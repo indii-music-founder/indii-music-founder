@@ -7,43 +7,11 @@ import { RegistrationAutonomousRail } from './components/RegistrationAutonomousR
 import { ORG_ADAPTERS } from './adapters';
 import type { CatalogTrack, OrgId, SubmissionResult, TrackRegistrationState, OrgRegistrationRecord } from './types';
 import { logger } from '@/utils/logger';
+import { loadRegistrationCatalog } from './services/RegistrationCatalog';
 
 // ============================================================================
 // Data loaders (module-level, not component-level)
 // ============================================================================
-
-async function loadCatalogTracks(userId: string): Promise<CatalogTrack[]> {
-  const { db } = await import('@/services/firebase');
-  const { collection, getDocs, query, where } = await import('firebase/firestore');
-
-  const snap = await getDocs(
-    query(collection(db, `users/${userId}/tracks`), where('deleted', '!=', true))
-  );
-
-  return snap.docs.map(doc => {
-    const d = doc.data();
-    return {
-      id: doc.id,
-      title: d.title ?? 'Untitled',
-      artistName: d.artistName ?? d.artist ?? '',
-      writersAndContributors: d.writersAndContributors ?? d.contributors ?? [],
-      isrc: d.isrc,
-      iswc: d.iswc,
-      releaseDate: d.releaseDate,
-      genre: d.genre,
-      duration: d.duration,
-      bpm: d.bpm,
-      musicalKey: d.key ?? d.musicalKey,
-      isPublished: d.isPublished ?? Boolean(d.releaseDate),
-      yearOfCreation: d.yearOfCreation ?? new Date().getFullYear().toString(),
-      copyrightClaimant: d.copyrightClaimant ?? d.artistName ?? d.artist,
-      workForHire: d.workForHire ?? false,
-      countryOfFirstPublication: d.countryOfFirstPublication ?? 'United States',
-      publisherName: d.publisherName,
-      publisherNumber: d.publisherNumber,
-    } as CatalogTrack;
-  });
-}
 
 async function loadRegistrationStates(
   userId: string,
@@ -138,7 +106,7 @@ export default function RegistrationCenter() {
       setLoading(true);
       setLoadError(null);
       try {
-        const loaded = await loadCatalogTracks(uid);
+        const loaded = await loadRegistrationCatalog(uid);
         if (cancelled) return;
         setTracks(loaded);
         if (!registrationFocus.trackId && loaded[0]) {
@@ -176,7 +144,9 @@ export default function RegistrationCenter() {
     if (!trackId) return;
     const record: OrgRegistrationRecord = {
       orgId,
-      status: result.success ? 'submitted' : result.requiresManualStep ? 'in_progress' : 'error',
+      status: result.success
+        ? (result.localRecordFailed ? 'submitted_local_record_failed' : 'submitted')
+        : result.requiresManualStep ? 'in_progress' : 'error',
       submittedAt: result.submittedAt,
       confirmationNumber: result.confirmationNumber,
       errorMessage: result.errorMessage,
@@ -199,7 +169,7 @@ export default function RegistrationCenter() {
         <span className="text-red-400">{loadError}</span>
         <button
           onClick={() => window.location.reload()}
-          className="text-xs text-purple-400 hover:text-purple-300 underline"
+          className="text-xs text-green-400 hover:text-green-300 underline"
         >
           Retry
         </button>

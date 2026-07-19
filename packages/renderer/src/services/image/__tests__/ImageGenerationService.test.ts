@@ -2,6 +2,8 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ImageGeneration } from "../ImageGenerationService";
 
 import { httpsCallable } from "firebase/functions";
+import { CostControlService } from '@/services/billing/CostControlService';
+import { subscriptionService } from '@/services/subscription/SubscriptionService';
 
 // Mock Firebase functions
 vi.mock("@/services/firebase", () => ({
@@ -56,10 +58,6 @@ vi.mock('@/services/intelligence/FirebaseIntelligenceService', () => {
     };
 });
 
-vi.mock("@/services/intelligence/generators/DirectImageEditor", () => ({
-  editImageDirectly: vi.fn(),
-}));
-
 // Mock SubscriptionService and UsageTracker
 vi.mock("@/services/subscription/SubscriptionService", () => ({
   subscriptionService: {
@@ -95,6 +93,14 @@ describe("ImageGenerationService", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(subscriptionService.canPerformAction).mockResolvedValue({ allowed: true });
+    vi.mocked(CostControlService.checkAndReserve).mockResolvedValue({
+      allowed: true,
+      remainingBudget: 100,
+      dailyUsed: 0,
+      monthlyUsed: 0,
+      operationId: 'test-cost-reservation',
+    });
     mockGenerateImage.stream = vi.fn();
     vi.mocked(httpsCallable).mockReturnValue(mockGenerateImage as any);
   });
@@ -128,8 +134,23 @@ describe("ImageGenerationService", () => {
         expect.objectContaining({
           prompt: expect.stringContaining("A test image"),
           count: 1,
+          costReservationId: 'test-cost-reservation',
         }),
       );
+    });
+
+    it('deduplicates concurrent identical requests before reserving cost', async () => {
+      let resolveGeneration!: (value: { data: { images: Array<{ bytesBase64Encoded: string; mimeType: string }> } }) => void;
+      mockGenerateImage.mockReturnValue(new Promise(resolve => { resolveGeneration = resolve; }));
+
+      const first = ImageGeneration.generateImages({ prompt: 'same intent', count: 1, sessionId: 'project-1' });
+      const second = ImageGeneration.generateImages({ prompt: 'same intent', count: 1, sessionId: 'project-1' });
+      await Promise.resolve();
+      resolveGeneration({ data: { images: [{ bytesBase64Encoded: 'base64data', mimeType: 'image/png' }] } });
+
+      await expect(Promise.all([first, second])).resolves.toHaveLength(2);
+      expect(CostControlService.checkAndReserve).toHaveBeenCalledTimes(1);
+      expect(mockGenerateImage).toHaveBeenCalledTimes(1);
     });
 
     it("should handle distributor-aware cover art generation", async () => {
@@ -232,6 +253,45 @@ describe("ImageGenerationService", () => {
       ]);
     });
 
+    it("ISSUE-777: returns every stored batch result and forwards advanced image settings", async () => {
+      mockGenerateImage.mockResolvedValue({
+        data: {
+          jobId: 'batch-job',
+          resultUris: [
+            'gs://mock-bucket/creative/test-user/one.png',
+            'gs://mock-bucket/creative/test-user/two.png',
+            'gs://mock-bucket/creative/test-user/three.png',
+          ],
+          textNarration: 'Campaign direction',
+          thoughtSummary: 'Composition summary',
+        },
+      });
+
+      const results = await ImageGeneration.generateImages({
+        prompt: 'Three campaign concepts',
+        count: 3,
+        imageSize: '1k',
+        thinkingLevel: 'minimal',
+        includeThoughts: true,
+        useGoogleSearch: true,
+        useImageSearch: true,
+        responseFormat: 'image_and_text',
+        referenceUris: ['gs://mock-bucket/creative/test-user/reference.png'],
+      });
+
+      expect(results).toHaveLength(3);
+      expect(results.every(result => result.textNarration === 'Campaign direction')).toBe(true);
+      expect(results.every(result => result.thoughtSignature === 'Composition summary')).toBe(true);
+      expect(mockGenerateImage).toHaveBeenCalledWith(expect.objectContaining({
+        count: 3,
+        imageSize: '1k',
+        includeThoughts: true,
+        responseFormat: 'image_and_text',
+        referenceUri: 'gs://mock-bucket/creative/test-user/reference.png',
+        referenceUris: ['gs://mock-bucket/creative/test-user/reference.png'],
+      }));
+    });
+
     it("should return fallback or empty on generation failure", async () => {
       mockGenerateImage.mockRejectedValue(new Error("Generation failed"));
 
@@ -242,6 +302,20 @@ describe("ImageGenerationService", () => {
       } catch (e: unknown) {
         expect(e).toBeDefined();
       }
+      expect(CostControlService.finalize).toHaveBeenCalledWith('test-cost-reservation', 'VOIDED');
+    });
+
+    it('checks subscription quota before reserving cost', async () => {
+      vi.mocked(subscriptionService.canPerformAction).mockResolvedValue({
+        allowed: false,
+        reason: 'quota reached',
+        currentUsage: { used: 10, limit: 10, remaining: 0 },
+      });
+
+      await expect(ImageGeneration.generateImages({ prompt: 'Over quota' })).rejects.toThrow('quota reached');
+
+      expect(CostControlService.checkAndReserve).not.toHaveBeenCalled();
+      expect(mockGenerateImage).not.toHaveBeenCalled();
     });
   });
 
@@ -281,14 +355,16 @@ describe("ImageGenerationService", () => {
   });
 
   describe("remixImage", () => {
-    it("should remix images with style reference via Direct SDK", async () => {
-      const { editImageDirectly } = await import("@/services/intelligence/generators/DirectImageEditor");
-      
+    it("should remix images with style reference via Cloud Function", async () => {
       const mockDirectResponse = {
-        url: "data:image/png;base64,remixeddata",
+        data: {
+          id: 'mock-id',
+          url: "data:image/png;base64,remixeddata",
+          prompt: "Apply this style",
+        }
       };
 
-      vi.mocked(editImageDirectly).mockResolvedValue(mockDirectResponse as any);
+      mockGenerateImage.mockResolvedValue(mockDirectResponse);
 
       const result = await ImageGeneration.remixImage({
         contentImage: { mimeType: "image/jpeg", data: "contentdata" },
@@ -298,13 +374,46 @@ describe("ImageGenerationService", () => {
 
       expect(result).toHaveProperty("url");
       expect(result!.url).toMatch(/^data:image\/png;base64,/);
-      expect(editImageDirectly).toHaveBeenCalledWith(
+      expect(mockGenerateImage).toHaveBeenCalledWith(
         expect.objectContaining({
           prompt: "Apply this style",
           image: { mimeType: "image/jpeg", data: "contentdata" },
           referenceImage: { mimeType: "image/png", data: "styledata" }
         })
       );
+    });
+
+    it("should normalize raw candidate responses into a usable preview url", async () => {
+      const mockDirectResponse = {
+        data: {
+          candidates: [
+            {
+              content: {
+                parts: [
+                  {
+                    inlineData: {
+                      mimeType: "image/png",
+                      data: "candidate-preview-data",
+                    },
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      };
+
+      mockGenerateImage.mockResolvedValue(mockDirectResponse);
+
+      const result = await ImageGeneration.remixImage({
+        contentImage: { mimeType: "image/jpeg", data: "contentdata" },
+        styleImage: { mimeType: "image/png", data: "styledata" },
+        prompt: "Apply this style",
+      });
+
+      expect(result).toEqual({
+        url: "data:image/png;base64,candidate-preview-data",
+      });
     });
   });
 

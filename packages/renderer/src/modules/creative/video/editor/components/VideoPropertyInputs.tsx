@@ -10,7 +10,7 @@ interface KeyframeButtonProps {
 export const KeyframeButton = memo(({ onClick, active }: KeyframeButtonProps) => (
     <button
         onClick={onClick}
-        className={`p-1 rounded hover:bg-gray-700 ${active ? 'text-purple-400' : 'text-gray-500'}`}
+        className={`p-1 rounded hover:bg-gray-700 ${active ? 'text-green-400' : 'text-gray-500'}`}
         title="Add/Update Keyframe"
     >
         <div className="w-2 h-2 transform rotate-45 border border-current bg-current" />

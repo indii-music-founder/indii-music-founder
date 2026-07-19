@@ -321,10 +321,7 @@ class WebSocketControlPlane {
   }
 
   private _defaultUrl(): string {
-    return (
-      (typeof import.meta !== 'undefined' && import.meta.env?.VITE_WEBSOCKET_URL) ||
-      'ws://127.0.0.1:1234'
-    );
+    return import.meta.env.VITE_WEBSOCKET_URL || 'ws://127.0.0.1:1234';
   }
 }
 

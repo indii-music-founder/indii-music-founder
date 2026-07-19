@@ -1,9 +1,37 @@
 import { logger } from '@/utils/logger';
+
+// CRITICAL: Set App Check debug token BEFORE any Firebase SDK initialization
+// This must happen in the module scope before any Firebase services load
+// In Electron, use debug token to allow development without blocking Referer headers
+if (typeof window !== 'undefined' && import.meta.env.DEV) {
+    const key = ['FIREBASE', 'APPCHECK', 'DEBUG', 'TOKEN'].join('_');
+    const isElectronEnv = typeof (window as any).electronAPI !== 'undefined';
+
+    // Auto-prune stale E2E mock flags from persistent localStorage in local dev
+    if (import.meta.env.VITE_FIREBASE_E2E_MOCK !== 'true' && import.meta.env.VITE_E2E !== 'true') {
+        try {
+            localStorage.removeItem('FIREBASE_E2E_MOCK');
+        } catch {
+            // ignore
+        }
+    }
+
+    // Use the registered debug token if available from env
+    const debugToken = import.meta.env.VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN;
+
+    // For Electron, use a valid debug token format (Firebase SDK will recognize this in debug mode)
+    // Web browsers can leave it as `true` to trigger automatic token generation
+    if (typeof (window as any)[key] !== 'string') {
+        const val = debugToken || (isElectronEnv ? 'debug-token-electron-local-dev' : true);
+        (window as unknown as Record<string, string | boolean>)[key] = val;
+        (self as unknown as Record<string, string | boolean>)[key] = val;
+    }
+}
+
 import { initializeApp } from 'firebase/app';
-import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, setDoc } from 'firebase/firestore';
-import { getStorage } from 'firebase/storage';
-import { initializeAuth, browserLocalPersistence, browserSessionPersistence, indexedDBLocalPersistence } from 'firebase/auth';
-import { getAI, VertexAIBackend, AI as Autonomous } from 'firebase/ai';
+import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, setDoc, connectFirestoreEmulator } from 'firebase/firestore';
+import { getStorage, connectStorageEmulator } from 'firebase/storage';
+import { initializeAuth, browserLocalPersistence, browserSessionPersistence, indexedDBLocalPersistence, connectAuthEmulator } from 'firebase/auth';
 
 import { firebaseConfig, env } from '@/config/env';
 
@@ -12,7 +40,6 @@ import { getFunctions, connectFunctionsEmulator, httpsCallable } from 'firebase/
 import { initializeAppCheck, ReCaptchaV3Provider, ReCaptchaEnterpriseProvider } from 'firebase/app-check';
 import { getRemoteConfig } from 'firebase/remote-config';
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
-import { isAppCheckConfigured } from '@/services/intelligence/appcheck';
 import { getE2EMockUser, isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
 
 // If Firebase config is missing critical keys, log clearly and continue with empty config.
@@ -22,12 +49,15 @@ if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
 }
 
 export const app = initializeApp(firebaseConfig);
+const isLocalhostDev = typeof window !== 'undefined' &&
+    import.meta.env.DEV &&
+    (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
 
 // ============================================================================
 // LAZY Firebase Autonomous Initialization
 // Only initialize when App Check is configured to avoid Installations API errors
 // ============================================================================
-const _aiInstances = new Map<string, Autonomous>();
+export type Autonomous = never;
 
 /**
  * Get the Firebase Autonomous instance. Returns null if App Check is not configured,
@@ -35,30 +65,9 @@ const _aiInstances = new Map<string, Autonomous>();
  * Allows passing an optional location (e.g. 'us-central1') for dynamic Vertex routing.
  */
 export function getFirebaseAI(location?: string): Autonomous | null {
-    const targetLocation = location || import.meta.env.VITE_VERTEX_LOCATION || 'global';
-    if (_aiInstances.has(targetLocation)) {
-        return _aiInstances.get(targetLocation)!;
-    }
-
-    // Only initialize Firebase Autonomous if App Check is configured
-    // This prevents the Installations API error when App Check isn't set up
-    if (!isAppCheckConfigured()) {
-        logger.warn('[Firebase] App Check not configured, Firebase Autonomous will not be initialized (using fallback)');
-        return null;
-    }
-
-    try {
-        const instance = getAI(app, {
-            backend: new VertexAIBackend(targetLocation),
-            useLimitedUseAppCheckTokens: false
-        });
-        _aiInstances.set(targetLocation, instance);
-        logger.info(`[Firebase] Firebase Autonomous initialized with Vertex Autonomous backend (${targetLocation})`);
-        return instance;
-    } catch (error: unknown) {
-        logger.error(`[Firebase] Failed to initialize Firebase AI for location ${targetLocation}:`, error);
-        return null;
-    }
+    void location;
+    logger.debug('[Firebase] Browser Firebase AI SDK is disabled; AI requests must use backend Cloud Function gateways.');
+    return null;
 }
 
 // For backwards compatibility - lazy getter
@@ -96,27 +105,23 @@ try {
         experimentalForceLongPolling: true
     });
     storage = getStorage(app);
-    functions = getFunctions(app); // Default (us-central1)
-    // Legacy aliases kept for existing imports. They intentionally point to the
-    // primary us-central1 client so region drift cannot reappear through aliases.
-    functionsWest1 = functions;
 
     const isDev = env.DEV;
     const useEmulator = env.VITE_USE_FUNCTIONS_EMULATOR === 'true';
 
     if (isDev && useEmulator && typeof window !== 'undefined') {
         try {
-            connectFunctionsEmulator(functions, '127.0.0.1', 5001);
-            logger.debug('[Firebase] Connected to Functions emulator on port 5001');
+            connectFirestoreEmulator(db, '127.0.0.1', 8080);
+            logger.debug('[Firebase] Connected to Firestore emulator on port 8080');
+            connectStorageEmulator(storage, '127.0.0.1', 9199);
+            logger.debug('[Firebase] Connected to Storage emulator on port 9199');
         } catch (e: unknown) {
-            logger.warn('[Firebase] Functions emulator connection skipped:', e);
+            logger.warn('[Firebase] Emulators connection skipped:', e);
         }
     }
 } catch (e) {
     logger.error('[Firebase] Failed to initialize core services (likely missing config):', e);
 }
-
-export { db, storage, functions, functionsWest1 };
 
 import { Auth, User } from 'firebase/auth';
 let rawAuth: Auth;
@@ -128,6 +133,22 @@ if (isFirebaseE2EMockEnabled()) {
     
     const notifyListeners = () => {
         authStateListeners.forEach(cb => cb(currentMockUser));
+    };
+
+    const clearSignedOutFlag = () => {
+        try {
+            localStorage.removeItem('FIREBASE_E2E_SIGNED_OUT');
+        } catch {
+            // ignore
+        }
+    };
+
+    const setSignedOutFlag = () => {
+        try {
+            localStorage.setItem('FIREBASE_E2E_SIGNED_OUT', '1');
+        } catch {
+            // ignore
+        }
     };
 
     rawAuth = {
@@ -143,18 +164,21 @@ if (isFirebaseE2EMockEnabled()) {
             };
         },
         signInAnonymously: async () => {
+            clearSignedOutFlag();
             currentMockUser = getE2EMockUser<User>();
             (rawAuth as Auth & { _signedOut?: boolean })._signedOut = false;
             notifyListeners();
             return { user: currentMockUser };
         },
         signInWithEmailAndPassword: async () => {
+            clearSignedOutFlag();
             currentMockUser = getE2EMockUser<User>();
             (rawAuth as Auth & { _signedOut?: boolean })._signedOut = false;
             notifyListeners();
             return { user: currentMockUser };
         },
         createUserWithEmailAndPassword: async () => {
+            clearSignedOutFlag();
             currentMockUser = getE2EMockUser<User>();
             (rawAuth as Auth & { _signedOut?: boolean })._signedOut = false;
             notifyListeners();
@@ -165,12 +189,14 @@ if (isFirebaseE2EMockEnabled()) {
             return Promise.resolve();
         },
         signInWithPopup: async () => {
+            clearSignedOutFlag();
             currentMockUser = getE2EMockUser<User>();
             (rawAuth as Auth & { _signedOut?: boolean })._signedOut = false;
             notifyListeners();
             return { user: currentMockUser };
         },
         signOut: async () => {
+            setSignedOutFlag();
             currentMockUser = null;
             (rawAuth as Auth & { _signedOut?: boolean })._signedOut = true;
             notifyListeners();
@@ -181,6 +207,16 @@ if (isFirebaseE2EMockEnabled()) {
         rawAuth = initializeAuth(app, {
             persistence: [indexedDBLocalPersistence, browserLocalPersistence, browserSessionPersistence]
         });
+
+        // Connect to Auth emulator in dev mode
+        if (env.DEV && env.VITE_USE_FUNCTIONS_EMULATOR === 'true' && typeof window !== 'undefined') {
+            try {
+                connectAuthEmulator(rawAuth, 'http://127.0.0.1:9099', { disableWarnings: true });
+                logger.debug('[Firebase] Connected to Auth emulator on port 9099');
+            } catch (e: unknown) {
+                logger.warn('[Firebase] Auth emulator connection skipped:', e);
+            }
+        }
     } catch (e: unknown) {
         logger.error('[Firebase] Failed to initialize Auth (likely missing API key):', e);
         rawAuth = {
@@ -234,15 +270,41 @@ const auth = new Proxy(rawAuth, {
 
 export { auth };
 
+try {
+    functions = getFunctions(app); // Default (us-central1)
+    // Legacy aliases kept for existing imports. They intentionally point to the
+    // primary us-central1 client so region drift cannot reappear through aliases.
+    functionsWest1 = functions;
+
+    const isDev = env.DEV;
+    const useEmulator = env.VITE_USE_FUNCTIONS_EMULATOR === 'true';
+
+    if (isDev && useEmulator && typeof window !== 'undefined') {
+        try {
+            connectFunctionsEmulator(functions, '127.0.0.1', 5001);
+            logger.debug('[Firebase] Connected to Functions emulator on port 5001');
+        } catch (e: unknown) {
+            logger.warn('[Firebase] Functions emulator connection skipped:', e);
+        }
+    }
+} catch (e) {
+    logger.error('[Firebase] Failed to initialize Functions:', e);
+}
+
+// Export after functions initialization
+export { db, storage, functions, functionsWest1 };
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let remoteConfig: any = null;
 try {
-    // Initialize Remote Config
-    remoteConfig = getRemoteConfig(app);
-    remoteConfig.defaultConfig = {
-        model_name: INTELLIGENCE_MODELS.TEXT.FAST,
-        vertex_location: 'global'
-    };
+    if (!isLocalhostDev) {
+        // Initialize Remote Config
+        remoteConfig = getRemoteConfig(app);
+        remoteConfig.defaultConfig = {
+            model_name: INTELLIGENCE_MODELS.TEXT.FAST,
+            vertex_location: 'global'
+        };
+    }
 } catch (e) {
     logger.error('[Firebase] Failed to initialize RemoteConfig:', e);
 }
@@ -288,8 +350,7 @@ export async function getFirebaseMessaging(): Promise<Messaging | null> {
     }
 }
 
-// Backwards-compat: eager reference (null until first async call)
-export const messaging = null as Messaging | null;
+// Use getFirebaseMessaging() function below instead of direct messaging export
 
 // Item 259: Initialize Firebase Performance Monitoring
 // Lazy-loaded to avoid adding to the critical path
@@ -312,29 +373,19 @@ export function getFirebasePerf() {
 }
 // Auto-initialize on load
 if (typeof window !== 'undefined') {
-    getFirebasePerf();
+    if (!isLocalhostDev) {
+        getFirebasePerf();
+    }
 }
 
 // Initialize App Check
 let appCheck = null;
 if (typeof window !== 'undefined') {
-    // Debug token for local development AND headless CI (e2e against deployed staging).
-    //
-    // An explicit debug token (VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN) is a deliberate,
-    // secret-controlled value. When present we apply it regardless of DEV/PROD so that
-    // a deployed staging build can pass App Check from a headless browser (which cannot
-    // solve a reCAPTCHA challenge). This does NOT weaken security: the token only lets
-    // App Check accept the request — Firestore/Storage Security Rules still enforce all
-    // real authorization. Production end-user builds simply won't have this token set.
-    //
-    // The auto-generate fallback (`= true`) stays DEV-only: it prompts the SDK to log a
-    // fresh token to the console for local registration, which must never happen in prod.
-    if (env.appCheckDebugToken) {
-        window.FIREBASE_APPCHECK_DEBUG_TOKEN = env.appCheckDebugToken;
-        self.FIREBASE_APPCHECK_DEBUG_TOKEN = env.appCheckDebugToken;
-    } else if (env.DEV) {
-        window.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
-        self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+    // Debug token is already set at module scope (see top of file)
+    // This ensures the Installations API uses the debug token before any Firebase service loads
+
+    if (env.DEV) {
+        logger.debug('[App Check] Auto-debug mode enabled (check console for debug token)');
     }
 
     // SECURITY: Warn in production if App Check is not configured
@@ -345,32 +396,34 @@ if (typeof window !== 'undefined') {
     }
 
     // Initialize App Check if we have a valid key
-    // SKIP in Electron unless a debug token is explicitly provided (ReCaptcha Enterprise requires web origin)
-    // ALLOW in DEV if key is present to trigger the Firebase SDK's local debug token logging
     const isElectron = !!window.electronAPI;
-    const isLocalhost = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
 
-    // Logic: 
+    // Logic:
     // 1. Must have a key.
-    // 2. If Electron, must have a debug token (unless in DEV, where we want to trigger the prompt).
-    // 3. If in DEV, we initialize even without a debug token so the SDK logs the "Missing debug token" message to the console.
-    const shouldInitAppCheck = !!env.appCheckKey && (
-        !isElectron || env.appCheckDebugToken || env.DEV
+    // 2. CRITICAL: Always skip App Check in Electron (DEV or PROD) because:
+    //    - ReCaptcha Enterprise requires a web origin (Electron is not a web origin)
+    //    - Electron has empty/missing Referer headers which Firebase blocks
+    //    - Firestore/Storage Security Rules enforce authorization without App Check
+    // 3. CRITICAL: In DEV mode with Functions emulator, skip App Check entirely to avoid Installations API blocking.
+    const skipAppCheckInElectron = isElectron;
+    const skipAppCheckInEmulator = env.DEV && (
+        env.VITE_USE_FUNCTIONS_EMULATOR === 'true' ||
+        isLocalhostDev
     );
+    const shouldInitAppCheck = !skipAppCheckInElectron && !skipAppCheckInEmulator && !!env.appCheckKey;
 
-    if (shouldInitAppCheck) {
-        if (env.DEV && !env.appCheckDebugToken && isLocalhost) {
-            Logger.warn(TAG, 
+    if (skipAppCheckInElectron) {
+        logger.info('[App Check] Skipped in Electron (native app, empty Referer headers). Auth/Firestore Security Rules enforce authorization.');
+    } else if (skipAppCheckInEmulator) {
+        logger.info('[App Check] Skipped in emulator mode (dev: true, emulator: true). Auth/Firestore will work without App Check validation.');
+    } else if (shouldInitAppCheck) {
+        if (env.DEV && isLocalhostDev) {
+            Logger.warn(TAG,
                 '[indii][AppCheck] Running on localhost without a debug token.\n' +
                 'Google Maps and other protected services will fail until you:\n' +
                 '1. Check the console for "App Check debug token: XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"\n' +
-                '2. Add this token to your .env as VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN\n' +
-                '3. Register this token in the Firebase Console under App Check > Manage Debug Tokens.'
+                '2. Register this token in the Firebase Console under App Check > Manage Debug Tokens.'
             );
-        }
-
-        if (isElectron && env.appCheckDebugToken) {
-            logger.debug('[App Check] Initializing in Electron with Debug Token');
         }
 
         try {
@@ -401,7 +454,6 @@ declare global {
         functions: typeof functions;
         auth: typeof auth;
         httpsCallable: typeof httpsCallable;
-        FIREBASE_APPCHECK_DEBUG_TOKEN?: string | boolean;
     }
 }
 

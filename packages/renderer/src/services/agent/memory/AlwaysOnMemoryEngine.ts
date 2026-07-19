@@ -335,7 +335,7 @@ export class AlwaysOnMemoryEngine {
 
         try {
             // Step 1: Fetch all memories (most recent first)
-            const memories = await this.getAllMemories(50);
+            const memories = await this.getAllMemories(500);
 
             // Step 2: Fetch consolidation insights
             const insights = await this.getInsights(10);
@@ -362,7 +362,8 @@ export class AlwaysOnMemoryEngine {
                 ? `Answer based ONLY on the stored memories and insights below.
 Reference memory IDs in your answer like [Memory abc123].
 Always cite your sources.`
-                : `You don't have stored memories for this topic yet, but you can answer based on your general knowledge.
+                : `You searched the indii memory engine, but no stored memories or insights were found.
+You MUST explicitly state to the user that you searched their memory engine but found nothing relevant. Then, answer the question based on your general knowledge.
 If appropriate, suggest that the user can ingest relevant information to build a memory base.`;
 
             const prompt = cleanPrompt(`
@@ -463,7 +464,7 @@ If appropriate, suggest that the user can ingest relevant information to build a
 
             // Get tier breakdown (fetch a sample to estimate)
             const tierSample = await getDocs(
-                query(memoryRef, where('isActive', '==', true), limit(200))
+                query(memoryRef, where('isActive', '==', true), limit(1000))
             );
             for (const doc of tierSample.docs) {
                 const data = doc.data();
@@ -486,7 +487,7 @@ If appropriate, suggest that the user can ingest relevant information to build a
      * Get all memories for the current user, optionally filtered by project or session.
      */
     public async getAllMemories(
-        maxCount: number = 50,
+        maxCount: number = 10000,
         filters?: { projectId?: string; sessionId?: string; category?: AlwaysOnMemoryCategory }
     ): Promise<AlwaysOnMemory[]> {
         if (!this.userId || this.isE2EMode) return [];
@@ -509,7 +510,12 @@ If appropriate, suggest that the user can ingest relevant information to build a
                 q = query(q, where('category', '==', filters.category));
             }
 
+            // Query cap raised to 10,000 to support full-archive recall (ISSUE-757)
+            // Queries hitting this cap will log a warning. Future: implement cursor pagination for unbounded search.
             const snapshot = await getDocs(query(q, limit(maxCount)));
+            if (snapshot.docs.length === maxCount) {
+                logger.warn(`[AlwaysOnMemoryEngine] getAllMemories hit the ${maxCount} doc limit — archive search incomplete. Implement pagination for full-archive recall.`);
+            }
             return snapshot.docs.map(doc => ({
                 id: doc.id,
                 ...doc.data(),
@@ -598,34 +604,43 @@ If appropriate, suggest that the user can ingest relevant information to build a
         let memoriesDeleted = 0;
         let insightsDeleted = 0;
 
-        // Delete all memories
+        // Delete all memories (batch by 500 to respect Firestore write limits)
         const memoryRef = collection(db, 'users', this.userId, 'alwaysOnMemories');
-        const memorySnapshot = await getDocs(query(memoryRef, limit(500)));
-        const memBatch = writeBatch(db);
-        for (const doc of memorySnapshot.docs) {
-            memBatch.delete(doc.ref);
-            memoriesDeleted++;
+        let memoryBatch = await getDocs(query(memoryRef, limit(500)));
+        while (!memoryBatch.empty) {
+            const memBatch = writeBatch(db);
+            for (const doc of memoryBatch.docs) {
+                memBatch.delete(doc.ref);
+                memoriesDeleted++;
+            }
+            if (memoriesDeleted > 0) await memBatch.commit();
+            memoryBatch = await getDocs(query(memoryRef, limit(500)));
         }
-        if (memoriesDeleted > 0) await memBatch.commit();
 
-        // Delete all insights
+        // Delete all insights (batch by 500 to respect Firestore write limits)
         const insightRef = collection(db, 'users', this.userId, 'consolidationInsights');
-        const insightSnapshot = await getDocs(query(insightRef, limit(500)));
-        const insBatch = writeBatch(db);
-        for (const doc of insightSnapshot.docs) {
-            insBatch.delete(doc.ref);
-            insightsDeleted++;
+        let insightBatch = await getDocs(query(insightRef, limit(500)));
+        while (!insightBatch.empty) {
+            const insBatch = writeBatch(db);
+            for (const doc of insightBatch.docs) {
+                insBatch.delete(doc.ref);
+                insightsDeleted++;
+            }
+            if (insightsDeleted > 0) await insBatch.commit();
+            insightBatch = await getDocs(query(insightRef, limit(500)));
         }
-        if (insightsDeleted > 0) await insBatch.commit();
 
-        // Delete all ingestion events
+        // Delete all ingestion events (batch by 500 to respect Firestore write limits)
         const eventRef = collection(db, 'users', this.userId, 'ingestionEvents');
-        const eventSnapshot = await getDocs(query(eventRef, limit(500)));
-        const evtBatch = writeBatch(db);
-        for (const doc of eventSnapshot.docs) {
-            evtBatch.delete(doc.ref);
+        let eventBatch = await getDocs(query(eventRef, limit(500)));
+        while (!eventBatch.empty) {
+            const evtBatch = writeBatch(db);
+            for (const doc of eventBatch.docs) {
+                evtBatch.delete(doc.ref);
+            }
+            if (!eventBatch.empty) await evtBatch.commit();
+            eventBatch = await getDocs(query(eventRef, limit(500)));
         }
-        if (!eventSnapshot.empty) await evtBatch.commit();
 
         logger.info(
             `[AlwaysOnMemoryEngine] 🗑️ Full reset: ${memoriesDeleted} memories, ${insightsDeleted} insights deleted`

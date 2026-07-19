@@ -4,6 +4,7 @@ import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
 import type { AnyToolFunction } from '../types';
 import { logger } from '@/utils/logger';
 import { getFineTunedModel } from '../fine-tuned-models';
+import { importWithRetry } from '@/utils/dynamicImport';
 
 // ============================================================================
 // SocialTools Implementation
@@ -140,7 +141,7 @@ Be specific and data-driven based on the post content above.`;
         platforms: Array<'TikTok' | 'YouTube Shorts' | 'IG Reels'>;
     }) => {
         try {
-            const { socialAutoPosterService } = await import('@/services/marketing/SocialAutoPosterService');
+            const { socialAutoPosterService } = await importWithRetry(() => import('@/services/marketing/SocialAutoPosterService'));
             const platformMap = {
                 'TikTok': 'tiktok',
                 'YouTube Shorts': 'youtube_shorts',

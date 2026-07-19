@@ -21,9 +21,9 @@ const TIER_CONFIG: Record<FanTier, { color: string; bg: string; border: string; 
         threshold: '$500+ spend',
     },
     VIP: {
-        color: 'text-purple-400',
-        bg: 'bg-purple-400/10',
-        border: 'border-purple-400/30',
+        color: 'text-green-400',
+        bg: 'bg-green-400/10',
+        border: 'border-green-400/30',
         icon: <Star size={12} />,
         threshold: '$100–$499',
     },
@@ -81,7 +81,7 @@ export function SuperfanCRM() {
                         <div className="text-[10px] text-slate-500 uppercase tracking-wider font-bold">Total Fans</div>
                         <div className="text-[11px] text-emerald-400 mt-1 flex items-center gap-1">
                             <TrendingUp size={10} />
-                            ${totalRevenue.toLocaleString()} LTV
+                            ${totalRevenue.toLocaleString('en-US')} LTV
                         </div>
                     </div>
                     {(['Superfan', 'VIP', 'Standard'] as FanTier[]).map(tier => {
@@ -151,11 +151,11 @@ export function SuperfanCRM() {
 
                                     {/* Stats */}
                                     <div className="text-right">
-                                        <div className="text-sm font-bold text-white">${fan.totalSpend.toLocaleString()}</div>
+                                        <div className="text-sm font-bold text-white">${fan.totalSpend.toLocaleString('en-US')}</div>
                                         <div className="text-[10px] text-slate-600">lifetime spend</div>
                                     </div>
                                     <div className="text-right w-20 hidden xl:block">
-                                        <div className="text-sm font-bold text-emerald-400">{fan.streamsThisMonth.toLocaleString()}</div>
+                                        <div className="text-sm font-bold text-emerald-400">{fan.streamsThisMonth.toLocaleString('en-US')}</div>
                                         <div className="text-[10px] text-slate-600">streams/mo</div>
                                     </div>
                                     <div className="text-[10px] text-slate-600 w-24 text-right hidden 2xl:block">{fan.lastActive}</div>

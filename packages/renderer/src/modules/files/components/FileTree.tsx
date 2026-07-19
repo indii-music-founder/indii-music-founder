@@ -115,7 +115,10 @@ export function FileTree({ nodes, parentId, level = 0 }: FileTreeProps) {
                             >
                                 <div className="w-5 flex items-center justify-center shrink-0">
                                     {node.type === 'folder' && (
-                                        <button className="p-0.5 hover:bg-white/10 rounded">
+                                        <button
+                                            className="p-0.5 hover:bg-white/10 rounded cursor-pointer"
+                                            onClick={() => toggleFolder(node.id)}
+                                        >
                                             {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
                                         </button>
                                     )}

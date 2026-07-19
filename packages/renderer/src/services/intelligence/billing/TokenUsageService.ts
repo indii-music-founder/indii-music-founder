@@ -1,4 +1,4 @@
-import { db } from '@/services/firebase';
+import { db, auth } from '@/services/firebase';
 import { doc, getDoc, setDoc, updateDoc, increment, serverTimestamp, FieldValue } from 'firebase/firestore';
 import { RATE_LIMITS } from '@/core/config/rate-limits';
 import { AppErrorCode, AppException } from '@/shared/types/errors';
@@ -7,6 +7,15 @@ import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
 import { estimateCostUsd, sanitizeModelKey } from './ModelPricing';
 import { subscriptionService } from '@/services/subscription/SubscriptionService';
 import { SubscriptionTier } from '@/services/subscription/SubscriptionTier';
+
+/** Founder emails that always receive unlimited quota — bypasses subscription lookup. */
+const FOUNDER_EMAILS: readonly string[] = ['wiil@indii.music'];
+
+/** Returns true if the currently signed-in Firebase Auth user is a founder. */
+function isFounderUser(): boolean {
+    const email = auth.currentUser?.email;
+    return !!email && FOUNDER_EMAILS.includes(email.toLowerCase());
+}
 
 
 /** Per-model cost breakdown stored inside each daily usage doc. */
@@ -180,6 +189,13 @@ export class TokenUsageService {
             throw new AppException(AppErrorCode.AUTH_ERROR, 'Authenticated user is required for quota checks.');
         }
 
+        // Founder hard-bypass: check auth email directly so that subscription
+        // service failures (unauthenticated fallback to FREE) never limit the founder.
+        if (isFounderUser()) {
+            logger.debug('[TokenUsageService] Founder detected via auth email — bypassing quota check.');
+            return true;
+        }
+
         // Get user's subscription tier
         let tier: SubscriptionTier = SubscriptionTier.FREE;
         try {
@@ -248,6 +264,13 @@ export class TokenUsageService {
         }
         if (!userId) {
             throw new AppException(AppErrorCode.AUTH_ERROR, 'Authenticated user is required for rate-limit checks.');
+        }
+
+        // Founder hard-bypass: check auth email directly — prevents free-tier rate limiting
+        // when subscription service is temporarily unavailable.
+        if (isFounderUser()) {
+            logger.debug('[TokenUsageService] Founder detected via auth email — bypassing rate limit check.');
+            return;
         }
 
         // Get user's subscription tier

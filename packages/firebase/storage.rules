@@ -60,21 +60,50 @@ service firebase.storage {
     // Users can only access their own storage
     match /users/{userId}/{allPaths=**} {
       allow read: if isAuthenticated() && request.auth.uid == userId;
-      // Write: authenticated, owner, under 500MB, valid media type
-      allow write: if isAuthenticated() && 
+      allow delete: if isAuthenticated() && request.auth.uid == userId;
+      // Create/update: authenticated owner, under 500MB, valid media type.
+      allow create, update: if isAuthenticated() &&
+                              request.auth.uid == userId &&
+                              isUnderSizeLimit(500) &&
+                              isAllowedMediaType();
+    }
+
+    // Content-addressed source masters: the authenticated owner can create a
+    // correctly identified audio object once, but clients can never replace or
+    // delete it. Admin retention/backup controls remain server-side.
+    match /masters/{userId}/{contentHash}/{fileName} {
+      allow read: if isAuthenticated() && request.auth.uid == userId;
+      allow create: if isAuthenticated() &&
                       request.auth.uid == userId &&
+                      resource == null &&
+                      contentHash.matches('^[a-f0-9]{64}$') &&
+                      fileName.matches('^original\\.[A-Za-z0-9]{2,8}$') &&
                       isUnderSizeLimit(500) &&
-                      isAllowedMediaType();
+                      isAudioType() &&
+                      request.resource.metadata.keys().hasAll([
+                        'contentHash', 'ownerId', 'immutable', 'masterFingerprint', 'originalFileName'
+                      ]) &&
+                      request.resource.metadata.contentHash == contentHash &&
+                      request.resource.metadata.ownerId == request.auth.uid &&
+                      request.resource.metadata.immutable == 'true' &&
+                      request.resource.metadata.masterFingerprint is string &&
+                      request.resource.metadata.masterFingerprint.size() > 0 &&
+                      request.resource.metadata.masterFingerprint.size() <= 512 &&
+                      request.resource.metadata.originalFileName is string &&
+                      request.resource.metadata.originalFileName.size() > 0 &&
+                      request.resource.metadata.originalFileName.size() <= 512;
+      allow update, delete: if false;
     }
 
     // Creative Suite thin client asset uploads
     match /creative/{userId}/{allPaths=**} {
       // Owner can read their own uploaded assets and results
       allow read: if (isAuthenticated() && request.auth.uid == userId) || (isGuest() && userId == 'founder-demo-uid');
-      // Owner can upload reference media
-      allow write: if ((isAuthenticated() && request.auth.uid == userId) || (isGuest() && userId == 'founder-demo-uid')) &&
-                      isUnderSizeLimit(100) && // limit references to 100MB
-                      (isImageType() || isVideoType() || isAudioType());
+      allow delete: if isAuthenticated() && request.auth.uid == userId;
+      // Owner can upload reference media; creation/update stays size and MIME gated.
+      allow create, update: if ((isAuthenticated() && request.auth.uid == userId) || (isGuest() && userId == 'founder-demo-uid')) &&
+                              isUnderSizeLimit(100) && // limit references to 100MB
+                              (isImageType() || isVideoType() || isAudioType());
     }
 
     // ========================================

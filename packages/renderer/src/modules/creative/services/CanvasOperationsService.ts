@@ -13,6 +13,7 @@ declare module 'fabric' {
 import { hexToRgba, scaleImageToCanvas } from '@/lib/canvasUtils';
 import { STUDIO_COLORS, CreativeColor } from '../constants';
 import { logger } from '@/utils/logger';
+import { resolveStorageUrl } from '@/services/storage/resolveStorageUrl';
 
 export interface MaskData {
     mimeType: string;
@@ -25,6 +26,16 @@ export interface MaskData {
 export interface PreparedMasks {
     baseImage: { mimeType: string; data: string };
     masks: MaskData[];
+}
+
+export interface LayerInfo {
+    id: string;
+    name: string;
+    type: string;
+    visible: boolean;
+    locked: boolean;
+    isBaseImage: boolean;
+    isAnnotation: boolean;
 }
 
 export class CanvasOperationsService {
@@ -47,16 +58,17 @@ export class CanvasOperationsService {
     private _points: { x: number; y: number }[] = [];
 
     /**
-     * Load a Fabric.js Image from URL with automatic CORS fallback.
+     * Load a Fabric.js Image from URL without tainting the export canvas.
      *
      * Strategy:
-     *  1. Try fabric.Image.fromURL with crossOrigin:'anonymous' (works for data URIs
-     *     and correctly-configured CORS origins).
-     *  2. On failure (CORS block, network error), fetch the image bytes via
-     *     `safeStorageFetch`, create a blob URL, and retry — blob URLs are same-origin
-     *     so CORS is irrelevant.
+     *  1. Prefer a blob URL for known remote storage assets so the browser never
+     *     has to guess about canvas safety.
+     *  2. Fall back to direct anonymous loading for sources that are already same-origin
+     *     or are clearly CORS-safe.
      */
     private async loadImageSafe(url: string): Promise<fabric.Image> {
+        const playableUrl = await resolveStorageUrl(url);
+
         // High-performance async decoding (off main thread) helper
         const loadOffThread = (sourceUrl: string, crossOrigin?: string): Promise<fabric.Image> => {
             return new Promise((resolve, reject) => {
@@ -89,26 +101,49 @@ export class CanvasOperationsService {
         };
 
         // Fast path for data URIs — no CORS issues possible
-        if (url.startsWith('data:')) {
+        if (playableUrl.startsWith('data:')) {
             try {
-                return await loadOffThread(url);
+                return await loadOffThread(playableUrl);
             } catch (e) {
                 logger.warn('[CanvasOps] Off-thread data URI load failed, falling back to fromURL:', e);
-                return fabric.Image.fromURL(url, { crossOrigin: 'anonymous' });
+                return fabric.Image.fromURL(playableUrl, { crossOrigin: 'anonymous' });
             }
         }
 
-        // Attempt 1: Direct load with crossOrigin
+        // Prefer the blob path for ANY cross-origin http(s) URL — not just the two
+        // legacy hosts. The bucket's own *.firebasestorage.app domain, signed URLs,
+        // and CDNs all taint the canvas if loaded directly without CORS (ISSUE-478).
+        const isRemoteHttp = /^https?:\/\//i.test(playableUrl);
+        const isSameOrigin = typeof window !== 'undefined' && playableUrl.startsWith(window.location.origin);
+        const shouldPreferBlob = isRemoteHttp && !isSameOrigin;
+
+        // Attempt 1: Use a blob URL for remote storage sources to avoid canvas taint.
+        if (shouldPreferBlob) {
+            try {
+                const { safeStorageFetch } = await import('@/services/storage/safeStorageFetch');
+                const { blob } = await safeStorageFetch(playableUrl);
+                const blobUrl = URL.createObjectURL(blob);
+                this._activeBlobUrls.push(blobUrl);
+
+                const img = await loadOffThread(blobUrl);
+                logger.info('[CanvasOps] Image loaded via blob URL (preferred for storage assets)');
+                return img;
+            } catch (blobErr: unknown) {
+                logger.warn('[CanvasOps] Preferred blob load failed for storage asset, falling back to direct CORS-safe load:', blobErr);
+            }
+        }
+
+        // Attempt 2: Direct load with crossOrigin for sources that are already safe.
         try {
-            return await loadOffThread(url, 'anonymous');
+                return await loadOffThread(playableUrl, 'anonymous');
         } catch (directErr: unknown) {
             logger.warn('[CanvasOps] Direct image load failed (likely CORS), attempting blob fallback:', directErr);
         }
 
-        // Attempt 2: Fetch via safeStorageFetch → blob URL (bypasses CORS)
+        // Attempt 3: Fetch via safeStorageFetch → blob URL (bypasses CORS)
         try {
             const { safeStorageFetch } = await import('@/services/storage/safeStorageFetch');
-            const { blob } = await safeStorageFetch(url);
+            const { blob } = await safeStorageFetch(playableUrl);
             const blobUrl = URL.createObjectURL(blob);
             this._activeBlobUrls.push(blobUrl);
 
@@ -116,18 +151,10 @@ export class CanvasOperationsService {
             logger.info('[CanvasOps] Image loaded via blob URL fallback');
             return img;
         } catch (blobErr: unknown) {
-            logger.warn('[CanvasOps] Blob fallback also failed, trying no-CORS Image element:', blobErr);
+            logger.warn('[CanvasOps] Blob fallback failed:', blobErr);
         }
 
-        // Attempt 3: Final fallback: try without crossOrigin for display-only (won't be exportable)
-        try {
-            const img = await loadOffThread(url);
-            logger.info('[CanvasOps] Image loaded via no-crossOrigin fallback');
-            return img;
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        } catch (e) {
-            throw new Error(`All image load strategies failed for: ${url}`);
-        }
+        throw new Error(`All CORS-safe image load strategies failed for URL: ${url}`);
     }
 
     /**
@@ -160,7 +187,7 @@ export class CanvasOperationsService {
     initialize(
         canvasElement: HTMLCanvasElement,
         imageUrl?: string,
-        onReady?: () => void,
+        onReady?: () => void | Promise<void>,
         onChange?: () => void
     ): fabric.Canvas {
         // Dynamic sizing: read container dimensions instead of hardcoded 800x600
@@ -179,15 +206,21 @@ export class CanvasOperationsService {
                 .then((img: fabric.Image) => {
                     if (!this.canvas) return;
                     this.placeImageOnCanvas(img, maxWidth, maxHeight);
-                    onReady?.();
+                    void Promise.resolve(onReady?.()).catch((err: unknown) => {
+                        logger.error('[CanvasOps] Canvas ready callback failed:', err);
+                    });
                 })
                 .catch((err: unknown) => {
                     logger.error('[CanvasOps] All image load strategies failed:', err);
                     // Still call onReady so UI doesn't hang, but canvas will be empty
-                    onReady?.();
+                    void Promise.resolve(onReady?.()).catch((readyErr: unknown) => {
+                        logger.error('[CanvasOps] Canvas ready callback failed after image load error:', readyErr);
+                    });
                 });
         } else {
-            onReady?.();
+            void Promise.resolve(onReady?.()).catch((err: unknown) => {
+                logger.error('[CanvasOps] Canvas ready callback failed:', err);
+            });
         }
 
         if (onChange) {
@@ -307,7 +340,7 @@ export class CanvasOperationsService {
         }
     }
 
-    undo(): void {
+    async undo(): Promise<void> {
         if (!this.canvas || this._historyStack.length <= 1) return;
 
         this._isUndoingRedoing = true;
@@ -318,29 +351,26 @@ export class CanvasOperationsService {
 
         const previousState = this._historyStack[this._historyStack.length - 1];
         if (previousState) {
-            this.canvas.loadFromJSON(JSON.parse(previousState), () => {
-                this.canvas?.renderAll();
-                this._isUndoingRedoing = false;
-            });
-        } else {
-            this._isUndoingRedoing = false;
+            // Route through the CORS-safe loadFromJSON (ISSUE-478) instead of calling
+            // fabric's loadFromJSON directly — the raw call reloads the base image
+            // straight from its remote http src with no crossOrigin handling, so a
+            // flaky/missing CORS header on the storage bucket silently drops the
+            // image while every vector annotation (text, bounding boxes) still loads.
+            await this.loadFromJSON(previousState);
         }
+        this._isUndoingRedoing = false;
     }
 
-    redo(): void {
+    async redo(): Promise<void> {
         if (!this.canvas || this._redoStack.length === 0) return;
 
         this._isUndoingRedoing = true;
         const nextState = this._redoStack.pop();
         if (nextState) {
             this._historyStack.push(nextState);
-            this.canvas.loadFromJSON(JSON.parse(nextState), () => {
-                this.canvas?.renderAll();
-                this._isUndoingRedoing = false;
-            });
-        } else {
-            this._isUndoingRedoing = false;
+            await this.loadFromJSON(nextState);
         }
+        this._isUndoingRedoing = false;
     }
 
     canUndo(): boolean {
@@ -360,6 +390,65 @@ export class CanvasOperationsService {
         // A canvas has content if it has at least one visible object
         const objects = this.canvas.getObjects();
         return objects.some(obj => obj.visible !== false);
+    }
+
+    /**
+     * True when the editable canvas has a real artwork layer, not just masks or
+     * annotation objects. Used to recover from stale/blank saved Fabric states.
+     */
+    hasBaseImage(): boolean {
+        if (!this.canvas) return false;
+
+        const canvasWidth = this.canvas.getWidth();
+        const canvasHeight = this.canvas.getHeight();
+
+        return this.canvas.getObjects().some(obj => {
+            if (obj.visible === false || obj.type !== 'image') return false;
+            if ((obj.opacity ?? 1) <= 0) return false;
+
+            const data = (obj as fabric.Object & { data?: Record<string, unknown> }).data;
+            if (data?.isSegmentationMask || data?.isAnnotation || data?.isBoundingBox) {
+                return false;
+            }
+
+            const objectWithSize = obj as fabric.Object & {
+                getScaledWidth?: () => number;
+                getScaledHeight?: () => number;
+            };
+            const width = objectWithSize.getScaledWidth?.() ?? ((obj.width ?? 0) * (obj.scaleX ?? 1));
+            const height = objectWithSize.getScaledHeight?.() ?? ((obj.height ?? 0) * (obj.scaleY ?? 1));
+            if (width <= 1 || height <= 1) return false;
+
+            const left = obj.left ?? 0;
+            const top = obj.top ?? 0;
+            const intersectsViewport =
+                left + width > 0 &&
+                top + height > 0 &&
+                left < canvasWidth &&
+                top < canvasHeight;
+            if (!intersectsViewport) return false;
+
+            return data?.isBaseImage === true || !this.isAnnotation(obj);
+        });
+    }
+
+    /**
+     * Load the selected asset as the base artwork if restored JSON did not
+     * contain one. This keeps the editor usable even when an old autosave only
+     * captured an empty canvas or annotations.
+     */
+    async ensureBaseImage(imageUrl?: string): Promise<boolean> {
+        if (!this.canvas || !imageUrl || this.hasBaseImage()) return false;
+
+        const img = await this.loadImageSafe(imageUrl);
+        img.set('data', { isBaseImage: true });
+        scaleImageToCanvas(img, this.canvas);
+        this.canvas.add(img);
+        this.canvas.sendObjectToBack(img);
+        this.canvas.renderAll();
+        this.saveHistoryState();
+
+        return true;
     }
 
     /**
@@ -633,11 +722,13 @@ export class CanvasOperationsService {
                 annotationObjects.forEach((obj, i) => (obj.visible = visibilitySnapshot[i] ?? true));
             }
 
-            return new Promise((resolve) => {
-                this.canvas!.loadFromJSON(jsonState, () => {
-                    resolve(dataUrl);
-                });
-            });
+            // Route through the CORS-safe loadFromJSON (ISSUE-478) instead of calling
+            // fabric's loadFromJSON directly — same base-image-drop risk as the
+            // undo()/redo() bug this export restore step shared the pattern with.
+            this._isUndoingRedoing = true;
+            await this.loadFromJSON(jsonState);
+            this._isUndoingRedoing = false;
+            return dataUrl;
         };
 
         try {
@@ -663,11 +754,22 @@ export class CanvasOperationsService {
     }
 
     /**
-     * Export canvas to JSON string
+     * Export canvas to JSON string.
+     *
+     * Strips ephemeral AI-detection overlays (ID Objects bounding boxes and
+     * their label text) before serializing. Those are transient analysis
+     * artifacts for reasoning about the scene — persisting them meant every
+     * reload resurrected the green detection boxes with no way to tell they
+     * weren't part of the artwork. Segmentation masks are kept because they
+     * carry the user's magic-fill edit intent for the session.
      */
     async toJSON(): Promise<unknown> {
         if (!this.canvas) return null;
-        return this.canvas.toJSON(['data', 'id']);
+        const json = this.canvas.toJSON(['data', 'id']) as { objects?: Array<{ data?: Record<string, unknown> }> };
+        if (json && Array.isArray(json.objects)) {
+            json.objects = json.objects.filter(obj => !obj?.data?.isBoundingBox);
+        }
+        return json;
     }
 
     /**
@@ -676,11 +778,47 @@ export class CanvasOperationsService {
     async loadFromJSON(json: string): Promise<void> {
         if (!this.canvas) return;
         try {
-            await this.canvas.loadFromJSON(JSON.parse(json));
+            const parsed = JSON.parse(json);
+            // CRITICAL (ISSUE-478): Fabric's loadFromJSON reloads images straight from
+            // their stored http `src` with no crossOrigin, which TAINTS the canvas when
+            // the bucket lacks CORS — every later toDataURL() then throws. Swap remote
+            // image sources to same-origin blob URLs BEFORE handing the JSON to Fabric.
+            await this._sanitizeRemoteImageSources(parsed);
+            await this.canvas.loadFromJSON(parsed);
             this.canvas.renderAll();
         } catch (e: unknown) {
             const message = e instanceof Error ? e.message : 'Unknown error';
             logger.error(`Failed to load canvas from JSON: ${message}`);
+        }
+    }
+
+    /**
+     * Walk a parsed Fabric JSON tree and replace any remote http(s) image `src`
+     * with a same-origin blob URL (fetched via safeStorageFetch), so reviving the
+     * canvas can never taint it regardless of bucket CORS state (ISSUE-478).
+     */
+    private async _sanitizeRemoteImageSources(node: unknown): Promise<void> {
+        if (!node || typeof node !== 'object') return;
+        const obj = node as { src?: unknown; crossOrigin?: unknown; objects?: unknown };
+
+        if (typeof obj.src === 'string' && /^https?:\/\//i.test(obj.src)) {
+            try {
+                const { safeStorageFetch } = await import('@/services/storage/safeStorageFetch');
+                const { blob } = await safeStorageFetch(obj.src);
+                const blobUrl = URL.createObjectURL(blob);
+                this._activeBlobUrls.push(blobUrl);
+                obj.src = blobUrl;
+                obj.crossOrigin = 'anonymous';
+            } catch (e: unknown) {
+                logger.warn('[CanvasOps] Could not blob-swap restored image src; may taint canvas:', e);
+                obj.crossOrigin = 'anonymous';
+            }
+        }
+
+        if (Array.isArray(obj.objects)) {
+            for (const child of obj.objects) {
+                await this._sanitizeRemoteImageSources(child);
+            }
         }
     }
 
@@ -742,6 +880,41 @@ export class CanvasOperationsService {
     }
 
     /**
+     * Add an explicit blank sketch layer placeholder.
+     *
+     * The free-draw brush still creates the actual stroke objects, but this
+     * gives users a visible layer entry they can name, select, reorder, and
+     * delete before they start sketching.
+     */
+    addBlankSketchLayer(name: string = 'Sketch Layer'): string | null {
+        if (!this.canvas) return null;
+
+        const sketchLayer = new fabric.Path('M 0 0', {
+            id: crypto.randomUUID(),
+            left: 48,
+            top: 48,
+            stroke: '#ffffff',
+            strokeWidth: 1,
+            fill: 'transparent',
+            opacity: 0.01,
+            selectable: true,
+            evented: true,
+            data: {
+                isAnnotation: true,
+                isSketchLayer: true,
+                label: name,
+            },
+        });
+
+        this.canvas.add(sketchLayer);
+        this.canvas.setActiveObject(sketchLayer);
+        this.canvas.renderAll();
+        this.saveHistoryState();
+
+        return (sketchLayer as unknown as { id?: string }).id ?? null;
+    }
+
+    /**
      * Returns a high-res data URL of the canvas with all annotation overlays
      * (drawing paths, bounding boxes, segmentation masks) temporarily hidden.
      * This ensures saved/exported images contain only the actual artwork.
@@ -777,6 +950,12 @@ export class CanvasOperationsService {
             });
 
             return dataUrl;
+        } catch (e: unknown) {
+            // A tainted canvas (cross-origin image without CORS) makes toDataURL throw
+            // a SecurityError. Degrade gracefully so callers (save/flatten/export) show
+            // an honest failure instead of an uncaught crash (ISSUE-478/482).
+            logger.error('[CanvasOps] Export failed — canvas may be tainted (cross-origin image without CORS):', e);
+            return '';
         } finally {
             // Restore original visibility
             annotationObjects.forEach((obj, i) => (obj.visible = visibilitySnapshot[i] ?? true));
@@ -1353,34 +1532,137 @@ export class CanvasOperationsService {
     }
 
     /**
-     * Get all layers (objects) on the canvas
+     * Find a canvas object by its stable layer id, assigning one if missing.
      */
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    getLayers(): any[] {
-        if (!this.canvas) return [];
-        return this.canvas.getObjects().map(obj => {
-            const fabricObj = obj as unknown as { data?: Record<string, unknown>; id?: string };
-            const data = fabricObj.data || {};
-            return {
-                id: fabricObj.id || `layer_${crypto.randomUUID().substring(0, 8)}`,
-                type: obj.type,
-                visible: obj.visible,
-                isBaseImage: !!data.isBaseImage,
-                isAnnotation: this.isAnnotation(obj),
-                colorId: data.colorId,
-                label: data.label,
-                object: obj
-            };
-        });
+    private getOrAssignLayerId(obj: fabric.Object): string {
+        const fabricObj = obj as unknown as { id?: string };
+        if (!fabricObj.id) {
+            fabricObj.id = `layer_${crypto.randomUUID().substring(0, 8)}`;
+        }
+        return fabricObj.id;
+    }
+
+    private findLayerObject(id: string): fabric.Object | undefined {
+        if (!this.canvas) return undefined;
+        return this.canvas.getObjects().find(obj => (obj as unknown as { id?: string }).id === id);
+    }
+
+    private describeLayerName(obj: fabric.Object, data: Record<string, unknown>): string {
+        if (data.isBaseImage) return 'Background';
+        if (typeof data.label === 'string' && data.label) return data.label as string;
+        switch (obj.type) {
+            case 'image': return 'Image';
+            case 'i-text':
+            case 'text': return (obj as fabric.IText).text?.slice(0, 24) || 'Text';
+            case 'rect': return 'Rectangle';
+            case 'circle': return 'Circle';
+            case 'path': return 'Drawing';
+            case 'group': return 'Group';
+            default: return obj.type ? obj.type[0]!.toUpperCase() + obj.type.slice(1) : 'Layer';
+        }
     }
 
     /**
-     * Toggle visibility of a specific layer/object
+     * Get all user-facing layers (objects) on the canvas, top of stack first.
+     * Excludes ephemeral AI annotation overlays (ID Objects bounding boxes,
+     * segmentation masks) — those are working data for the AI/agent to reason
+     * about the scene, not artwork the user composes with, so they don't
+     * belong in the layer list. Use clearDetections() to remove them.
      */
-    toggleLayerVisibility(obj: fabric.Object, visible: boolean): void {
+    getLayers(): LayerInfo[] {
+        if (!this.canvas) return [];
+        return this.canvas.getObjects()
+            .map(obj => {
+                const fabricObj = obj as unknown as { data?: Record<string, unknown> };
+                const data = fabricObj.data || {};
+                return { obj, data };
+            })
+            .filter(({ data }) => !data.isBoundingBox && !data.isSegmentationMask)
+            .map(({ obj, data }) => ({
+                id: this.getOrAssignLayerId(obj),
+                name: this.describeLayerName(obj, data),
+                type: obj.type ?? 'object',
+                visible: obj.visible !== false,
+                locked: obj.selectable === false,
+                isBaseImage: !!data.isBaseImage,
+                isAnnotation: this.isAnnotation(obj),
+            }))
+            .reverse();
+    }
+
+    /**
+     * Select a layer on the canvas (drives selection highlight + properties).
+     */
+    selectLayer(id: string): void {
         if (!this.canvas) return;
-        obj.set('visible', visible);
+        const obj = this.findLayerObject(id);
+        if (!obj || obj.selectable === false) return;
+        this.canvas.setActiveObject(obj);
         this.canvas.renderAll();
+    }
+
+    /**
+     * Toggle visibility of a specific layer/object by id.
+     */
+    toggleLayerVisibility(id: string): void {
+        if (!this.canvas) return;
+        const obj = this.findLayerObject(id);
+        if (!obj) return;
+        obj.set('visible', !(obj.visible !== false));
+        this.canvas.renderAll();
+        this.saveHistoryState();
+    }
+
+    /**
+     * Toggle lock (selectable/editable) state of a specific layer/object by id.
+     */
+    toggleLayerLock(id: string): void {
+        if (!this.canvas) return;
+        const obj = this.findLayerObject(id);
+        if (!obj) return;
+        const nextLocked = obj.selectable !== false;
+        obj.set({
+            selectable: !nextLocked,
+            evented: !nextLocked,
+            lockMovementX: nextLocked,
+            lockMovementY: nextLocked,
+        });
+        if (nextLocked && this.canvas.getActiveObject() === obj) {
+            this.canvas.discardActiveObject();
+        }
+        this.canvas.renderAll();
+        this.saveHistoryState();
+    }
+
+    /**
+     * Delete a layer/object by id. The base image cannot be deleted this way —
+     * use a fresh asset selection instead, since an empty canvas with no base
+     * image is the exact state the Undo bug (ISSUE-478) used to produce.
+     */
+    deleteLayer(id: string): void {
+        if (!this.canvas) return;
+        const obj = this.findLayerObject(id);
+        const fabricObj = obj as unknown as { data?: Record<string, unknown> } | undefined;
+        if (!obj || fabricObj?.data?.isBaseImage) return;
+        this.canvas.remove(obj);
+        this.canvas.renderAll();
+        // object:removed already triggers saveHistoryState via the canvas event handler.
+    }
+
+    /**
+     * Move a layer one step up/down in the stacking order by id.
+     */
+    reorderLayer(id: string, direction: 'up' | 'down'): void {
+        if (!this.canvas) return;
+        const obj = this.findLayerObject(id);
+        if (!obj) return;
+        if (direction === 'up') {
+            this.canvas.bringObjectForward(obj);
+        } else {
+            this.canvas.sendObjectBackwards(obj);
+        }
+        this.canvas.renderAll();
+        this.saveHistoryState();
     }
 }
 

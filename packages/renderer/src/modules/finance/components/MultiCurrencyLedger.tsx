@@ -62,7 +62,7 @@ export function MultiCurrencyLedger() {
             return `$${row.usdEquivalent.toFixed(2)} USD`;
         }
         if (row.currency === 'JPY') {
-            return `¥${row.amount.toLocaleString()} JPY`;
+            return `¥${row.amount.toLocaleString('en-US')} JPY`;
         }
         const symbols: Record<string, string> = { USD: '$', GBP: '£', EUR: '€', CAD: 'C$' };
         return `${symbols[row.currency] || ''}${row.amount.toFixed(2)} ${row.currency}`;

@@ -121,6 +121,12 @@ export interface UserPreferences {
 
     // Agent Strategy
     wisdomPoolOptIn?: boolean;
+    /** Judgment layer: how many unsolicited ideas agents may offer (never execute). Default: 'balanced'. */
+    agentAmbition?: 'focused' | 'balanced' | 'ideas';
+    /** v1.5: Track user idea-acceptances for consent-based dial promotion. Only ask ONCE when threshold hit. */
+    ideaAcceptanceCount?: number;
+    /** v1.5: Unix timestamp of last ambition-dial promotion offer (prevents repeated asks). */
+    lastAmbitionPromptTime?: number;
 
     /** Allow extensibility — callers must narrow before use */
     [key: string]: unknown;
@@ -135,7 +141,7 @@ export interface ShippingAddress {
 }
 
 export interface UserMembership {
-    tier: 'free' | 'pro' | 'enterprise';
+    tier: 'free' | 'pro' | 'founder' | 'enterprise';
     expiresAt: Timestamp | null;
 }
 
@@ -160,6 +166,7 @@ export interface UserProfile {
     knowledgeBase?: KnowledgeDocument[];
     savedWorkflows?: SavedWorkflow[];
     careerStage?: string;
+    careerProfile?: string;
     artistType?: 'Solo' | 'Band' | 'Collective';
     goals?: string[];
     location?: string; // User's city/region (e.g., "Detroit, MI") — powers spatial awareness in agent prompts

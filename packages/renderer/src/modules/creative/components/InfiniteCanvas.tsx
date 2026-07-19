@@ -1,13 +1,16 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { useStore, HistoryItem } from '@/core/store';
+import type { CanvasImage } from '@/core/store/slices/creative/creativeHistorySlice';
 import { useShallow } from 'zustand/react/shallow';
 import { ImageGeneration } from '@/services/image/ImageGenerationService';
 import { Editing } from '@/services/image/EditingService';
+import { imageAnalysisService, type DetectedObject } from '@/services/image/ImageAnalysisService';
 import { Loader2, Sparkles, Send, Crop } from 'lucide-react';
 import { InfiniteCanvasHUD } from './InfiniteCanvasHUD';
 import { useToast } from '@/core/context/ToastContext';
 import { logger } from '@/utils/logger';
 import { fetchAsBase64 } from '@/services/storage/safeStorageFetch';
+import { readCreativeAssetDrag } from '@/services/creative/CreativeAssetDragService';
 
 export default function InfiniteCanvas() {
     const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -19,7 +22,10 @@ export default function InfiniteCanvas() {
         selectedCanvasImageId,
         selectCanvasImage,
         currentProjectId,
-        addToHistory
+        addToHistory,
+        saveDesignVersion,
+        failedVariationBatch,
+        setFailedVariationBatch
     } = useStore(useShallow(state => ({
         canvasImages: state.canvasImages,
         addCanvasImage: state.addCanvasImage,
@@ -28,7 +34,10 @@ export default function InfiniteCanvas() {
         selectedCanvasImageId: state.selectedCanvasImageId,
         selectCanvasImage: state.selectCanvasImage,
         currentProjectId: state.currentProjectId,
-        addToHistory: state.addToHistory
+        addToHistory: state.addToHistory,
+        saveDesignVersion: state.saveDesignVersion,
+        failedVariationBatch: state.failedVariationBatch,
+        setFailedVariationBatch: state.setFailedVariationBatch
     })));
     const toast = useToast();
 
@@ -38,9 +47,12 @@ export default function InfiniteCanvas() {
 
     const [tool, setTool] = useState<'pan' | 'select' | 'generate' | 'crop'>('pan');
     const [isGenerating, setIsGenerating] = useState(false);
+    const [isDetectingObjects, setIsDetectingObjects] = useState(false);
     const [promptOverlay, setPromptOverlay] = useState<{ sx: number, sy: number, w: number, h: number } | null>(null);
     const [cropOverlay, setCropOverlay] = useState<{ sx: number, sy: number, w: number, h: number } | null>(null);
     const [promptText, setPromptText] = useState("");
+    const [detectedObjects, setDetectedObjects] = useState<{ sourceImageId: string; objects: DetectedObject[] } | null>(null);
+    const [flattenRevision, setFlattenRevision] = useState<{ flattenedId: string; sources: CanvasImage[] } | null>(null);
 
     // Interaction State
     const isDragging = useRef(false);
@@ -72,7 +84,7 @@ export default function InfiniteCanvas() {
     useEffect(() => {
         requestDraw();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [canvasImages, selectedCanvasImageId, tool]);
+    }, [canvasImages, detectedObjects, selectedCanvasImageId, tool]);
 
     const requestDraw = () => {
         if (rafId.current) cancelAnimationFrame(rafId.current);
@@ -190,6 +202,46 @@ export default function InfiniteCanvas() {
         });
 
         ctx.restore();
+
+        if (detectedObjects) {
+            const sourceImage = canvasImages.find(img => img.id === detectedObjects.sourceImageId);
+            if (sourceImage) {
+                const labelPadX = 8 / scale;
+                const labelPadY = 4 / scale;
+                const labelHeight = 18 / scale;
+
+                ctx.save();
+                ctx.strokeStyle = 'rgba(168, 85, 247, 0.95)';
+                ctx.fillStyle = 'rgba(168, 85, 247, 0.16)';
+                ctx.lineWidth = 2 / scale;
+                ctx.font = `${12 / scale}px ui-sans-serif, system-ui, sans-serif`;
+
+                detectedObjects.objects.forEach((detected) => {
+                    const x = sourceImage.x + ((detected.box.xmin / 1000) * sourceImage.width);
+                    const y = sourceImage.y + ((detected.box.ymin / 1000) * sourceImage.height);
+                    const w = ((detected.box.xmax - detected.box.xmin) / 1000) * sourceImage.width;
+                    const h = ((detected.box.ymax - detected.box.ymin) / 1000) * sourceImage.height;
+
+                    if (w <= 0 || h <= 0) return;
+
+                    ctx.fillRect(x, y, w, h);
+                    ctx.strokeRect(x, y, w, h);
+
+                    const labelWidth = ctx.measureText(detected.label).width + labelPadX * 2;
+                    const labelY = Math.max(sourceImage.y, y - labelHeight - (2 / scale));
+
+                    ctx.fillStyle = 'rgba(17, 24, 39, 0.92)';
+                    ctx.fillRect(x, labelY, labelWidth, labelHeight);
+                    ctx.strokeRect(x, labelY, labelWidth, labelHeight);
+
+                    ctx.fillStyle = '#f5f3ff';
+                    ctx.fillText(detected.label, x + labelPadX, labelY + labelPadY + (8 / scale));
+                    ctx.fillStyle = 'rgba(168, 85, 247, 0.16)';
+                });
+
+                ctx.restore();
+            }
+        }
 
         // Selection Box (Screen Space)
         if (selectionStart.current && (tool === 'generate' || tool === 'crop')) {
@@ -623,10 +675,20 @@ export default function InfiniteCanvas() {
                 })
             );
 
-            const resultsArrays = await Promise.all(generatePromises);
-            const results = resultsArrays.flat();
+            const settledResults = await Promise.allSettled(generatePromises);
+            const successfulResults = settledResults.flatMap((settled, requestIndex) => (
+                settled.status === 'fulfilled'
+                    ? settled.value.map((result) => ({ result, requestIndex }))
+                    : []
+            ));
+            const failedCount = settledResults.filter((settled) => (
+                settled.status === 'rejected' || settled.value.length === 0
+            )).length;
+            const failedSlots = settledResults.flatMap((settled, requestIndex) => (
+                settled.status === 'rejected' || settled.value.length === 0 ? [requestIndex] : []
+            ));
 
-            if (results && results.length > 0) {
+            if (successfulResults.length > 0) {
                 const padding = 40;
                 const ww = selectedImg.width ?? 512;
                 const wh = selectedImg.height ?? 512;
@@ -638,8 +700,8 @@ export default function InfiniteCanvas() {
                     { x: selectedImg.x + ww + padding + ww + padding, y: selectedImg.y }
                 ];
 
-                results.forEach((res, index) => {
-                    const pos = positions[index % 4]!;
+                successfulResults.forEach(({ result: res, requestIndex }) => {
+                    const pos = positions[requestIndex % 4]!;
                     addCanvasImage({
                         id: res.id,
                         base64: res.url,
@@ -665,11 +727,70 @@ export default function InfiniteCanvas() {
                     });
                 });
                 
-                toast.success(`Generated ${results.length} variations!`);
+                if (failedCount > 0) {
+                    setFailedVariationBatch({ source: { ...selectedImg }, prompt, mimeType, base64Data, projectId: currentProjectId, slots: failedSlots });
+                    toast.warning(`Generated ${successfulResults.length} variation${successfulResults.length === 1 ? '' : 's'}; ${failedCount} failed.`);
+                } else {
+                    setFailedVariationBatch(null);
+                    toast.success(`Generated ${successfulResults.length} variations!`);
+                }
+            } else {
+                setFailedVariationBatch({ source: { ...selectedImg }, prompt, mimeType, base64Data, projectId: currentProjectId, slots: failedSlots });
+                toast.error('All variation requests failed. Your source image is unchanged.');
             }
         } catch (e: unknown) {
             logger.error(e instanceof Error ? e.message : String(e));
             toast.error('Failed to generate variations.');
+        } finally {
+            setIsGenerating(false);
+        }
+    };
+
+    const handleRetryFailedVariations = async () => {
+        const batch = failedVariationBatch;
+        if (!batch || batch.projectId !== currentProjectId) {
+            toast.error('Failed variation batch belongs to a different project and cannot be retried here.');
+            return;
+        }
+        if (!canvasImages.some(image => image.id === batch.source.id)) {
+            toast.error('The original variation source is no longer on this canvas.');
+            return;
+        }
+        setIsGenerating(true);
+        try {
+            const settled = await Promise.allSettled(batch.slots.map(() => ImageGeneration.generateImages({
+                prompt: batch.prompt, count: 1, sourceImages: [{ mimeType: batch.mimeType, data: batch.base64Data }],
+            })));
+            const stillFailed: number[] = [];
+            const padding = 40;
+            const width = batch.source.width ?? 512;
+            const height = batch.source.height ?? 512;
+            const positions = [
+                { x: batch.source.x + width + padding, y: batch.source.y },
+                { x: batch.source.x + width + padding, y: batch.source.y + height + padding },
+                { x: batch.source.x, y: batch.source.y + height + padding },
+                { x: batch.source.x + width + padding + width + padding, y: batch.source.y },
+            ];
+            let recovered = 0;
+            settled.forEach((result, retryIndex) => {
+                const slot = batch.slots[retryIndex]!;
+                if (result.status !== 'fulfilled' || result.value.length === 0) {
+                    stillFailed.push(slot);
+                    return;
+                }
+                result.value.forEach(asset => {
+                    const position = positions[slot]!;
+                    addCanvasImage({ id: asset.id, base64: asset.url, x: position.x, y: position.y, width, height, aspect: width / height, projectId: currentProjectId, prompt: batch.prompt, parentId: batch.source.id, originalX: position.x, originalY: position.y, originalWidth: width, originalHeight: height, parentOffsetX: position.x - batch.source.x, parentOffsetY: position.y - batch.source.y });
+                    addToHistory({ id: asset.id, url: asset.url, type: 'image', prompt: batch.prompt, timestamp: Date.now(), projectId: currentProjectId, origin: 'generated' });
+                    recovered += 1;
+                });
+            });
+            setFailedVariationBatch(stillFailed.length ? { ...batch, slots: stillFailed } : null);
+            if (recovered > 0) toast.success(`Recovered ${recovered} failed variation${recovered === 1 ? '' : 's'}.`);
+            if (stillFailed.length) toast.warning(`${stillFailed.length} variation slot${stillFailed.length === 1 ? '' : 's'} still failed and can be retried.`);
+        } catch (error) {
+            logger.error('[InfiniteCanvas] Failed variation retry error:', error);
+            toast.error('Failed variations could not be retried. Your completed variants are safe.');
         } finally {
             setIsGenerating(false);
         }
@@ -734,9 +855,29 @@ export default function InfiniteCanvas() {
         }
     };
 
-    const handleFlatten = () => {
+    const handleFlatten = async () => {
         if (canvasImages.length <= 1) {
             toast.success("Nothing to flatten");
+            return;
+        }
+
+        const unavailableLayer = canvasImages.find((img) => {
+            const image = imageCache.current.get(img.id);
+            return !image || !image.complete || image.naturalWidth <= 0;
+        });
+        if (unavailableLayer) {
+            toast.error(`Cannot flatten yet: layer ${unavailableLayer.id.slice(0, 8)} is still loading or unavailable.`);
+            return;
+        }
+
+        // A flatten replaces every source layer. Persist the exact pre-flatten
+        // document before the destructive state change so recovery survives a
+        // reload, unlike the short-lived in-component Undo control.
+        try {
+            await saveDesignVersion(`Before flatten — ${new Date().toLocaleString()}`);
+        } catch (error) {
+            logger.error('Could not save a recoverable pre-flatten revision:', error);
+            toast.error('Flatten was not performed because its recovery revision could not be saved.');
             return;
         }
 
@@ -769,13 +910,20 @@ export default function InfiniteCanvas() {
             }
         });
 
-        const dataUrl = tempCanvas.toDataURL('image/png');
+        let dataUrl: string;
+        try {
+            dataUrl = tempCanvas.toDataURL('image/png');
+        } catch (error: unknown) {
+            logger.error('Failed to flatten canvas:', error);
+            toast.error('Could not flatten layers. The original layers were preserved.');
+            return;
+        }
         
-        // Remove old images
-        canvasImages.forEach(img => removeCanvasImage(img.id));
-        
-        // Add new flattened image
+        // Create the replacement only after every source was rendered. Keep an
+        // in-memory revision so this destructive-looking action has an immediate undo.
+        const sourceRevision = canvasImages.map(image => ({ ...image }));
         const newId = crypto.randomUUID();
+        canvasImages.forEach(img => removeCanvasImage(img.id));
         addCanvasImage({
             id: newId,
             base64: dataUrl,
@@ -787,9 +935,70 @@ export default function InfiniteCanvas() {
             projectId: currentProjectId,
             prompt: "Flattened Canvas"
         });
-        
+        setFlattenRevision({ flattenedId: newId, sources: sourceRevision });
         selectCanvasImage(newId);
-        toast.success("Layers flattened successfully!");
+        toast.success("Layers flattened successfully. Undo is available until the next flatten.");
+    };
+
+    const handleUndoFlatten = () => {
+        if (!flattenRevision) return;
+        const flattenedStillExists = canvasImages.some(image => image.id === flattenRevision.flattenedId);
+        if (!flattenedStillExists) {
+            setFlattenRevision(null);
+            toast.error('Cannot undo flatten because its replacement layer was removed.');
+            return;
+        }
+        removeCanvasImage(flattenRevision.flattenedId);
+        flattenRevision.sources.forEach(image => addCanvasImage(image));
+        selectCanvasImage(flattenRevision.sources[flattenRevision.sources.length - 1]?.id ?? null);
+        setFlattenRevision(null);
+        toast.success('Flatten undone. Original layers were restored.');
+    };
+
+    const handleZoomIn = () => {
+        scaleRef.current = Math.min(scaleRef.current * 1.2, 5);
+        requestDraw();
+    };
+
+    const handleZoomOut = () => {
+        scaleRef.current = Math.max(scaleRef.current / 1.2, 0.1);
+        requestDraw();
+    };
+
+    const handleDetectObjects = async () => {
+        if (!canvasRef.current || isDetectingObjects) return;
+
+        const targetImage = (selectedCanvasImageId
+            ? canvasImages.find(image => image.id === selectedCanvasImageId)
+            : null) ?? canvasImages[canvasImages.length - 1];
+
+        if (!targetImage) {
+            toast.info("Add an image before running object detection.");
+            return;
+        }
+
+        setIsDetectingObjects(true);
+        try {
+            const sourceUrl = targetImage.base64;
+            const dataUrl = sourceUrl.startsWith('http')
+                ? await fetchAsBase64(sourceUrl).then(({ base64, mimeType }) => `data:${mimeType};base64,${base64}`)
+                : sourceUrl;
+            const objects = await imageAnalysisService.detectObjects(dataUrl);
+            setDetectedObjects({ sourceImageId: targetImage.id, objects });
+
+            if (objects.length > 0) {
+                toast.success(`Detected ${objects.length} object${objects.length === 1 ? '' : 's'}.`);
+            } else {
+                toast.info('No prominent objects detected.');
+            }
+        } catch (error) {
+            logger.error('[InfiniteCanvas] Object detection failed', error);
+            setDetectedObjects(null);
+            toast.error('Object detection failed.');
+        } finally {
+            setIsDetectingObjects(false);
+            requestDraw();
+        }
     };
 
     const handleDrop = async (e: React.DragEvent) => {
@@ -864,19 +1073,22 @@ export default function InfiniteCanvas() {
             return;
         }
 
+        const creativePayload = readCreativeAssetDrag(e.dataTransfer);
         const rawData = e.dataTransfer.getData('text/plain');
-        let id = rawData;
+        let id = creativePayload?.asset.id || rawData;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        let droppedPayload: any = null;
+        let droppedPayload: any = creativePayload?.asset || null;
 
-        try {
-            const parsed = JSON.parse(rawData);
-            if (parsed && typeof parsed === 'object' && parsed.id) {
-                id = parsed.id;
-                droppedPayload = parsed;
+        if (!creativePayload) {
+            try {
+                const parsed = JSON.parse(rawData);
+                if (parsed && typeof parsed === 'object' && parsed.id) {
+                    id = parsed.id;
+                    droppedPayload = parsed;
+                }
+            } catch (_) {
+                // Keep original string if not valid JSON
             }
-        } catch (_) {
-            // Keep original string if not valid JSON
         }
         
         // Find in history, uploads, or file nodes
@@ -1072,7 +1284,14 @@ export default function InfiniteCanvas() {
                 selectedCanvasImageId={selectedCanvasImageId}
                 removeCanvasImage={removeCanvasImage}
                 onFlatten={handleFlatten}
+                onUndoFlatten={handleUndoFlatten}
+                canUndoFlatten={!!flattenRevision}
                 onGenerateVariations={handleGenerateVariations}
+                onRetryFailedVariations={handleRetryFailedVariations}
+                failedVariationCount={failedVariationBatch?.slots.length}
+                onZoomIn={handleZoomIn}
+                onZoomOut={handleZoomOut}
+                onDetectObjects={handleDetectObjects}
             />
 
             {promptOverlay && (
@@ -1086,7 +1305,7 @@ export default function InfiniteCanvas() {
                     }}
                 >
                     <div className="flex items-center gap-2 mb-1">
-                        <Sparkles className="w-4 h-4 text-purple-400" />
+                        <Sparkles className="w-4 h-4 text-green-400" />
                         <span className="text-xs text-white/70 font-medium">Generate & Outpaint</span>
                     </div>
                     <textarea
@@ -1094,7 +1313,7 @@ export default function InfiniteCanvas() {
                         value={promptText}
                         onChange={e => setPromptText(e.target.value)}
                         placeholder="Describe what you want to see..."
-                        className="w-full bg-black/40 border border-white/10 rounded p-2 text-sm text-white resize-none focus:outline-none focus:border-purple-500/50"
+                        className="w-full bg-black/40 border border-white/10 rounded p-2 text-sm text-white resize-none focus:outline-none focus:border-green-500/50"
                         rows={3}
                         onKeyDown={(e) => {
                             if (e.key === 'Enter' && !e.shiftKey) {
@@ -1126,7 +1345,7 @@ export default function InfiniteCanvas() {
                                 }
                             }}
                             disabled={!promptText.trim()}
-                            className="px-3 py-1 text-xs bg-purple-600 hover:bg-purple-500 text-white rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                            className="px-3 py-1 text-xs bg-green-600 hover:bg-green-500 text-white rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
                         >
                             Generate <Send className="w-3 h-3" />
                         </button>
@@ -1164,7 +1383,7 @@ export default function InfiniteCanvas() {
                         </button>
                         <button 
                             onClick={() => handleCrop(cropOverlay.sx, cropOverlay.sy, cropOverlay.w, cropOverlay.h, true)}
-                            className="w-full px-3 py-2 text-sm text-white bg-purple-600 hover:bg-purple-700 rounded transition-colors flex items-center justify-center gap-2"
+                            className="w-full px-3 py-2 text-sm text-white bg-green-600 hover:bg-green-700 rounded transition-colors flex items-center justify-center gap-2"
                         >
                             <Sparkles className="w-4 h-4" />
                             Adaptive Fill (Autonomous)
@@ -1184,7 +1403,7 @@ export default function InfiniteCanvas() {
             {isGenerating && (
                 <div className="absolute inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm z-50">
                     <div className="flex flex-col items-center gap-4">
-                        <Loader2 size={48} className="animate-spin text-purple-500" />
+                        <Loader2 size={48} className="animate-spin text-green-500" />
                         <p className="text-white font-bold animate-pulse">Dreaming...</p>
                     </div>
                 </div>

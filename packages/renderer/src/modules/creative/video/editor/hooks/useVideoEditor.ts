@@ -8,6 +8,8 @@ import { HistoryItem } from '@/core/store/slices/creative';
 import { useToast } from '@/core/context/ToastContext';
 import { PIXELS_PER_FRAME } from '../constants';
 import { logger } from '@/utils/logger';
+import { resolveMediaDurationSeconds, durationSecondsToFrames } from '../utils/mediaMetadata';
+import { readCreativeAssetDrag, writeCreativeAssetDrag } from '@/services/creative/CreativeAssetDragService';
 
 export function useVideoEditor(initialVideo?: HistoryItem) {
     const {
@@ -43,20 +45,28 @@ export function useVideoEditor(initialVideo?: HistoryItem) {
     );
 
     useEffect(() => {
-        if (initialVideo && !initializedRef.current) {
-            const existingClip = project.clips.find((c: VideoClip) => c.src === initialVideo.url);
-            if (!existingClip) {
-                addClip({
-                    type: initialVideo.type === 'video' ? 'video' : 'image',
-                    src: initialVideo.url,
-                    startFrame: 0,
-                    durationInFrames: 150,
-                    trackId: project.tracks[0]!.id,
-                    name: initialVideo.prompt || 'Imported Video'
-                });
-            }
-            initializedRef.current = true;
-        }
+        if (!initialVideo || initializedRef.current) return;
+        initializedRef.current = true;
+
+        const existingClip = project.clips.find((c: VideoClip) => c.src === initialVideo.url);
+        if (existingClip) return;
+
+        const mediaType: 'video' | 'audio' | 'image' = initialVideo.type === 'video' ? 'video' : initialVideo.type === 'music' ? 'audio' : 'image';
+        const trackId = project.tracks[0]?.id;
+        if (!trackId) return;
+
+        resolveMediaDurationSeconds(initialVideo.url, mediaType).then((durationSeconds) => {
+            const fps = useVideoEditorStore.getState().project?.fps || 30;
+            const durationInFrames = mediaType === 'image' ? 90 : durationSecondsToFrames(durationSeconds, fps);
+            addClip({
+                type: mediaType,
+                src: initialVideo.url,
+                startFrame: 0,
+                durationInFrames,
+                trackId,
+                name: initialVideo.prompt || 'Imported Video'
+            });
+        });
     }, [initialVideo, addClip, project.clips, project.tracks]);
 
     // Sync player state with store
@@ -157,7 +167,7 @@ export function useVideoEditor(initialVideo?: HistoryItem) {
                 inputProps: { project }
             });
             
-            toast.success(`Render complete!`);
+            toast.success(`Render complete: ${resultLocation}`);
             
             // Auto-save output to generatedHistory globally
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -168,6 +178,7 @@ export function useVideoEditor(initialVideo?: HistoryItem) {
                     id: `export_${timestamp}`,
                     type: 'video',
                     url: `file://${resultLocation}`,
+                    localPath: resultLocation,
                     origin: 'editor',
                     prompt: `Export of ${project.name || 'Project'}`,
                     timestamp: timestamp,
@@ -185,35 +196,41 @@ export function useVideoEditor(initialVideo?: HistoryItem) {
     };
 
     const handleLibraryDragStart = (e: React.DragEvent, item: HistoryItem) => {
-        e.dataTransfer.setData('application/json', JSON.stringify(item));
-        e.dataTransfer.effectAllowed = 'copy';
+        writeCreativeAssetDrag(e.dataTransfer, item, 'editor-library');
     };
 
-    const handleDrop = (e: React.DragEvent) => {
+    const handleDrop = async (e: React.DragEvent) => {
         e.preventDefault();
-        const data = e.dataTransfer.getData('application/json');
-        if (data) {
-            try {
-                const item = JSON.parse(data) as HistoryItem;
-                const rect = e.currentTarget.getBoundingClientRect();
-                const x = e.clientX - rect.left;
-                const dropFrame = Math.max(0, Math.round(x / PIXELS_PER_FRAME));
-                const trackId = project.tracks[0]?.id;
+        try {
+            const payload = readCreativeAssetDrag(e.dataTransfer);
+            if (!payload) return;
 
-                if (trackId) {
-                    addClip({
-                        type: item.type === 'video' ? 'video' : 'image',
-                        src: item.url,
-                        startFrame: dropFrame,
-                        durationInFrames: item.type === 'image' ? 90 : 150,
-                        trackId: trackId,
-                        name: item.prompt || `Imported ${item.type}`
-                    });
-                    toast.success('Asset added to timeline');
-                }
-            } catch (err: unknown) {
-                logger.error('Failed to parse dropped item', err);
+            const rect = e.currentTarget.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const dropFrame = Math.max(0, Math.round(x / PIXELS_PER_FRAME));
+            const trackId = project.tracks[0]?.id;
+            if (!trackId) return;
+
+            if (!['image', 'video', 'music'].includes(payload.asset.type)) {
+                toast.info('This file type cannot be placed on the video timeline yet.');
+                return;
             }
+            const mediaType: 'image' | 'audio' | 'video' = payload.asset.type === 'image' ? 'image' : payload.asset.type === 'music' ? 'audio' : 'video';
+            const durationSeconds = await resolveMediaDurationSeconds(payload.asset.url, mediaType);
+            const fps = useVideoEditorStore.getState().project?.fps || 30;
+            const durationInFrames = mediaType === 'image' ? 90 : durationSecondsToFrames(durationSeconds, fps);
+
+            addClip({
+                type: mediaType,
+                src: payload.asset.url,
+                startFrame: dropFrame,
+                durationInFrames,
+                trackId,
+                name: payload.asset.name
+            });
+            toast.success('Asset added to timeline');
+        } catch (err: unknown) {
+            logger.error('Failed to parse dropped item', err);
         }
     };
 

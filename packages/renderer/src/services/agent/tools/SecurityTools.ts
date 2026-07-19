@@ -5,6 +5,7 @@ import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
 import type { AnyToolFunction } from '../types';
 import { logger } from '@/utils/logger';
 import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
+import { importWithRetry } from '@/utils/dynamicImport';
 
 /**
  * Security Tools
@@ -138,10 +139,21 @@ export const SecurityTools = {
 
             return toolSuccess({
                 project_id: project_id,
-                status: "Live Audit Complete",
+                status: "shallow_membership_summary",
+                completeness: "partial",
+                unchecked_sources: [
+                    "memberRoles (custom org roles)",
+                    "Firestore security rules coverage",
+                    "Firebase Auth custom claims",
+                    "Cloud IAM bindings",
+                    "Service account permissions"
+                ],
                 roles: rolesArray,
-                recommendations: rolesArray.length > 0 ? ["Review access periodically"] : ["No members found"]
-            }, "Permissions audit completed using live organization data.");
+                recommendations: [
+                    ...rolesArray.length > 0 ? ["Review memberRoles for elevated privileges"] : [],
+                    "For complete security audit, verify Firestore rules, Auth claims, and IAM permissions separately"
+                ]
+            }, "Membership summary (partial). Custom roles, Firestore rules, Auth claims, and IAM not checked. Use SecurityTools with elevated access for complete audit.");
         }
 
         return toolError(
@@ -174,7 +186,7 @@ export const SecurityTools = {
             if (isFirebaseE2EMockEnabled()) {
                 return toolSuccess({ status: 'MOCK_E2E', log_count: 0, logs: [], project_id });
             }
-            const { collection, getDocs, query, orderBy, limit } = await import('firebase/firestore');
+            const { collection, getDocs, query, orderBy, limit } = await importWithRetry(() => import('firebase/firestore'));
             const q = query(collection(db, 'audit_logs'), orderBy('timestamp', 'desc'), limit(50));
             const snap = await getDocs(q);
             const logs = snap.docs.map(d => ({ id: d.id, ...(d.data() as Record<string, unknown> & { severity?: string }) }));

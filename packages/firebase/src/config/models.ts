@@ -6,34 +6,37 @@
  * 
  * Nano Banana Model Tiers:
  *   LEGACY  → gemini-2.5-flash-image       (OG, high-volume / low-latency)
- *   FAST    → gemini-3.1-flash-image-preview (Nano Banana 2, speed + quality)
- *   PRO     → gemini-3-pro-image-preview     (Nano Banana Pro, highest fidelity)
+ *   FAST    → gemini-3.1-flash-image (Nano Banana 2, speed + quality)
+ *   PRO     → gemini-3-pro-image             (Nano Banana Pro, highest fidelity)
  */
 
 export const FUNCTION_INTELLIGENCE_MODELS = {
     IMAGE: {
         /** Nano Banana Pro — highest quality, 4K, advanced thinking */
-        GENERATION: 'gemini-3-pro-image-preview',
+        GENERATION: 'gemini-3-pro-image',
         /** Nano Banana 2 — fast + quality, grounding, 4K */
-        FAST: 'gemini-3.1-flash-image-preview',
+        FAST: 'gemini-3.1-flash-image',
         /** Nano Banana OG — legacy, high-volume / low-latency */
         LEGACY: 'gemini-2.5-flash-image',
     },
     TEXT: {
         FAST: 'gemini-3-flash-preview',
-        LITE: 'gemini-3.1-flash-lite',
-        PRO: 'gemini-3.1-pro-preview',
+        LITE: 'gemini-3-flash-preview',
+        PRO: 'gemini-3-pro-preview',
     },
     VIDEO: {
-        GENERATION: 'veo-3.1-generate-preview',
-        PRO: 'veo-3.1-generate-preview', // Alias for internal consistency
-        FAST: 'veo-3.1-fast-generate-preview',
+        GENERATION: 'veo-3.1-generate-001',
+        PRO: 'veo-3.1-generate-001',
+        FAST: 'veo-3.1-fast-generate-001',
+        LITE: 'veo-3.1-lite-generate-001',
+        /** Gemini Omni public preview — native generation and conversational editing. */
+        OMNI: 'gemini-omni-flash-preview',
     },
     SPEECH: {
-        GENERATION: 'gemini-2.5-pro-tts',
+        GENERATION: 'gemini-3.1-flash-tts-preview',
     },
     AUDIO: {
-        ANALYSIS: 'gemini-3.1-pro-preview', // Multimodal audio support
+        ANALYSIS: 'gemini-3-flash-preview', // Multimodal audio support
     }
 } as const;
 
@@ -44,7 +47,7 @@ export const FUNCTION_INTELLIGENCE_MODELS = {
  * When Google ships model updates, change THIS object and everything adapts.
  */
 export const NANO_BANANA_CAPABILITIES = {
-    [FUNCTION_INTELLIGENCE_MODELS.IMAGE.GENERATION]: {
+    'gemini-3-pro-image': {
         tier: 'pro' as const,
         displayName: 'Nano Banana Pro',
         maxResolution: '4K',
@@ -58,7 +61,21 @@ export const NANO_BANANA_CAPABILITIES = {
         supportsInterleaved: true,
         defaultThinking: 'always_on',
     },
-    [FUNCTION_INTELLIGENCE_MODELS.IMAGE.FAST]: {
+    'gemini-3-pro-image-preview': {
+        tier: 'pro' as const,
+        displayName: 'Nano Banana Pro',
+        maxResolution: '4K',
+        supportedResolutions: ['1K', '2K', '4K'] as const,
+        supportedAspectRatios: ['1:1', '2:3', '3:2', '3:4', '4:3', '4:5', '5:4', '9:16', '16:9', '21:9'] as const,
+        maxReferenceImages: 11,
+        supportsThinkingControl: false,
+        supportsGoogleSearch: true,
+        supportsImageSearch: false,
+        supportsCandidateCount: false,
+        supportsInterleaved: true,
+        defaultThinking: 'always_on',
+    },
+    'gemini-3.1-flash-image': {
         tier: 'fast' as const,
         displayName: 'Nano Banana 2',
         maxResolution: '4K',
@@ -72,7 +89,7 @@ export const NANO_BANANA_CAPABILITIES = {
         supportsInterleaved: true,
         defaultThinking: 'minimal',
     },
-    [FUNCTION_INTELLIGENCE_MODELS.IMAGE.LEGACY]: {
+    'gemini-2.5-flash-image': {
         tier: 'legacy' as const,
         displayName: 'Nano Banana',
         maxResolution: '1K',

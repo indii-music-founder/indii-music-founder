@@ -142,7 +142,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         <ToastContext.Provider value={contextValue}>
             {children}
             {/* Item 342: aria-live="assertive" for error toasts, "polite" for informational */}
-            <div className="fixed bottom-4 right-4 z-[100] flex flex-col gap-2 pointer-events-none">
+            <div className="fixed bottom-24 md:bottom-4 right-4 left-4 md:left-auto z-[100] flex flex-col gap-2 pointer-events-none">
                 <div role="status" aria-live="assertive" aria-label="Error notifications" className="flex flex-col gap-2 items-end pointer-events-auto">
                     <AnimatePresence>
                         {toasts.filter(t => t.type === 'error').map(toast => (

@@ -4,6 +4,7 @@ import { z } from "zod";
 import { TranscoderServiceClient } from "@google-cloud/video-transcoder";
 import { Inngest } from "inngest";
 import { FUNCTION_INTELLIGENCE_MODELS } from "../config/models";
+import { getVertexAIBaseUrl } from "./vertexClient";
 
 /**
  * Robustly converts a Google Storage URL to a gs:// URI.
@@ -174,8 +175,8 @@ export const generateLongFormVideoFn = (inngestClient: Inngest, _geminiApiKey: s
                     const projectId = await auth.getProjectId();
                     const accessToken = await client.getAccessToken();
 
-                    const location = process.env.VITE_VERTEX_LOCATION || process.env.VERTEX_LOCATION || 'us-central1';
-                    const triggerEndpoint = `https://${location}-aiplatform.googleapis.com/v1beta/projects/${projectId}/locations/${location}/publishers/google/models/${modelId}:predictLongRunning`;
+                    const location = process.env.VERTEX_VIDEO_LOCATION || process.env.VERTEX_LOCATION || 'us-central1';
+                    const triggerEndpoint = `${getVertexAIBaseUrl(location)}/v1beta/projects/${projectId}/locations/${location}/publishers/google/models/${modelId}:predictLongRunning`;
 
                     // Validate startImage format (Base64 vs Data URL)
                     let imagePayload = undefined;
@@ -235,9 +236,9 @@ export const generateLongFormVideoFn = (inngestClient: Inngest, _geminiApiKey: s
                         const client = await auth.getClient();
                         const accessToken = await client.getAccessToken();
 
-                        const location = process.env.VITE_VERTEX_LOCATION || process.env.VERTEX_LOCATION || 'us-central1';
+                        const location = process.env.VERTEX_VIDEO_LOCATION || process.env.VERTEX_LOCATION || 'us-central1';
                         const statusResponse = await fetch(
-                            `https://${location}-aiplatform.googleapis.com/v1beta/${operationName}`,
+                            `${getVertexAIBaseUrl(location)}/v1beta/${operationName}`,
                             {
                                 headers: {
                                     'Authorization': `Bearer ${accessToken.token}`
@@ -315,7 +316,7 @@ export const generateLongFormVideoFn = (inngestClient: Inngest, _geminiApiKey: s
                                     const transcoder = new TranscoderServiceClient();
                                     try {
                                         const projectId = await auth.getProjectId();
-                                        const location = process.env.VITE_VERTEX_LOCATION || process.env.VERTEX_LOCATION || 'us-central1';
+                                        const location = process.env.VERTEX_VIDEO_LOCATION || process.env.VERTEX_LOCATION || 'us-central1';
                                         const bucket = admin.storage().bucket();
                                         const outputUri = `gs://${bucket.name}/frames/${userId}/${segmentId}/`;
 
@@ -472,7 +473,7 @@ export const stitchVideoFn = (inngestClient: Inngest) => inngestClient.createFun
         const transcoder = new TranscoderServiceClient();
         try {
             const projectId = admin.app().options.projectId;
-            const location = process.env.VITE_VERTEX_LOCATION || process.env.VERTEX_LOCATION || 'us-central1';
+            const location = process.env.VERTEX_VIDEO_LOCATION || process.env.VERTEX_LOCATION || 'us-central1';
             const bucket = admin.storage().bucket();
             const outputDir = `gs://${bucket.name}/videos/${userId}/${jobId}_output/`;
 

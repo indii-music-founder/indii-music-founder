@@ -139,7 +139,7 @@ export class GrowthPatternService {
                 id: uuidv4(),
                 type: 'creator_trend_detected' as AlertType,
                 title: 'Creator Trend Detected',
-                message: `${track.creatorCount.toLocaleString()} creators are using "${track.trackName}" as audio. Peak social exposure window is now.`,
+                message: `${track.creatorCount.toLocaleString('en-US')} creators are using "${track.trackName}" as audio. Peak social exposure window is now.`,
                 severity: 'warning',
                 timestamp: now,
                 trackId: track.trackId,

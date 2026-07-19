@@ -16,6 +16,20 @@ const _TEST_USER_ID = `gauntlet_user_${Date.now()}`;
 const TEST_EMAIL = process.env.E2E_TEST_EMAIL || process.env.AUDITOR_EMAIL;
 const TEST_PASSWORD = process.env.E2E_TEST_PASSWORD || process.env.AUDITOR_PASSWORD;
 
+async function enterOnboardingChat(page: import('@playwright/test').Page, careerPath = 'Sync Producer') {
+    const promptInput = page.locator('[data-testid="prompt-input"]');
+    if (await promptInput.isVisible({ timeout: 1000 }).catch(() => false)) {
+        return promptInput;
+    }
+
+    const careerPathHeading = page.getByRole('heading', { name: 'Choose Your Career Path' });
+    await expect(careerPathHeading).toBeVisible({ timeout: 15000 });
+    await page.getByRole('button', { name: new RegExp(careerPath, 'i') }).click();
+    await expect(promptInput).toBeVisible({ timeout: 15000 });
+
+    return promptInput;
+}
+
 test.describe('The Gauntlet: Live Production Stress Test', () => {
     test.setTimeout(60000); // Increase timeout to 60s for full flow
 
@@ -38,12 +52,12 @@ test.describe('The Gauntlet: Live Production Stress Test', () => {
 
         // 1. Setup: Bypass Auth & Inject Mock State
         // Using the predefined authenticated fixture's page (`authedPage`) which already injected the bypass scripts
-        // Wait briefly for app state hook unification
-        await page.waitForTimeout(1000);
+        await page.goto(`${BASE_URL}/onboarding`, { waitUntil: 'domcontentloaded' });
+        await page.waitForFunction(() => (window as unknown as TestWindow).useStore !== undefined, { timeout: 15000 });
 
         // Force app state to Onboarding (SPA state takes precedence over URL)
         console.log('[Gauntlet] Forcing module state to "onboarding"...');
-        await page.evaluate(() => {
+        await page.evaluate(async () => {
             const store = (window as unknown as TestWindow).useStore;
             console.log('[Gauntlet] PRE-Bypass Logic - Current Module:', store.getState().currentModule);
 
@@ -78,6 +92,10 @@ test.describe('The Gauntlet: Live Production Stress Test', () => {
                     savedWorkflows: []
                 }
             });
+            const setModule = store.getState().setModule as ((module: string) => Promise<void>) | undefined;
+            if (typeof setModule === 'function') {
+                await setModule('onboarding');
+            }
 
             console.log('[Gauntlet] POST-Bypass Logic - Current Module:', store.getState().currentModule);
         });
@@ -89,7 +107,7 @@ test.describe('The Gauntlet: Live Production Stress Test', () => {
         await page.evaluate(() => (window as unknown as TestWindow).__TEST_MODE__ = true);
 
         // 1. Send a message to the AI
-        const chatInput = page.locator('[data-testid="prompt-input"]');
+        const chatInput = await enterOnboardingChat(page);
 
         try {
             await expect(chatInput).toBeVisible({ timeout: 5000 });

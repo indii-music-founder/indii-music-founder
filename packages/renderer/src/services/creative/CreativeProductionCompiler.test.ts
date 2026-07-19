@@ -40,11 +40,11 @@ describe('CreativeProductionCompiler', () => {
     expect(run.approvalGates).toHaveLength(0);
     
     // Check downstream agent briefs
-    expect(run.agentBriefs.some(b => b.agentId === 'release')).toBe(true);
+    expect(run.agentBriefs.some(b => b.departmentId === 'release')).toBe(true);
     expect(run.agentBriefs.some(b => b.agentId === 'distribution')).toBe(true);
     expect(run.agentBriefs.some(b => b.agentId === 'licensing')).toBe(true);
     expect(run.agentBriefs.some(b => b.agentId === 'marketing')).toBe(true);
-    expect(run.agentBriefs.some(b => b.agentId === 'merch')).toBe(true);
+    expect(run.agentBriefs.some(b => b.agentId === 'merchandise')).toBe(true);
     expect(run.agentBriefs.some(b => b.agentId === 'publishing')).toBe(true);
   });
 
@@ -70,7 +70,7 @@ describe('CreativeProductionCompiler', () => {
     expect(run.output.deliveryReady).toBe(false);
     expect(run.output.missingItems).toContain('Master missing for track: Hit Song');
     expect(run.findings.some(f => f.id === 'missing_master_track-1')).toBe(true);
-    expect(run.agentBriefs.some(b => b.agentId === 'release')).toBe(false); // Shouldn't release if blocked
+    expect(run.agentBriefs.some(b => b.departmentId === 'release')).toBe(false); // Shouldn't release if blocked
   });
 
   it('should reduce sync score if stems are missing', () => {
@@ -120,7 +120,7 @@ describe('CreativeProductionCompiler', () => {
     expect(run.findings.some(f => f.id === 'artwork_issue')).toBe(true);
     expect(run.approvalGates.some(g => g.id === 'artwork_legal_approval')).toBe(true);
     expect(run.agentBriefs.some(b => b.agentId === 'legal')).toBe(true);
-    expect(run.agentBriefs.some(b => b.agentId === 'merch')).toBe(true);
+    expect(run.agentBriefs.some(b => b.agentId === 'merchandise')).toBe(true);
   });
 
   it('should flag missing credits', () => {

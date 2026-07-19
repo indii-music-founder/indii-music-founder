@@ -32,11 +32,9 @@ test.describe('Conductor → Specialist consult (live UI)', () => {
             });
         });
 
-        // Firebase Vertex AI and Gemini model calls.
-        await page.route(/.*(firebasevertexai|generativelanguage)\.googleapis\.com.*/, async (route) => {
-            const url = route.request().url();
+        // Intercept backend-only generateContentStream Cloud Function calls.
+        await page.route('**/generateContentStream', async (route) => {
             const postData = route.request().postData() || '';
-            const isStream = url.includes('streamGenerateContent');
             // Discriminate ONLY on the unique delegated task — the Conductor's own
             // request also contains "marketing" (it's in the valid-agent list), which
             // would otherwise misclassify the Conductor turn as the specialist.
@@ -44,36 +42,25 @@ test.describe('Conductor → Specialist consult (live UI)', () => {
 
             if (isMarketing) {
                 // Specialist streams its reply in chunks (so the UI grows progressively).
-                if (isStream) {
-                    await route.fulfill({
-                        status: 200,
-                        contentType: 'text/event-stream',
-                        body: sse(REPLY_CHUNKS.map((t) => ({ text: t }))),
-                    });
-                } else {
-                    await route.fulfill({
-                        status: 200,
-                        contentType: 'application/json',
-                        body: JSON.stringify({ candidates: [{ content: { parts: [{ text: SPECIALIST_REPLY }], role: 'model' } }] }),
-                    });
-                }
+                const bodyLines = REPLY_CHUNKS.map(t => `data: ${JSON.stringify({ text: t })}\n`).join('');
+                await route.fulfill({
+                    status: 200,
+                    contentType: 'text/event-stream',
+                    body: bodyLines,
+                });
                 return;
             }
 
             // Conductor: emit a consult_specialist tool call targeting marketing.
-            const conductorParts = [
-                { text: 'Routing to the marketing specialist.' },
-                { functionCall: { name: 'consult_specialist', args: { targetAgentId: 'marketing', task: 'Draft launch copy' } } },
-            ];
-            if (isStream) {
-                await route.fulfill({ status: 200, contentType: 'text/event-stream', body: sse(conductorParts) });
-            } else {
-                await route.fulfill({
-                    status: 200,
-                    contentType: 'application/json',
-                    body: JSON.stringify({ candidates: [{ content: { parts: conductorParts, role: 'model' } }] }),
-                });
-            }
+            const conductorPayload = {
+                text: 'Routing to the marketing specialist.',
+                functionCalls: [{ name: 'consult_specialist', args: { targetAgentId: 'marketing', task: 'Draft launch copy' } }]
+            };
+            await route.fulfill({
+                status: 200,
+                contentType: 'text/event-stream',
+                body: `data: ${JSON.stringify(conductorPayload)}\n`,
+            });
         });
 
         await page.goto('/', { waitUntil: 'domcontentloaded' });
@@ -89,7 +76,8 @@ test.describe('Conductor → Specialist consult (live UI)', () => {
         await input.fill('Help me launch my new album');
         await input.press('Enter');
 
-        await expect(page.getByText(SPECIALIST_REPLY, { exact: false })).toBeVisible({ timeout: 25_000 });
+        // Target the actual chat paragraph (not the system tool-call log span)
+        await expect(page.locator('p').filter({ hasText: SPECIALIST_REPLY })).toBeVisible({ timeout: 25_000 });
         await page.screenshot({ path: 'test-results/conductor-consult-streaming.png', fullPage: true });
     });
 });

@@ -16,14 +16,16 @@ import { logger } from '@/utils/logger';
  * - Electron-specific sync (Update channels)
  */
 export const AppInitializationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const { initializeAuthListener, loadUserProfile, user, userProfile, initializeHistory, loadProjects } = useStore(
+    const { initializeAuthListener, loadUserProfile, user, userProfile, initializeHistory, loadProjects, loadNotesFromCloud, currentOrganizationId } = useStore(
         useShallow(state => ({
             initializeAuthListener: state.initializeAuthListener,
             loadUserProfile: state.loadUserProfile,
             user: state.user,
             userProfile: state.userProfile,
             initializeHistory: state.initializeHistory,
-            loadProjects: state.loadProjects
+            loadProjects: state.loadProjects,
+            loadNotesFromCloud: state.loadNotesFromCloud,
+            currentOrganizationId: state.currentOrganizationId
         }))
     );
 
@@ -50,8 +52,17 @@ export const AppInitializationProvider: React.FC<{ children: React.ReactNode }> 
         if (user && !user.isAnonymous && user.uid !== 'demo') {
             let isMounted = true;
 
-            initializeHistory();
+            // ISSUE-772: rescope legacy 'org-default' docs to 'personal' BEFORE the
+            // history subscription attaches, so migrated items land in the first
+            // snapshot. Never blocks boot — failures retry on next login.
+            import('@/services/LegacyOrgMigrationService')
+                .then(({ LegacyOrgMigrationService }) => LegacyOrgMigrationService.run())
+                .catch(err => logger.error('[AppInit] Legacy org migration failed:', err))
+                .finally(() => {
+                    if (isMounted) initializeHistory();
+                });
             loadProjects();
+            loadNotesFromCloud();
 
             // Re-enable Agent if needed, but keep closed by default
             useStore.setState({ isAgentOpen: false });
@@ -111,7 +122,7 @@ export const AppInitializationProvider: React.FC<{ children: React.ReactNode }> 
                 }).catch(() => { /* module already unloaded */ });
             };
         }
-    }, [user, initializeHistory, loadProjects]);
+    }, [user, currentOrganizationId, initializeHistory, loadProjects, loadNotesFromCloud]);
 
     // 4. Electron-specific synchronization
     useEffect(() => {

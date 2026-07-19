@@ -2,6 +2,7 @@ import { wrapTool, toolError, toolSuccess } from '../utils/ToolUtils';
 import type { AnyToolFunction } from '../types';
 import { logger } from '@/utils/logger';
 import { useStore } from '@/core/store';
+import { importWithRetry } from '@/utils/dynamicImport';
 
 /**
  * NotificationTools — Multi-Channel Notifications
@@ -84,8 +85,8 @@ export const NotificationTools = {
 
             // Persist notification event for audit trail
             try {
-                const { db, auth } = await import('@/services/firebase');
-                const { collection, addDoc, serverTimestamp } = await import('firebase/firestore');
+                const { db, auth } = await importWithRetry(() => import('@/services/firebase'));
+                const { collection, addDoc, serverTimestamp } = await importWithRetry(() => import('firebase/firestore'));
                 const uid = auth.currentUser?.uid;
                 if (uid) {
                     await addDoc(collection(db, 'users', uid, 'notifications'), {

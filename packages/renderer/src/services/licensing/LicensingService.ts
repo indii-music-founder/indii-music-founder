@@ -3,8 +3,9 @@ import { logger } from '@/utils/logger';
 
 import { FirestoreService } from '../FirestoreService';
 import { License, LicenseRequest } from './types';
-import { query, where, orderBy, limit, Unsubscribe, collection, getDocs, addDoc, serverTimestamp } from 'firebase/firestore';
+import { query, where, orderBy, limit, Unsubscribe, collection, getDocs } from 'firebase/firestore';
 import { useStore } from '@/core/store';
+import { createOneTimePayment } from '@/services/payment/PaymentService';
 
 // ── Types for SyncBriefMatcher ────────────────────────────────────────────────
 
@@ -113,6 +114,39 @@ export class LicensingService {
     }
 
     /**
+     * Initiate a license purchase checkout session.
+     */
+    async initiateLicensePurchase(params: {
+        userId: string;
+        trackTitle: string;
+        artist: string;
+        price: number; // in cents
+        connectedAccountId: string;
+        metadata?: Record<string, string>;
+    }): Promise<string> {
+        const { userId, trackTitle, artist, price, connectedAccountId, metadata } = params;
+
+        return createOneTimePayment({
+            userId,
+            items: [{
+                name: `Sync License - ${trackTitle}`,
+                description: `Sync license agreement for ${trackTitle} by ${artist}`,
+                amount: price,
+                quantity: 1,
+            }],
+            applySurcharge: true,
+            metadata: {
+                type: 'licensing_purchase',
+                trackTitle,
+                artist,
+                connectedAccountId,
+                artistAmount: String(price),
+                ...metadata,
+            }
+        });
+    }
+
+    /**
      * Update an existing request.
      */
     async updateRequest(id: string, data: Partial<LicenseRequest>): Promise<void> {
@@ -214,9 +248,8 @@ export class LicensingService {
     }
 
     /**
-     * Returns sync briefs from Firestore. If the collection is empty, generates
-     * realistic sample briefs with AutonomousIntelligence and caches them in Firestore so future
-     * sessions load instantly.
+     * Returns sync briefs from Firestore.
+     * If the collection is empty, return an honest empty list instead of inventing opportunities.
      */
     async getSyncBriefs(): Promise<SyncBrief[]> {
         const userProfile = useStore.getState().userProfile;
@@ -230,76 +263,9 @@ export class LicensingService {
                 return snapshot.docs.map(d => ({ id: d.id, ...d.data() } as SyncBrief));
             }
 
-            // Collection empty → generate and seed with Intelligence
-            return this.seedSyncBriefs(userProfile.id);
+            return [];
         } catch (err: unknown) {
             logger.warn('[LicensingService] getSyncBriefs failed:', err);
-            return [];
-        }
-    }
-
-    /**
-     * Uses AutonomousIntelligence to generate realistic sync licensing briefs and writes them
-     * to Firestore so they survive page refreshes.
-     */
-    private async seedSyncBriefs(userId: string): Promise<SyncBrief[]> {
-        try {
-            const { AutonomousIntelligence } = await import('@/services/intelligence/AutonomousIntelligence');
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            const { INTELLIGENCE_MODELS } = await import('@/core/config/intelligence-models');
-
-            const today = new Date();
-            const deadlines = [7, 14, 21, 30, 45, 60, 90].map(d => {
-                const dt = new Date(today);
-                dt.setDate(dt.getDate() + d);
-                return dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-            });
-
-            const schema = {
-                type: 'OBJECT',
-                properties: {
-                    briefs: {
-                        type: 'ARRAY',
-                        items: {
-                            type: 'OBJECT',
-                            properties: {
-                                project: { type: 'STRING' },
-                                type: { type: 'STRING', enum: ['TV', 'Film', 'Ad', 'Game', 'Trailer'] },
-                                network: { type: 'STRING' },
-                                deadline: { type: 'STRING' },
-                                bpmMin: { type: 'NUMBER' },
-                                bpmMax: { type: 'NUMBER' },
-                                moods: { type: 'ARRAY', items: { type: 'STRING', enum: ['Cinematic', 'Upbeat', 'Melancholic', 'Dark', 'Chill', 'Energetic', 'Romantic', 'Triumphant'] } },
-                                budget: { type: 'STRING' },
-                                description: { type: 'STRING' },
-                            }
-                        }
-                    }
-                }
-            };
-
-            const generated = await AutonomousIntelligence.generateStructuredData<{ briefs: Omit<SyncBrief, 'id'>[] }>(
-                `Generate 8 realistic sync licensing briefs for music supervisors seeking independent music.
-Use these upcoming deadlines: ${deadlines.join(', ')}.
-Vary the types (TV, Film, Ad, Game, Trailer), budgets ($5K–$100K+), moods and BPM ranges.
-Make each brief feel authentic with real-sounding network names and project titles.`,
-                schema as Record<string, unknown>,
-                undefined,
-                'You are a sync licensing coordinator generating a daily brief digest for indie artists.'
-            );
-
-            const col = collection(db, 'users', userId, 'syncBriefs');
-            const briefs: SyncBrief[] = [];
-
-            for (const brief of generated.briefs ?? []) {
-                const docRef = await addDoc(col, { ...brief, createdAt: serverTimestamp() });
-                briefs.push({ id: docRef.id, ...brief });
-            }
-
-            logger.info(`[LicensingService] Seeded ${briefs.length} sync briefs for ${userId}`);
-            return briefs;
-        } catch (err: unknown) {
-            logger.warn('[LicensingService] seedSyncBriefs failed:', err);
             return [];
         }
     }

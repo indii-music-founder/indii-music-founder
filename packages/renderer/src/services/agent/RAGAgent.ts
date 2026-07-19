@@ -42,7 +42,7 @@ export class RAGAgent extends BaseAgent {
             let ragText = ragTextRaw;
             if (ragTextRaw && groundingMetadata?.groundingChunks) {
                 const chunks = groundingMetadata.groundingChunks;
-                const citations = chunks.map((chunk: any) => {
+                const citations = chunks.map((chunk: { retrievedContext?: { title?: string; uri?: string; pageNumber?: number; } }) => {
                     const ctx = chunk.retrievedContext;
                     if (ctx) {
                         return `[Source: ${ctx.title || ctx.uri || 'Unknown'}${ctx.pageNumber ? ` - Page ${ctx.pageNumber}` : ''}]`;
@@ -75,8 +75,11 @@ export class RAGAgent extends BaseAgent {
                 onProgress?.({ type: 'thought', content: 'Proceeding with standard protocol (no supplemental insights required).' });
             }
         } catch (error: unknown) {
+            // A failed/absent RAG corpus is normal (most projects have no knowledge
+            // base configured). Degrade silently with neutral wording instead of the
+            // alarming "KB offline" that read like a failure to users (ISSUE-481).
             logger.warn(`[RAGAgent] Knowledge Base Query Failed for ${this.id}:`, error);
-            onProgress?.({ type: 'thought', content: 'Proceeding without supplemental domain knowledge (KB offline).' });
+            onProgress?.({ type: 'thought', content: 'Proceeding with standard knowledge.' });
         }
 
         if (signal?.aborted) {

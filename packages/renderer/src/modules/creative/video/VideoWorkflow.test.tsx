@@ -2,7 +2,17 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import VideoWorkflow from './VideoWorkflow';
 import { extractVideoFrame } from '../../../utils/video';
+import { materializeVideoFrameForHandoff } from '@/services/creative/CreativeMediaHandoffService';
 import { useToast, ToastProvider } from '@/core/context/ToastContext';
+import { CREATIVE_ASSET_MIME } from '@/services/creative/CreativeAssetDragService';
+
+function droppedAssetDataTransfer(asset: Record<string, unknown>): DataTransfer {
+    const serialized = JSON.stringify({ version: 1, kind: 'creative-asset', source: 'project-assets', asset });
+    return {
+        dropEffect: 'none',
+        getData: (format: string) => format === CREATIVE_ASSET_MIME ? serialized : '',
+    } as DataTransfer;
+}
 
 // --- Mocks ---
 
@@ -31,6 +41,11 @@ const { mockStoreState, mockVideoEditorState, mockUseStore, mockUseVideoEditorSt
         },
         characterReferences: [],
         setStudioControls: vi.fn(),
+        currentProjectId: 'project-1',
+        pendingStageHandoff: { image: null, veo: null, omni: null, editor: null },
+        consumeStageHandoff: vi.fn(),
+        addCharacterReference: vi.fn(),
+        sendToStage: vi.fn(),
         isRightPanelOpen: false,
         toggleRightPanel: vi.fn(),
         addJob: vi.fn(),
@@ -102,6 +117,10 @@ vi.mock('../../../utils/video', () => ({
     extractVideoFrame: vi.fn()
 }));
 
+vi.mock('@/services/creative/CreativeMediaHandoffService', () => ({
+    materializeVideoFrameForHandoff: vi.fn(),
+}));
+
 // Mock FrameSelectionModal
 vi.mock('./components/FrameSelectionModal', () => ({
     serverTimestamp: vi.fn(),
@@ -115,6 +134,12 @@ vi.mock('./components/FrameSelectionModal', () => ({
     ) : null
 }));
 
+vi.mock('./components/VideoStage', () => ({
+    VideoStage: ({ activeVideo }: { activeVideo?: { id?: string } | null }) => (
+        <div data-testid="video-stage">{activeVideo?.id || 'empty-stage'}</div>
+    ),
+}));
+
 // Mock VideoGenerationService
 const mockGenerateVideo = vi.fn();
 const mockSubscribeToJob = vi.fn();
@@ -123,6 +148,7 @@ vi.mock('@/services/video/VideoGenerationService', () => ({
     VideoGeneration: {
         generateVideo: (...args: any[]) => mockGenerateVideo(...args),
         subscribeToJob: (...args: any[]) => mockSubscribeToJob(...args),
+        estimateVideoCost: vi.fn((duration) => duration * 0.1),
     },
 }));
 
@@ -174,6 +200,7 @@ describe('VideoWorkflow', () => {
             selectedItem: null,
             pendingPrompt: null,
             videoInputs: {},
+            pendingStageHandoff: { image: null, veo: null, omni: null, editor: null },
             studioControls: { resolution: '1080p' }
         });
 
@@ -184,6 +211,16 @@ describe('VideoWorkflow', () => {
         });
 
         (useToast as unknown as import("vitest").Mock).mockReturnValue(mockToast);
+        vi.mocked(materializeVideoFrameForHandoff).mockResolvedValue({
+            id: 'omni-last-frame',
+            type: 'image',
+            url: 'https://storage.example/omni-last.jpg',
+            storageUri: 'gs://bucket/omni-last.jpg',
+            prompt: 'Last frame from Omni output',
+            timestamp: 2,
+            projectId: 'project-1',
+            parentId: 'omni-video-1',
+        });
     });
 
     it('triggers video generation and sets jobId', async () => {
@@ -238,6 +275,99 @@ describe('VideoWorkflow', () => {
             id: 'job-123',
             url: 'http://video.url',
             type: 'video'
+        }));
+    });
+
+    it('turns an Omni source video into a durable Veo continuity frame', async () => {
+        const omniVideo = {
+            id: 'omni-video-1',
+            type: 'video' as const,
+            url: 'https://storage.example/omni.mp4',
+            storageUri: 'gs://bucket/omni.mp4',
+            prompt: 'Omni performance',
+            timestamp: 1,
+            projectId: 'project-1',
+        };
+        mockStoreState.pendingStageHandoff.veo = {
+            item: omniVideo,
+            role: 'source-video',
+            originStage: 'omni',
+            timestamp: Date.now(),
+        };
+
+        render(
+            <ToastProvider>
+                <VideoWorkflow />
+            </ToastProvider>
+        );
+
+        await waitFor(() => expect(materializeVideoFrameForHandoff).toHaveBeenCalledWith(
+            omniVideo,
+            'last',
+            { userId: 'test-user', projectId: 'project-1' },
+        ));
+        await waitFor(() => expect(mockStoreState.setVideoInputs).toHaveBeenCalledWith({
+            firstFrame: expect.objectContaining({
+                type: 'image',
+                storageUri: 'gs://bucket/omni-last.jpg',
+            }),
+            lastFrame: null,
+        }));
+        expect(mockStoreState.consumeStageHandoff).toHaveBeenCalledWith('veo');
+    });
+
+    it('opens a routed Omni video directly in the timeline editor', async () => {
+        const omniVideo = {
+            id: 'omni-video-editor',
+            type: 'video' as const,
+            url: 'https://storage.example/omni-editor.mp4',
+            storageUri: 'gs://bucket/omni-editor.mp4',
+            prompt: 'Omni editor source',
+            timestamp: 1,
+            projectId: 'project-1',
+        };
+        mockStoreState.pendingStageHandoff.editor = {
+            item: omniVideo,
+            role: 'source-video',
+            originStage: 'omni',
+            timestamp: Date.now(),
+        };
+
+        render(
+            <ToastProvider>
+                <VideoWorkflow />
+            </ToastProvider>
+        );
+
+        await waitFor(() => expect(mockVideoEditorState.setViewMode).toHaveBeenCalledWith('editor'));
+        expect(mockStoreState.consumeStageHandoff).toHaveBeenCalledWith('editor');
+    });
+
+    it('accepts a dragged project image as the first available Veo frame', async () => {
+        render(
+            <ToastProvider>
+                <VideoWorkflow />
+            </ToastProvider>
+        );
+
+        fireEvent.drop(screen.getByTestId('veo-asset-drop-zone'), {
+            dataTransfer: droppedAssetDataTransfer({
+                id: 'dragged-image-1',
+                type: 'image',
+                url: 'https://storage.example/dragged-image.jpg',
+                storageUri: 'gs://bucket/dragged-image.jpg',
+                name: 'Dragged image',
+                prompt: 'Dragged image',
+                projectId: 'project-1',
+            }),
+        });
+
+        await waitFor(() => expect(mockStoreState.setVideoInputs).toHaveBeenCalledWith({
+            firstFrame: expect.objectContaining({
+                id: 'dragged-image-1',
+                type: 'image',
+                storageUri: 'gs://bucket/dragged-image.jpg',
+            }),
         }));
     });
 });

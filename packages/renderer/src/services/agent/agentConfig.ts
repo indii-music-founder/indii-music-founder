@@ -7,6 +7,8 @@ import { VideoAgent } from './definitions/VideoAgent';
 import { SocialAgent } from './definitions/SocialAgent';
 import { PublicistAgent } from './definitions/PublicistAgent';
 import { RoadAgent } from './definitions/RoadAgent';
+import { HospitalityAgent } from './definitions/HospitalityAgent';
+import { EventPlannerAgent } from './definitions/EventPlannerAgent';
 import { PublishingAgent } from './definitions/PublishingAgent';
 import { LicensingAgent } from './definitions/LicensingAgent';
 import { BrandAgent } from './definitions/BrandAgent';
@@ -23,6 +25,7 @@ import { AnalyticsAgent } from './definitions/AnalyticsAgent';
 import { FinanceTaxAgent } from '@/agents/finance/workers/tax.config';
 import { FinanceRoyaltyAgent } from '@/agents/finance/workers/royalty.config';
 import { FinanceAccountingAgent } from '@/agents/finance/workers/accounting.config';
+import { RightsAgent } from '@/agents/rights/config';
 
 export const AGENT_CONFIGS: AgentConfig[] = [
     MarketingAgent,
@@ -35,6 +38,8 @@ export const AGENT_CONFIGS: AgentConfig[] = [
     SocialAgent,
     PublicistAgent,
     RoadAgent,
+    HospitalityAgent,
+    EventPlannerAgent,
     PublishingAgent,
     LicensingAgent,
     BrandAgent,
@@ -45,9 +50,9 @@ export const AGENT_CONFIGS: AgentConfig[] = [
     CreativeAgent,
     AnalyticsAgent,
     FinanceTaxAgent,
-
     FinanceRoyaltyAgent,
-    FinanceAccountingAgent
+    FinanceAccountingAgent,
+    RightsAgent
 ];
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars

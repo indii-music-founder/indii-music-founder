@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { FileText, Clock, CheckCircle2, AlertCircle, ExternalLink, ShieldCheck, Scale, TrendingUp } from 'lucide-react';
+import { FileText, Clock, CheckCircle2, AlertCircle, ExternalLink, ShieldCheck, TrendingUp } from 'lucide-react';
 import { licensingService } from '@/services/licensing/LicensingService';
 import type { LicenseRequest, License } from '@/services/licensing/types';
 import { motion, AnimatePresence } from 'motion/react';
@@ -85,7 +85,6 @@ export default function LicensingDashboard() {
                         projectedValue={projectedValue}
                     />
                     <RecentClearancesPanel requests={requests} onDraft={handleDraftAction} />
-                    <ActionButtonsPanel toast={toast} />
                 </>
             }
             rightPanel={
@@ -164,7 +163,7 @@ export default function LicensingDashboard() {
                                                         DRAFT AGREEMENT
                                                     </button>
                                                     <span className="text-[10px] font-medium text-gray-600">
-                                                        Requested • {request.requestedAt ? (request.requestedAt instanceof Date ? request.requestedAt.toLocaleDateString() : request.requestedAt.toDate().toLocaleDateString()) : 'N/A'}
+                                                        Requested • {request.requestedAt ? (request.requestedAt instanceof Date ? request.requestedAt.toLocaleDateString('en-US') : request.requestedAt.toDate().toLocaleDateString('en-US')) : 'N/A'}
                                                     </span>
                                                 </div>
                                             </div>
@@ -271,7 +270,7 @@ function DealHealthPanel({ activeLicenses, pendingRequests, projectedValue }: {
     const items = [
         { label: 'Active Licenses', value: activeLicenses.toString(), icon: ShieldCheck, color: 'text-emerald-400' },
         { label: 'Pending Clearances', value: pendingRequests.toString(), icon: Clock, color: 'text-yellow-400' },
-        { label: 'Projected Value', value: `$${projectedValue.toLocaleString()}`, icon: TrendingUp, color: 'text-emerald-400' },
+        { label: 'Projected Value', value: `$${projectedValue.toLocaleString('en-US')}`, icon: TrendingUp, color: 'text-emerald-400' },
     ];
 
     return (
@@ -319,23 +318,6 @@ function RecentClearancesPanel({ requests, onDraft }: { requests: LicenseRequest
                     ))}
                 </div>
             )}
-        </div>
-    );
-}
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function ActionButtonsPanel({ toast }: { toast: ReturnType<typeof useToast> }) {
-    return (
-        <div className="rounded-xl bg-white/[0.02] border border-white/5 p-3">
-            <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3 px-1">Quick Actions</h3>
-            <div className="space-y-2">
-                <button className="w-full flex items-center gap-2 p-2.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 transition-colors text-xs text-emerald-300 font-medium border border-emerald-500/10">
-                    <FileText size={12} /> Draft New Deal
-                </button>
-                <button className="w-full flex items-center gap-2 p-2.5 rounded-lg bg-white/[0.02] hover:bg-white/[0.06] transition-colors text-xs text-white font-medium">
-                    <Scale size={12} /> Review Agreements
-                </button>
-            </div>
         </div>
     );
 }

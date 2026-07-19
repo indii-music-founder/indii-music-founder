@@ -38,6 +38,7 @@ vi.mock('@/services/intelligence/FirebaseIntelligenceService', () => {
 });
 
 import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
+import { importWithRetry } from '@/utils/dynamicImport';
 
 vi.mock('../tools/LegalTools', () => ({
     LegalTools: {
@@ -166,7 +167,7 @@ describe('LicensingAgent', () => {
 
     describe('draft_license', () => {
         it('should use LegalTools to draft a contract', async () => {
-            const { LegalTools } = await import('../tools/LegalTools');
+            const { LegalTools } = await importWithRetry(() => import('../tools/LegalTools'));
             vi!.mocked(LegalTools.draft_contract!).mockResolvedValue({ success: true, data: { content: "Mocked Contract Content" } });
 
             const args = {
@@ -180,6 +181,32 @@ describe('LicensingAgent', () => {
             expect(LegalTools.draft_contract).toHaveBeenCalledWith(args);
             expect(result.success).toBe(true);
             expect(result.data.contract).toBe("Mocked Contract Content");
+        });
+    });
+
+    describe('search_sync_opportunities', () => {
+        it('should return mock opportunities', async () => {
+            const args = { genre: 'Rock', mood: 'Upbeat' };
+            type ResultType = { success: boolean; data: { opportunities?: any[]; message?: string } };
+            const result = await (LicensingAgent.functions!.search_sync_opportunities as (args: unknown) => Promise<ResultType>)(args);
+
+            expect(result.success).toBe(true);
+            expect(result.data.opportunities).toHaveLength(3);
+            expect(result.data.message).toContain('Found 3 potential sync opportunities');
+        });
+    });
+
+    describe('calculate_sync_fee_estimate', () => {
+        it('should calculate estimated fee correctly', async () => {
+            const args = { usage_type: 'Film', territory: 'Worldwide', term: 'Perpetual' };
+            type ResultType = { success: boolean; data: { estimated_fee_usd?: number; message?: string } };
+            const result = await (LicensingAgent.functions!.calculate_sync_fee_estimate as (args: unknown) => Promise<ResultType>)(args);
+
+            expect(result.success).toBe(true);
+            // Base Film: 25000, Worldwide multiplier: 2, Perpetual multiplier: 2
+            // 25000 * 2 * 2 = 100000
+            expect(result.data.estimated_fee_usd).toBe(100000);
+            expect(result.data.message).toContain('100,000');
         });
     });
 });

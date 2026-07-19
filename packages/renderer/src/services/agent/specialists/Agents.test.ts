@@ -75,9 +75,9 @@ describe('Agent System Verification', () => {
     // 4. Verify Road Agent Tools
     it('should have Road Agent tools registered', () => {
         expect(TOOL_REGISTRY).toHaveProperty('plan_tour_route');
-        expect(TOOL_REGISTRY).toHaveProperty('calculate_tour_budget');
+        expect(TOOL_REGISTRY).toHaveProperty('estimate_tour_budget');
         expect(TOOL_REGISTRY).toHaveProperty('book_logistics');
-        expect(TOOL_REGISTRY).toHaveProperty('generate_itinerary');
+        expect(TOOL_REGISTRY).toHaveProperty('draft_tour_itinerary');
         expect(TOOL_REGISTRY).toHaveProperty('search_places'); // From MapsTools
     });
 

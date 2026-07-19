@@ -1,3 +1,4 @@
+import { validateSender } from './utils/ipc-security';
 import { app, BrowserWindow, shell, ipcMain, Tray, Menu, nativeImage, Notification, powerMonitor, crashReporter, protocol, net } from 'electron';
 import path from 'path';
 import log from 'electron-log';
@@ -93,12 +94,15 @@ import { registerSonicBridgeHandlers } from './handlers/sonic_bridge';
 import { registerDawHandlers } from './handlers/daw';
 import { registerMobileRemoteHandlers, stopMobileRemoteServer } from './handlers/mobile_remote';
 import { indiiRemoteService } from './services/IndiiRemoteService';
+import { isLegacyEdgeRemoteEnabled } from './services/RemoteTransportPolicy';
 import { registerSchedulerHandlers } from './handlers/scheduler';
 import { SchedulerService } from './services/SchedulerService';
 import { configureSecurity, auditSessionCookies } from './security';
 import { applyCSP } from './security/csp';
 import { mcpClientService } from './services/mcp/MCPClientService';
 import { setupAutoUpdater, registerUpdaterHandlers } from './updater';
+import { registerWeb3Handlers } from './handlers/web3';
+import { registerPinataHandlers } from './handlers/pinata';
 import Store from 'electron-store';
 
 let tray: Tray | null = null;
@@ -119,7 +123,7 @@ if (app.isPackaged) {
 }
 
 const createWindow = async () => {
-    const devServerUrl = process.env.VITE_DEV_SERVER_URL || 'http://localhost:4242';
+    const devServerUrl = process.env.VITE_DEV_SERVER_URL || 'http://localhost:4243';
 
     interface IWindowStore {
         get(key: string, defaultValue: unknown): unknown;
@@ -138,17 +142,17 @@ const createWindow = async () => {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     try { require('dotenv').config(); } catch (__e) { /* dotenv optional */ }
 
-    try {
-        const token = process.env.VITE_NGROK_AUTHTOKEN || process.env.NGROK_AUTHTOKEN;
-        const password = crypto.randomUUID().substring(0, 6);
+    if (isLegacyEdgeRemoteEnabled()) {
         try {
+            const token = process.env.VITE_NGROK_AUTHTOKEN || process.env.NGROK_AUTHTOKEN;
+            const password = crypto.randomUUID().substring(0, 6);
             const url = await indiiRemoteService.start({ port: 3333, password, ngrokToken: token });
             log.info(`[IndiiRemote READY] Ngrok Tunnel: ${url}`);
         } catch (startErr) {
             log.error('[Main] IndiiRemoteService startup rejected:', startErr);
         }
-    } catch (e) {
-        log.error('[Main] Failed to start IndiiRemote subsystem:', e);
+    } else {
+        log.info('[Main] Legacy edge remote disabled; Mobile Remote uses the authenticated cloud relay.');
     }
 
     // Item 325: Hard assertion — webSecurity must always be true in production
@@ -171,6 +175,7 @@ const createWindow = async () => {
             safeDialogsMessage: 'Stop seeing alerts from this page',
             webSecurity: !isDev, // Intentionally disabled in dev only — needed for Vite CORS. Always true in production builds.
             webviewTag: false,
+            backgroundThrottling: false, // Ensures remote dispatch queue stays active when app is hidden to tray
         },
         autoHideMenuBar: true,
         backgroundColor: '#000000',
@@ -239,7 +244,7 @@ const createWindow = async () => {
                 'https://indii.music', 
                 'https://indii-music-founder.firebaseapp.com',
                 'http://localhost:3000',
-                'http://localhost:4242',
+                'http://localhost:4243',
                 'http://localhost:9099'
             ];
 
@@ -487,16 +492,18 @@ if (!gotTheLock) {
         registerVideoHandlers();
         registerSonicBridgeHandlers();
         registerDawHandlers();
+        registerWeb3Handlers();
+        registerPinataHandlers();
 
         // Register Sidecar Handlers (Removed)
 
         // Item 373: IPC channel allowlist audit — log any unregistered channels on startup
         const KNOWN_IPC_CHANNELS = new Set([
             'get-platform', 'get-app-version', 'privacy:toggle-protection',
-            'system:select-file', 'system:select-directory', 'system:get-directory-contents', 'system:get-gpu-info', 'system:getMobileRemoteInfo',
+            'system:select-file', 'system:select-directory', 'system:get-directory-contents', 'system:search-approved-assets', 'system:get-gpu-info', 'system:getMobileRemoteInfo',
             'auth:logout', 'credentials:save', 'credentials:get', 'credentials:delete',
             'audio:analyze', 'audio:lookup-metadata', 'audio:transcode', 'audio:master',
-            'net:fetch-url',
+            'net:fetch-url', 'net:fetch-url-base64',
             'sftp:connect', 'sftp:upload-directory', 'sftp:disconnect', 'sftp:is-connected',
             'distribution:validate-metadata', 'distribution:generate-isrc', 'distribution:generate-upc',
             'distribution:generate-ddex', 'distribution:stage-release', 'distribution:submit-release',
@@ -510,11 +517,13 @@ if (!gotTheLock) {
             'security:rotate-credentials', 'security:scan-vulnerabilities',
             'sonic-bridge:watch-folder', 'sonic-bridge:stop-watching',
             'daw:start', 'daw:stop', 'daw:get-state',
-            'video:render', 'video:open-folder', 'video:save-asset',
+            'video:render', 'video:open-folder', 'video:save-asset', 'video:get-default-path',
             'power:get-state', 'mobile-remote:stop',
             'updater:check', 'updater:install', 'updater:set-channel', 'updater:set-source', 'updater:get-config',
             'scheduler:register', 'scheduler:cancel', 'scheduler:set-enabled', 'scheduler:status', 'scheduler:get',
             'test:browser-agent', 'show-notification',
+            'web3:execute-transaction', 'web3:get-provider-metadata', 'web3:set-rpc-url', 'web3:get-balance',
+            'web3:pinata-upload',
         ]);
         log.info(`[IPC Allowlist] ${KNOWN_IPC_CHANNELS.size} known channels registered`);
 
@@ -530,16 +539,13 @@ if (!gotTheLock) {
         SchedulerService.registerBuiltInTasks();
 
         // Initialize Local MCP Client
-        mcpClientService.connectLocal().then(async () => {
-            log.info('[MCP] Successfully connected to local server');
-            try {
-                // Test call just to prove the protocol works on startup
-                const res = await mcpClientService.executeTool('read_wav_tags', { filePath: '/invalid/path.wav' });
-                log.info(`[MCP] Test call result: ${JSON.stringify(res)}`);
-            } catch (e: unknown) {
-                const msg = e instanceof Error ? e.message : String(e);
-                log.info(`[MCP] Test call (expected) error: ${msg}`);
+        mcpClientService.connectLocal().then(async (connected) => {
+            if (!connected) {
+                log.warn('[MCP] Local server unavailable; MCP tools disabled for this session.');
+                return;
             }
+
+            log.info('[MCP] Successfully connected to local server');
         }).catch(err => {
             log.error(`[MCP] Failed to connect to local server: ${err?.message}`);
         });
@@ -549,6 +555,7 @@ if (!gotTheLock) {
 
         // Register Notification IPC
         ipcMain.on('show-notification', (_event, { title, body }) => {
+            validateSender(_event);
             showNotification(title, body);
         });
 
@@ -580,8 +587,31 @@ if (!gotTheLock) {
         });
 
         // Send initial state on load
-        ipcMain.handle('power:get-state', () => {
+        ipcMain.handle('power:get-state', (event) => {
+        validateSender(event);
             return powerMonitor.isOnBatteryPower() ? 'battery' : 'ac';
+        });
+
+        // Window control (Sleep/Wake) — the renderer drives sleep mode by hiding
+        // the window to the tray and waking it back. The process keeps running
+        // (backgroundThrottling:false) so the relay listener stays alive while hidden.
+        ipcMain.handle('window:show', (event) => {
+        validateSender(event);
+            if (!mainWindow) return;
+            mainWindow.show();
+            mainWindow.moveTop();
+            if (process.platform === 'darwin') {
+                app.dock?.show();
+                app.focus({ steal: true });
+            }
+        });
+        ipcMain.handle('window:hide', (event) => {
+        validateSender(event);
+            if (!mainWindow) return;
+            mainWindow.hide();
+            if (process.platform === 'darwin') {
+                app.dock?.hide();
+            }
         });
 
         // Auto-updater IPC handlers — registered unconditionally so the renderer
@@ -596,7 +626,8 @@ if (!gotTheLock) {
 
         // Item 378: Developer-only memory snapshot — accessible via --inspect flag or IPC
         if (!app.isPackaged) {
-            ipcMain.handle('dev:heap-snapshot', async () => {
+            ipcMain.handle('dev:heap-snapshot', async (event) => {
+        validateSender(event);
                 try {
                     const v8 = await import('v8');
                     const snapshotPath = path.join(app.getPath('userData'), `heap-${Date.now()}.heapsnapshot`);

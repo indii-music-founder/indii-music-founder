@@ -16,6 +16,14 @@ else
 fi
 
 
+echo "--> Step 0.5: API System Integrity Check"
+if ! node scripts/verify-api-system-integrity.js; then
+  echo "❌ API System Integrity check failed."
+  fail=1
+else
+  echo "✅ API System Integrity check passed."
+fi
+
 echo "--> Step 1: Duplicate Identifier Check in appSlice.ts"
 if [ -f packages/renderer/src/core/store/slices/appSlice.ts ]; then
   duplicates=$(grep -rn "^  _last\|^  _cached\|^  current\|^  is" packages/renderer/src/core/store/slices/appSlice.ts | sort | uniq -d)

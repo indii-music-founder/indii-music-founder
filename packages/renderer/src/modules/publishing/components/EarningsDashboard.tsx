@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { useEarnings } from '../hooks/useEarnings';
 import { EarningsBreakdown } from './EarningsBreakdown';
-import { DollarSign, Globe, TrendingUp, Download } from 'lucide-react';
+import { DollarSign, Globe, TrendingUp } from 'lucide-react';
 import { SkeletonText, Skeleton } from '@/components/ui/Skeleton';
 
 // Compute default period outside component to satisfy react-compiler purity rules
@@ -86,11 +86,6 @@ export const EarningsDashboard: React.FC = () => {
             <div className="bg-[#121212] border border-gray-800/50 rounded-2xl p-6 shadow-xl relative overflow-hidden flex flex-col">
                 <div className="flex items-center justify-between mb-2">
                     <h3 className="text-lg font-bold text-white tracking-tight">Royalties</h3>
-                    <div className="flex gap-2">
-                        <button className="p-1.5 text-gray-500 hover:text-white rounded-lg transition-colors">
-                            <Download size={16} />
-                        </button>
-                    </div>
                 </div>
                 <p className="text-xs text-gray-500 font-bold uppercase tracking-widest mb-6 px-1">Active Balance (USD)</p>
 
@@ -102,7 +97,7 @@ export const EarningsDashboard: React.FC = () => {
                 ) : earnings ? (
                     <div>
                         <div className="flex items-baseline gap-1 mb-6">
-                            <span className="text-2xl font-bold text-purple-500 tracking-tighter">$</span>
+                            <span className="text-2xl font-bold text-green-500 tracking-tighter">$</span>
                             <span className="text-5xl font-black text-white tracking-tighter">
                                 {earnings.totalNetRevenue.toFixed(2)}
                             </span>
@@ -117,20 +112,20 @@ export const EarningsDashboard: React.FC = () => {
                                     <Globe size={14} className="text-green-400" />
                                     <span className="text-sm text-gray-400 font-medium">Global Streams</span>
                                 </div>
-                                <span className="text-sm font-bold text-white tracking-tight">{earnings.totalStreams.toLocaleString()}</span>
+                                <span className="text-sm font-bold text-white tracking-tight">{earnings.totalStreams.toLocaleString('en-US')}</span>
                             </div>
                             <div className="flex items-center justify-between p-3 bg-gray-900/40 rounded-xl border border-gray-800/50">
                                 <div className="flex items-center gap-2">
-                                    <DollarSign size={14} className="text-purple-400" />
+                                    <DollarSign size={14} className="text-green-400" />
                                     <span className="text-sm text-gray-400 font-medium">Estimated Unprocessed</span>
                                 </div>
                                 <span className="text-sm font-bold text-white tracking-tight">${(earnings.totalGrossRevenue - earnings.totalNetRevenue).toFixed(2)}</span>
                             </div>
                         </div>
 
-                        <button className="w-full mt-6 py-3 bg-white text-black rounded-xl font-bold text-sm hover:bg-gray-200 transition-all active:scale-[0.98] shadow-lg shadow-white/5">
-                            Request Withdrawal
-                        </button>
+                        <p className="w-full mt-6 py-3 text-center text-xs text-gray-500 border border-dashed border-gray-800 rounded-xl">
+                            Withdrawals aren't wired yet — royalties settle through your connected payout method.
+                        </p>
                     </div>
                 ) : (
                     <div className="text-center py-10 px-4 bg-gray-900/20 rounded-2xl border border-dashed border-gray-800">
@@ -144,7 +139,7 @@ export const EarningsDashboard: React.FC = () => {
                     </div>
                 )}
 
-                <div className="absolute top-0 right-0 w-64 h-64 bg-purple-500/5 blur-[100px] pointer-events-none -mr-32 -mt-32" />
+                <div className="absolute top-0 right-0 w-64 h-64 bg-green-500/5 blur-[100px] pointer-events-none -mr-32 -mt-32" />
             </div>
 
             {/* Always show breakdown below the summary card if we have data */}

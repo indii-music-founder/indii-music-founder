@@ -71,12 +71,12 @@ describe('ProfileSlice Persistence', () => {
         expect(saveProfileToStorage).toHaveBeenCalledWith(stateProfile);
     });
 
-    it('updateBrandKit should update state and save to storage', () => {
+    it('updateBrandKit should update state and save to storage', async () => {
         const { setUserProfile, updateBrandKit } = useStore.getState();
         setUserProfile(mockProfile);
         vi.mocked(saveProfileToStorage).mockClear();
 
-        updateBrandKit({ brandDescription: 'New Brand' });
+        await updateBrandKit({ brandDescription: 'New Brand' });
 
         const stateProfile = useStore.getState().userProfile;
         expect(stateProfile.brandKit.brandDescription).toBe('New Brand');

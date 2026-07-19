@@ -1,21 +1,15 @@
 /**
  * Google Developer Knowledge API Service
  *
- * Provides access to Google's public developer documentation via the
- * Developer Knowledge API (v1alpha). Supports searching documentation
- * and retrieving full page content as Markdown.
+ * Provides access to Google developer documentation when a secured backend
+ * gateway exists.
  *
  * API Reference: https://developers.google.com/knowledge/api
  * Quickstart: https://developers.google.com/knowledge/quickstart
  *
- * Requires: VITE_GOOGLE_DEVKNOWLEDGE_API_KEY env var
- * (or falls back to VITE_API_KEY if available)
+ * Browser-side Developer Knowledge API key usage is disabled. Do not add
+ * VITE_GOOGLE_DEVKNOWLEDGE_API_KEY back to the renderer.
  */
-
-import { env } from '@/config/env';
-import { Logger } from '@/core/logger/Logger';
-
-const BASE_URL = 'https://developerknowledge.googleapis.com/v1alpha';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -52,21 +46,11 @@ export interface DocumentContent {
 // ---------------------------------------------------------------------------
 
 class DevKnowledgeService {
-    private apiKey: string | undefined;
-    private cache = new Map<string, { data: unknown; expires: number }>();
-    private readonly CACHE_TTL_MS = 15 * 60 * 1000; // 15 minutes
-
-    constructor() {
-        // Use dedicated key if available, otherwise fall back to general API key
-        this.apiKey = (import.meta.env.VITE_GOOGLE_DEVKNOWLEDGE_API_KEY as string)
-            || env.VITE_API_KEY;
-    }
-
     /**
      * Check if the service is configured and ready to use.
      */
     isAvailable(): boolean {
-        return !!this.apiKey;
+        return false;
     }
 
     /**
@@ -76,41 +60,8 @@ class DevKnowledgeService {
      * @returns Search results with document chunks and snippets
      */
     async search(query: string): Promise<SearchResult> {
-        if (!this.apiKey) {
-            throw new Error('Developer Knowledge API key not configured');
-        }
-
-        const cacheKey = `search:${query}`;
-        const cached = this.getFromCache<SearchResult>(cacheKey);
-        if (cached) return cached;
-
-        const url = `${BASE_URL}/documents:searchDocumentChunks?query=${encodeURIComponent(query)}&key=${this.apiKey}`;
-
-        Logger.debug('DevKnowledge', `Searching: "${query}"`);
-
-        const response = await fetch(url);
-        if (!response.ok) {
-            const errText = await response.text();
-            Logger.error('DevKnowledge', `Search failed: ${response.status} ${errText}`);
-            throw new Error(`Developer Knowledge API search failed: ${response.status}`);
-        }
-
-        const data = await response.json();
-
-        const result: SearchResult = {
-            query,
-            timestamp: Date.now(),
-            chunks: (data.documentChunks || []).map((chunk: Record<string, unknown>) => ({
-                content: chunk.content || chunk.chunkContent || '',
-                parent: chunk.parent || chunk.document || '',
-                uri: chunk.uri || '',
-                score: chunk.relevanceScore || chunk.score,
-            })),
-        };
-
-        this.setCache(cacheKey, result);
-        Logger.debug('DevKnowledge', `Found ${result.chunks.length} results for "${query}"`);
-        return result;
+        void query;
+        throw new Error('Developer Knowledge API is backend-only. Configure a secured Firebase gateway before using this tool.');
     }
 
     /**
@@ -120,35 +71,8 @@ class DevKnowledgeService {
      * @returns Full document content as Markdown
      */
     async getDocument(documentName: string): Promise<DocumentContent> {
-        if (!this.apiKey) {
-            throw new Error('Developer Knowledge API key not configured');
-        }
-
-        const cacheKey = `doc:${documentName}`;
-        const cached = this.getFromCache<DocumentContent>(cacheKey);
-        if (cached) return cached;
-
-        const url = `${BASE_URL}/${documentName}?key=${this.apiKey}`;
-
-        Logger.debug('DevKnowledge', `Fetching document: ${documentName}`);
-
-        const response = await fetch(url);
-        if (!response.ok) {
-            const errText = await response.text();
-            Logger.error('DevKnowledge', `GetDocument failed: ${response.status} ${errText}`);
-            throw new Error(`Developer Knowledge API getDocument failed: ${response.status}`);
-        }
-
-        const data = await response.json();
-
-        const result: DocumentContent = {
-            markdown: data.content || data.markdown || '',
-            name: data.name || documentName,
-            uri: data.uri || '',
-        };
-
-        this.setCache(cacheKey, result);
-        return result;
+        void documentName;
+        throw new Error('Developer Knowledge API is backend-only. Configure a secured Firebase gateway before using this tool.');
     }
 
     /**
@@ -173,29 +97,6 @@ class DevKnowledgeService {
         return documents
             .filter((r): r is PromiseFulfilledResult<DocumentContent> => r.status === 'fulfilled')
             .map(r => r.value);
-    }
-
-    // -- Cache helpers -------------------------------------------------------
-
-    private getFromCache<T>(key: string): T | null {
-        const entry = this.cache.get(key);
-        if (entry && entry.expires > Date.now()) {
-            return entry.data as T;
-        }
-        if (entry) this.cache.delete(key);
-        return null;
-    }
-
-    private setCache(key: string, data: unknown): void {
-        this.cache.set(key, { data, expires: Date.now() + this.CACHE_TTL_MS });
-
-        // Evict old entries if cache grows too large
-        if (this.cache.size > 100) {
-            const now = Date.now();
-            for (const [k, v] of this.cache) {
-                if (v.expires < now) this.cache.delete(k);
-            }
-        }
     }
 }
 

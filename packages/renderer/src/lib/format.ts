@@ -1,7 +1,7 @@
 /**
  * Item 315: Locale-Aware Number, Date & Currency Formatting
  *
- * Replaces all raw `toFixed()`, `new Date().toLocaleDateString()`, and
+ * Replaces all raw `toFixed()`, `new Date().toLocaleDateString('en-US')`, and
  * manual currency formatting with `Intl.NumberFormat` and `Intl.DateTimeFormat`.
  *
  * All helpers accept an optional `locale` parameter — defaults to the

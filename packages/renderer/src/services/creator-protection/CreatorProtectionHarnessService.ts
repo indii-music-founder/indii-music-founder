@@ -365,7 +365,9 @@ function scoreReadiness(profile: IdentityProtectionProfile, works: WorkProtectio
   if (profile.copyrightStatus === 'registered' || profile.copyrightStatus === 'pending') { score += 12; strengths.push('Copyright status is tracked.'); } else { nextActions.push('Prepare copyright registration packet for key works.'); }
   if (profile.pro && profile.pro !== 'None') { score += 8; strengths.push('PRO affiliation captured.'); } else { nextActions.push('Capture PRO/MLC readiness for compositions.'); }
   if (profile.ipiCae) { score += 5; strengths.push('IPI/CAE captured.'); }
-  if (works.some(work => work.isrc || work.upc || work.iswc || work.copyrightRegistration)) { score += 15; strengths.push('At least one protected work has identifiers or registrations attached.'); } else { nextActions.push('Attach ISRC/UPC/ISWC/copyright registration data to priority works.'); }
+  // Score ONLY actual copyright registrations as legal protection evidence; ISRC/UPC/ISWC are distribution identifiers (metadata hygiene), not copyright proof
+  if (works.some(work => work.copyrightRegistration)) { score += 15; strengths.push('At least one work has a copyright registration (legal evidence).'); } else { nextActions.push('Register copyright for priority works via U.S. Copyright Office or equivalent.'); }
+  if (works.some(work => work.isrc || work.upc || work.iswc)) { score += 5; strengths.push('Distribution identifiers (ISRC/UPC/ISWC) attached for discoverability.'); }
 
   const capped = Math.min(100, score);
   return {

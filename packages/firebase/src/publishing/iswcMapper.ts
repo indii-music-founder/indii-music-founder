@@ -81,38 +81,53 @@ export const processISWCMapping = onDocumentCreated(
         console.log(`[ISWC Mapper] Processing: "${job.trackTitle}" from PandaDoc ${job.pandadocDocumentId}`);
 
         try {
-            // 1. Validate writer shares total 100%
+            // 1. Validate writer shares total 100% (ISSUE-865).
+            // Invalid splits must never silently pass through as if correct —
+            // normalize explicitly and record the original figures so
+            // downstream registration knows they need review.
             const totalWriterShare = job.writers.reduce((sum, w) => sum + w.share, 0);
             const publisherShare = job.publisher?.share || 0;
-            const totalShare = totalWriterShare + publisherShare;
+            const originalTotalShare = totalWriterShare + publisherShare;
+            const splitsValid = originalTotalShare === 100;
 
-            if (totalShare !== 100) {
-                console.warn(`[ISWC Mapper] Share total is ${totalShare}%, expected 100%. Proceeding with normalization.`);
-            }
-
-            // 2. Build the ISWC work record
-            const workRef = db.collection("iswc_works").doc();
-            const composers = job.writers.map((writer) => ({
+            let composers = job.writers.map((writer) => ({
                 name: writer.legalName,
                 ipiNumber: writer.ipiNumber || null,
                 share: writer.share,
                 role: writer.role,
                 pro: writer.pro || "None",
             }));
+            let normalizedPublisherShare = job.publisher?.share ?? null;
+
+            if (!splitsValid && originalTotalShare > 0) {
+                // Proportionally normalize to 100 so downstream records are usable,
+                // but the record stays clearly marked as normalized-not-verified.
+                const scale = 100 / originalTotalShare;
+                composers = composers.map((c) => ({ ...c, share: Math.round(c.share * scale * 100) / 100 }));
+                normalizedPublisherShare = job.publisher ? Math.round(job.publisher.share * scale * 100) / 100 : null;
+                console.warn(`[ISWC Mapper] Share total was ${originalTotalShare}%, expected 100%. Normalized proportionally; original figures preserved for review.`);
+            } else if (!splitsValid) {
+                console.warn(`[ISWC Mapper] Share total was ${originalTotalShare}% (degenerate, cannot normalize). Recording as invalid splits requiring correction.`);
+            }
+
+            // 2. Build the ISWC work record
+            const workRef = db.collection("iswc_works").doc();
 
             const workRecord = {
                 id: workRef.id,
                 iswc: null, // Null until CISAC confirms registration
-                status: "draft",
+                status: splitsValid ? "draft" : (originalTotalShare > 0 ? "draft_splits_normalized" : "draft_invalid_splits"),
                 title: job.trackTitle,
                 composers,
                 publisher: job.publisher
                     ? {
                         name: job.publisher.name,
                         ipiNumber: job.publisher.ipiNumber || null,
-                        share: job.publisher.share,
+                        share: normalizedPublisherShare,
                     }
                     : null,
+                splitsValid,
+                originalTotalShare,
                 associatedISRCs: job.isrc ? [job.isrc] : [],
                 releaseId: job.releaseId || null,
                 isInstrumental: false,
@@ -126,15 +141,21 @@ export const processISWCMapping = onDocumentCreated(
             await workRef.set(workRecord);
             console.log(`[ISWC Mapper] Created ISWC work record: ${workRef.id} for "${job.trackTitle}"`);
 
-            // 3. Record a career event for the memory pipeline
+            // 3. Record a career event for the memory pipeline.
+            // ISSUE-865: this is a DRAFT internal record, not a PRO/CISAC/MLC
+            // registration — the event type and summary must never claim
+            // "registered" until an external registration confirms an ISWC.
             await db.collection("career_events").add({
-                type: "composition_registered",
+                type: "composition_draft_created",
                 userId: job.userId,
                 workId: workRef.id,
                 trackTitle: job.trackTitle,
                 composerCount: composers.length,
+                splitsValid,
                 pandadocDocumentId: job.pandadocDocumentId,
-                summary: `Composition "${job.trackTitle}" registered from signed publishing agreement`,
+                summary: splitsValid
+                    ? `Draft composition record created for "${job.trackTitle}" from signed publishing agreement — not yet registered with a PRO/CISAC.`
+                    : `Draft composition record created for "${job.trackTitle}" with invalid splits (${originalTotalShare}%, expected 100%) — requires correction before registration.`,
                 createdAt: admin.firestore.FieldValue.serverTimestamp(),
             });
 

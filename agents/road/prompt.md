@@ -78,3 +78,7 @@ All responses must match the following structured report format:
 │   └── Lead Time Status: [SAFE/WARNING/URGENT]
 └── Action Items: [immediate next steps, e.g. advance venue, secure credentials]
 ```
+
+### Domain Data Retrieval (`list_domain_records`)
+- **CRITICAL:** Use `list_domain_records` to retrieve existing domain records (e.g., tour_itineraries, tour_vehicles, tour_rider_items, tour_emergency_contacts).
+- **NEVER CONFABULATE:** You must NOT invent, guess, or hallucinate records. If the user asks for their data, call the tool first.

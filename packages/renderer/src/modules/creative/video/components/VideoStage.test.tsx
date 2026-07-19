@@ -1,7 +1,12 @@
+import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { VideoStage } from './VideoStage';
 import { HistoryItem } from '@/core/store';
+
+vi.mock('./VideoJsPlayer', () => ({
+    VideoJsPlayer: React.forwardRef(({ videoUrl }: { videoUrl: string }, _ref) => <video data-testid="video-player" src={videoUrl} />),
+}));
 
 describe('VideoStage Accessibility', () => {
     const mockSetVideoInputs = vi.fn();
@@ -27,9 +32,9 @@ describe('VideoStage Accessibility', () => {
         const anchorBtn = screen.getByTestId('set-anchor-btn');
         const endBtn = screen.getByTestId('set-end-frame-btn');
 
-        // Check for aria-labels
-        expect(anchorBtn).toHaveAttribute('aria-label', 'Set as anchor frame for next generation');
-        expect(endBtn).toHaveAttribute('aria-label', 'Set as end frame for next generation');
+        // Check for aria-labels (updated for temporal inpaint frame validation)
+        expect(anchorBtn).toHaveAttribute('aria-label', 'Set as anchor frame for temporal inpaint (start frame)');
+        expect(endBtn).toHaveAttribute('aria-label', 'Set as end frame for temporal inpaint');
 
         // Check for focus visible styles
         expect(anchorBtn.className).toContain('focus-visible:ring-2');

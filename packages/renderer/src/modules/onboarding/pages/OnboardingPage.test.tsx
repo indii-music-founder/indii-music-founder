@@ -15,10 +15,13 @@ vi.mock('@/core/store', () => ({
                 colors: [], // Added for accessibility test rendering
             },
             goals: [],
-            analyzedTrackIds: []
+            analyzedTrackIds: [],
+            careerProfile: 'dj'
         },
         setUserProfile: mockSetUserProfile,
         setModule: mockSetModule,
+        addActiveAgent: vi.fn(),
+        removeActiveAgent: vi.fn(),
     }),
 }));
 
@@ -36,7 +39,11 @@ vi.mock('@/core/context/ToastContext', () => ({
 // Mock Service
 vi.mock('@/services/onboarding/onboardingService', () => ({
     runOnboardingConversation: vi.fn(),
-    processFunctionCalls: vi.fn(() => ({ updatedProfile: {}, isFinished: false, updates: [] })),
+    processFunctionCalls: vi.fn(() => ({ updatedProfile: {}, isFinished: false, updates: [], warnings: [] })),
+    // useOnboarding's handleSend awaits this unconditionally whenever functionCalls
+    // is non-empty; an incomplete mock leaves it undefined, throws, and silently
+    // routes every GenUI response through the generic catch-block fallback text.
+    externalizeOnboardingBrandAssets: vi.fn().mockResolvedValue({ profile: {}, warnings: [] }),
     calculateProfileStatus: () => ({ coreProgress: 0, releaseProgress: 0, coreMissing: [], releaseMissing: [] }),
     determinePhase: vi.fn(() => 'discovery'),
     generateNaturalFallback: vi.fn(() => 'Mock fallback response'),

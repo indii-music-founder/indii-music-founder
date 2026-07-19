@@ -12,10 +12,11 @@ import {
     Sun,
     Palette,
     RefreshCw,
+    Sparkles,
 } from 'lucide-react';
 import { StoreState, useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
-import { SectionHeader, SettingRow, Toggle } from './SettingsShared';
+import { SectionHeader, SettingRow, Toggle, SelectDropdown } from './SettingsShared';
 
 const AppearanceSection: React.FC = () => {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -29,6 +30,7 @@ const AppearanceSection: React.FC = () => {
     const prefs = (userProfile?.preferences || {}) as any;
     const compactMode = prefs.compactMode ?? false;
     const animationsEnabled = prefs.animationsEnabled ?? true;
+    const agentAmbition = prefs.agentAmbition ?? 'balanced';
 
     return (
         <div>
@@ -49,6 +51,18 @@ const AppearanceSection: React.FC = () => {
                     <Toggle
                         enabled={animationsEnabled}
                         onChange={(v) => updatePreferences({ animationsEnabled: v })}
+                    />
+                </SettingRow>
+
+                <SettingRow icon={Sparkles} label="Agent Ideas" description="How many unsolicited ideas your agents offer. They never act on an idea unless you ask.">
+                    <SelectDropdown
+                        value={agentAmbition}
+                        options={[
+                            { value: 'focused', label: 'Heads down' },
+                            { value: 'balanced', label: 'Balanced' },
+                            { value: 'ideas', label: 'Bring me ideas' },
+                        ]}
+                        onChange={(v) => updatePreferences({ agentAmbition: v as 'focused' | 'balanced' | 'ideas' })}
                     />
                 </SettingRow>
             </div>

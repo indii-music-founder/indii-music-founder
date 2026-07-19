@@ -56,12 +56,11 @@ npm test -- --run --coverage
 ### E2E Tests (Playwright)
 
 ```bash
-# Requires dev server running on :4242
-npm run dev &
-npm run test:e2e -- --grep "feature name"
+# Pre-optimize Vite cache and run specific spec with Firestore emulator
+npx vite optimize --config packages/renderer/vite.config.ts && npx firebase emulators:exec --only firestore "npx playwright test e2e/some-spec.spec.ts"
 
 # Full E2E suite
-npm run test:e2e
+npx vite optimize --config packages/renderer/vite.config.ts && npx firebase emulators:exec --only firestore "npm run test:e2e"
 ```
 
 ### Python Tests

@@ -14,6 +14,7 @@ import { IdentifierService } from '@/services/identity/IdentifierService';
 export class IngestionNotificationService {
     /**
      * Generate an IngestionNotification message from ExtendedGoldenMetadata
+     * Defaults to TestMessage unless explicitly requested otherwise via options.forceIsTestMode
      */
     async generateIngestionNotification(
         metadata: ExtendedGoldenMetadata,
@@ -22,9 +23,10 @@ export class IngestionNotificationService {
         assets?: ReleaseAssets,
         options?: {
             isTestMode?: boolean;
+            forceIsTestMode?: boolean;
             action?: 'NewRelease' | 'Update' | 'Takedown';
         }
-    ): Promise<{ success: boolean; xml?: string; error?: string }> {
+    ): Promise<{ success: boolean; xml?: string; error?: string; structuralLintPassed?: boolean; xsdValidated?: boolean }> {
         try {
             const { DISTRIBUTORS } = await import('@/core/config/distributors');
             const distributor = (DISTRIBUTORS[distributorKey as keyof typeof DISTRIBUTORS] || DISTRIBUTORS.merlin)!;
@@ -37,12 +39,16 @@ export class IngestionNotificationService {
                 logger.debug(`[IngestionNotificationService] Auto-assigned ISRC: ${metadata.isrc}`);
             }
 
-            if (metadata.releaseType !== 'Single' && !metadata.upc) {
+            // ISSUE-783: singles require a release-level UPC/ICPN too — DDEX
+            // packaging and release-identity validation apply uniformly.
+            if (!metadata.upc) {
                 metadata.upc = await IdentifierService.nextUPC();
                 logger.debug(`[IngestionNotificationService] Auto-assigned UPC: ${metadata.upc}`);
             }
 
             // 2. Use the Mapper to generate a complete IngestionNotification object
+            // FAIL-CLOSED: default to TestMessage unless explicitly confirmed for live mode
+            const isLiveMessage = options?.forceIsTestMode === false && options?.isTestMode === false;
             const ern = IngestionNotificationMapper.mapMetadataToIngestionNotification(metadata, {
                 messageId: `MSG-${Date.now()}`,
                 sender: {
@@ -54,7 +60,7 @@ export class IngestionNotificationService {
                     entityName: 'Distributor', // Ideally fetched from distributor config
                 },
                 createdDateTime: timestamp,
-                messageControlType: options?.isTestMode ? 'TestMessage' : 'LiveMessage',
+                messageControlType: isLiveMessage ? 'LiveMessage' : 'TestMessage',
                 action: options?.action,
             }, assets);
 
@@ -68,10 +74,14 @@ export class IngestionNotificationService {
                 return {
                     success: false,
                     error: `IngestionNotification structural validation failed: ${structureErrors.join('; ')}`,
+                    structuralLintPassed: false,
+                    xsdValidated: false,
                 };
             }
 
-            return { success: true, xml };
+            // ISSUE-862: structuralLintPassed means required tags are present —
+            // it is NOT a schema/profile pass. No XSD validator is wired up yet.
+            return { success: true, xml, structuralLintPassed: true, xsdValidated: false };
         } catch (error: unknown) {
             return {
                 success: false,
@@ -88,9 +98,14 @@ export class IngestionNotificationService {
     }
 
     /**
-     * Item 219: Validate a generated IngestionNotification XML string for required structural elements.
-     * Runs before SFTP delivery to catch schema violations early.
-     * Returns an array of error strings; empty array = valid.
+     * Item 219 / ISSUE-862: Structural LINT ONLY — checks required tag presence
+     * via substring matching. This is NOT XSD/profile schema validation; no
+     * real DDEX schema is consulted, so a structurally-tagged-correct document
+     * can still be a malformed or non-conformant ERN. Callers that need a
+     * delivery-ready guarantee must not treat an empty error array as
+     * "XSD validated" — see `structuralLintPassed` / `xsdValidated` on
+     * `generateIngestionNotification()`'s return value.
+     * Returns an array of error strings; empty array = structural lint passed.
      */
     static validateIngestionNotificationXML(xml: string): string[] {
         const errors: string[] = [];

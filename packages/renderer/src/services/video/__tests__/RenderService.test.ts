@@ -52,4 +52,46 @@ describe('RenderService', () => {
 
         await expect(service.renderComposition(config)).rejects.toThrow('Failed to render composition: Render error');
     });
+
+    /**
+     * ISSUE-995: a Cloud Run render with no public URL yet was previously
+     * encoded as a `CLOUD_QUEUED:...` string and callers displayed it as a
+     * "shareable URL". It must now come back as a typed queued result that
+     * cannot be mistaken for a real link.
+     */
+    describe('renderComposition cloud queue (ISSUE-995)', () => {
+        it('returns a real string URL when Cloud Run reports one', async () => {
+            vi.spyOn(service, 'renderCompositionCloud').mockResolvedValue({
+                renderId: 'render-1',
+                bucketName: 'bucket-1',
+                publicUrl: 'https://storage.googleapis.com/bucket-1/render-1.mp4',
+            });
+
+            const result = await service.renderComposition({
+                compositionId: 'Showreel',
+                outputLocation: 'ignored.mp4',
+                inputProps: {},
+                useCloudQueue: true,
+            });
+
+            expect(result).toBe('https://storage.googleapis.com/bucket-1/render-1.mp4');
+        });
+
+        it('returns a typed queued result (not a fake URL) when no public URL exists yet', async () => {
+            vi.spyOn(service, 'renderCompositionCloud').mockResolvedValue({
+                renderId: 'render-2',
+                bucketName: 'bucket-2',
+            });
+
+            const result = await service.renderComposition({
+                compositionId: 'Showreel',
+                outputLocation: 'ignored.mp4',
+                inputProps: {},
+                useCloudQueue: true,
+            });
+
+            expect(result).toEqual({ status: 'queued', renderId: 'render-2', bucketName: 'bucket-2' });
+            expect(typeof result).not.toBe('string');
+        });
+    });
 });

@@ -47,7 +47,7 @@ class KnowledgeBaseService {
                     title: w.title,
                     type: 'WIKI',
                     size: `${(w.content.length / 1024).toFixed(1)} KB`,
-                    date: w.updatedAt.toDate().toLocaleDateString(),
+                    date: w.updatedAt.toDate().toLocaleDateString('en-US'),
                     status: 'indexed' as const,
                     rawName: w.id,
                     mimeType: 'text/markdown',
@@ -133,7 +133,7 @@ class KnowledgeBaseService {
                 f.mimeType.includes('markdown') ? 'MD' :
                     f.mimeType.includes('text') ? 'TXT' : 'FILE',
             size: f.sizeBytes ? `${(parseInt(f.sizeBytes) / 1024).toFixed(1)} KB` : 'Unknown',
-            date: new Date(f.createTime).toLocaleDateString(),
+            date: new Date(f.createTime).toLocaleDateString('en-US'),
             status: f.state === 'ACTIVE' ? 'indexed' : f.state === 'PROCESSING' ? 'processing' : 'error',
             rawName: f.name,
             mimeType: f.mimeType

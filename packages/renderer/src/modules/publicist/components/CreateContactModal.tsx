@@ -17,14 +17,17 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({ isOpen, 
     const { t } = useTranslation();
     const [name, setName] = useState('');
     const [outlet, setOutlet] = useState('');
+    const [email, setEmail] = useState('');
     const [role, setRole] = useState<Contact['role']>('Journalist');
     const [tier, setTier] = useState<Contact['tier']>('Mid');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const toast = useToast();
 
+    const emailValid = !email.trim() || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!name || !outlet) return;
+        if (!name || !outlet || !emailValid) return;
 
         setIsSubmitting(true);
         try {
@@ -37,7 +40,8 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({ isOpen, 
                 influenceScore: tier === 'Top' ? 85 : tier === 'Mid' ? 60 : 25,
                 lastInteraction: 'Never',
                 notes: '',
-                avatarUrl: ''
+                avatarUrl: '',
+                email: email.trim() || undefined
             });
 
             toast.success(`Contact ${name} added to Media Network`);
@@ -45,6 +49,7 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({ isOpen, 
             // Reset and close
             setName('');
             setOutlet('');
+            setEmail('');
             setRole('Journalist');
             setTier('Mid');
             onClose();
@@ -121,6 +126,21 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({ isOpen, 
                             </div>
 
                             <div className="space-y-2">
+                                <label htmlFor="cc-email" className="text-xs font-bold uppercase tracking-wider text-slate-400 ml-1">Email (required to use "Open in Mail")</label>
+                                <input
+                                    id="cc-email"
+                                    type="email"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    placeholder="name@outlet.com"
+                                    className={`w-full bg-white/5 border rounded-xl px-4 py-3 text-white placeholder-slate-600 focus:outline-none focus:ring-2 transition-all font-medium ${emailValid ? 'border-white/10 focus:ring-sonic-purple/50' : 'border-red-500/50 focus:ring-red-500/50'}`}
+                                />
+                                {!emailValid && (
+                                    <p className="text-xs text-red-400 ml-1">Enter a valid email address, or leave blank.</p>
+                                )}
+                            </div>
+
+                            <div className="space-y-2">
                                 <label htmlFor="cc-role" className="text-xs font-bold uppercase tracking-wider text-slate-400 ml-1">Role/Position</label>
                                 <select
                                     id="cc-role"
@@ -158,7 +178,7 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({ isOpen, 
                             <div className="pt-4">
                                 <button
                                     type="submit"
-                                    disabled={isSubmitting || !name || !outlet}
+                                    disabled={isSubmitting || !name || !outlet || !emailValid}
                                     className="w-full py-4 bg-white text-black rounded-xl font-bold text-lg hover:bg-slate-200 active:scale-95 transition-all shadow-lg flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     {isSubmitting ? (

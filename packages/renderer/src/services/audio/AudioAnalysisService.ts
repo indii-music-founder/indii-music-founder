@@ -10,6 +10,7 @@ import type { AudioAnalysisResult } from '@/types/electron';
 
 export class AudioAnalysisService {
     private initialized = false;
+    private static readonly CACHE_HASH_VERSION = 'audio-analysis-v2';
 
 
     private async init(): Promise<void> {
@@ -80,6 +81,7 @@ export class AudioAnalysisService {
                     
                     // Since we removed local Python ML, we use Web Audio for basic features (BPM/Key)
                     const { features } = await this.analyzeDeep(file, fileHash);
+                    this.applyNativeMeasurement(features, result);
                     
                     // Attach the compressed proxy from Electron
                     const proxyBase64 = result.proxyBase64 || undefined;
@@ -137,11 +139,20 @@ export class AudioAnalysisService {
     }
 
     public async generateFileHash(file: Blob): Promise<string> {
-        const CHUNK_SIZE = 1024 * 1024; // 1MB
-        const blob = file.slice(0, CHUNK_SIZE);
-        const arrayBuffer = await blob.arrayBuffer();
+        let arrayBuffer: ArrayBuffer;
+        if (file.arrayBuffer) {
+            arrayBuffer = await file.arrayBuffer();
+        } else {
+            // Fallback for test environments where Blob.arrayBuffer() is not available
+            arrayBuffer = await new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result as ArrayBuffer);
+                reader.onerror = reject;
+                reader.readAsArrayBuffer(file);
+            });
+        }
 
-        const metadata = `${(file as File).name || 'blob'}-${file.size}`;
+        const metadata = `${AudioAnalysisService.CACHE_HASH_VERSION}:${file.type || 'application/octet-stream'}:${file.size}`;
         const encoder = new TextEncoder();
         const metadataBuffer = encoder.encode(metadata);
 
@@ -365,7 +376,7 @@ export class AudioAnalysisService {
             rejectionRisks: []
         };
 
-        return {
+        const features: DeepAudioFeatures = {
             bpm: technical?.bpm ?? 120,
             key: technical?.key ?? 'C',
             scale: technical?.scale ?? 'major',
@@ -377,6 +388,34 @@ export class AudioAnalysisService {
             genre: technical?.genre ?? {},
             moods: technical?.moods ?? { happy: 0, aggressive: 0, relaxed: 0, sad: 0 },
             audit
+        };
+        this.applyNativeMeasurement(features, result);
+        return features;
+    }
+
+    private applyNativeMeasurement(features: DeepAudioFeatures, result: AudioAnalysisResult): void {
+        const nativeAudit = result.features?.audit as { integratedLoudness?: number; truePeakDb?: number; sampleRate?: number; bitDepth?: number; isStereo?: boolean; measurementMethod?: string } | undefined;
+        if (nativeAudit?.measurementMethod !== 'measured' ||
+            !Number.isFinite(nativeAudit.integratedLoudness) ||
+            !Number.isFinite(nativeAudit.truePeakDb) ||
+            !Number.isFinite(nativeAudit.sampleRate)) return;
+        const bitDepth = Number.isFinite(nativeAudit.bitDepth) && nativeAudit.bitDepth! > 0 ? nativeAudit.bitDepth! : 16;
+        const compliance = DSPComplianceValidator.validateAudio(
+            nativeAudit.integratedLoudness!,
+            nativeAudit.truePeakDb!,
+            nativeAudit.sampleRate!,
+            bitDepth,
+            'measured'
+        );
+        features.loudness = nativeAudit.integratedLoudness!;
+        features.audit = {
+            peakLevel: nativeAudit.truePeakDb!,
+            truePeakDb: nativeAudit.truePeakDb!,
+            integratedLoudness: nativeAudit.integratedLoudness!,
+            sampleRate: nativeAudit.sampleRate!,
+            isStereo: nativeAudit.isStereo === true,
+            rejectionRisks: compliance.flags,
+            compliance,
         };
     }
 

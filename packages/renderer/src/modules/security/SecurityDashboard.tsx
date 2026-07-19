@@ -6,7 +6,7 @@ export default function SecurityDashboard() {
     return (
         <div className="flex flex-col h-full bg-background overflow-hidden relative">
             <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/10 blur-[120px] rounded-full pointer-events-none" />
-            <div className="absolute bottom-0 left-0 w-96 h-96 bg-purple-500/10 blur-[120px] rounded-full pointer-events-none" />
+            <div className="absolute bottom-0 left-0 w-96 h-96 bg-green-500/10 blur-[120px] rounded-full pointer-events-none" />
 
             {/* Header */}
             <div className="px-6 py-8 border-b border-white/5 relative z-10 flex-shrink-0">
@@ -75,7 +75,7 @@ export default function SecurityDashboard() {
                     {/* Pane 4: Encryption & E2E */}
                     <div className="bg-white/[0.02] border border-white/5 hover:border-white/10 rounded-2xl p-6 transition-colors flex flex-col min-h-[250px]">
                         <div className="flex items-center gap-3 mb-4">
-                            <div className="p-2 bg-purple-500/10 rounded-lg text-purple-400">
+                            <div className="p-2 bg-green-500/10 rounded-lg text-green-400">
                                 <Shield size={20} />
                             </div>
                             <h2 className="text-lg font-bold text-white">Agent Encryption</h2>

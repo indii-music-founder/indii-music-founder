@@ -2,6 +2,7 @@ import { wrapTool, toolError, toolSuccess } from '../utils/ToolUtils';
 import type { AnyToolFunction } from '../types';
 import { detect_streaming_anomalies } from './AnalysisTools';
 import { run_cohort_analysis } from './BigQueryTools';
+import { importWithRetry } from '@/utils/dynamicImport';
 
 export const AnalyticsTools = {
     calculate_viral_potential_score: wrapTool('calculate_viral_potential_score', async (args: { bpm: number; genre: string; mood: string }) => {
@@ -45,8 +46,8 @@ export const AnalyticsTools = {
 
     benchmark_release_velocity: wrapTool('benchmark_release_velocity', async (args: { trackId?: string; artistId?: string }) => {
         // 1. Get auth and Firestore db
-        const { db, auth } = await import('@/services/firebase');
-        const { doc, getDoc } = await import('firebase/firestore');
+        const { db, auth } = await importWithRetry(() => import('@/services/firebase'));
+        const { doc, getDoc } = await importWithRetry(() => import('firebase/firestore'));
 
         const uid = auth.currentUser?.uid;
         if (!uid) {
@@ -59,13 +60,19 @@ export const AnalyticsTools = {
 
         let followers = 1500; // default benchmark baseline
         let source = 'benchmark_baseline';
+        let personalized = true;
 
         if (snap.exists()) {
             const cached = snap.data();
             if (cached.followers) {
                 followers = cached.followers;
                 source = 'user_spotify_stats';
+                personalized = true;
+            } else {
+                personalized = false;
             }
+        } else {
+            personalized = false;
         }
 
         // Calculate a deterministic release velocity curve based on followers
@@ -74,10 +81,15 @@ export const AnalyticsTools = {
         const day7 = Math.round(followers * 0.45);
         const day30 = Math.round(followers * 1.8);
 
+        const projectionMessage = personalized
+            ? `Velocity benchmark based on your Spotify followers: day 30 projected ${day30.toLocaleString('en-US')} streams.`
+            : `Generic benchmark (not personalized). Using default audience size: day 30 example ${day30.toLocaleString('en-US')} streams. Connect Spotify for personalized projections.`;
+
         return toolSuccess({
             trackId: args.trackId || 'unknown_track',
             followers,
             source,
+            personalized,
             velocityCurve: {
                 day1,
                 day7,
@@ -87,7 +99,7 @@ export const AnalyticsTools = {
                 targetDay30: Math.round(followers * 2.0),
                 performanceRatio: Number((day30 / (followers * 2.0)).toFixed(2))
             }
-        }, `Velocity benchmarking complete. Track ${args.trackId || ''} projected day 30 streams: ${day30.toLocaleString()} based on ${followers.toLocaleString()} followers.`);
+        }, projectionMessage);
     }),
 
     detect_streaming_anomalies,

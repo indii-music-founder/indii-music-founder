@@ -33,7 +33,7 @@ export interface ReleaseDeploymentDocument extends BaseDocument {
     userId: string;
     orgId: string;
     distributorId: string;
-    status: 'validating' | 'pending_review' | 'in_review' | 'processing' | 'submitted' | 'failed' | 'delivered' | 'live' | 'takedown_pending' | 'takedown_complete';
+    status: 'validating' | 'ready_for_manual_submission' | 'pending_review' | 'in_review' | 'processing' | 'submitted' | 'failed' | 'delivered' | 'live' | 'takedown_pending' | 'takedown_complete';
     externalId?: string;
     submittedAt?: Timestamp;
     lastCheckedAt?: Timestamp;
@@ -133,7 +133,8 @@ export type MechanicalLicenseStatus =
     | 'license_requested'
     | 'license_active'
     | 'license_denied'
-    | 'not_required';
+    | 'not_required'
+    | 'clearance_unknown';
 
 export interface MechanicalLicenseDocument extends BaseDocument {
     userId: string;
@@ -200,6 +201,7 @@ export interface TourVehicleDocument {
  * Tour Itinerary Data
  */
 export interface TourItineraryStop {
+    id?: string;
     date: string;
     city: string;
     venue: string;
@@ -214,7 +216,7 @@ export interface TourItineraryDocument {
     tourName: string;
     stops: TourItineraryStop[];
     totalDistance: string;
-    estimatedBudget: string;
+    estimatedBudget?: string;
     createdAt: Timestamp;
     updatedAt: Timestamp;
 }

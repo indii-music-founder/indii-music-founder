@@ -19,25 +19,18 @@ export class CredentialService {
      * Uses Electron's safeStorage for platform-level encryption before storing in the keychain.
      */
     async saveCredentials(distributorId: DistributorId, credentials: Credentials): Promise<void> {
-        try {
-            const secretSerialized = JSON.stringify(credentials);
+        const secretSerialized = JSON.stringify(credentials);
 
-            // Phase 2 Security Enhancement: Encrypt the payload before keychain storage
-            let payloadToStore: string;
-            if (safeStorage.isEncryptionAvailable()) {
-                const encryptedBuffer = safeStorage.encryptString(secretSerialized);
-                payloadToStore = encryptedBuffer.toString('base64');
-            } else {
-                console.error('[CredentialService] safeStorage not available, refusing to store credentials in plaintext');
-                throw new Error('Encryption is not available. Credentials cannot be stored securely.');
-            }
-
-            await keytar.setPassword(SERVICE_NAME, distributorId, payloadToStore);
-            console.info(`[CredentialService] Securely saved credentials for ${distributorId}`);
-        } catch (error) {
-            console.error(`[CredentialService] Failed to save credentials for ${distributorId}`, error);
-            throw error;
+        // Phase 2 Security Enhancement: Encrypt the payload before keychain storage
+        let payloadToStore: string;
+        if (safeStorage.isEncryptionAvailable()) {
+            const encryptedBuffer = safeStorage.encryptString(secretSerialized);
+            payloadToStore = encryptedBuffer.toString('base64');
+        } else {
+            throw new Error('Encryption is not available. Credentials cannot be stored securely.');
         }
+
+        await keytar.setPassword(SERVICE_NAME, distributorId, payloadToStore);
     }
 
     /**
@@ -64,7 +57,7 @@ export class CredentialService {
                         throw new Error('safeStorage not available for decryption');
                     }
                 } catch (_e) {
-                    console.error('[CredentialService] Decryption failed, may be legacy or corrupted data');
+                    console.error('[CredentialService] SafeStorage decryption failed:', _e);
                     // If it's not JSON and decryption failed, we can't use it
                     if (storedPayload.trim().startsWith('{')) return JSON.parse(storedPayload);
                     return null;
@@ -72,8 +65,8 @@ export class CredentialService {
             }
 
             return JSON.parse(decryptedPayload) as Credentials;
-        } catch (error) {
-            console.error(`[CredentialService] Failed to get credentials for ${distributorId}`, error);
+        } catch (_error) {
+            console.error('[CredentialService] getCredentials failed:', _error);
             return null;
         }
     }
@@ -84,8 +77,8 @@ export class CredentialService {
     async deleteCredentials(distributorId: DistributorId): Promise<boolean> {
         try {
             return await keytar.deletePassword(SERVICE_NAME, distributorId);
-        } catch (error) {
-            console.error(`[CredentialService] Failed to delete credentials for ${distributorId}`, error);
+        } catch (_error) {
+            console.error('[CredentialService] deleteCredentials failed:', _error);
             return false;
         }
     }

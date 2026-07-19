@@ -78,10 +78,10 @@ export const EarningsTable = React.memo(({ data, pageSize = 10 }: EarningsTableP
                                             </TableCell>
                                             <TableCell className="text-gray-500 font-mono text-[10px] font-bold tracking-tighter">{row.isrc || 'N/A'}</TableCell>
                                             <TableCell className="text-right text-gray-300 font-bold tabular-nums">
-                                                {row.streams.toLocaleString()}
+                                                {row.streams.toLocaleString('en-US')}
                                             </TableCell>
                                             <TableCell className="text-right text-gray-300 font-bold tabular-nums">
-                                                {row.downloads.toLocaleString()}
+                                                {row.downloads.toLocaleString('en-US')}
                                             </TableCell>
                                             <TableCell className="text-right">
                                                 <span className="font-black text-white bg-dept-licensing/10 px-2 py-1 rounded-lg border border-dept-licensing/20 shadow-sm">
@@ -105,11 +105,6 @@ export const EarningsTable = React.memo(({ data, pageSize = 10 }: EarningsTableP
                                                 Copy Release Name
                                             </ContextMenu.Item>
                                             <ContextMenu.Separator className="h-px bg-white/10 my-1" />
-                                            <ContextMenu.Item
-                                                className="flex items-center gap-2 px-2 py-1.5 text-xs text-dept-licensing hover:bg-dept-licensing/10 rounded outline-none cursor-pointer font-bold"
-                                            >
-                                                View Report Details
-                                            </ContextMenu.Item>
                                         </ContextMenu.Content>
                                     </ContextMenu.Portal>
                                 </ContextMenu.Root>

@@ -2,6 +2,7 @@ import { Inngest } from "inngest";
 import * as admin from "firebase-admin";
 import { GoogleAuth } from "google-auth-library";
 import { FUNCTION_INTELLIGENCE_MODELS } from "../config/models";
+import { getVertexAIBaseUrl } from "./vertexClient";
 
 interface VideoGenerateEventData {
     jobId: string;
@@ -72,8 +73,8 @@ export const generateVideoFn = (inngestClient: Inngest, _geminiApiKey: string | 
                 const projectId = await auth.getProjectId();
                 const accessToken = await client.getAccessToken();
 
-                const location = process.env.VITE_VERTEX_LOCATION || process.env.VERTEX_LOCATION || 'us-central1';
-                const endpoint = `https://${location}-aiplatform.googleapis.com/v1beta/projects/${projectId}/locations/${location}/publishers/google/models/${modelId}:predictLongRunning`;
+                const location = process.env.VERTEX_VIDEO_LOCATION || process.env.VERTEX_LOCATION || 'global';
+                const endpoint = `${getVertexAIBaseUrl(location)}/v1beta/projects/${projectId}/locations/${location}/publishers/google/models/${modelId}:predictLongRunning`;
 
                 interface VertexVideoRequest {
                     instances: Array<{
@@ -291,8 +292,8 @@ export const generateVideoFn = (inngestClient: Inngest, _geminiApiKey: string | 
 
                     // operationName from Vertex is usually: projects/.../locations/.../operations/...
                     // So we can use the aiplatform endpoint directly with the name
-                    const location = process.env.VITE_VERTEX_LOCATION || process.env.VERTEX_LOCATION || 'us-central1';
-                    const statusEndpoint = `https://${location}-aiplatform.googleapis.com/v1beta/${operationName}`;
+                    const location = process.env.VERTEX_VIDEO_LOCATION || process.env.VERTEX_LOCATION || 'global';
+                    const statusEndpoint = `${getVertexAIBaseUrl(location)}/v1beta/${operationName}`;
 
                     const statusResponse = await fetch(statusEndpoint, {
                         headers: {

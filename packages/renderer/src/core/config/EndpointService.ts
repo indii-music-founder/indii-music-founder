@@ -14,11 +14,10 @@ export class EndpointService {
      * handling Emulator (DEV) vs. Production URL construction automatically.
      */
     getFunctionUrl(functionName: string): string {
-        // Match firebase.ts configuration - default to production
-        // If we want to use emulators, we should uncomment this AND the block in firebase.ts
-        // if (env.DEV) {
-        //     return `http://127.0.0.1:5001/${this.projectId}/${this.region}/${functionName}`;
-        // }
+        const useEmulator = env.VITE_USE_FUNCTIONS_EMULATOR === 'true';
+        if (env.DEV && useEmulator) {
+            return `http://127.0.0.1:5001/${this.projectId}/${this.region}/${functionName}`;
+        }
 
         // Production URL
         return `https://${this.region}-${this.projectId}.cloudfunctions.net/${functionName}`;

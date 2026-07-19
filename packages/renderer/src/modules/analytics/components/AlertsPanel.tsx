@@ -15,7 +15,7 @@ const ALERT_STYLES = {
 };
 
 function formatTime(iso: string) {
-    return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return new Date(iso).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
 }
 
 export const AlertsPanel: React.FC<AlertsPanelProps> = ({ alerts, onDismiss }) => {

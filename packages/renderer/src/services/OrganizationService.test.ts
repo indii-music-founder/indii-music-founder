@@ -68,4 +68,50 @@ describe('OrganizationService', () => {
         expect(orgs.length).toBe(1);
         expect(orgs[0]!.id).toBe('org-1');
     });
+
+    // ISSUE-772: the placeholder 'org-default' must never be used as a query scope —
+    // Firestore rules reject org-scope reads for a nonexistent org, silently killing
+    // cross-device history sync.
+    describe('getCurrentOrgId (ISSUE-772 scoping)', () => {
+        const makeStore = (state: Record<string, unknown>) => ({ getState: () => state });
+
+        it('returns null when store is not initialized', () => {
+            OrganizationService.setStore(null);
+            expect(OrganizationService.getCurrentOrgId()).toBeNull();
+        });
+
+        it("resolves the 'org-default' placeholder to 'personal'", () => {
+            OrganizationService.setStore(makeStore({ currentOrganizationId: 'org-default', organizations: [] }));
+            expect(OrganizationService.getCurrentOrgId()).toBe('personal');
+        });
+
+        it("resolves an empty org id to 'personal'", () => {
+            OrganizationService.setStore(makeStore({ currentOrganizationId: '', organizations: [] }));
+            expect(OrganizationService.getCurrentOrgId()).toBe('personal');
+        });
+
+        it('returns a real org id when it exists in the loaded org list', () => {
+            OrganizationService.setStore(makeStore({
+                currentOrganizationId: 'org-abc',
+                organizations: [{ id: 'org-abc' }]
+            }));
+            expect(OrganizationService.getCurrentOrgId()).toBe('org-abc');
+        });
+
+        it("falls back to 'personal' when the current id is stale (not in loaded orgs)", () => {
+            OrganizationService.setStore(makeStore({
+                currentOrganizationId: 'org-deleted',
+                organizations: [{ id: 'org-other' }]
+            }));
+            expect(OrganizationService.getCurrentOrgId()).toBe('personal');
+        });
+
+        it('trusts the current id while orgs have not loaded yet (empty list)', () => {
+            OrganizationService.setStore(makeStore({
+                currentOrganizationId: 'org-abc',
+                organizations: []
+            }));
+            expect(OrganizationService.getCurrentOrgId()).toBe('org-abc');
+        });
+    });
 });

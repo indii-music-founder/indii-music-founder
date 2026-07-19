@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Settings, Layers, Image as ImageIcon, Trash2, Plus } from 'lucide-react';
 import { EditorAssetLibrary } from './EditorAssetLibrary'; // Adjust import path as needed
 import { VideoProject } from '../../store/videoEditorStore';
@@ -14,6 +14,15 @@ interface VideoEditorSidebarProps {
     onLibraryDragStart: (e: React.DragEvent, item: HistoryItem) => void;
 }
 
+const BOUNDS = { width: { min: 64, max: 8192 }, height: { min: 64, max: 8192 }, fps: { min: 1, max: 120 } };
+
+const validateProjectSetting = (key: 'width' | 'height' | 'fps', value: string): number | null => {
+    const num = parseInt(value, 10);
+    if (!Number.isFinite(num) || num <= 0) return null;
+    const bound = BOUNDS[key];
+    return num >= bound.min && num <= bound.max ? num : null;
+};
+
 export const VideoEditorSidebar: React.FC<VideoEditorSidebarProps> = ({
     activeTab,
     setActiveTab,
@@ -23,27 +32,42 @@ export const VideoEditorSidebar: React.FC<VideoEditorSidebarProps> = ({
     addTrack,
     onLibraryDragStart
 }) => {
+    const [errors, setErrors] = useState<{ width?: string; height?: string; fps?: string }>({});
+
+    const handleSettingChange = (key: 'width' | 'height' | 'fps', value: string) => {
+        const validated = validateProjectSetting(key, value);
+        if (validated !== null) {
+            updateProject({ [key]: validated });
+            setErrors(prev => ({ ...prev, [key]: undefined }));
+        } else if (value === '') {
+            setErrors(prev => ({ ...prev, [key]: 'Required' }));
+        } else {
+            const bound = BOUNDS[key];
+            setErrors(prev => ({ ...prev, [key]: `Must be ${bound.min}–${bound.max}` }));
+        }
+    };
+
     return (
         <div className="flex h-full border-r border-[--border]">
             {/* Sidebar Tabs */}
             <div className="w-12 bg-gray-950 flex flex-col items-center py-4 border-r border-[#1a1a1a] gap-3">
                 <button
                     onClick={() => setActiveTab('project')}
-                    className={`p-1 rounded-lg transition-colors ${activeTab === 'project' ? 'bg-purple-600/20 text-purple-400' : 'text-gray-500 hover:text-gray-300 hover:bg-gray-900'}`}
+                    className={`p-1 rounded-lg transition-colors ${activeTab === 'project' ? 'bg-green-600/20 text-green-400' : 'text-gray-500 hover:text-gray-300 hover:bg-gray-900'}`}
                     title="Project Settings"
                 >
                     <Settings size={16} />
                 </button>
                 <button
                     onClick={() => setActiveTab('tracks')}
-                    className={`p-1 rounded-lg transition-colors ${activeTab === 'tracks' ? 'bg-purple-600/20 text-purple-400' : 'text-gray-500 hover:text-gray-300 hover:bg-gray-900'}`}
+                    className={`p-1 rounded-lg transition-colors ${activeTab === 'tracks' ? 'bg-green-600/20 text-green-400' : 'text-gray-500 hover:text-gray-300 hover:bg-gray-900'}`}
                     title="Tracks"
                 >
                     <Layers size={16} />
                 </button>
                 <button
                     onClick={() => setActiveTab('assets')}
-                    className={`p-1 rounded-lg transition-colors ${activeTab === 'assets' ? 'bg-purple-600/20 text-purple-400' : 'text-gray-500 hover:text-gray-300 hover:bg-gray-900'}`}
+                    className={`p-1 rounded-lg transition-colors ${activeTab === 'assets' ? 'bg-green-600/20 text-green-400' : 'text-gray-500 hover:text-gray-300 hover:bg-gray-900'}`}
                     title="Assets Library"
                 >
                     <ImageIcon size={16} />
@@ -60,12 +84,12 @@ export const VideoEditorSidebar: React.FC<VideoEditorSidebarProps> = ({
                     <div className="p-4 space-y-4">
                         <h3 className="text-lg font-semibold">Project Settings</h3>
 
-                        <div className="bg-purple-900/20 border border-purple-500/30 p-3 rounded-md">
-                            <h4 className="text-xs font-bold text-purple-400 uppercase mb-2">Video Presets</h4>
+                        <div className="bg-green-900/20 border border-green-500/30 p-3 rounded-md">
+                            <h4 className="text-xs font-bold text-green-400 uppercase mb-2">Video Presets</h4>
                             <div className="grid grid-cols-2 gap-2">
                                 <button
                                     onClick={() => updateProject({ width: 1920, height: 1080, fps: 24 })}
-                                    className="text-xs bg-purple-600 hover:bg-purple-500 text-white py-1 px-2 rounded transition-colors"
+                                    className="text-xs bg-green-600 hover:bg-green-500 text-white py-1 px-2 rounded transition-colors"
                                 >
                                     1080p Landscape (24fps)
                                 </button>
@@ -83,40 +107,43 @@ export const VideoEditorSidebar: React.FC<VideoEditorSidebarProps> = ({
                             <input
                                 type="text"
                                 id="projectName"
-                                className="mt-1 block w-full rounded-md bg-gray-800 border-gray-700 text-white shadow-sm focus:border-purple-500 focus:ring-purple-500 sm:text-sm"
+                                className="mt-1 block w-full rounded-md bg-gray-800 border-gray-700 text-white shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm"
                                 value={project.name}
                                 onChange={(e) => updateProject({ name: e.target.value })}
                             />
                         </div>
                         <div>
-                            <label htmlFor="projectWidth" className="block text-sm font-medium text-gray-400">Width</label>
+                            <label htmlFor="projectWidth" className="block text-sm font-medium text-gray-400">Width (64–8192)</label>
                             <input
                                 type="number"
                                 id="projectWidth"
-                                className="mt-1 block w-full rounded-md bg-gray-800 border-gray-700 text-white shadow-sm focus:border-purple-500 focus:ring-purple-500 sm:text-sm"
+                                className={`mt-1 block w-full rounded-md bg-gray-800 text-white shadow-sm focus:ring-green-500 sm:text-sm transition-colors ${errors.width ? 'border-red-500 focus:border-red-500' : 'border-gray-700 focus:border-green-500'}`}
                                 value={project.width}
-                                onChange={(e) => updateProject({ width: parseInt(e.target.value) })}
+                                onChange={(e) => handleSettingChange('width', e.target.value)}
                             />
+                            {errors.width && <p className="text-xs text-red-400 mt-1">{errors.width}</p>}
                         </div>
                         <div>
-                            <label htmlFor="projectHeight" className="block text-sm font-medium text-gray-400">Height</label>
+                            <label htmlFor="projectHeight" className="block text-sm font-medium text-gray-400">Height (64–8192)</label>
                             <input
                                 type="number"
                                 id="projectHeight"
-                                className="mt-1 block w-full rounded-md bg-gray-800 border-gray-700 text-white shadow-sm focus:border-purple-500 focus:ring-purple-500 sm:text-sm"
+                                className={`mt-1 block w-full rounded-md bg-gray-800 text-white shadow-sm focus:ring-green-500 sm:text-sm transition-colors ${errors.height ? 'border-red-500 focus:border-red-500' : 'border-gray-700 focus:border-green-500'}`}
                                 value={project.height}
-                                onChange={(e) => updateProject({ height: parseInt(e.target.value) })}
+                                onChange={(e) => handleSettingChange('height', e.target.value)}
                             />
+                            {errors.height && <p className="text-xs text-red-400 mt-1">{errors.height}</p>}
                         </div>
                         <div>
-                            <label htmlFor="projectFps" className="block text-sm font-medium text-gray-400">FPS</label>
+                            <label htmlFor="projectFps" className="block text-sm font-medium text-gray-400">FPS (1–120)</label>
                             <input
                                 type="number"
                                 id="projectFps"
-                                className="mt-1 block w-full rounded-md bg-gray-800 border-gray-700 text-white shadow-sm focus:border-purple-500 focus:ring-purple-500 sm:text-sm"
+                                className={`mt-1 block w-full rounded-md bg-gray-800 text-white shadow-sm focus:ring-green-500 sm:text-sm transition-colors ${errors.fps ? 'border-red-500 focus:border-red-500' : 'border-gray-700 focus:border-green-500'}`}
                                 value={project.fps}
-                                onChange={(e) => updateProject({ fps: parseInt(e.target.value) })}
+                                onChange={(e) => handleSettingChange('fps', e.target.value)}
                             />
+                            {errors.fps && <p className="text-xs text-red-400 mt-1">{errors.fps}</p>}
                         </div>
                     </div>
                 )}
@@ -138,7 +165,7 @@ export const VideoEditorSidebar: React.FC<VideoEditorSidebarProps> = ({
                         ))}
                         <button
                             onClick={() => addTrack('video')}
-                            className="w-full bg-purple-600 hover:bg-purple-500 text-white py-2 px-4 rounded-md text-sm font-medium transition-colors flex items-center justify-center gap-2"
+                            className="w-full bg-green-600 hover:bg-green-500 text-white py-2 px-4 rounded-md text-sm font-medium transition-colors flex items-center justify-center gap-2"
                         >
                             <Plus size={16} /> Add Track
                         </button>

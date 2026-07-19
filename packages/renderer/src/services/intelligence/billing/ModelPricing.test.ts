@@ -53,7 +53,7 @@ describe('ModelPricing', () => {
         });
 
         it('charges only per-image when no prompt tokens given', () => {
-            const cost = estimateCostUsd('gemini-3.1-flash-image-preview', { images: 3 });
+            const cost = estimateCostUsd('gemini-3.1-flash-image', { images: 3 });
             expect(cost).toBeCloseTo(3 * 0.039, 6);
         });
     });
@@ -74,9 +74,12 @@ describe('ModelPricing', () => {
     });
 
     describe('estimateCostUsd — TTS models', () => {
-        it('charges per million characters', () => {
-            const cost = estimateCostUsd('gemini-2.5-pro-tts', { characters: 500_000 });
-            expect(cost).toBeCloseTo((500_000 / 1_000_000) * 16.0, 6);
+        it('charges text input tokens plus 25 audio tokens per generated second', () => {
+            const cost = estimateCostUsd('gemini-3.1-flash-tts-preview', {
+                inputTokens: 1_000_000,
+                seconds: 100,
+            });
+            expect(cost).toBeCloseTo(1 + ((100 * 25) / 1_000_000) * 20, 6);
         });
     });
 
@@ -119,7 +122,9 @@ describe('ModelPricing', () => {
                         expect(pricing.perSecond, model).toBeGreaterThan(0);
                         break;
                     case 'tts':
-                        expect(pricing.perMillionChars, model).toBeGreaterThan(0);
+                        expect(pricing.inputPerMillion, model).toBeGreaterThan(0);
+                        expect(pricing.outputPerMillionAudioTokens, model).toBeGreaterThan(0);
+                        expect(pricing.audioTokensPerSecond, model).toBeGreaterThan(0);
                         break;
                 }
             }

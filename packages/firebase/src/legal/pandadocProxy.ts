@@ -8,12 +8,12 @@
  * the PandaDoc API directly with a VITE_-prefixed key.
  */
 import * as functions from "firebase-functions/v1";
+import * as admin from "firebase-admin";
 import { getPandaDocApiKey, pandaDocApiKey } from "../config/secrets";
+import { validateAppCheckV1 } from "../middleware/appCheck";
 
 const PANDADOC_API = "https://api.pandadoc.com/public/v1";
 
-// Common enforcements
-const ENFORCE_APP_CHECK = process.env.ENFORCE_APP_CHECK === "true";
 const REGION = "us-central1";
 
 function getHeaders(apiKey: string): Record<string, string> {
@@ -24,6 +24,37 @@ function getHeaders(apiKey: string): Record<string, string> {
 }
 
 /**
+ * Ownership gate (ISSUE-889): every document created through this proxy is
+ * recorded in `pandadoc_documents/{documentId}` with its owner uid. All
+ * status/send/session operations must pass this check — the platform API key
+ * can reach ANY document in the PandaDoc account, so authentication alone is
+ * not authorization.
+ */
+async function assertPandaDocOwnership(documentId: string, uid: string): Promise<void> {
+    const snap = await admin.firestore().doc(`pandadoc_documents/${documentId}`).get();
+    // Fail closed: unknown documents (including pre-registry ones) are denied.
+    // Same error for "missing" and "not yours" so existence doesn't leak.
+    if (!snap.exists || snap.data()?.ownerUid !== uid) {
+        throw new functions.https.HttpsError(
+            "permission-denied",
+            "Document was not found for this user.",
+        );
+    }
+}
+
+async function recordPandaDocOwnership(
+    documentId: string,
+    uid: string,
+    meta: Record<string, unknown>,
+): Promise<void> {
+    await admin.firestore().doc(`pandadoc_documents/${documentId}`).set({
+        ownerUid: uid,
+        ...meta,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+}
+
+/**
  * List available PandaDoc document templates.
  */
 export const pandadocListTemplates = functions
@@ -31,10 +62,11 @@ export const pandadocListTemplates = functions
     .runWith({
         timeoutSeconds: 30,
         memory: "256MB",
-        enforceAppCheck: ENFORCE_APP_CHECK,
+        enforceAppCheck: false,
         secrets: [pandaDocApiKey],
     })
     .https.onCall(async (_data: unknown, context: functions.https.CallableContext) => {
+        validateAppCheckV1(context);
         if (!context.auth) {
             throw new functions.https.HttpsError("unauthenticated", "Authentication required.");
         }
@@ -65,10 +97,11 @@ export const pandadocCreateDocument = functions
     .runWith({
         timeoutSeconds: 60,
         memory: "256MB",
-        enforceAppCheck: ENFORCE_APP_CHECK,
+        enforceAppCheck: false,
         secrets: [pandaDocApiKey],
     })
     .https.onCall(async (data: unknown, context: functions.https.CallableContext) => {
+        validateAppCheckV1(context);
         if (!context.auth) {
             throw new functions.https.HttpsError("unauthenticated", "Authentication required.");
         }
@@ -122,6 +155,13 @@ export const pandadocCreateDocument = functions
         }
 
         const doc = await response.json();
+
+        // Record ownership so send/status/session calls can be gated (ISSUE-889)
+        await recordPandaDocOwnership(doc.id, context.auth.uid, {
+            name: doc.name,
+            templateId: input.templateId || null,
+        });
+
         return {
             id: doc.id,
             name: doc.name,
@@ -140,10 +180,11 @@ export const pandadocSendDocument = functions
     .runWith({
         timeoutSeconds: 30,
         memory: "256MB",
-        enforceAppCheck: ENFORCE_APP_CHECK,
+        enforceAppCheck: false,
         secrets: [pandaDocApiKey],
     })
     .https.onCall(async (data: unknown, context: functions.https.CallableContext) => {
+        validateAppCheckV1(context);
         if (!context.auth) {
             throw new functions.https.HttpsError("unauthenticated", "Authentication required.");
         }
@@ -152,6 +193,7 @@ export const pandadocSendDocument = functions
         if (!input.documentId) {
             throw new functions.https.HttpsError("invalid-argument", "documentId is required.");
         }
+        await assertPandaDocOwnership(input.documentId, context.auth.uid);
 
         const apiKey = getPandaDocApiKey();
         const response = await fetch(`${PANDADOC_API}/documents/${input.documentId}/send`, {
@@ -179,10 +221,11 @@ export const pandadocGetDocumentStatus = functions
     .runWith({
         timeoutSeconds: 30,
         memory: "256MB",
-        enforceAppCheck: ENFORCE_APP_CHECK,
+        enforceAppCheck: false,
         secrets: [pandaDocApiKey],
     })
     .https.onCall(async (data: unknown, context: functions.https.CallableContext) => {
+        validateAppCheckV1(context);
         if (!context.auth) {
             throw new functions.https.HttpsError("unauthenticated", "Authentication required.");
         }
@@ -191,6 +234,7 @@ export const pandadocGetDocumentStatus = functions
         if (!input.documentId) {
             throw new functions.https.HttpsError("invalid-argument", "documentId is required.");
         }
+        await assertPandaDocOwnership(input.documentId, context.auth.uid);
 
         const apiKey = getPandaDocApiKey();
         const response = await fetch(`${PANDADOC_API}/documents/${input.documentId}`, {
@@ -226,10 +270,11 @@ export const pandadocGetSigningLink = functions
     .runWith({
         timeoutSeconds: 30,
         memory: "256MB",
-        enforceAppCheck: ENFORCE_APP_CHECK,
+        enforceAppCheck: false,
         secrets: [pandaDocApiKey],
     })
     .https.onCall(async (data: unknown, context: functions.https.CallableContext) => {
+        validateAppCheckV1(context);
         if (!context.auth) {
             throw new functions.https.HttpsError("unauthenticated", "Authentication required.");
         }
@@ -238,6 +283,7 @@ export const pandadocGetSigningLink = functions
         if (!input.documentId || !input.recipientId) {
             throw new functions.https.HttpsError("invalid-argument", "documentId and recipientId are required.");
         }
+        await assertPandaDocOwnership(input.documentId, context.auth.uid);
 
         const apiKey = getPandaDocApiKey();
         const response = await fetch(

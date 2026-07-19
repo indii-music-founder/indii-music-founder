@@ -47,7 +47,7 @@ export const BankPanel: React.FC = () => {
             splits.forEach(s => splitMap[s.userId] = s.percentage);
 
             const data: WaterfallData = {
-                gross_revenue: parseFloat(amount),
+                gross: parseFloat(amount),
                 splits: splitMap
             };
 
@@ -257,7 +257,8 @@ export const BankPanel: React.FC = () => {
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="p-6 rounded-2xl bg-black/40 border border-white/10 group hover:border-dept-distribution/50 transition-all">
                                         <span className="block text-[10px] font-black text-gray-600 uppercase tracking-widest mb-2">Withholding</span>
-                                        <span data-testid="bank-tax-withholding-rate" className="text-base font-black text-white italic">{(taxReport.withholding_rate * 100).toFixed(1)}%</span>
+                                        {/* withholding_rate is already a percent value (e.g. 30.0 = 30%) — do NOT multiply by 100 */}
+                                        <span data-testid="bank-tax-withholding-rate" className="text-base font-black text-white italic">{taxReport.withholding_rate.toFixed(1)}%</span>
                                     </div>
                                     <div className="p-6 rounded-2xl bg-black/40 border border-white/10 group hover:border-dept-licensing/50 transition-all">
                                         <span className="block text-[10px] font-black text-gray-600 uppercase tracking-widest mb-2">Payout Node</span>
@@ -268,16 +269,16 @@ export const BankPanel: React.FC = () => {
                                 <div className="bg-black border border-gray-800 rounded-2xl p-6 space-y-4">
                                     <div className="flex justify-between items-end">
                                         <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Gross Inventory</span>
-                                        <span className="text-lg font-black text-gray-300 italic">${parseFloat(amount).toLocaleString()}</span>
+                                        <span className="text-lg font-black text-gray-300 italic">${parseFloat(amount).toLocaleString('en-US')}</span>
                                     </div>
                                     <div className="flex justify-between items-end">
                                         <span className="text-[10px] font-black text-dept-marketing uppercase tracking-widest">Compliance Levy</span>
-                                        <span className="text-lg font-black text-dept-marketing italic">-${(parseFloat(amount) * taxReport.withholding_rate).toLocaleString()}</span>
+                                        <span className="text-lg font-black text-dept-marketing italic">-${(parseFloat(amount) * (taxReport.withholding_rate / 100)).toLocaleString('en-US')}</span>
                                     </div>
                                     <div className="border-t border-gray-900 pt-4 flex justify-between items-end">
                                         <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Net Disbursable</span>
                                         <span data-testid="bank-tax-net-disbursable" className="text-lg font-black text-white italic tracking-tighter shadow-dept-licensing/20 drop-shadow-lg">
-                                            ${(parseFloat(amount) * (1 - taxReport.withholding_rate)).toLocaleString()}
+                                            ${(parseFloat(amount) * (1 - taxReport.withholding_rate / 100)).toLocaleString('en-US')}
                                         </span>
                                     </div>
                                 </div>
@@ -295,31 +296,36 @@ export const BankPanel: React.FC = () => {
                             <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
                                 <div className="flex items-center justify-between border-b border-gray-800 pb-6">
                                     <h4 className="text-xl font-black text-white italic uppercase tracking-tighter">Waterfall Flow</h4>
-                                    <div className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Processed: {new Date(waterfallReport.processed_at).toLocaleTimeString()}</div>
+                                    <div className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Processed: {new Date(waterfallReport.processed_at).toLocaleTimeString('en-US')}</div>
                                 </div>
 
                                 <div className="space-y-4">
-                                    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                                    {Object.entries(waterfallReport.distributions).map(([user, distAmount], _i) => (
+                                    {Object.entries(waterfallReport.distributions).map(([user, dist]) => (
                                         <div key={user} className="flex items-center gap-4 group">
                                             <div className="w-1.5 h-1.5 rounded-full bg-dept-creative group-hover:scale-150 transition-all" />
                                             <div className="flex-1 p-4 bg-black/40 border border-white/10 rounded-xl flex items-center justify-between group-hover:border-dept-creative/30 transition-all">
                                                 <div className="flex flex-col">
-                                                    <span className="text-[9px] font-black text-gray-600 uppercase tracking-widest">Beneficiary Node</span>
+                                                    <span className="text-[9px] font-black text-gray-600 uppercase tracking-widest">Beneficiary Node · {dist.split}</span>
                                                     <span className="text-xs font-bold text-gray-300 font-mono">{user}</span>
                                                 </div>
                                                 <div className="flex items-center gap-3">
                                                     <ArrowDownRight className="w-4 h-4 text-dept-creative opacity-20 group-hover:opacity-100 transition-all" />
-                                                    <span className="text-xl font-black text-white italic">${distAmount.toLocaleString()}</span>
+                                                    <span className="text-xl font-black text-white italic">${dist.amount.toLocaleString('en-US')}</span>
                                                 </div>
                                             </div>
                                         </div>
                                     ))}
                                 </div>
 
-                                <div className="mt-8 pt-6 border-t border-gray-800 flex justify-between items-center">
-                                    <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Total Dispersed</span>
-                                    <span className="text-lg font-black text-white italic">${waterfallReport.net_revenue.toLocaleString()}</span>
+                                <div className="mt-8 pt-6 border-t border-gray-800 space-y-2">
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Platform Fee ({waterfallReport.platform_fee.percent})</span>
+                                        <span className="text-xs font-bold text-gray-400 font-mono">-${waterfallReport.platform_fee.amount.toLocaleString('en-US')}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Total Dispersed</span>
+                                        <span className="text-lg font-black text-white italic">${waterfallReport.total_distributed.toLocaleString('en-US')}</span>
+                                    </div>
                                 </div>
                             </div>
                         )

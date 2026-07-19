@@ -15,7 +15,7 @@
  * live in SettingsShared.tsx.
  */
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
     User,
@@ -24,6 +24,7 @@ import {
     Palette,
     Shield,
     Monitor,
+    Smartphone,
     LucideIcon,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -34,16 +35,22 @@ import NotificationsSection from './settings-panel/NotificationsSection';
 import AppearanceSection from './settings-panel/AppearanceSection';
 import SecuritySection from './settings-panel/SecuritySection';
 import DesktopSection from './settings-panel/DesktopSection';
+import RemoteSection from './settings-panel/RemoteSection';
+import {
+    getRequestedSettingsSection,
+    requestSettingsSection,
+    SETTINGS_SECTION_REQUEST_EVENT,
+    type SettingsSectionId,
+} from './SettingsNavigation';
 
 // ---------------------------------------------------------------------------
 // Types & Navigation Config
 // ---------------------------------------------------------------------------
 
-type SettingsSection = 'profile' | 'connections' | 'notifications' | 'appearance' | 'desktop' | 'security';
-
-const SECTIONS: Array<{ id: SettingsSection; label: string; icon: LucideIcon; description: string }> = [
+const SECTIONS: Array<{ id: SettingsSectionId; label: string; icon: LucideIcon; description: string }> = [
     { id: 'profile', label: 'Profile', icon: User, description: 'Name, avatar, and bio' },
     { id: 'connections', label: 'Connected Services', icon: Link2, description: 'Email, social, and integrations' },
+    { id: 'remote', label: 'Mobile Remote', icon: Smartphone, description: 'Pair and sync your phone or tablet' },
     { id: 'notifications', label: 'Notifications', icon: Bell, description: 'Push, email, and sound preferences' },
     { id: 'appearance', label: 'Appearance', icon: Palette, description: 'Theme, layout, and animations' },
     { id: 'desktop', label: 'Desktop & Updates', icon: Monitor, description: 'App version, auto-updates' },
@@ -56,12 +63,27 @@ const SECTIONS: Array<{ id: SettingsSection; label: string; icon: LucideIcon; de
 
 const SettingsPanel: React.FC = () => {
     const { t } = useTranslation();
-    const [activeSection, setActiveSection] = useState<SettingsSection>('profile');
+    const [activeSection, setActiveSection] = useState<SettingsSectionId>(getRequestedSettingsSection);
+
+    useEffect(() => {
+        const handleSectionRequest = (event: Event) => {
+            const section = (event as CustomEvent<SettingsSectionId>).detail;
+            setActiveSection(section);
+        };
+        window.addEventListener(SETTINGS_SECTION_REQUEST_EVENT, handleSectionRequest);
+        return () => window.removeEventListener(SETTINGS_SECTION_REQUEST_EVENT, handleSectionRequest);
+    }, []);
+
+    const selectSection = (section: SettingsSectionId) => {
+        setActiveSection(section);
+        requestSettingsSection(section);
+    };
 
     const renderSection = () => {
         switch (activeSection) {
             case 'profile': return <ProfileSection />;
             case 'connections': return <ConnectionsSection />;
+            case 'remote': return <RemoteSection />;
             case 'notifications': return <NotificationsSection />;
             case 'appearance': return <AppearanceSection />;
             case 'desktop': return <DesktopSection />;
@@ -80,7 +102,7 @@ const SettingsPanel: React.FC = () => {
                     return (
                         <button
                             key={section.id}
-                            onClick={() => setActiveSection(section.id)}
+                            onClick={() => selectSection(section.id)}
                             className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all ${
                                 isActive
                                     ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20'
@@ -101,7 +123,7 @@ const SettingsPanel: React.FC = () => {
                     return (
                         <button
                             key={section.id}
-                            onClick={() => setActiveSection(section.id)}
+                            onClick={() => selectSection(section.id)}
                             className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium whitespace-nowrap transition-all ${
                                 activeSection === section.id
                                     ? 'bg-cyan-500/20 text-cyan-400'

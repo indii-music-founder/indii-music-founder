@@ -15,6 +15,7 @@
  */
 
 import { logger } from '@/utils/logger';
+import * as Sentry from '@sentry/react';
 import { auth, db } from '@/services/firebase';
 import { doc, getDoc, setDoc, deleteDoc, onSnapshot, collection, Unsubscribe } from 'firebase/firestore';
 import { GmailProvider } from './GmailProvider';
@@ -164,7 +165,9 @@ class EmailServiceImpl {
                 });
                 const profile = await profileRes.json();
                 email = profile.emailAddress || '';
-            } catch {
+            } catch (err: unknown) {
+                logger.error('[EmailService] Failed to fetch Gmail profile:', err);
+                Sentry.captureException(err);
                 email = auth.currentUser?.email || '';
             }
             displayName = auth.currentUser?.displayName || email;
@@ -177,7 +180,9 @@ class EmailServiceImpl {
                 const profile = await profileRes.json();
                 email = profile.mail || profile.userPrincipalName || '';
                 displayName = profile.displayName || email;
-            } catch {
+            } catch (err: unknown) {
+                logger.error('[EmailService] Failed to fetch Outlook profile:', err);
+                Sentry.captureException(err);
                 email = '';
             }
         }

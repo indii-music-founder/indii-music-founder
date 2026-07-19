@@ -1,11 +1,12 @@
 import { useTranslation } from 'react-i18next';
-import React, { useState } from 'react';
-import { X, ChevronRight, ChevronLeft, Wand2, Loader2, Copy, CheckCircle, ExternalLink, Image as ImageIcon } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { X, ChevronRight, ChevronLeft, Wand2, Loader2, Copy, CheckCircle, ExternalLink, Image as ImageIcon, Download, Link } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
 import { SOCIAL_TOOLS } from '../tools';
 import BrandAssetsDrawer from '../../creative/components/BrandAssetsDrawer';
 import { ImageAsset } from '../types';
 import { logger } from '@/utils/logger';
+import { useStore } from '@/core/store';
 
 interface AccountCreationWizardProps {
     onClose: () => void;
@@ -18,20 +19,59 @@ const PLATFORMS = [
     { name: 'TikTok', url: 'https://www.tiktok.com/signup', color: 'bg-black' },
 ];
 
+interface AccountSetupDraft {
+    step: number;
+    platformName: string;
+    brandName: string;
+    industry: string;
+    generatedIdentity: { handles: string[]; bios: string[] } | null;
+    profileImage: ImageAsset | null;
+    bannerImage: ImageAsset | null;
+    transferredAssetUrls: string[];
+}
+
+const draftStorageKey = (userId: string, projectId: string) => `indii:social-account-setup:${userId}:${projectId}`;
+
+const readDraft = (userId: string, projectId: string): AccountSetupDraft | null => {
+    if (typeof window === 'undefined') return null;
+    try {
+        const raw = window.localStorage.getItem(draftStorageKey(userId, projectId));
+        if (!raw) return null;
+        const draft = JSON.parse(raw) as AccountSetupDraft;
+        return typeof draft.platformName === 'string' ? draft : null;
+    } catch {
+        return null;
+    }
+};
+
+const canTransferAsset = (asset: ImageAsset | null) => Boolean(asset?.imageUrl && /^(https?:|blob:|data:image\/)/i.test(asset.imageUrl));
+
 export default function AccountCreationWizard({ onClose }: AccountCreationWizardProps) {
     const { t } = useTranslation();
     const toast = useToast();
-    const [step, setStep] = useState(1);
-    const [platform, setPlatform] = useState(PLATFORMS[0]!);
-    const [brandName, setBrandName] = useState('');
-    const [industry, setIndustry] = useState('');
+    const draftScope = useMemo(() => {
+        const state = useStore.getState();
+        return { userId: state.userProfile?.id || 'anonymous', projectId: state.currentProjectId || 'default' };
+    }, []);
+    const restoredDraft = useMemo(() => readDraft(draftScope.userId, draftScope.projectId), [draftScope]);
+    const [step, setStep] = useState(restoredDraft?.step || 1);
+    const [platform, setPlatform] = useState(() => PLATFORMS.find(({ name }) => name === restoredDraft?.platformName) || PLATFORMS[0]!);
+    const [brandName, setBrandName] = useState(restoredDraft?.brandName || '');
+    const [industry, setIndustry] = useState(restoredDraft?.industry || '');
 
-    const [generatedIdentity, setGeneratedIdentity] = useState<{ handles: string[], bios: string[] } | null>(null);
+    const [generatedIdentity, setGeneratedIdentity] = useState<{ handles: string[], bios: string[] } | null>(restoredDraft?.generatedIdentity || null);
     const [isGenerating, setIsGenerating] = useState(false);
 
-    const [profileImage, setProfileImage] = useState<ImageAsset | null>(null);
-    const [bannerImage, setBannerImage] = useState<ImageAsset | null>(null);
+    const [profileImage, setProfileImage] = useState<ImageAsset | null>(restoredDraft?.profileImage || null);
+    const [bannerImage, setBannerImage] = useState<ImageAsset | null>(restoredDraft?.bannerImage || null);
+    const [transferredAssetUrls, setTransferredAssetUrls] = useState<string[]>(restoredDraft?.transferredAssetUrls || []);
     const [selectingFor, setSelectingFor] = useState<'profile' | 'banner' | null>(null);
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        const draft: AccountSetupDraft = { step, platformName: platform.name, brandName, industry, generatedIdentity, profileImage, bannerImage, transferredAssetUrls };
+        window.localStorage.setItem(draftStorageKey(draftScope.userId, draftScope.projectId), JSON.stringify(draft));
+    }, [brandName, bannerImage, draftScope, generatedIdentity, industry, platform.name, profileImage, step, transferredAssetUrls]);
 
     const handleGenerateIdentity = async () => {
         if (!brandName || !industry) {
@@ -57,9 +97,24 @@ export default function AccountCreationWizard({ onClose }: AccountCreationWizard
         }
     };
 
-    const copyToClipboard = (text: string) => {
-        navigator.clipboard.writeText(text);
-        toast.success("Copied to clipboard");
+    const copyToClipboard = async (text: string): Promise<boolean> => {
+        try {
+            await navigator.clipboard.writeText(text);
+            toast.success("Copied to clipboard");
+            return true;
+        } catch {
+            toast.error('Clipboard access was unavailable.');
+            return false;
+        }
+    };
+
+    const markTransferred = (asset: ImageAsset) => setTransferredAssetUrls(urls => urls.includes(asset.imageUrl) ? urls : [...urls, asset.imageUrl]);
+
+    const downloadAsset = async (asset: ImageAsset) => {
+        if (!canTransferAsset(asset)) return toast.error('This asset is unavailable. Choose it again before continuing.');
+        const { downloadAsset: download } = await import('@/utils/download');
+        if (await download(asset.imageUrl, `${asset.title || 'social-asset'}.png`)) markTransferred(asset);
+        else toast.error('Could not download this asset. Choose it again or use Open.');
     };
 
     const renderStep1_Platform = () => (
@@ -116,7 +171,7 @@ export default function AccountCreationWizard({ onClose }: AccountCreationWizard
                 <button
                     onClick={handleGenerateIdentity}
                     disabled={isGenerating}
-                    className="text-sm flex items-center gap-2 text-purple-400 hover:text-purple-300 disabled:opacity-50"
+                    className="text-sm flex items-center gap-2 text-green-400 hover:text-green-300 disabled:opacity-50"
                 >
                     {isGenerating ? <Loader2 size={16} className="animate-spin" /> : <Wand2 size={16} />}
                     {generatedIdentity ? 'Regenerate' : 'Generate Ideas'}
@@ -219,13 +274,17 @@ export default function AccountCreationWizard({ onClose }: AccountCreationWizard
 
     const renderStep4_Finish = () => (
         <div className="space-y-8 text-center py-8">
-            <div className="w-16 h-16 bg-green-500/10 text-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
+            {(() => {
+                const selectedAssets = [profileImage, bannerImage].filter((asset): asset is ImageAsset => asset !== null);
+                const assetsReady = selectedAssets.every(asset => canTransferAsset(asset) && transferredAssetUrls.includes(asset.imageUrl));
+                return <>
+            <div className={`w-16 h-16 ${assetsReady ? 'bg-green-500/10 text-green-500' : 'bg-amber-500/10 text-amber-400'} rounded-full flex items-center justify-center mx-auto mb-4`}>
                 <CheckCircle size={32} />
             </div>
             <div>
-                <h3 className="text-2xl font-bold text-white mb-2">Ready to Create!</h3>
+                <h3 className="text-2xl font-bold text-white mb-2">{assetsReady ? 'Ready to Create!' : 'Finish asset handoff'}</h3>
                 <p className="text-gray-400 max-w-md mx-auto">
-                    You have everything you need. Click the link below to go to {platform.name}'s sign-up page. Use the handles and bios you generated.
+                    {assetsReady ? `Your setup draft is saved for this project. Continue to ${platform.name} sign-up with your transferred assets.` : `Your setup draft is saved for this project. Transfer each selected asset below before continuing to ${platform.name} sign-up.`}
                 </p>
             </div>
 
@@ -253,6 +312,21 @@ export default function AccountCreationWizard({ onClose }: AccountCreationWizard
                     </div>
                 )}
             </div>
+
+            {(profileImage || bannerImage) && (
+                <div className="bg-bg-dark p-4 rounded-xl border border-gray-800 text-left max-w-md mx-auto space-y-3">
+                    <h4 className="text-sm font-bold text-gray-400 uppercase tracking-wider">Asset handoff</h4>
+                    {([['Profile image', profileImage, 'Use a square image; Instagram recommends at least 320 × 320 px.'], ['Banner / cover', bannerImage, 'Use the platform crop preview; keep text away from outer edges.']] as const).map(([label, asset, guidance]) => asset && (
+                        <div key={label} className="border border-gray-700 rounded-lg p-3 space-y-2">
+                            <div className="flex items-center gap-3"><img src={asset.imageUrl} alt={label} className="h-10 w-10 object-cover rounded" /><div><p className="text-sm text-white">{label}</p><p className="text-xs text-gray-500">{guidance}</p></div></div>
+                            {!canTransferAsset(asset) ? <p className="text-xs text-red-400">Unavailable — return to step 3 and choose this asset again.</p> : <div className="flex gap-3 text-xs"><button onClick={() => void downloadAsset(asset)} className="text-blue-400 hover:underline inline-flex items-center gap-1"><Download size={12} />Download</button><button onClick={() => { if (window.open(asset.imageUrl, '_blank', 'noopener,noreferrer')) markTransferred(asset); else toast.error('Pop-up blocked. Download or copy the link instead.'); }} className="text-blue-400 hover:underline inline-flex items-center gap-1"><ExternalLink size={12} />Open</button><button onClick={() => { void copyToClipboard(asset.imageUrl).then(copied => { if (copied) markTransferred(asset); }); }} className="text-blue-400 hover:underline inline-flex items-center gap-1"><Link size={12} />Copy link</button></div>}
+                            {canTransferAsset(asset) && !transferredAssetUrls.includes(asset.imageUrl) && <p className="text-xs text-amber-400">Choose Download, Open, or Copy link to mark this asset ready for transfer.</p>}
+                        </div>
+                    ))}
+                </div>
+            )}
+            </>;
+            })()}
         </div>
     );
 

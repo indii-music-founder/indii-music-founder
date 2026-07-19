@@ -6,6 +6,7 @@ import { useStore } from '@/core/store';
 import { AgentContext, ToolFunctionResult } from '../types';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { z } from 'zod';
+import { importWithRetry } from '@/utils/dynamicImport';
 
 /**
  * Tools for interacting with Living Plans.
@@ -18,16 +19,16 @@ export const LivingPlanTools = {
      */
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     propose_plan: async (args: PlanDraft, context?: AgentContext, toolContext?: any): Promise<ToolFunctionResult> => {
-        const { useStore } = await import('@/core/store');
+        const { useStore } = await importWithRetry(() => import('@/core/store'));
         const state = useStore.getState();
         const projectId = toolContext?.get('currentProjectId') || context?.projectId || state.currentProjectId;
         const userId = context?.userId || state.user?.uid;
 
         if (!projectId) {
-            return { success: true, error: 'No active project found. Cannot propose a plan.' };
+            return { success: false, error: 'No active project found. Cannot propose a plan.' };
         }
         if (!userId) {
-            return { success: true, error: 'User not authenticated. Cannot propose a plan.' };
+            return { success: false, error: 'User not authenticated. Cannot propose a plan.' };
         }
 
         logger.debug('[LivingPlanTools] Proposing plan:', args.summary);
@@ -53,12 +54,12 @@ export const LivingPlanTools = {
      */
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     refine_plan: async (args: { planId: string; updates: Partial<PlanDraft> }, context?: AgentContext, toolContext?: any): Promise<ToolFunctionResult> => {
-        const { useStore } = await import('@/core/store');
+        const { useStore } = await importWithRetry(() => import('@/core/store'));
         const state = useStore.getState();
         const projectId = toolContext?.get('currentProjectId') || context?.projectId || state.currentProjectId;
 
         if (!projectId) {
-            return { success: true, error: 'No active project found.' };
+            return { success: false, error: 'No active project found.' };
         }
 
         try {
@@ -82,12 +83,12 @@ export const LivingPlanTools = {
      */
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     get_plan: async (args: { planId: string }, context?: AgentContext, toolContext?: any): Promise<ToolFunctionResult> => {
-        const { useStore } = await import('@/core/store');
+        const { useStore } = await importWithRetry(() => import('@/core/store'));
         const state = useStore.getState();
         const projectId = toolContext?.get('currentProjectId') || context?.projectId || state.currentProjectId;
 
         if (!projectId) {
-            return { success: true, error: 'No active project found.' };
+            return { success: false, error: 'No active project found.' };
         }
 
         try {
@@ -108,12 +109,12 @@ export const LivingPlanTools = {
      */
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     cancel_plan: async (args: { planId: string }, context?: AgentContext, toolContext?: any): Promise<ToolFunctionResult> => {
-        const { useStore } = await import('@/core/store');
+        const { useStore } = await importWithRetry(() => import('@/core/store'));
         const state = useStore.getState();
         const projectId = toolContext?.get('currentProjectId') || context?.projectId || state.currentProjectId;
 
         if (!projectId) {
-            return { success: true, error: 'No active project found.' };
+            return { success: false, error: 'No active project found.' };
         }
 
         try {
@@ -131,12 +132,12 @@ export const LivingPlanTools = {
      */
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     complete_step: async (args: { planId: string; stepId: string; result?: any }, context?: AgentContext, toolContext?: any): Promise<ToolFunctionResult> => {
-        const { useStore } = await import('@/core/store');
+        const { useStore } = await importWithRetry(() => import('@/core/store'));
         const state = useStore.getState();
         const projectId = toolContext?.get('currentProjectId') || context?.projectId || state.currentProjectId;
 
         if (!projectId) {
-            return { success: true, error: 'No active project found.' };
+            return { success: false, error: 'No active project found.' };
         }
 
         try {
@@ -154,12 +155,12 @@ export const LivingPlanTools = {
      */
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     complete_plan: async (args: { planId: string }, context?: AgentContext, toolContext?: any): Promise<ToolFunctionResult> => {
-        const { useStore } = await import('@/core/store');
+        const { useStore } = await importWithRetry(() => import('@/core/store'));
         const state = useStore.getState();
         const projectId = toolContext?.get('currentProjectId') || context?.projectId || state.currentProjectId;
 
         if (!projectId) {
-            return { success: true, error: 'No active project found.' };
+            return { success: false, error: 'No active project found.' };
         }
 
         try {

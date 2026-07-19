@@ -10,9 +10,8 @@ import { Zap, Music2, Film, Star, ChevronDown, ChevronUp, RefreshCw, Tag, Upload
 import { licensingService } from '@/services/licensing/LicensingService';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import type { SyncBrief, SyncCatalogTrack as CatalogTrack, SyncMood as Mood } from '@/services/licensing/LicensingService';
-import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import { storage, db, auth } from '@/services/firebase';
+import { syncLicensingClearanceService } from '@/services/licensing/SyncLicensingClearanceService';
+import { auth } from '@/services/firebase';
 
 function matchScore(brief: SyncBrief, track: CatalogTrack): number {
     // BPM fit: 1.0 if in range, decays outside
@@ -31,7 +30,7 @@ function matchScore(brief: SyncBrief, track: CatalogTrack): number {
 
 const TYPE_COLORS: Record<string, string> = {
     TV: 'text-blue-400 bg-blue-400/10 border-blue-400/20',
-    Film: 'text-purple-400 bg-purple-400/10 border-purple-400/20',
+    Film: 'text-green-400 bg-green-400/10 border-green-400/20',
     Ad: 'text-[#FFE135] bg-[#FFE135]/10 border-[#FFE135]/20',
     Game: 'text-green-400 bg-green-400/10 border-green-400/20',
     Trailer: 'text-orange-400 bg-orange-400/10 border-orange-400/20',
@@ -59,12 +58,12 @@ interface ClearanceUploadModalProps {
     brief: SyncBrief;
     track: CatalogTrack;
     onClose: () => void;
-    onSubmitted: () => void;
+    onUploaded: () => void;
 }
 
 type UploadStatus = 'idle' | 'uploading' | 'done' | 'error';
 
-function ClearanceUploadModal({ brief, track, onClose, onSubmitted }: ClearanceUploadModalProps) {
+function ClearanceUploadModal({ brief, track, onClose, onUploaded }: ClearanceUploadModalProps) {
     const [files, setFiles] = useState<File[]>([]);
     const [status, setStatus] = useState<UploadStatus>('idle');
     const [error, setError] = useState('');
@@ -89,24 +88,22 @@ function ClearanceUploadModal({ brief, track, onClose, onSubmitted }: ClearanceU
         const urls: string[] = [];
         try {
             for (const file of files) {
-                const path = `users/${uid}/clearance/${brief.id}/${track.id}/${file.name}`;
-                const fileRef = storageRef(storage, path);
-                await uploadBytes(fileRef, file);
-                const url = await getDownloadURL(fileRef);
-                urls.push(url);
+                // brief.id acts as the service's releaseId key (sync briefs are the clearance context)
+                const req = await syncLicensingClearanceService.createClearanceRequirement(
+                    uid,
+                    brief.id,
+                    track.id,
+                    track.title,
+                    'sync_license',
+                    `Clearance for "${track.title}" -> brief "${brief.project}"`,
+                    undefined,
+                    undefined,
+                    { briefId: brief.id, briefProject: brief.project, trackISRC: track.isrc }
+                );
+                const uploaded = await syncLicensingClearanceService.uploadClearanceFile(req.id, file);
+                if (!uploaded?.downloadUrl) throw new Error(`Upload failed for ${file.name}`);
+                urls.push(uploaded.downloadUrl);
             }
-            // Record clearance submission in Firestore
-            await addDoc(collection(db, 'licensing_clearances'), {
-                briefId: brief.id,
-                briefProject: brief.project,
-                trackId: track.id,
-                trackTitle: track.title,
-                trackISRC: track.isrc,
-                userId: uid,
-                clearanceDocUrls: urls,
-                submittedAt: serverTimestamp(),
-                status: 'pending_review',
-            });
             setUploadedUrls(urls);
             setStatus('done');
         } catch (err: unknown) {
@@ -227,14 +224,14 @@ function ClearanceUploadModal({ brief, track, onClose, onSubmitted }: ClearanceU
                     <div className="flex flex-col items-center py-6 gap-3 text-center">
                         <CheckCircle2 size={32} className="text-green-400" aria-hidden="true" />
                         <div>
-                            <p className="text-sm font-semibold text-white">Submission received</p>
+                            <p className="text-sm font-semibold text-white">Clearance uploaded</p>
                             <p className="text-[10px] text-neutral-500 mt-1">
                                 {uploadedUrls.length} document{uploadedUrls.length !== 1 ? 's' : ''} uploaded.
-                                The licensor will review your clearance docs within 5 business days.
+                                This is an internal clearance record, not a sync pitch submission.
                             </p>
                         </div>
                         <button
-                            onClick={onSubmitted}
+                            onClick={onUploaded}
                             className="px-5 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-[11px] text-neutral-400 transition-colors"
                         >
                             Done
@@ -249,7 +246,7 @@ function ClearanceUploadModal({ brief, track, onClose, onSubmitted }: ClearanceU
 function BriefCard({ brief, catalog }: { brief: SyncBrief; catalog: CatalogTrack[]; key?: React.Key }) {
     const [open, setOpen] = useState(false);
     const [clearanceTrack, setClearanceTrack] = useState<CatalogTrack | null>(null);
-    const [submittedTracks, setSubmittedTracks] = useState<Set<string>>(new Set());
+    const [uploadedTracks, setUploadedTracks] = useState<Set<string>>(new Set());
     const matches = useMemo(() => catalog
         .map(t => ({ track: t, score: matchScore(brief, t) }))
         .sort((a, b) => b.score - a.score)
@@ -306,7 +303,7 @@ function BriefCard({ brief, catalog }: { brief: SyncBrief; catalog: CatalogTrack
                             <div className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest">Catalog Matches</div>
                             <div className="space-y-2">
                                 {matches.map(({ track, score }) => {
-                                    const submitted = submittedTracks.has(track.id);
+                                    const uploaded = uploadedTracks.has(track.id);
                                     return (
                                         <div key={track.id} className="flex items-center gap-3 p-2.5 bg-white/[0.02] border border-white/5 rounded-xl">
                                             <Music2 size={13} className="text-neutral-600 flex-shrink-0" aria-hidden="true" />
@@ -323,18 +320,18 @@ function BriefCard({ brief, catalog }: { brief: SyncBrief; catalog: CatalogTrack
                                             </div>
                                             <ScoreBadge score={score} />
                                             {/* Item 310: Submit with clearance docs */}
-                                            {submitted ? (
+                                            {uploaded ? (
                                                 <span className="flex items-center gap-1 text-[9px] text-green-400 font-bold">
-                                                    <CheckCircle2 size={10} aria-hidden="true" />Submitted
+                                                    <CheckCircle2 size={10} aria-hidden="true" />Uploaded
                                                 </span>
                                             ) : (
                                                 <button
                                                     onClick={() => setClearanceTrack(track)}
-                                                    aria-label={`Submit ${track.title} for ${brief.project} with clearance docs`}
+                                                    aria-label={`Upload clearance for ${track.title} and ${brief.project}`}
                                                     className="flex items-center gap-1 px-2 py-1 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 rounded-lg text-[9px] text-emerald-400 font-bold transition-colors whitespace-nowrap"
                                                 >
                                                     <Upload size={9} aria-hidden="true" />
-                                                    Submit
+                                                    Upload
                                                 </button>
                                             )}
                                         </div>
@@ -349,12 +346,12 @@ function BriefCard({ brief, catalog }: { brief: SyncBrief; catalog: CatalogTrack
             {/* Clearance Upload Modal — rendered in BriefCard to scope to this brief */}
             <AnimatePresence>
                 {clearanceTrack && (
-                    <ClearanceUploadModal
+                        <ClearanceUploadModal
                         brief={brief}
                         track={clearanceTrack}
                         onClose={() => setClearanceTrack(null)}
-                        onSubmitted={() => {
-                            setSubmittedTracks(prev => new Set([...prev, clearanceTrack.id]));
+                        onUploaded={() => {
+                            setUploadedTracks(prev => new Set([...prev, clearanceTrack.id]));
                             setClearanceTrack(null);
                         }}
                     />
@@ -405,7 +402,7 @@ export function SyncBriefMatcher() {
         const val = parseInt(b.budget.replace(/[^0-9]/g, ''), 10) || 0;
         return val > top ? val : top;
     }, 0);
-    const topBudgetLabel = topBudget >= 100000 ? '$100K+' : topBudget >= 50000 ? '$50K+' : topBudget >= 10000 ? `$${Math.round(topBudget / 1000)}K+` : topBudget > 0 ? `$${topBudget.toLocaleString()}` : '—';
+    const topBudgetLabel = topBudget >= 100000 ? '$100K+' : topBudget >= 50000 ? '$50K+' : topBudget >= 10000 ? `$${Math.round(topBudget / 1000)}K+` : topBudget > 0 ? `$${topBudget.toLocaleString('en-US')}` : '—';
 
     return (
         <div className="space-y-5">
@@ -446,7 +443,7 @@ export function SyncBriefMatcher() {
                     { label: 'Open Briefs', value: loading ? '…' : briefs.length, icon: <Film size={13} />, color: 'text-emerald-400' },
                     { label: 'High Match (75%+)', value: loading ? '…' : highMatchCount, icon: <Star size={13} />, color: 'text-[#FFE135]' },
                     { label: 'Catalog Tracks', value: loading ? '…' : catalog.length, icon: <Music2 size={13} />, color: 'text-green-400' },
-                    { label: 'Top Budget', value: loading ? '…' : topBudgetLabel, icon: <Zap size={13} />, color: 'text-purple-400' },
+                    { label: 'Top Budget', value: loading ? '…' : topBudgetLabel, icon: <Zap size={13} />, color: 'text-green-400' },
                 ].map(s => (
                     <div key={s.label} className="bg-white/[0.02] border border-white/5 rounded-xl p-3">
                         <div className={`${s.color} mb-1`}>{s.icon}</div>

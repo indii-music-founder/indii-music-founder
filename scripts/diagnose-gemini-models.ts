@@ -5,8 +5,8 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 async function listModels() {
-    const projectId = process.env.VITE_PROJECT_ID || process.env.VITE_VERTEX_PROJECT_ID || 'indii-v-1-1';
-    const location = 'us-central1'; // We'll test this first
+    const projectId = process.env.VERTEX_PROJECT_ID || process.env.GOOGLE_CLOUD_PROJECT || process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT || 'indii-music-founder';
+    const location = process.env.VERTEX_LOCATION || 'global';
 
     console.log(`🔍 Diagnosing Vertex AI Models for Project: ${projectId} in ${location}`);
 
@@ -18,7 +18,10 @@ async function listModels() {
     const accessToken = await client.getAccessToken();
 
     // Test v1beta1 publisher models
-    const endpoint = `https://${location}-aiplatform.googleapis.com/v1beta1/projects/${projectId}/locations/${location}/publishers/google/models`;
+    const baseUrl = location === 'global' || location === 'us' || location === 'eu'
+        ? 'https://aiplatform.googleapis.com'
+        : `https://${location}-aiplatform.googleapis.com`;
+    const endpoint = `${baseUrl}/v1beta1/projects/${projectId}/locations/${location}/publishers/google/models`;
 
     console.log(`\n📡 Fetching Publisher Models from: ${endpoint}`);
 

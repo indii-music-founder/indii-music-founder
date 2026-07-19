@@ -7,6 +7,7 @@ import type { ToolRiskTier } from '../types';
 import { getToolRiskMetadata } from '../ToolRiskRegistry';
 import type { AgentIdentityCard } from './AgentIdentity';
 import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
+import { importWithRetry } from '@/utils/dynamicImport';
 
 export interface HandshakeRequest {
     directiveId: string;
@@ -52,7 +53,7 @@ export class DigitalHandshake {
         const computeExceeded = computeAllocation.tokensUsed >= computeAllocation.maxTokens;
 
         // --- GEAP Phase 2: Model Armor Integration ---
-        const { ModelArmor, getDefaultPolicy } = await import('./ModelArmor');
+        const { ModelArmor, getDefaultPolicy } = await importWithRetry(() => import('./ModelArmor'));
         const armorResult = await ModelArmor.scanInput(actionDescription, getDefaultPolicy());
         let armorBlocked = false;
         

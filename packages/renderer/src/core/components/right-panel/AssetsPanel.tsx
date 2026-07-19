@@ -4,16 +4,42 @@ import { useShallow } from 'zustand/react/shallow';
 import { HistoryItem } from '@/core/types/history';
 import {
     ChevronRight, Image as ImageIcon, Video, Music,
-    FileText, Search, Eye, Grid3X3, List, X, type LucideIcon
+    FileText, Search, Eye, Grid3X3, List, X, Sparkles, type LucideIcon
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '@/lib/utils';
+import { useSafeImageUrl } from '@/hooks/useSafeImageUrl';
+import { writeCreativeAssetDrag } from '@/services/creative/CreativeAssetDragService';
 
 type AssetFilter = 'all' | 'images' | 'videos' | 'audio' | 'files';
 type ViewStyle = 'grid' | 'list';
 
 interface AssetsPanelProps {
     toggleRightPanel: () => void;
+}
+
+/**
+ * Renders an asset thumbnail via a same-origin blob: URL instead of a raw
+ * <img src="https://firebasestorage..."> — this panel can render under
+ * routes (e.g. /creative) with Cross-Origin-Embedder-Policy: require-corp,
+ * which silently blocks direct cross-origin image loads.
+ */
+function AssetThumbnail({ src, alt, className, onError }: { src: string; alt: string; className: string; onError?: () => void }) {
+    const resolvedSrc = useSafeImageUrl(src);
+    const [failed, setFailed] = React.useState(false);
+    React.useEffect(() => { setFailed(false); }, [resolvedSrc]);
+    // Render nothing while resolving or on failure — the caller's fallback
+    // type icon shows instead of the browser dumping alt text into the tile.
+    if (!resolvedSrc || failed) return null;
+    return (
+        <img
+            src={resolvedSrc}
+            alt={alt}
+            className={className}
+            loading="lazy"
+            onError={() => { setFailed(true); onError?.(); }}
+        />
+    );
 }
 
 export default function AssetsPanel({ toggleRightPanel }: AssetsPanelProps) {
@@ -181,7 +207,7 @@ export default function AssetsPanel({ toggleRightPanel }: AssetsPanelProps) {
 
     const getTypeColor = (type: string) => {
         switch (type) {
-            case 'image': return 'text-purple-400 bg-purple-500/15';
+            case 'image': return 'text-green-400 bg-green-500/15';
             case 'video': return 'text-blue-400 bg-blue-500/15';
             case 'music': return 'text-amber-400 bg-amber-500/15';
             default: return 'text-gray-400 bg-white/10';
@@ -278,10 +304,10 @@ export default function AssetsPanel({ toggleRightPanel }: AssetsPanelProps) {
                             {filteredAssets.map((asset) => (
                                 <motion.button
                                     key={asset.id}
-                                    draggable={asset.type === 'image' || asset.type === 'video'}
+                                    draggable={!!asset.url}
                                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                     onDragStart={(e: any) => {
-                                        e.dataTransfer?.setData('text/plain', asset.id);
+                                        if (e.dataTransfer) writeCreativeAssetDrag(e.dataTransfer, asset, 'project-assets');
                                     }}
                                     initial={{ opacity: 0, scale: 0.9 }}
                                     animate={{ opacity: 1, scale: 1 }}
@@ -299,12 +325,10 @@ export default function AssetsPanel({ toggleRightPanel }: AssetsPanelProps) {
                                             onError={(e) => { (e.target as HTMLVideoElement).style.display = 'none'; }}
                                         />
                                     ) : asset.type === 'image' ? (
-                                        <img
+                                        <AssetThumbnail
                                             src={asset.thumbnailUrl || asset.url}
                                             alt={asset.prompt || ''}
                                             className="w-full h-full object-cover"
-                                            loading="lazy"
-                                            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                                         />
                                     ) : null}
 
@@ -330,7 +354,13 @@ export default function AssetsPanel({ toggleRightPanel }: AssetsPanelProps) {
                                     </div>
 
                                     {/* Hover overlay */}
-                                    <div className="absolute inset-0 bg-linear-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity z-10 flex items-end p-1.5">
+                                    <div className="absolute inset-0 bg-linear-to-t from-black/90 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity z-10 flex flex-col justify-end p-1.5">
+                                        {(asset.type === 'image' || asset.type === 'video') && (
+                                            <div className="flex items-center gap-1 mb-1 text-green-400">
+                                                <Sparkles size={8} />
+                                                <span className="text-[8px] font-bold uppercase tracking-wider">Edit in Studio</span>
+                                            </div>
+                                        )}
                                         <p className="text-[9px] text-white/80 line-clamp-2 leading-tight">
                                             {asset.prompt || 'Untitled'}
                                         </p>
@@ -345,10 +375,10 @@ export default function AssetsPanel({ toggleRightPanel }: AssetsPanelProps) {
                             {filteredAssets.map((asset) => (
                                 <motion.button
                                     key={asset.id}
-                                    draggable={asset.type === 'image' || asset.type === 'video'}
+                                    draggable={!!asset.url}
                                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                     onDragStart={(e: any) => {
-                                        e.dataTransfer?.setData('text/plain', asset.id);
+                                        if (e.dataTransfer) writeCreativeAssetDrag(e.dataTransfer, asset, 'project-assets');
                                     }}
                                     initial={{ opacity: 0, x: -10 }}
                                     animate={{ opacity: 1, x: 0 }}
@@ -359,7 +389,11 @@ export default function AssetsPanel({ toggleRightPanel }: AssetsPanelProps) {
                                     {/* Mini thumbnail */}
                                     <div className="w-10 h-10 rounded-md overflow-hidden bg-white/[0.04] flex-shrink-0 flex items-center justify-center">
                                         {asset.type === 'image' && asset.url ? (
-                                            <img src={asset.thumbnailUrl || asset.url} alt="" className="w-full h-full object-cover" loading="lazy" />
+                                            <AssetThumbnail
+                                                src={asset.thumbnailUrl || asset.url}
+                                                alt=""
+                                                className="w-full h-full object-cover"
+                                            />
                                         ) : (
                                             <div className={cn("p-1.5 rounded", getTypeColor(asset.type))}>
                                                 {getTypeIcon(asset.type)}
@@ -377,7 +411,7 @@ export default function AssetsPanel({ toggleRightPanel }: AssetsPanelProps) {
                                                 {asset.type}
                                             </span>
                                             <span className="text-[8px] text-gray-600 font-mono">
-                                                {new Date(asset.timestamp).toLocaleDateString()}
+                                                {new Date(asset.timestamp).toLocaleDateString('en-US')}
                                             </span>
                                             {asset.origin && (
                                                 <span className="text-[8px] text-gray-600 capitalize">

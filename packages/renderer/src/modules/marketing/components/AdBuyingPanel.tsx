@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import {
     Megaphone, DollarSign, Users, MapPin, Play, Pause,
-    Loader2, CheckCircle, TrendingUp, Target, Plus, Tag
+    Loader2, TrendingUp, Target, Plus, Tag
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { AlertCircle } from 'lucide-react';
 
 interface Campaign {
     id: string;
@@ -33,29 +34,15 @@ export default function AdBuyingPanel() {
     const [location, setLocation] = useState('United States');
     const [deploying, setDeploying] = useState(false);
     const [campaigns, setCampaigns] = useState<Campaign[]>([]);
-    const [deployResult, setDeployResult] = useState<{ id: string; reach: number } | null>(null);
+    const [deployError, setDeployError] = useState<string | null>(null);
 
     const handleDeploy = () => {
         setDeploying(true);
-        setDeployResult(null);
+        setDeployError(null);
         setTimeout(() => {
-            const newId = `camp-${String(campaigns.length + 1).padStart(3, '0')}`;
-            const estimatedReach = Math.floor(budget * 1200 + 2000);
-            const newCampaign: Campaign = {
-                id: newId,
-                platform,
-                budget,
-                genre,
-                ageRange,
-                location,
-                status: 'running',
-                reach: estimatedReach,
-                spend: 0,
-            };
-            setCampaigns(prev => [newCampaign, ...prev]);
-            setDeployResult({ id: newId, reach: estimatedReach });
+            setDeployError(`${platform} ad platform integration is not yet connected to the backend API. Ad deployment is currently unavailable.`);
             setDeploying(false);
-        }, 2000);
+        }, 1000);
     };
 
     const toggleCampaign = (id: string) => {
@@ -188,20 +175,17 @@ export default function AdBuyingPanel() {
 
             {/* Deploy Result */}
             <AnimatePresence>
-                {deployResult && (
+                {deployError && (
                     <motion.div
                         initial={{ opacity: 0, y: -8 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0 }}
-                        className="p-4 rounded-xl bg-green-500/10 border border-green-500/20 flex items-start gap-3"
+                        className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 flex items-start gap-3"
                     >
-                        <CheckCircle size={16} className="text-green-400 mt-0.5 flex-shrink-0" />
+                        <AlertCircle size={16} className="text-red-400 mt-0.5 flex-shrink-0" />
                         <div>
-                            <p className="text-sm font-semibold text-green-400">Campaign Deployed</p>
-                            <p className="text-xs text-gray-400 mt-0.5">
-                                ID: <span className="text-white font-mono">{deployResult.id}</span> &nbsp;·&nbsp;
-                                Est. Reach: <span className="text-white">{deployResult.reach.toLocaleString()} users/day</span>
-                            </p>
+                            <p className="text-sm font-semibold text-red-400">Deployment Failed</p>
+                            <p className="text-xs text-red-400/80 mt-0.5">{deployError}</p>
                         </div>
                     </motion.div>
                 )}
@@ -230,7 +214,7 @@ export default function AdBuyingPanel() {
                                         <DollarSign size={9} />${c.budget}/day
                                     </span>
                                     <span className="text-[10px] text-gray-500 flex items-center gap-1">
-                                        <TrendingUp size={9} />{c.reach.toLocaleString()} est. reach
+                                        <TrendingUp size={9} />{c.reach.toLocaleString('en-US')} est. reach
                                     </span>
                                     <span className="text-[10px] text-gray-500">Spent: ${c.spend.toFixed(2)}</span>
                                 </div>

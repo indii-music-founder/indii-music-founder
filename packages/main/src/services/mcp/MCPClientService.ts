@@ -16,27 +16,44 @@ export class MCPClientService {
     private harnessClient: Client | null = null;
     private harnessTransport: StdioClientTransport | null = null;
 
+    private resolveBundledServerPath(packageName: 'mcp-server-local' | 'mcp-server-harness'): string | null {
+        const overrideEnvName = packageName === 'mcp-server-local'
+            ? 'INDII_LOCAL_MCP_SERVER_PATH'
+            : 'INDII_HARNESS_MCP_SERVER_PATH';
+        const overridePath = process.env[overrideEnvName];
+        if (overridePath) {
+            return existsSync(overridePath) ? overridePath : null;
+        }
+
+        const serverRelativePath = path.join(packageName, 'dist', 'index.js');
+
+        if (app.isPackaged) {
+            const packagedPath = path.join(process.resourcesPath, serverRelativePath);
+            return existsSync(packagedPath) ? packagedPath : null;
+        }
+
+        const appPath = app.getAppPath();
+        const candidates = [
+            path.resolve(appPath, 'packages', packageName, 'dist', 'index.js'),
+            path.resolve(appPath, '..', '..', 'packages', packageName, 'dist', 'index.js'),
+            path.resolve(process.cwd(), 'packages', packageName, 'dist', 'index.js'),
+        ];
+
+        return candidates.find(candidate => existsSync(candidate)) ?? null;
+    }
+
     /**
      * Initializes the connection to the local MCP server running over stdio
      */
-    public async connectLocal(): Promise<void> {
+    public async connectLocal(): Promise<boolean> {
         if (this.localClient) {
-            return;
+            return true;
         }
 
-        let serverPath;
-        if (app.isPackaged) {
-            serverPath = path.join(process.resourcesPath, 'mcp-server-local', 'dist', 'index.js');
-        } else {
-            const appPath = app.getAppPath();
-            // Try root-relative first (common in some dev runners)
-            const rootRelative = path.resolve(appPath, 'packages', 'mcp-server-local', 'dist', 'index.js');
-            if (existsSync(rootRelative)) {
-                serverPath = rootRelative;
-            } else {
-                // Try package-relative (standard electron-vite structure)
-                serverPath = path.resolve(appPath, '..', 'mcp-server-local', 'dist', 'index.js');
-            }
+        const serverPath = this.resolveBundledServerPath('mcp-server-local');
+        if (!serverPath) {
+            log.warn('[MCP] Local MCP server is not built; skipping local MCP connection. Run `npm run build -w packages/mcp-server-local`.');
+            return false;
         }
 
         this.localTransport = new StdioClientTransport({
@@ -62,29 +79,22 @@ export class MCPClientService {
         await this.connectHarness().catch(err => {
             log.error('[MCP] ❌ Failed to automatically connect harness MCP:', err);
         });
+
+        return true;
     }
 
     /**
      * Initializes the connection to the harness MCP server running over stdio
      */
-    public async connectHarness(): Promise<void> {
+    public async connectHarness(): Promise<boolean> {
         if (this.harnessClient) {
-            return;
+            return true;
         }
 
-        let serverPath;
-        if (app.isPackaged) {
-            serverPath = path.join(process.resourcesPath, 'mcp-server-harness', 'dist', 'index.js');
-        } else {
-            const appPath = app.getAppPath();
-            // Try root-relative first (common in some dev runners)
-            const rootRelative = path.resolve(appPath, 'packages', 'mcp-server-harness', 'dist', 'index.js');
-            if (existsSync(rootRelative)) {
-                serverPath = rootRelative;
-            } else {
-                // Try package-relative (standard electron-vite structure)
-                serverPath = path.resolve(appPath, '..', 'mcp-server-harness', 'dist', 'index.js');
-            }
+        const serverPath = this.resolveBundledServerPath('mcp-server-harness');
+        if (!serverPath) {
+            log.warn('[MCP] Harness MCP server is not built; skipping harness MCP connection. Run `npm run build -w packages/mcp-server-harness`.');
+            return false;
         }
 
         this.harnessTransport = new StdioClientTransport({
@@ -106,6 +116,7 @@ export class MCPClientService {
         try {
             await this.harnessClient.connect(this.harnessTransport);
             log.info('[MCP] ✅ Connected to harness MCP Server over Stdio');
+            return true;
         } catch (err) {
             this.harnessClient = null;
             this.harnessTransport = null;

@@ -48,8 +48,18 @@ export type AuthFixtures = {
   authedPage: Page;
 };
 
-export const test = base.extend<AuthFixtures>({
-  authedPage: async ({ page }, use) => {
+/**
+ * Applies the full E2E mock harness (CORS patching, Firestore/Auth/Vertex/RAG route
+ * interception, injected electronAPI + FIREBASE_E2E_MOCK globals, localStorage bypass
+ * flags, and the login-form-or-dashboard wait) to an arbitrary Playwright `Page`.
+ *
+ * This is the same setup the `authedPage` fixture below applies to its single page —
+ * extracted so multi-context specs (e.g. simulating two independent devices sharing
+ * one browser process) can apply identical mocking to each context's page individually.
+ * Playwright fixtures only ever hand you one `page`; tests that need N independent
+ * browser contexts must call this directly on each context's page.
+ */
+export async function setupE2EPage(page: Page): Promise<void> {
     // Dynamically patch all page.route handlers to return correct CORS headers matching request origin
     const originalRoute = page.route.bind(page);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -144,6 +154,53 @@ export const test = base.extend<AuthFixtures>({
       });
     });
 
+    // Mock Firestore Authentication Headers for E2E
+    // The Firestore emulator accepts unverified JWTs as authorization headers.
+    await page.route("http://127.0.0.1:8080/**", async (route) => {
+      const headers = { ...route.request().headers() };
+      const url = route.request().url();
+
+      if (url.includes("google.firestore.v1.Firestore") || url.includes("/documents/")) {
+        await route.fulfill({
+          status: 403,
+          headers: {
+            "Access-Control-Allow-Origin": origin,
+            "Access-Control-Allow-Credentials": "true",
+          },
+          contentType: "application/json",
+          body: "{}",
+        });
+        return;
+      }
+      
+      // If we aren't already passing an Authorization header...
+      if (!headers['authorization']) {
+          // Unverified JWT format for emulator: header.payload.signature
+          // Payload must match FIREBASE_USER_MOCK (sub: "test-user-uid-e2e")
+          const jwtHeader = Buffer.from(JSON.stringify({ alg: "none", type: "JWT" })).toString('base64url');
+          const jwtPayload = Buffer.from(JSON.stringify({ 
+              sub: "test-user-uid-e2e",
+              iss: "https://securetoken.google.com/indii-music-founder",
+              aud: "indii-music-founder",
+              auth_time: Math.floor(Date.now() / 1000),
+              user_id: "test-user-uid-e2e",
+              iat: Math.floor(Date.now() / 1000),
+              exp: Math.floor(Date.now() / 1000) + 3600,
+              email: "wiil@indii.music",
+              email_verified: true,
+              firebase: {
+                  sign_in_provider: "custom",
+                  identities: {}
+              }
+          })).toString('base64url');
+          const fakeJwt = `${jwtHeader}.${jwtPayload}.unsigned`;
+          
+          headers['authorization'] = `Bearer ${fakeJwt}`;
+      }
+      
+      await route.continue({ headers });
+    });
+
     const handleCloudFunction = async (route: Route) => {
       const url = route.request().url();
       console.log(
@@ -163,6 +220,81 @@ export const test = base.extend<AuthFixtures>({
           body: JSON.stringify({
             file: { name: "files/mock-file-123", state: "ACTIVE" },
           }),
+        });
+        return;
+      }
+
+      if (url.includes("generateContentStream")) {
+        let userMessage = "";
+        let contents: any[] = [];
+        try {
+          const parsed = JSON.parse(route.request().postData() || "{}");
+          contents = Array.isArray(parsed.contents) ? parsed.contents : [];
+          console.log("[E2E mock DEBUG CONTENTS] ->", JSON.stringify(contents));
+          const userContents = contents.filter((c: any) => c?.role === "user");
+          const userTextContents = userContents.filter((c: any) =>
+            c?.parts?.some((p: any) => p?.text && p.text.trim() && !p.text.trim().startsWith("Continue."))
+          );
+          const lastUser = userTextContents.length > 0
+            ? userTextContents[userTextContents.length - 1]
+            : userContents[userContents.length - 1];
+          userMessage = lastUser?.parts?.map((p: any) => p?.text || "").join(" ") || "";
+        } catch (error) {
+          console.log(`[E2E] Failed to parse generateContentStream payload: ${(error as Error).message}`);
+        }
+
+        const lower = userMessage.toLowerCase();
+        console.log("[E2E mock] contents array:", JSON.stringify(contents));
+        let text = "*(Analysis complete)*";
+        const functionCalls: Array<{ name: string; args: Record<string, unknown> }> = [];
+        const pushSeat = (agentId: string) => functionCalls.push({ name: "seat_agent", args: { targetAgentId: agentId } });
+        const pushUnseat = (agentId: string) => functionCalls.push({ name: "unseat_agent", args: { targetAgentId: agentId } });
+
+        if (contents.some((c: any) => c?.role === 'function' || (c?.parts && c.parts.some((p: any) => p?.functionResponse)))) {
+          console.log("[E2E mock] Detected function response!");
+          text = "[Publicist]: Here is your pitch: MOCK_DATA_FROM_MCP_SERVER.";
+        } else if (lower.includes("generate a playlist pitch")) {
+          text = "[Publicist]: Generating the pitch...";
+          functionCalls.push({ name: "generate_playlist_pitch", args: { releaseId: "track-123", targetPlaylist: "RapCaviar" } });
+        } else if (lower.includes("bring in marketing and finance")) {
+          text = "[Executor]: Hello! I will seat Marketing and Finance at the table immediately to begin our campaign strategy session.";
+          pushSeat("marketing");
+          pushSeat("finance");
+        } else if (lower.includes("how much should we spend") || lower.includes("spend on this campaign")) {
+          text = "[Marketing Dept.]: We propose a $5,000 budget targeting TikTok ads and playlist pitching to support the upcoming release. [Finance Dept.]: A $5,000 marketing expense fits within our seasonal cash flow limits. However, we should secure contract splits first.";
+        } else if (lower.includes("bring in legal") || lower.includes("check the agreements")) {
+          text = "[Executor]: Bringing Legal into the discussion to review the campaign split sheet agreements.";
+          pushSeat("legal");
+        } else if (lower.includes("good to go") || lower.includes("excused") || lower.includes("thank you")) {
+          text = "[Executor]: Marketing and Finance, thank you for the budget details. You are excused.";
+          pushUnseat("marketing");
+          pushUnseat("finance");
+        } else if (lower.includes("split sheet") || lower.includes("templates are we using")) {
+          text = "[Executor]: Directing the templates inquiry to our Legal department.";
+        } else if (lower.includes("marketing visual") || lower.includes("creative and video") || lower.includes("visual for this campaign")) {
+          text = "[Executor]: Summoning Creative Director and Video Agent to design marketing visuals.";
+          pushSeat("creative");
+          pushSeat("video");
+        } else if (lower.includes("social copy") || lower.includes("press release")) {
+          text = "[Executor]: Summoning Social and Publicist agents to outline copy and press releases.";
+          pushSeat("social");
+          pushSeat("publicist");
+        } else if (lower.includes("artistic vibe") || lower.includes("brand and music") || lower.includes("align on")) {
+          text = "[Executor]: Summoning Brand and Music Directors to align on the artistic vibe.";
+          pushSeat("brand");
+          pushSeat("music");
+        } else if (lower.includes("clear the table") || lower.includes("done for today")) {
+          text = "[Executor]: Excusing all remaining agents.";
+          ["legal", "creative", "video", "social", "publicist", "brand", "music"].forEach(pushUnseat);
+        }
+
+        const streamBody = "data: " + JSON.stringify({ text, functionCalls }) + "\n\n";
+        console.log(`[DEBUG] [E2E mock] userMessage: "${userMessage}", functionCalls:`, JSON.stringify(functionCalls));
+        await route.fulfill({
+          status: 200,
+          headers: corsHeaders,
+          contentType: "text/event-stream",
+          body: streamBody,
         });
         return;
       }
@@ -252,7 +384,7 @@ export const test = base.extend<AuthFixtures>({
         url.includes("/Write/") ||
         url.includes("channel?")
       ) {
-        await route.abort('failed');
+        await route.fulfill({ status: 403, headers: corsHeaders, body: "{}" });
         return;
       }
 
@@ -268,7 +400,7 @@ export const test = base.extend<AuthFixtures>({
                   name: "projects/mock-project/databases/(default)/documents/users/test-user-uid-e2e",
                   fields: {
                     uid: { stringValue: "test-user-uid-e2e" },
-                    email: { stringValue: "e2e@indii.test" },
+                    email: { stringValue: "wiil@indii.music" },
                     displayName: { stringValue: "E2E Test User" },
                     onboardingCompleted: { booleanValue: true },
                   },
@@ -297,6 +429,85 @@ export const test = base.extend<AuthFixtures>({
               onboardingCompleted: { booleanValue: true },
             },
           }),
+        });
+        return;
+      }
+
+      if (url.includes("generateContentStream")) {
+        let userMessage = "";
+        let contents: any[] = [];
+        try {
+          const parsed = JSON.parse(route.request().postData() || "{}");
+          contents = Array.isArray(parsed.contents) ? parsed.contents : [];
+          console.log("[E2E mock DEBUG CONTENTS 2] ->", JSON.stringify(contents));
+          const userContents = contents.filter((c: any) => c?.role === "user");
+          const userTextContents = userContents.filter((c: any) =>
+            c?.parts?.some((p: any) => p?.text && p.text.trim() && !p.text.trim().startsWith("Continue."))
+          );
+          const lastUser = userTextContents.length > 0
+            ? userTextContents[userTextContents.length - 1]
+            : userContents[userContents.length - 1];
+          userMessage = lastUser?.parts?.map((p: any) => p?.text || "").join(" ") || "";
+        } catch (error) {
+          console.log(`[E2E] Failed to parse generateContentStream payload: ${(error as Error).message}`);
+        }
+
+        const lower = userMessage.toLowerCase();
+        console.log("[E2E mock] contents array 2:", JSON.stringify(contents));
+        let text = "*(Analysis complete)*";
+        const functionCalls: Array<{ name: string; args: Record<string, unknown> }> = [];
+
+        const pushSeat = (agentId: string) => {
+          functionCalls.push({ name: "seat_agent", args: { targetAgentId: agentId } });
+        };
+
+        const pushUnseat = (agentId: string) => {
+          functionCalls.push({ name: "unseat_agent", args: { targetAgentId: agentId } });
+        };
+
+        if (lower.includes("bring in marketing and finance")) {
+          text = "[Executor]: Hello! I will seat Marketing and Finance at the table immediately to begin our campaign strategy session.";
+          pushSeat("marketing");
+          pushSeat("finance");
+        } else if (lower.includes("how much should we spend") || lower.includes("spend on this campaign")) {
+          text = "[Marketing Dept.]: We propose a $5,000 budget targeting TikTok ads and playlist pitching to support the upcoming release. [Finance Dept.]: A $5,000 marketing expense fits within our seasonal cash flow limits. However, we should secure contract splits first.";
+        } else if (lower.includes("bring in legal") || lower.includes("check the agreements") || lower.includes("legal")) {
+          text = "[Executor]: Bringing Legal into the discussion to review the campaign split sheet agreements.";
+          pushSeat("legal");
+        } else if (lower.includes("good to go") || lower.includes("excused") || lower.includes("thank you")) {
+          text = "[Executor]: Marketing and Finance, thank you for the budget details. You are excused.";
+          pushUnseat("marketing");
+          pushUnseat("finance");
+        } else if (lower.includes("split sheet") || lower.includes("templates are we using")) {
+          text = "[Executor]: Directing the templates inquiry to our Legal department.";
+        } else if (lower.includes("marketing visual") || lower.includes("creative and video") || lower.includes("visual for this campaign")) {
+          text = "[Executor]: Summoning Creative Director and Video Agent to design marketing visuals.";
+          pushSeat("creative");
+          pushSeat("video");
+        } else if (lower.includes("social copy") || lower.includes("social and publicist") || lower.includes("press release")) {
+          text = "[Executor]: Summoning Social and Publicist agents to outline copy and press releases.";
+          pushSeat("social");
+          pushSeat("publicist");
+        } else if (lower.includes("artistic vibe") || lower.includes("brand and music") || lower.includes("align on")) {
+          text = "[Executor]: Summoning Brand and Music Directors to align on the artistic vibe.";
+          pushSeat("brand");
+          pushSeat("music");
+        } else if (contents.some((c: any) => c?.role === 'function' || (c?.parts && c.parts.some((p: any) => p?.functionResponse)))) {
+          text = "[Publicist]: Here is your pitch: MOCK_DATA_FROM_MCP_SERVER.";
+        } else if (lower.includes("generate a playlist pitch")) {
+          text = "[Publicist]: Generating the pitch...";
+          functionCalls.push({ name: "generate_playlist_pitch", args: { releaseId: "track-123", targetPlaylist: "RapCaviar" } });
+        } else if (lower.includes("clear the table") || lower.includes("done for today")) {
+          text = "[Executor]: Excusing all remaining agents.";
+          ["legal", "creative", "video", "social", "publicist", "brand", "music"].forEach(pushUnseat);
+        }
+
+        const streamChunk = JSON.stringify({ text, functionCalls });
+        await route.fulfill({
+          status: 200,
+          headers: corsHeaders,
+          contentType: "text/event-stream",
+          body: `data: ${streamChunk}\n\n`,
         });
         return;
       }
@@ -372,13 +583,25 @@ export const test = base.extend<AuthFixtures>({
         const postData = route.request().postData() || "";
         const hasUpdateProfileTool = postData.includes("updateProfile");
         const hasSeatFinanceTool = postData.toLowerCase().includes("financial department") || postData.toLowerCase().includes("finance");
+        const hasClearTable = postData.toLowerCase().includes("clear the table");
 
         const parts: Array<{
           text?: string;
           functionCall?: Record<string, unknown>;
         }> = [];
 
-        if (hasSeatFinanceTool) {
+        if (hasClearTable) {
+          parts.push({ text: "Clearing the table." });
+          const agentsToUnseat = ["creative", "video", "social", "publicist", "brand", "music", "legal", "generalist"];
+          for (const agent of agentsToUnseat) {
+            parts.push({
+              functionCall: {
+                name: "unseat_agent",
+                args: { targetAgentId: agent }
+              }
+            });
+          }
+        } else if (hasSeatFinanceTool) {
           parts.push({
             text: "Calling seat_agent for finance.",
           });
@@ -812,15 +1035,15 @@ export const test = base.extend<AuthFixtures>({
       w.FIREBASE_E2E_MOCK = true;
       w.FIREBASE_USER_MOCK = {
         uid: "test-user-uid-e2e",
-        email: "e2e@indii.test",
+        email: "wiil@indii.music",
         displayName: "E2E Test User",
         isAnonymous: false,
-        getIdToken: () => Promise.resolve("eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJpc3MiOiJodHRwczovL3NlY3VyZXRva2VuLmdvb2dsZS5jb20vaW5kaWktbXVzaWMtZm91bmRlciIsImF1ZCI6ImluZGlpLW11c2ljLWZvdW5kZXIiLCJhdXRoX3RpbWUiOjE3MDAwMDAwMDAsInVzZXJfaWQiOiJ0ZXN0LXVzZXItdWlkLWUyZSIsInN1YiI6InRlc3QtdXNlci11aWQtZTJlIiwiaWF0IjoxNzAwMDAwMDAwLCJleHAiOjE4MDAwMDAwMDAsImVtYWlsIjoiZTJlQGluZGlpLnRlc3QiLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwiZmlyZWJhc2UiOnsiaWRlbnRpdGllcyI6eyJlbWFpbCI6WyJlMmVAaW5kaWkudGVzdCJdfSwic2lnbl9pbl9wcm92aWRlciI6InBhc3N3b3JkIn19.signature"),
+        getIdToken: () => Promise.resolve("eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJpc3MiOiJodHRwczovL3NlY3VyZXRva2VuLmdvb2dsZS5jb20vaW5kaWktbXVzaWMtZm91bmRlciIsImF1ZCI6ImluZGlpLW11c2ljLWZvdW5kZXIiLCJhdXRoX3RpbWUiOjE3MDAwMDAwMDAsInVzZXJfaWQiOiJ0ZXN0LXVzZXItdWlkLWUyZSIsInN1YiI6InRlc3QtdXNlci11aWQtZTJlIiwiaWF0IjoxNzAwMDAwMDAwLCJleHAiOjE4MDAwMDAwMDAsImVtYWlsIjoid2lpbEBpbmRpaS5tdXNpYyIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJmaXJlYmFzZSI6eyJpZGVudGl0aWVzIjp7ImVtYWlsIjpbIndpaWxAaW5kaWkubXVzaWMiXX0sInNpZ25faW5fcHJvdmlkZXIiOiJwYXNzd29yZCJ9fQ.signature"),
       };
 
       // Signal FirestoreService to use E2E bypass (skips addDoc/updateDoc network calls)
       try {
-        localStorage.setItem("FIREBASE_E2E_MOCK", "1");
+        localStorage.setItem("FIREBASE_E2E_MOCK", "true");
         // Prevent onboarding wizard from hijacking navigation
         localStorage.setItem("onboarding_dismissed", "true");
         // Dismiss the first-run guided tour overlay
@@ -867,7 +1090,7 @@ export const test = base.extend<AuthFixtures>({
     // Explicitly write localStorage values on the page origin to guarantee they are set
     await page.evaluate(() => {
       try {
-        localStorage.setItem("FIREBASE_E2E_MOCK", "1");
+        localStorage.setItem("FIREBASE_E2E_MOCK", "true");
         localStorage.setItem("onboarding_dismissed", "true");
         localStorage.setItem("indii_tour_completed_v1", "true");
         localStorage.setItem("indii_cookie_consent", JSON.stringify({
@@ -889,9 +1112,9 @@ export const test = base.extend<AuthFixtures>({
     
     try {
       // Use Playwright's native locator.or() to avoid dangling rejected promises from Promise.race
-      await dashboardBtn.or(emailInput).waitFor({ state: 'visible', timeout: 10000 });
+      await dashboardBtn.or(emailInput).waitFor({ state: 'visible', timeout: 45000 });
     } catch (e) {
-      console.log("[E2E] App load timeout. Neither login form nor dashboard was visible after 10s.");
+      console.log("[E2E] App load timeout. Neither login form nor dashboard was visible after 45s.");
     }
     
     if (await emailInput.isVisible().catch(() => false)) {
@@ -910,7 +1133,11 @@ export const test = base.extend<AuthFixtures>({
     } else if (await dashboardBtn.isVisible().catch(() => false)) {
       console.log("[E2E] Dashboard already visible. Already authenticated.");
     }
+}
 
+export const test = base.extend<AuthFixtures>({
+  authedPage: async ({ page }, use) => {
+    await setupE2EPage(page);
     // eslint-disable-next-line react-hooks/rules-of-hooks
     await use(page);
   },

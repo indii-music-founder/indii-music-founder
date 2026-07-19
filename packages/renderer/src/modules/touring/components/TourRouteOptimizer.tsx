@@ -4,6 +4,12 @@ import { motion, AnimatePresence } from 'motion/react';
 import { MapPin, Music2, Plus, X, ArrowRight, Zap, Users, Clock, Route, HelpCircle, Info, BookOpen } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Modal } from '@/components/ui/Modal';
+import { useToast } from '@/core/context/ToastContext';
+import { useTouring } from '../hooks/useTouring';
+import { functions } from '@/services/firebase';
+import { httpsCallable } from 'firebase/functions';
+import { createTouringStopId } from '../itinerary';
+import { TourMap } from './TourMap';
 
 interface City {
     id: string;
@@ -106,10 +112,23 @@ function formatListeners(n: number): string {
     return `${Math.round(n / 1000)}K`;
 }
 
+function toIsoDate(date: Date): string {
+    return date.toISOString().slice(0, 10);
+}
+
+function addDays(date: Date, days: number): Date {
+    const next = new Date(date);
+    next.setDate(next.getDate() + days);
+    return next;
+}
+
 export function TourRouteOptimizer() {
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
     const [optimized, setOptimized] = useState(false);
     const [isGuideOpen, setIsGuideOpen] = useState(false);
+    const [isBuildingItinerary, setIsBuildingItinerary] = useState(false);
+    const toast = useToast();
+    const { saveItinerary } = useTouring();
 
     const selected = CITY_POOL.filter(c => selectedIds.has(c.id));
     const available = CITY_POOL.filter(c => !selectedIds.has(c.id));
@@ -124,6 +143,63 @@ export function TourRouteOptimizer() {
 
     const totalListeners = route.reduce((s, c) => s + c.listeners, 0);
     const estimatedRevenue = route.reduce((s, c) => s + c.avgTicketPrice * Math.round(c.listeners * 0.002), 0);
+    const buildStartDate = toIsoDate(new Date());
+    const buildEndDate = toIsoDate(addDays(new Date(), Math.max(route.length - 1, 0)));
+
+    const handleBuildItinerary = async () => {
+        if (route.length < 2 || isBuildingItinerary) return;
+
+        setIsBuildingItinerary(true);
+        try {
+            const generateItinerary = httpsCallable(functions, 'generateItinerary');
+            const locations = route.map(city => `${city.name}, ${city.state}`);
+            const response = await generateItinerary({
+                locations,
+                dates: {
+                    start: buildStartDate,
+                    end: buildEndDate,
+                },
+            });
+
+            const rawResult = response.data as {
+                tourName?: string;
+                stops?: Array<Partial<{ date: string; city: string; venue: string; activity: string; notes: string; type: string; distance: number }>>;
+                totalDistanceMiles?: number;
+                estimatedBudget?: number | string;
+            };
+
+            const mappedStops = (rawResult.stops?.length ? rawResult.stops : route.map((city, idx) => ({
+                date: toIsoDate(addDays(new Date(), idx)),
+                city: city.name,
+                venue: `${city.name} Venue`,
+                activity: idx === 0 ? 'Travel' : 'Show',
+                notes: '',
+                type: idx === 0 ? 'Travel' : 'Show',
+            }))).map(stop => ({
+                id: createTouringStopId(),
+                date: stop.date || buildStartDate,
+                city: stop.city || '',
+                venue: stop.venue || '',
+                activity: stop.activity || '',
+                notes: stop.notes || '',
+                type: stop.type || 'Show',
+                distance: stop.distance,
+            }));
+
+            await saveItinerary({
+                tourName: rawResult.tourName || `Route plan: ${route[0]?.name} to ${route[route.length - 1]?.name}`,
+                stops: mappedStops,
+                totalDistance: rawResult.totalDistanceMiles ? `${rawResult.totalDistanceMiles} miles` : `${totalDistance} miles`,
+                estimatedBudget: rawResult.estimatedBudget != null ? String(rawResult.estimatedBudget) : undefined,
+            });
+
+            toast.success('Route itinerary saved');
+        } catch {
+            toast.error('Failed to build itinerary from this route');
+        } finally {
+            setIsBuildingItinerary(false);
+        }
+    };
 
     const toggleCity = (id: string) => {
         setSelectedIds(prev => {
@@ -136,9 +212,9 @@ export function TourRouteOptimizer() {
 
     return (
         <TooltipProvider delayDuration={200}>
-            <div className="flex gap-6 h-full">
+            <div className="flex flex-col gap-6 h-full overflow-y-auto custom-scrollbar">
                 {/* Left — city picker */}
-                <div className="w-56 flex-shrink-0 space-y-4">
+                <div className="w-full space-y-4">
                     <div>
                         <Tooltip>
                             <TooltipTrigger asChild>
@@ -153,7 +229,7 @@ export function TourRouteOptimizer() {
                         </Tooltip>
                     </div>
 
-                    <div className="space-y-1 max-h-72 overflow-y-auto pr-1">
+                    <div className="space-y-1 max-h-72 overflow-y-auto pr-1 custom-scrollbar">
                         {available.map(city => (
                             <button
                                 key={city.id}
@@ -182,7 +258,7 @@ export function TourRouteOptimizer() {
                     </div>
                     <div className="flex justify-between">
                         <span className="text-neutral-600">Distance</span>
-                        <span className="text-white font-bold">{totalDistance.toLocaleString()} mi</span>
+                        <span className="text-white font-bold">{totalDistance.toLocaleString('en-US')} mi</span>
                     </div>
 
                     <Tooltip>
@@ -249,6 +325,36 @@ export function TourRouteOptimizer() {
                             <p className="text-neutral-400 text-[10px]">Executes a greedy nearest-neighbor algorithm that sorts your tour routing. It calculates optimal legs based on Haversine distance, with a **weighting index** that draws routes closer to cities with higher Spotify listener concentrations.</p>
                         </TooltipContent>
                     </Tooltip>
+                </div>
+
+                <div className="flex justify-end">
+                    <button
+                        onClick={handleBuildItinerary}
+                        disabled={route.length < 2 || isBuildingItinerary}
+                        className="flex items-center gap-2 px-4 py-2 rounded-xl border border-white/10 bg-white/[0.03] text-white text-xs font-black uppercase tracking-widest hover:bg-white/[0.06] hover:border-white/20 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                        <Plus size={13} />
+                        {isBuildingItinerary ? 'Saving Itinerary...' : 'Build Itinerary from Route'}
+                    </button>
+                </div>
+
+                <div className="h-56 overflow-hidden rounded-xl border border-white/5 bg-[#0b0b0b]">
+                    {route.length > 0 ? (
+                        <TourMap
+                            locations={route.map(city => `${city.name}, ${city.state}`)}
+                            markers={route.map((city, idx) => ({
+                                position: { lat: city.lat, lng: city.lng },
+                                title: `${city.name}, ${city.state}`,
+                                type: 'venue' as const,
+                                label: `${idx + 1}`,
+                            }))}
+                            center={route[0] ? { lat: route[0].lat, lng: route[0].lng } : undefined}
+                        />
+                    ) : (
+                        <div className="flex h-full items-center justify-center text-xs text-neutral-500 uppercase tracking-[0.2em]">
+                            Select cities to preview the route map
+                        </div>
+                    )}
                 </div>
 
                 {/* Route cards */}
@@ -336,7 +442,7 @@ export function TourRouteOptimizer() {
                                                 <div className="flex-1 h-px bg-white/5" />
                                                 <div className="flex items-center gap-1.5 text-[9px] text-neutral-600">
                                                     <Route size={9} />
-                                                    <span>{dist.toLocaleString()} mi</span>
+                                                    <span>{dist.toLocaleString('en-US')} mi</span>
                                                     <ArrowRight size={9} />
                                                     <Clock size={9} />
                                                     <span>{driveHours(dist)}</span>

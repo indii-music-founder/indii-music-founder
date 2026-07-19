@@ -1,5 +1,4 @@
 import { AppErrorCode, AppException } from '@/shared/types/errors';
-import { logger } from '@/utils/logger';
 
 export interface GeminiFile {
     name: string;
@@ -29,211 +28,54 @@ export class GeminiFileService {
         return GeminiFileService.instance;
     }
 
-    private getApiKey(): string {
-        const key = import.meta.env.VITE_API_KEY;
-        if (!key) {
-            throw new AppException(
-                AppErrorCode.INTERNAL_ERROR,
-                'VITE_API_KEY is not defined. Required for Gemini File API.'
-            );
-        }
-        return key;
+    /**
+     * DEPRECATED: File operations must route through backend API.
+     * Client-side file uploads are disabled. Use the fileUpload Cloud Function instead.
+     */
+    public async uploadFile(): Promise<GeminiFile> {
+        throw new AppException(
+            AppErrorCode.INTERNAL_ERROR,
+            'File operations must route through backend API. Use the fileUpload Cloud Function instead of direct client-side upload.'
+        );
     }
 
     /**
-     * Uploads a file to the Gemini File API using the resumable upload protocol.
-     * This avoids Node.js `fs` module restrictions and works seamlessly in the Electron Renderer.
-     * Generative files are ephemeral and automatically expire after 48 hours.
-     * @param file The standard File/Blob object from user drops or fetch operations.
-     * @param displayName An optional display name for the file.
-     * @param onProgress Callback to report upload progress.
+     * DEPRECATED: File operations must route through backend API.
      */
-    public async uploadFile(
-        file: File | Blob,
-        displayName: string = 'Upload',
-        onProgress?: (progress: number) => void
-    ): Promise<GeminiFile> {
-        try {
-            const apiKey = this.getApiKey();
-            const mimeType = file.type || 'application/octet-stream';
-            const size = file.size;
-
-            logger.info(`[GeminiFileService] Starting resumable upload for ${displayName} (${size} bytes)`);
-
-            // Step 1: Initialize Resumable Session
-            const startResponse = await fetch(
-                `https://generativelanguage.googleapis.com/upload/v1beta/files?uploadType=resumable&key=${apiKey}`,
-                {
-                    method: 'POST',
-                    headers: {
-                        'X-Goog-Upload-Protocol': 'resumable',
-                        'X-Goog-Upload-Command': 'start',
-                        'X-Goog-Upload-Header-Content-Length': size.toString(),
-                        'X-Goog-Upload-Header-Content-Type': mimeType,
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        file: {
-                            display_name: displayName,
-                        },
-                    }),
-                }
-            );
-
-            if (!startResponse.ok) {
-                let errorText: string;
-                try {
-                    errorText = await startResponse.text();
-                } catch {
-                    errorText = `(unable to read response body: status ${startResponse.status})`;
-                }
-                throw new Error(`Failed to initialize upload: ${startResponse.status} ${errorText}`);
-            }
-
-            const uploadUrl = startResponse.headers.get('x-goog-upload-url');
-            if (!uploadUrl) {
-                throw new Error('Upload initialization response missing X-Goog-Upload-URL header');
-            }
-
-            // Step 2: Upload the actual data
-            // To provide robust progress tracking, we could chunk it, but standard 
-            // XMLHttpRequest / fetch with stream progress is better.
-            // For now, doing a direct PUT/POST with the Blob:
-
-            // Send the final payload chunked automatically by fetch
-            logger.info(`[GeminiFileService] Sending file data to session URL`);
-            if (onProgress) onProgress(0);
-
-            const uploadResponse = await fetch(uploadUrl, {
-                method: 'POST',
-                headers: {
-                    'X-Goog-Upload-Protocol': 'resumable',
-                    'X-Goog-Upload-Command': 'upload, finalize',
-                    'X-Goog-Upload-Offset': '0',
-                    'Content-Length': size.toString(),
-                },
-                body: file,
-            });
-
-            if (onProgress) onProgress(100);
-
-            if (!uploadResponse.ok) {
-                let errorText: string;
-                try {
-                    errorText = await uploadResponse.text();
-                } catch {
-                    errorText = `(unable to read response body: status ${uploadResponse.status})`;
-                }
-                throw new Error(`Upload failed: ${uploadResponse.status} ${errorText}`);
-            }
-
-            const data = await uploadResponse.json();
-
-            if (!data.file || !data.file.uri) {
-                throw new Error('API returned successfully but missing file/uri payload.');
-            }
-
-            if (onProgress) onProgress(100);
-
-            logger.info(`[GeminiFileService] Upload complete! URI: ${data.file.uri}`);
-            return data.file as GeminiFile;
-
-        } catch (error: unknown) {
-            if (error instanceof AppException) throw error;
-            const msg = error instanceof Error ? error.message : String(error);
-            logger.error(`[GeminiFileService] uploadFile failed: ${msg}`);
-            throw new AppException(AppErrorCode.NETWORK_ERROR, `Failed to upload file to Gemini AI: ${msg}`);
-        }
+    public async getFile(): Promise<GeminiFile> {
+        throw new AppException(
+            AppErrorCode.INTERNAL_ERROR,
+            'File operations must route through backend API. Use the fileQuery Cloud Function instead.'
+        );
     }
 
     /**
-     * Gets a single file's metadata by its name identifier (e.g. "files/xyz123").
+     * DEPRECATED: File operations must route through backend API.
      */
-    public async getFile(name: string): Promise<GeminiFile> {
-        try {
-            const apiKey = this.getApiKey();
-            const response = await fetch(
-                `https://generativelanguage.googleapis.com/v1beta/${name}?key=${apiKey}`,
-                { method: 'GET' }
-            );
-
-            if (!response.ok) {
-                throw new Error(`Failed to GET file: ${response.status}`);
-            }
-
-            return await response.json();
-        } catch (error: unknown) {
-            const msg = error instanceof Error ? error.message : String(error);
-            throw new AppException(AppErrorCode.NETWORK_ERROR, `Failed to get Gemini File metadata: ${msg}`);
-        }
-    }
-
-     /**
-     * Polls the file until its state is ACTIVE. 
-     * Useful for large media like video that require backend processing.
-     */
-    public async waitForActive(name: string, pollIntervalMs = 5000, timeoutMs = 600000): Promise<GeminiFile> {
-        logger.info(`[GeminiFileService] Polling ${name} for ACTIVE state...`);
-        const startTime = Date.now();
-
-        while (Date.now() - startTime < timeoutMs) {
-            const fileMeta = await this.getFile(name);
-            if (fileMeta.state === 'ACTIVE') {
-                 logger.info(`[GeminiFileService] ${name} is ACTIVE.`);
-                 return fileMeta;
-            }
-            if (fileMeta.state === 'FAILED') {
-                throw new Error(`File processing failed: ${fileMeta.error?.message || 'Unknown error'}`);
-            }
-            await new Promise(resolve => setTimeout(resolve, pollIntervalMs));
-        }
-
-        throw new Error(`Timeout waiting for file to become active after ${timeoutMs}ms`);
+    public async waitForActive(): Promise<GeminiFile> {
+        throw new AppException(
+            AppErrorCode.INTERNAL_ERROR,
+            'File operations must route through backend API. Use the fileStatus Cloud Function instead.'
+        );
     }
 
     /**
-     * Deletes a file.
+     * DEPRECATED: File operations must route through backend API.
      */
-    public async deleteFile(name: string): Promise<void> {
-        try {
-            const apiKey = this.getApiKey();
-            const response = await fetch(
-                `https://generativelanguage.googleapis.com/v1beta/${name}?key=${apiKey}`,
-                { method: 'DELETE' }
-            );
-
-            if (!response.ok) {
-                logger.warn(`[GeminiFileService] Failed to GET file for deletion: ${response.status}`);
-            } else {
-                logger.info(`[GeminiFileService] Successfully deleted ${name}`);
-            }
-        } catch (error: unknown) {
-            logger.warn(`[GeminiFileService] Error deleting file: ${error}`);
-        }
+    public async deleteFile(): Promise<void> {
+        throw new AppException(
+            AppErrorCode.INTERNAL_ERROR,
+            'File operations must route through backend API. Use the fileDelete Cloud Function instead.'
+        );
     }
 
     /**
-     * Lists files from the Gemini File API.
+     * DEPRECATED: File operations must route through backend API.
      */
-    public async listFiles(pageSize = 100, pageToken?: string): Promise<{ files: GeminiFile[], nextPageToken?: string }> {
-        try {
-            const apiKey = this.getApiKey();
-            let url = `https://generativelanguage.googleapis.com/v1beta/files?key=${apiKey}&pageSize=${pageSize}`;
-            if (pageToken) {
-                url += `&pageToken=${pageToken}`;
-            }
-
-            const response = await fetch(url, { method: 'GET' });
-
-            if (!response.ok) {
-                throw new Error(`Failed to list files: ${response.status}`);
-            }
-
-            return await response.json();
-        } catch (error: unknown) {
-            const msg = error instanceof Error ? error.message : String(error);
-            logger.error(`[GeminiFileService] listFiles failed: ${msg}`);
-            throw new AppException(AppErrorCode.NETWORK_ERROR, `Failed to list Gemini Files: ${msg}`);
-        }
+    public async listFiles(): Promise<{ files: GeminiFile[], hasMore: boolean }> {
+        throw new AppException(
+            AppErrorCode.INTERNAL_ERROR,
+            'File operations must route through backend API. Use the fileList Cloud Function instead.'
+        );
     }
 }

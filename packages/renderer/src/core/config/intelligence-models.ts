@@ -10,22 +10,25 @@ import { logger } from '@/utils/logger';
 
 // Approved model categories and IDs
 export const APPROVED_MODELS = {
-    TEXT_AGENT: 'gemini-3.1-pro-preview',
-    TEXT_FAST: 'gemini-3.1-flash-lite',
-    TEXT_LITE: 'gemini-3.1-flash-lite',
-    IMAGE_GEN: 'gemini-3-pro-image-preview',           // Native image gen via responseModalities
-    IMAGE_FAST: 'gemini-3.1-flash-image-preview',         // Fast image gen via responseModalities
+    TEXT_AGENT: 'gemini-3.1-pro-preview',        // Complex reasoning — per MODEL_POLICY.md
+    TEXT_FAST: 'gemini-3-flash-preview',          // Fast tasks — per MODEL_POLICY.md
+    TEXT_LITE: 'gemini-3.1-flash-lite',           // Budget tier — per MODEL_POLICY.md
+    IMAGE_GEN: 'gemini-3-pro-image',              // Native image gen via responseModalities
+    IMAGE_FAST: 'gemini-3.1-flash-image',         // Nano Banana 2 — fast image gen
     // Direct mode — bleeding-edge preview models for client-side SDK calls
-    DIRECT_PRO: 'gemini-3-pro-image-preview',      // Nano Banana Pro — highest quality, 4K, 14 ref images
-    DIRECT_FAST: 'gemini-3.1-flash-image-preview',  // Nano Banana 2 — fast + Pro quality, 4K, grounding
-    DIRECT_LEGACY: 'gemini-3.1-flash-image-preview',        // Nano Banana OG — high-volume, low-latency
+    DIRECT_PRO: 'gemini-3-pro-image',             // Nano Banana Pro — highest quality, 4K, 14 ref images
+    DIRECT_FAST: 'gemini-3.1-flash-image',        // Nano Banana 2 — fast + Pro quality
+    // Imagen 4 specifically for backwards compatibility and fallback options
+    IMAGEN_ULTRA: 'imagen-4.0-ultra-generate-001',
+    IMAGEN_PRO: 'imagen-4.0-generate-001',
+    IMAGEN_FAST: 'imagen-4.0-fast-generate-001',
     AUDIO_PRO: 'gemini-3.1-pro-preview',
     AUDIO_FLASH: 'gemini-3-flash-preview',
-    AUDIO_TTS: 'gemini-2.5-pro-tts',
-    VIDEO_PRO: 'veo-3.1-generate-preview',
-    VIDEO_FAST: 'veo-3.1-fast-generate-preview',   // Fast mode — lower latency, lower cost
-    VIDEO_LITE: 'veo-3.1-lite-generate-preview',   // Lite mode — lowest cost, good quality
-    VIDEO_GEN: 'veo-3.1-generate-preview',    // Alias for backward compatibility
+    AUDIO_TTS: 'gemini-3.1-flash-tts-preview',
+    VIDEO_PRO: 'veo-3.1-generate-001',
+    VIDEO_FAST: 'veo-3.1-fast-generate-001',  // Fast mode — lower latency, lower cost
+    VIDEO_LITE: 'veo-3.1-lite-generate-001',  // Lite mode — lowest cost, good quality
+    VIDEO_GEN: 'veo-3.1-generate-001',        // Alias for backward compatibility
     BROWSER_AGENT: 'gemini-3.1-pro-preview',
     EMBEDDING_DEFAULT: 'gemini-embedding-001'
 } as const;
@@ -41,7 +44,9 @@ export const INTELLIGENCE_MODELS = {
         FAST: APPROVED_MODELS.IMAGE_FAST,
         DIRECT_PRO: APPROVED_MODELS.DIRECT_PRO,
         DIRECT_FAST: APPROVED_MODELS.DIRECT_FAST,
-        DIRECT_LEGACY: APPROVED_MODELS.DIRECT_LEGACY,
+        IMAGEN_ULTRA: APPROVED_MODELS.IMAGEN_ULTRA,
+        IMAGEN_PRO: APPROVED_MODELS.IMAGEN_PRO,
+        IMAGEN_FAST: APPROVED_MODELS.IMAGEN_FAST,
     },
     AUDIO: {
         PRO: APPROVED_MODELS.AUDIO_PRO,
@@ -76,14 +81,9 @@ export const INTELLIGENCE_CONFIG = {
         }
     },
     TEXT: {
-        /** Default maxOutputTokens for Pro model — safety cap for cost control */
+        /** Judgment layer: verbosity/cost backstop for agent-loop text responses.
+         *  Per-agent override via AgentConfig.maxOutputTokens. */
         MAX_OUTPUT_TOKENS_AGENT: 8192,
-        /** Default maxOutputTokens for Flash model — lower cap for fast tasks */
-        MAX_OUTPUT_TOKENS_FAST: 4096,
-        /** Default maxOutputTokens for Flash-Lite model — budget cap for high-volume tasks */
-        MAX_OUTPUT_TOKENS_LITE: 4096,
-        /** Default maxOutputTokens applied to all calls unless overridden */
-        MAX_OUTPUT_TOKENS_DEFAULT: 8192,
     },
     MEDIA_RESOLUTION: {
         DEFAULT: 'MEDIA_RESOLUTION_HIGH',
@@ -129,26 +129,25 @@ export const MODEL_PRICING = {
     'gemini-3.1-pro-preview': { input: 1.25, output: 10.00 },
     'gemini-3-flash-preview': { input: 0.15, output: 0.60 },
     'gemini-3.1-flash-lite': { input: 0.04, output: 0.20 },
-    'veo-3.1-generate-preview': {
+    'veo-3.1-generate-001': {
         perSecond: 0.20,     // 720p/1080p Video Only
         perSecond4K: 0.40,   // 4K Video Only
         audioAddOn: 0.20     // Flat add-on for audio (up to 1080p)
     },
-    'veo-3.1-fast-generate-preview': {
+    'veo-3.1-fast-generate-001': {
         perSecond: 0.10,     // 720p/1080p Video Only
         perSecond4K: 0.30,   // 4K Video Only
         audioAddOn: 0.05     // Flat add-on for audio
     },
-    'veo-3.1-lite-generate-preview': {
+    'veo-3.1-lite-generate-001': {
         perSecond: 0.05,     // 720p/1080p Video Only — lowest cost tier
         audioAddOn: 0.02     // Flat add-on for audio
     },
-    'gemini-2.5-pro-tts': { input: 0.60, output: 4.00 },
+    'gemini-3.1-flash-tts-preview': { input: 1.00, output: 20.00 },
     // Direct mode image models (token-based pricing, same tier as text)
+    'gemini-3-pro-image': { input: 1.25, output: 10.00 },
     'gemini-3-pro-image-preview': { input: 1.25, output: 10.00 },
-    'gemini-3.1-flash-image-preview': { input: 0.15, output: 0.60 },
-    // Nano Banana OG (legacy tier)
-    'gemini-2.5-flash-image': { input: 0.10, output: 0.40 },
+    'gemini-3.1-flash-image': { input: 0.15, output: 0.60 },
     // New Imagen 4 models pricing (matches equivalent quality tiers)
     'imagen-4.0-ultra-generate-001': { input: 1.25, output: 10.00 },
     'imagen-4.0-generate-001': { input: 0.15, output: 0.60 },
@@ -170,10 +169,10 @@ export function calculateVideoTimeout(durationSeconds: number): number {
 
 const FORBIDDEN_PATTERNS: RegExp[] = [
     /gemini-1\./i,            // Block all legacy 1.x models
-    /gemini-2\.0/i,           // Block 2.0 models — allow 2.5.x (TTS + Nano Banana OG)
+    /gemini-2\.0/i,           // Block 2.0 models — allow 2.5.x (TTS only)
     /imagen(?!-4)/i,          // Block all older Imagen models (replaced by Nano Banana, permit only imagen-4.0-*)
-    // NOTE: gemini-2.5-flash-image (Nano Banana OG) is ALLOWED for high-volume/low-latency
-    // NOTE: gemini-3-pro-image-preview and gemini-3.1-flash-image-preview are ALLOWED (Direct mode)
+    /gemini-2\.5-flash-image/i, // Block Nano Banana OG (legacy)
+    // NOTE: gemini-3-pro-image, gemini-3-pro-image-preview and gemini-3.1-flash-image are ALLOWED
 ];
 
 function validateModels(): void {
@@ -209,6 +208,9 @@ function validateModels(): void {
 export const MODEL_DISPLAY_NAMES: Record<string, string> = {
     [APPROVED_MODELS.DIRECT_PRO]: 'Nano Banana Pro',
     [APPROVED_MODELS.DIRECT_FAST]: 'Nano Banana 2',
+    [APPROVED_MODELS.IMAGEN_ULTRA]: 'Imagen 4 Ultra',
+    [APPROVED_MODELS.IMAGEN_PRO]: 'Imagen 4',
+    [APPROVED_MODELS.IMAGEN_FAST]: 'Imagen 4 Fast',
     [APPROVED_MODELS.VIDEO_PRO]: 'Veo 3.1',
     [APPROVED_MODELS.VIDEO_FAST]: 'Veo 3.1 Fast',
     [APPROVED_MODELS.VIDEO_LITE]: 'Veo 3.1 Lite',

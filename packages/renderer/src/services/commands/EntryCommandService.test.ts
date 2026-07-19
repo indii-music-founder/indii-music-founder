@@ -88,6 +88,7 @@ import { merchPodHarnessService } from '@/services/business-harness/MerchPodHarn
 describe('EntryCommandService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    window.history.replaceState({}, '', '/');
     clearCustomEntryCommands();
     storeState.agentHistory = [];
     storeState.boardroomMessages = [];
@@ -112,6 +113,18 @@ describe('EntryCommandService', () => {
 
     expect(result.handled).toBe(false);
     expect(storeState.addAgentMessage).not.toHaveBeenCalled();
+  });
+
+  it('opens Mobile Remote settings for a natural-language connection request', async () => {
+    const result = await entryCommandService.handleInput('Can you help me connect to the remote control, please?', {
+      source: 'command-bar',
+      includeUserMessage: true,
+    });
+
+    expect(result).toMatchObject({ handled: true, agentId: 'connect-remote' });
+    expect(storeState.setModule).toHaveBeenCalledWith('settings');
+    expect(window.location.search).toBe('?section=remote');
+    expect(result.responseText).toContain('Mobile Remote');
   });
 
   it('captures a field contact from messy slash input', async () => {

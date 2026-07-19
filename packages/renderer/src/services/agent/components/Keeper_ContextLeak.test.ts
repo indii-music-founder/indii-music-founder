@@ -3,17 +3,20 @@ import { createStore } from 'zustand';
 import { createAgentSlice, AgentSlice, AgentMessage } from '@/core/store/slices/agent';
 
 // Mock SessionService to verify persistence
-const { mockUpdateSession } = vi.hoisted(() => ({
-    mockUpdateSession: vi.fn().mockResolvedValue(undefined)
+const { mockAppendMessage, mockClearMessages } = vi.hoisted(() => ({
+    mockAppendMessage: vi.fn().mockResolvedValue(undefined),
+    mockClearMessages: vi.fn().mockResolvedValue(undefined),
 }));
 
 vi.mock('@/services/agent/SessionService', () => ({
     sessionService: {
-        updateSession: mockUpdateSession,
+        appendMessage: mockAppendMessage,
+        clearMessages: mockClearMessages,
         getSessionsForUser: vi.fn().mockResolvedValue([]),
         createSession: vi.fn().mockResolvedValue(true),
         deleteSession: vi.fn().mockResolvedValue(true),
-        subscribeToSessions: vi.fn((_cb: unknown) => () => {})
+        subscribeToSessions: vi.fn((_cb: unknown) => () => {}),
+        subscribeToMessages: vi.fn((_sessionId: unknown, _cb: unknown) => () => {})
     }
 }));
 
@@ -76,10 +79,10 @@ describe('📚 Keeper: Context Integrity & Persistence', () => {
         expect(useStore.getState().agentHistory).toContainEqual(msg);
 
         // Assert: Persistence Call (The "File System" check via Service)
-        expect(mockUpdateSession).toHaveBeenCalledWith(
+        expect(mockAppendMessage).toHaveBeenCalledWith(
             sessionId,
             expect.objectContaining({
-                messages: expect.arrayContaining([expect.objectContaining({ text: 'Hello, persistence!' })])
+                text: 'Hello, persistence!'
             })
         );
     });
@@ -121,7 +124,7 @@ describe('📚 Keeper: Context Integrity & Persistence', () => {
         // 2. Add Message
         useStore.getState().addAgentMessage({ id: 's1', role: 'user', text: 'Forget me', timestamp: Date.now() });
         await new Promise(resolve => setTimeout(resolve, 50));
-        mockUpdateSession.mockClear();
+        mockClearMessages.mockClear();
 
         // 3. Action: Clear History
         useStore.getState().clearAgentHistory();
@@ -131,9 +134,6 @@ describe('📚 Keeper: Context Integrity & Persistence', () => {
         expect(useStore.getState().agentHistory).toHaveLength(0);
 
         // Assert: Persistence Cleared
-        expect(mockUpdateSession).toHaveBeenCalledWith(
-            sessionId,
-            expect.objectContaining({ messages: [] })
-        );
+        expect(mockClearMessages).toHaveBeenCalledWith(sessionId);
     });
 });

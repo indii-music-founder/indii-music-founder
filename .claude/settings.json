@@ -1,4 +1,5 @@
 {
+  "enableAllProjectMcpServers": true,
   "permissions": {
     "allow": [
       "Bash(firebase login:*)",
@@ -95,5 +96,197 @@
         ]
       }
     ]
-  }
+  },
+  "customCommands": [
+    {
+      "name": "start",
+      "description": "Execute the /start workflow",
+      "prompt": "You have been invoked with the /start command. Immediately use your file reading tool to read the file .agent/workflows/start.md. Once you have read it, follow all instructions in that workflow verbatim. Do not explain what you are going to do, just execute it."
+    },
+    {
+      "name": "proceed",
+      "description": "Execute the /proceed workflow",
+      "prompt": "You have been invoked with the /proceed command. Immediately use your file reading tool to read the file .agent/workflows/proceed.md. Once you have read it, follow all instructions in that workflow verbatim. Do not explain what you are going to do, just execute it."
+    },
+    {
+      "name": "middle",
+      "description": "Execute the /middle workflow",
+      "prompt": "You have been invoked with the /middle command. Immediately use your file reading tool to read the file .agent/workflows/middle.md. Once you have read it, follow all instructions in that workflow verbatim. Do not explain what you are going to do, just execute it."
+    },
+    {
+      "name": "end",
+      "description": "Execute the /end workflow",
+      "prompt": "You have been invoked with the /end command. Immediately use your file reading tool to read the file .agent/workflows/end.md. Once you have read it, follow all instructions in that workflow verbatim. Do not explain what you are going to do, just execute it."
+    },
+    {
+      "name": "skill-skill",
+      "description": "Execute the /skill-skill workflow",
+      "prompt": "You have been invoked with the /skill-skill command. Immediately use your file reading tool to read the file .agent/workflows/skill-skill.md. Once you have read it, follow all instructions in that workflow verbatim. Do not explain what you are going to do, just execute it."
+    },
+    {
+      "name": "review",
+      "description": "Execute the /review workflow",
+      "prompt": "You have been invoked with the /review command. Immediately use your file reading tool to read the file .agent/workflows/review.md. Once you have read it, follow all instructions in that workflow verbatim. Do not explain what you are going to do, just execute it."
+    },
+    {
+      "name": "opp",
+      "description": "Execute the /opp workflow",
+      "prompt": "You have been invoked with the /opp command. Immediately use your file reading tool to read the file .agent/workflows/opp.md. Once you have read it, follow all instructions in that workflow verbatim. Do not explain what you are going to do, just execute it."
+    },
+    {
+      "name": "go",
+      "description": "Execute the /go workflow",
+      "prompt": "You have been invoked with the /go command. Immediately use your file reading tool to read the file .agent/workflows/go.md. Once you have read it, follow all instructions in that workflow verbatim. Do not explain what you are going to do, just execute it."
+    },
+    {
+      "name": "get-git",
+      "description": "Execute the /get-git workflow",
+      "prompt": "You have been invoked with the /get-git command. Immediately use your file reading tool to read the file .agent/workflows/get-git.md. Once you have read it, follow all instructions in that workflow verbatim. Do not explain what you are going to do, just execute it."
+    },
+    {
+      "name": "c",
+      "description": "Execute the /c workflow",
+      "prompt": "You have been invoked with the /c command. Immediately use your file reading tool to read the file .agent/workflows/c.md. Once you have read it, follow all instructions in that workflow verbatim. Do not explain what you are going to do, just execute it."
+    },
+    {
+      "name": "away",
+      "description": "Execute the /away workflow",
+      "prompt": "You have been invoked with the /away command. Immediately use your file reading tool to read the file .agent/workflows/away.md. Once you have read it, follow all instructions in that workflow verbatim. Do not explain what you are going to do, just execute it."
+    },
+    {
+      "name": "ci-validate",
+      "description": "Execute the /ci-validate workflow",
+      "prompt": "You have been invoked with the /ci-validate command. Immediately use your file reading tool to read the file .agent/workflows/ci-validate.md. Once you have read it, follow all instructions in that workflow verbatim. Do not explain what you are going to do, just execute it."
+    },
+    {
+      "name": "flowchart",
+      "description": "Execute the /flowchart workflow",
+      "prompt": "You have been invoked with the /flowchart command. Immediately use your file reading tool to read the file .agent/workflows/flowchart.md. Once you have read it, follow all instructions in that workflow verbatim. Do not explain what you are going to do, just execute it."
+    },
+    {
+      "name": "db-sync",
+      "description": "Execute the /db-sync workflow",
+      "prompt": "You have been invoked with the /db-sync command. Immediately use your file reading tool to read the file .agent/workflows/db-sync.md. Once you have read it, follow all instructions in that workflow verbatim. Do not explain what you are going to do, just execute it."
+    },
+    {
+      "name": "auto-fix",
+      "description": "Execute the /auto-fix workflow",
+      "prompt": "You have been invoked with the /auto-fix command. Immediately use your file reading tool to read the file .agent/workflows/auto-fix.md. Once you have read it, follow all instructions in that workflow verbatim. Do not explain what you are going to do, just execute it."
+    },
+    {
+      "name": "hunter",
+      "description": "Execute the /hunter workflow",
+      "prompt": "You have been invoked with the /hunter command. Immediately use your file reading tool to read the file .agent/workflows/hunter.md. Once you have read it, follow all instructions in that workflow verbatim. Do not explain what you are going to do, just execute it."
+    },
+    {
+      "name": "issue-sweep",
+      "description": "Execute the /issue-sweep workflow",
+      "prompt": "You have been invoked with the /issue-sweep command. Immediately use your file reading tool to read the file .agent/workflows/issue-sweep.md. Once you have read it, follow all instructions in that workflow verbatim. Do not explain what you are going to do, just execute it."
+    },
+    {
+      "name": "better",
+      "description": "Execute the /better workflow",
+      "prompt": "You have been invoked with the /better command. Immediately use your file reading tool to read the file .agent/workflows/better.md. Once you have read it, follow all instructions in that workflow verbatim. Do not explain what you are going to do, just execute it."
+    },
+    {
+      "name": "finish",
+      "description": "Execute the /finish workflow",
+      "prompt": "You have been invoked with the /finish command. Immediately use your file reading tool to read the file .agent/workflows/finish.md. Once you have read it, follow all instructions in that workflow verbatim. Do not explain what you are going to do, just execute it."
+    },
+    {
+      "name": "devex-review",
+      "description": "Execute the /devex-review workflow",
+      "prompt": "You have been invoked with the /devex-review command. Immediately use your file reading tool to read the file .agent/workflows/devex-review.md. Once you have read it, follow all instructions in that workflow verbatim. Do not explain what you are going to do, just execute it."
+    },
+    {
+      "name": "factory",
+      "description": "Execute the /factory workflow",
+      "prompt": "You have been invoked with the /factory command. Immediately use your file reading tool to read the file .agent/workflows/factory.md. Once you have read it, follow all instructions in that workflow verbatim. Do not explain what you are going to do, just execute it."
+    },
+    {
+      "name": "test",
+      "description": "Execute the /test workflow",
+      "prompt": "You have been invoked with the /test command. Immediately use your file reading tool to read the file .agent/workflows/test.md. Once you have read it, follow all instructions in that workflow verbatim. Do not explain what you are going to do, just execute it."
+    },
+    {
+      "name": "training",
+      "description": "Execute the /training workflow",
+      "prompt": "You have been invoked with the /training command. Immediately use your file reading tool to read the file .agent/workflows/training.md. Once you have read it, follow all instructions in that workflow verbatim. Do not explain what you are going to do, just execute it."
+    },
+    {
+      "name": "api",
+      "description": "Execute the /api workflow",
+      "prompt": "You have been invoked with the /api command. Immediately use your file reading tool to read the file .agent/workflows/api.md. Once you have read it, follow all instructions in that workflow verbatim. Do not explain what you are going to do, just execute it."
+    },
+    {
+      "name": "to-prd",
+      "description": "Execute the /to-prd workflow",
+      "prompt": "You have been invoked with the /to-prd command. Immediately use your file reading tool to read the file .agent/workflows/to-prd.md. Once you have read it, follow all instructions in that workflow verbatim. Do not explain what you are going to do, just execute it."
+    },
+    {
+      "name": "to-issues",
+      "description": "Execute the /to-issues workflow",
+      "prompt": "You have been invoked with the /to-issues command. Immediately use your file reading tool to read the file .agent/workflows/to-issues.md. Once you have read it, follow all instructions in that workflow verbatim. Do not explain what you are going to do, just execute it."
+    },
+    {
+      "name": "grill-me",
+      "description": "Execute the /grill-me workflow",
+      "prompt": "You have been invoked with the /grill-me command. Immediately use your file reading tool to read the file .agent/workflows/grill-me.md. Once you have read it, follow all instructions in that workflow verbatim. Do not explain what you are going to do, just execute it."
+    },
+    {
+      "name": "zoom-out",
+      "description": "Execute the /zoom-out workflow",
+      "prompt": "You have been invoked with the /zoom-out command. Immediately use your file reading tool to read the file .agent/workflows/zoom-out.md. Once you have read it, follow all instructions in that workflow verbatim. Do not explain what you are going to do, just execute it."
+    },
+    {
+      "name": "tdd",
+      "description": "Execute the /tdd workflow",
+      "prompt": "You have been invoked with the /tdd command. Immediately use your file reading tool to read the file .agent/workflows/tdd.md. Once you have read it, follow all instructions in that workflow verbatim. Do not explain what you are going to do, just execute it."
+    },
+    {
+      "name": "mega",
+      "description": "Execute the /mega workflow",
+      "prompt": "You have been invoked with the /mega command. Immediately use your file reading tool to read the file .agent/workflows/mega.md. Once you have read it, follow all instructions in that workflow verbatim. Do not explain what you are going to do, just execute it."
+    },
+    {
+      "name": "mega-test",
+      "description": "Execute the /mega-test workflow",
+      "prompt": "You have been invoked with the /mega-test command. Immediately use your file reading tool to read the file .agent/workflows/mega-test.md. Once you have read it, follow all instructions in that workflow verbatim. Do not explain what you are going to do, just execute it."
+    },
+    {
+      "name": "real",
+      "description": "Execute the /real workflow",
+      "prompt": "You have been invoked with the /real command. Immediately use your file reading tool to read the file .agent/workflows/real.md. Once you have read it, follow all instructions in that workflow verbatim. Do not explain what you are going to do, just execute it."
+    },
+    {
+      "name": "auto_qa",
+      "description": "Execute the /auto_qa workflow",
+      "prompt": "You have been invoked with the /auto_qa command. Immediately use your file reading tool to read the file .agent/workflows/auto_qa.md. Once you have read it, follow all instructions in that workflow verbatim. Do not explain what you are going to do, just execute it."
+    },
+    {
+      "name": "issue",
+      "description": "Execute the /issue workflow",
+      "prompt": "You have been invoked with the /issue command. Immediately use your file reading tool to read the file .agent/workflows/issue.md. Once you have read it, follow all instructions in that workflow verbatim. Do not explain what you are going to do, just execute it."
+    },
+    {
+      "name": "a",
+      "description": "Execute the /a workflow",
+      "prompt": "You have been invoked with the /a command. Immediately use your file reading tool to read the file .agent/workflows/a.md. Once you have read it, follow all instructions in that workflow verbatim. Do not explain what you are going to do, just execute it."
+    },
+    {
+      "name": "b",
+      "description": "Execute the /b workflow",
+      "prompt": "You have been invoked with the /b command. Immediately use your file reading tool to read the file .agent/workflows/b.md. Once you have read it, follow all instructions in that workflow verbatim. Do not explain what you are going to do, just execute it."
+    },
+    {
+      "name": "d",
+      "description": "Execute the /d workflow",
+      "prompt": "You have been invoked with the /d command. Immediately use your file reading tool to read the file .agent/workflows/d.md. Once you have read it, follow all instructions in that workflow verbatim. Do not explain what you are going to do, just execute it."
+    },
+    {
+      "name": "abcd",
+      "description": "Execute the /abcd workflow",
+      "prompt": "You have been invoked with the /abcd command. Immediately use your file reading tool to read the file .agent/workflows/abcd.md. Once you have read it, follow all instructions in that workflow verbatim. Do not explain what you are going to do, just execute it."
+    }
+  ]
 }

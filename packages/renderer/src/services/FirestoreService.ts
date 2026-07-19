@@ -38,12 +38,12 @@ export class FirestoreService<T extends DocumentData = DocumentData> {
     }
 
     // Helper for where clause
-    protected where(field: string, op: WhereFilterOp, value: any): QueryConstraint {
+    public where(field: string, op: WhereFilterOp, value: any): QueryConstraint {
         return where(field, op, value);
     }
 
     // Helper for order by
-    protected orderBy(field: string, direction: OrderByDirection = 'asc'): QueryConstraint {
+    public orderBy(field: string, direction: OrderByDirection = 'asc'): QueryConstraint {
         return orderBy(field, direction);
     }
 

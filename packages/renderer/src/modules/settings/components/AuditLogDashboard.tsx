@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ShieldAlert, Database } from 'lucide-react';
+import { ShieldAlert } from 'lucide-react';
 import { collection, query, orderBy, limit, onSnapshot } from 'firebase/firestore';
 import { db } from '@/services/firebase';
 import { safeUnsubscribe } from '@/utils/safeUnsubscribe';
@@ -52,9 +52,9 @@ export const AuditLogDashboard: React.FC = () => {
     return (
         <div className="p-6 bg-gray-900 rounded-xl border border-gray-800 text-gray-200">
             <div className="flex items-center gap-3 mb-6">
-                <ShieldAlert className="text-purple-400" size={24} />
+                <ShieldAlert className="text-green-400" size={24} />
                 <h2 className="text-xl font-bold font-mono">System Audit Logs</h2>
-                <span className="px-2 py-0.5 ml-auto text-xs bg-purple-900/30 text-purple-400 border border-purple-500/30 rounded">
+                <span className="px-2 py-0.5 ml-auto text-xs bg-green-900/30 text-green-400 border border-green-500/30 rounded">
                     {loading ? 'Loading…' : `${logs.length} entries`}
                 </span>
             </div>
@@ -84,8 +84,8 @@ export const AuditLogDashboard: React.FC = () => {
                         )}
                         {logs.map((log, idx) => (
                             <tr key={log.id} className={`border-b border-gray-800/50 hover:bg-gray-800/20 transition-colors ${idx % 2 === 0 ? 'bg-gray-900/50' : ''}`}>
-                                <td className="py-3 font-mono text-xs text-gray-500">{new Date(log.timestamp).toLocaleString()}</td>
-                                <td className="py-3 font-medium text-purple-300">{log.agent}</td>
+                                <td className="py-3 font-mono text-xs text-gray-500">{new Date(log.timestamp).toLocaleString('en-US')}</td>
+                                <td className="py-3 font-medium text-green-300">{log.agent}</td>
                                 <td className="py-3">{log.action}</td>
                                 <td className="py-3 text-gray-400">{log.resource}</td>
                                 <td className="py-3 text-right text-green-400">{log.status}</td>
@@ -95,11 +95,6 @@ export const AuditLogDashboard: React.FC = () => {
                 </table>
             </div>
 
-            <div className="mt-6 flex justify-end">
-                <button className="flex items-center gap-2 px-4 py-2 bg-gray-800 hover:bg-gray-700 text-sm font-medium rounded-lg border border-gray-700 transition-colors">
-                    <Database size={16} /> Export CSV
-                </button>
-            </div>
         </div>
     );
 };

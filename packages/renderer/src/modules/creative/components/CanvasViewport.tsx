@@ -1,9 +1,10 @@
 import React from 'react';
 import { Wand2 } from 'lucide-react';
 import { HistoryItem } from '@/core/store';
-import { CandidatesCarousel, Candidate } from './CandidatesCarousel';
+import { CandidateReview, Candidate } from './CandidateReview';
 import { EndFrameSelector } from './EndFrameSelector';
 import { CreativeColor } from '../constants';
+import { useResolvedStorageUrl } from '@/hooks/useResolvedStorageUrl';
 
 interface CanvasViewportProps {
     item: HistoryItem;
@@ -11,7 +12,7 @@ interface CanvasViewportProps {
     isMagicFillMode: boolean;
     activeColor: CreativeColor;
     generatedCandidates: Candidate[];
-    onCandidateSelect: (candidate: Candidate, index: number) => void;
+    onCandidateApply: (candidates: Candidate[]) => void;
     onCloseCandidates: () => void;
     isSelectingEndFrame: boolean;
     setIsSelectingEndFrame: (open: boolean) => void;
@@ -25,17 +26,29 @@ export function CanvasViewport({
     isMagicFillMode,
     activeColor,
     generatedCandidates,
-    onCandidateSelect,
+    onCandidateApply,
     onCloseCandidates,
     isSelectingEndFrame,
     setIsSelectingEndFrame,
     generatedHistory,
     onEndFrameSelect
 }: CanvasViewportProps) {
+    const { url: resolvedVideoUrl, isResolving, error: resolveError } = useResolvedStorageUrl(item.type === 'video' ? item.url : null);
+
     return (
-        <main className="flex-1 relative bg-[#050505] flex items-center justify-center overflow-hidden p-12">
+        <main className="flex-1 relative bg-transparent flex items-center justify-center overflow-hidden p-12">
             {item.type === 'video' && !item.url.startsWith('data:image') ? (
-                <video src={item.url} controls className="max-w-full max-h-full object-contain shadow-2xl rounded-lg" />
+                isResolving ? (
+                    <div className="flex items-center justify-center rounded-lg border border-white/10 bg-black/70 px-4 py-3 text-sm text-white/60">
+                        Resolving playback asset...
+                    </div>
+                ) : resolveError ? (
+                    <div className="flex items-center justify-center rounded-lg border border-red-500/20 bg-[#1a0f0f] px-4 py-3 text-sm text-red-300">
+                        Playback asset unavailable.
+                    </div>
+                ) : (
+                    <video src={resolvedVideoUrl} controls className="max-w-full max-h-full object-contain shadow-2xl rounded-lg" />
+                )
             ) : (
                 <div
                     className="relative w-full h-full flex items-center justify-center group"
@@ -47,7 +60,7 @@ export function CanvasViewport({
                         data-testid="creative-canvas-element"
                     />
                     {item.type === 'video' && item.url.startsWith('data:image') && (
-                        <div className="absolute top-4 left-4 bg-purple-600/90 text-white text-xs font-bold px-3 py-1 rounded-md backdrop-blur-sm shadow-lg border border-white/20 pointer-events-none">
+                        <div className="absolute top-4 left-4 bg-green-600/90 text-white text-xs font-bold px-3 py-1 rounded-md backdrop-blur-sm shadow-lg border border-white/20 pointer-events-none">
                             STORYBOARD PREVIEW
                         </div>
                     )}
@@ -63,9 +76,9 @@ export function CanvasViewport({
             )}
 
             {/* Candidates Overlay */}
-            <CandidatesCarousel
+            <CandidateReview
                 candidates={generatedCandidates}
-                onSelect={onCandidateSelect}
+                onApply={onCandidateApply}
                 onClose={onCloseCandidates}
             />
 

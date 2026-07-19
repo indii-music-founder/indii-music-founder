@@ -26,6 +26,11 @@ export interface StorageFetchResult {
  * @throws     Only if both the direct fetch AND proxy fallback fail
  */
 export async function safeStorageFetch(url: string): Promise<StorageFetchResult> {
+    if (url.startsWith('data:')) {
+        const blob = dataUriToBlob(url);
+        return { blob, mimeType: blob.type || guessMimeFromUrl(url) };
+    }
+
     // --- Attempt 1: Direct browser fetch ---
     try {
         const res = await fetch(url, { mode: 'cors' });
@@ -51,7 +56,17 @@ export async function safeStorageFetch(url: string): Promise<StorageFetchResult>
         // Fallback silently
     }
 
-    // --- Attempt 3: Image element loading (works for images even with CORS blocks) ---
+    // --- Attempt 3: Authenticated server-side byte bridge for owned Storage assets ---
+    try {
+        const bridged = await fetchViaCanvasStorageBridge(url);
+        if (bridged.blob.size > 0) {
+            return bridged;
+        }
+    } catch (bridgeErr: unknown) {
+        logger.warn('[safeStorageFetch] Canvas Storage bridge failed:', bridgeErr);
+    }
+
+    // --- Attempt 4: Image element loading (only works when the source is CORS-readable) ---
     try {
         const blob = await loadImageAsBlob(url);
         const mimeType = blob.type || guessMimeFromUrl(url);
@@ -103,6 +118,42 @@ function blobToBase64(blob: Blob): Promise<string> {
         reader.onerror = reject;
         reader.readAsDataURL(blob);
     });
+}
+
+function dataUriToBlob(dataUri: string): Blob {
+    const [header, base64] = dataUri.split(',');
+    const mimeMatch = /data:(.*?)(;base64)?$/i.exec(header || '');
+    const mimeType = mimeMatch?.[1] || 'application/octet-stream';
+    const byteString = atob(base64 || '');
+    const bytes = new Uint8Array(byteString.length);
+    for (let i = 0; i < byteString.length; i += 1) {
+        bytes[i] = byteString.charCodeAt(i);
+    }
+    return new Blob([bytes], { type: mimeType });
+}
+
+async function fetchViaCanvasStorageBridge(url: string): Promise<StorageFetchResult> {
+    const { httpsCallable } = await import('firebase/functions');
+    const { functions } = await import('@/services/firebase');
+    const fetchStorageAssetForCanvas = httpsCallable<
+        { uri: string },
+        { data: string; mimeType: string; size: number }
+    >(functions, 'fetchStorageAssetForCanvas');
+    const response = await fetchStorageAssetForCanvas({ uri: url });
+    const mimeType = response.data.mimeType || guessMimeFromUrl(url);
+    return {
+        blob: base64ToBlob(response.data.data, mimeType),
+        mimeType,
+    };
+}
+
+function base64ToBlob(base64: string, mimeType: string): Blob {
+    const binary = atob(base64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i += 1) {
+        bytes[i] = binary.charCodeAt(i);
+    }
+    return new Blob([bytes], { type: mimeType });
 }
 
 function loadImageAsBlob(url: string): Promise<Blob> {

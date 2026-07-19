@@ -15,6 +15,7 @@ import { AutonomousIntelligence as AI } from '../intelligence/AutonomousIntellig
 import { INTELLIGENCE_CONFIG, INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { v4 as uuidv4 } from 'uuid';
 import { logger } from '@/utils/logger';
+import { StorageService } from '@/services/StorageService';
 
 // Re-export everything from sub-modules for backward compatibility
 export type {
@@ -277,6 +278,19 @@ ALWAYS preserve what they're NOT changing.`;
                     lastMsg.parts.push({
                         text: `[Attached Document: ${file.file.name}]\n${file.content}`
                     });
+                } else if (file.type === 'audio' && file.base64) {
+                    // ISSUE-955: previously had no audio branch at all — an
+                    // attached track was silently dropped from the model's
+                    // context even though the UI implied it would be heard.
+                    lastMsg.parts.push({
+                        text: `[Attached Audio: ${file.file.name}]`
+                    });
+                    lastMsg.parts.push({
+                        inlineData: {
+                            mimeType: file.file.type || inferAudioMimeType(file.file.name),
+                            data: file.base64
+                        }
+                    });
                 }
             });
         }
@@ -344,15 +358,56 @@ ALWAYS preserve what they're NOT changing.`;
 
 // --- Function Call Processor ---
 
+/**
+ * ISSUE-956: images are embedded as base64 data URLs directly inside the
+ * profile document (no object-storage upload path exists yet). Until that
+ * lands, bound the damage a single asset or a burst of assets can do to
+ * Firestore document size / IndexedDB / renderer memory.
+ */
+const MAX_BRAND_ASSET_BYTES = 5 * 1024 * 1024; // ~6.7MB base64-encoded
+const MAX_BRAND_ASSETS_PER_PROFILE = 20; // brandAssets + referenceImages combined
+
+const IMAGE_MIME_BY_EXTENSION: Record<string, string> = {
+    png: 'image/png',
+    jpg: 'image/jpeg',
+    jpeg: 'image/jpeg',
+    webp: 'image/webp',
+    gif: 'image/gif',
+    bmp: 'image/bmp',
+    svg: 'image/svg+xml',
+};
+
+function inferImageMimeType(file: File): string {
+    if (file.type) return file.type;
+    const ext = file.name.split('.').pop()?.toLowerCase() ?? '';
+    return IMAGE_MIME_BY_EXTENSION[ext] ?? 'application/octet-stream';
+}
+
+const AUDIO_MIME_BY_EXTENSION: Record<string, string> = {
+    mp3: 'audio/mpeg',
+    wav: 'audio/wav',
+    flac: 'audio/flac',
+    m4a: 'audio/mp4',
+    aac: 'audio/aac',
+    ogg: 'audio/ogg',
+    aiff: 'audio/aiff',
+};
+
+function inferAudioMimeType(fileName: string): string {
+    const ext = fileName.split('.').pop()?.toLowerCase() ?? '';
+    return AUDIO_MIME_BY_EXTENSION[ext] ?? 'audio/mpeg';
+}
+
 export function processFunctionCalls(
     functionCalls: FunctionCallPart['functionCall'][],
     currentProfile: UserProfile,
     files: ConversationFile[]
-): { updatedProfile: UserProfile, isFinished: boolean, updates: string[] } {
+): { updatedProfile: UserProfile, isFinished: boolean, updates: string[], warnings: string[] } {
     // Start with a shallow copy
     let updatedProfile = { ...currentProfile };
     let isFinished = false;
     const updates: string[] = [];
+    const warnings: string[] = [];
 
     functionCalls.forEach(call => {
         switch (call.name) {
@@ -363,6 +418,7 @@ export function processFunctionCalls(
                 if (args.bio) { updatedProfile = { ...updatedProfile, bio: args.bio }; updates.push('Bio'); }
                 if (args.creative_preferences) { updatedProfile = { ...updatedProfile, creativePreferences: args.creative_preferences }; updates.push('Creative Preferences'); }
                 if (args.career_stage) { updatedProfile = { ...updatedProfile, careerStage: args.career_stage }; updates.push('Career Stage'); }
+                if (args.career_profile) { updatedProfile = { ...updatedProfile, careerProfile: args.career_profile }; updates.push('Career Profile'); }
                 if (args.goals) { updatedProfile = { ...updatedProfile, goals: args.goals }; updates.push('Goals'); }
 
                 // Handle BrandKit (Identity + Release)
@@ -434,8 +490,27 @@ export function processFunctionCalls(
                 const args = call.args as unknown as AddImageAssetArgs;
                 const file = files.find(f => f.file.name === args.file_name);
                 if (file && file.base64) {
+                    const existingCount = (updatedProfile.brandKit?.brandAssets?.length || 0)
+                        + (updatedProfile.brandKit?.referenceImages?.length || 0);
+
+                    if (file.file.size > MAX_BRAND_ASSET_BYTES) {
+                        const warning = `"${args.file_name}" is ${(file.file.size / 1024 / 1024).toFixed(1)}MB, over the ${MAX_BRAND_ASSET_BYTES / 1024 / 1024}MB limit for brand images and was not added.`;
+                        logger.warn(`[onboardingService] ${warning}`);
+                        warnings.push(warning);
+                        break;
+                    }
+                    if (existingCount >= MAX_BRAND_ASSETS_PER_PROFILE) {
+                        const warning = `"${args.file_name}" was not added — this profile already has the maximum of ${MAX_BRAND_ASSETS_PER_PROFILE} brand images.`;
+                        logger.warn(`[onboardingService] ${warning}`);
+                        warnings.push(warning);
+                        break;
+                    }
+
+                    // ISSUE-956: previously hardcoded `data:image/png;base64,...`
+                    // regardless of the file's real type, mislabeling every
+                    // JPEG/WebP/GIF upload as PNG.
                     const newAsset: BrandAsset = {
-                        url: `data:image/png;base64,${file.base64}`,
+                        url: `data:${inferImageMimeType(file.file)};base64,${file.base64}`,
                         description: args.description,
                         category: args.category,
                         tags: args.tags,
@@ -491,7 +566,60 @@ export function processFunctionCalls(
         }
     });
 
-    return { updatedProfile, isFinished, updates };
+    return { updatedProfile, isFinished, updates, warnings };
+}
+
+/**
+ * Moves newly selected Brand Interview images out of the profile document.
+ * The synchronous tool processor remains deterministic; callers await this
+ * storage boundary before persisting the returned profile.
+ */
+export async function externalizeOnboardingBrandAssets(
+    profile: UserProfile,
+    files: ConversationFile[],
+): Promise<{ profile: UserProfile; warnings: string[] }> {
+    const userId = profile.id;
+    if (!userId) return { profile, warnings: ['Brand image was not saved because the profile has no authenticated owner.'] };
+
+    const fileByDataUrl = new Map<string, ConversationFile>();
+    for (const file of files) {
+        if (!file.base64 || !file.file.type.startsWith('image/')) continue;
+        fileByDataUrl.set(`data:${inferImageMimeType(file.file)};base64,${file.base64}`, file);
+    }
+    const warnings: string[] = [];
+    const externalize = async (assets: BrandAsset[] = []): Promise<BrandAsset[]> => {
+        const results = await Promise.all(assets.map(async (asset) => {
+            const source = fileByDataUrl.get(asset.url);
+            if (!source) return asset; // existing legacy/remote asset, not this turn's upload
+            try {
+                const safeName = source.file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+                const url = await StorageService.uploadFile(
+                    source.file,
+                    `users/${userId}/brand-assets/${uuidv4()}-${safeName}`,
+                );
+                return { ...asset, url };
+            } catch (error) {
+                warnings.push(`"${source.file.name}" could not be uploaded and was not added to your profile. Your other profile changes were kept.`);
+                logger.error('[onboardingService] Brand asset upload failed', error);
+                return null;
+            }
+        }));
+        return results.filter((asset): asset is BrandAsset => asset !== null);
+    };
+
+    const brandKit = profile.brandKit;
+    if (!brandKit) return { profile, warnings };
+    return {
+        profile: {
+            ...profile,
+            brandKit: {
+                ...brandKit,
+                brandAssets: await externalize(brandKit.brandAssets),
+                referenceImages: await externalize(brandKit.referenceImages),
+            },
+        },
+        warnings,
+    };
 }
 
 

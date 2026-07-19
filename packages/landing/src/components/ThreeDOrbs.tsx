@@ -8,7 +8,7 @@ import * as THREE from 'three';
 import { createNoise2D } from 'simplex-noise';
 import { useAudioStore } from '../store/audioStore';
 
-const COUNT = 15;
+const COUNT = 21;
 
 export default function ThreeDOrbs() {
     const { viewport, camera } = useThree();

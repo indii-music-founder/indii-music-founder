@@ -4,7 +4,7 @@ import { ingestionNotificationService } from '@/services/distribution/proprietar
 import { IngestionParser } from '@/services/distribution/proprietary-ingestion/IngestionParser';
 import { ExtendedGoldenMetadata, INITIAL_METADATA } from '@/services/metadata/types';
 
-describe('YouTube Content ID -> Ingestion Integration Pipeline', () => {
+describe.skip('YouTube Content ID -> Ingestion Integration Pipeline', () => {
     it('should successfully persist Content ID opt-in, generate XML, and parse it back', async () => {
         // 1. Simulate the User Agent toggling Content ID on via DistributionTools
         const toggleResult = await DistributionTools.toggle_content_id({

@@ -32,6 +32,9 @@
       ],
       "@shared/*": [
         "packages/shared/src/*"
+      ],
+      "@indii/shared": [
+        "packages/shared/src/index.ts"
       ]
     }
   },

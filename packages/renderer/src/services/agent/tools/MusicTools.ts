@@ -5,6 +5,7 @@ import type { AnyToolFunction } from '../types';
 import { db, auth } from '@/services/firebase';
 import { collection, doc, setDoc, getDoc, updateDoc } from 'firebase/firestore';
 import { logger } from '@/utils/logger';
+import { importWithRetry } from '@/utils/dynamicImport';
 
 export const MusicTools = {
     /**
@@ -17,7 +18,7 @@ export const MusicTools = {
         trackTitle?: string,
         releaseType?: 'Single' | 'EP' | 'Album'
     }) => {
-        const { useStore } = await import('@/core/store');
+        const { useStore } = await importWithRetry(() => import('@/core/store'));
         const { uploadedAudio } = useStore.getState();
 
         const audioItem = uploadedAudio[args.uploadedAudioIndex];
@@ -52,7 +53,7 @@ export const MusicTools = {
      * Verifies if a metadata object meets the industrial "Golden Standard".
      */
     verify_metadata_golden: wrapTool('verify_metadata_golden', async (args: { metadata: any }) => {
-        const { ExtendedGoldenMetadataSchema } = await import('@/services/distribution/proprietary-ingestion/validation');
+        const { ExtendedGoldenMetadataSchema } = await importWithRetry(() => import('@/services/distribution/proprietary-ingestion/validation'));
 
         const result = ExtendedGoldenMetadataSchema.safeParse(args.metadata);
 
@@ -86,7 +87,7 @@ export const MusicTools = {
         trackId: string,
         updates: Partial<any>
     }) => {
-        const { trackLibrary } = await import('@/services/metadata/TrackLibraryService');
+        const { trackLibrary } = await importWithRetry(() => import('@/services/metadata/TrackLibraryService'));
 
         const existing = await trackLibrary.getByFingerprint(args.trackId);
         if (!existing) return toolError("Track not found in library.", "NOT_FOUND");
@@ -102,7 +103,7 @@ export const MusicTools = {
      * Extracts BPM, key, energy, genre, mood, and visual prompts.
      */
     analyze_audio: wrapTool('analyze_audio', async (args: { uploadedAudioIndex: number }) => {
-        const { useStore } = await import('@/core/store');
+        const { useStore } = await importWithRetry(() => import('@/core/store'));
         const { uploadedAudio } = useStore.getState();
 
         const audioItem = uploadedAudio[args.uploadedAudioIndex];
@@ -111,7 +112,7 @@ export const MusicTools = {
         }
 
         try {
-            const { audioIntelligence } = await import('@/services/audio/AudioIntelligenceService');
+            const { audioIntelligence } = await importWithRetry(() => import('@/services/audio/AudioIntelligenceService'));
             
             // Fetch audio blob
             const fetchRes = await fetch(audioItem.url);
@@ -128,6 +129,78 @@ export const MusicTools = {
         } catch (error: unknown) {
             const message = error instanceof Error ? error.message : 'Unknown error';
             return toolError(`Failed to analyze audio: ${message}`, "ANALYSIS_FAILED");
+        }
+    }),
+
+    /**
+     * Deep technical and semantic analysis of an isolated audio stem.
+     * Extracts characteristics specifically tuned for isolated stems like vocals or drums.
+     */
+    analyze_audio_stem: wrapTool('analyze_audio_stem', async (args: { uploadedAudioIndex: number, stemType: string }) => {
+        const { useStore } = await importWithRetry(() => import('@/core/store'));
+        const { uploadedAudio } = useStore.getState();
+
+        const audioItem = uploadedAudio[args.uploadedAudioIndex];
+        if (!audioItem) {
+            return toolError(`No stem found at index ${args.uploadedAudioIndex}.`, "NOT_FOUND");
+        }
+
+        try {
+            const { audioIntelligence } = await importWithRetry(() => import('@/services/audio/AudioIntelligenceService'));
+            
+            // Fetch audio blob
+            const fetchRes = await fetch(audioItem.url);
+            const blob = await fetchRes.blob();
+            const file = new File([blob], audioItem.prompt || `stem-${args.stemType}.mp3`, { type: blob.type });
+
+            // Run Analysis
+            const profile = await audioIntelligence.analyze(file);
+
+            return toolSuccess(
+                profile,
+                `Stem analysis complete for ${args.stemType} stem. BPM: ${profile.technical.bpm}, Key: ${profile.technical.key}, Energy: ${profile.technical.energy.toFixed(2)}. Dominant Texture: ${profile.semantic?.timbre?.texture || 'Unknown'}.`
+            );
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : 'Unknown error';
+            return toolError(`Failed to analyze stem: ${message}`, "STEM_ANALYSIS_FAILED");
+        }
+    }),
+
+    /**
+     * Fast technical analysis focused solely on extracting BPM, Key, and Scale.
+     * Useful for quick synchronization checks without full semantic overhead.
+     */
+    detect_bpm_and_key: wrapTool('detect_bpm_and_key', async (args: { uploadedAudioIndex: number }) => {
+        const { useStore } = await importWithRetry(() => import('@/core/store'));
+        const { uploadedAudio } = useStore.getState();
+
+        const audioItem = uploadedAudio[args.uploadedAudioIndex];
+        if (!audioItem) {
+            return toolError(`No audio found at index ${args.uploadedAudioIndex}.`, "NOT_FOUND");
+        }
+
+        try {
+            const { audioAnalysisService } = await importWithRetry(() => import('@/services/audio/AudioAnalysisService'));
+            
+            // Fetch audio blob
+            const fetchRes = await fetch(audioItem.url);
+            const blob = await fetchRes.blob();
+            const file = new File([blob], audioItem.prompt || "track.mp3", { type: blob.type });
+
+            // Run fast technical analysis only
+            const result = await audioAnalysisService.analyze(file);
+
+            return toolSuccess(
+                {
+                    bpm: result.features.bpm,
+                    key: result.features.key,
+                    scale: result.features.scale
+                },
+                `BPM and Key detection complete for "${file.name}". BPM: ${result.features.bpm}, Key: ${result.features.key} ${result.features.scale}.`
+            );
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : 'Unknown error';
+            return toolError(`Failed to detect BPM and Key: ${message}`, "DETECTION_FAILED");
         }
     }),
 
@@ -170,10 +243,11 @@ export const MusicTools = {
 
         return toolSuccess({
             fileUrl: args.fileUrl,
-            status: 'ID3 Tags Written',
+            status: 'Draft Metadata Saved',
             tagsWritten: writtenTags,
-            tagCount: writtenTags.length
-        }, `ID3 tags written to downloadable audio file: ${writtenTags.length} tags applied. Ready for sync export.`);
+            tagCount: writtenTags.length,
+            draft_only: true
+        }, `ID3 tag metadata saved as draft (${writtenTags.length} tags). To embed into audio file, use an audio export tool or DAW. Audio file itself was not modified.`);
     }),
 
     inject_splits_to_metadata: wrapTool('inject_splits_to_metadata', async (args: { trackId: string; splits: Array<{ writer: string; percentage: number; ipi: string }> }) => {
@@ -217,8 +291,9 @@ export const MusicTools = {
                 injectedSplits: args.splits.length,
                 totalPercentage: totalSplit,
                 writers: args.splits.map(s => `${s.writer} (${s.percentage}%, IPI: ${s.ipi})`),
-                status: 'Embedded in Distribution Metadata'
-            }, `Songwriter splits deeply embedded into the distribution metadata blob for track ${args.trackId}. ${args.splits.length} writers registered.`);
+                status: 'App Metadata Saved',
+                draft_only: true
+            }, `Songwriter splits saved to app metadata for track ${args.trackId}. ${args.splits.length} splits recorded. NOTE: App metadata is not the same as official PRO registration or embedded audio tags. Official registration requires PRO or publishing platform submission.`);
         } catch (error: unknown) {
             logger.warn('[MusicTools] Failed to inject splits:', error);
             return toolError('Failed to persist split data to Firestore.', 'PERSISTENCE_ERROR');

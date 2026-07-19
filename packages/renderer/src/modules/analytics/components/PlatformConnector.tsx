@@ -12,7 +12,7 @@
  *  - YouTube       (Google reauth via YouTubeAnalyticsService)
  *  - TikTok        (OAuth 2.0 via TikTokAnalyticsService)
  *  - Instagram     (Facebook Login / Meta OAuth via InstagramAnalyticsService)
- *  - Apple Music   (MusicKit — coming soon)
+ *  - Apple Music   (requires secured Apple Music for Artists backend)
  */
 
 import React, { useEffect, useState, useCallback } from 'react';
@@ -33,6 +33,7 @@ interface PlatformDef {
     label: string;
     description: string;
     dataPoints: string[];
+    unavailableReason?: string;
     color: string;
     bgColor: string;
     borderColor: string;
@@ -44,7 +45,7 @@ const PLATFORMS: PlatformDef[] = [
         id: 'spotify',
         label: 'Spotify',
         description: 'Top tracks, audio features, and recently played data from your Spotify account.',
-        dataPoints: ['Top 50 tracks by popularity', 'Audio features (energy, BPM, key)', 'Recently played history', 'Estimated stream counts'],
+        dataPoints: ['Top 50 tracks by popularity', 'Audio features (energy, BPM, key)', 'Recently played history', 'Spotify-led track weighting'],
         color: 'text-green-400',
         bgColor: 'bg-green-500/10',
         borderColor: 'border-green-500/30',
@@ -87,11 +88,11 @@ const PLATFORMS: PlatformDef[] = [
         label: 'Instagram Reels',
         description: 'Reels plays, reach, impressions, and engagement via Instagram Graph API.',
         dataPoints: ['Reels plays & reach', 'Impressions (30 days)', 'Saves & shares per Reel', 'Account-level daily insights'],
-        color: 'text-purple-400',
-        bgColor: 'bg-purple-500/10',
-        borderColor: 'border-purple-500/30',
+        color: 'text-green-400',
+        bgColor: 'bg-green-500/10',
+        borderColor: 'border-green-500/30',
         icon: (
-            <svg viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 text-purple-400">
+            <svg viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 text-green-400">
                 <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 1 0 0 12.324 6.162 6.162 0 0 0 0-12.324zM12 16a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.406-11.845a1.44 1.44 0 1 0 0 2.881 1.44 1.44 0 0 0 0-2.881z"/>
             </svg>
         ),
@@ -99,8 +100,9 @@ const PLATFORMS: PlatformDef[] = [
     {
         id: 'apple_music',
         label: 'Apple Music',
-        description: 'Connect your Apple ID via MusicKit JS. Note: stream counts require Apple Music for Artists partner access (not yet public).',
-        dataPoints: ['Library saves (your tracks saved by user)', 'Catalog presence verification', 'Completion rate estimate (72% platform avg)', 'Stream counts when Artists API is available'],
+        description: 'Apple Music analytics require a secured Apple Music for Artists backend before indii can import real metrics.',
+        dataPoints: ['Backend partner integration required', 'Real metrics only', 'Analytics hidden until verified'],
+        unavailableReason: 'Apple Music analytics are unavailable until the secured backend integration is configured.',
         color: 'text-rose-400',
         bgColor: 'bg-rose-500/10',
         borderColor: 'border-rose-500/30',
@@ -114,7 +116,16 @@ const PLATFORMS: PlatformDef[] = [
 
 // ── Status pill ───────────────────────────────────────────────────────────────
 
-function StatusPill({ connected }: { connected: boolean }) {
+function StatusPill({ connected, unavailable = false }: { connected: boolean; unavailable?: boolean }) {
+    if (unavailable) {
+        return (
+            <span className="flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30">
+                <AlertCircle size={10} />
+                Unavailable
+            </span>
+        );
+    }
+
     return (
         <span className={`flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full ${
             connected
@@ -205,7 +216,7 @@ export function PlatformConnector({ onConnectionChange }: PlatformConnectorProps
                     onConnectionChange?.();
                     break;
                 default:
-                    break;
+                    throw new Error(`Connection not implemented for platform: ${platform}`);
             }
         } catch (err: unknown) {
             setErrorFor(platform, err instanceof Error ? err.message : 'Connection failed.');
@@ -224,7 +235,8 @@ export function PlatformConnector({ onConnectionChange }: PlatformConnectorProps
                 case 'tiktok':       await tikTokAnalyticsService.disconnect();    break;
                 case 'instagram':    await instagramAnalyticsService.disconnect(); break;
                 case 'apple_music':  await appleMusicService.disconnect();         break;
-                default: break;
+                default: 
+                    throw new Error(`Disconnect not implemented for platform: ${platform}`);
             }
             await checkStatus();
             onConnectionChange?.();
@@ -258,6 +270,7 @@ export function PlatformConnector({ onConnectionChange }: PlatformConnectorProps
                         const isConnected = status[platform.id];
                         const isLoading   = !!loading[platform.id];
                         const error       = errors[platform.id];
+                        const isUnavailable = !!platform.unavailableReason;
 
                         return (
                             <motion.div
@@ -281,7 +294,7 @@ export function PlatformConnector({ onConnectionChange }: PlatformConnectorProps
                                                 {platform.label}
                                             </p>
                                             <div className="mt-0.5">
-                                                <StatusPill connected={isConnected} />
+                                                <StatusPill connected={isConnected} unavailable={isUnavailable} />
                                             </div>
                                         </div>
                                     </div>
@@ -304,15 +317,19 @@ export function PlatformConnector({ onConnectionChange }: PlatformConnectorProps
 
                                 {/* Error */}
                                 <AnimatePresence>
-                                    {error && (
+                                    {(error || platform.unavailableReason) && (
                                         <motion.div
                                             initial={{ opacity: 0, height: 0 }}
                                             animate={{ opacity: 1, height: 'auto' }}
                                             exit={{ opacity: 0, height: 0 }}
-                                            className="mb-3 flex items-start gap-1.5 text-[11px] text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-2 py-2"
+                                            className={`mb-3 flex items-start gap-1.5 text-[11px] border rounded-lg px-2 py-2 ${
+                                                error
+                                                    ? 'text-red-400 bg-red-500/10 border-red-500/20'
+                                                    : 'text-amber-300 bg-amber-500/10 border-amber-500/20'
+                                            }`}
                                         >
                                             <AlertCircle size={11} className="shrink-0 mt-0.5" />
-                                            {error}
+                                            {error || platform.unavailableReason}
                                         </motion.div>
                                     )}
                                 </AnimatePresence>
@@ -320,7 +337,7 @@ export function PlatformConnector({ onConnectionChange }: PlatformConnectorProps
                                 {/* Action button */}
                                 <button
                                     onClick={() => isConnected ? handleDisconnect(platform.id) : handleConnect(platform.id)}
-                                    disabled={isLoading}
+                                    disabled={isLoading || isUnavailable}
                                     className={`w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold transition-all duration-150 disabled:opacity-50 ${
                                         isConnected
                                             ? 'bg-slate-700 hover:bg-slate-600 text-slate-300 border border-white/10'
@@ -331,6 +348,8 @@ export function PlatformConnector({ onConnectionChange }: PlatformConnectorProps
                                         <Loader2 size={12} className="animate-spin" />
                                     ) : isConnected ? (
                                         'Disconnect'
+                                    ) : isUnavailable ? (
+                                        'Unavailable'
                                     ) : (
                                         <>
                                             <ExternalLink size={11} />

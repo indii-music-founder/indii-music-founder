@@ -6,10 +6,9 @@ import { secureRandomAlphanumeric } from '@/utils/crypto-random';
 import { useToast } from '@/core/context/ToastContext';
 import { Logger } from '@/core/logger/Logger';
 import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
-
-/* ================================================================== */
-/*  Visa / Immigration Checklist — International Tour Documentation    */
-/* ================================================================== */
+import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
+import { AgentMessage } from '@/core/store/slices/agent';
 
 interface VisaDoc {
     id: string;
@@ -121,11 +120,7 @@ function createEntry(country: CountryKey): CountryEntry {
     };
 }
 
-interface Message {
-    id: string;
-    role: 'user' | 'assistant';
-    text: string;
-}
+// Interface Message is replaced by AgentMessage from store
 
 export function VisaChecklist() {
     const { t } = useTranslation();
@@ -147,27 +142,24 @@ export function VisaChecklist() {
     const [customCountryName, setCustomCountryName] = useState('');
     const [isGeneratingAI, setIsGeneratingAI] = useState(false);
 
-    // AI Advisor state
-    const [chatHistory, setChatHistory] = useState<Message[]>(() => {
-        try {
-            const saved = localStorage.getItem('indii_visa_advisor_chat');
-            return saved ? JSON.parse(saved) : [
-                {
-                    id: 'welcome',
-                    role: 'assistant',
-                    text: "Greetings! I am your AI Road Director. I've analyzed your tour itinerary and current documentation checklists. How can I help you expedite your visa applications today?"
-                }
-            ];
-        } catch {
-            return [
-                {
-                    id: 'welcome',
-                    role: 'assistant',
-                    text: "Greetings! I am your AI Road Director. I've analyzed your tour itinerary and current documentation checklists. How can I help you expedite your visa applications today?"
-                }
-            ];
+    const { sessions, createSession, addMessageToSession, clearAgentHistory } = useStore(
+        useShallow(state => ({
+            sessions: state.sessions,
+            createSession: state.createSession,
+            addMessageToSession: state.addMessageToSession,
+            clearAgentHistory: state.clearAgentHistory
+        }))
+    );
+
+    // Find existing visa session or fall back to default empty state
+    const visaSession = Object.values(sessions).find(s => s.namespace === 'visa-advisor');
+    const chatHistory = visaSession?.messages.length ? visaSession.messages : [
+        {
+            id: 'welcome',
+            role: 'model' as const,
+            text: "Greetings! I am your AI Road Director. I've analyzed your tour itinerary and current documentation checklists. How can I help you expedite your visa applications today?"
         }
-    });
+    ];
     const [userInput, setUserInput] = useState('');
     const [isAdvisorLoading, setIsAdvisorLoading] = useState(false);
     const chatEndRef = useRef<HTMLDivElement>(null);
@@ -181,14 +173,7 @@ export function VisaChecklist() {
         }
     }, [entries]);
 
-    // Persist chat history
-    useEffect(() => {
-        try {
-            localStorage.setItem('indii_visa_advisor_chat', JSON.stringify(chatHistory));
-        } catch (e) {
-            Logger.error('VisaChecklist', 'Failed to save visa advisor chat', e);
-        }
-    }, [chatHistory]);
+    // Local storage persist for checklists only
 
     // Auto-scroll chat advisor
     useEffect(() => {
@@ -313,13 +298,20 @@ Include 5 to 8 total documentation items tailored exactly to what an artist ente
             setUserInput('');
         }
 
-        const userMsg: Message = {
+        const userMsg: AgentMessage = {
             id: secureRandomAlphanumeric(7),
             role: 'user',
-            text: query
+            text: query,
+            timestamp: Date.now()
         };
 
-        setChatHistory(prev => [...prev, userMsg]);
+        let activeSessionId = visaSession?.id;
+        if (!activeSessionId) {
+            activeSessionId = createSession('Visa Advisor', ['visa-advisor'], 'visa-advisor');
+        }
+        
+        addMessageToSession(activeSessionId, userMsg);
+
         setIsAdvisorLoading(true);
 
         try {
@@ -343,34 +335,32 @@ Provide a highly practical, precise, and expert answer. Be direct and realistic.
 
             const reply = await AutonomousIntelligence.generateText(prompt);
 
-            const assistantMsg: Message = {
+            const assistantMsg: AgentMessage = {
                 id: secureRandomAlphanumeric(7),
-                role: 'assistant',
-                text: reply
+                role: 'model',
+                text: reply,
+                timestamp: Date.now()
             };
 
-            setChatHistory(prev => [...prev, assistantMsg]);
+            addMessageToSession(activeSessionId, assistantMsg);
         } catch (err) {
             Logger.error('VisaChecklist', 'Visa Advisor error', err);
-            const errorMsg: Message = {
+            const errorMsg: AgentMessage = {
                 id: secureRandomAlphanumeric(7),
-                role: 'assistant',
-                text: "My apologies. I had trouble connecting with the department database. Please rephrase your question, and let me try again."
+                role: 'model',
+                text: "My apologies. I had trouble connecting with the department database. Please rephrase your question, and let me try again.",
+                timestamp: Date.now()
             };
-            setChatHistory(prev => [...prev, errorMsg]);
+            addMessageToSession(activeSessionId, errorMsg);
         } finally {
             setIsAdvisorLoading(false);
         }
     };
 
     const handleClearChat = () => {
-        setChatHistory([
-            {
-                id: 'welcome',
-                role: 'assistant',
-                text: "Checklists reset. I'm ready to analyze your updated routes. What logistical info do you need?"
-            }
-        ]);
+        if (visaSession?.id) {
+            clearAgentHistory(visaSession.id);
+        }
         toast.info("Advisor chat log cleared.");
     };
 

@@ -9,6 +9,8 @@ import { CloudStorageService } from './CloudStorageService';
 import { OrganizationService } from './OrganizationService';
 import { Logger } from '@/core/logger/Logger';
 import { events } from '@/core/events';
+import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
+import { DEFAULT_PROJECT_ID } from '@/core/constants';
 
 interface HistoryDocument extends Omit<HistoryItem, 'timestamp'> {
     timestamp: Timestamp;
@@ -141,7 +143,10 @@ class StorageServiceImpl extends FirestoreService<HistoryDocument> {
 
     async deleteFile(path: string): Promise<void> {
         try {
-            const storageRef = ref(storage, path);
+            const storagePath = path.startsWith('gs://')
+                ? path.replace(/^gs:\/\/[^/]+\//, '')
+                : path;
+            const storageRef = ref(storage, storagePath);
             await deleteObject(storageRef);
         } catch (_error: unknown) {
             // Silently fail storage cleanup if file missing
@@ -154,6 +159,7 @@ class StorageServiceImpl extends FirestoreService<HistoryDocument> {
     async saveItem(item: HistoryItem) {
         let imageUrl = item.url;
         let thumbnailUrl: string | undefined;
+        let storageUri = item.storageUri;
 
         // 🔥 Handle blob: URLs for video items — blob: URLs are session-scoped
         // and become invalid after page refresh. We must upload to Firebase Storage
@@ -174,6 +180,7 @@ class StorageServiceImpl extends FirestoreService<HistoryDocument> {
 
                     imageUrl = uploadResult.url;
                     thumbnailUrl = uploadResult.thumbnailUrl;
+                    storageUri = uploadResult.storageUri;
                     logger.info(`[StorageService] Video uploaded to Storage: ${uploadResult.url}`);
                     if (thumbnailUrl) {
                         logger.info(`[StorageService] Video thumbnail: ${thumbnailUrl}`);
@@ -224,13 +231,19 @@ class StorageServiceImpl extends FirestoreService<HistoryDocument> {
             ...item,
             url: imageUrl,
             thumbnailUrl,
+            storageUri: storageUri ?? item.storageUri,
             timestamp: Timestamp.fromMillis(item.timestamp),
-            projectId: item.projectId || 'default-project',
+            projectId: item.projectId || DEFAULT_PROJECT_ID,
             orgId: orgId || 'personal',
             userId: auth.currentUser.uid
         } as HistoryDocument);
 
-        return item.id;
+        return { 
+            id: item.id, 
+            url: imageUrl, 
+            thumbnailUrl, 
+            storageUri: storageUri ?? item.storageUri 
+        };
 
     }
 
@@ -244,7 +257,9 @@ class StorageServiceImpl extends FirestoreService<HistoryDocument> {
 
         if (item) {
             // 2. If it has a standard storage URL (not a data URI or placeholder), delete from Storage
-            if (item.url && item.url.includes('firebasestorage.googleapis.com')) {
+            if (item.storageUri) {
+                await this.deleteFile(item.storageUri);
+            } else if (item.url && item.url.includes('firebasestorage.googleapis.com')) {
                 // Extract path from URL or assume standard path
                 await this.deleteFile(`generated/${id}`);
             }
@@ -323,6 +338,16 @@ class StorageServiceImpl extends FirestoreService<HistoryDocument> {
         onUpdate: (items: HistoryItem[]) => void,
         onError: (error: Error) => void
     ): Promise<Unsubscribe> {
+        if (isFirebaseE2EMockEnabled()) {
+            try {
+                const history = await this.loadHistory(limitCount);
+                onUpdate(history);
+            } catch (error) {
+                onError(error instanceof Error ? error : new Error('Failed to load mock history'));
+            }
+            return () => { };
+        }
+
         const orgId = OrganizationService.getCurrentOrgId() || 'personal';
 
         if (!orgId) {

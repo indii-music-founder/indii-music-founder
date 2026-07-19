@@ -15,6 +15,8 @@ describe('ReviewStep', () => {
         ingredients: [],
         onAddIngredient: vi.fn(),
         onRemoveIngredient: vi.fn(),
+        duration: 6,
+        model: 'veo-3.1-generate-preview'
     };
 
     it('renders ingredients section', () => {

@@ -46,6 +46,11 @@ export const DesignCanvas: React.FC<DesignCanvasProps> = ({
     const [snapToGrid, setSnapToGrid] = useState(false);
     const GRID_SIZE = 20;
 
+    const requestDeleteRef = useRef(onRequestDelete);
+    useEffect(() => {
+        requestDeleteRef.current = onRequestDelete;
+    }, [onRequestDelete]);
+
     // Show snap-to-grid status
     useEffect(() => {
         if (!isInitialized) return;
@@ -192,19 +197,22 @@ export const DesignCanvas: React.FC<DesignCanvasProps> = ({
                     key: ['Delete', 'Backspace'],
                     priority: 'normal',
                     handler: (e) => {
+                        // Check if we're actively editing text
                         const activeObject = canvas.getActiveObject();
-                        if (activeObject) {
-                            e.preventDefault();
-                            const activeObjects = canvas.getActiveObjects();
+                        const isTextEditing = activeObject &&
+                            (activeObject.type === 'i-text' || activeObject.type === 'textbox') &&
+                            (activeObject as fabric.IText).isEditing;
 
-                            if (onRequestDelete) {
-                                const canvasObjects = activeObjects.map(convertFabricToCanvasObject);
-                                onRequestDelete(canvasObjects);
-                            } else {
-                                activeObjects.forEach(obj => canvas.remove(obj));
-                                canvas.discardActiveObject();
-                                canvas.renderAll();
-                            }
+                        if (isTextEditing) {
+                            return; // Let the text editor handle the backspace/delete
+                        }
+
+                        // Not editing text, safely delete the whole object
+                        const activeObjects = canvas.getActiveObjects();
+                        if (activeObjects.length > 0) {
+                            e.preventDefault();
+                            const canvasObjects = activeObjects.map(convertFabricToCanvasObject);
+                            requestDeleteRef.current?.(canvasObjects);
                         }
                     }
                 }),
@@ -384,7 +392,7 @@ export const DesignCanvas: React.FC<DesignCanvasProps> = ({
             });
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps -- snapToGrid is read at event time, not at effect setup
-    }, [onCanvasReady, handleSelectionChange, emitLayersChange, onRequestDelete, convertFabricToCanvasObject]);
+    }, [onCanvasReady, handleSelectionChange, emitLayersChange, convertFabricToCanvasObject]);
 
     // Responsive canvas sizing
     useEffect(() => {

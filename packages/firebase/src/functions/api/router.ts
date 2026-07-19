@@ -80,6 +80,74 @@ async function rejectIfArcjetDenied(
   return true;
 }
 
+// Extract last resource ID segment from path, ignoring trailing slashes
+function extractResourceId(pathString: string): string | undefined {
+  if (!pathString) return undefined;
+  const segments = pathString.split('/').filter(Boolean);
+  return segments.pop();
+}
+
+// Extract parent resource ID segment (e.g. extracts "123" from "/api/distributions/123/submit")
+function extractParentResourceId(pathString: string, suffixSegment: string): string | undefined {
+  if (!pathString) return undefined;
+  const segments = pathString.split('/').filter(Boolean);
+  const suffixIdx = segments.indexOf(suffixSegment);
+  if (suffixIdx > 0) {
+    return segments[suffixIdx - 1];
+  }
+  return undefined;
+}
+
+// Maps Firebase HttpsError status codes to standard HTTP status codes
+function sendHttpErrorResponse(err: unknown, res: express.Response, requestId: string): void {
+  if (err instanceof HttpsError) {
+    let status = 500;
+    let code = 'INTERNAL_ERROR';
+
+    switch (err.code) {
+      case 'invalid-argument':
+        status = 400;
+        code = 'INVALID_ARGUMENT';
+        break;
+      case 'unauthenticated':
+        status = 401;
+        code = 'UNAUTHENTICATED';
+        break;
+      case 'permission-denied':
+        status = 403;
+        code = 'PERMISSION_DENIED';
+        break;
+      case 'not-found':
+        status = 404;
+        code = 'NOT_FOUND';
+        break;
+      case 'already-exists':
+        status = 409;
+        code = 'ALREADY_EXISTS';
+        break;
+      case 'resource-exhausted':
+        status = 429;
+        code = 'RESOURCE_EXHAUSTED';
+        break;
+      case 'failed-precondition':
+        status = 412;
+        code = 'FAILED_PRECONDITION';
+        break;
+      case 'unimplemented':
+        status = 501;
+        code = 'UNIMPLEMENTED';
+        break;
+      case 'unavailable':
+        status = 503;
+        code = 'UNAVAILABLE';
+        break;
+    }
+    res.status(status).json(errorResponse(code, err.message, requestId));
+  } else {
+    res.status(500).json(errorResponse('INTERNAL_ERROR', 'Internal server error', requestId));
+  }
+}
+
 // GET /api/tracks/:id - Get track details
 export const getTrack = onRequest(async (req: Request, res: express.Response) => {
   const requestId = generateRequestId();
@@ -90,8 +158,7 @@ export const getTrack = onRequest(async (req: Request, res: express.Response) =>
     }
 
     const userId = await verifyAuth(req);
-    if (await rejectIfArcjetDenied(protectAuthenticatedApiRequest(req, userId), res, requestId)) return;
-    const trackId = req.path.split('/').pop();
+    const trackId = extractResourceId(req.path);
 
     if (!trackId) {
       res.status(400).json(errorResponse('INVALID_REQUEST', 'Missing track ID', requestId));
@@ -106,11 +173,7 @@ export const getTrack = onRequest(async (req: Request, res: express.Response) =>
 
     res.status(200).json(respond(doc.data(), requestId));
   } catch (err) {
-    if (err instanceof HttpsError) {
-      res.status(401).json(errorResponse('UNAUTHORIZED', err.message, requestId));
-    } else {
-      res.status(500).json(errorResponse('INTERNAL_ERROR', 'Internal server error', requestId));
-    }
+    sendHttpErrorResponse(err, res, requestId);
   }
 });
 
@@ -139,12 +202,7 @@ export const createTrack = onRequest(async (req: Request, res: express.Response)
     res.status(201).json(respond(track, requestId));
   } catch (err) {
     console.error("Router error:", err);
-    if (err instanceof HttpsError) {
-      res.status(401).json(errorResponse('UNAUTHORIZED', err.message, requestId));
-    } else {
-      console.error('CREATE TRACK ERROR:', err);
-      res.status(500).json(errorResponse('INTERNAL_ERROR', 'Internal server error', requestId));
-    }
+    sendHttpErrorResponse(err, res, requestId);
   }
 });
 
@@ -175,11 +233,7 @@ export const queryAnalytics = onRequest(async (req: Request, res: express.Respon
     const events = snapshot.docs.slice(offset).map(d => d.data());
     res.status(200).json(respond(events, requestId));
   } catch (err) {
-    if (err instanceof HttpsError) {
-      res.status(401).json(errorResponse('UNAUTHORIZED', err.message, requestId));
-    } else {
-      res.status(500).json(errorResponse('INTERNAL_ERROR', 'Internal server error', requestId));
-    }
+    sendHttpErrorResponse(err, res, requestId);
   }
 });
 
@@ -193,26 +247,30 @@ export const updateTrack = onRequest(async (req: Request, res: express.Response)
     }
 
     const userId = await verifyAuth(req);
-    if (await rejectIfArcjetDenied(protectAuthenticatedApiRequest(req, userId), res, requestId)) return;
-    const trackId = req.path.split('/').pop();
+    const trackId = extractResourceId(req.path);
     if (!trackId) {
       res.status(400).json(errorResponse('INVALID_REQUEST', 'Missing track ID', requestId));
       return;
     }
 
-    const updateData = req.body;
-    const updateWithTimestamp = { ...updateData, updatedAt: new Date().toISOString() };
+    const trackRef = getDb().collection('users').doc(userId).collection('tracks').doc(trackId);
+    const existing = await trackRef.get();
+    if (!existing.exists) {
+      res.status(404).json(errorResponse('NOT_FOUND', 'Track not found', requestId));
+      return;
+    }
 
-    await getDb().collection('users').doc(userId).collection('tracks').doc(trackId).update(updateWithTimestamp);
-    const updated = await getDb().collection('users').doc(userId).collection('tracks').doc(trackId).get();
+    const updateData = req.body;
+    // Strip immutable fields from body update to protect data integrity
+    const { id, createdAt, updatedAt, userId: _, ...sanitizedUpdate } = updateData || {};
+    const updateWithTimestamp = { ...sanitizedUpdate, updatedAt: new Date().toISOString() };
+
+    await trackRef.update(updateWithTimestamp);
+    const updated = await trackRef.get();
 
     res.status(200).json(respond(updated.data(), requestId));
   } catch (err) {
-    if (err instanceof HttpsError) {
-      res.status(401).json(errorResponse('UNAUTHORIZED', err.message, requestId));
-    } else {
-      res.status(500).json(errorResponse('INTERNAL_ERROR', 'Internal server error', requestId));
-    }
+    sendHttpErrorResponse(err, res, requestId);
   }
 });
 
@@ -226,8 +284,7 @@ export const deleteTrack = onRequest(async (req: Request, res: express.Response)
     }
 
     const userId = await verifyAuth(req);
-    if (await rejectIfArcjetDenied(protectAuthenticatedApiRequest(req, userId), res, requestId)) return;
-    const trackId = req.path.split('/').pop();
+    const trackId = extractResourceId(req.path);
     if (!trackId) {
       res.status(400).json(errorResponse('INVALID_REQUEST', 'Missing track ID', requestId));
       return;
@@ -236,11 +293,7 @@ export const deleteTrack = onRequest(async (req: Request, res: express.Response)
     await getDb().collection('users').doc(userId).collection('tracks').doc(trackId).delete();
     res.status(204).send();
   } catch (err) {
-    if (err instanceof HttpsError) {
-      res.status(401).json(errorResponse('UNAUTHORIZED', err.message, requestId));
-    } else {
-      res.status(500).json(errorResponse('INTERNAL_ERROR', 'Internal server error', requestId));
-    }
+    sendHttpErrorResponse(err, res, requestId);
   }
 });
 
@@ -268,11 +321,7 @@ export const listTracks = onRequest(async (req: Request, res: express.Response) 
     const tracks = snapshot.docs.slice(offset).map(d => d.data());
     res.status(200).json(respond(tracks, requestId));
   } catch (err) {
-    if (err instanceof HttpsError) {
-      res.status(401).json(errorResponse('UNAUTHORIZED', err.message, requestId));
-    } else {
-      res.status(500).json(errorResponse('INTERNAL_ERROR', 'Internal server error', requestId));
-    }
+    sendHttpErrorResponse(err, res, requestId);
   }
 });
 
@@ -310,11 +359,7 @@ export const createDistribution = onRequest(async (req: Request, res: express.Re
 
     res.status(201).json(respond(distribution, requestId));
   } catch (err) {
-    if (err instanceof HttpsError) {
-      res.status(401).json(errorResponse('UNAUTHORIZED', err.message, requestId));
-    } else {
-      res.status(500).json(errorResponse('INTERNAL_ERROR', 'Internal server error', requestId));
-    }
+    sendHttpErrorResponse(err, res, requestId);
   }
 });
 
@@ -328,8 +373,7 @@ export const getDistribution = onRequest(async (req: Request, res: express.Respo
     }
 
     const userId = await verifyAuth(req);
-    if (await rejectIfArcjetDenied(protectAuthenticatedApiRequest(req, userId), res, requestId)) return;
-    const distId = req.path.split('/').pop();
+    const distId = extractResourceId(req.path);
     if (!distId) {
       res.status(400).json(errorResponse('INVALID_REQUEST', 'Missing distribution ID', requestId));
       return;
@@ -343,11 +387,7 @@ export const getDistribution = onRequest(async (req: Request, res: express.Respo
 
     res.status(200).json(respond(doc.data(), requestId));
   } catch (err) {
-    if (err instanceof HttpsError) {
-      res.status(401).json(errorResponse('UNAUTHORIZED', err.message, requestId));
-    } else {
-      res.status(500).json(errorResponse('INTERNAL_ERROR', 'Internal server error', requestId));
-    }
+    sendHttpErrorResponse(err, res, requestId);
   }
 });
 
@@ -361,24 +401,25 @@ export const submitDistribution = onRequest(async (req: Request, res: express.Re
     }
 
     const userId = await verifyAuth(req);
-    if (await rejectIfArcjetDenied(protectAuthenticatedApiRequest(req, userId), res, requestId)) return;
-    const distId = req.path.split('/')[req.path.split('/').length - 2];
+    const distId = extractParentResourceId(req.path, 'submit');
     if (!distId) {
       res.status(400).json(errorResponse('INVALID_REQUEST', 'Missing distribution ID', requestId));
       return;
     }
 
     const ref = getDb().collection('users').doc(userId).collection('distributions').doc(distId);
+    const existing = await ref.get();
+    if (!existing.exists) {
+      res.status(404).json(errorResponse('NOT_FOUND', 'Distribution not found', requestId));
+      return;
+    }
+
     await ref.update({ status: 'submitted', updatedAt: new Date().toISOString() });
     const updated = await ref.get();
 
     res.status(200).json(respond(updated.data(), requestId));
   } catch (err) {
-    if (err instanceof HttpsError) {
-      res.status(401).json(errorResponse('UNAUTHORIZED', err.message, requestId));
-    } else {
-      res.status(500).json(errorResponse('INTERNAL_ERROR', 'Internal server error', requestId));
-    }
+    sendHttpErrorResponse(err, res, requestId);
   }
 });
 
@@ -404,11 +445,7 @@ export const getProfile = onRequest(async (req: Request, res: express.Response) 
 
     res.status(200).json(respond(profile, requestId));
   } catch (err) {
-    if (err instanceof HttpsError) {
-      res.status(401).json(errorResponse('UNAUTHORIZED', err.message, requestId));
-    } else {
-      res.status(500).json(errorResponse('INTERNAL_ERROR', 'Internal server error', requestId));
-    }
+    sendHttpErrorResponse(err, res, requestId);
   }
 });
 

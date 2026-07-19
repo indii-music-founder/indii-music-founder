@@ -112,6 +112,7 @@ describe('PublicistDashboard', () => {
         expect(screen.getByText('Publicist')).toBeDefined();
         expect(screen.getByText('PR & Media')).toBeDefined(); // Tagline in Sidebar
         expect(screen.getByText('Main Menu')).toBeDefined();
+        expect(screen.getByRole('button', { name: /analytics & reports.*soon/i })).toBeDisabled();
     });
 
     it('renders stats ticker in sidebar', () => {
@@ -138,6 +139,7 @@ describe('PublicistDashboard', () => {
             activeTab: 'campaigns',
             setActiveTab: vi.fn(),
             loading: true,
+            error: null,
             searchQuery: '',
             setSearchQuery: vi.fn(),
             filterType: 'all',
@@ -193,6 +195,7 @@ describe('PublicistDashboard', () => {
             activeTab: 'contacts', // SWITCHED TO CONTACTS
             setActiveTab: vi.fn(),
             loading: false,
+            error: null,
             searchQuery: '',
             setSearchQuery: vi.fn(),
             filterType: 'all',
@@ -206,4 +209,3 @@ describe('PublicistDashboard', () => {
         expect(screen.getByText('Total Contacts')).toBeDefined();
     });
 });
-

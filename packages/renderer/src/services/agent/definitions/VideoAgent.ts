@@ -1,6 +1,19 @@
 import { AgentConfig } from "../types";
 import { VideoTools } from '../tools/VideoTools';
+import { UniversalTools } from '../tools/UniversalTools';
+import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import systemPrompt from '@agents/video/prompt.md?raw';
+import { buildDomainRetrievalTools, buildDomainRetrievalDeclarations } from '../tools/DomainTools';
+
+
+
+const videoRetrievalConfig = {
+    'videoJobs': { path: 'videoJobs', requiresUserIdFilter: true },
+    'video_releases': { path: 'video_releases', requiresUserIdFilter: true },
+    'generated_videos': { path: 'generated_videos', requiresUserIdFilter: true }
+};
+const videoRetrievalTools = buildDomainRetrievalTools('Video', videoRetrievalConfig);
+const videoRetrievalDeclarations = buildDomainRetrievalDeclarations('Video', videoRetrievalConfig);
 
 export const VideoAgent: AgentConfig = {
     id: 'video',
@@ -11,15 +24,39 @@ export const VideoAgent: AgentConfig = {
     systemPrompt: systemPrompt,
     get functions() {
         return {
+            ...videoRetrievalTools,
             generate_video: VideoTools.generate_video,
             batch_edit_videos: VideoTools.batch_edit_videos,
             extend_video: VideoTools.extend_video,
-            update_keyframe: VideoTools.update_keyframe
-        };
+            update_keyframe: VideoTools.update_keyframe,
+            browser_tool: UniversalTools.browser_tool,
+            indii_image_gen: UniversalTools.indii_image_gen,
+            orchestrate_timeline: VideoTools.orchestrate_timeline,
+            create_performance_video: VideoTools.create_performance_video,
+            generate_storyboard: async (args: { script: string, numFrames: number }) => {
+                const prompt = `Break down this script into a ${args.numFrames}-frame storyboard. For each frame, provide a shot type, action description, and visual prompt for image generation. Script: ${args.script}`;
+                try {
+                    const response = await AutonomousIntelligence.generateText(prompt, { maxOutputTokens: 8192, temperature: 1.0 });
+                    return { success: true, data: { storyboard: response } };
+                } catch (e: unknown) {
+                    return { success: false, error: (e as Error).message };
+                }
+            },
+            draft_video_budget: async (args: { durationMinutes: number, vfxLevel: string, locationDays: number }) => {
+                const prompt = `Draft a video production budget for a ${args.durationMinutes} minute video with ${args.vfxLevel} VFX and ${args.locationDays} location shooting days. Include pre-pro, production, and post-production costs.`;
+                try {
+                    const response = await AutonomousIntelligence.generateText(prompt, { maxOutputTokens: 8192, temperature: 1.0 });
+                    return { success: true, data: { budget: response } };
+                } catch (e: unknown) {
+                    return { success: false, error: (e as Error).message };
+                }
+            }
+        } as Record<string, import('@/services/agent/types').AnyToolFunction>;
     },
-    authorizedTools: ['generate_video', 'batch_edit_videos', 'extend_video', 'update_keyframe', 'browser_tool', 'indii_image_gen', 'orchestrate_timeline'],
+    authorizedTools: ['list_domain_records', 'generate_video', 'batch_edit_videos', 'extend_video', 'update_keyframe', 'browser_tool', 'indii_image_gen', 'orchestrate_timeline', 'create_performance_video', 'generate_storyboard', 'draft_video_budget'],
     tools: [{
         functionDeclarations: [
+            ...videoRetrievalDeclarations,
             {
                 name: "generate_video",
                 description: "Generate a video from a text prompt or start image.",
@@ -109,6 +146,31 @@ export const VideoAgent: AgentConfig = {
                         artStyle: { type: "STRING", description: "The overarching visual style to append to each prompt (e.g., 'Cinematic 35mm, neon noir')." }
                     },
                     required: ["masterScript", "totalDuration", "artStyle"]
+                }
+            },
+            {
+                name: "generate_storyboard",
+                description: "Break down a script into a storyboard with visual prompts.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        script: { type: "STRING" },
+                        numFrames: { type: "NUMBER" }
+                    },
+                    required: ["script", "numFrames"]
+                }
+            },
+            {
+                name: "draft_video_budget",
+                description: "Draft a video production budget.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        durationMinutes: { type: "NUMBER" },
+                        vfxLevel: { type: "STRING", enum: ["low", "medium", "high"] },
+                        locationDays: { type: "NUMBER" }
+                    },
+                    required: ["durationMinutes", "vfxLevel", "locationDays"]
                 }
             }
         ]

@@ -1,6 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Upload, Video, Wand2, ArrowRight, CheckCircle2, Download, RefreshCw, FileAudio } from 'lucide-react';
+import { featureFlags, FEATURE_FLAG_NAMES } from '@/config/featureFlags';
 
 export default function MarketingAssetGeneratorUI() {
     const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
@@ -16,6 +17,7 @@ export default function MarketingAssetGeneratorUI() {
     const [avatarImage, setAvatarImage] = useState<File | null>(null);
     const audioInputRef = useRef<HTMLInputElement | null>(null);
     const avatarInputRef = useRef<HTMLInputElement | null>(null);
+    const avatarGenerationEnabled = featureFlags.isEnabled(FEATURE_FLAG_NAMES.AVATAR_GENERATION);
 
     const readAsDataUri = (file: File): Promise<string> => new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -27,6 +29,10 @@ export default function MarketingAssetGeneratorUI() {
     const handleGenerate = async () => {
         if (generatorMode === 'reel' && !prompt.trim()) return;
         if (generatorMode === 'avatar' && (!audioFile || !avatarImage)) return;
+        if (generatorMode === 'avatar' && !avatarGenerationEnabled) {
+            setError('Avatar generation is unavailable until the backend worker is deployed.');
+            return;
+        }
 
         setStep(3);
         setIsGenerating(true);
@@ -48,14 +54,14 @@ export default function MarketingAssetGeneratorUI() {
                 const { avatarGenerationService } = await import('@/services/video/AvatarGenerationService');
                 const audioUrl = await CloudStorageService.uploadAudio(
                     audioFile!,
-                    `avatar_audio_${Date.now()}`,
+                    `avatar_audio_${crypto.randomUUID()}`,
                     userId,
                     audioFile!.type || 'audio/wav'
                 );
                 const imageDataUri = await readAsDataUri(avatarImage!);
                 const imageUpload = await CloudStorageService.uploadImage(
                     imageDataUri,
-                    `avatar_image_${Date.now()}`,
+                    `avatar_image_${crypto.randomUUID()}`,
                     userId
                 );
                 const jobId = await avatarGenerationService.generateLipSync(imageUpload.url, audioUrl);
@@ -86,7 +92,7 @@ export default function MarketingAssetGeneratorUI() {
         if (!videoUrl) return;
         const link = document.createElement('a');
         link.href = videoUrl;
-        link.download = `marketing-video-${Date.now()}.mp4`;
+        link.download = `marketing-video-${crypto.randomUUID().substring(0, 8)}.mp4`;
         link.rel = 'noopener';
         document.body.appendChild(link);
         link.click();
@@ -122,7 +128,7 @@ export default function MarketingAssetGeneratorUI() {
             <div className="max-w-4xl w-full mx-auto z-10 flex flex-col gap-8">
                 {/* Header */}
                 <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-linear-to-br from-dept-marketing to-purple-500 p-px shadow-lg shadow-dept-marketing/20">
+                    <div className="w-12 h-12 rounded-xl bg-linear-to-br from-dept-marketing to-green-500 p-px shadow-lg shadow-dept-marketing/20">
                         <div className="w-full h-full bg-background rounded-[11px] flex items-center justify-center">
                             <Wand2 className="text-dept-marketing" size={24} />
                         </div>
@@ -140,11 +146,17 @@ export default function MarketingAssetGeneratorUI() {
                             </button>
                             <button
                                 onClick={() => setGeneratorMode('avatar')}
-                                className={`text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded transition-colors ${generatorMode === 'avatar' ? 'bg-dept-marketing text-white' : 'bg-white/5 text-gray-500 hover:text-gray-300'}`}
+                                disabled={!avatarGenerationEnabled}
+                                className={`text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded transition-colors ${generatorMode === 'avatar' ? 'bg-dept-marketing text-white' : 'bg-white/5 text-gray-500 hover:text-gray-300'} ${!avatarGenerationEnabled ? 'opacity-40 cursor-not-allowed hover:text-gray-500' : ''}`}
                             >
-                                Autonomous Avatar Lip-Sync
+                                Autonomous Avatar Lip-Sync{!avatarGenerationEnabled ? ' (Unavailable)' : ''}
                             </button>
                         </div>
+                        {!avatarGenerationEnabled && (
+                            <p className="mt-2 text-[10px] text-neutral-500">
+                                Avatar lip-sync is unavailable until the backend worker is deployed.
+                            </p>
+                        )}
                     </div>
                 </div>
 
@@ -190,20 +202,32 @@ export default function MarketingAssetGeneratorUI() {
                                         : 'Text-to-video generation starts from the visual direction in the next step.'}
                                 </p>
 
-                                <div
-                                    className="flex-1 border-2 border-dashed border-white/10 hover:border-dept-marketing/50 bg-white/[0.02] hover:bg-dept-marketing/5 transition-all rounded-xl flex flex-col items-center justify-center cursor-pointer group p-8"
-                                    onClick={() => audioInputRef.current?.click()}
-                                >
-                                    <div className="w-16 h-16 rounded-full bg-white/5 group-hover:bg-dept-marketing/20 text-gray-400 group-hover:text-dept-marketing flex items-center justify-center mb-4 transition-colors">
-                                        {audioFile ? <FileAudio size={32} /> : <Upload size={32} />}
+                                {/* ISSUE-954: reel mode is text-to-video only — GenAI.generateVideo
+                                    never receives or conditions on audio, so this upload step only
+                                    appears for avatar mode, where the audio genuinely drives lip-sync. */}
+                                {generatorMode === 'avatar' ? (
+                                    <div
+                                        className="flex-1 border-2 border-dashed border-white/10 hover:border-dept-marketing/50 bg-white/[0.02] hover:bg-dept-marketing/5 transition-all rounded-xl flex flex-col items-center justify-center cursor-pointer group p-8"
+                                        onClick={() => audioInputRef.current?.click()}
+                                    >
+                                        <div className="w-16 h-16 rounded-full bg-white/5 group-hover:bg-dept-marketing/20 text-gray-400 group-hover:text-dept-marketing flex items-center justify-center mb-4 transition-colors">
+                                            {audioFile ? <FileAudio size={32} /> : <Upload size={32} />}
+                                        </div>
+                                        <h3 className="text-white font-semibold mb-1">
+                                            {audioFile ? audioFile.name : 'Click or drag to upload audio'}
+                                        </h3>
+                                        <p className="text-gray-500 text-sm">
+                                            {audioFile ? 'Ready to proceed' : 'WAV, MP3, or FLAC (max 60s)'}
+                                        </p>
                                     </div>
-                                    <h3 className="text-white font-semibold mb-1">
-                                        {audioFile ? audioFile.name : 'Click or drag to upload audio'}
-                                    </h3>
-                                    <p className="text-gray-500 text-sm">
-                                        {audioFile ? 'Ready to proceed' : 'WAV, MP3, or FLAC (max 60s)'}
-                                    </p>
-                                </div>
+                                ) : (
+                                    <div className="flex-1 border-2 border-dashed border-white/10 bg-white/[0.02] rounded-xl flex flex-col items-center justify-center p-8">
+                                        <Video size={32} className="text-gray-500 mb-4" />
+                                        <p className="text-gray-500 text-sm text-center max-w-xs">
+                                            Cinematic Reel mode generates video from your text prompt only — no audio is uploaded or synchronized.
+                                        </p>
+                                    </div>
+                                )}
 
                                 {generatorMode === 'avatar' && (
                                     <div className="mt-4 flex-1">
@@ -257,7 +281,7 @@ export default function MarketingAssetGeneratorUI() {
                                         <textarea
                                             value={prompt}
                                             onChange={(e) => setPrompt(e.target.value)}
-                                            placeholder="E.g., A lone astronaut floating through a neon-lit cyber city, synchronized to the beat..."
+                                            placeholder="E.g., A lone astronaut floating through a neon-lit cyber city, dynamic camera movement..."
                                             className="w-full h-32 bg-black/40 border border-white/10 rounded-xl p-4 text-white placeholder:text-gray-600 focus:outline-none focus:border-dept-marketing/50 resize-none transition-colors"
                                         />
                                     </div>
@@ -292,7 +316,7 @@ export default function MarketingAssetGeneratorUI() {
                                     <button
                                         disabled={generatorMode === 'reel' ? !prompt.trim() : false}
                                         onClick={handleGenerate}
-                                        className="btn-primary bg-linear-to-r from-dept-marketing to-purple-600 hover:opacity-90 text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-[0_0_20px_rgba(var(--color-dept-marketing),0.3)]"
+                                        className="btn-primary bg-linear-to-r from-dept-marketing to-green-600 hover:opacity-90 text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-[0_0_20px_rgba(var(--color-dept-marketing),0.3)]"
                                     >
                                         <Wand2 size={18} /> {generatorMode === 'reel' ? 'Generate Video' : 'Begin Lip-Sync'}
                                     </button>
@@ -318,7 +342,9 @@ export default function MarketingAssetGeneratorUI() {
                                 </div>
                                 <h2 className="text-base font-black text-white mb-3">Synthesizing Visuals</h2>
                                 <p className="text-gray-400 text-center max-w-sm">
-                                    Rendering highly-detailed frames synced with your audio. This normally takes a few minutes via background job...
+                                    {generatorMode === 'avatar'
+                                        ? 'Rendering the avatar lip-sync from your audio and portrait. This normally takes a few minutes via background job...'
+                                        : 'Rendering highly-detailed frames from your prompt. This normally takes a few minutes via background job...'}
                                 </p>
                             </motion.div>
                         )}

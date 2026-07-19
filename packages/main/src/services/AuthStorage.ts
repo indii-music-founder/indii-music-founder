@@ -14,7 +14,7 @@ export class AuthStorage {
             }
             await keytar.setPassword(SERVICE_NAME, TOKEN_ACCOUNT, payloadToStore);
         } catch (error) {
-            console.error('[AuthStorage] Failed to save token', error);
+            console.error('[AuthStorage] Failed to save token:', error);
             throw error;
         }
     }
@@ -29,13 +29,14 @@ export class AuthStorage {
                     const encryptedBuffer = Buffer.from(storedPayload, 'base64');
                     return safeStorage.decryptString(encryptedBuffer);
                 } catch (_e) {
+                    console.error('[AuthStorage] SafeStorage decryption failed:', _e);
                     // Fallback if not encrypted or corrupted
                     return storedPayload;
                 }
             }
             return storedPayload;
-        } catch (error) {
-            console.error('[AuthStorage] Failed to get token', error);
+        } catch (_error) {
+            console.error('[AuthStorage] Failed to get token:', _error);
             return null;
         }
     }
@@ -43,8 +44,7 @@ export class AuthStorage {
     async deleteToken(): Promise<boolean> {
         try {
             return await keytar.deletePassword(SERVICE_NAME, TOKEN_ACCOUNT);
-        } catch (error) {
-            console.error('[AuthStorage] Failed to delete token', error);
+        } catch (_error) {
             return false;
         }
     }

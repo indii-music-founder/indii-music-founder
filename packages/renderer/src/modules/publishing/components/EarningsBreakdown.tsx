@@ -76,7 +76,7 @@ export const EarningsBreakdown: React.FC<EarningsBreakdownProps> = ({
                                             )}
                                         </div>
                                         <div className="text-right">
-                                            <span className="text-sm font-black text-white">${item.revenue.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                                            <span className="text-sm font-black text-white">${item.revenue.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
                                         </div>
                                     </div>
                                     <div className="relative h-2 bg-gray-900 rounded-full overflow-hidden border border-gray-800/50">
@@ -85,7 +85,7 @@ export const EarningsBreakdown: React.FC<EarningsBreakdownProps> = ({
                                             animate={{ width: `${item.percentage}%` }}
                                             transition={{ duration: 1, delay: i * 0.1, ease: "circOut" }}
                                             className={`h-full rounded-full ${activeTab === 'platform' ? 'bg-blue-500' :
-                                                activeTab === 'territory' ? 'bg-purple-500' : 'bg-green-500'
+                                                activeTab === 'territory' ? 'bg-green-500' : 'bg-green-500'
                                                 } opacity-80`}
                                         />
                                         <div className="absolute right-2 top-0 h-full flex items-center">

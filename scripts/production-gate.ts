@@ -16,12 +16,11 @@ const yellow = "\x1b[33m";
 const cyan = "\x1b[36m";
 const reset = "\x1b[0m";
 
-// Helper to check required renderer env vars for production
+// Helper to check required renderer env vars for production.
+// Raw provider API keys must not be present in frontend builds.
 const rendererProdSchema = z.object({
-  VITE_API_KEY: z.string().min(1, "Missing VITE_API_KEY (Tuned Agents)"),
-  VITE_USE_FINE_TUNED_AGENTS: z.enum(["true", "false"]).refine(val => !isProd || val === "true", {
-    message: "VITE_USE_FINE_TUNED_AGENTS must be 'true' in production",
-  }).optional(),
+  VITE_API_KEY: z.string().optional(),
+  VITE_USE_FINE_TUNED_AGENTS: z.enum(["true", "false"]).optional(),
   VITE_FUNCTIONS_URL: z.string().url("Missing or invalid VITE_FUNCTIONS_URL").optional().refine(val => !isProd || !!val, {
     message: "Missing VITE_FUNCTIONS_URL"
   }),
@@ -45,6 +44,11 @@ const rendererProdSchema = z.object({
   VITE_INGESTION_ENTITY_NAME: z.string().min(1, "Missing VITE_INGESTION_ENTITY_NAME").optional().refine(val => !isProd || !!val, {
     message: "Missing VITE_INGESTION_ENTITY_NAME"
   }),
+}).refine(data => {
+  return !data.VITE_API_KEY;
+}, {
+  message: "VITE_API_KEY must not be set in frontend production builds; use Firebase/backend gateways.",
+  path: ["VITE_API_KEY"],
 }).refine(data => {
   if (!isProd) return true;
   const region = data.VITE_FUNCTIONS_REGION || "us-central1";

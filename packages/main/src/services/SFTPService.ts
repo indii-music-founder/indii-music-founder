@@ -25,7 +25,7 @@ class SFTPService {
 
     async connect(config: SFTPConfig): Promise<void> {
         try {
-            console.info(`[SFTPService] Connecting to ${config.host}:${config.port || 22}...`);
+            console.log('[SFTPService] Connecting to SFTP host:', config.host);
             await this.client.connect({
                 host: config.host,
                 port: config.port || 22,
@@ -34,10 +34,10 @@ class SFTPService {
                 privateKey: config.privateKey,
             });
             this.connected = true;
-            console.info('[SFTPService] Connected.');
+            console.log('[SFTPService] SFTP connection established successfully.');
         } catch (error: unknown) {
             const msg = error instanceof Error ? error.message : String(error);
-            console.error('[SFTPService] Connection failed:', error);
+            console.error('[SFTPService] SFTP connection failed:', msg);
             throw new SFTPError('CONNECTION_FAILED', `Failed to connect to SFTP: ${msg}`, error);
         }
     }
@@ -45,7 +45,7 @@ class SFTPService {
     async uploadDirectory(localPath: string, remotePath: string): Promise<string[]> {
         if (!this.connected) throw new SFTPError('NOT_CONNECTED', 'SFTP client not connected');
 
-        console.info(`[SFTPService] Uploading directory: ${localPath} -> ${remotePath}`);
+        console.log(`[SFTPService] Beginning directory upload from ${localPath} to ${remotePath}...`);
         const uploadedFiles: string[] = [];
 
         try {
@@ -64,11 +64,9 @@ class SFTPService {
             const list = await this.client.list(remotePath);
             uploadedFiles.push(...list.map(item => item.name));
 
-            console.info(`[SFTPService] Upload complete: ${remotePath}`);
             return uploadedFiles;
         } catch (error: unknown) {
             const msg = error instanceof Error ? error.message : String(error);
-            console.error(`[SFTPService] Upload failed:`, error);
             throw new SFTPError('UPLOAD_FAILED', `Failed to upload directory: ${msg}`, error);
         }
     }
@@ -99,7 +97,6 @@ class SFTPService {
         if (this.connected) {
             await this.client.end();
             this.connected = false;
-            console.info('[SFTPService] Disconnected.');
         }
     }
 

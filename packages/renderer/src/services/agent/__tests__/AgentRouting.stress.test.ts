@@ -119,7 +119,7 @@ vi.mock('../registry', () => {
         id: 'generalist',
         name: 'indii Conductor',
         description: 'Central Studio Head',
-        color: 'bg-purple-600',
+        color: 'bg-green-600',
         category: 'hub',
         getSystemPrompt: () => 'You are indii.',
         execute: vi.fn().mockImplementation(async () => ({

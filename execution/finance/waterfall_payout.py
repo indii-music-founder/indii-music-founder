@@ -1,6 +1,7 @@
 import json
 import logging
 import sys
+from datetime import datetime, timezone
 from typing import Any, Dict
 
 # Configure logging
@@ -87,7 +88,8 @@ def calculate_waterfall(
         "distributions": distributions,
         "summary_status": "PROCESSED",
         "total_distributed": float(total_distributed),
-        "unallocated_balance": float(unallocated_balance)
+        "unallocated_balance": float(unallocated_balance),
+        "processed_at": datetime.now(timezone.utc).isoformat()
     }
 
     return report

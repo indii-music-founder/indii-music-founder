@@ -32,8 +32,8 @@ The Gauntlet is a comprehensive verification suite that must be run before major
 # From project root
 ./scripts/run-gauntlet.sh
 
-# Or with npm
-npm run gauntlet  # (if configured in package.json)
+# Optional live-service sweep
+RUN_LIVE_GCP=true ./scripts/run-gauntlet.sh
 ```
 
 ---
@@ -41,29 +41,32 @@ npm run gauntlet  # (if configured in package.json)
 ## Verification Phases
 
 ### Phase 1: Build Verification
-- TypeScript compilation (`tsc --noEmit`)
-- Vite production build (`npm run build`)
+- TypeScript project references (`npm run typecheck`)
+- Lint (`npm run lint`)
+- Frontend API boundary guard (`npm run security:frontend-api-boundary`)
+- Studio production build (`npm run build:studio`)
 
 **Pass Criteria:** Zero compilation errors, successful build output
 
 ### Phase 2: Unit Tests
-- MembershipService quota enforcement tests
+- Vertex backend routing tests
+- Gemini image, video, billing, founder tier, and remote relay contract tests
 - All Vitest unit tests
 
 **Pass Criteria:** All tests pass with no failures
 
 ### Phase 3: E2E Stress Tests
-- Asset loading stress test (10 seeded images)
-- Load simulation test (20 concurrent virtual users)
-- File Search RAG stress test (if implemented)
+- Mega stress specs (`e2e/mega-stress-test-v4.spec.ts` through `v12`)
+- Current critical E2E specs for auth, navigation, FTUE, chaos, mobile remote, creative, video, media, and knowledge
+- Optional live GCP API verification when `RUN_LIVE_GCP=true`
 
 **Pass Criteria:** >90% success rate, no critical failures
 
 ### Phase 4: Model Policy Verification
-- Scan codebase for forbidden model patterns
-- Verify AI_MODELS config uses only approved models
+- Scan backend, frontend, scripts, E2E, and workflows for invalid Vertex multi-region host construction
+- Verify `us`/`eu` resource locations do not become invalid `us-aiplatform.googleapis.com` style hosts
 
-**Pass Criteria:** No `gemini-1.5`, `gemini-2.0`, or legacy model patterns found
+**Pass Criteria:** No invalid `us-aiplatform.googleapis.com`, `eu-aiplatform.googleapis.com`, or `global-aiplatform.googleapis.com` host patterns found
 
 ---
 
@@ -91,7 +94,7 @@ npm run gauntlet  # (if configured in package.json)
 
 ### Build Failures
 1. Check `tsconfig.json` for strict mode issues
-2. Run `npx tsc --noEmit` locally to see full errors
+2. Run `npm run typecheck` locally to see full errors
 3. Fix type errors before proceeding
 
 ### Unit Test Failures
@@ -105,10 +108,10 @@ npm run gauntlet  # (if configured in package.json)
 3. Review test logs in `playwright-report/`
 4. May indicate performance regression
 
-### Model Policy Violations
-1. Search for the offending pattern: `grep -r "gemini-1.5" src/`
-2. Replace with `AI_MODELS.TEXT.AGENT` or `AI_MODELS.TEXT.FAST`
-3. See MODEL_POLICY.md for approved models
+### Vertex Host Violations
+1. Search for the offending pattern: `rg "us-aiplatform|eu-aiplatform|global-aiplatform"`
+2. Keep the Vertex resource location as `us`, `eu`, or `global`, but route those multi-region calls through `https://aiplatform.googleapis.com`
+3. Use `packages/firebase/src/lib/vertexClient.ts` for backend Vertex client construction
 
 ---
 
@@ -116,11 +119,11 @@ npm run gauntlet  # (if configured in package.json)
 
 ### Adding a Stress Test
 1. Create `e2e/your-test.spec.ts`
-2. Follow existing patterns in `e2e/stress-test.spec.ts`
+2. Follow existing patterns in `e2e/stress-test-new-user.spec.ts` or the current `e2e/mega-stress-test-v*.spec.ts` files
 3. Add to run-gauntlet.sh Phase 3 section
 
 ### Adding a Quota Test
-1. Add test to `src/services/MembershipService.test.ts`
+1. Add test to the relevant workspace test, such as `packages/renderer/src/services/MembershipService.subscription.test.ts` or `packages/firebase/src/subscription/subscriptionDefaults.test.ts`
 2. Test both within-limit and over-limit scenarios
 3. Verify QuotaExceededError is thrown correctly
 
@@ -131,10 +134,11 @@ npm run gauntlet  # (if configured in package.json)
 | File | Purpose |
 |------|---------|
 | `scripts/run-gauntlet.sh` | Main verification runner |
-| `e2e/stress-test.spec.ts` | Asset loading stress test |
-| `e2e/load-simulation.spec.ts` | Concurrent user simulation |
-| `src/services/MembershipService.test.ts` | Quota enforcement tests |
-| `src/core/config/ai-models.ts` | Model policy configuration |
+| `e2e/stress-test-new-user.spec.ts` | FTUE happy-path stress test |
+| `e2e/multi-agent-swarm.spec.ts` | Multi-agent concurrency coverage |
+| `e2e/mega-stress-test-v*.spec.ts` | Named mega stress suite |
+| `packages/firebase/src/lib/vertexClient.test.ts` | Vertex endpoint host/location routing |
+| `packages/firebase/src/functions/creative/gateway.test.ts` | Gemini image/video callable contract coverage |
 
 ---
 

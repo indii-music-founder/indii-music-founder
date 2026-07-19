@@ -247,9 +247,8 @@ export default function MerchDashboard() {
                             </div>
 
                             <div className="mb-8">
-                                <div className="flex items-center justify-between mb-4">
+                                <div className="mb-4">
                                     <h3 className="text-xl font-bold text-white">Top Performing Products</h3>
-                                    <button className="text-xs text-[#FFE135] hover:underline">View All</button>
                                 </div>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
                                     {topSellingProducts.length > 0 ? (
@@ -355,7 +354,7 @@ function StoreStatsWidget({ stats }: { stats: MerchStats }) {
     const items = [
         { label: 'Revenue', value: formatCurrency(stats.totalRevenue), color: 'text-[#FFE135]' },
         { label: 'Units Sold', value: stats.unitsSold.toString(), color: 'text-green-400' },
-        { label: 'Conversion', value: `${stats.conversionRate ?? 0}%`, color: 'text-purple-400' },
+        { label: 'Conversion', value: `${stats.conversionRate ?? 0}%`, color: 'text-green-400' },
     ];
 
     return (
@@ -455,10 +454,10 @@ function PODPartnerStatusPanel() {
 
 function ConversionFunnelPanel({ stats }: { stats: MerchStats }) {
     const stages = [
-        { label: 'Page Views', value: stats.funnelData.pageViews.toLocaleString(), pct: 100 },
-        { label: 'Add to Cart', value: stats.funnelData.addToCart.toLocaleString(), pct: stats.funnelData.pageViews > 0 ? (stats.funnelData.addToCart / stats.funnelData.pageViews) * 100 : 0 },
-        { label: 'Checkout', value: stats.funnelData.checkout.toLocaleString(), pct: stats.funnelData.pageViews > 0 ? (stats.funnelData.checkout / stats.funnelData.pageViews) * 100 : 0 },
-        { label: 'Purchased', value: stats.unitsSold.toLocaleString(), pct: stats.conversionRate ?? 0 },
+        { label: 'Page Views', value: stats.funnelData.pageViews.toLocaleString('en-US'), pct: 100 },
+        { label: 'Add to Cart', value: stats.funnelData.addToCart.toLocaleString('en-US'), pct: stats.funnelData.pageViews > 0 ? (stats.funnelData.addToCart / stats.funnelData.pageViews) * 100 : 0 },
+        { label: 'Checkout', value: stats.funnelData.checkout.toLocaleString('en-US'), pct: stats.funnelData.pageViews > 0 ? (stats.funnelData.checkout / stats.funnelData.pageViews) * 100 : 0 },
+        { label: 'Purchased', value: stats.unitsSold.toLocaleString('en-US'), pct: stats.conversionRate ?? 0 },
     ];
 
     return (
@@ -493,10 +492,6 @@ function CampaignReadyPanel({ products }: { products: Array<{ id: string }> }) {
             <p className="text-[11px] text-neutral-400 px-1 mb-3">
                 {products.length} approved designs ready for production.
             </p>
-            <button className="w-full text-xs font-bold text-[#FFE135] py-2 rounded-lg bg-[#FFE135]/10 hover:bg-[#FFE135]/20 transition-colors flex items-center justify-center gap-1.5">
-                <Plus size={12} />
-                Launch Campaign
-            </button>
         </div>
     );
 }

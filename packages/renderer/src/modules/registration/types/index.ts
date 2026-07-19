@@ -11,7 +11,10 @@ export type RegistrationStatus =
   | 'in_progress'
   | 'submitted'
   | 'confirmed'
-  | 'error';
+  | 'error'
+  // ISSUE-970: external filing succeeded (real confirmation) but the local
+  // durable record failed to save — must never collapse into 'submitted'.
+  | 'submitted_local_record_failed';
 
 export type FieldType = 'text' | 'date' | 'select' | 'boolean' | 'multiselect' | 'textarea';
 
@@ -64,6 +67,14 @@ export interface SubmissionResult {
   requiresManualStep?: boolean;  // web fallback — auto submission not possible
   manualStepUrl?: string;
   manualStepInstructions?: string;
+  /**
+   * ISSUE-970: true when the external registration succeeded (confirmationNumber
+   * is real) but our own durable Firestore record failed to save. This is a
+   * distinct state from both success and failure — the filing is real and
+   * binding, but the app has no local record of it unless the user preserves
+   * the confirmation number and a retry succeeds.
+   */
+  localRecordFailed?: boolean;
 }
 
 // Per-org registration record (stored in Firestore)
@@ -76,6 +87,10 @@ export interface OrgRegistrationRecord {
   formSnapshot?: Record<string, unknown>;  // what was submitted
   errorMessage?: string;
   lastUpdated: Date;
+  // ISSUE-567: Approval freshness tracking
+  approvalRunId?: string;                    // HarnessRun ID that was approved
+  approvalPassportHash?: string;             // SHA-256 of Song Passport at approval time
+  approvalGrantedAt?: Date;                  // when user approved this filing
 }
 
 // Per-track aggregated registration state

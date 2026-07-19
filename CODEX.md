@@ -71,7 +71,7 @@ bash .claude/scripts/checkpoint.sh
 - **Version:** 1.55.3
 - **Org:** New Detroit Music LLC
 - **Repo:** `indii-music-founder/indii-music-founder`
-- **Node Requirement:** >= 22.0.0
+- **Node Requirement:** >= 24.0.0
 
 ---
 
@@ -275,6 +275,15 @@ import { AgentDef } from '@agents/creative';             // agents/*
 - Module-specific components in `src/modules/<name>/components/`
 - Layout components in `src/components/layout/`
 
+### Dialogs and Modals
+
+- **Standardized on `react-call`**: Use this instead of hand-rolling modal state; never fake a modal.
+- Native `window.confirm`, `window.prompt`, and `window.alert` are banned.
+- Use the standard awaited dialogs from anywhere in the codebase:
+  - `const ok = await ConfirmDialog.call({ message: '...' })`
+  - `await AlertDialog.call({ message: '...' })`
+  - `const input = await PromptDialog.call({ message: '...' })`
+
 ### ESLint Rules
 
 - `@typescript-eslint/no-explicit-any`: warn (not error)
@@ -305,7 +314,8 @@ All frontend env vars use the `VITE_` prefix. Copy `.env.example` to `.env` for 
 
 **Optional:**
 
-- `VITE_VERTEX_PROJECT_ID` / `VITE_VERTEX_LOCATION` - Vertex AI config
+- `VERTEX_PROJECT_ID` / `VERTEX_LOCATION` - backend Vertex AI config
+- `VERTEX_IMAGE_LOCATION` / `VERTEX_VIDEO_LOCATION` - backend media routing locations
 - `VITE_GOOGLE_MAPS_API_KEY` - Google Maps
 - `VITE_SKIP_ONBOARDING` - Skip onboarding in dev
 - `VITE_FIREBASE_APP_CHECK_KEY` - App Check (required for production)
@@ -343,7 +353,7 @@ All frontend env vars use the `VITE_` prefix. Copy `.env.example` to `.env` for 
 4. Two Firebase Hosting targets:
    - `landing` -> `landing-page/dist`
    - `app` -> `dist`
-5. Required secrets: `VITE_API_KEY`, `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_PROJECT_ID`, `VITE_VERTEX_PROJECT_ID`, `VITE_VERTEX_LOCATION`, `FIREBASE_SERVICE_ACCOUNT`
+5. Required secrets: `GEMINI_API_KEY`, `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_PROJECT_ID`, `VERTEX_PROJECT_ID`, `VERTEX_LOCATION`, `FIREBASE_SERVICE_ACCOUNT`
 
 ### Build Pipeline (`npm run build`)
 
@@ -379,6 +389,13 @@ The `build` script runs three steps sequentially:
 ---
 
 ## Operating Principles
+
+### -1. THE MCLEAR RULE (NEVER DECLARE VICTORY)
+
+> **"Never ever ever declare victory ever."**
+
+Before asserting that a problem is fixed, you MUST rigorously verify it from the user's perspective. Do not say "everything is completely fixed" if there are secondary side effects (like wiped local data) that the user will immediately encounter. State the exact status of the fix, acknowledge any new caveats, and never use the word "victory" or its equivalents.
+
 
 ### 0. CAVEMAN MODE (COMMUNICATION EFFICIENCY)
 
@@ -467,14 +484,14 @@ mcp_mem0_add-memory(
 
 Every code change, review, and agent-authored diff must meet the standards in the platinum documents:
 
-- `docs/PLATINUM_QUALITY_STANDARDS.md` — Code-review / diff discipline. The Seven Anti-Patterns, pre-commit checklist, pitfall library. **Read this before you edit anything.**
+- `docs/PLATINUM_QUALITY_STANDARDS.md` — Code-review / diff discipline. The Nine Anti-Patterns, pre-commit checklist, pitfall library. **Read this before you edit anything.**
 - `docs/PLATINUM_POLISH_REPORT.md` — Codebase audit snapshot (type safety, log hygiene, error handling).
 - `docs/DATABASE_PLATINUM_PROTOCOL.md` — Database-layer platinum protocol.
 - `docs/TOP_50_PLATINUM_RELEASE.md` — Release-readiness checklist.
 
 **Before every `git push`**, run `/plat` (see `.claude/commands/plat.md`). It executes the Pre-commit checklist from `docs/PLATINUM_QUALITY_STANDARDS.md`, cross-references the Error Ledger, and produces an explicit GO / NO-GO verdict. Skipping `/plat` on a substantive branch is treated the same as skipping the Error Ledger check — a protocol violation.
 
-Violations of the Seven Anti-Patterns must be fixed at the root. If you hit a novel variant, add new entries to BOTH `.agent/skills/error_memory/ERROR_LEDGER.md` AND `docs/PLATINUM_QUALITY_STANDARDS.md` before ending the session.
+Violations of the Nine Anti-Patterns must be fixed at the root. If you hit a novel variant, add new entries to BOTH `.agent/skills/error_memory/ERROR_LEDGER.md` AND `docs/PLATINUM_QUALITY_STANDARDS.md` before ending the session.
 
 ### 7. MERGE CONFLICT HYGIENE (MANDATORY AFTER EVERY MERGE)
 
@@ -525,6 +542,37 @@ Ignorance of a skill's purpose or absence from `WIIL-skill.md` is NOT grounds fo
 2. **Never** log issues to generic `OPEN_ISSUES.md` strings without specifying the exact path.
 3. **Always** append directly to `.agent/test_ledger/OPEN_ISSUES.md`.
 
+### 9. MULTI-AGENT NPM CONCURRENCY GUARDRAIL (STRICT)
+
+> [!CRITICAL]
+> Concurrent agents running `npm install` in the same workspace will shred `node_modules` file locks and corrupt the host machine's global `~/.npm/_cacache` registry, leading to unrecoverable `ENOENT` tarball errors.
+
+**Prevention Protocol (MANDATORY):**
+1. **Isolated Caches:** If you MUST run `npm install` (e.g., to fix `ERESOLVE` or missing types), you MUST append an isolated, randomized cache directory: `npm install --cache ./.npm-cache-isolated-$$`
+2. **Never Wipe Concurrently:** Never run `rm -rf node_modules` without checking if another agent or process is actively building the workspace. If you wipe it while another agent is compiling, you will break their build.
+
+### 10. SWARM CLI & MCP TOOLKIT INTEGRATION (MANDATORY)
+
+> [!IMPORTANT]
+> All agents in the swarm (including JULES, CODEX, Claude, Gemini, etc.) MUST actively utilize and coordinate via the native `firebase` CLI and the Google Cloud `gcloud` CLI for environment verification, function status checks, IAM policies, and logs. Additionally, all agents must remain aware of the active MCP tools (e.g., `firebase-mcp-server`, `cloudrun`, `sentry`, `genkit-mcp-server`) and call them to inspect/verify infrastructure rather than writing ad-hoc scripts.
+
+### 11. NO HARDCODED INFRASTRUCTURE IDENTIFIERS IN THE FRONTEND (STRICT)
+
+> [!CRITICAL]
+> Infrastructure-minted identifiers rotate on every re-train/redeploy. Hardcoding them into frontend source is a terminal review failure.
+
+**NEVER** hand-type any of the following into `packages/renderer/` (or any source module): Vertex AI **endpoint IDs**, deployed-model IDs, GCP **project numbers**, **regions/locations**, fine-tuned **tuning-job IDs**, bucket names, or any value an infra system mints and can rotate.
+
+**Why this rule exists (Post-Mortem 2026-06-21):** `packages/renderer/src/services/agent/fine-tuned-models.ts` hardcoded all 20 agents to `locations/us-central1/endpoints/<id>` from the May R8 run. A re-tune minted **new** endpoint IDs in a **different location (`us`)**. The code still compiled and passed its shape-check regex, so it "looked fine" — but every agent would 404 and silently fall back to the base model, meaning NONE of the freshly-trained agents actually served. See `.agent/skills/error_memory/ERROR_LEDGER.md` (2026-06-21 "Stale Hardcoded Fine-Tuned Endpoint Registry") and Platinum Anti-Pattern #9.
+
+**Required pattern:**
+1. Infra IDs come from a **single generated/synced config surface** (regenerated from `gcloud ai endpoints list` / the `tuningJobs` REST API after every re-tune) or are resolved at runtime — never scattered literals.
+2. If a value must be checked in, it lives in ONE clearly-marked generated file whose header carries the exact regen command. A re-tune must require editing only that one file, never hunting through frontend modules.
+3. **After ANY agent re-tune, re-sync the registry from Vertex before claiming agents are live.** Do not trust the checked-in registry — `curl` the live endpoint (`gcloud auth print-access-token` + the `tuningJobs`/`endpoints` REST API) and pick each agent's LATEST `JOB_STATE_SUCCEEDED` job by `endTime`.
+4. **Detect before every push:** `grep -rnE "endpoints/[0-9]{6,}|locations/(us|us-central1|global)/|projects/[0-9]{6,}" packages/renderer/src` — any hit outside a test fixture is a defect to fix at the root.
+
+**This rule is enforced by `/plat` and `/better` via Platinum Anti-Pattern #9. Skipping it on a branch that touches agent routing is a protocol violation.**
+
 ## Key Files Quick Reference
 
 | File | Purpose |
@@ -543,7 +591,7 @@ Ignorance of a skill's purpose or absence from `WIIL-skill.md` is NOT grounds fo
 | `packages/main/src/preload.ts` | Electron IPC bridge |
 | .env.example | Environment variable template |
 | `packages/renderer/src/test/setup.ts` | Vitest global test setup and Firebase mocks |
-| `docs/PLATINUM_QUALITY_STANDARDS.md` | Platinum code-review standards — Seven Anti-Patterns, pre-commit checklist |
+| `docs/PLATINUM_QUALITY_STANDARDS.md` | Platinum code-review standards — Nine Anti-Patterns, pre-commit checklist |
 | `docs/PLATINUM_POLISH_REPORT.md` | Codebase audit snapshot (type safety, log hygiene) |
 | `docs/DATABASE_PLATINUM_PROTOCOL.md` | Database-layer platinum protocol |
 | `docs/TOP_50_PLATINUM_RELEASE.md` | Release-readiness checklist |
@@ -608,6 +656,51 @@ Four skill registries exist — do not confuse them. All are active; the "not li
 
 ---
 
+## Slash Workflows (`.agent/workflows/`)
+
+These commands form the backbone of the agent's development workflow. When a user invokes one, read its corresponding markdown file in `.agent/workflows/` and execute it.
+
+### The Core Pipeline
+- `/start` — Initializes a new session, feature, or prompt. (`.agent/workflows/start.md`)
+- `/proceed` — Resumes an active task and runs a compliance check. (`.agent/workflows/proceed.md`)
+- `/middle` — Drives the iterative coding and building process. (`.agent/workflows/middle.md`)
+- `/end` — Wraps up a session leaving a pristine repository. (`.agent/workflows/end.md`)
+- `/skill-skill` — Intelligent skill router for dynamic workflows. (`.agent/workflows/skill-skill.md`)
+
+### Utility & Verification Commands
+- `/review` — Conversational Q&A loop to review state and align context. (`.agent/workflows/review.md`)
+- `/opp` — Operator persona activation / handoff check. (`.agent/workflows/opp.md`)
+- `/go` — Universal recursive execution loop for task continuation. (`.agent/workflows/go.md`)
+- `/get-git` — Git sync, local validation, and background scheduling. (`.agent/workflows/get-git.md`)
+- `/c` — Continuous coordination engine (autonomous supervisor). (`.agent/workflows/c.md`)
+- `/away` — Autonomous CI monitor & merge loop. (`.agent/workflows/away.md`)
+- `/ci-validate` — Pre-push CI validation and commit consolidation. (`.agent/workflows/ci-validate.md`)
+- `/flowchart` — Dynamic architecture and flow visualizer using Mermaid. (`.agent/workflows/flowchart.md`)
+- `/db-sync` — Security rules and schema auditor. (`.agent/workflows/db-sync.md`)
+- `/auto-fix` — Auto-fix Sentry issues and CodeRabbit PR comments. (`.agent/workflows/auto-fix.md`)
+- `/hunter` — Full-spectrum bug hunter. (`.agent/workflows/hunter.md`)
+- `/issue-sweep` — End-to-end issue sweep and stabilization. (`.agent/workflows/issue-sweep.md`)
+- `/better` — Universal improvement engine (audit, elevate, polish). (`.agent/workflows/better.md`)
+- `/finish` — Unfinished work sweep (TODOs, stubs, slop). (`.agent/workflows/finish.md`)
+- `/devex-review` — Developer experience (DX) audit. (`.agent/workflows/devex-review.md`)
+- `/factory` — Automated test & fix loop (nightly/autonomous runs). (`.agent/workflows/factory.md`)
+- `/test` — Context-aware test runner. (`.agent/workflows/test.md`)
+- `/training` — AI agent dataset generation & fine-tuning. (`.agent/workflows/training.md`)
+- `/api` — The API knowledge base and diagnostic tool. (`.agent/workflows/api.md`)
+- `/to-prd` — Product Requirement Document (PRD) generator. (`.agent/workflows/to-prd.md`)
+- `/to-issues` — vertical-Slice Ticketer. (`.agent/workflows/to-issues.md`)
+- `/grill-me` — Architect Interviewer (stress-test ADRs). (`.agent/workflows/grill-me.md`)
+- `/zoom-out` — Codebase dependency mapper. (`.agent/workflows/zoom-out.md`)
+- `/tdd` — Test-driven development loop. (`.agent/workflows/tdd.md`)
+- `/mega` — Mega stress test orchestrator. (`.agent/workflows/mega.md`)
+- `/mega-test` — Single mega test plan execution. (`.agent/workflows/mega-test.md`)
+- `/real` — Adaptive real-life testing workflow. (`.agent/workflows/real.md`)
+- `/auto_qa` — Autonomous visual QA via browser subagent. (`.agent/workflows/auto_qa.md`)
+- `/issue` — The Fix Agent (resolves issues logged in the ledger). (`.agent/workflows/issue.md`)
+- Engine Swarm: `/a` (Finder), `/b` (Resolver), `/c` (Shipper), `/d` (Verifier), `/abcd` (Launch All). (`.agent/workflows/a.md`, `b.md`, `c.md`, `d.md`, `abcd.md`)
+
+---
+
 ## Skill Routing
 
 When a user request matches a skill pattern below, **READ the referenced skill file first and follow its instructions exactly**. Do not answer ad hoc when a skill exists — the skill provides a proven, structured workflow.
@@ -616,45 +709,42 @@ When a user request matches a skill pattern below, **READ the referenced skill f
 
 ### Agent Skills (`.agent/skills/`)
 
-#### Engineering (Matt Pocock Core Suite)
+#### Testing & QA
+- `test` — Smart test runner for modified files (`.agent/skills/test/SKILL.md`)
+- `auto_qa` — Visual QA, screenshot testing (`.agent/skills/auto_qa/SKILL.md`)
+- `tdd` — Red-green-refactor via public interfaces (`.agent/skills/tdd/SKILL.md`)
+- `health-check` — Preventative health audit (`.agent/skills/health-check/SKILL.md`)
 
-| Trigger | Skill File |
-| --- | --- |
-| Interview plan against codebase context & ADRs, stress-test decisions | `.agent/skills/grill-with-docs/SKILL.md` |
-| Hard bugs & perf regressions: reproduce → minimize → hypothesize → instrument → fix | `.agent/skills/diagnose/SKILL.md` |
-| Strict red-green-refactor via public interfaces | `.agent/skills/tdd/SKILL.md` |
-| Turn conversation into PRD, publish to issue tracker | `.agent/skills/to-prd/SKILL.md` |
-| Break PRD/plan into independently-grabbable vertical-slice issues | `.agent/skills/to-issues/SKILL.md` |
-| Map codebase area: callers, dependencies, structure | `.agent/skills/zoom-out/SKILL.md` |
+#### Debugging & Troubleshooting
+- `diagnose` — Trace root cause from logs to codebase to hypothesis to fix (`.agent/skills/diagnose/SKILL.md`)
+- `hunter` — Full-spectrum bug hunt (security, leaks, races) (`.agent/skills/hunter/SKILL.md`)
+- `error_memory` — **MANDATORY check before debug** (`.agent/skills/error_memory/ERROR_LEDGER.md`)
 
-#### Productivity (Matt Pocock)
+#### Code Planning & Architecture
+- `agentic-harness-architect` — Design/evaluate AI agent harnesses (`.agent/skills/agentic-harness-architect/SKILL.md`)
+- `zoom-out` — Map codebase callers, dependencies, structure (`.agent/skills/zoom-out/SKILL.md`)
+- `grill-with-docs` — Interview plan against codebase context & ADRs (`.agent/skills/grill-with-docs/SKILL.md`)
+- `to-prd` — Turn conversation into PRD (`.agent/skills/to-prd/SKILL.md`)
+- `to-issues` — Break PRD/plan into vertical-slice issues (`.agent/skills/to-issues/SKILL.md`)
 
-| Trigger | Skill File |
-| --- | --- |
-| Interview pattern for non-code planning (product/strategy) | `.agent/skills/grill-me/SKILL.md` |
-| Terse mode: cut ~75% tokens by dropping articles & pleasantries | `.agent/skills/caveman/SKILL.md` |
+#### Development Productivity
+- `grill-me` — Interview pattern for non-code planning (product/strategy) (`.agent/skills/grill-me/SKILL.md`)
+- `caveman` — Terse mode: cut ~75% tokens (`.agent/skills/caveman/SKILL.md`)
+- `walk` — Session bootstrap, drive codebase to prime (`.agent/skills/walk/SKILL.md`)
+- `go` — Recursive execution loop (`.agent/skills/go/SKILL.md`)
+- `skill – skill` — Dynamic skill/tool router (`.agent/skills/skill – skill/SKILL.md`)
 
-#### Misc (Matt Pocock)
+#### Code Review & Quality
+- `health_audit` — Full engineering health audit, ship readiness (`.agent/skills/health_audit/SKILL.md`)
+- `hooks` — Audit, improve, add, or remove hooks (`.agent/skills/hooks/SKILL.md`)
 
-| Trigger | Skill File |
-| --- | --- |
-| Install hook that blocks `git push`, `reset --hard`, `clean -f` | `.agent/skills/git-guardrails-claude-code/SKILL.md` |
-| Install Husky + lint-staged + Prettier + typecheck + tests on commit | `.agent/skills/setup-pre-commit/SKILL.md` |
+#### Configuration & Setup
+- `setup-pre-commit` — Install Husky + lint-staged + Prettier + tests (`.agent/skills/setup-pre-commit/SKILL.md`)
+- `git-guardrails-claude-code` — Block dangerous git commands (`.agent/skills/git-guardrails-claude-code/SKILL.md`)
 
-#### Indii-Specific Skills (Core & Essential)
-
-| Trigger | Skill File |
-| --- | --- |
-| Assess task, evaluate available skills, route to best match | `.agent/skills/skill – skill/SKILL.md` |
-| Resume mobile session, drive codebase to prime | `.agent/skills/walk/SKILL.md` |
-| Audit, improve, add, or remove hooks (agent, React, Firebase, webhooks) | `.agent/skills/hooks/SKILL.md` |
-| Design or evaluate an AI agent harness | `.agent/skills/agentic-harness-architect/SKILL.md` |
-| Visual QA, screenshot testing, UI validation | `.agent/skills/auto_qa/SKILL.md` |
-| Drive a task to verified completion (recursive loop) | `.agent/skills/go/SKILL.md` |
-| Full engineering health audit, ship readiness | `.agent/skills/health_audit/SKILL.md` |
-| Bug sweep, security scan, find and fix all issues | `.agent/skills/hunter/SKILL.md` |
-| Run tests, determine which tests apply | `.agent/skills/test/SKILL.md` |
-| **MANDATORY before any debug**: error pattern lookup | `.agent/skills/error_memory/ERROR_LEDGER.md` |
+#### Creative & Media Production
+- `indii-cinema-worldbuilder` — Cinematic worldbuilding (`.agent/skills/indii-cinema-worldbuilder/SKILL.md`)
+- `indii-director` — AI director for cinematic sequences (`.agent/skills/indii-director/SKILL.md`)
 
 ### Jules Tools (`.jules/`)
 
@@ -695,11 +785,9 @@ When Claude would invoke a named Skill tool, use the following Gemini-native app
 | `checkpoint` | Write current session state to `.agent/HANDOFF_STATE.md` with completed work, decisions, and next steps |
 | `health` | Use `.agent/skills/health_audit/SKILL.md` for full spectrum audit |
 
-## Skill routing
+## Skill routing (General Principles)
 
-When the user's request matches an available skill, ALWAYS invoke it using the Skill
-tool as your FIRST action. Do NOT answer directly, do NOT use other tools first.
-The skill has specialized workflows that produce better results than ad-hoc answers.
+When the user's request matches an available skill, ALWAYS invoke it using the Skill tool as your FIRST action. Do NOT answer directly, do NOT use other tools first. The skill has specialized workflows that produce better results than ad-hoc answers.
 
 Key routing rules:
 - Product ideas, "is this worth building", brainstorming → invoke office-hours
@@ -714,4 +802,3 @@ Key routing rules:
 - Architecture review → invoke plan-eng-review
 - Save progress, checkpoint, resume → invoke checkpoint
 - Code quality, health check → invoke health
-

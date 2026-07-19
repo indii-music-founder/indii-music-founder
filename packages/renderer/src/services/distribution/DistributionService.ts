@@ -378,7 +378,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
         }
 
         try {
-            const result = await window.electronAPI.distribution.generateIngestionNotification(metadata);
+            const result = await window.electronAPI.distribution.generateDDEX(metadata);
             if (!result.success || !result.xml) {
                 throw new Error(result.error || 'DDEX Generation failed');
             }
@@ -567,7 +567,8 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
         const userId = auth.currentUser?.uid;
         if (!userId) return [];
 
-        const constraints = orgId
+        // Firestore rules evaluation for `isOrgMember` fails if `orgId` is unconstrained.
+        const constraints = orgId && orgId !== 'org-default'
             ? [this.where('orgId', '==', orgId)]
             : [this.where('userId', '==', userId)];
 
@@ -584,7 +585,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
     async submitRelease(
         releaseData: IngestionMetadata & { sftpConfig?: SFTPConfig; releaseId?: string },
         onProgress?: (event: { step?: string; status?: string; progress?: number; detail?: string; log?: string }) => void
-    ): Promise<{ status: string; xml?: string; xml_path?: string; tracks?: unknown[] }> {
+    ): Promise<{ status: string; xml?: string; xml_path?: string; tracks?: unknown[]; sftp_skipped?: boolean }> {
         if (!window.electronAPI) {
             throw new Error('Electron environment required for release submission');
         }
@@ -607,24 +608,32 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
             throw new Error(`QC Validation Failed: ${validationError}`);
         }
 
-        // Item: Check mechanical royalty clearance before distribution (Hardened Pre-flight)
+        // Item: Check mechanical royalty clearance before distribution (FAIL-CLOSED: block if unknown)
         try {
             const { MechanicalRoyaltyService } = await import('@/services/publishing/MechanicalRoyaltyService');
             const clearance = await MechanicalRoyaltyService.isReleaseClearedForDistribution(releaseId);
-            if (!clearance.cleared) {
-                const errorMsg = `Release distribution blocked: Mechanical license pending for [${clearance.pendingTracks.join(', ')}]`;
+
+            if (clearance.status === 'unknown') {
+                const errorMsg = `Release distribution blocked: Mechanical clearance status unknown. Cannot verify clearance for ${releaseId} — user must manually confirm.`;
                 await this.updateTask(taskId, { status: 'FAILED', error: errorMsg });
-                // In production, we block. In dev, we might just warn?
-                // For now, let's enforce production rules.
                 throw new Error(errorMsg);
             }
+
+            if (clearance.status === 'pending') {
+                const errorMsg = `Release distribution blocked: Mechanical license pending for [${clearance.pendingTracks.join(', ')}]`;
+                await this.updateTask(taskId, { status: 'FAILED', error: errorMsg });
+                throw new Error(errorMsg);
+            }
+
             logger.info(`[Distribution] Mechanical clearance verified for release ${releaseId}`);
         } catch (clearanceErr: unknown) {
-            if (clearanceErr instanceof Error && clearanceErr.message.includes('blocked')) {
+            const isBlockedError = clearanceErr instanceof Error && clearanceErr.message.includes('blocked');
+            if (isBlockedError || (clearanceErr instanceof Error && clearanceErr.message.includes('Mechanical clearance status unknown'))) {
                 throw clearanceErr;
             }
-            logger.warn('[Distribution] Clearance check service unavailable or errored:', clearanceErr);
-            // Default to allow in dev if service errors, but log warning
+            const errorMsg = `Release distribution blocked: Cannot determine mechanical clearance status (service error): ${clearanceErr instanceof Error ? clearanceErr.message : String(clearanceErr)}`;
+            await this.updateTask(taskId, { status: 'FAILED', error: errorMsg });
+            throw new Error(errorMsg);
         }
 
         // Item 409: Auto-assign UPC to releases that are missing one
@@ -770,7 +779,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
         const userId = auth.currentUser?.uid;
         if (!userId) return () => { };
 
-        const constraints = orgId
+        const constraints = orgId && orgId !== 'org-default'
             ? [this.where('orgId', '==', orgId)]
             : [this.where('userId', '==', userId)];
 

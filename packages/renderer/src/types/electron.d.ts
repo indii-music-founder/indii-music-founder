@@ -3,9 +3,29 @@
 import * as DistributionTypes from './distribution';
 import * as SchedulerTypes from '../services/scheduler/types';
 
+/** Shape of the payload delivered by the Electron P2P IPC bridge to the renderer. */
+export interface RemoteMobilePayload {
+    type: string;
+    ts?: number;
+    command?: {
+        id?: string;
+        text: string;
+        targetAgentId?: string;
+        metadata?: Record<string, unknown>;
+        executionTarget?: 'cloud' | 'studio';
+    };
+}
 export interface AuthTokenData {
     idToken: string;
     accessToken?: string | null;
+    source?: string | null;
+}
+
+export interface DAWState {
+    bpm: number;
+    isPlaying: boolean;
+    currentTime: number;
+    trackNames: string[];
 }
 
 export interface AudioAnalysisResult {
@@ -47,6 +67,8 @@ export interface AudioAnalysisResult {
             sampleRate: number;
             isStereo: boolean;
             rejectionRisks: string[];
+            measurementMethod?: 'measured';
+            bitDepth?: number;
         };
     } | null;
     proxyBase64?: string | null;
@@ -60,6 +82,13 @@ export interface ElectronAPI {
     setPrivacyMode: (enabled: boolean) => Promise<void>;
     selectFile: (options?: { title?: string, filters?: { name: string, extensions: string[] }[] }) => Promise<string | null>;
     selectDirectory: (options?: { title?: string }) => Promise<string | null>;
+    searchApprovedAssets: (dirPath: string, options?: { query?: string; extensions?: string[]; maxResults?: number }) => Promise<Array<{
+        name: string;
+        relativePath: string;
+        extension: string;
+        sizeBytes: number;
+        modifiedAt: number;
+    }>>;
     showNotification: (title: string, body: string) => void;
 
     // System Info (Mobile Remote, Device Detection)
@@ -94,6 +123,7 @@ export interface ElectronAPI {
     // Network (Main Process Fetching)
     network: {
         fetchUrl: (url: string) => Promise<string>;
+        fetchUrlBase64: (url: string) => Promise<{ base64: string; contentType: string }>;
     };
 
     // SFTP (Distribution)
@@ -136,10 +166,23 @@ export interface ElectronAPI {
         onAC: (callback: () => void) => () => void;
     };
 
+    // Window control (Sleep/Wake) — hide to tray / show window
+    window?: {
+        show: () => Promise<void>;
+        hide: () => Promise<void>;
+    };
+
+    // Menu events
+    menu?: {
+        onSaveTriggered: (callback: () => void) => () => void;
+    };
+
     // Video (Local Asset Management)
     video: {
         saveAsset: (url: string, filename: string) => Promise<string>;
         openFolder: (filePath?: string) => Promise<void>;
+        render: (config: { compositionId: string; outputLocation: string; inputProps?: Record<string, unknown> }) => Promise<string>;
+        getDefaultPath: (filename?: string) => Promise<string>;
     };
 
     // Credentials
@@ -161,7 +204,7 @@ export interface ElectronAPI {
         generateISRC: (options?: DistributionTypes.ISRCGenerationOptions) => Promise<DistributionTypes.ISRCResponse>;
         generateUPC: (options?: DistributionTypes.UPCGenerationOptions) => Promise<DistributionTypes.UPCResponse>;
         registerRelease: (metadata: unknown, releaseId?: string) => Promise<DistributionTypes.IPCResponse<unknown>>;
-        generateIngestionNotification: (metadata: DistributionTypes.IngestionMetadata) => Promise<DistributionTypes.IngestionResponse>;
+        generateDDEX: (metadata: DistributionTypes.IngestionMetadata) => Promise<DistributionTypes.IngestionResponse>;
         generateContentIdCSV: (data: DistributionTypes.ContentIdData) => Promise<DistributionTypes.CSVResponse<DistributionTypes.ContentIdReport>>;
         generateBWARM: (data: DistributionTypes.BWarmData) => Promise<DistributionTypes.CSVResponse<unknown>>;
         checkMerlinStatus: (data: DistributionTypes.MerlinCheckData) => Promise<DistributionTypes.IPCResponse<DistributionTypes.MerlinReport>>;
@@ -218,6 +261,18 @@ export interface ElectronAPI {
         get: (taskId: string) => Promise<{ success: boolean; task?: SchedulerTypes.ScheduledTask; error?: string }>;
         onTick: (callback: (event: SchedulerTypes.SchedulerTickEvent) => void) => () => void;
         onNeuralSync: (callback: (payload: unknown) => void) => () => void;
+    };
+    // Mobile Remote — P2P Local WebSocket IPC bridge (Electron-only)
+    remote?: {
+        onMessageFromMobile: (cb: (payload: RemoteMobilePayload) => void) => (() => void);
+        broadcast: (msg: Record<string, unknown>) => void;
+    };
+    // DAW Integration (Ableton/Logic/FL Studio Link)
+    daw?: {
+        start: () => Promise<boolean>;
+        stop: () => Promise<boolean>;
+        getState: () => Promise<DAWState | null>;
+        onStateChanged: (callback: (state: DAWState) => void) => () => void;
     };
 }
 

@@ -11,7 +11,8 @@
  * Each function takes `IntelligenceContext` as its first argument.
  */
 
-import type { Content, Part, Schema, Tool, GenerateContentResult } from 'firebase/ai';
+import type { Content, Part, Schema, Tool, WrappedResponse } from '@/shared/types/ai.dto';
+type GenerateContentResult = WrappedResponse;
 import type { IntelligenceContext } from '../IntelligenceContext';
 import type {
     GenerationConfig,

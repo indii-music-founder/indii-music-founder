@@ -49,6 +49,12 @@ vi.mock('@/services/distribution/proprietary-ingestion/IngestionNotificationServ
 
 vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('Network unavailable in tests')));
 
+const mockTuneCoreSuccessResponse = (releaseId: string, isrc: string) => ({
+    ok: true,
+    status: 200,
+    json: vi.fn().mockResolvedValue({ id: releaseId, isrc })
+}) as unknown as Response;
+
 describe('Distribution System Verification', () => {
     const mockMetadata: ExtendedGoldenMetadata = {
         trackTitle: 'Neon Nights',
@@ -69,6 +75,7 @@ describe('Distribution System Verification', () => {
         distributionChannels: ['streaming', 'download'],
         copyrightYear: '2025',
         copyrightOwner: 'The Synthwave Collective',
+        language: 'English', // Added language for Symphonic validation
         aiGeneratedContent: {
             isFullyAIGenerated: false,
             isPartiallyAIGenerated: false
@@ -144,6 +151,9 @@ describe('Distribution System Verification', () => {
         });
 
         it('should create release', async () => {
+            vi.mocked(fetch).mockResolvedValueOnce(
+                mockTuneCoreSuccessResponse('TC-TEST-RELEASE', mockMetadata.isrc)
+            );
             const result = await tunecore.createRelease(mockMetadata, mockAssets);
             expect(result.success).toBe(true);
             expect(result.distributorReleaseId).toBeDefined();

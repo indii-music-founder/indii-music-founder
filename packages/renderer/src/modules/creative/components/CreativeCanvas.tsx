@@ -5,6 +5,7 @@ import { CanvasHeader } from './CanvasHeader';
 import { CanvasToolbar } from './CanvasToolbar';
 import AnnotationPalette from './AnnotationPalette';
 import EditDefinitionsPanel from './EditDefinitionsPanel';
+import LayersPanel from './LayersPanel';
 import { CanvasViewport } from './CanvasViewport';
 import { CanvasActionRail } from './CanvasActionRail';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -14,7 +15,7 @@ import { useCreativeCanvas } from '../hooks/useCreativeCanvas';
 interface CreativeCanvasProps {
     item: HistoryItem | null;
     onClose: () => void;
-    onSendToWorkflow?: (type: 'firstFrame' | 'lastFrame', item: HistoryItem) => void;
+    onSendToWorkflow?: (type: 'firstFrame' | 'lastFrame', item: HistoryItem) => void | Promise<void>;
     onRefine?: () => void;
 }
 
@@ -24,9 +25,14 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
         isMagicFillMode,
         isSelectingEndFrame,
         isDefinitionsOpen,
+        isLayersPanelOpen,
+        layers,
+        selectedLayerId,
+        hasDetections,
         activeColor,
         definitions,
         referenceImages,
+        referenceRoles,
         generatedCandidates,
         endFrameItem,
         magicFillPrompt,
@@ -34,10 +40,12 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
         processingStatus,
         canvasEl,
         generatedHistory,
+        editManifest,
 
         setIsSelectingEndFrame,
         setEndFrameItem,
         setIsDefinitionsOpen,
+        toggleLayersPanel,
         setActiveColor,
         setMagicFillPrompt,
         setIsHighFidelity,
@@ -48,10 +56,16 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
         handleDetectObjects,
         handleUpdateDefinition,
         handleUpdateReferenceImage,
+        handleUpdateReferenceRole,
         handleMagicFill,
         handleClearDetections,
+        handleSelectLayer,
+        handleToggleLayerVisibility,
+        handleToggleLayerLock,
+        handleDeleteLayer,
+        handleReorderLayer,
         handleAnimate,
-        handleCandidateSelect,
+        handleCandidateApply,
         saveCanvas,
         handleCreateLastFrame,
         handleFlattenCanvas,
@@ -65,6 +79,7 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
         handleAddRectangle,
         handleAddCircle,
         handleAddText,
+        handleAddSketchLayer,
     } = useCreativeCanvas({ item, onClose, onRefine });
 
     if (!item) return null;
@@ -75,7 +90,7 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="absolute inset-0 z-40 bg-background flex flex-col overflow-hidden"
+                className="absolute inset-0 z-40 bg-background/80 backdrop-blur-xl flex flex-col overflow-hidden"
                 data-testid="creative-canvas-container"
             >
                 <CanvasHeader
@@ -87,9 +102,14 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
                     processingStatus={processingStatus}
                     isHighFidelity={isHighFidelity}
                     setIsHighFidelity={setIsHighFidelity}
+                    modelTier={editManifest.settings.modelTier}
+                    resolution={editManifest.settings.resolution}
+                    aspectRatio={editManifest.settings.aspectRatio}
+                    grounding={editManifest.settings.grounding}
+                    imageSize={editManifest.settings.imageSize}
                 />
 
-                <div className="flex-1 relative overflow-hidden bg-[#060608]">
+                <div className="flex-1 relative overflow-hidden bg-transparent">
                     <div className="absolute inset-0 grid grid-cols-[minmax(0,1fr)] gap-0 md:grid-cols-[72px_minmax(0,1fr)_72px]">
                         <aside className="z-30 hidden min-h-0 flex-col items-center justify-center border-r border-white/10 bg-[#050608]/74 px-2 py-4 backdrop-blur-xl md:flex">
                             <div className="max-h-full overflow-y-auto rounded-2xl border border-white/10 bg-[#050608]/82 p-2 shadow-[0_18px_48px_rgba(0,0,0,0.42)] backdrop-blur-2xl [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
@@ -105,6 +125,10 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
                                     activeTool={activeTool}
                                     handleDetectObjects={handleDetectObjects}
                                     handleClearDetections={handleClearDetections}
+                                    hasDetections={hasDetections}
+                                    toggleLayersPanel={toggleLayersPanel}
+                                    isLayersPanelOpen={isLayersPanelOpen}
+                                    addSketchLayer={handleAddSketchLayer}
                                     orientation="vertical"
                                 />
                                 <div className="my-2 h-px w-8 bg-white/10" />
@@ -125,7 +149,7 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
                             isMagicFillMode={isMagicFillMode}
                             activeColor={activeColor}
                             generatedCandidates={generatedCandidates}
-                            onCandidateSelect={handleCandidateSelect}
+                            onCandidateApply={handleCandidateApply}
                             onCloseCandidates={() => setGeneratedCandidates([])}
                             isSelectingEndFrame={isSelectingEndFrame}
                             setIsSelectingEndFrame={setIsSelectingEndFrame}
@@ -171,6 +195,10 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
                             activeTool={activeTool}
                             handleDetectObjects={handleDetectObjects}
                             handleClearDetections={handleClearDetections}
+                            hasDetections={hasDetections}
+                            toggleLayersPanel={toggleLayersPanel}
+                            isLayersPanelOpen={isLayersPanelOpen}
+                            addSketchLayer={handleAddSketchLayer}
                         />
                     </div>
 
@@ -178,11 +206,29 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
                     <EditDefinitionsPanel
                         isOpen={isDefinitionsOpen}
                         onClose={() => setIsDefinitionsOpen(false)}
-                        definitions={definitions}
-                        onUpdateDefinition={handleUpdateDefinition}
-                        referenceImages={referenceImages}
-                        onUpdateReferenceImage={handleUpdateReferenceImage}
-                    />
+                    definitions={definitions}
+                    onUpdateDefinition={handleUpdateDefinition}
+                    referenceImages={referenceImages}
+                    onUpdateReferenceImage={handleUpdateReferenceImage}
+                    referenceRoles={referenceRoles}
+                    onUpdateReferenceRole={handleUpdateReferenceRole}
+                />
+
+                <LayersPanel
+                    isOpen={isLayersPanelOpen}
+                    onClose={toggleLayersPanel}
+                    layers={layers}
+                    selectedLayerId={selectedLayerId}
+                    onSelectLayer={handleSelectLayer}
+                    onToggleVisibility={handleToggleLayerVisibility}
+                    onToggleLock={handleToggleLayerLock}
+                    onDeleteLayer={handleDeleteLayer}
+                    onReorderLayer={handleReorderLayer}
+                    onAddSketchLayer={handleAddSketchLayer}
+                    onAddTextLayer={handleAddText}
+                    onAddRectangleLayer={handleAddRectangle}
+                    onAddCircleLayer={handleAddCircle}
+                />
                 </div>
             </motion.div>
         </AnimatePresence>

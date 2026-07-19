@@ -3,7 +3,20 @@ import { logger } from '@/utils/logger';
 import systemPrompt from '@agents/publishing/prompt.md?raw';
 
 import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
-import { Schema } from 'firebase/ai';
+import type { Schema } from '@/shared/types/ai.dto';
+import { PublishingTools } from '../tools/PublishingTools';
+import { UniversalTools } from '../tools/UniversalTools';
+import { buildDomainRetrievalTools, buildDomainRetrievalDeclarations } from '../tools/DomainTools';
+
+
+
+const publishingRetrievalConfig = {
+    'publishingCatalog': { path: 'publishingCatalog', requiresUserIdFilter: true },
+    'iswc_works': { path: 'iswc_works', requiresUserIdFilter: true },
+    'publishing_registrations': { path: 'publishing_registrations', requiresUserIdFilter: true }
+};
+const publishingRetrievalTools = buildDomainRetrievalTools('Publishing', publishingRetrievalConfig);
+const publishingRetrievalDeclarations = buildDomainRetrievalDeclarations('Publishing', publishingRetrievalConfig);
 
 export const PublishingAgent: AgentConfig = {
     id: 'publishing',
@@ -13,6 +26,7 @@ export const PublishingAgent: AgentConfig = {
     category: 'department',
     systemPrompt: systemPrompt,
     functions: {
+        ...publishingRetrievalTools,
         register_work: async (args: { title: string, writers: string[], split: string }) => {
             const prompt = `Validate this music work registration draft. Title: "${args.title}", Contributors: ${args.writers.join(', ')}. Return missing fields, split warnings, and filing readiness. Do not generate or claim an official ISWC.`;
             try {
@@ -49,11 +63,17 @@ export const PublishingAgent: AgentConfig = {
             const prompt = `Prepare release delivery metadata readiness for release ${args.releaseId}. Assets: ${JSON.stringify(args.assets)}. Return missing delivery fields and review blockers. Do not claim external DSP delivery.`;
             const response = await AutonomousIntelligence.generateStructuredData<Record<string, unknown>>(prompt, { type: 'object' } as Schema, { maxOutputTokens: 8192, temperature: 1.0 });
             return { success: true, data: { status: "ReadyForReview", externalDelivery: false, ...response } };
-        }
+        },
+        check_pro_catalog: PublishingTools.check_pro_catalog,
+        search_pro_database: PublishingTools.search_pro_database,
+        register_work_with_pro: PublishingTools.register_work_with_pro,
+        pro_scraper: UniversalTools.pro_scraper,
+        payment_gate: UniversalTools.payment_gate,
     },
-    authorizedTools: ['analyze_contract', 'register_work', 'check_pro_catalog', 'package_release_assets', 'pro_scraper', 'payment_gate'],
+    authorizedTools: ['list_domain_records', 'analyze_contract', 'register_work', 'check_pro_catalog', 'package_release_assets', 'pro_scraper', 'payment_gate', 'search_pro_database', 'register_work_with_pro'],
     tools: [{
         functionDeclarations: [
+            ...publishingRetrievalDeclarations,
             {
                 name: "analyze_contract",
                 description: "Analyze a publishing contract.",
@@ -127,6 +147,54 @@ export const PublishingAgent: AgentConfig = {
                         reason: { type: "STRING" }
                     },
                     required: ["amount", "vendor", "reason"]
+                }
+            },
+            {
+                name: "search_pro_database",
+                description: "Search Performance Rights Organization (PRO) databases for existing catalog matches.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        query: { type: "STRING", description: "Title of the musical work or writer name." },
+                        society: { type: "STRING", description: "ASCAP, BMI, or SESAC." }
+                    },
+                    required: ["query"]
+                }
+            },
+            {
+                name: "register_work_with_pro",
+                description: "Prepare a draft work-registration packet for a PRO (ASCAP/BMI/SESAC). indii has no direct filing integration with any PRO — this stores the draft and returns a requires_manual_submission status; the user must file it themselves on the PRO's own portal.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        workTitle: { type: "STRING", description: "Title of the work." },
+                        writers: {
+                            type: "ARRAY",
+                            description: "List of writers and their splits.",
+                            items: {
+                                type: "OBJECT",
+                                properties: {
+                                    name: { type: "STRING" },
+                                    ipi: { type: "STRING" },
+                                    role: { type: "STRING" },
+                                    split: { type: "NUMBER" }
+                                },
+                                required: ["name", "role", "split"]
+                            }
+                        },
+                        publisher: {
+                            type: "OBJECT",
+                            description: "Publisher details and split.",
+                            properties: {
+                                name: { type: "STRING" },
+                                ipi: { type: "STRING" },
+                                split: { type: "NUMBER" }
+                            },
+                            required: ["name", "split"]
+                        },
+                        society: { type: "STRING", description: "ASCAP, BMI, or SESAC." }
+                    },
+                    required: ["workTitle", "writers", "society"]
                 }
             }
         ]

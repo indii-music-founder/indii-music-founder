@@ -24,7 +24,7 @@ const CustomTooltip = ({ active, payload, label }: PlatformTooltipProps) => {
     return (
         <div className="bg-slate-900/95 border border-white/10 rounded-xl p-3 shadow-2xl text-sm">
             <p className="text-white font-semibold mb-1">{label}</p>
-            <p className="text-slate-300">{Number(payload[0]?.value ?? 0).toLocaleString()} streams</p>
+            <p className="text-slate-300">{Number(payload[0]?.value ?? 0).toLocaleString('en-US')} streams</p>
             {payload[0]?.payload?.completionRate && (
                 <p className="text-slate-500 text-xs mt-0.5">
                     Completion: {(payload[0].payload.completionRate * 100).toFixed(0)}%
@@ -32,7 +32,7 @@ const CustomTooltip = ({ active, payload, label }: PlatformTooltipProps) => {
             )}
             {(payload[0]?.payload?.creatorCount ?? 0) > 0 && (
                 <p className="text-slate-500 text-xs">
-                    Creators: {payload[0]?.payload?.creatorCount?.toLocaleString()}
+                    Creators: {payload[0]?.payload?.creatorCount?.toLocaleString('en-US')}
                 </p>
             )}
         </div>

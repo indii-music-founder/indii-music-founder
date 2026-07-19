@@ -6,6 +6,7 @@ export interface ToolPoolContext {
     agentId: string;
     moduleContext: string;
     isReadOnly?: boolean;
+    conversationMode?: 'direct' | 'department' | 'boardroom';
 }
 
 /**
@@ -35,7 +36,7 @@ export class ToolPoolAssembler {
         const specialistToolNames = new Set(specialistTools.map(f => f.name));
         const filteredSuperpowers = SUPERPOWER_TOOLS.filter(tool => !specialistToolNames.has(tool.name));
 
-        const collaborationToolNames = ['delegate_task', 'consult_experts'];
+        const collaborationToolNames = ['delegate_task', 'consult_experts', 'share_note'];
         const collaborationTools = filteredSuperpowers.filter(t => collaborationToolNames.includes(t.name));
         const otherSuperpowers = filteredSuperpowers.filter(t => !collaborationToolNames.includes(t.name));
 
@@ -45,6 +46,15 @@ export class ToolPoolAssembler {
             ...specialistTools,
             ...otherSuperpowers
         ];
+
+        // Avoid offering tools that the hierarchy will reject. In Boardroom,
+        // managers coordinate with information notes; no peer manager executes
+        // another manager's task. Direct mode is intentionally 1:1.
+        if (context.conversationMode === 'boardroom') {
+            pool = pool.filter(tool => !['delegate_task', 'consult_experts'].includes(tool.name));
+        } else if (context.conversationMode === 'direct') {
+            pool = pool.filter(tool => !collaborationToolNames.includes(tool.name));
+        }
 
         // 2. Filter out destructive tools if in read-only mode
         if (context.isReadOnly) {

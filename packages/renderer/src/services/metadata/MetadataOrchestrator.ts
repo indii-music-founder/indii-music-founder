@@ -11,6 +11,50 @@ import { Logger } from '@/core/logger/Logger';
  */
 export class MetadataOrchestrator {
     /**
+     * Compute whether metadata meets golden (distribution-ready) requirements.
+     * Golden status requires: at least one split, non-default publisher, valid identifiers.
+     */
+    static computeGoldenStatus(metadata: Partial<ExtendedGoldenMetadata>): boolean {
+        // Must have at least one royalty split
+        if (!metadata.splits || metadata.splits.length === 0) {
+            return false;
+        }
+
+        // All splits must have valid data (legalName, email, valid percentage)
+        const allSplitsValid = metadata.splits.every(split =>
+            split.legalName?.trim() &&
+            split.email?.trim() &&
+            typeof split.percentage === 'number' &&
+            split.percentage > 0 &&
+            split.percentage <= 100
+        );
+        if (!allSplitsValid) {
+            return false;
+        }
+
+        // Publisher must not be default/empty
+        if (!metadata.publisher || metadata.publisher === 'Self-Published' || !metadata.publisher.trim()) {
+            return false;
+        }
+
+        // Label name must not be empty (required for golden)
+        if (!metadata.labelName || !metadata.labelName.trim()) {
+            return false;
+        }
+
+        // Must have valid ISRC format
+        if (!metadata.isrc || !/^[A-Z]{2}[A-Z0-9]{3}\d{7}$/.test(metadata.isrc)) {
+            return false;
+        }
+
+        // Must have basic metadata
+        if (!metadata.trackTitle || !metadata.artistName || !metadata.genre) {
+            return false;
+        }
+
+        return true;
+    }
+    /**
      * Creates a high-fidelity Golden Metadata record from a raw audio file.
      */
     async createGoldenMetadata(file: File, initialData: Partial<ExtendedGoldenMetadata> = {}): Promise<ExtendedGoldenMetadata> {
@@ -25,7 +69,9 @@ export class MetadataOrchestrator {
         
         // 2. Auto-generate Industry Identifiers if missing
         const isrc = initialData.isrc || await IdentifierService.nextISRC();
-        const upc = initialData.upc || (initialData.releaseType !== 'Single' ? await IdentifierService.nextUPC() : undefined);
+        // ISSUE-783: every commercial release requires a release-level UPC/ICPN for
+        // DDEX packaging (AuthorityPanel/DDEX validation), including singles.
+        const upc = initialData.upc || await IdentifierService.nextUPC();
 
         // 3. Map Intelligence results to Golden Metadata Schema
         const metadata: ExtendedGoldenMetadata = {
@@ -51,7 +97,6 @@ export class MetadataOrchestrator {
             durationFormatted: this.formatDuration(profile.technical.duration),
             releaseDate: initialData.releaseDate || new Date().toISOString().split('T')[0]!,
             releaseType: initialData.releaseType || 'Single',
-            isGolden: true, // Mark as Golden since it's Intelligence-verified and ID-assigned
             aiGeneratedContent: initialData.aiGeneratedContent || {
                 isFullyAIGenerated: false,
                 isPartiallyAIGenerated: false,
@@ -59,6 +104,9 @@ export class MetadataOrchestrator {
                 humanContribution: 'Original recording provided by user.'
             }
         };
+
+        // Compute golden status based on actual metadata requirements
+        metadata.isGolden = MetadataOrchestrator.computeGoldenStatus(metadata);
 
         // 4. Save to Track Library (Firestore)
         await trackLibrary.saveTrack(metadata);

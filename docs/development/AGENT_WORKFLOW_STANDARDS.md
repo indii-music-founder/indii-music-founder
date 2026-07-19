@@ -83,7 +83,7 @@ Select the appropriate model level based on complexity.
 | 6 | Response handling (.text()) | ✅ PASS | All services use method call |
 | 7 | Blueprint-first protocol | ⚠️ PARTIAL | Docs exist, hook not enforced |
 | 7 | Gauntlet verification suite | ✅ PASS | `scripts/run-gauntlet.sh` |
-| 7 | Stress tests | ✅ PASS | `e2e/file-search-stress.spec.ts` |
+| 7 | Stress tests | ✅ PASS | `e2e/stress-test-new-user.spec.ts`, `e2e/multi-agent-swarm.spec.ts`, `e2e/mega-stress-test-v*.spec.ts` |
 | 8 | Quota pre-checks | ✅ PASS | Integrated in Image/Video/RAG services |
 | 8 | Graceful degradation | ✅ PASS | `QuotaExceededError` with upgrade prompts |
 | 8 | MembershipService integration | ✅ PASS | Usage tracking in Firestore |
@@ -94,14 +94,14 @@ Select the appropriate model level based on complexity.
 | Video | Zoomable Timeline | ✅ PASS | `ZoomableTimeline` component |
 
 **Key Files:**
-- `src/services/MembershipService.ts` - Quota tracking & enforcement
-- `src/shared/types/errors.ts` - QuotaExceededError class
+- `packages/renderer/src/services/MembershipService.ts` - Quota tracking & enforcement
+- `packages/shared/src/types/errors.ts` - QuotaExceededError class
 - `scripts/run-gauntlet.sh` - Verification runner
 - `docs/development/GAUNTLET_PROTOCOL.md` - Verification docs
-- `src/services/video/SceneExtensionService.ts` - 60s+ video scene chaining
-- `src/services/video/VideoService.ts` - Enhanced with Veo 3.1 features
-- `src/modules/video/store/videoEditorStore.ts` - Extended video state
-- `src/modules/video/components/ZoomableTimeline.tsx` - Timeline zoom UI
+- `packages/renderer/src/services/video/SceneExtensionService.ts` - 60s+ video scene chaining
+- `packages/renderer/src/services/video/VideoService.ts` - Enhanced with Veo 3.1 features
+- `packages/renderer/src/modules/creative/video/store/videoEditorStore.ts` - Extended video state
+- `packages/renderer/src/modules/creative/video/components/ZoomableTimeline.tsx` - Timeline zoom UI
 
 ---
 

@@ -22,6 +22,7 @@ import { revenueService, type RevenueStats } from '@/services/RevenueService';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { AnalyticsService } from '@/services/dashboard/AnalyticsService';
+import { MODEL_PRICING } from '@/core/config/intelligence-models';
 import type {
     DashboardRevenueStats,
     DashboardStreamsStats,
@@ -37,7 +38,7 @@ import type {
     DashboardTourStatus,
 } from '@/services/dashboard/schema';
 
-export type WidgetType = 'streams_today' | 'revenue_mtd' | 'revenue_aggregated' | 'next_release' | 'top_track' | 'agent_activity' | 'audience_growth' | 'active_campaigns' | 'pending_tasks' | 'social_engagement' | 'brand_identity' | 'merch_sales' | 'tour_status';
+export type WidgetType = 'streams_today' | 'revenue_mtd' | 'revenue_aggregated' | 'next_release' | 'top_track' | 'agent_activity' | 'audience_growth' | 'active_campaigns' | 'pending_tasks' | 'social_engagement' | 'brand_identity' | 'merch_sales' | 'tour_status' | 'cost_estimator';
 
 export interface Widget {
     id: string;
@@ -59,6 +60,7 @@ export const WIDGET_DEFINITIONS: Record<WidgetType, { label: string; icon: Lucid
     brand_identity: { label: 'Brand Integrity', icon: Palette, description: 'Visual identity and brand compliance scores' },
     merch_sales: { label: 'Merchandise', icon: ShoppingBag, description: 'Recent sales and inventory alerts' },
     tour_status: { label: 'Tour & Shows', icon: MapPin, description: 'Ticket sales and upcoming tour dates' },
+    cost_estimator: { label: 'Cost Estimator', icon: DollarSign, description: 'Estimate API costs for generative intelligence' },
 };
 
 const DEFAULT_WIDGETS: Widget[] = [
@@ -68,6 +70,7 @@ const DEFAULT_WIDGETS: Widget[] = [
     { id: 'w4', type: 'top_track', order: 3 },
     { id: 'w5', type: 'audience_growth', order: 4 },
     { id: 'w6', type: 'active_campaigns', order: 5 },
+    { id: 'w7', type: 'cost_estimator', order: 6 },
 ];
 
 export const STORAGE_KEY = 'indii_custom_dashboard_widgets';
@@ -89,7 +92,7 @@ function formatCurrency(amount: number): string {
 /* ── Components ─────────────────────────────────────────────────── */
 
 // eslint-disable-next-line react-refresh/only-export-components
-function CountUp({ value, duration = 2, formatter = (v: number) => Math.floor(v).toLocaleString() }: { value: number; duration?: number; formatter?: (v: number) => string }) {
+function CountUp({ value, duration = 2, formatter = (v: number) => Math.floor(v).toLocaleString('en-US') }: { value: number; duration?: number; formatter?: (v: number) => string }) {
     const motionValue = useMotionValue(0);
     const rounded = useTransform(motionValue, (latest: number) => formatter(latest));
     const [displayValue, setDisplayValue] = useState("0");
@@ -177,7 +180,7 @@ function StreamsTodayWidget() {
             <div>
                 <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-purple-500/20 flex items-center justify-center border border-purple-500/30 shadow-[0_0_15px_rgba(168,85,247,0.2)] group-hover/widget:bg-purple-500 group-hover/widget:text-black transition-all duration-500">
+                        <div className="w-10 h-10 rounded-xl bg-green-500/20 flex items-center justify-center border border-green-500/30 shadow-[0_0_15px_rgba(168,85,247,0.2)] group-hover/widget:bg-green-500 group-hover/widget:text-black transition-all duration-500">
                             <Music size={18} className="group-hover/widget:scale-110 transition-transform" />
                         </div>
                         <span className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em]">Live Streams</span>
@@ -203,9 +206,9 @@ function StreamsTodayWidget() {
                         initial={{ height: 0 }}
                         animate={{ height: `${Math.max(8, (val / maxVal) * 100)}%` }}
                         transition={{ delay: i * 0.05, duration: 0.5, ease: "easeOut" }}
-                        className="flex-1 rounded-t-sm bg-linear-to-t from-purple-500/5 to-purple-500/40 group-hover/widget:to-purple-400 transition-colors relative"
+                        className="flex-1 rounded-t-sm bg-linear-to-t from-green-500/5 to-green-500/40 group-hover/widget:to-green-400 transition-colors relative"
                     >
-                        <div className="absolute inset-x-0 top-0 h-[1px] bg-purple-300/40" />
+                        <div className="absolute inset-x-0 top-0 h-[1px] bg-green-300/40" />
                     </motion.div>
                 ))}
             </div>
@@ -920,6 +923,7 @@ export const WIDGET_RENDERERS: Record<WidgetType, () => React.ReactElement> = {
     merch_sales: () => <MerchSalesWidget />,
     tour_status: () => <TourStatusWidget />,
     revenue_aggregated: () => <RevenueAggregatedWidget />,
+    cost_estimator: () => <CostEstimatorWidget />,
 };
 
 // eslint-disable-next-line react-refresh/only-export-components
@@ -948,7 +952,7 @@ function RevenueAggregatedWidget() {
         <div className="flex flex-col h-full justify-between group/widget cursor-pointer" onClick={() => setModule('finance')} data-testid="revenue-aggregated-widget">
             <div>
                 <div className="flex items-center gap-3 mb-4">
-                    <div className="w-10 h-10 rounded-xl bg-purple-500/20 flex items-center justify-center border border-purple-500/30 shadow-[0_0_15px_rgba(168,85,247,0.2)] group-hover/widget:bg-purple-500 group-hover/widget:text-black transition-all duration-500">
+                    <div className="w-10 h-10 rounded-xl bg-green-500/20 flex items-center justify-center border border-green-500/30 shadow-[0_0_15px_rgba(168,85,247,0.2)] group-hover/widget:bg-green-500 group-hover/widget:text-black transition-all duration-500">
                         <TrendingUp size={18} className="group-hover/widget:scale-110 transition-transform" />
                     </div>
                     <span className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em]">Aggregate Revenue</span>
@@ -956,7 +960,7 @@ function RevenueAggregatedWidget() {
                 
                 <div className="space-y-1">
                     <p className={`text-5xl font-black text-white tracking-tighter ${isLoading ? 'animate-pulse opacity-50' : ''}`}>
-                        ${stats?.totalRevenue.toLocaleString() || '0'}
+                        ${stats?.totalRevenue.toLocaleString('en-US') || '0'}
                     </p>
                     <div className="flex items-center gap-2">
                         <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Total Gross Revenue</p>
@@ -975,7 +979,7 @@ function RevenueAggregatedWidget() {
                         const percentage = stats.totalRevenue > 0 ? (value / stats.totalRevenue) * 100 : 0;
                         const colors: Record<string, string> = {
                             streaming: 'bg-blue-500',
-                            merch: 'bg-purple-500',
+                            merch: 'bg-green-500',
                             licensing: 'bg-emerald-500',
                             social: 'bg-pink-500'
                         };
@@ -993,7 +997,113 @@ function RevenueAggregatedWidget() {
                 </div>
                 <div className="mt-2 flex justify-between items-center">
                     <span className="text-[8px] font-black text-white/20 uppercase tracking-widest">Multi-Stream Distribution</span>
-                    <span className="text-[8px] font-black text-purple-400 uppercase tracking-widest group-hover/widget:translate-x-1 transition-transform">View Details →</span>
+                    <span className="text-[8px] font-black text-green-400 uppercase tracking-widest group-hover/widget:translate-x-1 transition-transform">View Details →</span>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+// eslint-disable-next-line react-refresh/only-export-components
+function CostEstimatorWidget() {
+    const [mediaType, setMediaType] = useState<'video' | 'image'>('video');
+    const [tier, setTier] = useState<'pro' | 'fast' | 'lite'>('pro');
+    const [duration, setDuration] = useState<number>(8);
+    const [count, setCount] = useState<number>(4);
+
+    const videoCost = (() => {
+        if (tier === 'pro') return duration * MODEL_PRICING['veo-3.1-generate-preview'].perSecond;
+        if (tier === 'fast') return duration * MODEL_PRICING['veo-3.1-fast-generate-preview'].perSecond;
+        return duration * MODEL_PRICING['veo-3.1-lite-generate-preview'].perSecond;
+    })();
+
+    const imageCost = (() => {
+        // Approximate image token sizes: ~13,400 tokens per 1K image
+        // 13,400 / 1,000,000 = 0.0134 multiplier for output cost
+        const TOKENS_PER_IMAGE = 13400;
+        const perTokenCost = (modelId: keyof typeof MODEL_PRICING) =>
+            // @ts-expect-error model pricing type indexing
+            (MODEL_PRICING[modelId].output || 0) / 1000000;
+
+        if (tier === 'pro') return count * TOKENS_PER_IMAGE * perTokenCost('gemini-3-pro-image-preview');
+        if (tier === 'fast') return count * TOKENS_PER_IMAGE * perTokenCost('gemini-3.1-flash-image');
+        return count * TOKENS_PER_IMAGE * perTokenCost('imagen-4.0-fast-generate-001'); // fallback lite equivalent
+    })();
+
+    const activeCost = mediaType === 'video' ? videoCost : imageCost;
+    const tierLabels = { pro: 'Pro', fast: 'Fast', lite: 'Lite' };
+
+    return (
+        <div className="flex flex-col h-full justify-between group/widget">
+            <div>
+                <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center border border-emerald-500/30 shadow-[0_0_15px_rgba(16,185,129,0.2)] group-hover/widget:bg-emerald-500 group-hover/widget:text-black transition-all duration-500">
+                        <DollarSign size={18} className="group-hover/widget:scale-110 transition-transform" />
+                    </div>
+                    <span className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em]">Cost Estimator</span>
+                </div>
+                
+                <div className="space-y-1">
+                    <p className="text-5xl font-black text-white tracking-tighter">
+                        ${activeCost.toFixed(3)}
+                    </p>
+                    <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Estimated Run Cost</p>
+                </div>
+            </div>
+
+            <div className="mt-4 space-y-3">
+                <div className="grid grid-cols-2 gap-2 bg-white/5 p-1 rounded-xl">
+                    <button 
+                        onClick={() => { setMediaType('video'); if (tier === 'lite') setTier('fast'); }}
+                        className={`text-[9px] font-black uppercase tracking-widest py-1.5 rounded-lg transition-colors ${mediaType === 'video' ? 'bg-white/10 text-white shadow-sm' : 'text-white/40 hover:text-white/80'}`}
+                    >
+                        Video
+                    </button>
+                    <button 
+                        onClick={() => { setMediaType('image'); if (tier === 'lite') setTier('fast'); }}
+                        className={`text-[9px] font-black uppercase tracking-widest py-1.5 rounded-lg transition-colors ${mediaType === 'image' ? 'bg-white/10 text-white shadow-sm' : 'text-white/40 hover:text-white/80'}`}
+                    >
+                        Image
+                    </button>
+                </div>
+
+                <div className="flex items-center justify-between">
+                    <span className="text-[9px] font-black text-white/40 uppercase tracking-widest">Tier</span>
+                    <div className="flex gap-1">
+                        {(['pro', 'fast', 'lite'] as const).map(t => {
+                            if (mediaType === 'image' && t === 'lite') return null;
+                            return (
+                                <button
+                                    key={t}
+                                    onClick={() => setTier(t)}
+                                    className={`px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest transition-colors ${tier === t ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-white/5 text-white/40 hover:bg-white/10'}`}
+                                >
+                                    {tierLabels[t]}
+                                </button>
+                            );
+                        })}
+                    </div>
+                </div>
+
+                <div className="flex items-center justify-between">
+                    <span className="text-[9px] font-black text-white/40 uppercase tracking-widest">
+                        {mediaType === 'video' ? 'Duration (s)' : 'Batch Size'}
+                    </span>
+                    <div className="flex items-center gap-2">
+                        <button 
+                            onClick={() => mediaType === 'video' ? setDuration(d => Math.max(1, d - 1)) : setCount(c => Math.max(1, c - 1))}
+                            className="w-5 h-5 rounded bg-white/5 flex items-center justify-center text-white/60 hover:bg-white/10"
+                        >
+                            -
+                        </button>
+                        <span className="text-xs font-black w-4 text-center">{mediaType === 'video' ? duration : count}</span>
+                        <button 
+                            onClick={() => mediaType === 'video' ? setDuration(d => Math.min(60, d + 1)) : setCount(c => Math.min(100, c + 1))}
+                            className="w-5 h-5 rounded bg-white/5 flex items-center justify-center text-white/60 hover:bg-white/10"
+                        >
+                            +
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>

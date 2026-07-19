@@ -1,8 +1,18 @@
 import { AgentConfig } from "../types";
-import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
-import { audioIntelligence } from '@/services/audio/AudioIntelligenceService';
 import { AutonomousTools } from '../tools/AutonomousTools';
+import { MarketingTools } from '../tools/MarketingTools';
+import { UniversalTools } from '../tools/UniversalTools';
 import systemPrompt from '@agents/marketing/prompt.md?raw';
+
+
+const marketingRetrievalConfig = {
+    'campaigns': { path: 'campaigns', requiresUserIdFilter: true },
+    'scheduledPosts': { path: 'scheduledPosts', requiresUserIdFilter: true },
+    'bountyLinks': { path: 'bountyLinks', requiresUserIdFilter: true },
+    'influencerBounties': { path: 'influencerBounties', requiresUserIdFilter: true }
+};
+const marketingRetrievalTools = buildDomainRetrievalTools('Marketing', marketingRetrievalConfig);
+const marketingRetrievalDeclarations = buildDomainRetrievalDeclarations('Marketing', marketingRetrievalConfig);
 
 export const MarketingAgent: AgentConfig = {
     id: 'marketing',
@@ -11,88 +21,32 @@ export const MarketingAgent: AgentConfig = {
     color: 'bg-orange-500',
     category: 'department',
     systemPrompt: systemPrompt,
-    functions: {
-        create_campaign_brief: async (args: { product: string, goal: string }) => {
-            const prompt = `Create a detailed Campaign Marketing Brief.
-    Product: ${args.product}
-Goal: ${args.goal}
-
-Include:
-- Target Audience Segments
-- Key Messaging / Positioning
-- Channel Strategy (Social, Email, PR)
-- Estimated Budget Allocation (Percent)
-- Success Metrics (KPIs)`;
-
-            try {
-                const response = await AutonomousIntelligence.generateText(prompt, { maxOutputTokens: 8192, temperature: 1.0 });
-                return { success: true, data: { brief: response } };
-            } catch (e: unknown) {
-                return { success: false, error: e instanceof Error ? e.message : String(e) };
-            }
-        },
-        analyze_audience: async (args: { platform: string }) => {
-            const prompt = `Analyze the current audience trends and demographics for the music industry on ${args.platform}.
-
-Provide:
-- Age / Gender breakdown (General approximations)
-- Content preferences
-- Engagement patterns
-- Best times to post`;
-
-            try {
-                const response = await AutonomousIntelligence.generateText(prompt, { maxOutputTokens: 8192, temperature: 1.0 });
-                return { success: true, data: { analysis: response } };
-            } catch (e: unknown) {
-                return { success: false, error: e instanceof Error ? e.message : String(e) };
-            }
-        },
-        schedule_content: async (args: { posts: Record<string, unknown>[] }) => {
-            void args;
-            return {
-                success: false,
-                error: 'Content scheduling requires a connected social scheduling backend. No posts were scheduled.'
-            };
-        },
-        track_performance: async (args: { campaignId: string }) => {
-            void args;
-            return { success: false, error: 'Campaign performance requires connected analytics data. No report was generated.' };
-        },
-        generate_campaign_from_audio: async (args: { uploadedAudioIndex: number }) => {
-            const { useStore } = await import('@/core/store');
-            const { uploadedAudio } = useStore.getState();
-            const audioItem = uploadedAudio[args.uploadedAudioIndex || 0];
-
-            if (!audioItem) {
-                return { success: false, error: "No audio found. Please upload audio first." };
-            }
-
-            try {
-                const fetchRes = await fetch(audioItem.url);
-                const blob = await fetchRes.blob();
-                const file = new File([blob], "audio_track.mp3", { type: blob.type });
-
-                const profile = await audioIntelligence.analyze(file);
-                const { mood, genre, marketingHooks } = profile.semantic;
-
-                return {
-                    success: true,
-                    data: {
-                        insight: `Analyzed track.Genre: ${genre.join(', ')}.Mood: ${mood.join(', ')}.`,
-                        suggested_one_liner: marketingHooks.oneLiner,
-                        keywords: marketingHooks.keywords,
-                        technical: profile.technical
-                    }
-                };
-            } catch (e: unknown) {
-                return { success: false, error: e instanceof Error ? e.message : String(e) };
-            }
-        },
-        create_artifact_drop: AutonomousTools.create_artifact_drop!
+    get functions() {
+        return {
+            ...marketingRetrievalTools,
+            create_campaign_brief: MarketingTools.create_campaign_brief,
+            analyze_audience: MarketingTools.analyze_audience,
+            schedule_content: MarketingTools.schedule_content,
+            track_performance: MarketingTools.track_performance,
+            generate_campaign_from_audio: MarketingTools.generate_campaign_from_audio,
+            browser_tool: UniversalTools.browser_tool,
+            indii_image_gen: UniversalTools.indii_image_gen,
+            create_artifact_drop: AutonomousTools.create_artifact_drop,
+            generate_ab_campaign: MarketingTools.generate_ab_campaign,
+            deploy_micro_ad_campaign: MarketingTools.deploy_micro_ad_campaign,
+            deploy_email_newsletter: MarketingTools.deploy_email_newsletter,
+            generate_presave_campaign: MarketingTools.generate_presave_campaign,
+            deploy_sms_blast: MarketingTools.deploy_sms_blast,
+            enrich_fan_data: MarketingTools.enrich_fan_data,
+            generate_influencer_bounty: MarketingTools.generate_influencer_bounty,
+            generate_ad_copy: MarketingTools.generate_ad_copy,
+            analyze_campaign_roi: MarketingTools.analyze_campaign_roi,
+        } as Record<string, import('@/services/agent/types').AnyToolFunction>;
     },
-    authorizedTools: ['create_campaign_brief', 'analyze_audience', 'schedule_content', 'track_performance', 'generate_campaign_from_audio', 'browser_tool', 'indii_image_gen', 'create_artifact_drop', 'generate_ab_campaign', 'deploy_micro_ad_campaign', 'deploy_email_newsletter', 'generate_presave_campaign', 'deploy_sms_blast', 'enrich_fan_data', 'generate_influencer_bounty'],
+    authorizedTools: ['list_domain_records', 'create_campaign_brief', 'analyze_audience', 'schedule_content', 'track_performance', 'generate_campaign_from_audio', 'browser_tool', 'indii_image_gen', 'create_artifact_drop', 'generate_ab_campaign', 'deploy_micro_ad_campaign', 'deploy_email_newsletter', 'generate_presave_campaign', 'deploy_sms_blast', 'enrich_fan_data', 'generate_influencer_bounty', 'generate_ad_copy', 'analyze_campaign_roi'],
     tools: [{
         functionDeclarations: [
+            ...marketingRetrievalDeclarations,
             {
                 name: 'create_campaign_brief',
                 description: 'Generate a structured campaign brief including target audience, budget, and channels.',
@@ -118,7 +72,7 @@ Provide:
             },
             {
                 name: 'schedule_content',
-                description: 'Schedule a batch of content posts.',
+                description: 'Generate a draft content posting plan with real dates. This does not persist or queue anything for delivery — it is a plan the user must still act on.',
                 parameters: {
                     type: 'OBJECT',
                     properties: {
@@ -209,7 +163,7 @@ Provide:
             },
             {
                 name: "deploy_micro_ad_campaign",
-                description: "Deploys a micro-budget ($10/day) ad campaign across Meta or TikTok Graph APIs, utilizing A/B tested creatives.",
+                description: "Prepares a micro-budget (10 dollars per day) ad campaign package for review (live deployment requires provider credentials).",
                 parameters: {
                     type: "OBJECT",
                     properties: {
@@ -224,7 +178,7 @@ Provide:
             },
             {
                 name: "deploy_email_newsletter",
-                description: "Syncs with Mailchimp/Klaviyo APIs to deploy a custom HTML newsletter template to a specific audience segment.",
+                description: "Prepares a custom HTML newsletter template for deployment (requires connected email provider).",
                 parameters: {
                     type: "OBJECT",
                     properties: {
@@ -252,7 +206,7 @@ Provide:
             },
             {
                 name: "deploy_sms_blast",
-                description: "Hooks into Twilio APIs to send direct SMS blasts to a segmented superfan list for surprise drops or pre-saves.",
+                description: "Prepares SMS message content for delivery to a segmented superfan list (requires connected Twilio account for live sending).",
                 parameters: {
                     type: "OBJECT",
                     properties: {
@@ -287,6 +241,33 @@ Provide:
                     },
                     required: ["trackTitle", "bountyRewardUsd", "soundUrl"]
                 }
+            },
+            {
+                name: "generate_ad_copy",
+                description: "Generates tailored ad copy for a product targeting a specific audience on a given platform.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        productName: { type: "STRING", description: "The product or release to market." },
+                        targetAudience: { type: "STRING", description: "The intended demographic." },
+                        tone: { type: "STRING", description: "The tone of the copy (e.g., engaging, professional, hype)." },
+                        platform: { type: "STRING", description: "The platform for the ad (e.g., Instagram, Twitter)." }
+                    },
+                    required: ["productName", "targetAudience", "platform"]
+                }
+            },
+            {
+                name: "analyze_campaign_roi",
+                description: "Analyzes the Return on Investment (ROI) for a specific campaign.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        campaignId: { type: "STRING", description: "The ID of the campaign to track." },
+                        totalSpend: { type: "NUMBER", description: "Total amount spent on the campaign." },
+                        totalRevenue: { type: "NUMBER", description: "Total revenue generated from the campaign." }
+                    },
+                    required: ["campaignId", "totalSpend", "totalRevenue"]
+                }
             }
         ]
     }]
@@ -294,6 +275,8 @@ Provide:
 };
 
 import { freezeAgentConfig } from '../FreezeDiagnostic';
+import { buildDomainRetrievalTools, buildDomainRetrievalDeclarations } from '../tools/DomainTools';
+
 
 // Freeze the schema to prevent cross-test contamination
 freezeAgentConfig(MarketingAgent);

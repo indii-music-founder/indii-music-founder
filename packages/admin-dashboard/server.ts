@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import admin from 'firebase-admin';
 import { google } from 'googleapis';
+import { randomBytes } from 'node:crypto';
 
 dotenv.config();
 
@@ -42,18 +43,6 @@ const requireAdminAuth = async (req: express.Request, res: express.Response, nex
   const token = req.headers.authorization?.split('Bearer ')[1];
   if (!token) return res.status(401).json({ error: 'Unauthorized' });
 
-  // Local development authentication bypass
-  if (token === 'MOCK_ADMIN_TOKEN') {
-    Object.assign(req, {
-      user: {
-        email: 'admin@indii.music',
-        name: 'Developer Admin',
-        uid: 'dev-admin-id',
-      },
-    });
-    return next();
-  }
-
   try {
     const decodedToken = await admin.auth().verifyIdToken(token);
     if (decodedToken.email?.endsWith(ADMIN_EMAIL_DOMAIN)) {
@@ -80,32 +69,6 @@ app.get('/api/health', async (req, res) => {
       firestore: 'unreachable',
       hint: 'Run `gcloud auth application-default login` or set GOOGLE_APPLICATION_CREDENTIALS.',
       error: error instanceof Error ? error.message : String(error),
-    });
-  }
-});
-
-// Passcode login endpoint for quick admin entry.
-// Validates passcode '0707', creates a Firebase custom auth token for admin@indii.music,
-// and returns it to the client.
-app.post('/api/auth/login-passcode', async (req, res) => {
-  try {
-    const { passcode } = req.body;
-    if (passcode === '0707') {
-      // Create custom token with administrative payload
-      const customToken = await admin.auth().createCustomToken('admin_nexus_user', {
-        email: 'admin@indii.music',
-        email_verified: true,
-        admin: true
-      });
-      res.json({ success: true, customToken });
-    } else {
-      res.status(401).json({ error: 'Invalid passcode' });
-    }
-  } catch (error) {
-    const msg = error instanceof Error ? error.message : String(error);
-    console.error('[Auth] Failed to generate custom token:', error);
-    res.status(500).json({ 
-      error: `Internal auth generation failed: ${msg}` 
     });
   }
 });
@@ -258,8 +221,22 @@ app.get('/api/founders', requireAdminAuth, async (req, res) => {
 
 // Phase 4: Agentic System Integration - Webhooks
 
+const requireWebhookSecret = (req: express.Request, res: express.Response, next: express.NextFunction) => {
+  const secret = process.env.ADMIN_WEBHOOK_SECRET;
+  if (!secret) {
+    console.error('[Webhooks] Webhook secret not configured. Failing closed.');
+    return res.status(500).send('Server configuration error');
+  }
+  const token = req.headers['x-webhook-secret'] || req.headers['authorization']?.replace('Bearer ', '');
+  if (token !== secret) {
+    console.warn('[Webhooks] Rejected request: invalid secret token');
+    return res.status(401).send('Unauthorized');
+  }
+  next();
+};
+
 // Webhook for agent@indii.music (Inbound Parse)
-app.post('/api/webhooks/agent-email', async (req, res) => {
+app.post('/api/webhooks/agent-email', requireWebhookSecret, async (req, res) => {
   try {
     const emailPayload = req.body;
     console.log(`[Agent Nexus] Received email for agent@indii.music from ${emailPayload.from}`);
@@ -272,7 +249,7 @@ app.post('/api/webhooks/agent-email', async (req, res) => {
 });
 
 // Webhook for Blacksmith.sh / GitHub Actions CI Failures
-app.post('/api/webhooks/ci-alerts', async (req, res) => {
+app.post('/api/webhooks/ci-alerts', requireWebhookSecret, async (req, res) => {
   try {
     const alertPayload = req.body;
     console.log(`[Agent Nexus] Received CI Alert for workflow: ${alertPayload.workflow_run?.name}`);
@@ -291,11 +268,38 @@ app.post('/api/webhooks/ci-alerts', async (req, res) => {
 });
 
 // ─── Google Workspace OAuth & API Integration ──────────────────────────────────
+if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
+  throw new Error('GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET environment variables are required');
+}
 const oauth2Client = new google.auth.OAuth2(
-  process.env.GOOGLE_CLIENT_ID || 'MOCK_GOOGLE_CLIENT_ID',
-  process.env.GOOGLE_CLIENT_SECRET || 'MOCK_GOOGLE_CLIENT_SECRET',
+  process.env.GOOGLE_CLIENT_ID,
+  process.env.GOOGLE_CLIENT_SECRET,
   process.env.GOOGLE_REDIRECT_URI || 'http://localhost:5174/api/google/oauth/callback'
 );
+
+const OAUTH_STATE_TTL_MS = 10 * 60 * 1000;
+const OAUTH_STATE_COLLECTION = 'admin_oauth_states';
+
+/**
+ * Consume an OAuth state exactly once before exchanging the authorization code.
+ * The state document is deliberately server-side: the callback cannot carry an
+ * admin Firebase token after Google redirects the browser back to this service.
+ */
+async function consumeOAuthState(state: string): Promise<string | null> {
+  const stateRef = admin.firestore().collection(OAUTH_STATE_COLLECTION).doc(state);
+
+  return admin.firestore().runTransaction(async (transaction) => {
+    const snapshot = await transaction.get(stateRef);
+    const data = snapshot.data() as { adminUid?: string; expiresAt?: number } | undefined;
+    if (!snapshot.exists || !data?.adminUid || !data.expiresAt || data.expiresAt < Date.now()) {
+      if (snapshot.exists) transaction.delete(stateRef);
+      return null;
+    }
+
+    transaction.delete(stateRef);
+    return data.adminUid;
+  });
+}
 
 // Retrieve active Google API client
 async function getGoogleAuthClient() {
@@ -305,9 +309,10 @@ async function getGoogleAuthClient() {
       return null;
     }
     const { tokens } = doc.data() as { tokens: Record<string, unknown> };
+    // Real credentials only — startup already throws if these are unset.
     const auth = new google.auth.OAuth2(
-      process.env.GOOGLE_CLIENT_ID || 'MOCK_GOOGLE_CLIENT_ID',
-      process.env.GOOGLE_CLIENT_SECRET || 'MOCK_GOOGLE_CLIENT_SECRET',
+      process.env.GOOGLE_CLIENT_ID,
+      process.env.GOOGLE_CLIENT_SECRET,
       process.env.GOOGLE_REDIRECT_URI || 'http://localhost:5174/api/google/oauth/callback'
     );
     auth.setCredentials(tokens);
@@ -319,30 +324,50 @@ async function getGoogleAuthClient() {
 }
 
 // Generate OAuth Consent URL
-app.get('/api/google/oauth/url', requireAdminAuth, (req, res) => {
+app.get('/api/google/oauth/url', requireAdminAuth, async (req, res) => {
   const scopes = [
     'https://www.googleapis.com/auth/gmail.modify',
     'https://www.googleapis.com/auth/calendar',
     'https://www.googleapis.com/auth/drive.file'
   ];
-  const url = oauth2Client.generateAuthUrl({
-    access_type: 'offline',
-    scope: scopes,
-    prompt: 'consent'
-  });
-  res.json({ url });
+  const user = (req as express.Request & { user?: admin.auth.DecodedIdToken }).user;
+  if (!user?.uid) return res.status(401).json({ error: 'Unauthorized' });
+
+  try {
+    const state = randomBytes(32).toString('base64url');
+    await admin.firestore().collection(OAUTH_STATE_COLLECTION).doc(state).create({
+      adminUid: user.uid,
+      createdAt: Date.now(),
+      expiresAt: Date.now() + OAUTH_STATE_TTL_MS,
+    });
+    const url = oauth2Client.generateAuthUrl({
+      access_type: 'offline',
+      scope: scopes,
+      prompt: 'consent',
+      state,
+    });
+    res.json({ url });
+  } catch (error) {
+    console.error('Failed to create OAuth state:', error);
+    res.status(500).json({ error: 'Failed to start Google OAuth flow' });
+  }
 });
 
 // Handles Google OAuth redirect/callback
 app.get('/api/google/oauth/callback', async (req, res) => {
-  const { code } = req.query;
-  if (!code || typeof code !== 'string') {
-    return res.status(400).send('Missing code parameter');
+  const { code, state } = req.query;
+  if (!code || typeof code !== 'string' || !state || typeof state !== 'string') {
+    return res.status(400).send('Missing or invalid OAuth callback parameters');
   }
   try {
+    const initiatingAdminUid = await consumeOAuthState(state);
+    if (!initiatingAdminUid) {
+      return res.status(401).send('Invalid or expired OAuth state');
+    }
     const { tokens } = await oauth2Client.getToken(code);
     await admin.firestore().collection('admin_secrets').doc('google_workspace').set({
       tokens,
+      linkedBy: initiatingAdminUid,
       updatedAt: new Date().toISOString(),
     });
     res.redirect('http://localhost:5174/?google_linked=true');
@@ -544,13 +569,46 @@ app.post('/api/google/drive/upload', requireAdminAuth, async (req, res) => {
 });
 
 // Protected Route for DNS Status
-app.get('/api/dns/status', requireAdminAuth, (req, res) => {
-  res.json({
-    domain: 'indii.music',
-    spf: 'verified',
-    dkim: 'verified',
-    dmarc: 'verified'
-  });
+app.get('/api/dns/status', requireAdminAuth, async (req, res) => {
+  try {
+    const dns = require('dns').promises;
+    const domain = 'indii.music';
+    
+    let spf = 'unverified';
+    let dkim = 'unverified';
+    let dmarc = 'unverified';
+
+    try {
+      const txtRecords = await dns.resolveTxt(domain);
+      // txtRecords is an array of arrays of strings
+      const hasSpf = txtRecords.some((record: string[]) => record.join('').includes('v=spf1'));
+      if (hasSpf) spf = 'verified';
+    } catch (e) { console.error('SPF lookup failed:', e); }
+
+    try {
+      const dmarcRecords = await dns.resolveTxt(`_dmarc.${domain}`);
+      const hasDmarc = dmarcRecords.some((record: string[]) => record.join('').includes('v=DMARC1'));
+      if (hasDmarc) dmarc = 'verified';
+    } catch (e) { console.error('DMARC lookup failed:', e); }
+
+    try {
+      // Assuming 'google' selector based on workspace integration, 
+      // but if others exist they might be needed. We'll check google.
+      const dkimRecords = await dns.resolveTxt(`google._domainkey.${domain}`);
+      const hasDkim = dkimRecords.some((record: string[]) => record.join('').includes('v=DKIM1'));
+      if (hasDkim) dkim = 'verified';
+    } catch (e) { console.error('DKIM lookup failed:', e); }
+
+    res.json({
+      domain,
+      spf,
+      dkim,
+      dmarc,
+      lastChecked: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to resolve DNS status', details: String(error) });
+  }
 });
 
 // Consolidated Messaging Inbox
@@ -620,4 +678,3 @@ app.get('/api/nexus/logs', requireAdminAuth, async (req, res) => {
 app.listen(PORT, () => {
   console.log(`Admin Dashboard backend listening on port ${PORT}`);
 });
-

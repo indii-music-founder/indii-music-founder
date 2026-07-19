@@ -3,12 +3,12 @@ import { FileText, Download, Eye, Trash2, Clock, ChevronRight, Loader2, FilePlus
 import { LegalService } from '@/services/legal/LegalService';
 import { ContractPDFService } from '@/services/legal/ContractPDFService';
 import { ResendEmailService } from '@/services/email/ResendEmailService';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import type { LegalContract } from '@/modules/legal/types';
 import { ContractStatus } from '@/modules/legal/types';
 import { useToast } from '@/core/context/ToastContext';
 import { logger } from '@/utils/logger';
 import { cn } from '@/lib/utils';
-import { Modal } from '@/components/ui/Modal';
 
 /* ================================================================== */
 /*  My Contracts — Live contract list with PDF export & management      */
@@ -28,7 +28,6 @@ export function MyContracts({ onNewContract }: MyContractsProps) {
     const [sendingId, setSendingId] = useState<string | null>(null);
     const [emailDialog, setEmailDialog] = useState<{ contract: LegalContract; recipientEmail: string; message: string } | null>(null);
     const emailInputRef = useRef<HTMLInputElement>(null);
-    const [deletingContract, setDeletingContract] = useState<LegalContract | null>(null);
 
     // Load contracts on mount
     const loadContracts = useCallback(async () => {
@@ -79,8 +78,24 @@ export function MyContracts({ onNewContract }: MyContractsProps) {
         }
     };
 
-    const handleDelete = (contract: LegalContract) => {
-        setDeletingContract(contract);
+    const handleDelete = async (contract: LegalContract) => {
+        const ok = await ConfirmDialog.call({
+            title: "Delete Contract",
+            message: `Are you sure you want to delete "${contract.title}"? This action cannot be undone.`,
+            confirmText: "Delete",
+            variant: "destructive"
+        });
+
+        if (ok) {
+            try {
+                await LegalService.updateContract(contract.id, { status: ContractStatus.DRAFT });
+                setContracts(prev => prev.filter(c => c.id !== contract.id));
+                toast.success(`Deleted: ${contract.title}`);
+            } catch (error: unknown) {
+                logger.error('Delete contract failed:', error);
+                toast.error('Failed to delete contract');
+            }
+        }
     };
 
     const openSendDialog = (contract: LegalContract) => {
@@ -136,7 +151,7 @@ export function MyContracts({ onNewContract }: MyContractsProps) {
         [ContractStatus.DRAFT]: { bg: 'bg-yellow-500/10 border-yellow-500/20', text: 'text-yellow-400', label: 'Draft' },
         [ContractStatus.REVIEW]: { bg: 'bg-blue-500/10 border-blue-500/20', text: 'text-blue-400', label: 'In Review' },
         [ContractStatus.FINAL]: { bg: 'bg-green-500/10 border-green-500/20', text: 'text-green-400', label: 'Final' },
-        [ContractStatus.SIGNED]: { bg: 'bg-purple-500/10 border-purple-500/20', text: 'text-purple-400', label: 'Signed' },
+        [ContractStatus.SIGNED]: { bg: 'bg-green-500/10 border-green-500/20', text: 'text-green-400', label: 'Signed' },
     };
 
     // ── Loading state ──────────────────────────────────────────────
@@ -236,7 +251,7 @@ export function MyContracts({ onNewContract }: MyContractsProps) {
                                     {createdDate && (
                                         <span className="flex items-center gap-1 text-[10px] text-gray-600">
                                             <Clock size={9} />
-                                            {createdDate.toLocaleDateString()}
+                                            {createdDate.toLocaleDateString('en-US')}
                                         </span>
                                     )}
                                     <span className="text-[10px] text-gray-600">{contract.type}</span>
@@ -248,7 +263,7 @@ export function MyContracts({ onNewContract }: MyContractsProps) {
                                 <button
                                     onClick={() => openSendDialog(contract)}
                                     disabled={sendingId === contract.id}
-                                    className="p-1.5 rounded-lg hover:bg-purple-500/10 text-gray-500 hover:text-purple-400 transition-colors"
+                                    className="p-1.5 rounded-lg hover:bg-green-500/10 text-gray-500 hover:text-green-400 transition-colors"
                                     title="Send via Email"
                                     aria-label={`Send ${contract.title} via email`}
                                     data-testid={`send-contract-${contract.id}`}
@@ -306,7 +321,7 @@ export function MyContracts({ onNewContract }: MyContractsProps) {
                                 <div className="flex gap-2 mt-4 pt-3 border-t border-white/5">
                                     <button
                                         onClick={() => openSendDialog(contract)}
-                                        className="flex items-center gap-1.5 px-3 py-2 bg-purple-600 hover:bg-purple-500 text-white text-[10px] font-bold rounded-lg transition-colors"
+                                        className="flex items-center gap-1.5 px-3 py-2 bg-green-600 hover:bg-green-500 text-white text-[10px] font-bold rounded-lg transition-colors"
                                     >
                                         <Send size={11} />
                                         Send via Email
@@ -343,8 +358,8 @@ export function MyContracts({ onNewContract }: MyContractsProps) {
                         {/* Header */}
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
-                                <div className="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center">
-                                    <Send size={14} className="text-purple-400" />
+                                <div className="w-8 h-8 rounded-lg bg-green-500/10 flex items-center justify-center">
+                                    <Send size={14} className="text-green-400" />
                                 </div>
                                 <div>
                                     <h4 className="text-sm font-bold text-white">Send Contract</h4>
@@ -370,7 +385,7 @@ export function MyContracts({ onNewContract }: MyContractsProps) {
                                 onChange={e => setEmailDialog(prev => prev ? { ...prev, recipientEmail: e.target.value } : null)}
                                 onKeyDown={e => e.key === 'Enter' && handleSendEmail()}
                                 placeholder="recipient@example.com"
-                                className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-xl text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all"
+                                className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-xl text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-green-500/50 transition-all"
                                 data-testid="send-contract-email-input"
                             />
                         </div>
@@ -383,7 +398,7 @@ export function MyContracts({ onNewContract }: MyContractsProps) {
                                 onChange={e => setEmailDialog(prev => prev ? { ...prev, message: e.target.value } : null)}
                                 placeholder="Add a personal note..."
                                 rows={3}
-                                className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-xl text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all resize-none"
+                                className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-xl text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-green-500/50 transition-all resize-none"
                                 data-testid="send-contract-message-input"
                             />
                         </div>
@@ -405,7 +420,7 @@ export function MyContracts({ onNewContract }: MyContractsProps) {
                             <button
                                 onClick={handleSendEmail}
                                 disabled={!emailDialog.recipientEmail.trim() || sendingId === emailDialog.contract.id}
-                                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-purple-600 hover:bg-purple-500 disabled:bg-gray-700 disabled:text-gray-500 text-white text-xs font-bold rounded-xl transition-colors"
+                                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-green-600 hover:bg-green-500 disabled:bg-gray-700 disabled:text-gray-500 text-white text-xs font-bold rounded-xl transition-colors"
                                 data-testid="send-contract-submit"
                             >
                                 {sendingId === emailDialog.contract.id ? (
@@ -425,46 +440,6 @@ export function MyContracts({ onNewContract }: MyContractsProps) {
                 </div>
             )}
 
-            <Modal
-                isOpen={deletingContract !== null}
-                onClose={() => setDeletingContract(null)}
-                titleId="delete-contract-title"
-                maxWidth="max-w-md"
-            >
-                <div className="p-6">
-                    <h2 id="delete-contract-title" className="text-lg font-bold text-white mb-2">Delete Contract</h2>
-                    <p className="text-sm text-gray-400 mb-6">
-                        Are you sure you want to delete "{deletingContract?.title}"? This action cannot be undone.
-                    </p>
-                    <div className="flex justify-end gap-3">
-                        <button
-                            onClick={() => setDeletingContract(null)}
-                            className="px-4 py-2 rounded-lg bg-zinc-800 text-gray-300 hover:bg-zinc-700 transition-colors text-xs font-semibold"
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            onClick={async () => {
-                                if (deletingContract) {
-                                    try {
-                                        await LegalService.updateContract(deletingContract.id, { status: ContractStatus.DRAFT });
-                                        setContracts(prev => prev.filter(c => c.id !== deletingContract.id));
-                                        toast.success(`Deleted: ${deletingContract.title}`);
-                                    } catch (err) {
-                                        logger.error('[MyContracts] Delete failed:', err);
-                                        toast.error('Failed to delete contract.');
-                                    } finally {
-                                        setDeletingContract(null);
-                                    }
-                                }
-                            }}
-                            className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors text-xs font-semibold"
-                        >
-                            Delete
-                        </button>
-                    </div>
-                </div>
-            </Modal>
         </div>
     );
 }

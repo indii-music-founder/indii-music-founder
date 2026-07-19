@@ -1,15 +1,14 @@
 /**
  * AppleMusicService — Apple Music for Artists Analytics Integration
  *
- * Uses MusicKit JS (browser SDK) for user authentication and Apple Music API access.
+ * Apple Music analytics must be served by a backend integration.
  * Analytics data (streams, Shazam, radio airplay, listener counts) requires an
- * Apple Music for Artists account — standard MusicKit developer tokens grant access
- * only to catalog and personal library, NOT to artist analytics.
+ * Apple Music for Artists account. Browser-side developer tokens are disabled.
  *
  * OAuth/Auth Flow:
- *   MusicKit JS handles Apple ID sign-in entirely client-side using the MusicKit
- *   developer token (a JWT signed with your Apple developer private key). No
- *   server-side token exchange is required for authentication.
+ *   MusicKit JS requires a developer token signed with an Apple private key.
+ *   That token must be minted and served by a secured backend route before this
+ *   service can enable real Apple Music access.
  *
  * However, Apple Music for Artists analytics are served through a SEPARATE portal
  * (artists.apple.com) and its API is NOT publicly documented or available to
@@ -19,16 +18,14 @@
  *   - Storefront: country of the user
  *
  * What this service provides:
- *   - MusicKit JS initialization and Apple ID authentication
- *   - User's library tracks (to identify your releases in their library)
- *   - Catalog search to verify your tracks are on Apple Music
- *   - Placeholder for future Apple Music for Artists API when documented
+ *   - Fails closed for browser-side Apple Music access
+ *   - Honest unavailable results until a secured Apple Music for Artists
+ *     backend is configured
  *
  * Setup requirements:
  *   1. Apple Developer account with MusicKit capability enabled
  *   2. Generate a MusicKit private key (.p8 file) in Apple Developer Console
- *   3. Create a developer token JWT (signed with private key, expires max 6 months)
- *      — this is typically done server-side and injected as VITE_APPLE_MUSIC_DEV_TOKEN
+ *   3. Create a backend route that mints developer token JWTs with the private key
  *   4. MusicKit JS loaded from Apple's CDN in index.html:
  *      <script src="https://js-cdn.music.apple.com/musickit/v3/musickit.js"></script>
  *
@@ -36,6 +33,7 @@
  */
 
 import { logger } from '@/utils/logger';
+import * as Sentry from '@sentry/react';
 import type { PlatformData, StreamDataPoint } from './types';
 
 // ── MusicKit JS type declarations ─────────────────────────────────────────────
@@ -102,6 +100,8 @@ interface MusicKitSearchResults {
 
 export class AppleMusicService {
     private _kit: MusicKitInstance | null = null;
+    static readonly UNAVAILABLE_MESSAGE =
+        'Apple Music analytics require a secured Apple Music for Artists backend integration.';
 
     // ── Initialization ────────────────────────────────────────────────────────
 
@@ -109,44 +109,32 @@ export class AppleMusicService {
      * Initialize MusicKit JS with the developer token.
      * Call this before any other method.
      *
-     * The developer token is a signed JWT. Never generate it client-side —
-     * use a server endpoint or bake it in as an env var (it expires in ≤ 6 months).
+     * The developer token is a signed JWT. Never generate or inject it client-side.
      */
     async initialize(): Promise<void> {
         if (this._kit) return;
 
-        const devToken = import.meta.env.VITE_APPLE_MUSIC_DEV_TOKEN;
-        if (!devToken) {
-            throw new Error(
-                'VITE_APPLE_MUSIC_DEV_TOKEN is not set.\n' +
-                'Generate a MusicKit developer token in the Apple Developer Console\n' +
-                'and add it to your .env file.'
-            );
-        }
-
-        if (!window.MusicKit) {
-            throw new Error(
-                'MusicKit JS is not loaded. Add the following to your index.html:\n' +
-                '<script src="https://js-cdn.music.apple.com/musickit/v3/musickit.js"></script>'
-            );
-        }
-
-        this._kit = await window.MusicKit.configure({
-            developerToken: devToken,
-            app: { name: 'indii', build: '1.0.0' },
-        });
+        logger.warn('[AppleMusicService] Browser-side Apple Music developer tokens are disabled. Configure a secured Firebase/backend gateway.');
     }
 
     // ── Auth / Connection ─────────────────────────────────────────────────────
 
     /**
      * Prompt the user to sign in with their Apple ID.
-     * Opens Apple's native sign-in popup via MusicKit JS.
+     * Opens Apple's native sign-in popup via MusicKit JS when configured.
      */
     async connect(): Promise<void> {
         await this.initialize();
-        if (!this._kit) throw new Error('MusicKit not initialized.');
-        await this._kit.authorize();
+        if (!this._kit) {
+            throw new Error(AppleMusicService.UNAVAILABLE_MESSAGE);
+        }
+        try {
+            await this._kit.authorize();
+        } catch (err: unknown) {
+            logger.error('[AppleMusicService] Connection failed:', err);
+            Sentry.captureException(err);
+            throw err;
+        }
     }
 
     /**
@@ -154,18 +142,29 @@ export class AppleMusicService {
      */
     async disconnect(): Promise<void> {
         if (!this._kit) return;
-        await this._kit.unauthorize();
-        this._kit = null;
+        try {
+            await this._kit.unauthorize();
+        } catch (err: unknown) {
+            logger.error('[AppleMusicService] Error during disconnect:', err);
+            Sentry.captureException(err);
+        } finally {
+            this._kit = null;
+        }
     }
 
     /**
-     * Check if the user is currently signed in to Apple Music via MusicKit.
+     * Check if the user is currently signed in to Apple Music.
      */
     async isConnected(): Promise<boolean> {
         try {
             await this.initialize();
-            return this._kit?.isAuthorized ?? false;
-        } catch {
+            if (!this._kit) {
+                return false;
+            }
+            return this._kit.isAuthorized;
+        } catch (err: unknown) {
+            logger.error('[AppleMusicService] Failed to check connection:', err);
+            Sentry.captureException(err);
             return false;
         }
     }
@@ -181,81 +180,89 @@ export class AppleMusicService {
 
     /**
      * Get songs from the user's Apple Music library.
-     * Useful for identifying which of your releases they have saved.
      */
     async getLibrarySongs(limit = 100): Promise<MusicKitLibrarySong[]> {
-        if (!this._kit?.isAuthorized) throw new Error('Apple Music not connected.');
+        await this.initialize();
+        if (!this._kit) {
+            throw new Error(AppleMusicService.UNAVAILABLE_MESSAGE);
+        }
+        if (!this._kit.isAuthorized) {
+            throw new Error('Apple Music not connected.');
+        }
         return this._kit.api.library.songs({ limit });
     }
 
     /**
      * Search the Apple Music catalog for your tracks by artist name.
-     * Returns the first page of matching results.
      */
     async searchCatalog(artistName: string, limit = 25): Promise<NonNullable<MusicKitSearchResults['songs']>['data']> {
-        if (!this._kit) throw new Error('MusicKit not initialized.');
+        await this.initialize();
+        if (!this._kit) {
+            throw new Error(AppleMusicService.UNAVAILABLE_MESSAGE);
+        }
         const results = await this._kit.api.search(artistName, { types: 'songs', limit });
         return results.songs?.data ?? [];
     }
 
-    // ── Analytics (Limited by Apple's API) ─────────────────────────────────────
+    // ── Partner Service Integration ───────────────────────────────────────────
 
     /**
-     * Build PlatformData for the analytics engine.
-     *
-     * Apple Music for Artists analytics (streams, Shazam, radio airplay,
-     * listener counts) are NOT available via the public MusicKit API. This is
-     * Apple's limitation, not ours. This method returns estimated data based on
-     * the user's library presence — the best signal available from MusicKit JS.
-     *
-     * When Apple releases a public analytics API (check artists.apple.com),
-     * update this method to use real data.
+     * Fetch analytics from the partner backend service for Apple Music for Artists.
+     * Browser-side partner bearer tokens are disabled; this must route through
+     * a secured Firebase/backend integration.
      */
-    async buildPlatformData(): Promise<PlatformData> {
-        logger.info(
-            '[AppleMusicService] Apple Music for Artists analytics API is not publicly available. ' +
-            'Returning estimated data based on library presence.'
-        );
-
-        const librarySongs = await this.getLibrarySongs(100);
-
-        return {
-            platform: 'apple_music',
-            // We cannot get real stream counts without the Artists API.
-            // Library song count is used as a rough proxy (industry avg ~1k streams per library save).
-            streams: librarySongs.length * 1000,
-            saves:   librarySongs.length,
-            completionRate: 0.72, // Apple Music has high completion rates (curated platform)
-            creatorCount: 0,
-        };
+    async fetchPartnerAnalytics(artistId: string): Promise<PlatformData | null> {
+        void artistId;
+        logger.warn('[AppleMusicService] Partner analytics are backend-only; no secured Firebase gateway is configured.');
+        return null;
     }
 
     /**
-     * Build a 30-day stream history.
-     *
-     * Real daily stream counts require Apple Music for Artists partner API,
-     * which is not publicly documented. Returns zero-filled history so the
-     * analytics engine has the correct data shape for aggregation.
+     * Fetch daily stream history from the partner service.
      */
-    buildStreamHistory(): StreamDataPoint[] {
-        logger.info('[AppleMusicService] Daily stream history requires Apple Music for Artists API (not publicly available). Returning zero-filled history.');
+    async fetchPartnerStreamHistory(artistId: string): Promise<StreamDataPoint[] | null> {
+        void artistId;
+        logger.warn('[AppleMusicService] Partner stream history is backend-only; no secured Firebase gateway is configured.');
+        return null;
+    }
 
-        const history: StreamDataPoint[] = [];
-        for (let i = 29; i >= 0; i--) {
-            const d = new Date();
-            d.setDate(d.getDate() - i);
-            history.push({
-                date:             d.toISOString().split('T')[0]!,
-                streams:          0,
-                saves:            0,
-                completions:      0,
-                uniqueListeners:  0,
-                shares:           0,
-                newFollowers:     0,
-                playlistAdditions: 0,
-            });
+    // ── Analytics ─────────────────────────────────────────────────────────────
+
+    /**
+     * Build PlatformData for the analytics engine.
+     * Returns null unless real partner analytics are available.
+     */
+    async buildPlatformData(artistId?: string): Promise<PlatformData | null> {
+        await this.initialize();
+
+        if (artistId) {
+            const partnerData = await this.fetchPartnerAnalytics(artistId);
+            if (partnerData) {
+                logger.info('[AppleMusicService] Successfully loaded partner analytics data.');
+                return partnerData;
+            }
         }
-        return history;
+
+        logger.warn('[AppleMusicService] Apple Music analytics unavailable: no secured partner analytics backend is configured.');
+        return null;
+    }
+
+    /**
+     * Build stream history from real partner data.
+     */
+    async buildStreamHistory(trackIdOrArtistId?: string): Promise<StreamDataPoint[] | null> {
+        logger.info('[AppleMusicService] Building Apple Music stream history.');
+
+        if (trackIdOrArtistId) {
+            const partnerHistory = await this.fetchPartnerStreamHistory(trackIdOrArtistId);
+            if (partnerHistory) {
+                logger.info('[AppleMusicService] Loaded stream history from partner service.');
+                return partnerHistory;
+            }
+        }
+
+        logger.warn('[AppleMusicService] Apple Music stream history unavailable: no secured partner history backend is configured.');
+        return null;
     }
 }
 

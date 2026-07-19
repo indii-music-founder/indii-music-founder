@@ -5,6 +5,7 @@ import type { AnyToolFunction } from '../types';
 import { z } from 'zod';
 import { zodToJsonSchema } from 'zod-to-json-schema';
 import { logger } from '@/utils/logger';
+import { importWithRetry } from '@/utils/dynamicImport';
 
 const SyncMatchSchema = z.object({
     matches: z.array(z.object({
@@ -20,7 +21,7 @@ const SyncMatchSchema = z.object({
 export const LicensingTools = {
     match_sync_licensing_brief: wrapTool('match_sync_licensing_brief', async (args: { briefDescription: string; mood: string; targetBpm: number }) => {
         // Item 133: Use Gemini to intelligently match catalog tracks to sync briefs
-        const { trackLibrary } = await import('@/services/metadata/TrackLibraryService');
+        const { trackLibrary } = await importWithRetry(() => import('@/services/metadata/TrackLibraryService'));
 
         // 1. Load catalog from TrackLibraryService
         let catalogTracks: Array<{ title: string; artist: string; bpm?: number; genre?: string; mood?: string }> = [];
@@ -81,7 +82,7 @@ export const LicensingTools = {
 
     generate_beat_lease_contract: wrapTool('generate_beat_lease_contract', async (args: { beatTitle: string; producerName: string; buyerName: string; leaseType: 'Exclusive' | 'Non-Exclusive'; price: number }) => {
         // Item 134: Delegate to LegalTools.draft_contract for real contract generation
-        const { LegalTools } = await import('./LegalTools');
+        const { LegalTools } = await importWithRetry(() => import('./LegalTools'));
 
         const terms = [
             `Beat Title: ${args.beatTitle}`,
@@ -122,8 +123,8 @@ export const LicensingTools = {
         terms: string;
     }) => {
         try {
-            const { db, auth } = await import('@/services/firebase');
-            const { collection, addDoc, serverTimestamp } = await import('firebase/firestore');
+            const { db, auth } = await importWithRetry(() => import('@/services/firebase'));
+            const { collection, addDoc, serverTimestamp } = await importWithRetry(() => import('firebase/firestore'));
 
             const uid = auth.currentUser?.uid;
             if (!uid) {

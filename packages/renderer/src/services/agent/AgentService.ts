@@ -18,6 +18,7 @@ import { agentGraphService } from './orchestration/AgentGraphService';
 import { agentGraphStateService } from './orchestration/AgentGraphStateService';
 import { AgentGraph } from './types';
 import { moduleImportCache } from './ModuleImportCache';
+import { importWithRetry } from '@/utils/dynamicImport';
 
 /**
  * AgentService is the primary entry point for agent-related operations.
@@ -86,7 +87,11 @@ export class AgentService {
         }
 
         // Pre-warm agents in the background (non-blocking)
-        this.warmup();
+        if (typeof process !== 'undefined' && process.env && (process.env.VITEST || process.env.NODE_ENV === 'test')) {
+            logger.debug('[AgentService] Skipping warmup in test environment');
+        } else {
+            this.warmup();
+        }
     }
 
     /**
@@ -113,7 +118,7 @@ export class AgentService {
         text: string,
         attachments?: { mimeType: string; base64: string }[],
         forcedAgentId?: string,
-        options?: { source?: 'desktop' | 'mobile-remote' | 'background' | 'api' }
+        options?: { source?: 'desktop' | 'mobile-remote' | 'background' | 'api', originalBrief?: string }
     ): Promise<void> {
         if (this.isProcessing) {
             logger.warn('[AgentService] sendMessage blocked: already processing');
@@ -122,11 +127,14 @@ export class AgentService {
         this.isProcessing = true;
 
         let useStoreInstance: typeof import('@/core/store').useStore | null = null;
+        let executionSignal: AbortSignal | undefined;
         try {
             try {
                 useStoreInstance = await this.getStore();
                 const state = useStoreInstance.getState();
-                if (typeof state.setAgentProcessing === 'function') {
+                if (typeof state.startAgentExecution === 'function') {
+                    executionSignal = state.startAgentExecution();
+                } else if (typeof state.setAgentProcessing === 'function') {
                     state.setAgentProcessing(true);
                 }
             } catch (_) {
@@ -147,6 +155,7 @@ export class AgentService {
             // PII Redaction for Agent/LLM Input AND Storage
             // We redact BEFORE storage to prevent PII from leaking into the Context Pipeline via chat history.
             const redactedText = this.redactPII(text);
+            const originalBrief = options?.originalBrief || redactedText;
             if (redactedText !== text) {
                 logger.debug("[SECURITY] PII Detected and Redacted from Agent Input");
             }
@@ -170,14 +179,14 @@ export class AgentService {
             logger.debug('[AgentService] sendMessage routing:', { isBoardroomMode });
 
             if (isBoardroomMode) {
-                store.getState().addBoardroomMessage(userMsg);
+                store.getState().addAgentMessage(userMsg);
             } else {
                 store.getState().addAgentMessage(userMsg);
             }
 
             // Tier 2: Index user message for semantic recall (Episodic Indexing)
             if (state.currentProjectId && state.activeSessionId && redactedText.length > 10) {
-                const { alwaysOnMemoryEngine } = await import('./memory/AlwaysOnMemoryEngine');
+                const { alwaysOnMemoryEngine } = await importWithRetry(() => import('./memory/AlwaysOnMemoryEngine'));
                 alwaysOnMemoryEngine.ingest(
                     redactedText,
                     'user_input',
@@ -203,7 +212,7 @@ export class AgentService {
                 };
 
                 if (isBoardroomMode) {
-                    store.getState().addBoardroomMessage(msgPayload);
+                    store.getState().addAgentMessage(msgPayload);
                 } else {
                     store.getState().addAgentMessage(msgPayload);
                 }
@@ -230,7 +239,7 @@ export class AgentService {
             };
 
             if (isBoardroomMode) {
-                store.getState().addBoardroomMessage(msgPayload);
+                store.getState().addAgentMessage(msgPayload);
             } else {
                 store.getState().addAgentMessage(msgPayload);
             }
@@ -249,10 +258,10 @@ export class AgentService {
             try {
                 // Main execution logic wrapped in a race with timeout
                 await Promise.race([
-                    this.executeFlow(redactedText, attachments, context, responseId, forcedAgentId).then(() => {
+                    this.executeFlow(redactedText, attachments, context, responseId, forcedAgentId, executionSignal).then(() => {
                         const currentState = store.getState();
                         const resultMsg = isBoardroomMode 
-                            ? (currentState.boardroomMessages as AgentMessage[]).find(m => m.id === responseId)
+                            ? (currentState.agentHistory as AgentMessage[]).find(m => m.id === responseId)
                             : (currentState.agentHistory as AgentMessage[]).find(m => m.id === responseId);
 
                         // After success, populate cache if not a generation request
@@ -279,7 +288,7 @@ export class AgentService {
                             if (resultMsg.text && this.containsImageToolOutput(resultMsg)) {
                                 this.triggerVisualAutorater(
                                     resultMsg.text,
-                                    redactedText,
+                                    originalBrief,
                                     resultMsg.agentId || 'generalist',
                                     responseId,
                                     isBoardroomMode
@@ -300,10 +309,9 @@ export class AgentService {
 
                 const errorMessage = err instanceof Error ? err.message : String(err);
 
-                const { updateAgentMessage, updateBoardroomMessage } = store.getState();
+                const { updateAgentMessage } = store.getState();
                 const updateMsg = (id: string, updates: Partial<AgentMessage>) => {
-                    if (isBoardroomMode) updateBoardroomMessage(id, updates);
-                    else updateAgentMessage(id, updates);
+                    updateAgentMessage(id, updates);
                 };
 
                 if (errorMessage.includes('Timeout')) {
@@ -352,14 +360,13 @@ export class AgentService {
                     });
                 }
             } finally {
-                const { updateAgentMessage, updateBoardroomMessage } = store.getState();
-                if (isBoardroomMode) updateBoardroomMessage(responseId, { isStreaming: false });
-                else updateAgentMessage(responseId, { isStreaming: false });
+                const { updateAgentMessage } = store.getState();
+                updateAgentMessage(responseId, { isStreaming: false });
             }
         } catch (e: unknown) {
             const errObj = e instanceof Error ? e : new Error(String(e));
             logger.error('[AgentService] Fatal Error in sendMessage:', e);
-            this.addSystemMessage(`❌ **Fatal Error:** ${errObj.message || 'Unknown error occurred.'}`);
+            this.addSystemMessage(`❌ **System Error:** ${errObj.message || 'Unknown error occurred.'}`);
         } finally {
             this.isProcessing = false;
             if (useStoreInstance) {
@@ -368,8 +375,9 @@ export class AgentService {
                     if (typeof state.setAgentProcessing === 'function') {
                         state.setAgentProcessing(false);
                     }
-                } catch (_) {
-                    // Silently ignore if reset fails
+                    useStoreInstance.setState({ agentAbortController: null });
+                } catch (e) {
+                    logger.error('[AgentService] Failed to reset processing state:', e);
                 }
             } else {
                 this.getStore().then(store => {
@@ -377,7 +385,10 @@ export class AgentService {
                     if (typeof state.setAgentProcessing === 'function') {
                         state.setAgentProcessing(false);
                     }
-                }).catch(() => {});
+                    store.setState({ agentAbortController: null });
+                }).catch((e) => {
+                    logger.error('[AgentService] Failed to reset processing state in getStore:', e);
+                });
             }
         }
     }
@@ -390,7 +401,8 @@ export class AgentService {
         attachments: { mimeType: string; base64: string }[] | undefined,
         context: AgentContext,
         responseId: string,
-        forcedAgentId?: string
+        forcedAgentId?: string,
+        signal?: AbortSignal
     ): Promise<void> {
         const useStore = await this.getStore();
         const state = useStore.getState();
@@ -403,13 +415,13 @@ export class AgentService {
         // 0. Dispatch by Mode — MUST be checked FIRST.
         if (conversationMode === 'boardroom') {
             logger.debug('[AgentService] Routing to boardroom multi-dispatch flow');
-            await this.handleBoardroomSwarmFlow(text, attachments, context, responseId);
+            await this.handleBoardroomSwarmFlow(text, attachments, context, responseId, signal);
             return;
         }
 
         if (conversationMode === 'department') {
             logger.debug('[AgentService] Routing to department flow');
-            await this.handleDepartmentFlow(text, attachments, context, responseId);
+            await this.handleDepartmentFlow(text, attachments, context, responseId, signal);
             return;
         }
 
@@ -452,7 +464,7 @@ export class AgentService {
                         });
                     }
                 }
-            }, undefined, undefined, attachments);
+            }, signal, undefined, attachments);
 
             if (result && result.text) {
                 updateAgentMessage(responseId, {
@@ -551,7 +563,7 @@ export class AgentService {
                     });
                 }
             }
-        }, undefined, undefined, attachments);
+        }, signal, undefined, attachments);
 
         if (result && result.text) {
             updateAgentMessage(responseId, {
@@ -561,7 +573,7 @@ export class AgentService {
 
             // Tier 2: Index model response
             if (state.currentProjectId && state.activeSessionId && result.text.length > 20) {
-                const { alwaysOnMemoryEngine } = await import('./memory/AlwaysOnMemoryEngine');
+                const { alwaysOnMemoryEngine } = await importWithRetry(() => import('./memory/AlwaysOnMemoryEngine'));
                 alwaysOnMemoryEngine.ingest(
                     result.text,
                     'agent_output',
@@ -583,7 +595,8 @@ export class AgentService {
         text: string,
         attachments: { mimeType: string; base64: string }[] | undefined,
         context: AgentContext,
-        responseId: string
+        responseId: string,
+        signal?: AbortSignal
     ): Promise<void> {
         const useStore = await this.getStore();
         const state = useStore.getState();
@@ -594,7 +607,7 @@ export class AgentService {
             return;
         }
 
-        const { DEPARTMENTS } = await import('./departments');
+        const { DEPARTMENTS } = await importWithRetry(() => import('./departments'));
         const dept = DEPARTMENTS[activeDepartmentId];
         
         if (!dept) {
@@ -630,7 +643,7 @@ export class AgentService {
                     });
                 }
             }
-        }, undefined, undefined, attachments);
+        }, signal, undefined, attachments);
 
         if (result && result.text) {
             updateAgentMessage(responseId, {
@@ -815,7 +828,8 @@ export class AgentService {
         text: string,
         attachments: { mimeType: string; base64: string }[] | undefined,
         context: AgentContext,
-        initialResponseId: string
+        initialResponseId: string,
+        signal?: AbortSignal
     ): Promise<void> {
         const useStore = await this.getStore();
         const state = useStore.getState();
@@ -826,7 +840,7 @@ export class AgentService {
 
         if (activeAgents.length === 0) {
             logger.warn('[AgentService] Boardroom: No active agents seated');
-            useStore.getState().updateBoardroomMessage(initialResponseId, {
+            useStore.getState().updateAgentMessage(initialResponseId, {
                 agentId: 'system',
                 text: '*(Please drag at least one agent onto the table to begin the discussion.)*',
                 isStreaming: false
@@ -836,7 +850,16 @@ export class AgentService {
 
         let assetContext = '';
         if (referencedAssets.length > 0) {
-            assetContext = '\n\n[BOARDROOM REFERENCED ASSETS]\n' + referencedAssets.map(a => `- ${a.name} (${a.type}): ${a.value}`).join('\n');
+            assetContext = '\n\n[BOARDROOM REFERENCED ASSETS]\n' + referencedAssets.map(a => {
+                const details = [
+                    `- ${a.name} (${a.type}): ${a.value}`,
+                    a.sourceType ? `sourceType=${a.sourceType}` : null,
+                    a.prompt ? `prompt=${a.prompt}` : null,
+                    a.origin ? `origin=${a.origin}` : null,
+                    a.parentId ? `parentId=${a.parentId}` : null,
+                ].filter((part): part is string => !!part);
+                return details.join(' | ');
+            }).join('\n');
         }
 
         let accumulatedContext = '';
@@ -850,7 +873,7 @@ export class AgentService {
                 const resId = index === 0 ? initialResponseId : uuidv4();
 
                 if (index > 0) {
-                    useStore.getState().addBoardroomMessage({
+                    useStore.getState().addAgentMessage({
                         id: resId,
                         role: 'model',
                         text: '*(Reviewing previous discussion...)*',
@@ -860,12 +883,12 @@ export class AgentService {
                         agentId: agentId
                     });
                 } else {
-                    useStore.getState().updateBoardroomMessage(resId, { agentId, text: '*(Reviewing request...)*' });
+                    useStore.getState().updateAgentMessage(resId, { agentId, text: '*(Reviewing request...)*' });
                 }
 
                 // Sync initial message immediately
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const initMsg = useStore.getState().boardroomMessages.find((m: any) => m.id === resId);
+                const initMsg = useStore.getState().agentHistory.find((m: any) => m.id === resId);
                 if (initMsg) {
                     agentFirebaseConnector.syncMessage(initMsg).catch(err => 
                         logger.error(`[AgentService] Swarm initial sync failed for ${resId}:`, err)
@@ -908,12 +931,12 @@ export class AgentService {
                         (event) => {
                             if (event.type === 'token') {
                                 currentStreamedText += event.content;
-                                useStore.getState().updateBoardroomMessage(resId, { text: currentStreamedText });
+                                useStore.getState().updateAgentMessage(resId, { text: currentStreamedText });
                                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                this.debounceSyncMessage(resId, () => useStore.getState().boardroomMessages.find((m: any) => m.id === resId));
+                                this.debounceSyncMessage(resId, () => useStore.getState().agentHistory.find((m: any) => m.id === resId));
                             }
                             if (event.type === 'thought' || event.type === 'tool' || event.type === 'tool_result') {
-                                const currentMsg = useStore.getState().boardroomMessages.find(m => m.id === resId);
+                                const currentMsg = useStore.getState().agentHistory.find(m => m.id === resId);
                                 const newThought: AgentThought = {
                                     id: uuidv4(),
                                     text: event.content || '',
@@ -925,15 +948,15 @@ export class AgentService {
                                 }
 
                                 if (currentMsg) {
-                                    useStore.getState().updateBoardroomMessage(resId, {
+                                    useStore.getState().updateAgentMessage(resId, {
                                         thoughts: [...(currentMsg.thoughts || []), JSON.parse(JSON.stringify(newThought))]
                                     });
                                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                    this.debounceSyncMessage(resId, () => useStore.getState().boardroomMessages.find((m: any) => m.id === resId));
+                                    this.debounceSyncMessage(resId, () => useStore.getState().agentHistory.find((m: any) => m.id === resId));
                                 }
                             }
                         },
-                        undefined,
+                        signal,
                         undefined,
                         attachments
                     );
@@ -957,7 +980,7 @@ export class AgentService {
                     }
 
                     if (result && result.text) {
-                        useStore.getState().updateBoardroomMessage(resId, {
+                        useStore.getState().updateAgentMessage(resId, {
                             text: result.text,
                             thoughtSignature: result.thoughtSignature,
                             ...(planId ? { planId } : {}),
@@ -965,7 +988,7 @@ export class AgentService {
                         });
                     } else {
                         if (currentStreamedText.length > 0) {
-                            useStore.getState().updateBoardroomMessage(resId, {
+                            useStore.getState().updateAgentMessage(resId, {
                                 text: currentStreamedText,
                                 thoughtSignature: result?.thoughtSignature,
                                 ...(planId ? { planId } : {}),
@@ -973,7 +996,7 @@ export class AgentService {
                             });
                         } else {
                             const hasToolCalls = result && result.toolCalls && result.toolCalls.length > 0;
-                            useStore.getState().updateBoardroomMessage(resId, {
+                            useStore.getState().updateAgentMessage(resId, {
                                 text: hasToolCalls ? '*(Executed tasks but provided no summary.)*' : '*(No observations or actions required from this department.)*',
                                 thoughtSignature: result?.thoughtSignature,
                                 ...(planId ? { planId } : {}),
@@ -984,12 +1007,12 @@ export class AgentService {
 
                     // Sync final completed message state to Firestore
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    this.flushSyncMessage(resId, () => useStore.getState().boardroomMessages.find((m: any) => m.id === resId));
+                    this.flushSyncMessage(resId, () => useStore.getState().agentHistory.find((m: any) => m.id === resId));
 
                     return { agentId, result };
                 } catch (err) {
                     logger.error(`[AgentService] Boardroom Swarm dispatch failed for agent ${agentId}:`, err);
-                    useStore.getState().updateBoardroomMessage(resId, {
+                    useStore.getState().updateAgentMessage(resId, {
                         text: `❌ **Error:** ${(err as Error).message || 'Request failed.'}`,
                         isStreaming: false,
                         thoughts: [{
@@ -1002,7 +1025,7 @@ export class AgentService {
 
                     // Sync error/failure state
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    this.flushSyncMessage(resId, () => useStore.getState().boardroomMessages.find((m: any) => m.id === resId));
+                    this.flushSyncMessage(resId, () => useStore.getState().agentHistory.find((m: any) => m.id === resId));
 
                     return { agentId, result: null };
                 }
@@ -1042,7 +1065,7 @@ export class AgentService {
         // If the stored displayName is the generic default, try Firebase Auth's displayName
         if (isDefaultName) {
             try {
-                const { auth } = await import('@/services/firebase');
+                const { auth } = await importWithRetry(() => import('@/services/firebase'));
                 const authUser = auth.currentUser;
                 if (authUser?.displayName && authUser.displayName !== 'New Artist') {
                     artistName = authUser.displayName;
@@ -1182,7 +1205,7 @@ The user will see this plan and can approve it to start execution.`;
                         const planDraft = parsed.livingPlan;
 
                         if (planDraft && context.projectId) {
-                            const { auth } = await import('@/services/firebase');
+                            const { auth } = await importWithRetry(() => import('@/services/firebase'));
                             const userId = auth.currentUser?.uid || null;
                             if (!userId) {
                                 throw new Error('User must be authenticated to create living plans.');
@@ -1253,7 +1276,7 @@ The user will see this plan and can approve it to start execution.`;
 
             // Ensure Living Context is present
             if (!context.livingContext) {
-                const { auth } = await import('@/services/firebase');
+                const { auth } = await importWithRetry(() => import('@/services/firebase'));
                 if (auth.currentUser) {
                     const { livingFileService } = await moduleImportCache.import('./living/LivingFileService', () => import('./living/LivingFileService'));
                     context.livingContext = await livingFileService.injectContext(auth.currentUser.uid);
@@ -1265,7 +1288,7 @@ The user will see this plan and can approve it to start execution.`;
             if (projectId && !context.memoryContext) {
                 try {
                     logger.debug(`[AgentService] Searching for relevant memories for task: "${task.substring(0, 50)}..."`);
-                    const { alwaysOnMemoryEngine } = await import('./memory/AlwaysOnMemoryEngine');
+                    const { alwaysOnMemoryEngine } = await importWithRetry(() => import('./memory/AlwaysOnMemoryEngine'));
                     const results = await alwaysOnMemoryEngine.retrieve({ query: task, limit: 5 });
                     if (results && results.length > 0) {
                         context.relevantMemories = results.map(m => m.summary || m.content);
@@ -1294,18 +1317,48 @@ The user will see this plan and can approve it to start execution.`;
         if (!context.chatHistory) context.chatHistory = [];
         if (!context.chatHistoryString) context.chatHistoryString = '';
 
+        // A manager's notes are durable Firestore documents, so a fact shared on
+        // phone is available to the same manager on desktop before its next run.
+        try {
+            const { agentNoteService } = await importWithRetry(() => import('./AgentNoteService'));
+            context.interAgentNotes = await agentNoteService.forAgent(agentId, context.projectId);
+        } catch (error) {
+            logger.warn('[AgentService] Could not load inter-agent notes (non-blocking):', error);
+        }
+
         // Hub and Spoke: Inject runner for intra-agent delegation
         context.runAgent = this.runAgent.bind(this);
 
-        return await this.executor.execute(
+        // Fail-safe: Enforce a master timeout of 5 minutes per agent run
+        // to prevent indefinite workflow orchestration hangs.
+        const timeoutController = new AbortController();
+        const timeoutMs = 300 * 1000;
+        
+        const timeoutPromise = new Promise<{ text: string; thoughtSignature?: string }>((_, reject) => {
+            setTimeout(() => {
+                logger.error(`[AgentService] Timeout: Agent ${agentId} took longer than 5 minutes to complete.`);
+                timeoutController.abort(new Error(`Agent ${agentId} execution timed out.`));
+                reject(new Error(`Agent ${agentId} execution timed out after ${timeoutMs / 1000}s.`));
+            }, timeoutMs);
+        });
+
+        const executePromise = this.executor.execute(
             agentId,
             task,
             context as PipelineContext,
             undefined,
-            undefined,
+            timeoutController.signal,
             parentTraceId,
             attachments || context.attachments
-        );
+        ).catch(err => {
+            if (timeoutController.signal.aborted) {
+                // We already rejected via the timeout promise, swallow to avoid unhandled rejection
+                return { text: `Agent ${agentId} execution timed out.` };
+            }
+            throw err;
+        });
+
+        return await Promise.race([executePromise, timeoutPromise]);
     }
 
     /**
@@ -1328,7 +1381,7 @@ The user will see this plan and can approve it to start execution.`;
         const state = useStore.getState();
         const msg = { id: uuidv4(), role: 'system' as const, text, timestamp: Date.now() };
         if (state.conversationMode === 'boardroom') {
-            state.addBoardroomMessage(msg);
+            state.addAgentMessage(msg);
         } else {
             state.addAgentMessage(msg);
         }
@@ -1403,13 +1456,13 @@ The user will see this plan and can approve it to start execution.`;
         try {
             logger.info(`[AgentService] Dispatching direct tool call ${toolName} to agent ${agentId}`);
             
-            const { TOOL_REGISTRY } = await import('./tools');
+            const { TOOL_REGISTRY } = await importWithRetry(() => import('./tools'));
             if (TOOL_REGISTRY[toolName]) {
                 // Execute the tool
                 const result = await TOOL_REGISTRY[toolName](args);
                 
                 const currentMsg = isBoardroomMode 
-                    ? state.boardroomMessages.find(m => m.id === responseId)
+                    ? state.agentHistory.find(m => m.id === responseId)
                     : state.agentHistory.find(m => m.id === responseId);
 
                 if (currentMsg) {
@@ -1421,7 +1474,7 @@ The user will see this plan and can approve it to start execution.`;
                         toolName
                     };
 
-                    const updateMsg = isBoardroomMode ? state.updateBoardroomMessage : state.updateAgentMessage;
+                    const updateMsg = state.updateAgentMessage;
                     updateMsg(responseId, {
                         thoughts: [...(currentMsg.thoughts || []), newThought]
                     });
@@ -1456,7 +1509,7 @@ The user will see this plan and can approve it to start execution.`;
         try {
             const useStore = await this.getStore();
             const state = useStore.getState();
-            const history = isBoardroomMode ? state.boardroomMessages : state.agentHistory;
+            const history = isBoardroomMode ? state.agentHistory : state.agentHistory;
             
             // Extract the last 10 messages for context evaluation
             const recentMessages = history
@@ -1466,7 +1519,7 @@ The user will see this plan and can approve it to start execution.`;
                     content: m.text || ''
                 }));
 
-            const { MultiTurnAutorater } = await import('./governance/MultiTurnAutorater');
+            const { MultiTurnAutorater } = await importWithRetry(() => import('./governance/MultiTurnAutorater'));
             
             // Fire-and-forget evaluation to not block the user interface
             await MultiTurnAutorater.evaluateAndRegister(
@@ -1566,12 +1619,12 @@ The user will see this plan and can approve it to start execution.`;
         isBoardroomMode: boolean
     ): Promise<void> {
         try {
-            const { VisualOutputAutorater } = await import('./governance/VisualOutputAutorater');
+            const { VisualOutputAutorater } = await importWithRetry(() => import('./governance/VisualOutputAutorater'));
             const useStore = await this.getStore();
 
             // Find the message in history to access thoughts/tool results
             const currentState = useStore.getState();
-            const history = isBoardroomMode ? currentState.boardroomMessages : currentState.agentHistory;
+            const history = isBoardroomMode ? currentState.agentHistory : currentState.agentHistory;
             const message = (history as AgentMessage[]).find(m => m.id === responseId);
 
             if (!message) {
@@ -1580,7 +1633,7 @@ The user will see this plan and can approve it to start execution.`;
             }
 
             const traceId = `visual-${responseId}`;
-            const originalImageId = responseId; // Use the response message ID as the image identifier
+            const originalImageId = this.getVisualAutoraterRetryKey(agentId, originalBrief);
 
             // Check if we've already exhausted retries for this image
             if (VisualOutputAutorater.hasReachedCap(originalImageId)) {
@@ -1656,12 +1709,12 @@ The user will see this plan and can approve it to start execution.`;
                 const manualReviewMsg = {
                     id: uuidv4(),
                     role: 'system' as const,
-                    text: `⚠️ **Image flagged for manual review** — The autorater couldn't reach a passing score after ${attemptNumber} self-correction attempts. Gaps found: ${score.gapsFound}`,
+                    text: `**Image correction stopped for manual review** — The autorater could not reach a passing score after ${attemptNumber} self-correction attempts, so no more automatic regenerations will run for this brief. Remaining gaps: ${score.gapsFound}. Next step: revise the prompt manually or accept the latest image with those limitations.`,
                     timestamp: Date.now(),
                 };
 
                 if (isBoardroomMode) {
-                    useStore.getState().addBoardroomMessage(manualReviewMsg);
+                    useStore.getState().addAgentMessage(manualReviewMsg);
                 } else {
                     useStore.getState().addAgentMessage(manualReviewMsg);
                 }
@@ -1673,13 +1726,25 @@ The user will see this plan and can approve it to start execution.`;
                 `[AgentService] Visual autorater FAILED (attempt ${attemptNumber}): dispatching correction. Gaps: ${score.gapsFound}`
             );
 
-            const correctiveMessage = `[Visual Autorater Correction] The previously generated image did not match the brief. ${score.gapsFound}. Please regenerate with the following corrections: ${score.correctivePrompt}. Original brief: "${originalBrief}"`;
+            const correctiveMessage = `[Visual Autorater Correction ${attemptNumber}/${VisualOutputAutorater.MAX_CORRECTION_ATTEMPTS}] The previously generated image did not match the brief. Remaining gaps: ${score.gapsFound}. Regenerate one corrected image using these corrections: ${score.correctivePrompt}. Original brief: "${originalBrief}"`;
 
             // Re-enter sendMessage to trigger a corrective generation
-            await this.sendMessage(correctiveMessage, undefined, agentId, { source: 'background' });
+            await this.sendMessage(correctiveMessage, undefined, agentId, { source: 'background', originalBrief });
         } catch (error) {
             logger.error('[AgentService] Visual autorater failed:', error);
         }
+    }
+
+    private getVisualAutoraterRetryKey(agentId: string, originalBrief: string): string {
+        let hash = 0;
+        const normalizedBrief = originalBrief.trim().toLowerCase();
+
+        for (let i = 0; i < normalizedBrief.length; i += 1) {
+            hash = ((hash << 5) - hash) + normalizedBrief.charCodeAt(i);
+            hash |= 0;
+        }
+
+        return `${agentId}:${Math.abs(hash).toString(36)}`;
     }
 }
 

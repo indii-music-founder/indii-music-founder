@@ -161,7 +161,11 @@ export function buildDistributionReadiness(params: {
       isrc: metadata.isrc,
       upc: metadata.upc,
       iswc: metadata.iswc,
-      iswcStatus: metadata.iswc ? 'registered' : 'missing',
+      // ISSUE-813: a caller-supplied ISWC string is an unverified claim, not
+      // proof of CISAC/PRO registration — this function only sees raw
+      // metadata, never a confirmed ISWCService work record, so it can
+      // never honestly report 'registered'.
+      iswcStatus: metadata.iswc ? 'draft' : 'missing',
       catalogNumber: metadata.catalogNumber,
       missing: missingIdentifiers,
     },

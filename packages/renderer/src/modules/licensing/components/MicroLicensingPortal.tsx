@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
-import { FileText, Copy, Download, CheckCircle2, Music, Globe, Clock, DollarSign } from 'lucide-react';
+import { FileText, Copy, Download, CheckCircle2, Music, Globe, Clock, DollarSign, CreditCard, Loader2 } from 'lucide-react';
+import { licensingService } from '@/services/licensing/LicensingService';
+import { useStore } from '@/core/store';
+import { useToast } from '@/core/context/ToastContext';
 
 /* ================================================================== */
 /*  Micro-Licensing Portal — Beat Leasing Contract Builder             */
@@ -104,6 +107,48 @@ export function MicroLicensingPortal() {
     const [form, setForm] = useState<LeaseForm>(INITIAL_FORM);
     const [contractHTML, setContractHTML] = useState<string | null>(null);
     const [copied, setCopied] = useState(false);
+    const toast = useToast();
+    const [purchasing, setPurchasing] = useState(false);
+
+    const handlePurchase = async () => {
+        if (!form.trackTitle.trim()) return;
+        const priceNum = parseFloat(form.price);
+        if (isNaN(priceNum) || priceNum <= 0) {
+            toast.error('Please enter a valid price to purchase.');
+            return;
+        }
+
+        const userProfile = useStore.getState().userProfile;
+        if (!userProfile?.id) {
+            toast.error('Please sign in to purchase a license.');
+            return;
+        }
+
+        setPurchasing(true);
+        try {
+            // Default to artist connected account, or developer account for testing
+            const connectedAccountId = 'acct_123456'; 
+            const priceInCents = Math.round(priceNum * 100);
+
+            const checkoutUrl = await licensingService.initiateLicensePurchase({
+                userId: userProfile.id,
+                trackTitle: form.trackTitle,
+                artist: userProfile.displayName || 'indii Artist',
+                price: priceInCents,
+                connectedAccountId,
+            });
+
+            toast.info('Redirecting to Stripe Checkout...');
+            if (typeof window !== 'undefined') {
+                window.location.href = checkoutUrl;
+            }
+        } catch (err: unknown) {
+            console.error('[MicroLicensingPortal] Purchase failed:', err);
+            toast.error(err instanceof Error ? err.message : 'Checkout failed');
+        } finally {
+            setPurchasing(false);
+        }
+    };
 
     const update = <K extends keyof LeaseForm>(key: K, value: LeaseForm[K]) =>
         setForm(prev => ({ ...prev, [key]: value }));
@@ -277,14 +322,24 @@ export function MicroLicensingPortal() {
                         </div>
                     </div>
 
-                    <button
-                        onClick={handleGenerate}
-                        disabled={!form.trackTitle.trim()}
-                        className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-bold uppercase tracking-widest rounded-lg transition-colors flex items-center justify-center gap-2"
-                    >
-                        <FileText size={14} />
-                        Generate Contract
-                    </button>
+                    <div className="grid grid-cols-2 gap-3">
+                        <button
+                            onClick={handleGenerate}
+                            disabled={!form.trackTitle.trim()}
+                            className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-[11px] font-bold uppercase tracking-widest rounded-lg transition-colors flex items-center justify-center gap-2"
+                        >
+                            <FileText size={14} />
+                            Generate Contract
+                        </button>
+                        <button
+                            onClick={handlePurchase}
+                            disabled={!form.trackTitle.trim() || !form.price || purchasing}
+                            className="w-full py-2.5 bg-amber-600 hover:bg-amber-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-[11px] font-bold uppercase tracking-widest rounded-lg transition-colors flex items-center justify-center gap-2"
+                        >
+                            {purchasing ? <Loader2 size={14} className="animate-spin" /> : <CreditCard size={14} />}
+                            Purchase License
+                        </button>
+                    </div>
                 </div>
 
                 {/* Contract Preview */}

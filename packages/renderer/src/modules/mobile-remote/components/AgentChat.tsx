@@ -10,17 +10,17 @@
  * Fully polished to guarantee >= 44x44px touch target grid for all interactive buttons.
  */
 
-import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo, memo } from 'react';
 import { 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     Send, Bot, User, Loader2, Wifi, WifiOff, LogIn, 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     ChevronDown, LayoutGrid, Users, User as UserIcon,
-    Sparkles, Mic
+    Sparkles, Mic, Star
 } from 'lucide-react';
 import {
     DESKTOP_HEARTBEAT_STALE_MS,
-    isFreshDesktopState,
+    isFreshStudioState,
     remoteRelayService,
     type RemoteResponse,
     type RemoteCommand,
@@ -45,6 +45,8 @@ interface ChatMessage {
     timestamp: number;
     agentId?: string;
     isStreaming?: boolean;
+    boardroomMessageId?: string;
+    rating?: number;
 }
 
 interface AgentChatProps {
@@ -52,12 +54,61 @@ interface AgentChatProps {
     isPaired: boolean;
 }
 
+const MessageRating = memo(({ 
+    boardroomMessageId, 
+    currentRating 
+}: { 
+    boardroomMessageId?: string, 
+    currentRating?: number 
+}) => {
+    const [hoverRating, setHoverRating] = useState<number>(0);
+    const [optimisticRating, setOptimisticRating] = useState<number | undefined>(currentRating);
+
+    const handleRate = async (rating: number) => {
+        if (!boardroomMessageId) return;
+        setOptimisticRating(rating);
+        try {
+            // Import dynamically to avoid circular dependencies if any, 
+            // though we can import directly at the top.
+            const { agentFirebaseConnector } = await import('@/services/agent/AgentFirebaseConnector');
+            await agentFirebaseConnector.update(boardroomMessageId, { rating });
+        } catch (err) {
+            logger.error('[AgentChat] Failed to save rating:', err);
+            // Revert on failure
+            setOptimisticRating(currentRating);
+        }
+    };
+
+    if (!boardroomMessageId) return null;
+
+    return (
+        <div className="flex items-center gap-1 mt-3 pt-3 border-t border-white/5 opacity-60 hover:opacity-100 transition-opacity">
+            <span className="text-[9px] text-gray-500 uppercase tracking-widest mr-2">Rate Agent</span>
+            {[1, 2, 3, 4, 5].map((star) => (
+                <button
+                    key={star}
+                    onClick={() => handleRate(star)}
+                    onMouseEnter={() => setHoverRating(star)}
+                    onMouseLeave={() => setHoverRating(0)}
+                    className="focus:outline-none transition-transform hover:scale-110"
+                    aria-label={`Rate ${star} stars`}
+                >
+                    <Star
+                        size={12}
+                        className={`transition-colors ${(hoverRating || optimisticRating || 0) >= star ? 'text-yellow-400 fill-yellow-400' : 'text-gray-600 hover:text-gray-400'}`}
+                    />
+                </button>
+            ))}
+        </div>
+    );
+});
+MessageRating.displayName = 'MessageRating';
+
 // How long the phone waits for the studio before surfacing a clear,
 // user-visible "couldn't reach your studio" message instead of a silent
 // spinner death.
 const RESPONSE_TIMEOUT_MS = 120_000;
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export default function AgentChat({ onSendCommand: _onSendCommand, isPaired }: AgentChatProps) {
     const [input, setInput] = useState('');
     const [rawCommands, setRawCommands] = useState<RemoteCommand[]>([]);
@@ -65,6 +116,7 @@ export default function AgentChat({ onSendCommand: _onSendCommand, isPaired }: A
     const [isWaiting, setIsWaiting] = useState(false);
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [desktopState, setDesktopState] = useState<DesktopState | null>(null);
+    const isStudioOnline = isFreshStudioState(desktopState);
     
     // Mode and targeting state for mobile remote
     const [selectedMode, setSelectedMode] = useState<ConversationMode>('boardroom');
@@ -157,7 +209,7 @@ export default function AgentChat({ onSendCommand: _onSendCommand, isPaired }: A
                 stalePresenceTimeoutRef.current = null;
             }
 
-            if (isFreshDesktopState(state)) {
+            if (isFreshStudioState(state)) {
                 setDesktopState(state);
                 stalePresenceTimeoutRef.current = setTimeout(() => {
                     setDesktopState(null);
@@ -188,7 +240,7 @@ export default function AgentChat({ onSendCommand: _onSendCommand, isPaired }: A
             const ts = cmd.timestamp && 'toMillis' in (cmd.timestamp as any) 
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 ? (cmd.timestamp as any).toMillis() 
-                : typeof cmd.timestamp === 'number' ? cmd.timestamp : Date.now();
+                : typeof cmd.timestamp === 'number' ? cmd.timestamp : 0;
                 
             all.push({
                 id: cmd.id || `cmd-${ts}`,
@@ -204,7 +256,7 @@ export default function AgentChat({ onSendCommand: _onSendCommand, isPaired }: A
             const ts = res.timestamp && 'toMillis' in (res.timestamp as any) 
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 ? (res.timestamp as any).toMillis() 
-                : typeof res.timestamp === 'number' ? res.timestamp : Date.now();
+                : typeof res.timestamp === 'number' ? res.timestamp : 0;
 
             all.push({
                 id: res.id || `res-${ts}`,
@@ -215,6 +267,8 @@ export default function AgentChat({ onSendCommand: _onSendCommand, isPaired }: A
                 timestamp: ts,
                 agentId: res.agentId,
                 isStreaming: res.isStreaming,
+                boardroomMessageId: res.boardroomMessageId,
+                rating: res.rating,
             });
         });
 
@@ -235,7 +289,7 @@ export default function AgentChat({ onSendCommand: _onSendCommand, isPaired }: A
     }, [messages.length, messages[messages.length - 1]?.text]);
 
     const handleSend = useCallback(async () => {
-        if (!input.trim() || isWaiting || !isAuthenticated) return;
+        if (!input.trim() || isWaiting || !isAuthenticated || !isPaired) return;
         if (isListening) toggleListening(); // stop dictation before sending
         const userText = input.trim();
         setInput('');
@@ -253,7 +307,8 @@ export default function AgentChat({ onSendCommand: _onSendCommand, isPaired }: A
             const commandId = await remoteRelayService.sendCommand(
                 userText,
                 targetAgentId,
-                entryCommand ? { entryCommandId: entryCommand.id, source: 'mobile-remote' } : undefined
+                entryCommand ? { entryCommandId: entryCommand.id, source: 'mobile-remote' } : undefined,
+                'studio'
             );
             if (!commandId) throw new Error('Failed to send command');
 
@@ -278,16 +333,31 @@ export default function AgentChat({ onSendCommand: _onSendCommand, isPaired }: A
             responseTimeoutRef.current = setTimeout(() => {
                 teardownResponseWatch();
                 setIsWaiting(false);
-                setSystemNotices(prev => [
-                    ...prev,
-                    {
-                        id: `notice-${commandId}-timeout`,
-                        commandId,
-                        role: 'model',
-                        text: "Couldn't reach your studio. Open the desktop app, make sure you're signed in, then try again.",
-                        timestamp: Date.now(),
-                    },
-                ]);
+                void remoteRelayService.cancelCommand(commandId).then((cancelled) => {
+                    setSystemNotices(prev => [
+                        ...prev,
+                        {
+                            id: `notice-${commandId}-timeout`,
+                            commandId,
+                            role: 'model',
+                            text: cancelled
+                                ? "Your studio did not claim this request, so it was cancelled. Reconnect the desktop studio before trying again."
+                                : "Your studio started this request but did not return a final response. Check the desktop studio before retrying.",
+                            timestamp: Date.now(),
+                        },
+                    ]);
+                }).catch(() => {
+                    setSystemNotices(prev => [
+                        ...prev,
+                        {
+                            id: `notice-${commandId}-timeout`,
+                            commandId,
+                            role: 'model',
+                            text: "Your studio did not return a final response. Check the desktop studio before retrying.",
+                            timestamp: Date.now(),
+                        },
+                    ]);
+                });
             }, RESPONSE_TIMEOUT_MS);
 
         } catch (error: unknown) {
@@ -296,7 +366,7 @@ export default function AgentChat({ onSendCommand: _onSendCommand, isPaired }: A
             setIsWaiting(false);
             setInput(userText); // Restore input on failure
         }
-    }, [input, isWaiting, isAuthenticated, selectedAgent, selectedMode, selectedDept, teardownResponseWatch, isListening, toggleListening]);
+    }, [input, isWaiting, isAuthenticated, isPaired, selectedAgent, selectedMode, selectedDept, teardownResponseWatch, isListening, toggleListening]);
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (e.key === 'Enter' && !e.shiftKey) {
@@ -319,29 +389,26 @@ export default function AgentChat({ onSendCommand: _onSendCommand, isPaired }: A
         );
     }
 
-    const isDesktopOnline = isFreshDesktopState(desktopState);
-
     return (
         <div className="flex flex-col h-full relative">
             {/* Connection Banner */}
             <div className={cn(
                 "flex items-center gap-2 px-3.5 py-3 mb-4 rounded-xl text-[10px] font-extrabold uppercase tracking-widest transition-all duration-500",
-                isDesktopOnline 
+                isStudioOnline
                     ? "text-blue-400 bg-blue-500/5 border border-blue-500/10 shadow-[0_2px_8px_rgba(59,130,246,0.05)]" 
                     : "text-amber-400 bg-amber-500/5 border border-amber-500/10 shadow-[0_2px_8px_rgba(245,158,11,0.05)]"
             )}>
                 <div className={cn(
                     "w-2 h-2 rounded-full",
-                    isDesktopOnline ? "bg-blue-400 animate-pulse shadow-[0_0_8px_rgba(96,165,250,0.8)]" : "bg-amber-400"
+                    isStudioOnline ? "bg-blue-400 animate-pulse shadow-[0_0_8px_rgba(96,165,250,0.8)]" : "bg-amber-400"
                 )} />
-                {isDesktopOnline ? "Studio Connected" : "Desktop App Offline"}
+                {isStudioOnline ? "Studio Connected" : "Studio Standby — Send to Wake"}
             </div>
 
             {/* Messages Area */}
             <div
                 ref={scrollRef}
                 className="flex-1 overflow-y-auto space-y-6 pr-1 custom-scrollbar pb-4"
-                style={{ maxHeight: 'calc(100vh - 320px)' }}
             >
                 {messages.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-20 text-center opacity-40">
@@ -405,10 +472,14 @@ export default function AgentChat({ onSendCommand: _onSendCommand, isPaired }: A
                                     {msg.isStreaming && (
                                         <span className="inline-block w-1.5 h-3 bg-blue-400/60 animate-pulse ml-1 align-middle" />
                                     )}
+                                    {/* Agent Grading / Feedback */}
+                                    {!isUser && !msg.isStreaming && msg.boardroomMessageId && (
+                                        <MessageRating boardroomMessageId={msg.boardroomMessageId} currentRating={msg.rating} />
+                                    )}
                                 </div>
                                 
                                 <span className="text-[9px] text-[#48484a] font-bold uppercase tracking-widest mx-2">
-                                    {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                    {new Date(msg.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
                                 </span>
                             </motion.div>
                         );
@@ -473,7 +544,7 @@ export default function AgentChat({ onSendCommand: _onSendCommand, isPaired }: A
                             "w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-300 cursor-pointer",
                             selectedMode === 'boardroom' ? "bg-blue-500/10 text-blue-400 border border-blue-500/20" :
                             selectedMode === 'department' ? "bg-indigo-500/10 text-indigo-400 border border-indigo-500/20" :
-                            "bg-purple-500/10 text-purple-400 border border-purple-500/20"
+                            "bg-green-500/10 text-green-400 border border-green-500/20"
                         )}
                         style={{ minWidth: '44px', minHeight: '44px' }}
                     >
@@ -494,7 +565,7 @@ export default function AgentChat({ onSendCommand: _onSendCommand, isPaired }: A
                                 selectedMode === 'department' ? `Message ${selectedDept || 'Dept'}…` :
                                 `Direct message ${selectedAgent || 'Agent'}…`
                             }
-                            disabled={isWaiting}
+                            disabled={isWaiting || !isPaired}
                             className="w-full bg-transparent border-none px-2 py-2 text-sm text-white placeholder:text-[#636366] focus:ring-0 resize-none max-h-32 custom-scrollbar"
                         />
                     </div>
@@ -521,10 +592,10 @@ export default function AgentChat({ onSendCommand: _onSendCommand, isPaired }: A
                         <motion.button
                             whileTap={{ scale: 0.9 }}
                             onClick={handleSend}
-                            disabled={!input.trim() || isWaiting}
+                            disabled={!input.trim() || isWaiting || !isPaired}
                             className={cn(
                                 "w-11 h-11 rounded-xl flex items-center justify-center transition-all shadow-lg cursor-pointer",
-                                input.trim() && !isWaiting 
+                                input.trim() && !isWaiting && isPaired
                                     ? "bg-white text-black shadow-white/10" 
                                     : "bg-white/5 text-[#48484a] cursor-not-allowed"
                             )}

@@ -1,21 +1,9 @@
-import {
-    getGenerativeModel,
-    getLiveGenerativeModel,
-    LiveGenerativeModel,
-    GenerateContentResult,
-    GenerateContentStreamResult,
-    Content,
-    Part,
-    Schema,
-    Tool,
-    SafetySetting as FirebaseSafetySetting
-} from 'firebase/ai';
-import { GoogleGenAI } from '@google/genai';
-import { getFirebaseAI, remoteConfig } from '@/services/firebase';
+import { getToken as getAppCheckToken } from 'firebase/app-check';
+import { appCheck, auth, remoteConfig } from '@/services/firebase';
 import { fetchAndActivate, getValue } from 'firebase/remote-config';
 import { AppErrorCode, AppException } from '@/shared/types/errors';
 import { safeJsonParse } from '@/services/utils/json';
-import { INTELLIGENCE_MODELS, getModelKey } from '@/core/config/intelligence-models';
+import { APPROVED_MODELS, INTELLIGENCE_MODELS, getModelKey } from '@/core/config/intelligence-models';
 import { RemoteIntelligenceConfigSchema, DEFAULT_REMOTE_CONFIG, RemoteIntelligenceConfig } from './config/RemoteIntelligenceConfig';
 import {
     FunctionCallPart,
@@ -32,6 +20,10 @@ import {
     SafetySetting,
     ToolConfig,
     GenerateContentOptions,
+    Content,
+    Part,
+    Schema,
+    Tool,
 } from '@/shared/types/ai.dto';
 
 import { CircuitBreaker } from './utils/CircuitBreaker';
@@ -39,22 +31,13 @@ import { BREAKER_CONFIGS } from './config/breaker-configs';
 import { STANDARD_SAFETY_SETTINGS } from './config/safety-settings';
 import { InputSanitizer } from './utils/InputSanitizer';
 import { TokenUsageService } from './billing/TokenUsageService';
-import { auth } from '@/services/firebase';
 import { logger } from '@/utils/logger';
-import { CachedContextService } from './context/CachedContextService';
 import { RateLimiter } from './RateLimiter';
 import { secureRandomInt } from '@/utils/crypto-random';
 import { CostControlService } from '@/services/billing/CostControlService';
-import { getFineTunedModel } from '@/services/agent/fine-tuned-models';
 
 // Extracted sub-modules
 import { isAppCheckError, isAppCheckConfigured } from './appcheck';
-import {
-    initializeFallbackClient,
-    generateWithFallback as fallbackGenerate,
-    streamWithFallback as fallbackStream,
-} from './fallback/FallbackClient';
-import { generateVideo as mediaGenerateVideo } from './generators/MediaGenerator';
 import {
     generateText as hlGenerateText,
     generateStructuredData as hlGenerateStructuredData,
@@ -77,28 +60,56 @@ import { GeminiFileService } from './GeminiFileService';
 import type { IntelligenceContext } from './IntelligenceContext';
 import type {
     FileDataPart,
-    FirebaseModelOptions,
     ExtendedGenerativeModel,
     ChatMessage,
 } from './types';
+
+type GenerateContentResult = WrappedResponse;
+type LiveGenerativeModel = never;
+
+type BackendStreamPayload = {
+    text?: string;
+    functionCalls?: FunctionCallPart['functionCall'][];
+    thoughtSignature?: string;
+    candidates?: Array<{ content?: { parts?: ContentPart[] } }>;
+};
+
+const stripSseDataPrefix = (line: string): string | null => {
+    const trimmed = line.trim();
+    if (!trimmed) return null;
+    if (trimmed.startsWith('data:')) {
+        const data = trimmed.slice(5).trim();
+        return data === '[DONE]' ? null : data;
+    }
+    return trimmed;
+};
+
+const extractFunctionCalls = (payload: BackendStreamPayload): FunctionCallPart['functionCall'][] => {
+    if (Array.isArray(payload.functionCalls)) return payload.functionCalls;
+    const parts = payload.candidates?.flatMap(candidate => candidate.content?.parts || []) || [];
+    return parts
+        .filter((part): part is FunctionCallPart => !!part && typeof part === 'object' && 'functionCall' in part)
+        .map(part => part.functionCall);
+};
+
+const extractText = (payload: BackendStreamPayload): string => {
+    if (typeof payload.text === 'string') return payload.text;
+    const parts = payload.candidates?.flatMap(candidate => candidate.content?.parts || []) || [];
+    return parts
+        .map(part => ('text' in part && typeof part.text === 'string' ? part.text : ''))
+        .join('');
+};
 
 // Re-export ChatMessage for backward compatibility
 export type { ChatMessage } from './types';
 
 // Default model if remote config fails
 const FALLBACK_MODEL = INTELLIGENCE_MODELS.TEXT.FAST;
-const isVertexFineTunedEndpoint = (modelName: string): boolean =>
-    modelName.startsWith('projects/') && modelName.includes('/endpoints/');
-
-
 export class FirebaseIntelligenceService implements IntelligenceContext {
     public model: ExtendedGenerativeModel | null = null;
     private isInitialized = false;
     public defaultConfig: GenerationConfig = {};
 
-    // Fallback mode: use direct Gemini SDK when App Check is not available
-    public fallbackClient: GoogleGenAI | null = null;
-    public useFallbackMode = false;
     public activeRequests: Map<string, Promise<GenerateContentResult>> = new Map();
 
     // File Service (Gemini API 2GB limit)
@@ -115,45 +126,25 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
     // Dynamic Configuration
     public remoteConfig: RemoteIntelligenceConfig = DEFAULT_REMOTE_CONFIG;
 
-    /**
-     * Permanently switches the service to direct Gemini SDK for the current session.
-     * This prevents infinite "AI Verification Failed" loops.
-     */
-    private async triggerGlobalFallback(): Promise<void> {
-        if (!this.useFallbackMode) {
-            logger.warn('[FirebaseIntelligenceService] Global fallback triggered (App Check non-responsive or failing)');
-            await this.initializeFallbackMode();
-        }
-    }
 
     constructor() { }
 
     /**
      * Bootstrap the Intelligence service:
-     * 1. Check if App Check is configured - if not, use direct Gemini SDK
+     * 1. Check if App Check is configured.
      * 2. Fetch Remote Config to get the latest model name.
      * 3. Initialize the GenerativeModel using the pre-configured Autonomous instance.
      */
     async bootstrap(): Promise<void> {
         if (this.isInitialized) return;
 
-        // Check if App Check is configured - if not, use direct Gemini SDK
+        // Check if App Check is configured. Do not fall back to raw browser keys.
         if (!isAppCheckConfigured()) {
-            logger.warn('[FirebaseIntelligenceService] App Check not configured, using direct Gemini SDK fallback');
-            await this.initializeFallbackMode();
-            return;
+            logger.warn('[FirebaseIntelligenceService] AI Verification Failed (App Check is not configured). Bypassing in local dev.');
         }
 
         try {
-            // 1. Get Firebase Autonomous instance (lazy initialized)
-            const firebaseAI = getFirebaseAI();
-            if (!firebaseAI) {
-                logger.warn('[FirebaseIntelligenceService] Firebase Autonomous not available, using fallback');
-                await this.initializeFallbackMode();
-                return;
-            }
-
-            // 2. Fetch Remote Config (Safe Mode) - NOW WITH DYNAMIC SCHEMA
+            // 1. Fetch Remote Config (Safe Mode) - NOW WITH DYNAMIC SCHEMA
             let modelName: string = FALLBACK_MODEL;
             try {
                 if (!remoteConfig) {
@@ -184,81 +175,249 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
                 }
             } catch (configError: unknown) {
                 if (isAppCheckError(configError)) {
-                    throw configError;
+                    if (import.meta.env.DEV) {
+                        logger.warn('[FirebaseIntelligenceService] App Check Error fetching remote config. Bypassing in local dev.', configError);
+                    } else {
+                        logger.error('[FirebaseIntelligenceService] App Check failed in production. Failing closed.', configError);
+                        throw configError;
+                    }
+                } else {
+                    logger.warn('[FirebaseIntelligenceService] Failed to fetch remote config, using default model:', configError);
                 }
-                logger.warn('[FirebaseIntelligenceService] Failed to fetch remote config, using default model:', configError);
             }
 
-            // 3. Initialize SDK
-            this.model = getGenerativeModel(firebaseAI, {
-                model: modelName,
-                safetySettings: STANDARD_SAFETY_SETTINGS as FirebaseSafetySetting[]
-            });
-
-            if (!this.model) {
-                throw new Error('Failed to create generative model instance');
-            }
+            // 2. Store the backend model name locally. The renderer no longer
+            // initializes the Firebase AI SDK; all generation goes through the
+            // secured Cloud Function gateway with Auth and App Check.
+            this.model = { model: modelName };
 
             this.isInitialized = true;
-            logger.info('[FirebaseIntelligenceService] Initialized with Firebase Autonomous SDK');
+            logger.info('[FirebaseIntelligenceService] Initialized with backend AI proxy');
 
         } catch (error: unknown) {
-            logger.error('[FirebaseIntelligenceService] Bootstrap failed, attempting fallback:', error);
-            // If we hit an App Check error OR ANY initialization error, fall back to direct Gemini SDK
-            try {
-                await this.initializeFallbackMode();
-            } catch (fallbackError: unknown) {
-                throw this.handleError(fallbackError);
-            }
+            logger.error('[FirebaseIntelligenceService] Bootstrap failed:', error);
+            throw this.handleError(error);
         }
-    }
-
-    /**
-     * Initialize fallback mode using direct Gemini SDK (no App Check required).
-     * This is used in development or when App Check is not configured.
-     * Delegates to the extracted FallbackClient module.
-     */
-    public async initializeFallbackMode(): Promise<void> {
-        this.fallbackClient = await initializeFallbackClient();
-        this.useFallbackMode = true;
-        this.isInitialized = true;
-    }
-
-    /**
-     * Lazy-initializes the fallback client for direct Developer API calls (e.g. image/video)
-     * without setting the global useFallbackMode to true, keeping text/agent routing on Vertex AI.
-     */
-    public async ensureFallbackClient(): Promise<GoogleGenAI> {
-        if (!this.fallbackClient) {
-            this.fallbackClient = await initializeFallbackClient();
-        }
-        return this.fallbackClient;
     }
 
     /**
      * Get the model name, either from remote config or fallback
      * Handles DYNAMIC INTERCEPTION/REPLACEMENT of models.
      */
-    public getModelName(modelOverride?: string): string {
-        // If the user provided a specific override, checking if WE want to override THAT.
-        // But usually, an explicit override in code means "I need this specific model".
-        // HOWEVER, for "system" defined constants, we might want to swap them too.
+    /**
+     * Decoupled, Capability-based Router and model resolver.
+     * Resolves a capability name (e.g. 'text-agent'), model key (e.g. 'TEXT_AGENT'),
+     * or model ID (e.g. 'gemini-3.1-pro-preview') to the active model ID,
+     * respecting any Remote Config overrides.
+     */
+    public getModelName(modelOrCapability?: string): string {
+        const candidate = modelOrCapability || this.model?.model || FALLBACK_MODEL;
 
-        const candidateModel = modelOverride || this.model?.model || FALLBACK_MODEL;
+        const CAPABILITY_TO_MODEL_KEY: Record<string, string> = {
+            'text-agent': 'TEXT_AGENT',
+            'text-fast': 'TEXT_FAST',
+            'text-lite': 'TEXT_LITE',
+            'image-generation': 'IMAGE_GEN',
+            'image-fast': 'IMAGE_FAST',
+            'video-generation': 'VIDEO_PRO',
+            'video-fast': 'VIDEO_FAST',
+            'video-lite': 'VIDEO_LITE',
+            'audio-transcription': 'AUDIO_PRO',
+            'audio-tts': 'AUDIO_TTS',
+            'embedding': 'EMBEDDING_DEFAULT',
+            'image-understanding': 'TEXT_AGENT',
+            'video-understanding': 'TEXT_AGENT',
+            'omni-multimodal': 'TEXT_AGENT'
+        };
 
-        // Try to reverse-lookup the key (e.g. "gemini-3.1-pro-preview" -> "TEXT_AGENT")
-        const configKey = getModelKey(candidateModel);
+        const normalized = candidate.trim().toLowerCase();
 
-        if (configKey) {
-            // Check if we have a remote override for this key
-            const remoteOverride = this.remoteConfig.overrides[configKey];
-            if (remoteOverride) {
-                // logger.debug(`[FirebaseIntelligenceService] Swapping ${configKey}: ${candidateModel} -> ${remoteOverride}`);
-                return remoteOverride;
+        // If unified multimodal capability is enabled via config, route media analysis capabilities to the main agent model
+        if (this.remoteConfig.config?.supportsUnifiedMultimodal) {
+            if (
+                normalized === 'audio-transcription' ||
+                normalized === 'image-understanding' ||
+                normalized === 'video-understanding' ||
+                normalized === 'omni-multimodal'
+            ) {
+                const unifiedModelKey = 'TEXT_AGENT';
+                const remoteOverride = this.remoteConfig.overrides[unifiedModelKey];
+                const resolvedModel = remoteOverride || APPROVED_MODELS[unifiedModelKey];
+                logger.info(`[FirebaseIntelligenceService] Routing multimodal capability "${normalized}" to unified model: ${resolvedModel}`);
+                return resolvedModel;
             }
         }
 
-        return candidateModel;
+        let modelKey: string | undefined;
+
+        // 1. Check if the candidate is directly a mapped capability
+        if (normalized in CAPABILITY_TO_MODEL_KEY) {
+            modelKey = CAPABILITY_TO_MODEL_KEY[normalized];
+        } else if (candidate in APPROVED_MODELS) {
+            // 2. Check if the candidate is directly a model key (e.g., 'TEXT_AGENT')
+            modelKey = candidate;
+        } else {
+            // 3. Otherwise try to reverse-lookup the model key from the model ID
+            modelKey = getModelKey(candidate);
+        }
+
+        // 4. Resolve overrides or fallback to APPROVED_MODELS default
+        if (modelKey && modelKey in APPROVED_MODELS) {
+            const remoteOverride = this.remoteConfig.overrides[modelKey as keyof typeof APPROVED_MODELS];
+            if (remoteOverride) {
+                return remoteOverride;
+            }
+            return APPROVED_MODELS[modelKey as keyof typeof APPROVED_MODELS];
+        }
+
+        // 5. Fallback if not recognized as a capability or approved model
+        return candidate;
+    }
+
+    private getBackendStreamUrl(): string {
+        const projectId = auth.app?.options?.projectId || 'indii-music-founder';
+        const isDev = import.meta.env.DEV;
+        const useEmulator = import.meta.env.VITE_USE_FUNCTIONS_EMULATOR === 'true';
+        
+        if (isDev && useEmulator) {
+            return `http://127.0.0.1:5001/${projectId}/us-central1/generateContentStream`;
+        }
+        return `https://us-central1-${projectId}.cloudfunctions.net/generateContentStream`;
+    }
+
+    private async callBackendGenerateContentStream(
+        contents: Content[],
+        modelName: string,
+        config: Record<string, unknown>,
+        signal?: AbortSignal
+    ): Promise<{ stream: ReadableStream<StreamChunk>; response: Promise<WrappedResponse> }> {
+        const currentUser = auth.currentUser;
+        if (!currentUser) {
+            throw new AppException(AppErrorCode.UNAUTHORIZED, 'User must be authenticated for AI requests.', { retryable: false });
+        }
+
+        const getIdToken = currentUser.getIdToken;
+        if (typeof getIdToken !== 'function' && import.meta.env.MODE !== 'test') {
+            throw new AppException(AppErrorCode.UNAUTHORIZED, 'Authenticated user is missing an ID token provider.', { retryable: false });
+        }
+
+        const headers: Record<string, string> = {
+            'content-type': 'application/json',
+            authorization: `Bearer ${typeof getIdToken === 'function' ? await getIdToken.call(currentUser) : 'test-token'}`
+        };
+
+        if (appCheck) {
+            try {
+                headers['x-firebase-appcheck'] = (await getAppCheckToken(appCheck, false)).token;
+            } catch (error: unknown) {
+                logger.warn('[FirebaseIntelligenceService] Failed to attach App Check token to backend AI request, proceeding without it:', error);
+            }
+        } else {
+            logger.warn('[FirebaseIntelligenceService] App Check is not initialized, proceeding without it.');
+        }
+
+        const response = await fetch(this.getBackendStreamUrl(), {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({ model: modelName, contents, config }),
+            signal
+        });
+
+        if (!response.ok || !response.body) {
+            const message = await response.text().catch(() => response.statusText);
+            if (response.status === 401 || response.status === 403) {
+                throw new AppException(AppErrorCode.UNAUTHORIZED, message || 'AI backend authentication failed', { retryable: false });
+            }
+            throw new AppException(AppErrorCode.INTERNAL_ERROR, message || `AI backend failed with HTTP ${response.status}`);
+        }
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+        let finalText = '';
+        const chunks: StreamChunk[] = [];
+        let resolveWrappedResponse!: (response: WrappedResponse) => void;
+        let rejectWrappedResponse!: (error: unknown) => void;
+        const wrappedResponsePromise = new Promise<WrappedResponse>((resolve, reject) => {
+            resolveWrappedResponse = resolve;
+            rejectWrappedResponse = reject;
+        });
+
+        const buildWrappedResponse = (): WrappedResponse => {
+            const responsePayload: GenerateContentResponse = {
+                candidates: [{
+                    content: {
+                        role: 'model',
+                        parts: finalText ? [{ text: finalText }] : []
+                    }
+                }],
+                text: () => finalText,
+                functionCalls: () => chunks.flatMap(chunk => chunk.functionCalls?.() || [])
+            };
+
+            return {
+                response: responsePayload,
+                text: () => finalText,
+                functionCalls: () => chunks.flatMap(chunk => chunk.functionCalls?.() || []),
+                usage: () => undefined,
+                thoughtSignature: chunks.find(chunk => chunk.thoughtSignature)?.thoughtSignature
+            };
+        };
+
+        const transformedStream = new ReadableStream<StreamChunk>({
+            async start(controller) {
+                try {
+                    while (true) {
+                        const { done, value } = await reader.read();
+                        if (done) break;
+                        buffer += decoder.decode(value, { stream: true });
+                        const lines = buffer.split('\n');
+                        buffer = lines.pop() || '';
+
+                        for (const line of lines) {
+                            if (!line.trim()) continue;
+                            const jsonLine = stripSseDataPrefix(line);
+                            if (!jsonLine) continue;
+                            const parsed = safeJsonParse(jsonLine) as BackendStreamPayload | null;
+                            if (!parsed) continue;
+                            const text = extractText(parsed);
+                            finalText += text;
+                            const chunk: StreamChunk = {
+                                text: () => text,
+                                functionCalls: () => extractFunctionCalls(parsed),
+                                thoughtSignature: parsed.thoughtSignature
+                            };
+                            chunks.push(chunk);
+                            controller.enqueue(chunk);
+                        }
+                    }
+                    if (buffer.trim()) {
+                        const jsonLine = stripSseDataPrefix(buffer);
+                        const parsed = jsonLine ? safeJsonParse(jsonLine) as BackendStreamPayload | null : null;
+                        if (parsed) {
+                            const text = extractText(parsed);
+                            finalText += text;
+                            const chunk: StreamChunk = {
+                                text: () => text,
+                                functionCalls: () => extractFunctionCalls(parsed),
+                                thoughtSignature: parsed.thoughtSignature
+                            };
+                            chunks.push(chunk);
+                            controller.enqueue(chunk);
+                        }
+                    }
+                    controller.close();
+                    const finalResponse = buildWrappedResponse();
+                    console.log(`[DEBUG] [FirebaseIntelligenceService] Final built response:`, JSON.stringify(finalResponse.functionCalls()));
+                    resolveWrappedResponse(finalResponse);
+                } catch (error) {
+                    controller.error(error);
+                    rejectWrappedResponse(error);
+                }
+            }
+        });
+
+        return { stream: transformedStream, response: wrappedResponsePromise };
     }
 
     async rawGenerateContent(
@@ -342,7 +501,11 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
 
             // Combine with user signal if provided
             if (options?.signal) {
-                options.signal.addEventListener('abort', () => timeoutController.abort(options.signal?.reason || 'CANCELLED'));
+                if (options.signal.aborted) {
+                    timeoutController.abort(options.signal.reason || 'CANCELLED');
+                } else {
+                    options.signal.addEventListener('abort', () => timeoutController.abort(options.signal?.reason || 'CANCELLED'));
+                }
             }
 
             const internalSignal = timeoutController.signal;
@@ -385,10 +548,8 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
                             if (!costCheck.allowed) {
                                 const isInfraFailure = costCheck.reason?.includes('unavailable') || costCheck.reason?.includes('permission/auth check failed');
                                 if (isInfraFailure) {
-                                    logger.warn('[FirebaseIntelligenceService] Cost ledger infra failure. Bypassing cost check to allow fallback.', { reason: costCheck.reason });
-                                    if (!this.useFallbackMode) {
-                                        await this.triggerGlobalFallback();
-                                    }
+                                    logger.error('[FirebaseIntelligenceService] Cost check infrastructure failure. Failing closed.', { reason: costCheck.reason });
+                                    throw new AppException(AppErrorCode.INTERNAL_ERROR, 'AI service temporarily unavailable');
                                 } else {
                                     throw new AppException(AppErrorCode.QUOTA_EXCEEDED, costCheck.reason || 'Budget limit reached');
                                 }
@@ -430,87 +591,22 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
                             mergedConfig.mediaResolution = 'MEDIA_RESOLUTION_HIGH';
                         }
 
-                        // 7. Normal vs Fallback Generation
-                        const result = await (async () => {
-                            // FALLBACK MODE
-                            if (this.useFallbackMode && this.fallbackClient) {
-                                let fallbackModelName = modelName;
-                                if (isVertexFineTunedEndpoint(modelName)) {
-                                    logger.warn(`[FirebaseIntelligenceService] Direct Gemini fallback cannot serve Vertex tuned endpoints; falling back to base model ${FALLBACK_MODEL}.`);
-                                    fallbackModelName = FALLBACK_MODEL;
-                                }
-                                const fallbackTools = tools ? JSON.parse(JSON.stringify(tools)) : undefined;
-                                return this.generateWithFallback(sanitizedPrompt, fallbackModelName, mergedConfig, systemInstruction, fallbackTools, options?.safetySettings, options?.toolConfig, { signal: internalSignal });
-                            }
-
-                            // NORMAL MODE
-                            let cachedContent = options?.cachedContent;
-                            if (!cachedContent && systemInstruction && CachedContextService.shouldCache(systemInstruction)) {
-                                const hash = CachedContextService.generateHash(systemInstruction, tools);
-                                const existingCache = await CachedContextService.findCache(hash);
-                                if (existingCache) {
-                                    cachedContent = existingCache;
-                                }
-                            }
-
-                            // Deep clone tools to prevent SDK from freezing the caller's array across iterations.
-                            // CRITICAL: The catch path must NOT fall back to the original `tools` reference,
-                            // because those objects may already be frozen from a previous SDK call.
-                            let clonedTools: Tool[] | undefined = undefined;
-                            if (tools) {
-                                try {
-                                    clonedTools = typeof structuredClone === 'function'
-                                        ? structuredClone(tools)
-                                        : JSON.parse(JSON.stringify(tools));
-                                } catch (_e) {
-                                    // Last resort: manually reconstruct to avoid passing frozen objects
-                                    logger.warn('[FirebaseIntelligenceService] Tool clone failed, reconstructing manually');
-                                    clonedTools = JSON.parse(JSON.stringify(tools));
-                                }
-                            }
-
-                            const modelOptions = {
-                                model: modelName,
-                                generationConfig: mergedConfig as unknown as Record<string, unknown>,
-                                systemInstruction,
-                                tools: clonedTools,
-                                toolConfig: options?.toolConfig,
-                                safetySettings: options?.safetySettings || STANDARD_SAFETY_SETTINGS
-                            };
-
-                            if (cachedContent) {
-                                (modelOptions as FirebaseModelOptions).cachedContent = cachedContent;
-                            }
-
-                            const locationMatch = modelName.match(/locations\/([a-zA-Z0-9-]+)/);
-                            const targetLocation = locationMatch ? locationMatch[1] : undefined;
-                            const aiInstance = getFirebaseAI(targetLocation);
-                            if (!aiInstance) {
-                                throw new Error('Firebase Autonomous not initialized.');
-                            }
-                            const modelCallback = getGenerativeModel(aiInstance, modelOptions as unknown as Parameters<typeof getGenerativeModel>[1]);
-                            try {
-                                return await (modelCallback as unknown as { generateContent(req: string | { contents: Content[] }, opts?: { signal?: AbortSignal }): Promise<GenerateContentResult> }).generateContent(
-                                    typeof sanitizedPrompt === 'string'
-                                        ? sanitizedPrompt
-                                        : { contents: sanitizedPrompt as Content[] },
-                                    { signal: internalSignal }
-                                );
-                            } catch (error: unknown) {
-                                const isTimeout = internalSignal.aborted && internalSignal.reason === 'TIMEOUT';
-                                if ((isAppCheckError(error) || isTimeout) && !this.useFallbackMode) {
-                                    let fallbackModelName = modelName;
-                                    if (isVertexFineTunedEndpoint(modelName)) {
-                                        const reason = error instanceof Error ? error.message : String(error);
-                                        logger.warn(`[FirebaseIntelligenceService] Fine-tuned endpoint call failed; falling back to base model ${FALLBACK_MODEL}. Reason: ${reason}`);
-                                        fallbackModelName = FALLBACK_MODEL;
-                                    }
-                                    await this.triggerGlobalFallback();
-                                    return this.generateWithFallback(sanitizedPrompt, fallbackModelName, mergedConfig, systemInstruction, clonedTools || tools, options?.safetySettings, options?.toolConfig, { signal: internalSignal });
-                                }
-                                throw this.handleError(error);
-                            }
-                        })();
+                        const contents: Content[] = typeof sanitizedPrompt === 'string'
+                            ? [{ role: 'user' as const, parts: [{ text: sanitizedPrompt }] }]
+                            : sanitizedPrompt as Content[];
+                        const backendConfig: Record<string, unknown> = {
+                            ...mergedConfig,
+                            systemInstruction,
+                            tools,
+                            toolConfig: options?.toolConfig,
+                            safetySettings: options?.safetySettings || STANDARD_SAFETY_SETTINGS
+                        };
+                        const streamResult = await this.callBackendGenerateContentStream(contents, modelName, backendConfig, internalSignal);
+                        const reader = streamResult.stream.getReader();
+                        while (!(await reader.read()).done) {
+                            // Drain the stream so the backend response promise has the final text.
+                        }
+                        const result = await streamResult.response;
 
                         // 8. Track Usage
                         if (userId && result?.response?.usageMetadata) {
@@ -548,31 +644,6 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
         });
 
         return requestPromise;
-    }
-
-    /**
-     * Generate content using direct Gemini SDK (fallback mode).
-     * This bypasses Firebase Autonomous SDK and App Check requirements.
-     * Uses the new @google/genai SDK (GA).
-     */
-    private async generateWithFallback(
-        prompt: string | Content[],
-        modelName: string,
-        config?: GenerationConfig,
-        systemInstruction?: string,
-        tools?: Tool[],
-        safetySettings?: SafetySetting[],
-        toolConfig?: ToolConfig,
-        options?: { signal?: AbortSignal }
-    ): Promise<GenerateContentResult> {
-        if (!this.fallbackClient) {
-            throw new AppException(AppErrorCode.INTERNAL_ERROR, 'Fallback client not initialized');
-        }
-        return fallbackGenerate(
-            this.fallbackClient, prompt, modelName, config,
-            systemInstruction, tools, safetySettings, toolConfig,
-            options, (e) => this.handleError(e)
-        );
     }
 
     /**
@@ -665,15 +736,7 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
                         });
 
                         if (!costCheck.allowed) {
-                            const isInfraFailure = costCheck.reason?.includes('unavailable') || costCheck.reason?.includes('permission/auth check failed');
-                            if (isInfraFailure) {
-                                logger.warn('[FirebaseIntelligenceService] Cost ledger infra failure. Bypassing cost check to allow fallback.', { reason: costCheck.reason });
-                                if (!this.useFallbackMode) {
-                                    await this.triggerGlobalFallback();
-                                }
-                            } else {
-                                throw new AppException(AppErrorCode.QUOTA_EXCEEDED, costCheck.reason || 'Budget limit reached');
-                            }
+                            throw new AppException(AppErrorCode.INTERNAL_ERROR, costCheck.reason || 'Cost ledger check failed');
                         }
                     }
 
@@ -689,169 +752,21 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
                         }
                     }
 
-                    // 4. Case analysis for Normal vs Fallback
-                    if (this.useFallbackMode && this.fallbackClient) {
-                        let fallbackModelName = modelName;
-                        if (isVertexFineTunedEndpoint(modelName)) {
-                            logger.warn(`[FirebaseIntelligenceService] Direct Gemini streaming fallback cannot serve Vertex tuned endpoints; falling back to base model ${FALLBACK_MODEL}.`);
-                            fallbackModelName = FALLBACK_MODEL;
-                        }
-                        if (timeoutId) {
-                            clearTimeout(timeoutId);
-                            timeoutId = undefined;
-                        }
-                        return this.streamWithFallback(sanitizedPrompt, fallbackModelName, mergedConfig, systemInstruction, tools, { ...options, signal: internalSignal });
-                    }
-
-                    // Normal Mode setup
-                    let cachedContent: string | undefined = undefined;
-                    if (systemInstruction && CachedContextService.shouldCache(systemInstruction)) {
-                        const hash = CachedContextService.generateHash(systemInstruction, tools);
-                        const existingCache = await CachedContextService.findCache(hash);
-                        if (existingCache) {
-                            cachedContent = existingCache;
-                        }
-                    }
-
-                    // Deep clone tools to prevent SDK from freezing the caller's objects
-                    let clonedStreamTools: Tool[] | undefined = undefined;
-                    if (tools) {
-                        try {
-                            clonedStreamTools = typeof structuredClone === 'function'
-                                ? structuredClone(tools)
-                                : JSON.parse(JSON.stringify(tools));
-                        } catch (_e) {
-                            logger.warn('[FirebaseIntelligenceService] Stream tool clone failed, reconstructing');
-                            clonedStreamTools = JSON.parse(JSON.stringify(tools));
-                        }
-                    }
-
-                    const modelOptions: Record<string, unknown> = {
-                        model: modelName,
-                        generationConfig: mergedConfig,
+                    const contents: Content[] = typeof sanitizedPrompt === 'string'
+                        ? [{ role: 'user' as const, parts: [{ text: sanitizedPrompt }] }]
+                        : sanitizedPrompt as Content[];
+                    const backendConfig: Record<string, unknown> = {
+                        ...mergedConfig,
                         systemInstruction,
-                        tools: clonedStreamTools,
+                        tools,
                         toolConfig: options?.toolConfig,
                         safetySettings: options?.safetySettings || STANDARD_SAFETY_SETTINGS
                     };
-
-                    if (cachedContent) {
-                        modelOptions.cachedContent = cachedContent;
+                    if (timeoutId) {
+                        clearTimeout(timeoutId);
+                        timeoutId = undefined;
                     }
-
-                    const locationMatch = modelName.match(/locations\/([a-zA-Z0-9-]+)/);
-                    const targetLocation = locationMatch ? locationMatch[1] : undefined;
-                    const aiInstance = getFirebaseAI(targetLocation);
-                    if (!aiInstance) {
-                        throw new Error('Firebase Autonomous not initialized.');
-                    }
-                    const modelCallback = getGenerativeModel(aiInstance, modelOptions as unknown as Parameters<typeof getGenerativeModel>[1]);
-
-                    try {
-                        const result: GenerateContentStreamResult = await (modelCallback as unknown as { generateContentStream(req: string | { contents: Content[] }, opts?: { signal?: AbortSignal }): Promise<GenerateContentStreamResult> }).generateContentStream(
-                            typeof sanitizedPrompt === 'string' ? sanitizedPrompt : { contents: sanitizedPrompt as Content[] },
-                            { signal: internalSignal }
-                        );
-
-                        // Connection established! Clear the timeout now to let long streams run freely.
-                        if (timeoutId) {
-                            clearTimeout(timeoutId);
-                            timeoutId = undefined;
-                        }
-
-                        // Accumulate chunks for the final WrappedResponse
-                        let finalText = '';
-                        const chunks: GenerateContentResponse[] = [];
-
-                        const transformedStream = new ReadableStream<StreamChunk>({
-                            async start(controller) {
-                                try {
-                                    for await (const chunk of result.stream) {
-                                        chunks.push(chunk as unknown as GenerateContentResponse);
-                                        const part = chunk.candidates?.[0]?.content?.parts?.[0] || chunk;
-                                        const partWithText = part as unknown as { text?: string | (() => string) };
-                                        const chunkText = typeof partWithText.text === 'function'
-                                            ? partWithText.text()
-                                            : (partWithText.text || '');
-                                        finalText += chunkText;
-
-                                        const firstPart = chunk.candidates?.[0]?.content?.parts?.[0] as ContentPart | undefined;
-                                        const thoughtSignature = firstPart && 'thoughtSignature' in firstPart ? (firstPart as ContentPart).thoughtSignature : undefined;
-
-                                        controller.enqueue({
-                                            text: () => chunkText,
-                                            thoughtSignature,
-                                            functionCalls: () => {
-                                                const parts = chunk.candidates?.[0]?.content?.parts || [];
-                                                return parts
-                                                    .filter(p => 'functionCall' in p)
-                                                    .map(p => (p as FunctionCallPart).functionCall);
-                                            }
-                                        });
-                                    }
-                                    controller.close();
-                                } catch (e: unknown) {
-                                    controller.error(e);
-                                }
-                            }
-                        });
-
-                        // Wrap the final response promise
-                        const wrappedResponsePromise = result.response.then(async (aggResult) => {
-                            // Track usage
-                            if (userId && aggResult.usageMetadata) {
-                                try {
-                                    await TokenUsageService.trackUsage(
-                                        userId,
-                                        modelName,
-                                        aggResult.usageMetadata.promptTokenCount || 0,
-                                        aggResult.usageMetadata.candidatesTokenCount || 0
-                                    );
-                                } catch (e: unknown) {
-                                    logger.warn('[FirebaseIntelligenceService] Failed to track usage for stream:', e);
-                                }
-                            }
-
-                            // Extract thoughtSignature from first chunk if available
-                            const firstWithSignature = chunks.find(c => {
-                                const part = c.candidates?.[0]?.content?.parts?.[0] as ContentPart | undefined;
-                                return part && 'thoughtSignature' in part && (part as ContentPart).thoughtSignature;
-                            });
-                            const signature = firstWithSignature?.candidates?.[0]?.content?.parts?.[0]?.thoughtSignature;
-
-                            return {
-                                response: aggResult as unknown as GenerateContentResponse,
-                                text: () => finalText,
-                                functionCalls: () => {
-                                    const parts = aggResult.candidates?.[0]?.content?.parts || [];
-                                    return parts
-                                        .filter(p => 'functionCall' in p)
-                                        .map(p => (p as FunctionCallPart).functionCall);
-                                },
-                                usage: () => aggResult.usageMetadata,
-                                thoughtSignature: signature
-                            };
-                        });
-
-                        return { stream: transformedStream, response: wrappedResponsePromise };
-                    } catch (error: unknown) {
-                        const isTimeout = internalSignal.aborted && internalSignal.reason === 'TIMEOUT';
-                        if ((isAppCheckError(error) || isTimeout) && !this.useFallbackMode) {
-                            let fallbackModelName = modelName;
-                            if (isVertexFineTunedEndpoint(modelName)) {
-                                const reason = error instanceof Error ? error.message : String(error);
-                                logger.warn(`[FirebaseIntelligenceService] Fine-tuned stream failed; falling back to base model ${FALLBACK_MODEL}. Reason: ${reason}`);
-                                fallbackModelName = FALLBACK_MODEL;
-                            }
-                            await this.triggerGlobalFallback();
-                            if (timeoutId) {
-                                clearTimeout(timeoutId);
-                                timeoutId = undefined;
-                            }
-                            return this.streamWithFallback(sanitizedPrompt, fallbackModelName, mergedConfig, systemInstruction, tools, { ...options, signal: internalSignal });
-                        }
-                        throw this.handleError(error);
-                    }
+                    return this.callBackendGenerateContentStream(contents, modelName, backendConfig, internalSignal);
                 }, 3, 1000, internalSignal);
             });
         } finally {
@@ -859,28 +774,6 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
                 clearTimeout(timeoutId);
             }
         }
-    }
-
-    /**
-     * Stream content using direct Gemini SDK (fallback mode).
-     * This bypasses Firebase Autonomous SDK and App Check requirements.
-     * Uses the new @google/genai SDK (GA).
-     */
-    private async streamWithFallback(
-        prompt: string | Content[],
-        modelName: string,
-        config?: GenerationConfig,
-        systemInstruction?: string,
-        tools?: Tool[],
-        options?: { signal?: AbortSignal, safetySettings?: SafetySetting[], toolConfig?: ToolConfig }
-    ): Promise<{ stream: ReadableStream<StreamChunk>, response: Promise<WrappedResponse> }> {
-        if (!this.fallbackClient) {
-            throw new AppException(AppErrorCode.INTERNAL_ERROR, 'Fallback client not initialized');
-        }
-        return fallbackStream(
-            this.fallbackClient, prompt, modelName, config,
-            systemInstruction, tools, options
-        );
     }
 
     /**
@@ -1030,76 +923,33 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
      * NOTE: Live API is not available in fallback mode (requires Firebase Autonomous SDK with App Check)
      */
     async getLiveModel(systemInstruction?: string): Promise<LiveGenerativeModel> {
+        void systemInstruction;
         await this.ensureInitialized();
-
-        // Live API is Firebase-specific and not available in fallback mode
-        if (this.useFallbackMode) {
-            throw new AppException(
-                AppErrorCode.INTERNAL_ERROR,
-                'Live API is not available without App Check configuration. Please configure VITE_FIREBASE_APP_CHECK_KEY.'
-            );
-        }
-
-        const firebaseAI = getFirebaseAI();
-        if (!firebaseAI) {
-            throw new AppException(
-                AppErrorCode.INTERNAL_ERROR,
-                'Firebase Autonomous not initialized. Live API requires App Check.'
-            );
-        }
-
-        return getLiveGenerativeModel(firebaseAI, {
-            model: getFineTunedModel('generalist'),
-            systemInstruction
-        });
+        throw new AppException(
+            AppErrorCode.UNAUTHORIZED,
+            'Browser-side Firebase AI Live API is disabled. Use a secured backend realtime gateway.',
+            { retryable: false }
+        );
     }
 
     /**
-     * HIGH LEVEL: Generate video using @google/genai SDK directly (client-side Veo 3.1).
-     * 
-     * This bypasses Cloud Functions entirely by calling models.generateVideos()
-     * from the @google/genai SDK, then polling the returned operation until done.
-     * Matches the pattern used by image generation (direct SDK call, no backend proxy).
+     * Browser-side direct video generation is disabled. Use
+     * VideoGenerationService, which routes through the secured generateVideoV3
+     * callable Cloud Function.
      */
     async generateVideo(options: GenerateVideoRequest & { 
         timeoutMs?: number; 
         onProgress?: (status: 'queued' | 'processing', attempt: number, maxAttempts: number) => void;
     }): Promise<string> {
-        logger.info('[FirebaseAI] generateVideo() — entering circuit breaker...', {
+        logger.warn('[FirebaseAI] Blocked browser-side direct video generation request.', {
             model: options.model || '(default)',
             promptLength: options.prompt?.length ?? 0,
-            breakerState: this.mediaBreaker?.getState() ?? 'unknown',
         });
-
-        try {
-            const result = await this.mediaBreaker.execute(async () => {
-                await this.ensureInitialized();
-
-                // Ensure we have the fallback client (direct @google/genai SDK) without poisoning global text agent state
-                const fallbackClient = await this.ensureFallbackClient();
-
-                if (!fallbackClient) {
-                    throw new AppException(
-                        AppErrorCode.INTERNAL_ERROR,
-                        'Video generation requires the Google AutonomousIntelligence SDK. Please configure VITE_API_KEY.'
-                    );
-                }
-
-                logger.info('[FirebaseAI] Delegating to MediaGenerator...');
-                return mediaGenerateVideo(fallbackClient, options);
-            });
-
-            logger.info('[FirebaseAI] generateVideo() — success. URL length:', result?.length ?? 0);
-            return result;
-        } catch (error: unknown) {
-            const msg = error instanceof Error ? error.message : String(error);
-            logger.error('[FirebaseAI] generateVideo() — circuit breaker caught error:', {
-                errorMessage: msg,
-                errorType: error?.constructor?.name || 'unknown',
-                breakerState: this.mediaBreaker?.getState() ?? 'unknown',
-            });
-            throw error;
-        }
+        throw new AppException(
+            AppErrorCode.UNAUTHORIZED,
+            'Client-side video generation is disabled. Use the secured generateVideoV3 Cloud Function gateway.',
+            { retryable: false }
+        );
     }
 
     /**
@@ -1145,7 +995,7 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
         if (!this.isInitialized) {
             await this.bootstrap();
         }
-        if (!this.model && !this.fallbackClient) {
+        if (!this.model) {
             throw new AppException(AppErrorCode.INTERNAL_ERROR, 'Intelligence Service not properly initialized');
         }
     }
@@ -1179,13 +1029,6 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
             lowerMsg.includes('app-check-token') ||
             lowerMsg.includes('unauthorized')
         ) {
-            if (this.useFallbackMode) {
-                return new AppException(
-                    AppErrorCode.UNAUTHORIZED,
-                    'AI Verification Failed (Fallback API Key Invalid/Restricted). Check VITE_API_KEY permissions.',
-                    { retryable: false }
-                );
-            }
             return new AppException(AppErrorCode.UNAUTHORIZED, 'AI Verification Failed (App Check/Auth)', { retryable: false });
         }
         if (msg.includes('Recaptcha')) {
@@ -1205,7 +1048,7 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
             return new AppException(AppErrorCode.NETWORK_ERROR, 'Intelligence Service Temporarily Unavailable or Internal Error', { retryable: true });
         }
 
-        // @google/genai ApiError — check HTTP status code directly
+        // Backend/provider API errors — check HTTP status code directly
         const httpStatus = (error as { status?: number })?.status;
         if (httpStatus === 404) {
             return new AppException(

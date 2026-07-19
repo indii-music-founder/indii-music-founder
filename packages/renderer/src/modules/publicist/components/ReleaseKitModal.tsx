@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next';
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, Sparkles, Copy, Check } from 'lucide-react';
-import { PUBLICIST_TOOLS } from '../tools';
+import { PUBLICIST_TOOLS, UNRESOLVED_MEDIA_CONTACT } from '../tools';
 import { logger } from '@/utils/logger';
 
 interface ReleaseKitModalProps {
@@ -24,21 +24,32 @@ export const ReleaseKitModal: React.FC<ReleaseKitModalProps> = ({ isOpen, onClos
         artistName: '',
         releaseDate: '',
         musicalStyle: '',
-        targetAudience: ''
+        targetAudience: '',
+        mediaContact: ''
     });
     const [assets, setAssets] = useState<GeneratedAssets | null>(null);
     const [activeTab, setActiveTab] = useState<'press' | 'social' | 'email'>('press');
     const [copied, setCopied] = useState<string | null>(null);
+    const [error, setError] = useState<string | null>(null);
 
     const handleGenerate = async () => {
+        const styles = formData.musicalStyle.split(',').map(s => s.trim()).filter(Boolean);
+        const required = [formData.trackTitle, formData.artistName, formData.targetAudience];
+        const parsedDate = new Date(`${formData.releaseDate}T00:00:00`);
+        if (required.some(value => !value.trim()) || styles.length === 0 || !formData.releaseDate || Number.isNaN(parsedDate.getTime())) {
+            setError('Enter a track title, artist name, valid release date, at least one musical style, and target audience.');
+            return;
+        }
+        setError(null);
         setStep('generating');
         try {
             const result = await PUBLICIST_TOOLS.generate_campaign_assets!({
                 trackTitle: formData.trackTitle,
                 artistName: formData.artistName,
                 releaseDate: formData.releaseDate,
-                musicalStyle: formData.musicalStyle.split(',').map(s => s.trim()),
-                targetAudience: formData.targetAudience
+                musicalStyle: styles,
+                targetAudience: formData.targetAudience,
+                contactInfo: formData.mediaContact
             });
 
             if (result.success && result.data) {
@@ -46,10 +57,12 @@ export const ReleaseKitModal: React.FC<ReleaseKitModalProps> = ({ isOpen, onClos
                 setStep('results');
             } else {
                 logger.error("Generation failed", result);
-                setStep('input'); // Reset on failure for now
+                setError(result.error || 'Release Kit generation failed. Your details are still here—please retry.');
+                setStep('input');
             }
         } catch (e: unknown) {
             logger.error("Operation failed:", e);
+            setError(e instanceof Error ? e.message : 'Release Kit generation failed. Please retry.');
             setStep('input');
         }
     };
@@ -81,7 +94,7 @@ export const ReleaseKitModal: React.FC<ReleaseKitModalProps> = ({ isOpen, onClos
                     {/* Header */}
                     <div className="p-6 border-b border-white/10 flex justify-between items-center bg-black/40">
                         <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-purple-500/20 flex items-center justify-center text-purple-400">
+                            <div className="w-10 h-10 rounded-xl bg-green-500/20 flex items-center justify-center text-green-400">
                                 <Sparkles size={20} />
                             </div>
                             <div>
@@ -98,6 +111,7 @@ export const ReleaseKitModal: React.FC<ReleaseKitModalProps> = ({ isOpen, onClos
                     <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
                         {step === 'input' && (
                             <div className="space-y-6 max-w-xl mx-auto py-8">
+                                {error && <div role="alert" className="rounded-lg border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-300">{error}</div>}
                                 <div className="space-y-4">
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="space-y-2">
@@ -107,7 +121,7 @@ export const ReleaseKitModal: React.FC<ReleaseKitModalProps> = ({ isOpen, onClos
                                                 type="text"
                                                 value={formData.trackTitle}
                                                 onChange={e => setFormData({ ...formData, trackTitle: e.target.value })}
-                                                className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-purple-500 transition-colors"
+                                                className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-green-500 transition-colors"
                                                 placeholder={t('publicist.hints.release_title')}
                                             />
                                         </div>
@@ -118,7 +132,7 @@ export const ReleaseKitModal: React.FC<ReleaseKitModalProps> = ({ isOpen, onClos
                                                 type="text"
                                                 value={formData.artistName}
                                                 onChange={e => setFormData({ ...formData, artistName: e.target.value })}
-                                                className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-purple-500 transition-colors"
+                                                className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-green-500 transition-colors"
                                                 placeholder={t('publicist.hints.release_genre')}
                                             />
                                         </div>
@@ -130,7 +144,7 @@ export const ReleaseKitModal: React.FC<ReleaseKitModalProps> = ({ isOpen, onClos
                                             type="date"
                                             value={formData.releaseDate}
                                             onChange={e => setFormData({ ...formData, releaseDate: e.target.value })}
-                                            className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-purple-500 transition-colors"
+                                            className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-green-500 transition-colors"
                                         />
                                     </div>
                                     <div className="space-y-2">
@@ -140,7 +154,7 @@ export const ReleaseKitModal: React.FC<ReleaseKitModalProps> = ({ isOpen, onClos
                                             type="text"
                                             value={formData.musicalStyle}
                                             onChange={e => setFormData({ ...formData, musicalStyle: e.target.value })}
-                                            className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-purple-500 transition-colors"
+                                            className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-green-500 transition-colors"
                                             placeholder={t('publicist.hints.release_tags')}
                                         />
                                     </div>
@@ -150,14 +164,26 @@ export const ReleaseKitModal: React.FC<ReleaseKitModalProps> = ({ isOpen, onClos
                                             id="rk-target-audience"
                                             value={formData.targetAudience}
                                             onChange={e => setFormData({ ...formData, targetAudience: e.target.value })}
-                                            className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-purple-500 transition-colors min-h-[100px]"
+                                            className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-green-500 transition-colors min-h-[100px]"
                                             placeholder={t('publicist.hints.target_audience')}
                                         />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label htmlFor="rk-media-contact" className="text-xs font-bold text-gray-400 uppercase tracking-wider">Media Contact (Name &amp; Email/Phone)</label>
+                                        <input
+                                            id="rk-media-contact"
+                                            type="text"
+                                            value={formData.mediaContact}
+                                            onChange={e => setFormData({ ...formData, mediaContact: e.target.value })}
+                                            className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-green-500 transition-colors"
+                                            placeholder="Jane Doe, press@yourlabel.com"
+                                        />
+                                        <p className="text-xs text-gray-500">Never auto-generated — the press release uses exactly what you enter here, or an unresolved placeholder if left blank.</p>
                                     </div>
                                 </div>
                                 <button
                                     onClick={handleGenerate}
-                                    className="w-full py-4 bg-linear-to-r from-purple-600 to-indigo-600 rounded-xl font-bold text-white shadow-lg shadow-purple-500/20 hover:from-purple-500 hover:to-indigo-500 transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+                                    className="w-full py-4 bg-linear-to-r from-green-600 to-indigo-600 rounded-xl font-bold text-white shadow-lg shadow-green-500/20 hover:from-green-500 hover:to-indigo-500 transition-all active:scale-[0.98] flex items-center justify-center gap-2"
                                 >
                                     <Sparkles size={18} />
                                     Generate Release Kit
@@ -170,7 +196,7 @@ export const ReleaseKitModal: React.FC<ReleaseKitModalProps> = ({ isOpen, onClos
                                 <div className="relative">
                                     <div className="w-20 h-20 rounded-full border-4 border-white/10 border-t-purple-500 animate-spin" />
                                     <div className="absolute inset-0 flex items-center justify-center">
-                                        <Sparkles size={24} className="text-purple-400 animate-pulse" />
+                                        <Sparkles size={24} className="text-green-400 animate-pulse" />
                                     </div>
                                 </div>
                                 <div className="text-center space-y-2">
@@ -185,19 +211,19 @@ export const ReleaseKitModal: React.FC<ReleaseKitModalProps> = ({ isOpen, onClos
                                 <div className="flex gap-4 mb-6 border-b border-white/10 pb-1">
                                     <button
                                         onClick={() => setActiveTab('press')}
-                                        className={`px-4 py-2 text-sm font-bold border-b-2 transition-colors ${activeTab === 'press' ? 'border-purple-500 text-white' : 'border-transparent text-gray-500 hover:text-gray-300'}`}
+                                        className={`px-4 py-2 text-sm font-bold border-b-2 transition-colors ${activeTab === 'press' ? 'border-green-500 text-white' : 'border-transparent text-gray-500 hover:text-gray-300'}`}
                                     >
                                         Press Release
                                     </button>
                                     <button
                                         onClick={() => setActiveTab('social')}
-                                        className={`px-4 py-2 text-sm font-bold border-b-2 transition-colors ${activeTab === 'social' ? 'border-purple-500 text-white' : 'border-transparent text-gray-500 hover:text-gray-300'}`}
+                                        className={`px-4 py-2 text-sm font-bold border-b-2 transition-colors ${activeTab === 'social' ? 'border-green-500 text-white' : 'border-transparent text-gray-500 hover:text-gray-300'}`}
                                     >
                                         Social Media
                                     </button>
                                     <button
                                         onClick={() => setActiveTab('email')}
-                                        className={`px-4 py-2 text-sm font-bold border-b-2 transition-colors ${activeTab === 'email' ? 'border-purple-500 text-white' : 'border-transparent text-gray-500 hover:text-gray-300'}`}
+                                        className={`px-4 py-2 text-sm font-bold border-b-2 transition-colors ${activeTab === 'email' ? 'border-green-500 text-white' : 'border-transparent text-gray-500 hover:text-gray-300'}`}
                                     >
                                         Email Blast
                                     </button>
@@ -223,9 +249,13 @@ export const ReleaseKitModal: React.FC<ReleaseKitModalProps> = ({ isOpen, onClos
                                             <div className="prose prose-invert max-w-none">
                                                 <p className="whitespace-pre-wrap text-gray-300 leading-relaxed font-serif text-lg">{assets.pressRelease.content}</p>
                                             </div>
-                                            <div className="pt-6 border-t border-white/10">
+                                            <div className={`pt-6 border-t ${assets.pressRelease.contactInfo === UNRESOLVED_MEDIA_CONTACT ? 'border-red-500/30' : 'border-white/10'}`}>
                                                 <p className="text-sm text-gray-500 font-bold uppercase">Media Contact</p>
-                                                <p className="text-purple-400">{assets.pressRelease.contactInfo}</p>
+                                                {assets.pressRelease.contactInfo === UNRESOLVED_MEDIA_CONTACT ? (
+                                                    <p className="text-red-400 font-bold">⚠ {assets.pressRelease.contactInfo}</p>
+                                                ) : (
+                                                    <p className="text-green-400">{assets.pressRelease.contactInfo}</p>
+                                                )}
                                             </div>
                                         </div>
                                     )}

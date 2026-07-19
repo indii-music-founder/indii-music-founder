@@ -1,18 +1,19 @@
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { useState, useMemo, useEffect } from 'react';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { Wand2, History, ChevronRight, ChevronDown, Sliders, Zap, Brain, Layers, Video, Move, Plus, Settings, Sparkles, Image as ImageIcon, Film, ImagePlay, Loader2, Shield, Languages, Eye, Music } from 'lucide-react';
+import { Wand2, History, ChevronRight, ChevronDown, Sliders, Zap, Brain, Layers, Video, Move, Sparkles, Image as ImageIcon, Film, ImagePlay, Loader2, Shield, Eye, Music } from 'lucide-react';
 import CreativeGallery from '../../../modules/creative/components/CreativeGallery';
 import { useStore } from '../../store';
 import { useShallow } from 'zustand/react/shallow';
 import { StoreState } from '../../store';
 import { useToast } from '@/core/context/ToastContext';
+import { CreativeStorageService } from '@/services/creative/CreativeStorageService';
 import { z } from 'zod';
 import { AspectRatioSchema, VideoResolutionSchema } from '@/modules/creative/video/schemas';
 import { WhiskDropZone } from '@/modules/creative/components/whisk/WhiskDropZone';
 import WhiskPresetStyles from '@/modules/creative/components/whisk/WhiskPresetStyles';
 import { motion, AnimatePresence } from 'motion/react';
 import { CharacterLibrary } from '@/modules/creative/components/CharacterLibrary';
+import { CostControlService } from '@/services/billing/CostControlService';
 
 type AspectRatio = z.infer<typeof AspectRatioSchema>;
 type VideoResolution = z.infer<typeof VideoResolutionSchema>;
@@ -58,7 +59,7 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
     const {
         studioControls, setStudioControls,
         whiskState, addWhiskItem, removeWhiskItem, toggleWhiskItem, updateWhiskItem, setPreciseReference, setTargetMedia,
-        videoInputs, setVideoInput, viewMode
+        videoInputs, setVideoInput, viewMode, user, currentProjectId, activeSessionId
     } = useStore(useShallow((state: StoreState) => ({
         studioControls: state.studioControls,
         setStudioControls: state.setStudioControls,
@@ -71,7 +72,10 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
         setTargetMedia: state.setTargetMedia,
         videoInputs: state.videoInputs,
         setVideoInput: state.setVideoInput,
-        viewMode: state.viewMode
+        viewMode: state.viewMode,
+        user: state.user,
+        currentProjectId: state.currentProjectId,
+        activeSessionId: state.activeSessionId
     })));
     const toast = useToast();
 
@@ -79,6 +83,30 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
 
     const [expandedSection, setExpandedSection] = useState<string>('mixer');
     const [prevViewMode, setPrevViewMode] = useState(viewMode);
+    const [budgetStatus, setBudgetStatus] = useState<Awaited<ReturnType<typeof CostControlService.getStatus>> | null>(null);
+    const [costHistory, setCostHistory] = useState<Awaited<ReturnType<typeof CostControlService.getHistory>>['operations']>([]);
+    const [costHistoryCursor, setCostHistoryCursor] = useState<Awaited<ReturnType<typeof CostControlService.getHistory>>['nextCursor']>(null);
+    const [costHistoryHasMore, setCostHistoryHasMore] = useState(false);
+    const [costHistoryLoading, setCostHistoryLoading] = useState(false);
+
+    const persistVideoFrame = async (content: string, label: string) => {
+        const userId = user?.uid;
+        if (!userId) {
+            return { url: content, storageUri: undefined };
+        }
+
+        try {
+            const storageUri = await CreativeStorageService.uploadReferenceMedia(userId, content, 'image', {
+                projectId: currentProjectId || undefined,
+                sessionId: currentProjectId ? undefined : activeSessionId || undefined,
+                scope: 'assets'
+            });
+            return { url: storageUri, storageUri };
+        } catch (_error) {
+            toast.warning(`Saved ${label.toLowerCase()} locally. Storage upload failed.`);
+            return { url: content, storageUri: undefined };
+        }
+    };
 
     if (viewMode !== prevViewMode) {
         setPrevViewMode(viewMode);
@@ -93,6 +121,70 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
         return 0;
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [whiskState?.targetMedia, studioControls?.model, studioControls?.resolution]);
+
+    useEffect(() => {
+        if (!user?.uid) {
+            setBudgetStatus(null);
+            setCostHistory([]);
+            setCostHistoryCursor(null);
+            setCostHistoryHasMore(false);
+            return;
+        }
+        let active = true;
+        setCostHistoryLoading(true);
+        Promise.all([
+            CostControlService.getStatus(user.uid),
+            CostControlService.getHistory(user.uid),
+        ]).then(([status, history]) => {
+            if (!active) return;
+            setBudgetStatus(status);
+            setCostHistory(history.operations);
+            setCostHistoryCursor(history.nextCursor);
+            setCostHistoryHasMore(history.hasMore);
+        }).catch(() => {
+            if (!active) return;
+            setBudgetStatus(null);
+            setCostHistory([]);
+            setCostHistoryCursor(null);
+            setCostHistoryHasMore(false);
+        }).finally(() => {
+            if (active) setCostHistoryLoading(false);
+        });
+        return () => { active = false; };
+    }, [user?.uid]);
+
+    const refreshCostHistory = async () => {
+        if (!user?.uid || costHistoryLoading) return;
+        setCostHistoryLoading(true);
+        try {
+            const [status, history] = await Promise.all([
+                CostControlService.getStatus(user.uid),
+                CostControlService.getHistory(user.uid),
+            ]);
+            setBudgetStatus(status);
+            setCostHistory(history.operations);
+            setCostHistoryCursor(history.nextCursor);
+            setCostHistoryHasMore(history.hasMore);
+        } finally {
+            setCostHistoryLoading(false);
+        }
+    };
+
+    const loadMoreCostHistory = async () => {
+        if (!user?.uid || !costHistoryCursor || costHistoryLoading) return;
+        setCostHistoryLoading(true);
+        try {
+            const history = await CostControlService.getHistory(user.uid, costHistoryCursor);
+            setCostHistory(current => [
+                ...current,
+                ...history.operations.filter(next => !current.some(existing => existing.operationId === next.operationId)),
+            ]);
+            setCostHistoryCursor(history.nextCursor);
+            setCostHistoryHasMore(history.hasMore);
+        } finally {
+            setCostHistoryLoading(false);
+        }
+    };
 
     if (!whiskState) return null;
 
@@ -109,14 +201,14 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
                     <div className="flex gap-1 bg-white/5 p-0.5 rounded-lg border border-white/5">
                         <button
                             onClick={() => setActiveTab('create')}
-                            className={`p-1.5 rounded-md transition-all ${activeTab === 'create' ? 'bg-purple-500/15 text-purple-400 shadow-[0_0_12px_rgba(168,85,247,0.1)]' : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'}`}
+                            className={`p-1.5 rounded-md transition-all ${activeTab === 'create' ? 'bg-green-500/15 text-green-400 shadow-[0_0_12px_rgba(168,85,247,0.1)]' : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'}`}
                             title="Create"
                         >
                             <Wand2 size={14} />
                         </button>
                         <button
                             onClick={() => setActiveTab('history')}
-                            className={`p-1.5 rounded-md transition-all ${activeTab === 'history' ? 'bg-purple-500/15 text-purple-400 shadow-[0_0_12px_rgba(168,85,247,0.1)]' : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'}`}
+                            className={`p-1.5 rounded-md transition-all ${activeTab === 'history' ? 'bg-green-500/15 text-green-400 shadow-[0_0_12px_rgba(168,85,247,0.1)]' : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'}`}
                             title="History"
                         >
                             <History size={14} />
@@ -141,30 +233,55 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
                             title={
                                 <div className="flex items-center justify-between w-full">
                                     <span>Omni Stage Controls</span>
-                                    <span className="text-[9px] text-purple-400 font-mono font-medium ml-2 bg-purple-500/10 px-1.5 py-0.5 rounded animate-pulse">
-                                        V2V Active
+                                    <span className="text-[9px] text-green-400 font-mono font-medium ml-2 bg-green-500/10 px-1.5 py-0.5 rounded animate-pulse">
+                                        Omni Active
                                     </span>
                                 </div>
                             }
-                            icon={<Sparkles className="text-purple-400" size={14} />}
+                            icon={<Sparkles className="text-green-400" size={14} />}
                         >
                             <div className="space-y-4">
                                 <div className="space-y-1.5">
-                                    <span className="text-[9px] font-bold text-gray-500 uppercase tracking-widest font-mono">Pipeline Mode</span>
-                                    <div className="grid grid-cols-2 gap-1 p-1 bg-black/60 rounded-lg border border-white/5 font-mono text-[9px]">
-                                        <button
-                                            onClick={() => setStudioControls({ omniPipelineMode: 'pure-omni' })}
-                                            className={`py-1 rounded transition-colors ${studioControls.omniPipelineMode === 'pure-omni' ? 'bg-purple-500/20 text-purple-400 font-bold border border-purple-500/20' : 'text-gray-400 hover:text-white'}`}
-                                        >
-                                            Pure Omni
-                                        </button>
-                                        <button
-                                            onClick={() => setStudioControls({ omniPipelineMode: 'hybrid-veo' })}
-                                            className={`py-1 rounded transition-colors ${studioControls.omniPipelineMode === 'hybrid-veo' ? 'bg-purple-500/20 text-purple-400 font-bold border border-purple-500/20' : 'text-gray-400 hover:text-white'}`}
-                                        >
-                                            Hybrid Veo
-                                        </button>
+                                    <span className="text-[9px] font-bold text-gray-500 uppercase tracking-widest font-mono">Generation Engine</span>
+                                    <div className="flex items-center gap-1.5 p-2 bg-black/60 rounded-lg border border-green-500/20 font-mono text-[9px] text-green-400 font-bold">
+                                        Gemini Omni Flash · 4 task modes
                                     </div>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-2">
+                                    <label className="space-y-1.5">
+                                        <span className="text-[9px] font-bold text-gray-500 uppercase tracking-widest font-mono">Aspect ratio</span>
+                                        <select
+                                            aria-label="Omni aspect ratio"
+                                            value={studioControls.aspectRatio === '9:16' ? '9:16' : '16:9'}
+                                            onChange={(event) => setStudioControls({ aspectRatio: event.target.value as AspectRatio })}
+                                            className="w-full bg-black/60 text-[9px] p-2 rounded-lg border border-white/10 outline-none text-gray-200 font-mono"
+                                        >
+                                            <option value="16:9">16:9 Landscape</option>
+                                            <option value="9:16">9:16 Portrait</option>
+                                        </select>
+                                    </label>
+                                    <div className="space-y-1.5">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-[9px] font-bold text-gray-500 uppercase tracking-widest font-mono">Duration</span>
+                                            <span className="text-[9px] text-green-400 font-mono">{Math.min(10, Math.max(3, studioControls.duration || 8))}s</span>
+                                        </div>
+                                        <input
+                                            aria-label="Omni duration"
+                                            type="range"
+                                            min="3"
+                                            max="10"
+                                            step="1"
+                                            value={Math.min(10, Math.max(3, studioControls.duration || 8))}
+                                            onChange={(event) => setStudioControls({ duration: Number(event.target.value) })}
+                                            className="w-full accent-purple-500 bg-black/45 h-1 rounded-full outline-none cursor-pointer"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center justify-between p-2 bg-black/40 rounded-xl border border-white/5 font-mono">
+                                    <span className="text-[9px] text-gray-400">HD 720p · 24 fps</span>
+                                    <span className="text-[9px] text-green-400">~${(Math.min(10, Math.max(3, studioControls.duration || 8)) * 0.1).toFixed(2)}</span>
                                 </div>
 
                                 <div className="flex items-center justify-between p-2 bg-black/40 rounded-xl border border-white/5">
@@ -201,7 +318,7 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
                                 <div className="space-y-2">
                                     <div className="flex justify-between text-[10px] font-bold text-gray-500 uppercase font-mono tracking-wide">
                                         <span>Pose Preservation</span>
-                                        <span className="text-purple-400">{(studioControls.posePreservation * 100).toFixed(0)}%</span>
+                                        <span className="text-green-400">{(studioControls.posePreservation * 100).toFixed(0)}%</span>
                                     </div>
                                     <input
                                         type="range" min="0" max="1" step="0.05"
@@ -214,7 +331,7 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
                                 <div className="space-y-2">
                                     <div className="flex justify-between text-[10px] font-bold text-gray-500 uppercase font-mono tracking-wide">
                                         <span>Beat Motion Pulse</span>
-                                        <span className="text-purple-400">{(studioControls.beatPulse * 100).toFixed(0)}%</span>
+                                        <span className="text-green-400">{(studioControls.beatPulse * 100).toFixed(0)}%</span>
                                     </div>
                                     <input
                                         type="range" min="0" max="1" step="0.05"
@@ -227,7 +344,7 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
                                 <div className="space-y-1.5">
                                     <div className="flex justify-between items-center text-[9px] font-bold text-gray-500 uppercase font-mono tracking-widest">
                                         <span>Waveform Theme Color</span>
-                                        <span className="font-mono text-purple-400 text-[8px]">{studioControls.visualizerColor}</span>
+                                        <span className="font-mono text-green-400 text-[8px]">{studioControls.visualizerColor}</span>
                                     </div>
                                     <div className="flex items-center gap-2 p-1.5 bg-black/40 rounded-lg border border-white/5">
                                         <input
@@ -250,13 +367,13 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
                                 </div>
 
                                 <div className="space-y-1.5 border-t border-white/5 pt-3">
-                                    <span className="text-[9px] font-bold text-gray-500 uppercase tracking-widest font-mono flex items-center gap-1"><Music size={11} className="text-purple-400" /> Kinetic Lyric Text</span>
+                                    <span className="text-[9px] font-bold text-gray-500 uppercase tracking-widest font-mono flex items-center gap-1"><Music size={11} className="text-green-400" /> Kinetic Lyric Text</span>
                                     <textarea
                                         value={studioControls.lyricsText}
                                         onChange={(e) => setStudioControls({ lyricsText: e.target.value })}
                                         rows={2}
                                         placeholder="Type song lyrics to overlay..."
-                                        className="w-full bg-black/60 text-[9px] p-2.5 rounded-lg border border-white/10 outline-none text-white font-mono resize-none focus:border-purple-500/30"
+                                        className="w-full bg-black/60 text-[9px] p-2.5 rounded-lg border border-white/10 outline-none text-white font-mono resize-none focus:border-green-500/30"
                                     />
                                 </div>
 
@@ -277,40 +394,30 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
 
                                 <div className="p-2 rounded-xl bg-black/40 border border-white/5 space-y-2">
                                     <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest font-mono flex items-center gap-1">
-                                        <Languages size={11} className="text-purple-400" />
-                                        Lip-Sync Dubbing
+                                        <Music size={11} className="text-green-400" />
+                                        Generated Audio
                                     </span>
-                                    <select
-                                        value={studioControls.selectedLanguage}
-                                        onChange={(e) => setStudioControls({ selectedLanguage: e.target.value })}
-                                        className="w-full bg-black/60 text-[9px] p-2 rounded-lg border border-white/10 outline-none text-gray-200 font-mono"
-                                    >
-                                        <option value="es">Spanish Dub</option>
-                                        <option value="ja">Japanese Dub</option>
-                                        <option value="fr">French Dub</option>
-                                        <option value="de">German Dub</option>
-                                    </select>
+                                    <span className="block text-[8px] text-gray-500 font-mono leading-relaxed">
+                                        Prompt dialogue, ambience, sound effects, and music. Uploaded audio and voice editing are unavailable in this preview.
+                                    </span>
                                 </div>
 
                                 <div className="flex items-center justify-between p-2 bg-black/40 rounded-xl border border-white/5">
                                     <div className="flex flex-col">
                                         <span className="text-[10px] font-bold text-white uppercase tracking-wider font-mono flex items-center gap-1">
-                                            <Shield size={11} className={studioControls.synthIdEnabled ? 'text-emerald-400' : 'text-gray-400'} />
-                                            Synth ID Mark
+                                            <Shield size={11} className="text-emerald-400" />
+                                            Automatic SynthID
                                         </span>
-                                        <span className="text-[8px] text-gray-500 font-mono">Secure digital watermark</span>
+                                        <span className="text-[8px] text-gray-500 font-mono">Applied by Google to every output</span>
                                     </div>
-                                    <button
-                                        onClick={() => setStudioControls({ synthIdEnabled: !studioControls.synthIdEnabled })}
-                                        className={`w-7 h-4 rounded-full relative transition-all ${studioControls.synthIdEnabled ? 'bg-emerald-600' : 'bg-gray-800'}`}
-                                    >
-                                        <div className={`absolute top-0.5 left-0.5 w-3 h-3 rounded-full bg-white transition-transform ${studioControls.synthIdEnabled ? 'translate-x-3.5' : 'translate-x-0'}`} />
-                                    </button>
+                                    <span className="text-[8px] font-bold font-mono text-emerald-400 uppercase">Always on</span>
                                 </div>
                             </div>
                         </SectionCard>
                     )}
 
+                    {viewMode !== 'omni' && (
+                    <>
                     <SectionCard
                         isOpen={expandedSection === 'mixer'}
                         onToggle={() => setExpandedSection(expandedSection === 'mixer' ? '' : 'mixer')}
@@ -324,7 +431,7 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
                                 (whiskState.styles?.filter((i: { checked?: boolean }) => i.checked).length || 0) +
                                 
                                 (whiskState.motion?.filter((i: { checked?: boolean }) => i.checked).length || 0)) > 0 && (
-                                    <span className="text-[9px] text-purple-400 normal-case ml-2">
+                                    <span className="text-[9px] text-green-400 normal-case ml-2">
                                         
                                         {(whiskState.subjects?.filter((i: { checked?: boolean }) => i.checked).length || 0) +
                                             
@@ -336,7 +443,7 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
                                     </span>
                                 )}
                         </div>}
-                        icon={<Sparkles className="text-purple-400" size={14} />}
+                        icon={<Sparkles className="text-green-400" size={14} />}
                     >
                         <div className="space-y-4">
                             <div className="flex items-center justify-end mb-2">
@@ -345,7 +452,7 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
                                     <button
                                         onClick={() => setPreciseReference(!whiskState.preciseReference)}
                                         className={`w-8 h-4 rounded-full relative transition-all ${whiskState.preciseReference
-                                            ? 'bg-purple-600 shadow-[0_0_10px_rgba(147,51,234,0.5)]'
+                                            ? 'bg-green-600 shadow-[0_0_10px_rgba(147,51,234,0.5)]'
                                             : 'bg-gray-800'
                                             }`}
                                         title={whiskState.preciseReference ? 'Precise: ON' : 'Precise: OFF'}
@@ -363,7 +470,7 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
                                 <button
                                     onClick={() => setTargetMedia('image')}
                                     className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-md text-[10px] font-medium uppercase transition-all ${whiskState.targetMedia === 'image'
-                                        ? 'bg-purple-500/30 text-purple-300 shadow-[0_0_8px_rgba(147,51,234,0.3)]'
+                                        ? 'bg-green-500/30 text-green-300 shadow-[0_0_8px_rgba(147,51,234,0.3)]'
                                         : 'text-gray-500 hover:text-gray-300'
                                         }`}
                                 >
@@ -383,7 +490,7 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
                                 <button
                                     onClick={() => setTargetMedia('both')}
                                     className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-md text-[10px] font-medium uppercase transition-all ${whiskState.targetMedia === 'both'
-                                        ? 'bg-linear-to-r from-purple-500/30 to-blue-500/30 text-white shadow-[0_0_8px_rgba(147,51,234,0.2)]'
+                                        ? 'bg-linear-to-r from-green-500/30 to-blue-500/30 text-white shadow-[0_0_8px_rgba(147,51,234,0.2)]'
                                         : 'text-gray-500 hover:text-gray-300'
                                         }`}
                                 >
@@ -437,7 +544,18 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
                                                         title=""
                                                         category="subject"
                                                         items={videoInputs.firstFrame ? [{ id: 'ff', type: 'image', content: videoInputs.firstFrame.url, checked: true, category: 'subject' }] : []}
-                                                        onAdd={(type, content) => setVideoInput('firstFrame', { id: `ff_${Date.now()}`, type: 'image', url: content, prompt: 'Start frame', timestamp: Date.now(), projectId: '' })}
+                                                        onAdd={async (_type, content) => {
+                                                            const persisted = await persistVideoFrame(content, 'Start frame');
+                                                            setVideoInput('firstFrame', {
+                                                                id: `ff_${Date.now()}`,
+                                                                type: 'image',
+                                                                url: persisted.url,
+                                                                storageUri: persisted.storageUri,
+                                                                prompt: 'Start frame',
+                                                                timestamp: Date.now(),
+                                                                projectId: currentProjectId || ''
+                                                            });
+                                                        }}
                                                         onRemove={() => setVideoInput('firstFrame', null)}
                                                         onToggle={() => {}}
                                                         onUpdate={(id, updates) => {
@@ -458,7 +576,18 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
                                                         title=""
                                                         category="subject"
                                                         items={videoInputs.lastFrame ? [{ id: 'lf', type: 'image', content: videoInputs.lastFrame.url, checked: true, category: 'subject' }] : []}
-                                                        onAdd={(type, content) => setVideoInput('lastFrame', { id: `lf_${Date.now()}`, type: 'image', url: content, prompt: 'End frame', timestamp: Date.now(), projectId: '' })}
+                                                        onAdd={async (_type, content) => {
+                                                            const persisted = await persistVideoFrame(content, 'End frame');
+                                                            setVideoInput('lastFrame', {
+                                                                id: `lf_${Date.now()}`,
+                                                                type: 'image',
+                                                                url: persisted.url,
+                                                                storageUri: persisted.storageUri,
+                                                                prompt: 'End frame',
+                                                                timestamp: Date.now(),
+                                                                projectId: currentProjectId || ''
+                                                            });
+                                                        }}
                                                         onRemove={() => setVideoInput('lastFrame', null)}
                                                         onToggle={() => {}}
                                                         onUpdate={(id, updates) => {
@@ -559,6 +688,73 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
                         icon={<Zap className="text-yellow-400" size={14} />}
                     >
                         <div className="space-y-4">
+                            {budgetStatus && (
+                                <div className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-[10px]" data-testid="creative-budget-status">
+                                    <div className="flex justify-between text-gray-300">
+                                        <span>Daily creative budget</span>
+                                        <span className="font-mono text-white">${budgetStatus.dailyRemaining.toFixed(2)} remaining</span>
+                                    </div>
+                                    <p className="mt-1 text-gray-500">
+                                        ${budgetStatus.settledCost.toFixed(2)} settled · ${budgetStatus.voidedCost.toFixed(2)} refunded
+                                    </p>
+                                    {budgetStatus.pendingHoldCount > 0 && (
+                                        <p className="mt-1 text-amber-300">
+                                            ${budgetStatus.pendingHoldCost.toFixed(2)} in {budgetStatus.pendingHoldCount} pending hold{budgetStatus.pendingHoldCount === 1 ? '' : 's'} — released automatically if generation fails.
+                                        </p>
+                                    )}
+                                    <div className="mt-2 border-t border-white/10 pt-2" data-testid="cost-operation-history">
+                                        <div className="flex items-center justify-between">
+                                            <span className="font-semibold uppercase tracking-wider text-gray-400">Recent operations</span>
+                                            <button
+                                                type="button"
+                                                onClick={refreshCostHistory}
+                                                disabled={costHistoryLoading}
+                                                className="text-blue-300 disabled:text-gray-600"
+                                            >
+                                                {costHistoryLoading ? 'Loading…' : 'Refresh'}
+                                            </button>
+                                        </div>
+                                        {costHistory.length === 0 && !costHistoryLoading && (
+                                            <p className="mt-1 text-gray-600">No metered creative operations yet.</p>
+                                        )}
+                                        <div className="mt-1 space-y-1.5">
+                                            {costHistory.map(operation => (
+                                                <div key={operation.operationId} className="rounded border border-white/5 bg-black/20 px-2 py-1.5">
+                                                    <div className="flex justify-between gap-2 text-gray-300">
+                                                        <span className="uppercase">{operation.operationType.replace('_', ' ')}</span>
+                                                        <span className="font-mono">${operation.estimatedCost.toFixed(2)}</span>
+                                                    </div>
+                                                    <p className={operation.resolution === 'pending_auto_release'
+                                                        ? 'text-amber-300'
+                                                        : operation.resolution === 'refunded'
+                                                            ? 'text-cyan-300'
+                                                            : operation.resolution === 'settled'
+                                                                ? 'text-green-300'
+                                                                : 'text-gray-500'}>
+                                                        {operation.resolution === 'pending_auto_release' && (
+                                                            <>Pending hold — auto-releases {operation.autoReleaseAt ? new Date(operation.autoReleaseAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : 'soon'}.</>
+                                                        )}
+                                                        {operation.resolution === 'refunded' && <>Refunded — safe to retry.</>}
+                                                        {operation.resolution === 'settled' && <>Settled — provider output billed.</>}
+                                                        {operation.resolution === 'unknown' && <>Unknown receipt state — refresh or contact support.</>}
+                                                    </p>
+                                                    <p className="truncate font-mono text-[9px] text-gray-600" title={operation.operationId}>{operation.operationId}</p>
+                                                </div>
+                                            ))}
+                                        </div>
+                                        {costHistoryHasMore && (
+                                            <button
+                                                type="button"
+                                                onClick={loadMoreCostHistory}
+                                                disabled={costHistoryLoading || !costHistoryCursor}
+                                                className="mt-2 w-full rounded border border-white/10 py-1 text-gray-300 disabled:text-gray-600"
+                                            >
+                                                Load more
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
                             {/* ── Model Tier ─────────────────────────────── */}
                             <div className="grid grid-cols-2 gap-3">
                                 <div className="bg-black/60 p-1 rounded-xl flex relative h-9 border border-white/5">
@@ -577,7 +773,7 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
                                     </button>
                                     <button
                                         onClick={() => setStudioControls({ model: 'pro' })}
-                                        className={`flex-1 relative z-10 text-[10px] font-bold uppercase transition-colors ${studioControls.model === 'pro' ? 'text-purple-300' : 'text-gray-500'}`}
+                                        className={`flex-1 relative z-10 text-[10px] font-bold uppercase transition-colors ${studioControls.model === 'pro' ? 'text-green-300' : 'text-gray-500'}`}
                                         title="Nano Banana Pro (Gemini 3 Pro) — Max quality, 14 refs, 5 chars"
                                     >
                                         Pro
@@ -604,7 +800,7 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
                             <div className="space-y-2">
                                 <div className="flex items-center justify-between">
                                     <span className="text-[10px] font-bold text-gray-400 tracking-wider flex items-center gap-1.5">
-                                        <Brain size={11} className={studioControls.model === 'pro' || studioControls.thinkingLevel !== 'none' ? 'text-purple-400 animate-pulse' : 'text-gray-500'} />
+                                        <Brain size={11} className={studioControls.model === 'pro' || studioControls.thinkingLevel !== 'none' ? 'text-green-400 animate-pulse' : 'text-gray-500'} />
                                         THINKING
                                     </span>
                                     {(studioControls.model === 'pro' || studioControls.thinkingLevel !== 'none') && (
@@ -612,7 +808,7 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
                                             <span className="text-[9px] text-gray-500">Show thoughts</span>
                                             <button
                                                 onClick={() => setStudioControls({ includeThoughts: !studioControls.includeThoughts })}
-                                                className={`w-6 h-3.5 rounded-full relative transition-all ${studioControls.includeThoughts ? 'bg-purple-600' : 'bg-gray-800'}`}
+                                                className={`w-6 h-3.5 rounded-full relative transition-all ${studioControls.includeThoughts ? 'bg-green-600' : 'bg-gray-800'}`}
                                             >
                                                 <motion.div
                                                     animate={{ x: studioControls.includeThoughts ? 10 : 2 }}
@@ -625,9 +821,9 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
                                 </div>
                                 {studioControls.model === 'pro' ? (
                                     /* Pro: Thinking is always on, cannot be disabled */
-                                    <div className="flex items-center gap-2 bg-purple-500/10 px-3 py-2 rounded-lg border border-purple-500/20">
-                                        <div className="w-2 h-2 rounded-full bg-purple-400 animate-pulse" />
-                                        <span className="text-[10px] text-purple-300 font-medium">Always On — Generates interim thought images</span>
+                                    <div className="flex items-center gap-2 bg-green-500/10 px-3 py-2 rounded-lg border border-green-500/20">
+                                        <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+                                        <span className="text-[10px] text-green-300 font-medium">Always On — Generates interim thought images</span>
                                     </div>
                                 ) : (
                                     /* Flash (NB2): Off / Minimal / High */
@@ -640,7 +836,7 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
                                                     studioControls.thinkingLevel === level
                                                         ? level === 'none'
                                                             ? 'bg-white/10 text-gray-200'
-                                                            : 'bg-purple-500/25 text-purple-200 shadow-[0_0_8px_rgba(168,85,247,0.3)]'
+                                                            : 'bg-green-500/25 text-green-200 shadow-[0_0_8px_rgba(168,85,247,0.3)]'
                                                         : 'text-gray-500 hover:text-gray-300'
                                                 }`}
                                             >
@@ -910,7 +1106,7 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
                                         value={studioControls.seed || ''}
                                         onChange={(e) => setStudioControls({ seed: e.target.value })}
                                         placeholder="Random"
-                                        className="w-full bg-black/40 text-white text-xs p-2.5 rounded-xl border border-white/10 outline-none focus:border-purple-500/50 placeholder:text-gray-600"
+                                        className="w-full bg-black/40 text-white text-xs p-2.5 rounded-xl border border-white/10 outline-none focus:border-green-500/50 placeholder:text-gray-600"
                                     />
                                 </div>
                             )}
@@ -975,7 +1171,7 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
                             isOpen={expandedSection === 'shotlist'}
                             onToggle={() => setExpandedSection(expandedSection === 'shotlist' ? '' : 'shotlist')}
                             title="Shot List"
-                            icon={<Video className="text-purple-400" size={14} />}
+                            icon={<Video className="text-green-400" size={14} />}
                         >
                             <div className="space-y-3">
                                 <div className="flex justify-between items-center">
@@ -1000,20 +1196,13 @@ export default function StudioControlsPanel({ toggleRightPanel }: StudioControls
                                                 </div>
                                                 <p className="text-[9px] text-gray-500 truncate">Cinematic drone shot over mountains...</p>
                                             </div>
-                                            <div className="absolute right-2 bottom-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <button className="p-1 hover:bg-white/10 rounded"><Settings size={10} className="text-gray-400" /></button>
-                                            </div>
                                         </motion.div>
                                     ))}
-                                    <button
-                                        data-testid="add-shot-btn"
-                                        className="w-full py-2.5 border border-dashed border-white/10 rounded-xl text-[11px] text-gray-500 hover:text-gray-300 hover:border-white/20 hover:bg-white/5 transition-all flex items-center justify-center gap-2"
-                                    >
-                                        <Plus size={12} /> Add New Shot
-                                    </button>
                                 </div>
                             </div>
                         </SectionCard>
+                    )}
+                    </>
                     )}
                 </div>
             )}

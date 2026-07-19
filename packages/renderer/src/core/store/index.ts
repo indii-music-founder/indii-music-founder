@@ -32,6 +32,11 @@ import { AgentPlanSlice, createAgentPlanSlice } from './slices/agentPlanSlice';
 import { AgentCanvasSlice, createAgentCanvasSlice } from './slices/agentCanvasSlice';
 import { AgentMemoryState, createAgentMemorySlice } from './slices/agentMemorySlice';
 import { HandoffSlice, createHandoffSlice } from './slices/handoffSlice';
+import { CRMSlice, createCRMSlice } from './slices/crmSlice';
+import { MapSlice, createMapSlice } from './slices/mapSlice';
+import { NotesSlice, createNotesSlice } from './slices/notesSlice';
+import { useLivingPlanSlice } from './slices/livingPlanSlice';
+import type { WorkspaceSnapshot } from '@/services/sync/WorkspaceSyncService';
 
 export type { AgentMessage, AgentThought } from './slices/agent';
 
@@ -64,7 +69,10 @@ export interface StoreState extends
     AgentPlanSlice,
     AgentCanvasSlice,
     AgentMemoryState,
-    HandoffSlice { }
+    HandoffSlice,
+    CRMSlice,
+    MapSlice,
+    NotesSlice { }
 
 
 import { OrganizationService } from '@/services/OrganizationService';
@@ -104,6 +112,9 @@ export const useStore = create<StoreState>()(
                 ...createAgentCanvasSlice(...a),
                 ...createAgentMemorySlice(...a),
                 ...createHandoffSlice(...a),
+                ...createCRMSlice(...a),
+                ...createMapSlice(...a),
+                ...createNotesSlice(...a),
             };
 
             // Phase 3.6: Bridge store state to OrganizationService for synchronous access
@@ -121,15 +132,104 @@ export const useStore = create<StoreState>()(
                 conversationMode: state.conversationMode,
                 userProfile: state.userProfile,
                 // ISSUE-007: Persist boardroom chat history to survive HMR/soft reloads in dev
-                boardroomMessages: state.boardroomMessages,
+                boardroomMessages: state.agentHistory,
+                notes: state.notes,
+                selectedNoteId: state.selectedNoteId,
                 // ISSUE-006: Session persistence for draft prompts
                 ...(state.isSessionPersistent ? { creativePrompt: state.creativePrompt } : {})
+                // failedVariationBatch is deliberately NOT persisted: it carries raw
+                // base64 image data that can exceed the localStorage quota and break
+                // persistence of everything else. Store residency (in-memory) is what
+                // keeps it alive across canvas unmounts.
             }),
         }
     )
 );
 
+// Centralized event-driven context publisher to synchronize boardroom referenced assets
+useStore.subscribe((state, prevState) => {
+    if (state.generatedHistory === prevState.generatedHistory && 
+        state.distribution?.releases === prevState.distribution?.releases) {
+        return;
+    }
+
+    // Dynamic import to break circular dependency cycle
+    import('@/hooks/useBoardroomContextHandshake').then(({ publishBoardroomContextUpdate }) => {
+        publishBoardroomContextUpdate(state);
+    }).catch(err => {
+        console.error('Failed to import publishBoardroomContextUpdate dynamically', err);
+    });
+});
+
 // Expose store for testing purposes
 if (typeof window !== 'undefined') {
     window.useStore = useStore;
+}
+
+// ---------------------------------------------------------------------------
+// Workspace Sync: Snapshot Selector & Applier
+// ---------------------------------------------------------------------------
+
+/**
+ * Extract workspace snapshot from the root store + living plan slice.
+ * Pure selector; does not mutate state.
+ */
+export function getWorkspaceSnapshot(state: StoreState): WorkspaceSnapshot {
+    const planState = useLivingPlanSlice.getState();
+
+    return {
+        schemaVersion: 1,
+        activeAgents: (state as any).activeAgents || ['generalist'],
+        referencedAssets: (state as any).referencedAssets || [],
+        selectedPlan: planState.selectedPlan || null,
+        selectedPlanId: planState.selectedPlanId || null,
+        currentModule: (state as any).currentModule || 'dashboard',
+        conversationMode: (state as any).conversationMode || 'normal',
+        notes: (state as any).notes || [],
+        selectedNoteId: (state as any).selectedNoteId || null,
+        creativePrompt: (state as any).creativePrompt || '',
+    };
+}
+
+/**
+ * Apply a workspace snapshot to the root store + living plan slice.
+ * Merges fields, guarding against missing keys (forward compatibility with older schemaVersion).
+ */
+export function applyWorkspaceSnapshot(snapshot: Partial<WorkspaceSnapshot>): void {
+    const rootUpdates: Partial<StoreState> = {};
+
+    // Merge into root store
+    if (snapshot.activeAgents !== undefined) {
+        rootUpdates.activeAgents = snapshot.activeAgents;
+    }
+    if (snapshot.referencedAssets !== undefined) {
+        rootUpdates.referencedAssets = snapshot.referencedAssets as any;
+    }
+    if (snapshot.currentModule !== undefined) {
+        rootUpdates.currentModule = snapshot.currentModule as any;
+    }
+    if (snapshot.conversationMode !== undefined) {
+        rootUpdates.conversationMode = snapshot.conversationMode as any;
+    }
+    if (snapshot.notes !== undefined) {
+        rootUpdates.notes = snapshot.notes as any;
+    }
+    if (snapshot.selectedNoteId !== undefined) {
+        rootUpdates.selectedNoteId = snapshot.selectedNoteId;
+    }
+    if (snapshot.creativePrompt !== undefined) {
+        rootUpdates.creativePrompt = snapshot.creativePrompt;
+    }
+
+    if (Object.keys(rootUpdates).length > 0) {
+        useStore.setState(rootUpdates as any);
+    }
+
+    // Restore plan from separate store
+    const planState = useLivingPlanSlice.getState();
+    if (snapshot.selectedPlan !== undefined) {
+        planState.setSelectedPlan(snapshot.selectedPlan as any);
+    } else if (snapshot.selectedPlanId !== undefined) {
+        planState.setSelectedPlanId(snapshot.selectedPlanId);
+    }
 }

@@ -1,5 +1,5 @@
 
-import { calculateProfileStatus, processFunctionCalls, runOnboardingConversation, OnboardingTools, determinePhase } from './onboardingService';
+import { calculateProfileStatus, processFunctionCalls, externalizeOnboardingBrandAssets, runOnboardingConversation, OnboardingTools, determinePhase } from './onboardingService';
 import type { UserProfile, ConversationFile } from '../../modules/workflow/types';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { AutonomousIntelligence as AI } from '../intelligence/AutonomousIntelligence';
@@ -12,6 +12,11 @@ vi.mock('../intelligence/AutonomousIntelligence', () => ({
     AI: {
         generateContent: vi.fn()
     }
+}));
+
+const { mockUploadFile } = vi.hoisted(() => ({ mockUploadFile: vi.fn() }));
+vi.mock('@/services/StorageService', () => ({
+    StorageService: { uploadFile: mockUploadFile },
 }));
 
 describe('onboardingService', () => {
@@ -234,6 +239,98 @@ describe('onboardingService', () => {
             expect(updates).toContain('Brand Asset');
         });
 
+        it('ISSUE-956: preserves the real image MIME type instead of hardcoding image/png', () => {
+            const files: ConversationFile[] = [{
+                id: '1',
+                type: 'image',
+                file: { name: 'photo.jpg', type: 'image/jpeg', size: 1024 } as File,
+                preview: 'data:image...',
+                base64: 'base64data'
+            }];
+
+            const calls = [{
+                name: OnboardingTools.AddImageAsset,
+                args: { file_name: 'photo.jpg', asset_type: 'brand_asset', description: 'Headshot' }
+            }];
+
+            const { updatedProfile } = processFunctionCalls(calls, baseProfile, files);
+            expect(updatedProfile.brandKit!.brandAssets[0]!.url).toBe('data:image/jpeg;base64,base64data');
+        });
+
+        it('ISSUE-956: externalizes a new profile image and removes it if upload fails', async () => {
+            const file = {
+                id: '1', type: 'image',
+                file: { name: 'photo.jpg', type: 'image/jpeg', size: 1024 } as File,
+                preview: 'data:image...', base64: 'base64data',
+            } as ConversationFile;
+            const withEmbeddedAsset: UserProfile = {
+                ...baseProfile,
+                brandKit: {
+                    ...baseProfile.brandKit!,
+                    brandAssets: [{ url: 'data:image/jpeg;base64,base64data', description: 'Headshot' }],
+                    referenceImages: [],
+                },
+            };
+            mockUploadFile.mockResolvedValueOnce('https://storage.example.com/brand/photo.jpg');
+            await expect(externalizeOnboardingBrandAssets(withEmbeddedAsset, [file])).resolves.toEqual(expect.objectContaining({
+                profile: expect.objectContaining({
+                    brandKit: expect.objectContaining({
+                        brandAssets: [expect.objectContaining({ url: 'https://storage.example.com/brand/photo.jpg' })],
+                    }),
+                }),
+                warnings: [],
+            }));
+
+            mockUploadFile.mockRejectedValueOnce(new Error('offline'));
+            const failed = await externalizeOnboardingBrandAssets(withEmbeddedAsset, [file]);
+            expect(failed.profile.brandKit!.brandAssets).toEqual([]);
+            expect(failed.warnings).toHaveLength(1);
+        });
+
+        it('ISSUE-956: rejects an oversized image instead of embedding it in the profile', () => {
+            const files: ConversationFile[] = [{
+                id: '1',
+                type: 'image',
+                file: { name: 'huge.png', type: 'image/png', size: 6 * 1024 * 1024 } as File,
+                preview: 'data:image...',
+                base64: 'base64data'
+            }];
+
+            const calls = [{
+                name: OnboardingTools.AddImageAsset,
+                args: { file_name: 'huge.png', asset_type: 'brand_asset', description: 'Too big' }
+            }];
+
+            const { updatedProfile, updates, warnings } = processFunctionCalls(calls, baseProfile, files);
+            expect(updatedProfile.brandKit!.brandAssets).toHaveLength(0);
+            expect(updates).not.toContain('Brand Asset');
+            expect(warnings.some(w => w.includes('huge.png'))).toBe(true);
+        });
+
+        it('ISSUE-956: rejects a new image once the profile already holds the max brand images', () => {
+            const manyAssets = Array.from({ length: 20 }, (_, i) => ({ url: `data:image/png;base64,x${i}`, description: `asset ${i}` }));
+            const profileAtLimit: UserProfile = {
+                ...baseProfile,
+                brandKit: { ...baseProfile.brandKit!, brandAssets: manyAssets, referenceImages: [] }
+            };
+            const files: ConversationFile[] = [{
+                id: '1',
+                type: 'image',
+                file: { name: 'one-more.png', type: 'image/png', size: 1024 } as File,
+                preview: 'data:image...',
+                base64: 'base64data'
+            }];
+
+            const calls = [{
+                name: OnboardingTools.AddImageAsset,
+                args: { file_name: 'one-more.png', asset_type: 'brand_asset', description: 'One more' }
+            }];
+
+            const { updatedProfile, warnings } = processFunctionCalls(calls, profileAtLimit, files);
+            expect(updatedProfile.brandKit!.brandAssets).toHaveLength(20);
+            expect(warnings.some(w => w.includes('maximum'))).toBe(true);
+        });
+
         it('should finish onboarding', () => {
             const calls = [{
                 name: OnboardingTools.FinishOnboarding,
@@ -282,6 +379,39 @@ describe('onboardingService', () => {
             expect(result.text).toBe('Hello');
             expect(result.functionCalls).toHaveLength(1);
             expect(result!.functionCalls![0]!.name).toBe('updateProfile');
+        });
+
+        it('ISSUE-955: attaches audio files as real inlineData instead of dropping them', async () => {
+            vi.mocked(AI.generateContent).mockResolvedValue({
+                response: {
+                    text: () => 'Got it',
+                    functionCalls: () => [],
+                    candidates: [{ content: { parts: [{ text: 'Got it' }] } }]
+                }
+            } as unknown as Awaited<ReturnType<typeof AI.generateContent>>);
+
+            const audioFile: ConversationFile = {
+                id: '1',
+                type: 'audio',
+                file: { name: 'demo.mp3', type: 'audio/mpeg' } as File,
+                preview: '',
+                base64: 'ZmFrZS1hdWRpby1ieXRlcw==',
+            };
+
+            await runOnboardingConversation(
+                [{ role: 'user', parts: [{ text: 'Here is a demo of my track' }] }],
+                {} as unknown as UserProfile,
+                'onboarding',
+                [audioFile]
+            );
+
+            const [sentContents] = vi.mocked(AI.generateContent).mock.calls[0]!;
+            const lastMessageParts = (sentContents as any[])[sentContents.length - 1].parts;
+            const inlineAudioPart = lastMessageParts.find((p: any) => p.inlineData);
+
+            expect(inlineAudioPart).toBeDefined();
+            expect(inlineAudioPart.inlineData.mimeType).toBe('audio/mpeg');
+            expect(inlineAudioPart.inlineData.data).toBe('ZmFrZS1hdWRpby1ieXRlcw==');
         });
     });
 });

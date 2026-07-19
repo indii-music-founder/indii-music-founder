@@ -32,7 +32,7 @@ export const EndFrameSelector: React.FC<EndFrameSelectorProps> = ({
                     <button
                         key={histItem.id}
                         onClick={() => onSelect(histItem)}
-                        className="relative aspect-square rounded-lg overflow-hidden border border-gray-700 hover:border-purple-500 transition-colors group"
+                        className="relative aspect-square rounded-lg overflow-hidden border border-gray-700 hover:border-green-500 transition-colors group"
                     >
                         <img src={histItem.url} alt={histItem.prompt} className="w-full h-full object-cover" />
                         <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">

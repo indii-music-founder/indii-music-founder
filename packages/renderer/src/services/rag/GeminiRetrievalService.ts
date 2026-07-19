@@ -6,7 +6,7 @@ import { QuotaExceededError } from '@/shared/types/errors';
 
 // Switch to File API resource types
 import { INTELLIGENCE_MODELS } from '../../core/config/intelligence-models.ts';
-import { delay } from '@/utils/async';
+import { delay, fetchWithRetry } from '@/utils/async';
 import { logger } from '@/utils/logger';
 
 export interface GeminiFile {
@@ -27,10 +27,7 @@ export class GeminiRetrievalService {
     private baseUrl: string;
 
     constructor(apiKey?: string) {
-        this.apiKey = apiKey || env.apiKey || '';
-        if (!this.apiKey) {
-            logger.error("GeminiRetrievalService: Missing API Key");
-        }
+        this.apiKey = apiKey || '';
         // Default to production if not set, or update local default to correct project
         // Note: For "The Gauntlet" E2E tests which run against local frontend but expect live backend
         const projectId = env.firebaseProjectId || env.projectId || '';
@@ -46,15 +43,14 @@ export class GeminiRetrievalService {
         }
 
         this.baseUrl = configuredUrl || `${functionsUrl}/ragProxy/v1beta`;
+        const parsedBaseUrl = new URL(this.baseUrl);
+        if (parsedBaseUrl.hostname.endsWith('googleapis.com')) {
+            throw new Error('Direct Google API RAG endpoints are disabled in the browser. Configure the secured ragProxy backend.');
+        }
     }
 
     private async fetch(endpoint: string, options: RequestInit = {}) {
-        let url = `${this.baseUrl}/${endpoint}`;
-        
-        // If it's a direct API call (not going through proxy), we MUST append the API key
-        if (this.baseUrl.includes('generativelanguage.googleapis.com')) {
-            url += `?key=${this.apiKey}`;
-        }
+        const url = `${this.baseUrl}/${endpoint}`;
         
         const maxRetries = 3;
         let attempt = 0;
@@ -69,34 +65,30 @@ export class GeminiRetrievalService {
             headers['Content-Type'] = 'application/json';
         }
 
-        // Add Firebase Auth token and App Check token for ragProxy authentication
-        // ONLY if we are using the proxy (not direct API)
-        if (!this.baseUrl.includes('generativelanguage.googleapis.com')) {
-            try {
-                const firebase = await import('@/services/firebase');
-                const auth = firebase.auth;
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const appCheck: any = firebase.appCheck;
-                const currentUser = auth.currentUser;
-                if (currentUser) {
-                    const idToken = await currentUser.getIdToken();
-                    headers['Authorization'] = `Bearer ${idToken}`;
-                }
-                if (appCheck) {
-                    const { getToken } = await import('firebase/app-check');
-                    const appCheckToken = await getToken(appCheck, false);
-                    if (appCheckToken.token) {
-                        headers['X-Firebase-AppCheck'] = appCheckToken.token;
-                    }
-                }
-            } catch (e: unknown) {
-                logger.warn('[GeminiRetrieval] Could not get auth or appcheck token:', e);
+        try {
+            const firebase = await import('@/services/firebase');
+            const auth = firebase.auth;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const appCheck: any = firebase.appCheck;
+            const currentUser = auth.currentUser;
+            if (currentUser) {
+                const idToken = await currentUser.getIdToken();
+                headers['Authorization'] = `Bearer ${idToken}`;
             }
+            if (appCheck) {
+                const { getToken } = await import('firebase/app-check');
+                const appCheckToken = await getToken(appCheck, false);
+                if (appCheckToken.token) {
+                    headers['X-Firebase-AppCheck'] = appCheckToken.token;
+                }
+            }
+        } catch (e: unknown) {
+            logger.warn('[GeminiRetrieval] Could not get auth or appcheck token:', e);
         }
 
         while (attempt < maxRetries) {
             try {
-                console.log('--- RAG FETCH ---', url, headers);
+                logger.debug('--- RAG FETCH ---', url, headers);
                 const response = await fetch(url, {
                     ...options,
                     headers
@@ -331,7 +323,7 @@ export class GeminiRetrievalService {
      * If fileUri is provided, it ensures that file is present in the store.
      * If fileUri is null/empty, it searches the entire store.
      */
-    async query(fileUri: string | null, userQuery: string, fileContent?: string, model?: string, projectId?: string, metadataFilter?: any) {
+    async query(fileUri: string | null, userQuery: string, fileContent?: string, model?: string, projectId?: string, metadataFilter?: Record<string, unknown>) {
         let tools: Record<string, unknown>[] | undefined;
         const targetModel = model || INTELLIGENCE_MODELS.TEXT.AGENT;
 
@@ -401,7 +393,7 @@ export class GeminiRetrievalService {
     /**
      * Streams query responses using the Gemini API.
      */
-    async *streamQuery(fileUri: string | null, userQuery: string, fileContent?: string, model?: string, projectId?: string, metadataFilter?: any): AsyncGenerator<string> {
+    async *streamQuery(fileUri: string | null, userQuery: string, fileContent?: string, model?: string, projectId?: string, metadataFilter?: Record<string, unknown>): AsyncGenerator<string> {
         let tools: Record<string, unknown>[] | undefined;
         const targetModel = model || INTELLIGENCE_MODELS.TEXT.AGENT;
 
@@ -436,36 +428,31 @@ export class GeminiRetrievalService {
 
         // Build auth headers matching the main fetch() method to avoid 403 on ragProxy
         const streamHeaders: Record<string, string> = { 'Content-Type': 'application/json' };
-        if (!this.baseUrl.includes('generativelanguage.googleapis.com')) {
-            try {
-                const firebase = await import('@/services/firebase');
-                const auth = firebase.auth;
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const appCheck: any = firebase.appCheck;
-                const currentUser = auth.currentUser;
-                if (currentUser) {
-                    const idToken = await currentUser.getIdToken();
-                    streamHeaders['Authorization'] = `Bearer ${idToken}`;
-                }
-                if (appCheck) {
-                    const { getToken } = await import('firebase/app-check');
-                    const appCheckToken = await getToken(appCheck, false);
-                    if (appCheckToken.token) {
-                        streamHeaders['X-Firebase-AppCheck'] = appCheckToken.token;
-                    }
-                }
-            } catch (e: unknown) {
-                logger.warn('[GeminiRetrieval] streamQuery: Could not get auth or appcheck token:', e);
+        try {
+            const firebase = await import('@/services/firebase');
+            const auth = firebase.auth;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const appCheck: any = firebase.appCheck;
+            const currentUser = auth.currentUser;
+            if (currentUser) {
+                const idToken = await currentUser.getIdToken();
+                streamHeaders['Authorization'] = `Bearer ${idToken}`;
             }
+            if (appCheck) {
+                const { getToken } = await import('firebase/app-check');
+                const appCheckToken = await getToken(appCheck, false);
+                if (appCheckToken.token) {
+                    streamHeaders['X-Firebase-AppCheck'] = appCheckToken.token;
+                }
+            }
+        } catch (e: unknown) {
+            logger.warn('[GeminiRetrieval] streamQuery: Could not get auth or appcheck token:', e);
         }
 
-        let url = `${this.baseUrl}/models/${targetModel}:streamGenerateContent`;
-        if (this.baseUrl.includes('generativelanguage.googleapis.com')) {
-            url += `?key=${this.apiKey}`;
-        }
+        const url = `${this.baseUrl}/models/${targetModel}:streamGenerateContent`;
 
-        console.log('--- RAG FETCH ---', url, streamHeaders);
-                const response = await fetch(url, {
+        logger.debug('--- RAG FETCH ---', url, streamHeaders);
+                const response = await fetchWithRetry(url, {
             method: 'POST',
             headers: streamHeaders,
             body: JSON.stringify(body)

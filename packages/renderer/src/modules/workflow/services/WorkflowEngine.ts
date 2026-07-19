@@ -4,6 +4,7 @@ import { ImageGeneration } from '@/services/image/ImageGenerationService';
 import { VideoGeneration } from '@/services/video/VideoGenerationService';
 import { SocialService } from '@/services/social/SocialService';
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
+import { performanceVideoService } from '@/services/video/PerformanceVideoService';
 import { logger } from '@/utils/logger';
 
 interface ExecutionTask {
@@ -24,6 +25,8 @@ export class WorkflowEngine {
     private blackboard: Map<string, unknown> = new Map();
     /** Gatekeeper pause callbacks: nodeId → resolve function */
     private approvalCallbacks: Map<string, (approved: boolean) => void> = new Map();
+    /** Defense-in-depth: track execution counts to prevent infinite loops */
+    private visitCounts: Map<string, number> = new Map();
 
     constructor(
         nodes: CustomNode[],
@@ -44,6 +47,7 @@ export class WorkflowEngine {
         this.isRunning = true;
         this.results.clear();
         this.blackboard.clear();
+        this.visitCounts.clear();
         this.executionQueue = [];
 
         try {
@@ -114,6 +118,14 @@ export class WorkflowEngine {
     private async executeNode(task: ExecutionTask) {
         const node = this.nodes.find(n => n.id === task.nodeId);
         if (!node) return;
+
+        const count = (this.visitCounts.get(node.id) || 0) + 1;
+        this.visitCounts.set(node.id, count);
+
+        if (count > 25) {
+            this.updateNodeStatus(node.id, Status.ERROR, 'Cycle detected: Node executed too many times.');
+            return;
+        }
 
         this.updateNodeStatus(node.id, Status.WORKING);
 
@@ -207,28 +219,75 @@ export class WorkflowEngine {
 
             // ── Video Department ────────────────────────────────────────────
             case 'Video Department': {
+                if (jobId === 'video-analyze-song') {
+                    // Analyze audio: extract BPM, mood, structure
+                    const songUrl = (inputs.audio_input as string) || '';
+                    if (!songUrl) throw new Error('Song URL required for audio analysis');
+                    const analyzeAudio = (await import('firebase/functions')).httpsCallable(
+                        (await import('@/services/firebase')).functions,
+                        'analyzeAudio'
+                    );
+                    const response = await analyzeAudio({ audioUrl: songUrl, mimeType: 'audio/mpeg' });
+                    return response.data;
+                }
+                if (jobId === 'video-beat-sync-assemble') {
+                    // Beat-sync assemble: create performance video from song + artist image
+                    const songUrl = (inputs.audio_input as string) || '';
+                    const artistImageUrl = (inputs.image_input as string) || '';
+                    if (!songUrl) throw new Error('Song URL required');
+                    if (!artistImageUrl) throw new Error('Artist image URL required');
+                    const aspectRatio = (inputs.aspect_ratio as '16:9' | '9:16' | '1:1') || '16:9';
+                    const result = await performanceVideoService.generate({
+                        songUrl,
+                        artistImageUrl,
+                        style: prompt,
+                        aspectRatio,
+                    });
+                    return result.videoUrl;
+                }
                 if (jobId === 'video-img-to-video') {
                     // Image → video: pass the image url as the first frame
                     const imageUrl = (inputs.image_input as string) || undefined;
                     const results = await VideoGeneration.generateVideo({
                         prompt,
-                        durationSeconds: 5,
+                        durationSeconds: 8, // Veo accepts 4, 6, or 8 seconds
                         aspectRatio: '16:9',
-                        ...(imageUrl ? { imageUrl } : {}),
+                        ...(imageUrl ? { firstFrame: imageUrl } : {}),
                     });
                     return results[0]?.url;
                 }
                 if (jobId === 'video-extend') {
                     // Extend the incoming video clip
+                    const videoUrl = (inputs.video_input as string) || undefined;
                     const results = await VideoGeneration.generateVideo({
                         prompt: `Continue: ${prompt}`,
-                        durationSeconds: 5,
+                        durationSeconds: 8, // Veo accepts 4, 6, or 8 seconds
+                        aspectRatio: '16:9',
+                        ...(videoUrl ? { inputVideo: videoUrl } : {}),
+                    });
+                    return results[0]?.url;
+                }
+                if (jobId === 'video-performance-clip') {
+                    // Performance clip: artist image → performance video
+                    const artistImageUrl = (inputs.image_input as string) || '';
+                    const durationSecStr = (inputs.duration_input as string) || '8';
+                    let durationSeconds = parseInt(durationSecStr, 10) || 8;
+                    // Clamp to valid Veo durations: 4, 6, 8 seconds
+                    if (durationSeconds <= 5) durationSeconds = 4;
+                    else if (durationSeconds <= 7) durationSeconds = 6;
+                    else durationSeconds = 8;
+                    if (!artistImageUrl) throw new Error('Artist image required for performance clip');
+                    const results = await VideoGeneration.generateVideo({
+                        prompt: `Artist performance: ${prompt}`,
+                        firstFrame: artistImageUrl,
+                        referenceImages: [{ image: { uri: artistImageUrl }, referenceType: 'asset' }],
+                        durationSeconds,
                         aspectRatio: '16:9',
                     });
                     return results[0]?.url;
                 }
                 // Default: text-to-video
-                const results = await VideoGeneration.generateVideo({ prompt, durationSeconds: 5, aspectRatio: '16:9' });
+                const results = await VideoGeneration.generateVideo({ prompt, durationSeconds: 8, aspectRatio: '16:9' });
                 return results[0]?.url;
             }
 

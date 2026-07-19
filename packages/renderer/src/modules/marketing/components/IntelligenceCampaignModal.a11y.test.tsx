@@ -96,17 +96,17 @@ describe('IntelligenceCampaignModal Accessibility', () => {
         const instagramButton = screen.getByRole('button', { name: /Instagram/i });
         expect(instagramButton).toHaveAttribute('aria-pressed', 'true');
 
-        // LinkedIn is not selected by default
-        const linkedinButton = screen.getByRole('button', { name: /LinkedIn/i });
-        expect(linkedinButton).toHaveAttribute('aria-pressed', 'false');
-
-        // Click LinkedIn to select it
-        fireEvent.click(linkedinButton);
-        expect(linkedinButton).toHaveAttribute('aria-pressed', 'true');
+        // X/Twitter is selected by default
+        const xButton = screen.getByRole('button', { name: /X \/ Twitter/i });
+        expect(xButton).toHaveAttribute('aria-pressed', 'true');
 
         // Click Instagram to deselect it
         fireEvent.click(instagramButton);
         expect(instagramButton).toHaveAttribute('aria-pressed', 'false');
+
+        // Click X to toggle it
+        fireEvent.click(xButton);
+        expect(xButton).toHaveAttribute('aria-pressed', 'false');
     });
 
     it('tone selection buttons should use aria-pressed and update on click', () => {

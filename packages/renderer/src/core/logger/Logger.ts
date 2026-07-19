@@ -31,8 +31,8 @@ function getSentry(): SentryLike | null {
 }
 
 class LoggerService {
-    private isDev = typeof import.meta.env !== 'undefined' ? import.meta.env.DEV : process.env.NODE_ENV !== 'production';
-    private isProd = typeof import.meta.env !== 'undefined' ? import.meta.env.PROD : process.env.NODE_ENV === 'production';
+    private isDev = typeof import.meta.env !== 'undefined' ? import.meta.env.DEV : (typeof process !== 'undefined' && process.env ? process.env.NODE_ENV !== 'production' : true);
+    private isProd = typeof import.meta.env !== 'undefined' ? import.meta.env.PROD : (typeof process !== 'undefined' && process.env ? process.env.NODE_ENV === 'production' : false);
 
     private formatMessage(module: string, message: string): string {
         return `[${module}] ${message}`;

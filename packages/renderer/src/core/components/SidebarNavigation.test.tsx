@@ -50,13 +50,13 @@ vi.mock('@/modules/creative/video/VideoStudioContainer', () => ({ default: () =>
 vi.mock('@/modules/workflow/WorkflowLab', () => ({ default: () => <div data-testid="workflow-lab">Workflow Lab</div> }));
 vi.mock('@/modules/dashboard/Dashboard', () => ({ default: () => <div data-testid="dashboard">Dashboard</div> }));
 vi.mock('@/modules/knowledge/KnowledgeBase', () => ({ default: () => <div data-testid="knowledge-base">Knowledge Base</div> }));
+vi.mock('@/modules/notes/NotesModule', () => ({ default: () => <div data-testid="notes-module">Notes Module</div> }));
 vi.mock('@/modules/auth/SelectOrg', () => ({ default: () => <div data-testid="select-org">Select Org</div> }));
 
 // Mock other components used in App
 vi.mock('./CommandBar', () => ({ default: () => <div data-testid="command-bar">Command Bar</div> }));
 vi.mock('./AgentWindow', () => ({ default: () => <div data-testid="agent-window">Agent Window</div> }));
 vi.mock('./RightPanel', () => ({ default: () => <div data-testid="right-panel">Right Panel</div> }));
-vi.mock('./MobileNav', () => ({ MobileNav: () => <div data-testid="mobile-nav">Mobile Nav</div> }));
 vi.mock('./ApiKeyErrorModal', () => ({ ApiKeyErrorModal: () => <div data-testid="api-key-error">Api Key Error</div> }));
 vi.mock('./sidebar/ProjectList', () => ({ ProjectList: () => <div data-testid="project-list">Project List</div> }));
 vi.mock('@/modules/finance/hooks/useSubscription', () => ({
@@ -111,7 +111,9 @@ describe('Sidebar Navigation Integration', () => {
         },
         initializeHistory: mockInitializeHistory,
         loadProjects: mockLoadProjects,
-        loadSessions: vi.fn(),
+        loadBoardroomMessages: vi.fn().mockResolvedValue(vi.fn()),
+        // App.tsx calls loadSessions().catch(...) on mount — must resolve, not return undefined.
+        loadSessions: vi.fn().mockResolvedValue(undefined),
         pendingCount: 0,
         isSyncing: false,
         lastSyncError: null,
@@ -126,6 +128,11 @@ describe('Sidebar Navigation Integration', () => {
         updatePreferences: vi.fn(),
         setCommandMenuOpen: vi.fn(),
         logout: vi.fn(),
+        // ISSUE-761: AppInitializationProvider.tsx now calls loadNotesFromCloud()
+        // on mount (Firestore notes cloud sync) — an incomplete mock made this
+        // throw "loadNotesFromCloud is not a function" for every test in this
+        // file, a real regression (not a flake) caught via a CI run.
+        loadNotesFromCloud: vi.fn().mockResolvedValue(undefined),
         ...overrides,
     });
 
@@ -151,7 +158,7 @@ describe('Sidebar Navigation Integration', () => {
         );
 
         expect(screen.getByText('Brand Manager')).toBeInTheDocument();
-        expect(screen.getByText('Road Manager')).toBeInTheDocument();
+        expect(screen.getByText('Road/tour')).toBeInTheDocument();
         expect(screen.getByText('Campaign Manager')).toBeInTheDocument();
         expect(screen.getByText('Publicist')).toBeInTheDocument();
         expect(screen.getByText('Marketing Department')).toBeInTheDocument();
@@ -160,6 +167,7 @@ describe('Sidebar Navigation Integration', () => {
         expect(screen.getByText('Publishing Department')).toBeInTheDocument();
         expect(screen.getByText('Finance Department')).toBeInTheDocument();
         expect(screen.getByText('Licensing Department')).toBeInTheDocument();
+        expect(screen.getByText('Notes')).toBeInTheDocument();
     });
 
     it('calls setModule when a sidebar item is clicked', () => {
@@ -180,6 +188,14 @@ describe('Sidebar Navigation Integration', () => {
         vi.advanceTimersByTime(200);
         fireEvent.click(screen.getByText('Finance Department'));
         expect(mockSetModule).toHaveBeenCalledWith('finance');
+
+        vi.advanceTimersByTime(200);
+        fireEvent.click(screen.getByText('Social Media Department'));
+        expect(mockSetModule).toHaveBeenCalledWith('social');
+
+        vi.advanceTimersByTime(200);
+        fireEvent.click(screen.getByText('Notes'));
+        expect(mockSetModule).toHaveBeenCalledWith('notes');
 
         vi.useRealTimers();
     });
@@ -297,6 +313,60 @@ describe('Sidebar Navigation Integration', () => {
             expect(screen.getByTestId('licensing-dashboard')).toBeInTheDocument();
         }, { timeout: 20000 });
     }, 30000);
+
+    it('renders correct dashboard for Notes', async () => {
+        const state = buildStoreState({ currentModule: 'notes' });
+        mockedUseStore.mockImplementation((selector?: (state: ReturnType<typeof buildStoreState>) => unknown) => {
+            if (selector && typeof selector === 'function') return selector(state);
+            return state;
+        });
+        mockedUseStore.getState = vi.fn().mockReturnValue(state);
+
+        render(
+            <MemoryRouter>
+                <App />
+            </MemoryRouter>
+        );
+
+        await waitFor(() => {
+            expect(screen.getByTestId('notes-module')).toBeInTheDocument();
+        }, { timeout: 20000 });
+    }, 30000);
+
+    // ISSUE-443 regression: the "Social Media Department" sidebar item must route to the
+    // 'social' module (SocialDashboard) on desktop, NOT bounce to mobile-remote. The
+    // App.tsx phone force-route (isAnyPhone -> mobile-remote) only applies on phone-class
+    // viewports; on desktop (jsdom media queries default to non-phone) Social must render
+    // its own dashboard.
+    it('renders SocialDashboard for Social Media Department, not mobile-remote (ISSUE-443)', async () => {
+        const state = buildStoreState({ currentModule: 'social' });
+        mockedUseStore.mockImplementation((selector?: (state: ReturnType<typeof buildStoreState>) => unknown) => {
+            if (selector && typeof selector === 'function') return selector(state);
+            return state;
+        });
+        mockedUseStore.getState = vi.fn().mockReturnValue(state);
+
+        render(
+            <MemoryRouter>
+                <App />
+            </MemoryRouter>
+        );
+
+        await waitFor(() => {
+            expect(screen.getByTestId('social-dashboard')).toBeInTheDocument();
+        }, { timeout: 20000 });
+    }, 30000);
+
+    it('Social Media Department sidebar click dispatches setModule("social") (ISSUE-443)', () => {
+        render(
+            <MemoryRouter>
+                <Sidebar />
+            </MemoryRouter>
+        );
+
+        fireEvent.click(screen.getByText('Social Media Department'));
+        expect(mockSetModule).toHaveBeenCalledWith('social');
+    });
 
     it('renders navigation items correctly', () => {
         mockedUseStore.mockReturnValue({

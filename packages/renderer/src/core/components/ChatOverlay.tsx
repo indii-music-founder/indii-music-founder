@@ -12,6 +12,7 @@ import { MessageItem } from './chat/ChatMessage';
 import { PromptArea } from './command-bar/PromptArea';
 import { ErrorBoundary } from '@/core/components/ErrorBoundary';
 import { cn } from '@/lib/utils';
+import { AgentSwitcherStrip } from './AgentSwitcherStrip';
 
 interface ChatOverlayProps {
     onClose: () => void;
@@ -157,22 +158,22 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, onToggleMinimize }) 
         <>
             {/* Right edge */}
             <div
-                className="absolute top-0 right-0 w-1.5 h-full cursor-e-resize hover:bg-purple-500/30 transition-colors z-50"
+                className="absolute top-0 right-0 w-1.5 h-full cursor-e-resize hover:bg-green-500/30 transition-colors z-50"
                 onPointerDown={(e) => handleResize('right', e)}
             />
             {/* Bottom edge */}
             <div
-                className="absolute bottom-0 left-0 w-full h-1.5 cursor-s-resize hover:bg-purple-500/30 transition-colors z-50"
+                className="absolute bottom-0 left-0 w-full h-1.5 cursor-s-resize hover:bg-green-500/30 transition-colors z-50"
                 onPointerDown={(e) => handleResize('bottom', e)}
             />
             {/* Left edge */}
             <div
-                className="absolute top-0 left-0 w-1.5 h-full cursor-w-resize hover:bg-purple-500/30 transition-colors z-50"
+                className="absolute top-0 left-0 w-1.5 h-full cursor-w-resize hover:bg-green-500/30 transition-colors z-50"
                 onPointerDown={(e) => handleResize('left', e)}
             />
             {/* Top edge */}
             <div
-                className="absolute top-0 left-0 w-full h-1.5 cursor-n-resize hover:bg-purple-500/30 transition-colors z-50"
+                className="absolute top-0 left-0 w-full h-1.5 cursor-n-resize hover:bg-green-500/30 transition-colors z-50"
                 onPointerDown={(e) => handleResize('top', e)}
             />
             {/* Bottom-right corner */}
@@ -180,7 +181,7 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, onToggleMinimize }) 
                 className="absolute bottom-0 right-0 w-4 h-4 cursor-se-resize z-50"
                 onPointerDown={(e) => handleResize('bottom-right', e)}
             >
-                <svg width="16" height="16" viewBox="0 0 16 16" className="text-gray-600 hover:text-purple-400 transition-colors">
+                <svg width="16" height="16" viewBox="0 0 16 16" className="text-gray-600 hover:text-green-400 transition-colors">
                     <path d="M14 14L8 14L14 8L14 14Z" fill="currentColor" opacity="0.5" />
                     <path d="M14 14L11 14L14 11L14 14Z" fill="currentColor" opacity="0.8" />
                 </svg>
@@ -246,6 +247,8 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, onToggleMinimize }) 
 
                                 {/* Action Buttons */}
                                 <div className="flex items-center gap-1 relative z-10">
+                                    <AgentSwitcherStrip />
+                                    <div className="w-px h-4 bg-white/10 mx-1 hidden md:block" />
                                     <button onClick={() => setCommandBarDetached(!isCommandBarDetached)} className="p-2 hover:bg-white/10 rounded-lg transition-all text-gray-400 hover:text-white" aria-label={isCommandBarDetached ? "Dock Input" : "Detach Input"} title={isCommandBarDetached ? "Dock Input" : "Detach Input"} data-testid="detach-input-btn"><Maximize2 size={14} /></button>
                                     <button onClick={toggleLocalMinimize} className="p-2 hover:bg-white/10 rounded-lg transition-all text-gray-400 hover:text-white" aria-label="Minimize chat" data-testid="minimize-chat-btn"><Minimize2 size={14} /></button>
                                     <button onClick={toggleStealth} className="p-2 hover:bg-white/10 rounded-lg transition-all text-gray-400 hover:text-white" aria-label="Toggle Stealth Mode" title="Stealth Mode"><Bot size={14} className="opacity-50" /></button>
@@ -352,11 +355,11 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, onToggleMinimize }) 
                                         {isProcessing ? (
                                             <>
                                                 <div className="flex gap-1">
-                                                    <div className="w-1.5 h-1.5 bg-purple-500 rounded-full animate-bounce" />
-                                                    <div className="w-1.5 h-1.5 bg-purple-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                                                    <div className="w-1.5 h-1.5 bg-purple-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                                                    <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-bounce" />
+                                                    <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                                                    <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
                                                 </div>
-                                                <span className="text-purple-300 animate-pulse">PROCESSING...</span>
+                                                <span className="text-green-300 animate-pulse">PROCESSING...</span>
                                             </>
                                         ) : isListening ? (
                                             <>

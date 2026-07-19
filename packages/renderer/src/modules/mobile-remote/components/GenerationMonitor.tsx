@@ -25,6 +25,7 @@ import { remoteRelayService, type RemoteCommand, type RemoteResponse } from '@/s
 import type { Unsubscribe } from 'firebase/firestore';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { logger } from '@/utils/logger';
 
 // ─── Aspect Ratio Options ────────────────────────────────────────────────────
 const ASPECT_RATIOS = [
@@ -56,13 +57,54 @@ function timestampToMillis(timestamp: unknown): number {
         const toMillis = (timestamp as { toMillis?: () => number }).toMillis;
         if (typeof toMillis === 'function') return toMillis();
     }
-    return Date.now();
+    return 0;
 }
 
 function cleanPrompt(commandText?: string): string {
     return (commandText || 'Remote image generation')
         .replace(/^\[GENERATE_IMAGE\]\s*/, '')
         .trim() || 'Remote image generation';
+}
+
+/**
+ * ISSUE-990: the same relay `imageUrls` channel is reused by non-generation
+ * responses ([SHOW] retrievals, chat/boardroom replies). Only a command the
+ * phone itself tagged as a real image generation request
+ * (`metadata.type === 'generate_image'`) may populate the "Recent Generates"
+ * gallery — an unmatched/orphan response is quarantined (excluded), never
+ * relabeled with a generic "Remote image generation" caption.
+ */
+// eslint-disable-next-line react-refresh/only-export-components -- pure gallery reducer is exported for regression tests
+export function buildGeneratedImagesGallery(
+    relayCommands: RemoteCommand[],
+    relayResponses: RemoteResponse[],
+    localGeneratedImages: GeneratedImage[]
+): GeneratedImage[] {
+    const generateImagePromptById = new Map<string, string>();
+    relayCommands.forEach(command => {
+        if (command.id && command.metadata?.type === 'generate_image') {
+            generateImagePromptById.set(command.id, cleanPrompt(command.text));
+        }
+    });
+
+    const relayImages = relayResponses.flatMap(response => {
+        if (!response.imageUrls || response.imageUrls.length === 0) return [];
+        const prompt = generateImagePromptById.get(response.commandId);
+        if (prompt === undefined) return [];
+        const timestamp = timestampToMillis(response.timestamp);
+        return response.imageUrls.map(url => ({ url, prompt, timestamp }));
+    });
+
+    const byUrl = new Map<string, GeneratedImage>();
+    [...relayImages, ...localGeneratedImages].forEach(image => {
+        if (!byUrl.has(image.url)) {
+            byUrl.set(image.url, image);
+        }
+    });
+
+    return Array.from(byUrl.values())
+        .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0))
+        .slice(0, 24);
 }
 
 export default function GenerationMonitor() {
@@ -89,6 +131,11 @@ export default function GenerationMonitor() {
     const [error, setError] = useState<string | null>(null);
     const [activeStylePreset, setActiveStylePreset] = useState<string | null>(null);
     const activeListenerRef = useRef<Unsubscribe | null>(null);
+    const activeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const isMountedRef = useRef(true);
+    // ISSUE-989: tracks the in-flight command so a timeout OR unmount can
+    // actually cancel it in Firestore, not just detach the local listener.
+    const activeCommandIdRef = useRef<string | null>(null);
 
     const handleStylePreset = useCallback((preset: typeof STYLE_PRESETS[0]) => {
         if (activeStylePreset === preset.label) {
@@ -106,12 +153,14 @@ export default function GenerationMonitor() {
 
         setIsSending(true);
         setError(null);
+        let commandId: string | null = null;
 
         try {
-            const commandId = await remoteRelayService.sendCommand(
+            commandId = await remoteRelayService.sendCommand(
                 `[GENERATE_IMAGE] ${inputPrompt.trim()}`,
                 undefined,
-                { aspectRatio, type: 'generate_image' } as Record<string, unknown>
+                { aspectRatio, type: 'generate_image' } as Record<string, unknown>,
+                'studio'
             );
 
             if (!commandId) {
@@ -124,23 +173,48 @@ export default function GenerationMonitor() {
                 activeListenerRef.current();
                 activeListenerRef.current = null;
             }
+            if (activeTimeoutRef.current) {
+                clearTimeout(activeTimeoutRef.current);
+                activeTimeoutRef.current = null;
+            }
+            activeCommandIdRef.current = commandId;
 
-            const timeout = setTimeout(() => {
+            activeTimeoutRef.current = setTimeout(async () => {
+                activeTimeoutRef.current = null;
                 if (activeListenerRef.current) {
                     activeListenerRef.current();
                     activeListenerRef.current = null;
                 }
-                setIsSending(false);
-                setError('Generation timed out. Check desktop studio.');
+                if (isMountedRef.current) setIsSending(false);
+                // ISSUE-989: actively cancel in Firestore, not just detach the
+                // listener — otherwise a pending command survives and a later
+                // desktop recovery/backlog scan can still execute (and pay
+                // for) a generation the phone already gave up on.
+                const cancelled = await remoteRelayService.cancelCommand(commandId);
+                // The user can start another generation while the cancellation
+                // transaction is in flight. Never let the older completion
+                // clear or annotate the newer command.
+                if (activeCommandIdRef.current !== commandId) return;
+                activeCommandIdRef.current = null;
+                if (isMountedRef.current) {
+                    setError(cancelled
+                        ? 'Generation timed out and was cancelled — no cost incurred.'
+                        : 'Generation timed out, but the desktop had already started — check desktop studio before retrying to avoid duplicate cost.');
+                }
             }, 90000);
 
             activeListenerRef.current = remoteRelayService.onResponse(commandId, (response: RemoteResponse) => {
                 if (response.isFinal && response.text) {
-                    clearTimeout(timeout);
+                    if (activeCommandIdRef.current !== commandId) return;
+                    if (activeTimeoutRef.current) {
+                        clearTimeout(activeTimeoutRef.current);
+                        activeTimeoutRef.current = null;
+                    }
                     if (activeListenerRef.current) {
                         activeListenerRef.current();
                         activeListenerRef.current = null;
                     }
+                    activeCommandIdRef.current = null;
                     setIsSending(false);
 
                     if (response.imageUrls && response.imageUrls.length > 0) {
@@ -160,6 +234,20 @@ export default function GenerationMonitor() {
                 }
             });
         } catch (err: unknown) {
+            if (activeTimeoutRef.current) {
+                clearTimeout(activeTimeoutRef.current);
+                activeTimeoutRef.current = null;
+            }
+            if (activeListenerRef.current) {
+                activeListenerRef.current();
+                activeListenerRef.current = null;
+            }
+            if (commandId && activeCommandIdRef.current === commandId) {
+                remoteRelayService.cancelCommand(commandId).catch((error) => {
+                    logger.warn('[GenerationMonitor] Failed to cancel command after listener setup error:', error);
+                });
+                activeCommandIdRef.current = null;
+            }
             setError(err instanceof Error ? err.message : 'Pipeline Error');
             setIsSending(false);
         }
@@ -175,38 +263,31 @@ export default function GenerationMonitor() {
         };
     }, []);
 
-    const generatedImages = useMemo(() => {
-        const commandPromptById = new Map<string, string>();
-        relayCommands.forEach(command => {
-            if (command.id) {
-                commandPromptById.set(command.id, cleanPrompt(command.text));
-            }
-        });
-
-        const relayImages = relayResponses.flatMap(response => {
-            if (!response.imageUrls || response.imageUrls.length === 0) return [];
-            const timestamp = timestampToMillis(response.timestamp);
-            const prompt = commandPromptById.get(response.commandId) || 'Remote image generation';
-            return response.imageUrls.map(url => ({ url, prompt, timestamp }));
-        });
-
-        const byUrl = new Map<string, GeneratedImage>();
-        [...relayImages, ...localGeneratedImages].forEach(image => {
-            if (!byUrl.has(image.url)) {
-                byUrl.set(image.url, image);
-            }
-        });
-
-        return Array.from(byUrl.values())
-            .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0))
-            .slice(0, 24);
-    }, [localGeneratedImages, relayCommands, relayResponses]);
+    const generatedImages = useMemo(
+        () => buildGeneratedImagesGallery(relayCommands, relayResponses, localGeneratedImages),
+        [localGeneratedImages, relayCommands, relayResponses]
+    );
 
     useEffect(() => {
+        isMountedRef.current = true;
         return () => {
+            isMountedRef.current = false;
+            if (activeTimeoutRef.current) {
+                clearTimeout(activeTimeoutRef.current);
+                activeTimeoutRef.current = null;
+            }
             if (activeListenerRef.current) {
                 activeListenerRef.current();
                 activeListenerRef.current = null;
+            }
+            // ISSUE-989: navigating away mid-generation must not leave a
+            // pending (uncancelled) command for a later backlog scan to pick
+            // up — cancel it if the desktop hasn't claimed it yet.
+            if (activeCommandIdRef.current) {
+                remoteRelayService.cancelCommand(activeCommandIdRef.current).catch((error) => {
+                    logger.warn('[GenerationMonitor] Failed to cancel pending command during cleanup:', error);
+                });
+                activeCommandIdRef.current = null;
             }
         };
     }, []);
@@ -223,7 +304,7 @@ export default function GenerationMonitor() {
                     >
                         <div className="flex items-center justify-between px-1">
                             <div className="flex items-center gap-2">
-                                <LayoutGrid className="w-3.5 h-3.5 text-purple-400" />
+                                <LayoutGrid className="w-3.5 h-3.5 text-green-400" />
                                 <span className="text-[10px] font-bold uppercase tracking-widest text-[#8e8e93]">Recent Generates</span>
                             </div>
                             <span className="text-[10px] font-bold text-white/40">{generatedImages.length} items</span>
@@ -286,12 +367,17 @@ export default function GenerationMonitor() {
                                             initial={{ width: 0 }}
                                             animate={{ width: '100%' }}
                                             transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}
-                                            className="h-full bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-600 shadow-[0_0_10px_rgba(59,130,246,0.4)]"
+                                            className="h-full bg-gradient-to-r from-blue-500 via-indigo-500 to-green-600 shadow-[0_0_10px_rgba(59,130,246,0.4)]"
                                         />
                                     </div>
-                                    <div className="flex justify-between items-center text-[9px] font-bold text-white/20 uppercase tracking-widest">
-                                        <span>Allocating GPU</span>
-                                        <span>4K Upscaling</span>
+                                    {/* ISSUE-991: no backend stage telemetry (allocation/resolution/
+                                        upscaler) reaches the phone at all — this used to claim
+                                        specific processing stages regardless of whether they were
+                                        real, whether the job had even reached the provider, or
+                                        whether it was an image job at all. Honest indeterminate
+                                        copy only. */}
+                                    <div className="flex justify-center items-center text-[9px] font-bold text-white/20 uppercase tracking-widest">
+                                        <span>{isSending ? 'Working — no ETA available' : 'Waiting for desktop'}</span>
                                     </div>
                                 </div>
                             </div>

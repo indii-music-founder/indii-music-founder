@@ -5,6 +5,7 @@ import { useShallow } from 'zustand/react/shallow';
 import {
     runOnboardingConversation,
     processFunctionCalls,
+    externalizeOnboardingBrandAssets,
     calculateProfileStatus,
     generateNaturalFallback,
     generateEmptyResponseFallback,
@@ -14,10 +15,38 @@ import {
 } from '@/services/onboarding/onboardingService';
 import { useToast } from '@/core/context/ToastContext';
 import { onboardingAnalytics } from '@/services/onboarding/onboardingAnalytics';
+import { flushFounderFunnelQueue, trackFounderFunnelEvent } from '@/services/founders/founderFunnel';
 import type { ConversationFile } from '@/modules/workflow/types';
 import { v4 as uuidv4 } from 'uuid';
 import { validateOptions, isSemanticallySimilar, OPENING_GREETINGS } from '../onboardingUtils';
 import { secureRandomPick } from '@/utils/crypto-random';
+import { logger } from '@/utils/logger';
+
+/**
+ * ISSUE-955: Brand Interview audio attachments are sent to Gemini as
+ * inlineData (base64), same as images. Capped well under Gemini's
+ * inlineData limit — this is a short reference clip in a chat attachment,
+ * not a full master (see AudioIntelligenceService's larger cap for that
+ * separate, dedicated analysis flow).
+ */
+const MAX_ONBOARDING_AUDIO_BYTES = 15 * 1024 * 1024;
+
+function fileToBase64(file: File): Promise<string> {
+    return new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            const dataUrl = reader.result as string;
+            const base64 = dataUrl.split(',')[1];
+            if (!base64) {
+                reject(new Error('FileReader produced an empty base64 payload'));
+                return;
+            }
+            resolve(base64);
+        };
+        reader.onerror = () => reject(new Error('FileReader failed to read file'));
+        reader.readAsDataURL(file);
+    });
+}
 
 export interface HistoryItem {
     role: string;
@@ -57,14 +86,15 @@ export interface UseOnboardingOptions {
 }
 
 export function useOnboarding(options: UseOnboardingOptions = {}) {
-    const { userProfile, setUserProfile, setModule } = useStore(
+    const { userProfile, setUserProfile, setModule, addActiveAgent } = useStore(
         useShallow(state => ({
             userProfile: state.userProfile,
             setUserProfile: state.setUserProfile,
-            setModule: state.setModule
+            setModule: state.setModule,
+            addActiveAgent: state.addActiveAgent
         }))
     );
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+     
     const { showToast } = useToast();
     const [input, setInput] = useState('');
     const [history, setHistory] = useState<HistoryItem[]>([]);
@@ -94,6 +124,20 @@ export function useOnboarding(options: UseOnboardingOptions = {}) {
             if (shouldTrackAnalytics) {
                 onboardingAnalytics.start();
             }
+            flushFounderFunnelQueue();
+            try {
+                if (typeof window !== 'undefined' && localStorage.getItem('indii_founder_preview_pending') === 'true') {
+                    void trackFounderFunnelEvent('founder_walkthrough_started', {
+                        mode: resolvedMode,
+                        surface: 'onboarding',
+                    }, {
+                        userId: userProfile?.id ?? null,
+                        email: userProfile?.email ?? null,
+                    });
+                }
+            } catch {
+                // localStorage may be unavailable; founder tracking remains best-effort.
+            }
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [history.length]);
@@ -110,14 +154,14 @@ export function useOnboarding(options: UseOnboardingOptions = {}) {
         const filesArray = Array.from(fileList);
         if (filesArray.length === 0) return;
 
-        const filePromises = filesArray.map(file => {
-            return new Promise<ConversationFile>((resolve) => {
-                const isImage = file.type.startsWith('image/');
-                const isAudio = file.type.startsWith('audio/') || ['.mp3', '.wav', '.flac', '.aiff', '.m4a', '.ogg', '.aac'].some(ext => file.name.toLowerCase().endsWith(ext));
-                const isText = file.type === 'text/plain' || file.type === 'application/json' || file.type === 'text/markdown';
-                const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+        const filePromises = filesArray.map(async (file): Promise<ConversationFile> => {
+            const isImage = file.type.startsWith('image/');
+            const isAudio = file.type.startsWith('audio/') || ['.mp3', '.wav', '.flac', '.aiff', '.m4a', '.ogg', '.aac'].some(ext => file.name.toLowerCase().endsWith(ext));
+            const isText = file.type === 'text/plain' || file.type === 'application/json' || file.type === 'text/markdown';
+            const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
 
-                if (isImage) {
+            if (isImage) {
+                return new Promise<ConversationFile>((resolve) => {
                     const reader = new FileReader();
                     reader.onload = (e) => {
                         resolve({
@@ -129,43 +173,87 @@ export function useOnboarding(options: UseOnboardingOptions = {}) {
                         });
                     };
                     reader.readAsDataURL(file);
-                } else if (isAudio) {
-                    resolve({
+                });
+            }
+
+            if (isAudio) {
+                // ISSUE-955: previously stored only a metadata string —
+                // the model could never hear the audio. Attach the real
+                // bytes (bounded) so onboardingService can send them to
+                // Gemini as inlineData, same as images.
+                if (file.size > MAX_ONBOARDING_AUDIO_BYTES) {
+                    return {
                         id: uuidv4(),
                         file,
                         preview: '',
                         type: 'audio',
-                        content: `[Audio File: ${file.name}, Size: ${(file.size / 1024 / 1024).toFixed(2)}MB, Type: ${file.type}]`
-                    });
-                } else if (isPdf) {
-                    resolve({
+                        content: `[Audio File: ${file.name} is ${(file.size / 1024 / 1024).toFixed(1)}MB, over the ${MAX_ONBOARDING_AUDIO_BYTES / 1024 / 1024}MB limit — not attached for analysis.]`
+                    };
+                }
+                try {
+                    const base64 = await fileToBase64(file);
+                    return {
                         id: uuidv4(),
                         file,
                         preview: '',
-                        type: 'document',
-                        content: `[PDF Document: ${file.name}, Size: ${(file.size / 1024 / 1024).toFixed(2)}MB]`
-                    });
-                } else if (isText) {
-                    file.text().then(text => {
-                        resolve({
+                        type: 'audio',
+                        base64
+                    };
+                } catch (error: unknown) {
+                    logger.error('Failed to read audio file for onboarding attachment', error);
+                    return {
+                        id: uuidv4(),
+                        file,
+                        preview: '',
+                        type: 'audio',
+                        content: `[Audio File: ${file.name} could not be read — it may be corrupt.]`
+                    };
+                }
+            }
+
+            if (isPdf) {
+                // ISSUE-955: previously stored only a "[PDF Document: name,
+                // Size: ...]" placeholder as if it were the document's
+                // content. Extract the real text via the existing
+                // PDFService (pdfjs-dist) instead.
+                try {
+                    const { PDFService } = await import('@/services/utils/PDFService');
+                    const text = await PDFService.extractText(file);
+                    if (!text.trim()) {
+                        return {
                             id: uuidv4(),
                             file,
                             preview: '',
                             type: 'document',
-                            content: text
-                        });
-                    });
-                } else {
-                    // Fallback — treat unknown types as generic documents
-                    resolve({
+                            content: `[PDF Document: ${file.name} — no extractable text found. It may be a scanned/image-only PDF.]`
+                        };
+                    }
+                    return { id: uuidv4(), file, preview: '', type: 'document', content: text };
+                } catch (error: unknown) {
+                    logger.error('Failed to extract PDF text for onboarding attachment', error);
+                    return {
                         id: uuidv4(),
                         file,
                         preview: '',
                         type: 'document',
-                        content: `[File: ${file.name}, Size: ${(file.size / 1024 / 1024).toFixed(2)}MB, Type: ${file.type || 'unknown'}]`
-                    });
+                        content: `[PDF Document: ${file.name} could not be read — it may be encrypted or corrupt.]`
+                    };
                 }
-            });
+            }
+
+            if (isText) {
+                const text = await file.text();
+                return { id: uuidv4(), file, preview: '', type: 'document', content: text };
+            }
+
+            // Fallback — treat unknown types as generic documents
+            return {
+                id: uuidv4(),
+                file,
+                preview: '',
+                type: 'document',
+                content: `[File: ${file.name}, Size: ${(file.size / 1024 / 1024).toFixed(2)}MB, Type: ${file.type || 'unknown'}]`
+            };
         });
 
         const newFiles = await Promise.all(filePromises);
@@ -175,6 +263,10 @@ export function useOnboarding(options: UseOnboardingOptions = {}) {
     const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files.length > 0) {
             await processFiles(e.target.files);
+            // ISSUE-957: reset the native input so selecting the exact same
+            // file again (e.g. after a failed send restored the composer)
+            // still fires a change event.
+            e.target.value = '';
         }
     };
 
@@ -217,8 +309,23 @@ export function useOnboarding(options: UseOnboardingOptions = {}) {
             let uiToolCall: HistoryItem['toolCall'] = null;
 
             if (functionCalls && functionCalls.length > 0) {
-                const { updatedProfile, isFinished, updates } = processFunctionCalls(functionCalls, userProfile, currentFiles);
-                setUserProfile(updatedProfile);
+                const { updatedProfile, isFinished, updates, warnings } = processFunctionCalls(functionCalls, userProfile, currentFiles);
+                const externalized = await externalizeOnboardingBrandAssets(updatedProfile, currentFiles);
+                const persistedProfile = externalized.profile;
+                setUserProfile(persistedProfile);
+
+                [...warnings, ...externalized.warnings].forEach(warning => showToast(warning, 'error'));
+
+                if (persistedProfile.careerProfile && persistedProfile.careerProfile !== userProfile.careerProfile) {
+                    const seatingMap: Record<string, string[]> = {
+                        dj: ['generalist', 'marketing', 'social', 'creative'],
+                        sync_producer: ['generalist', 'legal', 'licensing', 'publishing'],
+                        touring_band: ['generalist', 'road', 'marketing', 'merchandise', 'finance'],
+                        label_manager: ['generalist', 'legal', 'finance', 'distribution', 'publishing']
+                    };
+                    const agentsToSeat = seatingMap[persistedProfile.careerProfile] || ['generalist'];
+                    agentsToSeat.forEach(agentId => addActiveAgent(agentId));
+                }
 
                 if (shouldTrackAnalytics) {
                     for (const update of updates) {
@@ -325,7 +432,13 @@ export function useOnboarding(options: UseOnboardingOptions = {}) {
                 errorText = secureRandomPick(errorResponses);
             }
 
-            setHistory(prev => [...prev, { role: 'model', parts: [{ text: errorText }] }]);
+            // ISSUE-957: a failed send must not cost the artist their work.
+            // Restore the exact typed text and every selected attachment to
+            // the composer, and withdraw the unanswered user turn from the
+            // thread so "send again" reproduces the identical request once.
+            setInput(textToSend);
+            setFiles(currentFiles);
+            setHistory(prev => [...prev.filter(m => m !== userMsg), { role: 'model', parts: [{ text: errorText }] }]);
         } finally {
             setIsProcessing(false);
         }
@@ -344,7 +457,18 @@ export function useOnboarding(options: UseOnboardingOptions = {}) {
         // Persist dismissal so the user never gets redirected back to onboarding.
         // This is the escape hatch read by useOnboardingRedirect in App.tsx.
         try {
+            const isFounderPreview = localStorage.getItem('indii_founder_preview_pending') === 'true';
             localStorage.setItem('onboarding_dismissed', 'true');
+            localStorage.removeItem('indii_founder_preview_pending');
+            if (isFounderPreview) {
+                void trackFounderFunnelEvent('founder_walkthrough_completed', {
+                    mode: resolvedMode,
+                    surface: 'onboarding',
+                }, {
+                    userId: userProfile?.id ?? null,
+                    email: userProfile?.email ?? null,
+                });
+            }
         } catch {
             // localStorage may be unavailable (private browsing, quota exceeded)
         }
@@ -422,6 +546,8 @@ export function useOnboarding(options: UseOnboardingOptions = {}) {
         handleEditBio,
         handleSaveBio,
         handleCancelEdit,
-        handleRegenerateBio
+        handleRegenerateBio,
+        addActiveAgent,
+        setUserProfile
     };
 }

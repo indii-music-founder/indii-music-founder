@@ -3,7 +3,7 @@ import React, { memo, useMemo } from 'react';
 import { motion } from 'motion/react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { Bot } from 'lucide-react';
+import { Bot, Star } from 'lucide-react';
 import { AgentMessage } from '@/core/store';
 import { useStore } from '@/core/store';
 
@@ -50,21 +50,34 @@ const LivingPlanToolRenderer = memo(({ planId }: { planId: string }) => {
     useEffect(() => {
         if (!currentProjectId || !planId) return;
 
+        let hasResolved = false;
         const fetchPlan = async () => {
             try {
                 const fetchedPlan = await livingPlanService.get(currentProjectId, planId);
+                hasResolved = true;
                 setPlan(fetchedPlan);
             } catch (e) {
+                hasResolved = true;
                 logger.error('Failed to load living plan:', e);
             } finally {
                 setIsLoading(false);
             }
         };
         fetchPlan();
+
+        // 10s timeout failsafe to prevent infinite loading
+        const timer = setTimeout(() => {
+            if (!hasResolved) {
+                logger.warn(`LivingPlanToolRenderer: fetchPlan timed out after 10s for planId ${planId}`);
+                setIsLoading(false);
+            }
+        }, 10000);
+
+        return () => clearTimeout(timer);
     }, [planId, currentProjectId]);
 
     if (isLoading) return <div className="p-4 animate-pulse bg-cyan-500/5 rounded-lg border border-cyan-500/20 text-xs text-cyan-400">Fetching living plan...</div>;
-    if (!plan) return <div className="p-4 bg-red-500/5 rounded-lg border border-red-500/20 text-xs text-red-400">Plan not found or deleted.</div>;
+    if (!plan) return <div className="p-4 bg-red-500/5 rounded-lg border border-red-500/20 text-xs text-red-400">Plan not found, deleted, or network timeout.</div>;
 
     const handleApprove = async () => {
         if (!currentProjectId) return;
@@ -106,6 +119,46 @@ const LivingPlanToolRenderer = memo(({ planId }: { planId: string }) => {
             onRefine={handleRefine}
             onCancel={handleCancel}
         />
+    );
+});
+
+const MessageRating = memo(({ messageId, currentRating }: { messageId: string, currentRating?: number }) => {
+    const updateAgentMessage = useStore(state => state.updateAgentMessage);
+    const [hoverRating, setHoverRating] = useState<number>(0);
+    const [optimisticRating, setOptimisticRating] = useState<number | undefined>(currentRating);
+
+    const handleRate = async (rating: number) => {
+        setOptimisticRating(rating);
+        updateAgentMessage(messageId, { rating });
+        try {
+            const { agentFirebaseConnector } = await import('@/services/agent/AgentFirebaseConnector');
+            await agentFirebaseConnector.update(messageId, { rating });
+        } catch (err) {
+            logger.error('[ChatMessage] Failed to save message rating:', err);
+            setOptimisticRating(currentRating);
+            updateAgentMessage(messageId, { rating: currentRating });
+        }
+    };
+
+    return (
+        <div className="flex items-center gap-1 mt-3 pt-3 border-t border-white/5 opacity-40 hover:opacity-100 transition-opacity">
+            <span className="text-[9px] text-gray-500 uppercase tracking-widest mr-2">Rate Agent</span>
+            {[1, 2, 3, 4, 5].map((star) => (
+                <button
+                    key={star}
+                    onClick={() => handleRate(star)}
+                    onMouseEnter={() => setHoverRating(star)}
+                    onMouseLeave={() => setHoverRating(0)}
+                    className="focus:outline-none transition-transform hover:scale-110"
+                    aria-label={`Rate ${star} stars`}
+                >
+                    <Star
+                        size={12}
+                        className={`transition-colors ${(hoverRating || optimisticRating || 0) >= star ? 'text-yellow-400 fill-yellow-400' : 'text-gray-600 hover:text-gray-400'}`}
+                    />
+                </button>
+            ))}
+        </div>
     );
 });
 
@@ -236,8 +289,8 @@ export const MessageItem = memo(({ msg, avatarUrl, variant = 'default', agentIde
                             {agentIdentity.initials}
                         </div>
                     ) : (
-                        <div className={`${variant === 'compact' ? 'w-6 h-6' : 'w-9 h-9'} rounded-full bg-linear-to-br from-purple-600 to-purple-800 flex items-center justify-center text-xs font-bold relative z-10 border border-purple-500/30`}>
-                            <Bot size={variant === 'compact' ? 12 : 18} className="text-purple-200" />
+                        <div className={`${variant === 'compact' ? 'w-6 h-6' : 'w-9 h-9'} rounded-full bg-linear-to-br from-green-600 to-green-800 flex items-center justify-center text-xs font-bold relative z-10 border border-green-500/30`}>
+                            <Bot size={variant === 'compact' ? 12 : 18} className="text-green-200" />
                         </div>
                     )}
                 </div>
@@ -255,7 +308,7 @@ export const MessageItem = memo(({ msg, avatarUrl, variant = 'default', agentIde
 
                 {msg.role === 'model' && msg.thoughts && <ThoughtChain thoughts={msg.thoughts} messageId={msg.id} compact={variant === 'compact'} />}
 
-                <div className={`prose prose-invert ${variant === 'compact' ? 'prose-xs' : 'prose-sm'} max-w-full overflow-hidden wrap-break-word break-all leading-normal font-medium tracking-tight`}>
+                <div className={`prose prose-invert ${variant === 'compact' ? 'prose-xs' : 'prose-sm'} max-w-full overflow-hidden wrap-break-word leading-normal font-medium tracking-tight`}>
                     <ReactMarkdown
                         remarkPlugins={[remarkGfm]}
                         components={markdownComponents}
@@ -287,10 +340,10 @@ export const MessageItem = memo(({ msg, avatarUrl, variant = 'default', agentIde
                             
                             if (tool.name === 'analyze_brand_consistency' && tool.json.analysis) {
                                 return (
-                                    <div key={`ext-tool-${idx}`} className="my-4 bg-purple-900/10 rounded-xl border border-purple-500/20 p-4">
+                                    <div key={`ext-tool-${idx}`} className="my-4 bg-green-900/10 rounded-xl border border-green-500/20 p-4">
                                         <div className="flex items-center gap-2 mb-3 pb-2 border-b border-white/5">
-                                            <div className="w-2 h-2 rounded-full bg-purple-400 animate-pulse" />
-                                            <span className="text-xs font-bold text-purple-300 uppercase tracking-widest">Brand Analysis Report</span>
+                                            <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+                                            <span className="text-xs font-bold text-green-300 uppercase tracking-widest">Brand Analysis Report</span>
                                         </div>
                                         <div className="prose prose-invert prose-sm max-w-none">
                                             <ReactMarkdown components={{ p: ({ children }: { children?: React.ReactNode }) => <span className="block mb-2 last:mb-0">{children}</span> }}>
@@ -389,17 +442,17 @@ export const MessageItem = memo(({ msg, avatarUrl, variant = 'default', agentIde
                         <motion.div
                             animate={{ scale: [1, 1.5, 1], opacity: [0.5, 1, 0.5] }}
                             transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}
-                            className="w-1.5 h-1.5 bg-purple-500 rounded-full"
+                            className="w-1.5 h-1.5 bg-green-500 rounded-full"
                         />
                         <motion.div
                             animate={{ scale: [1, 1.5, 1], opacity: [0.5, 1, 0.5] }}
                             transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut", delay: 0.2 }}
-                            className="w-1.5 h-1.5 bg-purple-500/60 rounded-full"
+                            className="w-1.5 h-1.5 bg-green-500/60 rounded-full"
                         />
                         <motion.div
                             animate={{ scale: [1, 1.5, 1], opacity: [0.5, 1, 0.5] }}
                             transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut", delay: 0.4 }}
-                            className="w-1.5 h-1.5 bg-purple-500/30 rounded-full"
+                            className="w-1.5 h-1.5 bg-green-500/30 rounded-full"
                         />
                     </div>
                 )}
@@ -412,12 +465,12 @@ export const MessageItem = memo(({ msg, avatarUrl, variant = 'default', agentIde
                                 whileHover={{ scale: 1.05, rotate: 2 }}
                                 className="relative group/att"
                             >
-                                <div className="absolute inset-0 bg-purple-500/20 blur opacity-0 group-hover/att:opacity-100 transition-opacity rounded-xl"></div>
+                                <div className="absolute inset-0 bg-green-500/20 blur opacity-0 group-hover/att:opacity-100 transition-opacity rounded-xl"></div>
                                 {att.mimeType && !att.mimeType.startsWith('image/') ? (
                                     <div className="w-24 h-24 rounded-xl border border-white/10 shadow-lg relative z-10 flex flex-col items-center justify-center bg-gray-900/50 p-2 text-center overflow-hidden">
                                         <div className="flex-1 flex items-center justify-center">
                                             {att.mimeType.startsWith('audio/') ? (
-                                                <svg className="w-8 h-8 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <svg className="w-8 h-8 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
                                                 </svg>
                                             ) : (
@@ -436,6 +489,11 @@ export const MessageItem = memo(({ msg, avatarUrl, variant = 'default', agentIde
                             </motion.div>
                         ))}
                     </div>
+                )}
+
+                {/* Agent Grading / Feedback */}
+                {msg.role === 'model' && !msg.isStreaming && (
+                    <MessageRating messageId={msg.id} currentRating={msg.rating} />
                 )}
 
                 {/* Mobile Remote Source Badge */}

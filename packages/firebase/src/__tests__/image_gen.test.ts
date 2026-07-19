@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import * as admin from 'firebase-admin';
 
 
@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => {
     return {
         generateContent: vi.fn(),
         generateContentStream: vi.fn(),
+        createInteraction: vi.fn(),
         generateImages: vi.fn(),
         editImage: vi.fn(),
         secrets: {
@@ -24,6 +25,9 @@ vi.mock('@google/genai', () => {
                 generateContentStream: mocks.generateContentStream,
                 generateImages: mocks.generateImages,
                 editImage: mocks.editImage
+            };
+            interactions = {
+                create: mocks.createInteraction
             };
         }
     };
@@ -66,6 +70,9 @@ vi.mock('firebase-admin', () => {
     return {
         initializeApp: vi.fn(),
         auth: vi.fn(),
+        appCheck: vi.fn(() => ({
+            verifyToken: vi.fn().mockResolvedValue({ appId: 'test-app' }),
+        })),
         firestore: firestoreFn,
         storage: vi.fn(() => ({
             bucket: vi.fn(() => ({
@@ -91,6 +98,13 @@ vi.mock('firebase-functions/v1', () => {
     const objectBuilder = { onArchive: handler, onDelete: handler, onFinalize: handler, onMetadataUpdate: handler };
 
     const builder: Record<string, unknown> = {
+        logger: {
+            info: vi.fn(),
+            warn: vi.fn(),
+            error: vi.fn(),
+            debug: vi.fn(),
+            log: vi.fn(),
+        },
         region: vi.fn().mockReturnThis(),
         runWith: vi.fn().mockReturnThis(),
         pubsub: {
@@ -142,8 +156,16 @@ vi.mock('firebase-functions/params', () => ({
     defineInt: vi.fn(() => ({ value: vi.fn(() => 0) })),
 }));
 
+vi.mock('../stripe/config', () => ({
+    stripe: {}
+}));
+
+vi.mock('../email/sendEmail', () => ({ sendEmail: vi.fn() }));
+vi.mock('../mcp', () => ({ mcpHttpHandler: vi.fn() }));
+vi.mock('../orchestration', () => ({ orchestrationListener: vi.fn() }));
+
 // Mock specific logic in index.ts if needed, but here we test the exported functions
-import { generateImageV3, editImage, generateContentStream } from '../index';
+import { generateImageV3, editImage, generateContentStream, enrichFanData, healthCheck, healthCheckWest1 } from '../index';
 
 describe('Image and Content Generation Functions', () => {
     beforeEach(() => {
@@ -151,37 +173,75 @@ describe('Image and Content Generation Functions', () => {
     });
 
     describe('generateImageV3', () => {
+        // Capture the shared default firestore instance so it can be restored
+        // after overriding it below — otherwise the override leaks into
+        // sibling describe blocks (e.g. editImage's runTransaction usage).
+        const defaultFirestoreInstance = admin.firestore();
+
+        afterEach(() => {
+            vi.mocked(admin.firestore).mockReturnValue(defaultFirestoreInstance);
+        });
+
         it('should call @google/genai SDK with correct parameters', async () => {
             const context: any = { auth: { uid: 'user123' } };
             const data = {
                 prompt: 'a beautiful cat',
                 aspectRatio: '1:1',
                 count: 2,
-                model: 'fast'
+                model: 'fast',
+                // Required by GenerateImageSchema (ISSUE-881 cost-control gate) —
+                // loadCostReservation() reads this from the costLedger collection.
+                costReservationId: 'res-test-1'
             };
 
-            mocks.generateContent.mockResolvedValue({
-                candidates: [{
-                    content: {
-                        parts: [
-                            { inlineData: { data: 'base64-image-1', mimeType: 'image/png' } },
-                            { inlineData: { data: 'base64-image-2', mimeType: 'image/png' } }
-                        ]
-                    }
-                }]
+            // costLedger doc must resolve APPROVED for the authenticated user/type;
+            // any other collection/doc falls back to the default mock's harmless
+            // docRef (which safeDbSet's own internal try/catch tolerates).
+            const defaultDocRef = { id: 'mock-doc', set: vi.fn().mockResolvedValue(undefined), update: vi.fn().mockResolvedValue(undefined) };
+            const costLedgerDocRef = {
+                get: vi.fn().mockResolvedValue({
+                    exists: true,
+                    data: () => ({
+                        userId: 'user123',
+                        type: 'image',
+                        status: 'APPROVED',
+                        // The request asks for two outputs, so the reservation
+                        // must cover the same batch count enforced by the gateway.
+                        estimatedCost: 0.08,
+                    }),
+                }),
+            };
+            vi.mocked(admin.firestore).mockReturnValue({
+                collection: vi.fn((name: string) => ({
+                    doc: vi.fn(() => (name === 'costLedger' ? costLedgerDocRef : defaultDocRef)),
+                })),
+                doc: vi.fn(() => costLedgerDocRef), // finalizeOperationReservation calls db.doc() directly
+                runTransaction: vi.fn((fn: (tx: unknown) => Promise<void>) => fn({
+                    get: vi.fn().mockResolvedValue({ data: () => undefined, exists: false }),
+                    set: vi.fn(),
+                    update: vi.fn(),
+                })),
+            } as any);
+
+            mocks.createInteraction.mockResolvedValue({
+                output_image: {
+                    data: 'base64-image-1',
+                    mime_type: 'image/png'
+                }
             });
 
             const generateImageCall = generateImageV3 as any;
             const result = await generateImageCall({ data, auth: context.auth });
 
-            expect(mocks.generateContent).toHaveBeenCalledWith(
+            expect(mocks.createInteraction).toHaveBeenCalledTimes(2);
+            expect(mocks.createInteraction).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    model: 'gemini-3.1-flash-image-preview',
-                    contents: [{ role: "user", parts: [{ text: 'a beautiful cat' }] }],
-                    config: expect.objectContaining({
-                        responseModalities: ["IMAGE"],
-                        imageConfig: expect.objectContaining({
-                            aspectRatio: '1:1'
+                    model: 'gemini-3.1-flash-image',
+                    input: [{ type: 'text', text: 'a beautiful cat' }],
+                    response_modalities: ['image'],
+                    generation_config: expect.objectContaining({
+                        image_config: expect.objectContaining({
+                            aspect_ratio: '1:1'
                         })
                     })
                 })
@@ -189,7 +249,11 @@ describe('Image and Content Generation Functions', () => {
 
             expect(result).toEqual(expect.objectContaining({
                 jobId: 'mock-doc',
-                resultUri: expect.stringContaining('gs://')
+                resultUri: expect.stringContaining('gs://'),
+                resultUris: expect.arrayContaining([
+                    expect.stringContaining('gs://'),
+                    expect.stringContaining('gs://'),
+                ]),
             }));
         });
     });
@@ -233,7 +297,11 @@ describe('Image and Content Generation Functions', () => {
         it('should yield chunks from SDK stream', async () => {
             const req: any = {
                 method: 'POST',
-                headers: { authorization: 'Bearer token', origin: 'http://localhost:4242' },
+                headers: {
+                    authorization: 'Bearer token',
+                    origin: 'http://localhost:4242',
+                    'x-firebase-appcheck': 'app-check-token',
+                },
                 body: {
                     model: 'gemini-3.1-pro-preview',
                     contents: [{ role: 'user', parts: [{ text: 'say hello' }] }]
@@ -288,6 +356,146 @@ describe('Image and Content Generation Functions', () => {
             expect(res.write).toHaveBeenCalledWith(JSON.stringify({ text: ' world' }) + '\n');
             expect(res.end).toHaveBeenCalled();
 
+        });
+    });
+
+    describe('healthCheck', () => {
+        const createRes = () => ({
+            status: vi.fn().mockReturnThis(),
+            json: vi.fn().mockReturnThis(),
+            send: vi.fn(),
+        });
+
+        it('returns 200 and connected status when Firestore ping succeeds', async () => {
+            const req = {} as any;
+            const res = createRes();
+            const set = vi.fn().mockResolvedValue(undefined);
+            vi.mocked(admin.firestore).mockReturnValue({
+                collection: vi.fn(() => ({
+                    doc: vi.fn(() => ({ set })),
+                })),
+            } as any);
+
+            await (healthCheck as any)(req, res);
+
+            expect(res.status).toHaveBeenCalledWith(200);
+            expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+                status: 'ok',
+                firestore: 'connected',
+            }));
+        });
+
+        it('returns 200 and degraded status when Firestore ping fails', async () => {
+            const req = {} as any;
+            const res = createRes();
+            const set = vi.fn().mockRejectedValue(new Error('firestore unavailable'));
+            vi.mocked(admin.firestore).mockReturnValue({
+                collection: vi.fn(() => ({
+                    doc: vi.fn(() => ({ set })),
+                })),
+            } as any);
+
+            await (healthCheck as any)(req, res);
+
+            expect(res.status).toHaveBeenCalledWith(200);
+            expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+                status: 'degraded',
+                firestore: 'error',
+            }));
+        });
+
+        it('returns 200 from the regional health check', async () => {
+            const req = {} as any;
+            const res = createRes();
+
+            await (healthCheckWest1 as any)(req, res);
+
+            expect(res.status).toHaveBeenCalledWith(200);
+            expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+                status: 'ok',
+                region: 'us-central1',
+            }));
+        });
+    });
+
+    describe('enrichFanData', () => {
+        beforeEach(() => {
+            mocks.secrets.value.mockReturnValue('mock-api-key');
+            vi.stubGlobal('fetch', vi.fn());
+        });
+
+        afterEach(() => {
+            vi.unstubAllGlobals();
+        });
+
+        it.each([
+            { provider: 'Clearbit', label: 'Clearbit' },
+            { provider: 'Apollo', label: 'Apollo' },
+        ])('fails honestly when $label is unconfigured', async ({ provider, label }) => {
+            mocks.secrets.value.mockReturnValueOnce('');
+
+            const callEnrichFanData = enrichFanData as any;
+
+            await expect(callEnrichFanData({
+                fans: [{ email: 'fan@example.com' }],
+                provider,
+                orgId: 'personal',
+            }, {
+                auth: { uid: 'user123' },
+            })).rejects.toMatchObject({
+                code: 'failed-precondition',
+                message: `${label} enrichment is unavailable because the API key is not configured.`,
+            });
+
+            expect(fetch).not.toHaveBeenCalled();
+        });
+
+        it('passes through real Clearbit enrichment results when configured', async () => {
+            vi.mocked(fetch).mockResolvedValueOnce(
+                new Response(JSON.stringify({
+                    person: {
+                        location: 'Nashville',
+                        geo: { countryCode: 'US' },
+                        seniority: 'director',
+                        bio: 'Artist bio',
+                        avatar: 'https://avatar.example/fan.jpg',
+                    },
+                }), {
+                    status: 200,
+                    headers: { 'Content-Type': 'application/json' },
+                })
+            );
+
+            const callEnrichFanData = enrichFanData as any;
+            const result = await callEnrichFanData({
+                fans: [{ email: 'fan@example.com' }],
+                provider: 'Clearbit',
+                orgId: 'personal',
+            }, {
+                auth: { uid: 'user123' },
+            });
+
+            expect(fetch).toHaveBeenCalledWith(
+                'https://person.clearbit.com/v2/combined/find?email=fan%40example.com',
+                expect.objectContaining({
+                    headers: { Authorization: 'Bearer mock-api-key' },
+                })
+            );
+            expect(result).toEqual({
+                results: [
+                    expect.objectContaining({
+                        email: 'fan@example.com',
+                        city: 'Nashville',
+                        country: 'US',
+                        provider: 'clearbit',
+                        enrichmentScore: 85,
+                    }),
+                ],
+                metadata: expect.objectContaining({
+                    provider: 'clearbit',
+                    count: 1,
+                }),
+            });
         });
     });
 });

@@ -17,7 +17,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { BaseAgent } from '../BaseAgent';
 import type { AgentConfig, ValidAgentId } from '../types';
+import { MembershipService } from '@/services/MembershipService';
 import { SPOKE_AGENT_IDS, HUB_ONLY_TOOLS } from './AgentStressTest.harness';
+import { importWithRetry } from '@/utils/dynamicImport';
 
 // ============================================================================
 // Module mocks (must be at top-level for vi.mock hoisting)
@@ -52,7 +54,17 @@ const mockGenerateContent = vi.fn();
 vi.mock('@/services/intelligence/AutonomousIntelligence', () => ({
     AutonomousIntelligence: {
         generateContent: mockGenerateContent,
-        generateContentStream: vi.fn(),
+        generateContentStream: vi.fn().mockImplementation(async (...args: any[]) => {
+            const result = await mockGenerateContent(...args);
+            return {
+                stream: {
+                    [Symbol.asyncIterator]: async function* () {
+                        yield { text: () => result?.response?.text?.() || '' };
+                    }
+                },
+                response: Promise.resolve(result)
+            };
+        }),
         generateSpeech: vi.fn(),
     },
 }));
@@ -125,7 +137,7 @@ vi.mock('../observability/TraceService', () => ({
 }));
 
 vi.mock('../fine-tuned-models', () => ({
-    getFineTunedModel: vi.fn().mockReturnValue('projects/223837784072/locations/us-central1/endpoints/8440177260006211584'),
+    getFineTunedModel: vi.fn().mockReturnValue('projects/148015878263/locations/us-central1/endpoints/8440177260006211584'),
 }));
 
 vi.mock('@/services/intelligence/context/ContextManager', () => ({
@@ -155,7 +167,7 @@ function makeTestAgent(authorizedTools: string[], extraTools: string[] = []): Ba
         color: 'bg-gray-500',
         category: 'specialist',
         systemPrompt: 'You are a test specialist agent.',
-        modelId: 'projects/223837784072/locations/us-central1/endpoints/8440177260006211584',
+        modelId: 'projects/148015878263/locations/us-central1/endpoints/8440177260006211584',
         authorizedTools,
         tools: [{
             functionDeclarations: allToolNames.map(name => ({
@@ -204,6 +216,7 @@ describe('BaseAgent Runtime Tool Authorization', () => {
 
     beforeEach(() => {
         mockGenerateContent.mockReset();
+        vi.mocked(MembershipService.checkBudget).mockResolvedValue({ allowed: true, remainingBudget: 9999, requiresApproval: false });
     });
 
     // --------------------------------------------------------------------------
@@ -237,7 +250,7 @@ describe('BaseAgent Runtime Tool Authorization', () => {
                 color: 'bg-gray-500',
                 category: 'specialist',
                 systemPrompt: `You are the ${agentId} agent.`,
-                modelId: 'projects/223837784072/locations/us-central1/endpoints/8440177260006211584',
+                modelId: 'projects/148015878263/locations/us-central1/endpoints/8440177260006211584',
                 // Each spoke has its own tools but NOT delegate_task
                 authorizedTools: ['allowed_tool'],
                 tools: [{
@@ -274,7 +287,7 @@ describe('BaseAgent Runtime Tool Authorization', () => {
                 color: 'bg-gray-500',
                 category: 'specialist',
                 systemPrompt: `You are the ${agentId} agent.`,
-                modelId: 'projects/223837784072/locations/us-central1/endpoints/8440177260006211584',
+                modelId: 'projects/148015878263/locations/us-central1/endpoints/8440177260006211584',
                 authorizedTools: ['allowed_tool'],
                 tools: [{
                     functionDeclarations: [
@@ -327,7 +340,7 @@ describe('BaseAgent Runtime Tool Authorization', () => {
             color: 'bg-gray-500',
             category: 'specialist',
             systemPrompt: 'You are a restricted agent with no tools.',
-            modelId: 'projects/223837784072/locations/us-central1/endpoints/8440177260006211584',
+            modelId: 'projects/148015878263/locations/us-central1/endpoints/8440177260006211584',
             authorizedTools: [], // empty = nothing allowed
             tools: [{
                 functionDeclarations: [
@@ -363,9 +376,9 @@ describe('BaseAgent Runtime Tool Authorization', () => {
     it('definition-based agents export authorizedTools as non-empty arrays', async () => {
         // Sample 3 representative production agents to confirm Task 1 was applied correctly.
         // Full coverage is verified by grep in CI.
-        const { FinanceAgent } = await import('../definitions/FinanceAgent');
-        const { MarketingAgent } = await import('../definitions/MarketingAgent');
-        const { DevOpsAgent } = await import('../definitions/DevOpsAgent');
+        const { FinanceAgent } = await importWithRetry(() => import('../definitions/FinanceAgent'));
+        const { MarketingAgent } = await importWithRetry(() => import('../definitions/MarketingAgent'));
+        const { DevOpsAgent } = await importWithRetry(() => import('../definitions/DevOpsAgent'));
 
         expect(Array.isArray(FinanceAgent.authorizedTools)).toBe(true);
         expect((FinanceAgent.authorizedTools?.length ?? 0)).toBeGreaterThan(0);

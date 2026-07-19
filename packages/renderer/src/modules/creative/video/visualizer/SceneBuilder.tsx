@@ -1,10 +1,12 @@
-import React, { useState, useMemo, useEffect, Suspense, Component, ErrorInfo } from 'react';
+import React, { useState, useMemo, useEffect, useRef, Suspense, Component, ErrorInfo } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Environment, ContactShadows, useGLTF } from '@react-three/drei';
 import { Mesh } from 'three'; // Item 357: Named import enables Three.js tree-shaking
-import { Download, Trash2, BoxSelect, MonitorPlay } from 'lucide-react';
+import { Download, Trash2, BoxSelect, Upload, AlertTriangle } from 'lucide-react';
 import { logger } from '@/utils/logger';
 import { useToast } from '@/core/context/ToastContext';
+import { validateSceneModelFile, validateSceneModelContents } from './sceneBuilderFiles';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 
 /**
  * Advanced 3D Scene Builder component implementing requirement 105.
@@ -19,14 +21,15 @@ interface DroppedAsset {
 }
 
 // Error boundary so a bad GLTF file doesn't crash the whole canvas
-class ModelErrorBoundary extends Component<{ key?: React.Key; children: React.ReactNode }, { hasError: boolean }> {
-    constructor(props: { key?: React.Key; children: React.ReactNode }) {
+class ModelErrorBoundary extends Component<{ key?: React.Key; children: React.ReactNode; onLoadError: (message: string) => void }, { hasError: boolean }> {
+    constructor(props: { key?: React.Key; children: React.ReactNode; onLoadError: (message: string) => void }) {
         super(props);
         this.state = { hasError: false };
     }
     static getDerivedStateFromError(_: Error) { return { hasError: true }; }
     componentDidCatch(error: Error, errorInfo: ErrorInfo) {
         logger.error('Failed to load GLTF model:', error, errorInfo);
+        this.props.onLoadError(error.message || 'The model could not be decoded by the 3D viewer.');
     }
     render() {
         if (this.state.hasError) return null;
@@ -79,57 +82,97 @@ const Model = ({ url, position, scale }: { url: string; position: [number, numbe
     return <primitive object={clonedScene} position={position} scale={scale} />;
 };
 
-const DroppableArea = ({ onDrop }: { onDrop: (url: string) => void }) => {
-    const { error: toastError } = useToast();
-    const handleDragOver = (e: React.DragEvent) => {
-        e.preventDefault();
-        e.dataTransfer.dropEffect = 'copy';
-    };
-
-    const handleDrop = (e: React.DragEvent) => {
-        e.preventDefault();
-        const files = e.dataTransfer.files;
-        if (files && files.length > 0) {
-            const file = files[0];
-            if (!file) return;
-            if (file.name.endsWith('.glb') || file.name.endsWith('.gltf')) {
-                const url = URL.createObjectURL(file);
-                onDrop(url);
-            } else {
-                toastError('Please drop a valid .glb or .gltf 3D model file.');
-            }
-        }
-    };
-
+const DropHighlight = () => {
     return (
         <div
-            onDragOver={handleDragOver}
-            onDrop={handleDrop}
             className="absolute inset-0 z-10 pointer-events-none flex items-center justify-center border-4 border-transparent border-dashed hover:border-blue-500/50 transition-colors"
-        >
-            {/* The invisible dropzone overlay */}
-        </div>
+            aria-hidden="true"
+        />
     );
 };
 
 export const SceneBuilder = () => {
     const [assets, setAssets] = useState<DroppedAsset[]>([]);
+    const [intakeStatus, setIntakeStatus] = useState<string | null>(null);
+    const [assetErrors, setAssetErrors] = useState<Record<string, string>>({});
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const assetsRef = useRef<DroppedAsset[]>([]);
+    const { error: toastError } = useToast();
+
+    useEffect(() => {
+        assetsRef.current = assets;
+    }, [assets]);
+
+    useEffect(() => () => {
+        assetsRef.current.forEach((asset) => {
+            if (asset.url.startsWith('blob:')) URL.revokeObjectURL(asset.url);
+        });
+    }, []);
 
     const handleDrop = (url: string) => {
         const randValues = new Uint32Array(1);
         crypto.getRandomValues(randValues);
         const randomVal = randValues[0]! / 0xffffffff;
         const newAsset: DroppedAsset = {
-            id: Date.now().toString(),
+            id: crypto.randomUUID(),
             url,
             // Drop them slightly spread out
             position: [(randomVal - 0.5) * 5, 0, (randomVal - 0.5) * 5],
             scale: 1,
         };
         setAssets((prev) => [...prev, newAsset]);
+        setAssetErrors((prev) => {
+            const { [newAsset.id]: _ignored, ...rest } = prev;
+            return rest;
+        });
     };
 
-    const handleClear = () => {
+    const addModelFile = async (file: File) => {
+        const validationError = validateSceneModelFile(file);
+        if (validationError) {
+            toastError(validationError);
+            return;
+        }
+        setIntakeStatus(`Validating ${file.name}…`);
+        const contentError = await validateSceneModelContents(file);
+        if (contentError) {
+            setIntakeStatus(null);
+            toastError(contentError);
+            return;
+        }
+        handleDrop(URL.createObjectURL(file));
+        setIntakeStatus(null);
+    };
+
+    const handleDragOver = (event: React.DragEvent) => {
+        event.preventDefault();
+        event.dataTransfer.dropEffect = 'copy';
+    };
+
+    const handleFileDrop = (event: React.DragEvent) => {
+        event.preventDefault();
+        const files = event.dataTransfer.files;
+        if (files.length !== 1) {
+            toastError('Drop one GLB or GLTF model at a time.');
+            return;
+        }
+        void addModelFile(files[0]!);
+    };
+
+    const handleClear = async () => {
+        if (assets.length === 0) return;
+
+        // ISSUE-1015: this stage has no save/persistence path at all — Clear
+        // Stage is the only way to lose it faster than just navigating away,
+        // so it needs its own confirmation rather than a single accidental click.
+        const confirmed = await ConfirmDialog.call({
+            title: 'Clear Stage?',
+            message: `This will remove all ${assets.length} model${assets.length === 1 ? '' : 's'} from the stage. This cannot be undone — the stage is not saved anywhere.`,
+            confirmText: 'Clear Stage',
+            variant: 'destructive',
+        });
+        if (!confirmed) return;
+
         // Revoke blob URLs created by URL.createObjectURL to free browser memory
         assets.forEach(asset => {
             if (asset.url.startsWith('blob:')) {
@@ -137,10 +180,15 @@ export const SceneBuilder = () => {
             }
         });
         setAssets([]);
+        setAssetErrors({});
     };
 
     return (
-        <div className="flex flex-col h-full bg-gray-950 rounded-lg overflow-hidden border border-gray-800 relative">
+        <div
+            className="flex flex-col h-full bg-gray-950 rounded-lg overflow-hidden border border-gray-800 relative"
+            onDragOver={handleDragOver}
+            onDrop={handleFileDrop}
+        >
 
             {/* Toolbar */}
             <div className="absolute top-0 left-0 right-0 z-20 flex justify-between items-center p-4 bg-linear-to-b from-black/80 to-transparent pointer-events-auto">
@@ -148,8 +196,36 @@ export const SceneBuilder = () => {
                     <BoxSelect className="w-6 h-6 text-blue-400" />
                     <h2 className="text-white font-semibold text-lg">3D Stage Builder</h2>
                     <span className="bg-blue-500/20 text-blue-300 text-xs px-2 py-1 rounded border border-blue-500/30">Beta</span>
+                    {intakeStatus && <span role="status" className="text-xs text-blue-200">{intakeStatus}</span>}
+                    {/* ISSUE-1015: this stage has no save/persistence path and is not
+                        consumed by any video render — make that explicit rather than
+                        letting a navigate-away/refresh silently discard the only copy. */}
+                    <span className="flex items-center gap-1 bg-amber-500/15 text-amber-300 text-xs px-2 py-1 rounded border border-amber-500/30">
+                        <AlertTriangle className="w-3 h-3" />
+                        Preview only — not saved
+                    </span>
                 </div>
                 <div className="flex items-center gap-2">
+                    <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="flex items-center gap-2 px-3 py-2 bg-blue-500/10 text-blue-300 hover:bg-blue-500/20 rounded-md transition-colors border border-blue-500/20"
+                    >
+                        <Upload className="w-4 h-4" />
+                        Add Model
+                    </button>
+                    <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept=".glb,.gltf,model/gltf-binary,model/gltf+json"
+                        className="hidden"
+                        onChange={(event) => {
+                            const file = event.target.files?.[0];
+                            if (file) void addModelFile(file);
+                            event.target.value = '';
+                        }}
+                        aria-label="Choose a GLB or GLTF model"
+                    />
                     <button
                         onClick={handleClear}
                         className="flex items-center gap-2 px-3 py-2 bg-red-500/10 text-red-400 hover:bg-red-500/20 rounded-md transition-colors border border-red-500/20"
@@ -157,12 +233,14 @@ export const SceneBuilder = () => {
                         <Trash2 className="w-4 h-4" />
                         Clear Stage
                     </button>
-                    <button className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white hover:bg-blue-500 rounded-md transition-colors font-medium shadow-lg shadow-blue-500/20">
-                        <MonitorPlay className="w-4 h-4" />
-                        Preview Camera
-                    </button>
                 </div>
             </div>
+
+            {Object.entries(assetErrors).map(([assetId, message]) => (
+                <div key={assetId} role="alert" className="absolute top-16 left-4 right-4 z-20 rounded border border-red-500/40 bg-red-950/85 px-3 py-2 text-xs text-red-200">
+                    A stage model could not load. Keep the original file, remove it, or choose a different GLB/GLTF asset. {message}
+                </div>
+            ))}
 
             {/* Instruction Overlay when empty */}
             {assets.length === 0 && (
@@ -180,7 +258,7 @@ export const SceneBuilder = () => {
             )}
 
             {/* Drag & Drop Overlay */}
-            <DroppableArea onDrop={handleDrop} />
+            <DropHighlight />
 
             {/* 3D Canvas */}
             <div className="w-full h-[600px] bg-black">
@@ -196,7 +274,10 @@ export const SceneBuilder = () => {
                     <Suspense fallback={null}>
                         {/* Render all dropped assets */}
                         {assets.map((asset) => (
-                            <ModelErrorBoundary key={asset.id}>
+                            <ModelErrorBoundary
+                                key={asset.id}
+                                onLoadError={(message) => setAssetErrors(prev => ({ ...prev, [asset.id]: message }))}
+                            >
                                 <Model url={asset.url} position={asset.position} scale={asset.scale} />
                             </ModelErrorBoundary>
                         ))}

@@ -29,6 +29,17 @@ vi.mock('@/modules/marketplace/components/ProductCard', () => ({
     default: () => <div data-testid="product-card" />,
 }));
 
+vi.mock('../../creative/components/BrandAssetsDrawer', () => ({
+    default: ({ onSelect, onClose }: { onSelect?: (asset: { url: string; description?: string }) => void; onClose: () => void }) => (
+        <div data-testid="brand-assets-drawer">
+            <button onClick={() => onSelect?.({ url: 'https://example.com/brand-asset.jpg', description: 'Brand asset' })}>
+                Choose Brand Asset
+            </button>
+            <button onClick={onClose}>Close</button>
+        </div>
+    ),
+}));
+
 describe('SocialFeed Interaction: Send Button', () => {
     const mockCreatePost = vi.fn();
     const mockSetFilter = vi.fn();
@@ -139,5 +150,24 @@ describe('SocialFeed Interaction: Send Button', () => {
         // 7. Button should be enabled again
         expect(sendButton).not.toBeDisabled();
         expect(screen.queryByText('Posting...')).not.toBeInTheDocument();
+    });
+
+    it('attaches media from Brand Assets before posting', async () => {
+        render(<SocialFeed userId="user-123" />);
+
+        const textarea = screen.getByPlaceholderText("social.hints.studio_update");
+        fireEvent.change(textarea, { target: { value: 'Post with media' } });
+
+        fireEvent.click(screen.getByRole('button', { name: /Add media from brand assets/i }));
+        expect(screen.getByTestId('brand-assets-drawer')).toBeInTheDocument();
+
+        fireEvent.click(screen.getByText('Choose Brand Asset'));
+        expect(screen.getByText('Media attached')).toBeInTheDocument();
+
+        fireEvent.click(screen.getByTestId('social-post-submit'));
+
+        await waitFor(() => {
+            expect(mockCreatePost).toHaveBeenCalledWith('Post with media', ['https://example.com/brand-asset.jpg'], undefined);
+        });
     });
 });

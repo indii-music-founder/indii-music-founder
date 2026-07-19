@@ -1,8 +1,9 @@
 import { z } from "zod";
 import { UserProfile } from "@/types/User";
+export { BaseMediaRequestSchema, GenerateAudioSchema, GenerateImageSchema, GenerateOmniRemixSchema, GenerateVideoSchema } from '@indii/shared';
 
 export const VideoJobStatusSchema = z.enum([
-    'idle', 'queued', 'processing', 'completed', 'failed', 'stitching'
+    'idle', 'queued', 'processing', 'completed', 'failed', 'stitching', 'cancelled'
 ]);
 
 export const SafetyRatingSchema = z.object({
@@ -31,19 +32,49 @@ export const ReferenceImageSchema = z.object({
     referenceType: z.literal('asset').optional().default('asset')
 });
 
+export const DirectorSettingsSchema = z.object({
+    fps: z.number().int().min(1).max(60),
+    durationSeconds: z.number().positive(),
+    totalFrames: z.number().int().nonnegative(),
+    aspectRatio: VideoAspectRatioSchema.optional(),
+    resolution: VideoResolutionSchema.optional(),
+    seed: z.union([z.number().int(), z.string().regex(/^\d+$/)]).optional(),
+    firstFrameUri: z.string().optional(),
+    lastFrameUri: z.string().optional(),
+    cameraMovement: z.string().optional(),
+    motionStrength: z.number().min(0).max(1).optional(),
+});
+
+// UI callers may use a semantic tier or the canonical GA provider ID from
+// INTELLIGENCE_MODELS. Preview/retired IDs are deliberately absent.
+export const SupportedVideoModelSchema = z.enum([
+    'lite', 'fast', 'pro',
+    'veo-3.1-lite-generate-001',
+    'veo-3.1-fast-generate-001',
+    'veo-3.1-generate-001',
+]);
+
 export const VideoGenerationOptionsSchema = z.object({
     prompt: z.string().min(1, "Prompt is required"),
+    mode: z.enum(['video_remix', 'temporal_inpaint']).optional(),
     aspectRatio: VideoAspectRatioSchema.optional(),
     resolution: VideoResolutionSchema.optional(),
     seed: z.number().int().optional(),
     negativePrompt: z.string().optional(),
-    model: z.string().optional(),
+    model: SupportedVideoModelSchema.optional(),
     firstFrame: z.string().optional(), // Allow Data URI or URL
     lastFrame: z.string().optional(),  // Allow Data URI or URL
     inputVideo: z.string().optional(), // For video extensions (URL or Base64)
     image: z.object({
         imageBytes: z.string(),
         mimeType: z.string().optional()
+    }).optional(),
+    sourceVideoUri: z.string().startsWith('gs://').optional(),
+    maskFrameUri: z.string().startsWith('gs://').optional(),
+    maskTrackUri: z.string().startsWith('gs://').optional(),
+    frameRange: z.object({
+        startFrame: z.number().int().min(0),
+        endFrame: z.number().int().min(0),
     }).optional(),
     timeOffset: z.number().optional(),
     ingredients: z.array(z.string()).optional(),
@@ -55,6 +86,7 @@ export const VideoGenerationOptionsSchema = z.object({
     cameraMovement: z.string().optional(),
     motionStrength: z.number().min(0).max(1).optional(),
     shotList: z.array(z.unknown()).optional(), // Can refine later
+    directorSettings: DirectorSettingsSchema.optional(),
     // NOTE: Audio is always-on for Veo 3.1 — generateAudio is not a valid API parameter
     // Retained in schema for UI state only, never sent to API
     inputAudio: z.string().optional(), // For custom soundtracks (URL or Base64)
@@ -62,7 +94,14 @@ export const VideoGenerationOptionsSchema = z.object({
     orgId: z.string().optional(),
     userProfile: z.custom<UserProfile>().optional(), // Typed UserProfile for service compatibility
     jobId: z.string().optional(),
-    useGrounding: z.boolean().optional()
+    useGrounding: z.boolean().optional(),
+    skipCostCheck: z.boolean().optional(),
+    costReservationId: z.string().optional(),
+    parentId: z.string().optional(),
+    inputManifest: z.array(z.object({
+        role: z.enum(['first_frame', 'last_frame', 'ingredient', 'character_reference', 'whisk_reference']),
+        uri: z.string(),
+    })).max(5).optional(),
 });
 
 export type VideoGenerationOptions = z.infer<typeof VideoGenerationOptionsSchema>;

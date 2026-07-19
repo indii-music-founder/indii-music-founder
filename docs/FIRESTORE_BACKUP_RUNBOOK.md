@@ -25,7 +25,7 @@ gcloud firestore export → gs://indii-backups/firestore/YYYY-MM-DD/
 
 ```bash
 # Create a dedicated backup bucket with versioning
-gsutil mb -p indii-v-1-1 -l us-central1 gs://indii-backups
+gsutil mb -p indii-music-founder -l us-central1 gs://indii-backups
 
 # Enable versioning for additional protection
 gsutil versioning set on gs://indii-backups
@@ -48,11 +48,11 @@ gsutil lifecycle set /tmp/lifecycle.json gs://indii-backups
 
 ```bash
 # Get the default service account
-SA=$(gcloud iam service-accounts list --project=indii-v-1-1 \
+SA=$(gcloud iam service-accounts list --project=indii-music-founder \
   --filter="email:firebase-adminsdk" --format="value(email)")
 
 # Grant Firestore export permissions
-gcloud projects add-iam-policy-binding indii-v-1-1 \
+gcloud projects add-iam-policy-binding indii-music-founder \
   --member="serviceAccount:$SA" \
   --role="roles/datastore.importExportAdmin"
 
@@ -72,7 +72,7 @@ export const scheduledFirestoreBackup = functions
   .timeZone('America/New_York')
   .onRun(async () => {
     const client = new admin.firestore.v1.FirestoreAdminClient();
-    const projectId = process.env.GCP_PROJECT || 'indii-v-1-1';
+    const projectId = process.env.GCP_PROJECT || 'indii-music-founder';
     const databaseName = client.databasePath(projectId, '(default)');
 
     const date = new Date().toISOString().split('T')[0];
@@ -94,14 +94,14 @@ export const scheduledFirestoreBackup = functions
 ```bash
 # Using gcloud directly (alternative to Cloud Function above)
 gcloud scheduler jobs create http firestore-daily-backup \
-  --project=indii-v-1-1 \
+  --project=indii-music-founder \
   --schedule="0 2 * * *" \
   --time-zone="America/New_York" \
-  --uri="https://firestore.googleapis.com/v1/projects/indii-v-1-1/databases/(default):exportDocuments" \
+  --uri="https://firestore.googleapis.com/v1/projects/indii-music-founder/databases/(default):exportDocuments" \
   --http-method=POST \
   --headers="Content-Type=application/json" \
   --message-body='{"outputUriPrefix":"gs://indii-backups/firestore/"}' \
-  --oauth-service-account-email="firebase-adminsdk@indii-v-1-1.iam.gserviceaccount.com"
+  --oauth-service-account-email="firebase-adminsdk@indii-music-founder.iam.gserviceaccount.com"
 ```
 
 ---
@@ -123,14 +123,14 @@ gsutil ls gs://indii-backups/firestore/ | tail -5
 ```bash
 # Import the latest backup
 gcloud firestore import gs://indii-backups/firestore/YYYY-MM-DD/ \
-  --project=indii-v-1-1
+  --project=indii-music-founder
 ```
 
 ### Step 3: Verify Data
 
 ```bash
 # Run a count query to verify collections are populated
-firebase firestore:list --project=indii-v-1-1
+firebase firestore:list --project=indii-music-founder
 ```
 
 ### Step 4: Notify Users

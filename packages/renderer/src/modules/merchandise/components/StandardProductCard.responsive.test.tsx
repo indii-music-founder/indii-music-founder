@@ -36,23 +36,11 @@ describe('📱 Viewport: StandardProductCard Responsiveness', () => {
         expect(price).toBeInTheDocument();
     });
 
-    it('ensures the "Add to Cart" button is accessible via focus on mobile', () => {
+    it('does not render the removed "Add to Cart" dead affordance (ISSUE-621+)', () => {
         render(<StandardProductCard product={mockProduct} />);
 
-        const button = screen.getByText('ADD TO CART').closest('button');
-        expect(button).toBeInTheDocument();
-
-        const cardContainer = button?.closest('.group');
-        expect(cardContainer).toBeInTheDocument();
-
-        // Let's verify that the button has the class that reveals it on focus.
-        expect(button?.closest('div')).toHaveClass('group-focus-within:opacity-100');
-
-        // Also verify the button itself moves up on focus within
-        expect(button).toHaveClass('group-focus-within:translate-y-0');
-
-        // Verify focus-visible classes for accessibility
-        expect(button).toHaveClass('focus-visible:ring-2');
+        expect(screen.queryByText('ADD TO CART')).not.toBeInTheDocument();
+        expect(screen.queryByRole('button')).not.toBeInTheDocument();
     });
 
     it('handles long tags without breaking layout', () => {

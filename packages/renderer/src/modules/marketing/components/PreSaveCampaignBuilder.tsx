@@ -45,6 +45,30 @@ export default function PreSaveCampaignBuilder() {
         setTimeout(() => setCopied(false), 2000);
     };
 
+    const handleShare = async () => {
+        const shareUrl = `https://${campaignUrl}`;
+        const sharePayload = {
+            title: trackTitle || 'Pre-Save Campaign',
+            text: 'Open this pre-save campaign page.',
+            url: shareUrl,
+        };
+
+        if (typeof navigator !== 'undefined' && 'share' in navigator) {
+            try {
+                await navigator.share(sharePayload);
+                return;
+            } catch (error) {
+                if ((error as DOMException)?.name === 'AbortError') {
+                    return;
+                }
+            }
+        }
+
+        await navigator.clipboard.writeText(shareUrl);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+    };
+
     return (
         <div className="flex flex-col gap-6 p-6 max-w-2xl">
             {/* Header */}
@@ -157,7 +181,7 @@ export default function PreSaveCampaignBuilder() {
                     {/* Page Content */}
                     <div className="p-6 flex flex-col items-center gap-4 min-h-40">
                         {/* Album art placeholder */}
-                        <div className="w-24 h-24 rounded-xl bg-linear-to-br from-dept-marketing/30 to-purple-600/30 border border-white/10 flex items-center justify-center">
+                        <div className="w-24 h-24 rounded-xl bg-linear-to-br from-dept-marketing/30 to-green-600/30 border border-white/10 flex items-center justify-center">
                             <Music size={28} className="text-dept-marketing/60" />
                         </div>
                         <div className="text-center">
@@ -211,7 +235,11 @@ export default function PreSaveCampaignBuilder() {
                         {copied ? <CheckCircle size={12} className="text-green-400" /> : <Copy size={12} />}
                         {copied ? 'Copied!' : 'Copy'}
                     </button>
-                    <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-xs text-gray-300 hover:border-white/20 transition-all">
+                    <button
+                        onClick={() => void handleShare()}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-xs text-gray-300 hover:border-white/20 transition-all"
+                        title="Share campaign link"
+                    >
                         <Share2 size={12} />
                         Share
                     </button>

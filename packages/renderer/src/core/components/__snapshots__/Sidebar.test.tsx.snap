@@ -39,7 +39,7 @@ exports[`Sidebar > matches snapshot in collapsed state 1`] = `
   >
     <button
       aria-label="Open Command Menu"
-      class="p-2 rounded-lg text-gray-400 hover:text-purple-400 hover:bg-white/10 transition-colors shadow-sm"
+      class="p-2 rounded-lg text-gray-400 hover:text-green-400 hover:bg-white/10 transition-colors shadow-sm"
       title="Search (⌘K)"
     >
       <svg
@@ -91,6 +91,17 @@ exports[`Sidebar > matches snapshot in collapsed state 1`] = `
     </button>
   </div>
   <div
+    class="px-4 pb-2"
+  >
+    <button
+      aria-label="Founders"
+      class="w-full flex items-center justify-center p-2 rounded-lg transition-all text-xs font-mono tracking-wider text-gray-600 hover:text-gray-400 hover:bg-white/5"
+      title="View Founder Recognition"
+    >
+      ⭐
+    </button>
+  </div>
+  <div
     class="flex-1 py-4 space-y-2"
   >
     <div
@@ -124,7 +135,7 @@ exports[`Sidebar > matches snapshot in collapsed state 1`] = `
           />
         </button>
         <button
-          aria-label="Road Manager"
+          aria-label="Road/tour"
           class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
           data-testid="nav-item-road"
@@ -448,6 +459,23 @@ exports[`Sidebar > matches snapshot in collapsed state 1`] = `
           />
         </button>
         <button
+          aria-label="Notes"
+          class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
+          data-state="closed"
+          data-testid="nav-item-notes"
+          style="--dept-color: var(--color-test); border-left: 3px solid transparent;"
+        >
+          <div
+            class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+            style="background: radial-gradient(circle at 12px, var(--dept-color)33, transparent 50px);"
+          />
+          <svg
+            class="relative z-10 transition-transform duration-300 group-hover:scale-110 opacity-70 group-hover:opacity-100"
+            data-testid="icon-FileText"
+            size="18"
+          />
+        </button>
+        <button
           aria-label="Memory Agent"
           class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
           data-state="closed"
@@ -577,7 +605,7 @@ exports[`Sidebar > matches snapshot in expanded state 1`] = `
         class="flex items-center gap-2"
       >
         <svg
-          class="text-gray-500 group-hover:text-purple-400 transition-colors"
+          class="text-gray-500 group-hover:text-green-400 transition-colors"
           data-testid="icon-Search"
           size="14"
         />
@@ -644,6 +672,17 @@ exports[`Sidebar > matches snapshot in expanded state 1`] = `
       <div
         class="absolute inset-0 rounded-xl bg-linear-to-r from-transparent via-amber-400/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 pointer-events-none"
       />
+    </button>
+  </div>
+  <div
+    class="px-4 pb-2"
+  >
+    <button
+      aria-label="Founders"
+      class="w-full flex items-center justify-center p-2 rounded-lg transition-all text-xs font-mono tracking-wider text-gray-600 hover:text-gray-400 hover:bg-white/5"
+      title="View Founder Recognition"
+    >
+      Founders
     </button>
   </div>
   <div
@@ -715,7 +754,7 @@ exports[`Sidebar > matches snapshot in expanded state 1`] = `
           <span
             class="truncate relative z-10 font-medium transition-all duration-300 group-hover:translate-x-0.5"
           >
-            Road Manager
+            Road/tour
           </span>
         </button>
         <button
@@ -1119,6 +1158,27 @@ exports[`Sidebar > matches snapshot in expanded state 1`] = `
             class="truncate relative z-10 font-medium transition-all duration-300 group-hover:translate-x-0.5"
           >
             Knowledge Base
+          </span>
+        </button>
+        <button
+          class="w-[calc(100%-8px)] mx-1 flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg transition-all duration-300 relative group overflow-hidden mb-0.5 text-gray-400 font-medium hover:text-white hover:bg-white/[0.02]"
+          data-state="closed"
+          data-testid="nav-item-notes"
+          style="--dept-color: var(--color-test); border-left: 3px solid transparent;"
+        >
+          <div
+            class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+            style="background: radial-gradient(circle at 12px, var(--dept-color)33, transparent 50px);"
+          />
+          <svg
+            class="relative z-10 transition-transform duration-300 group-hover:scale-110 opacity-70 group-hover:opacity-100"
+            data-testid="icon-FileText"
+            size="18"
+          />
+          <span
+            class="truncate relative z-10 font-medium transition-all duration-300 group-hover:translate-x-0.5"
+          >
+            Notes
           </span>
         </button>
         <button

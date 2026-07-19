@@ -27,7 +27,7 @@ export const UploadQueueMonitor: React.FC = () => {
     const getIconForType = (type: string) => {
         switch (type) {
             case 'image': return <FileImage size={16} className="text-blue-400" />;
-            case 'video': return <FileVideo size={16} className="text-purple-400" />;
+            case 'video': return <FileVideo size={16} className="text-green-400" />;
             case 'music': return <FileAudio size={16} className="text-orange-400" />;
             case 'document': return <FileText size={16} className="text-green-400" />;
             default: return <FileText size={16} className="text-gray-400" />;

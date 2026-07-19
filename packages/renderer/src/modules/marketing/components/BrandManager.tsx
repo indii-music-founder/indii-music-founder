@@ -12,6 +12,7 @@ import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
 import { calculateProfileStatus } from '@/services/onboarding/onboardingService';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/services/firebase';
+import { resolveBrandManagerTab } from '@/modules/handoffViews';
 import {
     IdentityPanel,
     VisualsPanel,
@@ -31,8 +32,23 @@ const BrandManager: React.FC = () => {
         setUserProfile: state.setUserProfile
     })));
 
+    const pendingMarketingHandoff = useStore(state => state.pendingHandoffs.marketing);
+
     // Tab State
     const [activeTab, setActiveTab] = useState<TabId>('identity');
+
+    // Adjust state during render (not in an effect) when a new handoff arrives —
+    // avoids the cascading-render pattern flagged by react-hooks/set-state-in-effect.
+    const [prevHandoff, setPrevHandoff] = useState(pendingMarketingHandoff);
+    if (pendingMarketingHandoff !== prevHandoff) {
+        setPrevHandoff(pendingMarketingHandoff);
+        if (pendingMarketingHandoff) {
+            const pendingTab = resolveBrandManagerTab(pendingMarketingHandoff.targetView);
+            if (pendingTab && activeTab !== pendingTab) {
+                setActiveTab(pendingTab);
+            }
+        }
+    }
 
     // Brand Kit with defaults
     const brandKit: BrandKitWithDefaults = {

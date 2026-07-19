@@ -78,7 +78,7 @@ const formatTime = (seconds: number) => new Date(seconds * 1000).toISOString().s
 
 export const AudioSegmentNode = memo(({ data, selected }: NodeProps<AudioSegmentNodeData>) => {
     return (
-        <NodeWrapper selected={selected} className="w-[280px] border-purple-500/30">
+        <NodeWrapper selected={selected} className="w-[280px] border-green-500/30">
             <Handle
                 type="source"
                 position={Position.Right}
@@ -87,10 +87,10 @@ export const AudioSegmentNode = memo(({ data, selected }: NodeProps<AudioSegment
             />
             <div className="p-3">
                 <div className="flex items-center gap-2 mb-2">
-                    <div className="p-1 bg-purple-900/30 rounded">
-                        <AudioWaveform className="w-4 h-4 text-purple-400" />
+                    <div className="p-1 bg-green-900/30 rounded">
+                        <AudioWaveform className="w-4 h-4 text-green-400" />
                     </div>
-                    <p className="font-bold text-xs text-purple-300 uppercase tracking-wider">Audio Source</p>
+                    <p className="font-bold text-xs text-green-300 uppercase tracking-wider">Audio Source</p>
                 </div>
                 <div className="bg-gray-900/50 p-2 rounded-md border border-gray-700/50">
                     <p className="text-gray-200 font-medium truncate text-sm" title={data.segmentLabel}>{data.segmentLabel}</p>

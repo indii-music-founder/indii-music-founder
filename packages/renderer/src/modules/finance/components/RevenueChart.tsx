@@ -24,7 +24,7 @@ export const RevenueChart: React.FC<RevenueChartProps> = ({
             <div className="flex items-center justify-between mb-6">
                 <h3 className="font-semibold text-white">{title}</h3>
                 <div className="flex items-center gap-2">
-                    <span className="w-3 h-3 rounded-full bg-purple-500" />
+                    <span className="w-3 h-3 rounded-full bg-green-500" />
                     <span className="text-xs text-gray-400">Revenue</span>
                 </div>
             </div>
@@ -39,7 +39,7 @@ export const RevenueChart: React.FC<RevenueChartProps> = ({
                                 whileHover={{ opacity: 1, y: 0 }}
                                 className="absolute -top-10 left-1/2 -translate-x-1/2 bg-white/10 backdrop-blur-md border border-white/20 text-white text-[10px] rounded-lg px-2 py-1 shadow-xl pointer-events-none z-20"
                             >
-                                {valuePrefix}{point.value.toLocaleString()}
+                                {valuePrefix}{point.value.toLocaleString('en-US')}
                             </motion.div>
 
                             {/* Bar background */}
@@ -49,7 +49,7 @@ export const RevenueChart: React.FC<RevenueChartProps> = ({
                                     initial={{ height: 0 }}
                                     animate={{ height: `${(point.value / maxValue) * 100}%` }}
                                     transition={{ duration: 1, delay: index * 0.1, ease: [0.23, 1, 0.32, 1] }}
-                                    className="absolute bottom-0 left-0 w-full bg-linear-to-t from-purple-600/60 to-purple-400 shadow-[0_0_20px_rgba(168,85,247,0.3)] group-hover:from-purple-500 group-hover:to-purple-300 transition-colors"
+                                    className="absolute bottom-0 left-0 w-full bg-linear-to-t from-green-600/60 to-green-400 shadow-[0_0_20px_rgba(168,85,247,0.3)] group-hover:from-green-500 group-hover:to-green-300 transition-colors"
                                 />
                             </div>
                         </div>

@@ -18,7 +18,7 @@ description: Automatically identify and run relevant tests based on the current 
 ## 2. Execution Protocol
 
 * **Unit (Vitest):** `npm run test -- [path]`
-* **E2E (Playwright):** `npm run test:e2e -- [path]`
+* **E2E (Playwright):** `npx vite optimize --config packages/renderer/vite.config.ts && npx firebase emulators:exec --only firestore "npm run test:e2e -- [path]"`
 * **Python:** `python3 -m pytest [path]`
 * **Department-Scoped:** `python3 execution/run_department_test.py [department] [options]` (e.g. `python3 execution/run_department_test.py marketing --unit-only`)
 * **Audio System / MegaTestAudioLoop:** `python3 execution/run_department_test.py audio-analyzer` (aliases: `audio`, `audio-system`, `mega-test-audio`, `MegaTestAudioLoop`)

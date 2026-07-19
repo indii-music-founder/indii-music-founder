@@ -13,6 +13,7 @@ export const ProjectSchema = z.object({
     date: z.number().optional().default(() => Date.now()),
     orgId: z.string(),
     userId: z.string().optional(),
+    status: z.enum(['active', 'paused', 'archived']).optional().default('active'),
     metadata: z.record(z.any()).optional(),
 });
 
@@ -26,6 +27,7 @@ export const ProjectMetadataSchema = z.object({
     type: z.string(),
     lastModified: z.number(),
     assetCount: z.number(),
+    status: z.enum(['active', 'paused', 'archived']).optional().default('active'),
     thumbnail: z.string().optional(),
     metadata: z.record(z.any()).optional(),
 });
@@ -54,6 +56,7 @@ export function projectToMetadata(
         id: validatedProject.id,
         name: validatedProject.name,
         type: validatedProject.type as ProjectMetadata['type'],
+        status: validatedProject.status as ProjectMetadata['status'],
         lastModified: validatedProject.date, // KEY CONVERSION: date → lastModified
         assetCount,
         thumbnail,

@@ -99,6 +99,16 @@ interface FirebaseAuthError {
  * Centralised to avoid duplicating error strings across every auth method.
  */
 function getAuthErrorMessage(error: FirebaseAuthError): string | null {
+    // Firebase may embed the full blocked origin in the error code, for example:
+    // auth/requests-from-referer-http://localhost:4243-are-blocked
+    if (
+        typeof error.code === 'string' &&
+        error.code.startsWith('auth/requests-from-referer-') &&
+        error.code.endsWith('-are-blocked')
+    ) {
+        return 'Authentication service not configured for this domain. Please contact support.';
+    }
+
     switch (error.code) {
         // ── Config / service issues ────────────────────────────────────────
         case 'auth/argument-error':
@@ -144,6 +154,11 @@ function getAuthErrorMessage(error: FirebaseAuthError): string | null {
         // ── Re-authentication required (stale session for destructive ops) ─
         case 'auth/requires-recent-login':
             return 'Your session has expired. Please sign in again before making this change.';
+
+        // ── Domain authorization (Firebase Console configuration) ──────────
+        case 'auth/requests-from-referer-blocked':
+        case 'auth/requests-from-referer-empty-are-blocked':
+            return 'Authentication service not configured for this domain. Please contact support.';
 
         // ── Fallback ───────────────────────────────────────────────────────
         default:
@@ -214,8 +229,22 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, _get) => ({
     signUpWithEmail: async (email: string, pass: string) => {
         try {
             set({ authLoading: true, authError: null });
-            await wrappedCreateUserWithEmailAndPassword(auth, email, pass);
-            // State update handled by listener — initializeAuthListener will create the user doc
+            const userCred = await wrappedCreateUserWithEmailAndPassword(auth, email, pass);
+
+            // Create user document in Firestore immediately (don't wait for listener)
+            if (userCred.user) {
+                const userDocRef = doc(db, 'users', userCred.user.uid);
+                await setDoc(userDocRef, {
+                    uid: userCred.user.uid,
+                    email: userCred.user.email,
+                    displayName: '',
+                    createdAt: serverTimestamp(),
+                    updatedAt: serverTimestamp(),
+                }, { merge: true });
+            }
+
+            set({ authLoading: false });
+            // State update handled by listener — onAuthStateChanged will update currentUser
         } catch (error: unknown) {
             const firebaseError = error as FirebaseAuthError;
             const errorMessage = getAuthErrorMessage(firebaseError);
@@ -309,12 +338,17 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, _get) => ({
 
         // 6. Electron Auth Handoff Listener (Item 518)
         let electronUnsub: (() => void) | null = null;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const electronAuth = typeof window !== 'undefined' ? (window.electronAPI?.auth as any) : null;
+        const electronAuth = typeof window !== 'undefined' ? window.electronAPI?.auth : null;
         if (electronAuth && electronAuth.onUserUpdate) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            electronUnsub = electronAuth.onUserUpdate(async (tokens: any) => {
+            electronUnsub = electronAuth.onUserUpdate(async (tokens) => {
                 if (tokens) {
+                    if (tokens.source === 'founder') {
+                        try {
+                            localStorage.setItem('indii_founder_preview_pending', 'true');
+                        } catch {
+                            // localStorage may be unavailable; the app will still sign in.
+                        }
+                    }
                     logger.info('[Auth] Received handoff tokens from Main Process. Signing in...');
                     try {
                         set({ authLoading: true, authError: null });
@@ -351,7 +385,10 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, _get) => ({
         if (!isE2EMock && (!apiKey || apiKeyLower.includes('fake') || apiKeyLower.includes('bypass') || apiKeyLower.includes('mock') || apiKeyLower.includes('your_'))) {
             logger.warn('[Auth] No valid API Key found and not in E2E mode.');
             set({ authLoading: false });
-            return () => { };
+            return () => {
+                if (electronUnsub) electronUnsub();
+                if (errorUnsub) errorUnsub();
+            };
         }
 
         // TIMEOUT FAILSAFE: If onAuthStateChanged never fires (API key blocked,

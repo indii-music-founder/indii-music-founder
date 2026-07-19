@@ -169,9 +169,7 @@ Total posts needed: ${brief.durationDays * brief.postsPerDay}
 
         const platformLimits: Record<Platform, number> = {
             Twitter: 280,
-            Instagram: 2200,
-            LinkedIn: 3000,
-            Email: 10000 // Arbitrary high limit for email
+            Instagram: 2200
         };
 
         const prompt = `
@@ -236,12 +234,17 @@ Ensure all versions respect the platform's character limit.
     // =========================================================================
 
     /**
-     * Generate a short-form video asset for marketing
+     * Generate a short-form video asset for marketing.
+     *
+     * ISSUE-954: text-to-video only — GenAI.generateVideo below takes a
+     * text prompt and config, nothing audio-related. A previous `audioUrl`
+     * parameter was never referenced in this function body and no caller
+     * ever passed one; removed rather than kept as an unused parameter that
+     * implies audio-conditioned generation is possible here.
      */
     async generateMarketingVideo(
         prompt: string,
         style: string,
-        audioUrl?: string,
         config?: Record<string, unknown>
     ): Promise<string> {
         const brandContext = await this.getBrandContext();
@@ -372,8 +375,7 @@ Focus on dynamic movements, high-quality textures, and brand alignment.
             const userId = auth.currentUser?.uid || 'anonymous';
             const gsUri = await CreativeStorageService.uploadReferenceMedia(userId, dataUrl, 'image');
             return await getDownloadURL(ref(storage, gsUri));
-        } catch (error: unknown) {
-            console.error('[CampaignIntelligence] Failed to upload generated image:', error);
+        } catch (_error: unknown) {
             throw new Error('Failed to persist generated image to Cloud Storage.');
         }
     }

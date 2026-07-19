@@ -3,6 +3,7 @@ import { Eye, Volume2, Plus, Trash2 } from 'lucide-react';
 import { VideoTrack, VideoClip } from '../../store/videoEditorStore';
 import { TimelineClip } from './TimelineClip';
 import { PIXELS_PER_FRAME } from '../constants';
+import { readCreativeAssetDrag } from '@/services/creative/CreativeAssetDragService';
 
 export interface TimelineTrackProps {
     key?: React.Key;
@@ -33,9 +34,9 @@ export const TimelineTrack = memo(({
                 <div className="w-48 border-r border-gray-800 p-2 flex flex-col justify-between bg-gray-900 shrink-0 z-10">
                     <div className="flex items-center justify-between">
                         <span className="text-[10px] font-medium text-gray-300 truncate" title={track.name}>{track.name}</span>
-                        <div className="flex gap-1">
-                            <button data-testid={`track-toggle-visibility-${track.id}`} className="text-gray-600 hover:text-gray-400" aria-label={`Toggle visibility for track ${track.name}`}><Eye size={12} /></button>
-                            <button data-testid={`track-toggle-mute-${track.id}`} className="text-gray-600 hover:text-gray-400" aria-label={`Toggle mute for track ${track.name}`}><Volume2 size={12} /></button>
+                        <div className="flex gap-1 text-gray-600">
+                            <Eye size={12} />
+                            <Volume2 size={12} />
                         </div>
                     </div>
                     <div className="flex gap-1.5">
@@ -60,7 +61,7 @@ export const TimelineTrack = memo(({
                         e.preventDefault();
                         e.dataTransfer.dropEffect = 'copy';
                     }}
-                    onDrop={(e) => {
+                    onDrop={async (e) => {
                         e.preventDefault();
 
                         const rect = e.currentTarget.getBoundingClientRect();
@@ -68,45 +69,54 @@ export const TimelineTrack = memo(({
                         const frame = Math.max(0, Math.round(x / PIXELS_PER_FRAME));
 
                         const files = Array.from(e.dataTransfer.files) as File[];
+                        const { useVideoEditorStore } = await import('../../store/videoEditorStore');
+                        const { getMediaDurationFromFile, resolveMediaDurationSeconds, durationSecondsToFrames } = await import('../utils/mediaMetadata');
+                        const fps = useVideoEditorStore.getState().project?.fps || 30;
+
                         if (files.length > 0) {
                             const file = files[0]!;
                             const type = file.type.startsWith('video/') ? 'video' : file.type.startsWith('audio/') ? 'audio' : file.type.startsWith('image/') ? 'image' : 'video';
                             const url = URL.createObjectURL(file);
 
-                            import('../../store/videoEditorStore').then(({ useVideoEditorStore }) => {
-                                useVideoEditorStore.getState().addClip({
-                                    type,
-                                    trackId: track.id,
-                                    name: file.name,
-                                    startFrame: frame,
-                                    durationInFrames: 300,
-                                    src: url,
-                                    opacity: 1,
-                                    scale: 1,
-                                    x: 0,
-                                    y: 0
-                                });
+                            const durationSeconds = type !== 'image' ? await getMediaDurationFromFile(file) : 0;
+                            const durationInFrames = type === 'image' ? 90 : durationSecondsToFrames(durationSeconds, fps);
+
+                            useVideoEditorStore.getState().addClip({
+                                type,
+                                trackId: track.id,
+                                name: file.name,
+                                startFrame: frame,
+                                durationInFrames,
+                                src: url,
+                                opacity: 1,
+                                scale: 1,
+                                x: 0,
+                                y: 0
                             });
                         } else {
                             try {
-                                const dataString = e.dataTransfer.getData('application/json');
-                                if (dataString) {
-                                    const data = JSON.parse(dataString);
-                                    if (data.type === 'asset' && data.asset) {
-                                        const mediaType = data.asset.type === 'image' ? 'image' : data.asset.type === 'audio' ? 'audio' : 'video';
-                                        import('../../store/videoEditorStore').then(({ useVideoEditorStore }) => {
-                                            useVideoEditorStore.getState().addClip({
-                                                type: mediaType,
-                                                trackId: track.id,
-                                                name: data.asset.name,
-                                                startFrame: frame,
-                                                durationInFrames: data.asset.durationInSeconds ? Math.floor(data.asset.durationInSeconds * 30) : 300,
-                                                src: data.asset.url,
-                                                opacity: 1,
-                                                scale: 1,
-                                                x: 0,
-                                                y: 0
-                                            });
+                                const data = readCreativeAssetDrag(e.dataTransfer);
+                                if (data) {
+                                    if (data.asset) {
+                                        // ISSUE-923: canonical HistoryItem type for songs/stems is 'music' — map it
+                                        // (and legacy 'audio') to an audio clip, never a video clip.
+                                        if (!['image', 'video', 'music'].includes(data.asset.type)) return;
+                                        const mediaType: 'video' | 'audio' | 'image' = data.asset.type === 'image' ? 'image' : data.asset.type === 'music' ? 'audio' : 'video';
+
+                                        const durationSeconds = await resolveMediaDurationSeconds(data.asset.url, mediaType);
+                                        const durationInFrames = mediaType === 'image' ? 90 : durationSecondsToFrames(durationSeconds, fps);
+
+                                        useVideoEditorStore.getState().addClip({
+                                            type: mediaType,
+                                            trackId: track.id,
+                                            name: data.asset.name,
+                                            startFrame: frame,
+                                            durationInFrames,
+                                            src: data.asset.url,
+                                            opacity: 1,
+                                            scale: 1,
+                                            x: 0,
+                                            y: 0
                                         });
                                     }
                                 }

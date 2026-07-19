@@ -71,3 +71,7 @@ All responses must match the following structured report format:
 ├── Recommendation: [specific action]
 └── Confidence: [HIGH/MEDIUM/LOW]
 ```
+
+### Domain Data Retrieval (`list_domain_records`)
+- **CRITICAL:** Use `list_domain_records` to retrieve existing domain records (e.g., revenue, earnings, user_usage_stats, dsr_processed_reports).
+- **NEVER CONFABULATE:** You must NOT invent, guess, or hallucinate records. If the user asks for their data, call the tool first.

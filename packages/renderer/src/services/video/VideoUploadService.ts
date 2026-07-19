@@ -20,6 +20,7 @@ export interface VideoUploadOptions {
 export interface VideoUploadResult {
     url: string;
     path: string;
+    storageUri: string;
     size: number;
     contentType: string;
     thumbnailUrl?: string;
@@ -95,6 +96,8 @@ export class VideoUploadService {
                     // Upload completed successfully
                     try {
                         const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+                        const storageBucket = storage.app?.options?.storageBucket;
+                        const storageUri = storageBucket ? `gs://${storageBucket}/${destinationPath}` : destinationPath;
                         Logger.info(TAG, 'Upload complete:', downloadURL);
 
                         // Fire-and-forget thumbnail generation
@@ -112,6 +115,7 @@ export class VideoUploadService {
                         resolve({
                             url: downloadURL,
                             path: destinationPath,
+                            storageUri,
                             size: file.size,
                             contentType: uploadMetadata.contentType,
                             thumbnailUrl,

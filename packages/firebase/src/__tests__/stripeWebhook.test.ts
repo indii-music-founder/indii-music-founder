@@ -20,6 +20,8 @@ const mocks = vi.hoisted(() => {
     const mockUpdate = vi.fn().mockResolvedValue(undefined);
     const mockSet = vi.fn().mockResolvedValue(undefined);
     const mockAdd = vi.fn().mockResolvedValue(undefined);
+    const mockBatchSet = vi.fn();
+    const mockBatchCommit = vi.fn().mockResolvedValue(undefined);
 
     // Firestore doc snapshot factory
     const makeSnap = (exists: boolean, data: Record<string, unknown> = {}) => ({
@@ -70,15 +72,19 @@ const mocks = vi.hoisted(() => {
             where: mockWhere,
         })),
         runTransaction: mockRunTransaction,
+        batch: vi.fn(() => ({ set: mockBatchSet, commit: mockBatchCommit })),
     };
 
     const mockConstructEvent = vi.fn();
     const mockRetrieve = vi.fn();
+    const mockTransferCreate = vi.fn().mockResolvedValue({ id: 'tr_123' });
 
     return {
         mockSet,
         mockUpdate,
         mockAdd,
+        mockBatchSet,
+        mockBatchCommit,
         mockDoc,
         mockCollection,
         mockRunTransaction,
@@ -88,6 +94,7 @@ const mocks = vi.hoisted(() => {
         mockDb,
         mockConstructEvent,
         mockRetrieve,
+        mockTransferCreate,
         makeSnap,
     };
 });
@@ -101,6 +108,7 @@ vi.mock('firebase-admin/firestore', () => ({
     FieldValue: {
         serverTimestamp: () => 'MOCK_TIMESTAMP',
         delete: () => 'MOCK_DELETE',
+        increment: (n: number) => n,
     },
 }));
 
@@ -126,6 +134,7 @@ vi.mock('../stripe/config', async () => {
         stripe: {
             webhooks: { constructEvent: mocks.mockConstructEvent },
             subscriptions: { retrieve: mocks.mockRetrieve },
+            transfers: { create: mocks.mockTransferCreate },
         },
         mapStripeStatus: (status: string) => {
             const map: Record<string, string> = {
@@ -217,10 +226,16 @@ describe('Stripe Webhook Handler (WO-8)', () => {
         const event: Partial<Stripe.Event> = { id: 'evt_dup', type: 'checkout.session.completed' };
         mocks.mockConstructEvent.mockReturnValue(event);
 
-        // Simulate Firestore returning "already processed"
+        // Simulate Firestore returning "already processed".
+        // The source calls snap.get('status') (DocumentSnapshot API), so the mock
+        // must provide a .get() method. status='completed' → not 'failed' → returns true.
         mocks.mockRunTransaction.mockImplementationOnce(async (cb) => {
+            const snapData: Record<string, unknown> = { status: 'completed' };
             const tx = {
-                get: vi.fn().mockResolvedValue({ exists: true }),
+                get: vi.fn().mockResolvedValue({
+                    exists: true,
+                    get: (field: string) => snapData[field],
+                }),
                 set: mocks.mockSet,
                 update: mocks.mockUpdate,
             };
@@ -231,6 +246,19 @@ describe('Stripe Webhook Handler (WO-8)', () => {
         await stripeWebhook(req, res);
 
         expect(jsonFn).toHaveBeenCalledWith({ received: true, duplicate: true });
+    });
+
+    it('should fail closed when the idempotency claim cannot be recorded', async () => {
+        const event: Partial<Stripe.Event> = { id: 'evt_claim_failed', type: 'checkout.session.completed' };
+        mocks.mockConstructEvent.mockReturnValue(event);
+        mocks.mockRunTransaction.mockRejectedValueOnce(new Error('firestore unavailable'));
+
+        const { req, res, statusFn, jsonFn } = makeReqRes(event);
+        await stripeWebhook(req, res);
+
+        expect(statusFn).toHaveBeenCalledWith(500);
+        expect(jsonFn).toHaveBeenCalledWith({ error: 'Webhook idempotency check failed' });
+        expect(mocks.mockTransferCreate).not.toHaveBeenCalled();
     });
 
     // ── checkout.session.completed — Subscription ────────────────────────────
@@ -437,6 +465,79 @@ describe('Stripe Webhook Handler (WO-8)', () => {
         );
     });
 
+    // ── checkout.session.completed — Licensing Purchase ───────────────────────
+
+    it('should handle checkout.session.completed for a licensing purchase', async () => {
+        const session: Partial<Stripe.Checkout.Session> = {
+            id: 'cs_lic_001',
+            payment_status: 'paid',
+            metadata: {
+                userId: 'user-123',
+                type: 'licensing_purchase',
+                connectedAccountId: 'acct_123456',
+                artistAmount: '1000000',
+                trackTitle: 'Midnight Blaze',
+                artist: 'The Flames',
+            },
+        };
+        const event: Partial<Stripe.Event> = {
+            id: 'evt_checkout_lic',
+            type: 'checkout.session.completed',
+            data: { object: session as Stripe.Checkout.Session },
+        };
+        mocks.mockConstructEvent.mockReturnValue(event);
+
+        const { req, res, jsonFn, statusFn } = makeReqRes(event);
+        await stripeWebhook(req, res);
+
+        expect(statusFn).not.toHaveBeenCalled();
+        expect(jsonFn).toHaveBeenCalledWith({ received: true });
+
+        // Verify Stripe transfer was created (with idempotencyKey option)
+        expect(mocks.mockTransferCreate).toHaveBeenCalledWith(
+            expect.objectContaining({
+                amount: 1000000,
+                currency: 'usd',
+                destination: 'acct_123456',
+            }),
+            expect.objectContaining({
+                idempotencyKey: 'transfer_cs_lic_001',
+            })
+        );
+
+        // Verify deterministic, atomic license fulfillment records.
+        expect(mocks.mockDb.collection).toHaveBeenCalledWith('licenses');
+        expect(mocks.mockDoc).toHaveBeenCalledWith('cs_lic_001');
+        expect(mocks.mockBatchSet).toHaveBeenCalledWith(
+            expect.anything(),
+            expect.objectContaining({
+                userId: 'user-123',
+                title: 'Midnight Blaze',
+                artist: 'The Flames',
+                licenseType: 'sync',
+                status: 'active',
+                amount: 1000000,
+                stripeTransferId: 'tr_123',
+            }),
+            { merge: true },
+        );
+
+        // Verify transaction log in user's ledger
+        expect(mocks.mockDb.collection).toHaveBeenCalledWith('users/user-123/ledger');
+        expect(mocks.mockDoc).toHaveBeenCalledWith('sync_license_cs_lic_001');
+        expect(mocks.mockBatchSet).toHaveBeenCalledWith(
+            expect.anything(),
+            expect.objectContaining({
+                type: 'sync_license_sale',
+                amount: 1000000,
+                status: 'paid',
+                stripeTransferId: 'tr_123',
+            }),
+            { merge: true },
+        );
+        expect(mocks.mockBatchCommit).toHaveBeenCalledTimes(1);
+    });
+
     // ── Unknown event type ────────────────────────────────────────────────────
 
     it('should handle unknown event types gracefully (200 received:true)', async () => {
@@ -451,5 +552,136 @@ describe('Stripe Webhook Handler (WO-8)', () => {
 
         expect(statusFn).not.toHaveBeenCalled();
         expect(jsonFn).toHaveBeenCalledWith({ received: true, status: 'unhandled_event', type: 'payment_intent.created' });
+    });
+
+    // ── checkout.session.completed — Marketplace Purchase (ISSUE-977/978) ────
+
+    it('should finalize a marketplace purchase as a durable sale without touching inventory again', async () => {
+        const session: Partial<Stripe.Checkout.Session> = {
+            id: 'cs_mkt_001',
+            payment_status: 'paid',
+            metadata: {
+                type: 'marketplace_purchase',
+                reservationId: 'res-1',
+                productId: 'prod-1',
+                buyerId: 'buyer-1',
+                sellerId: 'seller-1',
+            },
+        };
+        const event: Partial<Stripe.Event> = {
+            id: 'evt_checkout_mkt',
+            type: 'checkout.session.completed',
+            data: { object: session as Stripe.Checkout.Session },
+        };
+        mocks.mockConstructEvent.mockReturnValue(event);
+
+        // Call 1: outer webhook idempotency check (not yet processed).
+        // Call 2: handleMarketplacePurchaseCompleted's own transaction, reading the reservation.
+        mocks.mockRunTransaction
+            .mockImplementationOnce(async (cb: (tx: unknown) => Promise<unknown>) => cb({
+                get: vi.fn().mockResolvedValue(mocks.makeSnap(false)),
+                set: mocks.mockSet,
+                update: mocks.mockUpdate,
+            }))
+            .mockImplementationOnce(async (cb: (tx: unknown) => Promise<unknown>) => cb({
+                get: vi.fn().mockResolvedValue({
+                    exists: true,
+                    data: () => ({
+                        status: 'reserved',
+                        buyerId: 'buyer-1',
+                        sellerId: 'seller-1',
+                        productId: 'prod-1',
+                        productTitle: 'Beat Pack',
+                        priceCents: 999,
+                        currency: 'USD',
+                        source: 'direct',
+                    }),
+                }),
+                set: mocks.mockSet,
+                update: mocks.mockUpdate,
+            }));
+
+        const { req, res, jsonFn, statusFn } = makeReqRes(event);
+        await stripeWebhook(req, res);
+
+        expect(statusFn).not.toHaveBeenCalled();
+        expect(jsonFn).toHaveBeenCalledWith({ received: true });
+
+        // A durable purchase record, keyed by the Stripe session id (idempotency key).
+        expect(mocks.mockDb.collection).toHaveBeenCalledWith('purchases');
+        expect(mocks.mockSet).toHaveBeenCalledWith(
+            expect.anything(),
+            expect.objectContaining({ status: 'completed', amount: 999, productId: 'prod-1', transactionId: 'cs_mkt_001' }),
+            { merge: true }
+        );
+
+        // Revenue is recorded only now — after Stripe confirmed payment.
+        expect(mocks.mockDb.collection).toHaveBeenCalledWith('revenue');
+        expect(mocks.mockSet).toHaveBeenCalledWith(
+            expect.anything(),
+            expect.objectContaining({ userId: 'seller-1', amount: 999, status: 'completed' })
+        );
+
+        // The reservation transitions to completed; inventory is never touched here again
+        // (it was already decremented atomically at reservation time).
+        expect(mocks.mockUpdate).toHaveBeenCalledWith(
+            expect.anything(),
+            expect.objectContaining({ status: 'completed' })
+        );
+        expect(mocks.mockUpdate).not.toHaveBeenCalledWith(
+            expect.anything(),
+            expect.objectContaining({ inventory: expect.anything() })
+        );
+    });
+
+    it('should release the inventory reservation when a marketplace checkout session expires unpaid', async () => {
+        const session: Partial<Stripe.Checkout.Session> = {
+            id: 'cs_mkt_expired',
+            metadata: {
+                type: 'marketplace_purchase',
+                reservationId: 'res-2',
+                productId: 'prod-2',
+                buyerId: 'buyer-1',
+                sellerId: 'seller-1',
+            },
+        };
+        const event: Partial<Stripe.Event> = {
+            id: 'evt_checkout_expired',
+            type: 'checkout.session.expired',
+            data: { object: session as Stripe.Checkout.Session },
+        };
+        mocks.mockConstructEvent.mockReturnValue(event);
+
+        // Call 1: outer webhook idempotency check (not yet processed) — runs for every event type.
+        // Call 2: handleMarketplaceCheckoutExpired's own transaction, releasing the reservation.
+        mocks.mockRunTransaction
+            .mockImplementationOnce(async (cb: (tx: unknown) => Promise<unknown>) => cb({
+                get: vi.fn().mockResolvedValue(mocks.makeSnap(false)),
+                set: mocks.mockSet,
+                update: mocks.mockUpdate,
+            }))
+            .mockImplementationOnce(async (cb: (tx: unknown) => Promise<unknown>) => cb({
+                get: vi.fn().mockResolvedValue({
+                    exists: true,
+                    data: () => ({ status: 'reserved', hasInventoryTracking: true }),
+                }),
+                set: mocks.mockSet,
+                update: mocks.mockUpdate,
+            }));
+
+        const { req, res, jsonFn, statusFn } = makeReqRes(event);
+        await stripeWebhook(req, res);
+
+        expect(statusFn).not.toHaveBeenCalled();
+        expect(jsonFn).toHaveBeenCalledWith({ received: true });
+
+        expect(mocks.mockUpdate).toHaveBeenCalledWith(
+            expect.anything(),
+            expect.objectContaining({ inventory: 1 }) // FieldValue.increment(1) mocked as identity passthrough of n
+        );
+        expect(mocks.mockUpdate).toHaveBeenCalledWith(
+            expect.anything(),
+            expect.objectContaining({ status: 'released', releasedReason: 'checkout_expired' })
+        );
     });
 });

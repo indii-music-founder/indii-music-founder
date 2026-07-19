@@ -103,11 +103,13 @@ vi.mock('@/services/video/VideoGenerationService', () => ({
         generateVideo: vi.fn(),
         generateLongFormVideo: vi.fn(),
         subscribeToJob: vi.fn().mockReturnValue(vi.fn()), // Returns unsubscribe
+        estimateVideoCost: vi.fn((duration) => duration * 0.1),
     },
     VideoGenerationService: class {
         generateVideo = vi.fn();
         generateLongFormVideo = vi.fn();
         subscribeToJob = vi.fn().mockReturnValue(vi.fn());
+        estimateVideoCost = vi.fn((duration) => duration * 0.1);
     }
 }));
 
@@ -190,6 +192,7 @@ describe('🖱️ Click: Video Production Daisychain', () => {
                 studioControls: { resolution: '1K', aspectRatio: '16:9', duration: 4, fps: 24 },
                 currentProjectId: 'p1',
                 currentOrganizationId: 'o1',
+                canvasImages: [],
                 whiskState: {
                     subjects: [],
                     scenes: [],

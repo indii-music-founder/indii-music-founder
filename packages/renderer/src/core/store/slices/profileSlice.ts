@@ -6,10 +6,12 @@ import { logger } from '@/utils/logger';
 import { auth } from '@/services/firebase';
 import { isAnonymousOrDemoUser, isDemoUserId } from '@/utils/authGuards';
 
+let globalProfileUnsubscribe: (() => void) | null = null;
+
 export interface Organization {
     id: string;
     name: string;
-    plan: 'free' | 'pro' | 'enterprise';
+    plan: 'free' | 'pro' | 'founder' | 'enterprise';
     members: string[];
     ownerId?: string;
     memberRoles?: Record<string, 'owner' | 'manager' | 'producer' | 'member'>;
@@ -22,7 +24,7 @@ export interface ProfileSlice {
     setOrganization: (id: string) => void;
     addOrganization: (org: Organization) => void;
     setUserProfile: (profile: UserProfile) => void;
-    updateBrandKit: (updates: Partial<BrandKit>) => void;
+    updateBrandKit: (updates: Partial<BrandKit>) => Promise<void>;
     loadUserProfile: (uid: string) => Promise<void>;
     logout: () => Promise<void>;
     setTheme: (theme: 'dark' | 'light' | 'system') => void;
@@ -66,7 +68,10 @@ const DEFAULT_USER_PROFILE: UserProfile = {
     preferences: {
         theme: 'system',
         notifications: true,
-        observabilityEnabled: false
+        observabilityEnabled: false,
+        agentAmbition: 'balanced',
+        ideaAcceptanceCount: 0,
+        lastAmbitionPromptTime: 0
     },
     brandKit: DEFAULT_BRAND_KIT,
     analyzedTrackIds: [],
@@ -95,16 +100,18 @@ export const createProfileSlice: StateCreator<ProfileSlice> = (set, get) => ({
         // Persistence Strategy: Hybrid (IndexedDB for speed + Firestore for cloud backup)
         saveProfileToStorage(newProfile).catch(err => logger.error("[ProfileSlice] Failed to save profile:", err));
     },
-    updateBrandKit: (updates) => set((state) => {
+    updateBrandKit: async (updates) => {
+        const state = get();
         const currentBrandKit = state.userProfile.brandKit || DEFAULT_BRAND_KIT;
         const newProfile = {
             ...state.userProfile,
             brandKit: { ...currentBrandKit, ...updates },
             updatedAt: Timestamp.now()
         };
-        saveProfileToStorage(newProfile).catch(err => logger.error("[ProfileSlice] Failed to save profile update:", err));
-        return { userProfile: newProfile };
-    }),
+        set({ userProfile: newProfile });
+        // Await persistence before returning so caller knows the write succeeded
+        await saveProfileToStorage(newProfile);
+    },
     loadUserProfile: async (uid: string) => {
         logger.info('[Profile] Loading user profile for:', uid);
 
@@ -190,8 +197,23 @@ export const createProfileSlice: StateCreator<ProfileSlice> = (set, get) => ({
 
             if (profile) {
                 logger.info('[Profile] Loaded profile for:', uid);
-                // Ensure legacy profiles align with new schema if needed (runtime migration could go here)
-                set({ userProfile: profile });
+
+                // FOUNDER AUTO-GRANT: If the profile email matches the platform owner,
+                // ensure membership tier is always set to 'founder' regardless of Firestore state.
+                const FOUNDER_EMAILS = ['wiil@indii.music'];
+                const isFounderEmail = profile.email && FOUNDER_EMAILS.includes(profile.email.toLowerCase());
+                const resolvedProfile = isFounderEmail
+                    ? {
+                        ...profile,
+                        membership: { ...profile.membership, tier: 'founder' as const },
+                    }
+                    : profile;
+
+                if (isFounderEmail) {
+                    logger.info('[Profile] Founder email detected — auto-granting founder tier.');
+                }
+
+                set({ userProfile: resolvedProfile });
             } else {
                 logger.info('[Profile] No profile found, creating default for:', uid);
                 // Create a new profile for this user
@@ -204,9 +226,14 @@ export const createProfileSlice: StateCreator<ProfileSlice> = (set, get) => ({
             try {
                 const { db } = await import('@/services/firebase');
                 const { doc, onSnapshot } = await import('firebase/firestore');
-                const { useStore } = await import('@/core/store');
 
                 const userRef = doc(db, 'users', uid);
+                
+                if (globalProfileUnsubscribe) {
+                    globalProfileUnsubscribe();
+                    globalProfileUnsubscribe = null;
+                }
+
                 const unsubscribe = onSnapshot(userRef, (docSnap) => {
                     if (docSnap.exists()) {
                         const cloudProfile = docSnap.data() as UserProfile;
@@ -236,7 +263,7 @@ export const createProfileSlice: StateCreator<ProfileSlice> = (set, get) => ({
                     logger.error('[Profile] Real-time listener error:', error);
                 });
 
-                useStore.getState().registerSubscription('global_profile', unsubscribe);
+                globalProfileUnsubscribe = unsubscribe;
             } catch (err: unknown) {
                 logger.error('[Profile] Failed to initialize real-time listener:', err);
             }
@@ -246,6 +273,10 @@ export const createProfileSlice: StateCreator<ProfileSlice> = (set, get) => ({
     },
     logout: async () => {
         try {
+            if (globalProfileUnsubscribe) {
+                globalProfileUnsubscribe();
+                globalProfileUnsubscribe = null;
+            }
             const { useStore } = await import('@/core/store');
             useStore.getState().clearAllSubscriptions();
         } catch (err: unknown) {

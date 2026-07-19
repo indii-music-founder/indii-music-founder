@@ -28,8 +28,8 @@ export function setupMenu(mainWindow: BrowserWindow) {
                         if (!mainWindow.isDestroyed() && !mainWindow.webContents.isDestroyed()) {
                             try {
                                 mainWindow.webContents.send('menu:save-triggered');
-                            } catch (err) {
-                                console.warn('[Menu] Failed to send save event:', err);
+                            } catch (_err) {
+                                console.error('[Menu] Failed to send menu:save-triggered:', _err);
                             }
                         }
                     }

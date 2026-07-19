@@ -42,7 +42,7 @@ export function BoardroomConversationPanel({ messages }: BoardroomConversationPa
                     const state = useStore.getState();
                     messages.forEach(msg => {
                         if (msg.isStreaming) {
-                            state.updateBoardroomMessage(msg.id, { isStreaming: false });
+                            state.updateAgentMessage(msg.id, { isStreaming: false });
                         }
                     });
                 });
@@ -127,7 +127,7 @@ export function BoardroomConversationPanel({ messages }: BoardroomConversationPa
                                                     {identity.initials}
                                                 </span>
                                             ) : (
-                                                <Bot size={14} className="text-purple-300" />
+                                                <Bot size={14} className="text-green-300" />
                                             )}
                                         </div>
                                     )}

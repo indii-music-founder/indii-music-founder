@@ -1,7 +1,6 @@
 import { onDocumentWritten } from 'firebase-functions/v2/firestore';
 import * as logger from 'firebase-functions/logger';
-import { AgentTriad } from './AgentTriad';
-import { DefaultPlanner, DefaultGenerator, DefaultEvaluator } from './DefaultAgents';
+
 
 interface WorkflowStepExecution {
     stepId: string;
@@ -100,33 +99,26 @@ export const workflowOrchestrator = onDocumentWritten(
                 updatedAt: Date.now()
             });
 
-            // Wire up the Triad with real AI agents
-            const triad = new AgentTriad({
-                planner: new DefaultPlanner(),
-                generator: new DefaultGenerator(),
-                evaluator: new DefaultEvaluator()
-            });
+            // Get Inngest Client
+            const { inngest } = await import('../orchestration/inngest');
 
-            const context = {
-                workflowId: after.id,
-                stepId: nextStep.stepId,
-                userId: after.userId
-            };
-
-            // Warning: Running this inline might hit Cloud Function timeouts for long tasks.
-            // In a production system, this should be deferred to a background task runner like Inngest.
             try {
-                const result = await triad.executeTriadLoop(context, nextStep.prompt || 'Execute step');
-
-                await snapshot.after.ref.update({
-                    [`steps.${nextStep.stepId}.status`]: result.status,
-                    [`steps.${nextStep.stepId}.result`]: result.result || null,
-                    [`steps.${nextStep.stepId}.error`]: result.error || null,
-                    updatedAt: Date.now()
+                // Fire an event to Inngest to handle the execution in the background
+                await inngest.send({
+                    name: 'workflow/step-started',
+                    data: {
+                        executionId: after.id,
+                        userId: after.userId,
+                        stepId: nextStep.stepId,
+                        agentId: nextStep.agentId,
+                        prompt: nextStep.prompt || 'Execute step'
+                    }
                 });
+                
+                logger.info(`[WorkflowOrchestrator] Successfully dispatched step ${nextStep.stepId} to Inngest`);
             } catch (err) {
                 const error = err instanceof Error ? err : new Error(String(err));
-                logger.error(`[WorkflowOrchestrator] Failed to execute Triad Loop`, error);
+                logger.error(`[WorkflowOrchestrator] Failed to dispatch step to Inngest`, error);
                 await snapshot.after.ref.update({
                     [`steps.${nextStep.stepId}.status`]: 'FAILED',
                     [`steps.${nextStep.stepId}.error`]: error.message,

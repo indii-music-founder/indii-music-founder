@@ -6,7 +6,7 @@
 
 - **Root:** `indii-monorepo` v1.55.3
 - **Type:** ES module
-- **Node engine:** `>=22.0.0`
+- **Node engine:** `>=24.0.0`
 - **Workspaces (6 packages):**
 
 | Package | Purpose | Runtime |

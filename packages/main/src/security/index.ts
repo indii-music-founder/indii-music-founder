@@ -40,7 +40,7 @@ export function configureSecurity(session: Session) {
 
         const connectSrc = isDev
             ? "* ws: http: https:"
-            : "'self' https://apis.google.com https://*.googleapis.com https://*.firebaseio.com https://*.firebaseapp.com https://us-central1-indii-v-1-1.cloudfunctions.net https://essentia.upf.edu https://cdn.jsdelivr.net https://storage.googleapis.com";
+            : "'self' https://apis.google.com https://*.googleapis.com https://*.firebaseio.com https://*.firebaseapp.com https://us-central1-indii-music-founder.cloudfunctions.net https://essentia.upf.edu https://cdn.jsdelivr.net https://storage.googleapis.com";
 
         const mediaSrc = isDev
             ? "*"
@@ -56,8 +56,8 @@ export function configureSecurity(session: Session) {
                         `style-src ${styleSrc}`,
                         `connect-src ${connectSrc}`,
                         `media-src ${mediaSrc}`,
-                        "img-src 'self' file: data: https://firebasestorage.googleapis.com https://*.googleusercontent.com http://localhost:4242 https://indii.music",
-                        "font-src 'self' https://fonts.gstatic.com http://localhost:4242",
+                        "img-src 'self' file: data: https://firebasestorage.googleapis.com https://*.googleusercontent.com http://localhost:4243 https://indii.music",
+                        "font-src 'self' data: https://fonts.gstatic.com http://localhost:4243",
                         "manifest-src 'self' https://indii.music",
                         "frame-src 'self' https://www.google.com/recaptcha/ https://recaptcha.net https://*.recaptcha.net https://*.google.com",
                         "worker-src 'self' blob:"
@@ -117,25 +117,25 @@ export function configureSecurity(session: Session) {
         return callback(verificationResult === 'net::OK' ? 0 : -2);
     });
 
-    // 5. Inject Referer for Firebase/Google APIs (Fixes "requests from referer empty blocked")
+    // 5. Inject Referer & Client Type for Firebase/Google APIs & Cloud Functions (Fixes App Check / Referer blocks)
     session.webRequest.onBeforeSendHeaders(
-        { urls: ['*://*.googleapis.com/*', '*://*.firebaseapp.com/*'] },
+        { urls: [
+            '*://*.googleapis.com/*',
+            '*://*.firebaseapp.com/*',
+            '*://*.cloudfunctions.net/*',
+            '*://*.run.app/*',
+            'http://127.0.0.1:*/*',
+            'http://localhost:*/*'
+        ] },
         (details, callback) => {
-            const url = details.url;
-
-            // Only inject Referer for Firestore and Storage which specifically require it
-            // for security rules matching.
-            if (
-                url.includes('firestore.googleapis.com') ||
-                url.includes('firebasestorage.googleapis.com')
-            ) {
-                details.requestHeaders['Referer'] = 'http://localhost:4242';
-                callback({ requestHeaders: details.requestHeaders });
-                return;
-            }
-
-            // Do NOT inject Referer for Identity Toolkit, Secure Token, or generic Google APIs
-            // as this can trigger 'auth/invalid-credential' errors.
+            // Inject a valid production referer for all Firebase/Google APIs.
+            // This satisfies GCP API Key restrictions which block <empty> referers,
+            // fixing the 'auth/requests-from-referer-<empty>-are-blocked' error.
+            details.requestHeaders['Referer'] = 'https://founder.indii.music/';
+            
+            // Inject client type to bypass App Check for desktop in production
+            details.requestHeaders['X-App-Client-Type'] = 'electron-desktop-app';
+            
             callback({ requestHeaders: details.requestHeaders });
         }
     );

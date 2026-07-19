@@ -38,7 +38,7 @@ class RecursiveAgent extends BaseAgent {
             color: '#000',
             category: 'generalist' as unknown as string,
             systemPrompt: 'sys',
-            modelId: 'projects/223837784072/locations/us-central1/endpoints/8440177260006211584',
+            modelId: 'projects/148015878263/locations/us-central1/endpoints/8440177260006211584',
             tools: []
         } as unknown as ConstructorParameters<typeof BaseAgent>[0]);
     }
@@ -60,7 +60,7 @@ class FailingAgent extends BaseAgent {
             color: '#000',
             category: 'generalist' as unknown as string,
             systemPrompt: 'sys',
-            modelId: 'projects/223837784072/locations/us-central1/endpoints/8440177260006211584',
+            modelId: 'projects/148015878263/locations/us-central1/endpoints/8440177260006211584',
             tools: []
         } as unknown as ConstructorParameters<typeof BaseAgent>[0]);
     }
@@ -80,7 +80,7 @@ class ParentAgent extends BaseAgent {
             color: '#000',
             category: 'generalist' as unknown as string,
             systemPrompt: 'sys',
-            modelId: 'projects/223837784072/locations/us-central1/endpoints/8440177260006211584',
+            modelId: 'projects/148015878263/locations/us-central1/endpoints/8440177260006211584',
             tools: []
         } as unknown as ConstructorParameters<typeof BaseAgent>[0]);
     }

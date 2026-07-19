@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { Loader2, Video, AlertCircle, CheckCircle2, X } from 'lucide-react';
 import clsx from 'clsx';
@@ -14,12 +14,13 @@ export interface VideoGenerationJob {
 }
 
 interface VideoGenerationProgressProps {
-    key?: React.Key;
     job: VideoGenerationJob;
-    onCancel?: (jobId: string) => void;
+    onCancel?: (jobId: string) => Promise<void> | void;
 }
 
-export function VideoGenerationProgress({ job, onCancel }: VideoGenerationProgressProps) {
+export const VideoGenerationProgress = React.forwardRef<HTMLDivElement, VideoGenerationProgressProps>(
+function VideoGenerationProgress({ job, onCancel }, ref) {
+    const [isCancelling, setIsCancelling] = useState(false);
     const isError = job.status === 'failed';
     const isCompleted = job.status === 'completed';
     const isProcessing = job.status === 'processing' || job.status === 'stitching';
@@ -27,6 +28,7 @@ export function VideoGenerationProgress({ job, onCancel }: VideoGenerationProgre
 
     return (
         <motion.div
+            ref={ref}
             layout
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -36,7 +38,7 @@ export function VideoGenerationProgress({ job, onCancel }: VideoGenerationProgre
             {/* Animated Background Gradient for Processing */}
             {isProcessing && (
                 <motion.div 
-                    className="absolute inset-0 bg-gradient-to-tr from-purple-500/10 via-pink-500/10 to-blue-500/10 blur-xl opacity-50"
+                    className="absolute inset-0 bg-gradient-to-tr from-green-500/10 via-pink-500/10 to-blue-500/10 blur-xl opacity-50"
                     animate={{
                         backgroundPosition: ['0% 0%', '100% 100%'],
                         scale: [1, 1.1, 1]
@@ -49,17 +51,23 @@ export function VideoGenerationProgress({ job, onCancel }: VideoGenerationProgre
                 />
             )}
 
-            {onCancel && (
+            {onCancel && !isCompleted && !isError && (
                 <button
-                    onClick={(e) => {
+                    onClick={async (e) => {
                         e.stopPropagation();
-                        onCancel(job.id);
+                        setIsCancelling(true);
+                        try {
+                            await onCancel(job.id);
+                        } finally {
+                            setIsCancelling(false);
+                        }
                     }}
+                    disabled={isCancelling}
                     className="absolute top-2 right-2 p-1.5 rounded-full bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-colors z-20"
-                    title="Cancel Job"
-                    aria-label="Cancel Job"
+                    title={isCancelling ? 'Cancelling Job' : 'Cancel Job'}
+                    aria-label={isCancelling ? 'Cancelling Job' : 'Cancel Job'}
                 >
-                    <X size={14} />
+                    {isCancelling ? <Loader2 size={14} className="animate-spin" /> : <X size={14} />}
                 </button>
             )}
 
@@ -69,7 +77,7 @@ export function VideoGenerationProgress({ job, onCancel }: VideoGenerationProgre
                     "w-12 h-12 rounded-2xl flex items-center justify-center border backdrop-blur-md shadow-lg",
                     isError ? "bg-red-500/10 border-red-500/20 text-red-400" :
                     isCompleted ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400" :
-                    "bg-white/5 border-white/10 text-purple-400"
+                    "bg-white/5 border-white/10 text-green-400"
                 )}>
                     {isError ? <AlertCircle size={24} /> :
                      isCompleted ? <CheckCircle2 size={24} /> :
@@ -95,14 +103,14 @@ export function VideoGenerationProgress({ job, onCancel }: VideoGenerationProgre
                     <div className="w-full max-w-[120px] h-1.5 bg-white/10 rounded-full overflow-hidden mt-2">
                         {job.progress !== undefined ? (
                             <motion.div 
-                                className="h-full bg-gradient-to-r from-purple-500 to-pink-500"
+                                className="h-full bg-gradient-to-r from-green-500 to-pink-500"
                                 initial={{ width: 0 }}
                                 animate={{ width: `${job.progress}%` }}
                                 transition={{ type: "spring", bounce: 0, duration: 0.5 }}
                             />
                         ) : (
                             <motion.div 
-                                className="h-full w-1/2 bg-gradient-to-r from-purple-500 to-pink-500"
+                                className="h-full w-1/2 bg-gradient-to-r from-green-500 to-pink-500"
                                 animate={{
                                     x: ['-100%', '200%']
                                 }}
@@ -125,4 +133,4 @@ export function VideoGenerationProgress({ job, onCancel }: VideoGenerationProgre
             </div>
         </motion.div>
     );
-}
+});

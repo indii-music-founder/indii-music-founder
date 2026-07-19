@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Wand2 } from 'lucide-react';
+import { X } from 'lucide-react';
 import { ScheduledPost } from '../types';
 interface EditableCopyModalProps {
     post: ScheduledPost;
@@ -9,8 +9,6 @@ interface EditableCopyModalProps {
 
 const EditableCopyModal: React.FC<EditableCopyModalProps> = ({ post, onClose, onSave }) => {
     const [content, setContent] = useState(post.copy);
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const [showEnhanceModal, setShowEnhanceModal] = useState(false);
 
     useEffect(() => {
         setContent(post.copy);
@@ -18,11 +16,6 @@ const EditableCopyModal: React.FC<EditableCopyModalProps> = ({ post, onClose, on
 
     const handleSave = () => {
         onSave(post.id, content);
-    };
-
-    const _handleEnhanceApply = (postId: string, newCopy: string) => {
-        setContent(newCopy);
-        setShowEnhanceModal(false);
     };
 
     return (
@@ -41,18 +34,11 @@ const EditableCopyModal: React.FC<EditableCopyModalProps> = ({ post, onClose, on
                             <label className="block text-sm font-medium text-gray-400">
                                 Platform: <span className={post.platform === 'Twitter' ? 'text-sky-400' : 'text-pink-500'}>{post.platform}</span>
                             </label>
-                            <button
-                                onClick={() => setShowEnhanceModal(true)}
-                                className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-blue-400 hover:text-blue-300 bg-blue-500/10 hover:bg-blue-500/20 rounded-lg transition-colors"
-                            >
-                                <Wand2 size={14} />
-                                Enhance with AI
-                            </button>
                         </div>
                         <textarea
                             value={content}
                             onChange={(e) => setContent(e.target.value)}
-                            className="w-full h-64 bg-black/50 border border-gray-700 rounded-xl p-4 text-white focus:outline-none focus:border-purple-500 transition-colors resize-none font-mono text-sm"
+                            className="w-full h-64 bg-black/50 border border-gray-700 rounded-xl p-4 text-white focus:outline-none focus:border-green-500 transition-colors resize-none font-mono text-sm"
                             placeholder="Write your post copy here..."
                         />
                     </div>
@@ -67,7 +53,7 @@ const EditableCopyModal: React.FC<EditableCopyModalProps> = ({ post, onClose, on
                     </button>
                     <button
                         onClick={handleSave}
-                        className="px-4 py-2 rounded-lg bg-purple-600 text-white hover:bg-purple-500 transition-colors font-bold"
+                        className="px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-500 transition-colors font-bold"
                     >
                         Save Changes
                     </button>

@@ -272,6 +272,19 @@ export const ENTRY_COMMANDS: EntryCommandDefinition[] = [
     resumeBehavior: 'Resume command drafting until a valid non-conflicting slash command is saved.',
   },
   {
+    id: 'connect-remote',
+    slash: '/connect-remote',
+    aliases: ['/pair-remote', '/link-remote', '/remote-setup'],
+    title: 'Connect Mobile Remote',
+    summary: 'Open the secure Mobile Remote pairing and connection status panel.',
+    surfaces: ['dashboard', 'command-bar'],
+    launchMode: 'navigate',
+    intakeFields: [],
+    outputContract: 'Mobile Remote settings opened with truthful pairing and connection status.',
+    approvalRequiredFor: [],
+    resumeBehavior: 'Remote Settings owns pairing, status, retry, and device revocation.',
+  },
+  {
     id: 'custom-workflow',
     slash: '/custom-workflow',
     aliases: ['/workflow', '/workflow-lab'],
@@ -302,11 +315,23 @@ export function getEntryCommand(id: string): EntryCommandDefinition | undefined 
 }
 
 export function resolveEntryCommand(input: string): EntryCommandDefinition | undefined {
-  const token = input.trim().split(/\s+/)[0]?.toLowerCase();
-  if (!token?.startsWith('/')) return undefined;
-  return COMMANDS_BY_SLASH.get(token) || getCustomEntryCommands().find(command =>
-    command.slash === token || command.aliases.includes(token)
-  );
+  const trimmed = input.trim();
+  const token = trimmed.split(/\s+/)[0]?.toLowerCase();
+  if (token?.startsWith('/')) {
+    return COMMANDS_BY_SLASH.get(token) || getCustomEntryCommands().find(command =>
+      command.slash === token || command.aliases.includes(token)
+    );
+  }
+  if (isRemoteConnectionIntent(trimmed)) {
+    return COMMANDS_BY_ID.get('connect-remote');
+  }
+  return undefined;
+}
+
+function isRemoteConnectionIntent(input: string): boolean {
+  const connectionAction = /\b(connect|pair|link|set\s*up)\b/i;
+  const remoteTarget = /\b(remote(?:\s+(?:control|controller))?|controller|phone|tablet)\b/i;
+  return connectionAction.test(input) && remoteTarget.test(input);
 }
 
 export function getEntryCommandRemainder(input: string): string {

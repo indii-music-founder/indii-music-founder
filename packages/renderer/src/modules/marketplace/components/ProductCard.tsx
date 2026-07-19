@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Product, StemFile } from '@/services/marketplace/types';
 import { MarketplaceService } from '@/services/marketplace/MarketplaceService';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
-import { ShoppingBag, Loader2, Check, Music } from 'lucide-react';
+import { ShoppingBag, Loader2, Check, Music, Download } from 'lucide-react';
+import { useToast } from '@/core/context/ToastContext';
 import { logger } from '@/utils/logger';
 
 const STEM_LABEL_DISPLAY: Record<string, string> = {
@@ -19,7 +20,7 @@ function StemPackBadge({ stems }: { stems: StemFile[] }) {
             {stems.map(s => (
                 <span
                     key={s.label}
-                    className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-purple-900/50 text-purple-300 border border-purple-700/40"
+                    className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-green-900/50 text-green-300 border border-green-700/40"
                 >
                     {STEM_LABEL_DISPLAY[s.label] ?? s.label}
                 </span>
@@ -39,25 +40,32 @@ interface ProductCardProps {
 const ProductCard = React.memo(({ product, variant = 'default', source, sourceId }: ProductCardProps) => {
     const [purchasing, setPurchasing] = useState(false);
     const [purchased, setPurchased] = useState(false);
+    const [downloadingStems, setDownloadingStems] = useState(false);
     const currentUser = useStore(useShallow((state) => state.userProfile));
+    const toast = useToast();
+
+    // Prices are stored as integer cents end-to-end; format only at this UI boundary.
+    const displayPrice = (product.price / 100).toFixed(2);
+
+    useEffect(() => {
+        let cancelled = false;
+        if (!currentUser || !product.id) return;
+        MarketplaceService.hasCompletedPurchase(currentUser.id, product.id)
+            .then((owned) => { if (!cancelled) setPurchased(owned); })
+            .catch((error: unknown) => logger.error('Failed to check purchase ownership:', error));
+        return () => { cancelled = true; };
+    }, [currentUser, product.id]);
 
     const handlePurchase = async () => {
         if (!currentUser) return;
 
         setPurchasing(true);
         try {
-            await MarketplaceService.purchaseProduct(
-                product.id!,
-                currentUser.id,
-                product.sellerId,
-                product.price,
-                source,
-                sourceId
-            );
-            setPurchased(true);
+            // Redirects to Stripe Checkout — there is no local "purchased" state to
+            // set here; ownership is derived from the webhook-finalized purchase record.
+            await MarketplaceService.purchaseProduct(product.id!, source, sourceId);
         } catch (error: unknown) {
             logger.error("Purchase failed:", error);
-        } finally {
             setPurchasing(false);
         }
     };
@@ -67,6 +75,28 @@ const ProductCard = React.memo(({ product, variant = 'default', source, sourceId
     const stemFiles = isStemPack
         ? ((product.metadata?.stemFiles ?? []) as StemFile[])
         : [];
+
+    // ISSUE-975: buyers get a short-lived signed URL per stem, resolved server-side
+    // after verifying the completed purchase — never a stored bearer-token URL.
+    const handleDownloadStems = async (e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (!product.id || downloadingStems) return;
+        setDownloadingStems(true);
+        try {
+            for (const stem of stemFiles) {
+                const url = await MarketplaceService.getStemDownloadUrl(product.id, stem.label);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = stem.filename;
+                a.click();
+            }
+        } catch (error: unknown) {
+            logger.error('Failed to download stems:', error);
+            toast.error('Failed to generate download link. Please try again.');
+        } finally {
+            setDownloadingStems(false);
+        }
+    };
 
     if (isEmbedded) {
         return (
@@ -81,7 +111,7 @@ const ProductCard = React.memo(({ product, variant = 'default', source, sourceId
                             decoding="async"
                         />
                     ) : (
-                        <div className="w-full h-full bg-linear-to-br from-indigo-500/20 to-purple-500/20 flex items-center justify-center">
+                        <div className="w-full h-full bg-linear-to-br from-indigo-500/20 to-green-500/20 flex items-center justify-center">
                             <ShoppingBag className="text-white/20" size={24} aria-hidden="true" />
                         </div>
                     )}
@@ -92,19 +122,19 @@ const ProductCard = React.memo(({ product, variant = 'default', source, sourceId
                         <div>
                             <h4 className="font-semibold text-white text-sm line-clamp-1">{product.title}</h4>
                             <p className="text-xs text-gray-400 capitalize flex items-center gap-1">
-                                {isStemPack && <Music size={10} className="text-purple-400" aria-hidden="true" />}
+                                {isStemPack && <Music size={10} className="text-green-400" aria-hidden="true" />}
                                 {isStemPack ? 'Stem Pack' : product.type} • {product.inventory} left
                             </p>
                         </div>
                         <span className="text-green-400 font-bold text-sm">
-                            {product.currency} {product.price}
+                            {product.currency} {displayPrice}
                         </span>
                     </div>
 
                     <button
                         onClick={handlePurchase}
                         disabled={purchasing || purchased || product.inventory === 0}
-                        aria-label={purchased ? `Owned: ${product.title}` : `Buy ${product.title} for ${product.currency} ${product.price}`}
+                        aria-label={purchased ? `Owned: ${product.title}` : `Buy ${product.title} for ${product.currency} ${displayPrice}`}
                         className={`w-full mt-auto py-1.5 px-3 rounded text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors
                             ${purchased
                                 ? 'bg-green-600/20 text-green-400 cursor-default'
@@ -142,7 +172,7 @@ const ProductCard = React.memo(({ product, variant = 'default', source, sourceId
                         decoding="async"
                     />
                 ) : (
-                    <div className="w-full h-full bg-linear-to-br from-indigo-500/10 to-purple-500/10 flex items-center justify-center group-hover:from-indigo-500/20 group-hover:to-purple-500/20 transition-colors">
+                    <div className="w-full h-full bg-linear-to-br from-indigo-500/10 to-green-500/10 flex items-center justify-center group-hover:from-indigo-500/20 group-hover:to-green-500/20 transition-colors">
                         <ShoppingBag className="text-white/20 group-hover:text-white/40 transition-colors" size={48} aria-hidden="true" />
                     </div>
                 )}
@@ -158,7 +188,7 @@ const ProductCard = React.memo(({ product, variant = 'default', source, sourceId
                     <div className="flex justify-between items-start gap-2 mb-1">
                         <h3 className="font-bold text-white leading-tight">{product.title}</h3>
                         <span className="text-green-400 font-bold whitespace-nowrap">
-                            {product.currency} {product.price}
+                            {product.currency} {displayPrice}
                         </span>
                     </div>
                     <p className="text-sm text-gray-400 line-clamp-2">{product.description}</p>
@@ -170,7 +200,7 @@ const ProductCard = React.memo(({ product, variant = 'default', source, sourceId
                 <div className="flex items-center justify-between pt-2 border-t border-gray-800">
                     <span className={`text-xs font-medium px-2 py-1 rounded capitalize flex items-center gap-1
                         ${isStemPack
-                            ? 'bg-purple-900/40 text-purple-300 border border-purple-700/40'
+                            ? 'bg-green-900/40 text-green-300 border border-green-700/40'
                             : 'bg-gray-800 text-gray-300'
                         }`}
                     >
@@ -178,30 +208,46 @@ const ProductCard = React.memo(({ product, variant = 'default', source, sourceId
                         {isStemPack ? 'Stem Pack' : product.type}
                     </span>
 
-                    <button
-                        onClick={handlePurchase}
-                        disabled={purchasing || purchased || product.inventory === 0}
-                        aria-label={purchased ? `Owned: ${product.title}` : `Purchase ${product.title} for ${product.currency} ${product.price}`}
-                        className={`px-4 py-2 rounded-lg font-semibold text-sm flex items-center gap-2 transition-all
-                            ${purchased
-                                ? 'bg-green-600/20 text-green-400 cursor-default'
-                                : 'bg-white text-black hover:bg-gray-200'
-                            }`}
-                    >
-                        {purchasing ? (
-                            <>
+                    {purchased && isStemPack ? (
+                        <button
+                            onClick={handleDownloadStems}
+                            disabled={downloadingStems}
+                            aria-label={`Download stems for ${product.title}`}
+                            className="px-4 py-2 rounded-lg font-semibold text-sm flex items-center gap-2 transition-all bg-green-600/20 text-green-400 hover:bg-green-600/30"
+                        >
+                            {downloadingStems ? (
                                 <Loader2 size={16} className="animate-spin" aria-hidden="true" />
-                                Processing...
-                            </>
-                        ) : purchased ? (
-                            <>
-                                <Check size={16} aria-hidden="true" />
-                                In Collection
-                            </>
-                        ) : (
-                            'Purchase'
-                        )}
-                    </button>
+                            ) : (
+                                <Download size={16} aria-hidden="true" />
+                            )}
+                            Download Stems
+                        </button>
+                    ) : (
+                        <button
+                            onClick={handlePurchase}
+                            disabled={purchasing || purchased || product.inventory === 0}
+                            aria-label={purchased ? `Owned: ${product.title}` : `Purchase ${product.title} for ${product.currency} ${displayPrice}`}
+                            className={`px-4 py-2 rounded-lg font-semibold text-sm flex items-center gap-2 transition-all
+                                ${purchased
+                                    ? 'bg-green-600/20 text-green-400 cursor-default'
+                                    : 'bg-white text-black hover:bg-gray-200'
+                                }`}
+                        >
+                            {purchasing ? (
+                                <>
+                                    <Loader2 size={16} className="animate-spin" aria-hidden="true" />
+                                    Processing...
+                                </>
+                            ) : purchased ? (
+                                <>
+                                    <Check size={16} aria-hidden="true" />
+                                    In Collection
+                                </>
+                            ) : (
+                                'Purchase'
+                            )}
+                        </button>
+                    )}
                 </div>
             </div>
         </div>

@@ -56,42 +56,49 @@ export const AuthorityPanel: React.FC = () => {
                 throw new Error('Release not found');
             }
 
-            // Auto-generate identifiers if not already present
-            let activeIsrc = isrc;
+            // Auto-generate identifiers if not already present.
+            // ISSUE-782: each distinct recording MUST get its own immutable ISRC —
+            // never reuse one generated code across multiple missing tracks.
             let activeUpc = upc;
-
-            if (!activeIsrc && (!releaseData.metadata.tracks || releaseData.metadata.tracks.some(t => !t.isrc))) {
-                activeIsrc = await distributionService.assignISRCs();
-                setIsrc(activeIsrc);
-            }
-
             if (!activeUpc && !releaseData.metadata.upc) {
                 activeUpc = await distributionService.generateUPC();
                 setUpc(activeUpc);
+            }
+
+            let tracksPayload: { id: string; title: string; isrc: string }[];
+            if (releaseData.metadata.tracks && releaseData.metadata.tracks.length > 0) {
+                // Sequential (not Promise.all) — avoids racing the backend pool's
+                // per-code transaction and keeps issuance order deterministic.
+                tracksPayload = [];
+                for (let idx = 0; idx < releaseData.metadata.tracks.length; idx++) {
+                    const t = releaseData.metadata.tracks[idx]!;
+                    const trackIsrc = t.isrc || await distributionService.assignISRCs();
+                    tracksPayload.push({ id: String(idx + 1), title: t.trackTitle, isrc: trackIsrc });
+                }
+                // Guard against any residual duplicate before DDEX compilation.
+                const seen = new Set<string>();
+                for (const t of tracksPayload) {
+                    if (seen.has(t.isrc)) {
+                        throw new Error(`Duplicate ISRC ${t.isrc} assigned to multiple tracks — DDEX compilation blocked.`);
+                    }
+                    seen.add(t.isrc);
+                }
+            } else {
+                // Fallback for single-track releases stored without a tracks array
+                const singleTrackIsrc = releaseData.metadata.isrc || isrc || await distributionService.assignISRCs();
+                if (!isrc) setIsrc(singleTrackIsrc);
+                tracksPayload = [{
+                    id: '1',
+                    title: releaseData.metadata.trackTitle,
+                    isrc: singleTrackIsrc
+                }];
             }
 
             const releasePayload = {
                 releaseId: releaseData.id,
                 title: releaseData.metadata.releaseTitle || releaseData.metadata.trackTitle,
                 artists: [releaseData.metadata.artistName],
-                tracks: (releaseData.metadata.tracks && releaseData.metadata.tracks.length > 0) ? releaseData.metadata.tracks.map((t, idx) => {
-                    const trackIsrc = t.isrc || activeIsrc;
-                    if (!trackIsrc) throw new Error(`Missing ISRC for track ${idx + 1}: ${t.trackTitle}`);
-                    return {
-                        id: String(idx + 1),
-                        title: t.trackTitle,
-                        isrc: trackIsrc
-                    };
-                }) : (() => {
-                    // Fallback for single-track releases stored without a tracks array
-                    const singleTrackIsrc = releaseData.metadata.isrc || activeIsrc;
-                    if (!singleTrackIsrc) throw new Error('Missing ISRC for single track release');
-                    return [{
-                        id: '1',
-                        title: releaseData.metadata.trackTitle,
-                        isrc: singleTrackIsrc
-                    }];
-                })(),
+                tracks: tracksPayload,
                 upc: releaseData.metadata.upc || activeUpc,
                 label: releaseData.metadata.labelName
             };

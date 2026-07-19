@@ -11,7 +11,7 @@ export const CampaignStatusSchema = z.enum(['PENDING', 'EXECUTING', 'DONE', 'FAI
 
 export const ScheduledPostSchema = z.object({
     id: z.string(),
-    platform: z.enum(['Twitter', 'Instagram', 'LinkedIn']),
+    platform: z.enum(['Twitter', 'Instagram']),
     copy: z.string(),
     imageAsset: z.object({
         assetType: z.literal('image'),
@@ -53,11 +53,17 @@ function scheduledAtForPost(post: z.infer<typeof ScheduledPostSchema>): admin.fi
     return admin.firestore.Timestamp.fromDate(date);
 }
 
-function normalizeDispatchPlatform(platform: unknown): 'twitter' | 'instagram' | 'tiktok' {
+export function normalizeDispatchPlatform(platform: unknown): 'twitter' | 'instagram' | 'tiktok' | 'youtube' {
     const normalized = String(platform || '').toLowerCase().trim();
     if (normalized === 'twitter' || normalized === 'x') return 'twitter';
     if (normalized === 'instagram' || normalized === 'ig' || normalized === 'meta_reels') return 'instagram';
     if (normalized === 'tiktok') return 'tiktok';
+    // ISSUE-820: MultiPlatformPoster/SocialAutoPosterService send the raw
+    // platform id 'youtube_shorts' verbatim in the dispatch payload, but the
+    // scheduled-delivery worker (deliverScheduledPosts.ts) only recognizes
+    // 'youtube' — this alias was previously rejected here before ever
+    // reaching the worker.
+    if (normalized === 'youtube' || normalized === 'youtube_shorts') return 'youtube';
     throw new functions.https.HttpsError(
         "failed-precondition",
         `Social platform '${String(platform)}' is not wired for native delivery.`
@@ -182,7 +188,7 @@ export const createInfluencerBounty = functions
     .https.onCall(async (data: Record<string, unknown>, context: functions.https.CallableContext) => {
         if (!context.auth) throw new functions.https.HttpsError("unauthenticated", "Auth required");
 
-        const { influencerHandle, trackName, rewardAmount: _rewardAmount } = data;
+        const { influencerHandle, trackName, rewardAmount: _rewardAmount, action } = data;
         let bountyBaseUrl = process.env.INFLUENCER_BOUNTY_BASE_URL || '';
         if (!bountyBaseUrl) {
             try {
@@ -207,6 +213,7 @@ export const createInfluencerBounty = functions
             influencerHandle,
             trackName,
             rewardAmount: _rewardAmount ?? null,
+            action: typeof action === 'string' ? action : null,
             refCode,
             link,
             status: 'active',

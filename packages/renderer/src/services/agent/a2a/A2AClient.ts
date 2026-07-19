@@ -10,6 +10,17 @@ import { resolveA2AConfig, invalidateA2AConfig, MY_AGENT_ID } from './A2AConfig'
 import { z } from 'zod';
 import { logger } from '@/utils/logger';
 
+const A2A_MAX_CONCURRENT_REQUESTS = Number(import.meta.env.VITE_A2A_MAX_CONCURRENT_REQUESTS ?? 2);
+const A2A_REQUEST_SPACING_MS = Number(import.meta.env.VITE_A2A_REQUEST_SPACING_MS ?? 250);
+const A2A_MAX_CONCURRENT = Number.isFinite(A2A_MAX_CONCURRENT_REQUESTS)
+  ? Math.max(1, Math.floor(A2A_MAX_CONCURRENT_REQUESTS))
+  : 2;
+const A2A_SPACING_MS = Number.isFinite(A2A_REQUEST_SPACING_MS)
+  ? Math.max(0, Math.floor(A2A_REQUEST_SPACING_MS))
+  : 250;
+
+const sleep = (ms: number): Promise<void> => new Promise(resolve => setTimeout(resolve, ms));
+
 export class A2ATransportUnavailableError extends Error {
   constructor(message: string) {
     super(message);
@@ -23,6 +34,48 @@ export class A2AClient {
   private cachedCards: AgentCard[] = [];
   private transport: A2ATransport | null = null;
   private breaker = { isTripped: false, tripTime: 0, cooldown: 30000 };
+  private activeRequests = 0;
+  private waitingResolvers: Array<() => void> = [];
+  private startGate: Promise<void> = Promise.resolve();
+  private lastRequestStartedAt = 0;
+
+  private async acquireBackpressure(label: string): Promise<() => void> {
+    while (this.activeRequests >= A2A_MAX_CONCURRENT) {
+      await new Promise<void>(resolve => this.waitingResolvers.push(resolve));
+    }
+    this.activeRequests++;
+
+    const previousStart = this.startGate;
+    let releaseStartGate!: () => void;
+    this.startGate = new Promise(resolve => {
+      releaseStartGate = resolve;
+    });
+
+    await previousStart;
+
+    const waitMs = Math.max(0, this.lastRequestStartedAt + A2A_SPACING_MS - Date.now());
+    if (waitMs > 0) {
+      logger.debug(`[A2AClient] Backpressure delaying ${label} by ${waitMs}ms`);
+      await sleep(waitMs);
+    }
+
+    this.lastRequestStartedAt = Date.now();
+    releaseStartGate();
+
+    return () => {
+      this.activeRequests = Math.max(0, this.activeRequests - 1);
+      this.waitingResolvers.shift()?.();
+    };
+  }
+
+  private async withBackpressure<T>(label: string, fn: () => Promise<T>): Promise<T> {
+    const release = await this.acquireBackpressure(label);
+    try {
+      return await fn();
+    } finally {
+      release();
+    }
+  }
 
   /**
    * Get or initialize the transport based on configuration.
@@ -130,9 +183,11 @@ export class A2AClient {
     this.checkBreaker();
 
     try {
-      const transport = await this.getTransport();
-      await this.ensureKeyExchange(transport);
-      return this.cachedCards;
+      return await this.withBackpressure('discover', async () => {
+        const transport = await this.getTransport();
+        await this.ensureKeyExchange(transport);
+        return this.cachedCards;
+      });
     } catch (error) {
       if (!(error instanceof A2ATransportUnavailableError)) {
         this.tripBreaker(error);
@@ -165,28 +220,30 @@ export class A2AClient {
     }
 
     try {
-      const transport = await this.getTransport();
-      await this.ensureKeyExchange(transport);
+      return await this.withBackpressure(`invoke:${agentId}`, async () => {
+        const transport = await this.getTransport();
+        await this.ensureKeyExchange(transport);
 
-      const payload = {
-        jsonrpc: '2.0',
-        method,
-        params: { ...params, senderId: MY_AGENT_ID, targetAgentId: agentId },
-        id: crypto.randomUUID(),
-      };
+        const payload = {
+          jsonrpc: '2.0',
+          method,
+          params: { ...params, senderId: MY_AGENT_ID, targetAgentId: agentId },
+          id: crypto.randomUUID(),
+        };
 
-      // Encrypt TO the router (MY_AGENT_ID). The targetAgentId rides in params.
-      const envelope = await e2eEncryptionService.encryptMessage(payload, MY_AGENT_ID, MY_AGENT_ID);
+        // Encrypt TO the router (MY_AGENT_ID). The targetAgentId rides in params.
+        const envelope = await e2eEncryptionService.encryptMessage(payload, MY_AGENT_ID, MY_AGENT_ID);
 
-      // Call with localCtx for loopback to use
-      const responseEnvelope = await transport.rpc(envelope, localCtx);
-      const decrypted = await e2eEncryptionService.decryptMessage(responseEnvelope, MY_AGENT_ID);
+        // Call with localCtx for loopback to use
+        const responseEnvelope = await transport.rpc(envelope, localCtx);
+        const decrypted = await e2eEncryptionService.decryptMessage(responseEnvelope, MY_AGENT_ID);
 
-      if ('error' in decrypted) {
-        throw new Error(`RPC Error: ${JSON.stringify(decrypted.error)}`);
-      }
+        if ('error' in decrypted) {
+          throw new Error(`RPC Error: ${JSON.stringify(decrypted.error)}`);
+        }
 
-      return decrypted.result;
+        return decrypted.result;
+      });
     } catch (error) {
       if (!(error instanceof A2ATransportUnavailableError)) {
         this.tripBreaker(error);
@@ -219,26 +276,28 @@ export class A2AClient {
     }
 
     try {
-      const transport = await this.getTransport();
-      await this.ensureKeyExchange(transport);
+      const { transport, requestId } = await this.withBackpressure(`stream:${agentId}`, async () => {
+        const transport = await this.getTransport();
+        await this.ensureKeyExchange(transport);
 
-      const payload = {
-        jsonrpc: '2.0',
-        method: 'stream.init',
-        params: { ...params, targetMethod: method, targetAgentId: agentId, senderId: MY_AGENT_ID },
-        id: crypto.randomUUID(),
-      };
+        const payload = {
+          jsonrpc: '2.0',
+          method: 'stream.init',
+          params: { ...params, targetMethod: method, targetAgentId: agentId, senderId: MY_AGENT_ID },
+          id: crypto.randomUUID(),
+        };
 
-      // Encrypt TO the router (MY_AGENT_ID). The targetAgentId rides in params.
-      const envelope = await e2eEncryptionService.encryptMessage(payload, MY_AGENT_ID, MY_AGENT_ID);
-      const responseEnvelope = await transport.rpc(envelope, localCtx);
-      const decryptedInit = await e2eEncryptionService.decryptMessage(responseEnvelope, MY_AGENT_ID);
+        // Encrypt TO the router (MY_AGENT_ID). The targetAgentId rides in params.
+        const envelope = await e2eEncryptionService.encryptMessage(payload, MY_AGENT_ID, MY_AGENT_ID);
+        const responseEnvelope = await transport.rpc(envelope, localCtx);
+        const decryptedInit = await e2eEncryptionService.decryptMessage(responseEnvelope, MY_AGENT_ID);
 
-      if ('error' in decryptedInit) {
-        throw new Error(`RPC Error initializing stream: ${JSON.stringify(decryptedInit.error)}`);
-      }
+        if ('error' in decryptedInit) {
+          throw new Error(`RPC Error initializing stream: ${JSON.stringify(decryptedInit.error)}`);
+        }
 
-      const requestId = (decryptedInit.result as { requestId: string }).requestId;
+        return { transport, requestId: (decryptedInit.result as { requestId: string }).requestId };
+      });
 
       // Consume the stream
       for await (const eventEnvelope of transport.openStream(requestId)) {

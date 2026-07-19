@@ -35,6 +35,25 @@ description: >
    a 1-line description of what you changed.
 6. **You do NOT delete or rewrite issues.** You only update the `Status` field
    and append fix notes.
+7. **No mock data, ever (project hard rule).** A fix is real behavior. If a capability
+   cannot be built right now (no API/SDK/credentials/upstream support), the ONLY honest
+   outcomes are a clear thrown error / "unavailable" state, or `WONTFIX — <reason>`. You
+   may NEVER fabricate data, success statuses, IDs, addresses, QR codes, or UI to make
+   something *appear* fixed. (On 2026-06-14 an agent "fixed" WalletConnect by faking a
+   wallet address — that is the exact crime this rule forbids.)
+8. **Evidence or it didn't happen.** A `FIXED` status requires a `Fix:` line (the real
+   mechanism) AND an `Evidence:` line with the exact `file:line` a reviewer can open. The
+   word "Verified" with no `file:line` is banned.
+9. **The audit trail is READ-ONLY.** Never edit, upgrade, or delete a `## Verification
+   Findings` section or any `⚠️/🔴 REOPENED` note — those are written by humans or a
+   verification pass. To move a REOPENED issue to FIXED, satisfy Rules 7–8 and APPEND your
+   evidence *below* the reviewer's note. Never self-grant "Verified."
+
+> **DEFINITION OF DONE:** an issue becomes `✅ FIXED` only when (1) the behavior is real,
+> not mock; (2) you re-opened the cited `file:line` and confirmed the placeholder is gone;
+> (3) `Fix:` + `Evidence: file:line` are in the entry; (4) `npm run typecheck` is green.
+> If you can't hit all four, set `🟠 BLOCKED — <reason>` and leave the honest state in code.
+> **A truthful BLOCKED is a success; a fake FIXED is a terminal violation.**
 
 ---
 
@@ -70,6 +89,8 @@ If invoked as `/issue sync`:
    - **Severity:** 🟡 MEDIUM (or 🔴 HIGH if labeled 'severity:critical'/'severity:major', etc.)
    - **Link:** <html_url>
    - **Summary:** <brief excerpt of body>
+   - **Expected (acceptance):** <what "done" looks like — derive from the issue body; if unclear, say "underspecified — confirm before fixing">
+   - **Honest fallback:** <if it can't be built now: clear error / "unavailable" state or WONTFIX — never fabricate data/success/UI to fake it. No mock data, ever.>
    ```
 5. Once appended, proceed to Step 2.
 
@@ -132,6 +153,8 @@ Read the issue entry carefully. Extract:
 
 Use the reproduction steps and module information to find the relevant source files.
 
+- **Flowchart Alignment:** Before making modifications, cross-reference the affected area with the system flowcharts in `docs/flowcharts/` (specifically [01-grand-unified-macro.md](file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/docs/flowcharts/01-grand-unified-macro.md), [backend-only-api-boundary.md](file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/docs/flowcharts/backend-only-api-boundary.md), and [entire-app-architecture.md](file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/docs/flowcharts/entire-app-architecture.md)). Trace the exact boundary routing, verifying that if the fix touches external integrations or client interfaces, it aligns with our strict device pathways and backend-only API boundaries.
+
 ```
 Search strategy:
 1. grep for the module name in src/modules/
@@ -155,6 +178,14 @@ Rules for fixing:
 - **Follow existing patterns.** Match the code style of the file you're editing.
 - **Boy Scout Rule.** Fix obvious lint errors or unused imports in the immediate
   vicinity of your changes. Delete zombie (commented-out) code blocks.
+- **The Ponytail Rule.** Before writing new logic, stop at the first rung that holds:
+  1. Does this need to exist? → no: skip it (YAGNI)
+  2. Stdlib does it? → use it
+  3. Native platform feature? → use it
+  4. Installed dependency? → use it
+  5. One line? → one line
+  6. Only then: the minimum that works
+  *(Lazy, not negligent: trust-boundary validation, data-loss handling, security, and accessibility are never on the chopping block.)*
 
 ### 3.4 Verify the Fix
 
@@ -163,8 +194,14 @@ After applying the fix:
 1. **Type-check:** Run `npm run typecheck` to ensure no TypeScript errors
 2. **Lint:** Run `npm run lint` to ensure no ESLint violations
 3. **Unit tests:** Run `npm test -- --run` to ensure no test regressions
-4. **Browser verify (if applicable):** Use `browser_subagent` to reproduce
-   the original steps and confirm the issue is resolved
+4. **Static Verification Gate (MANDATORY — re-open the file, do not trust your diff alone):**
+   Open the cited `file:line` AFTER your change and read it. The issue stays OPEN/BLOCKED unless ALL of these are true:
+   - **No placeholder residue.** None of: `return []`, `return null`, `throw new Error('not implemented')`, `// coming soon`, bare `void 0;`, empty function body.
+   - **No fabricated values.** No `Math.random()`-generated IDs/UPCs/addresses, no hardcoded `status:'success'` / `'SENT'` / `'done'`, no fake UI that simulates a real connection/result. If the real thing can't be built, the honest output is an error/"unavailable" state — see Prime Rule 7.
+   - **Tests aren't faked green.** A `test.skip(...)` (even with a reason) is zero coverage, not a fix. A passing assertion that can never fail is not a test.
+   - **The `Fix:` text matches the actual code added**, and an `Evidence: file:line` is recorded. Fake/inaccurate fix descriptions are terminal violations.
+5. **Browser verify (if applicable):** Use the `chrome-devtools` MCP plugin to navigate,
+   take snapshots, and visually verify the UI state/console errors to confirm the issue is resolved
 
 ### 3.5 Update .agent/test_ledger/OPEN_ISSUES.md
 
@@ -175,17 +212,21 @@ After a successful fix, update the issue entry:
 - **Status:** ✅ FIXED (<commit_hash>)
 - **Severity:** 🔴 HIGH
 - ... (keep all original fields)
-- **Fix:** <1-2 sentences describing the code change>
+- **Fix:** <1-2 sentences describing the REAL code change / mechanism>
+- **Evidence:** `<file.ts:line>` — <what a reviewer will see there proving it's done>
 - **Files:** `<file1.ts>`, `<file2.tsx>`
 - **UX Impact:** <updated to reflect the fixed state>
 ```
 
 **Rules:**
-- Change `Status` from `OPEN` to `✅ FIXED (<commit_hash>)`
-- Add a `Fix:` field with a concise description
-- Add a `Files:` field listing every file modified
-- Update `UX Impact:` to reflect the resolved state
-- Do NOT delete any original fields (Steps to Reproduce, Summary, etc.)
+- Change `Status` from `OPEN` to `✅ FIXED (<commit_hash>)` — **only after the §3.4 gate passes.**
+- Add a `Fix:` field with a concise description of the actual mechanism.
+- Add an **`Evidence:`** field with the exact `file:line` a reviewer can open (Prime Rule 8). No `file:line` → not FIXED.
+- Add a `Files:` field listing every file modified.
+- Update `UX Impact:` to reflect the resolved state.
+- Do NOT delete any original fields (Steps to Reproduce, Summary, etc.).
+- **Do NOT touch the `## Verification Findings` section or any `⚠️/🔴 REOPENED` note** (Prime Rule 9). If reopening a REOPENED issue, append your `Fix:`/`Evidence:` lines *below* the reviewer's note — never rewrite it, never self-mark "Verified."
+- If you cannot honestly reach FIXED, set `🟠 BLOCKED — <what's missing>` instead. Do not fabricate to close.
 
 ### 3.6 Print Progress
 
@@ -359,3 +400,9 @@ Output:
 | Refactoring an entire file to fix one bug | Surgical precision. Change the minimum lines needed. |
 | Ignoring the Error Ledger | Always check `.agent/skills/error_memory/ERROR_LEDGER.md` first. |
 | Fixing LOW issues before HIGH issues | Severity order is mandatory unless the user overrides. |
+| Faking data/success to make a stub "work" (random IDs, `status:'success'`, fake modal/wallet) | NO-MOCK-DATA hard rule. Honest error / "unavailable" / `WONTFIX` instead. This is the ISSUE-184 crime. |
+| Marking `FIXED` with no `Evidence: file:line` | Prime Rule 8. "Verified" with no clickable evidence is banned. |
+| Editing/upgrading the `Verification Findings` or a `REOPENED` note | Prime Rule 9. The audit trail is read-only; append below, never rewrite. Never self-grant "Verified." |
+| "Finishing" a test by `test.skip(...)` with a generic reason | A skipped test is zero coverage, not a fix. Write the real test or keep the issue OPEN. |
+| Closing a CI failure by deleting/skipping the test or loosening the assertion | Green-by-deletion is a fake FIXED. Find the root cause. |
+| Resolving strict-mode violations with `.first()`/`.last()`/`.nth()` | Strict-mode violation means elements are duplicated in UI. Resolve duplicates, don't paper over them with `.first()`. |

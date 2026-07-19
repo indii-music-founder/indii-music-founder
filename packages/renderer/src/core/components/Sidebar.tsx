@@ -164,7 +164,7 @@ export default function Sidebar() {
     // Grouped navigation items based on the screenshot
     const managerItems: SidebarItem[] = [
         { id: 'brand', icon: Briefcase, label: 'Brand Manager' },
-        { id: 'road', icon: Users, label: 'Road Manager' },
+        { id: 'road', icon: Users, label: 'Road/tour' },
         { id: 'campaign', icon: Megaphone, label: 'Campaign Manager' },
         { id: 'agent', icon: CalendarDays, label: 'Booking Agent' },
         { id: 'publicist', icon: Mic, label: 'Publicist' },
@@ -188,6 +188,7 @@ export default function Sidebar() {
         { id: 'workflow', icon: GitBranch, label: 'Workflow Builder' },
         { id: 'audio-analyzer', icon: Radio, label: 'Audio Analyzer' },
         { id: 'knowledge', icon: Book, label: 'Knowledge Base' },
+        { id: 'notes', icon: FileText, label: 'Notes' },
         { id: 'memory', icon: AudioLines, label: 'Memory Agent' },
         { id: 'observability', icon: Activity, label: 'Command Center' },
         { id: 'settings', icon: Settings, label: 'Settings' },
@@ -255,7 +256,7 @@ export default function Sidebar() {
                         aria-label="Open Command Menu"
                     >
                         <span className="flex items-center gap-2">
-                            <Search size={14} className="text-gray-500 group-hover:text-purple-400 transition-colors" />
+                            <Search size={14} className="text-gray-500 group-hover:text-green-400 transition-colors" />
                             Search...
                         </span>
                         <div className="flex items-center gap-1">
@@ -268,7 +269,7 @@ export default function Sidebar() {
                 <div className="flex items-center justify-center pt-4 pb-2 border-b border-white/5 border-dashed">
                     <button
                         onClick={() => useStore.getState().setCommandMenuOpen(true)}
-                        className="p-2 rounded-lg text-gray-400 hover:text-purple-400 hover:bg-white/10 transition-colors shadow-sm"
+                        className="p-2 rounded-lg text-gray-400 hover:text-green-400 hover:bg-white/10 transition-colors shadow-sm"
                         aria-label="Open Command Menu"
                         title="Search (⌘K)"
                     >
@@ -351,6 +352,23 @@ export default function Sidebar() {
 
                     {/* Shimmer sweep */}
                     <div className="absolute inset-0 rounded-xl bg-linear-to-r from-transparent via-amber-400/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 pointer-events-none" />
+                </button>
+            </div>
+
+            {/* Founders Recognition Link */}
+            <div className="px-4 pb-2">
+                <button
+                    onClick={() => throttledSetModule('founders-recognition')}
+                    className={cn(
+                        "w-full flex items-center justify-center p-2 rounded-lg transition-all text-xs font-mono tracking-wider",
+                        currentModule === 'founders-recognition'
+                            ? "bg-amber-500/10 border border-amber-500/30 text-amber-300"
+                            : "text-gray-600 hover:text-gray-400 hover:bg-white/5"
+                    )}
+                    title="View Founder Recognition"
+                    aria-label="Founders"
+                >
+                    {isSidebarOpen ? "Founders" : "⭐"}
                 </button>
             </div>
 

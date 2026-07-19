@@ -7,9 +7,12 @@ import { XMLParser } from 'fast-xml-parser';
 
 export class IngestionValidator {
     /**
-     * Check an XML string for key structural elements. This is not an XSD validator.
+     * ISSUE-862: Structural LINT ONLY — checks required tag/declaration presence
+     * via substring matching. This is NOT an XSD/profile validator; no real
+     * DDEX schema is consulted. `valid: true` means `structuralLintPassed`,
+     * not "delivery ready" or "schema conformant".
      */
-    validateXML(xml: string, schemaVersion: string = '4.3'): { valid: boolean; errors: string[] } {
+    validateXML(xml: string, schemaVersion: string = '4.3'): { valid: boolean; errors: string[]; xsdValidated: false } {
         const errors: string[] = [];
 
         // Check for XML declaration
@@ -53,7 +56,8 @@ export class IngestionValidator {
 
         return {
             valid: errors.length === 0,
-            errors
+            errors,
+            xsdValidated: false
         };
     }
 

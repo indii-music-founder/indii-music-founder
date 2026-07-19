@@ -53,7 +53,7 @@ export const RegionalMap: React.FC<RegionalMapProps> = ({ regions, totalStreams 
                                         ? `${(region.streams / 1000000).toFixed(1)}M`
                                         : region.streams >= 1000
                                             ? `${(region.streams / 1000).toFixed(0)}K`
-                                            : region.streams.toLocaleString()}
+                                            : region.streams.toLocaleString('en-US')}
                                 </span>
                             </div>
                         </div>

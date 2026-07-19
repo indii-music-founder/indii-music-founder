@@ -40,7 +40,7 @@ const prepare_release = wrapTool('prepare_release', async (args: {
     // 1. Try Industrial Engine (Electron)
     if (typeof window !== 'undefined' && window.electronAPI) {
         try {
-            const rawDdex = await window.electronAPI.distribution.generateIngestionNotification({
+            const rawDdex = await window.electronAPI.distribution.generateDDEX({
                 releaseId: `rel-${isrc}`,
                 title,
                 artists: [artist],
@@ -94,7 +94,7 @@ const prepare_release = wrapTool('prepare_release', async (args: {
             publisher: 'Self-Published',
             containsSamples: false,
             samples: [],
-            isGolden: true,
+            isGolden: false, // Not golden: empty splits and default publisher (ISSUE-795)
             territories: ['Worldwide'],
             distributionChannels: ['streaming', 'download'],
             aiGeneratedContent: { isFullyAIGenerated: false, isPartiallyAIGenerated: false }
@@ -181,31 +181,38 @@ const issue_isrc = wrapTool('issue_isrc', async (args: {
                 year: year
             });
 
-            return {
+            return toolSuccess({
                 isrc: result.isrc,
                 source: 'Authority Layer (Python)',
-                registry: 'Local'
-            };
+                registry_status: 'recorded_internal'
+            }, `ISRC ${result.isrc} generated and recorded locally for "${trackTitle}". This is an internal identifier; official ISRC registration requires registration with an ISRC agency.`);
         } catch (e: unknown) {
             logger.warn('[DistributionTools] Authority Layer ISRC generation failed, falling back to JS:', e);
         }
     }
 
-    // 2. Fallback to JS Service
+    // 2. Fallback to JS Service — issues from the verified backend pool (ISSUE-781)
     try {
-        const isrc = await IdentifierService.nextISRC('US', 'IND');
+        const isrc = await IdentifierService.nextISRC();
 
         const userId = auth.currentUser?.uid;
         if (userId) {
-            const recordIdentifier = httpsCallable(functions, 'recordDistributionIdentifier');
-            await recordIdentifier({
-                type: 'isrc',
-                isrc,
-                releaseId: `generated-${isrc}`,
-                trackTitle,
-                artistName: artist,
-                metadataSnapshot: { year, orgId: 'personal', source: 'DistributionTools.issue_isrc' },
-            });
+            // Best-effort registry record. The backend now enforces release
+            // ownership (ISSUE-887), so a synthetic releaseId is rejected —
+            // that must not fail the ISRC generation itself.
+            try {
+                const recordIdentifier = httpsCallable(functions, 'recordDistributionIdentifier');
+                await recordIdentifier({
+                    type: 'isrc',
+                    isrc,
+                    releaseId: `generated-${isrc}`,
+                    trackTitle,
+                    artistName: artist,
+                    metadataSnapshot: { year, orgId: 'personal', source: 'DistributionTools.issue_isrc' },
+                });
+            } catch (recordErr) {
+                logger.warn('[DistributionTools] ISRC registry record skipped (no owned release):', recordErr);
+            }
         }
 
         return toolSuccess({
@@ -213,8 +220,8 @@ const issue_isrc = wrapTool('issue_isrc', async (args: {
             source: 'JS Service',
             valid: true,
             track_title: trackTitle,
-            registry_status: 'REGISTERED'
-        }, `ISRC ${isrc} generated and registered for "${trackTitle}".`);
+            registry_status: 'generated_local'
+        }, `ISRC ${isrc} generated for "${trackTitle}". This is an internal identifier; official ISRC registration requires registration with an ISRC agency.`);
     } catch (error: unknown) {
         return toolError(error instanceof Error ? error.message : 'ISRC failed', 'ISRC_ERROR');
     }
@@ -232,7 +239,7 @@ const certify_tax_profile = wrapTool('certify_tax_profile', async (args: {
     tin: string;
     signedUnderPerjury: boolean;
 }) => {
-    const { userId, fullName, isUsPerson, country, tin, signedUnderPerjury } = args;
+    const { userId, fullName, isUsPerson, isEntity, country, tin, signedUnderPerjury } = args;
     if (!fullName?.trim()) {
         return toolError('Legal name is required to certify a tax profile.', 'LEGAL_NAME_REQUIRED');
     }
@@ -242,13 +249,17 @@ const certify_tax_profile = wrapTool('certify_tax_profile', async (args: {
             // Calculate status first
             const taxResult = await window.electronAPI.distribution.calculateTax({ userId, amount: 100 });
 
-            // Certify - remove userId from the data object as it's passed as first arg
+            // ISSUE-793: field names must match tax_withholding_engine.py's
+            // certify_user() exactly (is_us_person, is_entity, tin,
+            // signed_under_perjury) — the previous taxId/usPerson/signature
+            // shape silently mismatched and certification could never succeed.
             const certResult = await window.electronAPI.distribution.certifyTax(userId, {
-                fullName: fullName.trim(),
+                full_name: fullName.trim(),
                 country,
-                taxId: tin,
-                usPerson: isUsPerson,
-                signature: signedUnderPerjury ? 'SIGNED_DIGITALLY' : ''
+                tin,
+                is_us_person: isUsPerson,
+                is_entity: isEntity ?? false,
+                signed_under_perjury: signedUnderPerjury
             });
 
             // Use 'certified' boolean and valid properties from TaxReport interface
@@ -287,20 +298,23 @@ const calculate_payout = wrapTool('calculate_payout', async (args: {
     // 1. Try Bank Layer (Electron)
     if (typeof window !== 'undefined' && window.electronAPI) {
         try {
+            // Tool schema declares percent units (percentage: 50, indiiFeePercent: 10);
+            // waterfall_payout.py requires 0-1 fractions for both (ISSUE-826).
             const splitsRecord: Record<string, number> = {};
             splits.forEach(s => {
-                splitsRecord[s.email || s.name] = s.percentage;
+                splitsRecord[s.email || s.name] = s.percentage / 100;
             });
 
             const waterfallResult = await window.electronAPI.distribution.executeWaterfall({
-                gross_revenue: grossRevenue,
+                gross: grossRevenue,
                 splits: splitsRecord,
-                expenses: recoupableExpenses
+                recoupment: recoupableExpenses,
+                indii_fee_percent: indiiFeePercent / 100
             });
 
             return {
                 ...waterfallResult.report,
-                message: `Industrial Waterfall Executed. Net Distributable: $${waterfallResult.report ? waterfallResult.report.net_revenue : 0}`
+                message: `Industrial Waterfall Executed. Net Distributable: $${waterfallResult.report ? waterfallResult.report.total_distributed : 0}`
             };
         } catch (e: unknown) {
             logger.warn('[DistributionTools] Bank Layer waterfall failed, falling back to JS:', e);
@@ -493,39 +507,14 @@ export const DistributionTools = {
             createdAt: serverTimestamp(),
         });
 
-        // 2. Call Cloud Function for DSP-specific ingestion pipeline
-        try {
-            const { httpsCallable } = await import('firebase/functions');
-            const { functions } = await import('@/services/firebase');
-            const distributeVideo = httpsCallable(functions, 'distributeVideoToDSP');
-            const result = await distributeVideo({
-                releaseDocId: videoReleaseRef.id,
-                videoTitle: args.videoTitle,
-                artistName: args.artistName,
-                videoUrl: args.videoUrl,
-                targetDSP: dsp,
-            });
-            const data = result.data as Record<string, unknown>;
-            return toolSuccess({
-                videoTitle: args.videoTitle,
-                artistName: args.artistName,
-                targetDSP: dsp,
-                releaseId: videoReleaseRef.id,
-                deliveryStatus: data.status || 'QUEUED',
-                pipelineId: data.pipelineId || null,
-            }, `Premium music video "${args.videoTitle}" submitted to ${dsp} ingestion pipeline via Cloud Function.`);
-        } catch (cfError: unknown) {
-            logger.warn(`[DistributionTools] ${dsp} Cloud Function unavailable, falling back to local record:`, cfError);
-            // Fallback: video is persisted in Firestore for manual pipeline pickup
-            return toolSuccess({
-                videoTitle: args.videoTitle,
-                artistName: args.artistName,
-                targetDSP: dsp,
-                releaseId: videoReleaseRef.id,
-                deliveryStatus: 'QUEUED_FOR_MANUAL_REVIEW',
-                note: `${dsp} ingestion API not yet configured. Video release saved — will be processed when partner API credentials are added.`,
-            }, `Premium music video "${args.videoTitle}" saved for ${dsp} distribution. Awaiting partner API configuration.`);
-        }
+        return toolSuccess({
+            videoTitle: args.videoTitle,
+            artistName: args.artistName,
+            targetDSP: dsp,
+            releaseId: videoReleaseRef.id,
+            deliveryStatus: 'QUEUED_FOR_MANUAL_REVIEW',
+            note: `${dsp} ingestion is not automated in this build. Video release saved for manual processing.`,
+        }, `Premium music video "${args.videoTitle}" saved for ${dsp} distribution. Manual processing is required because the DSP worker is not deployed.`);
     }),
 
     export_ddex_ern42: wrapTool('export_ddex_ern42', async (args: { releaseId: string; metadata: any }) => {
@@ -543,6 +532,9 @@ export const DistributionTools = {
             trackTitle,
             artistName,
             isrc: args.metadata.isrc,
+            territories: [],
+            distributionChannels: [],
+            isGolden: false,
             upc: args.metadata.upc,
             labelName,
             releaseType: args.metadata?.releaseType || 'Single',
@@ -557,11 +549,12 @@ export const DistributionTools = {
             publisher: args.metadata?.publisher || 'Self-Published',
             containsSamples: args.metadata?.containsSamples ?? false,
             samples: args.metadata?.samples || [],
-            isGolden: true,
-            territories: args.metadata?.territories || ['Worldwide'],
-            distributionChannels: args.metadata?.distributionChannels || ['streaming', 'download'],
             aiGeneratedContent: args.metadata?.aiGeneratedContent || { isFullyAIGenerated: false, isPartiallyAIGenerated: false },
         };
+
+        // Compute golden status based on actual requirements (ISSUE-795)
+        const { MetadataOrchestrator } = await import('@/services/metadata/MetadataOrchestrator');
+        meta.isGolden = MetadataOrchestrator.computeGoldenStatus(meta);
 
         try {
             const result = await ingestionNotificationService.generateERN(meta, undefined, 'generic', undefined, { isTestMode: false });
@@ -569,16 +562,17 @@ export const DistributionTools = {
                 return toolError(result.error || 'ERN generation failed', 'ERN_ERROR');
             }
 
-            // Validate the generated XML
+            // Validate the generated XML (ISSUE-862: structural lint only, not XSD)
             const validationErrors = IngestionNotificationService.validateERNXML(result.xml || '');
 
             return toolSuccess({
                 releaseId: args.releaseId,
                 format: 'DDEX ERN 4.3',
-                isValid: validationErrors.length === 0,
+                structuralLintPassed: validationErrors.length === 0,
+                xsdValidated: false,
                 validationErrors: validationErrors.length > 0 ? validationErrors : undefined,
                 xmlLength: result.xml?.length || 0,
-            }, `Exported metadata for Release ${args.releaseId} to DDEX ERN 4.3 format via IngestionNotificationService. ${validationErrors.length === 0 ? 'Structural validation passed.' : `${validationErrors.length} validation issue(s) detected.`}`);
+            }, `Exported metadata for Release ${args.releaseId} to DDEX ERN 4.3 format via IngestionNotificationService. ${validationErrors.length === 0 ? 'Structural lint passed (required tags present) — NOT XSD/schema validated.' : `${validationErrors.length} structural validation issue(s) detected.`}`);
         } catch (error: unknown) {
             return toolError(error instanceof Error ? error.message : 'ERN export failed', 'ERN_EXPORT_ERROR');
         }
@@ -590,20 +584,25 @@ export const DistributionTools = {
             const upc = await IdentifierService.nextUPC();
             const isValid = IdentifierService.validateUPC(upc);
 
-            // Persist to Firestore registry
+            // Best-effort registry record — backend rejects synthetic release IDs
+            // (ISSUE-887 ownership gate); that must not fail UPC generation.
             const uid = auth.currentUser?.uid;
             if (uid) {
-                const recordIdentifier = httpsCallable(functions, 'recordDistributionIdentifier');
-                await recordIdentifier({
-                    type: 'upc',
-                    upc,
-                    releaseId: `generated-${upc}`,
-                    releaseTitle: args.releaseTitle,
-                    metadataSnapshot: {
-                        recordLabel: args.recordLabel,
-                        source: 'DistributionTools.generate_upc',
-                    },
-                });
+                try {
+                    const recordIdentifier = httpsCallable(functions, 'recordDistributionIdentifier');
+                    await recordIdentifier({
+                        type: 'upc',
+                        upc,
+                        releaseId: `generated-${upc}`,
+                        releaseTitle: args.releaseTitle,
+                        metadataSnapshot: {
+                            recordLabel: args.recordLabel,
+                            source: 'DistributionTools.generate_upc',
+                        },
+                    });
+                } catch (recordErr) {
+                    logger.warn('[DistributionTools] UPC registry record skipped (no owned release):', recordErr);
+                }
             }
 
             return toolSuccess({
@@ -666,47 +665,19 @@ export const DistributionTools = {
             }
         }
 
-        // 3. Fallback: Cloud Function for server-side SFTP
-        try {
-            const { httpsCallable } = await import('firebase/functions');
-            const { functions } = await import('@/services/firebase');
-            const sftpDeliver = httpsCallable(functions, 'sftpDeliverRelease');
-            const result = await sftpDeliver({
-                ingestionId,
-                targetDSP: args.targetDSP,
-                releaseFolder: args.releaseFolder,
-            });
-            const data = result.data as Record<string, unknown>;
+        // Manual fallback: the server-side SFTP worker is not deployed in this build.
+        await updateSftpIngestion({
+            ingestionId,
+            status: 'PENDING_MANUAL',
+        });
 
-            await updateSftpIngestion({
-                ingestionId,
-                status: data.status || 'TRANSFERRED',
-            });
-
-            return toolSuccess({
-                dsp: args.targetDSP,
-                folderPath: args.releaseFolder,
-                sftpStatus: data.status || 'Transferred',
-                ingestionId,
-                timestamp: new Date().toISOString(),
-                engine: 'Cloud Function',
-            }, `SFTP delivery for "${args.releaseFolder}" to ${args.targetDSP} completed via Cloud Function.`);
-        } catch (cfError: unknown) {
-            logger.warn('[DistributionTools] SFTP Cloud Function unavailable:', cfError);
-            // Mark as pending for manual processing
-            await updateSftpIngestion({
-                ingestionId,
-                status: 'PENDING_MANUAL',
-            });
-
-            return toolSuccess({
-                dsp: args.targetDSP,
-                folderPath: args.releaseFolder,
-                sftpStatus: 'PENDING_MANUAL',
-                ingestionId,
-                note: 'SFTP engine unavailable. Ingestion saved — will be processed when SFTP credentials are configured.',
-            }, `SFTP delivery saved for manual processing. Configure ${args.targetDSP} SFTP credentials to enable automated delivery.`);
-        }
+        return toolSuccess({
+            dsp: args.targetDSP,
+            folderPath: args.releaseFolder,
+            sftpStatus: 'PENDING_MANUAL',
+            ingestionId,
+            note: 'Server-side SFTP delivery is unavailable in this build. Manual processing is required.',
+        }, `SFTP delivery saved for manual processing. Configure ${args.targetDSP} SFTP delivery in a deployed worker to automate this path.`);
     }),
 
     toggle_content_id: wrapTool('toggle_content_id', async (args: {
@@ -767,35 +738,81 @@ export const DistributionTools = {
             return toolError('Takedown request did not return a server id.', 'TAKEDOWN_ERROR');
         }
 
-        // 2. Notify distributors via Cloud Function
+        return toolSuccess({
+            releaseId: args.releaseId,
+            reason: args.reason,
+            takedownId,
+            status: 'RECORDED_PENDING_NOTIFICATION',
+            note: 'Takedown recorded for manual follow-up. No distributor notification worker is deployed in this build.',
+            estimatedRemovalTime: 'Unavailable until distributor notification is confirmed',
+        }, `Takedown for release ${args.releaseId} recorded for manual follow-up. Distributor notification has not been sent.`);
+    }),
+
+    check_dsp_delivery_status: wrapTool('check_dsp_delivery_status', async (args: { releaseId: string; dspName?: string }) => {
+        const { releaseId, dspName } = args;
+        const uid = auth.currentUser?.uid;
+        if (!uid) return toolError('User not authenticated');
+
         try {
-            const processTakedown = httpsCallable(functions, 'processReleaseTakedown');
-            const result = await processTakedown({
-                takedownId,
-                releaseId: args.releaseId,
-                reason: args.reason,
-            });
-            const data = result.data as Record<string, unknown>;
+            const releaseRef = doc(db, 'releases', releaseId);
+            const snap = await getDoc(releaseRef);
+
+            if (!snap.exists()) {
+                return toolError(`Release ${releaseId} not found`, 'RELEASE_NOT_FOUND');
+            }
+
+            const data = snap.data();
+            const deliveryStatus = data.deliveryStatus || {};
+            
+            if (dspName) {
+                const status = deliveryStatus[dspName] || 'NOT_DELIVERED';
+                return toolSuccess({
+                    releaseId,
+                    dsp: dspName,
+                    status
+                }, `Delivery status for release ${releaseId} to ${dspName} is ${status}.`);
+            } else {
+                return toolSuccess({
+                    releaseId,
+                    statuses: deliveryStatus
+                }, `Delivery statuses for release ${releaseId} retrieved successfully.`);
+            }
+        } catch (error: unknown) {
+            return toolError(error instanceof Error ? error.message : 'Failed to check DSP delivery status', 'DSP_STATUS_ERROR');
+        }
+    }),
+
+    validate_metadata_readiness: wrapTool('validate_metadata_readiness', async (args: { releaseId: string }) => {
+        const { releaseId } = args;
+        const uid = auth.currentUser?.uid;
+        if (!uid) return toolError('User not authenticated');
+
+        try {
+            const releaseRef = doc(db, 'releases', releaseId);
+            const snap = await getDoc(releaseRef);
+
+            if (!snap.exists()) {
+                return toolError(`Release ${releaseId} not found`, 'RELEASE_NOT_FOUND');
+            }
+
+            const data = snap.data();
+            const metadata = data.metadata || {};
+            
+            const missingFields: string[] = [];
+            if (!metadata.title && !data.title) missingFields.push('title');
+            if (!metadata.artist && !data.artist) missingFields.push('artist');
+            if (!metadata.genre && !data.genre) missingFields.push('genre');
+            if (!metadata.isrc && !data.isrc) missingFields.push('isrc');
+
+            const isReady = missingFields.length === 0;
 
             return toolSuccess({
-                releaseId: args.releaseId,
-                reason: args.reason,
-                takedownId,
-                status: data.status || 'PROCESSING',
-                distributorsNotified: data.distributorsNotified || 0,
-                estimatedRemovalTime: '24-48 hours',
-            }, `Automated takedown issued for release ${args.releaseId}. ${data.distributorsNotified || 'All'} distributor(s) notified. Estimated removal: 24-48 hours.`);
-        } catch (cfError: unknown) {
-            logger.warn('[DistributionTools] Takedown Cloud Function unavailable:', cfError);
-            // Takedown is already recorded in Firestore — manual follow-up possible
-            return toolSuccess({
-                releaseId: args.releaseId,
-                reason: args.reason,
-                takedownId,
-                status: 'RECORDED_PENDING_NOTIFICATION',
-                note: 'Takedown recorded in system. Distributor notifications will be sent when Cloud Function is deployed.',
-                estimatedRemovalTime: '24-48 hours after notification',
-            }, `Takedown for release ${args.releaseId} recorded. Distributor notification pending Cloud Function deployment.`);
+                releaseId,
+                isReady,
+                missingFields
+            }, isReady ? `Metadata for release ${releaseId} is ready for distribution.` : `Metadata for release ${releaseId} is incomplete. Missing fields: ${missingFields.join(', ')}.`);
+        } catch (error: unknown) {
+            return toolError(error instanceof Error ? error.message : 'Failed to validate metadata readiness', 'METADATA_VALIDATION_ERROR');
         }
     })
 } satisfies Record<string, AnyToolFunction>;

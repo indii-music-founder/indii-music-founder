@@ -1,5 +1,6 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+vi.unmock('@/services/MembershipService');
 import { MembershipService } from './MembershipService';
 
 // -----------------------------------------------------------------------------

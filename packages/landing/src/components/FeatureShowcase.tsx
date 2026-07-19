@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Disc, Scale, Clapperboard, ArrowRight } from 'lucide-react';
+import { Disc, Scale, Clapperboard } from 'lucide-react';
 
 const features = [
     {
@@ -88,13 +88,9 @@ export default function FeatureShowcase() {
                                 <h3 className="text-2xl md:text-3xl font-bold mb-4 text-white group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-white group-hover:to-gray-400 transition-all">
                                     {feature.title}
                                 </h3>
-                                <p className="text-gray-400 leading-relaxed mb-6">
+                                <p className="text-gray-400 leading-relaxed">
                                     {feature.description}
                                 </p>
-
-                                <div className="flex items-center gap-2 text-sm font-medium text-white/60 group-hover:text-white transition-colors cursor-pointer">
-                                    See Documentation <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
-                                </div>
                             </div>
                         </div>
                     </motion.div>

@@ -223,14 +223,18 @@ describe('security/index.ts', () => {
             });
         });
 
-        describe('onBeforeSendHeaders (Referer Injection)', () => {
-            it('should inject referer for firestore and storage', () => {
+        describe('onBeforeSendHeaders (Referer & Client Type Injection)', () => {
+            it('should inject referer and client type for all googleapis, firebaseapp, cloudfunctions, and run.app', () => {
                 configureSecurity(mockSession as unknown as Session);
                 const handler = mockSession.webRequest.onBeforeSendHeaders.mock.calls[0][1];
 
                 const urls = [
                     'https://firestore.googleapis.com/v1/projects/my-project/databases/(default)/documents',
-                    'https://firebasestorage.googleapis.com/v0/b/my-bucket.appspot.com/o'
+                    'https://firebasestorage.googleapis.com/v0/b/my-bucket.appspot.com/o',
+                    'https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword',
+                    'https://us-central1-indii-music-founder.cloudfunctions.net/generateContentStream',
+                    'https://generateimagev3-run-app-subdomain.run.app',
+                    'http://127.0.0.1:5001/indii-music-founder/us-central1/generateContentStream'
                 ];
 
                 for (const url of urls) {
@@ -245,29 +249,11 @@ describe('security/index.ts', () => {
                     expect(callback).toHaveBeenCalledWith({
                         requestHeaders: {
                             'User-Agent': 'test',
-                            'Referer': 'http://localhost:4242'
+                            'Referer': 'https://founder.indii.music/',
+                            'X-App-Client-Type': 'electron-desktop-app'
                         }
                     });
                 }
-            });
-
-            it('should not inject referer for other googleapis', () => {
-                configureSecurity(mockSession as unknown as Session);
-                const handler = mockSession.webRequest.onBeforeSendHeaders.mock.calls[0][1];
-                const callback = vi.fn();
-                const details: { url: string; requestHeaders: Record<string, string> } = {
-                    url: 'https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword',
-                    requestHeaders: { 'User-Agent': 'test' }
-                };
-
-                handler(details, callback);
-
-                expect(callback).toHaveBeenCalledWith({
-                    requestHeaders: {
-                        'User-Agent': 'test'
-                    }
-                });
-                expect(details.requestHeaders['Referer']).toBeUndefined();
             });
         });
     });

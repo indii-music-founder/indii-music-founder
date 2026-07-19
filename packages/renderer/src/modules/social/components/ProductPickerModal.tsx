@@ -148,7 +148,7 @@ export const ProductPickerModal: React.FC<ProductPickerModalProps> = ({
                     <h4 className="font-bold text-white truncate">{product.title}</h4>
                     <div className="flex items-center gap-2 mt-1">
                       <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded ${
-                        product.type === 'stem-pack' ? 'bg-purple-900/50 text-purple-400' : 'bg-blue-900/50 text-blue-400'
+                        product.type === 'stem-pack' ? 'bg-green-900/50 text-green-400' : 'bg-blue-900/50 text-blue-400'
                       }`}>
                         {product.type}
                       </span>

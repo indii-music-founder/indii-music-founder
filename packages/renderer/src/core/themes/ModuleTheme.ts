@@ -187,6 +187,12 @@ export const MODULE_THEMES: Record<ModuleId, ModuleTheme> = {
         backgroundGradient: 'radial-gradient(circle at 50% 50%, rgba(0, 150, 136, 0.07), rgba(0, 0, 0, 0))',
         ambientConfig: { type: 'vectors', opacity: 0.3 }
     },
+    'notes': {
+        officeName: 'Notes',
+        accent: '#009688', // Teal
+        backgroundGradient: 'radial-gradient(circle at 50% 50%, rgba(0, 150, 136, 0.06), rgba(0, 0, 0, 0))',
+        ambientConfig: { type: 'vectors', opacity: 0.18 }
+    },
     'settings': {
         officeName: 'Settings',
         accent: '#00BCD4', // Cyan
@@ -248,6 +254,12 @@ export const MODULE_THEMES: Record<ModuleId, ModuleTheme> = {
         accent: '#8b5cf6', // violet-500
         backgroundGradient: 'radial-gradient(circle at 50% -20%, rgba(139, 92, 246, 0.08), rgba(0, 0, 0, 0))',
         ambientConfig: { type: 'grid', opacity: 0.15 }
+    },
+    'founders-recognition': {
+        officeName: 'Founder Recognition',
+        accent: '#f59e0b', // amber-500
+        backgroundGradient: 'radial-gradient(circle at 50% 0%, rgba(245, 158, 11, 0.1), rgba(0, 0, 0, 0))',
+        ambientConfig: { type: 'grid', opacity: 0.1 }
     }
 };
 

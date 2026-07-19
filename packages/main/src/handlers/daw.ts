@@ -1,3 +1,4 @@
+import { validateSender } from '../utils/ipc-security';
 import { ipcMain } from 'electron';
 import { dawServer, DAWState } from '../daw-server';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -5,17 +6,20 @@ import log from 'electron-log';
 import { BrowserWindow } from 'electron';
 
 export const registerDawHandlers = () => {
-    ipcMain.handle('daw:start', () => {
+    ipcMain.handle('daw:start', (event) => {
+        validateSender(event);
         dawServer.start();
         return true;
     });
 
-    ipcMain.handle('daw:stop', () => {
+    ipcMain.handle('daw:stop', (event) => {
+        validateSender(event);
         dawServer.stop();
         return true;
     });
 
-    ipcMain.handle('daw:get-state', () => {
+    ipcMain.handle('daw:get-state', (event) => {
+        validateSender(event);
         return dawServer.getState();
     });
 

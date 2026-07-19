@@ -37,6 +37,7 @@ vi.mock('@/core/store', () => ({
       currentProjectId: 'test-project',
       organizations: [{ id: 'test-org', name: 'Test Org' }],
       currentOrganizationId: 'test-org',
+      pendingHandoffs: {},
       consumeHandoff: vi.fn().mockReturnValue(null),
     };
     return selector ? selector(state) : state;

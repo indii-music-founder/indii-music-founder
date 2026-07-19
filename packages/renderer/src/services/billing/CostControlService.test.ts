@@ -154,4 +154,68 @@ describe('CostControlService', () => {
     expect(result.allowed).toBe(false);
     expect(result.remainingBudget).toBe(0);
   });
+
+  it('gets owner-scoped status and explicit pending holds from the server receipt', async () => {
+    mocks.callable.mockResolvedValueOnce({
+      data: {
+        dailyUsed: 4,
+        monthlyUsed: 17,
+        dailyRemaining: 21,
+        monthlyRemaining: 233,
+        tier: 'pro',
+        pendingHoldCost: 1.5,
+        pendingHoldCount: 2,
+        settledCost: 12.5,
+        voidedCost: 3,
+      },
+    });
+
+    await expect(CostControlService.getStatus('auth-user-1')).resolves.toEqual({
+      dailyUsed: 4,
+      monthlyUsed: 17,
+      dailyRemaining: 21,
+      monthlyRemaining: 233,
+      tier: 'pro',
+      pendingHoldCost: 1.5,
+      pendingHoldCount: 2,
+      settledCost: 12.5,
+      voidedCost: 3,
+    });
+    expect(mocks.httpsCallable).toHaveBeenCalledWith({ region: 'us-central1' }, 'getOperationCostStatus');
+    expect(mocks.callable).toHaveBeenCalledWith();
+  });
+
+  it('gets an owner-scoped cursor-paginated operation history', async () => {
+    const nextCursor = { timestampMs: 1_784_240_000_000, operationId: 'op-older' };
+    mocks.callable.mockResolvedValueOnce({
+      data: {
+        operations: [{
+          operationId: 'op-pending',
+          operationType: 'image',
+          status: 'APPROVED',
+          estimatedCost: 0.12,
+          createdAt: '2026-07-16T20:00:00.000Z',
+          finalizedAt: null,
+          autoReleaseAt: '2026-07-16T20:15:00.000Z',
+          resolution: 'pending_auto_release',
+        }],
+        nextCursor,
+        hasMore: true,
+      },
+    });
+
+    await expect(CostControlService.getHistory('auth-user-1', null, 5)).resolves.toEqual({
+      operations: [expect.objectContaining({
+        operationId: 'op-pending',
+        resolution: 'pending_auto_release',
+      })],
+      nextCursor,
+      hasMore: true,
+    });
+    expect(mocks.httpsCallable).toHaveBeenCalledWith(
+      { region: 'us-central1' },
+      'getOperationCostHistory',
+    );
+    expect(mocks.callable).toHaveBeenCalledWith({ cursor: null, limit: 5 });
+  });
 });

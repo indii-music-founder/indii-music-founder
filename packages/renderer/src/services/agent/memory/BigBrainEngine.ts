@@ -284,9 +284,12 @@ class BigBrainEngine {
 
         if (!userMessage) return '';
 
-        // 1. Semantic search via Mem0 (MemoryBankService) for global episodic recall
+        // 1. Semantic search via Mem0 (MemoryBankService) for global episodic recall with pagination
         try {
-            const mem0Results = await memoryBankService.searchMemories(userId, userMessage, 8);
+            const { results: mem0Results, scopeMessage } = await memoryBankService.searchMemoriesAllPages(userId, userMessage, 5);
+            if (scopeMessage) {
+                lines.push(`[Search Scope] ${scopeMessage}`);
+            }
             for (const mem of mem0Results) {
                 const line = `- [Recall] ${mem.memory}`;
                 if (lines.join('\n').length + line.length > _maxChars) break;
@@ -323,7 +326,7 @@ class BigBrainEngine {
         maxChars: number
     ): Promise<string[]> {
         // Query preferences and feedback categories specifically
-        const results = await memoryBankService.searchMemories(userId, userMessage || 'general preferences', 5);
+        const { results } = await memoryBankService.searchMemories(userId, userMessage || 'general preferences', 100);
 
         const result: string[] = [];
         let currentChars = 0;

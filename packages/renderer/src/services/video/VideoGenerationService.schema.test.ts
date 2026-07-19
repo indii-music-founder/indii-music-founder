@@ -150,6 +150,25 @@ describe('VideoGenerationService - Forge Hardening (Schema & Input)', () => {
             await expect(service.generateVideo(invalidOptions)).rejects.toThrow(/Invalid video parameters/);
         });
 
+        it('rejects retired preview IDs before any reservation and normalizes GA IDs for the gateway', async () => {
+            const reserve = await import('@/services/billing/CostControlService');
+            const reserveSpy = vi.spyOn(reserve.CostControlService, 'checkAndReserve');
+
+            await expect(service.generateVideo({
+                prompt: 'A stage performance',
+                // @ts-expect-error deliberately exercise a retired provider ID
+                model: 'veo-3.1-generate-preview',
+            })).rejects.toThrow(/Invalid video parameters/);
+            expect(reserveSpy).not.toHaveBeenCalled();
+
+            await service.generateVideo({
+                prompt: 'A stage performance',
+                model: 'veo-3.1-generate-001',
+                skipCostCheck: true,
+            });
+            expect(mocks.httpsCallableFn).toHaveBeenCalledWith(expect.objectContaining({ model: 'pro' }));
+        });
+
         it('should reject negative duration', async () => {
             const invalidOptions = {
                 prompt: 'Valid prompt',

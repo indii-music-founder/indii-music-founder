@@ -24,7 +24,8 @@ const mocks = vi.hoisted(() => ({
         realpathSync: vi.fn((p: string) => p),
     },
     os: { tmpdir: vi.fn(() => '/mock/tmp') },
-    credentialService: { getCredentials: vi.fn(() => null), saveCredentials: vi.fn(), deleteCredentials: vi.fn() }
+    credentialService: { getCredentials: vi.fn(() => null), saveCredentials: vi.fn(), deleteCredentials: vi.fn() },
+    stageCanonicalMasters: vi.fn(),
 }));
 
 // Mock modules — must cover ALL imports in distribution.ts
@@ -69,6 +70,10 @@ vi.mock('../utils/validation', () => ({
 
 vi.mock('../services/CredentialService', () => ({
     credentialService: mocks.credentialService
+}));
+
+vi.mock('../services/MasterAudioStagingService', () => ({
+    stageCanonicalMasters: mocks.stageCanonicalMasters,
 }));
 
 vi.mock('fs/promises', () => mocks.fs);
@@ -122,13 +127,34 @@ describe('🛡️ Shield: Distribution PII Redaction', () => {
 
         expect(mocks.agentSupervisor.execute).toHaveBeenCalledWith(
             'distribution',
-            'ddex_generator.py',
+            'ingestion_generator.py',
             expect.arrayContaining([JSON.stringify(sensitiveData)]),
             expect.any(Object),
             undefined,
             expect.anything(),
             [0]
         );
+    });
+
+    it('should require full XSD validation and return the validator report', async () => {
+        const report = {
+            valid: true,
+            mode: 'xsd',
+            errors: [],
+            warnings: [],
+            summary: 'XSD validation passed'
+        };
+        mocks.agentSupervisor.execute.mockResolvedValue(report);
+
+        const result = await invoke('distribution:validate-xsd', '<NewReleaseMessage />');
+
+        expect(mocks.agentSupervisor.execute).toHaveBeenCalledWith(
+            'distribution',
+            'xsd_validator.py',
+            [expect.stringMatching(/xsd-validation-.*\.xml$/), '--require-xsd'],
+            expect.any(Object)
+        );
+        expect(result).toEqual({ success: true, report });
     });
 
     it('should redact sensitive data in generate-bwarm', async () => {
@@ -180,5 +206,36 @@ describe('🛡️ Shield: Distribution PII Redaction', () => {
             expect.anything(),
             [1]
         );
+    });
+
+    it('stages canonical master bytes, passes only the verified local path to Python, and cleans up', async () => {
+        const cleanup = vi.fn();
+        const stagedRelease = {
+            title: 'Verified Master Release',
+            tracks: [{
+                title: 'Signal Path',
+                filename: 'resources/01-master.flac',
+                master_asset: {
+                    content_hash: 'a'.repeat(64),
+                    local_path: '/mock/tmp/indii-ddex-master/01-master.flac',
+                    storage_path: `masters/user-1/${'a'.repeat(64)}/original.flac`,
+                },
+            }],
+        };
+        mocks.stageCanonicalMasters.mockResolvedValue({
+            cleanup,
+            releaseData: stagedRelease,
+            stagingPath: '/mock/tmp/indii-ddex-master',
+        });
+        mocks.agentSupervisor.execute.mockResolvedValue({ status: 'SUCCESS' });
+
+        await invoke('distribution:submit-release', { title: 'Verified Master Release', tracks: [] });
+
+        expect(mocks.stageCanonicalMasters).toHaveBeenCalledOnce();
+        const executeArgs = mocks.agentSupervisor.execute.mock.calls[0]!;
+        const childPayload = JSON.parse(executeArgs[2][0]);
+        expect(childPayload.tracks[0].master_asset.local_path).toContain('indii-ddex-master');
+        expect(childPayload.tracks[0].master_asset.download_url).toBeUndefined();
+        expect(cleanup).toHaveBeenCalledOnce();
     });
 });

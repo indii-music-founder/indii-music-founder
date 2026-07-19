@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { DistributorId } from '@/services/distribution/types/distributor';
-import { MoreHorizontal, FileText, CheckCircle, AlertCircle, Clock, Loader2 } from 'lucide-react';
+import { FileText, CheckCircle, AlertCircle, Clock, Loader2 } from 'lucide-react';
 
 interface ReleaseItem {
     id: string; // Internal ID
@@ -28,9 +28,6 @@ export default function ReleaseStatusList({ releases, onDeliver, onViewReport }:
                 </div>
                 <h3 className="text-lg font-bold text-white mb-1">No Releases Yet</h3>
                 <p className="text-gray-400 max-w-sm mb-6">Create your first release in the Studio to start distributing to platforms.</p>
-                <button className="px-5 py-2.5 bg-white text-black rounded-lg font-semibold hover:bg-gray-200 transition-colors">
-                    Create New Release
-                </button>
             </div>
         );
     }
@@ -68,7 +65,7 @@ export default function ReleaseStatusList({ releases, onDeliver, onViewReport }:
                                     </div>
                                 </td>
                                 <td className="py-4 px-6 text-sm text-gray-300">
-                                    {new Date(release.releaseDate).toLocaleDateString()}
+                                    {new Date(release.releaseDate).toLocaleDateString('en-US')}
                                 </td>
                                 <td className="py-4 px-6">
                                     <div className="flex flex-wrap gap-2">
@@ -77,11 +74,7 @@ export default function ReleaseStatusList({ releases, onDeliver, onViewReport }:
                                         ))}
                                     </div>
                                 </td>
-                                <td className="py-4 px-6 text-right">
-                                    <button className="p-2 text-gray-400 hover:text-white hover:bg-gray-700/50 rounded-lg transition-colors">
-                                        <MoreHorizontal size={18} />
-                                    </button>
-                                </td>
+                                <td className="py-4 px-6 text-right" />
                             </tr>
                         ))}
                     </tbody>

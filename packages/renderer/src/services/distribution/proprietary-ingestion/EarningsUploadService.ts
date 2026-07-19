@@ -1,12 +1,10 @@
-import { Timestamp } from 'firebase/firestore';
-import { auth } from '@/services/firebase';
-import { FirestoreService } from '@/services/FirestoreService';
-import type { DSRProcessedReportDocument } from '@/types/firestore';
+import { httpsCallable } from 'firebase/functions';
+import * as Sentry from '@sentry/react';
+
+import { auth, functions } from '@/services/firebase';
+import { logger } from '@/utils/logger';
 import type { EarningsReportReport } from '@/services/distribution/proprietary-ingestion/types/dsr';
 import type { ExtendedGoldenMetadata } from '@/services/metadata/types';
-import { earningsReportService, type ProcessedSalesBatches } from '@/services/distribution/proprietary-ingestion/EarningsReportService';
-import { logger } from '@/utils/logger';
-import * as Sentry from '@sentry/react';
 
 export interface EarningsReportUploadResult {
     success: boolean;
@@ -14,107 +12,83 @@ export interface EarningsReportUploadResult {
     totalRevenue?: number;
     transactionCount?: number;
     matchedReleases?: number;
+    unmatchedISRCs?: string[];
+    alreadyProcessed?: boolean;
+    allocation?: BackendRoyaltyAllocationResult;
+    allocationError?: string;
     error?: string;
 }
 
-/**
- * EarningsReport Upload Service
- * Handles the complete flow of uploading, parsing, and processing sales reports.
- */
-export class EarningsReportUploadService extends FirestoreService<DSRProcessedReportDocument> {
-    constructor() {
-        super('dsr_processed_reports');
-    }
+interface BackendEarningsIngestionResult {
+    success: true;
+    batchId: string;
+    totalRevenue: number;
+    transactionCount: number;
+    matchedReleases: number;
+    unmatchedISRCs: string[];
+    alreadyProcessed: boolean;
+}
 
-    /**
-     * Process a parsed EarningsReport report and save earnings/royalties
-     * @param report - The parsed EarningsReport report
-     * @param userCatalog - Map of user's releases for matching
-     */
+interface BackendRoyaltyAllocationResult {
+    success: true;
+    batchId: string;
+    processedEarnings: number;
+    alreadyProcessedEarnings: number;
+    heldPayouts: number;
+    blockedEarnings: number;
+}
+
+/**
+ * Sends a parsed DSR to the authenticated backend ingestion boundary.
+ *
+ * Financial collections are intentionally backend-only in Firestore Rules.
+ * The server re-validates totals/identifiers and loads the caller's catalog
+ * itself; client-provided catalog metadata is never trusted for ledger writes.
+ */
+export class EarningsReportUploadService {
     async processAndSaveReport(
         report: EarningsReportReport,
-        userCatalog: Map<string, ExtendedGoldenMetadata>
+        _userCatalog?: Map<string, ExtendedGoldenMetadata>
     ): Promise<EarningsReportUploadResult> {
         try {
-            const userId = auth.currentUser?.uid;
-            if (!userId) {
+            if (!auth.currentUser?.uid) {
                 throw new Error('User not authenticated');
             }
 
-            // Step 1: Deduce distributor from senderId (handled inside EarningsReportService)
-            const processedBatch = await earningsReportService.processReport(report, userCatalog);
+            const ingest = httpsCallable<
+                { report: EarningsReportReport },
+                BackendEarningsIngestionResult
+            >(functions, 'ingestEarningsReport');
+            const response = await ingest({ report });
+            if (response.data.matchedReleases === 0) return response.data;
 
-            // Figure out the distributor ID to save under
-            const { DISTRIBUTORS } = await import('@/core/config/distributors');
-            const distributorKey = Object.keys(DISTRIBUTORS).find(
-                key => DISTRIBUTORS[key]!.systemIdentifier === report.senderId
-            ) || 'unknown';
-
-            // Step 2: Count matched releases
-            const matchedReleases = new Set(
-                processedBatch.royalties.map(r => r.isrc)
-            ).size;
-
-            // Step 3: Save to Firestore for persistence
-            await this.saveProcessedReport(userId, distributorKey, processedBatch, report);
-
-            return {
-                success: true,
-                batchId: processedBatch.batchId,
-                totalRevenue: processedBatch.totalRevenue,
-                transactionCount: processedBatch.transactionCount,
-                matchedReleases
-            };
-
+            try {
+                const calculateAllocations = httpsCallable<
+                    { batchId: string },
+                    BackendRoyaltyAllocationResult
+                >(functions, 'calculateRoyaltyAllocations');
+                const allocationResponse = await calculateAllocations({ batchId: response.data.batchId });
+                return { ...response.data, allocation: allocationResponse.data };
+            } catch (allocationError: unknown) {
+                // The validated earnings receipt remains durable and retryable.
+                // Never pretend provisional obligations were calculated when the
+                // second, idempotent backend stage could not complete.
+                logger.error('[EarningsReportUploadService] Royalty allocation failed:', allocationError);
+                Sentry.captureException(allocationError);
+                return {
+                    ...response.data,
+                    allocationError: allocationError instanceof Error
+                        ? allocationError.message
+                        : 'Royalty allocation could not be calculated.',
+                };
+            }
         } catch (error: unknown) {
             logger.error('[EarningsReportUploadService] Processing failed:', error);
             Sentry.captureException(error);
-
             return {
                 success: false,
-                error: error instanceof Error ? error.message : 'Unknown error occurred'
+                error: error instanceof Error ? error.message : 'Unknown error occurred',
             };
-        }
-    }
-
-    /**
-     * Save processed report to Firestore
-     */
-    private async saveProcessedReport(
-        userId: string,
-        distributorId: string,
-        batch: ProcessedSalesBatches,
-        originalReport: EarningsReportReport
-    ): Promise<void> {
-        try {
-            const reportData: Omit<DSRProcessedReportDocument, 'id' | 'createdAt' | 'updatedAt'> = {
-                userId,
-                distributorId,
-                batchId: batch.batchId,
-                reportId: batch.reportId,
-                totalRevenue: batch.totalRevenue,
-                transactionCount: batch.transactionCount,
-                processedAt: Timestamp.fromDate(new Date(batch.processedAt)),
-                reportPeriod: {
-                    start: originalReport.reportingPeriod.startDate,
-                    end: originalReport.reportingPeriod.endDate || new Date().toISOString()
-                },
-                royaltiesSummary: {
-                    count: batch.royalties.length,
-                    totalNetRevenue: batch.royalties.reduce((sum, r) => sum + r.netRevenue, 0),
-                    totalGrossRevenue: batch.royalties.reduce((sum, r) => sum + r.grossRevenue, 0)
-                },
-                metadata: {
-                    createdAt: Timestamp.now(),
-                    source: 'dsr_upload_modal'
-                }
-            };
-
-            await this.add(reportData);
-            logger.debug('[EarningsReportUploadService] Report saved successfully:', batch.batchId);
-        } catch (error: unknown) {
-            logger.error('[EarningsReportUploadService] Failed to save report:', error);
-            Sentry.captureException(error);
         }
     }
 }

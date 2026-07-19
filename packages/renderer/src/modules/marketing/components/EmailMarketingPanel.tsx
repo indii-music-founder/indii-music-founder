@@ -1,12 +1,18 @@
 import React, { useState } from 'react';
 import {
-    Mail, Sparkles, Users, CheckCircle,
-    Loader2, Send, Calendar
+    Mail, Sparkles, Users, Loader2, Send, Info
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
 import { AutonomousIntelligence as AI } from '@/services/intelligence/AutonomousIntelligence';
+import { useToast } from '@/core/context/ToastContext';
+import { emailMarketingService, type EmailProvider } from '@/services/marketing/EmailMarketingService';
+import { isProviderUnavailable } from '@/services/marketing/providerErrors';
 
 type EmailPlatform = 'Mailchimp' | 'Klaviyo';
+
+const PROVIDER_IDS: Record<EmailPlatform, EmailProvider> = {
+    Mailchimp: 'mailchimp',
+    Klaviyo: 'klaviyo',
+};
 
 const TEMPLATES = [
     { id: 'new-release', label: 'New Release', desc: 'Announce a new single or album drop' },
@@ -15,7 +21,11 @@ const TEMPLATES = [
     { id: 'fan-newsletter', label: 'Fan Newsletter', desc: 'Monthly update for your community' },
 ];
 
-const FAN_LIST_SIZE = 2847;
+// ISSUE-665: no Mailchimp/Klaviyo account or subscriber list is linked to
+// indii yet, so there is no real list to deploy to. The composer stays usable
+// for drafting; we say that plainly and never fabricate subscriber counts or
+// delivery confirmations.
+const CONNECTED_LIST_ID: string | null = null;
 
 export default function EmailMarketingPanel() {
     const [platform, setPlatform] = useState<EmailPlatform>('Mailchimp');
@@ -23,9 +33,10 @@ export default function EmailMarketingPanel() {
     const [subject, setSubject] = useState('');
     const [previewText, setPreviewText] = useState('');
     const [generatingSubject, setGeneratingSubject] = useState(false);
-    const [scheduledTime, setScheduledTime] = useState('');
     const [sending, setSending] = useState(false);
-    const [sent, setSent] = useState(false);
+    const toast = useToast();
+
+    const hasList = CONNECTED_LIST_ID !== null;
 
     const handleGenerateSubject = async () => {
         setGeneratingSubject(true);
@@ -35,19 +46,36 @@ export default function EmailMarketingPanel() {
             const result = await AI.generateText(prompt);
             setSubject(result.trim());
         } catch {
-            setSubject('Something big is coming — you heard it here first');
+            // Honest failure — don't plant a canned line and present it as generated.
+            toast.error('Subject generation failed — try again or write your own.');
         } finally {
             setGeneratingSubject(false);
         }
     };
 
-    const handleSend = () => {
+    const handleSend = async () => {
+        if (!subject || CONNECTED_LIST_ID === null || sending) return;
         setSending(true);
-        setTimeout(() => {
+        try {
+            const template = TEMPLATES.find(t => t.id === selectedTemplate);
+            const campaignId = await emailMarketingService.deployCampaign(
+                {
+                    id: selectedTemplate,
+                    name: template?.label ?? selectedTemplate,
+                    subject,
+                    htmlContent: previewText,
+                },
+                CONNECTED_LIST_ID,
+                PROVIDER_IDS[platform]
+            );
+            toast.success(`Campaign ${campaignId} accepted by ${platform} for sending.`);
+        } catch (e) {
+            toast.error(isProviderUnavailable(e)
+                ? e.message
+                : `Campaign deploy failed — nothing was sent via ${platform}.`);
+        } finally {
             setSending(false);
-            setSent(true);
-            setTimeout(() => setSent(false), 4000);
-        }, 1800);
+        }
     };
 
     return (
@@ -60,6 +88,21 @@ export default function EmailMarketingPanel() {
                 </h2>
                 <p className="text-xs text-gray-500 mt-1">Deploy HTML newsletter campaigns via Mailchimp & Klaviyo.</p>
             </div>
+
+            {/* Honest availability state */}
+            {!hasList && (
+                <div className="p-4 rounded-xl bg-white/[0.03] border border-white/5 flex items-start gap-3">
+                    <Info size={16} className="text-dept-marketing mt-0.5 flex-shrink-0" />
+                    <div>
+                        <p className="text-sm font-semibold text-white">No subscriber list connected yet</p>
+                        <p className="text-xs text-gray-400 mt-0.5">
+                            Sending requires a linked {platform} account with a subscriber list, which
+                            isn't wired into indii yet. You can draft your campaign now — sending stays
+                            disabled until a list is connected.
+                        </p>
+                    </div>
+                </div>
+            )}
 
             {/* Platform Toggle */}
             <div className="flex gap-2">
@@ -140,67 +183,32 @@ export default function EmailMarketingPanel() {
                 />
             </div>
 
-            {/* Recipient Count + Schedule */}
-            <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/[0.03] border border-white/5">
-                    <Users size={14} className="text-dept-marketing" />
-                    <span className="text-sm font-bold text-white">{FAN_LIST_SIZE.toLocaleString()}</span>
-                    <span className="text-xs text-gray-500">subscribers</span>
-                </div>
-                <div className="flex-1 relative">
-                    <Calendar size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
-                    <input
-                        type="datetime-local"
-                        value={scheduledTime}
-                        onChange={e => setScheduledTime(e.target.value)}
-                        className="w-full pl-8 pr-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-gray-300 focus:border-dept-marketing/50 outline-none"
-                    />
-                </div>
+            {/* Real audience summary — honest state only */}
+            <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/[0.03] border border-white/5 w-fit">
+                <Users size={14} className="text-dept-marketing" />
+                <span className="text-xs text-gray-500">
+                    {hasList ? `List ${CONNECTED_LIST_ID} connected` : 'No subscriber list connected'}
+                </span>
             </div>
 
             {/* Send Button */}
             <button
                 onClick={handleSend}
-                disabled={sending || !subject}
+                disabled={sending || !subject || !hasList}
                 className="flex items-center justify-center gap-2 py-3 rounded-xl bg-dept-marketing text-white font-semibold text-sm hover:bg-dept-marketing/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-dept-marketing/20"
             >
                 {sending ? (
                     <>
                         <Loader2 size={16} className="animate-spin" />
-                        {scheduledTime ? 'Scheduling...' : 'Sending...'}
+                        Sending...
                     </>
                 ) : (
                     <>
                         <Send size={16} />
-                        {scheduledTime ? 'Schedule Email' : 'Send Now'}
+                        {hasList ? 'Send Now' : 'Send Now (no list connected)'}
                     </>
                 )}
             </button>
-
-            {/* Confirmation */}
-            <AnimatePresence>
-                {sent && (
-                    <motion.div
-                        initial={{ opacity: 0, y: -8 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0 }}
-                        className="p-4 rounded-xl bg-green-500/10 border border-green-500/20 flex items-start gap-3"
-                    >
-                        <CheckCircle size={16} className="text-green-400 mt-0.5 flex-shrink-0" />
-                        <div>
-                            <p className="text-sm font-semibold text-green-400">
-                                {scheduledTime ? 'Email Scheduled' : 'Email Sent Successfully'}
-                            </p>
-                            <p className="text-xs text-gray-400 mt-0.5">
-                                Delivered to <span className="text-white">{FAN_LIST_SIZE.toLocaleString()} subscribers</span> via {platform}.
-                                {scheduledTime && (
-                                    <> Scheduled for {new Date(scheduledTime).toLocaleString()}.</>
-                                )}
-                            </p>
-                        </div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
         </div>
     );
 }

@@ -8,29 +8,43 @@ import { AgentConfig } from "../types";
 import { freezeAgentConfig } from '../FreezeDiagnostic';
 import { AnalyticsTools } from '../tools/AnalyticsTools';
 import systemPrompt from '@agents/analytics/prompt.md?raw';
+import { buildDomainRetrievalTools, buildDomainRetrievalDeclarations } from '../tools/DomainTools';
+
+
+
+const analyticsRetrievalConfig = {
+    'revenue': { path: 'revenue', requiresUserIdFilter: true },
+    'earnings': { path: 'earnings', requiresUserIdFilter: true },
+    'user_usage_stats': { path: 'user_usage_stats', requiresUserIdFilter: true },
+    'dsr_processed_reports': { path: 'dsr_processed_reports', requiresUserIdFilter: true }
+};
+const analyticsRetrievalTools = buildDomainRetrievalTools('Analytics', analyticsRetrievalConfig);
+const analyticsRetrievalDeclarations = buildDomainRetrievalDeclarations('Analytics', analyticsRetrievalConfig);
 
 export const AnalyticsAgent: AgentConfig = {
     id: "analytics",
     name: "Analytics Director",
     description: "Analyzes audience intelligence, streaming data, and career metrics for independent artists.",
-    color: "bg-purple-600",
+    color: "bg-green-600",
     category: "specialist",
     systemPrompt: systemPrompt,
     get functions() {
         return {
+            ...analyticsRetrievalTools,
             calculate_viral_potential_score: AnalyticsTools.calculate_viral_potential_score,
             benchmark_release_velocity: AnalyticsTools.benchmark_release_velocity,
             detect_streaming_anomalies: AnalyticsTools.detect_streaming_anomalies,
             run_cohort_analysis: AnalyticsTools.run_cohort_analysis,
         } as Record<string, import('@/services/agent/types').AnyToolFunction>;
     },
-    authorizedTools: ['calculate_viral_potential_score', 'benchmark_release_velocity', 'detect_streaming_anomalies', 'run_cohort_analysis'],
+    authorizedTools: ['list_domain_records', 'calculate_viral_potential_score', 'benchmark_release_velocity', 'detect_streaming_anomalies', 'run_cohort_analysis'],
 
     tools: [{
         functionDeclarations: [
+            ...analyticsRetrievalDeclarations,
             {
                 name: "calculate_viral_potential_score",
-                description: "Predict viral potential based on tempo/BPM, genre, and mood using historical artist distributions.",
+                description: "Estimate viral potential using a transparent heuristic rubric (tempo/BPM, genre, mood). Heuristic estimate only — not a prediction from historical streaming data. Always present the result to the user as a heuristic estimate.",
                 parameters: {
                     type: "OBJECT",
                     properties: {
@@ -43,7 +57,7 @@ export const AnalyticsAgent: AgentConfig = {
             },
             {
                 name: "benchmark_release_velocity",
-                description: "Compare current release streaming trajectory (24h, 7d, 30d) against artist historical baseline.",
+                description: "Project an expected release velocity curve (day 1/7/30) from the artist's Spotify follower baseline. Projection from follower count — does not yet read actual per-track streaming trajectories. Label outputs as projections.",
                 parameters: {
                     type: "OBJECT",
                     properties: {

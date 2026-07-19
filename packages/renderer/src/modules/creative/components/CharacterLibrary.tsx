@@ -4,6 +4,8 @@ import { useShallow } from 'zustand/react/shallow';
 import { User, X, Upload, AlertTriangle, Grid3x3, Eye, Palette, Pencil, ImagePlus } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
 import { logger } from '@/utils/logger';
+import { BrandAsset } from '@/types/User';
+import { DEFAULT_PROJECT_ID } from '@/core/constants';
 
 /** Maximum file size for character reference images: 10MB */
 const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024;
@@ -39,14 +41,15 @@ interface CharacterRefDimensions {
 
 export const CharacterLibrary: React.FC = () => {
     const toast = useToast();
-    const { characterReferences, addCharacterReference, removeCharacterReference, updateCharacterReference, currentProjectId, addUploadedImage, generatedHistory } = useStore(useShallow(state => ({
+    const { characterReferences, addCharacterReference, removeCharacterReference, updateCharacterReference, currentProjectId, addUploadedImage, generatedHistory, userProfile } = useStore(useShallow(state => ({
         characterReferences: state.characterReferences,
         addCharacterReference: state.addCharacterReference,
         removeCharacterReference: state.removeCharacterReference,
         updateCharacterReference: state.updateCharacterReference,
         currentProjectId: state.currentProjectId,
         addUploadedImage: state.addUploadedImage,
-        generatedHistory: state.generatedHistory
+        generatedHistory: state.generatedHistory,
+        userProfile: state.userProfile
     })));
 
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -59,6 +62,21 @@ export const CharacterLibrary: React.FC = () => {
     const [editingNameId, setEditingNameId] = useState<string | null>(null);
     const [showAddOptions, setShowAddOptions] = useState(false);
     const nameInputRef = useRef<HTMLInputElement>(null);
+
+    const validateReferenceDimensions = useCallback(async (dataUrl: string, sourceLabel: string) => {
+        try {
+            const dims = await getImageDimensions(dataUrl);
+            if (dims.width < MIN_WIDTH || dims.height < MIN_HEIGHT) {
+                toast.error(`${sourceLabel} resolution too low (${dims.width}×${dims.height}). Minimum is ${MIN_RESOLUTION_LABEL}.`);
+                return null;
+            }
+            return dims;
+        } catch (err: unknown) {
+            logger.warn(`[CharacterLibrary] Could not verify ${sourceLabel} image dimensions`, err);
+            toast.warning(`Could not verify ${sourceLabel} image resolution. Please choose a different image.`);
+            return null;
+        }
+    }, [toast]);
 
     /**
      * Core file processing: validates size + resolution, persists on success.
@@ -95,10 +113,8 @@ export const CharacterLibrary: React.FC = () => {
         });
 
         // --- Validation 2: Image Resolution (720p minimum) ---
-        const dims = await getImageDimensions(dataUrl);
-
-        if (dims.width < MIN_WIDTH || dims.height < MIN_HEIGHT) {
-            toast.error(`Image resolution too low (${dims.width}×${dims.height}). Minimum is ${MIN_RESOLUTION_LABEL}.`);
+        const dims = await validateReferenceDimensions(dataUrl, 'Uploaded image');
+        if (!dims) {
             return false;
         }
 
@@ -110,15 +126,20 @@ export const CharacterLibrary: React.FC = () => {
             type: 'image' as const,
             timestamp: Date.now(),
             category: 'headshot' as const,
-            projectId: currentProjectId || 'default-project'
+            projectId: currentProjectId || DEFAULT_PROJECT_ID
         };
 
-        addUploadedImage(newItem);
+        const success = await addUploadedImage(newItem);
+        if (!success) {
+            toast.error("Failed to save character reference to cloud library.");
+            return false;
+        }
+
         addCharacterReference({ image: newItem, referenceType: 'subject', name: `Character ${currentRefCount + 1}` });
         setDimensions(prev => ({ ...prev, [newItem.id]: dims }));
         toast.success(`Character reference added (${dims.width}×${dims.height}).`);
         return true;
-    }, [currentProjectId, addUploadedImage, addCharacterReference, toast]);
+    }, [currentProjectId, addUploadedImage, addCharacterReference, toast, validateReferenceDimensions]);
 
     const handleFileChange = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
@@ -147,7 +168,10 @@ export const CharacterLibrary: React.FC = () => {
             return;
         }
 
-        const dims = await getImageDimensions(historyItem.url).catch(() => ({ width: 1024, height: 1024 }));
+        const dims = await validateReferenceDimensions(historyItem.url, 'Creative Director image');
+        if (!dims) {
+            return;
+        }
 
         const newItem = {
             id: crypto.randomUUID(),
@@ -156,15 +180,53 @@ export const CharacterLibrary: React.FC = () => {
             type: 'image' as const,
             timestamp: Date.now(),
             category: 'headshot' as const,
-            projectId: currentProjectId || 'default-project'
+            projectId: currentProjectId || DEFAULT_PROJECT_ID
         };
 
-        addUploadedImage(newItem);
+        const success = await addUploadedImage(newItem);
+        if (!success) {
+            toast.error("Failed to save character reference to cloud library.");
+            return;
+        }
+
         addCharacterReference({ image: newItem, referenceType: 'subject', name: `Character ${characterReferences.length + 1}` });
         setDimensions(prev => ({ ...prev, [newItem.id]: dims }));
         setShowAddOptions(false);
         toast.success(`Character reference added from Creative Director.`);
-    }, [characterReferences.length, addUploadedImage, addCharacterReference, currentProjectId, toast]);
+    }, [characterReferences.length, addUploadedImage, addCharacterReference, currentProjectId, toast, validateReferenceDimensions]);
+
+    const handleSelectBrandAsset = useCallback(async (asset: BrandAsset) => {
+        if (characterReferences.length >= 3) {
+            toast.error("Maximum 3 character references allowed.");
+            return;
+        }
+
+        const dims = await validateReferenceDimensions(asset.url, 'Brand HQ asset');
+        if (!dims) {
+            return;
+        }
+
+        const newItem = {
+            id: crypto.randomUUID(),
+            url: asset.url,
+            prompt: asset.description || "Brand HQ Import",
+            type: 'image' as const,
+            timestamp: Date.now(),
+            category: 'headshot' as const,
+            projectId: currentProjectId || DEFAULT_PROJECT_ID
+        };
+
+        const success = await addUploadedImage(newItem);
+        if (!success) {
+            toast.error("Failed to save character reference to cloud library.");
+            return;
+        }
+        
+        addCharacterReference({ image: newItem, referenceType: 'subject', name: asset.description || `Character ${characterReferences.length + 1}` });
+        setDimensions(prev => ({ ...prev, [newItem.id]: dims }));
+        setShowAddOptions(false);
+        toast.success(`Character reference added from Brand HQ.`);
+    }, [characterReferences.length, addUploadedImage, addCharacterReference, currentProjectId, toast, validateReferenceDimensions]);
 
     /** Drag-and-Drop Handlers */
     const handleDragOver = useCallback((e: React.DragEvent) => {
@@ -361,7 +423,7 @@ export const CharacterLibrary: React.FC = () => {
                                     title="Style Reference (Art Style/Aesthetic)"
                                     aria-label="Set as Style reference"
                                     className={`px-1.5 py-0.5 rounded text-[8px] font-bold uppercase transition-all ${ref.referenceType === 'style'
-                                        ? 'bg-purple-500/30 text-purple-300 border border-purple-500/40'
+                                        ? 'bg-green-500/30 text-green-300 border border-green-500/40'
                                         : 'text-gray-500 hover:text-gray-300'
                                         }`}
                                 >
@@ -419,7 +481,7 @@ export const CharacterLibrary: React.FC = () => {
                                 {generatedHistory.filter(h => h.type === 'image' && h.url).length > 0 ? (
                                     <div className="grid grid-cols-4 gap-3">
                                         {generatedHistory.filter(h => h.type === 'image' && h.url).slice(0, 8).map((img, idx) => (
-                                            <div key={img.id || idx} onClick={() => handleSelectGeneratedImage(img)} className="aspect-square bg-black rounded-lg border border-white/10 hover:border-blue-500/50 cursor-pointer overflow-hidden relative group">
+                                            <div key={img.id || idx} data-testid={`generated-reference-${idx}`} onClick={() => handleSelectGeneratedImage(img)} className="aspect-square bg-black rounded-lg border border-white/10 hover:border-blue-500/50 cursor-pointer overflow-hidden relative group">
                                                 <img src={img.url} alt="Generated" className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" />
                                                 <div className="absolute inset-0 bg-blue-500/20 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
                                                     <span className="text-[10px] font-bold text-white bg-blue-600/80 px-2 py-1 rounded">Select</span>
@@ -429,6 +491,31 @@ export const CharacterLibrary: React.FC = () => {
                                     </div>
                                 ) : (
                                     <div className="text-xs text-gray-500 italic p-4 text-center bg-white/5 rounded-lg border border-dashed border-white/10">No recent images generated yet. Go to Creative Director to make some!</div>
+                                )}
+                            </div>
+                            
+                            {/* Brand HQ Assets Section */}
+                            <div className="mb-6 border-t border-white/10 pt-6">
+                                <h4 className="text-xs font-bold text-gray-400 mb-3 uppercase tracking-wider">Import from Brand HQ</h4>
+                                {((userProfile?.brandKit?.brandAssets || []).length > 0 || (userProfile?.brandKit?.referenceImages || []).length > 0) ? (
+                                    <div className="grid grid-cols-4 gap-3 max-h-48 overflow-y-auto custom-scrollbar p-1">
+                                        {[
+                                            ...(userProfile?.brandKit?.brandAssets || []),
+                                            ...(userProfile?.brandKit?.referenceImages || [])
+                                        ].map((asset, idx) => (
+                                            <div key={asset.id || idx} data-testid={`brand-asset-reference-${idx}`} onClick={() => handleSelectBrandAsset(asset)} className="aspect-square bg-black rounded-lg border border-white/10 hover:border-blue-500/50 cursor-pointer overflow-hidden relative group">
+                                                <img src={asset.url} alt={asset.description || "Brand Asset"} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" />
+                                                <div className="absolute top-1 left-1 bg-black/75 px-1 rounded text-[7px] uppercase tracking-wider font-bold text-gray-400">
+                                                    {asset.category || 'Asset'}
+                                                </div>
+                                                <div className="absolute inset-0 bg-blue-500/20 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                                                    <span className="text-[9px] font-bold text-white bg-blue-600/80 px-2 py-0.5 rounded">Select</span>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="text-xs text-gray-500 italic p-4 text-center bg-white/5 rounded-lg border border-dashed border-white/10">No Brand HQ assets found. Go to Brand HQ / Visual DNA to upload some!</div>
                                 )}
                             </div>
                             <div className="border-t border-white/10 pt-6">

@@ -8,13 +8,14 @@ dotenv.config();
 // Manually mapped to match env-schema.json
 const envSchema = z.object({
   VITE_API_KEY: z.string().min(1),
-  VITE_GOOGLE_MAPS_API_KEY: z.string().optional(),
   VITE_SKIP_ONBOARDING: z.enum(["true", "false"]).default("false").optional(),
   DEV: z.string().default("false").optional(),
 
-  VITE_VERTEX_PROJECT_ID: z.string().min(1),
-  VITE_VERTEX_LOCATION: z.string().default("us-central1"),
   VITE_USE_VERTEX: z.enum(["true", "false"]).default("false"),
+  VERTEX_PROJECT_ID: z.string().optional(),
+  VERTEX_LOCATION: z.string().default("global"),
+  VERTEX_IMAGE_LOCATION: z.string().default("us").optional(),
+  VERTEX_VIDEO_LOCATION: z.string().default("us-central1").optional(),
   GCLOUD_PROJECT: z.string().optional(),
 
   VITE_FUNCTIONS_REGION: z.string().default("us-central1"),
@@ -33,7 +34,6 @@ const envSchema = z.object({
 
   // App Check
   VITE_FIREBASE_APP_CHECK_KEY: z.string().optional(),
-  VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN: z.string().optional(),
 
   VITE_LANDING_PAGE_URL: z.string().optional(),
 
@@ -59,13 +59,14 @@ console.log("Validating environment variables...");
 
 const processEnv = {
   VITE_API_KEY: process.env.VITE_API_KEY,
-  VITE_GOOGLE_MAPS_API_KEY: process.env.VITE_GOOGLE_MAPS_API_KEY,
   VITE_SKIP_ONBOARDING: process.env.VITE_SKIP_ONBOARDING,
   DEV: process.env.DEV,
 
-  VITE_VERTEX_PROJECT_ID: process.env.VITE_VERTEX_PROJECT_ID,
-  VITE_VERTEX_LOCATION: process.env.VITE_VERTEX_LOCATION,
   VITE_USE_VERTEX: process.env.VITE_USE_VERTEX,
+  VERTEX_PROJECT_ID: process.env.VERTEX_PROJECT_ID,
+  VERTEX_LOCATION: process.env.VERTEX_LOCATION,
+  VERTEX_IMAGE_LOCATION: process.env.VERTEX_IMAGE_LOCATION,
+  VERTEX_VIDEO_LOCATION: process.env.VERTEX_VIDEO_LOCATION,
   GCLOUD_PROJECT: process.env.GCLOUD_PROJECT,
 
   VITE_FUNCTIONS_REGION: process.env.VITE_FUNCTIONS_REGION,
@@ -83,8 +84,6 @@ const processEnv = {
   VITE_FIREBASE_DATABASE_URL: process.env.VITE_FIREBASE_DATABASE_URL,
 
   VITE_FIREBASE_APP_CHECK_KEY: process.env.VITE_FIREBASE_APP_CHECK_KEY,
-  VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN:
-    process.env.VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN,
 
   VITE_LANDING_PAGE_URL: process.env.VITE_LANDING_PAGE_URL,
 

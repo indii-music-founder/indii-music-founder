@@ -204,6 +204,9 @@ This format gives the model concrete coordinates per color, paired with the natu
 - **Release Hygiene**: Updated Firebase Cloud Functions (`agentStream.ts`) to use `FUNCTION_AI_MODELS.TEXT.FAST` (Gemini 3 Flash).
 - **CI/CD Alignment**: Verified `deploy.yml` secret references for upcoming production release.
 
+**Recent work (Claude session 2026-07-17):**
+- **E2E coverage**: Reviewed and cleaned up the new `e2e/image-annotation.spec.ts` (inline annotator open → draw via `e2e-force-annotation` helper → prompt fill → Apply). Removed debug scaffolding (repo-root `dom-dump.html` write, stray console.logs). Spec relies on `data-testid="inline-annotator"` and the `e2e-force-annotation` helper.
+- **Retry-batch resilience**: `failedVariationBatch` moved from InfiniteCanvas local state into the creative history store so the variation-retry UI survives canvas unmounts. Deliberately NOT persisted to localStorage (base64 payload quota risk — see ISSUE-1080). InfiniteCanvas unit suite 6/6 green.
 
 **Notes for the next agent:**
 

@@ -18,6 +18,7 @@ import {
     FINE_TUNED_MODEL_ALIASES,
     FINE_TUNED_MODEL_REGISTRY,
     getFineTunedModel,
+    USE_FINE_TUNED_AGENTS,
 } from '../fine-tuned-models';
 import { VALID_AGENT_IDS, type ValidAgentId } from '../types';
 import { SPOKE_AGENT_IDS } from './AgentStressTest.harness';
@@ -58,7 +59,7 @@ vi.mock('@/services/firebase', () => ({
 const ENDPOINT_FORMAT = /^projects\/\d+\/locations\/[a-z0-9-]+\/endpoints\/\d+$/;
 
 /** Expected GCP project number (from the existing registry) */
-const EXPECTED_PROJECT_NUMBER = '223837784072';
+const EXPECTED_PROJECT_NUMBER = '148015878263';
 
 // ============================================================================
 // Test Suite
@@ -97,15 +98,15 @@ describe('🔬 Fine-Tuned Model Registry Validation (15 tests)', () => {
             });
         });
 
-        it('endpoints should contain valid location (us-central1)', () => {
+        it('endpoints should contain valid location (us or us-central1)', () => {
             const entries = Object.entries(FINE_TUNED_MODEL_REGISTRY);
 
             entries.forEach(([_agentId, endpoint]) => {
                 if (endpoint !== undefined) {
                     const match = endpoint.match(/\/locations\/([a-z0-9-]+)\//);
                     expect(match).not.toBeNull();
-                    // Location should be a valid GCP region
-                    expect(match![1]).toMatch(/^[a-z]+-[a-z]+\d?(-[a-z]+\d?)?$/);
+                    // Location should be a valid GCP region or multi-region (us, eu, us-central1, etc.)
+                    expect(match![1]).toMatch(/^[a-z](?:[a-z0-9-]*[a-z0-9])?$/);
                 }
             });
         });
@@ -143,7 +144,12 @@ describe('🔬 Fine-Tuned Model Registry Validation (15 tests)', () => {
                 if (firstAgent) {
                     const [agentId] = firstAgent;
                     const model = getFineTunedModel(agentId as ValidAgentId);
-                    expect(model).toMatch(ENDPOINT_FORMAT);
+                    
+                    if (USE_FINE_TUNED_AGENTS) {
+                        expect(model).toMatch(ENDPOINT_FORMAT);
+                    } else {
+                        expect(model).toBe('gemini-3.1-pro-preview');
+                    }
                 }
             }
         });

@@ -4,6 +4,7 @@ import { VideoClip } from '../../store/videoEditorStore';
 import { AudioWaveform } from '../components/AudioWaveform'; // Check path relative to new file location? No, this is in components dir.
 import { getKeyframeColor } from '../utils/keyframeUtils';
 import { PIXELS_PER_FRAME, ANIMATABLE_PROPERTIES } from '../constants';
+import { useResolvedStorageUrl } from '@/hooks/useResolvedStorageUrl';
 
 const XIcon = ({ size = 16 }: { size?: number }) => (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -29,9 +30,13 @@ export const TimelineClip = memo(({
     onToggleExpand, onRemove, onDragStart,
     onAddKeyframe, onKeyframeClick
 }: TimelineClipProps) => {
+    const urlToResolve = clip.src && !clip.src.startsWith('file://') ? clip.src : null;
+    const { url: resolvedUrl } = useResolvedStorageUrl(urlToResolve);
+    const displayUrl = resolvedUrl || clip.src;
+
     return (
         <div
-            className={`absolute top-2 border rounded cursor-pointer transition-all group/clip ${isSelected ? 'bg-purple-600 border-purple-400 ring-1 ring-white' : 'bg-purple-600/30 border-purple-500/50 hover:bg-purple-600/50'}`}
+            className={`absolute top-2 border rounded cursor-pointer transition-all group/clip ${isSelected ? 'bg-green-600 border-green-400 ring-1 ring-white' : 'bg-green-600/30 border-green-500/50 hover:bg-green-600/50'}`}
             style={{
                 left: clip.startFrame * PIXELS_PER_FRAME,
                 width: clip.durationInFrames * PIXELS_PER_FRAME,
@@ -63,7 +68,7 @@ export const TimelineClip = memo(({
                         onRemove(clip.id);
                     }}
                     data-testid={`clip-remove-${clip.id}`}
-                    className="opacity-0 group-hover/clip:opacity-100 text-purple-200 hover:text-white transition-opacity pointer-events-auto"
+                    className="opacity-0 group-hover/clip:opacity-100 text-green-200 hover:text-white transition-opacity pointer-events-auto"
                     aria-label={`Remove clip ${clip.name}`}
                 >
                     <XIcon size={12} />
@@ -71,10 +76,10 @@ export const TimelineClip = memo(({
             </div>
 
             {/* Audio Waveform */}
-            {clip.type === 'audio' && clip.src && (
+            {clip.type === 'audio' && displayUrl && (
                 <div className="absolute top-0 left-0 right-0 h-16 z-0 opacity-50 pointer-events-none">
                     <AudioWaveform
-                        src={clip.src}
+                        src={displayUrl}
                         width={clip.durationInFrames * PIXELS_PER_FRAME}
                         height={64}
                         color="rgba(255, 255, 255, 0.6)"
@@ -83,12 +88,12 @@ export const TimelineClip = memo(({
             )}
 
             {/* Video/Image Preview Thumbnail */}
-            {(clip.type === 'video' || clip.type === 'image') && clip.src && (
+            {(clip.type === 'video' || clip.type === 'image') && displayUrl && (
                 <div className="absolute inset-0 z-0 opacity-70 pointer-events-none overflow-hidden rounded bg-black/50">
                     {clip.type === 'video' ? (
-                        <video src={clip.src} className="w-full h-full object-cover" muted preload="none" />
+                        <video src={displayUrl} className="w-full h-full object-cover" muted preload="none" />
                     ) : (
-                        <img src={clip.src} className="w-full h-full object-cover" alt="" />
+                        <img src={displayUrl} className="w-full h-full object-cover" alt="" />
                     )}
                 </div>
             )}

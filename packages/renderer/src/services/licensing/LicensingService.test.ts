@@ -9,6 +9,7 @@ const {
     mockCollection,
     mockWhere,
     mockOrderBy,
+    mockLimit,
     mockDoc,
     mockUpdateDoc
 } = vi.hoisted(() => {
@@ -20,6 +21,7 @@ const {
         mockCollection: vi.fn(),
         mockWhere: vi.fn(),
         mockOrderBy: vi.fn(),
+        mockLimit: vi.fn(),
         mockDoc: vi.fn(),
         mockUpdateDoc: vi.fn()
     }
@@ -41,6 +43,19 @@ vi.mock('@/services/firebase', () => ({
     messaging: { getToken: vi.fn() }
 }));
 
+const mockCreateOneTimePayment = vi.fn().mockResolvedValue('https://checkout.stripe.com/mock');
+vi.mock('@/services/payment/PaymentService', () => ({
+    createOneTimePayment: (...args: unknown[]) => mockCreateOneTimePayment(...args),
+}));
+
+vi.mock('@/core/store', () => ({
+    useStore: {
+        getState: vi.fn(() => ({
+            userProfile: { id: 'user-123' },
+        })),
+    },
+}));
+
 vi.mock('firebase/firestore', () => ({
   serverTimestamp: vi.fn(),
     collection: mockCollection,
@@ -52,6 +67,7 @@ vi.mock('firebase/firestore', () => ({
     query: mockQuery,
     where: mockWhere,
     orderBy: mockOrderBy,
+    limit: mockLimit,
     Timestamp: {
         now: () => ({
   serverTimestamp: vi.fn(), toDate: () => new Date() })
@@ -136,6 +152,21 @@ describe('LicensingService', () => {
         });
     });
 
+    describe('getSyncBriefs', () => {
+        it('returns an empty list when no briefs exist instead of seeding fake opportunities', async () => {
+            mockGetDocs.mockResolvedValueOnce({
+                docs: [],
+                empty: true,
+            });
+
+            const briefs = await service.getSyncBriefs();
+
+            expect(mockGetDocs).toHaveBeenCalled();
+            expect(mockAddDoc).not.toHaveBeenCalled();
+            expect(briefs).toEqual([]);
+        });
+    });
+
     describe('updateRequestStatus', () => {
         it('should update request status', async () => {
             mockDoc.mockReturnValue('MOCK_DOC_REF');
@@ -146,6 +177,39 @@ describe('LicensingService', () => {
                 'MOCK_DOC_REF',
                 expect.objectContaining({
                     status: 'negotiating'
+                })
+            );
+        });
+    });
+
+    describe('initiateLicensePurchase', () => {
+        it('should call createOneTimePayment with applySurcharge and connected account metadata', async () => {
+            const params = {
+                userId: 'user-123',
+                trackTitle: 'Midnight Blaze',
+                artist: 'The Flames',
+                price: 1000000, // $10,000 in cents
+                connectedAccountId: 'acct_123456',
+            };
+
+            const url = await service.initiateLicensePurchase(params);
+
+            expect(url).toBe('https://checkout.stripe.com/mock');
+            expect(mockCreateOneTimePayment).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    userId: 'user-123',
+                    applySurcharge: true,
+                    items: [
+                        expect.objectContaining({
+                            name: 'Sync License - Midnight Blaze',
+                            amount: 1000000,
+                        }),
+                    ],
+                    metadata: expect.objectContaining({
+                        type: 'licensing_purchase',
+                        connectedAccountId: 'acct_123456',
+                        artistAmount: '1000000',
+                    }),
                 })
             );
         });

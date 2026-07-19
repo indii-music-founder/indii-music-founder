@@ -1,38 +1,32 @@
-export interface DAWState {
-    bpm: number;
-    isPlaying: boolean;
-    currentTime: number;
-    trackNames: string[];
-}
+import type { DAWState } from '@/types/electron';
 
 class DawIntegrationService {
+    private isElectron(): boolean {
+        return typeof window !== 'undefined' && typeof window.electronAPI !== 'undefined';
+    }
+
     public isAvailable(): boolean {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return typeof window !== 'undefined' && 'electronAPI' in window && 'daw' in (window as any).electronAPI;
+        return this.isElectron() && typeof window.electronAPI!.daw !== 'undefined';
     }
 
     public async start(): Promise<boolean> {
         if (!this.isAvailable()) return false;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return (window as any).electronAPI.daw.start();
+        return window.electronAPI!.daw!.start() as Promise<boolean>;
     }
 
     public async stop(): Promise<boolean> {
         if (!this.isAvailable()) return false;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return (window as any).electronAPI.daw.stop();
+        return window.electronAPI!.daw!.stop() as Promise<boolean>;
     }
 
     public async getState(): Promise<DAWState | null> {
         if (!this.isAvailable()) return null;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return (window as any).electronAPI.daw.getState();
+        return window.electronAPI!.daw!.getState() as Promise<DAWState | null>;
     }
 
     public onStateChanged(callback: (state: DAWState) => void): () => void {
         if (!this.isAvailable()) return () => {};
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return (window as any).electronAPI.daw.onStateChanged(callback);
+        return window.electronAPI!.daw!.onStateChanged(callback as (state: unknown) => void);
     }
 }
 

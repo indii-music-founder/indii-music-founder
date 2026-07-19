@@ -108,4 +108,41 @@ describe('AuthorityPanel', () => {
         expect(screen.getByTestId('authority-ddex-output')).toHaveTextContent('<DDEX>XML Content</DDEX>');
         expect(screen.getByTestId('authority-copy-ddex')).toBeDefined();
     });
+
+    it('assigns a unique ISRC per track when multiple tracks are missing one (ISSUE-782)', async () => {
+        const mockReleaseData = {
+            id: 'rel-1',
+            metadata: {
+                releaseTitle: 'Test Release',
+                artistName: 'Test Artist',
+                labelName: 'Test Label',
+                upc: '123456789012',
+                tracks: [
+                    { trackTitle: 'Track 1' },
+                    { trackTitle: 'Track 2' },
+                    { trackTitle: 'Track 3' },
+                ]
+            }
+        };
+        (DistributionSyncService.getRelease as import("vitest").Mock).mockResolvedValue(mockReleaseData);
+        (distributionService.assignISRCs as import("vitest").Mock)
+            .mockResolvedValueOnce('US-XXX-25-00001')
+            .mockResolvedValueOnce('US-XXX-25-00002')
+            .mockResolvedValueOnce('US-XXX-25-00003');
+        (distributionService.generateIngestionNotification as import("vitest").Mock).mockResolvedValue('<DDEX>XML Content</DDEX>');
+
+        render(<AuthorityPanel />);
+        fireEvent.change(screen.getByTestId('authority-release-selector'), { target: { value: 'rel-1' } });
+        fireEvent.click(screen.getByTestId('authority-generate-ddex'));
+
+        await waitFor(() => {
+            expect(distributionService.generateIngestionNotification).toHaveBeenCalled();
+        });
+
+        expect(distributionService.assignISRCs).toHaveBeenCalledTimes(3);
+        const payload = (distributionService.generateIngestionNotification as import("vitest").Mock).mock.calls[0][0];
+        const isrcs = payload.tracks.map((t: { isrc: string }) => t.isrc);
+        expect(new Set(isrcs).size).toBe(3);
+        expect(isrcs).toEqual(['US-XXX-25-00001', 'US-XXX-25-00002', 'US-XXX-25-00003']);
+    });
 });

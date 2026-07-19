@@ -47,6 +47,7 @@ export const ReleaseDetailPage: React.FC<ReleaseDetailPageProps> = ({
 }) => {
     const statusMap: Record<ReleaseStatus, { label: string; color: string; icon: React.ReactNode }> = {
         'draft': { label: 'Draft', color: 'gray', icon: <Edit2 size={12} /> },
+        'ready_for_manual_submission': { label: 'Ready for Submission', color: 'blue', icon: <CheckCircle2 size={12} /> },
         'validating': { label: 'Validating', color: 'blue', icon: <Clock size={12} /> },
         'pending_review': { label: 'Review', color: 'yellow', icon: <AlertTriangle size={12} /> },
         'in_review': { label: 'Review', color: 'yellow', icon: <AlertTriangle size={12} /> },
@@ -185,7 +186,7 @@ export const ReleaseDetailPage: React.FC<ReleaseDetailPageProps> = ({
                                     </div>
                                     <div className="w-1.5 h-1.5 rounded-full bg-gray-800" />
                                     <div className="flex items-center gap-2">
-                                        <Disc size={16} className="text-purple-500" />
+                                        <Disc size={16} className="text-green-500" />
                                         {metadata.labelName || 'Independent'}
                                     </div>
                                 </div>
@@ -195,7 +196,7 @@ export const ReleaseDetailPage: React.FC<ReleaseDetailPageProps> = ({
                                 <div>
                                     <p className="text-[10px] font-black text-gray-600 uppercase tracking-widest leading-none mb-1">Release Date</p>
                                     <p className="text-sm font-bold text-white leading-none">
-                                        {metadata.releaseDate ? new Date(metadata.releaseDate).toLocaleDateString() : 'TBD'}
+                                        {metadata.releaseDate ? new Date(metadata.releaseDate).toLocaleDateString('en-US') : 'TBD'}
                                     </p>
                                 </div>
                             </div>
@@ -232,7 +233,7 @@ export const ReleaseDetailPage: React.FC<ReleaseDetailPageProps> = ({
                                 Tracklist
                                 <span className="px-2 py-0.5 bg-gray-900 rounded-md text-[10px] font-bold text-gray-400">1 Track</span>
                             </h4>
-                            <div className="mt-4 p-4 bg-gray-900/30 rounded-2xl border border-gray-800/50 flex items-center justify-between group cursor-pointer hover:bg-gray-900/50 transition-all">
+                            <div className="mt-4 p-4 bg-gray-900/30 rounded-2xl border border-gray-800/50 flex items-center justify-between group transition-all">
                                 <div className="flex items-center gap-4">
                                     <span className="text-xs font-black text-gray-700 w-4 tracking-tighter">01</span>
                                     <div className="w-10 h-10 bg-gray-900 rounded-lg flex items-center justify-center text-blue-500 group-hover:scale-110 transition-transform">

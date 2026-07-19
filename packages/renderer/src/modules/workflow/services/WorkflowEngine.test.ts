@@ -148,7 +148,7 @@ describe('WorkflowEngine', () => {
 
         const { VideoGeneration } = await import('@/services/video/VideoGenerationService');
         expect(VideoGeneration.generateVideo).toHaveBeenCalledWith(
-            expect.objectContaining({ prompt: 'Test prompt', durationSeconds: 5, aspectRatio: '16:9' })
+            expect.objectContaining({ prompt: 'Test prompt', durationSeconds: 8, aspectRatio: '16:9' })
         );
     });
 
@@ -184,7 +184,7 @@ describe('WorkflowEngine', () => {
         // Note: With the updated prompt concatenation logic, any input containing a URL
         // will be automatically appended to the final prompt.
         expect(VideoGeneration.generateVideo).toHaveBeenCalledWith(
-            expect.objectContaining({ prompt: 'Cinematic shot\n\nhttps://example.com/frame.jpg', durationSeconds: 5, aspectRatio: '16:9' })
+            expect.objectContaining({ prompt: 'Cinematic shot\n\nhttps://example.com/frame.jpg', durationSeconds: 8, aspectRatio: '16:9' })
         );
     });
 

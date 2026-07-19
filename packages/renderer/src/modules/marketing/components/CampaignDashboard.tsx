@@ -23,8 +23,10 @@ import { BarChart3, Image, Sparkles, Radio } from 'lucide-react';
 import { logger } from '@/utils/logger';
 import { SkeletonList, SkeletonStat } from '@/components/shared/SkeletonLoader';
 import { useStore } from '@/core/store';
+import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
 import { useShallow } from 'zustand/react/shallow';
 import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
+import { useToast } from '@/core/context/ToastContext';
 
 /* ================================================================== */
 /*  Campaign Dashboard — Three-Panel Layout                             */
@@ -41,6 +43,7 @@ import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
 const CampaignDashboard: React.FC = () => {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { campaigns, actions, isLoading } = useMarketing();
+    const toast = useToast();
 
     const [selectedCampaign, setSelectedCampaign] = useState<CampaignAsset | null>(null);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -49,9 +52,30 @@ const CampaignDashboard: React.FC = () => {
     const [isAIModalOpen, setIsAIModalOpen] = useState(false);
     const [activeTab, setActiveTab] = useState('campaigns');
 
-    const handleUpdateCampaign = useCallback((updatedCampaign: CampaignAsset) => {
+    /**
+     * ISSUE-949: previously only called setSelectedCampaign — image batch
+     * Apply & Save, copy edits, and execution status updates all vanished
+     * on navigate-away/refresh because nothing ever reached Firestore.
+     * Now persists via MarketingService.updateCampaign (already implemented,
+     * but had zero callers anywhere in the app) and reverts the optimistic
+     * local update if the write fails, so the UI never claims a save that
+     * didn't happen.
+     */
+    const handleUpdateCampaign = useCallback(async (updatedCampaign: CampaignAsset) => {
+        const previousCampaign = selectedCampaign;
         setSelectedCampaign(updatedCampaign);
-    }, []);
+
+        if (!updatedCampaign.id) return;
+
+        try {
+            await MarketingService.updateCampaign(updatedCampaign.id, updatedCampaign);
+        } catch (error: unknown) {
+            logger.error("Failed to persist campaign update", error);
+            setSelectedCampaign(previousCampaign);
+            toast.error("Failed to save campaign changes. Please try again.");
+            throw error;
+        }
+    }, [selectedCampaign, toast]);
 
     const handleCreateSave = useCallback(async (campaignId?: string) => {
         setIsCreateModalOpen(false);
@@ -67,8 +91,15 @@ const CampaignDashboard: React.FC = () => {
         }
     }, []);
 
+    /**
+     * ISSUE-951: previously closed the modal (setIsAIModalOpen(false))
+     * BEFORE attempting creation, so the modal always appeared to succeed
+     * regardless of an auth/permission/quota/validation failure — and the
+     * generated plan was gone forever since the modal had already unmounted.
+     * Now only closes after a confirmed created+read-back campaign; on
+     * failure, re-throws so the modal keeps the plan visible and retryable.
+     */
     const handleAISave = useCallback(async (campaign: CampaignAsset) => {
-        setIsAIModalOpen(false);
         try {
             const newId = await MarketingService.createCampaign({
                 ...campaign,
@@ -76,10 +107,13 @@ const CampaignDashboard: React.FC = () => {
             });
             const savedCampaign = await MarketingService.getCampaignById(newId);
             if (savedCampaign) setSelectedCampaign(savedCampaign);
+            setIsAIModalOpen(false);
         } catch (error: unknown) {
             logger.error("Failed to save Autonomous campaign", error);
+            toast.error("Failed to create campaign. Please try again.");
+            throw error;
         }
-    }, []);
+    }, [toast]);
 
     const handleCreateNew = useCallback(() => {
         setIsCreateModalOpen(true);
@@ -115,13 +149,13 @@ const CampaignDashboard: React.FC = () => {
             }
         };
 
-        if (import.meta.env.DEV) {
+        if (import.meta.env.DEV || isFirebaseE2EMockEnabled()) {
             window.addEventListener('TEST_INJECT_SET_CAMPAIGN', handleTestSetCampaign);
         }
 
         return () => {
             window.removeEventListener('TEST_INJECT_CAMPAIGN_UPDATE', handleTestInjection);
-            if (import.meta.env.DEV) {
+            if (import.meta.env.DEV || isFirebaseE2EMockEnabled()) {
                 window.removeEventListener('TEST_INJECT_SET_CAMPAIGN', handleTestSetCampaign);
             }
         };
@@ -143,6 +177,23 @@ const CampaignDashboard: React.FC = () => {
                             Mission Active: {deployedBounty}
                         </div>
                     )}
+                    <div className="px-4 md:px-6 pt-4">
+                        <div className="rounded-[28px] border border-dept-marketing/20 bg-linear-to-r from-dept-marketing/10 via-white/[0.03] to-transparent p-5 md:p-6 shadow-[0_16px_40px_rgba(0,0,0,0.18)]">
+                            <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+                                <div className="max-w-2xl">
+                                    <p className="text-[10px] font-black uppercase tracking-[0.28em] text-dept-marketing">Marketing Narrative</p>
+                                    <h3 className="mt-2 text-xl md:text-2xl font-bold tracking-tight text-white">Pocket-team capture for live moments.</h3>
+                                    <p className="mt-2 text-sm md:text-[15px] leading-relaxed text-gray-300">
+                                        The remote becomes a pocket team-capture lane for voice memos, photos, and quick notes that turn real-world moments into campaign-ready material.
+                                    </p>
+                                </div>
+                                <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.24em] text-dept-marketing/80">
+                                    <span className="h-2 w-2 rounded-full bg-dept-marketing shadow-[0_0_12px_rgba(233,30,99,0.55)]" />
+                                    Marketing page concept
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                     <MarketingToolbar
                         onAction={handleCreateNew}
                         actionLabel="New Campaign"
@@ -195,8 +246,8 @@ const CampaignDashboard: React.FC = () => {
                         ) : (
                             <div className="h-full flex flex-col items-center justify-center text-gray-500 gap-3">
                                 <Sparkles size={24} className="text-gray-600" />
-                                <p className="text-sm font-medium text-gray-400">This feature is launching soon</p>
-                                <p className="text-xs text-gray-600 max-w-xs text-center">We're putting the finishing touches on this experience. In the meantime, explore your active campaigns.</p>
+                                <p className="text-sm font-medium text-gray-400">This section is unavailable</p>
+                                <p className="text-xs text-gray-600 max-w-xs text-center">The sidebar still exposes a few future modules that are not wired into this build yet.</p>
                             </div>
                         )}
                     </div>
@@ -296,7 +347,7 @@ function AssetLibraryPanel() {
                     ))}
                     {totalAssets > 4 && (
                         <div className="col-span-2 text-center pt-2">
-                            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest cursor-pointer hover:text-white">+ {totalAssets - 4} more assets</p>
+                            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">+ {totalAssets - 4} more assets</p>
                         </div>
                     )}
                 </div>

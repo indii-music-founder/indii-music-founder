@@ -26,6 +26,7 @@ import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
 export default function SocialDashboard() {
     const _toast = useToast();
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const [selectedScheduleDate, setSelectedScheduleDate] = useState<string | undefined>();
     const [isAccountWizardOpen, setIsAccountWizardOpen] = useState(false);
 
     const {
@@ -44,9 +45,9 @@ export default function SocialDashboard() {
                 ? post.scheduledTime.getTime()
                 : post.scheduledTime
                     ? new Date(post.scheduledTime as unknown as string).getTime()
-                    : Date.now();
+                    : new Date().getTime();
 
-            const _success = await actions.schedulePost({
+            return await actions.schedulePost({
                 platform: post.platform,
                 copy: post.copy,
                 imageAsset: post.imageAsset,
@@ -55,6 +56,7 @@ export default function SocialDashboard() {
             });
         } catch (error: unknown) {
             logger.error("Operation failed:", error);
+            return false;
         }
     };
 
@@ -76,22 +78,22 @@ export default function SocialDashboard() {
             days.push(<div key={`empty-${i}`} className="h-28 bg-white/[0.01] border border-white/5"></div>);
         }
         for (let i = 1; i <= daysInMonth; i++) {
-            const campaign = campaigns.find(c => c.day === i);
+            const dayCampaigns = campaigns.filter(c => c.day === i);
             days.push(
                 <div key={i} className="h-28 bg-white/[0.01] border border-white/5 p-2 relative group hover:bg-white/[0.03] transition-colors">
                     <span className="text-gray-500 text-xs font-mono">{i}</span>
-                    {campaign && (
-                        <div className="mt-1 p-1.5 rounded bg-dept-creative/10 border border-dept-creative/30 text-[10px] cursor-pointer hover:bg-dept-creative/20 transition-colors">
+                    {dayCampaigns.map(campaign => (
+                        <div className="mt-1 p-1.5 rounded bg-dept-creative/10 border border-dept-creative/30 text-[10px] transition-colors">
                             <div className="font-bold text-dept-creative truncate">{campaign.title}</div>
                             <div className="text-dept-creative/70 flex items-center gap-1 mt-0.5">
                                 <span className="w-1 h-1 rounded-full bg-dept-creative"></span>
                                 {campaign.platform}
                             </div>
                         </div>
-                    )}
+                    ))}
                     <button
-                        onClick={() => setIsCreateModalOpen(true)}
-                        aria-label={`Create post for ${new Date(now.getFullYear(), now.getMonth(), i).toLocaleDateString()}`}
+                        onClick={() => { setSelectedScheduleDate(new Date(now.getFullYear(), now.getMonth(), i).toLocaleDateString('en-CA')); setIsCreateModalOpen(true); }}
+                        aria-label={`Create post for ${new Date(now.getFullYear(), now.getMonth(), i).toLocaleDateString('en-US')}`}
                         className="absolute bottom-1 right-1 opacity-0 group-hover:opacity-100 p-1 hover:bg-white/10 rounded text-gray-400 transition-opacity"
                     >
                         <Plus size={12} />
@@ -194,6 +196,7 @@ export default function SocialDashboard() {
                     <CreatePostModal
                         onClose={() => setIsCreateModalOpen(false)}
                         onSave={handleCreatePost}
+                        initialScheduledDate={selectedScheduleDate}
                     />
                 )}
 
@@ -213,9 +216,9 @@ export default function SocialDashboard() {
 
 function AccountStatsPanel({ stats }: { stats: SocialStats | null }) {
     const items = [
-        { label: 'Total Reach', value: (stats?.followers || 0).toLocaleString(), icon: Users, color: 'text-dept-creative' },
-        { label: 'Following', value: (stats?.following || 0).toLocaleString(), icon: TrendingUp, color: 'text-dept-marketing' },
-        { label: 'Posts', value: (stats?.posts || 0).toLocaleString(), icon: Megaphone, color: 'text-dept-creative' },
+        { label: 'Total Reach', value: (stats?.followers || 0).toLocaleString('en-US'), icon: Users, color: 'text-dept-creative' },
+        { label: 'Following', value: (stats?.following || 0).toLocaleString('en-US'), icon: TrendingUp, color: 'text-dept-marketing' },
+        { label: 'Posts', value: (stats?.posts || 0).toLocaleString('en-US'), icon: Megaphone, color: 'text-dept-creative' },
     ];
 
     return (
@@ -251,7 +254,7 @@ function PlatformFiltersPanel() {
             <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3 px-1">Platforms</h3>
             <div className="space-y-1">
                 {platforms.map((p) => (
-                    <div key={p.name} className="flex items-center gap-2 py-2 px-2 rounded-lg hover:bg-white/[0.04] transition-colors cursor-pointer">
+                    <div key={p.name} className="flex items-center gap-2 py-2 px-2 rounded-lg transition-colors">
                         <div className={`w-2 h-2 rounded-full ${p.color}`} />
                         <span className="text-xs text-gray-300 flex-1">{p.name}</span>
                         <div className={`w-3 h-3 rounded-sm border flex items-center justify-center ${p.active ? 'bg-dept-creative/20 border-dept-creative/40' : 'border-white/10'}`}>
@@ -315,7 +318,7 @@ function DraftsQueuePanel({ scheduledPosts }: { scheduledPosts: ScheduledPost[] 
                             <div className="flex items-center gap-2 mt-1">
                                 <span className="text-[10px] text-gray-600">{p.platform}</span>
                                 <span className="text-[10px] text-gray-600">
-                                    {p.scheduledTime ? new Date(p.scheduledTime).toLocaleDateString() : 'TBD'}
+                                    {p.scheduledTime ? new Date(p.scheduledTime).toLocaleDateString('en-US') : 'TBD'}
                                 </span>
                             </div>
                         </div>

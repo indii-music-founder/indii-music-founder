@@ -66,12 +66,24 @@ export const BmiAdapter: OrgAdapter = {
 
       const result = await registerWithBMI(userId, metadata as Parameters<typeof registerWithBMI>[1]);
 
-      await persistOrgRecord(userId, track.id, 'bmi', data, result.workId);
+      const persisted = await persistOrgRecord(userId, track.id, 'bmi', data, result.workId);
+
+      if (!result.success) {
+        return {
+          success: false,
+          errorMessage: result.error ?? 'BMI registration requires manual completion.',
+          submittedAt: new Date(),
+          requiresManualStep: true,
+          manualStepUrl: 'https://worksexpress.bmi.com',
+          manualStepInstructions: 'Log in to BMI Works Express and register this title manually.',
+        };
+      }
 
       return {
         success: true,
         confirmationNumber: result.workId,
         submittedAt: new Date(),
+        localRecordFailed: !persisted,
       };
     } catch (err: unknown) {
       logger.error('[BmiAdapter] Registration failed:', err);

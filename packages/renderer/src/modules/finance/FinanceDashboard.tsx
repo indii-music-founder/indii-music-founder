@@ -100,7 +100,7 @@ export default function FinanceDashboard() {
             <Tabs defaultValue="overview" className="flex-1 flex flex-col overflow-hidden">
                 <div className="px-4 md:px-6 border-b border-white/5 flex-shrink-0 overflow-x-auto">
                     <TabsList className="bg-transparent gap-4 p-0 h-12 flex-nowrap">
-                        <TabsTrigger value="overview" data-testid="finance-tab-overview" className="text-muted-foreground data-[state=active]:text-purple-400 data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-purple-400 rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs">
+                        <TabsTrigger value="overview" data-testid="finance-tab-overview" className="text-muted-foreground data-[state=active]:text-green-400 data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-green-400 rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs">
                             <TrendingUp size={14} /> Revenue Overview
                         </TabsTrigger>
                         <TabsTrigger value="earnings" data-testid="finance-tab-earnings" className="text-muted-foreground data-[state=active]:text-emerald-400 data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-emerald-400 rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs">
@@ -257,7 +257,7 @@ function formatRelativeTime(dateStr: string): string {
     if (diffMins < 60) return `${diffMins}m ago`;
     if (diffHours < 24) return `${diffHours}h ago`;
     if (diffDays < 30) return `${diffDays}d ago`;
-    return date.toLocaleDateString();
+    return date.toLocaleDateString('en-US');
 }
 
 function LoadingSpinner() {
@@ -297,7 +297,7 @@ function QuickStatsPanel({ earningsSummary, expenses, loading }: QuickStatsPanel
     const dividendSaved = totalRevenue * MANAGEMENT_FEE_RATE;
 
     const stats = [
-        { label: 'Total Revenue', value: formatCurrency(totalRevenue), icon: DollarSign, change: earningsSummary ? `${earningsSummary.totalStreams.toLocaleString()} streams` : 'No data', positive: totalRevenue > 0 },
+        { label: 'Total Revenue', value: formatCurrency(totalRevenue), icon: DollarSign, change: earningsSummary ? `${earningsSummary.totalStreams.toLocaleString('en-US')} streams` : 'No data', positive: totalRevenue > 0 },
         { label: 'Net Income', value: formatCurrency(netIncome), icon: ArrowUpRight, change: totalExpenses > 0 ? `${formatCurrency(totalExpenses)} expenses` : 'No expenses', positive: netIncome > 0 },
         { label: 'Pending Payouts', value: pendingCount > 0 ? `${pendingCount} pending` : 'None', icon: Wallet, change: earningsSummary?.currencyCode ?? 'USD', positive: true },
     ];
@@ -505,7 +505,7 @@ function RevenueByPlatformPanel({ earningsSummary, loading }: RevenueByPlatformP
                                 </div>
                                 <p className="text-lg font-black text-white">{formatCurrency(p.revenue)}</p>
                                 <p className="text-[10px] text-gray-600 mt-0.5">
-                                    {p.streams.toLocaleString()} streams · {p.downloads.toLocaleString()} downloads
+                                    {p.streams.toLocaleString('en-US')} streams · {p.downloads.toLocaleString('en-US')} downloads
                                 </p>
                                 <div className="w-full h-1 bg-white/5 rounded-full mt-2 overflow-hidden">
                                     <motion.div
@@ -544,7 +544,7 @@ function ExpenseBreakdownPanel({ expenses, loading }: ExpenseBreakdownPanelProps
         }
 
         const colorMap: Record<string, string> = {
-            'Equipment': 'bg-purple-500',
+            'Equipment': 'bg-green-500',
             'Software / Plugins': 'bg-blue-500',
             'Marketing': 'bg-cyan-500',
             'Travel': 'bg-emerald-500',

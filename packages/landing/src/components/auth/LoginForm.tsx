@@ -1,9 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { signInWithEmail, getStudioUrl } from '@/lib/auth';
+import { flushFounderFunnelQueue, trackFounderFunnelEvent } from '@/lib/founderFunnel';
 import { Loader2 } from 'lucide-react';
+import FounderPreviewContext from './FounderPreviewContext';
 
 export default function LoginForm() {
     // const router = useRouter(); // Unused
@@ -12,13 +14,41 @@ export default function LoginForm() {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
+    // Detect founder traffic via ?source=founder query param
+    const isFounderSource = typeof window !== 'undefined' &&
+        (window.location.search.includes('source=founder') ||
+         window.location.hostname.startsWith('founder'));
+    const sourceSuffix = isFounderSource ? '?source=founder' : '';
+
+    useEffect(() => {
+        flushFounderFunnelQueue();
+        if (isFounderSource) {
+            void trackFounderFunnelEvent('founder_auth_viewed', {
+                variant: 'login',
+            });
+        }
+    }, [isFounderSource]);
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
         setError(null);
 
         try {
-            await signInWithEmail(email, password);
+            if (isFounderSource) {
+                await trackFounderFunnelEvent('founder_auth_submitted', {
+                    variant: 'login',
+                });
+            }
+            const user = await signInWithEmail(email, password);
+            if (isFounderSource) {
+                await trackFounderFunnelEvent('founder_auth_completed', {
+                    variant: 'login',
+                }, {
+                    userId: user.uid,
+                    email: user.email,
+                });
+            }
             // Redirect to studio app
             window.location.href = getStudioUrl();
         } catch (err: unknown) {
@@ -33,11 +63,18 @@ export default function LoginForm() {
     return (
         <div className="w-full max-w-md space-y-8 bg-black/50 p-8 rounded-2xl border border-white/10 backdrop-blur-xl">
             <div className="text-center">
-                <h2 className="text-3xl font-bold tracking-tight text-white">Welcome back</h2>
+                <h2 className="text-3xl font-bold tracking-tight text-white">
+                    {isFounderSource ? 'Enter the Preview' : 'Welcome back'}
+                </h2>
                 <p className="mt-2 text-sm text-gray-400">
-                    Sign in to your account
+                    {isFounderSource
+                        ? 'Sign in to preview the indii studio and meet the Conductor.'
+                        : 'Sign in to your account'
+                    }
                 </p>
             </div>
+
+            <FounderPreviewContext variant="login" />
 
             <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
                 <div className="space-y-4">
@@ -78,7 +115,7 @@ export default function LoginForm() {
                 <div className="flex items-center justify-between">
                     <div className="text-sm">
                         <Link
-                            to="/reset-password"
+                            to={`/reset-password${sourceSuffix}`}
                             className="font-medium text-purple-400 hover:text-purple-300 transition-colors"
                         >
                             Forgot your password?
@@ -126,7 +163,7 @@ export default function LoginForm() {
 
                     <div className="mt-6">
                         <Link
-                            to="/signup"
+                            to={`/signup${sourceSuffix}`}
                             className="flex w-full justify-center rounded-lg bg-white/5 border border-white/10 px-4 py-2.5 text-sm font-bold text-white hover:bg-white/10 transition-all"
                         >
                             Create an account

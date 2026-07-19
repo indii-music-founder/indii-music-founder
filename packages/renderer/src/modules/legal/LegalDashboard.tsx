@@ -52,7 +52,7 @@ export default function LegalDashboard() {
                 setAnalysisHistory(analyses.map(a => ({
                     name: a.fileName,
                     score: a.score,
-                    date: new Date(a.analyzedAt).toLocaleDateString(),
+                    date: new Date(a.analyzedAt).toLocaleDateString('en-US'),
                 })));
             }
         }).catch(err => logger.warn('[Legal] Could not load analysis history:', err));
@@ -130,7 +130,7 @@ Only return valid JSON.
             };
 
             setAnalysisResult(result);
-            const historyEntry = { name: file.name, score: result.score, date: new Date().toLocaleDateString() };
+            const historyEntry = { name: file.name, score: result.score, date: new Date().toLocaleDateString('en-US') };
             setAnalysisHistory(prev => [historyEntry, ...prev.slice(0, 19)]);
 
             // Persist to Firestore (fire-and-forget — don't block the UI)
@@ -386,8 +386,8 @@ function LegalTemplatesPanel({ isGenerating, onGenerateNDA, onGenerateIP }: {
                     disabled={isGenerating !== null}
                     className={`w-full flex items-center gap-3 p-2.5 rounded-lg transition-colors text-left ${isGenerating === 'IP' ? 'opacity-50 cursor-wait' : 'hover:bg-white/[0.04]'}`}
                 >
-                    <div className="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center flex-shrink-0">
-                        {isGenerating === 'IP' ? <Loader2 size={14} className="animate-spin text-purple-400" /> : <CheckCircle size={14} className="text-purple-400" />}
+                    <div className="w-8 h-8 rounded-lg bg-green-500/10 flex items-center justify-center flex-shrink-0">
+                        {isGenerating === 'IP' ? <Loader2 size={14} className="animate-spin text-green-400" /> : <CheckCircle size={14} className="text-green-400" />}
                     </div>
                     <div>
                         <p className="text-xs font-bold text-white">IP Assignment</p>
@@ -504,7 +504,7 @@ function RiskScoresPanel({ result }: { result: { score: number; risks: string[] 
 
 function CounselPanel({ onFindCounsel }: { onFindCounsel: () => void }) {
     return (
-        <div className="rounded-xl bg-linear-to-br from-blue-500/10 to-purple-500/5 border border-blue-500/20 p-3 space-y-3">
+        <div className="rounded-xl bg-linear-to-br from-blue-500/10 to-green-500/5 border border-blue-500/20 p-3 space-y-3">
             {/* Partner badge */}
             <div className="flex items-center justify-between">
                 <h3 className="text-[10px] font-bold text-blue-400 uppercase tracking-widest">Platform Legal Partner</h3>
@@ -517,7 +517,7 @@ function CounselPanel({ onFindCounsel }: { onFindCounsel: () => void }) {
 
             {/* Avatar + name */}
             <div className="flex items-center gap-2.5">
-                <div className="w-10 h-10 rounded-full bg-linear-to-br from-blue-400 to-purple-500 flex items-center justify-center flex-shrink-0 ring-2 ring-blue-500/30">
+                <div className="w-10 h-10 rounded-full bg-linear-to-br from-blue-400 to-green-500 flex items-center justify-center flex-shrink-0 ring-2 ring-blue-500/30">
                     <Scale size={16} className="text-white" />
                 </div>
                 <div className="min-w-0">
@@ -557,7 +557,7 @@ function FindCounselPanel() {
         <div className="space-y-6 max-w-2xl mx-auto">
 
             {/* ── Featured Attorney Card ─────────────────────────── */}
-            <div className="relative rounded-2xl overflow-hidden border border-blue-500/30 bg-linear-to-br from-blue-500/10 via-purple-500/5 to-transparent">
+            <div className="relative rounded-2xl overflow-hidden border border-blue-500/30 bg-linear-to-br from-blue-500/10 via-green-500/5 to-transparent">
                 {/* Glow */}
                 <div className="absolute top-0 right-0 w-48 h-48 bg-blue-500/10 blur-[60px] pointer-events-none rounded-full" />
 
@@ -566,7 +566,7 @@ function FindCounselPanel() {
                     <div className="flex items-start justify-between gap-3">
                         <div className="flex items-center gap-3">
                             {/* Avatar */}
-                            <div className="w-14 h-14 rounded-2xl bg-linear-to-br from-blue-400 to-purple-600 flex items-center justify-center flex-shrink-0 ring-2 ring-blue-500/40 shadow-lg shadow-blue-500/20">
+                            <div className="w-14 h-14 rounded-2xl bg-linear-to-br from-blue-400 to-green-600 flex items-center justify-center flex-shrink-0 ring-2 ring-blue-500/40 shadow-lg shadow-blue-500/20">
                                 <Scale size={24} className="text-white" />
                             </div>
                             <div>

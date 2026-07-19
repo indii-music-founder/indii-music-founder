@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     Music, Play, Pause, Trash2, Cpu, Eye, Check, AlertTriangle, 
-    Sparkles, RefreshCw, Layers, Link as LinkIcon, Volume2, CloudLightning
+    Sparkles, RefreshCw, Layers, Link as LinkIcon, CloudLightning
 } from 'lucide-react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
@@ -15,6 +15,9 @@ import { VideoGeneration } from '@/services/video/VideoGenerationService';
 import { useToast } from '@/core/context/ToastContext';
 import { renderService } from '@/services/video/RenderService';
 import { logger } from '@/utils/logger';
+import { useResolvedStorageUrl } from '@/hooks/useResolvedStorageUrl';
+import { resolveStorageUrl } from '@/services/storage/resolveStorageUrl';
+import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 
 function readAudioDuration(audioUrl: string): Promise<number> {
     return new Promise((resolve, reject) => {
@@ -30,6 +33,72 @@ function readAudioDuration(audioUrl: string): Promise<number> {
         audio.onerror = () => reject(new Error('Unable to read audio metadata from uploaded file.'));
         audio.src = audioUrl;
     });
+}
+
+/** Converts the final decoded frame of a generated clip into a real image input for Veo. */
+async function extractLastVideoFrame(videoUri: string): Promise<string> {
+    const videoUrl = await resolveStorageUrl(videoUri);
+
+    return new Promise((resolve, reject) => {
+        const video = document.createElement('video');
+        video.crossOrigin = 'anonymous';
+        video.preload = 'auto';
+        video.muted = true;
+
+        video.onloadedmetadata = () => {
+            if (!Number.isFinite(video.duration) || video.duration <= 0) {
+                reject(new Error('Previous clip has no readable duration.'));
+                return;
+            }
+            video.currentTime = Math.max(0, video.duration - 0.05);
+        };
+        video.onseeked = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const context = canvas.getContext('2d');
+            if (!context || !canvas.width || !canvas.height) {
+                reject(new Error('Unable to decode the previous clip frame.'));
+                return;
+            }
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            resolve(canvas.toDataURL('image/jpeg', 0.9));
+        };
+        video.onerror = () => reject(new Error('Unable to load the previous clip for continuity.'));
+        video.src = videoUrl;
+        video.load();
+    });
+}
+
+function StoryboardClipPreview({ videoUrl }: { videoUrl: string }) {
+    const { url: resolvedVideoUrl, isResolving, error: resolveError } = useResolvedStorageUrl(videoUrl);
+
+    if (isResolving) {
+        return (
+            <div className="flex h-full w-full items-center justify-center bg-black/60 text-[10px] font-bold uppercase tracking-widest text-white/50">
+                Resolving clip...
+            </div>
+        );
+    }
+
+    if (resolveError) {
+        return (
+            <div className="flex h-full w-full items-center justify-center bg-[#1a0f0f] px-3 text-center text-[10px] font-bold uppercase tracking-widest text-red-300">
+                Preview unavailable
+            </div>
+        );
+    }
+
+    return (
+        <video
+            src={resolvedVideoUrl}
+            className="w-full h-full object-cover"
+            muted
+            loop
+            playsInline
+            autoPlay
+        />
+    );
 }
 
 export function StoryboardTimeline() {
@@ -171,20 +240,9 @@ export function StoryboardTimeline() {
             if (slot.useDaisyChain && index > 0 && storyboardProject) {
                 const prevSlot = storyboardProject.slots[index - 1];
                 if (prevSlot?.videoUrl) {
-                    firstFrame = prevSlot.videoUrl;
-                    logger.info(`[Storyboard] Daisy-chain continuous framing applied for slot ${index + 1}`);
+                    firstFrame = await extractLastVideoFrame(prevSlot.videoUrl);
+                    logger.info(`[Storyboard] Extracted the previous clip's final image frame for slot ${index + 1}`);
                 }
-            }
-
-            let vocalAudio: string | undefined;
-            if (slot.useVocalSync) {
-                if (!slot.vocalConditioningAudioUrl) {
-                    updateStoryboardSlot(slot.id, { isGenerating: false, progress: 0 });
-                    toast.error("Vocal sync requires a real isolated vocal stem URL.");
-                    return;
-                }
-                vocalAudio = slot.vocalConditioningAudioUrl;
-                logger.info(`[Storyboard] Vocal stem conditioning enabled for slot ${index + 1}`);
             }
 
             // Trigger Veo 3.1 generation
@@ -193,10 +251,9 @@ export function StoryboardTimeline() {
                 resolution: '1080p',
                 aspectRatio: '16:9',
                 firstFrame,
-                inputAudio: vocalAudio,
                 duration: 8, // 4 bars typically at ~120BPM is ~8 seconds
                 durationSeconds: 8,
-                model: 'veo-3.1-generate-preview'
+                model: INTELLIGENCE_MODELS.VIDEO.PRO
             });
 
             if (result && result.length > 0) {
@@ -277,8 +334,14 @@ export function StoryboardTimeline() {
                 outputLocation: 'local_ignored.mp4',
                 useCloudQueue: true
             });
-            
-            toast.success(`Showreel dispatched successfully! URL: ${result}`);
+
+            // ISSUE-995: a queued render has no shareable URL yet — don't
+            // claim one exists. Only a real, completed public URL is a link.
+            if (typeof result === 'string') {
+                toast.success(`Showreel render complete! URL: ${result}`);
+            } else {
+                toast.info(`Showreel render queued (ID: ${result.renderId}). No shareable link yet — this can take several minutes.`);
+            }
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
             logger.error('[StoryboardTimeline] Showreel render failed:', error);
@@ -287,22 +350,22 @@ export function StoryboardTimeline() {
     };
 
     return (
-        <div className="h-full flex flex-col bg-bg-dark text-white selection:bg-purple-500/20 selection:text-white relative">
+        <div className="h-full flex flex-col bg-bg-dark text-white selection:bg-green-500/20 selection:text-white relative">
             {/* Header / Audio Import Panel */}
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between border-b border-white/5 bg-[#0e1117]/60 p-5 shrink-0 backdrop-blur-xl gap-4">
                 <div className="flex items-center gap-3">
-                    <div className="p-3 bg-purple-500/10 rounded-2xl border border-purple-500/20 text-purple-400">
+                    <div className="p-3 bg-green-500/10 rounded-2xl border border-green-500/20 text-green-400">
                         <Music size={22} className="animate-pulse" />
                     </div>
                     <div>
                         <h2 className="text-sm font-bold uppercase tracking-widest text-white flex items-center gap-2">
-                            Beat-Quantized Storyboard Timeline
-                            <span className="text-[9px] bg-cyan-500/10 text-cyan-400 px-2 py-0.5 rounded-full border border-cyan-500/20 uppercase tracking-widest">Veo 3.1 Audio-Conditioned</span>
+                            Editable Timing Storyboard
+                            <span className="text-[9px] bg-cyan-500/10 text-cyan-400 px-2 py-0.5 rounded-full border border-cyan-500/20 uppercase tracking-widest">Audio-timed planning</span>
                         </h2>
                         <p className="text-[10px] text-neutral-500 mt-1 font-mono uppercase tracking-wider">
                             {storyboardProject
                                 ? `Active: ${storyboardProject.name} · Grid: ${storyboardProject.bpm} BPM${storyboardProject.key ? ` · Key: ${storyboardProject.key}` : ' · Key: not analyzed'}`
-                                : "Upload audio to generate bar-aligned video segments"
+                                : "Load audio to create an editable 120 BPM timing scaffold"
                             }
                         </p>
                     </div>
@@ -318,9 +381,9 @@ export function StoryboardTimeline() {
                     />
 
                     {isIsolatingStems ? (
-                        <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-purple-600/20 text-purple-300 border border-purple-500/30 text-xs font-bold uppercase tracking-wider">
+                        <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-green-600/20 text-green-300 border border-green-500/30 text-xs font-bold uppercase tracking-wider">
                             <RefreshCw size={14} className="animate-spin" />
-                            Isolating vocal stems...
+                            Reading audio timing...
                         </div>
                     ) : (
                         <button
@@ -349,19 +412,19 @@ export function StoryboardTimeline() {
                 {!storyboardProject ? (
                     <div className="w-full max-w-md mx-auto text-center space-y-4 py-16">
                         <div className="w-16 h-16 rounded-3xl bg-white/[0.02] border border-white/5 flex items-center justify-center mx-auto text-neutral-500 animate-bounce">
-                            <CloudLightning size={28} className="text-purple-400/50" />
+                            <CloudLightning size={28} className="text-green-400/50" />
                         </div>
                         <div className="space-y-1">
                             <p className="text-xs font-bold uppercase tracking-wider text-neutral-300">
                                 Import master audio to begin storyboarding
                             </p>
                             <p className="text-[10px] text-neutral-600 leading-normal max-w-sm mx-auto uppercase">
-                                The engine will automatically segment your track into beat-quantized four-bar cards, ready for sequential video generation.
+                                Load a track to create editable four-bar timing cards on a 120 BPM scaffold. Beat, key, and stem analysis are not configured yet.
                             </p>
                         </div>
                         <button
                             onClick={() => audioInputRef.current?.click()}
-                            className="px-5 py-2.5 rounded-full bg-purple-600 hover:bg-purple-500 text-white text-xs font-black uppercase tracking-wider transition-all shadow-lg shadow-purple-500/20"
+                            className="px-5 py-2.5 rounded-full bg-green-600 hover:bg-green-500 text-white text-xs font-black uppercase tracking-wider transition-all shadow-lg shadow-green-500/20"
                         >
                             Select Audio File
                         </button>
@@ -395,7 +458,7 @@ export function StoryboardTimeline() {
                                     {/* Waveform Beat Segment Indicator */}
                                     <div className="px-4 py-2.5 bg-black/40 border-b border-white/5 flex items-center justify-between shrink-0 font-mono">
                                         <div className="flex items-center gap-1.5">
-                                            <span className="text-[10px] font-black text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded border border-purple-500/20">
+                                            <span className="text-[10px] font-black text-green-400 bg-green-500/10 px-2 py-0.5 rounded border border-green-500/20">
                                                 BAR {slot.startBar + 1}-{slot.startBar + slot.durationBars}
                                             </span>
                                         </div>
@@ -408,14 +471,7 @@ export function StoryboardTimeline() {
                                     <div className="flex-1 bg-black/50 relative overflow-hidden flex items-center justify-center select-none group">
                                         {slot.videoUrl ? (
                                             <div className="w-full h-full relative">
-                                                <video
-                                                    src={slot.videoUrl}
-                                                    className="w-full h-full object-cover"
-                                                    muted
-                                                    loop
-                                                    playsInline
-                                                    autoPlay
-                                                />
+                                                <StoryboardClipPreview videoUrl={slot.videoUrl} />
                                                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                                                     <button
                                                         onClick={() => updateStoryboardSlot(slot.id, { videoUrl: undefined })}
@@ -429,17 +485,17 @@ export function StoryboardTimeline() {
                                         ) : slot.isGenerating ? (
                                             <div className="text-center space-y-3 px-4">
                                                 <div className="relative w-14 h-14 mx-auto flex items-center justify-center">
-                                                    <div className="absolute inset-0 border-4 border-purple-500/20 border-t-purple-500 rounded-full animate-spin" />
-                                                    <Cpu size={18} className="text-purple-400 animate-pulse" />
+                                                    <div className="absolute inset-0 border-4 border-green-500/20 border-t-purple-500 rounded-full animate-spin" />
+                                                    <Cpu size={18} className="text-green-400 animate-pulse" />
                                                 </div>
                                                 <div className="space-y-1">
-                                                    <p className="text-[10px] font-black uppercase tracking-wider text-purple-300">Veo 3.1 generating...</p>
+                                                    <p className="text-[10px] font-black uppercase tracking-wider text-green-300">Veo 3.1 generating...</p>
                                                     <p className="text-[9px] text-neutral-500 font-mono">{slot.progress}%</p>
                                                 </div>
                                             </div>
                                         ) : (
                                             <div className="text-center p-6 space-y-2 pointer-events-none select-none">
-                                                <Layers size={24} className="text-neutral-600 mx-auto group-hover:text-purple-400 transition-colors duration-300" />
+                                                <Layers size={24} className="text-neutral-600 mx-auto group-hover:text-green-400 transition-colors duration-300" />
                                                 <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">
                                                     Drag visual asset here
                                                 </p>
@@ -462,7 +518,7 @@ export function StoryboardTimeline() {
                                     <div className="p-4 bg-[#0e1117]/80 border-t border-white/5 space-y-3 shrink-0 flex flex-col justify-between">
                                         <div className="space-y-2">
                                             <textarea
-                                                className="w-full bg-black/40 border border-white/5 rounded-xl px-3 py-2 text-[11px] text-gray-200 placeholder-neutral-600 focus:outline-none focus:border-purple-500/40 resize-none h-16 transition-colors"
+                                                className="w-full bg-black/40 border border-white/5 rounded-xl px-3 py-2 text-[11px] text-gray-200 placeholder-neutral-600 focus:outline-none focus:border-green-500/40 resize-none h-16 transition-colors"
                                                 placeholder="Describe scene visual prompt details..."
                                                 value={slot.prompt}
                                                 onChange={(e) => updateStoryboardSlot(slot.id, { prompt: e.target.value })}
@@ -470,19 +526,6 @@ export function StoryboardTimeline() {
 
                                             {/* Control Toggles */}
                                             <div className="flex items-center justify-between gap-2 pt-1 border-t border-white/5 text-[9px]">
-                                                {/* Vocal Conditioning Isolator */}
-                                                <button
-                                                    onClick={() => updateStoryboardSlot(slot.id, { useVocalSync: !slot.useVocalSync })}
-                                                    className={`flex items-center gap-1 px-2.5 py-1 rounded border font-bold uppercase tracking-wider transition-colors ${
-                                                        slot.useVocalSync 
-                                                            ? 'bg-purple-600/10 border-purple-500/30 text-purple-400' 
-                                                            : 'bg-black/30 border-white/5 text-neutral-500 hover:text-neutral-300'
-                                                    }`}
-                                                >
-                                                    <Volume2 size={10} />
-                                                    🎙️ Sync vocals
-                                                </button>
-
                                                 {/* Daisy-Chain Continuity Checkbox */}
                                                 <button
                                                     onClick={() => updateStoryboardSlot(slot.id, { useDaisyChain: !slot.useDaisyChain })}
@@ -502,9 +545,9 @@ export function StoryboardTimeline() {
                                         <button
                                             disabled={slot.isGenerating}
                                             onClick={() => renderSlotVideo(slot, index)}
-                                            className="w-full flex items-center justify-center gap-2.5 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 disabled:bg-purple-800/40 disabled:text-neutral-500 text-xs font-bold uppercase tracking-widest transition-all mt-1"
+                                            className="w-full flex items-center justify-center gap-2.5 py-2 rounded-xl bg-green-600 hover:bg-green-500 disabled:bg-green-800/40 disabled:text-neutral-500 text-xs font-bold uppercase tracking-widest transition-all mt-1"
                                         >
-                                            <CloudLightning size={12} className="text-purple-300 animate-pulse" />
+                                            <CloudLightning size={12} className="text-green-300 animate-pulse" />
                                             {slot.videoUrl ? 'Re-render Block' : 'Render Segment'}
                                         </button>
                                     </div>

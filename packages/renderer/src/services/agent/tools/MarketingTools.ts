@@ -10,6 +10,7 @@ import { zodToJsonSchema } from 'zod-to-json-schema';
 import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
 import type { AnyToolFunction } from '../types';
 import { logger } from '@/utils/logger';
+import { importWithRetry } from '@/utils/dynamicImport';
 
 /** Typed Electron IPC bridge for marketing tools */
 interface ElectronMarketingBridge {
@@ -67,8 +68,10 @@ const parseDurationDays = (value?: string): number => {
 const toSupportedPlatform = (channel: string): ScheduledPost['platform'] => {
     const normalized = channel.toLowerCase();
     if (normalized.includes('instagram')) return 'Instagram';
-    if (normalized.includes('linkedin')) return 'LinkedIn';
-    if (normalized.includes('email') || normalized.includes('newsletter')) return 'Email';
+    // LinkedIn and Email are draft-only (not supported for native delivery)
+    if (normalized.includes('linkedin') || normalized.includes('email') || normalized.includes('newsletter')) {
+        return 'Twitter'; // Default to Twitter for draft-only channels
+    }
     return 'Twitter';
 };
 
@@ -89,6 +92,12 @@ export const MarketingTools = {
         const parsed = CreateCampaignBriefSchema.parse(data);
 
         // AUTO-PERSIST: Save the generated brief to the database
+        // ISSUE-835: this used to catch-and-log a persistence failure, then
+        // ALWAYS report "saved to Marketing Dashboard" regardless of whether
+        // it actually was. campaignId is now only present when the write
+        // really succeeded, and the response honestly reflects that.
+        let campaignId: string | undefined;
+        let persistErrorMessage: string | undefined;
         try {
             const durationDays = parseDurationDays(duration);
             const startDate = new Date().toISOString().split('T')[0]!;
@@ -107,7 +116,7 @@ export const MarketingTools = {
                 status: CampaignStatus.PENDING,
             }));
 
-            await MarketingService.createCampaign({
+            campaignId = await MarketingService.createCampaign({
                 assetType: 'campaign',
                 title: parsed.campaignName,
                 description: `${goal} Target audience: ${parsed.targetAudience}. KPIs: ${parsed.kpis.join(', ') || 'TBD'}.`,
@@ -120,10 +129,21 @@ export const MarketingTools = {
             });
             logger.info(`[MarketingTools] Campaign brief persisted: ${parsed.campaignName}`);
         } catch (persistError: unknown) {
+            persistErrorMessage = persistError instanceof Error ? persistError.message : String(persistError);
             logger.warn('[MarketingTools] Persistence failed:', persistError);
         }
 
-        return toolSuccess(parsed, `Campaign brief created for ${parsed.campaignName} and saved to Marketing Dashboard.`);
+        if (campaignId) {
+            return toolSuccess(
+                { ...parsed, campaignId, saved: true },
+                `Campaign brief created for ${parsed.campaignName} and saved to Marketing Dashboard (ID: ${campaignId}).`
+            );
+        }
+
+        return toolSuccess(
+            { ...parsed, saved: false },
+            `Campaign brief generated for ${parsed.campaignName}, but it was NOT saved to the Marketing Dashboard: ${persistErrorMessage}. This brief exists only in this response.`
+        );
     }),
 
     analyze_audience: wrapTool('analyze_audience', async ({ genre, similar_artists }: { genre: string; similar_artists?: string[] }) => {
@@ -168,18 +188,21 @@ export const MarketingTools = {
 
         schedule.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
+        // ISSUE-835: this schedule is generated in-memory only — nothing is
+        // persisted or queued for delivery. "scheduled" implied posts would
+        // actually go out; "draft_generated" is the honest state.
         return toolSuccess({
-            status: "scheduled",
+            status: "draft_generated",
             count: schedule.length,
             schedule: schedule,
             nextPost: schedule.length > 0 ? schedule[0]!.date : "None"
-        }, `Content schedule generated with ${schedule.length} posts across ${platforms.join(', ')}.`);
+        }, `Draft content schedule generated with ${schedule.length} posts across ${platforms.join(', ')}. This is a plan only — no posts have been saved or queued for delivery.`);
     }),
 
     track_performance: wrapTool('track_performance', async ({ campaignId }: { campaignId: string }) => {
         try {
-            const { auth, db } = await import('@/services/firebase');
-            const { doc, getDoc } = await import('firebase/firestore');
+            const { auth, db } = await importWithRetry(() => import('@/services/firebase'));
+            const { doc, getDoc } = await importWithRetry(() => import('firebase/firestore'));
             const uid = auth.currentUser?.uid;
 
             const refs = [
@@ -208,7 +231,7 @@ export const MarketingTools = {
     }),
 
     generate_campaign_from_audio: wrapTool('generate_campaign_from_audio', async ({ uploadedAudioIndex }: { uploadedAudioIndex: number }) => {
-        const { useStore } = await import('@/core/store');
+        const { useStore } = await importWithRetry(() => import('@/core/store'));
         const { uploadedAudio } = useStore.getState();
         const audioItem = uploadedAudio[uploadedAudioIndex];
 
@@ -279,10 +302,11 @@ export const MarketingTools = {
             channels,
             variants,
             pixel_framework: {
-                status: 'configured',
-                events_tracked: ['ViewContent', 'AddToCart', 'Purchase']
+                status: 'draft_pixel_plan',
+                events_tracked: ['ViewContent', 'AddToCart', 'Purchase'],
+                requires_setup: ['provider_pixel_id', 'installed_tracking_code', 'verified_event_receipt', 'connected_ad_account']
             }
-        }, `A/B testing campaign created for ${product} with 3 copy variants and tracking pixel initialized.`);
+        }, `A/B testing campaign draft created for ${product} with 3 copy variants. Tracking pixel requires provider setup: need pixel ID, install code, verified events, and connected ad account.`);
     }),
 
     generate_ab_campaign: wrapTool('generate_ab_campaign', async (args: { productName: string; targetAudience: string; platform: 'Meta' | 'TikTok' | 'YouTube' }) => {
@@ -425,41 +449,48 @@ export const MarketingTools = {
         }, `Influencer bounty draft generated for ${args.trackTitle}.`);
     }),
 
+    // ISSUE-848: this used to silently swallow both "no user signed in" and
+    // a real Firestore read failure into the same all-zero success result,
+    // making them indistinguishable from a genuinely empty CRM.
     tier_superfans: wrapTool('tier_superfans', async (args: { minSpendForVIP: number; minSpendForSuperfan: number }) => {
-        // Superfan CRM Tiering — reads real fan purchase records from Firestore
-        const results = { Standard: 0, VIP: 0, Superfan: 0 };
-
-        try {
-            const { db, auth } = await import('@/services/firebase');
-            const { collection, getDocs } = await import('firebase/firestore');
-
-            const uid = auth.currentUser?.uid;
-            if (uid) {
-                // Aggregate spend per fan from purchase records
-                const purchasesSnap = await getDocs(
-                    collection(db, 'users', uid, 'fanPurchases')
-                );
-
-                const fanSpend: Record<string, number> = {};
-                purchasesSnap.forEach(doc => {
-                    const data = doc.data();
-                    const fanId = data.fanId as string;
-                    if (fanId) {
-                        fanSpend[fanId] = (fanSpend[fanId] || 0) + (Number(data.amount) || 0);
-                    }
-                });
-
-                Object.values(fanSpend).forEach(spend => {
-                    if (spend >= args.minSpendForSuperfan) results.Superfan++;
-                    else if (spend >= args.minSpendForVIP) results.VIP++;
-                    else results.Standard++;
-                });
-            }
-        } catch (err: unknown) {
-            logger.warn('[MarketingTools] tier_superfans Firestore read failed:', err);
+        const { db, auth } = await importWithRetry(() => import('@/services/firebase'));
+        const uid = auth.currentUser?.uid;
+        if (!uid) {
+            return toolError('No user is signed in. Fan CRM tiering requires an authenticated user.', 'AUTH_REQUIRED');
         }
 
+        const { collection, getDocs } = await importWithRetry(() => import('firebase/firestore'));
+
+        let purchasesSnap;
+        try {
+            purchasesSnap = await getDocs(collection(db, 'users', uid, 'fanPurchases'));
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : String(err);
+            logger.warn('[MarketingTools] tier_superfans Firestore read failed:', err);
+            return toolError(`Could not read fan purchase records: ${message}`, 'FAN_PURCHASES_UNAVAILABLE');
+        }
+
+        const results = { Standard: 0, VIP: 0, Superfan: 0 };
+        const fanSpend: Record<string, number> = {};
+        purchasesSnap.forEach(doc => {
+            const data = doc.data();
+            const fanId = data.fanId as string;
+            if (fanId) {
+                fanSpend[fanId] = (fanSpend[fanId] || 0) + (Number(data.amount) || 0);
+            }
+        });
+
+        Object.values(fanSpend).forEach(spend => {
+            if (spend >= args.minSpendForSuperfan) results.Superfan++;
+            else if (spend >= args.minSpendForVIP) results.VIP++;
+            else results.Standard++;
+        });
+
         const total = results.Standard + results.VIP + results.Superfan;
+        const message = total === 0
+            ? 'Fan CRM tiered: no purchase records found for this account.'
+            : `Fan CRM tiered (${total} fans): ${results.Superfan} Superfans, ${results.VIP} VIPs, ${results.Standard} Standard.`;
+
         return toolSuccess({
             tiers: results,
             thresholds: {
@@ -467,7 +498,9 @@ export const MarketingTools = {
                 superfan: args.minSpendForSuperfan,
             },
             totalFans: total,
-        }, `Fan CRM tiered (${total} fans): ${results.Superfan} Superfans, ${results.VIP} VIPs, ${results.Standard} Standard.`);
+            source: 'fanPurchases',
+            recordsRead: purchasesSnap.size,
+        }, message);
     }),
 
     track_post_release_momentum: wrapTool('track_post_release_momentum', async (args: { trackId: string; adSpend: number; organicStreams: number; dsp: string }) => {
@@ -483,6 +516,25 @@ export const MarketingTools = {
             estimatedRoiMultiplier: Number(roi.toFixed(2)),
             trend: momentumScore > 50 ? 'Accelerating' : 'Decelerating'
         }, `Post-release momentum tracked for ${args.trackId} on ${args.dsp}. Momentum Score: ${Math.round(momentumScore)}/100. Trend: ${momentumScore > 50 ? 'Accelerating' : 'Decelerating'}.`);
+    }),
+
+    generate_ad_copy: wrapTool('generate_ad_copy', async (args: { productName: string; targetAudience: string; tone?: string; platform: string }) => {
+        const tone = args.tone || 'engaging';
+        return toolSuccess({
+            copy: `Discover ${args.productName}. Tailored for ${args.targetAudience} with a ${tone} vibe on ${args.platform}.`,
+            hashtags: ['#' + args.productName.replace(/\s+/g, ''), '#music', '#newrelease'],
+            callToAction: 'Listen Now'
+        }, `Ad copy generated for ${args.productName} on ${args.platform}.`);
+    }),
+
+    analyze_campaign_roi: wrapTool('analyze_campaign_roi', async (args: { campaignId: string; totalSpend: number; totalRevenue: number }) => {
+        const roiPercentage = args.totalSpend > 0 ? ((args.totalRevenue - args.totalSpend) / args.totalSpend) * 100 : 0;
+        return toolSuccess({
+            campaignId: args.campaignId,
+            roiPercentage: Number(roiPercentage.toFixed(2)),
+            profitable: roiPercentage > 0,
+            summary: `Campaign ${args.campaignId} yielded a ${roiPercentage.toFixed(2)}% ROI.`
+        }, `ROI analyzed for campaign ${args.campaignId}.`);
     })
 } satisfies Record<string, AnyToolFunction>;
 
@@ -496,5 +548,7 @@ export const {
     analyze_market_trends,
     create_ab_test_campaign,
     tier_superfans,
-    track_post_release_momentum
+    track_post_release_momentum,
+    generate_ad_copy,
+    analyze_campaign_roi
 } = MarketingTools;

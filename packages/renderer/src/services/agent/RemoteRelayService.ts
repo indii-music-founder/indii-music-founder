@@ -24,7 +24,6 @@ import {
     collection,
     doc,
     addDoc,
-    setDoc,
     updateDoc,
     onSnapshot,
     query,
@@ -34,13 +33,17 @@ import {
     serverTimestamp,
     deleteDoc,
     getDocs,
+    runTransaction,
     Timestamp,
     type Unsubscribe,
+    type WithFieldValue,
 } from 'firebase/firestore';
 import { db, auth } from '@/services/firebase';
 import { logger } from '@/utils/logger';
 import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
 import { getRealAuthenticatedUserId } from '@/utils/authGuards';
+import type { RemoteMobilePayload } from '@/types/electron';
+
 
 // ---------------------------------------------------------------------------
 // Types
@@ -51,8 +54,18 @@ export interface RemoteCommand {
     text: string;
     targetAgentId?: string;
     metadata?: Record<string, unknown>;
+    /**
+     * The sole executor allowed to claim this command. Keeping this on the
+     * durable command record prevents the Studio listener and Cloud Function
+     * from racing to claim the same pending request.
+     */
+    executionTarget?: RemoteExecutionTarget;
     timestamp: Timestamp | ReturnType<typeof serverTimestamp>;
-    status: 'pending' | 'processing' | 'completed';
+    // 'cancelled' (ISSUE-989): the phone gave up (timeout/unmount) before the
+    // desktop claimed the command — the atomic claim precondition in
+    // processSingleCommand() only matches 'pending', so a cancelled command
+    // can never be picked up by a later backlog scan/recovery.
+    status: 'pending' | 'processing' | 'completed' | 'cancelled';
     createdAt: Timestamp | ReturnType<typeof serverTimestamp>;
 }
 
@@ -65,6 +78,29 @@ export interface RemoteResponse {
     isFinal?: boolean;
     timestamp: Timestamp | ReturnType<typeof serverTimestamp>;
     isStreaming: boolean;
+    boardroomMessageId?: string;
+    rating?: number;
+}
+
+/** One transport-neutral response contract. Optional keys are omitted, never undefined. */
+export function serializeRemoteResponse(input: {
+    commandId: string;
+    text: string;
+    agentId?: string;
+    isStreaming?: boolean;
+    imageUrls?: string[];
+    boardroomMessageId?: string;
+}): Omit<RemoteResponse, 'timestamp'> {
+    const isStreaming = input.isStreaming === true;
+    return {
+        commandId: input.commandId,
+        text: input.text,
+        isStreaming,
+        isFinal: !isStreaming,
+        ...(input.agentId ? { agentId: input.agentId } : {}),
+        ...(input.imageUrls?.length ? { imageUrls: input.imageUrls } : {}),
+        ...(input.boardroomMessageId ? { boardroomMessageId: input.boardroomMessageId } : {}),
+    };
 }
 
 export interface DesktopState {
@@ -73,11 +109,105 @@ export interface DesktopState {
     activeSessionId: string;
     timestamp: Timestamp | ReturnType<typeof serverTimestamp>;
     online: boolean;
+    /** Presence must come from a Studio executor, never the Controller. */
+    role?: 'studio';
+    /** Per-running-Studio identity, used to distinguish a live executor lease. */
+    studioInstanceId?: string;
+    /** The Studio has mounted its queue consumer and may safely accept work. */
+    listenerReady?: boolean;
+    executorDeviceId?: string;
+    /** Public compatibility marker; executor credentials are never projected here. */
+    protocolVersion?: number;
+    /**
+     * True when the desktop is in sleep mode (window hidden to tray, still
+     * listening to the relay queue). Lets the phone show Sleeping vs Active vs
+     * Offline. Absent/false in the web/PWA build (no Electron tray).
+     */
+    sleepMode?: boolean;
+    /** Populated locally by onSnapshot to decouple freshness from server clock skew. */
+    _localReceivedAtMs?: number;
+}
+
+export type RemoteExecutionTarget = 'cloud' | 'studio';
+
+const LEGACY_STUDIO_COMMAND_PREFIXES = [
+    '[GENERATE_IMAGE]',
+    '[SHOW]',
+    '[WAKE]',
+    '[NAVIGATE]',
+    '[AGENT_ACTION]',
+    '[DAW_CONTROL]',
+    '[MEDIA_PLAYBACK]',
+    '[RAW]',
+] as const;
+
+/**
+ * Legacy commands did not record their executor. Preserve those established
+ * Studio controls while making all unmarked text cloud-owned. New callers
+ * always persist the target, so this fallback is only for already-queued docs.
+ */
+export function resolveRemoteCommandExecutionTarget(
+    command: Pick<RemoteCommand, 'text' | 'executionTarget'>
+): RemoteExecutionTarget {
+    if (command.executionTarget === 'studio' || command.executionTarget === 'cloud') {
+        return command.executionTarget;
+    }
+
+    const text = command.text.trim();
+    return LEGACY_STUDIO_COMMAND_PREFIXES.some(prefix => text.startsWith(prefix))
+        ? 'studio'
+        : 'cloud';
+}
+
+export interface AgentDispatchTask {
+    id?: string;
+    type: 'voice_memo' | 'quick_contact' | 'receipt_log' | 'agent_command' | 'live_moment' | 'media_capture' | 'document_scan' | 'venue_log';
+    payload: {
+        audioUrl?: string;
+        videoUrl?: string;
+        transcription?: string;
+        imageUrl?: string;
+        amount?: number;
+        commandText?: string;
+        noteText?: string;
+        lat?: number;
+        lng?: number;
+        accuracyMeters?: number;
+        capturedAt?: string;
+    };
+    status: 'pending' | 'processing' | 'completed' | 'failed';
+    executorId?: string;
+    createdAt: Timestamp | ReturnType<typeof serverTimestamp>;
+    pickedUpAt?: Timestamp | ReturnType<typeof serverTimestamp>;
+    completedAt?: Timestamp | ReturnType<typeof serverTimestamp>;
+    error?: {
+        code: string;
+        message: string;
+    };
+    /**
+     * ISSUE-983: the durable receipt proving a note/attachment was actually
+     * created — populated only when the desktop executor calls the Notes
+     * tool directly and gets a real ID back, never inferred from an agent
+     * chat reply.
+     */
+    result?: {
+        noteId?: string;
+        assetUrl?: string;
+    };
 }
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
+
+function isRemoteMobileMessage(payload: unknown): payload is RemoteMobilePayload {
+    if (!payload || typeof payload !== 'object') return false;
+    const message = payload as Record<string, unknown>;
+    if (typeof message.type !== 'string') return false;
+    if (message.command === undefined) return true;
+    if (!message.command || typeof message.command !== 'object') return false;
+    return typeof (message.command as Record<string, unknown>).text === 'string';
+}
 
 function getUserId(): string | null {
     return getRealAuthenticatedUserId(auth.currentUser);
@@ -104,6 +234,13 @@ function getResponsesRef() {
     return collection(db, 'users', uid, 'remote-relay-responses');
 }
 
+function getDispatchQueueRef() {
+    if (isFirebaseE2EMockEnabled()) return null;
+    const uid = getUserId();
+    if (!uid) return null;
+    return collection(db, 'users', uid, 'agent_dispatch_queue');
+}
+
 // ---------------------------------------------------------------------------
 // Feed scoping
 // ---------------------------------------------------------------------------
@@ -120,7 +257,15 @@ function getResponsesRef() {
  */
 const FEED_PAGE_SIZE = 50;
 const FEED_RECENCY_HOURS = 24;
-export const DESKTOP_HEARTBEAT_STALE_MS = 15_000;
+const LOCAL_P2P_PASSCODE_KEY = 'indii_p2p_passcode';
+// Background browser tabs throttle setTimeout/setInterval to ~once per minute, so the
+// desktop's 5s heartbeat loop collapses to ~60s whenever the studio tab is not focused
+// (the common case while driving from a phone). A 15s window made the phone flap between
+// connected/reconnecting and eventually unpair. Tolerate throttled beats so the
+// pairing holds while the desktop is backgrounded; a genuinely closed desktop is
+// still detected within 120s.
+export const DESKTOP_HEARTBEAT_STALE_MS = 120_000;
+export const DESKTOP_HEARTBEAT_CLOCK_SKEW_TOLERANCE_MS = 30_000;
 
 function getFeedRecencyCutoff(): Timestamp {
     return Timestamp.fromMillis(Date.now() - FEED_RECENCY_HOURS * 60 * 60 * 1000);
@@ -134,10 +279,28 @@ function getFeedRecencyCutoff(): Timestamp {
 export function relayTimestampToMillis(ts: Timestamp | ReturnType<typeof serverTimestamp> | number | undefined): number {
     if (typeof ts === 'number') return ts;
     if (!ts) return 0;
-    if (ts instanceof Timestamp) return ts.toMillis();
-    // Defensive: handle a plain { toMillis } shape or unresolved sentinel.
+    // Defensive: handle a plain { toMillis } shape or unresolved sentinel, bypassing instanceof Timestamp issues in tests.
     const maybe = ts as { toMillis?: () => number };
     return typeof maybe?.toMillis === 'function' ? maybe.toMillis() : 0;
+}
+
+export function isPrivateIP(hostname: string): boolean {
+    if (hostname === 'localhost' || hostname === '127.0.0.1') return true;
+
+    // Class A: 10.X.X.X
+    if (hostname.startsWith('10.')) return true;
+
+    // Class C: 192.168.X.X
+    if (hostname.startsWith('192.168.')) return true;
+
+    // Class B: 172.16.X.X to 172.31.X.X
+    const parts = hostname.split('.');
+    if (parts.length === 4 && parts[0] === '172') {
+        const second = parseInt(parts[1], 10);
+        if (second >= 16 && second <= 31) return true;
+    }
+
+    return false;
 }
 
 export function isFreshDesktopState(
@@ -146,8 +309,82 @@ export function isFreshDesktopState(
     staleMs = DESKTOP_HEARTBEAT_STALE_MS
 ): boolean {
     if (!state?.online) return false;
+    
+    // If we have a local receipt timestamp, use it directly to avoid clock skew entirely
+    if (state._localReceivedAtMs) {
+        return now - state._localReceivedAtMs <= staleMs;
+    }
+
     const timestamp = relayTimestampToMillis(state.timestamp);
-    return timestamp > 0 && now - timestamp <= staleMs;
+    if (timestamp === 0) return false;
+    
+    // Fallback: Account for local clock skew between phone and server.
+    return Math.abs(now - timestamp) <= staleMs + DESKTOP_HEARTBEAT_CLOCK_SKEW_TOLERANCE_MS;
+}
+
+/**
+ * A generic fresh state document is not enough to call a Controller connected:
+ * older Controller builds could write the same document themselves. Only a
+ * current Studio executor lease proves that Studio work can be dispatched.
+ */
+export function isFreshStudioState(
+    state: DesktopState | null | undefined,
+    now = Date.now(),
+    staleMs = DESKTOP_HEARTBEAT_STALE_MS
+): boolean {
+    return isFreshDesktopState(state, now, staleMs)
+        && state?.role === 'studio'
+        && typeof state.studioInstanceId === 'string'
+        && state.studioInstanceId.length > 0
+        && state.listenerReady === true;
+}
+
+/**
+ * How long the current Studio lease can still be treated as fresh on this
+ * device. MobileRemote uses the same boundary as isFreshStudioState so its
+ * timeout cannot fire early, briefly recover inside the skew allowance, and
+ * then forget to schedule the real stale transition.
+ */
+export function studioStateFreshnessRemainingMs(
+    state: DesktopState | null | undefined,
+    now = Date.now(),
+    staleMs = DESKTOP_HEARTBEAT_STALE_MS
+): number {
+    if (!isFreshStudioState(state, now, staleMs)) return 0;
+    
+    if (state?._localReceivedAtMs) {
+        return Math.max(0, state._localReceivedAtMs + staleMs - now);
+    }
+    
+    const timestamp = relayTimestampToMillis(state?.timestamp);
+    return Math.max(
+        0,
+        timestamp + staleMs + DESKTOP_HEARTBEAT_CLOCK_SKEW_TOLERANCE_MS - now
+    );
+}
+
+export function cacheRemotePairingToken(token: string | null | undefined): string | null {
+    const normalized = token?.trim();
+    if (!normalized) return null;
+
+    try {
+        localStorage.setItem(LOCAL_P2P_PASSCODE_KEY, normalized);
+    } catch (error) {
+        logger.debug('[RemoteRelay] Unable to cache local P2P passcode:', error);
+    }
+
+    return normalized;
+}
+
+export function getCachedRemotePairingToken(search = typeof window !== 'undefined' ? window.location.search : ''): string | null {
+    const urlToken = cacheRemotePairingToken(new URLSearchParams(search).get('passcode'));
+    if (urlToken) return urlToken;
+
+    try {
+        return localStorage.getItem(LOCAL_P2P_PASSCODE_KEY);
+    } catch {
+        return null;
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -155,6 +392,82 @@ export function isFreshDesktopState(
 // ---------------------------------------------------------------------------
 
 class RemoteRelayService {
+    private localWs: WebSocket | null = null;
+    private localMessageCallbacks: Map<string, (data: RemoteResponse) => void> = new Map();
+    private localStateCallbacks = new Set<(state: DesktopState | null) => void>();
+    private wsRetryCount = 0;
+
+    constructor() {
+        if (typeof process !== 'undefined' && process.env.VITEST) {
+            return;
+        }
+        if (typeof window !== 'undefined' && typeof WebSocket !== 'undefined') {
+            const isLocalServer = window.location.port === '3333' || isPrivateIP(window.location.hostname);
+            if (isLocalServer) {
+                this.initLocalWebSocket();
+            }
+        }
+    }
+
+    private initLocalWebSocket() {
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsUrl = `${protocol}//${window.location.host}`;
+        logger.info(`[RemoteRelay] Connecting local P2P WebSocket to ${wsUrl}`);
+        
+        try {
+            const ws = new WebSocket(wsUrl);
+            ws.onopen = () => {
+                logger.info('[RemoteRelay] Local P2P WebSocket connected');
+                this.localWs = ws;
+                this.wsRetryCount = 0; // reset on success
+                const passcode = getCachedRemotePairingToken();
+                if (passcode) {
+                    ws.send(JSON.stringify({ type: 'auth', token: passcode }));
+                }
+            };
+            ws.onmessage = (event) => {
+                try {
+                    const parsed = JSON.parse(event.data);
+                    if (parsed.type === 'response' && parsed.response) {
+                        const callback = this.localMessageCallbacks.get(parsed.response.commandId);
+                        if (callback) {
+                            callback({
+                                ...parsed.response,
+                                timestamp: Timestamp.fromMillis(parsed.response.timestamp)
+                            });
+                        }
+                    } else if (parsed.type === 'sync' && parsed.payload) {
+                        for (const callback of this.localStateCallbacks) {
+                            callback({
+                                ...parsed.payload,
+                                timestamp: Timestamp.now()
+                            });
+                        }
+                    }
+                } catch (err) {
+                    logger.error('[RemoteRelay] P2P message parse error', err);
+                }
+            };
+            ws.onclose = (event) => {
+                this.localWs = null;
+                if (event.code === 4001) {
+                    logger.warn('[RemoteRelay] Local P2P WebSocket authentication failed (code 4001). Will not retry.');
+                    return;
+                }
+                const delay = Math.min(1000 * Math.pow(2, this.wsRetryCount), 30000);
+                this.wsRetryCount++;
+                logger.info(`[RemoteRelay] Local P2P WebSocket closed. Code: ${event.code}. Retrying in ${delay}ms...`);
+                setTimeout(() => this.initLocalWebSocket(), delay);
+            };
+        } catch (err) {
+            logger.error('[RemoteRelay] Local P2P WebSocket creation failed', err);
+            const delay = Math.min(1000 * Math.pow(2, this.wsRetryCount), 30000);
+            this.wsRetryCount++;
+            logger.info(`[RemoteRelay] Scheduling retry in ${delay}ms after constructor error.`);
+            setTimeout(() => this.initLocalWebSocket(), delay);
+        }
+    }
+
     // -----------------------------------------------------------------------
     // PHONE SIDE
     // -----------------------------------------------------------------------
@@ -162,7 +475,32 @@ class RemoteRelayService {
     /**
      * Send a command from the phone. Returns the command document ID.
      */
-    async sendCommand(text: string, targetAgentId?: string, metadata?: Record<string, unknown>): Promise<string | null> {
+    async sendCommand(
+        text: string,
+        targetAgentId?: string,
+        metadata?: Record<string, unknown>,
+        executionTarget?: RemoteExecutionTarget
+    ): Promise<string | null> {
+        const resolvedExecutionTarget = executionTarget ?? resolveRemoteCommandExecutionTarget({ text });
+        // P2P WebSocket send path
+        if (this.localWs && this.localWs.readyState === 1 /* OPEN */) {
+            const commandId = `p2p-${Math.random().toString(36).substring(2)}`;
+            const payload = {
+                type: 'command',
+                command: {
+                    id: commandId,
+                    text,
+                    targetAgentId,
+                    metadata,
+                    executionTarget: resolvedExecutionTarget,
+                },
+                ts: Date.now()
+            };
+            this.localWs.send(JSON.stringify(payload));
+            logger.info(`[RemoteRelay] 📱 Local P2P Command sent via WebSocket: ${commandId}`);
+            return commandId;
+        }
+
         const ref = getCommandsRef();
         if (!ref) {
             logger.warn('[RemoteRelay] No auth — cannot send command');
@@ -176,11 +514,67 @@ class RemoteRelayService {
             createdAt: serverTimestamp(),
             ...(targetAgentId ? { targetAgentId } : {}),
             ...(metadata ? { metadata } : {}),
+            executionTarget: resolvedExecutionTarget,
         };
 
         const docRef = await addDoc(ref, command);
         logger.info(`[RemoteRelay] 📱 Command sent: ${docRef.id} → agent: ${targetAgentId || 'auto'}`);
         return docRef.id;
+    }
+
+    /**
+     * Dispatch a generic task to the desktop executor (Mobile side).
+     *
+     * ISSUE-982: callers (QuickCaptureView) treat a resolved promise as success
+     * and clear the user's only local copy of the note/media. Silently
+     * returning null on missing auth let that happen invisibly. Auth failure
+     * must throw so it lands in the caller's existing try/catch instead.
+     */
+    async dispatchTask(task: Omit<AgentDispatchTask, 'id' | 'status' | 'createdAt'>): Promise<string> {
+        if (isFirebaseE2EMockEnabled()) {
+            return `e2e-dispatch-${Date.now()}`;
+        }
+
+        const ref = getDispatchQueueRef();
+        if (!ref) {
+            throw new Error('Not authenticated — cannot dispatch task');
+        }
+
+        const dispatchDoc: AgentDispatchTask = {
+            ...task,
+            status: 'pending',
+            createdAt: serverTimestamp(),
+        };
+
+        const docRef = await addDoc(ref, dispatchDoc);
+        logger.info(`[RemoteRelay] 📱 Dispatch task sent: ${docRef.id} [${task.type}]`);
+        return docRef.id;
+    }
+
+    /**
+     * Listen for all dispatch tasks for this user (Mobile side - to see status of tasks).
+     */
+    onAllDispatchTasks(callback: (tasks: (AgentDispatchTask & { id: string })[]) => void): Unsubscribe {
+        const ref = getDispatchQueueRef();
+        if (!ref) return () => { };
+
+        // Order by createdAt descending
+        const q = query(
+            ref,
+            orderBy('createdAt', 'desc'),
+            limit(50)
+        );
+
+        return onSnapshot(q, (snapshot) => {
+            const tasks: (AgentDispatchTask & { id: string })[] = [];
+            snapshot.forEach((doc) => {
+                const data = doc.data() as AgentDispatchTask;
+                tasks.push({ ...data, id: doc.id });
+            });
+            callback(tasks);
+        }, (error) => {
+            logger.error('[RemoteRelay] onAllDispatchTasks listener error:', error);
+        });
     }
 
     /**
@@ -191,28 +585,33 @@ class RemoteRelayService {
         commandId: string,
         callback: (response: RemoteResponse) => void
     ): Unsubscribe {
+        let unsubFirestore: Unsubscribe = () => {};
         const ref = getResponsesRef();
-        if (!ref) {
-            logger.warn('[RemoteRelay] No auth — cannot listen for responses');
-            return () => { };
+        if (ref) {
+            const q = query(
+                ref,
+                where('commandId', '==', commandId)
+            );
+
+            unsubFirestore = onSnapshot(q, (snapshot) => {
+                snapshot.docChanges().forEach((change) => {
+                    if (change.type === 'added' || change.type === 'modified') {
+                        const data = change.doc.data() as RemoteResponse;
+                        data.id = change.doc.id;
+                        callback(data);
+                    }
+                });
+            }, (error) => {
+                logger.error('[RemoteRelay] Response listener error:', error);
+            });
         }
 
-        const q = query(
-            ref,
-            where('commandId', '==', commandId)
-        );
+        this.localMessageCallbacks.set(commandId, callback);
 
-        return onSnapshot(q, (snapshot) => {
-            snapshot.docChanges().forEach((change) => {
-                if (change.type === 'added' || change.type === 'modified') {
-                    const data = change.doc.data() as RemoteResponse;
-                    data.id = change.doc.id;
-                    callback(data);
-                }
-            });
-        }, (error) => {
-            logger.error('[RemoteRelay] Response listener error:', error);
-        });
+        return () => {
+            unsubFirestore();
+            this.localMessageCallbacks.delete(commandId);
+        };
     }
 
     /**
@@ -282,17 +681,33 @@ class RemoteRelayService {
     /**
      * Listen for desktop state changes (phone side).
      */
-    onDesktopState(callback: (state: DesktopState | null) => void): Unsubscribe {
+    onDesktopState(
+        callback: (state: DesktopState | null) => void,
+        onError?: (error: unknown) => void,
+    ): Unsubscribe {
+        let unsubFirestore: Unsubscribe = () => {};
         const ref = getRelayRef();
-        if (!ref) return () => { };
+        if (ref) {
+            unsubFirestore = onSnapshot(ref, (snapshot) => {
+                if (snapshot.exists()) {
+                    const data = snapshot.data({ serverTimestamps: 'estimate' }) as DesktopState;
+                    data._localReceivedAtMs = Date.now();
+                    callback(data);
+                } else {
+                    callback(null);
+                }
+            }, (error) => {
+                logger.error('[RemoteRelay] desktop state listener error:', error);
+                onError?.(error);
+            });
+        }
 
-        return onSnapshot(ref, (snapshot) => {
-            if (snapshot.exists()) {
-                callback(snapshot.data() as DesktopState);
-            } else {
-                callback(null);
-            }
-        });
+        this.localStateCallbacks.add(callback);
+
+        return () => {
+            unsubFirestore();
+            this.localStateCallbacks.delete(callback);
+        };
     }
 
     // -----------------------------------------------------------------------
@@ -306,35 +721,61 @@ class RemoteRelayService {
     onCommand(
         callback: (command: RemoteCommand & { id: string }) => void
     ): Unsubscribe {
+        let unsubFirestore: Unsubscribe = () => {};
         const ref = getCommandsRef();
         if (!ref) {
-            logger.warn('[RemoteRelay] No auth — cannot listen for commands');
-            return () => { };
+            logger.warn('[RemoteRelay] No Firestore auth — fallback to local WebSocket listener only');
+        } else {
+            logger.info('[RemoteRelay] 🖥️ Starting Firestore command listener...');
+            unsubFirestore = onSnapshot(ref, (snapshot) => {
+                snapshot.docChanges().forEach((change) => {
+                    if (change.type === 'added' || change.type === 'modified') {
+                        const data = change.doc.data() as RemoteCommand;
+                        if (data.status === 'pending') {
+                            logger.info(`[RemoteRelay] 📥 Pending command received: ${change.doc.id}`);
+                            callback({ ...data, id: change.doc.id });
+                        }
+                    }
+                });
+            }, (error) => {
+                logger.error('[RemoteRelay] Command listener error:', error);
+            });
         }
 
-        // Simple query — no compound index needed.
-        // Filter status=='pending' client-side to avoid missing composite index.
-        logger.info('[RemoteRelay] 🖥️ Starting command listener...');
-
-        return onSnapshot(ref, (snapshot) => {
-            snapshot.docChanges().forEach((change) => {
-                if (change.type === 'added' || change.type === 'modified') {
-                    const data = change.doc.data() as RemoteCommand;
-                    if (data.status === 'pending') {
-                        logger.info(`[RemoteRelay] 📥 Pending command received: ${change.doc.id}`);
-                        callback({ ...data, id: change.doc.id });
-                    }
+        // Local P2P WebSocket fallback listener
+        let localUnsub: (() => void) | null = null;
+        const api = window.electronAPI;
+        if (api?.remote?.onMessageFromMobile) {
+            logger.info('[RemoteRelay] 🖥️ Starting P2P Local WebSocket IPC listener...');
+            localUnsub = api.remote.onMessageFromMobile((payload: RemoteMobilePayload) => {
+                if (!isRemoteMobileMessage(payload)) return;
+                if (payload && payload.type === 'command' && payload.command) {
+                    logger.info(`[RemoteRelay] 📥 P2P Local command received over WebSocket: ${payload.command.text}`);
+                    callback({
+                        id: payload.command.id || `p2p-${Date.now()}`,
+                        text: payload.command.text,
+                        targetAgentId: payload.command.targetAgentId,
+                        metadata: payload.command.metadata,
+                        executionTarget: payload.command.executionTarget,
+                        timestamp: Timestamp.fromMillis(payload.ts || Date.now()),
+                        status: 'pending',
+                        createdAt: Timestamp.fromMillis(payload.ts || Date.now()),
+                    });
                 }
             });
-        }, (error) => {
-            logger.error('[RemoteRelay] Command listener error:', error);
-        });
+        }
+
+        return () => {
+            unsubFirestore();
+            if (localUnsub) localUnsub();
+        };
     }
 
     /**
      * Mark a command as processing (desktop side).
      */
     async markCommandProcessing(commandId: string): Promise<void> {
+        if (commandId.startsWith('p2p-')) return;
         const uid = getUserId();
         if (!uid) return;
         await updateDoc(doc(db, 'users', uid, 'remote-relay-commands', commandId), {
@@ -346,11 +787,161 @@ class RemoteRelayService {
      * Mark a command as completed (desktop side).
      */
     async markCommandCompleted(commandId: string): Promise<void> {
+        if (commandId.startsWith('p2p-')) return;
+        const { studioExecutorLeaseService } = await import('./StudioExecutorLeaseService');
+        await studioExecutorLeaseService.completeCommand(commandId);
+    }
+
+    /**
+     * Atomically cancel a command if the desktop hasn't claimed it yet
+     * (phone side — timeout or giving up on a request).
+     *
+     * ISSUE-989: a client-side generation timeout previously only detached
+     * the phone's listener; the Firestore command stayed 'pending' forever,
+     * so a desktop that came back online later (mount/recovery backlog scan)
+     * would still execute it — potentially alongside a brand-new retry
+     * command, paying for the same generation twice. Returns `true` when the
+     * command was genuinely cancelled before being claimed (no cost was
+     * incurred); `false` when the desktop already claimed it (work may still
+     * be in progress — cannot be cancelled for free) or it doesn't exist.
+     */
+    async cancelCommand(commandId: string): Promise<boolean> {
+        const uid = getUserId();
+        if (!uid) return false;
+
+        const ref = doc(db, 'users', uid, 'remote-relay-commands', commandId);
+        try {
+            return await runTransaction(db, async (tx) => {
+                const snap = await tx.get(ref);
+                if (snap.exists() && snap.data()?.status === 'pending') {
+                    tx.update(ref, { status: 'cancelled' });
+                    return true;
+                }
+                return false;
+            });
+        } catch (error) {
+            logger.error('[RemoteRelay] Command cancel failed:', error);
+            return false;
+        }
+    }
+
+    /**
+     * Listen for pending dispatch tasks (desktop side).
+     */
+    onDispatchTask(
+        callback: (task: AgentDispatchTask & { id: string }) => void
+    ): Unsubscribe {
+        let unsubFirestore: Unsubscribe = () => {};
+        const ref = getDispatchQueueRef();
+        if (!ref) {
+            logger.warn('[RemoteRelay] No Firestore auth — cannot listen for dispatch tasks');
+        } else {
+            logger.info('[RemoteRelay] 🖥️ Starting Firestore dispatch task listener...');
+            unsubFirestore = onSnapshot(ref, (snapshot) => {
+                snapshot.docChanges().forEach((change) => {
+                    if (change.type === 'added' || change.type === 'modified') {
+                        const data = change.doc.data() as AgentDispatchTask;
+                        if (data.status === 'pending') {
+                            logger.info(`[RemoteRelay] 📥 Pending dispatch task received: ${change.doc.id} [${data.type}]`);
+                            callback({ ...data, id: change.doc.id });
+                        }
+                    }
+                });
+            }, (error) => {
+                logger.error('[RemoteRelay] Dispatch task listener error:', error);
+            });
+        }
+        return unsubFirestore;
+    }
+
+    /**
+     * Atomically claim a dispatch task by flipping pending → processing
+     * inside a Firestore transaction. First caller to commit wins.
+     *
+     * ISSUE-984: `onDispatchTask` can fire for the same pending task on
+     * multiple open desktop listeners (two tabs/windows, or a re-subscribe)
+     * before any of them has written back a status change. Without an
+     * atomic precondition, every one of them would independently pass and
+     * process the same capture — duplicate notes, duplicate AI calls,
+     * duplicate spend. The transaction re-reads status inside the commit
+     * attempt, so only one caller observes 'pending' and wins the claim.
+     */
+    async claimDispatchTask(taskId: string): Promise<boolean> {
+        const uid = getUserId();
+        if (!uid) return false;
+
+        const ref = doc(db, 'users', uid, 'agent_dispatch_queue', taskId);
+        try {
+            return await runTransaction(db, async (tx) => {
+                const snap = await tx.get(ref);
+                if (snap.exists() && snap.data()?.status === 'pending') {
+                    tx.update(ref, { status: 'processing', pickedUpAt: serverTimestamp() });
+                    return true;
+                }
+                return false;
+            });
+        } catch (error) {
+            logger.error('[RemoteRelay] Dispatch task atomic claim failed:', error);
+            return false;
+        }
+    }
+
+    /**
+     * Update the status of a dispatch task (desktop side).
+     */
+    async updateDispatchTaskStatus(
+        taskId: string,
+        status: AgentDispatchTask['status'],
+        error?: AgentDispatchTask['error'],
+        result?: AgentDispatchTask['result']
+    ): Promise<void> {
         const uid = getUserId();
         if (!uid) return;
-        await updateDoc(doc(db, 'users', uid, 'remote-relay-commands', commandId), {
-            status: 'completed',
-        });
+
+        const updateData: WithFieldValue<Partial<AgentDispatchTask>> = { status };
+
+        if (status === 'processing') {
+            updateData.pickedUpAt = serverTimestamp();
+        } else if (status === 'completed' || status === 'failed') {
+            updateData.completedAt = serverTimestamp();
+        }
+
+        if (error) {
+            updateData.error = error;
+        }
+
+        if (result) {
+            updateData.result = result;
+        }
+
+        await updateDoc(doc(db, 'users', uid, 'agent_dispatch_queue', taskId), updateData);
+        logger.info(`[RemoteRelay] 🖥️ Dispatch task ${taskId} marked as ${status}`);
+    }
+
+    /**
+     * Listen for status/result changes on a single dispatch task (phone side).
+     * ISSUE-983: lets the capture UI wait for a real terminal receipt
+     * ('completed' with a noteId, or 'failed') instead of treating queue
+     * acceptance itself as success.
+     */
+    onDispatchTaskUpdate(
+        taskId: string,
+        callback: (task: AgentDispatchTask & { id: string }) => void
+    ): Unsubscribe {
+        if (isFirebaseE2EMockEnabled()) return () => {};
+        const uid = getUserId();
+        if (!uid) return () => {};
+
+        return onSnapshot(
+            doc(db, 'users', uid, 'agent_dispatch_queue', taskId),
+            (snap) => {
+                if (!snap.exists()) return;
+                callback({ ...(snap.data() as AgentDispatchTask), id: snap.id });
+            },
+            (error) => {
+                logger.error('[RemoteRelay] Dispatch task update listener error:', error);
+            }
+        );
     }
 
     /**
@@ -361,27 +952,30 @@ class RemoteRelayService {
         text: string,
         agentId?: string,
         isStreaming = false,
-        imageUrls?: string[]
+        imageUrls?: string[],
+        boardroomMessageId?: string
     ): Promise<void> {
-        const ref = getResponsesRef();
-        if (!ref) return;
+        const response = serializeRemoteResponse({ commandId, text, agentId, isStreaming, imageUrls, boardroomMessageId });
 
-        // Firestore rejects undefined values — only include optional fields if defined
-        const response: Record<string, unknown> = {
-            commandId,
-            text,
-            timestamp: serverTimestamp(),
-            isStreaming,
-            isFinal: !isStreaming,
-        };
-        if (agentId !== undefined) {
-            response.agentId = agentId;
-        }
-        if (imageUrls && imageUrls.length > 0) {
-            response.imageUrls = imageUrls;
+        // P2P Local WebSocket broadcast fallback
+        const api = window.electronAPI;
+        if (api?.remote?.broadcast) {
+            api.remote.broadcast({
+                type: 'response',
+                response: {
+                    ...response,
+                    timestamp: Date.now()
+                }
+            });
         }
 
-        await addDoc(ref, response);
+        if (commandId.startsWith('p2p-')) return;
+
+        // Firestore rejects undefined values (no ignoreUndefinedProperties) —
+        // every optional field must be added conditionally, never spread in
+        // unconditionally like boardroomMessageId previously was.
+        const { studioExecutorLeaseService } = await import('./StudioExecutorLeaseService');
+        await studioExecutorLeaseService.publishResponse(response);
         logger.info(`[RemoteRelay] 🖥️ Response sent for command ${commandId} (${text.length} chars, ${imageUrls?.length || 0} images)`);
     }
 
@@ -389,15 +983,30 @@ class RemoteRelayService {
      * Push desktop state (desktop side).
      */
     async pushDesktopState(state: Omit<DesktopState, 'timestamp'>): Promise<void> {
-        if (isFirebaseE2EMockEnabled()) return;
-        
-        const ref = getRelayRef();
-        if (!ref) return;
+        // P2P Local WebSocket broadcast fallback
+        const api = window.electronAPI;
+        if (api?.remote?.broadcast) {
+            api.remote.broadcast({
+                type: 'sync',
+                payload: state,
+                ts: Date.now()
+            });
+        }
 
-        await setDoc(ref, {
-            ...state,
-            timestamp: serverTimestamp(),
-        }, { merge: true });
+        if (isFirebaseE2EMockEnabled()) return;
+        const { studioExecutorLeaseService } = await import('./StudioExecutorLeaseService');
+        await studioExecutorLeaseService.publishPresence(state);
+    }
+
+    /**
+     * A closing Studio may mark only its own lease offline. Without this guard,
+     * a Controller route transition or a second Studio window can overwrite a
+     * healthy executor's presence document.
+     */
+    async releaseStudioPresence(studioInstanceId: string): Promise<void> {
+        if (isFirebaseE2EMockEnabled()) return;
+        const { studioExecutorLeaseService } = await import('./StudioExecutorLeaseService');
+        await studioExecutorLeaseService.releasePresence(studioInstanceId);
     }
 
     // -----------------------------------------------------------------------
@@ -453,3 +1062,34 @@ class RemoteRelayService {
 }
 
 export const remoteRelayService = new RemoteRelayService();
+
+const DISPATCH_CONFIRMATION_TIMEOUT_MS = 90000;
+
+/**
+ * ISSUE-983: wait for a dispatch task's real terminal status instead of
+ * treating queue acceptance as success — so "Save to Notes" only clears the
+ * capture once a note actually exists (or surfaces a genuine failure/timeout).
+ */
+export function waitForDispatchConfirmation(
+    taskId: string
+): Promise<{ status: 'completed' | 'failed'; error?: AgentDispatchTask['error'] }> {
+    return new Promise((resolve) => {
+        let settled = false;
+
+        const timeout = setTimeout(() => {
+            if (settled) return;
+            settled = true;
+            unsubscribe();
+            resolve({ status: 'failed', error: { code: 'TIMEOUT', message: 'Saving timed out. Check desktop studio.' } });
+        }, DISPATCH_CONFIRMATION_TIMEOUT_MS);
+
+        const unsubscribe = remoteRelayService.onDispatchTaskUpdate(taskId, (task) => {
+            if (task.status !== 'completed' && task.status !== 'failed') return;
+            if (settled) return;
+            settled = true;
+            clearTimeout(timeout);
+            unsubscribe();
+            resolve({ status: task.status, error: task.error });
+        });
+    });
+}

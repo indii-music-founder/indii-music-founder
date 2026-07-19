@@ -70,7 +70,7 @@ export default function Dashboard() {
                             exit={{ opacity: 0, height: 0, transition: { duration: 0.3 } }}
                             className="relative overflow-hidden border-b border-amber-500/20 glass"
                         >
-                            <div className="absolute inset-0 bg-linear-to-r from-amber-900/10 via-amber-800/5 to-purple-900/10 pointer-events-none" />
+                            <div className="absolute inset-0 bg-linear-to-r from-amber-900/10 via-amber-800/5 to-green-900/10 pointer-events-none" />
                             <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_left,_var(--tw-gradient-stops))] from-amber-500/10 to-transparent pointer-events-none" />
 
                             <div className={`relative z-10 flex items-center justify-between ${isAnyPhone ? 'px-4 py-3' : 'px-8 py-4'}`}>

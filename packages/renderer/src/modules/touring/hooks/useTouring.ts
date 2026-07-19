@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { TouringService } from '@/services/touring/TouringService';
 import { Itinerary, ItineraryStop, EmergencyContact } from '../types';
+import { normalizeItinerary } from '../itinerary';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { useToast } from '@/core/context/ToastContext';
@@ -41,12 +42,13 @@ export const useTouring = () => {
         // Subscribe to itineraries — mounted guard prevents post-unmount state updates
         const unsubscribe = TouringService.subscribeToItineraries(userProfile.id, (data) => {
             if (!isMountedRef.current) return;
-            setItineraries(data);
+            const normalizedData = data.map(normalizeItinerary);
+            setItineraries(normalizedData);
 
             // Safer logic to set current itinerary only if none is selected
             setCurrentItinerary(prev => {
-                if (data.length > 0 && !prev) {
-                    return data[0]!;
+                if (normalizedData.length > 0 && !prev) {
+                    return normalizedData[0]!;
                 }
                 return prev;
             });

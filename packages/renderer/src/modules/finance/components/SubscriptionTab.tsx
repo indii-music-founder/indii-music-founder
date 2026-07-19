@@ -60,7 +60,7 @@ export const SubscriptionTab = () => {
                             {subscription?.cancelAtPeriodEnd && (
                                 <p className="text-xs text-red-400 flex items-center gap-1">
                                     <AlertCircle size={12} />
-                                    Ends on {new Date(subscription.currentPeriodEnd).toLocaleDateString()}
+                                    Ends on {new Date(subscription.currentPeriodEnd).toLocaleDateString('en-US')}
                                 </p>
                             )}
                         </div>

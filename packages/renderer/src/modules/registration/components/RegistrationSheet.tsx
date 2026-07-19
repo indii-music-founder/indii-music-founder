@@ -57,7 +57,7 @@ export function RegistrationSheet({
           <div className="flex items-center gap-2 mt-2">
             <div className="flex-1 h-1 bg-white/[0.05] rounded-full overflow-hidden">
               <div
-                className="h-full bg-purple-500 rounded-full transition-all duration-500"
+                className="h-full bg-green-500 rounded-full transition-all duration-500"
                 style={{ width: `${registrationState.completenessScore}%` }}
               />
             </div>

@@ -81,7 +81,7 @@ export class VoiceService {
 
         try {
             const response = await AutonomousIntelligence.generateSpeech(text, voiceName || 'Kore');
-            await audioService.play(response.audio.inlineData.data, response.audio.inlineData.mimeType);
+            await audioService.playUrl(response.audio.playbackUrl, response.audio.mimeType);
         } catch {
             this.fallbackSpeak(text);
         }

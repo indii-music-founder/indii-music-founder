@@ -1,26 +1,33 @@
 import { GoogleAuth } from 'google-auth-library';
 
+function getVertexAIBaseUrl(location: string): string {
+  if (location === 'global' || location === 'us' || location === 'eu') {
+    return 'https://aiplatform.googleapis.com';
+  }
+  return `https://${location}-aiplatform.googleapis.com`;
+}
+
 export const FINE_TUNED_MODEL_REGISTRY: Partial<Record<string, string>> = {
-    'generalist':    'projects/223837784072/locations/us-central1/endpoints/4735553150121934848',
-    'finance':       'projects/223837784072/locations/us-central1/endpoints/6137298534141001728',
-    'legal':         'projects/223837784072/locations/us-central1/endpoints/4777774396628533248',
-    'distribution':  'projects/223837784072/locations/us-central1/endpoints/5237704508573745152',
-    'marketing':     'projects/223837784072/locations/us-central1/endpoints/1319009882807992320',
-    'social':        'projects/223837784072/locations/us-central1/endpoints/5771381064417148928',
-    'publishing':    'projects/223837784072/locations/us-central1/endpoints/3258372472344412160',
-    'licensing':     'projects/223837784072/locations/us-central1/endpoints/6679982289239146496',
-    'brand':         'projects/223837784072/locations/us-central1/endpoints/7567191415831134208',
-    'road':          'projects/223837784072/locations/us-central1/endpoints/3656378089413279744',
-    'publicist':     'projects/223837784072/locations/us-central1/endpoints/2417325241932972032',
-    'music':         'projects/223837784072/locations/us-central1/endpoints/1795828493355843584',
-    'video':         'projects/223837784072/locations/us-central1/endpoints/8143652168134557696',
-    'devops':        'projects/223837784072/locations/us-central1/endpoints/4433249025134690304',
-    'security':      'projects/223837784072/locations/us-central1/endpoints/1282418135835607040',
-    'producer':      'projects/223837784072/locations/us-central1/endpoints/1620188107888394240',
-    'director':      'projects/223837784072/locations/us-central1/endpoints/5993183346065145856',
-    'screenwriter':  'projects/223837784072/locations/us-central1/endpoints/6342775267139780608',
-    'merchandise':   'projects/223837784072/locations/us-central1/endpoints/7718062003348045824',
-    'curriculum':    'projects/223837784072/locations/us-central1/endpoints/8815251462566182912',
+    'generalist':    'projects/148015878263/locations/us-central1/endpoints/4735553150121934848',
+    'finance':       'projects/148015878263/locations/us-central1/endpoints/6137298534141001728',
+    'legal':         'projects/148015878263/locations/us-central1/endpoints/4777774396628533248',
+    'distribution':  'projects/148015878263/locations/us-central1/endpoints/5237704508573745152',
+    'marketing':     'projects/148015878263/locations/us-central1/endpoints/1319009882807992320',
+    'social':        'projects/148015878263/locations/us-central1/endpoints/5771381064417148928',
+    'publishing':    'projects/148015878263/locations/us-central1/endpoints/3258372472344412160',
+    'licensing':     'projects/148015878263/locations/us-central1/endpoints/6679982289239146496',
+    'brand':         'projects/148015878263/locations/us-central1/endpoints/7567191415831134208',
+    'road':          'projects/148015878263/locations/us-central1/endpoints/3656378089413279744',
+    'publicist':     'projects/148015878263/locations/us-central1/endpoints/2417325241932972032',
+    'music':         'projects/148015878263/locations/us-central1/endpoints/1795828493355843584',
+    'video':         'projects/148015878263/locations/us-central1/endpoints/8143652168134557696',
+    'devops':        'projects/148015878263/locations/us-central1/endpoints/4433249025134690304',
+    'security':      'projects/148015878263/locations/us-central1/endpoints/1282418135835607040',
+    'producer':      'projects/148015878263/locations/us-central1/endpoints/1620188107888394240',
+    'director':      'projects/148015878263/locations/us-central1/endpoints/5993183346065145856',
+    'screenwriter':  'projects/148015878263/locations/us-central1/endpoints/6342775267139780608',
+    'merchandise':   'projects/148015878263/locations/us-central1/endpoints/7718062003348045824',
+    'curriculum':    'projects/148015878263/locations/us-central1/endpoints/8815251462566182912',
 };
 
 async function verifyGate1() {
@@ -33,7 +40,6 @@ async function verifyGate1() {
     });
 
     const client = await auth.getClient();
-    const location = 'us-central1';
     const accessToken = await client.getAccessToken();
 
     if (!accessToken.token) {
@@ -48,7 +54,9 @@ async function verifyGate1() {
       const endpointPath = FINE_TUNED_MODEL_REGISTRY[agent as keyof typeof FINE_TUNED_MODEL_REGISTRY];
       if (!endpointPath) continue;
 
-      const url = `https://${location}-aiplatform.googleapis.com/v1beta1/${endpointPath}:generateContent`;
+      const match = endpointPath.match(/^projects\/[^/]+\/locations\/([^/]+)\//);
+      const location = match?.[1] || 'global';
+      const url = `${getVertexAIBaseUrl(location)}/v1beta1/${endpointPath}:generateContent`;
 
       const startTime = Date.now();
       try {

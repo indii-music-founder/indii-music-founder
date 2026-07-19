@@ -34,6 +34,22 @@ export class SubscriptionService {
   private inFlightUsage: Map<string, Promise<UsageStats>> = new Map();
   private readonly CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
+  private async assertCurrentAuthUser(userId: string): Promise<void> {
+    const currentUser = auth.currentUser;
+
+    if (!currentUser) {
+      throw new Error('Firebase Auth session is not ready for subscription lookup.');
+    }
+
+    if (currentUser.uid !== userId) {
+      throw new Error('Subscription lookup user mismatch.');
+    }
+
+    if (typeof currentUser.getIdToken === 'function') {
+      await currentUser.getIdToken();
+    }
+  }
+
   private formatQuotaCheckError(error: unknown): string {
     const message = error instanceof Error ? error.message : String(error);
     const code = error && typeof error === 'object' && 'code' in error
@@ -88,6 +104,8 @@ export class SubscriptionService {
       };
     }
 
+    await this.assertCurrentAuthUser(userId);
+
     // Check cache
     if (!forceRefresh && this.subscriptionCache.has(userId)) {
       const cached = this.subscriptionCache.get(userId)!;
@@ -116,6 +134,10 @@ export class SubscriptionService {
 
       for (let attempt = 1; attempt <= maxRetries; attempt++) {
         try {
+          // Force a fresh ID token before calling the Cloud Function — prevents
+          // stale/unset token causing FirebaseError: unauthenticated on the server.
+          await this.assertCurrentAuthUser(userId);
+
           const getSubscriptionFn = httpsCallable(functions, 'getSubscription');
 
           const result = await getSubscriptionFn({ userId });
@@ -211,6 +233,8 @@ export class SubscriptionService {
         isFallback: true
       };
     }
+
+    await this.assertCurrentAuthUser(userId);
 
     // Check cache
     if (!forceRefresh && this.usageCache.has(userId)) {
@@ -379,12 +403,9 @@ export class SubscriptionService {
           ? this.formatQuotaCheckError(subscriptionResult.reason)
           : (usageResult.status === 'rejected' ? this.formatQuotaCheckError(usageResult.reason) : 'unknown');
 
-        if (this.isQuotaServiceInfrastructureError(reason) && !this.isAuthQuotaCheckError(reason)) {
-          logger.warn(`[SubscriptionService] Quota service unavailable (${reason}); allowing action and relying on backend usage tracking.`);
-          return { allowed: true };
-        }
-
-        logger.warn(`[SubscriptionService] Pre-flight check failed (${reason}); blocking action.`);
+        // ISSUE-886: FAIL CLOSED. The creative gateway has no quota enforcement
+        // of its own, so an infra outage here must not grant unmetered access.
+        logger.warn(`[SubscriptionService] Pre-flight check failed (${reason}); blocking action (fail-closed).`);
         return { allowed: false, reason: `Subscription quota check failed: ${reason}` };
       }
 
@@ -499,10 +520,12 @@ export class SubscriptionService {
           };
       }
     } catch (error: unknown) {
-      // GRACEFUL DEGRADATION: If subscription check fails (timeout, auth, network),
-      // allow the action to proceed for demo experience. The backend will enforce limits.
-      logger.warn('[SubscriptionService] Quota check failed, allowing action with graceful degradation:', error instanceof Error ? error.message : String(error));
-      return { allowed: true };
+      // ISSUE-886: FAIL CLOSED. The backend does NOT independently enforce
+      // plan limits, so "allow on error" was unmetered generation during any
+      // subscription-service outage.
+      const message = error instanceof Error ? error.message : String(error);
+      logger.warn('[SubscriptionService] Quota check failed; blocking action (fail-closed):', message);
+      return { allowed: false, reason: `Subscription quota check failed: ${message}` };
     }
   }
 

@@ -58,10 +58,10 @@ function CyclableControl<T extends string>({
                     onClick={() => cycle(1)}
                     data-testid={`${testId}-value`}
                     className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg
-                        bg-white/4 border border-white/8 hover:border-purple-500/30
-                        hover:bg-purple-500/5 transition-all cursor-pointer select-none"
+                        bg-white/4 border border-white/8 hover:border-green-500/30
+                        hover:bg-green-500/5 transition-all cursor-pointer select-none"
                 >
-                    {current.icon && <span className="text-purple-400">{current.icon}</span>}
+                    {current.icon && <span className="text-green-400">{current.icon}</span>}
                     <div className="text-center">
                         <div className="text-xs font-bold text-gray-200">{current.label}</div>
                         {current.sublabel && (
@@ -86,7 +86,7 @@ function CyclableControl<T extends string>({
                         onClick={() => onChange(opt.value)}
                         className={`w-1.5 h-1.5 rounded-full transition-all ${
                             i === currentIdx
-                                ? 'bg-purple-400 shadow-[0_0_6px_rgba(168,85,247,0.5)]'
+                                ? 'bg-green-400 shadow-[0_0_6px_rgba(168,85,247,0.5)]'
                                 : 'bg-white/10 hover:bg-white/20'
                         }`}
                         aria-label={opt.label}
@@ -154,6 +154,8 @@ export default function StudioSettingsPanel({ onClose }: { onClose: () => void }
         setStudioControls: state.setStudioControls,
         generationMode: state.generationMode
     })));
+    const directorFps = studioControls.fps || 24;
+    const directorFrames = Math.round((studioControls.duration || 0) * directorFps);
 
     const resetDefaults = useCallback(() => {
         setStudioControls({
@@ -194,6 +196,18 @@ export default function StudioSettingsPanel({ onClose }: { onClose: () => void }
                         </button>
                     </div>
                 </div>
+
+                {generationMode === 'video' && (
+                    <div className="mb-4 flex items-center justify-between rounded-lg border border-white/8 bg-white/3 px-3 py-2">
+                        <div>
+                            <p className="text-[9px] uppercase tracking-widest text-gray-500 font-bold">Video timing</p>
+                            <p className="text-[11px] font-mono font-bold text-white">{directorFps} fps · {directorFrames} frames</p>
+                        </div>
+                        <span className="text-[9px] uppercase tracking-widest text-green-300 bg-green-500/10 border border-green-500/20 rounded-full px-2 py-1">
+                            Locked
+                        </span>
+                    </div>
+                )}
 
                 {/* Controls Grid */}
                 <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
@@ -249,7 +263,7 @@ export default function StudioSettingsPanel({ onClose }: { onClose: () => void }
                                     onClick={() => setStudioControls({ thinkingLevel: level.value })}
                                     className={`px-2 py-1 rounded text-[9px] font-semibold transition-colors ${
                                         studioControls.thinkingLevel === level.value
-                                            ? 'bg-purple-500/25 text-purple-200'
+                                            ? 'bg-green-500/25 text-green-200'
                                             : 'text-gray-400 hover:text-gray-200'
                                     }`}
                                 >
@@ -273,7 +287,11 @@ export default function StudioSettingsPanel({ onClose }: { onClose: () => void }
                     </label>
 
                     {generationMode === 'video' && (
-                        <label className="flex items-center gap-2 cursor-pointer" data-testid="settings-audio-toggle">
+                        <label
+                            className="flex items-center gap-2 cursor-pointer"
+                            data-testid="settings-audio-toggle"
+                            title="Audio control is prompt-only (no API-level audio toggle). When OFF, requests silent video via prompt text. This is a best-effort request, not guaranteed."
+                        >
                             <input
                                 type="checkbox"
                                 checked={studioControls.generateAudio}
@@ -283,7 +301,7 @@ export default function StudioSettingsPanel({ onClose }: { onClose: () => void }
                             <div className="w-7 h-4 bg-white/10 peer-checked:bg-emerald-500/50 rounded-full relative transition-colors">
                                 <div className="absolute top-0.5 left-0.5 w-3 h-3 bg-gray-400 peer-checked:bg-emerald-300 rounded-full transition-all peer-checked:translate-x-3" />
                             </div>
-                            <span className="text-[10px] text-gray-400 font-medium">Audio</span>
+                            <span className="text-[10px] text-gray-400 font-medium">{studioControls.generateAudio ? 'Audio' : 'Silent (requested)'}</span>
                         </label>
                     )}
 
@@ -297,7 +315,7 @@ export default function StudioSettingsPanel({ onClose }: { onClose: () => void }
                             data-testid="settings-negative-prompt"
                             className="w-full bg-white/3 border border-white/6 rounded-md px-2.5 py-1
                                 text-[10px] text-gray-300 placeholder:text-gray-600 focus:outline-none
-                                focus:border-purple-500/30 transition-colors"
+                                focus:border-green-500/30 transition-colors"
                         />
                     </div>
                 </div>

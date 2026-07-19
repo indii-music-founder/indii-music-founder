@@ -1,3 +1,4 @@
+import { validateSender } from './utils/ipc-security';
 /**
  * Electron Auto-Updater
  *
@@ -10,6 +11,7 @@ import { BrowserWindow, ipcMain, Notification, app } from 'electron';
 import path from 'path';
 import log from 'electron-log';
 import Store from 'electron-store';
+import { isLocalUnsignedBuild } from './updaterPolicy';
 
 // Initialize configuration store
 interface IUpdaterStore {
@@ -36,12 +38,14 @@ export function formatUpdaterErrorMessage(err: unknown): string {
     const message = err instanceof Error ? err.message : String(err);
     const lowerMessage = message.toLowerCase();
     const isMissingManifest =
-        lowerMessage.includes('404') &&
+        (lowerMessage.includes('404') &&
         (
             lowerMessage.includes('latest-mac.yml') ||
             lowerMessage.includes('latest.yml') ||
             lowerMessage.includes('latest-linux.yml')
-        );
+        )) ||
+        lowerMessage.includes('does not have a valid semver version: "undefined"') ||
+        lowerMessage.includes("does not have a valid semver version: 'undefined'");
 
     if (isMissingManifest) {
         return `${RELEASE_DISPLAY_NAME} cannot be installed yet because the latest GitHub release is missing its updater manifest. Publish a repaired release with latest-mac.yml, latest.yml, and latest-linux.yml, then check again.`;
@@ -103,6 +107,10 @@ function showUpdaterNotification(title: string, body: string, onClick?: () => vo
 
 export function setupAutoUpdater(): void {
     if (!autoUpdater) return;
+    if (isLocalUnsignedBuild(process.resourcesPath)) {
+        log.info('[Updater] Local unsigned build detected; public update checks are disabled.');
+        return;
+    }
 
     // Configure basic autoUpdater settings
     autoUpdater.logger = log;
@@ -110,7 +118,10 @@ export function setupAutoUpdater(): void {
     autoUpdater.autoInstallOnAppQuit = true;
     autoUpdater.allowDowngrade = false;
 
-    // Load persisted settings
+    // Load persisted settings.
+    // Default source is 'github' — the Firebase Hosting /updates/ path only redirects
+    // there anyway, and its SPA rewrite used to serve index.html for the manifest,
+    // which broke electron-updater with `semver version: "undefined"`.
     const savedSource = store.get('updater-source', 'github') as 'github' | 'firebase';
     const savedChannel = store.get('updater-channel', 'stable') as 'stable' | 'beta';
     
@@ -198,8 +209,11 @@ export function registerUpdaterHandlers(): void {
     handlersRegistered = true;
 
     // IPC handlers for renderer control - registered unconditionally
-    ipcMain.handle('updater:check', async () => {
-        if (!autoUpdater) return { available: false };
+    ipcMain.handle('updater:check', async (event) => {
+        validateSender(event);
+        if (!autoUpdater || isLocalUnsignedBuild(process.resourcesPath)) {
+            return { available: false, reason: 'local-unsigned-build' };
+        }
         try {
             const result = await autoUpdater.checkForUpdates();
             return { available: !!result?.updateInfo, version: result?.updateInfo?.version };
@@ -209,24 +223,27 @@ export function registerUpdaterHandlers(): void {
         }
     });
 
-    ipcMain.handle('updater:install', () => {
-        if (autoUpdater) {
+    ipcMain.handle('updater:install', (event) => {
+        validateSender(event);
+        if (autoUpdater && !isLocalUnsignedBuild(process.resourcesPath)) {
             autoUpdater.quitAndInstall(false, true);
         }
     });
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ipcMain.handle('updater:set-channel', (_event: any, channel: 'stable' | 'beta') => {
+    ipcMain.handle('updater:set-channel', (event: any, channel: 'stable' | 'beta') => {
+        validateSender(event);
         if (autoUpdater) {
             store.set('updater-channel', channel);
-            const currentSource = store.get('updater-source', 'github') as 'github' | 'firebase';
+            const currentSource = store.get('updater-source', 'firebase') as 'github' | 'firebase';
             applyUpdaterConfig(currentSource, channel);
             log.info(`[Updater] Channel set and persisted to: ${channel}`);
         }
     });
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ipcMain.handle('updater:set-source', (_event: any, source: 'github' | 'firebase') => {
+    ipcMain.handle('updater:set-source', (event: any, source: 'github' | 'firebase') => {
+        validateSender(event);
         if (autoUpdater) {
             store.set('updater-source', source);
             const currentChannel = store.get('updater-channel', 'stable') as 'stable' | 'beta';
@@ -235,13 +252,14 @@ export function registerUpdaterHandlers(): void {
         }
     });
 
-    ipcMain.handle('updater:get-config', () => {
+    ipcMain.handle('updater:get-config', (event) => {
+        validateSender(event);
         const currentChannel = store.get('updater-channel', 'stable') as 'stable' | 'beta';
-        const currentSource = store.get('updater-source', 'github') as 'github' | 'firebase';
+        const currentSource = store.get('updater-source', 'firebase') as 'github' | 'firebase';
         return {
             channel: currentChannel,
             source: currentSource,
-            isAvailable: !!autoUpdater,
+            isAvailable: !!autoUpdater && !isLocalUnsignedBuild(process.resourcesPath),
             releaseName: RELEASE_DISPLAY_NAME,
             releaseNumber: RELEASE_DISPLAY_NUMBER,
             technicalVersion: app.getVersion()
