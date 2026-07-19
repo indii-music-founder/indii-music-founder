@@ -105,8 +105,11 @@ export function registerSecurityHandlers() {
                 newKey = `[github-secret-updated:${secret_name}]`; // Not returned — stays in GitHub
 
             } else {
-                const crypto = await import('crypto');
-                newKey = crypto.randomBytes(32).toString('hex');
+                // ISSUE-900: Unsupported service. Fail closed rather than fabricate success.
+                return {
+                    success: false,
+                    error: `Credential rotation is not supported for ${serviceName}. Supported services: stripe, github.`
+                };
             }
 
             if (!newKey) {

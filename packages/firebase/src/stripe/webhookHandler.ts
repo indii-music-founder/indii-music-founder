@@ -33,6 +33,11 @@ function verifyStripeWebhook(
  * Handle checkout.session.completed event
  */
 async function handleMicroTransactionCheckoutCompleted(session: Stripe.Checkout.Session): Promise<void> {
+  if (session.payment_status !== 'paid') {
+    logger.info(`[handleMicroTransaction] Session ${session.id} not paid yet (${session.payment_status})`);
+    return;
+  }
+
   const userId = session.metadata?.userId;
   const credits = parseInt(session.metadata?.credits || '0', 10);
   
@@ -66,12 +71,247 @@ async function handleMicroTransactionCheckoutCompleted(session: Stripe.Checkout.
   logger.info(`[handleMicroTransaction] Added ${credits} credits to user ${maskId(userId)}`);
 }
 
+async function handleLicensingCheckoutCompleted(session: Stripe.Checkout.Session): Promise<void> {
+  if (session.payment_status !== 'paid') {
+    logger.info(`[handleLicensingCheckoutCompleted] Session ${session.id} not paid yet (${session.payment_status})`);
+    return;
+  }
+
+  const userId = session.metadata?.userId;
+  const connectedAccountId = session.metadata?.connectedAccountId;
+  const artistAmountStr = session.metadata?.artistAmount;
+  const trackTitle = session.metadata?.trackTitle || 'Sync License';
+  const artist = session.metadata?.artist || 'indii Artist';
+
+  if (!userId || !connectedAccountId || !artistAmountStr) {
+    logger.error('[handleLicensingCheckoutCompleted] Missing metadata for licensing purchase');
+    return;
+  }
+
+  const artistAmount = parseInt(artistAmountStr, 10);
+  if (isNaN(artistAmount) || artistAmount <= 0) {
+    logger.error('[handleLicensingCheckoutCompleted] Invalid artist amount');
+    return;
+  }
+
+  // Execute Stripe transfer to connected account
+  let transfer: Stripe.Transfer;
+  try {
+    transfer = await stripe.transfers.create({
+      amount: artistAmount,
+      currency: 'usd',
+      destination: connectedAccountId,
+      description: `indii Sync License payout - Session: ${session.id}`,
+    }, {
+      idempotencyKey: `transfer_${session.id}`,
+    });
+    logger.info(`[handleLicensingCheckoutCompleted] Transferred ${artistAmount} cents to connected account ${connectedAccountId}, transferId: ${transfer.id}`);
+  } catch (err: any) {
+    logger.error(`[handleLicensingCheckoutCompleted] Stripe transfer failed for session ${session.id}:`, err);
+    throw err; // Throw to trigger webhook retry
+  }
+
+  // Record fulfillment with deterministic document IDs. Stripe retries return
+  // the same transfer for the idempotency key above; deterministic Firestore
+  // IDs make the rest of fulfillment idempotent as well. A batch prevents a
+  // license without its matching financial ledger entry (or vice versa).
+  const db = getFirestore();
+  const licenseRef = db.collection('licenses').doc(session.id);
+  const ledgerRef = db.collection(`users/${userId}/ledger`).doc(`sync_license_${session.id}`);
+  const batch = db.batch();
+
+  batch.set(licenseRef, {
+    userId,
+    title: trackTitle,
+    artist,
+    licenseType: 'sync',
+    status: 'active',
+    amount: artistAmount,
+    stripeSessionId: session.id,
+    stripeTransferId: transfer.id,
+    createdAt: FieldValue.serverTimestamp(),
+    updatedAt: FieldValue.serverTimestamp(),
+  }, { merge: true });
+
+  batch.set(ledgerRef, {
+    type: 'sync_license_sale',
+    amount: artistAmount,
+    currency: 'usd',
+    status: 'paid',
+    stripeSessionId: session.id,
+    stripeTransferId: transfer.id,
+    createdAt: FieldValue.serverTimestamp(),
+  }, { merge: true });
+
+  await batch.commit();
+}
+
+/**
+ * Founder seat purchase completed (ISSUE-866).
+ *
+ * Founder activation itself stays a deliberate step (seat numbering, public
+ * display name, agreement hash, GitHub commit — see activateFounderPass), but
+ * the PAYMENT must never be silently dropped. This handler verifies the paid
+ * amount, records an idempotent fulfillment task, and flags the user profile
+ * so the UI can show "payment received — activation pending".
+ */
+async function handleFounderSeatCheckoutCompleted(session: Stripe.Checkout.Session): Promise<void> {
+  const userId = session.metadata?.userId || session.client_reference_id;
+  if (!userId) {
+    logger.error('[handleFounderSeatCheckoutCompleted] Missing userId metadata — cannot fulfill', { sessionId: session.id });
+    throw new Error('Founder seat checkout is missing userId metadata');
+  }
+
+  const FOUNDER_SEAT_PRICE_CENTS = 250000; // $2,500.00
+  const paidCents = session.amount_total ?? 0;
+  if (paidCents < FOUNDER_SEAT_PRICE_CENTS) {
+    logger.error(`[handleFounderSeatCheckoutCompleted] Underpaid founder seat: ${paidCents} < ${FOUNDER_SEAT_PRICE_CENTS}`, { sessionId: session.id });
+    throw new Error('Founder seat payment amount below seat price');
+  }
+
+  const db = getFirestore();
+  // Idempotent by session id — Stripe retries must not duplicate the task.
+  await db.collection('founder_fulfillment_queue').doc(session.id).set({
+    userId,
+    stripeSessionId: session.id,
+    paymentIntentId: typeof session.payment_intent === 'string' ? session.payment_intent : null,
+    amountCents: paidCents,
+    customerEmail: session.customer_details?.email || null,
+    status: 'paid_pending_activation',
+    createdAt: FieldValue.serverTimestamp(),
+  }, { merge: true });
+
+  await db.collection('users').doc(userId).set({
+    founderPaymentStatus: 'paid_pending_activation',
+    founderPaymentSessionId: session.id,
+    founderPaidAt: FieldValue.serverTimestamp(),
+  }, { merge: true });
+
+  logger.info(`[handleFounderSeatCheckoutCompleted] Founder payment recorded for ${maskId(userId)} — activation queued`);
+}
+
+/**
+ * Marketplace purchase completed (ISSUE-977 / ISSUE-978).
+ *
+ * The reservation (see createMarketplaceCheckout.ts) already decremented
+ * inventory atomically before Stripe was ever contacted. This handler's job
+ * is purely to turn a *paid* reservation into a durable, idempotent sale —
+ * it must never touch inventory again (that already happened at reservation
+ * time, which is what prevents oversell).
+ */
+async function handleMarketplacePurchaseCompleted(session: Stripe.Checkout.Session): Promise<void> {
+  if (session.payment_status !== 'paid') {
+    logger.info(`[handleMarketplacePurchaseCompleted] Session ${session.id} not paid yet (${session.payment_status})`);
+    return;
+  }
+
+  const reservationId = session.metadata?.reservationId;
+  if (!reservationId) {
+    logger.error('[handleMarketplacePurchaseCompleted] Missing reservationId metadata', { sessionId: session.id });
+    return;
+  }
+
+  const db = getFirestore();
+  const reservationRef = db.collection('marketplace_reservations').doc(reservationId);
+
+  await db.runTransaction(async (tx) => {
+    const resSnap = await tx.get(reservationRef);
+    if (!resSnap.exists) {
+      logger.error(`[handleMarketplacePurchaseCompleted] Reservation ${reservationId} not found`);
+      return;
+    }
+    const reservation = resSnap.data()!;
+
+    // Idempotent: duplicate webhook delivery for an already-completed reservation is a no-op.
+    if (reservation.status === 'completed') {
+      logger.info(`[handleMarketplacePurchaseCompleted] Reservation ${reservationId} already completed — skipping`);
+      return;
+    }
+
+    const purchaseRef = db.collection('purchases').doc(session.id); // Stripe session id = natural idempotency key
+    tx.set(purchaseRef, {
+      buyerId: reservation.buyerId,
+      sellerId: reservation.sellerId,
+      productId: reservation.productId,
+      amount: reservation.priceCents,
+      currency: reservation.currency,
+      status: 'completed',
+      transactionId: session.id,
+      createdAt: FieldValue.serverTimestamp(),
+    }, { merge: true });
+
+    tx.set(db.collection('revenue').doc(), {
+      userId: reservation.sellerId,
+      productId: reservation.productId,
+      productName: reservation.productTitle,
+      amount: reservation.priceCents,
+      currency: reservation.currency,
+      source: reservation.source === 'social' ? 'social_drop' : reservation.source,
+      sourceId: reservation.sourceId || undefined,
+      customerId: reservation.buyerId,
+      status: 'completed',
+      createdAt: FieldValue.serverTimestamp(),
+    });
+
+    tx.update(reservationRef, { status: 'completed', completedAt: FieldValue.serverTimestamp() });
+  });
+
+  logger.info(`[handleMarketplacePurchaseCompleted] Finalized sale for reservation ${reservationId}, session ${session.id}`);
+}
+
+/**
+ * Marketplace checkout expired/cancelled without payment — release the
+ * inventory reservation made at checkout-creation time (ISSUE-978).
+ */
+async function handleMarketplaceCheckoutExpired(session: Stripe.Checkout.Session): Promise<void> {
+  const reservationId = session.metadata?.reservationId;
+  if (!reservationId || session.metadata?.type !== 'marketplace_purchase') return;
+
+  const db = getFirestore();
+  const reservationRef = db.collection('marketplace_reservations').doc(reservationId);
+  const productRef = db.collection('products').doc(session.metadata!.productId as string);
+
+  await db.runTransaction(async (tx) => {
+    const resSnap = await tx.get(reservationRef);
+    if (!resSnap.exists) return;
+    const reservation = resSnap.data()!;
+
+    // Only release reservations still pending — a completed or already-released one is untouched.
+    if (reservation.status !== 'reserved') return;
+
+    if (reservation.hasInventoryTracking) {
+      tx.update(productRef, { inventory: FieldValue.increment(1) });
+    }
+    tx.update(reservationRef, { status: 'released', releasedReason: 'checkout_expired' });
+  });
+
+  logger.info(`[handleMarketplaceCheckoutExpired] Released reservation ${reservationId} for expired session ${session.id}`);
+}
+
 async function handleCheckoutCompleted(event: Stripe.Event): Promise<void> {
   const session = event.data.object as Stripe.Checkout.Session;
 
   // Route micro-transactions separately.
   if (session.metadata?.type === 'micro_transaction') {
     await handleMicroTransactionCheckoutCompleted(session);
+    return;
+  }
+
+  // Route marketplace purchases separately.
+  if (session.metadata?.type === 'marketplace_purchase') {
+    await handleMarketplacePurchaseCompleted(session);
+    return;
+  }
+
+  // Route licensing purchases separately.
+  if (session.metadata?.type === 'licensing_purchase') {
+    await handleLicensingCheckoutCompleted(session);
+    return;
+  }
+
+  // Route founder seat purchases separately (ISSUE-866).
+  if (session.metadata?.type === 'founder_seat') {
+    await handleFounderSeatCheckoutCompleted(session);
     return;
   }
 
@@ -331,7 +571,24 @@ export const stripeWebhook = onRequest({
     const alreadyProcessed = await db.runTransaction(async (tx) => {
       const snap = await tx.get(deliveryRef);
       if (snap.exists) {
-        return true; // Already processed or in-flight
+        // ISSUE-883: a 'failed' delivery is retryable — Stripe's retry must
+        // reprocess it, not be swallowed as a duplicate. A stale 'processing'
+        // claim (>5 min old) is also retakeable: a crashed worker never flips
+        // its doc to failed, and Stripe only retries after we 500/timeout.
+        const status = snap.get('status');
+        const receivedAt = snap.get('receivedAt');
+        const receivedMs = typeof receivedAt?.toMillis === 'function' ? receivedAt.toMillis() : 0;
+        const staleProcessing = status === 'processing' && (Date.now() - receivedMs) > 5 * 60 * 1000;
+        if (status !== 'failed' && !staleProcessing) {
+          return true; // Processed, or another worker is actively on it
+        }
+        tx.update(deliveryRef, {
+          status: 'processing',
+          receivedAt: FieldValue.serverTimestamp(),
+          retriedAt: FieldValue.serverTimestamp(),
+          retryCount: FieldValue.increment(1),
+        });
+        return false;
       }
       // Atomically mark as in-flight so concurrent retries are blocked
       tx.set(deliveryRef, {
@@ -349,14 +606,22 @@ export const stripeWebhook = onRequest({
       return;
     }
   } catch (idempotencyErr) {
-    // Non-fatal: log and continue — better to process twice than drop
-    logger.warn('[stripeWebhook] Idempotency check failed (proceeding):', idempotencyErr);
+    // Fail closed. Stripe will retry a 5xx delivery; proceeding without the
+    // atomic claim can duplicate non-idempotent financial side effects.
+    logger.error('[stripeWebhook] Idempotency check failed:', idempotencyErr);
+    res.status(500).json({ error: 'Webhook idempotency check failed' });
+    return;
   }
 
   try {
     switch (event.type) {
       case 'checkout.session.completed':
+      case 'checkout.session.async_payment_succeeded':
         await handleCheckoutCompleted(event);
+        break;
+      case 'checkout.session.expired':
+      case 'checkout.session.async_payment_failed':
+        await handleMarketplaceCheckoutExpired(event.data.object as Stripe.Checkout.Session);
         break;
       case 'customer.subscription.created':
         await handleSubscriptionCreated(event);

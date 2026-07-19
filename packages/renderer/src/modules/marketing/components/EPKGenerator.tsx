@@ -21,6 +21,29 @@ function slugify(text: string): string {
     return text.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '').slice(0, 24) || 'artist';
 }
 
+/** Escape a string for safe interpolation into HTML text or attribute contexts. */
+function escapeHtml(value: string): string {
+    return value
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+/** Only allow well-formed https:// links — rejects javascript:/data:/other schemes. */
+function sanitizeHttpsUrl(value: string): string | null {
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+    try {
+        const url = new URL(trimmed);
+        if (url.protocol !== 'https:') return null;
+        return url.toString();
+    } catch {
+        return null;
+    }
+}
+
 export default function EPKGenerator() {
     const [artistName, setArtistName] = useState('');
     const [bio, setBio] = useState(DEFAULT_BIO);
@@ -32,6 +55,7 @@ export default function EPKGenerator() {
     const [generating, setGenerating] = useState(false);
     const [generated, setGenerated] = useState(false);
     const [copied, setCopied] = useState(false);
+    const [pressPhotoUrl, setPressPhotoUrl] = useState<string | null>(null);
 
     const slug = slugify(artistName || 'your-artist');
     const epkUrl = `indii.vip/artist/${slug}/epk`;
@@ -50,18 +74,45 @@ export default function EPKGenerator() {
         }, 1800);
     };
 
+    const handlePressPhoto = (file: File | undefined) => {
+        if (!file) return;
+        if (pressPhotoUrl) URL.revokeObjectURL(pressPhotoUrl);
+        setPressPhotoUrl(URL.createObjectURL(file));
+    };
+
     const handleCopyLink = () => {
         void navigator.clipboard.writeText(`https://${epkUrl}`);
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
     };
 
-    const handleDownloadPDF = () => {
+    const handleDownloadHtml = () => {
+        const safeArtistName = escapeHtml(artistName || 'Artist Name');
+        const safeBio = escapeHtml(bio);
+        // GENRE_OPTIONS is a fixed enum, but escape anyway — defense in depth if it's ever extended.
+        const safeTags = genreTags.map(t => `<span class="tag">${escapeHtml(t)}</span>`).join('');
+        const safeTracks = tracks
+            .map(t => `<div class="track"><span>${escapeHtml(t.title)}</span><span>${escapeHtml(t.year)} &nbsp;·&nbsp; ${escapeHtml(t.streams)} streams</span></div>`)
+            .join('');
+
+        const linkEntries: [string, string][] = [
+            ['Spotify', spotifyUrl],
+            ['Apple Music', appleMusicUrl],
+            ['Instagram', instagramUrl],
+        ];
+        const safeLinks = linkEntries
+            .map(([label, rawUrl]) => {
+                const safeUrl = sanitizeHttpsUrl(rawUrl);
+                return safeUrl ? `<a href="${escapeHtml(safeUrl)}">${escapeHtml(label)}</a>` : '';
+            })
+            .join('');
+
         const html = `<!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>${artistName ? `EPK - ${artistName}` : 'EPK'}</title>
+  <title>EPK - ${safeArtistName}</title>
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src data:;">
   <style>
     body { font-family: 'Helvetica Neue', sans-serif; max-width: 800px; margin: 0 auto; padding: 40px; background: #fff; color: #111; }
     h1 { font-size: 36px; font-weight: 800; margin-bottom: 4px; }
@@ -75,18 +126,16 @@ export default function EPKGenerator() {
   </style>
 </head>
 <body>
-  <h1>${artistName || 'Artist Name'}</h1>
-  <div class="tags">${genreTags.map(t => `<span class="tag">${t}</span>`).join('')}</div>
-  <p class="bio">${bio}</p>
+  <h1>${safeArtistName}</h1>
+  <div class="tags">${safeTags}</div>
+  <p class="bio">${safeBio}</p>
   <div class="section-title">Recent Releases</div>
-  ${tracks.map(t => `<div class="track"><span>${t.title}</span><span>${t.year} &nbsp;·&nbsp; ${t.streams} streams</span></div>`).join('')}
+  ${safeTracks}
   <div class="section-title">Links</div>
   <div class="links">
-    ${spotifyUrl ? `<a href="${spotifyUrl}">Spotify</a>` : ''}
-    ${appleMusicUrl ? `<a href="${appleMusicUrl}">Apple Music</a>` : ''}
-    ${instagramUrl ? `<a href="${instagramUrl}">Instagram</a>` : ''}
+    ${safeLinks}
   </div>
-  <p class="epk-url">EPK: https://${epkUrl}</p>
+  <p class="epk-url">EPK: https://${escapeHtml(epkUrl)}</p>
 </body>
 </html>`;
         const blob = new Blob([html], { type: 'text/html' });
@@ -127,12 +176,12 @@ export default function EPKGenerator() {
                     <ImageIcon size={10} /> Press Photo
                 </label>
                 <div className="flex items-center gap-4">
-                    <div className="w-20 h-20 rounded-xl bg-linear-to-br from-dept-marketing/30 to-purple-600/20 border border-white/10 flex items-center justify-center flex-shrink-0">
-                        <ImageIcon size={20} className="text-gray-600" />
+                    <div className="w-20 h-20 rounded-xl bg-linear-to-br from-dept-marketing/30 to-green-600/20 border border-white/10 flex items-center justify-center flex-shrink-0">
+                        {pressPhotoUrl ? <img src={pressPhotoUrl} alt="Selected press" className="w-full h-full object-cover rounded-xl" /> : <ImageIcon size={20} className="text-gray-600" />}
                     </div>
                     <label className="flex-1 flex flex-col items-center py-3 rounded-xl border border-dashed border-white/10 hover:border-dept-marketing/30 text-xs text-gray-500 cursor-pointer hover:text-gray-400 transition-all bg-white/[0.02]">
                         Click to upload press photo
-                        <input type="file" accept="image/*" className="sr-only" />
+                        <input type="file" accept="image/*" className="sr-only" onChange={e => handlePressPhoto(e.target.files?.[0])} />
                     </label>
                 </div>
             </div>
@@ -254,7 +303,7 @@ export default function EPKGenerator() {
                                 <ExternalLink size={9} className="text-gray-600" />
                             </div>
                             <div className="p-5 flex gap-4">
-                                <div className="w-16 h-16 rounded-xl bg-linear-to-br from-dept-marketing/30 to-purple-600/20 border border-white/10 flex-shrink-0 flex items-center justify-center">
+                                <div className="w-16 h-16 rounded-xl bg-linear-to-br from-dept-marketing/30 to-green-600/20 border border-white/10 flex-shrink-0 flex items-center justify-center">
                                     <ImageIcon size={18} className="text-gray-600" />
                                 </div>
                                 <div className="flex-1 min-w-0">
@@ -279,7 +328,7 @@ export default function EPKGenerator() {
                                 {copied ? 'Copied!' : 'Copy Link'}
                             </button>
                             <button
-                                onClick={handleDownloadPDF}
+                                onClick={handleDownloadHtml}
                                 className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-white/5 border border-white/10 text-sm text-gray-300 hover:border-white/20 transition-all font-medium"
                             >
                                 <Download size={14} />

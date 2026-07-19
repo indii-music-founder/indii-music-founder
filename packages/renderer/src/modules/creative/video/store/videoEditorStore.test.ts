@@ -1,10 +1,16 @@
 import { renderHook, act } from '@testing-library/react';
-import { useVideoEditorStore } from './videoEditorStore';
+import { INITIAL_PROJECT, useVideoEditorStore } from './videoEditorStore';
 import { vi } from 'vitest';
 
 vi.unmock('@/modules/creative/video/store/videoEditorStore');
+vi.unmock('@/services/MembershipService');
 
 describe('useVideoEditorStore', () => {
+    it('starts a production project without a framework title clip', () => {
+        expect(INITIAL_PROJECT.clips).toEqual([]);
+        expect(INITIAL_PROJECT.clips.some(clip => clip.text === 'Welcome to Remotion')).toBe(false);
+    });
+
     beforeEach(() => {
         const store = useVideoEditorStore.getState();
         store.setProject({
@@ -38,6 +44,29 @@ describe('useVideoEditorStore', () => {
         });
 
         expect(result.current.project.durationInFrames).toBe(500);
+    });
+
+    it('rejects invalid render dimensions and FPS at the store boundary', () => {
+        const store = useVideoEditorStore.getState();
+        store.updateProjectSettings({ width: Number.NaN, height: 0, fps: 999 });
+        const project = useVideoEditorStore.getState().project;
+        expect(project.width).toBe(1920);
+        expect(project.height).toBe(1080);
+        expect(project.fps).toBe(30);
+    });
+
+    it('keeps one importable track when the user removes tracks', () => {
+        const store = useVideoEditorStore.getState();
+        store.setProject({ id: 'one-track', name: 'One track', fps: 30, durationInFrames: 300, width: 1920, height: 1080, tracks: [{ id: 'only', name: 'Only', type: 'video' }], clips: [] });
+        store.removeTrack('only');
+        expect(useVideoEditorStore.getState().project.tracks).toHaveLength(1);
+    });
+
+    it('expands render duration for clips that extend beyond the project', () => {
+        const store = useVideoEditorStore.getState();
+        store.setProject({ id: 'timeline', name: 'Timeline', fps: 30, durationInFrames: 300, width: 1920, height: 1080, tracks: [{ id: 'video', name: 'Video', type: 'video' }], clips: [] });
+        store.addClip({ type: 'video', name: 'Long clip', startFrame: 400, durationInFrames: 50, trackId: 'video' });
+        expect(useVideoEditorStore.getState().project.durationInFrames).toBe(450);
     });
 
     it('adds and updates clips with keyframes', () => {

@@ -1,6 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron';
 
-console.log('[Preload] Initializing context bridge...');
+console.log('[preload] Preload script loaded.');
 
 // Type definitions for IPC communication
 interface Credentials {
@@ -27,6 +27,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     selectFile: (options?: unknown) => ipcRenderer.invoke('system:select-file', options),
     selectDirectory: (options?: unknown) => ipcRenderer.invoke('system:select-directory', options),
     getDirectoryContents: (dirPath: string, options?: { recursive?: boolean, extensions?: string[] }) => ipcRenderer.invoke('system:get-directory-contents', dirPath, options),
+    searchApprovedAssets: (dirPath: string, options?: { query?: string, extensions?: string[], maxResults?: number }) => ipcRenderer.invoke('system:search-approved-assets', dirPath, options),
     getGpuInfo: () => ipcRenderer.invoke('system:get-gpu-info'),
     showNotification: (title: string, body: string) => ipcRenderer.send('show-notification', { title, body }),
 
@@ -35,7 +36,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
         // Login is now handled directly via Firebase signInWithPopup in the renderer
         // No need for IPC - it works natively in Electron's Chromium
         logout: () => ipcRenderer.invoke('auth:logout'),
-        onUserUpdate: (callback: (tokens: { idToken: string, accessToken?: string | null } | null) => void) => {
+        onUserUpdate: (callback: (tokens: { idToken: string, accessToken?: string | null, source?: string | null } | null) => void) => {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const handler = (_event: unknown, tokens: any) => callback(tokens);
             ipcRenderer.on('auth:user-update', handler);
@@ -66,7 +67,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
     // Network (Main Process Fetching)
     network: {
-        fetchUrl: (url: string) => ipcRenderer.invoke('net:fetch-url', url)
+        fetchUrl: (url: string) => ipcRenderer.invoke('net:fetch-url', url),
+        fetchUrlBase64: (url: string) => ipcRenderer.invoke('net:fetch-url-base64', url)
     },
 
     // SFTP (Distribution)
@@ -117,6 +119,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
         saveAsset: (url: string, filename: string) => ipcRenderer.invoke('video:save-asset', url, filename),
         openFolder: (filePath?: string) => ipcRenderer.invoke('video:open-folder', filePath),
         render: (config: unknown) => ipcRenderer.invoke('video:render', config),
+        getDefaultPath: (filename?: string) => ipcRenderer.invoke('video:get-default-path', filename),
     },
 
 
@@ -165,7 +168,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
             const handler = (_event: unknown, status: unknown) => callback(status);
             ipcRenderer.on('indii-remote:status-updated', handler);
             return () => ipcRenderer.removeListener('indii-remote:status-updated', handler);
-        }
+        },
+        broadcast: (payload: unknown) => ipcRenderer.send('mobile-remote:broadcast', payload)
     },
 
     // Auto-Updater
@@ -260,6 +264,21 @@ contextBridge.exposeInMainWorld('electronAPI', {
         onAC: (callback: () => void) => {
             ipcRenderer.on('power:on-ac', callback);
             return () => ipcRenderer.removeListener('power:on-ac', callback);
+        }
+    },
+
+    // Window control (Sleep/Wake) — hide to tray on sleep, show on wake.
+    window: {
+        show: () => ipcRenderer.invoke('window:show'),
+        hide: () => ipcRenderer.invoke('window:hide'),
+    },
+
+    // Menu events
+    menu: {
+        onSaveTriggered: (callback: () => void) => {
+            const handler = () => callback();
+            ipcRenderer.on('menu:save-triggered', handler);
+            return () => ipcRenderer.removeListener('menu:save-triggered', handler);
         }
     }
 });

@@ -134,12 +134,43 @@ export function LoadingFallback() {
         currentModule: state.currentModule
     })));
     const [show, setShow] = useState(false);
+    const [isTimedOut, setIsTimedOut] = useState(false);
 
     useEffect(() => {
         // Delay showing the skeleton to prevent flash for fast module loads
         const timer = setTimeout(() => setShow(true), 150);
-        return () => clearTimeout(timer);
+        
+        // 10s failsafe timeout to prevent infinite loading spinners
+        const failsafe = setTimeout(() => {
+            setIsTimedOut(true);
+            console.warn(`[LoadingFallbacks] Module loading timed out for: ${currentModule}`);
+        }, 10000);
+
+        return () => {
+            clearTimeout(timer);
+            clearTimeout(failsafe);
+        };
     }, [currentModule]); // Reset delay when module changes
+
+    if (isTimedOut) {
+        return (
+            <div className="absolute inset-0 bg-background/95 backdrop-blur-sm z-[50] flex flex-col items-center justify-center p-6 text-center animate-in fade-in">
+                <div className="text-4xl mb-4">⏳</div>
+                <h3 className="text-lg font-bold text-white mb-2">Loading is taking longer than expected</h3>
+                <p className="text-gray-400 text-sm max-w-sm mb-6">
+                    A background service or module is taking a long time to load. You can continue waiting or try reloading.
+                </p>
+                <div className="flex gap-4">
+                    <button onClick={() => window.location.reload()} className="px-6 py-2.5 bg-dept-creative text-white rounded-lg text-sm font-semibold hover:bg-dept-creative-glow transition-colors">
+                        Reload App
+                    </button>
+                    <button onClick={() => { setIsTimedOut(false); useStore.getState().setModule('dashboard'); }} className="px-6 py-2.5 bg-white/10 text-white rounded-lg text-sm hover:bg-white/20 transition-colors">
+                        Go to Dashboard
+                    </button>
+                </div>
+            </div>
+        );
+    }
 
     if (!show) {
         return null;

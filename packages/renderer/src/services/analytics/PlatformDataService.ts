@@ -11,7 +11,8 @@
  * - Track identity:  Spotify is used as the master track catalog (most complete metadata).
  *   YouTube and TikTok data is then aggregated at the channel/account level and
  *   distributed across tracks proportionally to popularity.
- * - Stream counts:   Per-platform actual values where available; estimated otherwise.
+ * - Stream counts:   Per-platform actual values where available; synthetic values are
+ *                    labeled and never used for Apple Music without partner data.
  * - History:         Spotify recently-played provides per-track history; YouTube/TikTok
  *                    provide channel-level history which is prorated.
  * - Region data:     Sourced from YouTube Analytics geographic breakdown (most complete).
@@ -173,7 +174,7 @@ export class PlatformDataService {
         const ytPlatform = ytResult.status === 'fulfilled' ? ytResult.value : null;
         const ttPlatform = ttResult.status === 'fulfilled' ? ttResult.value : null;
         const igPlatform = igResult.status === 'fulfilled' ? igResult.value : null;
-        const amPlatform = amResult.status === 'fulfilled' ? amResult.value : null;
+        const amPlatform = amResult.status === 'fulfilled' && amResult.value ? amResult.value : null;
 
         // Fetch YouTube region data if available
         let regionData: RegionData[] = [];

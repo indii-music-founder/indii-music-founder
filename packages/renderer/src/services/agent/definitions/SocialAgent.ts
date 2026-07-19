@@ -1,8 +1,20 @@
 import { AgentConfig } from "../types";
 import { freezeAgentConfig } from '../FreezeDiagnostic';
 import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
-import { Schema } from 'firebase/ai';
+import type { Schema } from '@/shared/types/ai.dto';
+import { SocialTools } from '../tools/SocialTools';
+import { UniversalTools } from '../tools/UniversalTools';
 import systemPrompt from '@agents/social/prompt.md?raw';
+import { buildDomainRetrievalTools, buildDomainRetrievalDeclarations } from '../tools/DomainTools';
+
+
+
+const socialRetrievalConfig = {
+    'scheduled_posts': { path: 'scheduled_posts', requiresUserIdFilter: true },
+    'posts': { path: 'posts', requiresUserIdFilter: true }
+};
+const socialRetrievalTools = buildDomainRetrievalTools('Social', socialRetrievalConfig);
+const socialRetrievalDeclarations = buildDomainRetrievalDeclarations('Social', socialRetrievalConfig);
 
 export const SocialAgent: AgentConfig = {
     id: 'social',
@@ -11,67 +23,71 @@ export const SocialAgent: AgentConfig = {
     color: 'bg-sky-400',
     category: 'department',
     systemPrompt: systemPrompt,
-    functions: {
-        analyze_trends: async (args: { topic: string }) => {
-            const prompt = `Analyze current social media trends for the topic: "${args.topic}". Return a JSON with trend_score (0-100), sentiment (positive/neutral/negative), keywords (array), and a summary.`;
-            try {
-                const response = await AutonomousIntelligence.generateStructuredData(prompt, { type: 'object' } as Schema, { maxOutputTokens: 8192, temperature: 1.0 });
-                return { success: true, data: response };
-            } catch (e: unknown) {
-                return { success: false, error: (e as Error).message };
-            }
-        },
-        generate_social_post: async (args: { platform: string, topic: string, tone?: string }) => {
-            const prompt = `Write a ${args.platform} post about "${args.topic}". Tone: ${args.tone || 'engaging'}. Include hashtags.`;
-            const response = await AutonomousIntelligence.generateText(prompt, { maxOutputTokens: 8192, temperature: 1.0 });
-            return { success: true, data: { content: response } };
-        },
-        create_social_calendar: async (args: { releaseDate: string, campaignTitle: string, durationWeeks: number }) => {
-            const prompt = `Generate a long-term social media content calendar for a music release.
-            Campaign: ${args.campaignTitle}
-            Release Date: ${args.releaseDate}
-            Duration: ${args.durationWeeks} weeks
-            
-            Include:
-            - Pre-release (Hype/Teasers)
-            - Release Day (Launch/Direct links)
-            - Post-release (UGC/Music Video/Remix)
-            - Platform-specific frequency (TikTok daily, IG 3x/week, etc.)`;
-
-            try {
-                const response = await AutonomousIntelligence.generateText(prompt, { maxOutputTokens: 8192, temperature: 1.0 });
-                return { success: true, data: { calendar: response } };
-            } catch (e: unknown) {
-                return { success: false, error: (e as Error).message };
-            }
-        },
-        schedule_post_execution: async (args: { platform: string, content: string, scheduleTime: string }) => {
-            // Integration with long-term scheduling service (Cron/Inngest)
-            return {
-                success: true,
-                data: {
-                    status: "Queued",
-                    platform: args.platform,
-                    scheduled_for: args.scheduleTime,
-                    message: `Post successfully queued for ${args.platform}. indii will monitor for engagement upon release.`
+    get functions() {
+        return {
+            ...socialRetrievalTools,
+            analyze_trends: async (args: { topic: string }) => {
+                const prompt = `Analyze current social media trends for the topic: "${args.topic}". Return a JSON with trend_score (0-100), sentiment (positive/neutral/negative), keywords (array), and a summary.`;
+                try {
+                    const response = await AutonomousIntelligence.generateStructuredData(prompt, { type: 'object' } as Schema, { maxOutputTokens: 8192, temperature: 1.0 });
+                    return { success: true, data: response };
+                } catch (e: unknown) {
+                    return { success: false, error: (e as Error).message };
                 }
-            };
-        },
-        draft_advanced_thread: async (args: { topic: string, platform: string, threadLength: number }) => {
-            const prompt = `Draft a compelling ${args.threadLength}-part advanced thread for ${args.platform} about ${args.topic}. Make each part flow smoothly into the next, using hooks and cliffhangers where appropriate. Return an array of strings.`;
-            try {
-                const response = await AutonomousIntelligence.generateStructuredData(prompt, { type: 'array', items: { type: 'string' } } as Schema, { maxOutputTokens: 8192, temperature: 1.0 });
-                return { success: true, data: { thread: response } };
-            } catch (e: unknown) {
-                return { success: false, error: (e as Error).message };
-            }
-        }
+            },
+            generate_social_post: SocialTools.generate_social_post,
+            generate_content_calendar: async (args: { releaseDate: string, campaignTitle: string, durationWeeks: number }) => {
+                const prompt = `Generate a long-term social media content calendar for a music release.
+                Campaign: ${args.campaignTitle}
+                Release Date: ${args.releaseDate}
+                Duration: ${args.durationWeeks} weeks
+                
+                Include:
+                - Pre-release (Hype/Teasers)
+                - Release Day (Launch/Direct links)
+                - Post-release (UGC/Music Video/Remix)
+                - Platform-specific frequency (TikTok daily, IG 3x/week, etc.)`;
+
+                try {
+                    const response = await AutonomousIntelligence.generateText(prompt, { maxOutputTokens: 8192, temperature: 1.0 });
+                    return { success: true, data: { calendar: response } };
+                } catch (e: unknown) {
+                    return { success: false, error: (e as Error).message };
+                }
+            },
+            schedule_post_execution: SocialTools.schedule_social_post,
+            draft_advanced_thread: async (args: { topic: string, platform: string, threadLength: number }) => {
+                const prompt = `Draft a compelling ${args.threadLength}-part advanced thread for ${args.platform} about ${args.topic}. Make each part flow smoothly into the next, using hooks and cliffhangers where appropriate. Return an array of strings.`;
+                try {
+                    const response = await AutonomousIntelligence.generateStructuredData(prompt, { type: 'array', items: { type: 'string' } } as Schema, { maxOutputTokens: 8192, temperature: 1.0 });
+                    return { success: true, data: { thread: response } };
+                } catch (e: unknown) {
+                    return { success: false, error: (e as Error).message };
+                }
+            },
+            browser_tool: UniversalTools.browser_tool,
+            indii_image_gen: UniversalTools.indii_image_gen,
+            credential_vault: UniversalTools.credential_vault,
+            analyze_sentiment: SocialTools.analyze_sentiment,
+            multi_platform_autopost: SocialTools.multi_platform_autopost,
+            dispatch_community_webhook: SocialTools.dispatch_community_webhook,
+            analyze_engagement_rate: async (args: { platform: string, timePeriod: string }) => {
+                const prompt = `Analyze engagement rate for ${args.platform} over the last ${args.timePeriod}. Calculate the total engagement divided by followers or impressions, and provide actionable tips to increase engagement.`;
+                try {
+                    const response = await AutonomousIntelligence.generateText(prompt, { maxOutputTokens: 8192, temperature: 1.0 });
+                    return { success: true, data: { analysis: response } };
+                } catch (e: unknown) {
+                    return { success: false, error: (e as Error).message };
+                }
+            },
+        } as Record<string, import('@/services/agent/types').AnyToolFunction>;
     },
-    authorizedTools: ['create_social_calendar', 'schedule_post_execution', 'generate_social_post', 'analyze_trends', 'browser_tool', 'indii_image_gen', 'credential_vault', 'draft_advanced_thread', 'analyze_sentiment', 'multi_platform_autopost', 'dispatch_community_webhook'],
+    authorizedTools: ['list_domain_records', 'generate_content_calendar', 'schedule_post_execution', 'generate_social_post', 'analyze_trends', 'browser_tool', 'indii_image_gen', 'credential_vault', 'draft_advanced_thread', 'analyze_sentiment', 'multi_platform_autopost', 'dispatch_community_webhook', 'analyze_engagement_rate'],
     tools: [{
         functionDeclarations: [
+            ...socialRetrievalDeclarations,
             {
-                name: "create_social_calendar",
+                name: "generate_content_calendar",
                 description: "Generate a multi-week content calendar for a music release.",
                 parameters: {
                     type: "OBJECT",
@@ -214,6 +230,18 @@ export const SocialAgent: AgentConfig = {
                         embedLink: { type: "STRING", description: "Call to action link (e.g., pre-save link)." }
                     },
                     required: ["platform", "webhookUrl", "messageContent"]
+                }
+            },
+            {
+                name: "analyze_engagement_rate",
+                description: "Analyze the engagement rate across social platforms.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        platform: { type: "STRING", description: "The platform to analyze." },
+                        timePeriod: { type: "STRING", description: "The time period to analyze (e.g., '7d', '30d')." }
+                    },
+                    required: ["platform", "timePeriod"]
                 }
             }
         ]

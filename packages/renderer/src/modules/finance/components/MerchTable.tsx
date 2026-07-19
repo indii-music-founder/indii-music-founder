@@ -11,6 +11,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { logger } from '@/utils/logger';
 import * as ContextMenu from '@radix-ui/react-context-menu';
 import { ActionableEmptyState } from '@/components/shared/ActionableEmptyState';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 
 interface MerchTableProps {
     isDashboardView?: boolean;
@@ -89,7 +90,7 @@ export const MerchTable: React.FC<MerchTableProps> = ({ isDashboardView = false,
                 ]
             });
 
-            toast.success('Asset Minted successfully!');
+            toast.success('Product added to storefront!');
             setIsMinting(false);
             loadProducts();
 
@@ -99,7 +100,7 @@ export const MerchTable: React.FC<MerchTableProps> = ({ isDashboardView = false,
             setSelectedAsset(null);
         } catch (error: unknown) {
             logger.error("Operation failed:", error);
-            toast.error('Failed to mint asset.');
+            toast.error('Failed to add product to storefront.');
         }
     };
 
@@ -120,7 +121,7 @@ export const MerchTable: React.FC<MerchTableProps> = ({ isDashboardView = false,
                     className="flex items-center gap-2 bg-linear-to-r from-dept-creative to-dept-royalties hover:from-dept-creative/80 hover:to-dept-royalties/80 text-white px-5 py-2.5 rounded-2xl text-sm font-bold transition-all shadow-xl shadow-dept-creative/20 border border-white/10"
                 >
                     {isMinting ? <Trash2 size={16} /> : <Plus size={16} />}
-                    {isMinting ? 'Cancel' : 'Mint New Item'}
+                    {isMinting ? 'Cancel' : 'Add to Storefront'}
                 </motion.button>
             </div>
 
@@ -137,7 +138,7 @@ export const MerchTable: React.FC<MerchTableProps> = ({ isDashboardView = false,
 
                             <div className="flex items-center gap-2">
                                 <Sparkles size={16} className="text-yellow-400" />
-                                <h4 className="text-sm font-black text-white uppercase tracking-widest">Global Asset Minting</h4>
+                                <h4 className="text-sm font-black text-white uppercase tracking-widest">Add Product to Storefront</h4>
                             </div>
 
                             {/* Asset Selector */}
@@ -318,6 +319,9 @@ export const MerchTable: React.FC<MerchTableProps> = ({ isDashboardView = false,
                                             <ContextMenu.Separator className="h-px bg-white/10 my-1" />
                                             <ContextMenu.Item
                                                 onSelect={async () => {
+                                                    const ok = await ConfirmDialog.call({ message: 'Are you sure you want to delete this product? This action cannot be undone.' });
+                                                    if (!ok) return;
+                                                    
                                                     try {
                                                         await MarketplaceService.deleteProduct(product.id);
                                                         toast.success('Product deleted successfully');

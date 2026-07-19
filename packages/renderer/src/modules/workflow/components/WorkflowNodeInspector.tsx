@@ -78,13 +78,13 @@ export default function WorkflowNodeInspector() {
                     <textarea
                         value={prompt}
                         onChange={(e) => setPrompt(e.target.value)}
-                        className="w-full h-32 bg-black/30 border border-gray-700 rounded-lg p-3 text-sm text-gray-200 focus:border-purple-500 outline-none resize-none"
+                        className="w-full h-32 bg-black/30 border border-gray-700 rounded-lg p-3 text-sm text-gray-200 focus:border-green-500 outline-none resize-none"
                         placeholder="Enter node instructions..."
                     />
                 </div>
 
-                <div className="bg-purple-900/10 border border-purple-500/30 rounded-lg p-3">
-                    <label className="text-xs font-bold text-purple-400 uppercase mb-2 block flex items-center gap-2">
+                <div className="bg-green-900/10 border border-green-500/30 rounded-lg p-3">
+                    <label className="text-xs font-bold text-green-400 uppercase mb-2 block flex items-center gap-2">
                         <Sparkles size={12} /> Autonomous Assistant
                     </label>
                     <div className="flex gap-2">
@@ -93,13 +93,13 @@ export default function WorkflowNodeInspector() {
                             value={aiInstruction}
                             onChange={(e) => setAiInstruction(e.target.value)}
                             placeholder="e.g. Make it more detailed..."
-                            className="flex-1 bg-black/30 border border-gray-700 rounded px-2 py-1.5 text-xs text-white focus:border-purple-500 outline-none"
+                            className="flex-1 bg-black/30 border border-gray-700 rounded px-2 py-1.5 text-xs text-white focus:border-green-500 outline-none"
                             onKeyDown={(e) => e.key === 'Enter' && handleAiGenerate()}
                         />
                         <button
                             onClick={handleAiGenerate}
                             disabled={isGenerating || !aiInstruction.trim()}
-                            className="p-1.5 bg-purple-600 hover:bg-purple-500 text-white rounded disabled:opacity-50"
+                            className="p-1.5 bg-green-600 hover:bg-green-500 text-white rounded disabled:opacity-50"
                         >
                             {isGenerating ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
                         </button>

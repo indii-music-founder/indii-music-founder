@@ -56,12 +56,18 @@ export const DSRUploadModal: React.FC<DSRUploadModalProps> = ({ isOpen, onClose,
         if (!parsedReport) return;
 
         setIsParsing(true);
+        setError(null);
         try {
+            // onProcess must reject on failure (ISSUE-966) — this is the single
+            // terminal-messaging boundary: close + parent's own success toast only
+            // fire if that promise actually resolves. On failure, the parsed
+            // preview and file stay intact for retry, and the error is shown here.
             await onProcess(parsedReport);
-            toast.success('Royalty data integrated into dashboard');
             onClose();
         } catch (err: unknown) {
-            setError(err instanceof Error ? err.message : 'Failed to process report data.');
+            const message = err instanceof Error ? err.message : 'Failed to process report data.';
+            setError(message);
+            toast.error(message);
         } finally {
             setIsParsing(false);
         }
@@ -145,7 +151,7 @@ export const DSRUploadModal: React.FC<DSRUploadModalProps> = ({ isOpen, onClose,
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="p-4 bg-gray-900/30 border border-gray-800 rounded-xl">
                                         <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Total Transactions</p>
-                                        <p className="text-2xl font-black text-white">{parsedReport.transactions.length.toLocaleString()}</p>
+                                        <p className="text-2xl font-black text-white">{parsedReport.transactions.length.toLocaleString('en-US')}</p>
                                     </div>
                                     <div className="p-4 bg-gray-900/30 border border-gray-800 rounded-xl">
                                         <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Estimated Revenue</p>
@@ -170,7 +176,7 @@ export const DSRUploadModal: React.FC<DSRUploadModalProps> = ({ isOpen, onClose,
                                                 {parsedReport.transactions.slice(0, 5).map((row: { resourceId: { isrc?: string }; usageCount: number; revenueAmount: number }, i: number) => (
                                                     <tr key={i} className="text-gray-300">
                                                         <td className="px-4 py-2 font-mono">{row.resourceId.isrc}</td>
-                                                        <td className="px-4 py-2">{row.usageCount.toLocaleString()}</td>
+                                                        <td className="px-4 py-2">{row.usageCount.toLocaleString('en-US')}</td>
                                                         <td className="px-4 py-2 text-green-500/80">${row.revenueAmount.toFixed(4)}</td>
                                                     </tr>
                                                 ))}
@@ -178,6 +184,17 @@ export const DSRUploadModal: React.FC<DSRUploadModalProps> = ({ isOpen, onClose,
                                         </table>
                                     </div>
                                 </div>
+
+                                {error && (
+                                    <motion.div
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl flex gap-3"
+                                    >
+                                        <AlertCircle className="text-red-500 shrink-0" size={20} />
+                                        <p className="text-sm text-red-200/80 leading-relaxed">{error}</p>
+                                    </motion.div>
+                                )}
                             </motion.div>
                         )}
                     </div>

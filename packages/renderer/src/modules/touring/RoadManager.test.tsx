@@ -31,6 +31,15 @@ vi.mock('./hooks/useTouring', () => ({
     useTouring: vi.fn(),
 }));
 
+// Mock Zustand store
+vi.mock('@/core/store', () => ({
+    useStore: vi.fn((selector) => selector({
+        pendingHandoffs: { touring: null },
+        setModule: vi.fn(),
+        currentProjectId: 'test-project',
+    })),
+}));
+
 const setupTouringMock = (overrides: any = {}) => {
     const defaultValues = {
         itineraries: [],
@@ -50,6 +59,7 @@ const setupTouringMock = (overrides: any = {}) => {
         emergencyContacts: [],
         saveEmergencyContact: vi.fn().mockResolvedValue(undefined),
         deleteEmergencyContact: vi.fn().mockResolvedValue(undefined),
+        pendingHandoffs: {},
         loading: false,
     };
     vi.mocked(useTouring).mockReturnValue({ ...defaultValues, ...overrides } as any);
@@ -113,14 +123,14 @@ describe('RoadManager', () => {
         fireEvent.change(input, { target: { value: 'New York' } });
         fireEvent.click(addButton);
 
-        expect(screen.getByText('New York')).toBeInTheDocument();
+        expect(screen.getByLabelText('Remove New York')).toBeInTheDocument();
 
         // Remove location
         const removeButton = screen.getByLabelText('Remove New York');
         fireEvent.click(removeButton);
 
         await waitFor(() => {
-            expect(screen.queryByText('New York')).not.toBeInTheDocument();
+            expect(screen.queryByLabelText('Remove New York')).not.toBeInTheDocument();
         });
     });
 
@@ -168,7 +178,7 @@ describe('RoadManager', () => {
 
         // Wait for location to appear
         await waitFor(() => {
-            expect(screen.getByText('New York')).toBeInTheDocument();
+            expect(screen.getByLabelText('Remove New York')).toBeInTheDocument();
         });
 
         const generateButton = screen.getByText('Initialize Route');
@@ -222,5 +232,71 @@ describe('RoadManager', () => {
         await waitFor(() => {
             expect(screen.getByText('Logistics Verified')).toBeInTheDocument();
         });
+    });
+
+    it('updates the selected same-day stop by stable id instead of the first matching date', async () => {
+        const setCurrentItineraryMock = vi.fn();
+        const updateItineraryStopMock = vi.fn().mockResolvedValue(undefined);
+
+        setupTouringMock({
+            currentItinerary: {
+                id: 'itinerary-123',
+                tourName: 'Test Tour',
+                stops: [
+                    {
+                        id: 'stop-1',
+                        date: '2023-10-01',
+                        city: 'Detroit',
+                        venue: 'Club A',
+                        activity: 'Travel',
+                        notes: ''
+                    },
+                    {
+                        id: 'stop-2',
+                        date: '2023-10-01',
+                        city: 'Chicago',
+                        venue: 'Club B',
+                        activity: 'Show',
+                        notes: ''
+                    }
+                ],
+                totalDistance: '300 miles',
+                estimatedBudget: '$50'
+            },
+            setCurrentItinerary: setCurrentItineraryMock,
+            updateItineraryStop: updateItineraryStopMock,
+        });
+
+        render(<RoadManager />);
+
+        await waitFor(() => {
+            expect(screen.getByText('Generated Itinerary')).toBeInTheDocument();
+        });
+
+        const editButtons = screen.getAllByText('Edit');
+        fireEvent.click(editButtons[1]!);
+
+        fireEvent.change(screen.getByLabelText('City'), { target: { value: 'Milwaukee' } });
+        fireEvent.click(screen.getByText('Save Changes'));
+
+        await waitFor(() => {
+            expect(updateItineraryStopMock).toHaveBeenCalledWith(
+                1,
+                expect.objectContaining({
+                    id: 'stop-2',
+                    date: '2023-10-01',
+                    city: 'Milwaukee',
+                })
+            );
+        });
+
+        expect(setCurrentItineraryMock).toHaveBeenCalledWith(
+            expect.objectContaining({
+                stops: [
+                    expect.objectContaining({ id: 'stop-1', city: 'Detroit' }),
+                    expect.objectContaining({ id: 'stop-2', city: 'Milwaukee' }),
+                ]
+            })
+        );
     });
 });

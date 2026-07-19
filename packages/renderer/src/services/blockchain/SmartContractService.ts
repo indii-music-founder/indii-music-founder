@@ -14,7 +14,9 @@ import { logger } from '@/utils/logger';
  * 2. Automated Split Execution via Smart Contracts (real on-chain via window.ethereum)
  * 3. Tokenization (SongShares) — ERC-1155 mint
  *
- * Env: VITE_ETH_RPC_URL — Alchemy/Infura RPC (for non-wallet reads)
+ * Browser-side keyed RPC URLs are disabled. Wallet operations use
+ * `window.ethereum`; receipt polling uses the fixed public Cloudflare gateway
+ * until a secured backend resolver is available.
  */
 
 /**
@@ -61,7 +63,7 @@ export class SmartContractService {
     }
 
     /**
-     * Item 237 — Deploy a Smart Contract for Royalty Splits via window.ethereum.
+     * Item 237 — Deploy a Smart Contract for Royalty Splits via (window as any).ethereum.
      * Uses eth_sendTransaction to deploy a real ERC-1155 contract on the connected chain.
      * Missing wallet/provider configuration is a hard failure.
      */
@@ -78,7 +80,7 @@ export class SmartContractService {
 
         if (typeof window !== 'undefined' && window.ethereum) {
             // Real deployment via connected wallet (MetaMask / WalletConnect)
-            const accounts = await window.ethereum.request({ method: 'eth_accounts' }) as string[];
+            const accounts = await (window.ethereum as any).request({ method: 'eth_accounts' }) as string[];
             if (!accounts || accounts.length === 0) {
                 throw new Error('No wallet connected. Connect MetaMask or WalletConnect first.');
             }
@@ -86,7 +88,7 @@ export class SmartContractService {
             const from = accounts[0];
 
             // Deploy contract: send transaction with compiled ERC-1155 bytecode, no 'to' field
-            const txHash = await window.ethereum.request({
+            const txHash = await (window.ethereum as any).request({
                 method: 'eth_sendTransaction',
                 params: [{
                     from,
@@ -120,7 +122,7 @@ export class SmartContractService {
      * Poll eth_getTransactionReceipt until the deployment transaction is mined.
      */
     private async waitForDeployment(txHash: string, maxAttempts = 20): Promise<string> {
-        const rpcUrl = import.meta.env.VITE_ETH_RPC_URL || 'https://cloudflare-eth.com';
+        const rpcUrl = 'https://cloudflare-eth.com';
 
         for (let i = 0; i < maxAttempts; i++) {
             await new Promise(r => setTimeout(r, 3000)); // 3s between polls
@@ -160,7 +162,7 @@ export class SmartContractService {
 
         if (typeof window !== 'undefined' && window.ethereum) {
             try {
-                const accounts = await window.ethereum.request({ method: 'eth_accounts' }) as string[];
+                const accounts = await (window.ethereum as any).request({ method: 'eth_accounts' }) as string[];
                 if (!accounts || accounts.length === 0) {
                     throw new Error('No wallet connected for payout execution.');
                 }
@@ -170,7 +172,7 @@ export class SmartContractService {
                 // distribute(uint256 amount) => 0x91b7f5ed + encoded amount
                 const amountHex = '0x' + Math.floor(amountUSDC * 1e6).toString(16); // USDC has 6 decimals
 
-                const txHash = await window.ethereum.request({
+                const txHash = await (window.ethereum as any).request({
                     method: 'eth_sendTransaction',
                     params: [{
                         from: accounts[0],
@@ -203,13 +205,13 @@ export class SmartContractService {
 
         if (typeof window !== 'undefined' && window.ethereum) {
             try {
-                const accounts = await window.ethereum.request({ method: 'eth_accounts' }) as string[];
+                const accounts = await (window.ethereum as any).request({ method: 'eth_accounts' }) as string[];
                 if (!accounts || accounts.length === 0) {
                     throw new Error('No wallet connected for token minting.');
                 }
 
                 // Deploy ERC-1155 token contract with totalShares as constructor argument
-                const txHash = await window.ethereum.request({
+                const txHash = await (window.ethereum as any).request({
                     method: 'eth_sendTransaction',
                     params: [{
                         from: accounts[0],

@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """
-ingestion_generator.py - Proprietary Ingestion IP Ingestion Protocol 4.3 XML Generator
+ingestion_generator.py - DDEX Ingestion Protocol 4.3 XML Generator
 
-Industrial-grade Proprietary Ingestion IP Electronic Release Notification generator
+Industrial-grade DDEX Electronic Release Notification generator
 for direct ingestion by Apple Music, Spotify, Amazon, and other DSPs.
 
-Implements Proprietary Ingestion IP Ingestion Protocol 4.3 standard (https://kb.ingestion.net/display/Ingestion NotificationDG/Ingestion Notification+4)
+Implements the DDEX ERN 4.3 message namespace and delivery profile.
 """
 
 import datetime
@@ -27,33 +27,50 @@ logging.basicConfig(
 logger = logging.getLogger("ingestion_generator")
 
 
-class Proprietary Ingestion IPGenerator:
-    """Generates Proprietary Ingestion IP Ingestion Protocol 4.3 compliant XML messages.
+class DDEXGenerator:
+    """Generates DDEX Ingestion Protocol 4.3 compliant XML messages.
 
     This generator creates NewReleaseMessage documents for
     digital music distribution to DSPs.
     """
 
-    # Proprietary Ingestion IP Namespace
-    Ingestion Notification_NS = "http://ingestion.net/xml/ern/43"
+    # DDEX Namespace
+    ERN_NS = "http://ddex.net/xml/ern/43"
+    DPID_PATTERN = re.compile(r"^PADPIDA\d{10}[A-Z0-9]$")
 
-    # Registered DPID for New Detroit Music LLC (dpid.ingestion.net)
-    # Override via Proprietary Ingestion IP_SENDER_DPID env var for multi-tenant deployments
-    DEFAULT_SENDER_DPID = os.environ.get("Proprietary Ingestion IP_SENDER_DPID", "PA-DPIDA-2025122604-E")
-    DEFAULT_SENDER_NAME = os.environ.get("Proprietary Ingestion IP_SENDER_NAME", "New Detroit Music LLC")
+    DEFAULT_SENDER_NAME = os.environ.get("DDEX_SENDER_NAME", "New Detroit Music LLC")
 
     def __init__(self, sender_dpid: Optional[str] = None,
                  sender_name: Optional[str] = None):
-        """Initialize the Proprietary Ingestion IP Generator.
+        """Initialize the DDEX Generator.
 
         Args:
-            sender_dpid: Proprietary Ingestion IP Party ID for the sender (distributor).
-                         Defaults to Proprietary Ingestion IP_SENDER_DPID env var or the registered indii DPID.
+            sender_dpid: DDEX Party ID for the sender (distributor).
+                         Defaults to the required DDEX_SENDER_DPID environment variable.
             sender_name: Human-readable sender name.
-                         Defaults to Proprietary Ingestion IP_SENDER_NAME env var or 'New Detroit Music LLC'.
+                         Defaults to DDEX_SENDER_NAME env var or 'New Detroit Music LLC'.
         """
-        self.sender_dpid = sender_dpid or self.DEFAULT_SENDER_DPID
+        configured_sender_dpid = sender_dpid or os.environ.get("DDEX_SENDER_DPID", "")
+        if not configured_sender_dpid.strip():
+            raise ValueError(
+                "DDEX_SENDER_DPID is required; live DDEX generation cannot use a placeholder identity"
+            )
+        self.sender_dpid = self.canonicalize_dpid(
+            configured_sender_dpid,
+            "DDEX_SENDER_DPID",
+        )
         self.sender_name = sender_name or self.DEFAULT_SENDER_NAME
+
+    @classmethod
+    def canonicalize_dpid(cls, value: str, field_name: str) -> str:
+        """Return the canonical no-hyphen XML form of a DDEX Party Identifier."""
+        canonical = value.strip().upper().replace("-", "")
+        if not cls.DPID_PATTERN.fullmatch(canonical):
+            raise ValueError(
+                f"{field_name} must be a valid DDEX Party Identifier, for example "
+                "PA-DPIDA-2014122301-Q"
+            )
+        return canonical
 
     def _create_element(self, parent: Optional[ET.Element], tag: str,
                         text: Optional[str] = None, **attrs) -> ET.Element:
@@ -70,7 +87,7 @@ class Proprietary Ingestion IPGenerator:
     def generate_message_header(
             self,
             root: ET.Element,
-            recipient_dpid: str = "PADPIDA0000000000Y") -> ET.Element:
+            recipient_dpid: str) -> ET.Element:
         """Generate the MessageHeader element."""
         header = self._create_element(root, "MessageHeader")
 
@@ -95,13 +112,17 @@ class Proprietary Ingestion IPGenerator:
 
         # Message Recipient
         recipient_party = self._create_element(header, "MessageRecipient")
-        self._create_element(recipient_party, "PartyId", recipient_dpid)
+        self._create_element(
+            recipient_party,
+            "PartyId",
+            self.canonicalize_dpid(recipient_dpid, "DDEX_RECIPIENT_DPID"),
+        )
 
         # Message Created DateTime
         self._create_element(
             header,
             "MessageCreatedDateTime",
-            datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"))
+            datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"))
 
         return header
 
@@ -269,7 +290,7 @@ class Proprietary Ingestion IPGenerator:
                                 release_data: Dict[str, Any]) -> ET.Element:
         """Generate an Image resource for cover art.
 
-        Both Apple Music and Spotify require cover art as a resource in the Ingestion Notification.
+        Both Apple Music and Spotify require cover art as a resource in the ERN.
         Apple: minimum 3000x3000 pixels, JPEG or PNG.
         Spotify: minimum 3000x3000 pixels, JPEG.
         """
@@ -482,15 +503,23 @@ class Proprietary Ingestion IPGenerator:
         return deal
 
     def generate_ern(self, release_data: Dict[str, Any]) -> str:
-        """Generate a complete Proprietary Ingestion IP Ingestion Protocol 4.3 NewReleaseMessage."""
+        """Generate a complete DDEX Ingestion Protocol 4.3 NewReleaseMessage."""
         # Create root element with namespace
         root = ET.Element("NewReleaseMessage")
-        root.set("xmlns", self.Ingestion Notification_NS)
+        root.set("xmlns", self.ERN_NS)
         root.set("ReleaseProfileVersionId", "CommonReleaseTypes/14")
         root.set("LanguageAndScriptCode", "en")
 
         # Message Header
-        self.generate_message_header(root)
+        recipient_dpid = release_data.get("recipient_dpid") or os.environ.get(
+            "DDEX_RECIPIENT_DPID",
+            "",
+        )
+        if not recipient_dpid.strip():
+            raise ValueError(
+                "DDEX_RECIPIENT_DPID is required; live DDEX generation cannot use a placeholder identity"
+            )
+        self.generate_message_header(root, recipient_dpid)
 
         # Resource List
         resource_list = self._create_element(root, "ResourceList")
@@ -525,7 +554,7 @@ class Proprietary Ingestion IPGenerator:
 # Legacy compatibility function
 def generate_ingestion(artist_data: Dict[str, Any]) -> str:
     """Legacy wrapper for backward compatibility."""
-    generator = Proprietary Ingestion IPGenerator()
+    generator = DDEXGenerator()
     return generator.generate_ern(artist_data)
 
 
@@ -533,7 +562,7 @@ def generate_ingestion(artist_data: Dict[str, Any]) -> str:
 if __name__ == "__main__":
     import argparse
 
-    parser = argparse.ArgumentParser(description="Proprietary Ingestion IP Ingestion Protocol 4.3 Generator")
+    parser = argparse.ArgumentParser(description="DDEX Ingestion Protocol 4.3 Generator")
     parser.add_argument("json_data", help="JSON payload string")
     parser.add_argument("--storage-path", help="Optional path for file persistence")
 
@@ -543,8 +572,8 @@ if __name__ == "__main__":
         # Parse input JSON
         release_data = json.loads(args.json_data)
 
-        # Generate Proprietary Ingestion IP XML
-        generator = Proprietary Ingestion IPGenerator()
+        # Generate DDEX XML
+        generator = DDEXGenerator()
         xml_output = generator.generate_ern(release_data)
 
         # Return as JSON with the XML embedded
@@ -562,6 +591,6 @@ if __name__ == "__main__":
         print(json.dumps({"error": f"Invalid JSON: {str(e)}"}))
         sys.exit(1)
     except Exception as e:
-        logger.exception("Proprietary Ingestion IP Generator Execution Error")
+        logger.exception("DDEX Generator Execution Error")
         print(json.dumps({"error": str(e)}))
         sys.exit(1)

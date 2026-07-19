@@ -69,7 +69,7 @@ export class LegalComplianceCompiler implements HarnessCompiler<LegalComplianceI
           priority: 'high',
           title: 'Attorney Review for AI Clause',
           detail: 'Consult legal counsel to ensure AI training rights are not being inadvertently surrendered.',
-          ownerAgentId: 'legal_agent',
+          ownerAgentId: 'legal',
           approvalRequired: true
         });
         approvalGates.push({
@@ -159,7 +159,7 @@ export class LegalComplianceCompiler implements HarnessCompiler<LegalComplianceI
             confidence: 'high'
           });
           agentBriefs.push({
-            agentId: 'distribution_agent',
+            agentId: 'distribution',
             brief: 'Release is missing ISRC or UPC codes. Auto-generate or request from user before generating DDEX.',
             inputs: [item.id]
           });
@@ -220,7 +220,7 @@ export class LegalComplianceCompiler implements HarnessCompiler<LegalComplianceI
 
     if (highestRiskLevel > 2) {
       agentBriefs.push({
-        agentId: 'legal_agent',
+        agentId: 'legal',
         brief: 'High or critical legal risks identified. Immediate review required.',
         inputs: input.items.map(i => i.id)
       });

@@ -1,6 +1,7 @@
 import { WhiskState } from '@/core/store/slices/creative';
 import { ImageGeneration } from './image/ImageGenerationService';
 import { logger } from '@/utils/logger';
+import { fetchAsBase64 } from '@/services/storage/safeStorageFetch';
 
 // Inspiration prompts for each category
 const INSPIRATION_SYSTEM_PROMPTS: Record<'subject' | 'scene' | 'style' | 'motion', string> = {
@@ -33,7 +34,47 @@ Return ONLY a JSON array of 4 short descriptions (max 15 words each). No explana
 Return ONLY a JSON array of 4 short descriptions (max 15 words each). No explanations.`
 };
 
+const MAX_INSPIRATION_ITEMS = 4;
+const MAX_INSPIRATION_LENGTH = 160;
+
+export function parseInspirationSuggestions(text: string): string[] {
+    const jsonMatch = text.trim().match(/\[[\s\S]*\]/);
+    if (!jsonMatch) {
+        throw new Error('Inspiration response did not contain a JSON array.');
+    }
+
+    const parsed: unknown = JSON.parse(jsonMatch[0]);
+    if (!Array.isArray(parsed) || parsed.length === 0 || parsed.length > MAX_INSPIRATION_ITEMS) {
+        throw new Error('Inspiration response must contain between 1 and 4 suggestions.');
+    }
+
+    const suggestions = parsed.map((value) => {
+        if (typeof value !== 'string') {
+            throw new Error('Every inspiration suggestion must be text.');
+        }
+        const suggestion = value.trim();
+        if (!suggestion || suggestion.length > MAX_INSPIRATION_LENGTH) {
+            throw new Error('Inspiration suggestions must be non-empty and at most 160 characters.');
+        }
+        return suggestion;
+    });
+
+    return suggestions;
+}
+
 export class WhiskService {
+    /** Resolve a Whisk media source without assuming it is a data URI. */
+    static async resolveReferenceMedia(content: string, referenceId = 'unknown'): Promise<{ mimeType: string; data: string }> {
+        const dataUriMatch = content.match(/^data:([^;,]+);base64,(.+)$/s);
+        const resolved = dataUriMatch
+            ? { mimeType: dataUriMatch[1]!, base64: dataUriMatch[2]! }
+            : await fetchAsBase64(content);
+        if (!resolved.mimeType.startsWith('image/') || !resolved.base64) {
+            throw new Error(`Whisk reference ${referenceId} is not a readable image.`);
+        }
+        return { mimeType: resolved.mimeType, data: resolved.base64 };
+    }
+
     /**
      * Synthesizes a complex prompt from the user's action prompt and locked Whisk references.
      */
@@ -84,7 +125,7 @@ export class WhiskService {
     /**
      * Prepares source media for the generation request based on the "Precise" toggle.
      */
-    static getSourceMedia(whiskState: WhiskState): { mimeType: string; data: string }[] | undefined {
+    static async getSourceMedia(whiskState: WhiskState): Promise<{ mimeType: string; data: string }[] | undefined> {
         if (!whiskState.preciseReference) return undefined;
 
         const allActiveRefs = [
@@ -97,11 +138,26 @@ export class WhiskService {
 
         if (mediaRefs.length === 0) return undefined;
 
-        return mediaRefs.map(item => {
-            const [mimeType, b64] = item.content.split(',');
-            const pureMime = mimeType!.split(':')[1]!.split(';')[0]!;
-            return { mimeType: pureMime, data: b64! };
+        const settled = await Promise.allSettled(
+            mediaRefs.map(item => this.resolveReferenceMedia(item.content, item.id))
+        );
+        const resolved = settled.flatMap((result, index) => {
+            if (result.status === 'fulfilled') return [result.value];
+            const reference = mediaRefs[index];
+            logger.warn('[Whisk] Skipping unreadable precise reference', {
+                referenceId: reference?.id,
+                error: result.reason instanceof Error ? result.reason.message : String(result.reason),
+            });
+            return [];
         });
+
+        // A single stale Storage/gallery URL must not discard every valid
+        // locked reference. If none resolve, fail honestly so callers do not
+        // silently run a supposedly "precise" generation with no media.
+        if (resolved.length === 0) {
+            throw new Error('None of the selected precise references could be read. Repair or remove the unavailable reference and try again.');
+        }
+        return resolved;
     }
 
     /**
@@ -221,13 +277,7 @@ export class WhiskService {
                 if (value?.text) fullText += value.text;
             }
 
-            const text = fullText.trim() || '[]';
-            // Parse JSON array from response
-            const jsonMatch = text.match(/\[[\s\S]*\]/);
-            if (jsonMatch) {
-                return JSON.parse(jsonMatch[0]);
-            }
-            return [];
+            return parseInspirationSuggestions(fullText);
         } catch (error: unknown) {
             logger.error('[WHISK_DEBUG] WhiskService.generateInspiration error:', JSON.stringify(error, null, 2));
             logger.error('[WHISK_DEBUG] Error message:', error instanceof Error ? error.message : String(error));

@@ -140,6 +140,12 @@ vi.mock('./billing/TokenUsageService', () => ({
 describe('FirebaseIntelligenceService', () => {
     let service: FirebaseIntelligenceService;
 
+    const latestBackendRequest = () => {
+        const calls = vi.mocked(fetch).mock.calls;
+        const call = [...calls].reverse().find(([url]) => String(url).includes('generateContentStream'));
+        return JSON.parse(call?.[1]?.body as string);
+    };
+
     beforeEach(() => {
         service = new FirebaseIntelligenceService();
         vi.clearAllMocks();
@@ -166,28 +172,22 @@ describe('FirebaseIntelligenceService', () => {
 
     it('should bootstrap by fetching remote config and initializing model', async () => {
         const { fetchAndActivate } = await import('firebase/remote-config');
-        const { getGenerativeModel } = await import('firebase/ai');
-        const { STANDARD_SAFETY_SETTINGS } = await import('./config/safety-settings');
 
         await service.bootstrap();
 
         expect(fetchAndActivate).toHaveBeenCalled();
-        expect(getGenerativeModel).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
-            model: 'gemini-3-mock-v1',
-            safetySettings: STANDARD_SAFETY_SETTINGS
-        }));
+        expect(service.model).toMatchObject({ model: 'gemini-3-mock-v1' });
     });
 
-    it('should enforce safety settings in generateContent', async () => {
-        const { getGenerativeModel } = await import('firebase/ai');
+    it('should send safety settings to the backend gateway', async () => {
         const { STANDARD_SAFETY_SETTINGS } = await import('./config/safety-settings');
 
-        // Force a call that triggers re-initialization of model (e.g. by passing config)
         await service.generateContent('Safe Prompt', undefined, { temperature: 0.5 });
 
-        expect(getGenerativeModel).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
+        expect(latestBackendRequest().config).toMatchObject({
+            temperature: 0.5,
             safetySettings: STANDARD_SAFETY_SETTINGS
-        }));
+        });
     });
 
     it('should auto-initialize on first generateContent call', async () => {
@@ -203,23 +203,19 @@ describe('FirebaseIntelligenceService', () => {
         const result = await service.generateText('Prompt', 1024, 'Be a cat');
         expect(result).toBe('Mock Autonomous Response');
 
-        const { getGenerativeModel } = await import('firebase/ai');
-        expect(getGenerativeModel).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
+        expect(latestBackendRequest().config).toMatchObject({
             systemInstruction: 'Be a cat',
-            generationConfig: expect.objectContaining({
-                thinkingConfig: expect.objectContaining({
-                    thinkingBudget: 1024,
-                    includeThoughts: true
-                })
+            thinkingConfig: expect.objectContaining({
+                thinkingBudget: 1024,
+                includeThoughts: true
             })
-        }));
+        });
     });
 
     it('should handle chat sessions', async () => {
         const result = await service.chat([], 'Hello');
         expect(result).toBe('Mock Autonomous Response');
-        // We verify interactions via the hoisted functions now since reference to local var is gone
-        expect(mockGenerateContent).toHaveBeenCalled();
+        expect(latestBackendRequest().contents[0].parts[0].text).toBe('Hello');
     });
 
     it('should handle generateStructuredData', async () => {
@@ -231,20 +227,16 @@ describe('FirebaseIntelligenceService', () => {
         const result = await service.generateStructuredData('Prompt', schema as Parameters<typeof service.generateStructuredData>[1]);
         expect(result).toEqual({ test: 'success' });
 
-        const { getGenerativeModel } = await import('firebase/ai');
-        expect(getGenerativeModel).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
-            generationConfig: expect.objectContaining({
-                responseMimeType: 'application/json',
-                responseSchema: schema
-            })
-        }));
+        expect(latestBackendRequest().config).toMatchObject({
+            responseMimeType: 'application/json',
+            responseSchema: schema
+        });
     });
 
     it('should handle analyzeImage', async () => {
         await service.analyzeImage('What is this?', 'data:image/png;base64,encoded...', 'image/png');
 
-        const args = mockGenerateContent.mock.calls[0];
-        expect(args![0]).toMatchObject({
+        expect(latestBackendRequest()).toMatchObject({
             contents: [{
                 role: 'user',
                 parts: [
@@ -259,8 +251,7 @@ describe('FirebaseIntelligenceService', () => {
         const parts = [{ text: 'Extra Part' }];
         await service.analyzeMultimodal('Explain', parts);
 
-        const args = mockGenerateContent.mock.calls[0];
-        expect(args![0]).toMatchObject({
+        expect(latestBackendRequest()).toMatchObject({
             contents: [{
                 role: 'user',
                 parts: [
@@ -274,41 +265,37 @@ describe('FirebaseIntelligenceService', () => {
     it('should handle generateGroundedContent', async () => {
         await service.generateGroundedContent('Search this');
 
-        const { getGenerativeModel } = await import('firebase/ai');
-        expect(getGenerativeModel).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
+        expect(latestBackendRequest().config).toMatchObject({
             tools: expect.arrayContaining([
                 expect.objectContaining({ googleSearch: {} })
             ])
-        }));
+        });
     });
 
-    it('should handle embedContent', async () => {
-        const result = await service.embedContent({
+    it('should fail closed for embedContent until a backend embedding route exists', async () => {
+        await expect(service.embedContent({
             model: 'gemini-3-mock-v1',
             content: { role: 'user', parts: [{ text: 'Embed me' }] }
+        })).rejects.toMatchObject({ code: 'UNAUTHORIZED' });
+    });
+
+    it('should fail closed for browser-side Live API', async () => {
+        await expect(service.getLiveModel('System instruction')).rejects.toMatchObject({
+            code: 'UNAUTHORIZED'
         });
-
-        expect(result.values).toEqual([0.1, 0.2, 0.3]);
-        // expect(mockGenerativeModel.embedContent).toHaveBeenCalled(); // Can't easily check internal mock obj
     });
 
-    it('should handle getLiveModel', async () => {
-        const { getLiveGenerativeModel } = await import('firebase/ai');
-        await service.getLiveModel('System instruction');
-
-        expect(getLiveGenerativeModel).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
-            model: expect.any(String),
-            systemInstruction: 'System instruction'
-        }));
-    });
-
-    it('should fall back to direct SDK on App Check failure', async () => {
+    it('should fail closed on App Check failure', async () => {
         // Force primary model to fail with App Check error during bootstrap
         const { fetchAndActivate } = await import('firebase/remote-config');
         vi.mocked(fetchAndActivate).mockRejectedValueOnce(new Error('firebase-app-check-token-invalid'));
 
-        await service.bootstrap();
-        expect(service['useFallbackMode']).toBe(true);
+        const originalDev = import.meta.env.DEV;
+        (import.meta.env as any).DEV = false;
+        await expect(service.bootstrap()).rejects.toMatchObject({
+            code: 'UNAUTHORIZED'
+        });
+        (import.meta.env as any).DEV = originalDev;
     });
 
     it('should handle content streams', async () => {
@@ -320,56 +307,28 @@ describe('FirebaseIntelligenceService', () => {
         expect(text).toBe('Stream');
     });
 
-    it('should falling back if bootstrap fails (Resilience)', async () => {
+    it('should not fall back if bootstrap fails (Resilience)', async () => {
         const { fetchAndActivate } = await import('firebase/remote-config');
         vi.mocked(fetchAndActivate).mockRejectedValueOnce(new Error('firebase-app-check-token-invalid'));
 
-        // Should NOT throw, but enter fallback mode
-        await service.bootstrap();
-        expect(service['useFallbackMode']).toBe(true);
+        const originalDev = import.meta.env.DEV;
+        (import.meta.env as any).DEV = false;
+        await expect(service.bootstrap()).rejects.toMatchObject({
+            code: 'UNAUTHORIZED'
+        });
+        (import.meta.env as any).DEV = originalDev;
     });
 
-    it('should throw if BOTH primary and fallback fail', async () => {
-        // Force fallback mode, but with a broken client
-        const { fetchAndActivate } = await import('firebase/remote-config');
-        vi.mocked(fetchAndActivate).mockRejectedValueOnce(new Error('firebase-app-check-token-invalid'));
-
-        // Corrupt the fallback client to simulate total failure
-        await service.bootstrap();
-        service['fallbackClient'] = null;
-
-        await expect(service.generateText('test')).rejects.toThrow('Intelligence Service not properly initialized');
-    });
-
-    it('should handle generateVideo with polling', async () => {
-        // Bootstrap with real timers to avoid freezing async init
-        await service.bootstrap();
-        service['useFallbackMode'] = true;
-        await service['initializeFallbackMode']();
-
-        // Mock fetch to reject immediately so the fallback URI path is taken
-        // (the real fetch would require authentication and hang in test env)
-        const fetchSpy = vi.spyOn(global, 'fetch').mockRejectedValue(new Error('fetch unavailable in tests'));
-
-        vi.useFakeTimers();
-
-        const generatePromise = service.generateVideo({
+    it('should block renderer-side direct video generation', async () => {
+        await expect(service.generateVideo({
             prompt: 'Cinematic video',
             model: 'veo-v1',
             config: { durationSeconds: 5 },
-            timeoutMs: 60000 // large enough to pass the maxAttempts check
+            timeoutMs: 60000
+        })).rejects.toMatchObject({
+            code: 'UNAUTHORIZED'
         });
-
-        // MediaGenerator.ts uses a 10s poll interval — advance enough to trigger polling
-        await vi.advanceTimersByTimeAsync(15000);
-
-        const result = await generatePromise;
-
-        expect(result).toBe('http://video.mp4');
-
-        vi.useRealTimers();
-        fetchSpy.mockRestore();
-    }, 30000);
+    });
 
     it('should retry on transient errors', async () => {
         vi.useFakeTimers();
@@ -392,37 +351,29 @@ describe('FirebaseIntelligenceService', () => {
 
         const result = await promise;
         expect(result.response.text()).toBe('Success after retry');
-        expect(mockGenerateContent).toHaveBeenCalledTimes(3);
+        expect(fetch).toHaveBeenCalled();
         vi.useRealTimers();
     });
 
     it('should abort retry if user cancels', async () => {
-        vi.useFakeTimers();
-        mockGenerateContent.mockRejectedValue(new Error('503 service unavailable'));
         const abortController = new AbortController();
-
-        const promise = service.generateContent('Cancel me', undefined, undefined, undefined, undefined, { signal: abortController.signal });
-        const expectation = expect(promise).rejects.toThrow('Operation cancelled by user');
-
-        // Advance slightly to let it enter retry loop
-        await vi.advanceTimersByTimeAsync(10);
         abortController.abort();
 
-        // Must advance timer to trigger the abort check inside the sleep
-        await vi.advanceTimersByTimeAsync(1000);
-
-        await expectation;
-        vi.useRealTimers();
+        await expect(service.generateContent('Cancel me', undefined, undefined, undefined, undefined, { signal: abortController.signal }))
+            .rejects.toThrow(/aborted|cancelled/i);
     });
 
-    it('should fallback on Firebase Installations API errors', async () => {
-        // Mock a failure that resembles the Installations error
-        const errMsg = 'Installations: Create Installation request failed with error "403 PERMISSION_DENIED"';
+    it('should fail closed on Firebase Installations API errors', async () => {
         const { fetchAndActivate } = await import('firebase/remote-config');
-        vi.mocked(fetchAndActivate).mockRejectedValueOnce(new Error(errMsg));
+        const error = 'Installations: Create Installation request failed with error "403 PERMISSION_DENIED"';
+        vi.mocked(fetchAndActivate).mockRejectedValueOnce(new Error(error));
 
-        // Should NOT throw
-        await service.bootstrap();
-        expect(service['useFallbackMode']).toBe(true);
+        const originalDev = import.meta.env.DEV;
+        (import.meta.env as any).DEV = false;
+        await expect(service.bootstrap()).rejects.toMatchObject({
+            code: 'INTERNAL_ERROR',
+            message: 'Firebase Installations API is disabled or restricted. Please enable it in Google Cloud Console.'
+        });
+        (import.meta.env as any).DEV = originalDev;
     });
 });

@@ -1,0 +1,17 @@
+[
+  {
+    "origin": [
+      "http://localhost:4242",
+      "http://localhost:4243",
+      "https://indii-music-studio.web.app",
+      "https://indii-music-studio.firebaseapp.com",
+      "https://indii.music",
+      "https://app.indii.music",
+      "https://founder.indii.music",
+      "https://www.indii.music"
+    ],
+    "method": ["GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD"],
+    "responseHeader": ["Content-Type", "Authorization", "x-goog-meta-author", "x-goog-meta-title", "x-goog-meta-genre", "x-goog-meta-status", "x-goog-meta-bpm"],
+    "maxAgeSeconds": 3600
+  }
+]

@@ -49,13 +49,13 @@ const ReleasePanel: React.FC<ReleasePanelProps> = ({
                 <div className="flex flex-col md:flex-row gap-8 relative z-10">
                     {/* Cover Art Placeholder */}
                     <div className="shrink-0 group">
-                        <div className="w-48 h-48 bg-[#111] border border-gray-800 rounded shadow-2xl flex flex-col items-center justify-center text-gray-600 hover:border-dept-marketing/50 transition-colors cursor-pointer relative overflow-hidden">
+                        <div className="w-48 h-48 bg-[#111] border border-gray-800 rounded shadow-2xl flex flex-col items-center justify-center text-gray-600 relative overflow-hidden">
                             {release.coverArtUrl ? (
                                 <img src={release.coverArtUrl} alt="Cover" className="w-full h-full object-cover" />
                             ) : (
                                 <>
                                     <ImageIcon size={32} className="mb-2 opacity-50 group-hover:opacity-100 transition-opacity" />
-                                    <span className="text-[9px] font-bold uppercase tracking-widest text-center px-4">Upload Artwork<br />(3000x3000px)</span>
+                                    <span className="text-[9px] font-bold uppercase tracking-widest text-center px-4">No Artwork Yet<br />(needs 3000x3000px)</span>
                                 </>
                             )}
                         </div>
@@ -98,7 +98,7 @@ const ReleasePanel: React.FC<ReleasePanelProps> = ({
                             </div>
                             <div className="h-4 w-px bg-gray-800 hidden md:block" />
                             <div className="flex items-center gap-3 bg-[#151515] border border-gray-800 rounded-lg px-4 py-2 flex-1 max-w-sm hover:border-gray-700 transition-colors">
-                                <Hash size={14} className="text-purple-500 opacity-50" />
+                                <Hash size={14} className="text-green-500 opacity-50" />
                                 <input
                                     type="text"
                                     value={release.genre}

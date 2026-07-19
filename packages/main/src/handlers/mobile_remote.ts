@@ -1,3 +1,4 @@
+import { validateSender } from '../utils/ipc-security';
 /**
  * Mobile Remote IPC Handler — Electron Main Process
  *
@@ -12,6 +13,7 @@ import { ipcMain } from 'electron';
 import log from 'electron-log';
 import crypto from 'crypto';
 import { indiiRemoteService } from '../services/IndiiRemoteService';
+import { isLegacyEdgeRemoteEnabled } from '../services/RemoteTransportPolicy';
 
 // Generate a cryptographically random numeric passcode
 function generatePasscode(): string {
@@ -23,7 +25,15 @@ export function registerMobileRemoteHandlers(): void {
    * Renderer requests pairing info (starts server if not running).
    * It also fetches the active Ngrok Auth Token from the user's environment.
    */
-  ipcMain.handle('system:getMobileRemoteInfo', async () => {
+  ipcMain.handle('system:getMobileRemoteInfo', async (event) => {
+        validateSender(event);
+    if (!isLegacyEdgeRemoteEnabled()) {
+      return {
+        success: false,
+        errorCode: 'LEGACY_EDGE_DISABLED',
+        error: 'Direct edge pairing is disabled. Use Settings > Mobile Remote for the authenticated cloud relay.',
+      };
+    }
     try {
       // In production, we'd grab this from Keytar or user desktop settings.
       // For now, we try to load the Ngrok token from env vars.
@@ -64,6 +74,8 @@ export function registerMobileRemoteHandlers(): void {
    * Renderer sends a Zustand state slice to broadcast to all mobile clients.
    */
   ipcMain.on('mobile-remote:broadcast', (_event, payload: unknown) => {
+      validateSender(_event);
+    if (!isLegacyEdgeRemoteEnabled()) return;
     // We wrap it in a format the mobile WS client expects
     indiiRemoteService.sendToMobile({ type: 'sync', payload, ts: Date.now() });
   });
@@ -71,7 +83,8 @@ export function registerMobileRemoteHandlers(): void {
   /**
    * Renderer requests server shutdown.
    */
-  ipcMain.handle('mobile-remote:stop', async () => {
+  ipcMain.handle('mobile-remote:stop', async (event) => {
+        validateSender(event);
     await indiiRemoteService.stop();
     return { success: true };
   });
@@ -80,4 +93,7 @@ export function registerMobileRemoteHandlers(): void {
 }
 
 export const stopMobileRemoteServer = async () => await indiiRemoteService.stop();
-export const broadcastToMobileClients = (payload: unknown) => indiiRemoteService.sendToMobile({ type: 'sync', payload, ts: Date.now() });
+export const broadcastToMobileClients = (payload: unknown) => {
+  if (!isLegacyEdgeRemoteEnabled()) return;
+  indiiRemoteService.sendToMobile({ type: 'sync', payload, ts: Date.now() });
+};

@@ -10,10 +10,14 @@ import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { INGESTION_CONFIG } from '@/core/config/ingestion';
 import { StorageService } from '@/services/StorageService';
+import { masterAudioService } from '@/services/audio/MasterAudioService';
 import { agentService } from '@/services/agent/AgentService';
 import type { ExtendedGoldenMetadata, DDEXReleaseRecord } from '@/services/metadata/types';
 import type { DistributorId, ReleaseAssets } from '@/services/distribution/types/distributor';
 import { logger } from '@/utils/logger';
+import { DEFAULT_PROJECT_ID } from '@/core/constants';
+import { validateImageForDistributor } from '@/services/onboarding/DistributorContext';
+import { measureReleaseAudio, sha256Hex, validateReleaseAudio } from './releaseAssetValidation';
 
 // Map display names from onboarding to DistributorId
 const DISTRIBUTOR_NAME_MAP: Record<string, DistributorId> = {
@@ -120,59 +124,32 @@ const STEP_ORDER: WizardStep[] = ['metadata', 'distribution', 'ai_disclosure', '
 
 /**
  * Extract real audio metadata (sample rate, bit depth) from a File using the Web Audio API.
- * Falls back to format-based defaults if AudioContext decoding fails.
+ *
+ * ISSUE-963: returns null on decode failure instead of fabricating
+ * format-based defaults — a file that cannot be decoded must never be
+ * displayed/stored as if it were measured.
  */
-async function extractAudioMetadata(file: File): Promise<{ sampleRate: number; bitDepth: number }> {
+async function extractAudioMetadata(file: File): Promise<{ sampleRate: number; bitDepth: number; channels: number; format: 'wav' | 'flac'; hash: string } | null> {
   try {
-    const arrayBuffer = await file.arrayBuffer();
-    const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-    const audioContext = new AudioContextClass();
-
-    try {
-      const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
-      const sampleRate = audioBuffer.sampleRate; // Real sample rate (e.g., 44100, 48000, 96000)
-
-      // Bit depth: Web Audio API always decodes to 32-bit float internally.
-      // We derive the original bit depth from the file extension / MIME type.
-      const ext = file.name.split('.').pop()?.toLowerCase();
-      let bitDepth = 16; // Default
-      if (ext === 'wav') {
-        // WAV files: check file size to estimate bit depth
-        // size ≈ sampleRate * channels * (bitDepth/8) * duration
-        const channels = audioBuffer.numberOfChannels;
-        const duration = audioBuffer.duration;
-        const expectedBytesPerSample = file.size / (sampleRate * channels * duration);
-        if (expectedBytesPerSample >= 3.8) bitDepth = 32;
-        else if (expectedBytesPerSample >= 2.8) bitDepth = 24;
-        else bitDepth = 16;
-      } else if (ext === 'flac') {
-        // FLAC is typically 16 or 24-bit; estimate from file size ratio
-        const rawPcmSize = audioBuffer.sampleRate * audioBuffer.numberOfChannels * 2 * audioBuffer.duration;
-        bitDepth = file.size > rawPcmSize * 0.8 ? 24 : 16;
-      } else if (ext === 'mp3' || ext === 'aac') {
-        // Lossy formats: bit depth concept doesn't apply, but DSPs expect 16
-        bitDepth = 16;
-      }
-
-      return { sampleRate, bitDepth };
-    } finally {
-      await audioContext.close();
-    }
+    const measurement = await measureReleaseAudio(file);
+    const validationError = validateReleaseAudio(measurement);
+    if (validationError) throw new Error(validationError);
+    return { ...measurement, hash: await sha256Hex(file) };
   } catch (error: unknown) {
-    logger.warn('[useDDEXRelease] AudioContext decoding failed, using format defaults:', error);
-    // Fallback: derive from file extension
-    const ext = file.name.split('.').pop()?.toLowerCase();
-    if (ext === 'wav') return { sampleRate: 44100, bitDepth: 24 };
-    if (ext === 'flac') return { sampleRate: 44100, bitDepth: 24 };
-    return { sampleRate: 44100, bitDepth: 16 };
+    logger.warn('[useDDEXRelease] AudioContext decoding failed — file cannot be verified:', error);
+    return null;
   }
 }
 
 /**
  * Extract real image dimensions from an image URL using the Image API.
- * Returns { width, height } or falls back to 3000x3000 on error.
+ *
+ * ISSUE-963: returns null on failure instead of fabricating a 3000x3000
+ * default — an image that cannot be decoded must never be displayed/stored
+ * as if its dimensions were measured.
  */
-async function extractImageDimensions(imageUrl: string): Promise<{ width: number; height: number }> {
+async function extractImageDimensions(file: File): Promise<{ width: number; height: number } | null> {
+  const imageUrl = URL.createObjectURL(file);
   try {
     return await new Promise<{ width: number; height: number }>((resolve, reject) => {
       const img = new Image();
@@ -181,18 +158,21 @@ async function extractImageDimensions(imageUrl: string): Promise<{ width: number
       img.onerror = () => reject(new Error('Image failed to load'));
       img.src = imageUrl;
     });
-  } catch {
-    logger.warn('[useDDEXRelease] Failed to extract image dimensions, using 3000x3000 default');
-    return { width: 3000, height: 3000 };
+  } catch (error: unknown) {
+    logger.warn('[useDDEXRelease] Failed to extract image dimensions — file cannot be verified:', error);
+    return null;
+  } finally {
+    URL.revokeObjectURL(imageUrl);
   }
 }
 
 export function useDDEXRelease(): UseDDEXReleaseReturn {
-  const { currentOrganizationId, organizations, userProfile } = useStore(
+  const { currentOrganizationId, organizations, userProfile, currentProjectId } = useStore(
     useShallow(state => ({
       currentOrganizationId: state.currentOrganizationId,
       organizations: state.organizations,
       userProfile: state.userProfile,
+      currentProjectId: state.currentProjectId,
     }))
   );
 
@@ -202,8 +182,7 @@ export function useDDEXRelease(): UseDDEXReleaseReturn {
     [organizations, currentOrganizationId]
   );
 
-  // For now, use a default project ID (can be enhanced later)
-  const activeProjectId = 'default-project';
+  const activeProjectId = currentProjectId || DEFAULT_PROJECT_ID;
 
   // Get user's preferred distributor from onboarding profile
   const userDistributor = useMemo(() => {
@@ -256,10 +235,69 @@ export function useDDEXRelease(): UseDDEXReleaseReturn {
       throw new Error('Missing organization or user context');
     }
 
-    // Use a dedicated 'packaging' path to differentiate from analysis-only uploads
-    const path = `orgs/${activeOrg.id}/releases/packaging/${Date.now()}_${file.name}`;
+    // ISSUE-963: reject lossy audio formats before uploading any bytes —
+    // MP3/AAC were previously accepted by the file picker (and by AAC-aware
+    // extraction logic) despite the UI copy promising "WAV or FLAC" only,
+    // and were silently relabeled as 'wav' at submission with no
+    // transcoding. A release master must actually be lossless.
+    if (type === 'audio') {
+      const ext = file.name.split('.').pop()?.toLowerCase();
+      if (ext !== 'wav' && ext !== 'flac') {
+        const message = `"${file.name}" is a ${ext?.toUpperCase() || 'unrecognized'} file. Only WAV or FLAC masters are accepted for release delivery.`;
+        setSubmitError(message);
+        throw new Error(message);
+      }
+    }
 
     try {
+      // A rejected master must not leave behind an orphaned package object.
+      const audioMetadata = type === 'audio' ? await extractAudioMetadata(file) : null;
+      const imageDimensions = type === 'cover' ? await extractImageDimensions(file) : null;
+      if (type === 'audio' && !audioMetadata) {
+        const message = `Could not decode or validate "${file.name}" — it may be corrupt or violate release-master requirements. It was not uploaded.`;
+        setSubmitError(message);
+        throw new Error(message);
+      }
+      if (type === 'cover' && !imageDimensions) {
+        const message = `Could not read image dimensions for "${file.name}" — it may be corrupt or an unsupported format. It was not uploaded as cover art.`;
+        setSubmitError(message);
+        throw new Error(message);
+      }
+      if (type === 'audio') {
+        // DDEX packaging references the same immutable, content-addressed
+        // master as ingestion, analysis, video, and the track library.
+        const masterFingerprint = metadata.masterFingerprint?.trim() || `SHA256-${audioMetadata.hash}`;
+        setUploadProgress(prev => ({ ...prev, audio: 10 }));
+        const masterAsset = await masterAudioService.persist(file, {
+          userId: userProfile.id,
+          masterFingerprint,
+        });
+        setUploadProgress(prev => ({ ...prev, audio: 100 }));
+
+        const audioInfo = {
+          url: masterAsset.downloadUrl,
+          mimeType: file.type,
+          sizeBytes: file.size,
+          format: audioMetadata.format,
+          sampleRate: audioMetadata.sampleRate,
+          bitDepth: audioMetadata.bitDepth,
+          hash: audioMetadata.hash,
+          storagePath: masterAsset.storagePath,
+          contentHash: masterAsset.contentHash,
+          masterFingerprint: masterAsset.masterFingerprint,
+        };
+        setSubmitError(null);
+        updateMetadata({
+          userId: userProfile.id,
+          masterFingerprint: masterAsset.masterFingerprint,
+          masterAsset,
+        });
+        updateAssets({ audioFile: audioInfo });
+        return masterAsset.downloadUrl;
+      }
+
+      // Non-audio release collateral retains its ordinary packaging path.
+      const path = `orgs/${activeOrg.id}/releases/packaging/${Date.now()}_${file.name}`;
       const url = await StorageService.uploadFileWithProgress(
         file,
         path,
@@ -267,38 +305,21 @@ export function useDDEXRelease(): UseDDEXReleaseReturn {
           setUploadProgress(prev => ({ ...prev, [type]: progress }));
         }
       );
-
-      // Extract real metadata from audio file using Web Audio API
-      if (type === 'audio') {
-        const audioMetadata = await extractAudioMetadata(file);
-        const audioInfo = {
-          url,
-          mimeType: file.type,
-          sizeBytes: file.size,
-          format: (file.name.split('.').pop()?.toLowerCase() || 'wav') as 'wav' | 'flac' | 'mp3' | 'aac',
-          sampleRate: audioMetadata.sampleRate,
-          bitDepth: audioMetadata.bitDepth,
-        };
-        updateAssets({ audioFile: audioInfo });
-      } else {
-        // Extract real image dimensions
-        const dimensions = await extractImageDimensions(url);
-        const coverInfo = {
-          url,
-          mimeType: file.type,
-          sizeBytes: file.size,
-          width: dimensions.width,
-          height: dimensions.height,
-        };
-        updateAssets({ coverArt: coverInfo });
-      }
-
+      const coverInfo = {
+        url,
+        mimeType: file.type,
+        sizeBytes: file.size,
+        width: imageDimensions.width,
+        height: imageDimensions.height,
+      };
+      setSubmitError(null);
+      updateAssets({ coverArt: coverInfo });
       return url;
     } catch (error: unknown) {
       logger.error(`Error uploading ${type} asset:`, error);
       throw error;
     }
-  }, [activeOrg, userProfile, updateAssets]);
+  }, [activeOrg, userProfile, metadata.masterFingerprint, updateAssets, updateMetadata]);
 
   // Validation errors
   const getValidationErrors = useCallback((step: WizardStep): string[] => {
@@ -325,6 +346,14 @@ export function useDDEXRelease(): UseDDEXReleaseReturn {
       case 'assets':
         if (!assets.audioFile) errors.push('Audio file is required');
         if (!assets.coverArt) errors.push('Cover art is required');
+        if (assets.coverArt && userProfile) {
+          const coverValidation = validateImageForDistributor(
+            userProfile,
+            assets.coverArt.width,
+            assets.coverArt.height
+          );
+          errors.push(...coverValidation.errors.map(error => `Cover art: ${error}`));
+        }
         break;
 
       case 'harness':
@@ -341,7 +370,7 @@ export function useDDEXRelease(): UseDDEXReleaseReturn {
     }
 
     return errors;
-  }, [metadata, selectedDistributors, assets]);
+  }, [metadata, selectedDistributors, assets, userProfile]);
 
   const validationErrors = getValidationErrors(currentStep);
 
@@ -373,73 +402,109 @@ export function useDDEXRelease(): UseDDEXReleaseReturn {
       throw new Error('Missing organization or user context');
     }
 
+    // Navigation normally prevents this, but callers can invoke submission
+    // directly. Recheck the real measured asset here so an undersized/non-square
+    // cover can never enter the packaging record by bypassing the UI step.
+    const assetErrors = getValidationErrors('assets');
+    if (assetErrors.length > 0) {
+      throw new Error(`Release assets are not ready: ${assetErrors.join('; ')}`);
+    }
+
     setIsSubmitting(true);
     setSubmitError(null);
     setCurrentStep('submitting');
 
     try {
-      // Determine audio format, defaulting to 'wav' if aac or unknown
-      const rawFormat = assets.audioFile?.format || 'wav';
-      const audioFormat: AudioFormat = (rawFormat === 'aac' ? 'wav' : rawFormat) as AudioFormat;
+      // ISSUE-964: a retry after a prior packaging failure reuses the
+      // existing draft doc instead of creating a duplicate release record.
+      let docId = releaseId;
 
-      // Create release record
-      const releaseRecord: Omit<DDEXReleaseRecord, 'id'> = {
-        orgId: activeOrg.id,
-        projectId: activeProjectId,
-        userId: userProfile.id,
-        metadata: metadata as ExtendedGoldenMetadata,
-        assets: {
-          audioUrl: assets.audioFile?.url || '',
-          audioFormat,
-          audioSampleRate: assets.audioFile?.sampleRate || 44100,
-          audioBitDepth: assets.audioFile?.bitDepth || 16,
-          coverArtUrl: assets.coverArt?.url || '',
-          coverArtWidth: assets.coverArt?.width || 3000,
-          coverArtHeight: assets.coverArt?.height || 3000
-        },
-        status: 'draft',
-        distributors: selectedDistributors.map(id => ({
-          distributorId: id,
-          status: 'pending'
-        })),
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      };
+      if (!docId) {
+        // ISSUE-963: previously silently relabeled 'aac' as 'wav' here with
+        // no transcoding, so a lossy AAC payload could be declared as a
+        // lossless WAV master. uploadAsset() now rejects non-WAV/FLAC
+        // formats before this point is ever reached; this is a defensive
+        // second gate, not the primary enforcement.
+        const rawFormat = assets.audioFile?.format;
+        if (rawFormat !== 'wav' && rawFormat !== 'flac') {
+          throw new Error(`Release audio must be WAV or FLAC (got "${rawFormat || 'unknown'}"). Re-upload a lossless master before submitting.`);
+        }
+        const audioFormat: AudioFormat = rawFormat;
 
-      // Save to Firestore
-      const docRef = await addDoc(collection(db, 'proprietaryIngestionReleases'), {
-        ...releaseRecord,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
-      });
+        // Create release record
+        const releaseRecord: Omit<DDEXReleaseRecord, 'id'> = {
+          orgId: activeOrg.id,
+          projectId: activeProjectId,
+          userId: userProfile.id,
+          metadata: metadata as ExtendedGoldenMetadata,
+          assets: {
+            audioUrl: assets.audioFile?.url || '',
+            audioFormat,
+            audioSampleRate: assets.audioFile?.sampleRate || 44100,
+            audioBitDepth: assets.audioFile?.bitDepth || 16,
+            ...(assets.audioFile?.storagePath ? { audioStoragePath: assets.audioFile.storagePath } : {}),
+            ...(assets.audioFile?.contentHash ? { audioContentHash: assets.audioFile.contentHash } : {}),
+            ...(assets.audioFile?.masterFingerprint ? { masterFingerprint: assets.audioFile.masterFingerprint } : {}),
+            ...(metadata.isrc?.trim() ? { isrc: metadata.isrc.trim() } : {}),
+            coverArtUrl: assets.coverArt?.url || '',
+            coverArtWidth: assets.coverArt?.width || 3000,
+            coverArtHeight: assets.coverArt?.height || 3000
+          },
+          status: 'draft',
+          distributors: selectedDistributors.map(id => ({
+            distributorId: id,
+            status: 'pending'
+          })),
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
 
-      // Update status to validating
-      // Update status to complete
-      await updateDoc(doc(db, 'proprietaryIngestionReleases', docRef.id), {
+        // Save to Firestore
+        const docRef = await addDoc(collection(db, 'proprietaryIngestionReleases'), {
+          ...releaseRecord,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        });
+
+        docId = docRef.id;
+        setReleaseId(docId);
+      }
+
+      // ISSUE-964: packaging must succeed before the release is ever
+      // marked metadata_complete. A failure here throws (propagating to
+      // the outer catch below) instead of being logged and ignored, so
+      // the record stays truthfully in packaging_failed with the real
+      // error and can be retried without duplicating the draft.
+      try {
+        await agentService.runAgent(
+          'publishing',
+          `Package the definitive assets for release ID: ${docId}.
+          Audio URL: ${assets.audioFile?.url}
+          Canonical audio storage path: ${assets.audioFile?.storagePath || 'unavailable'}
+          Master fingerprint: ${assets.audioFile?.masterFingerprint || metadata.masterFingerprint || 'unavailable'}
+          ISRC: ${metadata.isrc || 'not assigned'}
+          Cover Art URL: ${assets.coverArt?.url}`
+        );
+      } catch (agentError: unknown) {
+        const packagingErrorMessage = agentError instanceof Error ? agentError.message : 'Packaging failed';
+        logger.error('[useDDEXRelease] Definitive packaging failed:', agentError);
+        await updateDoc(doc(db, 'proprietaryIngestionReleases', docId), {
+          status: 'packaging_failed',
+          packagingError: packagingErrorMessage,
+          updatedAt: serverTimestamp()
+        });
+        throw new Error(`Packaging failed: ${packagingErrorMessage}. Your draft is saved — you can retry.`);
+      }
+
+      // Packaging confirmed — only now is it truthful to mark complete.
+      await updateDoc(doc(db, 'proprietaryIngestionReleases', docId), {
         status: 'metadata_complete',
         updatedAt: serverTimestamp()
       });
 
-      setReleaseId(docRef.id);
-
-      // Trigger definitive packaging via the Publishing Department Agent
-      // This is the ONLY time music is packaged for distribution.
-      try {
-        await agentService.runAgent(
-          'publishing',
-          `Package the definitive assets for release ID: ${docRef.id}.
-          Audio URL: ${assets.audioFile?.url}
-          Cover Art URL: ${assets.coverArt?.url}`
-        );
-      } catch (agentError: unknown) {
-        logger.warn('[useDDEXRelease] Agent packaging trigger failed:', agentError);
-        // We don't fail the whole submission if the agent trigger fails,
-        // since the record is already saved.
-      }
-
       setCurrentStep('complete');
 
-      return docRef.id;
+      return docId;
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to submit release';
       setSubmitError(errorMessage);
@@ -448,7 +513,7 @@ export function useDDEXRelease(): UseDDEXReleaseReturn {
     } finally {
       setIsSubmitting(false);
     }
-  }, [activeOrg, activeProjectId, userProfile, metadata, assets, selectedDistributors]);
+  }, [activeOrg, activeProjectId, userProfile, metadata, assets, selectedDistributors, releaseId, getValidationErrors]);
 
   // Reset wizard
   const resetWizard = useCallback(() => {

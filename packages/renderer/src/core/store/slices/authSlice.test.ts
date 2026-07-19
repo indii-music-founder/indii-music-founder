@@ -3,13 +3,13 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createStore, type StoreApi } from 'zustand';
 import { createAuthSlice, AuthSlice } from './authSlice';
 import type { UserCredential } from 'firebase/auth';
-import { signInWithPopup, signOut, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
+import { signInWithPopup, signOut, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, signInWithCredential } from 'firebase/auth';
 import { setDoc } from 'firebase/firestore';
 
 // Mock Firebase Auth
 vi.mock('firebase/auth', () => ({
     getAuth: vi.fn(),
-    GoogleAuthProvider: vi.fn(),
+    GoogleAuthProvider: Object.assign(vi.fn(), { credential: vi.fn(() => ({ providerId: 'google.com' })) }),
     signInWithPopup: vi.fn(),
     signOut: vi.fn(),
     onAuthStateChanged: vi.fn(),
@@ -17,6 +17,7 @@ vi.mock('firebase/auth', () => ({
     createUserWithEmailAndPassword: vi.fn(),
     signInAnonymously: vi.fn(),
     sendPasswordResetEmail: vi.fn(),
+    signInWithCredential: vi.fn(),
 }));
 
 vi.mock('@/services/firebase', () => ({
@@ -61,6 +62,8 @@ describe('AuthSlice', () => {
         vi.useRealTimers();
         if (typeof window !== 'undefined') {
             delete (window as unknown as Record<string, boolean>).FIREBASE_E2E_MOCK;
+            delete (window as unknown as Record<string, unknown>).electronAPI;
+            localStorage.removeItem('indii_founder_preview_pending');
         }
     });
 
@@ -133,6 +136,20 @@ describe('AuthSlice', () => {
             await loginWithGoogle();
 
             expect(useStore.getState().authError).toBe('Authentication service unavailable. Please try again later.');
+        });
+
+        it('should normalize referer errors that embed the blocked localhost origin', async () => {
+            const error = Object.assign(new Error('raw Firebase referer error'), {
+                code: 'auth/requests-from-referer-http://localhost:4243-are-blocked'
+            });
+            vi.mocked(signInWithPopup).mockRejectedValueOnce(error);
+            const { loginWithGoogle } = useStore.getState();
+
+            await loginWithGoogle();
+
+            expect(useStore.getState().authError).toBe(
+                'Authentication service not configured for this domain. Please contact support.'
+            );
         });
 
         it('should show user-friendly message for too-many-requests', async () => {
@@ -428,6 +445,30 @@ describe('AuthSlice', () => {
 
             // Now the logout should have taken effect
             expect(useStore.getState().user).toBeNull();
+        });
+
+        it('should preserve founder source from electron handoff tokens', async () => {
+            let userUpdateCallback: ((tokens: { idToken: string; accessToken?: string | null; source?: string }) => Promise<void> | void) | null = null;
+            const onUserUpdate = vi.fn((cb) => {
+                userUpdateCallback = cb;
+                return () => {};
+            });
+            const onError = vi.fn();
+            Object.defineProperty(window, 'electronAPI', {
+                value: { auth: { onUserUpdate, onError } },
+                configurable: true,
+            });
+
+            vi.mocked(signInWithCredential).mockResolvedValueOnce({} as never);
+
+            const { initializeAuthListener } = useStore.getState();
+            initializeAuthListener();
+
+            expect(onUserUpdate).toHaveBeenCalled();
+            await userUpdateCallback?.({ idToken: 'id-token', accessToken: 'access-token', source: 'founder' });
+
+            expect(localStorage.getItem('indii_founder_preview_pending')).toBe('true');
+            expect(signInWithCredential).toHaveBeenCalled();
         });
 
         it('should not sync anonymous users to Firestore', async () => {

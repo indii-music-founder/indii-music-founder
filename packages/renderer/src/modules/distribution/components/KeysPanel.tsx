@@ -6,12 +6,20 @@ import { distributionService } from '@/services/distribution/DistributionService
 import { isrcService } from '@/services/distribution/ISRCService'; // Import ISRCService
 import { MerlinReport, MerlinCheckData, MerlinTrack, BWarmWork } from '@/types/distribution';
 import { ISRCRecordDocument } from '@/types/firestore';
+import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 
 import { auth } from '@/services/firebase';
 import { logger } from '@/utils/logger';
 
 export const KeysPanel: React.FC = () => {
     const { success, error } = useToast();
+    const { setModule, setRegistrationFocus } = useStore(
+        useShallow(state => ({
+            setModule: state.setModule,
+            setRegistrationFocus: state.setRegistrationFocus,
+        }))
+    );
     const [loading, setLoading] = useState(false);
     const [statusReport, setStatusReport] = useState<MerlinReport | null>(null);
     const [bwarmCsv, setBwarmCsv] = useState<string | null>(null);
@@ -71,28 +79,93 @@ export const KeysPanel: React.FC = () => {
         setBwarmCsv(null);
         try {
             if (catalog.length === 0) {
-                success('No works to register. Please assign ISRCs first.');
+                error('No works to register. Please assign ISRCs first.');
                 return;
             }
 
-            // Map real catalog to BWarmWork format
-            const works: BWarmWork[] = catalog.map(record => {
-                // Attempt to find writers in metadata snapshot, fallback to artistName
-                const writers = (record.metadataSnapshot?.writers as string[]) || [record.artistName];
+            // ISSUE-792 FIX: Extract real writer/publisher data from metadata
+            // Never use fabricated defaults like "John Doe" or "Self-Published"
+            const works: BWarmWork[] = [];
+            const skipped: string[] = [];
 
-                return {
-                    title: record.trackTitle,
-                    writers: writers,
-                    isrc: record.isrc,
-                    // Additional helpful metadata if available
-                    artist: record.artistName
-                };
-            });
+            for (const record of catalog) {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const meta = (record.metadataSnapshot as Record<string, any>) || {};
+                const title = record.trackTitle || 'Untitled';
+
+                // Validate splits exist and have real data
+                const splits = (meta.splits as Array<{ legalName?: string; percentage?: number; email?: string }>) || [];
+                if (!splits || splits.length === 0) {
+                    skipped.push(`${title}: No royalty splits defined`);
+                    continue;
+                }
+
+                // Validate split has real legal names
+                const validSplits = splits.filter(s => s.legalName?.trim());
+                if (validSplits.length === 0) {
+                    skipped.push(`${title}: No valid writer legal names in splits`);
+                    continue;
+                }
+
+                // Validate publisher (must be real, not "Self-Published")
+                const publisher = meta.publisher?.trim();
+                if (!publisher || publisher === 'Self-Published') {
+                    skipped.push(`${title}: Requires real publisher name (not "Self-Published")`);
+                    continue;
+                }
+
+                // Validate release date from metadata
+                const releaseDate = meta.releaseDate?.trim();
+                if (!releaseDate) {
+                    skipped.push(`${title}: Requires release date in metadata`);
+                    continue;
+                }
+
+                // Map each split to a work entry (MLC expects individual writer per row)
+                for (const split of validSplits) {
+                    const nameParts = (split.legalName || '').split(/\s+/);
+                    const firstName = nameParts.slice(0, -1).join(' ') || nameParts[0] || '';
+                    const lastName = nameParts.length > 1 ? nameParts[nameParts.length - 1] : '';
+
+                    if (!lastName) {
+                        logger.warn(`[KeysPanel] Skipping split: "${split.legalName}" requires first and last name`);
+                        continue;
+                    }
+
+                     
+                    works.push({
+                        title,
+                        isrc: record.isrc,
+                        artist: record.artistName,
+                        // Split-specific data (ISSUE-792)
+                        writer_first: firstName,
+                        writer_last: lastName,
+                        writer_ipi: ((split as Record<string, unknown>).ipi as string) || '',
+                        publisher,
+                        publisher_ipi: (meta.publisherIPI as string) || '',
+                        collection_share: split.percentage || 0,
+                        release_date: releaseDate,
+                        id: record.id
+                    } as BWarmWork);
+                }
+            }
+
+            if (works.length === 0) {
+                const msg = skipped.length > 0
+                    ? `No complete works. Issues:\n${skipped.join('\n')}`
+                    : 'No works with valid metadata for BWARM export.';
+                error(msg);
+                return;
+            }
+
+            if (skipped.length > 0) {
+                logger.warn('[KeysPanel] Skipped works during BWARM generation:', skipped);
+            }
 
             // DistributionService.generateBWARM returns the CSV string directly (unwrapped)
             const csv = await distributionService.generateBWARM({ works });
             setBwarmCsv(csv);
-            success('BWARM CSV Generated. Ready for download.');
+            success(`BWARM CSV Generated (${works.length} writer entries). Ready for download.`);
         } catch (err: unknown) {
             error(err instanceof Error ? err.message : 'Unknown error during BWARM generation');
         } finally {
@@ -111,6 +184,14 @@ export const KeysPanel: React.FC = () => {
         a.click();
         document.body.removeChild(a);
         window.URL.revokeObjectURL(url);
+    };
+
+    const openRegistrationCenter = (orgId: 'mlc' | 'soundexchange') => {
+        setRegistrationFocus({
+            trackId: catalog[0]?.id ?? null,
+            orgId,
+        });
+        setModule('registration');
     };
 
     return (
@@ -206,7 +287,7 @@ export const KeysPanel: React.FC = () => {
                         <div className="p-4 bg-black/40 rounded-lg border border-white/10">
                             <h4 className="text-sm font-medium text-white mb-2">BWARM Generation</h4>
                             <p className="text-xs text-gray-400 mb-4">
-                                Generate Bulk Works Registration (BWARM) CSV files compliant with The MLC standards for royalty collection.
+                                Generate Bulk Works Registration (BWARM) CSV for The MLC. Requires: royalty splits with real writer legal names, publisher, and release dates. No fabricated data.
                             </p>
 
                             {bwarmCsv ? (
@@ -246,11 +327,21 @@ export const KeysPanel: React.FC = () => {
                         <div className="pt-4 border-t border-gray-800">
                             <h4 className="text-sm font-medium text-white mb-2">External Connections</h4>
                             <div className="flex gap-2">
-                                <button disabled className="flex-1 py-2 bg-white/5 text-gray-500 rounded border border-white/10 text-xs cursor-not-allowed">
-                                    Connect MLC Account
+                                <button
+                                    data-testid="keys-open-mlc-registration"
+                                    onClick={() => openRegistrationCenter('mlc')}
+                                    disabled={catalog.length === 0}
+                                    className="flex-1 py-2 bg-white/5 hover:bg-white/10 text-white rounded border border-white/10 text-xs transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    Open MLC Registration
                                 </button>
-                                <button disabled className="flex-1 py-2 bg-white/5 text-gray-500 rounded border border-white/10 text-xs cursor-not-allowed">
-                                    Connect SoundExchange
+                                <button
+                                    data-testid="keys-open-soundexchange-registration"
+                                    onClick={() => openRegistrationCenter('soundexchange')}
+                                    disabled={catalog.length === 0}
+                                    className="flex-1 py-2 bg-white/5 hover:bg-white/10 text-white rounded border border-white/10 text-xs transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    Open SoundExchange
                                 </button>
                             </div>
                         </div>

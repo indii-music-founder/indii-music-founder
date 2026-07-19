@@ -3,6 +3,7 @@ import { VideoProject, VideoClip } from '../../store/videoEditorStore';
 import { PropertiesPanel } from '@/components/studio/PropertiesPanel';
 import FrameSelectionModal from '../../components/FrameSelectionModal';
 import { HistoryItem } from '@/core/store';
+import { resolveStorageUrl } from '@/services/storage/resolveStorageUrl';
 import {
     ProjectSettingsSection,
     ClipBasicsSection,
@@ -24,9 +25,10 @@ interface VideoPropertiesPanelProps {
 export const VideoPropertiesPanel: React.FC<VideoPropertiesPanelProps> = ({ project, selectedClip, updateClip, isPopoutActive = false }) => {
     const [isFrameModalOpen, setIsFrameModalOpen] = useState(false);
 
-    const handleSourceSelect = useCallback((item: HistoryItem) => {
+    const handleSourceSelect = useCallback(async (item: HistoryItem) => {
         if (selectedClip) {
-            updateClip(selectedClip.id, { src: item.url });
+            const resolvedUrl = await resolveStorageUrl(item.url);
+            updateClip(selectedClip.id, { src: resolvedUrl });
         }
     }, [selectedClip, updateClip]);
 

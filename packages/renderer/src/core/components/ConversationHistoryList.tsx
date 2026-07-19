@@ -2,9 +2,25 @@ import React, { useMemo, memo } from 'react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { formatSmartDate, cn } from '@/lib/utils';
-import { MessageSquare, Calendar, Trash2, X, Edit2, Check } from 'lucide-react';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { MessageSquare, Calendar, Trash2, X, Edit2, Check, Archive, ArchiveRestore, Search, Briefcase, FolderOutput, Target, Scale, DollarSign, Palette, Film, Share2, Library, Zap } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { motion } from 'framer-motion';
+import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import type { ConversationSession } from '@/core/store/slices/agent';
+
+
+const AGENT_ICONS: Record<string, { icon: LucideIcon; color: string }> = {
+    'marketing': { icon: Target, color: 'text-rose-400' },
+    'finance': { icon: DollarSign, color: 'text-emerald-400' },
+    'legal': { icon: Scale, color: 'text-amber-400' },
+    'brand': { icon: Briefcase, color: 'text-fuchsia-400' },
+    'creative': { icon: Palette, color: 'text-green-400' },
+    'video': { icon: Film, color: 'text-sky-400' },
+    'social': { icon: Share2, color: 'text-blue-400' },
+    'publishing': { icon: Library, color: 'text-orange-400' },
+    'indii': { icon: Zap, color: 'text-cyan-400' },
+};
 
 const HistoryItem = memo(({
     session,
@@ -12,7 +28,10 @@ const HistoryItem = memo(({
     index,
     onSelect,
     onDelete,
-    onRename
+    onRename,
+    onArchive,
+    onUnarchive,
+    onUpdateProject
 }: {
     key?: React.Key,
     session: ConversationSession,
@@ -20,10 +39,15 @@ const HistoryItem = memo(({
     index: number,
     onSelect: (id: string) => void,
     onDelete: (id: string) => void,
-    onRename: (id: string, title: string) => void
+    onRename: (id: string, title: string) => void,
+    onArchive: (id: string) => void,
+    onUnarchive: (id: string) => void,
+    onUpdateProject: (id: string, projectId: string) => void
 }) => {
     const [isEditing, setIsEditing] = React.useState(false);
     const [tempTitle, setTempTitle] = React.useState(session.title || '');
+    const projects = (useStore(state => state.projects) || []);
+    const project = session.projectId ? projects.find(p => p.id === session.projectId) : undefined;
 
     const handleRename = (e: React.MouseEvent | React.FormEvent) => {
         e.stopPropagation();
@@ -63,6 +87,30 @@ const HistoryItem = memo(({
                 aria-current={isActive ? 'true' : undefined}
             >
                 <div className="flex justify-between items-start mb-2">
+                {/* Participant Avatars */}
+                {session.participants && session.participants.length > 0 && (
+                    <div className="flex gap-1 mb-2">
+                        {session.participants.slice(0, 3).map(agentId => {
+                            const agent = AGENT_ICONS[agentId] || { icon: Zap, color: 'text-gray-400' };
+                            const Icon = agent.icon;
+                            return (
+                                <div key={agentId} className={cn(
+                                    "w-5 h-5 rounded-full bg-white/5 flex items-center justify-center border border-white/10",
+                                    agent.color
+                                )}>
+                                    <Icon size={12} />
+                                </div>
+                            );
+                        })}
+                        {session.participants.length > 3 && (
+                            <div className="w-5 h-5 rounded-full bg-white/5 flex items-center justify-center border border-white/10 text-[9px] text-gray-400">
+                                +{session.participants.length - 3}
+                            </div>
+                        )}
+                    </div>
+                )}
+
+
                     {isEditing ? (
                         <div className="flex items-center gap-2 w-full pr-12" onClick={e => e.stopPropagation()}>
                             <input
@@ -92,7 +140,13 @@ const HistoryItem = memo(({
                     )}
                 </div>
 
-                <div className="flex items-center gap-3 text-[10px] text-gray-500 font-mono tracking-wider uppercase">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-gray-500 font-mono tracking-wider uppercase mt-1">
+                    {project && (
+                        <span className="flex items-center gap-1 text-[9px] bg-white/5 px-1.5 py-0.5 rounded border border-white/10 text-gray-300">
+                            <Briefcase size={8} className="text-gray-400" />
+                            {project.name}
+                        </span>
+                    )}
                     <span className="flex items-center gap-1.5" aria-label={`${session.messages?.length || 0} messages`}>
                         <MessageSquare size={10} className="text-dept-creative/50" aria-hidden="true" />
                         {session.messages?.length || 0}
@@ -117,10 +171,73 @@ const HistoryItem = memo(({
                     </button>
                 )}
                 <button
-                    className="p-2 hover:bg-red-500/20 hover:text-red-400 rounded-lg text-gray-600 transition-colors focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:outline-none"
+                    className="p-2 hover:bg-white/10 hover:text-white rounded-lg text-gray-600 transition-colors focus-visible:ring-2 focus-visible:ring-dept-creative focus-visible:outline-none"
                     onClick={(e) => {
                         e.stopPropagation();
-                        onDelete(session.id);
+                        if (session.isArchived) {
+                            onUnarchive(session.id);
+                        } else {
+                            onArchive(session.id);
+                        }
+                    }}
+                    aria-label={session.isArchived ? 'Restore session' : 'Archive session'}
+                >
+                    {session.isArchived ? <ArchiveRestore size={12} /> : <Archive size={12} />}
+                </button>
+                <DropdownMenu.Root>
+                    <DropdownMenu.Trigger asChild>
+                        <button
+                            className="p-2 hover:bg-white/10 hover:text-white rounded-lg text-gray-600 transition-colors focus-visible:ring-2 focus-visible:ring-dept-creative focus-visible:outline-none"
+                            onClick={(e) => e.stopPropagation()}
+                            aria-label="Move to project"
+                        >
+                            <FolderOutput size={12} />
+                        </button>
+                    </DropdownMenu.Trigger>
+                    <DropdownMenu.Portal>
+                        <DropdownMenu.Content
+                            className="z-50 min-w-[200px] overflow-hidden rounded-md border border-white/10 bg-[#1A1A1A] text-white shadow-xl animate-in fade-in-80 zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2"
+                            sideOffset={4}
+                            align="end"
+                        >
+                            <div className="px-2 py-1.5 text-xs font-semibold text-gray-400 uppercase tracking-wider border-b border-white/5 mb-1">
+                                Move to Project
+                            </div>
+                            <DropdownMenu.Item
+                                className="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-white/10 focus:bg-white/10 focus:text-white data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onUpdateProject(session.id, '');
+                                }}
+                            >
+                                <span className="flex-1 truncate">Inbox (Unassigned)</span>
+                            </DropdownMenu.Item>
+                            {projects.filter(p => p.status === 'active' || p.status === 'paused').map((p) => (
+                                <DropdownMenu.Item
+                                    key={p.id}
+                                    className="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-white/10 focus:bg-white/10 focus:text-white data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        onUpdateProject(session.id, p.id);
+                                    }}
+                                >
+                                    <span className="flex-1 truncate">{p.name}</span>
+                                </DropdownMenu.Item>
+                            ))}
+                        </DropdownMenu.Content>
+                    </DropdownMenu.Portal>
+                </DropdownMenu.Root>
+                <button
+                    className="p-2 hover:bg-red-500/20 hover:text-red-400 rounded-lg text-gray-600 transition-colors focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:outline-none"
+                    onClick={async (e) => {
+                        e.stopPropagation();
+                        const ok = await ConfirmDialog.call({
+                            title: 'Delete Session',
+                            message: `Are you sure you want to delete "${session.title || 'Temporal Stream'}"? This cannot be undone.`,
+                            confirmText: 'Delete',
+                            variant: 'destructive'
+                        });
+                        if (ok) onDelete(session.id);
                     }}
                     aria-label={`Delete session: ${session.title || 'Temporal Stream'}`}
                 >
@@ -141,59 +258,154 @@ const HistoryItem = memo(({
 });
 
 export const ConversationHistoryList = ({ className, onClose }: { className?: string; onClose?: () => void }) => {
-    const { sessions, activeSessionId, setActiveSession, deleteSession, updateSessionTitle, setRightPanelView } = useStore(
+    const { sessions, activeSessionId, setActiveSession, deleteSession, updateSessionTitle, updateSessionProject, archiveSession, unarchiveSession, setRightPanelView, loadMoreSessions, sessionsPaginationLoading, hasMoreSessions } = useStore(
         useShallow(state => ({
             sessions: state.sessions,
             activeSessionId: state.activeSessionId,
             setActiveSession: state.setActiveSession,
             deleteSession: state.deleteSession,
             updateSessionTitle: state.updateSessionTitle,
+            updateSessionProject: state.updateSessionProject,
+            archiveSession: state.archiveSession,
+            unarchiveSession: state.unarchiveSession,
             setRightPanelView: state.setRightPanelView,
+            loadMoreSessions: state.loadMoreSessions,
+            sessionsPaginationLoading: state.sessionsPaginationLoading,
+            hasMoreSessions: state.hasMoreSessions,
         }))
     );
+    
+    const currentProjectId = useStore(state => state.currentProjectId);
+
+    const [searchQuery, setSearchQuery] = React.useState('');
+    const [activeTab, setActiveTab] = React.useState<'active' | 'archived'>('active');
 
     const handleSelect = React.useCallback((id: string) => {
         setActiveSession(id);
         setRightPanelView('messages');
     }, [setActiveSession, setRightPanelView]);
 
-    // Bolt Optimization: Memoize sorted sessions to prevent re-sorting on every render
-    const sortedSessions = useMemo(() => {
-        return Object.values(sessions).sort((a, b) => b.updatedAt - a.updatedAt);
-    }, [sessions]);
+    // Grouping helper
+    const categorizeDate = (timestamp: number) => {
+        const date = new Date(timestamp);
+        const today = new Date();
+        const yesterday = new Date(today);
+        yesterday.setDate(yesterday.getDate() - 1);
+        const lastWeek = new Date(today);
+        lastWeek.setDate(lastWeek.getDate() - 7);
+
+        if (date.toDateString() === today.toDateString()) return 'Today';
+        if (date.toDateString() === yesterday.toDateString()) return 'Yesterday';
+        if (date > lastWeek) return 'Previous 7 Days';
+        return 'Older';
+    };
+
+    const groupedSessions = useMemo(() => {
+        const filtered = Object.values(sessions).filter(s => {
+            const matchesSearch = s.title?.toLowerCase().includes(searchQuery.toLowerCase());
+            const matchesTab = activeTab === 'archived' ? s.isArchived : !s.isArchived;
+            // Only show sessions for the current project. If a session lacks a projectId, assume it belongs to the active project (or Inbox).
+            // This ensures backwards compatibility.
+            const matchesProject = !s.projectId || s.projectId === currentProjectId;
+            return matchesSearch && matchesTab && matchesProject;
+        }).sort((a, b) => b.updatedAt - a.updatedAt);
+
+        const groups: Record<string, typeof filtered> = {
+            'Today': [],
+            'Yesterday': [],
+            'Previous 7 Days': [],
+            'Older': []
+        };
+
+        filtered.forEach(s => {
+            groups[categorizeDate(s.updatedAt)].push(s);
+        });
+
+        return groups;
+    }, [sessions, searchQuery, activeTab, currentProjectId]);
 
     return (
         <div className={cn("flex flex-col h-full bg-black/40 text-white w-64 border-r border-white/5 backdrop-blur-3xl", className)}>
-            <div className="p-5 border-b border-white/5 flex justify-between items-center bg-white/5">
-                <h3 id="history-title" className="font-bold text-[13px] uppercase tracking-[0.2em] text-gray-400">Archives</h3>
-                <button
-                    onClick={() => onClose ? onClose() : setRightPanelView('messages')}
-                    className="p-1.5 hover:bg-white/10 rounded-full transition-colors text-gray-500 hover:text-white focus-visible:ring-2 focus-visible:ring-dept-creative focus-visible:outline-none"
-                    aria-label="Close history panel"
-                >
-                    <X size={14} />
-                </button>
+            <div className="p-4 border-b border-white/5 flex flex-col gap-3 bg-white/5">
+                <div className="flex justify-between items-center">
+                    <h3 id="history-title" className="font-bold text-[13px] uppercase tracking-[0.2em] text-gray-400">Sessions</h3>
+                    <button
+                        onClick={() => onClose ? onClose() : setRightPanelView('messages')}
+                        className="p-1 hover:bg-white/10 rounded-full transition-colors text-gray-500 hover:text-white"
+                        aria-label="Close history panel"
+                    >
+                        <X size={14} />
+                    </button>
+                </div>
+                
+                <div className="flex bg-black/40 p-1 rounded-lg">
+                    <button
+                        className={cn("flex-1 text-[11px] py-1.5 rounded-md font-medium transition-colors", activeTab === 'active' ? 'bg-white/10 text-white' : 'text-gray-500 hover:text-gray-300')}
+                        onClick={() => setActiveTab('active')}
+                    >
+                        Active
+                    </button>
+                    <button
+                        className={cn("flex-1 text-[11px] py-1.5 rounded-md font-medium transition-colors", activeTab === 'archived' ? 'bg-white/10 text-white' : 'text-gray-500 hover:text-gray-300')}
+                        onClick={() => setActiveTab('archived')}
+                    >
+                        Archived
+                    </button>
+                </div>
+
+                <div className="relative">
+                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500" size={12} />
+                    <input
+                        type="text"
+                        placeholder="Search sessions..."
+                        value={searchQuery}
+                        onChange={e => setSearchQuery(e.target.value)}
+                        className="w-full bg-black/50 border border-white/10 rounded-lg pl-8 pr-3 py-1.5 text-[12px] text-white placeholder:text-gray-600 focus:outline-none focus:border-dept-creative/50"
+                    />
+                </div>
             </div>
 
-            <ul aria-labelledby="history-title" className="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-2 m-0 list-none">
-                {sortedSessions.length === 0 && (
-                    <li className="text-center text-gray-500 mt-12 text-xs italic font-light">
-                        No temporal logs found.
-                    </li>
+            <div className="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-4 m-0">
+                {Object.values(groupedSessions).every(g => g.length === 0) && (
+                    <div className="text-center text-gray-500 mt-12 text-xs italic font-light">
+                        No {activeTab} sessions found.
+                    </div>
                 )}
 
-                {sortedSessions.map((session, index) => (
-                    <HistoryItem
-                        key={session.id}
-                        session={session}
-                        isActive={session.id === activeSessionId}
-                        index={index}
-                        onSelect={handleSelect}
-                        onDelete={deleteSession}
-                        onRename={updateSessionTitle}
-                    />
-                ))}
-            </ul>
+                {Object.entries(groupedSessions).map(([groupName, groupSessions]) => {
+                    if (groupSessions.length === 0) return null;
+                    return (
+                        <div key={groupName} className="space-y-2">
+                            <h4 className="text-[10px] font-bold uppercase tracking-widest text-gray-600 px-1">{groupName}</h4>
+                            <ul className="space-y-1" aria-labelledby="history-title">
+                                {groupSessions.map((session, index) => (
+                                    <HistoryItem
+                                        key={session.id}
+                                        session={session}
+                                        isActive={session.id === activeSessionId}
+                                        index={index}
+                                        onSelect={handleSelect}
+                                        onDelete={deleteSession}
+                                        onRename={updateSessionTitle}
+                                        onArchive={archiveSession}
+                                        onUnarchive={unarchiveSession}
+                                        onUpdateProject={updateSessionProject}
+                                    />
+                                ))}
+                            </ul>
+                        </div>
+                    );
+                })}
+                {hasMoreSessions && (
+                    <motion.button
+                        onClick={() => loadMoreSessions()}
+                        disabled={sessionsPaginationLoading}
+                        className="w-full m-3 px-4 py-2 bg-white/5 hover:bg-white/10 disabled:opacity-50 rounded-lg text-[12px] font-medium text-gray-300 transition-colors"
+                    >
+                        {sessionsPaginationLoading ? 'Loading...' : 'Load More Sessions'}
+                    </motion.button>
+                )}
+            </div>
         </div>
     );
 };

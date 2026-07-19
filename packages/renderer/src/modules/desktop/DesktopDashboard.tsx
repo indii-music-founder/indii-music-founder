@@ -65,7 +65,7 @@ export default function DesktopDashboard() {
                                 <div className="space-y-6">
                                     <ResourceBar label="MEMORY / VRAM" value={64} color="bg-cyan-500" />
                                     <ResourceBar label="CPU UTILIZATION" value={28} color="bg-blue-500" />
-                                    <ResourceBar label="FILE CACHE" value={82} color="bg-purple-500" />
+                                    <ResourceBar label="FILE CACHE" value={82} color="bg-green-500" />
                                 </div>
 
                                 <div className="mt-8 pt-6 border-t border-white/5 flex items-center justify-between">

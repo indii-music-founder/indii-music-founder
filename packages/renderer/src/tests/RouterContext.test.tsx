@@ -35,11 +35,22 @@ vi.mock('../core/store', () => {
         loadUserProfile: vi.fn(),
         initializeHistory: vi.fn(),
         loadProjects: vi.fn(),
-        loadSessions: vi.fn(),
+        // ISSUE-761: AppInitializationProvider.tsx calls loadNotesFromCloud()
+        // on mount (Firestore notes cloud sync) — a real regression caught
+        // via CI, not a flake: an incomplete mock throws
+        // "loadNotesFromCloud is not a function" when App actually renders.
+        loadNotesFromCloud: vi.fn().mockResolvedValue(undefined),
+        loadBoardroomMessages: vi.fn().mockResolvedValue(vi.fn()),
+        // App.tsx calls loadSessions().catch(...) on mount — must resolve, not return undefined.
+        loadSessions: vi.fn().mockResolvedValue(undefined),
         loginWithGoogle: vi.fn(),
         pendingCount: 0,
         isSyncing: false,
         lastSyncError: null,
+        boardroomMessages: [],
+        addAgentMessage: vi.fn(),
+        updateAgentMessage: vi.fn(),
+        removeAgentMessage: vi.fn(),
         setPendingCount: vi.fn(),
         setIsSyncing: vi.fn(),
         setLastSyncError: vi.fn(),
@@ -82,7 +93,6 @@ vi.mock('../core/components/ErrorBoundary', () => ({
 vi.mock('../core/components/Sidebar', () => ({ default: () => <div>Sidebar</div> }));
 vi.mock('../core/components/RightPanel', () => ({ default: () => <div>RightPanel</div> }));
 vi.mock('../core/components/CommandBar', () => ({ default: () => <div>CommandBar</div> }));
-vi.mock('../core/components/MobileNav', () => ({ MobileNav: () => <div>MobileNav</div> }));
 
 // Silence background async services causing fetch overlap
 vi.mock('../core/logger/Logger', () => ({
@@ -131,7 +141,7 @@ describe('Router Context Verification', () => {
             // If we wait for it to load, it should throw
             await screen.findByText('Dashboard Loaded');
         } catch (e: unknown) {
-            expect(e instanceof Error ? e.message : '').toMatch(/useNavigate\(\) may be used only in the context of a <Router> component/);
+            expect(e instanceof Error ? e.message : '').toMatch(/use(?:Navigate|Location)\(\) may be used only in the context of a <Router> component/);
         }
 
         consoleSpy.mockRestore();

@@ -103,7 +103,7 @@ export const RevenueProjections = () => {
                         <div className="bg-dept-royalties/10 border border-dept-royalties/20 rounded-xl p-5 text-center relative overflow-hidden group">
                             <div className="absolute inset-0 bg-dept-royalties/5 group-hover:bg-dept-royalties/10 transition-colors duration-500" />
                             <p className="text-dept-royalties text-xs font-bold uppercase tracking-wider mb-1 relative z-10">1 Year Net Revenue</p>
-                            <h2 className="text-lg font-black text-white relative z-10">${projections.net_to_rights_holder.year_1.toLocaleString(undefined, { maximumFractionDigits: 0 })}</h2>
+                            <h2 className="text-lg font-black text-white relative z-10">${projections.net_to_rights_holder.year_1.toLocaleString('en-US', { maximumFractionDigits: 0 })}</h2>
                         </div>
 
                         {/* Manager Savings Badge - Gamification */}
@@ -114,7 +114,7 @@ export const RevenueProjections = () => {
                                 </div>
                                 <div>
                                     <p className="text-xs text-dept-royalties/70 font-medium">Manager Fees Saved</p>
-                                    <p className="text-lg font-bold text-white">${projections.manager_fee_saved.year_1.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
+                                    <p className="text-lg font-bold text-white">${projections.manager_fee_saved.year_1.toLocaleString('en-US', { maximumFractionDigits: 0 })}</p>
                                 </div>
                             </div>
                             <div className="text-[10px] bg-dept-royalties/20 text-dept-royalties px-2 py-1 rounded font-bold">
@@ -126,11 +126,11 @@ export const RevenueProjections = () => {
                         <div className="grid grid-cols-2 gap-3">
                             <div className="bg-white/5 rounded-lg p-3 border border-white/5">
                                 <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">1 Month</p>
-                                <p className="text-sm font-bold text-white">${projections.net_to_rights_holder.month_1.toLocaleString()}</p>
+                                <p className="text-sm font-bold text-white">${projections.net_to_rights_holder.month_1.toLocaleString('en-US')}</p>
                             </div>
                             <div className="bg-white/5 rounded-lg p-3 border border-white/5">
                                 <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">6 Months</p>
-                                <p className="text-sm font-bold text-white">${projections.net_to_rights_holder.month_6.toLocaleString()}</p>
+                                <p className="text-sm font-bold text-white">${projections.net_to_rights_holder.month_6.toLocaleString('en-US')}</p>
                             </div>
                         </div>
                     </div>

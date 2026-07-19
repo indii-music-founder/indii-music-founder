@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { AlertTriangle, Bot, CheckCircle2, Database, GitBranch, Loader2, Music2, Save, Sparkles } from 'lucide-react';
 import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 import type { ExtendedGoldenMetadata } from '@/services/metadata/types';
 import { releaseHarnessService, saveReleaseHarnessRun, type ReleaseHarnessResult } from '@/services/release-harness';
 import { IdentifierService } from '@/services/identity/IdentifierService';
 import { ISWCService } from '@/services/publishing/ISWCService';
+import { DEFAULT_PROJECT_ID } from '@/core/constants';
 
 interface ReleaseHarnessWorkspaceProps {
   metadata: Partial<ExtendedGoldenMetadata>;
@@ -19,14 +21,16 @@ export function ReleaseHarnessWorkspace({
   metadata,
   selectedStores,
   audioFile,
-  projectId = 'default-project',
+  projectId = DEFAULT_PROJECT_ID,
   onApplyMetadata,
   onSaved,
 }: ReleaseHarnessWorkspaceProps) {
-  const { userProfile, analyticsReports } = useStore(state => ({
-    userProfile: state.userProfile,
-    analyticsReports: state.analyticsReports,
-  }));
+  const { userProfile, analyticsReports } = useStore(
+    useShallow(state => ({
+      userProfile: state.userProfile,
+      analyticsReports: state.analyticsReports,
+    }))
+  );
   const [result, setResult] = useState<ReleaseHarnessResult | null>(null);
   const [isCompiling, setIsCompiling] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -102,7 +106,11 @@ export function ReleaseHarnessWorkspace({
               isrc: updates.isrc ?? result.distributionReadiness.identifiers.isrc,
               upc: updates.upc ?? result.distributionReadiness.identifiers.upc,
               iswc: result.distributionReadiness.identifiers.iswc,
-              iswcStatus: result.distributionReadiness.identifiers.iswc ? 'registered' : work ? 'draft' : result.distributionReadiness.identifiers.iswcStatus,
+              // ISSUE-813: don't re-derive 'registered' from mere string
+              // presence — only a freshly created work draft (real
+              // ISWCService record) justifies 'draft'; otherwise carry
+              // forward whatever status was already known.
+              iswcStatus: work ? 'draft' : result.distributionReadiness.identifiers.iswcStatus,
               workId: work?.id ?? result.distributionReadiness.identifiers.workId,
               catalogNumber: updates.catalogNumber ?? result.distributionReadiness.identifiers.catalogNumber,
               missing: result.distributionReadiness.identifiers.missing.filter(id => id === 'iswc' || !(id in updates)),
@@ -123,10 +131,10 @@ export function ReleaseHarnessWorkspace({
 
   return (
     <div className="space-y-6">
-      <div className="rounded-lg border border-purple-500/30 bg-purple-500/10 p-5">
+      <div className="rounded-lg border border-green-500/30 bg-green-500/10 p-5">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
-            <div className="flex items-center gap-2 text-purple-200">
+            <div className="flex items-center gap-2 text-green-200">
               <GitBranch size={20} />
               <h3 className="text-lg font-semibold">Release Harness</h3>
             </div>
@@ -138,7 +146,7 @@ export function ReleaseHarnessWorkspace({
             type="button"
             onClick={compile}
             disabled={isCompiling}
-            className="inline-flex items-center justify-center gap-2 rounded-lg bg-purple-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-purple-400 disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex items-center justify-center gap-2 rounded-lg bg-green-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-green-400 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isCompiling ? <Loader2 size={18} className="animate-spin" /> : <Sparkles size={18} />}
             Compile Harness
@@ -246,7 +254,7 @@ export function ReleaseHarnessWorkspace({
             <div className="mt-4 space-y-3">
               {result.timelineDraft.map(item => (
                 <div key={`${item.offsetDays}-${item.title}`} className="flex gap-3 text-sm">
-                  <div className="w-14 shrink-0 text-purple-300">{item.offsetDays >= 0 ? `+${item.offsetDays}` : item.offsetDays}d</div>
+                  <div className="w-14 shrink-0 text-green-300">{item.offsetDays >= 0 ? `+${item.offsetDays}` : item.offsetDays}d</div>
                   <div>
                     <div className="font-medium text-gray-100">{item.title}</div>
                     <div className="text-gray-400">{item.description}</div>

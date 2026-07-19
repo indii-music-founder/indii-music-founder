@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import type { ConversationSession } from '@/core/store/slices/agent';
 import { FilterItem } from './components/FilterItem';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 
 export default function HistoryDashboard() {
     const {
@@ -87,13 +88,13 @@ export default function HistoryDashboard() {
     return (
         <div className="flex h-full bg-background overflow-hidden relative text-white">
             {/* Ambient Background Effect */}
-            <div className="absolute top-[-20%] left-[-10%] w-[800px] h-[800px] bg-purple-500/10 rounded-full blur-[150px] pointer-events-none" />
+            <div className="absolute top-[-20%] left-[-10%] w-[800px] h-[800px] bg-green-500/10 rounded-full blur-[150px] pointer-events-none" />
 
             {/* Left Sidebar (Filters) */}
             <div className="w-64 border-r border-white/5 bg-surface/30 backdrop-blur-xl flex flex-col z-10">
                 <div className="p-6">
-                    <h1 className="text-2xl font-black tracking-tight text-transparent bg-clip-text bg-linear-to-r from-purple-400 to-pink-600 flex items-center gap-2">
-                        <Activity size={24} className="text-purple-500" />
+                    <h1 className="text-2xl font-black tracking-tight text-transparent bg-clip-text bg-linear-to-r from-green-400 to-pink-600 flex items-center gap-2">
+                        <Activity size={24} className="text-green-500" />
                         HISTORY
                     </h1>
                     <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest mt-1">Unified Activity Feed</p>
@@ -132,7 +133,7 @@ export default function HistoryDashboard() {
                             placeholder="Search history, agent sessions, or files..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full bg-black/40 border border-white/10 rounded-2xl pl-12 pr-4 py-3 text-sm text-gray-200 placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500/50 transition-all shadow-inner"
+                            className="w-full bg-black/40 border border-white/10 rounded-2xl pl-12 pr-4 py-3 text-sm text-gray-200 placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-green-500/50 transition-all shadow-inner"
                         />
                     </div>
                 </div>
@@ -164,14 +165,14 @@ export default function HistoryDashboard() {
                                                 className="relative pl-16 group"
                                             >
                                                 {/* Timeline Dot */}
-                                                <div className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-background border-2 border-purple-500 shadow-[0_0_10px_rgba(168,85,247,0.5)] z-10 flex items-center justify-center">
-                                                    <div className="w-1.5 h-1.5 rounded-full bg-purple-400" />
+                                                <div className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-background border-2 border-green-500 shadow-[0_0_10px_rgba(168,85,247,0.5)] z-10 flex items-center justify-center">
+                                                    <div className="w-1.5 h-1.5 rounded-full bg-green-400" />
                                                 </div>
 
                                                 <div className="border rounded-xl p-4 transition-all flex items-center justify-between bg-surface/30 border-white/5 hover:bg-surface/50 group-hover:border-white/10">
                                                     <div className="flex items-center gap-4">
                                                         <div className="w-10 h-10 rounded-lg bg-black/40 border border-white/5 flex items-center justify-center flex-shrink-0">
-                                                            {item.type === 'agent' ? <Bot size={20} className="text-purple-400" /> : getFileIcon(item.fileType || 'file')}
+                                                            {item.type === 'agent' ? <Bot size={20} className="text-green-400" /> : getFileIcon(item.fileType || 'file')}
                                                         </div>
                                                         <div>
                                                             <h3 className="font-bold text-gray-200">{item.title}</h3>
@@ -196,12 +197,21 @@ export default function HistoryDashboard() {
                                                                     onClick={() => {
                                                                         setActiveSession(item.id);
                                                                     }}
-                                                                    className="px-3 py-1.5 bg-purple-500/20 hover:bg-purple-500/40 text-purple-300 text-xs font-bold rounded transition-colors"
+                                                                    className="px-3 py-1.5 bg-green-500/20 hover:bg-green-500/40 text-green-300 text-xs font-bold rounded transition-colors"
                                                                 >
                                                                     Resume
                                                                 </button>
                                                                 <button
-                                                                    onClick={() => deleteSession(item.id)}
+                                                                    onClick={async (e) => {
+                                                                        e.stopPropagation();
+                                                                        const ok = await ConfirmDialog.call({
+                                                                            title: 'Delete Session',
+                                                                            message: `Are you sure you want to delete session "${item.title}"? This cannot be undone.`,
+                                                                            confirmText: 'Delete',
+                                                                            variant: 'destructive'
+                                                                        });
+                                                                        if (ok) deleteSession(item.id);
+                                                                    }}
                                                                     className="p-1.5 text-gray-500 hover:text-red-400 hover:bg-red-500/10 rounded transition-colors"
                                                                 >
                                                                     <Trash2 size={14} />

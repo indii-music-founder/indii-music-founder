@@ -1,13 +1,14 @@
 /**
- * SDK Bridge Types — Bridging Firebase Autonomous SDK ↔ @google/genai SDK
+ * SDK Bridge Types — Bridging Firebase Autonomous SDK ↔ @googleGoogle Gen AI SDK
  *
  * These interfaces cover shape mismatches between the two SDKs.
  * Extracted from FirebaseIntelligenceService.ts for reuse across sub-modules.
  */
 
-import type { GenerativeModel, Content, Part } from 'firebase/ai';
 import type {
+    Content,
     ContentPart,
+    Part,
     SafetySetting,
     ToolConfig,
 } from '@/shared/types/ai.dto';
@@ -25,7 +26,7 @@ export interface ImportMetaEnvWithKeys {
     };
 }
 
-/** Shape returned by @google/genai embedContent — differs from Firebase SDK */
+/** Shape returned by @googleGoogle Gen AI embedContent — differs from Firebase SDK */
 export interface AutonomousIntelligenceEmbedResult {
     embeddings?: { values: number[] }[];
     embedding?: { values: number[] };
@@ -39,7 +40,7 @@ export interface FileDataPart {
     };
 }
 
-/** Model options shape accepted by getGenerativeModel */
+/** Backend model options shape */
 export interface FirebaseModelOptions {
     model: string;
     generationConfig?: Record<string, unknown>;
@@ -50,14 +51,14 @@ export interface FirebaseModelOptions {
     cachedContent?: string;
 }
 
-/** Result shape from @google/genai generateContent */
+/** Result shape from @googleGoogle Gen AI generateContent */
 export interface AutonomousIntelligenceGenerateResult {
     candidates?: unknown[];
     usageMetadata?: { promptTokenCount?: number; candidatesTokenCount?: number; totalTokenCount?: number };
     text?: string;
 }
 
-/** Chunk shape from @google/genai generateContentStream */
+/** Chunk shape from @googleGoogle Gen AI generateContentStream */
 export interface AutonomousIntelligenceStreamChunk {
     candidates?: { content?: { parts?: unknown[] } }[];
     usageMetadata?: { promptTokenCount?: number; candidatesTokenCount?: number; totalTokenCount?: number };
@@ -70,7 +71,8 @@ export interface BatchEmbedContentsResponse {
 }
 
 /** Interface for GenerativeModel with batching support */
-export interface ExtendedGenerativeModel extends GenerativeModel {
+export interface ExtendedGenerativeModel {
+    model?: string;
     batchEmbedContents?: (req: { requests: { content: Content, model?: string }[] }) => Promise<BatchEmbedContentsResponse>;
     embedContent?: (req: Content | string) => Promise<{ embedding: { values: number[] } }>;
 }

@@ -155,7 +155,7 @@ export class PublishingRightsCompiler implements HarnessCompiler<PublishingRight
         priority: 'medium',
         title: 'Register for ISWC',
         detail: 'Register the song with your PRO to get an ISWC assigned.',
-        ownerAgentId: 'legal_agent', // Legal or royalty agent
+        ownerAgentId: 'publishing',
         approvalRequired: false,
       });
     } else {
@@ -178,6 +178,7 @@ export class PublishingRightsCompiler implements HarnessCompiler<PublishingRight
     let needsMlc = false;
     if (input.mlcRegistrationStatus === 'unregistered') {
       needsMlc = true;
+      blockers.push('MLC registration missing — required for mechanical royalty collection.');
       findings.push({
         id: 'mlc_unregistered',
         domain: this.domain,
@@ -190,6 +191,7 @@ export class PublishingRightsCompiler implements HarnessCompiler<PublishingRight
 
     // IPI Check
     if (missingIpis.length > 0) {
+      blockers.push(`Missing writer IPI/CAE: ${missingIpis.join(', ')}`);
       findings.push({
         id: 'missing_ipi',
         domain: this.domain,
@@ -200,7 +202,17 @@ export class PublishingRightsCompiler implements HarnessCompiler<PublishingRight
       });
     }
 
-    const registrationReady = blockers.length === 0;
+    // CRITICAL: Registration ready requires the actual delivery blockers.
+    // A missing ISWC is deliberately NOT a blocker — it delays global royalty
+    // collection but does not block delivery/registration (see the medium
+    // 'missing_iswc' finding above). Counting it here contradicted that finding.
+    const hasCriticalBlockers = blockers.length > 0 ||
+                                 input.mlcRegistrationStatus === 'unregistered' ||
+                                 missingIpis.length > 0;
+    
+    // registrationReady means: ready to file splits/works with proper identifiers
+    // This requires: PRO active, writer IPIs present, ISWC assigned, MLC registered
+    const registrationReady = !hasCriticalBlockers;
 
     const output: PublishingRightsOutput = {
       registrationReady,
@@ -224,7 +236,7 @@ export class PublishingRightsCompiler implements HarnessCompiler<PublishingRight
     const agentBriefs: HarnessAgentBrief[] = [];
     if (!registrationReady) {
       agentBriefs.push({
-        agentId: 'legal_agent',
+        agentId: 'legal',
         brief: 'Resolve publishing split sheet blocks and verify share totals.',
         inputs: ['Publishing splits', 'Writer signatures'],
         blockedBy: blockers,

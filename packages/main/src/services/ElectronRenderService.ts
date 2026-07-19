@@ -2,7 +2,7 @@
 
 export const electronRenderService = {
     async render(config: { compositionId: string; outputLocation: string; inputProps?: Record<string, unknown> }) {
-        console.log('[ElectronRenderService] Starting local render for', config.compositionId);
+        console.log('[ElectronRenderService] Rendering composition:', config.compositionId);
         
         try {
             // Dynamically import @remotion/renderer so that it doesn't break if not available
@@ -26,10 +26,10 @@ export const electronRenderService = {
                 outputLocation: config.outputLocation,
             } as RenderMediaParams);
             
-            console.log('[ElectronRenderService] Local render successful:', config.outputLocation);
+            console.log('[ElectronRenderService] Rendering complete:', config.outputLocation);
             return config.outputLocation;
         } catch (error) {
-            console.error('[ElectronRenderService] Local render failed; no stub render will be reported as success.', error);
+            console.error('[ElectronRenderService] Rendering failed:', error);
             throw error;
         }
     }

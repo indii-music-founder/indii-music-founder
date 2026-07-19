@@ -1,6 +1,4 @@
 import { test, expect } from './fixtures/auth';
-import * as fs from 'fs';
-import * as path from 'path';
 
 const agentsToTest = [
   { file: 'live_test_analytics_agent.md', name: 'Intelligence Analytics Agent', trigger: 'Request a demographic breakdown of the top streaming audience.', targetText: 'Command Center' },
@@ -27,6 +25,14 @@ const agentsToTest = [
   { file: 'live_test_video_agent.md', name: 'Video Agent', trigger: 'Upload a raw video clip and request a color grading or trimming plan.', targetText: 'Video Producer', skip: true }
 ];
 
+const isFirestoreEmulatorUrl = (url: string): boolean =>
+  url.includes('/google.firestore.v1.Firestore/') ||
+  url.includes('firestore.googleapis.com');
+
+const isExpectedNetworkFailure = (url: string, errorText: string): boolean =>
+  isFirestoreEmulatorUrl(url) ||
+  (url.includes('google.com/images/cleardot.gif') && errorText.includes('net::ERR_ABORTED'));
+
 test.describe('Live Test Orchestrator', () => {
   for (const agent of agentsToTest) {
     if (agent.skip) continue;
@@ -38,11 +44,30 @@ test.describe('Live Test Orchestrator', () => {
       await page.waitForTimeout(1000);
       
       const errors: string[] = [];
+      page.on('response', response => {
+        const status = response.status();
+        if (status < 400) return;
+
+        const url = response.url();
+        if (isExpectedNetworkFailure(url, `${status}`)) return;
+
+        errors.push(`${status} ${url}`);
+      });
+
+      page.on('requestfailed', request => {
+        const url = request.url();
+        const errorText = request.failure()?.errorText ?? '';
+        if (isExpectedNetworkFailure(url, errorText)) return;
+
+        errors.push(`${errorText || 'request failed'} ${url}`);
+      });
+
       page.on('console', msg => {
         if (msg.type() === 'error') {
           const text = msg.text();
-          // Ignore expected firestore connection and offline state warnings in offline test harness
+          // URL-specific network handlers above preserve real non-Firestore failures.
           if (
+            text === 'Failed to load resource: the server responded with a status of 403 (Forbidden)' ||
             text.includes('@firebase/firestore') ||
             text.includes('Could not reach Cloud Firestore') ||
             text.includes('Failed to get document because the client is offline') ||

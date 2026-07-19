@@ -89,9 +89,12 @@ export const VALID_AGENT_IDS = [
     'social',
     'publicist',
     'road',
+    'hospitality',   // Venue hospitality & artist care for tours/events
+    'event-planner', // End-to-end event production & coordination
     'creative',
     'publishing',
     'licensing',
+    'rights',       // Rights & Registration orchestration (filing packets, portal workflows)
     'brand',
     'devops',
     'security',
@@ -210,6 +213,7 @@ export interface AgentContext {
     memoryContext?: string;
     relevantMemories?: string[];
     userAlignmentRules?: string[]; // Injected strategic alignment rules
+    ambitionLevel?: 'focused' | 'balanced' | 'ideas'; // Judgment layer: user-owned dial for offered-idea volume
     ragCorpus?: string;
     activeModule?: string;
     conversationMode?: 'direct' | 'department' | 'boardroom';
@@ -226,6 +230,8 @@ export interface AgentContext {
     setMetadata?: (key: string, value: any) => void;
     /** Shared memory context explicitly passed between agents during delegation */
     sharedContext?: string;
+    /** Durable informational notes routed to this agent; never executable instructions. */
+    interAgentNotes?: Array<{ fromAgentId: string; content: string; createdAt?: number }>;
     /** When set by ProactiveService, carries the triggering proactive task metadata */
     proactiveTask?: ProactiveTask;
     /** The trigger type that caused this agent execution (schedule, event, etc.) */
@@ -330,6 +336,11 @@ export interface ConsultExpertsArgs extends ToolFunctionArgs {
     consultations: ExpertConsultation[];
 }
 
+export interface ShareNoteArgs extends ToolFunctionArgs {
+    targetAgentId: ValidAgentId;
+    content: string;
+}
+
 /**
  * Tool function type - accepts any args that extend ToolFunctionArgs
  * The runtime will validate args against the tool schema.
@@ -381,6 +392,11 @@ export interface AgentConfig {
      * BaseAgent will mint one automatically during construction.
      */
     identityCard?: AgentIdentityCard;
+    /** Hard cap on model output tokens per LLM call in the agent loop.
+     *  Defaults to INTELLIGENCE_CONFIG.TEXT.MAX_OUTPUT_TOKENS_AGENT. */
+    maxOutputTokens?: number;
+    /** Max agentic-loop iterations (tool-call rounds) per task. Defaults to 8. */
+    maxIterations?: number;
 }
 
 export interface AgentResponse {

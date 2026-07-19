@@ -87,7 +87,7 @@ describe('CampaignManager', () => {
     };
 
     const mockOnSelectCampaign = vi.fn();
-    const mockOnUpdateCampaign = vi.fn();
+    const mockOnUpdateCampaign = vi.fn(async () => undefined);
     const mockOnCreateNew = vi.fn();
 
     const defaultProps = {
@@ -134,10 +134,16 @@ describe('CampaignManager', () => {
         expect(screen.getByTestId('editable-copy-modal')).toBeInTheDocument();
     });
 
-    it('updates campaign when post copy is saved', () => {
+    it('updates campaign when post copy is saved', async () => {
+        // ISSUE-949: handleSaveCopy now awaits onUpdateCampaign (a real
+        // persistence call) before clearing the editor's local state.
+        const { act } = await import('@testing-library/react');
         render(<CampaignManager {...defaultProps} selectedCampaign={mockCampaign} />);
         fireEvent.click(screen.getByText('Edit Post'));
-        fireEvent.click(screen.getByText('Save Copy'));
+
+        await act(async () => {
+            fireEvent.click(screen.getByText('Save Copy'));
+        });
 
         expect(mockOnUpdateCampaign).toHaveBeenCalledWith(expect.objectContaining({
             posts: expect.arrayContaining([

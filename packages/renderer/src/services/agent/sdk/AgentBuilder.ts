@@ -106,6 +106,23 @@ export class AgentBuilder {
     }
 
     /**
+     * Helper to inject domain retrieval tools in bulk.
+     */
+    withDomainRetrieval(declarations: any[], implementations: Record<string, AnyToolFunction>): this {
+        if (!this.config.tools) this.config.tools = [];
+        this.config.tools.push({ functionDeclarations: declarations });
+        
+        if (!this.config.functions) this.config.functions = {};
+        Object.assign(this.config.functions, implementations);
+        
+        if (!this.config.authorizedTools) this.config.authorizedTools = [];
+        if (!this.config.authorizedTools.includes('list_domain_records')) {
+            this.config.authorizedTools.push('list_domain_records');
+        }
+        return this;
+    }
+
+    /**
      * Builds and validates the agent configuration.
      * @throws Error if required fields (id, name, systemPrompt) are missing.
      */

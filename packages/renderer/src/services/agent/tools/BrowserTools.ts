@@ -1,6 +1,7 @@
 import { wrapTool, toolError, toolSuccess } from '../utils/ToolUtils';
 import type { AnyToolFunction } from '../types';
 import { logger } from '@/utils/logger';
+import { importWithRetry } from '@/utils/dynamicImport';
 
 /**
  * BrowserTools: The "Ghost Hands" (CDP Bridge)
@@ -18,8 +19,8 @@ export const BrowserTools = {
                 if (result.success) {
                     // Record navigation in Firestore for observability
                     try {
-                        const { db, auth } = await import('@/services/firebase');
-                        const { collection, addDoc, serverTimestamp } = await import('firebase/firestore');
+                        const { db, auth } = await importWithRetry(() => import('@/services/firebase'));
+                        const { collection, addDoc, serverTimestamp } = await importWithRetry(() => import('firebase/firestore'));
                         const uid = auth.currentUser?.uid;
                         if (uid) {
                             await addDoc(collection(db, 'users', uid, 'browserHistory'), {

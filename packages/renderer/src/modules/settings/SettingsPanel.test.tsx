@@ -1,23 +1,48 @@
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { render, screen, fireEvent, within } from '@testing-library/react';
-import { describe, it, expect, vi } from 'vitest';
+import { beforeEach, describe, it, expect, vi } from 'vitest';
 import SettingsPanel from './SettingsPanel';
+
+const settingsStoreState = {
+    user: {
+        uid: 'test-uid-12345678',
+        email: 'dtroit@indii.music',
+        displayName: 'D-Troit',
+        photoURL: null,
+    },
+    userProfile: {
+        bio: 'Detroit techno producer',
+        founderTier: null,
+    },
+};
+
+// Make AnimatePresence render children synchronously in jsdom — without this,
+// mode="wait" delays mounting the incoming section and fireEvent.click() tests
+// see stale content because animations don't run in jsdom.
+vi.mock('motion/react', async () => {
+    const actual = await vi.importActual<typeof import('motion/react')>('motion/react');
+    return {
+        ...actual,
+        AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+        motion: new Proxy({} as typeof actual.motion, {
+            get: (_target, prop: string) =>
+                // Return a simple passthrough component for any motion.* tag
+                ({ children, ...rest }: any) => {
+                    const Tag = prop as keyof JSX.IntrinsicElements;
+                    return <Tag {...rest}>{children}</Tag>;
+                },
+        }),
+    };
+});
 
 // ── Mocks ──────────────────────────────────────────────────────────────────
 
 vi.mock('@/core/store', () => ({
-    useStore: () => ({
-        user: {
-            uid: 'test-uid-12345678',
-            email: 'dtroit@indii.music',
-            displayName: 'D-Troit',
-            photoURL: null,
-        },
-        userProfile: {
-            bio: 'Detroit techno producer',
-            founderTier: null,
-        },
-    }),
+    useStore: () => settingsStoreState,
+}));
+
+vi.mock('./settings-panel/RemoteSection', () => ({
+    default: () => <div>Remote pairing controls</div>,
 }));
 
 vi.mock('zustand/react/shallow', () => ({
@@ -76,6 +101,18 @@ vi.mock('./components/DownloadHub', () => ({
     DownloadHub: () => <div data-testid="download-hub" />,
 }));
 
+// The global setup.ts sets window.electronAPI to a partial stub (no getAppVersion).
+// DesktopSection reads !!window.electronAPI to decide which branch to render.
+// Force it to undefined so the non-Electron path is exercised here.
+beforeEach(() => {
+    window.history.replaceState({}, '', '/settings');
+    Object.defineProperty(window, 'electronAPI', {
+        writable: true,
+        configurable: true,
+        value: undefined,
+    });
+});
+
 // ── Tests ──────────────────────────────────────────────────────────────────
 
 describe('SettingsPanel', () => {
@@ -98,6 +135,14 @@ describe('SettingsPanel', () => {
         render(<SettingsPanel />);
         // Profile section should show the display name input
         expect(screen.getByPlaceholderText('settings.hints.display_name')).toBeInTheDocument();
+    });
+
+    it('renders the requested Remote section from shared navigation state', () => {
+        window.history.replaceState({}, '', '/settings?section=remote');
+        render(<SettingsPanel />);
+
+        expect(screen.getByText('Remote pairing controls')).toBeInTheDocument();
+        expect(screen.getAllByText('settings.sections.remote.label')[0]!.closest('button')).toHaveClass('bg-cyan-500/10');
     });
 
     it('switches to Connected Services when clicked', () => {
@@ -130,6 +175,27 @@ describe('SettingsPanel', () => {
         const buttons = screen.getAllByText('settings.sections.security.label');
         fireEvent.click(buttons[0]!);
         expect(buttons[0]!.closest('button')).toHaveClass('bg-cyan-500/10');
+    });
+
+    it('renders the real privacy controls inside Account & Security', () => {
+        render(<SettingsPanel />);
+        const buttons = screen.getAllByText('settings.sections.security.label');
+        fireEvent.click(buttons[0]!);
+
+        expect(screen.getByText('Privacy & Data')).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Request account deletion' })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Export my data' })).toBeInTheDocument();
+    });
+
+    it('hides the developer Firebase bypass from non-founder users', () => {
+        render(<SettingsPanel />);
+        const buttons = screen.getAllByText('settings.sections.desktop.label');
+        fireEvent.click(buttons[0]!);
+
+        // import.meta.env.DEV is TRUE in Vitest, so isFounderAccess=true.
+        // The bypass panel is shown; the hidden-outside-founder message is NOT shown.
+        expect(screen.getByText('Developer Firebase Push Bypass')).toBeInTheDocument();
+        expect(screen.queryByText('Developer push tools are hidden outside founder/dev builds.')).not.toBeInTheDocument();
     });
 
     it('Profile section renders display name and bio fields', () => {

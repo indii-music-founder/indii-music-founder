@@ -1,7 +1,9 @@
+import type { FieldValue, Timestamp } from 'firebase/firestore';
+import { httpsCallable } from 'firebase/functions';
+
+import { functions } from '@/services/firebase';
+import type { ExtendedGoldenMetadata } from '@/services/metadata/types';
 import { logger } from '@/utils/logger';
-import { ExtendedGoldenMetadata } from '@/services/metadata/types';
-import { db } from '@/services/firebase';
-import { Timestamp, FieldValue, collection, doc, runTransaction, addDoc, serverTimestamp } from 'firebase/firestore';
 
 export interface RevenueReportItem {
     transactionId: string;
@@ -13,176 +15,114 @@ export interface RevenueReportItem {
 }
 
 export interface PayoutRecord {
-    userId: string; // The email or UID of the specific payee
+    /** Account that owns the obligation ledger, never a contributor email. */
+    userId: string;
+    recipientEmail?: string;
     amount: number;
     currency: string;
     sourceTrackIsrc: string;
     role: string;
-    status: 'pending' | 'paid';
+    status: 'held_for_reconciliation' | 'pending' | 'paid' | 'failed';
     reportId?: string;
     createdAt?: Timestamp | FieldValue;
 }
 
 export interface RecoupmentBalance {
-    releaseId: string; // releaseId or trackIsrc
-    balance: number; // Remaining amount to recoup
+    userId?: string;
+    releaseId: string;
+    balance: number;
+    balanceMicros?: number;
     totalExpense: number;
     updatedAt: Timestamp | FieldValue;
 }
 
+export interface RoyaltyReportClaim {
+    reportId: string;
+    releaseId: string;
+    payoutCount: number;
+    recoupmentApplied: number;
+    processedAt: Timestamp | FieldValue;
+}
+
+export interface RevenueIngestionResult {
+    success: boolean;
+    payoutCount: number;
+    processedGroups: number;
+    skippedGroups: number;
+    alreadyProcessed: boolean;
+    error?: string;
+}
+
+interface BackendAllocationResult {
+    success: true;
+    processedEarnings: number;
+    alreadyProcessedEarnings: number;
+    heldPayouts: number;
+    blockedEarnings: number;
+}
+
+/**
+ * Compatibility facade for the server-owned royalty allocation pipeline.
+ *
+ * @deprecated New DSR imports should use EarningsReportUploadService, which
+ * validates the report and automatically invokes the same backend stage.
+ */
 export class RoyaltyService {
-    private static readonly PAYOUTS_COLLECTION = 'payouts';
-    private static readonly RECOUPMENT_COLLECTION = 'recoupment_balances';
-
-    /**
-     * Ingest a batch of revenue items and calculate payouts, applying recoupment.
-     */
     static async ingestRevenueReport(
-        reportId: string,
-        items: RevenueReportItem[],
-        metadataMap: Record<string, ExtendedGoldenMetadata>
-    ): Promise<{ success: boolean; payoutCount: number; error?: string }> {
+        batchId: string,
+        _items: RevenueReportItem[],
+        _metadataMap: Record<string, ExtendedGoldenMetadata>
+    ): Promise<RevenueIngestionResult> {
+        if (!batchId?.trim()) {
+            return {
+                success: false,
+                payoutCount: 0,
+                processedGroups: 0,
+                skippedGroups: 0,
+                alreadyProcessed: false,
+                error: 'A backend DSR receipt batchId is required.',
+            };
+        }
+
         try {
-            let totalPayoutsStored = 0;
-
-            // Group items by releaseId to minimize database queries
-            const releaseGroups: Record<string, RevenueReportItem[]> = {};
-
-            for (const item of items) {
-                const trackData = metadataMap[item.isrc];
-                if (!trackData) continue;
-
-                const releaseId = trackData.id || item.isrc;
-                if (!releaseGroups[releaseId]) {
-                    releaseGroups[releaseId] = [];
-                }
-                releaseGroups[releaseId].push(item);
-            }
-
-            const transactionPromises = Object.entries(releaseGroups).map(async ([releaseId, groupItems]) => {
-                let payoutsStoredInThisTx = 0;
-                // Use transaction for atomic recoupment update and payout recording per release
-                await runTransaction(db, async (transaction) => {
-                    const recoupRef = doc(db, this.RECOUPMENT_COLLECTION, releaseId);
-                    const recoupDoc = await transaction.get(recoupRef);
-
-                    let currentBalance = 0;
-
-                    if (recoupDoc.exists()) {
-                        const data = recoupDoc.data() as RecoupmentBalance;
-                        currentBalance = data.balance;
-                    }
-
-                    const initialBalance = currentBalance;
-
-                    for (const item of groupItems) {
-                        const trackData = metadataMap[item.isrc];
-                        if (!trackData) continue;
-
-                        let unallocatedRevenue = item.grossRevenue;
-
-                        if (currentBalance > 0) {
-                            const deduction = Math.min(unallocatedRevenue, currentBalance);
-                            currentBalance -= deduction;
-                            unallocatedRevenue -= deduction;
-                        }
-
-                        if (unallocatedRevenue <= 0) continue;
-
-                        // Calculate splits on the remaining revenue for this item
-                        const payouts = this.calculateSplitsFromUnallocated(unallocatedRevenue, trackData, item);
-
-                        // Record each payout in the transaction
-                        for (const payout of payouts) {
-                            const payoutRef = doc(collection(db, this.PAYOUTS_COLLECTION));
-                            transaction.set(payoutRef, {
-                                ...payout,
-                                reportId,
-                                status: 'pending',
-                                createdAt: serverTimestamp()
-                            });
-                            payoutsStoredInThisTx++;
-                        }
-                    }
-
-                    if (initialBalance !== currentBalance) {
-                        transaction.update(recoupRef, {
-                            balance: currentBalance,
-                            updatedAt: serverTimestamp()
-                        });
-                        logger.debug(`[RoyaltyService] Recooped ${initialBalance - currentBalance} for ${releaseId}. Remaining: ${currentBalance}`);
-                    }
-                });
-                return payoutsStoredInThisTx;
-            });
-
-            const results = await Promise.all(transactionPromises);
-            totalPayoutsStored = results.reduce((acc, count) => acc + count, 0);
-
-            return { success: true, payoutCount: totalPayoutsStored };
+            const calculate = httpsCallable<{ batchId: string }, BackendAllocationResult>(
+                functions,
+                'calculateRoyaltyAllocations'
+            );
+            const { data } = await calculate({ batchId: batchId.trim() });
+            return {
+                success: true,
+                payoutCount: data.heldPayouts,
+                processedGroups: data.processedEarnings,
+                skippedGroups: data.alreadyProcessedEarnings,
+                alreadyProcessed: data.processedEarnings === 0 && data.alreadyProcessedEarnings > 0,
+                ...(data.blockedEarnings > 0
+                    ? { error: `${data.blockedEarnings} earnings record(s) require split or adjustment review.` }
+                    : {}),
+            };
         } catch (error: unknown) {
-            logger.error('[RoyaltyService] Ingestion failed:', error);
-            return { success: false, payoutCount: 0, error: error instanceof Error ? error.message : 'Unknown error' };
+            logger.error('[RoyaltyService] Backend allocation failed:', error);
+            return {
+                success: false,
+                payoutCount: 0,
+                processedGroups: 0,
+                skippedGroups: 0,
+                alreadyProcessed: false,
+                error: error instanceof Error ? error.message : 'Unknown error',
+            };
         }
     }
 
-    /**
-     * Internal logic helper for split distribution.
-     */
-    private static calculateSplitsFromUnallocated(
-        unallocatedRevenue: number,
-        trackData: ExtendedGoldenMetadata,
-        item: RevenueReportItem
-    ): PayoutRecord[] {
-        const payouts: PayoutRecord[] = [];
-        const totalSplits = trackData.splits.reduce((sum, s) => sum + s.percentage, 0);
-
-        // 1. Distribute defined splits
-        trackData.splits.forEach(split => {
-            const normalizedPercentage = totalSplits > 100 ? (split.percentage / totalSplits) * 100 : split.percentage;
-            const splitAmount = unallocatedRevenue * (normalizedPercentage / 100);
-
-            if (splitAmount > 0) {
-                payouts.push({
-                    userId: split.email,
-                    amount: Number(splitAmount.toFixed(4)),
-                    currency: item.currency,
-                    sourceTrackIsrc: item.isrc,
-                    role: split.role,
-                    status: 'pending'
-                });
-            }
-        });
-
-        // 2. Handle Leftovers (to Label)
-        if (totalSplits < 100) {
-            const labelPercentage = 100 - totalSplits;
-            const labelAmount = unallocatedRevenue * (labelPercentage / 100);
-
-            if (labelAmount > 0) {
-                payouts.push({
-                    userId: 'label_hq@indii.music',
-                    amount: Number(labelAmount.toFixed(4)),
-                    currency: item.currency,
-                    sourceTrackIsrc: item.isrc,
-                    role: 'Label',
-                    status: 'pending'
-                });
-            }
-        }
-
-        return payouts;
-    }
-
-    /**
-     * Manual override or initialization of recoupment balance.
-     */
-    static async setRecoupmentBalance(releaseId: string, amount: number): Promise<void> {
-        await addDoc(collection(db, this.RECOUPMENT_COLLECTION), {
-            releaseId,
-            balance: amount,
-            totalExpense: amount,
-            updatedAt: serverTimestamp()
+    static async setRecoupmentBalance(trackId: string, amount: number): Promise<void> {
+        const configure = httpsCallable<
+            { trackId: string; amount: number; requestId: string; reason: string },
+            { success: true }
+        >(functions, 'setRecoupmentBalance');
+        await configure({
+            trackId,
+            amount,
+            requestId: crypto.randomUUID(),
+            reason: 'Owner-confirmed recoupment balance configuration',
         });
     }
 }

@@ -1,6 +1,68 @@
 import { StateCreator } from 'zustand';
 import { HistoryItem } from '@/core/types/history';
 import { logger } from '@/utils/logger';
+import { StoreState } from '@/core/store';
+
+let creativeHistoryUnsubscribe: (() => void) | null = null;
+
+// ISSUE-922 (remainder): the in-memory gallery keeps only the most recent
+// uploads (data-URI items are memory-heavy). Evicted items remain durable in
+// the cloud library and reappear through the uncapped Firestore snapshot
+// rebuild in loadHistory — but trimming the visible list must never be silent.
+export const UPLOAD_MEMORY_CAP = 50;
+let lastEvictionNoticeAt = 0;
+function notifyUploadEviction(kind: 'image' | 'audio'): void {
+    logger.info(`[CreativeSlice] Upload list exceeded ${UPLOAD_MEMORY_CAP} ${kind} items — oldest trimmed from view (cloud copies remain).`);
+    const now = Date.now();
+    if (now - lastEvictionNoticeAt < 30_000) return; // one notice per batch, not per file
+    lastEvictionNoticeAt = now;
+    import('@/core/events').then(({ events }) => {
+        events.emit('SYSTEM_ALERT', {
+            level: 'info',
+            message: `Showing your ${UPLOAD_MEMORY_CAP} most recent uploads — older uploads stay in your cloud library and reappear after sync.`
+        });
+    }).catch(() => { /* events module unavailable in some test contexts */ });
+}
+
+const KNOWN_MEDIA_EXTENSIONS: Record<string, string> = {
+    mp4: 'video/mp4',
+    webm: 'video/webm',
+    mov: 'video/quicktime',
+    png: 'image/png',
+    jpg: 'image/jpeg',
+    jpeg: 'image/jpeg',
+    webp: 'image/webp',
+    gif: 'image/gif',
+    mp3: 'audio/mpeg',
+    wav: 'audio/wav',
+    flac: 'audio/flac',
+};
+
+/**
+ * ISSUE-810: file-node sync previously hardcoded every generated asset's
+ * filename as `.png`, even for videos. Prefer the real extension found in
+ * the asset's own URL/storage URI; only fall back to a per-type default
+ * when no recognizable extension is present.
+ */
+function inferMediaExtension(item: HistoryItem): { extension: string; mimeType: string } {
+    const source = item.storageUri || item.url || '';
+    const match = /\.([a-zA-Z0-9]{2,4})(?:[?#]|$)/.exec(source);
+    const rawExt = match?.[1]?.toLowerCase();
+    if (rawExt && KNOWN_MEDIA_EXTENSIONS[rawExt]) {
+        return { extension: rawExt, mimeType: KNOWN_MEDIA_EXTENSIONS[rawExt] };
+    }
+
+    switch (item.type) {
+        case 'video':
+            return { extension: 'mp4', mimeType: 'video/mp4' };
+        case 'music':
+            return { extension: 'mp3', mimeType: 'audio/mpeg' };
+        case 'image':
+            return { extension: 'png', mimeType: 'image/png' };
+        default:
+            return { extension: 'bin', mimeType: 'application/octet-stream' };
+    }
+}
 
 export interface CanvasImage {
     id: string;
@@ -21,9 +83,20 @@ export interface CanvasImage {
     parentOffsetY?: number;
 }
 
+export interface FailedVariationBatch {
+    source: CanvasImage;
+    prompt: string;
+    mimeType: string;
+    base64Data: string;
+    projectId: string;
+    slots: number[];
+}
+
 export interface CreativeHistorySlice {
     // History
     generatedHistory: HistoryItem[];
+    /** Non-null when the cloud history subscription failed — the gallery may be showing device-local data only (ISSUE-772). */
+    historySyncError: string | null;
     addToHistory: (item: HistoryItem) => void;
     initializeHistory: () => Promise<void>;
     updateHistoryItem: (id: string, updates: Partial<HistoryItem>) => void;
@@ -38,6 +111,10 @@ export interface CreativeHistorySlice {
     removeCanvasImage: (id: string) => void;
     selectCanvasImage: (id: string | null) => void;
 
+    // Variations
+    failedVariationBatch: FailedVariationBatch | null;
+    setFailedVariationBatch: (batch: FailedVariationBatch | null) => void;
+
     // Chat Import
     chatImportContext: { messageId: string; agentId: string; prompt: string } | null;
     clearChatImportContext: () => void;
@@ -45,12 +122,12 @@ export interface CreativeHistorySlice {
 
     // Uploads
     uploadedImages: HistoryItem[];
-    addUploadedImage: (img: HistoryItem) => void;
+    addUploadedImage: (img: HistoryItem) => Promise<boolean>;
     updateUploadedImage: (id: string, updates: Partial<HistoryItem>) => void;
     removeUploadedImage: (id: string) => void;
 
     uploadedAudio: HistoryItem[];
-    addUploadedAudio: (audio: HistoryItem) => void;
+    addUploadedAudio: (audio: HistoryItem) => Promise<boolean>;
     removeUploadedAudio: (id: string) => void;
 
     // Soft delete from project view
@@ -59,18 +136,21 @@ export interface CreativeHistorySlice {
 }
 
 export function buildCreativeHistoryState(
-    set: Parameters<StateCreator<CreativeHistorySlice>>[0],
-    _get: Parameters<StateCreator<CreativeHistorySlice>>[1]
+    set: Parameters<StateCreator<StoreState, [], [], CreativeHistorySlice>>[0],
+    _get: Parameters<StateCreator<StoreState, [], [], CreativeHistorySlice>>[1]
 ): CreativeHistorySlice {
     return {
         generatedHistory: [],
+        historySyncError: null,
+        failedVariationBatch: null,
+        setFailedVariationBatch: (batch) => set({ failedVariationBatch: batch }),
         addToHistory: (item: HistoryItem) => {
             // Use dynamic import to avoid circular dependency with store
             import('@/core/store').then(({ useStore }) => {
                 logger.debug("CreativeSlice: addToHistory called", item.id);
                 const { currentOrganizationId, currentProjectId, createFileNode, user } = useStore.getState();
                 const enrichedItem = { ...item, orgId: item.orgId || currentOrganizationId };
-                // Implement eviction policy: cap at 50 items to prevent memory bloat from base64 images
+                // Eviction policy: cap at 50 items to prevent memory bloat from base64 images
                 set((state) => ({ generatedHistory: [enrichedItem, ...state.generatedHistory].slice(0, 50) }));
                 logger.debug("CreativeSlice: generatedHistory updated", enrichedItem.id);
 
@@ -79,7 +159,9 @@ export function buildCreativeHistoryState(
                     if (!user?.uid) {
                         logger.error("CreativeSlice: Cannot sync generated asset to file system without an authenticated user");
                     } else {
-                        const filename = `${enrichedItem.origin || 'generation'}-${enrichedItem.id.slice(0, 8)}.png`;
+                        const { extension, mimeType } = inferMediaExtension(enrichedItem);
+                        const filename = `${enrichedItem.origin || 'generation'}-${enrichedItem.id.slice(0, 8)}.${extension}`;
+                        const persistedUrl = enrichedItem.storageUri || enrichedItem.url;
                         createFileNode(
                             filename,
                             null, // root
@@ -87,7 +169,12 @@ export function buildCreativeHistoryState(
                             user.uid,
                             // eslint-disable-next-line @typescript-eslint/no-explicit-any
                             enrichedItem.type as any,
-                            { url: enrichedItem.url, origin: enrichedItem.origin }
+                            {
+                                url: persistedUrl,
+                                storagePath: enrichedItem.storageUri || undefined,
+                                origin: enrichedItem.origin,
+                                mimeType
+                            }
                         ).catch(err => logger.error("CreativeSlice: File system sync error", err));
                     }
                 }
@@ -106,6 +193,10 @@ export function buildCreativeHistoryState(
                 return new Promise<void>((resolve) => {
                     (async () => {
                         try {
+                            if (creativeHistoryUnsubscribe) {
+                                creativeHistoryUnsubscribe();
+                                creativeHistoryUnsubscribe = null;
+                            }
                             const unsubscribe = await StorageService.subscribeToHistory(50, (history) => {
                                 set((state) => {
                                     const historyMap = new Map(state.generatedHistory.map(item => [item.id, item]));
@@ -149,7 +240,8 @@ export function buildCreativeHistoryState(
                                     return {
                                         generatedHistory: generated.slice(0, 50),
                                         uploadedImages: uploadedImages,
-                                        uploadedAudio: uploadedAudio
+                                        uploadedAudio: uploadedAudio,
+                                        historySyncError: null
                                     };
                                 });
 
@@ -161,22 +253,23 @@ export function buildCreativeHistoryState(
 
                                 if (isPermissionError) {
                                     // Don't retry on permission errors — permissions won't change mid-session.
-                                    // Just resolve to unblock UI; this is expected in dev.
-                                    logger.debug(`[CreativeSlice] History subscription — insufficient permissions (expected in dev). Resolving.`);
+                                    // ISSUE-772: this failure mode silently hid a dead cross-device sync for
+                                    // months. Surface it loudly — an empty gallery must never masquerade as truth.
+                                    logger.error('[CreativeSlice] History subscription denied by Firestore rules — cloud library will NOT sync on this device.', error);
+                                    set({ historySyncError: 'Your creations library could not sync from the cloud on this device.' });
+                                    import('@/core/events').then(({ events }) => {
+                                        events.emit('SYSTEM_ALERT', { level: 'error', message: 'Creations library failed to sync from the cloud.' });
+                                    }).catch(() => { /* events module unavailable in some test contexts */ });
                                     resolve();
                                 } else if (retryCount < MAX_RETRIES) {
                                     // Resolve anyway to unblock UI; non-recoverable errors logged at warn level only
-                                    if (!isPermissionError) {
-                                        logger.error('[CreativeSlice] History subscription error:', error);
-                                    }
+                                    logger.error('[CreativeSlice] History subscription error:', error);
+                                    set({ historySyncError: 'Cloud sync for your creations library is temporarily unavailable.' });
                                     resolve();
                                 }
                             });
 
-                            // Register with SubscriptionManager
-                            import('@/core/store').then(({ useStore }) => {
-                                useStore.getState().registerSubscription('creative_history', unsubscribe);
-                            });
+                            creativeHistoryUnsubscribe = unsubscribe;
 
                         } catch (err: unknown) {
                             logger.error('[CreativeSlice] Failed to initialize history:', err);
@@ -261,11 +354,45 @@ export function buildCreativeHistoryState(
         },
 
         uploadedImages: [],
+        // ISSUE-922: returns whether durable persistence succeeded so callers
+        // can report honest per-file outcomes. Never rejects — legacy
+        // fire-and-forget callers stay safe.
         addUploadedImage: (img: HistoryItem) => {
-            set((state) => ({ uploadedImages: [img, ...state.uploadedImages] }));
-            import('@/services/StorageService').then(({ StorageService }) => {
-                StorageService.saveItem(img).catch((e) => { logger.error('[Store] Failed to save item:', e); });
+            // Eviction policy: keep the 50 most recent in memory (data-URI
+            // items are heavy). Evicted items are durable in the cloud and
+            // reappear via the Firestore snapshot rebuild (which is uncapped)
+            // — but the trim must never be silent (ISSUE-922 remainder).
+            set((state) => {
+                const next = [img, ...state.uploadedImages];
+                if (next.length > UPLOAD_MEMORY_CAP) notifyUploadEviction('image');
+                return { uploadedImages: next.slice(0, UPLOAD_MEMORY_CAP) };
             });
+            return import('@/services/StorageService')
+                .then(({ StorageService }) => StorageService.saveItem(img))
+                .then((savedInfo) => {
+                    import('@/core/store').then(({ useStore }) => {
+                        const { currentProjectId, createFileNode, user } = useStore.getState();
+                        if (user?.uid) {
+                            const { extension, mimeType } = inferMediaExtension(img);
+                            const filename = `uploaded-${img.id.slice(0, 8)}.${extension}`;
+                            createFileNode(
+                                filename,
+                                null,
+                                currentProjectId,
+                                user.uid,
+                                'image',
+                                {
+                                    url: savedInfo.url,
+                                    storagePath: savedInfo.storageUri,
+                                    origin: 'uploaded',
+                                    mimeType
+                                }
+                            ).catch(err => logger.error("[CreativeSlice] File system sync error", err));
+                        }
+                    });
+                    return true;
+                })
+                .catch((e) => { logger.error('[Store] Failed to save item:', e); return false; });
         },
         updateUploadedImage: (id: string, updates: Partial<HistoryItem>) => set((state) => ({
             uploadedImages: state.uploadedImages.map(img => img.id === id ? { ...img, ...updates } : img)
@@ -278,11 +405,40 @@ export function buildCreativeHistoryState(
         },
 
         uploadedAudio: [],
+        // ISSUE-922: same honest-persistence + explicit-eviction contract as
+        // addUploadedImage.
         addUploadedAudio: (audio: HistoryItem) => {
-            set((state) => ({ uploadedAudio: [audio, ...state.uploadedAudio] }));
-            import('@/services/StorageService').then(({ StorageService }) => {
-                StorageService.saveItem(audio).catch((e) => { logger.error('[Store] Failed to save item:', e); });
+            set((state) => {
+                const next = [audio, ...state.uploadedAudio];
+                if (next.length > UPLOAD_MEMORY_CAP) notifyUploadEviction('audio');
+                return { uploadedAudio: next.slice(0, UPLOAD_MEMORY_CAP) };
             });
+            return import('@/services/StorageService')
+                .then(({ StorageService }) => StorageService.saveItem(audio))
+                .then((savedInfo) => {
+                    import('@/core/store').then(({ useStore }) => {
+                        const { currentProjectId, createFileNode, user } = useStore.getState();
+                        if (user?.uid) {
+                            const { extension, mimeType } = inferMediaExtension(audio);
+                            const filename = `uploaded-${audio.id.slice(0, 8)}.${extension}`;
+                            createFileNode(
+                                filename,
+                                null,
+                                currentProjectId,
+                                user.uid,
+                                'audio',
+                                {
+                                    url: savedInfo.url,
+                                    storagePath: savedInfo.storageUri,
+                                    origin: 'uploaded',
+                                    mimeType
+                                }
+                            ).catch(err => logger.error("[CreativeSlice] File system sync error", err));
+                        }
+                    });
+                    return true;
+                })
+                .catch((e) => { logger.error('[Store] Failed to save item:', e); return false; });
         },
         removeUploadedAudio: (id: string) => {
             set((state) => ({ uploadedAudio: state.uploadedAudio.filter(i => i.id !== id) }));
@@ -299,4 +455,11 @@ export function buildCreativeHistoryState(
             logger.debug(`[CreativeSlice] Soft removed uploaded audio ${id} from project view.`);
         },
     };
+}
+
+export function resetCreativeHistoryListener() {
+    if (creativeHistoryUnsubscribe) {
+        creativeHistoryUnsubscribe();
+        creativeHistoryUnsubscribe = null;
+    }
 }

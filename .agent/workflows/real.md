@@ -421,6 +421,8 @@ Each issue follows this exact template:
   2. [Step 2]
   3. [What happened]
   4. [What should have happened]
+- **Expected (acceptance):** [What "done" looks like as a user — the concrete behavior the fix agent must produce, so it can't guess wrong]
+- **Honest fallback:** [If the feature genuinely isn't available, the right outcome is a clear "unavailable"/error state — NOT fabricated data or fake success. Flag it so the fixer doesn't fake a pass. (No mock data, ever.)]
 - **User Impact:** [How does this feel as a user? What can't they do?]
 - **Screenshot:** [path or description]
 - **Notes:** [Any additional context — but NO code suggestions]

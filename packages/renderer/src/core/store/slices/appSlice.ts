@@ -1,5 +1,5 @@
 import { StateCreator } from 'zustand';
-import { type ModuleId, isValidModule, MODULE_AGENT_MAP } from '@/core/constants';
+import { type ModuleId, isValidModule, MODULE_AGENT_MAP, DEFAULT_PROJECT_ID } from '@/core/constants';
 import type { ProjectMetadata } from '@/services/dashboard/DashboardService';
 import { logger } from '@/utils/logger';
 
@@ -60,6 +60,7 @@ export interface Project {
     date?: number;
     lastModified?: number;
     orgId: string;
+    status?: 'active' | 'paused' | 'archived';
     thumbnail?: string;
     assetCount?: number;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -75,8 +76,12 @@ export interface AppSlice {
     addProject: (project: ProjectMetadata) => void; // Changed parameter type
     loadProjects: () => Promise<void>;
     createNewProject: (name: string, type: Project['type'], orgId: string) => Promise<string>;
+     
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     updateProjectMetadata: (projectId: string, metadata: Record<string, any>) => Promise<void>;
+    updateProjectName: (projectId: string, name: string) => Promise<void>;
+    setProjectStatus: (projectId: string, status: 'active' | 'paused' | 'archived') => Promise<void>;
+    deleteProject: (projectId: string) => Promise<void>;
     pendingPrompt: string | null;
     setPendingPrompt: (prompt: string | null) => void;
     apiKeyError: boolean;
@@ -103,15 +108,28 @@ export interface AppSlice {
     _navigationHistory?: ModuleId[];
     /** @internal Debounce tracker for rapid module switches (ISSUE-043) */
     _lastModuleSwitch?: number;
+    bugReportDialog?: { isOpen: boolean; type: 'bug' | 'feature'; prefilledError?: string; prefilledModule?: string };
+    setBugReportDialog: (dialog: AppSlice['bugReportDialog']) => void;
+    rightPanelWidth: number;
+    setRightPanelWidth: (width: number) => void;
 }
 
 export const createAppSlice: StateCreator<AppSlice> = (set, get) => ({
     currentModule: getInitialModule(),
-    currentProjectId: 'default',
+    currentProjectId: DEFAULT_PROJECT_ID,
     projects: [],
     hasUnsavedChanges: false,
     pendingCostWarning: null,
+    bugReportDialog: { isOpen: false, type: 'bug' },
+    rightPanelWidth: typeof window !== 'undefined' ? Math.max(320, Math.min(800, parseInt(localStorage.getItem('indii_rightPanelWidth') || '320', 10) || 320)) : 320,
+    setRightPanelWidth: (width) => {
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('indii_rightPanelWidth', width.toString());
+        }
+        set({ rightPanelWidth: width });
+    },
     setPendingCostWarning: (warning) => set({ pendingCostWarning: warning }),
+    setBugReportDialog: (dialog) => set({ bugReportDialog: dialog }),
     setHasUnsavedChanges: (hasUnsaved) => set({ hasUnsavedChanges: hasUnsaved }),
     isEntryAssistantDismissed: typeof window !== 'undefined' ? localStorage.getItem('indii_entryAssistantDismissed') === 'true' : false,
     setEntryAssistantDismissed: (dismissed) => {
@@ -197,7 +215,31 @@ export const createAppSlice: StateCreator<AppSlice> = (set, get) => ({
             _lastModuleSwitch: now,
         });
     },
-    setProject: (id) => set({ currentProjectId: id }),
+    setProject: (id) => {
+        set({ currentProjectId: id });
+        const state = get() as any;
+        
+        // Only switch session if we have agent slice loaded
+        if (state.sessions && state.setActiveSession) {
+            const sessions = Object.values(state.sessions) as any[];
+            const currentActive = sessions.find(s => s.id === state.activeSessionId);
+            
+            // If current session doesn't belong to the new project
+            if (currentActive && currentActive.projectId !== id) {
+                // Find the most recent session for this project
+                const recentForProject = sessions
+                    .filter(s => s.projectId === id && !s.namespace && !s.isArchived)
+                    .sort((a, b) => b.updatedAt - a.updatedAt)[0];
+                    
+                if (recentForProject) {
+                    state.setActiveSession(recentForProject.id);
+                } else if (state.createSession) {
+                    const newId = state.createSession('New Conversation', undefined, undefined, id);
+                    state.setActiveSession(newId);
+                }
+            }
+        }
+    },
     addProject: (project) => set((state) => ({ projects: [project, ...state.projects] })),
     loadProjects: async () => {
         const { ProjectService } = await import('@/services/ProjectService');
@@ -243,7 +285,38 @@ export const createAppSlice: StateCreator<AppSlice> = (set, get) => ({
             )
         }));
         
+        
         logger.info(`[AppSlice] Updated metadata for project ${projectId}`);
+    },
+    updateProjectName: async (projectId, name) => {
+        const { ProjectService } = await import('@/services/ProjectService');
+        await ProjectService.updateProject(projectId, { name });
+
+        set((state) => ({
+            projects: state.projects.map((p) =>
+                p.id === projectId ? { ...p, name } : p
+            )
+        }));
+    },
+    setProjectStatus: async (projectId, status) => {
+        const { ProjectService } = await import('@/services/ProjectService');
+        await ProjectService.setStatus(projectId, status);
+
+        set((state) => ({
+            projects: state.projects.map((p) =>
+                p.id === projectId ? { ...p, status } : p
+            )
+        }));
+    },
+    deleteProject: async (projectId) => {
+        const { ProjectService } = await import('@/services/ProjectService');
+        // Actually we just archive it to be safe, or delete if wanted.
+        await ProjectService.deleteProject(projectId);
+
+        set((state) => ({
+            projects: state.projects.filter((p) => p.id !== projectId),
+            currentProjectId: state.currentProjectId === projectId ? DEFAULT_PROJECT_ID : state.currentProjectId
+        }));
     },
     pendingPrompt: null,
     setPendingPrompt: (prompt) => set({ pendingPrompt: prompt }),

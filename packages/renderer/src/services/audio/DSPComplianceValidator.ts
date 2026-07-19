@@ -15,6 +15,16 @@ export interface DSPComplianceReport {
         warnings: string[];
     }>;
     flags: string[];
+    /**
+     * ISSUE-997: neither browser input (RMS-derived loudness, unweighted peak
+     * sample) nor project-file input implements real BS.1770 gated/K-weighted
+     * loudness or oversampled true peak — 'estimated' is always a heuristic,
+     * never a certified measurement. 'unavailable' means loudness/true-peak
+     * were not evaluated at all (see validateFormatOnly). Callers/UI must
+     * label results accordingly and must not present `isCompliant` as a
+     * certified distribution-compliance pass.
+     */
+    measurementMethod: 'measured' | 'estimated' | 'unavailable';
 }
 
 export class DSPComplianceValidator {
@@ -32,12 +42,14 @@ export class DSPComplianceValidator {
         integratedLufs: number,
         truePeakDb: number,
         sampleRate: number,
-        bitDepth: number = 16 // Default to 16-bit unless verified
+        bitDepth: number = 16,
+        measurementMethod: 'measured' | 'estimated' = 'estimated'
     ): DSPComplianceReport {
         const report: DSPComplianceReport = {
             isCompliant: true,
             platformChecks: {},
-            flags: []
+            flags: [],
+            measurementMethod
         };
 
         let hasFails = false;
@@ -91,6 +103,57 @@ export class DSPComplianceValidator {
         } else {
             logger.info('[DSPComplianceValidator] Track passed all DSP compliance checks.');
         }
+
+        return report;
+    }
+
+    /**
+     * ISSUE-1024: DAW project files (Ableton .als, Logic .logicx, FL Studio
+     * .flp, ...) carry no audio stream to measure loudness/true-peak from.
+     * Checks only the genuinely-parsed sampleRate/bitDepth against DSP
+     * limits, instead of validating against fabricated LUFS/true-peak
+     * constants as if they were measured.
+     */
+    static validateFormatOnly(sampleRate: number, bitDepth: number = 16): DSPComplianceReport {
+        const report: DSPComplianceReport = {
+            isCompliant: true,
+            platformChecks: {},
+            flags: [],
+            measurementMethod: 'unavailable'
+        };
+
+        let hasFails = false;
+
+        for (const limit of this.PLATFORM_LIMITS) {
+            const warnings: string[] = [];
+            let compliant = true;
+
+            if (sampleRate < limit.minSampleRate) {
+                warnings.push(`Sample rate too low: ${sampleRate}Hz (Minimum: ${limit.minSampleRate}Hz) - Rejection risk.`);
+                compliant = false;
+            }
+            if (bitDepth < limit.minBitDepth) {
+                warnings.push(`Bit depth too low: ${bitDepth}-bit (Minimum: ${limit.minBitDepth}-bit) - Rejection risk.`);
+                compliant = false;
+            }
+
+            report.platformChecks[limit.platform] = { compliant, warnings };
+            if (!compliant) hasFails = true;
+        }
+
+        report.isCompliant = !hasFails;
+
+        if (hasFails) {
+            report.flags.push('CRITICAL: Track fails DSP format compliance (sample rate or bit depth).');
+            if (sampleRate < 44100) report.flags.push('REJECTION RISK: Format below required 44.1kHz threshold.');
+        }
+        report.flags.push('Loudness/true-peak compliance not evaluated: project files carry no audio stream to measure.');
+
+        logger.info('[DSPComplianceValidator] Format-only compliance check complete (loudness/true-peak not measured).', {
+            flags: report.flags,
+            sampleRate,
+            bitDepth
+        });
 
         return report;
     }

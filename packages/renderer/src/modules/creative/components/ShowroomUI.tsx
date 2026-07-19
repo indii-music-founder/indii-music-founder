@@ -1,9 +1,9 @@
 import React from 'react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
-import { 
-    Package, 
-    Image as ImageIcon, 
+import {
+    Package,
+    Image as ImageIcon,
     Layers,
     Play,
     Loader2,
@@ -12,7 +12,8 @@ import {
     Trash2,
     Zap,
     Video,
-    Pin
+    Pin,
+    Send
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useToast } from '@/core/context/ToastContext';
@@ -25,44 +26,74 @@ import { showroomService } from '@/services/creative/ShowroomService';
 const PRODUCT_TYPES = ['T-Shirt', 'Hoodie', 'Mug', 'Bottle', 'Poster', 'Phone Screen'] as const;
 
 export default function ShowroomUI() {
-    const { 
-        showroomState, 
+    const {
+        showroomState,
         setShowroomState,
         currentProjectId,
         addToHistory,
-        pinToClipboard
+        pinToClipboard,
+        sendToStage
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } = useStore(useShallow((state: any) => ({
         showroomState: state.showroomState,
         setShowroomState: state.setShowroomState,
         currentProjectId: state.currentProjectId,
         addToHistory: state.addToHistory,
-        pinToClipboard: state.pinToClipboard
+        pinToClipboard: state.pinToClipboard,
+        sendToStage: state.sendToStage
     })));
 
     const toast = useToast();
 
-    const handleAssetSelected = (files: File[]) => {
+    // ISSUE-959: validate type, handle read errors, and verify the bytes
+    // actually decode as an image BEFORE accepting the asset — a renamed or
+    // corrupt file must never reach the (expensive) generation request.
+    const handleAssetSelected = async (files: File[]) => {
         if (files.length === 0) return;
         const file = files[0];
         if (!file) return;
-        
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            if (e.target?.result) {
-                const newItem: HistoryItem = {
-                    id: crypto.randomUUID(),
-                    type: 'image',
-                    url: e.target.result as string,
-                    prompt: 'Showroom Asset',
-                    timestamp: Date.now(),
-                    projectId: currentProjectId,
-                    origin: 'uploaded'
-                };
-                setShowroomState({ productAsset: newItem });
-            }
+
+        const SUPPORTED_TYPES = ['image/png', 'image/jpeg', 'image/webp'];
+        if (!SUPPORTED_TYPES.includes(file.type)) {
+            toast.error(`"${file.name}" is ${file.type || 'an unknown type'} — use a PNG, JPEG, or WebP graphic.`);
+            return;
+        }
+
+        let dataUrl: string;
+        try {
+            dataUrl = await new Promise<string>((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => (typeof reader.result === 'string' ? resolve(reader.result) : reject(new Error('Empty read result')));
+                reader.onerror = () => reject(reader.error ?? new Error('File read failed'));
+                reader.readAsDataURL(file);
+            });
+        } catch {
+            toast.error(`Could not read "${file.name}" — the file may be locked or removed. Try again.`);
+            return;
+        }
+
+        // Decode check: the browser must be able to parse the actual bytes.
+        const decoded = await new Promise<{ width: number; height: number } | null>((resolve) => {
+            const img = new Image();
+            img.onload = () => resolve({ width: img.naturalWidth, height: img.naturalHeight });
+            img.onerror = () => resolve(null);
+            img.src = dataUrl;
+        });
+        if (!decoded || decoded.width === 0 || decoded.height === 0) {
+            toast.error(`"${file.name}" is not a valid image — it may be corrupt or mislabeled. Re-export it as PNG, JPEG, or WebP.`);
+            return;
+        }
+
+        const newItem: HistoryItem = {
+            id: crypto.randomUUID(),
+            type: 'image',
+            url: dataUrl,
+            prompt: 'Showroom Asset',
+            timestamp: Date.now(),
+            projectId: currentProjectId,
+            origin: 'uploaded'
         };
-        reader.readAsDataURL(file);
+        setShowroomState({ productAsset: newItem });
     };
 
     const handleGenerateMockup = async () => {
@@ -137,7 +168,7 @@ export default function ShowroomUI() {
                     <h2 className="text-lg font-bold tracking-tight text-white">Asset Rack</h2>
                 </div>
 
-                <div className="space-y-4">
+                <div className="space-y-4 shrink-0">
                     <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Product Asset</label>
                     <div className="relative group">
                         {showroomState.productAsset ? (
@@ -153,16 +184,16 @@ export default function ShowroomUI() {
                                 </div>
                             </div>
                         ) : (
-                            <FileUpload 
+                            <FileUpload
                                 onFilesSelected={handleAssetSelected}
                                 acceptedFileTypes={['image/png', 'image/jpeg', 'image/webp']}
-                                className="h-48"
+                                className="min-h-48"
                             />
                         )}
                     </div>
                 </div>
 
-                <div className="space-y-4">
+                <div className="space-y-4 shrink-0">
                     <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Product Type</label>
                     <div className="grid grid-cols-2 gap-2">
                         {PRODUCT_TYPES.map((type) => (
@@ -184,7 +215,7 @@ export default function ShowroomUI() {
                     </div>
                 </div>
 
-                <div className="space-y-4">
+                <div className="space-y-4 shrink-0">
                     <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Placement Hint</label>
                     <div className="relative">
                         <input 
@@ -201,7 +232,7 @@ export default function ShowroomUI() {
             {/* Column 2: Scenario */}
             <div className="flex-1 border-r border-white/10 flex flex-col p-6 space-y-6 overflow-y-auto scrollbar-hide bg-white/[0.01]">
                 <div className="flex items-center gap-2 mb-2">
-                    <div className="p-2 rounded-lg bg-purple-500/20 text-purple-400">
+                    <div className="p-2 rounded-lg bg-green-500/20 text-green-400">
                         <Layers size={20} />
                     </div>
                     <h2 className="text-lg font-bold tracking-tight text-white">Scenario</h2>
@@ -217,7 +248,7 @@ export default function ShowroomUI() {
                             value={showroomState.sceneDescription}
                             onChange={(e) => setShowroomState({ sceneDescription: e.target.value })}
                             placeholder="Describe the environment, lighting, and mood (e.g. A cyberpunk street at night with neon reflections)..."
-                            className="w-full h-32 bg-white/5 border border-white/10 rounded-xl p-4 text-sm text-white focus:outline-none focus:border-purple-500/50 transition-colors resize-none leading-relaxed"
+                            className="w-full h-32 bg-white/5 border border-white/10 rounded-xl p-4 text-sm text-white focus:outline-none focus:border-green-500/50 transition-colors resize-none leading-relaxed"
                         />
                     </div>
 
@@ -230,7 +261,7 @@ export default function ShowroomUI() {
                             value={showroomState.motionDescription}
                             onChange={(e) => setShowroomState({ motionDescription: e.target.value })}
                             placeholder="Describe how the camera or subject moves (e.g. Slow cinematic zoom towards the chest)..."
-                            className="w-full h-32 bg-white/5 border border-white/10 rounded-xl p-4 text-sm text-white focus:outline-none focus:border-purple-500/50 transition-colors resize-none leading-relaxed"
+                            className="w-full h-32 bg-white/5 border border-white/10 rounded-xl p-4 text-sm text-white focus:outline-none focus:border-green-500/50 transition-colors resize-none leading-relaxed"
                         />
                     </div>
 
@@ -241,7 +272,7 @@ export default function ShowroomUI() {
                                 <button 
                                     key={preset}
                                     onClick={() => setShowroomState({ sceneDescription: preset })}
-                                    className="px-4 py-2 rounded-full bg-white/5 border border-white/10 hover:border-purple-500/50 text-[11px] font-medium transition-all hover:bg-purple-500/5 text-muted-foreground hover:text-white"
+                                    className="px-4 py-2 rounded-full bg-white/5 border border-white/10 hover:border-green-500/50 text-[11px] font-medium transition-all hover:bg-green-500/5 text-muted-foreground hover:text-white"
                                 >
                                     {preset}
                                 </button>
@@ -274,24 +305,49 @@ export default function ShowroomUI() {
                                         className="w-full h-full object-cover" 
                                         alt="Mockup result" 
                                     />
-                                    {/* Hover Pin Button */}
-                                    <button
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            pinToClipboard({
-                                                id: showroomState.mockupResult.id,
-                                                url: showroomState.mockupResult.url,
-                                                prompt: showroomState.mockupResult.prompt || `${showroomState.productType} Mockup`,
-                                                type: showroomState.mockupResult.type || 'image',
-                                                timestamp: Date.now()
-                                            });
-                                            toast.success("Pinned to Creative Clipboard!");
-                                        }}
-                                        className="absolute bottom-3 left-3 bg-black/75 backdrop-blur-md text-white p-2.5 rounded-full shadow-lg border border-white/10 hover:bg-violet-600 transition-all opacity-0 group-hover/preview:opacity-100 flex items-center justify-center z-20"
-                                        title="Pin to Visual Clipboard"
-                                    >
-                                        <Pin size={14} className="text-violet-400" />
-                                    </button>
+                                    {/* Hover Controls */}
+                                    <div className="absolute bottom-3 left-3 flex gap-2 opacity-0 group-hover/preview:opacity-100 transition-opacity">
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                pinToClipboard({
+                                                    id: showroomState.mockupResult.id,
+                                                    url: showroomState.mockupResult.url,
+                                                    prompt: showroomState.mockupResult.prompt || `${showroomState.productType} Mockup`,
+                                                    type: showroomState.mockupResult.type || 'image',
+                                                    timestamp: Date.now()
+                                                });
+                                                toast.success("Pinned to Creative Clipboard!");
+                                            }}
+                                            className="bg-black/75 backdrop-blur-md text-white p-2.5 rounded-full shadow-lg border border-white/10 hover:bg-violet-600 transition-all flex items-center justify-center z-20"
+                                            title="Pin to Visual Clipboard"
+                                        >
+                                            <Pin size={14} className="text-violet-400" />
+                                        </button>
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                sendToStage('veo', {
+                                                    item: {
+                                                        id: showroomState.mockupResult.id,
+                                                        url: showroomState.mockupResult.url,
+                                                        prompt: showroomState.mockupResult.prompt || `${showroomState.productType} Mockup`,
+                                                        type: showroomState.mockupResult.type || 'image',
+                                                        timestamp: Date.now(),
+                                                        projectId: currentProjectId
+                                                    },
+                                                    role: 'first-frame',
+                                                    originStage: 'image',
+                                                    timestamp: Date.now()
+                                                });
+                                                toast.success("Sent to Veo!");
+                                            }}
+                                            className="bg-black/75 backdrop-blur-md text-white p-2.5 rounded-full shadow-lg border border-cyan-600/40 hover:bg-cyan-600/20 transition-all flex items-center justify-center z-20"
+                                            title="Send to Veo for video generation"
+                                        >
+                                            <Send size={14} className="text-cyan-400" />
+                                        </button>
+                                    </div>
                                 </div>
                             ) : showroomState.productAsset ? (
                                 <motion.div 
@@ -370,7 +426,7 @@ export default function ShowroomUI() {
                                 "w-full py-4 rounded-xl flex items-center justify-center gap-3 font-bold uppercase tracking-widest text-xs transition-all",
                                 !showroomState.mockupResult || showroomState.isGeneratingMockup || showroomState.isGeneratingVideo
                                     ? "bg-white/5 text-muted-foreground cursor-not-allowed border border-white/5"
-                                    : "bg-purple-600 text-white hover:bg-purple-700 shadow-lg shadow-purple-500/20 active:scale-[0.98]"
+                                    : "bg-green-600 text-white hover:bg-green-700 shadow-lg shadow-green-500/20 active:scale-[0.98]"
                             )}
                         >
                             {showroomState.isGeneratingVideo ? (

@@ -27,10 +27,18 @@ export interface SFTPConfig {
     privateKey?: string;
 }
 
+export interface ElectronAuthTokenData {
+    idToken: string;
+    accessToken?: string | null;
+    source?: string | null;
+}
+
 // ── Namespace Interfaces ──────────────────────────────────────────────────
 
 export interface ElectronAuthAPI {
     logout: () => Promise<void>;
+    onUserUpdate: (callback: (user: ElectronAuthTokenData | null) => void) => () => void;
+    onError: (callback: (data: { message: string }) => void) => () => void;
 }
 
 export interface ElectronCredentialsAPI {
@@ -101,6 +109,14 @@ export interface ElectronAgentAPI {
 export interface ElectronVideoAPI {
     saveAsset: (url: string, filename: string) => Promise<unknown>;
     openFolder: (filePath?: string) => Promise<unknown>;
+    render: (config: unknown) => Promise<string>;
+}
+
+export interface ElectronDawAPI {
+    start: () => Promise<unknown>;
+    stop: () => Promise<unknown>;
+    getState: () => Promise<unknown>;
+    onStateChanged: (callback: (state: unknown) => void) => () => void;
 }
 
 export interface ElectronDistributionAPI {
@@ -120,8 +136,6 @@ export interface ElectronDistributionAPI {
     generateUPC: (options?: unknown) => Promise<{ success: boolean; error?: string; upc?: string }>;
     registerRelease: (metadata: unknown, releaseId?: string) => Promise<{ success: boolean; error?: string }>;
     generateDDEX: (metadata: unknown) => Promise<{ success: boolean; error?: string; xml?: string }>;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    generateIngestionNotification: (metadata: any) => Promise<{ success: boolean; error?: string; xml?: string }>;
     generateContentIdCSV: (data: unknown) => Promise<{ success: boolean; error?: string; csvData?: string; csv?: string }>;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     generateBWARM: (data: unknown) => Promise<{ success: boolean; error?: string; csv?: string; report?: any }>;
@@ -145,6 +159,7 @@ export interface ElectronDistributionAPI {
 export interface ElectronRemoteAPI {
     onMessageFromMobile: (callback: (data: unknown) => void) => () => void;
     onStatusUpdated: (callback: (status: unknown) => void) => () => void;
+    broadcast: (payload: unknown) => void;
 }
 
 export interface ElectronUpdaterAPI {
@@ -188,6 +203,19 @@ export interface ElectronPowerAPI {
     onAC: (callback: () => void) => () => void;
 }
 
+export interface ElectronWindowAPI {
+    show: () => Promise<void>;
+    hide: () => Promise<void>;
+}
+
+export interface ApprovedAssetMetadata {
+    name: string;
+    relativePath: string;
+    extension: string;
+    sizeBytes: number;
+    modifiedAt: number;
+}
+
 // ── Root ElectronAPI Interface ─────────────────────────────────────────────
 
 export interface ElectronAPI {
@@ -196,8 +224,9 @@ export interface ElectronAPI {
     getAppVersion: () => Promise<string>;
     setPrivacyMode: (enabled: boolean) => Promise<void>;
     selectFile: (options?: unknown) => Promise<unknown>;
-    selectDirectory: (options?: unknown) => Promise<unknown>;
+    selectDirectory: (options?: { title?: string }) => Promise<string | null>;
     getDirectoryContents: (dirPath: string, options?: { recursive?: boolean; extensions?: string[] }) => Promise<unknown>;
+    searchApprovedAssets: (dirPath: string, options?: { query?: string; extensions?: string[]; maxResults?: number }) => Promise<ApprovedAssetMetadata[]>;
     getGpuInfo: () => Promise<unknown>;
     showNotification: (title: string, body: string) => void;
 
@@ -213,15 +242,22 @@ export interface ElectronAPI {
     security: ElectronSecurityAPI;
     agent: ElectronAgentAPI;
     video: ElectronVideoAPI;
+    daw: ElectronDawAPI;
     distribution: ElectronDistributionAPI;
     remote: ElectronRemoteAPI;
     updater: ElectronUpdaterAPI;
     scheduler: ElectronSchedulerAPI;
     sidecar: ElectronSidecarAPI;
     power: ElectronPowerAPI;
+    window: ElectronWindowAPI;
 
     // Top-level test
     testAgent: (query?: string) => Promise<unknown>;
+
+    // Menu
+    menu?: {
+        onSaveTriggered: (callback: () => void) => () => void;
+    };
 }
 
 // ── Window Augmentation ───────────────────────────────────────────────────

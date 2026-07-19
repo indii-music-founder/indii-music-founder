@@ -4,8 +4,10 @@ import { distributionService } from '@/services/distribution/DistributionService
 import { useToast } from '@/core/context/ToastContext';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import type { IngestionMetadata } from '@/types/distribution';
+import { trackLibrary } from '@/services/metadata/TrackLibraryService';
+import type { ExtendedGoldenMetadata } from '@/services/metadata/types';
+import type { BrandAsset } from '@/types/User';
 
 interface PipelineStep {
     id: string;
@@ -37,12 +39,24 @@ export const SubmitReleaseModal: React.FC<Props> = ({ open, onClose, onSubmitted
     const [artist, setArtist] = useState('');
     const [label, setLabel] = useState('Indii Records');
     const [releaseDate, setRelDate] = useState('');
-    const [artworkUrl, setArtwork] = useState('');
     const [trackTitle, setTrkTitle] = useState('');
     const [isrc, setIsrc] = useState('');
     const [genre, setGenre] = useState('Electronic');
 
+    // ISSUE-969: audio and cover art must reference a real, already-processed
+    // asset (an immutable canonical master / an uploaded brand asset) rather than
+    // freeform, unverifiable text fields the QC step never checked existed.
+    const [availableTracks, setAvailableTracks] = useState<ExtendedGoldenMetadata[]>([]);
+    const [loadingTracks, setLoadingTracks] = useState(false);
+    const [selectedMasterFingerprint, setSelectedMasterFingerprint] = useState('');
+    const [selectedCoverUrl, setSelectedCoverUrl] = useState('');
+
     const [submitting, setSubmitting] = useState(false);
+
+    const coverAssets: BrandAsset[] = [
+        ...(userProfile?.brandKit?.brandAssets || []),
+        ...(userProfile?.brandKit?.referenceImages || []),
+    ];
 
     useEffect(() => {
         if (open && userProfile) {
@@ -53,11 +67,24 @@ export const SubmitReleaseModal: React.FC<Props> = ({ open, onClose, onSubmitted
             setGenre(prev => prev || release?.genre || 'Electronic');
         }
     }, [open, userProfile]);
+
+    useEffect(() => {
+        if (!open) return;
+        setLoadingTracks(true);
+        trackLibrary.list()
+            .then(tracks => setAvailableTracks(tracks.filter(track => (
+                !!track.masterFingerprint && !!track.masterAsset?.audioProperties
+            ))))
+            .finally(() => setLoadingTracks(false));
+    }, [open]);
     const [done, setDone] = useState(false);
+    const [deliveryState, setDeliveryState] = useState<'idle' | 'delivered' | 'ready_for_manual' | 'skipped'>('idle');
     const [steps, setSteps] = useState<PipelineStep[]>(INITIAL_STEPS);
     const [overallProgress, setOverallProgress] = useState(0);
 
-    const formValid = title.trim() && artist.trim() && trackTitle.trim();
+    // ISSUE-969: metadata alone can no longer pass — a real hashed master
+    // and a real staged cover asset are required before submission.
+    const formValid = title.trim() && artist.trim() && trackTitle.trim() && selectedMasterFingerprint && selectedCoverUrl;
 
     const updateStep = (id: string, patch: Partial<PipelineStep>) => {
         setSteps(prev => prev.map(s => s.id === id ? { ...s, ...patch } : s));
@@ -67,7 +94,10 @@ export const SubmitReleaseModal: React.FC<Props> = ({ open, onClose, onSubmitted
         setSteps(INITIAL_STEPS);
         setOverallProgress(0);
         setDone(false);
+        setDeliveryState('idle');
         setSubmitting(false);
+        setSelectedMasterFingerprint('');
+        setSelectedCoverUrl('');
     };
 
     const handleClose = () => {
@@ -83,31 +113,56 @@ export const SubmitReleaseModal: React.FC<Props> = ({ open, onClose, onSubmitted
     const handleSubmit = async () => {
         if (!formValid || submitting) return;
 
+        const selectedTrack = availableTracks.find(track => (
+            track.masterFingerprint === selectedMasterFingerprint
+        ));
+        const masterAsset = selectedTrack?.masterAsset;
+        const audioProperties = masterAsset?.audioProperties;
+        if (!selectedTrack || !masterAsset || !audioProperties) {
+            toastError('Select a delivery-ready canonical master with measured audio properties.');
+            return;
+        }
+
         setSubmitting(true);
         setDone(false);
         setSteps(INITIAL_STEPS);
         setOverallProgress(0);
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const releaseData: any = {
-            releaseId: `release-${Date.now()}`,
+        const releaseData: IngestionMetadata = {
+            releaseId: `release-${crypto.randomUUID()}`,
             title: title.trim(),
             artist: artist.trim(),
             artists: [artist.trim()],
             label: label.trim() || 'Indii Records',
             genre: genre,
             release_date: releaseDate || undefined,
-            artwork_url: artworkUrl || undefined,
+            artwork_url: selectedCoverUrl,
             tracks: [{
                 title: trackTitle.trim(),
                 isrc: isrc.trim() || undefined,
                 artist: artist.trim(),
                 artists: [artist.trim()],
+                filename: masterAsset.originalFileName,
+                duration: selectedTrack.durationSeconds,
+                bit_depth: audioProperties.bitDepth,
+                channels: audioProperties.channels,
+                codec: audioProperties.codec,
+                sample_rate: audioProperties.sampleRate,
+                master_asset: {
+                    content_hash: masterAsset.contentHash,
+                    download_url: masterAsset.downloadUrl,
+                    master_fingerprint: masterAsset.masterFingerprint,
+                    mime_type: masterAsset.mimeType,
+                    original_file_name: masterAsset.originalFileName,
+                    size_bytes: masterAsset.sizeBytes,
+                    storage_path: masterAsset.storagePath,
+                },
             }],
         };
 
         try {
-            await distributionService.submitRelease(releaseData, (evt) => {
+             
+            const result = await distributionService.submitRelease(releaseData, (evt) => {
                 if (evt.progress !== undefined) {
                     setOverallProgress(evt.progress);
                 }
@@ -124,7 +179,15 @@ export const SubmitReleaseModal: React.FC<Props> = ({ open, onClose, onSubmitted
 
             setDone(true);
             setOverallProgress(100);
-            toastSuccess('Release submitted successfully!');
+
+            // Determine delivery state from result
+            if (result?.sftp_skipped) {
+                setDeliveryState('ready_for_manual');
+                toastSuccess('Metadata package ready — manual delivery required');
+            } else {
+                setDeliveryState('delivered');
+                toastSuccess('Release delivered to distributor!');
+            }
             // Wait for user to click Done button, which triggers onSubmitted via handleClose
         } catch (err: unknown) {
             const msg = err instanceof Error ? err.message : 'Submission failed';
@@ -209,6 +272,29 @@ export const SubmitReleaseModal: React.FC<Props> = ({ open, onClose, onSubmitted
                                 </div>
                             </div>
 
+                            <div>
+                                <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1.5">
+                                    Master Track *
+                                    <span className="text-gray-600 normal-case font-medium"> (from your upload-once catalog)</span>
+                                </label>
+                                <select
+                                    value={selectedMasterFingerprint}
+                                    onChange={e => setSelectedMasterFingerprint(e.target.value)}
+                                    data-testid="release-track-select"
+                                    disabled={loadingTracks}
+                                    className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-dept-distribution/50 transition-colors appearance-none disabled:opacity-40"
+                                >
+                                    <option value="">
+                                        {loadingTracks ? 'Loading canonical masters…' : availableTracks.length === 0 ? 'No canonical masters found — ingest one first' : 'Select an upload-once master track'}
+                                    </option>
+                                    {availableTracks.map(track => (
+                                        <option key={track.id ?? track.masterFingerprint} value={track.masterFingerprint}>
+                                            {track.trackTitle} ({Math.round(track.durationSeconds || 0)}s)
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1.5">Label</label>
@@ -250,14 +336,25 @@ export const SubmitReleaseModal: React.FC<Props> = ({ open, onClose, onSubmitted
                             </div>
 
                             <div>
-                                <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1.5">Artwork URL</label>
-                                <input
-                                    data-testid="release-artwork-input"
-                                    value={artworkUrl}
-                                    onChange={e => setArtwork(e.target.value)}
-                                    placeholder="https://..."
-                                    className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:border-dept-distribution/50 transition-colors"
-                                />
+                                <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1.5">
+                                    Cover Art *
+                                    <span className="text-gray-600 normal-case font-medium"> (from your uploaded brand assets)</span>
+                                </label>
+                                <select
+                                    value={selectedCoverUrl}
+                                    onChange={e => setSelectedCoverUrl(e.target.value)}
+                                    data-testid="release-artwork-select"
+                                    className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-dept-distribution/50 transition-colors appearance-none"
+                                >
+                                    <option value="">
+                                        {coverAssets.length === 0 ? 'No brand assets found — upload one first' : 'Select a staged cover asset'}
+                                    </option>
+                                    {coverAssets.map((asset, idx) => (
+                                        <option key={`${asset.url}-${idx}`} value={asset.url}>
+                                            {asset.description || `Asset ${idx + 1}`}
+                                        </option>
+                                    ))}
+                                </select>
                             </div>
                         </div>
                     )}
@@ -318,7 +415,9 @@ export const SubmitReleaseModal: React.FC<Props> = ({ open, onClose, onSubmitted
                                 <div className="flex items-center gap-2 p-3 bg-dept-publishing/10 border border-dept-publishing/20 rounded-lg">
                                     <CheckCircle2 className="w-4 h-4 text-dept-publishing flex-shrink-0" />
                                     <span className="text-xs font-bold text-dept-publishing uppercase tracking-widest">
-                                        Release delivered to distributor
+                                        {deliveryState === 'ready_for_manual'
+                                            ? 'Metadata ready — manual delivery required'
+                                            : 'Release delivered to distributor'}
                                     </span>
                                 </div>
                             )}

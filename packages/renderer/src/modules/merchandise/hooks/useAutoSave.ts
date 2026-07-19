@@ -11,8 +11,20 @@ export interface AutoSaveOptions {
     enabled?: boolean; // Enable auto-save (default: true)
 }
 
+/**
+ * ISSUE-933: saveDesign() reports exactly what happened — callers must never
+ * show "saved" without checking `success`. Skipped saves (missing context)
+ * and Firestore failures are both `success: false` with a `reason`.
+ */
+export interface SaveResult {
+    success: boolean;
+    reason?: string;
+    designId?: string;
+    lastModified?: Date;
+}
+
 export interface AutoSaveReturn {
-    saveDesign: () => Promise<void>;
+    saveDesign: () => Promise<SaveResult>;
     lastSaved: Date | null;
     isSaving: boolean;
     error: string | null;
@@ -32,23 +44,30 @@ export const useAutoSave = (
         organizations: state.organizations,
         currentProjectId: state.currentProjectId
     })));
+    // ISSUE-933: a matched org is NOT required — solo/personal-workspace users
+    // have no `organizations` entries and must still be able to save. orgId is
+    // best-effort association, not a save gate.
     const activeOrg = organizations.find(org => org.id === currentOrganizationId);
+    const resolvedOrgId = activeOrg?.id ?? currentOrganizationId ?? null;
 
     const [lastSaved, setLastSaved] = useState<Date | null>(null);
     const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-    const saveDesign = useCallback(async () => {
-        if (!canvas || !user || !currentProjectId || !activeOrg) {
-            logger.warn('Auto-save skipped: missing canvas, user, or project context', {
+    const saveDesign = useCallback(async (): Promise<SaveResult> => {
+        if (!canvas || !user || !currentProjectId) {
+            const reason = `Auto-save skipped: missing ${[
+                !canvas && 'canvas',
+                !user && 'authenticated user',
+                !currentProjectId && 'active project',
+            ].filter(Boolean).join(', ')}.`;
+            logger.warn(reason, {
                 hasCanvas: !!canvas,
                 hasUser: !!user,
                 hasProject: !!currentProjectId,
-                hasOrg: !!activeOrg,
-                currentOrganizationId
             });
-            return;
+            setError(reason);
+            return { success: false, reason };
         }
 
         setIsSaving(true);
@@ -82,12 +101,13 @@ export const useAutoSave = (
             canvas.setViewportTransform(currentVpt as [number, number, number, number, number, number]);
             canvas.setZoom(currentZoom);
 
-            // Save to Firestore
+            // Save to Firestore. orgId is best-effort — never blocks the save
+            // (ISSUE-933: personal/solo workspaces have no matching org entry).
             const designRef = doc(db, 'designs', designId);
             await setDoc(designRef, {
                 id: designId,
                 userId: user.uid,
-                orgId: activeOrg.id,
+                orgId: resolvedOrgId,
                 projectId: currentProjectId,
                 name: designName,
                 canvasJSON,
@@ -96,15 +116,19 @@ export const useAutoSave = (
                 ...(lastSaved ? {} : { createdAt: serverTimestamp() })
             }, { merge: true });
 
-            setLastSaved(new Date());
-            logger.debug(`Design "${designName}" auto-saved at ${new Date().toLocaleTimeString()}`);
+            const savedAt = new Date();
+            setLastSaved(savedAt);
+            logger.debug(`Design "${designName}" auto-saved at ${savedAt.toLocaleTimeString('en-US')}`);
+            return { success: true, designId, lastModified: savedAt };
         } catch (err: unknown) {
+            const errorMsg = err instanceof Error ? err.message : 'Auto-save failed';
             logger.error('Auto-save failed:', err);
-            setError(err instanceof Error ? err.message : 'Auto-save failed');
+            setError(errorMsg);
+            return { success: false, reason: errorMsg };
         } finally {
             setIsSaving(false);
         }
-    }, [canvas, user, currentOrganizationId, currentProjectId, designName, designId, lastSaved, activeOrg]);
+    }, [canvas, user, currentProjectId, designName, designId, lastSaved, resolvedOrgId]);
 
     // Auto-save interval
     useEffect(() => {

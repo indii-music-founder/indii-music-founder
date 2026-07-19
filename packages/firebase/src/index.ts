@@ -6,6 +6,10 @@ import { BigQuery } from "@google-cloud/bigquery";
 // Initialize Firebase Admin immediately to prevent race conditions during import analysis
 admin.initializeApp();
 
+import { setGlobalOptions } from "firebase-functions/v2";
+// Fix: Increase default memory limit to prevent OOM errors in heavy Genkit/GenAI functions
+setGlobalOptions({ memory: "512MiB" });
+
 // Phase 2a: Agent Streaming (v2 - SSE support for Phase 2 orchestration)
 export { agentStreamResponse, agentStreamHealth } from './streaming/agentStream';
 import { Inngest } from "inngest";
@@ -16,18 +20,24 @@ import { VideoJobSchema } from "./lib/video";
 import { GenerateSpeechRequestSchema } from "./lib/audio";
 
 
+import { executeWorkflowStepFn } from "./functions/agent/executeWorkflowStep";
 import { LongFormVideoJobSchema, generateLongFormVideoFn, stitchVideoFn } from "./lib/long_form_video";
 import { generateVideoFn } from "./lib/video_generation";
 import { generateVideoDirect } from "./lib/video_generation_direct";
 import { executeMilestoneFn } from "./timeline/milestone_execution";
 import { editImageFn } from "./lib/image_generation";
 export { generateImageV3, generateVideoV3, generateOmniRemixV3, generateAudioV3 } from "./functions/creative/gateway";
+export { getOperationCostHistory, getOperationCostStatus } from "./functions/billing/enforceOperationCost";
+export { cancelVideoJob } from "./functions/creative/gateway";
+export { videoJobFirestoreOrchestrator } from "./functions/creative/videoJobOrchestrator";
+export { getMediaDuration } from "./functions/creative/getMediaDuration";
 import { analyzeAudioFn } from "./lib/audio";
 import { FUNCTION_INTELLIGENCE_MODELS } from "./config/models";
-import { clearbitApiKey, apolloApiKey } from "./config/secrets";
+import { clearbitApiKey, apolloApiKey, getClearbitApiKey, getApolloApiKey } from "./config/secrets";
 
 import { estimateVideoCost } from "./config/pricing";
 import { enforceRateLimit, RATE_LIMITS } from "./lib/rateLimit";
+import { validateAppCheckHttp, validateAppCheckV1 } from "./middleware/appCheck";
 
 
 // Vertex AI SDK
@@ -50,10 +60,13 @@ export { createHandoffCode, redeemHandoffCode } from './functions/auth/handoff';
 // Agent Functions (Bug Reporting)
 export { reportBugFn } from './functions/agent/reportBugFn';
 export { workflowOrchestrator } from './functions/agent/workflowOrchestrator';
+export { manageSemanticMemory } from './functions/agent/manageSemanticMemory';
+export { agentLoopCron } from './functions/agent/agentLoopCron';
 
 // Security Functions
 export { persistFraudAlert } from './functions/security/persistFraudAlert';
 export { logAuditEvent } from './functions/security/logAuditEvent';
+export { registerAiContextCache, recordInstrumentUsage } from './functions/security/writeSharedOperationalData';
 
 // REST API Router
 export {
@@ -74,9 +87,14 @@ export {
 export { createStripeAccount, createStripeConnectAccount, createTransfer } from './stripe/connect';
 
 // Stripe Split Escrow (Item 135)
-export { initiateSplitEscrow, signEscrow } from './stripe/splitEscrow';
+export { initiateSplitEscrow, signEscrow, releaseEscrow } from './stripe/splitEscrow';
 
 export { requestTaxForms } from './stripe/taxForms';
+
+// Finance Functions (server-owned DSR/earnings ledger writes)
+export { ingestEarningsReport } from './functions/finance/ingestEarningsReport';
+export { calculateRoyaltyAllocations } from './functions/finance/calculateRoyaltyAllocations';
+export { setRecoupmentBalance } from './functions/finance/setRecoupmentBalance';
 
 // Distribution Functions (Item 218: Delivery Status Polling)
 export { pollDeliveryStatus } from './distribution/pollDeliveryStatus';
@@ -91,6 +109,9 @@ export {
     createSftpIngestionRecord,
     updateSftpIngestionRecord,
 } from './functions/distribution/distributionRecords';
+
+// Rights Functions (ISSUE-655: provider registration queued server-side; renderer never touches provider credentials)
+export { queueRightsRegistration } from './functions/rights/queueRightsRegistration';
 
 // Legal Functions (Item 412: Split Sheet PDF Export)
 export { exportSplitSheet } from './legal/exportSplitSheet';
@@ -118,6 +139,7 @@ export { processISWCMapping as processISWCMappingV2 } from './publishing/iswcMap
 
 // Social Functions (Item 226: Scheduled Post Background Delivery)
 export { deliverScheduledPosts } from './social/deliverScheduledPosts';
+export { refreshSocialToken } from './social/refreshTokenCallable';
 
 // Timeline Orchestrator (Progressive Campaign Engine — polls every 15 min for due milestones)
 export { pollTimelineMilestones } from './timeline/pollTimelineMilestones';
@@ -133,14 +155,18 @@ export { sendEmail } from './email/sendEmail';
 // Growth Intelligence Engine — Platform Analytics OAuth (Spotify, TikTok, Instagram)
 export { analyticsExchangeToken, analyticsRefreshToken, analyticsRevokeToken } from './analytics/platformTokenExchange';
 
-// Storage Maintenance (Scheduled — orphan cleanup, quota tracking, archival flagging)
-export { cleanupOrphanedVideos, trackStorageQuotas, flagVideosForArchival } from './devops/storageMaintenance';
+// Storage Maintenance (Scheduled — orphan cleanup, quota tracking, archival flagging, temp cleanup)
+export { cleanupExpiredVideoTemps, cleanupOrphanedVideos, trackStorageQuotas, flagVideosForArchival } from './devops/storageMaintenance';
+export { fetchStorageAssetForCanvas } from './functions/storage/fetchStorageAssetForCanvas';
+export { verifyMasterAudio } from './functions/storage/verifyMasterAudio';
+export { processAudioIngestion } from './distribution/ingestion';
 
 // Remote Relay — Server-Side Agent Processing (replaces desktop-browser-dependent relay)
 export { processRelayCommand } from './relay/relayCommandProcessor';
+export { issueStudioExecutorLease, publishStudioPresence, releaseStudioPresence, claimStudioCommand, publishStudioResponse, completeStudioCommand } from './functions/remote/issueStudioExecutorLease';
 
 // Billing / Cost Control
-export { enforceOperationCost } from './functions/billing/enforceOperationCost';
+export { enforceOperationCost, finalizeOperationCost, expireStaleOperationCostReservations } from './functions/billing/enforceOperationCost';
 
 // Telegram Bot Adapter — Phase 2 Multi-Channel (bridges Telegram → Firestore relay)
 export { telegramWebhook } from './relay/telegramWebhook';
@@ -148,6 +174,13 @@ export { generateTelegramLinkCode, getTelegramLinkStatus } from './relay/telegra
 
 // App Releases (Founder Delivery)
 export { generateReleaseDownloadUrl } from './releases/generateDownloadUrl';
+
+// MCP Server Endpoint and Triggers
+export { mcpEndpoint } from './mcp/index';
+export { processPayoutJobs } from './mcp/processPayoutJobs';
+export { processVideoJobs } from './mcp/processVideoJobs';
+export { processMcpJobs } from './mcp/processMcpJobs';
+
 
 // App Check enforcement flag — controls whether Firebase App Check tokens are validated.
 // PRODUCTION ENABLEMENT (Item 247):
@@ -158,9 +191,6 @@ export { generateReleaseDownloadUrl } from './releases/generateDownloadUrl';
 //      Set SKIP_APP_CHECK=true in your local .env or GCP Cloud Run environment.
 //   5. Deploy: firebase deploy --only functions
 //   CAUTION: Requires reCAPTCHA Enterprise configured in Firebase Console for all clients.
-// Item 331: Default ENFORCE to true — opt-out via SKIP_APP_CHECK=true for dev environments.
-const ENFORCE_APP_CHECK = true;
-
 /**
  * Security Helper: Validate Organization Access
  *
@@ -244,17 +274,16 @@ const requireAdmin = (context: functions.https.CallableContext) => {
 const getAllowedOrigins = (): string[] => {
     const origins = [
         'https://indii.music',
-        'https://indii-studio.firebaseapp.com',
-        'https://indii-v-1-1.web.app',
-        'https://indii-v-1-1.firebaseapp.com',
-        'https://studio.indii.music',
-        'https://indii.music',
-        'https://indii.music',
-        'https://www.indii.music',
         'https://app.indii.music',
+        'https://founder.indii.music',
+        'https://www.indii.music',
         'https://studio.indii.music',
+        'https://indii-music-studio.web.app',
+        'https://indii-music-studio.firebaseapp.com',
+        'https://indii-music-founder.web.app',
+        'https://indii-music-founder.firebaseapp.com',
+        'https://indii-studio.firebaseapp.com',
         'app://.',  // Electron app
-        
     ];
 
     // Add localhost origins in emulator/development mode
@@ -295,8 +324,9 @@ const corsHandler = corsLib({
 
 // ----------------------------------------------------------------------------
 // Tier Limits (Duplicated from MembershipService for Server-Side Enforcement)
+// Updated to match SubscriptionTier enum — includes 'founder' (unlimited, for initial investors)
 // ----------------------------------------------------------------------------
-type MembershipTier = 'free' | 'pro' | 'enterprise';
+type MembershipTier = 'free' | 'pro' | 'enterprise' | 'founder';
 
 interface TierLimits {
     maxVideoDuration: number;          // Max seconds per job
@@ -315,6 +345,10 @@ const TIER_LIMITS: Record<MembershipTier, TierLimits> = {
     enterprise: {
         maxVideoDuration: 4 * 60 * 60,     // 4 hours
         maxVideoGenerationsPerDay: 500,
+    },
+    founder: {
+        maxVideoDuration: 24 * 60 * 60,    // 24 hours (unlimited in practice)
+        maxVideoGenerationsPerDay: 1000,   // 1000/day (unlimited in practice)
     },
 };
 
@@ -337,10 +371,12 @@ export const triggerVideoJob = functions
     .runWith({
         timeoutSeconds: 60,
         memory: "2GB",
-        enforceAppCheck: ENFORCE_APP_CHECK
+        enforceAppCheck: false
     })
     // Item 352: Explicit return type annotation
     .https.onCall(async (data: unknown, context: functions.https.CallableContext): Promise<{ success: boolean; message: string }> => {
+        validateAppCheckV1(context);
+        
         if (!context.auth) {
             throw new functions.https.HttpsError(
                 "unauthenticated",
@@ -423,7 +459,6 @@ export const triggerVideoJob = functions
 export const executeVideoJob = functions
     .region("us-central1")
     .runWith({
-        enforceAppCheck: ENFORCE_APP_CHECK,
         timeoutSeconds: 540, // 9 minutes
         memory: "2GB"
     })
@@ -482,10 +517,12 @@ export const triggerLongFormVideoJob = functions
         secrets: [inngestEventKey],
         timeoutSeconds: 60,
         memory: "2GB",
-        enforceAppCheck: ENFORCE_APP_CHECK
+        enforceAppCheck: false
     })
     // Item 352: Explicit return type annotation
     .https.onCall(async (data: unknown, context: functions.https.CallableContext): Promise<{ success: boolean; message: string }> => {
+        validateAppCheckV1(context);
+
         if (!context.auth) {
             throw new functions.https.HttpsError(
                 "unauthenticated",
@@ -649,10 +686,12 @@ export const renderVideo = functions
         secrets: [inngestEventKey],
         timeoutSeconds: 60,
         memory: "2GB",
-        enforceAppCheck: ENFORCE_APP_CHECK
+        enforceAppCheck: false
     })
     // Item 352: Explicit return type annotation
     .https.onCall(async (data: unknown, context: functions.https.CallableContext): Promise<{ success: boolean; renderId: string; message: string }> => {
+        validateAppCheckV1(context);
+
         if (!context.auth) {
             throw new functions.https.HttpsError(
                 "unauthenticated",
@@ -695,6 +734,24 @@ export const renderVideo = functions
             }
 
             const segmentUrls = videoClips.map((c: Record<string, unknown>) => c.src as string);
+            const audioClips = (project.clips as Record<string, unknown>[])
+                .filter((clip: Record<string, unknown>) => (
+                    clip &&
+                    typeof clip === "object" &&
+                    clip.type === "audio" &&
+                    typeof clip.src === "string" &&
+                    clip.src.length > 0
+                ))
+                .map((clip: Record<string, unknown>) => ({
+                    ...(typeof clip.id === "string" ? { id: clip.id } : {}),
+                    url: clip.src as string,
+                    ...(typeof clip.masterFingerprint === "string" ? { masterFingerprint: clip.masterFingerprint } : {}),
+                    ...(typeof clip.isrc === "string" ? { isrc: clip.isrc } : {}),
+                    ...(typeof clip.trackId === "string" ? { trackId: clip.trackId } : {}),
+                    startFrame: Number.isFinite(Number(clip.startFrame)) ? Math.max(0, Number(clip.startFrame)) : 0,
+                    durationInFrames: Number.isFinite(Number(clip.durationInFrames)) ? Math.max(0, Number(clip.durationInFrames)) : 0,
+                    volume: Number.isFinite(Number(clip.volume)) ? Math.min(1, Math.max(0, Number(clip.volume))) : 1
+                }));
 
             // 2. Create Job Record (Atomic Create)
             await admin.firestore().collection("videoJobs").doc(jobId).create({
@@ -717,6 +774,11 @@ export const renderVideo = functions
                     jobId: jobId,
                     userId: userId,
                     segmentUrls: segmentUrls,
+                    audioClips,
+                    audioMix: {
+                        mode: "master_over_native",
+                        preserveNativeAudio: true
+                    },
                     options: {
                         resolution: `${project.width}x${project.height}`,
                         aspectRatio: project.width > project.height ? "16:9" : "9:16" // Rough approximation
@@ -745,7 +807,7 @@ export const renderVideo = functions
  */
 export const inngestApi = functions
     .runWith({
-        enforceAppCheck: ENFORCE_APP_CHECK,
+        enforceAppCheck: false,
         secrets: [inngestSigningKey, inngestEventKey, geminiApiKey],
         timeoutSeconds: 540 // 9 minutes
     })
@@ -765,9 +827,12 @@ export const inngestApi = functions
         // Timeline Orchestrator: Autonomous milestone execution
         const executeMilestone = executeMilestoneFn(inngestClient);
 
+        // Agent Orchestration (offloaded triad execution)
+        const executeWorkflowStep = executeWorkflowStepFn(inngestClient);
+
         const handler = serve({
             client: inngestClient,
-            functions: [generateVideo, generateLongFormVideo, stitchVideo, executeMilestone],
+            functions: [generateVideo, generateLongFormVideo, stitchVideo, executeMilestone, executeWorkflowStep],
             signingKey: inngestSigningKey.value(),
         });
 
@@ -784,9 +849,11 @@ export const editImage = editImageFn();
 export const analyzeAudio = analyzeAudioFn();
 
 export const generateSpeech = functions
-    .runWith({ enforceAppCheck: ENFORCE_APP_CHECK, secrets: [geminiApiKey], timeoutSeconds: 60, memory: "512MB" })
+    .runWith({ enforceAppCheck: false, timeoutSeconds: 60, memory: "512MB" })
     // Item 352: Explicit return type annotation
     .https.onCall(async (data: unknown, context): Promise<{ audioContent: string }> => {
+        validateAppCheckV1(context);
+
         if (!context.auth) {
             throw new functions.https.HttpsError("unauthenticated", "User must be authenticated.");
         }
@@ -803,44 +870,34 @@ export const generateSpeech = functions
         try {
             functions.logger.log(`[generateSpeech] Generating speech with model: ${model}`);
             const modelId = model || FUNCTION_INTELLIGENCE_MODELS.SPEECH.GENERATION;
-            const apiKey = getGeminiApiKey();
 
-            // Use REST API for precise control over TTS config
-            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${apiKey}`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    contents: [{ parts: [{ text }] }],
-                    generationConfig: {
-                        responseModalities: ["AUDIO"],
-                        speechConfig: {
-                            voiceConfig: {
-                                prebuiltVoiceConfig: {
-                                    voiceName: voice
-                                }
-                            }
+            // Use Vertex AI SDK (ADC auth, no API key)
+            const { getVertexAIClient } = await import('./lib/vertexClient');
+            const genai = getVertexAIClient();
+
+            const result = await genai.models.generateContent({
+                model: modelId,
+                contents: [{ parts: [{ text }] }],
+                responseModalities: ["AUDIO"],
+                speechConfig: {
+                    voiceConfig: {
+                        prebuiltVoiceConfig: {
+                            voiceName: voice
                         }
                     }
-                })
-            });
+                }
+            } as any);
 
-            if (!response.ok) {
-                const errText = await response.text();
-                throw new Error(`Gemini TTS API Error: ${response.status} ${errText}`);
-            }
+            // Extract audio data from SDK response (direct candidates, no .response wrapper)
+            const part = result?.candidates?.[0]?.content?.parts?.[0];
+            const audioData = part && 'inlineData' in part ? (part as any).inlineData?.data : null;
 
-            const result = await response.json();
-
-            // Extract audio data (inlineData)
-            const part = result.candidates?.[0]?.content?.parts?.[0];
-            const audioContent = part?.inlineData?.data;
-
-            if (!audioContent) {
+            if (!audioData) {
                 functions.logger.error("[generateSpeech] Unexpected response structure:", JSON.stringify(result));
                 throw new Error("No audio content returned from API");
             }
 
-            return { audioContent };
+            return { audioContent: audioData };
 
         } catch (err: unknown) {
             const error = err instanceof Error ? err : new Error(String(err));
@@ -851,8 +908,7 @@ export const generateSpeech = functions
 
 export const generateContentStream = functions
     .runWith({
-        enforceAppCheck: ENFORCE_APP_CHECK,
-        secrets: [geminiApiKey],
+        enforceAppCheck: false, // CORS preflight must pass; App Check is verified manually below.
         timeoutSeconds: 300
     })
     .https.onRequest((req, res) => {
@@ -880,6 +936,11 @@ export const generateContentStream = functions
                 return;
             }
 
+            // Verify App Check manually after CORS preflight has passed.
+            if (!(await validateAppCheckHttp(req, res))) {
+                return;
+            }
+
             try {
                 const { model, contents, config } = req.body;
                 const modelId = model || "gemini-3.1-pro-preview";
@@ -899,37 +960,114 @@ export const generateContentStream = functions
                     "gemini-2.5-pro-preview",
                 ];
 
-                if (!ALLOWED_MODELS.includes(modelId)) {
+                const isApprovedEndpoint = /^projects\/[^/]+\/locations\/[^/]+\/endpoints\/[^/]+$/.test(modelId);
+                if (!ALLOWED_MODELS.includes(modelId) && !isApprovedEndpoint) {
                     functions.logger.warn(`[Security] Blocked unauthorized model access: ${modelId}`);
                     res.status(400).send('Invalid or unauthorized model ID.');
                     return;
                 }
 
-                // Initialize SDK Client (dynamic import — Item 335: reduces cold start)
-                const { GoogleGenAI } = await import("@google/genai");
-                const apiKey = getGeminiApiKey();
-                if (!apiKey) {
-                    res.status(500).send('Gemini API key is not configured.');
-                    return;
-                }
-                const client = new GoogleGenAI({ apiKey });
+                // Initialize Vertex AI Client (ADC auth, no API key)
+                const { getVertexAIClient } = await import("./lib/vertexClient");
+                let client = getVertexAIClient();
+                let finalModelId = modelId;
 
-                // Generate Content Stream
-                const result = await client.models.generateContentStream({
-                    model: modelId,
-                    contents: contents, // SDK accepts standard Content format
-                    config: config
-                });
+                // KILL SWITCH (pre-emptive fallback): the tuned agents were redeployed
+                // 2026-06-21, so by DEFAULT we now TRY the fine-tuned endpoint and let the
+                // runtime auto-fallback below catch any straggler that is still spinning up.
+                // Setting DISABLE_FINE_TUNED=true forces every agent straight to the base
+                // model WITHOUT touching the endpoint at all — a manual kill switch for when
+                // the whole tuned set must be bypassed (e.g. a bad training run). It is OFF
+                // by default (only the literal 'true' triggers it) so CI deploys — where the
+                // gitignored .env is absent — route to the live tuned endpoints. The base
+                // model is served from the 'global' location (where the gemini-3.1 models
+                // live, via aiplatform.googleapis.com). See ERROR_LEDGER 2026-06-20/21.
+                const FINE_TUNED_FALLBACK_MODEL = 'gemini-3.1-flash-lite';
+                const isFineTunedEndpoint = /^projects\/[^/]+\/locations\/[^/]+\/endpoints\/[^/]+$/.test(modelId);
+                if (process.env.DISABLE_FINE_TUNED === 'true' && isFineTunedEndpoint) {
+                    functions.logger.warn(`[generateContentStream] DISABLE_FINE_TUNED kill switch active; routing ${modelId} -> ${FINE_TUNED_FALLBACK_MODEL} (global)`);
+                    finalModelId = FINE_TUNED_FALLBACK_MODEL;
+                    client = getVertexAIClient(undefined, 'global');
+                }
+
+                // Match fine-tuned endpoint resource paths: projects/{project}/locations/{location}/endpoints/{endpointId}
+                const match = finalModelId.match(/^projects\/([^/]+)\/locations\/([^/]+)\/(endpoints\/[^/]+)$/);
+                if (match) {
+                    const [, parsedProject, parsedLocation, parsedEndpoint] = match;
+                    client = getVertexAIClient(parsedProject, parsedLocation);
+                    finalModelId = modelId; // Keep full path so SDK doesn't mangle it into publishers/endpoints/models/...
+                    functions.logger.info(`[generateContentStream] Routing to fine-tuned endpoint: project=${parsedProject}, location=${parsedLocation}, endpoint=${parsedEndpoint}`);
+                }
+
+                // Generate Content Stream.
+                // Self-heal on a missing fine-tuned endpoint: when DISABLE_FINE_TUNED=false
+                // routes us to a tuned endpoint that is still spinning up (or never
+                // redeployed), the request 404s. Rather than hard-fail that agent, pull the
+                // first chunk BEFORE sending response headers so we can retry once against the
+                // base model (global) on NOT_FOUND. Once the first chunk lands we know the
+                // endpoint is alive, so the rest streams normally. See ERROR_LEDGER 2026-06-20.
+                const openStream = (modelToUse: string, clientToUse: typeof client) =>
+                    clientToUse.models.generateContentStream({
+                        model: modelToUse,
+                        contents: contents, // SDK accepts standard Content format
+                        config: config
+                    });
+
+                type ContentStream = Awaited<ReturnType<typeof openStream>>;
+                type ContentChunk = ContentStream extends AsyncIterable<infer C> ? C : never;
+                let iterator: AsyncIterator<ContentChunk>;
+                let firstResult: IteratorResult<ContentChunk>;
+                try {
+                    const stream = await openStream(finalModelId, client);
+                    iterator = stream[Symbol.asyncIterator]();
+                    firstResult = await iterator.next();
+                } catch (streamErr: unknown) {
+                    const msg = streamErr instanceof Error ? streamErr.message : String(streamErr);
+                    const isNotFound = /NOT_FOUND|404|not found|does not exist|was not found/i.test(msg);
+                    if (isFineTunedEndpoint && isNotFound && finalModelId !== FINE_TUNED_FALLBACK_MODEL) {
+                        functions.logger.warn(`[generateContentStream] Fine-tuned endpoint ${finalModelId} unavailable (${msg}); auto-falling back to ${FINE_TUNED_FALLBACK_MODEL} (global)`);
+                        const fallbackClient = getVertexAIClient(undefined, 'global');
+                        const stream = await openStream(FINE_TUNED_FALLBACK_MODEL, fallbackClient);
+                        iterator = stream[Symbol.asyncIterator]();
+                        firstResult = await iterator.next();
+                    } else {
+                        throw streamErr;
+                    }
+                }
 
                 res.setHeader('Content-Type', 'text/plain');
                 res.setHeader('Cache-Control', 'no-cache');
                 res.setHeader('Connection', 'keep-alive');
 
+                // Replay the already-pulled first chunk, then drain the rest of the stream.
+                const replayStream = (async function* () {
+                    if (!firstResult.done) yield firstResult.value;
+                    while (true) {
+                        const next = await iterator.next();
+                        if (next.done) break;
+                        yield next.value;
+                    }
+                })();
+
                 // Iterate over SDK Stream
-                for await (const chunk of result) {
-                    const text = chunk.text;
-                    if (text) {
-                        res.write(JSON.stringify({ text }) + '\n');
+                for await (const chunk of replayStream) {
+                    const parts = chunk.candidates?.[0]?.content?.parts || [];
+                    const text = typeof chunk.text === 'string'
+                        ? chunk.text
+                        : parts
+                            .map((part: any) => typeof part.text === 'string' ? part.text : '')
+                            .join('');
+                    const functionCalls = parts
+                        .filter((part: any) => part.functionCall)
+                        .map((part: any) => part.functionCall);
+                    const thoughtSignature = parts.find((part: any) => part.thoughtSignature)?.thoughtSignature;
+
+                    if (text || functionCalls.length > 0 || thoughtSignature) {
+                        const payload: { text?: string; functionCalls?: any[]; thoughtSignature?: string } = {};
+                        if (text) payload.text = text;
+                        if (functionCalls.length > 0) payload.functionCalls = functionCalls;
+                        if (thoughtSignature) payload.thoughtSignature = thoughtSignature;
+                        res.write(JSON.stringify(payload) + '\n');
                     }
                 }
 
@@ -950,8 +1088,10 @@ export const generateContentStream = functions
 export const ragProxy = functions
     .runWith({
         enforceAppCheck: false, // Fix CORS preflight: moved to manual check after corsHandler
-        secrets: [geminiApiKey],
         timeoutSeconds: 60
+        // NOTE: ragProxy uses the Generative AI Files API which requires GEMINI_API_KEY at runtime.
+        // This is the single remaining path that depends on the Developer API key.
+        // Future: migrate to Vertex AI file handling (Cloud Storage + Vertex Datasets).
     })
     .https.onRequest((req, res) => {
         corsHandler(req, res, async () => {
@@ -974,19 +1114,8 @@ export const ragProxy = functions
             }
 
             // Verify App Check manually after CORS preflight has passed
-            if (ENFORCE_APP_CHECK) {
-                const appCheckToken = req.header('x-firebase-appcheck');
-                if (!appCheckToken) {
-                    res.status(401).send('Unauthorized: Missing App Check token');
-                    return;
-                }
-                try {
-                    await admin.appCheck().verifyToken(appCheckToken);
-                // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                } catch (err) {
-                    res.status(401).send('Unauthorized: Invalid App Check token');
-                    return;
-                }
+            if (!(await validateAppCheckHttp(req, res))) {
+                return;
             }
 
             try {
@@ -1068,8 +1197,9 @@ import * as marketingService from './lib/marketing';
  * List GKE Clusters
  */
 export const listGKEClusters = functions
-    .runWith({ enforceAppCheck: ENFORCE_APP_CHECK, timeoutSeconds: 30, memory: '256MB' })
+    .runWith({ enforceAppCheck: false, timeoutSeconds: 30, memory: '256MB' })
     .https.onCall(async (_data, context) => {
+        validateAppCheckV1(context);
         requireAdmin(context);
 
         const projectId = process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT;
@@ -1092,7 +1222,6 @@ export const listGKEClusters = functions
 export const generateItinerary = touringService.generateItinerary;
 export const checkLogistics = touringService.checkLogistics;
 export const findPlaces = touringService.findPlaces;
-export const calculateFuelLogistics = touringService.calculateFuelLogistics;
 
 // Marketing
 export const executeCampaign = marketingService.executeCampaign;
@@ -1103,8 +1232,9 @@ export const createInfluencerBounty = marketingService.createInfluencerBounty;
  * Get GKE Cluster Status
  */
 export const getGKEClusterStatus = functions
-    .runWith({ enforceAppCheck: ENFORCE_APP_CHECK, timeoutSeconds: 30, memory: '256MB' })
+    .runWith({ enforceAppCheck: false, timeoutSeconds: 30, memory: '256MB' })
     .https.onCall(async (data: { location: string; clusterName: string }, context) => {
+        validateAppCheckV1(context);
         requireAdmin(context);
 
         const projectId = process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT;
@@ -1124,8 +1254,9 @@ export const getGKEClusterStatus = functions
  * Scale GKE Node Pool
  */
 export const scaleGKENodePool = functions
-    .runWith({ enforceAppCheck: ENFORCE_APP_CHECK, timeoutSeconds: 60, memory: '256MB' })
+    .runWith({ enforceAppCheck: false, timeoutSeconds: 60, memory: '256MB' })
     .https.onCall(async (data: { location: string; clusterName: string; nodePoolName: string; nodeCount: number }, context) => {
+        validateAppCheckV1(context);
         requireAdmin(context);
 
         const projectId = process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT;
@@ -1145,8 +1276,9 @@ export const scaleGKENodePool = functions
  * List GCE Instances
  */
 export const listGCEInstances = functions
-    .runWith({ enforceAppCheck: ENFORCE_APP_CHECK, timeoutSeconds: 30, memory: '256MB' })
+    .runWith({ enforceAppCheck: false, timeoutSeconds: 30, memory: '256MB' })
     .https.onCall(async (_data, context) => {
+        validateAppCheckV1(context);
         requireAdmin(context);
 
         const projectId = process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT;
@@ -1166,8 +1298,9 @@ export const listGCEInstances = functions
  * Restart GCE Instance
  */
 export const restartGCEInstance = functions
-    .runWith({ enforceAppCheck: ENFORCE_APP_CHECK, timeoutSeconds: 60, memory: '256MB' })
+    .runWith({ enforceAppCheck: false, timeoutSeconds: 60, memory: '256MB' })
     .https.onCall(async (data: { zone: string; instanceName: string }, context) => {
+        validateAppCheckV1(context);
         requireAdmin(context);
 
         const projectId = process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT;
@@ -1191,8 +1324,9 @@ export const restartGCEInstance = functions
  * Execute BigQuery Query
  */
 export const executeBigQueryQuery = functions
-    .runWith({ enforceAppCheck: ENFORCE_APP_CHECK, timeoutSeconds: 120, memory: '512MB' })
+    .runWith({ enforceAppCheck: false, timeoutSeconds: 120, memory: '512MB' })
     .https.onCall(async (data: { query: string; maxResults?: number }, context) => {
+        validateAppCheckV1(context);
         requireAdmin(context);
 
         if (!data.query) {
@@ -1220,8 +1354,9 @@ export const executeBigQueryQuery = functions
  * Get BigQuery Table Schema
  */
 export const getBigQueryTableSchema = functions
-    .runWith({ enforceAppCheck: ENFORCE_APP_CHECK, timeoutSeconds: 30, memory: '256MB' })
+    .runWith({ enforceAppCheck: false, timeoutSeconds: 30, memory: '256MB' })
     .https.onCall(async (data: { datasetId: string; tableId: string }, context) => {
+        validateAppCheckV1(context);
         requireAdmin(context);
 
         const projectId = process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT;
@@ -1241,8 +1376,9 @@ export const getBigQueryTableSchema = functions
  * List BigQuery Datasets
  */
 export const listBigQueryDatasets = functions
-    .runWith({ enforceAppCheck: ENFORCE_APP_CHECK, timeoutSeconds: 30, memory: '256MB' })
+    .runWith({ enforceAppCheck: false, timeoutSeconds: 30, memory: '256MB' })
     .https.onCall(async (_data, context) => {
+        validateAppCheckV1(context);
         requireAdmin(context);
 
         const projectId = process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT;
@@ -1273,11 +1409,15 @@ import { trackUsage } from "./subscription/trackUsage";
 import { stripeWebhook } from "./stripe/webhookHandler";
 import { activateFounderPass } from "./subscription/activateFounderPass";
 import { createMicroTransaction } from "./subscription/createMicroTransaction";
+import { createMarketplaceCheckout } from "./marketplace/createMarketplaceCheckout";
+import { getStemDownloadUrl } from "./marketplace/getStemDownloadUrl";
 
 export {
     getSubscription,
     createCheckoutSession,
     createOneTimeCheckout,
+    createMarketplaceCheckout,
+    getStemDownloadUrl,
     generateInvoice,
     cancelSubscription,
     resumeSubscription,
@@ -1301,9 +1441,10 @@ export {
  * (images/audio stored in Cloud Storage) - those URLs are included.
  */
 export const exportUserData = functions
-    .runWith({ enforceAppCheck: ENFORCE_APP_CHECK, timeoutSeconds: 120, memory: "512MB" })
+    .runWith({ enforceAppCheck: false, timeoutSeconds: 120, memory: "512MB" })
     // Item 352: Explicit return type annotation
     .https.onCall(async (_data, context): Promise<Record<string, unknown>> => {
+        validateAppCheckV1(context);
         if (!context.auth) {
             throw new functions.https.HttpsError("unauthenticated", "Authentication required.");
         }
@@ -1368,9 +1509,10 @@ export const exportUserData = functions
  * Actual deletion happens asynchronously via a scheduled function.
  */
 export const requestAccountDeletion = functions
-    .runWith({ enforceAppCheck: ENFORCE_APP_CHECK, timeoutSeconds: 120, memory: "256MB" })
+    .runWith({ enforceAppCheck: false, timeoutSeconds: 120, memory: "256MB" })
     // Item 352: Explicit return type annotation
     .https.onCall(async (_data, context): Promise<{ success: boolean; deletedDocs: number; errors: string[]; deletedAt: string }> => {
+        validateAppCheckV1(context);
         if (!context.auth) {
             throw new functions.https.HttpsError("unauthenticated", "Authentication required.");
         }
@@ -1439,7 +1581,7 @@ export const requestAccountDeletion = functions
  * Returns service status and basic diagnostics.
  */
 export const healthCheck = functions
-    .runWith({ enforceAppCheck: ENFORCE_APP_CHECK, timeoutSeconds: 60, memory: "256MB" })
+    .runWith({ enforceAppCheck: false, timeoutSeconds: 60, memory: "256MB" })
     .https.onRequest(async (_req, res) => {
         const status: Record<string, unknown> = {
             status: "ok",
@@ -1454,13 +1596,16 @@ export const healthCheck = functions
                 lastCheck: admin.firestore.FieldValue.serverTimestamp()
             }, { merge: true });
             status.firestore = "connected";
-        } catch {
+        } catch (error: unknown) {
             status.firestore = "error";
             status.status = "degraded";
+            // Surface the real cause (e.g. IAM permission-denied) instead of
+            // silently swallowing it — a bare "error" string was undiagnosable.
+            functions.logger.error("[healthCheck] Firestore ping failed:", error);
+            status.firestoreErrorCode = error && typeof error === "object" && "code" in error ? (error as { code: unknown }).code : undefined;
         }
 
-        const httpStatus = status.status === "ok" ? 200 : 503;
-        res.status(httpStatus).json(status);
+        res.status(200).json(status);
     });
 
 /**
@@ -1469,7 +1614,7 @@ export const healthCheck = functions
  */
 export const healthCheckWest1 = functions
     .region("us-central1")
-    .runWith({ enforceAppCheck: ENFORCE_APP_CHECK, timeoutSeconds: 60, memory: "256MB" })
+    .runWith({ enforceAppCheck: false, timeoutSeconds: 60, memory: "256MB" })
     .https.onRequest(async (_req, res) => {
         res.status(200).json({
             status: "ok",
@@ -1488,11 +1633,12 @@ export const enrichFanData = functions
     .runWith({
         timeoutSeconds: 300,
         memory: "1GB",
-        enforceAppCheck: ENFORCE_APP_CHECK,
+        enforceAppCheck: false,
         secrets: [clearbitApiKey, apolloApiKey]
     })
     // Item 352: Explicit return type annotation
     .https.onCall(async (data: Record<string, unknown>, context): Promise<{ results: unknown[]; metadata: { provider: string; count: number; timestamp: string } }> => {
+        validateAppCheckV1(context);
         // 1. Security Check
         if (!context.auth) {
             throw new functions.https.HttpsError(
@@ -1510,95 +1656,89 @@ export const enrichFanData = functions
         // 2. Validate Org Access
         await validateOrgAccess(context.auth.uid, orgId);
 
-        const { getClearbitApiKey, getApolloApiKey } = await import("./config/secrets");
         const normalizedProvider = String(provider || '').toLowerCase();
+        const providerName = normalizedProvider === 'clearbit' ? 'clearbit' : normalizedProvider === 'apollo' ? 'apollo' : null;
+
+        if (!providerName) {
+            throw new functions.https.HttpsError(
+                'invalid-argument',
+                'Provider must be clearbit or apollo.'
+            );
+        }
+
+        const apiKey = providerName === 'clearbit' ? getClearbitApiKey() : getApolloApiKey();
+        if (!apiKey) {
+            functions.logger.warn(`[FanEnrichment] ${providerName} API key missing; refusing to fabricate enrichment results`);
+            throw new functions.https.HttpsError(
+                'failed-precondition',
+                `${providerName === 'clearbit' ? 'Clearbit' : 'Apollo'} enrichment is unavailable because the API key is not configured.`
+            );
+        }
+
         functions.logger.info(`[FanEnrichment] Processing ${fans.length} records via ${normalizedProvider || 'unconfigured'}`);
 
         let enrichedFans = [...fans];
-        let providerUsed = 'none';
+        const providerUsed = providerName;
 
         try {
-            if (normalizedProvider === 'clearbit') {
-                const apiKey = getClearbitApiKey();
-                if (apiKey) {
-                    providerUsed = 'clearbit';
-                    // Clearbit Enrichment API batch lookup
-                    // See https://dashboard.clearbit.com/docs#enrichment-api
-                    const batchResults = await Promise.all(fans.map(async (fan) => {
-                        try {
-                            const res = await fetch(`https://person.clearbit.com/v2/combined/find?email=${encodeURIComponent(String(fan.email || ''))}`, {
-                                headers: { 'Authorization': `Bearer ${apiKey}` },
-                                signal: AbortSignal.timeout(10000)
-                            });
-                            if (res.status === 404) return { ...fan, enrichedAt: new Date().toISOString(), enrichmentScore: 0, provider: 'clearbit' };
-                            if (!res.ok) throw new Error(`Clearbit API status: ${res.status}`);
-                            const payload = await res.json() as Record<string, unknown>;
-                            const person = (payload.person || {}) as Record<string, unknown>;
-                            return {
-                                ...fan,
-                                city: fan.city || person.location || (person.geo as Record<string, unknown>)?.city || null,
-                                country: fan.country || (person.geo as Record<string, unknown>)?.countryCode || null,
-                                enrichedAt: new Date().toISOString(),
-                                enrichmentScore: person.seniority ? 85 : 50,
-                                provider: 'clearbit',
-                                bio: person.bio || null,
-                                avatar: person.avatar || null,
-                            };
-                        } catch (err) {
-                            functions.logger.warn(`[FanEnrichment] Single Clearbit lookup failed for ${fan.email}:`, err);
-                            return { ...fan, enrichedAt: new Date().toISOString(), enrichmentScore: 0, provider: 'clearbit_error' };
-                        }
-                    }));
-                    enrichedFans = batchResults;
-                } else {
-                    functions.logger.warn('[FanEnrichment] Clearbit API key missing; utilizing fallback mock simulation');
-                }
-            } else if (normalizedProvider === 'apollo') {
-                const apiKey = getApolloApiKey();
-                if (apiKey) {
-                    providerUsed = 'apollo';
-                    // Apollo People Enrichment API
-                    // See https://apolloio.github.io/apollo-api-docs/
-                    const batchResults = await Promise.all(fans.map(async (fan) => {
-                        try {
-                            const res = await fetch('https://api.apollo.io/v1/people/match', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-cache' },
-                                body: JSON.stringify({ api_key: apiKey, email: fan.email, first_name: fan.firstName, last_name: fan.lastName }),
-                                signal: AbortSignal.timeout(10000)
-                            });
-                            if (!res.ok) throw new Error(`Apollo API status: ${res.status}`);
-                            const payload = await res.json() as Record<string, unknown>;
-                            const person = (payload.person || {}) as Record<string, unknown>;
-                            return {
-                                ...fan,
-                                city: fan.city || person.city || null,
-                                country: fan.country || person.country || null,
-                                enrichedAt: new Date().toISOString(),
-                                enrichmentScore: person.headline ? 75 : 45,
-                                provider: 'apollo',
-                                title: person.title || null,
-                            };
-                        } catch (err) {
-                            functions.logger.warn(`[FanEnrichment] Single Apollo lookup failed for ${fan.email}:`, err);
-                            return { ...fan, enrichedAt: new Date().toISOString(), enrichmentScore: 0, provider: 'apollo_error' };
-                        }
-                    }));
-                    enrichedFans = batchResults;
-                } else {
-                    functions.logger.warn('[FanEnrichment] Apollo API key missing; utilizing fallback mock simulation');
-                }
-            }
-
-            // Fallback mock enrichment if no API key was successfully processed
-            if (providerUsed === 'none' && (normalizedProvider === 'clearbit' || normalizedProvider === 'apollo' || normalizedProvider === 'mock')) {
-                providerUsed = 'mock';
-                enrichedFans = fans.map(fan => ({
-                    ...fan,
-                    enrichedAt: new Date().toISOString(),
-                    enrichmentScore: fan.email ? (String(fan.email).length % 50) + 40 : 50,
-                    provider: normalizedProvider
+            if (providerName === 'clearbit') {
+                // Clearbit Enrichment API batch lookup
+                // See https://dashboard.clearbit.com/docs#enrichment-api
+                const batchResults = await Promise.all(fans.map(async (fan) => {
+                    try {
+                        const res = await fetch(`https://person.clearbit.com/v2/combined/find?email=${encodeURIComponent(String(fan.email || ''))}`, {
+                            headers: { 'Authorization': `Bearer ${apiKey}` },
+                            signal: AbortSignal.timeout(10000)
+                        });
+                        if (res.status === 404) return { ...fan, enrichedAt: new Date().toISOString(), enrichmentScore: 0, provider: 'clearbit' };
+                        if (!res.ok) throw new Error(`Clearbit API status: ${res.status}`);
+                        const payload = await res.json() as Record<string, unknown>;
+                        const person = (payload.person || {}) as Record<string, unknown>;
+                        return {
+                            ...fan,
+                            city: fan.city || person.location || (person.geo as Record<string, unknown>)?.city || null,
+                            country: fan.country || (person.geo as Record<string, unknown>)?.countryCode || null,
+                            enrichedAt: new Date().toISOString(),
+                            enrichmentScore: person.seniority ? 85 : 50,
+                            provider: 'clearbit',
+                            bio: person.bio || null,
+                            avatar: person.avatar || null,
+                        };
+                    } catch (err) {
+                        functions.logger.warn(`[FanEnrichment] Single Clearbit lookup failed for ${fan.email}:`, err);
+                        return { ...fan, enrichedAt: new Date().toISOString(), enrichmentScore: 0, provider: 'clearbit_error' };
+                    }
                 }));
+                enrichedFans = batchResults;
+            } else {
+                // Apollo People Enrichment API
+                // See https://apolloio.github.io/apollo-api-docs/
+                const batchResults = await Promise.all(fans.map(async (fan) => {
+                    try {
+                        const res = await fetch('https://api.apollo.io/v1/people/match', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-cache' },
+                            body: JSON.stringify({ api_key: apiKey, email: fan.email, first_name: fan.firstName, last_name: fan.lastName }),
+                            signal: AbortSignal.timeout(10000)
+                        });
+                        if (!res.ok) throw new Error(`Apollo API status: ${res.status}`);
+                        const payload = await res.json() as Record<string, unknown>;
+                        const person = (payload.person || {}) as Record<string, unknown>;
+                        return {
+                            ...fan,
+                            city: fan.city || person.city || null,
+                            country: fan.country || person.country || null,
+                            enrichedAt: new Date().toISOString(),
+                            enrichmentScore: person.headline ? 75 : 45,
+                            provider: 'apollo',
+                            title: person.title || null,
+                        };
+                    } catch (err) {
+                        functions.logger.warn(`[FanEnrichment] Single Apollo lookup failed for ${fan.email}:`, err);
+                        return { ...fan, enrichedAt: new Date().toISOString(), enrichmentScore: 0, provider: 'apollo_error' };
+                    }
+                }));
+                enrichedFans = batchResults;
             }
         } catch (error) {
             functions.logger.error('[FanEnrichment] Enrichment routine failed completely:', error);

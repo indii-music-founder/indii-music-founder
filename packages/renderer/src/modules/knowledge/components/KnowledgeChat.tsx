@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Send, Loader2, Sparkles, X, Copy, Trash2 } from 'lucide-react';
-import { knowledgeBaseService, ChatMessage, KnowledgeDoc } from '../services/KnowledgeBaseService';
+import { knowledgeBaseService, KnowledgeDoc } from '../services/KnowledgeBaseService';
+import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
+import { AgentMessage } from '@/core/store/slices/agent';
 
 interface KnowledgeChatProps {
     isOpen: boolean;
@@ -16,22 +19,31 @@ const SUGGESTED_QUESTIONS = [
 ];
 
 export const KnowledgeChat: React.FC<KnowledgeChatProps> = ({ isOpen, onClose, activeDoc }) => {
-    const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [input, setInput] = useState('');
     const [isTyping, setIsTyping] = useState(false);
     const [streamingContent, setStreamingContent] = useState('');
     const scrollRef = useRef<HTMLDivElement>(null);
 
-    useEffect(() => {
-        if (messages.length === 0) {
-            setMessages([{
-                id: 'welcome',
-                role: 'model',
-                content: "Hello! I'm your Neural Knowledge Assistant. Ask me anything about your documents.",
-                timestamp: Date.now()
-            }]);
+    const { sessions, createSession, addMessageToSession, clearAgentHistory } = useStore(
+        useShallow(state => ({
+            sessions: state.sessions,
+            createSession: state.createSession,
+            addMessageToSession: state.addMessageToSession,
+            clearAgentHistory: state.clearAgentHistory
+        }))
+    );
+
+    const namespace = activeDoc ? `knowledge-advisor-${activeDoc.id}` : 'knowledge-advisor-global';
+    const knowledgeSession = Object.values(sessions).find(s => s.namespace === namespace);
+    
+    const messages = knowledgeSession?.messages.length ? knowledgeSession.messages : [
+        {
+            id: 'welcome',
+            role: 'model' as const,
+            text: "Hello! I'm your Neural Knowledge Assistant. Ask me anything about your documents.",
+            timestamp: Date.now()
         }
-    }, [messages.length]);
+    ];
 
     useEffect(() => {
         if (scrollRef.current) {
@@ -43,14 +55,23 @@ export const KnowledgeChat: React.FC<KnowledgeChatProps> = ({ isOpen, onClose, a
         const query = text.trim();
         if (!query || isTyping) return;
 
-        const userMsg: ChatMessage = {
+        const userMsg: AgentMessage = {
             id: Date.now().toString(),
             role: 'user',
-            content: query,
+            text: query,
             timestamp: Date.now()
         };
 
-        setMessages(prev => [...prev, userMsg]);
+        let activeSessionId = knowledgeSession?.id;
+        if (!activeSessionId) {
+            activeSessionId = createSession(
+                activeDoc ? `Chat: ${activeDoc.title}` : 'Global Knowledge Chat',
+                ['knowledge-advisor'],
+                namespace
+            );
+        }
+        
+        addMessageToSession(activeSessionId, userMsg);
         setInput('');
         setIsTyping(true);
         setStreamingContent('');
@@ -62,22 +83,21 @@ export const KnowledgeChat: React.FC<KnowledgeChatProps> = ({ isOpen, onClose, a
                 setStreamingContent(fullContent);
             }
 
-            const botMsg: ChatMessage = {
+            const botMsg: AgentMessage = {
                 id: Date.now().toString(),
                 role: 'model',
-                content: fullContent,
+                text: fullContent,
                 timestamp: Date.now()
             };
-            setMessages(prev => [...prev, botMsg]);
+            addMessageToSession(activeSessionId, botMsg);
         } catch (_error: unknown) {
-            const errorMsg: ChatMessage = {
+            const errorMsg: AgentMessage = {
                 id: Date.now().toString(),
                 role: 'model',
-                content: "I apologize, but I encountered an error processing your request.",
+                text: "I apologize, but I encountered an error processing your request.",
                 timestamp: Date.now(),
-                isError: true
             };
-            setMessages(prev => [...prev, errorMsg]);
+            addMessageToSession(activeSessionId, errorMsg);
         } finally {
             setIsTyping(false);
             setStreamingContent('');
@@ -90,7 +110,9 @@ export const KnowledgeChat: React.FC<KnowledgeChatProps> = ({ isOpen, onClose, a
     };
 
     const clearChat = () => {
-        setMessages([]);
+        if (knowledgeSession?.id) {
+            clearAgentHistory(knowledgeSession.id);
+        }
     };
 
     if (!isOpen) return null;
@@ -131,10 +153,10 @@ export const KnowledgeChat: React.FC<KnowledgeChatProps> = ({ isOpen, onClose, a
                             ? 'bg-[#FFE135] text-black rounded-tr-none font-semibold shadow-[0_4px_15px_rgba(255,225,53,0.15)]'
                             : 'bg-[#161b22]/80 text-gray-200 rounded-tl-none border border-gray-800/50 backdrop-blur-md'
                             }`}>
-                            {msg.content}
+                            {msg.text}
                             {msg.role === 'model' && (
                                 <button
-                                    onClick={() => handleCopy(msg.content)}
+                                    onClick={() => handleCopy(msg.text)}
                                     className="absolute -right-10 top-0 p-1.5 opacity-0 group-hover:opacity-100 hover:bg-gray-800 rounded text-gray-500 hover:text-[#FFE135] transition-all"
                                     title="Copy to clipboard"
                                 >

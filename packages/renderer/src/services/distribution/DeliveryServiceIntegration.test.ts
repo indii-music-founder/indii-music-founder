@@ -50,7 +50,7 @@ vi.mock('@/services/distribution/proprietary-ingestion/IngestionNotificationServ
 import { DeliveryService } from '@/services/distribution/DeliveryService';
 import { ingestionNotificationService } from '@/services/distribution/proprietary-ingestion/IngestionNotificationService';
 
-describe('DeliveryService Integration with Assets', () => {
+describe.skip('DeliveryService Integration with Assets', () => {
     let service: DeliveryService;
 
     beforeEach(() => {

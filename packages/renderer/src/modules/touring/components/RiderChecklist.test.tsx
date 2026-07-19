@@ -1,5 +1,5 @@
 
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { RiderChecklist } from './RiderChecklist';
 import { useRider } from '../hooks/useRider';
@@ -79,7 +79,9 @@ describe('RiderChecklist', () => {
         fireEvent.change(input, { target: { value: 'Beer' } });
 
         const addButton = screen.getByLabelText('Add Item');
-        fireEvent.click(addButton);
+        await act(async () => {
+            fireEvent.click(addButton);
+        });
 
         expect(addItemMock).toHaveBeenCalledWith('Beer', 'essential');
     });
@@ -94,7 +96,9 @@ describe('RiderChecklist', () => {
         // The delete button appears on hover, but in JSDOM we can just click it if it's in the DOM
         // Framer motion might handle opacity, but the button should be there.
         const deleteButton = screen.getByLabelText('Delete Item');
-        fireEvent.click(deleteButton);
+        await act(async () => {
+            fireEvent.click(deleteButton);
+        });
 
         expect(deleteItemMock).toHaveBeenCalledWith('1');
     });

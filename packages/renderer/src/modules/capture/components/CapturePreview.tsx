@@ -12,8 +12,8 @@ interface CapturePreviewProps {
 
 /**
  * CapturePreview — Post-capture view showing the image with scanning overlay.
- * Displays the blueprint scanning animation during OCR analysis and a
- * "Transmit to Studio" CTA button upon completion.
+ * Displays the blueprint scanning animation during preview preparation and a
+ * "Transmit to Studio" CTA button when ready. Does not perform OCR or analysis.
  */
 export function CapturePreview({ imagePreview, isScanning, scanComplete, onTransmit }: CapturePreviewProps) {
     return (
@@ -41,7 +41,7 @@ export function CapturePreview({ imagePreview, isScanning, scanComplete, onTrans
                         className="absolute inset-0 bg-green-500/20 backdrop-blur-[2px] flex items-center justify-center pointer-events-none"
                     >
                         <div className="bg-green-500 text-black font-bold px-6 py-3 rounded-full flex items-center gap-2 shadow-[0_0_30px_#22c55e]">
-                            INGEST COMPLETE
+                            PREVIEW READY
                         </div>
                     </motion.div>
                 )}

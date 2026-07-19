@@ -65,9 +65,20 @@ export const SoundExchangeAdapter: OrgAdapter = {
 
       const result = await enrollWithSoundExchange(userId, metadata as Parameters<typeof enrollWithSoundExchange>[1]);
 
-      await persistOrgRecord(userId, track.id, 'soundexchange', data, result.enrollmentId);
+      const persisted = await persistOrgRecord(userId, track.id, 'soundexchange', data, result.enrollmentId);
 
-      return { success: true, confirmationNumber: result.enrollmentId, submittedAt: new Date() };
+      if (!result.success) {
+        return {
+          success: false,
+          errorMessage: result.error ?? 'SoundExchange enrollment requires manual completion.',
+          submittedAt: new Date(),
+          requiresManualStep: true,
+          manualStepUrl: 'https://www.soundexchange.com/member-login',
+          manualStepInstructions: 'Log in to SoundExchange and enroll your ISRC manually.',
+        };
+      }
+
+      return { success: true, confirmationNumber: result.enrollmentId, submittedAt: new Date(), localRecordFailed: !persisted };
     } catch (err: unknown) {
       logger.error('[SoundExchangeAdapter] Enrollment failed:', err);
       await persistOrgRecord(userId, track.id, 'soundexchange', data, undefined);

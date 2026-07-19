@@ -127,7 +127,9 @@ if (typeof window !== 'undefined') {
             sftp: {
                 connectDistributor: vi.fn().mockResolvedValue({ success: true }),
                 uploadRelease: vi.fn().mockResolvedValue({ success: true, url: 'sftp://mock' }),
-                disconnect: vi.fn().mockResolvedValue({ success: true })
+                uploadDirectory: vi.fn().mockResolvedValue({ success: true }),
+                disconnect: vi.fn().mockResolvedValue({ success: true }),
+                isConnected: vi.fn().mockResolvedValue(false),
             }
         }
     });
@@ -243,6 +245,16 @@ vi.mock('@/core/store', () => {
         updateJobProgress: vi.fn(),
         updateJobStatus: vi.fn(),
         removeJob: vi.fn(),
+        // crm slice
+        crm: {
+            campaigns: [],
+            loading: false,
+            error: null,
+        },
+        fetchCampaigns: vi.fn().mockResolvedValue(undefined),
+        subscribeToCampaigns: vi.fn(() => vi.fn()),
+        createCampaign: vi.fn().mockResolvedValue('camp-1'),
+        deleteCampaign: vi.fn().mockResolvedValue(undefined),
         clearCompletedJobs: vi.fn(),
         toggleJobMonitor: vi.fn(),
         addUploadItems: vi.fn(),
@@ -251,9 +263,12 @@ vi.mock('@/core/store', () => {
         removeUploadItem: vi.fn(),
         clearCompletedUploads: vi.fn(),
         toggleUploadQueue: vi.fn(),
-        // Common slice methods to prevent "is not a function" errors
+        loadBoardroomMessages: vi.fn().mockResolvedValue(vi.fn()),
         addAgentMessage: vi.fn(),
+        addMessageToSession: vi.fn(),
+        clearAgentHistory: vi.fn(),
         updateAgentMessage: vi.fn(),
+        removeAgentMessage: vi.fn(),
         setAgentStatus: vi.fn(),
         updateTaskProgress: vi.fn(),
         addNotification: vi.fn(),
@@ -267,6 +282,11 @@ vi.mock('@/core/store', () => {
         consumeHandoff: vi.fn(() => null),
         pinToClipboard: vi.fn(),
         sendToModule: vi.fn(),
+        sessions: {},
+        activeSessionId: null,
+        createSession: vi.fn().mockReturnValue('new-session-id'),
+        setActiveSession: vi.fn(),
+        generatedHistory: [],
         // Agent UI slice — required by AgentService.sendMessage (ISSUE-045)
         isAgentProcessing: false,
         setAgentProcessing: vi.fn(),
@@ -275,7 +295,11 @@ vi.mock('@/core/store', () => {
         clearCompletedBatchTasks: vi.fn(),
         addBatchingTask: vi.fn(),
         updateBatchingTask: vi.fn(),
-        dispatchBatchQueue: vi.fn()
+        dispatchBatchQueue: vi.fn(),
+        // Agent orchestration slice
+        activeLoops: {},
+        setActiveLoops: vi.fn(),
+        updateLoopExecution: vi.fn()
     };
 
     const useStoreMock = Object.assign(
@@ -560,8 +584,10 @@ vi.mock('@/services/billing/CostControlService', () => ({
             allowed: true,
             remainingBudget: 100,
             dailyUsed: 0,
-            monthlyUsed: 0
+            monthlyUsed: 0,
+            operationId: 'test-cost-reservation'
         }),
+        finalize: vi.fn().mockResolvedValue(undefined),
         getStatus: vi.fn().mockResolvedValue({
             dailyUsed: 0,
             monthlyUsed: 0,
@@ -602,11 +628,21 @@ vi.mock('@react-three/drei', () => ({
     },
 }));
 
-// Mock ToastContext globally
+// Mock ToastContext globally — mirrors the full ToastContextType API so
+// components calling toast.success()/error()/etc. don't crash in tests.
 vi.mock('@/core/context/ToastContext', () => ({
     useToast: vi.fn(() => ({
         addToast: vi.fn(),
-        removeToast: vi.fn()
+        removeToast: vi.fn(),
+        showToast: vi.fn(),
+        success: vi.fn(),
+        error: vi.fn(),
+        info: vi.fn(),
+        warning: vi.fn(),
+        loading: vi.fn(() => 'toast-id'),
+        updateProgress: vi.fn(),
+        dismiss: vi.fn(),
+        promise: vi.fn((p: Promise<unknown>) => p)
     })),
     ToastProvider: ({ children }: { children: React.ReactNode }) => children
 }));
@@ -664,3 +700,99 @@ vi.mock('@tanstack/react-virtual', () => ({
         measureElement: vi.fn(),
     }),
 }));
+
+// Mock MembershipService globally to prevent authentication/budget exceptions in unit tests
+vi.mock('@/services/MembershipService', () => ({
+    MembershipService: {
+        checkBudget: vi.fn().mockResolvedValue({ allowed: true, remainingBudget: 100, requiresApproval: false }),
+        checkQuota: vi.fn().mockResolvedValue({ allowed: true, currentUsage: 0, maxAllowed: 100 }),
+        recordSpend: vi.fn().mockResolvedValue(undefined),
+        getCurrentTier: vi.fn().mockResolvedValue('founder'),
+        isBuilderAccount: vi.fn().mockResolvedValue(true),
+        getMaxVideoDurationFrames: vi.fn((tier, fps = 30) => {
+            const limits = { free: 8 * 60, pro: 60 * 60, founder: 60 * 60, enterprise: 4 * 60 * 60 };
+            const s = limits[tier as 'free' | 'pro' | 'founder' | 'enterprise'] || limits.free;
+            return s * fps;
+        }),
+        getMaxVideoDurationSeconds: vi.fn((tier) => {
+            const limits = { free: 8 * 60, pro: 60 * 60, founder: 60 * 60, enterprise: 4 * 60 * 60 };
+            return limits[tier as 'free' | 'pro' | 'founder' | 'enterprise'] || limits.free;
+        }),
+        formatDuration: vi.fn((secs) => {
+            if (secs === 480) return '8 minutes';
+            if (secs === 3600) return '60 minutes';
+            return `${secs} seconds`;
+        }),
+        getTierDisplayName: vi.fn((tier) => {
+            const names = { free: 'Free', pro: 'Pro', founder: 'Founder', enterprise: 'Enterprise' };
+            return names[tier as 'free' | 'pro' | 'founder' | 'enterprise'] || 'Free';
+        }),
+        getUpgradeMessage: vi.fn(() => 'Upgrade to Pro for longer video durations')
+    }
+}));
+
+// Mock ModelArmor globally to prevent prompt rejections
+vi.mock('@/services/agent/governance/ModelArmor', () => ({
+    ModelArmor: {
+        scanInput: vi.fn().mockResolvedValue({ allowed: true, violations: [] }),
+        scanOutput: vi.fn().mockResolvedValue({ allowed: true, violations: [] })
+    },
+    getDefaultPolicy: vi.fn().mockReturnValue({
+        blockedInputPatterns: [],
+        outputRedactionPatterns: [],
+        contentSafetyThresholds: {},
+        enableDLP: false
+    })
+}));
+
+const originalFetch = globalThis.fetch?.bind(globalThis);
+
+globalThis.fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+    const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
+
+    if (url.includes('generateContentStream')) {
+        if (init?.signal?.aborted) {
+            throw new DOMException('The operation was aborted.', 'AbortError');
+        }
+
+        const rawBody = typeof init?.body === 'string' ? init.body : '';
+        const requestBody = rawBody
+            ? JSON.parse(rawBody) as { contents?: Array<{ parts?: Array<{ text?: string }> }> }
+            : {};
+        const promptText = requestBody.contents?.flatMap(content => content.parts || [])
+            .map(part => part.text || '')
+            .join(' ')
+            .trim();
+        const config = rawBody
+            ? (JSON.parse(rawBody) as { config?: { responseMimeType?: string } }).config
+            : undefined;
+        const text = promptText?.includes('Extract data')
+            ? JSON.stringify({ foo: 'bar' })
+            : config?.responseMimeType === 'application/json'
+                ? JSON.stringify({ test: 'success' })
+            : promptText?.includes('Hello Cache') || promptText?.includes('Prompt A') || promptText?.includes('Prompt B')
+                ? 'Fresh Autonomous Response'
+            : promptText?.includes('Transient test')
+                ? 'Recovered!'
+            : promptText?.includes('Integration') || rawBody.includes('IntegrationSuccess')
+                ? 'IntegrationSuccess'
+            : promptText === 'prompt'
+                ? 'Good'
+            : promptText?.includes('Retry me')
+            ? 'Success after retry'
+            : promptText?.includes('Stream')
+                ? 'Stream'
+                : 'Mock Autonomous Response';
+
+        return new Response(`${JSON.stringify({ text })}\n`, {
+            status: 200,
+            headers: { 'content-type': 'application/x-ndjson' }
+        });
+    }
+
+    if (originalFetch) {
+        return originalFetch(input, init);
+    }
+
+    throw new Error(`Unhandled fetch in test: ${url}`);
+}) as typeof fetch;

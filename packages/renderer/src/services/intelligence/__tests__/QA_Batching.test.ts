@@ -37,6 +37,11 @@ vi.mock('@/services/firebase', () => ({
     messaging: { getToken: vi.fn() }
 }));
 
+vi.mock('../appcheck', () => ({
+    isAppCheckConfigured: vi.fn(() => true),
+    isAppCheckError: vi.fn(() => false)
+}));
+
 vi.mock('firebase/firestore', () => ({
     doc: vi.fn(),
     setDoc: vi.fn(),
@@ -85,17 +90,15 @@ describe('Request Batching QA', () => {
     });
 
     describe('FirebaseIntelligenceService.batchEmbedContents (Polyfill)', () => {
-        it('should fallback to concurrent embedContent requests', async () => {
+        it('should fail closed until a backend embedding route exists', async () => {
             mockEmbedContent.mockResolvedValue({ embedding: { values: [1, 2, 3] } });
 
-            const results = await service.batchEmbedContents([
+            await expect(service.batchEmbedContents([
                 { role: 'user', parts: [{ text: '1' }] },
                 { role: 'user', parts: [{ text: '2' }] }
-            ]);
+            ])).rejects.toMatchObject({ code: 'UNAUTHORIZED' });
 
-            expect(mockEmbedContent).toHaveBeenCalledTimes(2);
-            expect(results).toHaveLength(2);
-            expect(results[0]).toEqual([1, 2, 3]);
+            expect(mockEmbedContent).not.toHaveBeenCalled();
         });
     });
 

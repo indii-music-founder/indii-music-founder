@@ -2,16 +2,44 @@ import { AutonomousIntelligence } from '../intelligence/AutonomousIntelligence';
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { InputSanitizer } from '../intelligence/utils/InputSanitizer';
 import { logger } from '@/utils/logger';
-import { ContentPart } from '@/shared/types/ai.dto';
-import { editImageDirectly } from '@/services/intelligence/generators/DirectImageEditor';
-
-
+import { ContentPart, Part } from '@/shared/types/ai.dto';
+import { CreativeStorageService } from '@/services/creative/CreativeStorageService';
+import { normalizeEditImageResult } from './editResponse';
 // Data URI regex - strict pattern for image MIME types
 const DATA_URI_REGEX = /^data:(image\/[a-z0-9.+-]+);base64,([A-Za-z0-9+/=]+)$/i;
 
 export interface BatchEditResult {
     results: { id: string; url: string; prompt: string }[];
     failures: { index: number; error: string }[];
+}
+
+function normalizeEditFailure(error: unknown): Error {
+    const maybe = error as { code?: string; message?: string; details?: unknown };
+    const code = maybe?.code || '';
+    const message = error instanceof Error ? error.message : maybe?.message || String(error);
+    const details = typeof maybe?.details === 'string' ? maybe.details : '';
+    const raw = `${code} ${message} ${details}`.toLowerCase();
+
+    if (raw.includes('unauthenticated')) {
+        return new Error('Sign in again to edit this image.');
+    }
+    if (raw.includes('app-check') || raw.includes('appcheck')) {
+        return new Error('Creative edit is blocked by App Check. Refresh the app and try again.');
+    }
+    if (raw.includes('rate') || raw.includes('quota') || raw.includes('resource-exhausted')) {
+        return new Error('Creative edit is temporarily rate limited. Wait a moment and try again.');
+    }
+    if (raw.includes('permission-denied') || raw.includes('forbidden')) {
+        return new Error('Creative edit was denied by the backend. Check access and try again once the service is reachable.');
+    }
+    if (raw.includes('invalid-argument') || raw.includes('validation failed')) {
+        return new Error(message && message !== 'internal' ? message : 'Creative edit rejected the mask or reference payload.');
+    }
+    if (!message || message === 'internal' || code.includes('internal')) {
+        return new Error('Creative edit could not finish because the backend returned an internal error. Your annotations are still on the canvas; try again after the service recovers.');
+    }
+
+    return new Error(message);
 }
 
 export class EditingService {
@@ -46,42 +74,96 @@ export class EditingService {
     }
 
     /**
-     * Edit a single image using the Direct SDK Pipeline (original + binary mask).
-     * 
-     * Calls Gemini SDK directly via DirectImageEditor, bypassing Cloud Functions.
-     * This eliminates AppCheck 401 errors and provides lower latency.
-     * 
-     * Pro (High Fidelity): Uses gemini-3-pro-image-preview with IMAGE responseModality.
-     * Flash (High Speed): Uses gemini-3.1-flash-image-preview with IMAGE responseModality.
+     * Edit a single image through the secured Cloud Function pipeline.
      */
     async editImage(options: {
         image: { mimeType: string; data: string };
         mask?: { mimeType: string; data: string };
         decoratedImage?: { mimeType: string; data: string }; // Legacy/Flattened
         referenceImage?: { mimeType: string; data: string };
+        referenceImages?: { mimeType: string; data: string }[];
         prompt: string;
         forceHighFidelity?: boolean;
         model?: 'pro' | 'flash' | string;
         thoughtSignature?: string;
         useSemanticMap?: boolean;
+        sessionId?: string;
+        routeId?: string;
+        routeLabel?: string;
+        routeReason?: string;
     }): Promise<{ id: string; url: string; prompt: string; thoughtSignature?: string } | null> {
-        logger.info('[EditingService] editImage called — using Direct SDK path', {
+        logger.info('[EditingService] editImage called — using secured backend path', {
             hasMask: !!options.mask,
-            hasReference: !!options.referenceImage,
+            hasReference: !!options.referenceImage || !!options.referenceImages?.length,
             model: options.model,
             useSemanticMap: !!options.useSemanticMap,
         });
 
-        return this.withRetry(() => editImageDirectly({
-            image: options.image,
-            mask: options.mask,
-            referenceImage: options.referenceImage,
-            prompt: options.prompt,
-            forceHighFidelity: options.forceHighFidelity || !!options.decoratedImage,
-            model: options.model,
-            thoughtSignature: options.thoughtSignature,
-            useSemanticMap: options.useSemanticMap,
-        }));
+        return this.withRetry(async () => {
+            const firebaseModule = await import('@/services/firebase');
+            const { functions } = firebaseModule;
+            const { httpsCallable } = await import('firebase/functions');
+            const editImageFn = httpsCallable(functions, 'editImage');
+
+            const userId = firebaseModule.auth.currentUser?.uid;
+            if (!userId) {
+                throw new Error('User must be authenticated to edit images.');
+            }
+
+            const imageUri = await CreativeStorageService.uploadReferenceMedia(
+                userId,
+                `data:${options.image.mimeType};base64,${options.image.data}`,
+                'image',
+                { scope: 'objects' }
+            );
+            const maskUri = options.mask
+                ? await CreativeStorageService.uploadReferenceMedia(
+                    userId,
+                    `data:${options.mask.mimeType};base64,${options.mask.data}`,
+                    'image',
+                    { scope: 'masks' }
+                )
+                : undefined;
+            const referenceImageUri = options.referenceImage
+                ? await CreativeStorageService.uploadReferenceMedia(
+                    userId,
+                    `data:${options.referenceImage.mimeType};base64,${options.referenceImage.data}`,
+                    'image',
+                    { scope: 'objects' }
+                )
+                : undefined;
+            const referenceImageUris = options.referenceImages?.length
+                ? await Promise.all(options.referenceImages.map((referenceImage) => CreativeStorageService.uploadReferenceMedia(
+                    userId,
+                    `data:${referenceImage.mimeType};base64,${referenceImage.data}`,
+                    'image',
+                    { scope: 'objects' }
+                )))
+                : undefined;
+
+            const payload = {
+                imageUri,
+                maskUri,
+                referenceImageUri,
+                referenceImageUris,
+                prompt: options.prompt,
+                forceHighFidelity: options.forceHighFidelity || !!options.decoratedImage,
+                model: options.model,
+                thoughtSignature: options.thoughtSignature,
+                useSemanticMap: options.useSemanticMap,
+                sessionId: options.sessionId,
+                routeId: options.routeId,
+                routeLabel: options.routeLabel,
+                routeReason: options.routeReason,
+            };
+
+            try {
+                const result = await editImageFn(payload);
+                return normalizeEditImageResult(result.data, options.prompt);
+            } catch (error: unknown) {
+                throw normalizeEditFailure(error);
+            }
+        });
     }
 
     /**
@@ -93,6 +175,10 @@ export class EditingService {
         masks: { mimeType: string; data: string; prompt: string; colorId: string; referenceImage?: { mimeType: string; data: string } }[];
         variationCount?: number;
         model?: string;
+        sessionId?: string;
+        routeId?: string;
+        routeLabel?: string;
+        routeReason?: string;
     }): Promise<{ id: string; url: string; prompt: string }[]> {
         const results: { id: string; url: string; prompt: string }[] = [];
         const count = options.variationCount || 4;
@@ -116,6 +202,10 @@ export class EditingService {
                     prompt: variedPrompt,
                     model: options.model,
                     thoughtSignature: currentThoughtSignature, // Circulate through chain
+                    sessionId: options.sessionId,
+                    routeId: options.routeId,
+                    routeLabel: options.routeLabel,
+                    routeReason: options.routeReason,
                 });
 
                 if (result) {
@@ -143,6 +233,36 @@ export class EditingService {
         }
 
         return results;
+    }
+
+    /**
+     * Specialized macro for AI Face Swap (Likeness).
+     * Extracts the face mask from the generated image and performs a targeted edit
+     * using the user's real face as the reference image to correct generation errors.
+     */
+    async faceSwap(options: {
+        generatedImage: { mimeType: string; data: string };
+        likenessImage: { mimeType: string; data: string };
+        model?: string;
+    }): Promise<{ id: string; url: string; prompt: string; thoughtSignature?: string } | null> {
+        const { ImageAnalysisService } = await import('./ImageAnalysisService');
+        const analysis = new ImageAnalysisService();
+        
+        logger.info('[EditingService] Extracting face mask for Likeness Face Swap');
+        const faceMaskBase64 = await analysis.extractSegmentationMask(
+            `data:${options.generatedImage.mimeType};base64,${options.generatedImage.data}`,
+            'The person\'s face'
+        );
+
+        logger.info('[EditingService] Executing Likeness Face Swap');
+        return this.editImage({
+            image: options.generatedImage,
+            mask: { mimeType: 'image/png', data: faceMaskBase64 },
+            referenceImage: options.likenessImage,
+            prompt: 'Seamlessly blend the reference face onto this person, matching lighting and skin tone exactly.',
+            model: options.model || 'pro',
+            forceHighFidelity: true
+        });
     }
 
     /**
@@ -217,7 +337,7 @@ export class EditingService {
         projectContext?: string;
         thoughtSignature?: string;
     }): Promise<{ id: string; url: string; prompt: string; thoughtSignature?: string } | null> {
-        const parts: import('firebase/ai').Part[] = [];
+        const parts: Part[] = [];
         options.images.forEach((img, idx) => {
             parts.push({ inlineData: { mimeType: img.mimeType, data: img.data } });
             parts.push({ text: `[Reference ${idx + 1}]` });
@@ -300,7 +420,7 @@ export class EditingService {
             }
 
             // Step 3: Generate Frame
-            const parts: import('firebase/ai').Part[] = [];
+            const parts: Part[] = [];
             if (previousImage) {
                 parts.push({ inlineData: { mimeType: previousImage.mimeType, data: previousImage.data } });
                 parts.push({ text: `[Reference Frame]` });
@@ -349,7 +469,7 @@ export class EditingService {
             ? INTELLIGENCE_MODELS.IMAGE.DIRECT_PRO
             : INTELLIGENCE_MODELS.IMAGE.DIRECT_FAST;
 
-        const parts: import('firebase/ai').Part[] = [
+        const parts: Part[] = [
             { text: options.prompt || 'Render the content image in the artistic style of the style reference. Preserve the subject and composition from the content image. Apply the colors, textures, lighting, and mood from the style reference.' },
             { inlineData: { mimeType: options.contentImage.mimeType, data: options.contentImage.data } },
             { text: '[Content Image - preserve this subject/composition]' },

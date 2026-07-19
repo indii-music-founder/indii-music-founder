@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { FinanceTools } from '../FinanceTools';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { getFineTunedModel } from '../../fine-tuned-models';
+import { importWithRetry } from '@/utils/dynamicImport';
 
 // Mock Dependencies
 vi.mock('@/services/intelligence/FirebaseIntelligenceService', () => {
@@ -38,7 +39,7 @@ describe('FinanceTools', () => {
 
     beforeEach(async () => {
         vi.clearAllMocks();
-        const module = await import('@/services/intelligence/AutonomousIntelligence');
+        const module = await importWithRetry(() => import('@/services/intelligence/AutonomousIntelligence'));
         AutonomousIntelligence = module.AutonomousIntelligence;
     });
 
@@ -172,6 +173,33 @@ describe('FinanceTools', () => {
             expect(result.success).toBe(true);
             expect(result.data.projections.gross.month_1).toBeCloseTo(30);
             expect(result.data.projections.net_to_rights_holder.month_1).toBeCloseTo(15);
+        });
+    });
+
+    /**
+     * ISSUE-856: this tool never parses CSV content, validates columns, or
+     * reconciles totals — it only asks Gemini to describe a mapping
+     * conceptually, yet used to report status: 'Normalized into standard
+     * indii ledger format'. These prove the output is now honestly labeled
+     * a draft suggestion, not completed ledger normalization.
+     */
+    describe('normalize_distributor_statements (ISSUE-856)', () => {
+        it('labels the output mapping_draft, not a completed normalization', async () => {
+            AutonomousIntelligence.generateContent.mockResolvedValue({
+                response: {
+                    text: () => JSON.stringify({ mapping: 'track_title,artist,isrc,period,streams,revenue,territory,distributor' })
+                }
+            });
+
+            const result = await FinanceTools.normalize_distributor_statements({
+                csvFiles: ['distrokid_2026_06.csv', 'tunecore_2026_06.csv'],
+            });
+
+            expect(result.success).toBe(true);
+            expect(result.data.status).toBe('mapping_draft');
+            expect(result.data.status).not.toBe('Normalized into standard indii ledger format');
+            expect(result.message).toContain('No files were actually parsed');
+            expect(result.message).toContain('draft normalization mapping');
         });
     });
 });

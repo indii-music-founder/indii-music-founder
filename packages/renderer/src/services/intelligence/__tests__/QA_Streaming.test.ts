@@ -35,8 +35,10 @@ vi.mock('firebase/remote-config', () => ({
 
 vi.mock('@/config/env', () => ({
     env: {
-        VITE_API_KEY: 'mock-key',
-        apiKey: 'mock-key'
+        VITE_API_KEY: '',
+        apiKey: '',
+        appCheckKey: 'mock-app-check-key',
+        appCheckDebugToken: 'mock-debug-token'
     }
 }));
 
@@ -48,16 +50,10 @@ vi.mock('../billing/TokenUsageService', () => ({
     }
 }));
 
-// Mock Google AutonomousIntelligence SDK (Fallback) - new @google/genai package
+// Raw Google client fallback must stay unused in renderer tests.
 vi.mock('@google/genai', () => ({
-    GoogleGenAI: vi.fn(function () {
-        return {
-            models: {
-                generateContent: mockGenerateContent,
-                generateContentStream: mockGenerateContentStream,
-                embedContent: vi.fn()
-            }
-        };
+    GoogleGenAI: vi.fn(() => {
+        throw new Error('Raw Google client fallback must not be constructed');
     })
 }));
 
@@ -78,57 +74,19 @@ describe('Streaming QA', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         service = new FirebaseIntelligenceService();
-        service.useFallbackMode = true;
-        service.fallbackClient = {
-            models: {
-                generateContent: mockGenerateContent,
-                generateContentStream: mockGenerateContentStream
-            }
-        } as any;
     });
 
-    it('should pass AbortSignal to SDK', async () => {
-        const mockStream = {
-            [Symbol.asyncIterator]: async function* () {
-                yield {
-                    text: () => 'Chunk',
-                    candidates: [{ content: { parts: [{ text: 'Chunk' }] } }]
-                };
-            }
-        };
-
-        mockGenerateContentStream.mockResolvedValue(mockStream);
-
+    it('should pass AbortSignal to the backend gateway', async () => {
         const controller = new AbortController();
         const signal = controller.signal;
 
         await service.generateContentStream('prompt', undefined, {}, undefined, undefined, { signal });
 
-        expect(mockGenerateContentStream).toHaveBeenCalledWith(
-            expect.objectContaining({
-                config: expect.objectContaining({
-                    abortSignal: expect.anything()
-                })
-            })
-        );
+        const call = [...vi.mocked(fetch).mock.calls].reverse().find(([url]) => String(url).includes('generateContentStream'));
+        expect(call?.[1]?.signal).toBeInstanceOf(AbortSignal);
     });
 
-    it('should tolerate chunk errors', async () => {
-        const mockStream = {
-            [Symbol.asyncIterator]: async function* () {
-                yield {
-                    text: () => 'Good',
-                    candidates: [{ content: { parts: [{ text: 'Good' }] } }]
-                };
-                yield {
-                    text: () => { throw new Error('Bad'); },
-                    candidates: []
-                };
-            }
-        };
-
-        mockGenerateContentStream.mockResolvedValue(mockStream);
-
+    it('should read backend stream chunks', async () => {
         const { stream } = await service.generateContentStream('prompt');
         const reader = stream.getReader();
 
@@ -136,6 +94,39 @@ describe('Streaming QA', () => {
         expect(r1.value?.text()).toBe('Good');
 
         const r2 = await reader.read();
-        expect(r2.value?.text()).toBe(''); // Should catch error and return empty string
+        expect(r2.done).toBe(true);
+    });
+
+    it('should preserve function calls from SSE candidate parts', async () => {
+        vi.mocked(fetch).mockResolvedValueOnce(new Response(
+            `data: ${JSON.stringify({
+                candidates: [{
+                    content: {
+                        role: 'model',
+                        parts: [
+                            { text: 'Seating Marketing.' },
+                            { functionCall: { name: 'seat_agent', args: { targetAgentId: 'marketing' } } },
+                        ],
+                    },
+                    finishReason: 'STOP',
+                }],
+            })}\n\n`,
+            { status: 200, headers: { 'Content-Type': 'text/event-stream' } },
+        ));
+
+        const { stream, response } = await service.generateContentStream('prompt');
+        const reader = stream.getReader();
+
+        const streamed = await reader.read();
+        expect(streamed.value?.text()).toBe('Seating Marketing.');
+        expect(streamed.value?.functionCalls()).toEqual([
+            { name: 'seat_agent', args: { targetAgentId: 'marketing' } },
+        ]);
+
+        const final = await response;
+        expect(final.text()).toBe('Seating Marketing.');
+        expect(final.functionCalls()).toEqual([
+            { name: 'seat_agent', args: { targetAgentId: 'marketing' } },
+        ]);
     });
 });

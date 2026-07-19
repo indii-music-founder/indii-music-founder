@@ -34,7 +34,7 @@ export function CandidatesCarousel({ candidates, onSelect, onClose }: Candidates
                         className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 flex items-center justify-center transition-opacity focus-visible:ring-2 focus-visible:ring-white outline-none"
                         aria-label={`Select candidate ${idx + 1}: ${cand.prompt}`}
                     >
-                        <span className="bg-purple-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg group-focus-within:ring-2 group-focus-within:ring-white">
+                        <span className="bg-green-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg group-focus-within:ring-2 group-focus-within:ring-white">
                             Select
                         </span>
                     </button>

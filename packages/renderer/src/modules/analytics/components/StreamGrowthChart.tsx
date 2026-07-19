@@ -24,7 +24,7 @@ const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
             {payload.map((entry) => (
                 entry.name !== 'lower' && entry.name !== 'upper' && (
                     <p key={entry.name} className="font-semibold" style={{ color: entry.color }}>
-                        {Number(entry.value).toLocaleString()} streams
+                        {Number(entry.value).toLocaleString('en-US')} streams
                     </p>
                 )
             ))}
@@ -33,9 +33,9 @@ const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
                 const upper = payload.find((e) => e.name === 'upper')?.value;
                 return isForecast && lower !== undefined && upper !== undefined ? (
                     <p className="text-xs text-slate-500 mt-0.5">
-                        Range: {Number(lower).toLocaleString()}
+                        Range: {Number(lower).toLocaleString('en-US')}
                         {' – '}
-                        {Number(upper).toLocaleString()}
+                        {Number(upper).toLocaleString('en-US')}
                     </p>
                 ) : null;
             })()}

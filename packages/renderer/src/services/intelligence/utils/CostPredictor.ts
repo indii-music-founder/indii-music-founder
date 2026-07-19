@@ -77,7 +77,7 @@ export class CostPredictor {
             // Typical native image gen produces ~2500 output tokens per image.
             const IMAGE_OUTPUT_TOKENS_EST = 2500;
             const costPerImage = (IMAGE_OUTPUT_TOKENS_EST * pricing.output) / 1_000_000;
-            const costUsd = parseFloat((costPerImage * count).toFixed(4));
+            const costUsd = Math.round(costPerImage * count * 10000) / 10000;
             return {
                 model,
                 estimatedCostUsd: costUsd,
@@ -103,7 +103,7 @@ export class CostPredictor {
 
         return {
             model,
-            estimatedCostUsd: parseFloat(costUsd.toFixed(4)),
+            estimatedCostUsd: Math.round(costUsd * 10000) / 10000,
             estimatedCredits: Math.ceil(costUsd * this.CREDIT_MULTIPLIER),
             unit: 'seconds',
             details: `Based on ${durationSeconds}s at $${pricing.perSecond}/s for premium video synthesis.`

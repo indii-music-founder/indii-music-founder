@@ -148,10 +148,10 @@ export class LivingFileService {
 
         if (currentContent.includes(header)) {
             // Insert after header
-            newContent = currentContent.replace(header, `${header}\n- [${new Date().toLocaleTimeString()}] ${entry}`);
+            newContent = currentContent.replace(header, `${header}\n- [${new Date().toLocaleTimeString('en-US')}] ${entry}`);
         } else {
             // New day, prepend
-            newContent = `${header}\n- [${new Date().toLocaleTimeString()}] ${entry}\n\n${currentContent}`;
+            newContent = `${header}\n- [${new Date().toLocaleTimeString('en-US')}] ${entry}\n\n${currentContent}`;
         }
 
         await this.write(userId, 'EPISODIC', newContent, 'system');

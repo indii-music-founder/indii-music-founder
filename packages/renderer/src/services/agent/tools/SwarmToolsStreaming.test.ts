@@ -1,4 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { importWithRetry } from '@/utils/dynamicImport';
+import { DelegationLoopDetector } from '../LoopDetector';
 
 /**
  * consult_specialist → UI bridge tests.
@@ -38,10 +40,13 @@ function makeContext(overrides: Record<string, unknown> = {}) {
 describe('consult_specialist streaming bridge', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Judgment layer: each test represents an independent consult session, so clear
+    // the shared DelegationLoopDetector chain for the fixed traceId these tests reuse.
+    DelegationLoopDetector.cleanup('t1');
   });
 
   it('streams deltas through emitToken when a UI sink + streamAgent are present', async () => {
-    const { consult_specialist } = await import('./SwarmTools');
+    const { consult_specialist } = await importWithRetry(() => import('./SwarmTools'));
     mockStream.mockReturnValue(gen([
       { type: 'delta', text: 'Hel', done: false },
       { type: 'delta', text: 'lo', done: false },
@@ -62,7 +67,7 @@ describe('consult_specialist streaming bridge', () => {
   });
 
   it('uses the non-streaming invoke() path when no emitToken sink is present', async () => {
-    const { consult_specialist } = await import('./SwarmTools');
+    const { consult_specialist } = await importWithRetry(() => import('./SwarmTools'));
     mockInvoke.mockResolvedValue({ text: 'batch reply', agentId: 'marketing' });
 
     const ctx = makeContext(); // no emitToken / streamAgent

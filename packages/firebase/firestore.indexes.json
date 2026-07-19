@@ -2,6 +2,31 @@
   "fieldOverrides": [],
   "indexes": [
     {
+      "collectionGroup": "costLedger",
+      "fields": [
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "timestamp", "order": "ASCENDING" }
+      ],
+      "queryScope": "COLLECTION"
+    },
+    {
+      "collectionGroup": "costLedger",
+      "fields": [
+        { "fieldPath": "userId", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" }
+      ],
+      "queryScope": "COLLECTION"
+    },
+    {
+      "collectionGroup": "costLedger",
+      "fields": [
+        { "fieldPath": "userId", "order": "ASCENDING" },
+        { "fieldPath": "timestamp", "order": "DESCENDING" },
+        { "fieldPath": "operationId", "order": "DESCENDING" }
+      ],
+      "queryScope": "COLLECTION"
+    },
+    {
       "collectionGroup": "boardroom_messages",
       "fields": [
         {
@@ -694,6 +719,16 @@
           "fieldPath": "updatedAt",
           "order": "DESCENDING"
         }
+      ],
+      "queryScope": "COLLECTION"
+    },
+    {
+      "collectionGroup": "agent_notes",
+      "fields": [
+        { "fieldPath": "userId", "order": "ASCENDING" },
+        { "fieldPath": "toAgentId", "order": "ASCENDING" },
+        { "fieldPath": "projectId", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
       ],
       "queryScope": "COLLECTION"
     },

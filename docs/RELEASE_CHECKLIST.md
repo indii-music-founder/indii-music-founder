@@ -2,6 +2,33 @@
 
 Use this internal checklist to verify the Founder release artifacts (macOS DMG and Windows NSIS EXE) before and after deployment. Founders do not see this document; it is for release QA.
 
+## 🔴 LIVE INCIDENT (ISSUE-992, 2026-07-10) — stable macOS update channel is empty
+
+`v1.64.6` and `v1.64.5` were both confirmed ad-hoc signed (`codesign -d` reports
+`Signature=adhoc`, `TeamIdentifier=not set`, no `_CodeSignature/CodeResources`).
+ShipIt correctly refuses to install either — any user offered one of these
+versions enters a repeat download/fail loop. Both were flipped to **prerelease**
+on GitHub (reversible, nothing deleted) so the update feed stops serving them;
+`v1.50.0` is now the resolved "latest" as an interim fallback — its signing
+status is **unverified**, not confirmed good.
+
+**This will keep happening on every future tag** until the items in
+"Apple Developer ID / macOS Notarization" below are actually completed — the
+release workflow (`.github/workflows/release.yml`) now fails the macOS build
+outright if `MAC_CERTIFICATE_P12_BASE64`/`CSC_LINK`, `CSC_KEY_PASSWORD`,
+`APPLE_ID`, `APPLE_APP_SPECIFIC_PASSWORD`, or `APPLE_TEAM_ID` are missing, and
+verifies `codesign --verify --deep --strict`, `spctl --assess`, and
+`xcrun stapler validate` against the exact artifact before it can be published.
+No further ad-hoc build can reach the update feed — but that also means **no
+new macOS release can ship at all** until real signing secrets are added.
+
+- [ ] Complete every item in "Apple Developer ID / macOS Notarization" below.
+- [ ] Add the 5 required secrets to GitHub Actions repo secrets.
+- [ ] Cut a new tag once secrets are in place; confirm the release workflow's
+      verification step passes before trusting the release.
+- [ ] Once a verified signed release exists, decide whether to leave
+      `v1.64.6`/`v1.64.5` as prerelease permanently or delete them.
+
 ## Human Action Items — Desktop Signing & Notarization
 
 These are real-world account/certificate tasks that an agent cannot complete
@@ -38,18 +65,61 @@ without the founder's Apple/Microsoft accounts and private signing material.
 - [ ] Smoke test the x64 installer on Windows 10/11 and confirm the app launches as `indii.music` with the `ii` icon.
 - [ ] Smoke test the ARM64 installer on a Windows ARM device or VM before publishing it as a supported artifact.
 
+### DDEX Sender Party ID (ISSUE-859 / ISSUE-861, added 2026-07-10)
+
+The DDEX ERN generators (`ddex-generator.ts`, MCP `draft_dsp_metadata_xml`) now fail
+closed instead of emitting a hard-coded/placeholder sender `PartyId` — they require
+`DDEX_SENDER_PARTY_ID` as a Firebase Functions runtime env var.
+
+- [ ] **Resolve a DPID discrepancy found while fixing this**: the repo has TWO different
+  values on file for indii's registered sender DPID — `PA-DPIDA-2025122604-E`
+  (`distributors.ts`, `DeliveryProfile.ts`) vs `PA-DPIDA-2025122601-E`
+  (`verify-adapters.test.ts`). Verify the real value at dpid.ddex.net and correct
+  whichever file is wrong.
+- [ ] Set `DDEX_SENDER_PARTY_ID` (the confirmed value, digits-only party id form
+  e.g. `PADPIDA2025122604E`, matching the format DDEX XML expects — no dashes)
+  as a Firebase Functions runtime env var / secret. Until set, DDEX compilation
+  and the MCP metadata draft tool both throw `failed-precondition`.
+
+### Google Cloud Console — Maps & API Keys (ISSUE-764 / ISSUE-765, added 2026-07-08)
+
+These are GCP Console settings changes an agent cannot make. The code-side fixes
+(vite config unstrip, deploy.yml secret) are tracked separately in the ledger.
+
+- [x] In GCP Console → APIs & Services → Credentials, open the Maps API key (`VITE_GOOGLE_MAPS_API_KEY` in `.env`) and ADD **Geocoding API** and **Places API** to its allowed-API list. Keep it restricted — do NOT switch to unrestricted. (Live probe 2026-07-07: Geocoding → REQUEST_DENIED, Static Maps → 403; only Maps JavaScript API is enabled.)
+- [ ] Decide the Electron referrer strategy for the Maps key: the packaged desktop app sends no HTTP referer, so a referrer-restricted key throws `RefererNotAllowedMapError`. Options: separate key for desktop with IP/none restriction, or loosen referrer rules on the existing key. Verify in the packaged desktop build, not the web app.
+- [x] Verify the Firebase Functions secret exists and holds a Geocoding-enabled key: `firebase functions:secrets:access GOOGLE_MAPS_API_KEY` (used server-side by the `findPlaces` touring callable).
+- [x] Create a **dedicated YouTube Data API key** (service separation — the code currently reuses the Firebase key, which is referrer-blocked from Electron and violates API Credentials Policy §3.2.3). Add it as `VITE_GOOGLE_YOUTUBE_API_KEY` once the code fix lands.
+- [x] Add `VITE_GOOGLE_MAPS_API_KEY` as a GitHub Actions repo secret so the hosted web build gets the key (deploy.yml injection is a code-side fix, but the secret value must be created by you).
+- [x] Vertex AI: re-verify the 20 fine-tuned agent endpoints against the live tuningJobs API (registry last synced 2026-06-21; Anti-Pattern #9 protocol). Requires `gcloud auth login` on the machine running the check.
+
+### Social Platform Developer Registrations (ISSUE-766, added 2026-07-08)
+
+The full posting pipeline (X/Twitter, Instagram, TikTok, YouTube, Spotify) is built,
+but every credential is a `MOCK_KEY_DO_NOT_USE` placeholder. No social feature works
+until these developer apps exist. Each requires the company's accounts and, in several
+cases, a platform review process — start these early, approvals take days to weeks.
+
+- [ ] **Meta (Instagram/Facebook):** create a Meta developer app for New Detroit Music LLC; enable Instagram Graph API; request `instagram_content_publish` + pages permissions (requires Meta App Review with a screencast of the posting flow). Store `META_APP_ID` / `META_APP_SECRET`.
+- [ ] **TikTok:** register a TikTok for Developers app; apply for the **Content Posting API** (separate TikTok approval). Store `TIKTOK_CLIENT_KEY` / `TIKTOK_CLIENT_SECRET`.
+- [ ] **X / Twitter:** create a developer project; posting via API v2 requires the **paid Basic tier** (~$100/mo) — decide if X posting ships in v1 or is deferred. Store client id/secret.
+- [ ] **Spotify:** create a Spotify developer app (client id/secret); request extended quota mode before public launch (dev mode caps at 25 users).
+- [ ] **Google OAuth (YouTube upload + Gmail):** in GCP Console, create/verify the OAuth client (`VITE_GOOGLE_OAUTH_CLIENT_ID` exists in `.env`); add YouTube upload scope; complete OAuth consent-screen verification for external users (Google review required for sensitive scopes).
+- [ ] After each registration: set the SECRET half only as Firebase Functions secrets (`firebase functions:secrets:set META_APP_SECRET` etc. — never in `.env` VITE_ vars or the repo), and the public client id half in `.env` + GitHub Actions secrets.
+- [ ] When all target platforms have real credentials, tell the coding agent to flip the `SOCIAL_POSTING` feature flag and run a live test post per platform.
+
 ## Current Release Target
 
 Public release identity: **Founders Version One**.
 
-Technical updater version: **1.64.2**. Do not reset `package.json` to `1.0.0` for this launch, because installed `v1.50.0` builds would treat that as a downgrade and skip the update while `allowDowngrade` remains false.
+Technical updater version: **1.64.5**.
 
-- [ ] Push a `v1.64.2` release tag after local validation is complete.
-- [ ] Verify GitHub Release `v1.64.2` includes platform installers and updater manifests:
+- [x] Push a `v1.64.5` release tag after local validation is complete.
+- [x] Verify GitHub Release `v1.64.5` includes platform installers and updater manifests:
   - `latest-mac.yml`
   - `latest.yml`
   - `latest-linux.yml`
-- [ ] Confirm each manifest URL returns `200` before calling Founders Version One live.
+- [x] Confirm each manifest URL returns `200` before calling Founders Version One live.
 
 ## Current Local Verification Snapshot
 

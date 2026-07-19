@@ -8,6 +8,7 @@
  */
 
 import { BaseDistributorAdapter } from './BaseDistributorAdapter';
+import { earningsService } from '../EarningsService';
 import {
     DistributorId,
     DistributorRequirements,
@@ -17,7 +18,8 @@ import {
     ValidationResult,
     ReleaseAssets,
     ExtendedGoldenMetadata,
-    DateRange
+    DateRange,
+    DistributorCredentials
 } from '@/services/distribution/types/distributor';
 import { ingestionNotificationService } from '@/services/distribution/proprietary-ingestion/IngestionNotificationService';
 import { INGESTION_CONFIG } from '@/core/config/ingestion';
@@ -28,6 +30,7 @@ const BELIEVE_API_BASE = 'https://api.believemusic.com/v1';
 export class BelieveAdapter extends BaseDistributorAdapter {
     readonly id: DistributorId = 'believe';
     readonly name = 'Believe';
+    protected readonly apiBaseUrl = BELIEVE_API_BASE;
 
     readonly requirements: DistributorRequirements = {
         distributorId: 'believe',
@@ -67,6 +70,31 @@ export class BelieveAdapter extends BaseDistributorAdapter {
         },
     };
 
+    async connect(credentials: DistributorCredentials): Promise<void> {
+        await super.connect(credentials);
+        if (credentials.apiKey) {
+            try {
+                const response = await fetch(`${BELIEVE_API_BASE}/version`, {
+                    headers: {
+                        'Authorization': `Bearer ${credentials.apiKey}`,
+                        ...this.getVersionedHeaders(),
+                    },
+                    signal: AbortSignal.timeout(5000),
+                });
+                if (response.status === 401 || response.status === 403) {
+                    throw new Error('Invalid API key or credentials for Believe');
+                }
+            } catch (err: unknown) {
+                if (err instanceof Error && err.message.includes('Invalid')) {
+                    this.connected = false;
+                    this.credentials = undefined;
+                    throw err;
+                }
+                logger.warn('[Believe] API connection verification warning:', err);
+            }
+        }
+    }
+
     async createRelease(metadata: ExtendedGoldenMetadata, assets: ReleaseAssets): Promise<ReleaseResult> {
         const isConnected = await this.isConnected();
         if (!isConnected) throw new Error('Not connected to Believe');
@@ -99,6 +127,7 @@ export class BelieveAdapter extends BaseDistributorAdapter {
                             'Authorization': `Bearer ${this.credentials.apiKey}`,
                             'Content-Type': 'application/json',
                             'X-Partner-ID': this.credentials.username || 'indii',
+                            ...this.getVersionedHeaders(),
                         },
                         body: JSON.stringify({
                             title: metadata.trackTitle,
@@ -113,33 +142,51 @@ export class BelieveAdapter extends BaseDistributorAdapter {
                         }),
                     });
 
-                    if (response.ok) {
-                        const data = await response.json();
+                    if (!response.ok) {
+                        logger.warn(`[Believe] API rejected the release (HTTP ${response.status}) — no delivery occurred.`);
                         return {
-                            success: true,
+                            success: false,
                             releaseId,
-                            distributorReleaseId: data.id || `BLV-${releaseId}`,
-                            status: 'pending_review',
-                            metadata: {
-                                estimatedLiveDate: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000).toISOString(),
-                                reviewRequired: true,
-                            }
+                            status: 'failed',
+                            errors: [{ code: 'DELIVERY_REJECTED', message: `Believe API rejected the release (HTTP ${response.status}). Nothing was delivered.` }]
                         };
                     }
+
+                    const data = await response.json();
+                    return {
+                        success: true,
+                        releaseId,
+                        distributorReleaseId: data.id || `BLV-${releaseId}`,
+                        status: 'pending_review',
+                        metadata: {
+                            estimatedLiveDate: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000).toISOString(),
+                            reviewRequired: true,
+                        }
+                    };
                 } catch (apiErr: unknown) {
-                    logger.warn('[Believe] API delivery failed, returning ERN-ready status:', apiErr);
+                    logger.warn('[Believe] API delivery unavailable — ERN is ready for manual submission, nothing was delivered:', apiErr);
+                    return {
+                        success: false,
+                        releaseId,
+                        status: 'ready_for_manual_submission',
+                        errors: [{ code: 'DELIVERY_UNAVAILABLE', message: 'Believe API delivery failed before acceptance. The DDEX ERN was generated — submit the release manually through your Believe partner account.' }],
+                        metadata: {
+                            reviewRequired: true,
+                            note: 'ERN generated. No delivery to Believe occurred.',
+                        }
+                    };
                 }
             }
 
+            // No API key: honest manual handoff — ERN generated, nothing delivered (ISSUE-658)
             return {
-                success: true,
+                success: false,
                 releaseId,
-                distributorReleaseId: `BLV-${releaseId}`,
-                status: 'pending_review',
+                status: 'ready_for_manual_submission',
+                errors: [{ code: 'MANUAL_DELIVERY_REQUIRED', message: 'No Believe API key configured — nothing was delivered. Add one in Settings > Integrations for automatic delivery, or submit the generated ERN manually through your Believe partner account.' }],
                 metadata: {
-                    estimatedLiveDate: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000).toISOString(),
                     reviewRequired: true,
-                    note: 'Add Believe API key in Settings > Integrations for automatic delivery.',
+                    note: 'ERN generated. No delivery to Believe occurred.',
                 }
             };
         } catch (e: unknown) {
@@ -156,7 +203,11 @@ export class BelieveAdapter extends BaseDistributorAdapter {
         }
         const response = await fetch(`${BELIEVE_API_BASE}/releases/${releaseId}`, {
             method: 'PATCH',
-            headers: { 'Authorization': `Bearer ${this.credentials.apiKey}`, 'Content-Type': 'application/json' },
+            headers: {
+                'Authorization': `Bearer ${this.credentials.apiKey}`,
+                'Content-Type': 'application/json',
+                ...this.getVersionedHeaders(),
+            },
             body: JSON.stringify(updates),
         });
         return { success: response.ok, status: response.ok ? 'processing' : 'failed', distributorReleaseId: releaseId };
@@ -166,18 +217,37 @@ export class BelieveAdapter extends BaseDistributorAdapter {
         if (!this.credentials?.apiKey) return 'in_review';
         try {
             const response = await fetch(`${BELIEVE_API_BASE}/releases/${releaseId}/status`, {
-                headers: { 'Authorization': `Bearer ${this.credentials.apiKey}` }
+                headers: {
+                    'Authorization': `Bearer ${this.credentials.apiKey}`,
+                    ...this.getVersionedHeaders(),
+                }
             });
             if (response.ok) {
                 const data = await response.json();
-                return (data.status as ReleaseStatus) || 'in_review';
+                const statusMap: Record<string, ReleaseStatus> = {
+                    'LIVE': 'live',
+                    'PENDING': 'pending_review',
+                    'REVIEW': 'in_review',
+                    'FAILED': 'failed',
+                    'SUCCESS': 'live',
+                    'PROCESSING': 'processing',
+                };
+                return statusMap[data.status?.toUpperCase()] || (data.status as ReleaseStatus) || 'in_review';
             }
         } catch { /* fall through */ }
         return 'in_review';
     }
 
     async takedownRelease(releaseId: string): Promise<ReleaseResult> {
-        return { success: true, status: 'takedown_requested', distributorReleaseId: releaseId };
+        return {
+            success: false,
+            status: 'ready_for_manual_submission',
+            distributorReleaseId: releaseId,
+            errors: [{
+                code: 'TAKEDOWN_MANUAL_REQUIRED',
+                message: 'Believe takedown automation is not wired. Submit the takedown manually through the Believe partner account before marking it requested.',
+            }],
+        };
     }
 
     async getEarnings(releaseId: string, period: DateRange): Promise<DistributorEarnings> {
@@ -188,31 +258,158 @@ export class BelieveAdapter extends BaseDistributorAdapter {
         };
     }
 
-    async getAllEarnings(_period: DateRange): Promise<DistributorEarnings[]> {
-        return [];
+    async getAllEarnings(period: DateRange): Promise<DistributorEarnings[]> {
+        const isConnected = await this.isConnected();
+        if (!isConnected) {
+            throw new Error('Not connected to Believe');
+        }
+        return await earningsService.getAllEarnings(this.id, period);
     }
 
     async validateMetadata(metadata: ExtendedGoldenMetadata): Promise<ValidationResult> {
-        const errors: string[] = [];
-        if (!metadata.trackTitle) errors.push('Title is required');
-        if (!metadata.isrc) errors.push('ISRC is required for Believe');
-        if (!metadata.upc) errors.push('UPC is required for Believe');
-        if (!metadata.labelName) errors.push('Label name is required for Believe');
+        const errors: ValidationResult['errors'] = [];
+        const req = this.requirements.metadata;
+
+        if (req.requiredFields) {
+            for (const field of req.requiredFields) {
+                let val = '';
+                if (field === 'trackTitle' || field === 'title') val = metadata.trackTitle || '';
+                else if (field === 'artistName' || field === 'artist') val = metadata.artistName || '';
+                else if (field === 'genre') val = metadata.genre || '';
+                else if (field === 'labelName' || field === 'label') val = metadata.labelName || '';
+                else if (field === 'releaseDate') val = metadata.releaseDate || '';
+
+                if (!val) {
+                    errors.push({
+                        code: `MISSING_${field.toUpperCase()}`,
+                        message: `${this.name} requires ${field}`,
+                        field,
+                        severity: 'error'
+                    });
+                }
+            }
+        }
+
+        if (req.maxTitleLength && metadata.trackTitle && metadata.trackTitle.length > req.maxTitleLength) {
+            errors.push({
+                code: 'TITLE_TOO_LONG',
+                message: `Title must be ${req.maxTitleLength} characters or less`,
+                field: 'trackTitle',
+                severity: 'error'
+            });
+        }
+        if (req.maxArtistNameLength && metadata.artistName && metadata.artistName.length > req.maxArtistNameLength) {
+            errors.push({
+                code: 'ARTIST_TOO_LONG',
+                message: `Artist name must be ${req.maxArtistNameLength} characters or less`,
+                field: 'artistName',
+                severity: 'error'
+            });
+        }
+
+        if (req.isrcRequired && !metadata.isrc) {
+            errors.push({ code: 'MISSING_ISRC', message: 'ISRC is required for Believe', field: 'isrc', severity: 'error' });
+        }
+        if (req.upcRequired && !metadata.upc) {
+            errors.push({ code: 'MISSING_UPC', message: 'UPC is required for Believe', field: 'upc', severity: 'error' });
+        }
+        if (req.genreRequired && !metadata.genre) {
+            errors.push({ code: 'MISSING_GENRE', message: 'Genre is required for Believe', field: 'genre', severity: 'error' });
+        }
+        if (req.languageRequired && !metadata.language) {
+            errors.push({ code: 'MISSING_LANGUAGE', message: 'Language is required for Believe', field: 'language', severity: 'error' });
+        }
+
         return {
             isValid: errors.length === 0,
-            errors: errors.map(e => ({ code: 'VALIDATION_ERROR', message: e, severity: 'error' as const })),
+            errors,
             warnings: []
         };
     }
 
     async validateAssets(assets: ReleaseAssets): Promise<ValidationResult> {
-        const errors: string[] = [];
-        if (assets.coverArt.width < this.requirements.coverArt.minWidth) {
-            errors.push(`Believe requires ${this.requirements.coverArt.minWidth}px cover art (highest standard)`);
+        const errors: ValidationResult['errors'] = [];
+        const cReq = this.requirements.coverArt;
+        const aReq = this.requirements.audio;
+
+        if (assets.coverArt) {
+            const { width, height, sizeBytes, url } = assets.coverArt;
+            if (width < cReq.minWidth || height < cReq.minHeight) {
+                errors.push({
+                    code: 'COVER_TOO_SMALL',
+                    message: `Believe requires ${cReq.minWidth}x${cReq.minHeight}px cover art (highest standard)`,
+                    field: 'coverArt',
+                    severity: 'error'
+                });
+            }
+            if (cReq.maxWidth && cReq.maxHeight && (width > cReq.maxWidth || height > cReq.maxHeight)) {
+                errors.push({
+                    code: 'COVER_TOO_LARGE',
+                    message: `Cover art must be at most ${cReq.maxWidth}x${cReq.maxHeight}px`,
+                    field: 'coverArt',
+                    severity: 'error'
+                });
+            }
+            if (cReq.maxSizeBytes && sizeBytes > cReq.maxSizeBytes) {
+                errors.push({
+                    code: 'COVER_SIZE_LIMIT',
+                    message: `Cover art size is too large (max ${cReq.maxSizeBytes / (1024 * 1024)}MB)`,
+                    field: 'coverArt',
+                    severity: 'error'
+                });
+            }
+            if (cReq.allowedFormats) {
+                const ext = url.split('.').pop()?.toLowerCase();
+                if (!ext || !(cReq.allowedFormats as string[]).includes(ext)) {
+                    errors.push({
+                        code: 'COVER_FORMAT_INVALID',
+                        message: `Cover art format must be one of: ${(cReq.allowedFormats as string[]).join(', ')}`,
+                        field: 'coverArt',
+                        severity: 'error'
+                    });
+                }
+            }
+        } else {
+            errors.push({ code: 'MISSING_COVER_ART', message: 'Cover art is required', field: 'coverArt', severity: 'error' });
         }
+
+        const audioFiles = assets.audioFiles || (assets.audioFile ? [assets.audioFile] : []);
+        if (audioFiles.length > 0) {
+            audioFiles.forEach((file, index) => {
+                const { url, sampleRate, bitDepth } = file;
+                const ext = url.split('.').pop()?.toLowerCase();
+                if (aReq.allowedFormats && ext && !aReq.allowedFormats.includes(ext)) {
+                    errors.push({
+                        code: 'AUDIO_FORMAT_INVALID',
+                        message: `Track ${index + 1} format must be one of: ${aReq.allowedFormats.join(', ')}`,
+                        field: `audioFiles[${index}]`,
+                        severity: 'error'
+                    });
+                }
+                if (aReq.minSampleRate && sampleRate && sampleRate < aReq.minSampleRate) {
+                    errors.push({
+                        code: 'AUDIO_SAMPLE_RATE_LOW',
+                        message: `Track ${index + 1} sample rate must be at least ${aReq.minSampleRate}Hz`,
+                        field: `audioFiles[${index}]`,
+                        severity: 'error'
+                    });
+                }
+                if (aReq.minBitDepth && bitDepth && bitDepth < aReq.minBitDepth) {
+                    errors.push({
+                        code: 'AUDIO_BIT_DEPTH_LOW',
+                        message: `Track ${index + 1} bit depth must be at least ${aReq.minBitDepth} bit`,
+                        field: `audioFiles[${index}]`,
+                        severity: 'error'
+                    });
+                }
+            });
+        } else {
+            errors.push({ code: 'MISSING_AUDIO', message: 'Audio asset is required', field: 'audioFile', severity: 'error' });
+        }
+
         return {
             isValid: errors.length === 0,
-            errors: errors.map(e => ({ code: 'ASSET_ERROR', message: e, severity: 'error' as const })),
+            errors,
             warnings: []
         };
     }

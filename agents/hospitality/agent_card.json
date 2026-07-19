@@ -1,0 +1,78 @@
+{
+  "schemaVersion": "1.0.0",
+  "agentId": "hospitality",
+  "displayName": "Hospitality Coordinator",
+  "description": "Ensures exceptional artist care and venue hospitality through meticulous coordination of green rooms, catering, travel, and guest logistics.",
+  "capabilities": [
+    {
+      "name": "search_places",
+      "description": "Find hotels, catering services, and vendor options near venues.",
+      "inputSchemaRef": "#/components/schemas/Empty",
+      "outputSchemaRef": "#/components/schemas/Empty",
+      "streaming": false
+    },
+    {
+      "name": "get_place_details",
+      "description": "Retrieve details on accommodations and vendors.",
+      "inputSchemaRef": "#/components/schemas/Empty",
+      "outputSchemaRef": "#/components/schemas/Empty",
+      "streaming": false
+    },
+    {
+      "name": "get_distance_matrix",
+      "description": "Calculate travel times between venues and accommodations.",
+      "inputSchemaRef": "#/components/schemas/Empty",
+      "outputSchemaRef": "#/components/schemas/Empty",
+      "streaming": false
+    },
+    {
+      "name": "create_project",
+      "description": "Create a hospitality coordination project for multi-stop tours.",
+      "inputSchemaRef": "#/components/schemas/Empty",
+      "outputSchemaRef": "#/components/schemas/Empty",
+      "streaming": false
+    },
+    {
+      "name": "search_knowledge",
+      "description": "Research touring standards, hospitality best practices, and venue-specific requirements.",
+      "inputSchemaRef": "#/components/schemas/Empty",
+      "outputSchemaRef": "#/components/schemas/Empty",
+      "streaming": false
+    },
+    {
+      "name": "browser_tool",
+      "description": "Research venue websites, hotel options, and catering services online.",
+      "inputSchemaRef": "#/components/schemas/Empty",
+      "outputSchemaRef": "#/components/schemas/Empty",
+      "streaming": false
+    },
+    {
+      "name": "credential_vault",
+      "description": "Securely retrieve booking credentials for hotels and vendors.",
+      "inputSchemaRef": "#/components/schemas/Empty",
+      "outputSchemaRef": "#/components/schemas/Empty",
+      "streaming": false
+    }
+  ],
+  "inputSchemas": {},
+  "outputSchemas": {},
+  "costModel": {
+    "perTokenInUsd": 0.00001,
+    "perTokenOutUsd": 0.000003,
+    "perInvocationUsd": 0.0
+  },
+  "riskTier": "write",
+  "sla": {
+    "modeSync": {
+      "p50Ms": 2000,
+      "p99Ms": 5000
+    },
+    "modeStream": {
+      "firstByteMs": 500
+    }
+  },
+  "roster": {
+    "category": "department",
+    "departmentId": "hospitality"
+  }
+}

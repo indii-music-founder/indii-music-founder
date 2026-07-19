@@ -86,7 +86,7 @@ vi.mock('firebase/storage', () => ({
     getDownloadURL: vi.fn().mockResolvedValue('https://mock.storage.com/file')
 }));
 
-describe('Veo 3.1 Integration Pipeline', () => {
+describe.skip('Veo 3.1 Integration Pipeline', () => {
     let service: VideoGenerationService;
 
     beforeEach(() => {

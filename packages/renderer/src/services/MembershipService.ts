@@ -123,6 +123,14 @@ const TIER_LIMITS: Record<MembershipTier, TierLimits> = {
     },
 };
 
+/**
+ * Emails that receive automatic Founder-tier access and full budget bypass.
+ * These are platform owners who should never be gated by tier limits.
+ */
+const FOUNDER_EMAILS: readonly string[] = [
+    'wiil@indii.music',
+];
+
 
 class MembershipServiceImpl {
     private sessionSpend: number = 0;
@@ -138,14 +146,20 @@ class MembershipServiceImpl {
         // ALWAYS bypass limits in local development so the team can test without hitting budget caps
         // IMPORTANT: Do NOT bypass in Vitest test runs — tests need to exercise real limit enforcement
         // OPTIONAL: Bypass via explicit environment variable if the developer chooses
-        if (import.meta.env && import.meta.env.VITE_BYPASS_BUDGET_LIMITS === 'true') {
+        if (import.meta.env.VITE_BYPASS_BUDGET_LIMITS === 'true') {
             return true;
         }
 
         try {
-            // Check for god_mode custom claim on Firebase Auth
             const firebaseModule = await import('@/services/firebase');
             const currentUser = firebaseModule.auth.currentUser;
+
+            // FOUNDER EMAIL BYPASS: Platform owner emails always bypass all limits.
+            if (currentUser?.email && FOUNDER_EMAILS.includes(currentUser.email.toLowerCase())) {
+                return true;
+            }
+
+            // Check for god_mode custom claim on Firebase Auth
             if (currentUser && typeof currentUser.getIdTokenResult === 'function') {
                 const tokenResult = await currentUser.getIdTokenResult();
                 if (tokenResult?.claims?.god_mode === true) {
@@ -157,7 +171,7 @@ class MembershipServiceImpl {
         } catch {
             // STRICT SAFETY: No automatic bypass in DEV mode anymore.
             // Requires explicit opt-in via .env flag for high-cost testing.
-            return (import.meta.env && import.meta.env.VITE_BYPASS_BUDGET_LIMITS === 'true') || false;
+            return import.meta.env.VITE_BYPASS_BUDGET_LIMITS === 'true';
         }
     }
 
@@ -270,6 +284,23 @@ class MembershipServiceImpl {
         try {
             const { useStore } = await import('@/core/store');
             const state = useStore.getState();
+
+            // FOUNDER EMAIL: Platform owner always gets founder tier.
+            try {
+                const firebaseModule = await import('@/services/firebase');
+                const currentUser = firebaseModule.auth.currentUser;
+                if (currentUser?.email && FOUNDER_EMAILS.includes(currentUser.email.toLowerCase())) {
+                    return 'founder';
+                }
+            } catch {
+                // Firebase auth not available — fall through to store check
+            }
+
+            // Also check the store profile email (covers offline/cached scenarios)
+            const profileEmail = state.userProfile?.email;
+            if (profileEmail && FOUNDER_EMAILS.includes(profileEmail.toLowerCase())) {
+                return 'founder';
+            }
 
             // GOD MODE: Bypass via custom claim or Dev environment
             if (await this.isBuilderAccount()) {
@@ -409,6 +440,33 @@ class MembershipServiceImpl {
     }
 
     /**
+     * Helper to get local storage key for daily offline spend tracking.
+     */
+    private getOfflineSpendKey(): string {
+        return `indii_offline_spend_${this.getTodayKey()}`;
+    }
+
+    /**
+     * Retrieve accumulated offline spend from localStorage.
+     */
+    getLocalOfflineSpend(): number {
+        if (typeof window === 'undefined' || !window.localStorage) {
+            return 0;
+        }
+        const val = window.localStorage.getItem(this.getOfflineSpendKey());
+        return val ? parseFloat(val) || 0 : 0;
+    }
+
+    /**
+     * Write offline spend to localStorage.
+     */
+    private setLocalOfflineSpend(amount: number): void {
+        if (typeof window !== 'undefined' && window.localStorage) {
+            window.localStorage.setItem(this.getOfflineSpendKey(), amount.toString());
+        }
+    }
+
+    /**
      * Records a monetary spend amount for a user's daily usage.
      * This is used for budget enforcement and tiered pass-through billing.
      * 
@@ -424,6 +482,14 @@ class MembershipServiceImpl {
             // Phase 4: Track session-wide spend for immediate circuit breaking
             this.sessionSpend += amount;
 
+            // If offline, accumulate spend locally so we can track offline quota limits instantly
+            if (typeof navigator !== 'undefined' && !navigator.onLine) {
+                const currentOfflineSpend = this.getLocalOfflineSpend();
+                this.setLocalOfflineSpend(currentOfflineSpend + amount);
+                logger.info(`[MembershipService] Offline mode: accumulated $${amount} to offline spend ledger.`);
+                return;
+            }
+
             // Atomic update or create with merge to prevent race conditions
             await setDoc(usageRef, {
                 date: dateKey,
@@ -432,6 +498,29 @@ class MembershipServiceImpl {
             }, { merge: true });
         } catch (error: unknown) {
             logger.error('[MembershipService] Failed to record spend:', error);
+        }
+    }
+
+    /**
+     * Flushes accumulated offline daily spend back to the Firestore server ledger when transitioning online.
+     */
+    async syncOfflineSpend(userId: string): Promise<void> {
+        const offlineSpend = this.getLocalOfflineSpend();
+        if (offlineSpend <= 0) return;
+
+        logger.info(`[MembershipService] Syncing accumulated offline spend of $${offlineSpend.toFixed(4)} to Firestore.`);
+        
+        // Temporarily override navigator.onLine during sync to ensure recordSpend performs a network operation
+        const originalOnLine = navigator.onLine;
+        Object.defineProperty(navigator, 'onLine', { value: true, configurable: true });
+
+        try {
+            await this.recordSpend(userId, offlineSpend);
+            this.setLocalOfflineSpend(0);
+        } catch (err) {
+            logger.error('[MembershipService] Failed to sync offline spend:', err);
+        } finally {
+            Object.defineProperty(navigator, 'onLine', { value: originalOnLine, configurable: true });
         }
     }
 
@@ -455,21 +544,33 @@ class MembershipServiceImpl {
 
         const tier = await this.getCurrentTier();
         const limits = this.getLimits(tier);
-        const usage = await this.getDailyUsage(userId);
-        const currentSpend = usage.totalSpend || 0;
+        
+        let currentSpend = 0;
+        const isOffline = typeof navigator !== 'undefined' && !navigator.onLine;
 
-        // Use fixed point arithmetic for currency comparison to avoid float errors
-        const currentSpendFixed = Math.round(currentSpend * 100);
-        const estimatedCostFixed = Math.round(estimatedCost * 100);
-        const maxSpendFixed = Math.round(limits.maxDailySpend * 100);
+        if (isOffline) {
+            // Offline Budget Gate: Combine local offline spend accumulator to prevent offline quota escapes
+            currentSpend = this.getLocalOfflineSpend();
+            logger.info(`[MembershipService] Offline budget check: current local spend is $${currentSpend}`);
+        } else {
+            // Attempt to sync any existing offline spend first before checking
+            await this.syncOfflineSpend(userId);
+            const usage = await this.getDailyUsage(userId);
+            currentSpend = usage.totalSpend || 0;
+        }
 
-        const remainingBudgetFixed = maxSpendFixed - currentSpendFixed;
-        const allowed = (currentSpendFixed + estimatedCostFixed) <= maxSpendFixed;
+        // Use integer cents arithmetic for currency comparison to avoid float errors
+        const currentSpendCents = Math.round(currentSpend * 100);
+        const estimatedCostCents = Math.round(estimatedCost * 100);
+        const maxSpendCents = Math.round(limits.maxDailySpend * 100);
+
+        const remainingBudgetCents = maxSpendCents - currentSpendCents;
+        const allowed = (currentSpendCents + estimatedCostCents) <= maxSpendCents;
 
         // EMERGENCY CIRCUIT BREAKER: Check session-wide limit
         if (this.sessionSpend + estimatedCost > this.MAX_SESSION_SPEND) {
             logger.error(`[MembershipService] EMERGENCY KILL: Session spend ($${this.sessionSpend.toFixed(2)}) + estimate ($${estimatedCost.toFixed(2)}) exceeds session safety limit ($${this.MAX_SESSION_SPEND.toFixed(2)})`);
-            return { allowed: false, remainingBudget: 0, requiresApproval: false };
+            return { allowed: false, remainingBudget: remainingBudgetCents / 100, requiresApproval: false };
         }
 
         // Ledger Policy: User must approve every charge over $0.50
@@ -477,7 +578,7 @@ class MembershipServiceImpl {
 
         return {
             allowed,
-            remainingBudget: remainingBudgetFixed / 100,
+            remainingBudget: remainingBudgetCents / 100,
             requiresApproval
         };
     }

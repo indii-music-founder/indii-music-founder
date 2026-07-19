@@ -74,7 +74,7 @@ The GCP project has automated Firestore exports and GCS backup retention policie
 
 ## 4. Recommended Remediation
 
-1. **[Critical] Restore Vertex AI Endpoints:** Investigate the GCP project `223837784072`. Ensure the fine-tuned models are actively deployed to the endpoints referenced in `src/services/agent/fine-tuned-models.ts`. This is the single biggest blocker to a clean technical diligence.
+1. **[Critical] Restore Vertex AI Endpoints:** Investigate the GCP project `148015878263`. Ensure the fine-tuned models are actively deployed to the endpoints referenced in `src/services/agent/fine-tuned-models.ts`. This is the single biggest blocker to a clean technical diligence.
 2. **[Major] Resolve Entity Structure:** Provide the necessary legal documentation reconciling "New Detroit Music LLC" and "indii LLC" to clear Gate 7.
 3. **[Informational] Complete IP Assignment:** Ensure `IP_ASSIGNMENT.md`, `CONTRIBUTORS.md`, and `AI_AUTHORSHIP_DISCLOSURE.md` are signed and reviewed by counsel.
 

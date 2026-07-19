@@ -15,10 +15,12 @@ interface ChecklistItem {
     actionText?: string;
 }
 
+// CRITICAL: Static 'complete' status is FALSE without verification
+// All items start as 'missing' and must be verified before marking complete
 const INITIAL_ITEMS: ChecklistItem[] = [
     { id: 'audio', label: 'Audio Master (16-bit/44.1kHz+)', icon: FileAudio, status: 'missing', required: true, actionText: 'Verify Audio' },
-    { id: 'art', label: 'Cover Art (3000x3000px)', icon: ImageIcon, status: 'complete', required: true },
-    { id: 'metadata', label: 'Title & Release Metadata', icon: AlignLeft, status: 'complete', required: true },
+    { id: 'art', label: 'Cover Art (3000x3000px)', icon: ImageIcon, status: 'missing', required: true, actionText: 'Upload Art' },
+    { id: 'metadata', label: 'Title & Release Metadata', icon: AlignLeft, status: 'missing', required: true, actionText: 'Add Metadata' },
     { id: 'isrc', label: 'ISRC Assignment', icon: Hash, status: 'missing', required: true, actionText: 'Generate ISRC' },
     { id: 'upc', label: 'UPC/EAN Code', icon: Receipt, status: 'missing', required: true, actionText: 'Assign UPC' },
     { id: 'splits', label: 'Contributor Splits', icon: Users, status: 'warning', required: false, actionText: 'Review Splits' },
@@ -42,7 +44,7 @@ export function RegistrationChecklistPanel() {
             title: 'Select Audio Master',
             filters: [{ name: 'Audio', extensions: ['wav', 'aiff', 'flac', 'mp3', 'aac', 'm4a'] }]
         }).catch((err: unknown) => {
-            console.error('[RegistrationChecklistPanel] Select file dialog failed:', err);
+            console.warn('[RegistrationChecklistPanel] Failed to select file:', err);
             toastError(`Failed to open file selection dialog: ${err instanceof Error ? err.message : String(err)}`);
             return null;
         });
@@ -127,8 +129,23 @@ export function RegistrationChecklistPanel() {
         }
     };
 
+
+    const handleUploadCoverArt = async () => {
+        setItemStatus('art', 'checking');
+        toastError('Cover art upload: please add via release form. Requires 3000x3000px minimum.');
+        setItemStatus('art', 'warning');
+    };
+
+    const handleAddMetadata = async () => {
+        setItemStatus('metadata', 'checking');
+        toastError('Metadata must be added in the main release form (title, date, artist). Static defaults are not accepted.');
+        setItemStatus('metadata', 'warning');
+    };
+
     const handleAction = (id: string) => {
         if (id === 'audio') handleAudioVerify();
+        else if (id === 'art') handleUploadCoverArt();
+        else if (id === 'metadata') handleAddMetadata();
         else if (id === 'isrc') handleGenerateISRC();
         else if (id === 'upc') handleAssignUPC();
     };
@@ -138,7 +155,8 @@ export function RegistrationChecklistPanel() {
     const requiredComplete = items.filter(item => item.status === 'complete' && item.required).length;
 
     const progress = Math.round((requiredComplete / totalRequired) * 100);
-    const isReadyForDistribution = progress === 100;
+    // CRITICAL: Only show "Ready" when ALL required items are actually complete
+    const isReadyForDistribution = requiredComplete === totalRequired && totalRequired > 0;
 
     return (
         <div className="rounded-xl border border-white/5 bg-black/40 backdrop-blur-md overflow-hidden flex flex-col">

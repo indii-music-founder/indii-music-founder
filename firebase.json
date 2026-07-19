@@ -12,6 +12,10 @@
     "firestore": {
       "port": 8080
     },
+    "functions": {
+      "port": 5001,
+      "host": "127.0.0.1"
+    },
     "singleProjectMode": false,
     "ui": {
       "enabled": false
@@ -65,7 +69,7 @@
             },
             {
               "key": "Content-Security-Policy",
-              "value": "default-src 'self' blob:; script-src 'self' https://maps.googleapis.com https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/ https://www.gstatic.com/; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com https://fonts.googleapis.com; img-src 'self' data: blob: https://firebasestorage.googleapis.com https://images.unsplash.com https://storage.googleapis.com http://commondatastorage.googleapis.com https://www.google.com; connect-src 'self' blob: https://*.firebaseio.com https://*.firebaseapp.com https://firestore.googleapis.com https://*.firestore.googleapis.com https://firebasestorage.googleapis.com https://storage.googleapis.com https://*.cloudfunctions.net https://maps.googleapis.com https://places.googleapis.com https://cdn.jsdelivr.net https://api.printful.com https://generativelanguage.googleapis.com https://firebasevertexai.googleapis.com https://firebaseremoteconfig.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firebaseinstallations.googleapis.com https://content-firebaseappcheck.googleapis.com https://firebaseappcheck.googleapis.com https://fcmregistrations.googleapis.com https://www.google.com/recaptcha/ https://recaptcha.google.com/ https://developerknowledge.googleapis.com https://*.sentry.io; media-src 'self' blob: https://storage.googleapis.com http://commondatastorage.googleapis.com; worker-src 'self' blob:; frame-src https://www.google.com/recaptcha/ https://recaptcha.google.com/; manifest-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+              "value": "default-src 'self' blob:; script-src 'self' https://maps.googleapis.com https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/ https://www.gstatic.com/; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com https://fonts.googleapis.com; img-src 'self' data: blob: https://firebasestorage.googleapis.com https://images.unsplash.com https://storage.googleapis.com http://commondatastorage.googleapis.com https://www.google.com; connect-src 'self' blob: https://*.firebaseio.com https://*.firebaseapp.com https://firestore.googleapis.com https://*.firestore.googleapis.com https://firebasestorage.googleapis.com https://storage.googleapis.com https://*.cloudfunctions.net https://maps.googleapis.com https://places.googleapis.com https://cdn.jsdelivr.net https://api.printful.com https://firebasevertexai.googleapis.com https://firebaseremoteconfig.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firebaseinstallations.googleapis.com https://content-firebaseappcheck.googleapis.com https://firebaseappcheck.googleapis.com https://fcmregistrations.googleapis.com https://www.google.com/recaptcha/ https://recaptcha.google.com/ https://developerknowledge.googleapis.com https://*.sentry.io; media-src 'self' blob: https://storage.googleapis.com http://commondatastorage.googleapis.com; worker-src 'self' blob:; frame-src https://www.google.com/recaptcha/ https://recaptcha.google.com/; manifest-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
             }
           ]
         }
@@ -76,6 +80,13 @@
         "**/node_modules/**"
       ],
       "public": "packages/landing/dist",
+      "redirects": [
+        {
+          "source": "/updates/:file*",
+          "destination": "https://github.com/indii-music-founder/indii-music-founder/releases/latest/download/:file",
+          "type": 302
+        }
+      ],
       "rewrites": [
         {
           "destination": "/index.html",
@@ -86,6 +97,96 @@
     },
     {
       "headers": [
+        {
+          "source": "/creative",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "no-cache, no-store, must-revalidate"
+            },
+            {
+              "key": "Cross-Origin-Opener-Policy",
+              "value": "same-origin"
+            },
+            {
+              "key": "Cross-Origin-Embedder-Policy",
+              "value": "require-corp"
+            },
+            {
+              "key": "X-Content-Type-Options",
+              "value": "nosniff"
+            },
+            {
+              "key": "X-Frame-Options",
+              "value": "DENY"
+            },
+            {
+              "key": "X-XSS-Protection",
+              "value": "1; mode=block"
+            },
+            {
+              "key": "Referrer-Policy",
+              "value": "strict-origin-when-cross-origin"
+            },
+            {
+              "key": "Permissions-Policy",
+              "value": "camera=(), microphone=(), geolocation=(), payment=()"
+            },
+            {
+              "key": "Strict-Transport-Security",
+              "value": "max-age=31536000; includeSubDomains"
+            },
+            {
+              "key": "Content-Security-Policy",
+              "value": "default-src 'self' blob:; script-src 'self' https://maps.googleapis.com https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/ https://www.gstatic.com/; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com https://fonts.googleapis.com; img-src 'self' data: blob: https://firebasestorage.googleapis.com https://images.unsplash.com https://storage.googleapis.com http://commondatastorage.googleapis.com https://www.google.com https://maps.googleapis.com https://maps.gstatic.com; connect-src 'self' blob: https://*.firebaseio.com https://*.firebaseapp.com https://firestore.googleapis.com https://*.firestore.googleapis.com https://firebasestorage.googleapis.com https://storage.googleapis.com https://*.cloudfunctions.net https://maps.googleapis.com https://places.googleapis.com https://cdn.jsdelivr.net https://api.printful.com https://firebasevertexai.googleapis.com https://firebaseremoteconfig.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firebaseinstallations.googleapis.com https://content-firebaseappcheck.googleapis.com https://firebaseappcheck.googleapis.com https://firebaselogging-pa.googleapis.com https://fcmregistrations.googleapis.com https://www.google.com/recaptcha/ https://recaptcha.google.com/ https://developerknowledge.googleapis.com https://*.sentry.io; media-src 'self' blob: https://storage.googleapis.com http://commondatastorage.googleapis.com; worker-src 'self' blob:; frame-src https://www.google.com/recaptcha/ https://recaptcha.google.com/; manifest-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+            }
+          ]
+        },
+        {
+          "source": "/creative/**",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "no-cache, no-store, must-revalidate"
+            },
+            {
+              "key": "Cross-Origin-Opener-Policy",
+              "value": "same-origin"
+            },
+            {
+              "key": "Cross-Origin-Embedder-Policy",
+              "value": "require-corp"
+            },
+            {
+              "key": "X-Content-Type-Options",
+              "value": "nosniff"
+            },
+            {
+              "key": "X-Frame-Options",
+              "value": "DENY"
+            },
+            {
+              "key": "X-XSS-Protection",
+              "value": "1; mode=block"
+            },
+            {
+              "key": "Referrer-Policy",
+              "value": "strict-origin-when-cross-origin"
+            },
+            {
+              "key": "Permissions-Policy",
+              "value": "camera=(), microphone=(), geolocation=(), payment=()"
+            },
+            {
+              "key": "Strict-Transport-Security",
+              "value": "max-age=31536000; includeSubDomains"
+            },
+            {
+              "key": "Content-Security-Policy",
+              "value": "default-src 'self' blob:; script-src 'self' https://maps.googleapis.com https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/ https://www.gstatic.com/; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com https://fonts.googleapis.com; img-src 'self' data: blob: https://firebasestorage.googleapis.com https://images.unsplash.com https://storage.googleapis.com http://commondatastorage.googleapis.com https://www.google.com https://maps.googleapis.com https://maps.gstatic.com; connect-src 'self' blob: https://*.firebaseio.com https://*.firebaseapp.com https://firestore.googleapis.com https://*.firestore.googleapis.com https://firebasestorage.googleapis.com https://storage.googleapis.com https://*.cloudfunctions.net https://maps.googleapis.com https://places.googleapis.com https://cdn.jsdelivr.net https://api.printful.com https://firebasevertexai.googleapis.com https://firebaseremoteconfig.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firebaseinstallations.googleapis.com https://content-firebaseappcheck.googleapis.com https://firebaseappcheck.googleapis.com https://firebaselogging-pa.googleapis.com https://fcmregistrations.googleapis.com https://www.google.com/recaptcha/ https://recaptcha.google.com/ https://developerknowledge.googleapis.com https://*.sentry.io; media-src 'self' blob: https://storage.googleapis.com http://commondatastorage.googleapis.com; worker-src 'self' blob:; frame-src https://www.google.com/recaptcha/ https://recaptcha.google.com/; manifest-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+            }
+          ]
+        },
         {
           "source": "**/*.@(js|css)",
           "headers": [
@@ -146,7 +247,7 @@
             },
             {
               "key": "Content-Security-Policy",
-              "value": "default-src 'self' blob:; script-src 'self' 'wasm-unsafe-eval' https://maps.googleapis.com https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/ https://www.gstatic.com/; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com https://fonts.googleapis.com; img-src 'self' data: blob: https://firebasestorage.googleapis.com https://images.unsplash.com https://storage.googleapis.com http://commondatastorage.googleapis.com https://www.google.com; connect-src 'self' blob: https://*.firebaseio.com https://*.firebaseapp.com https://firestore.googleapis.com https://*.firestore.googleapis.com https://firebasestorage.googleapis.com https://storage.googleapis.com https://*.cloudfunctions.net https://maps.googleapis.com https://places.googleapis.com https://cdn.jsdelivr.net https://api.printful.com https://generativelanguage.googleapis.com https://firebasevertexai.googleapis.com https://firebaseremoteconfig.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firebaseinstallations.googleapis.com https://content-firebaseappcheck.googleapis.com https://firebaseappcheck.googleapis.com https://firebaselogging-pa.googleapis.com https://fcmregistrations.googleapis.com https://www.google.com/recaptcha/ https://recaptcha.google.com/ https://developerknowledge.googleapis.com https://*.sentry.io; media-src 'self' blob: https://storage.googleapis.com http://commondatastorage.googleapis.com; worker-src 'self' blob:; frame-src https://www.google.com/recaptcha/ https://recaptcha.google.com/; manifest-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+              "value": "default-src 'self' blob:; script-src 'self' 'wasm-unsafe-eval' https://maps.googleapis.com https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/ https://www.gstatic.com/; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com https://fonts.googleapis.com; img-src 'self' data: blob: https://firebasestorage.googleapis.com https://images.unsplash.com https://storage.googleapis.com http://commondatastorage.googleapis.com https://www.google.com https://maps.googleapis.com https://maps.gstatic.com; connect-src 'self' blob: https://*.firebaseio.com https://*.firebaseapp.com https://firestore.googleapis.com https://*.firestore.googleapis.com https://firebasestorage.googleapis.com https://storage.googleapis.com https://*.cloudfunctions.net https://maps.googleapis.com https://places.googleapis.com https://cdn.jsdelivr.net https://api.printful.com https://firebasevertexai.googleapis.com https://firebaseremoteconfig.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firebaseinstallations.googleapis.com https://content-firebaseappcheck.googleapis.com https://firebaseappcheck.googleapis.com https://firebaselogging-pa.googleapis.com https://fcmregistrations.googleapis.com https://www.google.com/recaptcha/ https://recaptcha.google.com/ https://developerknowledge.googleapis.com https://*.sentry.io; media-src 'self' blob: https://storage.googleapis.com http://commondatastorage.googleapis.com; worker-src 'self' blob:; frame-src https://www.google.com/recaptcha/ https://recaptcha.google.com/; manifest-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
             }
           ]
         }

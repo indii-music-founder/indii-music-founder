@@ -1,10 +1,25 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-// Mock firebase/functions (still needed for module resolution)
-const mockHttpsCallable = vi.fn();
+const { mockEditImageFn, mockUploadReferenceMedia } = vi.hoisted(() => {
+    return {
+        mockEditImageFn: vi.fn(),
+        mockUploadReferenceMedia: vi.fn(async (_userId: string, media: string): Promise<string> => {
+            if (media.includes('mask')) return 'gs://mock-bucket.appspot.com/users/test-user/vault/masks/mock-mask.png';
+            if (media.includes('reference')) return 'gs://mock-bucket.appspot.com/users/test-user/vault/objects/mock-reference.png';
+            return 'gs://mock-bucket.appspot.com/users/test-user/vault/objects/mock-image.png';
+        })
+    };
+});
+
 vi.mock('firebase/functions', () => ({
-    httpsCallable: (...args: any[]) => mockHttpsCallable(...args),
+    httpsCallable: () => mockEditImageFn,
     connectFunctionsEmulator: vi.fn(),
+}));
+
+vi.mock('@/services/creative/CreativeStorageService', () => ({
+    CreativeStorageService: {
+        uploadReferenceMedia: (...args: unknown[]) => mockUploadReferenceMedia(...args as [string, string]),
+    },
 }));
 
 // Mock firebase service
@@ -52,13 +67,12 @@ vi.mock('@/core/config/intelligence-models', () => ({
             GENERATION: 'gemini-3-pro-image-preview',
             FAST: 'gemini-2.5-flash-image',
             DIRECT_PRO: 'gemini-3-pro-image-preview',
-            DIRECT_FAST: 'gemini-3.1-flash-image-preview',
+            DIRECT_FAST: 'gemini-3.1-flash-image',
         },
     },
 }));
 
-// Mock InputSanitizer — must expose `sanitize`, `validate`, and `containsInjectionPatterns`
-// to match the real static class API used by DirectImageEditor and EditingService.
+// Mock InputSanitizer
 vi.mock('@/services/intelligence/utils/InputSanitizer', () => ({
     InputSanitizer: {
         sanitize: (p: string) => p,
@@ -76,31 +90,32 @@ vi.mock('./IntelligenceImagePromptService', () => ({
     },
 }));
 
-// Mock DirectImageEditor — editImageDirectly is the actual call path
-// after the Cloud Function → Direct SDK refactor.
-const mockEditImageDirectly = vi.fn();
-vi.mock('@/services/intelligence/generators/DirectImageEditor', () => ({
-    editImageDirectly: (...args: any[]) => mockEditImageDirectly(...args),
-}));
-
 describe('EditingService', () => {
     let EditingService: any;
 
     beforeEach(async () => {
         vi.resetAllMocks();
-        mockEditImageDirectly.mockReset();
+        mockEditImageFn.mockReset();
+        mockUploadReferenceMedia.mockReset();
+        mockUploadReferenceMedia.mockImplementation(async (_userId: string, media: string) => {
+            if (media.includes('mask')) return 'gs://mock-bucket.appspot.com/users/test-user/vault/masks/mock-mask.png';
+            if (media.includes('reference')) return 'gs://mock-bucket.appspot.com/users/test-user/vault/objects/mock-reference.png';
+            return 'gs://mock-bucket.appspot.com/users/test-user/vault/objects/mock-image.png';
+        });
         // Dynamic import to get fresh module each time
         const mod = await import('./EditingService');
-        EditingService = mod.Editing;
+        EditingService = new mod.EditingService();
     });
 
     describe('editImage', () => {
         it('should return an image result from the Direct SDK pipeline', async () => {
-            mockEditImageDirectly.mockResolvedValue({
-                id: 'test-uuid-1',
-                url: 'data:image/png;base64,base64encodeddata==',
-                prompt: 'Edit (Flash): Make the sky blue',
-                thoughtSignature: undefined,
+            mockEditImageFn.mockResolvedValue({
+                data: {
+                    id: 'test-uuid-1',
+                    url: 'data:image/png;base64,base64encodeddata==',
+                    prompt: 'Edit (Flash): Make the sky blue',
+                    thoughtSignature: undefined,
+                }
             });
 
             const result = await EditingService.editImage({
@@ -112,15 +127,20 @@ describe('EditingService', () => {
             expect(result!.url).toContain('data:image/png;base64,');
             expect(result!.prompt).toContain('Make the sky blue');
             expect(result!.id).toBeDefined();
-            expect(mockEditImageDirectly).toHaveBeenCalledTimes(1);
+            expect(mockEditImageFn).toHaveBeenCalledTimes(1);
+            expect(mockEditImageFn).toHaveBeenCalledWith(expect.objectContaining({
+                imageUri: 'gs://mock-bucket.appspot.com/users/test-user/vault/objects/mock-image.png',
+            }));
         });
 
         it('should propagate thought signatures from direct SDK', async () => {
-            mockEditImageDirectly.mockResolvedValue({
-                id: 'test-uuid-2',
-                url: 'data:image/jpeg;base64,flatbase64data==',
-                prompt: 'Edit (Pro): Add rain',
-                thoughtSignature: 'test-sig-123',
+            mockEditImageFn.mockResolvedValue({
+                data: {
+                    id: 'test-uuid-2',
+                    url: 'data:image/jpeg;base64,flatbase64data==',
+                    prompt: 'Edit (Pro): Add rain',
+                    thoughtSignature: 'test-sig-123',
+                }
             });
 
             const result = await EditingService.editImage({
@@ -134,7 +154,7 @@ describe('EditingService', () => {
         });
 
         it('should return null when direct SDK returns null', async () => {
-            mockEditImageDirectly.mockResolvedValue(null);
+            mockEditImageFn.mockResolvedValue({ data: null });
 
             const result = await EditingService.editImage({
                 image: { mimeType: 'image/png', data: 'inputbase64==' },
@@ -144,58 +164,167 @@ describe('EditingService', () => {
             expect(result).toBeNull();
         });
 
+        it('should normalize raw Gemini candidate responses into a displayable data URL', async () => {
+            mockEditImageFn.mockResolvedValue({
+                data: {
+                    candidates: [{
+                        content: {
+                            parts: [{
+                                inlineData: {
+                                    data: 'candidate-base64-data==',
+                                    mimeType: 'image/png',
+                                }
+                            }]
+                        }
+                    }]
+                }
+            });
+
+            const result = await EditingService.editImage({
+                image: { mimeType: 'image/png', data: 'inputbase64==' },
+                prompt: 'Make it cinematic',
+            });
+
+            expect(result).not.toBeNull();
+            expect(result!.url).toBe('data:image/png;base64,candidate-base64-data==');
+            expect(result!.prompt).toBe('Make it cinematic');
+        });
+
         it('should pass forceHighFidelity to direct SDK', async () => {
-            mockEditImageDirectly.mockResolvedValue({
-                id: 'test-uuid-3',
-                url: 'data:image/png;base64,prodata==',
-                prompt: 'Edit (Pro): High quality edit',
+            mockEditImageFn.mockResolvedValue({
+                data: {
+                    id: 'test-uuid-3',
+                    url: 'data:image/png;base64,prodata==',
+                    prompt: 'Edit (Pro): Make it cinematic',
+                }
             });
 
             await EditingService.editImage({
                 image: { mimeType: 'image/png', data: 'inputbase64==' },
-                prompt: 'High quality edit',
+                prompt: 'Make it cinematic',
                 forceHighFidelity: true,
             });
 
-            // Verify editImageDirectly was called with forceHighFidelity
-            expect(mockEditImageDirectly).toHaveBeenCalledWith(expect.objectContaining({
-                forceHighFidelity: true,
-                prompt: 'High quality edit',
-            }));
+            expect(mockEditImageFn).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    forceHighFidelity: true,
+                })
+            );
         });
 
         it('should pass mask data to direct SDK when provided', async () => {
-            mockEditImageDirectly.mockResolvedValue({
-                id: 'test-uuid-4',
-                url: 'data:image/png;base64,maskedresult==',
-                prompt: 'Edit (Flash): Remove the background',
+            mockEditImageFn.mockResolvedValue({
+                data: {
+                    id: 'test-uuid-4',
+                    url: 'data:image/png;base64,maskdata==',
+                    prompt: 'Edit (Pro): Remove the background',
+                }
             });
 
             await EditingService.editImage({
-                image: { mimeType: 'image/png', data: 'base64==' },
+                image: { mimeType: 'image/png', data: 'inputbase64==' },
                 mask: { mimeType: 'image/png', data: 'maskbase64==' },
                 prompt: 'Remove the background',
             });
 
-            expect(mockEditImageDirectly).toHaveBeenCalledWith(expect.objectContaining({
-                mask: { mimeType: 'image/png', data: 'maskbase64==' },
-                prompt: 'Remove the background',
-            }));
+            expect(mockEditImageFn).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    maskUri: 'gs://mock-bucket.appspot.com/users/test-user/vault/masks/mock-mask.png',
+                })
+            );
+        });
+
+        it('should pass reference images to the backend when provided', async () => {
+            mockEditImageFn.mockResolvedValue({
+                data: {
+                    id: 'test-uuid-5',
+                    url: 'data:image/png;base64,refdata==',
+                    prompt: 'Edit (Flash): Use this reference',
+                }
+            });
+
+            await EditingService.editImage({
+                image: { mimeType: 'image/png', data: 'inputbase64==' },
+                referenceImage: { mimeType: 'image/png', data: 'referencebase64==' },
+                prompt: 'Use this reference',
+            });
+
+            expect(mockEditImageFn).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    referenceImageUri: 'gs://mock-bucket.appspot.com/users/test-user/vault/objects/mock-reference.png',
+                })
+            );
+        });
+
+        it('should pass multiple reference images to the backend when provided', async () => {
+            mockUploadReferenceMedia.mockImplementation(async (_userId: string, media: string) => {
+                if (media.includes('reference-1')) return 'gs://mock-bucket.appspot.com/users/test-user/vault/objects/mock-reference-1.png';
+                if (media.includes('reference-2')) return 'gs://mock-bucket.appspot.com/users/test-user/vault/objects/mock-reference-2.png';
+                if (media.includes('mask')) return 'gs://mock-bucket.appspot.com/users/test-user/vault/masks/mock-mask.png';
+                return 'gs://mock-bucket.appspot.com/users/test-user/vault/objects/mock-image.png';
+            });
+            mockEditImageFn.mockResolvedValue({
+                data: {
+                    id: 'test-uuid-6',
+                    url: 'data:image/png;base64,refdata==',
+                    prompt: 'Edit (Pro): Use these references',
+                }
+            });
+
+            await EditingService.editImage({
+                image: { mimeType: 'image/png', data: 'inputbase64==' },
+                referenceImages: [
+                    { mimeType: 'image/png', data: 'reference-1==' },
+                    { mimeType: 'image/png', data: 'reference-2==' },
+                ],
+                prompt: 'Use these references',
+            });
+
+            expect(mockEditImageFn).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    referenceImageUris: [
+                        'gs://mock-bucket.appspot.com/users/test-user/vault/objects/mock-reference-1.png',
+                        'gs://mock-bucket.appspot.com/users/test-user/vault/objects/mock-reference-2.png',
+                    ],
+                })
+            );
+        });
+
+        it('maps raw internal callable failures to an actionable edit message', async () => {
+            mockEditImageFn.mockRejectedValue({ code: 'functions/internal', message: 'internal' });
+
+            await expect(EditingService.editImage({
+                image: { mimeType: 'image/png', data: 'inputbase64==' },
+                prompt: 'Add a small fly',
+            })).rejects.toThrow('Creative edit could not finish because the backend returned an internal error. Your annotations are still on the canvas; try again after the service recovers.');
+        });
+
+        it('maps permission denied callable failures to a backend access message', async () => {
+            mockEditImageFn.mockRejectedValue({ code: 'permission-denied', message: 'Permission denied' });
+
+            await expect(EditingService.editImage({
+                image: { mimeType: 'image/png', data: 'inputbase64==' },
+                prompt: 'Add a small fly',
+            })).rejects.toThrow('Creative edit was denied by the backend. Check access and try again once the service is reachable.');
         });
     });
 
     describe('batchEdit', () => {
         it('should process multiple images and track progress', async () => {
-            mockEditImageDirectly
+            mockEditImageFn
                 .mockResolvedValueOnce({
-                    id: 'batch-1',
-                    url: 'data:image/png;base64,img1==',
-                    prompt: 'Edit (Flash): Enhance all',
+                    data: {
+                        id: 'batch-1',
+                        url: 'data:image/png;base64,img1==',
+                        prompt: 'Edit (Flash): Enhance all',
+                    }
                 })
                 .mockResolvedValueOnce({
-                    id: 'batch-2',
-                    url: 'data:image/png;base64,img2==',
-                    prompt: 'Edit (Flash): Enhance all',
+                    data: {
+                        id: 'batch-2',
+                        url: 'data:image/png;base64,img2==',
+                        prompt: 'Edit (Flash): Enhance all',
+                    }
                 });
 
             const onProgress = vi.fn();
@@ -216,11 +345,13 @@ describe('EditingService', () => {
         });
 
         it('should capture failures individually without stopping batch', async () => {
-            mockEditImageDirectly
+            mockEditImageFn
                 .mockResolvedValueOnce({
-                    id: 'ok-1',
-                    url: 'data:image/png;base64,ok==',
-                    prompt: 'Edit (Flash): Batch test',
+                    data: {
+                        id: 'ok-1',
+                        url: 'data:image/png;base64,ok==',
+                        prompt: 'Edit (Flash): Batch test',
+                    }
                 })
                 .mockRejectedValueOnce(new Error('Safety filter blocked this content'));
 
@@ -241,12 +372,14 @@ describe('EditingService', () => {
 
     describe('withRetry', () => {
         it('should retry on resource-exhausted errors', async () => {
-            mockEditImageDirectly
+            mockEditImageFn
                 .mockRejectedValueOnce({ code: 'resource-exhausted', message: 'Rate limit' })
                 .mockResolvedValueOnce({
-                    id: 'retried-1',
-                    url: 'data:image/png;base64,retried==',
-                    prompt: 'Edit (Flash): Retry test',
+                    data: {
+                        id: 'retried-1',
+                        url: 'data:image/png;base64,retried==',
+                        prompt: 'Edit (Flash): Retry test',
+                    }
                 });
 
             const result = await EditingService.editImage({
@@ -255,7 +388,7 @@ describe('EditingService', () => {
             });
 
             expect(result).not.toBeNull();
-            expect(mockEditImageDirectly).toHaveBeenCalledTimes(2);
+            expect(mockEditImageFn).toHaveBeenCalledTimes(2);
         });
     });
 

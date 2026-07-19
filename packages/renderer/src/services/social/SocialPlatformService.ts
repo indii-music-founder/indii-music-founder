@@ -13,9 +13,11 @@
  *   228 — OAuth token refresh for all platforms
  */
 
-import { db } from '@/services/firebase';
+import { db, functions } from '@/services/firebase';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { httpsCallable } from 'firebase/functions';
 import { logger } from '@/utils/logger';
+import { fetchWithRetry } from '@/utils/async';
 
 export type SocialPlatform = 'twitter' | 'instagram' | 'tiktok' | 'youtube' | 'spotify';
 
@@ -67,7 +69,8 @@ async function getToken(uid: string, platform: SocialPlatform): Promise<Platform
         const ref = doc(db, 'users', uid, 'socialTokens', platform);
         const snap = await getDoc(ref);
         return snap.exists() ? (snap.data() as PlatformToken) : null;
-    } catch {
+    } catch (err) {
+        logger.error(`[SocialPlatformService] Failed to get token for ${platform}:`, err);
         return null;
     }
 }
@@ -97,47 +100,23 @@ export async function refreshPlatformToken(
         return token;
     }
 
-    const refreshEndpoints: Record<string, string> = {
-        instagram: 'https://graph.facebook.com/v20.0/oauth/access_token',
-        youtube: 'https://oauth2.googleapis.com/token',
-        tiktok: 'https://open.tiktokapis.com/v2/oauth/token/',
-        twitter: 'https://api.twitter.com/2/oauth2/token',
-        spotify: 'https://accounts.spotify.com/api/token',
-    };
-
-    const url = refreshEndpoints[platform];
-    if (!url) return token;
-
     try {
-        const body = new URLSearchParams({
-            grant_type: 'refresh_token',
-            refresh_token: token.refreshToken,
-            client_id: '', // Injected from env/Firestore remote config in prod
-        });
+        const refreshSocialToken = httpsCallable<{
+            platform: SocialPlatform;
+            refreshToken: string;
+        }, {
+            accessToken: string;
+            expiresIn: number;
+            newRefreshToken?: string;
+        }>(functions, 'refreshSocialToken');
 
-        const response = await fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: body.toString(),
-            signal: AbortSignal.timeout(10000),
-        });
-
-        if (!response.ok) {
-            logger.error(`[SocialPlatformService] Token refresh failed for ${platform}: ${response.status}`);
-            return null;
-        }
-
-        const data = await response.json() as {
-            access_token: string;
-            refresh_token?: string;
-            expires_in?: number;
-        };
+        const result = await refreshSocialToken({ platform, refreshToken: token.refreshToken });
 
         const refreshed: PlatformToken = {
             ...token,
-            accessToken: data.access_token,
-            refreshToken: data.refresh_token || token.refreshToken,
-            expiresAt: data.expires_in ? Date.now() + data.expires_in * 1000 : undefined,
+            accessToken: result.data.accessToken,
+            refreshToken: result.data.newRefreshToken || token.refreshToken,
+            expiresAt: result.data.expiresIn ? Date.now() + result.data.expiresIn * 1000 : undefined,
         };
 
         await saveToken(uid, platform, refreshed);
@@ -177,7 +156,7 @@ export async function postToTwitter(uid: string, payload: PostPayload): Promise<
     ].filter(Boolean).join('\n\n');
 
     try {
-        const response = await fetch('https://api.twitter.com/2/tweets', {
+        const response = await fetchWithRetry('https://api.twitter.com/2/tweets', {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${token.accessToken}`,
@@ -194,7 +173,7 @@ export async function postToTwitter(uid: string, payload: PostPayload): Promise<
         }
 
         if (!response.ok) {
-            const err = await response.json().catch(() => ({})) as { title?: string };
+            const err = await response.json().catch((e) => { logger.warn('[SocialPlatformService] Failed to parse JSON error response:', e); return {}; }) as { title?: string };
             return { platform: 'twitter', success: false, error: err.title || `Twitter API error ${response.status}` };
         }
 
@@ -239,13 +218,13 @@ export async function postToInstagram(uid: string, payload: PostPayload): Promis
             createParams.set('image_url', payload.mediaUrl);
         }
 
-        const createRes = await fetch(`${base}/${igUserId}/media?${createParams}`, {
+        const createRes = await fetchWithRetry(`${base}/${igUserId}/media?${createParams}`, {
             method: 'POST',
             signal: AbortSignal.timeout(30000),
         });
 
         if (!createRes.ok) {
-            const err = await createRes.json().catch(() => ({})) as { error?: { message: string } };
+            const err = await createRes.json().catch((e) => { logger.warn('[SocialPlatformService] Failed to parse JSON error response:', e); return {}; }) as { error?: { message: string } };
             return { platform: 'instagram', success: false, error: err.error?.message || `Instagram container error ${createRes.status}` };
         }
 
@@ -256,7 +235,7 @@ export async function postToInstagram(uid: string, payload: PostPayload): Promis
             let attempts = 0;
             while (attempts < 12) {
                 await new Promise(r => setTimeout(r, 5000));
-                const statusRes = await fetch(`${base}/${containerId}?fields=status_code&access_token=${token.accessToken}`);
+                const statusRes = await fetchWithRetry(`${base}/${containerId}?fields=status_code&access_token=${token.accessToken}`);
                 const { status_code } = await statusRes.json() as { status_code: string };
                 if (status_code === 'FINISHED') break;
                 if (status_code === 'ERROR') return { platform: 'instagram', success: false, error: 'Instagram video processing failed' };
@@ -265,7 +244,7 @@ export async function postToInstagram(uid: string, payload: PostPayload): Promis
         }
 
         // Step 2: Publish container
-        const publishRes = await fetch(`${base}/${igUserId}/media_publish`, {
+        const publishRes = await fetchWithRetry(`${base}/${igUserId}/media_publish`, {
             method: 'POST',
             body: new URLSearchParams({
                 creation_id: containerId,
@@ -275,7 +254,7 @@ export async function postToInstagram(uid: string, payload: PostPayload): Promis
         });
 
         if (!publishRes.ok) {
-            const err = await publishRes.json().catch(() => ({})) as { error?: { message: string } };
+            const err = await publishRes.json().catch((e) => { logger.warn('[SocialPlatformService] Failed to parse JSON error response:', e); return {}; }) as { error?: { message: string } };
             return { platform: 'instagram', success: false, error: err.error?.message || `Instagram publish error ${publishRes.status}` };
         }
 
@@ -302,7 +281,7 @@ export async function postToTikTok(uid: string, payload: PostPayload): Promise<P
 
     try {
         // Step 1: Initialize upload
-        const initRes = await fetch('https://open.tiktokapis.com/v2/post/publish/video/init/', {
+        const initRes = await fetchWithRetry('https://open.tiktokapis.com/v2/post/publish/video/init/', {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${token.accessToken}`,
@@ -332,7 +311,7 @@ export async function postToTikTok(uid: string, payload: PostPayload): Promise<P
         }
 
         if (!initRes.ok) {
-            const err = await initRes.json().catch(() => ({})) as { error?: { message: string } };
+            const err = await initRes.json().catch((e) => { logger.warn('[SocialPlatformService] Failed to parse JSON error response:', e); return {}; }) as { error?: { message: string } };
             return { platform: 'tiktok', success: false, error: err.error?.message || `TikTok API error ${initRes.status}` };
         }
 
@@ -376,7 +355,7 @@ export async function uploadToYouTube(uid: string, payload: PostPayload): Promis
             },
         };
 
-        const insertRes = await fetch(
+        const insertRes = await fetchWithRetry(
             'https://www.googleapis.com/upload/youtube/v3/videos?uploadType=resumable&part=snippet,status',
             {
                 method: 'POST',
@@ -397,7 +376,7 @@ export async function uploadToYouTube(uid: string, payload: PostPayload): Promis
         }
 
         if (!insertRes.ok) {
-            const err = await insertRes.json().catch(() => ({})) as { error?: { message: string } };
+            const err = await insertRes.json().catch((e) => { logger.warn('[SocialPlatformService] Failed to parse JSON error response:', e); return {}; }) as { error?: { message: string } };
             return { platform: 'youtube', success: false, error: err.error?.message || `YouTube API error ${insertRes.status}` };
         }
 
@@ -405,13 +384,16 @@ export async function uploadToYouTube(uid: string, payload: PostPayload): Promis
         const uploadUrl = insertRes.headers.get('Location');
         logger.info(`[SocialPlatformService] YouTube resumable upload URL obtained: ${uploadUrl?.substring(0, 60)}...`);
 
-        // In production, the Electron main process would stream the video file
-        // to this upload URL using a resumable upload. For now, return the session URL.
+        // ISSUE-884: HONESTY — only the upload *session* exists at this point.
+        // No video bytes have been streamed and YouTube has issued no video ID,
+        // so this must never be reported as a published upload. The byte-stream
+        // step (Electron main PUT to uploadUrl until a video ID returns) is not
+        // implemented yet.
         return {
             platform: 'youtube',
-            success: true,
-            postId: uploadUrl || 'pending',
-            postUrl: uploadUrl ? undefined : 'https://studio.youtube.com',
+            success: false,
+            error: 'YouTube upload session was created, but streaming the video bytes is not yet supported in this build — no video was published.',
+            postUrl: 'https://studio.youtube.com',
         };
     } catch (err: unknown) {
         return { platform: 'youtube', success: false, error: err instanceof Error ? err.message : 'YouTube error' };
@@ -432,7 +414,7 @@ export async function syncSpotifyStats(uid: string, artistId: string): Promise<P
 
     try {
         // Spotify Web API: artist profile (followers, popularity, genres)
-        const artistRes = await fetch(`https://api.spotify.com/v1/artists/${artistId}`, {
+        const artistRes = await fetchWithRetry(`https://api.spotify.com/v1/artists/${artistId}`, {
             headers: { 'Authorization': `Bearer ${token.accessToken}` },
             signal: AbortSignal.timeout(10000),
         });
@@ -497,7 +479,7 @@ export async function syncInstagramStats(uid: string): Promise<PlatformStats> {
 
     try {
         // Get the Instagram Business/Creator account ID linked to the token
-        const meRes = await fetch(
+        const meRes = await fetchWithRetry(
             `https://graph.facebook.com/v19.0/me?fields=instagram_business_account&access_token=${token.accessToken}`,
             { signal: AbortSignal.timeout(10000) }
         );
@@ -516,7 +498,7 @@ export async function syncInstagramStats(uid: string): Promise<PlatformStats> {
             return { platform: 'instagram', fetchedAt: Date.now() };
         }
 
-        const statsRes = await fetch(
+        const statsRes = await fetchWithRetry(
             `https://graph.facebook.com/v19.0/${igId}?fields=followers_count,media_count&access_token=${token.accessToken}`,
             { signal: AbortSignal.timeout(10000) }
         );
@@ -554,7 +536,7 @@ export async function syncTikTokStats(uid: string): Promise<PlatformStats> {
     }
 
     try {
-        const res = await fetch(
+        const res = await fetchWithRetry(
             'https://open.tiktokapis.com/v2/user/info/?fields=follower_count,likes_count,video_count',
             {
                 headers: { 'Authorization': `Bearer ${token.accessToken}` },
@@ -602,7 +584,7 @@ export async function syncTwitterStats(uid: string): Promise<PlatformStats> {
 
     try {
         // Get authenticated user's public metrics
-        const meRes = await fetch('https://api.twitter.com/2/users/me?user.fields=public_metrics', {
+        const meRes = await fetchWithRetry('https://api.twitter.com/2/users/me?user.fields=public_metrics', {
             headers: { 'Authorization': `Bearer ${token.accessToken}` },
             signal: AbortSignal.timeout(10000),
         });
@@ -642,7 +624,7 @@ export async function syncYouTubeStats(uid: string): Promise<PlatformStats> {
     }
 
     try {
-        const res = await fetch(
+        const res = await fetchWithRetry(
             'https://www.googleapis.com/youtube/v3/channels?part=statistics&mine=true',
             {
                 headers: { 'Authorization': `Bearer ${token.accessToken}` },

@@ -126,8 +126,8 @@ You must explicitly sign off on these 12 gates in your report. See `docs/data-ro
 - All code is public-facing (standard practice for early-stage startups)
 
 **GCP Project Access:**
-- Firebase Project ID: `indii-v-1-1`
-- GCP Project: `223837784072`
+- Firebase Project ID: `indii-music-founder`
+- GCP Project: `148015878263`
 - You will receive Viewer IAM role (read-only)
 - Can inspect: Firestore rules, Storage rules, Cloud Functions, Vertex AI endpoints, billing
 

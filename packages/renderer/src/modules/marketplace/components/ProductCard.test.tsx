@@ -8,6 +8,7 @@ import { Product } from '@/services/marketplace/types';
 vi.mock('@/services/marketplace/MarketplaceService', () => ({
     MarketplaceService: {
         purchaseProduct: vi.fn(),
+        hasCompletedPurchase: vi.fn().mockResolvedValue(false),
     },
 }));
 
@@ -45,7 +46,8 @@ describe('ProductCard', () => {
 
         expect(screen.getByText('Test Product')).toBeInTheDocument();
         expect(screen.getByText('A great product')).toBeInTheDocument();
-        expect(screen.getByText('USD 1000')).toBeInTheDocument();
+        // Product.price is stored in cents (1000 = $10.00); the card must format, never show raw cents.
+        expect(screen.getByText('USD 10.00')).toBeInTheDocument();
         expect(screen.getByText('merch')).toBeInTheDocument();
         expect(screen.getByText('Purchase')).toBeInTheDocument();
     });
@@ -56,7 +58,7 @@ describe('ProductCard', () => {
         expect(screen.getByText('Test Product')).toBeInTheDocument();
         // Embedded variant doesn't show description
         expect(screen.queryByText('A great product')).not.toBeInTheDocument();
-        expect(screen.getByText('USD 1000')).toBeInTheDocument();
+        expect(screen.getByText('USD 10.00')).toBeInTheDocument();
         expect(screen.getByText('Buy Now')).toBeInTheDocument();
     });
 

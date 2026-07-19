@@ -16,24 +16,52 @@ This command is run when the feature or task is deemed complete. It ensures ever
 - **Strict Issue Validation:** Do not mark issues fixed based only on broad validation. For each issue, list explicit acceptance criteria and show evidence for each one. If any criterion is not proven, mark the issue PARTIAL or OPEN. For dependency work, npm audit and npm ls must both be clean for the dependencies being claimed fixed. For release/download work, local artifacts are not enough; prove upload path and Founder download authorization. Do not add placeholder records to permanent covenant/source-of-truth files.
 - **Proof of Verification:** You are forbidden from stating "it works" or "I have verified this" without pasting the raw terminal output, test results, or explicit browser DOM state that proves it. If you cannot provide the raw output, the task is incomplete.
 
-## 2. Standardized Closing Process
+## 2. Pattern Health Verification (via `/health`)
+Before finalizing, verify patterns didn't get worse:
+- Run pattern detector again to get final risk score
+- **Compare to baseline:** Did score improve, stay same, or worsen?
+  - ✅ Improved or same: Continue to closing process
+  - ❌ Worsened: STOP, identify what patterns you added, fix them first
+- **Update ledger:** If you discovered new patterns, add to `.agent/test_ledger/GENERATION_FAILURES.md`
+- **Report delta:** "Baseline 100 → Final 95 (-5 improvement)"
+
+## 2.1 Dependency Version Drift Check (MANDATORY)
+Catch package.json/package-lock.json/node_modules disagreements before they cause a silent CI or runtime failure (discovered 2026-07-03 via a `firebase-admin@14.1.0` nested copy shadowing the declared `13.10.0`, which broke `tsc` with cryptic namespace-export errors two steps downstream in the Cloud Functions deploy):
+- Run: `npm run check:dep-drift` (wraps `scripts/check-dep-version-drift.cjs`)
+- This checks every workspace member's declared dependency ranges against what's actually resolved in `node_modules` (nested copy if present, else root-hoisted) — flagging real manifest violations, not ordinary npm dedup (a package legitimately getting its own nested copy because a transitive constraint differs is NOT a violation).
+- **If violations are found:**
+  - Decide per-violation which side is stale: if the installed/locked version is intentional (e.g. a root `overrides` entry, or newer tooling already verified working), update the declared `package.json` range to match reality.
+  - If the declared range is intentional and the install is stale, run a scoped `npm install <dep>@<range>` for that workspace and regenerate the lockfile with `npm install --package-lock-only`.
+  - Never silently downgrade or upgrade a runtime dependency without checking its usage pattern first (e.g. grep for the imported API surface) — a dev-tooling version gap (eslint, typescript) is lower risk than a runtime dependency gap (uuid, firebase-admin) that 30+ files call directly.
+- Re-run `npm run check:dep-drift` after any fix — it must report clean before proceeding to the gauntlet.
+
+## 2.5 Commit & Push All Work (MANDATORY)
+Ensure agent work is saved to GitHub **before** closing:
+- **Check status:** `git status --short`
+- **Commit any uncommitted changes:** If dirty files exist, commit them with conventional message
+- **Push to GitHub:** `git push origin $(git branch --show-current)`
+- **Verify remote:** Confirm commits arrived on GitHub (no "ahead of origin")
+- **This step is MANDATORY:** No session ends with unpushed work
+
+## 3. Standardized Closing Process
 Execute the formal note-taking and checkpointing process:
-- **Documentation:** Generate a summary of the session's learnings, key decisions made, and bugs fixed. Update `.agent/skills/error_memory/ERROR_LEDGER.md` with any new patterns discovered.
+- **Documentation:** Generate a summary of the session's learnings, key decisions made, bugs fixed, and pattern improvements. Update `.agent/skills/error_memory/ERROR_LEDGER.md` with any new patterns discovered.
+- **Pattern Report:** Include delta: "Risk score improved from X to Y" or "Added Z new patterns to watch"
 - **Checkpoints:** Update the agent's distributed checkpoint in `.agent/checkpoints/` with the final state of the work so the next session can pick up cleanly.
 - **Session Checkpoint Script:** Always execute `bash .claude/scripts/checkpoint.sh` before ending the session to commit the final state and ensure the next session picks up cleanly.
 
-## 3. Final Architecture Update (via `/flowchart`)
+## 4. Final Architecture Update (via `/flowchart`)
 If any architecture, state flow, or logic shifted during the execution phase:
 - Invoke the **`/flowchart`** command for a final pass to update or generate the definitive diagrams for what was built.
 - **Save Requirement:** Update the relevant markdown files inside `docs/flowcharts/` as part of the formal closing notes.
 
-## 4. Final Polish Pass (via `/better`)
+## 5. Final Polish Pass (via `/better`)
 Run the session's single final `/better` pass now — BEFORE the CI gauntlet, never after it (polishing after validation would invalidate the validation):
 - Scope it to the files touched this session (`git diff --name-only main...HEAD` plus uncommitted changes).
 - Audit from every angle (Performance, DevEx, Architecture) and elevate to Platinum Quality Standards.
 - Apply any micro-refactors, then let the gauntlet below verify them.
 
-## 5. Resource Cleanup & The Gauntlet (via `/ci-validate`)
+## 6. Resource Cleanup & The Gauntlet (via `/ci-validate`)
 Signal "we're done" and leave a perfectly clean repository and environment:
 - **Resource Cleanup (MANDATORY):** Before finalizing the session, list all background tasks and subagents. You MUST explicitly terminate any running background tasks (using `manage_task` with action `kill`) and all active subagents (using `manage_subagents` with action `kill_all`) to prevent leaking processes or orphaned CPU/memory resource usage.
 - **Uncommitted Workspace Changes Alert (MANDATORY):** You must run a `git status` check at the start of `/end`. If any dirty or untracked files remain in the workspace, you MUST list them prominently in your final session report under a dedicated `### ⚠️ Uncommitted Workspace Changes / Pre-existing Dirty Files` header, explaining which session they belong to and prompting the user for instructions.

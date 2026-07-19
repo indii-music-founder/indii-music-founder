@@ -15,6 +15,19 @@ export interface CloudRenderResponse {
     publicUrl?: string;
 }
 
+/**
+ * ISSUE-995: a render still processing on Cloud Run has no real shareable
+ * URL yet. Callers must branch on `status` instead of treating every
+ * return value as a finished, shareable link.
+ */
+export interface QueuedRenderResult {
+    status: 'queued';
+    renderId: string;
+    bucketName: string;
+}
+
+export type RenderResult = string | QueuedRenderResult;
+
 export class RenderService {
     /**
      * Dispatches a render job to Google Cloud Run so it doesn't block the UI/Electron thread.
@@ -83,7 +96,7 @@ export class RenderService {
      * Note: This requires a Node.js environment (Electron Main process or Server).
      * In the browser/renderer process, this will throw an error or need a cloud delegate.
      */
-    async renderComposition(config: RenderConfig): Promise<string> {
+    async renderComposition(config: RenderConfig): Promise<RenderResult> {
         // If the configuration explicitly asks for the cloud queue, delegate it
         if (config.useCloudQueue) {
             const cloudResponse = await this.renderCompositionCloud(config);
@@ -91,8 +104,14 @@ export class RenderService {
             if (cloudResponse.publicUrl) {
                 return cloudResponse.publicUrl;
             }
-            // Otherwise return a marker string for the caller to poll
-            return `CLOUD_QUEUED:${cloudResponse.renderId}:${cloudResponse.bucketName}`;
+            // ISSUE-995: previously encoded this as a `CLOUD_QUEUED:...` string
+            // and callers displayed it as a "shareable URL" — it isn't one.
+            // Return a typed status so callers can't mistake it for a link.
+            return {
+                status: 'queued',
+                renderId: cloudResponse.renderId,
+                bucketName: cloudResponse.bucketName,
+            };
         }
 
         try {

@@ -71,6 +71,20 @@ export const departmentCssVars = {
     investor: '--color-dept-distribution', // Investor portal shares Distribution
     settings: '--color-dept-social',       // Settings uses Social cyan
     registration: '--color-dept-licensing', // Registration uses Licensing teal
+    notes: '--color-dept-licensing',                 // Notes shares Memory/Licensing teal
+    'founders-recognition': '--color-dept-brand',   // Founders Recognition uses Brand amber
+    memory: '--color-dept-social',                  // Memory uses Social cyan
+    capture: '--color-dept-social',                 // Capture uses Social cyan
+    observability: '--color-dept-distribution',     // Observability uses Distribution blue
+    history: '--color-dept-default',                // History uses default
+    'video-popout': '--color-dept-creative',        // Video Popout uses Creative purple
+    'mobile-remote': '--color-dept-default',        // Mobile Remote uses default
+    analytics: '--color-dept-distribution',         // Analytics uses Distribution blue
+    desktop: '--color-dept-default',                // Desktop uses default
+    security: '--color-dept-legal',                 // Security uses Legal slate
+    devops: '--color-dept-distribution',            // DevOps uses Distribution blue
+    screenwriter: '--color-dept-creative',          // Screenwriter uses Creative purple
+    crm: '--color-dept-marketing'                   // CRM uses Marketing magenta
 } as const;
 
 /**
@@ -360,6 +374,16 @@ export const moduleColors: Record<ModuleId, ModuleColor> = {
         hoverBg: 'hover:bg-teal-500/5',
         cssVar: '--color-dept-licensing',
     },
+    notes: {
+        // Notes shares Memory's teal note-taking surface
+        text: 'text-teal-400',
+        bg: 'bg-teal-500/10',
+        border: 'border-teal-500',
+        ring: 'focus-within:ring-teal-500/50',
+        hoverText: 'hover:text-teal-300',
+        hoverBg: 'hover:bg-teal-500/5',
+        cssVar: '--color-dept-licensing',
+    },
     marketplace: {
         // Marketplace shares Brand's amber (product identity)
         text: 'text-dept-brand',
@@ -461,12 +485,12 @@ export const moduleColors: Record<ModuleId, ModuleColor> = {
         cssVar: '--color-dept-default',
     },
     'devops': {
-        text: 'text-purple-500',
-        bg: 'bg-purple-500/10',
-        border: 'border-purple-500',
-        ring: 'focus-within:ring-purple-500/50',
-        hoverText: 'hover:text-purple-400',
-        hoverBg: 'hover:bg-purple-500/5',
+        text: 'text-green-500',
+        bg: 'bg-green-500/10',
+        border: 'border-green-500',
+        ring: 'focus-within:ring-green-500/50',
+        hoverText: 'hover:text-green-400',
+        hoverBg: 'hover:bg-green-500/5',
         cssVar: '--color-dept-default',
     },
     'screenwriter': {
@@ -486,6 +510,15 @@ export const moduleColors: Record<ModuleId, ModuleColor> = {
         hoverText: 'group-hover:text-violet-300',
         hoverBg: 'hover:bg-violet-500/20',
         cssVar: '262 83% 58%'
+    },
+    'founders-recognition': {
+        text: 'text-amber-400',
+        bg: 'bg-amber-500/10',
+        border: 'border-amber-500/20',
+        ring: 'ring-amber-500/30',
+        hoverText: 'group-hover:text-amber-300',
+        hoverBg: 'hover:bg-amber-500/20',
+        cssVar: '--color-dept-brand'
     }
 };
 

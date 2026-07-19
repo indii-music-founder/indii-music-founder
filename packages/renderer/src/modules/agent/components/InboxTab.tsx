@@ -251,7 +251,7 @@ const EmailDetailView: React.FC<{
                         <p className="text-xs text-slate-500">{fullMessage.from.email}</p>
                     </div>
                     <span className="text-xs text-slate-600 ml-auto shrink-0">
-                        {new Date(fullMessage.date).toLocaleString()}
+                        {new Date(fullMessage.date).toLocaleString('en-US')}
                     </span>
                 </div>
 
@@ -320,7 +320,7 @@ const ComposeModal: React.FC<{
     const [to, setTo] = useState(replyTo ? replyTo.from.email : '');
     const [subject, setSubject] = useState(replyTo ? `Re: ${replyTo.subject}` : '');
     const [body, setBody] = useState(replyTo
-        ? `\n\n---\nOn ${new Date(replyTo.date).toLocaleString()}, ${replyTo.from.name} wrote:\n> ${replyTo.snippet}`
+        ? `\n\n---\nOn ${new Date(replyTo.date).toLocaleString('en-US')}, ${replyTo.from.name} wrote:\n> ${replyTo.snippet}`
         : ''
     );
     const [accountId, setAccountId] = useState(accounts[0]?.id || '');
@@ -449,6 +449,8 @@ const InboxTab: React.FC = () => {
         emailMarkAsRead,
         emailToggleStar,
         emailRemoveMessage,
+        emailAppendMessages,
+        emailUpdateMessage,
         emailFilteredMessages,
         emailUnreadCount,
         emailSetAccounts,
@@ -473,6 +475,8 @@ const InboxTab: React.FC = () => {
         emailMarkAsRead: s.emailMarkAsRead as (messageId: string) => void,
         emailToggleStar: s.emailToggleStar as (messageId: string) => void,
         emailRemoveMessage: s.emailRemoveMessage as (messageId: string) => void,
+        emailAppendMessages: s.emailAppendMessages as (messages: EmailMessage[]) => void,
+        emailUpdateMessage: s.emailUpdateMessage as (messageId: string, updates: Partial<EmailMessage>) => void,
         emailFilteredMessages: s.emailFilteredMessages as () => EmailMessage[],
         emailUnreadCount: s.emailUnreadCount as () => number,
         emailSetAccounts: s.emailSetAccounts as (accounts: import('@/services/email/types').EmailAccount[]) => void,
@@ -525,10 +529,11 @@ const InboxTab: React.FC = () => {
                 const { EmailService } = await import('@/services/email/EmailService');
                 await EmailService.markAsRead(msg.provider, msg.providerMessageId);
             } catch {
-                // Optimistic update is fine even if API call fails
+                emailUpdateMessage(msg.id, { isRead: false });
+                showToast('Failed to mark message as read', 'error');
             }
         }
-    }, [emailSelectMessage, emailMarkAsRead]);
+    }, [emailSelectMessage, emailMarkAsRead, emailUpdateMessage, showToast]);
 
     const handleStar = useCallback(async (msg: EmailMessage) => {
         emailToggleStar(msg.id);
@@ -538,12 +543,14 @@ const InboxTab: React.FC = () => {
         } catch {
             // Revert optimistic update
             emailToggleStar(msg.id);
+            showToast('Failed to update star', 'error');
         }
-    }, [emailToggleStar]);
+    }, [emailToggleStar, showToast]);
 
     const handleTrash = useCallback(async (msg: EmailMessage) => {
+        const wasSelected = emailSelectedMessage?.id === msg.id;
         emailRemoveMessage(msg.id);
-        if (emailSelectedMessage?.id === msg.id) {
+        if (wasSelected) {
             emailSelectMessage(null);
         }
         try {
@@ -551,9 +558,13 @@ const InboxTab: React.FC = () => {
             await EmailService.trashMessage(msg.provider, msg.providerMessageId);
             showToast('Message moved to trash', 'success');
         } catch {
+            emailAppendMessages([msg]);
+            if (wasSelected) {
+                emailSelectMessage(msg);
+            }
             showToast('Failed to trash message', 'error');
         }
-    }, [emailRemoveMessage, emailSelectedMessage, emailSelectMessage, showToast]);
+    }, [emailRemoveMessage, emailSelectedMessage, emailSelectMessage, emailAppendMessages, showToast]);
 
     const handleSendEmail = useCallback(async (data: ComposeEmailData) => {
         const success = await emailSend(data);

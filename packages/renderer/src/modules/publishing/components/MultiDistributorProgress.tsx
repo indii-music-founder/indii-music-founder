@@ -2,7 +2,7 @@ import React from 'react';
 import { motion } from 'motion/react';
 import {
     Loader2, CheckCircle2, XCircle, Clock,
-    ArrowRight, AlertCircle, RefreshCw, X
+    AlertCircle, RefreshCw, X
 } from 'lucide-react';
 import type { DistributorId } from '@/services/distribution/types/distributor';
 
@@ -144,9 +144,7 @@ export const MultiDistributorProgress: React.FC<MultiDistributorProgressProps> =
             {/* Footer */}
             {overallProgress === 100 && (
                 <div className="p-6 border-t border-gray-800 bg-green-500/[0.02]">
-                    <button className="w-full py-3 bg-white text-black rounded-xl font-bold text-sm hover:bg-gray-200 transition-all flex items-center justify-center gap-2">
-                        View Releases <ArrowRight size={18} />
-                    </button>
+                    <p className="text-center text-green-400 font-semibold text-sm">Distribution complete.</p>
                 </div>
             )}
         </div>

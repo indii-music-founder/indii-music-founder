@@ -1,5 +1,5 @@
 import React from 'react';
-import { Lock, Sparkles, Star, Wand2 } from 'lucide-react';
+import { Lock, Sparkles, Star, Wand2, Shield } from 'lucide-react';
 import { auth } from '@/services/firebase';
 
 interface CanvasHeaderProps {
@@ -11,6 +11,11 @@ interface CanvasHeaderProps {
     processingStatus?: string;
     isHighFidelity: boolean;
     setIsHighFidelity: (val: boolean) => void;
+    modelTier?: 'fast' | 'pro';
+    resolution?: string;
+    aspectRatio?: string;
+    grounding?: boolean;
+    imageSize?: string;
 }
 
 export const CanvasHeader: React.FC<CanvasHeaderProps> = ({
@@ -22,19 +27,25 @@ export const CanvasHeader: React.FC<CanvasHeaderProps> = ({
     processingStatus,
     isHighFidelity,
     setIsHighFidelity,
+    modelTier,
+    resolution,
+    aspectRatio,
+    grounding,
+    imageSize,
 }) => {
     const isAuthenticated = !!auth.currentUser;
+    const effectiveModel = modelTier || (isHighFidelity ? 'pro' : 'fast');
 
     return (
-        <header className="grid grid-cols-[minmax(140px,1fr)_minmax(320px,560px)_minmax(140px,1fr)] items-center gap-4 px-5 py-3 border-b border-white/10 bg-[#050608]/95 backdrop-blur-xl">
+        <header className="grid grid-cols-[minmax(140px,1fr)_minmax(320px,560px)_minmax(140px,1fr)] items-start gap-4 px-5 py-3 border-b border-white/10 bg-[#050608]/95 backdrop-blur-xl">
             <div className="min-w-0 flex items-center gap-2">
                 <h3 className="text-sm font-bold text-white truncate">
                     Creative Editor
                 </h3>
             </div>
 
-            <div className="min-w-0 flex justify-center">
-                <div className="flex w-full items-center gap-2 bg-gray-900/50 border border-white/5 p-1 px-2 rounded-xl backdrop-blur-md shadow-inner ring-1 ring-white/10 group/magic focus-within:ring-dept-creative/50 transition-all duration-300">
+            <div className="min-w-0 flex flex-col items-center">
+                <div className="flex w-full max-w-[560px] items-center gap-2 bg-gray-900/50 border border-white/5 p-1 px-2 rounded-xl backdrop-blur-md shadow-inner ring-1 ring-white/10 group/magic focus-within:ring-dept-creative/50 transition-all duration-300">
                     <Sparkles size={14} className="text-dept-creative animate-pulse" />
                     <input
                         type="text"
@@ -70,18 +81,46 @@ export const CanvasHeader: React.FC<CanvasHeaderProps> = ({
                         )}
                     </button>
 
-                    {/* High Fidelity Toggle */}
-                    <button
-                        onClick={() => setIsHighFidelity(!isHighFidelity)}
-                        title={isHighFidelity ? "Switch to High Speed (Flash)" : "Switch to High Fidelity (Pro)"}
-                        className={`p-1.5 px-3 rounded-lg border transition-all flex items-center gap-1.5 ${isHighFidelity
-                            ? 'bg-amber-500/20 border-amber-500/50 text-amber-500 shadow-lg shadow-amber-500/20 font-bold'
-                            : 'bg-gray-800 border-gray-700 text-gray-500 hover:text-white font-medium'
-                            }`}
-                    >
-                        <Star size={12} fill={isHighFidelity ? "currentColor" : "none"} />
-                        <span className="text-[10px] uppercase tracking-wider">{isHighFidelity ? "Pro" : "Flash"}</span>
-                    </button>
+                    <div className="flex items-center gap-1.5">
+                        {/* High Fidelity Toggle */}
+                        <button
+                            onClick={() => setIsHighFidelity(!isHighFidelity)}
+                            title={isHighFidelity ? "Switch to High Speed (Flash)" : "Switch to High Fidelity (Pro)"}
+                            aria-label={isHighFidelity ? "Model quality: Pro" : "Model quality: High Speed"}
+                            className={`p-1.5 px-3 rounded-lg border transition-all flex items-center gap-1.5 ${isHighFidelity
+                                ? 'bg-amber-500/20 border-amber-500/50 text-amber-500 shadow-lg shadow-amber-500/20 font-bold'
+                                : 'bg-gray-800 border-gray-700 text-gray-500 hover:text-white font-medium'
+                                }`}
+                        >
+                            <Star size={12} fill={isHighFidelity ? "currentColor" : "none"} />
+                            <span className="text-[10px] uppercase tracking-wider">{isHighFidelity ? "Pro" : "Speed"}</span>
+                        </button>
+
+                        {effectiveModel === 'pro' && (
+                            <div className="flex items-center gap-1.5 rounded-lg border border-amber-500/20 bg-amber-500/10 px-2 py-1 text-[10px] font-semibold text-amber-200">
+                                <Shield size={11} />
+                                Higher cost
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                <div className="mt-2 flex w-full max-w-[560px] flex-wrap items-center justify-center gap-1.5 text-[10px] text-gray-400">
+                    <span className="rounded-full border border-white/8 bg-white/4 px-2 py-1 text-gray-300">
+                        {isHighFidelity ? 'High Fidelity' : 'Rapid Edit'}
+                    </span>
+                    <span className="rounded-full border border-white/8 bg-white/4 px-2 py-1">
+                        {effectiveModel === 'pro' ? 'Tier: Pro' : 'Tier: Flash'}
+                    </span>
+                    <span className="rounded-full border border-white/8 bg-white/4 px-2 py-1">
+                        {imageSize || resolution || '2K'}
+                    </span>
+                    <span className="rounded-full border border-white/8 bg-white/4 px-2 py-1">
+                        {grounding ? 'Grounded' : 'Ungrounded'}
+                    </span>
+                    <span className="rounded-full border border-white/8 bg-white/4 px-2 py-1">
+                        {aspectRatio || '1:1'}
+                    </span>
                 </div>
             </div>
 

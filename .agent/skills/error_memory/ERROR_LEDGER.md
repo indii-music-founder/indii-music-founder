@@ -1,3 +1,279 @@
+## 2026-06-30 WorkspaceSyncService Phase 1 Integration — Three Zustand Pattern Errors
+
+**SEVERITY:** Medium (CI test failures, fixed via commits 49e27e476 + 5feb481a6)
+
+**MISTAKES (3x Pattern Violations):**
+
+### 1. Zustand subscribe() listener signature — used (state, prevState) instead of (state)
+- FILE: `packages/renderer/src/hooks/useWorkspaceSync.ts` (lines 129–157)
+- Called `useStore.subscribe((state, prevState) => { if (state.x !== prevState.x) ... })` 
+- **Zustand's subscribe method only passes the current state** to the listener; there is no `prevState` parameter
+- CI: "Cannot read property of prevState" or similar, blocking all tests that render App
+
+**FIX:** Track previous state manually in a closure variable
+```typescript
+let prevState = useStore.getState();
+const unsub = useStore.subscribe((state) => {
+  if (state.foo !== prevState.foo) { queuePush(); }
+  prevState = state;
+});
+```
+
+### 2. Confused Zustand store for React hook — tried to call `.subscribe()` on a hook-like name
+- FILE: `packages/renderer/src/hooks/useWorkspaceSync.ts` (line 148)
+- Called `useLivingPlanSlice.subscribe(...)` assuming it was unavailable in test env
+- **`useLivingPlanSlice` is a Zustand store created with `create()`, not a React hook**, despite the `use*` prefix
+- In codebase: Zustand stores ARE named `use*` (e.g., `useStore`, `useLivingPlanSlice`) but they're store instances, not React hooks
+- Caused confusion about whether `.subscribe()` would be available; actually always available (unless explicitly mocked in tests)
+
+**FIX (for future):** Before calling `.subscribe()`, check the declaration to confirm it's a `const useFoo = create(...)` store, not a function hook. The `use*` prefix is **not** a reliable indicator.
+
+### 3. Root-level hook mounted stores without defensive availability checks
+- FILE: `packages/renderer/src/core/App.tsx` mounts `useWorkspaceSync()`
+- Hook tries to subscribe to stores during effect phase, but in test environments, stores might not be fully initialized
+- Result: **SidebarNavigation.test.tsx and other App-rendering tests failed** because the hook threw during effect mount
+
+**FIX:** Add defensive checks before subscribing
+```typescript
+if (typeof useStore.subscribe !== 'function' || typeof useLivingPlanSlice.subscribe !== 'function') {
+  logger.warn('[WorkspaceSync] Store subscribe methods unavailable, skipping sync setup');
+  return;
+}
+const unsub = useStore.subscribe(...);
+```
+
+**PREVENTION:** 
+1. Every `store.subscribe()` call must track prevState manually (see [[zustand-subscribe-listener-signature]])
+2. Zustand stores use `use*` prefix despite being callable outside React (see [[hook-vs-store-naming-convention]])
+3. Root-level hooks (mounted in App.tsx) must defensively check `typeof store.subscribe === 'function'` before using it (see [[test-env-hook-initialization-safety]])
+
+---
+
+## 2026-06-30 Misdiagnosed Own Regression as "Pre-existing Flakiness" — App Check Electron Skip-Logic
+
+**SEVERITY:** High (McLEAR RULE violation — declared CI green without verifying the actual cause)
+
+**MISTAKE:**
+- FILE: `packages/renderer/src/services/firebase.ts` (App Check skip logic)
+- During the WorkspaceSyncService Phase 1 commit (3473d1c26), unplanned scope creep changed:
+  ```typescript
+  // BEFORE (correct, tested):
+  const skipAppCheckInElectron = isElectron;
+  // AFTER (broken):
+  const skipAppCheckInElectron = isElectron && !env.DEV;
+  ```
+- This violated a documented architectural invariant: App Check must ALWAYS be skipped in Electron (DEV or PROD) because ReCaptcha Enterprise requires a web origin and Electron has no Referer headers (see memory: `appcheck-disabled-pending-recaptcha-domain.md`).
+- CI run failed `firebase.appcheck.test.ts > should NOT initialize App Check in Electron environment (empty Referer headers)`.
+- **The agent assumed this was "pre-existing flakiness... unrelated to sync changes"** and reported Phase 1 as CI-green without checking `git log -- firebase.ts` or `git show <own-sha> -- firebase.ts`. The user had to point back at the actual failing job link before the agent investigated and found its own regression.
+
+**FIX:** Reverted to the original, tested skip logic (`skipAppCheckInElectron = isElectron`, unconditional).
+
+**PREVENTION:** Before calling ANY CI failure "pre-existing" or "unrelated," run `git log --oneline -5 -- <failing-test-file> <source-under-test>` and `git show <own-recent-sha> -- <file>` to verify. Never dismiss on assumption — this is a direct violation of the McLEAR RULE ("never ever ever declare victory ever" without rigorous verification). See [[never-dismiss-ci-failure-without-blame-check]].
+
+---
+
+## 2026-06-24 Arcjet Lazy Initialization TypeScript Complexity → Revert to Eager Init
+
+**SEVERITY:** Low (local issue, resolved before CI run)
+
+**MISTAKE:**
+- FILE: `packages/firebase/src/functions/security/arcjet.ts`
+- Attempted to make Arcjet client initialization lazy with type: `let baseArcjet: ReturnType<typeof arcjet> | null = null`
+- Then tried to type dependent clients as: `ReturnType<typeof baseArcjet.withRule>` when baseArcjet could be null
+- TypeScript cannot infer the type when the variable is possibly null, leading to: `error TS18047: 'baseArcjet' is possibly 'null'`
+
+**FIX:** Reverted to original eager initialization (original pattern was correct).
+```typescript
+const baseArcjet = arcjet({ ... }); // Eager, not lazy
+const authenticatedApiArcjet = baseArcjet.withRule(...);
+```
+
+**PREVENTION:** When initializing polymorphic clients that have dependent types (like Arcjet), prefer eager initialization over lazy unless there's a compelling performance reason. Lazy init adds type complexity that often isn't worth it for startup-time operations.
+
+**LEARNING:** Simple code beats clever code. The original eager init was the right choice.
+
+---
+
+## 2026-06-22 window.location access without SSR guard → TypeError in test env
+
+**SEVERITY:** Medium (3 test failures, blocking CI lint gate on `App.test.tsx`)
+
+**MISTAKE:**
+- FILE: `packages/landing/src/App.tsx` (`App` component)
+- Direct `window.location.hostname.startsWith(...)` and `window.location.search.includes(...)` called at component top-level without `typeof window !== 'undefined'` guard.
+- In jsdom test environments, `window.location.search` is `undefined` if not explicitly mocked, causing `TypeError: Cannot read properties of undefined (reading 'includes')`.
+
+**FIX:**
+```tsx
+const isFounderDomain = typeof window !== 'undefined' && window.location && window.location.hostname && window.location.hostname.startsWith('founder');
+const hasQueryFlag = typeof window !== 'undefined' && window.location && window.location.search &&
+  (window.location.search.includes('founder=true') || window.location.search.includes('thesis=true'));
+```
+
+**PREVENTION:** Every `window.location.*` access in component scope (not inside an effect or event handler) MUST be guarded with `typeof window !== 'undefined' && window.location && window.location.<prop>`. Never assume the test environment fully mocks `window.location`.
+
+---
+
+## 2026-06-22 Duplicate Global Interface Augmentation → TS2717 Type Conflict
+
+**SEVERITY:** Medium (typecheck fails, blocks CI)
+
+**MISTAKE:**
+- Added `declare global { interface Window { electronAPI?: ElectronAPI } }` inline inside a `.ts` service file when an authoritative `electron.d.ts` already declares the same augmentation.
+- TypeScript raises `TS2717: Subsequent property declarations must have the same type` even if both sides declare identical shapes, because the same property is augmented twice from different files.
+
+**FIX:** Never add a `declare global { interface Window { … } }` in a non-`.d.ts` file. Always extend the canonical `packages/renderer/src/types/electron.d.ts` instead. For new IPC surfaces, add the property directly to the `ElectronAPI` interface in that file and export a named type alias for complex nested shapes (e.g., `RemoteMobilePayload`).
+
+**DETECTION:** `error TS2717: Subsequent property declarations must have the same type. Property 'X' must be of type 'Y', but here has type 'Y'.` — even when "Y" looks identical, it means the augmentation exists elsewhere.
+
+---
+
+## 2026-06-22 Lazy useState Initializer Regressed into useEffect+setState (lint error + 3 broken landing tests, left uncommitted)
+
+**SEVERITY:** Medium (1 ESLint **error** that fails the CI lint gate + 3 failing `packages/landing/src/App.test.tsx` tests). Caught only because it was left as a dirty working-tree change during an unrelated refactor; had a checkpoint hook `git add -A`'d it, it would have broken CI under someone else's name.
+
+**MISTAKE:**
+- FILE: `packages/landing/src/page.tsx` (`Home` component, `isThesisOpen` state).
+- An agent took a correct **lazy `useState` initializer** that derives initial state from `window` synchronously and rewrote it into `useState(false)` + a `useEffect(() => { … setIsThesisOpen(true) }, [])`.
+- TWO failures result:
+  1. **Lint error** — `Calling setState synchronously within an effect can trigger cascading renders` (a hard error, not a warning, so it fails `npm run lint` in CI).
+  2. **3 test failures** — `App.test.tsx` asserts the thesis/founder-mode state on the **initial render**. The lazy initializer set it during first render; the effect sets it on a *later* tick, so the initial-render assertions now fail.
+- The agent's underlying INTENT was valid (add `hostname.includes('founders')` detection). The implementation, not the feature, caused the regression.
+
+**FIX (the right way — keep it synchronous):** extend the lazy initializer; do NOT move derived-from-`window` initial state into an effect.
+```tsx
+const [isThesisOpen, setIsThesisOpen] = useState(() => {
+  if (typeof window === 'undefined') return false;
+  const { hostname, search, hash } = window.location;
+  return hostname.includes('founders') || search.includes('thesis=true') || hash.includes('#thesis');
+});
+```
+
+**PREVENTION (what NOT to do / what to do):**
+1. **Do not convert a lazy `useState(() => …)` initializer into `useState(initial)` + `useEffect(setState)`.** If initial state can be computed synchronously (incl. from `window`/`document` behind a `typeof window !== 'undefined'` guard), compute it in the initializer. Effects that immediately `setState` cause an extra render and trip the lint rule. Reserve effects for *subscriptions* and *post-mount* side effects, not initial derivation.
+2. **Never leave a broken change uncommitted in the shared working tree.** Run `npm run lint` + the package's tests on any file you touch BEFORE moving on. A dirty file that fails lint/tests is a landmine — a checkpoint/Stop hook doing `git add -A` can sweep it into someone else's commit and fail CI under the wrong author.
+3. **Detect:** `npm run lint` surfaces the rule by name (`setState synchronously within an effect`). For initial-render test breakage, run the touched package's tests (`npm test -- --run packages/landing`).
+
+## 2026-06-21 Stale Hardcoded Fine-Tuned Endpoint Registry — Re-Tune Minted New IDs in a New Location
+
+**SEVERITY:** High (after an R8 re-tune of all agents, the frontend endpoint registry pointed at dead May endpoints in the wrong region; every agent would 404 → silently fall back to base model, i.e. NONE of the freshly-trained agents would actually serve)
+
+**MISTAKE:**
+- FILE: `packages/renderer/src/services/agent/fine-tuned-models.ts` — `DIRECT_FINE_TUNED_MODEL_REGISTRY` hand-hardcodes 20 agents to `projects/148015878263/locations/us-central1/endpoints/<id>`. Those IDs + location were from the **May 2026** R8 run.
+- DISCOVERY: User re-tuned all agents (R8 re-run, jobs `JOB_STATE_SUCCEEDED` 2026-06-21). Verified via REST: `GET https://us-central1-aiplatform.googleapis.com/v1/projects/indii-music-founder/locations/us-central1/tuningJobs` (23 jobs). Each succeeded job's `tunedModel.endpoint` is in **`locations/us`** (multi-region), NOT `us-central1`, with **brand-new endpoint IDs**. Examples: `marketing → endpoints/126382264543084544`, `video → endpoints/5283003837882302464`, plus NEW agents `hospitality` + `event-planner` that aren't in the old registry at all.
+- WHY IT'S DANGEROUS: TypeScript compiles fine, the registry's `VERTEX_ENDPOINT_PATTERN` still matches (it only checks shape, not liveness), so the app "looks fine." But `us-central1` endpoints list is `[]` → every tuned call 404s. With `DISABLE_FINE_TUNED=false` + the new runtime auto-fallback, agents silently drop to base `gemini-3.1-flash-lite` — so the user thinks they're talking to trained agents and they are NOT.
+- CONTEXT: `gcloud ai endpoints list`/`models list` were BLANK in `us-central1` and `gcloud auth` had expired (`Reauthentication failed`). Real source of truth was the **tuningJobs REST endpoint** read with `gcloud auth print-access-token`. NOTE: the `us` multi-region host is `https://us-aiplatform.googleapis.com` (consistent with the global-host rule from 2026-06-20 — location prefixes the host).
+
+**FIX (process, not just data):**
+1. Endpoint IDs/location must come from a **synced/generated surface**, regenerated from `tuningJobs`/`endpoints list` after every re-tune — never hand-typed across frontend modules. Codified as Platinum Anti-Pattern #9 "Hardcoded Infrastructure Identifiers (Frontend)".
+2. When refreshing the registry: pick each agent's LATEST succeeded job by `endTime` (e.g. `generalist` had two succeeded jobs — `1720656532632240128` @16:31 beats `7678918839643406336` @15:58), and update the location to `us`.
+3. Backend `generateContentStream` already parses `locations/<loc>` from the model path and builds the client for that location, so routing to `us` works once the registry carries the right path — but verify `getVertexAIClient`/`vertexClient.ts` builds `https://us-aiplatform.googleapis.com` for `location='us'`.
+
+**PREVENTION:** Treat any `endpoints/<digits>`, `locations/<region>`, or `projects/<number>` literal in `packages/renderer/` as a defect. Detect: `grep -rnE "endpoints/[0-9]{6,}|locations/(us|us-central1|global)/|projects/[0-9]{6,}" packages/renderer/src`. The source of truth for "which endpoint serves agent X" is Vertex, queried live — a checked-in copy must be generated, single-file, and stamped with its regen command. After ANY re-tune, re-sync before claiming agents are live (don't trust the registry; curl the endpoint).
+
+## 2026-06-20 Chat Double-Broken — App Check Missing siteKey + Dead Fine-Tuned Endpoints + Wrong 'global' Vertex Host
+
+**SEVERITY:** Critical (Boardroom Conductor + all Vertex AI agents 500/404; three stacked root causes, each masking the next)
+
+**MISTAKE / CHAIN (peeled one at a time via prod logs + direct Vertex calls):**
+1. **App Check siteKey unset.** `firebaseappcheck...recaptchaEnterpriseConfig` for the web app had `tokenTtl`+`riskAnalysis` defaults but **no `siteKey`** → backend `verifyToken` rejected every client token → `401`. The reCAPTCHA Enterprise key (`6LdAqPcs…`) and its allowed domains (incl. `indii.music`) were fine; App Check just wasn't told which key to trust. FIX: `PATCH recaptchaEnterpriseConfig?updateMask=siteKey` with the site key. (Verify config via `GET …/recaptchaEnterpriseConfig` + `x-goog-user-project` header; ADC needs a quota project.)
+2. **Fine-tuned Vertex endpoints all undeployed.** `gcloud ai endpoints list --region=us-central1` → `[]`. The client registry (`packages/renderer/src/services/agent/fine-tuned-models.ts`) hardwires all 20 agents to `endpoints/<id>` that 404. `generateContentStream` passed them straight to Vertex → `404 Endpoint not found` → `500`. FIX: committed-code fallback in `index.ts` — any `endpoints/…` model routes to the base model `gemini-3.1-flash-lite` (what they were tuned from). Default-ON (`process.env.DISABLE_FINE_TUNED !== 'false'`) so it survives CI deploys with no `.env`. Set `DISABLE_FINE_TUNED=false` to restore real endpoints once redeployed.
+3. **`vertexClient.ts` built the wrong host for `location='global'`.** `https://${location}-aiplatform.googleapis.com` → `https://global-aiplatform.googleapis.com` = `404`. The correct global host is `https://aiplatform.googleapis.com` (no prefix). This silently broke EVERY base-model (non-fine-tuned) Vertex call. FIX: special-case `location === 'global'` → `https://aiplatform.googleapis.com`. Verified `gemini-3.1-flash-lite:streamGenerateContent` returns `200` at the correct host (and `404` at the wrong one). NOTE: `gemini-3.1-flash-lite` exists only in `global`, not `us-central1`; the fallback explicitly uses `getVertexAIClient(undefined, 'global')`.
+
+**DURABILITY TRAP:** All `packages/firebase/.env*` are gitignored, and CI (`deploy.yml`) DOES `firebase deploy --only functions` with no `.env`. So runtime flags set only in `.env` (e.g. `DISABLE_FINE_TUNED`, `SKIP_APP_CHECK`) do NOT survive a CI deploy, and CI hardcodes `VITE_USE_FINE_TUNED_AGENTS: "true"` (still sends dead endpoints). PREVENTION: fixes that must survive CI belong in **committed code defaults**, not gitignored `.env`. The fallback + global-host fixes are committed; App Check enforces by default (`SKIP_APP_CHECK !== 'true'`) which is correct now that the siteKey is bound.
+
+**PREVENTION (general):** When a request "fails", peel layers from the logs — App Check `401` masked a Vertex `404` masked a wrong-host `404`. Verify each external dependency DIRECTLY (curl Vertex with `gcloud auth print-access-token`) instead of inferring through the app. Webhooks (stripe/telegram/inngest/pandadoc) do NOT enforce App Check, so fleet-wide enforcement is safe.
+
+## 2026-06-20 App Check Re-Enable Blocked — Live Web Client Can't Mint a Token reCAPTCHA Accepts
+
+**SEVERITY:** High (re-enabling App Check enforcement 401s ALL real Boardroom chat traffic → AI down)
+
+**MISTAKE:**
+- FILES: `packages/firebase/.env` (`SKIP_APP_CHECK`), `packages/firebase/src/index.ts` (`ENFORCE_APP_CHECK`, manual verify in `generateContentStream`), client `packages/renderer/src/services/firebase.ts` (App Check init) + `services/intelligence/FirebaseIntelligenceService.ts` (attaches `x-firebase-appcheck`).
+- TEST: Canary — set `SKIP_APP_CHECK=false`, redeployed ONLY `generateContentStream`, sent one real Boardroom message from `indii.music`. Logs: CORS preflight `204`, then the real POST `401` (one attempt took 303ms = it actually called `admin.appCheck().verifyToken()` and the token FAILED; a follow-up was `401` in 6ms = no/again-invalid token).
+- CONCLUSION: The deployed web client cannot produce an App Check token the backend will accept. The CI secret `VITE_FIREBASE_APP_CHECK_KEY` IS set (so the client initializes App Check), so the failure is downstream: the reCAPTCHA **Enterprise** key almost certainly does not list `indii.music` (and/or the web app isn't registered to that exact key in Firebase Console → App Check, or the secret's key value ≠ the registered key). This matches the original "fix(security): bypass App Check ... mitigate frontend API key restrictions" regression — someone hit this same wall and hardcoded the bypass instead of fixing the Console config.
+- FIX (immediate): Rolled back — `SKIP_APP_CHECK=true`, redeployed `generateContentStream`. AI restored. App Check remains OFF pending Console config. **`index.ts` is now correctly env-driven, so once the Console is fixed, re-enabling is just `.env` `SKIP_APP_CHECK=false` + redeploy — no code change.**
+- PREVENTION / TO RE-ENABLE LATER (needs Console/owner, can't be done from code):
+  1. Firebase Console → App Check → Apps: confirm the **web** app is registered with the **reCAPTCHA Enterprise** provider and note the exact site key.
+  2. GCP Console → reCAPTCHA Enterprise → that key → **Domains**: add `indii.music` (and any other prod hostnames). This is the most likely missing piece.
+  3. Confirm GitHub secret `VITE_FIREBASE_APP_CHECK_KEY` value === that registered site key.
+  4. ONLY THEN run the canary again (`SKIP_APP_CHECK=false`, redeploy `generateContentStream`, send one message, expect `200`). Never flip the whole fleet before the single-function canary returns `200`.
+
+## 2026-06-20 Mobile Remote "Handoff Won't Hold" — Background Timer Throttle Starves Heartbeat
+
+**SEVERITY:** High (iPhone indii-remote pairing flaps connected↔reconnecting and eventually unpairs while driving the studio)
+
+**MISTAKE:**
+- FILES: `packages/renderer/src/services/agent/RemoteRelayService.ts` (`DESKTOP_HEARTBEAT_STALE_MS`), `packages/renderer/src/hooks/useRemoteCommandListener.ts` (desktop heartbeat loop), `packages/renderer/src/modules/mobile-remote/MobileRemote.tsx` (`markDesktopOffline`).
+- SYMPTOM: The phone pairs, then "doesn't permanently grab hold" — it repeatedly drops to `pairing`/`idle` and unpairs even though auth (custom token) is still valid.
+- CAUSE: The phone treats the desktop as offline if no fresh presence heartbeat arrives within `DESKTOP_HEARTBEAT_STALE_MS`. That was **15s**, but the desktop heartbeat is a `setTimeout`-based 5s loop. When the desktop studio tab is **backgrounded** (the normal case while controlling from a phone) or the machine dims/locks, browsers throttle background-tab timers to **~once per minute**, so beats arrive ~every 60s — past the 15s gate. The phone fires `markDesktopOffline`, exhausts `maxReconnectAttempts`, and tears down to `idle` + `setIsPaired(false)`. It recovers on the next throttled beat, then drops again — a permanent flap. This is distinct from the 2026-06-11 navigation-desync heartbeat bug.
+- FIX: (1) Widen `DESKTOP_HEARTBEAT_STALE_MS` 15s → **65s** so a single throttled beat keeps the pairing alive; a genuinely closed desktop is still detected within ~65s. (2) On the desktop, push an immediate heartbeat on `visibilitychange→visible` so recovery on tab refocus is instant instead of waiting for the next throttled tick.
+- PREVENTION: Never gate a cross-device "is it alive" check on a window tighter than the **background-throttled** beat interval (~60s), not the foreground interval. Any presence/heartbeat consumed by a phone must assume the producer tab is frequently hidden. Where sub-minute liveness truly matters, drive the producer's heartbeat from a Web Worker (less aggressively throttled) rather than a main-thread `setTimeout`.
+- VERIFICATION: Unit — `RemoteRelayService.test.ts` (10 tests, boundary cases reference the constant symbolically, still green). Real-world hold requires a two-device test (desktop backgrounded + iPhone remote) — NOT yet confirmed on-device.
+
+## 2026-06-20 Vitest Zustand Mock Property Missing (useStore.getState()... is not a function)
+**SEVERITY:** High (Causes test suite crashes in components accessing new Zustand slice methods)
+
+**MISTAKE:**
+- FILES: `packages/renderer/src/test/setup.ts`, any component test using `useStore`.
+- ERROR: `TypeError: useStore.getState(...).updateLoopExecution is not a function` during Vitest runs.
+- CAUSE: When adding new methods to a Zustand slice (e.g., `updateLoopExecution` in `agentOrchestrationSlice`), the `useStoreMock` object defined in `packages/renderer/src/test/setup.ts` must be manually updated to include a mock implementation (e.g., `updateLoopExecution: vi.fn()`). If omitted, tests rendering components that call these methods will throw a `TypeError` when the component mounts or the method is invoked.
+- FIX: Update `useStoreMock` in `packages/renderer/src/test/setup.ts` with all newly added state properties and functions from the respective Zustand slices.
+- PREVENTION: Whenever extending the Zustand store with new state or methods, ALWAYS update the `useStoreMock` object in `setup.ts` to ensure tests have access to the complete interface.
+
+## 2026-06-19 Vitest Dynamic Import Mock Hoisting (editImageFn is not a function)
+**SEVERITY:** High (Causes full test suite crashes for Firebase Function wrappers)
+
+**MISTAKE:**
+- FILES: `EditingService.test.ts`, any file dynamically importing `firebase/functions`.
+- ERROR: `TypeError: editImageFn is not a function` during Vitest runs.
+- CAUSE: When dynamically importing `firebase/functions` inside the tested service, `vi.mock('firebase/functions')` in the test file initializes correctly. However, if the mock uses variables (e.g. `mockEditImageFn`) that are defined with `const` above `vi.mock`, Vitest's hoisting mechanism lifts `vi.mock` ABOVE the variable declaration. This causes the mock implementation to capture `undefined`, crashing the test when the mocked function is called.
+- FIX: Use `vi.hoisted()` to initialize mock state and functions before `vi.mock` captures them. Example: `const { mockFn } = vi.hoisted(() => ({ mockFn: vi.fn() }));`
+- PREVENTION: Whenever relying on local variables inside a `vi.mock` factory, always wrap the variable declarations in `vi.hoisted()` to guarantee correct initialization order.
+
+## 2026-06-19 The Illusion of the Surface Fix (Ghost Identity Leak in CI/CD)
+
+**SEVERITY:** Critical (causes "Project suspended" errors, blocks live functionality even when code is 100% clean)
+
+**MISTAKE:**
+- FILES: Codebase `.env`, hardcoded files, AND GitHub Action Secrets.
+- ERROR: `Project indii-v-1-1 is suspended`. The agent purged all references to `indii-v-1-1` from the codebase, but the CI/CD pipeline injected the old project ID via GitHub Secrets (`VITE_FIREBASE_PROJECT_ID`).
+- CAUSE: A clean local build can still compile with toxic configuration if the CI pipeline environment variables are outdated. The agent assumed changing the local `.env` and `grep`ing the code was enough, failing to realize that `deploy.yml` pulls from `secrets.VITE_FIREBASE_PROJECT_ID`.
+- FIX: After cleaning the code, MUST authenticate with `gh` CLI and execute `gh secret set <KEY> -b "<VALUE>"` for `VITE_FIREBASE_PROJECT_ID`, `VITE_VERTEX_PROJECT_ID`, etc., to sync the CI environment with the active `indii-music-founder` project.
+- PREVENTION: When changing core infrastructure identities (Project IDs, Database Names, Vertex Endpoints), you MUST audit both the code AND the deployment pipeline secrets. A surface fix in the code is an illusion if the build server injects the old identity.
+
+## 2026-06-19 JSDOM Image Onload Promise Hang in Vitest Unit Tests
+**SEVERITY:** High (causes Vitest unit test suite to hang and time out after 30s in CI/CD)
+
+**MISTAKE:**
+- FILES: `packages/renderer/src/services/creative/CreativeStorageService.ts`
+- ERROR: Unit tests in `ImageGenerationService.test.ts` (specifically `should handle image uploads (reference images)`) hung indefinitely and timed out after 30000ms.
+- CAUSE: When uploading reference images, the code called `CreativeStorageService.compressImage`, which attempted to load the image onto a `new Image()` and awaited its `onload` event to perform canvas-based downscaling. In JSDOM (the Vitest test environment), `window` and `document` are defined, but the mock DOM implementation of `new Image()` does not load image data or fire the `onload` event, causing the promise to hang.
+- FIX: Modified `CreativeStorageService.compressImage` to detect the test environment (`process.env.VITEST || process.env.NODE_ENV === 'test'`) and immediately return the original uncompressed media, avoiding the image loading promise entirely.
+- PREVENTION: Always bypass or mock asynchronous browser-only APIs (like image loading, audio decoding, and canvas rendering) when running unit tests under JSDOM.
+
+## 2026-06-14 Zustand Subscription Leaks on Logout
+
+**SEVERITY:** Medium (causes Firestore permission errors and memory leaks when switching users)
+
+**MISTAKE:**
+- FILES: `packages/renderer/src/core/store/slices/agent/agentOrchestrationSlice.ts`, `packages/renderer/src/core/store/slices/agent/agentSessionSlice.ts`, `packages/renderer/src/core/store/slices/creative/creativeHistorySlice.ts`, `packages/renderer/src/core/store/slices/financeSlice.ts`, `packages/renderer/src/core/store/slices/subscriptionSlice.ts`
+- ERROR: When a user logged out, file-scoped Firestore unsubscribe callbacks (`graphListeners`, `executionUnsubscribe`, `agentSessionsUnsubscribe`, `creativeHistoryUnsubscribe`, `financeUnsubscribe`) were not cleared. This caused permission denied exceptions in the background console because Firestore listeners tried to run using the previous credentials.
+- CAUSE: File-scoped listeners are outside of the standard Zustand slice state registry, so a simple state reset or calling `clearAllSubscriptions` did not execute the closure references.
+- FIX: Added explicit reset exporter functions (`resetGraphListeners`, `resetAgentSessionsListener`, `resetCreativeHistoryListener`, `resetFinanceListener`) to clear file-scoped unsubscribe callbacks, and updated `clearAllSubscriptions` in `subscriptionSlice.ts` to dynamically import and invoke them.
+- PREVENTION: Avoid using file-scoped variables for active listeners if possible. If they are necessary, expose a dedicated cleanup utility and call it during the logout action.
+
+## 2026-06-14 Electron Preload type definitions out of sync with main process
+
+**SEVERITY:** High (causes typescript compilation failures during package typechecking)
+
+**MISTAKE:**
+- FILES: `packages/shared/src/ipc/electron-api.types.ts`
+- ERROR: Preload declared `daw` and `video.render` namespace methods, but the renderer and shared type definitions lacked these properties in the `ElectronAPI` definition.
+- CAUSE: Interface declarations inside `electron-api.types.ts` fell out of sync with actual IPC handlers exposed in `packages/main/src/preload.ts`.
+- FIX: Synchronized the types by adding `ElectronDawAPI` and updating `ElectronVideoAPI` with the missing methods.
+- PREVENTION: When adding or removing IPC handlers in `preload.ts`, immediately update `electron-api.types.ts` to match the exact properties.
+
 ## 2026-06-04 Electron macOS Hidden Window Reactivation Hang
 
 **SEVERITY:** High (causes application to become completely unresponsive to launcher clicks or new instance launches, appearing "hung" in background)
@@ -492,8 +768,8 @@ When a CI shard fails:
 - SEVERITY: Critical (entire Creative Studio editor non-functional)
 - FILE: `packages/renderer/src/modules/creative/services/CanvasOperationsService.ts`
 - BUG: `fabric.Image.fromURL(url, { crossOrigin: 'anonymous' })` silently fails when Firebase Storage doesn't return `Access-Control-Allow-Origin` headers. The promise had NO `.catch()` handler, so the canvas stayed blank with zero user feedback. Clicking "Save" then persisted an empty canvas to the gallery, cluttering it with blank assets.
-- ROOT CAUSE: Firebase Storage bucket `gs://indii-v-1-1.firebasestorage.app` had no CORS policy applied (the `config/cors.json` file existed but was never deployed via `gsutil`).
-- FIX (server): `gsutil cors set config/cors.json gs://indii-v-1-1.firebasestorage.app`
+- ROOT CAUSE: Firebase Storage bucket `gs://indii-music-founder.firebasestorage.app` had no CORS policy applied (the `config/cors.json` file existed but was never deployed via `gsutil`).
+- FIX (server): `gsutil cors set config/cors.json gs://indii-music-founder.firebasestorage.app`
 - FIX (client): Added `loadImageSafe()` with 3-tier fallback:
   1. Direct `fabric.Image.fromURL` with `crossOrigin: 'anonymous'`
   2. Fetch via `safeStorageFetch` → `URL.createObjectURL(blob)` (blob URLs are same-origin, bypass CORS)
@@ -948,3 +1224,178 @@ Before pushing any branch, run `/plat` (see `.claude/commands/plat.md`). It exec
 - CAUSE: The `useFirestoreRelay` state-push effect dependencies ran the unmount cleanup on every navigation or mode switch, writing `online: false` to the relay document before writing `online:true`. The companion reacted by immediately disconnecting and reconnecting.
 - FIX: Decoupled the heartbeat loop from navigation state updates using `enabledRef.current` and a mount-once effect, so the heartbeat runs continuously without unmounting, and write `online: false` only on true hook unmount/disable.
 - PREVENTION: Heartbeat loops should be isolated from rapid UI navigation paths. Use mutable references (`useRef`) to store connection state and run the heartbeat loop inside a mount-once effect.
+
+## 2026-06-20 Cloud Functions Deployment Quota 409 Silent Errors
+
+**SEVERITY:** High (silent deployment failures)
+
+**MISTAKE:**
+- FILES: packages/firebase/src/functions/agent/agentLoopCron.ts, packages/firebase/src/lib/vertexClient.ts
+- ERROR: `HTTP Error: 409` due to quota limits on updating multiple Cloud Run services simultaneously.
+- CAUSE: When deploying a large number of Cloud Functions simultaneously, Google Cloud Run quotas limit concurrent updates, causing some updates to fail silently or hang in the background.
+- FIX: Run targeted deployments using `--only functions:functionName` for the specific failed functions to force updates through the quota limits.
+- PREVENTION: Ensure CI or deployment pipelines verify successful update operations for critical functions instead of relying on the global "Deploy complete" flag, or use batched deployments.
+
+## 2026-06-20 Unbundled Monorepo Workspace Import Crashes ALL Cloud Functions on Cold-Start
+
+**SEVERITY:** Critical (took down the entire AI backend — every function — in production; surfaced to users as a misleading "App Check token" error)
+
+**MISTAKE:**
+- FILES: `packages/firebase/src/functions/agent/agentLoopCron.ts` (the offending import), `packages/firebase/src/index.ts` (loads it at module scope).
+- ERROR (Cloud Run logs): `Error: Cannot find module '@indii/shared'` → `Require stack: /workspace/lib/functions/agent/agentLoopCron.js → /workspace/lib/index.js`; `Could not load the function, shutting down.`; container `exit(1)`; `Container Healthcheck failed`; deploy `UpdateFunction` returns status code 3.
+- USER-VISIBLE SYMPTOM: The Boardroom Conductor chat returned `Error: Unauthorized: Missing App Check token`. This was a **red herring** — the live `generateContentStream` was the OLD (App-Check-enforcing) revision still serving, because the fixed revision's deploy was rejected by the load-check crash. The error looked like an App Check problem but the real cause was a module-load failure.
+- CAUSE: The autonomous-agent-loop feature added `import { AgentLoopStatusEnum } from '@indii/shared'` at the TOP of `agentLoopCron.ts`. `@indii/shared` is a monorepo **workspace** package — it resolves at `tsc` compile time but is **NOT bundled into the Firebase deploy artifact** (it is not a published npm dependency and not listed in `packages/firebase/package.json`). Because `index.ts` imports `agentLoopCron` at module scope, the missing module crashed the load of `index.js` — so EVERY function in the codebase failed cold-start, not just the agent loop.
+- FIX: Removed the workspace import; emit the literal value instead (e.g. `status: 'IDLE'` instead of `AgentLoopStatusEnum.enum.IDLE`). Rebuilt (`npm run build`) so `lib/` is clean, then redeployed. Verified via `mcp__firebase__functions_get_logs` that `generateContentStream` no longer logs `Cannot find module '@indii/shared'`.
+- PREVENTION:
+  1. NEVER import an unbundled monorepo workspace package (`@indii/shared`, `@indii/*`) at the **module top-level** of any file in `packages/firebase/src` that is reachable from `index.ts`. Firebase deploys only the functions dir + its npm deps; workspace symlinks do not travel. Use literal values, inline the needed type, or add the package to `package.json` dependencies as a publishable/bundled artifact.
+  2. DIAGNOSE FROM LOGS, NOT THE SYMPTOM STRING: a backend 401/"App Check" error can mask a cold-start crash on a stale revision. Always pull `functions_get_logs` for the **specific function the client calls** before assuming the error string is the cause.
+  3. KNOW WHICH FUNCTION THE CLIENT HITS: the Boardroom Conductor calls `generateContentStream` (see `FirebaseIntelligenceService.getBackendStreamUrl()`), NOT `agentStreamResponse`. Deploying/fixing the wrong function wastes a cycle.
+  4. After deploy, verify the **target** function's revision actually updated (deploy can reject a function with status 3 while reporting overall success for the rest).
+
+## 2026-07-02 Hunter Session - Autorater Prompt Mutation Loop
+- SEVERITY: High
+- FILE: packages/renderer/src/services/agent/AgentService.ts
+- BUG: The VisualOutputAutorater passed the full "correction prompt" as the `originalBrief` back into `sendMessage`. Because the correction prompt contains dynamic error messages, the hashing algorithm generated a new hash every time, circumventing the `MAX_CORRECTION_ATTEMPTS` limit and causing an infinite generation loop.
+- FIX: Updated `sendMessage` signature to accept `originalBrief` via options, and passed the original brief through untouched to `triggerVisualAutorater`.
+
+## 2026-07-02 Hunter Session - Local Zustand State Lost on Reload
+- SEVERITY: High
+- FILE: packages/renderer/src/hooks/useWorkspaceSync.ts
+- BUG: Boardroom messages are stored locally in Zustand and do not automatically sync to Firestore sessions. The `WorkspaceSyncService` syncs the entire workspace state, but `useWorkspaceSync` had an "echo guard" that rejected loading the cloud snapshot if it originated from the same device ID. This caused all boardroom messages to disappear if the user simply refreshed their browser tab.
+- FIX: Added a bypass to the echo guard in `useWorkspaceSync`: if the local state is completely empty but the cloud snapshot has messages, it will auto-rehydrate regardless of the device ID.
+
+## 2026-07-02 Hunter Session - Image Generation Subject Hallucination
+- SEVERITY: Medium
+- FILE: packages/renderer/src/services/agent/instruments/ImageGenerationInstrument.ts
+- BUG: The image generation tool defaulted to adding human subjects to the generated images when the prompt was vague, even if the user never requested humans or shared pictures of themselves.
+- FIX: Explicitly updated the instrument `description` and input `schema` to strictly instruct the model NOT to hallucinate people/human subjects unless the user explicitly asks for them.
+
+## 2026-07-02 Hunter Session - Creative Color Name Palette Render Bug
+- SEVERITY: High
+- FILE: packages/renderer/src/modules/marketing/components/brand-manager/VisualsPanel.tsx, packages/renderer/src/modules/creative/components/ImageSubMenu.tsx, packages/renderer/src/utils/colorUtils.ts
+- BUG: Brand colors generated by AI agents frequently store colors as semantic/creative names (e.g., "Midnight Shadow", "Midnight Shadow (#0b0c10)"). In the UI, rendering via raw `style={{ backgroundColor: color }}` failed for non-hex CSS strings, causing the palette boxes to render completely black/blank and breaking the native `<input type="color">` components.
+- FIX: Created a robust `parseColor` utility in `colorUtils.ts` that handles custom name/hex combos, standard CSS names, fallback dictionary matches, and deterministic string hashing. Integrated this utility to correctly extract hex values for rendering and input values while retaining semantic labels.
+
+## 2026-07-02 Hunter Session - Brand Assets Missing from Creative Director (Somatic Connection)
+- SEVERITY: Medium
+- FILE: packages/renderer/src/modules/creative/components/CharacterLibrary.tsx
+- BUG: Images uploaded to Brand HQ (like headshots of the user's face) were stored in `userProfile.brandKit.brandAssets` but were completely inaccessible in the Creative Studio (Art Department) Character Library modal, forcing users to manually upload their photos twice.
+- FIX: Integrated `userProfile.brandKit` assets directly into `CharacterLibrary.tsx`. Added an "Import from Brand HQ" grid within the "Add Character Reference" modal to dynamically load and ingest user brand assets.
+
+## 2026-07-02 Fable Session - Global ToastContext Test Mock API Drift
+- SEVERITY: Medium
+- FILE: packages/renderer/src/test/setup.ts
+- BUG: The global `vi.mock('@/core/context/ToastContext')` exposed only `addToast`/`removeToast`, but the real `ToastContextType` API is `success/error/info/warning/loading/updateProgress/dismiss/promise`. Any component test exercising `toast.success(...)` crashed with "toast.success is not a function" — masking real component behavior and forcing per-test workarounds.
+- FIX: The global mock now mirrors the full `ToastContextType` surface. PATTERN: when globally mocking a context/service in test setup, mirror its complete public API — a partial mock silently breaks every future test that touches the unmocked half.
+
+## 2026-07-02 Fable Session - Fabricated Provider-Success Fallbacks (marketing service layer)
+- SEVERITY: High
+- FILE: packages/renderer/src/services/marketing/{SMSMarketingService,EmailMarketingService,SocialAutoPosterService}.ts, providerErrors.ts
+- BUG: Catch blocks for undeployed provider callables returned plausible fallback values — "queued locally", `'pending'` status, zero-filled analytics, `revokePost() → true` — so the UI reported deliveries/cancellations that never happened (ISSUE-665/666/667; same family as ISSUE-497).
+- FIX: Introduced typed `MarketingProviderUnavailableError`; every provider-callable catch now throws it and UI callers surface the message. PATTERN: a catch block must never return a value shaped like success. If the provider didn't confirm, throw a typed unavailable error and let the UI show an honest state. Regression suite: providerHonesty.test.ts.
+
+## 2026-07-03 Callable returns bare "internal" + ZERO server logs = missing IAM invoker (silent org-policy strip)
+
+**SEVERITY:** Critical (56 of 130 Cloud Functions unreachable by anyone; Magic Edit, video pipeline, PandaDoc, webhooks, healthchecks all dead)
+
+**ERROR:** Firebase `httpsCallable` rejects with `FirebaseError{code:'functions/internal', message:'internal'}` (UI shows a bare red "internal" toast). `gcloud logging read` shows **zero "Function execution started" entries** for the function — ever — while OTHER functions and Storage uploads from the same client session succeed.
+
+**CAUSE:** The function has **no `allUsers → roles/cloudfunctions.invoker` binding**, so Google Front End returns 403 before the container runs (nothing logs, Sentry sees nothing). Historical root cause: org policy `constraints/iam.allowedPolicyMemberDomains` blocked public members at CREATE time; firebase-tools warns-and-continues and **never retries the grant on subsequent deploys**, so functions stay broken forever even after the policy is relaxed (project override is now `allValues: ALLOW`).
+
+**DIAGNOSIS (5 minutes, no auth to the app needed):**
+1. `curl -s -o /dev/null -w "%{http_code}" -X POST https://us-central1-<project>.cloudfunctions.net/<fn> -H "Content-Type: application/json" -d '{"data":{}}'` → **403 = IAM-blocked** (broken); **401/400 = reachable** (healthy — framework rejected auth/payload, which is correct).
+2. Gen1: `gcloud functions get-iam-policy <fn> --region=us-central1` — empty policy confirms it. **Gen2 CAVEAT:** empty function-level policy is NORMAL for Gen2 (invoker lives on the Cloud Run service) — the curl probe is ground truth, NOT `get-iam-policy`. (This false-flagged `generateImageV3`/`enforceOperationCost` before re-probing showed 401.)
+
+**FIX:** `gcloud functions add-invoker-policy-binding <fn> --region=us-central1 --member="allUsers"` — scope to client-called callables + inbound webhooks + healthchecks ONLY (never blanket-grant crons/orchestrators; Scheduler invokes those via OIDC). Full inventory + grant list: `.agent/test_ledger/OPEN_ISSUES.md` ISSUE-672/673.
+
+**PREVENTION:**
+1. Post-deploy CI probe: curl every renderer-called callable, fail the deploy on 403 (grep list: `rg -oU "httpsCallable[^)]*?['\"]([a-zA-Z0-9_]+)['\"]" -r '$1' packages/renderer/src | sort -u`).
+2. NEVER diagnose a callable "internal" error client-side first — check server execution logs; zero logs means the request never arrived (IAM/network), and no client-side error-message fix can help.
+3. Related trap: `enforceAppCheck: true` + Electron (which skips App Check init by design) = second 401 blocker hiding behind the first — see OPEN_ISSUES ISSUE-677.
+
+## 2026-07-07 Sync Session - Cross-Device Sync Race Condition (AppInitializationProvider)
+- SEVERITY: High
+- FILE: packages/renderer/src/providers/AppInitializationProvider.tsx
+- BUG: On app startup or reload, the heavy initialization functions `initializeHistory()` and `loadProjects()` were called immediately once auth is defined (Effect 3). However, the actual user profile loads asynchronously (Effect 2) and updates the active organization ID (`currentOrganizationId`) in the Zustand store. Because Effect 3 did not list `currentOrganizationId` as a dependency, the active history and project subscriptions remained bound to the default fallback organization ID (`'org-default'`) instead of switching to the user's real organization ID. This race condition prevented new devices (like iPads) from syncing or loading the created assets/projects of the laptop session.
+- FIX: Added `currentOrganizationId` to the state selectors and to the dependencies list of the data initialization effect in `AppInitializationProvider.tsx`, ensuring subscriptions cleanly re-bind when the profile loads and switches organizations.
+- PREVENTION: Always include store-state variables that dictate Firestore path paths (like org IDs or project IDs) in the dependency arrays of `useEffect` blocks that establish Firestore subscriptions/data fetchers.
+
+## 2026-07-08 Space-in-Path Node Native Dependency Rebuild Issue (keytar)
+- SEVERITY: High
+- FILE: node_modules/keytar/build/Release/keytar.node (and any C++ bindings compiled via node-gyp)
+- BUG: If the parent/workspace directory path or the user's HOME directory contains space characters (e.g. `/Volumes/X SSD 2025/Users/narrowchannel`), running `electron-rebuild` or `node-gyp rebuild` will fail compile/link steps. The space causes clang++ to split includes incorrectly (e.g., parsing `SSD` and `2025/Users/...` as separate files), throwing file-not-found errors during compilation. 
+- FIX: Compile the native module in a path without spaces (such as `/tmp/rebuild-workspace/node_modules/keytar`) and set the `HOME` environment variable to a directory without spaces (e.g. `HOME=/tmp/gyp-home`) during rebuild. This ensures header files are downloaded to a space-free path, generating correct compiler flags. Copy the resulting `<addon>.node` binary back to the local `node_modules` directory before packaging.
+- PREVENTION: Never execute `@electron/rebuild` or `electron-builder install-app-deps` directly in environments where workspace or user paths contain spaces. Use a space-free `/tmp/` staging zone for native dependency builds.
+
+**GREP:** `functions/internal`, `add-invoker-policy-binding`, `allowedPolicyMemberDomains`, `Function execution started`, `keytar.node`, `Attempting to build a module with a space in the path`
+
+## 2026-07-09 End Workflow - Vitest 4 rejects legacy `--grep` in health scripts
+- SEVERITY: Medium
+- FILE: `package.json` (`health:check`)
+- BUG: The `/health_audit` manual command `npm run health:check` failed before running tests because the script used `vitest --run --grep ...`, but the installed Vitest 4.1.8 CLI does not support `--grep`.
+- FIX: Select integration files by filename with `find packages/renderer/src/services -name "*.integration.test.ts" -print`, then pass those files to `vitest run`; exit cleanly if none exist.
+- PREVENTION: For Vitest 4, use positional file filters for filename selection and `-t/--testNamePattern` only for test-name filtering. Do not port Jest-style `--grep` flags into npm scripts without checking `npx vitest --help`.
+
+## 2026-07-16 Multi-Output Generation - Partial Storage Writes Must Be Compensated
+- SEVERITY: High
+- FILES: `packages/firebase/src/functions/creative/gateway.ts`
+- BUG: A metered multi-output request can successfully write output 1 to Cloud Storage, fail while writing output 2, then void the cost reservation while leaving output 1 orphaned and absent from the failed job response.
+- FIX: Complete provider generation for the full batch before Storage persistence, track every written `gs://` URI, and delete already-written objects when any later Storage write fails. Only mark the job completed and settle cost after every requested output is durable.
+- PREVENTION: Any operation that produces multiple external side effects under one transaction/reservation needs a compensation path. Tests must force failure after the first successful write and assert cleanup plus reservation voiding.
+
+## 2026-07-17 — Firebase auth/requests-from-referer-blocked on ALL localhost ports (not port-specific)
+
+- SEVERITY: High (blocks all local web dev auth)
+- ERROR: `Firebase: Error (auth/requests-from-referer-http://localhost:4243-are-blocked.)`
+- ROOT CAUSE: The browser API key (`VITE_FIREBASE_API_KEY`, prefix AIzaSyD4Vd) has HTTP-referrer restrictions allowlisting ONLY production domains (`indii-music-founder.web.app`, `.firebaseapp.com`). NO localhost referrer passes — probed 4242, 4243, 3000, bare localhost, and 127.0.0.1: all blocked. Changing dev ports can NEVER fix this. Electron is unaffected only because native apps send no browser Referer header.
+- DIAGNOSIS TECHNIQUE (no GCP console needed): probe Identity Toolkit directly per candidate referrer —
+  `curl -s -X POST "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=$KEY" -H "Referer: http://localhost:4243/" -d '{"email":"probe@probe.invalid","password":"x","returnSecureToken":true}'`
+  → blocked referrer returns "Requests from referer ... are blocked."; allowed referrer returns a normal auth error (e.g. INVALID_LOGIN_CREDENTIALS).
+- FIX: GCP Console → APIs & Services → Credentials → the browser key → Application restrictions → HTTP referrers → ADD `http://localhost:4243/*` (web dev) alongside prod entries. Requires an account with apikeys perms on `indii-music-founder` (the.walking.agency.det@gmail.com is DENIED; wiil@indii.music is the firebase-tools owner account — use it: `gcloud config set account wiil@indii.music`).
+- PORT MAP (do not reshuffle): 4242 = Electron dev (permanent), 4243 = web dev/test (`dev:web`), 3000 = landing/marketing.
+
+## 2026-07-17 — Agent Browser UI Testing Auth Bypass Stuck
+- SEVERITY: Medium (wastes agent time/credits)
+- BUG: When testing locally at localhost, browser subagents can get permanently stuck at the auth wall despite `window.useStore` injection instructions. The agents will spin indefinitely retrying the navigation instead of reporting failure.
+- FIX: Natively verify UI rendering by explicitly mocking `useStore` in `Vitest` and testing the React component mounts directly without crashing, rather than relying on a visual browser subagent for routine UI rendering verification.
+- PREVENTION: Never deploy browser QA subagents for tasks that can be fully verified with explicit Vitest component rendering tests.
+
+## 2026-07-17 — Live image/video generation dead: GEMINI_API_KEY secret held a rotated-out (invalid) key — NOT depleted credits
+
+- SEVERITY: High (all API-key-path generation failed live)
+- ERROR SURFACE: historically surfaced as 429 "prepayment credits are depleted"; current live state was 400 "API key not valid" from the secret's stale value.
+- ROOT CAUSE: the GCP key "Gemini Developer API Key (Auto-Rotated)" rotates its keyString, but Secret Manager `GEMINI_API_KEY` kept the old string. Also note: that "Gemini" key's API targets are all Firebase services (it is actually the app's `VITE_FIREBASE_API_KEY`); the ONLY key allowed to call generativelanguage.googleapis.com is "API 1" (uid 5673dfd1).
+- DIAGNOSIS: probe billing/validity with a minimal live call — `curl -X POST "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=$KEY" -d '{"contents":[{"parts":[{"text":"ping"}]}],"generationConfig":{"maxOutputTokens":5}}'` → 400 invalid-key vs 429 prepay-depleted vs 200 OK are unambiguous.
+- FIX (2026-07-17): added Secret Manager version 191 of `GEMINI_API_KEY` containing the valid "API 1" keyString (verified live: 200 OK). Gen2 functions bind the new version on next deploy (CI deploy on push to main). Requires `wiil@indii.music` gcloud account (`gcloud config set account wiil@indii.music`).
+- PREVENTION: after any key auto-rotation, re-sync Secret Manager; a validity probe belongs in deploy verification. Do not trust old 429 messages — re-probe live before concluding billing is the blocker.
+
+## 2026-07-17 — Stripe escrow release: capturing before validating the payout plan, and non-idempotent capture bricking retries
+
+- SEVERITY: Critical (real-money path)
+- BUG PATTERN 1: capture-then-distribute flows that validate payees DURING the transfer loop (skip/continue on missing split or account) can capture funds and pay nobody, while marking the record RELEASED. Stripe transfers draw from platform balance — they are NOT capped by the captured amount, so splits summing >100% overpay.
+- BUG PATTERN 2: on partial failure after capture, reverting status for "retry" is a trap if the retry path re-calls `paymentIntents.capture` — capturing an already-captured intent throws, permanently wedging the flow.
+- FIX: validate the ENTIRE payout plan (split total in (0,100], every positive-split party has an account) inside the Firestore transaction BEFORE the status moves and before any Stripe call; make capture idempotent (`retrieve` first, skip when `status === 'succeeded'`); keep per-party idempotency keys on transfers. See `packages/firebase/src/stripe/splitEscrow.ts` (ISSUE-1079).
+- PREVENTION: in any money-movement function, no Stripe mutation until every downstream leg of the plan is proven executable.
+
+## 2026-07-17 — Zustand persist: adding base64-bearing state to partialize silently risks killing ALL localStorage persistence
+
+- SEVERITY: High
+- BUG: persisting any store field that carries base64 image/audio data (e.g. a retry batch with `base64Data`) can exceed the ~5MB localStorage quota; the persist write fails and takes down persistence for every other field sharing the storage key (notes, prompts, prefs).
+- FIX: keep large-payload state store-resident but OUT of `partialize` — in-memory store residency already survives component unmounts, which is usually the actual requirement. See `packages/renderer/src/core/store/index.ts` comment (ISSUE-1080).
+- PREVENTION: before adding a field to `partialize`, ask "can this ever contain media bytes?" If yes, persist a reference (id/path), never the bytes.
+
+## 2026-07-17 — AI provider single-point-of-failure: fallback matcher tuned only to key errors missed billing exhaustion
+
+- SEVERITY: Critical (was the "creative is down" outage)
+- BUG: creative gateway preferred the AI Studio API key and fell back to Vertex ADC only on API-KEY errors. Prepaid billing exhaustion (`RESOURCE_EXHAUSTED` / "prepayment credits are depleted") is not a key error, so the fallback never fired and users ate the outage.
+- FIX: `getMediaProvider()` policy — production defaults to Vertex ADC on the postpaid project, dev/QA defaults to the key (spend isolation), `MEDIA_PROVIDER` overrides; fallback matcher extended to billing-exhaustion strings. Cloud Monitoring log alert + GCP budget now page the founder. See `packages/firebase/src/functions/creative/gateway.ts` (ISSUE-1082).
+- PREVENTION: when a provider has a fallback, enumerate every error class that means "this provider is unusable" — not just the one that motivated the fallback. Billing outages must page a human, never only surface as user-facing errors.
+
+## 2026-07-17 — Mobile Remote presence loss must not revoke pairing or strand newer async work
+
+- SEVERITY: High (phone controls locked out during ordinary mobile backgrounding; stale async completions could corrupt the next command/playback state)
+- FILES: `packages/renderer/src/modules/mobile-remote/`, `packages/renderer/src/services/agent/RemoteRelayService.ts`, `packages/renderer/src/hooks/useRemoteCommandListener.ts`, `packages/firebase/firestore.rules`
+- BUG: The Controller treated a stale Studio heartbeat as loss of authentication/pairing, disabled Boardroom dispatch in Standby, and stopped retrying at a full-screen disconnected state. Its stale timer also ignored the relay's 30-second clock-skew allowance, so an early timeout could re-check as fresh and never schedule the true stale edge. Independent P2P state consumers overwrote one singleton callback. Untracked UI timers and late generation/audio promises could update unmounted or newer work. Finally, accepted ordinary commands did not wake the sleeping Studio, and owner-only Firestore rules still allowed oversized/schema-polluted command creation plus cancellation-time payload mutation.
+- FIX: Keep authenticated pairing durable while presence moves to Standby; schedule from the canonical heartbeat-plus-skew boundary; retain the 15-second visibility grace and let manual retry clear deferred timers; fan out P2P state through independent subscriptions; allow Standby chat dispatch and wake Studio after atomic command claim; track/clear component timers; guard async completions by active command/playback identity; validate command/settings schemas and make cancellation status-only in Firestore Rules.
+- PREVENTION: Model authentication, pairing, executor presence, and active wake state as separate facts. A heartbeat may change presence only. Any async callback that can outlive its initiating request must verify request identity before mutating shared refs or UI state. Security-rule tests must cover create-valid/update-invalid bypasses, maximum payload size, and unknown keys.
+- VERIFICATION: 93 focused mobile-remote/listener tests passed (3 skipped), followed by 73 targeted race tests (3 skipped); scoped ESLint passed with zero warnings; renderer and repository TypeScript passed; production Studio build passed; Firestore rules compiled in dry-run and all 138 emulator assertions passed; authenticated Playwright mobile-remote spec passed 2/2. The repository-wide Vitest run passed 4,853 tests (52 skipped) and found one unrelated missing finance test import.

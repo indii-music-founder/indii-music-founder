@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Paperclip, X, Trash2, Send, ExternalLink, Minimize2, Maximize2, AlertCircle } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
 import { SendToTarget } from '@/types/handoff';
+import { writeCreativeAssetDrag } from '@/services/creative/CreativeAssetDragService';
 
 const getCurrentTime = () => Date.now();
 
@@ -28,11 +29,20 @@ export default function CreativeClipboard() {
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const handleSendTo = React.useCallback((target: SendToTarget, item: any) => {
+        const targetView = target === 'marketing'
+            ? 'visuals'
+            : target === 'touring'
+                ? 'rider'
+                : target === 'merch'
+                    ? 'design'
+                    : 'conversation';
+
         sendToModule(target, {
             assetId: item.id,
             assetUrl: item.url,
             assetType: item.type,
             prompt: item.prompt || 'Clipboard Asset',
+            targetView,
             originModule: 'creative',
             timestamp: getCurrentTime()
         });
@@ -101,12 +111,7 @@ export default function CreativeClipboard() {
                                     key={item.id}
                                     draggable
                                     onDragStart={(e) => {
-                                        e.dataTransfer.setData('text/plain', JSON.stringify({
-                                            id: item.id,
-                                            url: item.url,
-                                            type: item.type,
-                                            prompt: item.prompt
-                                        }));
+                                        writeCreativeAssetDrag(e.dataTransfer, item, 'creative-clipboard');
                                     }}
                                     className="group relative flex items-center gap-3 p-2 bg-white/[0.02] border border-white/5 hover:border-violet-500/20 rounded-lg transition-all cursor-grab active:cursor-grabbing"
                                 >

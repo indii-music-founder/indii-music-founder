@@ -146,12 +146,12 @@ describe('OrchestrationService', () => {
 
     it('should route "deploy protocol" to INDII_GROWTH_PROTOCOL', async () => {
         const mockExecution: WorkflowExecution = {
-            id: 'exec-3',
+            id: 'exec-123',
             workflowId: 'INDII_GROWTH_PROTOCOL',
             userId: 'test-user',
             status: 'PLANNED',
             steps: {
-                'video_generation': { stepId: 'video_generation', agentId: 'workflow', prompt: 'Trigger Node recipe', status: 'PLANNED' } as WorkflowStepExecution,
+                'video_generation': { stepId: 'video_generation', agentId: 'creative', prompt: 'Trigger Node recipe', status: 'PLANNED' } as WorkflowStepExecution,
                 'ad_deployment': { stepId: 'ad_deployment', agentId: 'marketing', prompt: 'Deploy all creative', status: 'PLANNED' } as WorkflowStepExecution,
             },
             edges: WORKFLOW_REGISTRY['INDII_GROWTH_PROTOCOL']!.edges,
@@ -165,7 +165,7 @@ describe('OrchestrationService', () => {
             .mockResolvedValue({
                 ...mockExecution,
                 steps: {
-                    'video_generation': { stepId: 'video_generation', agentId: 'workflow', prompt: 'Trigger Node recipe', status: 'STEP_COMPLETE' } as WorkflowStepExecution,
+                    'video_generation': { stepId: 'video_generation', agentId: 'creative', prompt: 'Trigger Node recipe', status: 'STEP_COMPLETE' } as WorkflowStepExecution,
                     'ad_deployment': { stepId: 'ad_deployment', agentId: 'marketing', prompt: 'Deploy all creative', status: 'STEP_COMPLETE' } as WorkflowStepExecution,
                 }
             });
@@ -181,7 +181,7 @@ describe('OrchestrationService', () => {
         );
 
         expect(result).toContain('Workflow Report: indii Growth Protocol');
-        expect(result).toContain('Step: video_generation [WORKFLOW]');
+        expect(result).toContain('Step: video_generation [CREATIVE]');
         expect(workflowStateService.createExecution).toHaveBeenCalledWith(
             'test-user',
             'INDII_GROWTH_PROTOCOL',

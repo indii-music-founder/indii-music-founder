@@ -5,6 +5,26 @@
 
 import { INGESTION_CONFIG } from '@/core/config/ingestion';
 
+export interface MasterAudioReference {
+    audioProperties?: {
+        bitDepth: number;
+        channels: number;
+        codec: 'PCM' | 'FLAC';
+        container: 'wav' | 'flac';
+        sampleRate: number;
+    };
+    contentHash: string;
+    downloadUrl: string;
+    /** Immutable Cloud Storage generation profiled by the server worker. Legacy references may lack it. */
+    generation?: string;
+    masterFingerprint: string;
+    mimeType: string;
+    originalFileName: string;
+    sizeBytes: number;
+    storagePath: string;
+    uploadedAt: string;
+}
+
 export interface RoyaltySplit {
     legalName: string;
     role: 'songwriter' | 'producer' | 'performer' | 'other';
@@ -29,6 +49,10 @@ export interface GoldenMetadata {
 
     // 2. The Economics
     splits: RoyaltySplit[];
+    /** Composition ownership/writer shares used for PRO, MLC, and publishing flows. */
+    compositionSplits?: RoyaltySplit[];
+    /** Sound-recording/master ownership shares used for recording revenue flows. */
+    recordingSplits?: RoyaltySplit[];
 
     // 3. Rights Administration
     pro: 'ASCAP' | 'BMI' | 'SESAC' | 'GMR' | 'None';
@@ -61,6 +85,16 @@ export interface GoldenMetadata {
 export interface ExtendedGoldenMetadata extends GoldenMetadata {
     // Internal Identifier
     id?: string;
+    userId?: string;
+    masterAsset?: MasterAudioReference;
+    /** Measured properties of the immutable master used in DDEX technical details. */
+    audioTechnical?: {
+        bitDepth: number;
+        channels: number;
+        codec: 'PCM' | 'FLAC';
+        container: 'wav' | 'flac';
+        sampleRate: number;
+    };
 
     // Artist Disambiguation
     artistIsni?: string;
@@ -155,7 +189,12 @@ export type ReleaseDistributionStatus =
     | 'delivering'
     | 'live'
     | 'takedown_requested'
-    | 'taken_down';
+    | 'taken_down'
+    // ISSUE-964: the draft record can be created successfully while the
+    // Publishing agent's definitive packaging step fails — this state
+    // makes that distinction reloadable/retryable instead of silently
+    // advancing to 'metadata_complete' regardless of packaging outcome.
+    | 'packaging_failed';
 
 // Release record for Firestore
 export interface DDEXReleaseRecord {
@@ -173,6 +212,10 @@ export interface DDEXReleaseRecord {
         audioFormat: 'wav' | 'flac' | 'mp3';
         audioSampleRate: number;
         audioBitDepth: number;
+        audioStoragePath?: string;
+        audioContentHash?: string;
+        masterFingerprint?: string;
+        isrc?: string;
         coverArtUrl: string;
         coverArtWidth: number;
         coverArtHeight: number;
@@ -180,6 +223,7 @@ export interface DDEXReleaseRecord {
 
     // Distribution State
     status: ReleaseDistributionStatus;
+    packagingError?: string; // set when status === 'packaging_failed'
     distributors: {
         distributorId: string;
         releaseId?: string;

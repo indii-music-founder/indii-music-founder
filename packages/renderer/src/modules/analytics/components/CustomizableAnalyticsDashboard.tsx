@@ -81,8 +81,8 @@ export const CustomizableAnalyticsDashboard: React.FC = () => {
             const hasData = (stats?.totalRevenue > 0) || (expenseList.length > 0) || (usageObj.imagesGenerated > 0) || (tracks.length > 0);
             setIsRealData(hasData);
 
-        } catch (error) {
-            console.error('[CustomizableAnalyticsDashboard] Failed to fetch Firestore/Stripe data:', error);
+        } catch (_error) {
+            console.error('Analytics dashboard refresh failed:', _error);
         } finally {
             setLoading(false);
             setRefreshing(false);
@@ -177,25 +177,25 @@ export const CustomizableAnalyticsDashboard: React.FC = () => {
                             <div className="bg-slate-900/50 border border-white/5 rounded-xl p-3">
                                 <span className="text-[10px] text-slate-400 uppercase font-mono block">Gross Revenue</span>
                                 <span className="text-lg font-bold text-white font-mono mt-1 block">
-                                    ${totalEarnings.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                    ${totalEarnings.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                 </span>
                             </div>
                             <div className="bg-slate-900/50 border border-white/5 rounded-xl p-3">
                                 <span className="text-[10px] text-slate-400 uppercase font-mono block">Ledger Expenses</span>
                                 <span className="text-lg font-bold text-red-400 font-mono mt-1 block">
-                                    -${totalExpenses.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                    -${totalExpenses.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                 </span>
                             </div>
                             <div className="bg-slate-900/50 border border-white/5 rounded-xl p-3">
                                 <span className="text-[10px] text-slate-400 uppercase font-mono block">Pending Payouts</span>
                                 <span className="text-lg font-bold text-yellow-400 font-mono mt-1 block">
-                                    ${pendingPayouts.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                    ${pendingPayouts.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                 </span>
                             </div>
                             <div className="bg-slate-900/50 border border-white/5 rounded-xl p-3">
                                 <span className="text-[10px] text-slate-400 uppercase font-mono block">Net Income</span>
                                 <span className={`text-lg font-bold font-mono mt-1 block ${netProfit >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                                    ${netProfit.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                    ${netProfit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                 </span>
                             </div>
                         </div>
@@ -303,7 +303,7 @@ export const CustomizableAnalyticsDashboard: React.FC = () => {
                             <div className="mt-5 p-3 bg-indigo-500/10 border border-indigo-500/20 rounded-xl flex items-center gap-2.5">
                                 <Sparkles size={14} className="text-indigo-400 animate-pulse shrink-0" />
                                 <div className="text-[10px] text-indigo-200">
-                                    Unlock 10GB storage, 500 daily images and 4K resolution exports. <span className="underline font-bold cursor-pointer hover:text-white">Upgrade to Pro</span>
+                                    Unlock 10GB storage, 500 daily images and 4K resolution exports. <span className="font-bold">Upgrade to Pro</span>
                                 </div>
                             </div>
                         )}
@@ -344,7 +344,7 @@ export const CustomizableAnalyticsDashboard: React.FC = () => {
                                                 {exp.category}
                                             </span>
                                             <span>
-                                                {new Date(exp.createdAt).toLocaleDateString()}
+                                                {new Date(exp.createdAt).toLocaleDateString('en-US')}
                                             </span>
                                         </div>
                                     </div>
@@ -431,7 +431,7 @@ export const CustomizableAnalyticsDashboard: React.FC = () => {
                                 <p className="text-[10px] text-slate-400 mt-0.5">Aggregated metrics from Spotify, YouTube, TikTok</p>
                             </div>
                             <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-cyan-500/10 border border-cyan-500/20 text-cyan-300">
-                                {totalStreams.toLocaleString()} Total Streams
+                                {totalStreams.toLocaleString('en-US')} Total Streams
                             </span>
                         </div>
 
@@ -455,11 +455,11 @@ export const CustomizableAnalyticsDashboard: React.FC = () => {
                                         <div className="flex justify-between items-end border-t border-white/5 pt-3 mt-3">
                                             <div className="flex flex-col">
                                                 <span className="text-[10px] text-slate-500 uppercase font-mono">Streams</span>
-                                                <span className="text-sm font-bold text-emerald-400 font-mono">{track.totalStreams.toLocaleString()}</span>
+                                                <span className="text-sm font-bold text-emerald-400 font-mono">{track.totalStreams.toLocaleString('en-US')}</span>
                                             </div>
                                             <div className="flex flex-col text-right">
                                                 <span className="text-[10px] text-slate-500 uppercase font-mono">Creators</span>
-                                                <span className="text-sm font-bold text-indigo-400 font-mono">{track.creatorCount.toLocaleString()}</span>
+                                                <span className="text-sm font-bold text-indigo-400 font-mono">{track.creatorCount.toLocaleString('en-US')}</span>
                                             </div>
                                         </div>
                                     </div>

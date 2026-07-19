@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, act } from '@testing-library/react';
+import { render, screen, act, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import VideoWorkflow from './VideoWorkflow';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -20,6 +20,7 @@ const { mockStoreStateData, mockVideoEditorState, mockUseStore, mockUseVideoEdit
         setCreativePrompt: vi.fn(),
         studioControls: { resolution: '1080p' },
         videoInputs: {},
+        setVideoInputs: vi.fn(),
         currentOrganizationId: 'org-123',
         currentProjectId: 'proj-123',
         isRightPanelOpen: false,
@@ -103,6 +104,7 @@ vi.mock('@/services/video/VideoGenerationService', () => ({
             return vi.fn(); // unsubscribe
         }),
         generateLongFormVideo: vi.fn(),
+        estimateVideoCost: vi.fn((duration) => duration * 0.1),
     },
 }));
 
@@ -208,7 +210,7 @@ describe('VideoWorkflow UI States', () => {
         expect(mockVideoEditorState.setProgress).toHaveBeenCalledWith(0);
     });
 
-    it('displays success toast, adds to history, and stops loading when job completes', () => {
+    it('displays success toast, adds to history, and stops loading when job completes', async () => {
         mockStoreState({ status: 'processing', jobId: 'job-123' });
         render(<VideoWorkflow />);
 
@@ -220,11 +222,17 @@ describe('VideoWorkflow UI States', () => {
         const mockVideoUrl = 'https://example.com/video.mp4';
         act(() => {
             subscribeCallback!({ status: 'completed', videoUrl: mockVideoUrl, prompt: 'Test Prompt' });
-            vi.runOnlyPendingTimers();
         });
 
-        // Verify Success Toast
-        expect(mockToastSuccess).toHaveBeenCalledWith('Scene generated!');
+        // Wait for async operations to complete
+        vi.useRealTimers();
+        await waitFor(() => {
+            expect(mockToastSuccess).toHaveBeenCalledWith('Scene generated!');
+        }, { timeout: 2000 });
+
+        // Wait for delayed setProgress(0) timeout
+        await new Promise(resolve => setTimeout(resolve, 150));
+        vi.useFakeTimers();
 
         // Verify History Update
         expect(mockStoreStateData.addToHistory).toHaveBeenCalledWith(expect.objectContaining({

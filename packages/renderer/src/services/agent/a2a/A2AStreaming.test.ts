@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { importWithRetry } from '@/utils/dynamicImport';
 
 /**
  * A2A streaming proof (service layer, real crypto + real router).
@@ -32,8 +33,8 @@ function resetClient(client: unknown) {
 /** Reset shared singletons (encryption keys + router) so sequential tests don't
  *  interfere via leftover key state. */
 async function resetSingletons() {
-  const { e2eEncryptionService } = await import('@/services/security/E2EEncryptionService');
-  const { a2aRouter } = await import('./A2ARouter');
+  const { e2eEncryptionService } = await importWithRetry(() => import('@/services/security/E2EEncryptionService'));
+  const { a2aRouter } = await importWithRetry(() => import('./A2ARouter'));
   const enc = e2eEncryptionService as unknown as Record<string, { clear?: () => void }>;
   enc.keyPairs?.clear?.();
   enc.publicKeyRegistry?.clear?.();
@@ -49,7 +50,7 @@ describe('A2A streaming (real crypto loopback)', () => {
   });
 
   it('yields MULTIPLE progressive deltas and reconstructs the full text', async () => {
-    const { a2aClient } = await import('./A2AClient');
+    const { a2aClient } = await importWithRetry(() => import('./A2AClient'));
     resetClient(a2aClient);
 
     // Each chunk exceeds the 120-char flush threshold → one delta envelope each,
@@ -88,7 +89,7 @@ describe('A2A streaming (real crypto loopback)', () => {
   });
 
   it('falls back to a single batch envelope when no streamAgent is provided', async () => {
-    const { a2aClient } = await import('./A2AClient');
+    const { a2aClient } = await importWithRetry(() => import('./A2AClient'));
     resetClient(a2aClient);
 
     const runAgent = vi.fn().mockResolvedValue({ text: 'batch result' });

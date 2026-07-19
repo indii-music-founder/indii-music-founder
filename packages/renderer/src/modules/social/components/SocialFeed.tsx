@@ -13,7 +13,6 @@ import {
   Heart, 
   MessageCircle, 
   Share2, 
-  MoreHorizontal, 
   Image as ImageIcon, 
   Send, 
   ShoppingBag, 
@@ -29,6 +28,7 @@ import { areFeedItemPropsEqual, FeedItemProps } from './SocialFeed.utils';
 import { formatDate } from '@/lib/utils';
 import { logger } from '@/utils/logger';
 import ProductPickerModal from './ProductPickerModal';
+import BrandAssetsDrawer from '../../creative/components/BrandAssetsDrawer';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface SocialFeedProps {
@@ -53,11 +53,13 @@ const SocialFeed = React.memo(function SocialFeed({ userId }: SocialFeedProps) {
 
     const [newPostContent, setNewPostContent] = useState('');
     const [isPosting, setIsPosting] = useState(false);
+    const [attachedMediaUrls, setAttachedMediaUrls] = useState<string[]>([]);
 
     // Drop State
     const [artistProducts, setArtistProducts] = useState<Product[]>([]);
     const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
     const [showProductPicker, setShowProductPicker] = useState(false);
+    const [showMediaPicker, setShowMediaPicker] = useState(false);
 
     const userProfile = useStore(useShallow((state: StoreState) => state.userProfile));
 
@@ -87,14 +89,16 @@ const SocialFeed = React.memo(function SocialFeed({ userId }: SocialFeedProps) {
         setIsPosting(true);
         const success = await createPost(
             newPostContent,
-            [],
+            attachedMediaUrls,
             selectedProductId || undefined
         );
 
         if (success) {
             setNewPostContent('');
+            setAttachedMediaUrls([]);
             setSelectedProductId(null);
             setShowProductPicker(false);
+            setShowMediaPicker(false);
         }
         setIsPosting(false);
     };
@@ -153,16 +157,46 @@ const SocialFeed = React.memo(function SocialFeed({ userId }: SocialFeedProps) {
                                         </motion.div>
                                     )}
                                 </AnimatePresence>
+
+                                <AnimatePresence>
+                                    {attachedMediaUrls.length > 0 && (
+                                        <motion.div
+                                            initial={{ opacity: 0, y: 8 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            exit={{ opacity: 0, y: 8 }}
+                                            className="mt-3 flex flex-wrap gap-2"
+                                        >
+                                            {attachedMediaUrls.map((url) => (
+                                                <div
+                                                    key={url}
+                                                    className="flex items-center gap-2 rounded-full border border-dept-creative/20 bg-dept-creative/10 px-3 py-1 text-xs text-dept-creative"
+                                                >
+                                                    <ImageIcon size={12} />
+                                                    <span className="max-w-[160px] truncate">Media attached</span>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setAttachedMediaUrls((current) => current.filter((item) => item !== url))}
+                                                        className="text-dept-creative/70 hover:text-dept-creative"
+                                                        aria-label="Remove attached media"
+                                                    >
+                                                        <X size={12} />
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
                             </div>
 
                             <div className="flex justify-between items-center">
                                 <div className="flex items-center gap-1">
                                     <button
-                                        onClick={() => { }} 
-                                        className="p-2.5 text-gray-400 hover:text-dept-creative transition-colors rounded-xl hover:bg-dept-creative/5 group"
+                                        onClick={() => setShowMediaPicker(true)}
+                                        className="p-2.5 text-gray-400 rounded-xl border border-white/10 hover:border-gray-500 hover:text-white hover:bg-white/5 transition-colors"
                                         title="Add Media"
+                                        aria-label="Add media from brand assets"
                                     >
-                                        <ImageIcon size={20} className="group-hover:scale-110 transition-transform" />
+                                        <ImageIcon size={20} />
                                     </button>
                                     
                                     {(({...userProfile, accountType: userProfile?.accountType} as { accountType?: string })?.accountType === 'artist' || ({...userProfile, accountType: userProfile?.accountType} as { accountType?: string })?.accountType === 'label') && (
@@ -221,6 +255,20 @@ const SocialFeed = React.memo(function SocialFeed({ userId }: SocialFeedProps) {
                             setShowProductPicker(false);
                         }}
                         selectedId={selectedProductId}
+                    />
+                )}
+            </AnimatePresence>
+
+            <AnimatePresence>
+                {showMediaPicker && (
+                    <BrandAssetsDrawer
+                        onClose={() => setShowMediaPicker(false)}
+                        onSelect={(asset) => {
+                            setAttachedMediaUrls((current) =>
+                                current.includes(asset.url) ? current : [...current, asset.url]
+                            );
+                            setShowMediaPicker(false);
+                        }}
                     />
                 )}
             </AnimatePresence>
@@ -294,7 +342,7 @@ const FeedItem = React.memo(({ post }: FeedItemProps) => {
     return (
         <article className="p-4 hover:bg-[#161b22] transition-colors group">
             <div className="flex gap-4">
-                <div className="w-10 h-10 rounded-full bg-gray-700 flex-shrink-0 overflow-hidden cursor-pointer">
+                <div className="w-10 h-10 rounded-full bg-gray-700 flex-shrink-0 overflow-hidden">
                     {post.authorAvatar ? (
                         <img src={post.authorAvatar} alt={post.authorName} className="w-full h-full object-cover" />
                     ) : (
@@ -304,19 +352,13 @@ const FeedItem = React.memo(({ post }: FeedItemProps) => {
                 <div className="flex-1 min-w-0">
                     <div className="flex justify-between items-start">
                         <div>
-                            <span className="font-bold text-white hover:underline cursor-pointer">
+                            <span className="font-bold text-white">
                                 {post.authorName}
                             </span>
                             <span className="text-gray-500 text-sm ml-2">
                                 {formatDate(post.timestamp, true)}
                             </span>
                         </div>
-                        <button
-                            className="text-gray-500 hover:text-white opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 transition-opacity focus-visible:ring-2 focus-visible:ring-blue-500 rounded p-1 focus-visible:outline-none"
-                            aria-label={`More options for post by ${post.authorName}`}
-                        >
-                            <MoreHorizontal size={16} />
-                        </button>
                     </div>
 
                     <p className="text-gray-200 mt-1 whitespace-pre-wrap">{post.content}</p>
@@ -346,26 +388,15 @@ const FeedItem = React.memo(({ post }: FeedItemProps) => {
                     )}
 
                     <div className="flex items-center gap-6 mt-3 text-gray-500">
-                        <button
-                            className="flex items-center gap-2 hover:text-red-500 transition-colors group/like focus-visible:ring-2 focus-visible:ring-red-500 rounded px-1 focus-visible:outline-none"
-                            aria-label={`Like post, ${post.likes} likes`}
-                        >
-                            <Heart size={18} className="group-hover/like:scale-110 transition-transform" />
+                        <div className="flex items-center gap-2">
+                            <Heart size={18} />
                             <span className="text-sm">{post.likes}</span>
-                        </button>
-                        <button
-                            className="flex items-center gap-2 hover:text-dept-creative transition-colors focus-visible:ring-2 focus-visible:ring-dept-creative rounded px-1 focus-visible:outline-none"
-                            aria-label={`Comment on post, ${post.commentsCount} comments`}
-                        >
+                        </div>
+                        <div className="flex items-center gap-2">
                             <MessageCircle size={18} />
                             <span className="text-sm">{post.commentsCount}</span>
-                        </button>
-                        <button
-                            className="flex items-center gap-2 hover:text-dept-creative transition-colors focus-visible:ring-2 focus-visible:ring-dept-creative rounded px-1 focus-visible:outline-none"
-                            aria-label="Share post"
-                        >
-                            <Share2 size={18} />
-                        </button>
+                        </div>
+                        <Share2 size={18} />
                     </div>
                 </div>
             </div>

@@ -70,7 +70,7 @@ export const SequenceTimeline = ({ sequence, onChange, bpm = 120, onBpmChange }:
                         <span className={totalBeats === maxTotalBeats ? 'text-amber-400' : 'text-white'}>{totalBeats}</span> / {maxTotalBeats} beats
                     </span>
                     <span className="text-gray-600">|</span>
-                    <span className="text-purple-400" title="Total Duration">
+                    <span className="text-green-400" title="Total Duration">
                         {totalSeconds.toFixed(2)}s
                     </span>
                 </div>

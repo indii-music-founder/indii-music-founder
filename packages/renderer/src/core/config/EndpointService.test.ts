@@ -11,8 +11,6 @@ vi.mock('@/config/env', () => {
             projectId: 'test-project',
             location: 'global',
             functionsRegion: 'us-central1',
-            VITE_VERTEX_PROJECT_ID: 'test-project',
-            VITE_VERTEX_LOCATION: 'global',
             VITE_FUNCTIONS_REGION: 'us-central1',
         }
     };
@@ -31,14 +29,11 @@ describe('EndpointService', () => {
         expect(url).toBe('https://us-central1-test-project.cloudfunctions.net/myFunction');
     });
 
-    it('always generates Production URL (emulator support disabled)', () => {
-        // Note: Emulator URL generation is intentionally disabled in EndpointService
-        // See comment in EndpointService.ts - emulator code is commented out
-        // Setting DEV=true should NOT change the URL behavior
+    it('generates Emulator URL when DEV is true and emulator flag is true', () => {
         (env as any).DEV = true;
+        (env as any).VITE_USE_FUNCTIONS_EMULATOR = 'true';
 
         const url = endpointService.getFunctionUrl('myFunction');
-        // Still returns production URL since emulator support is disabled
-        expect(url).toBe('https://us-central1-test-project.cloudfunctions.net/myFunction');
+        expect(url).toBe('http://127.0.0.1:5001/test-project/us-central1/myFunction');
     });
 });

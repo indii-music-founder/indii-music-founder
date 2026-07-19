@@ -94,7 +94,7 @@ describe('generateImageV3Fn', () => {
         const callArgs = mockGenerateContent.mock.calls[0][0];
 
         // Model should be Pro
-        expect(callArgs.model).toBe('gemini-3-pro-image-preview');
+        expect(callArgs.model).toBe('gemini-3-pro-image');
         // Prompt should be in contents
         expect(callArgs.contents[0].parts[0].text).toBe('test prompt');
         expect(callArgs.config.imageConfig.aspectRatio).toBe('16:9');
@@ -124,7 +124,7 @@ describe('generateImageV3Fn', () => {
         const callArgs = mockGenerateContent.mock.calls[0][0];
 
         // Model should be Fast
-        expect(callArgs.model).toBe('gemini-3.1-flash-image-preview');
+        expect(callArgs.model).toBe('gemini-3.1-flash-image');
         // Fast supports candidateCount
         expect(callArgs.config.candidateCount).toBe(3);
         // Default response modalities: image only
@@ -318,7 +318,7 @@ describe('editImageFn', () => {
         const callArgs = mockGenerateContent.mock.calls[0][0];
 
         // Default model for editing is Pro
-        expect(callArgs.model).toBe('gemini-3-pro-image-preview');
+        expect(callArgs.model).toBe('gemini-3-pro-image');
         // Should have text prompt + source image in parts
         const parts = callArgs.contents[0].parts;
         expect(parts.length).toBe(2); // text + image
@@ -366,5 +366,24 @@ describe('editImageFn', () => {
         const data: any = { image: 'test', prompt: 'test' };
         const context = {};
         await expect(wrapped(data, context)).rejects.toThrow(/authenticated/);
+    });
+
+    it('should surface a friendly error when Gemini returns no editable image', async () => {
+        mockGenerateContent.mockResolvedValueOnce({
+            candidates: [{
+                content: {
+                    parts: [{ text: 'no image available' }]
+                }
+            }]
+        });
+
+        const data: any = {
+            image: 'source-base64',
+            imageMimeType: 'image/png',
+            prompt: 'remove the background',
+        };
+
+        const context = { auth: { uid: 'test-user-id' } };
+        await expect(wrapped(data, context)).rejects.toThrow(/did not return an editable image/i);
     });
 });

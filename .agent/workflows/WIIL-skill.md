@@ -62,6 +62,14 @@ These commands are called by the Core Pipeline or can be invoked directly as nee
 - **Purpose:** Checks local repository state, fetches origin, pulls/rebases changes, validates ahead commits using typecheck/Vitest, and manages background scheduling cron.
 - **When to use:** Run at start, middle, or manually to keep commits organized and pushed cleanly.
 
+### `/c` — Continuous Coordination Engine
+- **Purpose:** Acts as the continuous supervisor, maintaining system flow by running git sync cycles, committing workspace changes, and triggering issue resolution autonomously.
+- **When to use:** Used to put the agent into a persistent background monitor mode while the user steps away.
+
+### `/away` — Autonomous CI Monitor & Merge Loop
+- **Purpose:** Executes an autonomous loop to monitor branch CI using the browser subagent, automatically fixing errors until green, then merging to main.
+- **When to use:** When the user steps away from the keyboard and wants the agent to drive a branch across the finish line.
+
 ### `/ci-validate` — Pre-Push CI Validation
 - **Purpose:** Comprehensive pre-push CI validation with commit consolidation to prevent bloat.
 - **When to use:** Used automatically by `/end`. Must be run before any push to `main`.
@@ -109,6 +117,10 @@ These commands are called by the Core Pipeline or can be invoked directly as nee
 ### `/training` — AI Agent Dataset Generation & Fine-Tuning
 - **Purpose:** Executes the dataset generation (using local scripts) and safely orchestrates cloud AI fine-tuning jobs for the multi-agent hub-and-spoke system.
 - **When to use:** When preparing harness datasets or when explicit user approval is granted to incur model training costs.
+
+### `/api` — The API Knowledge Base
+- **Purpose:** Serves as the ultimate reference and diagnostic tool for the entire API system (Firebase Cloud Functions, AI logic, Inngest Jobs, etc.).
+- **When to use:** When discovering, debugging, or planning to add new API endpoints.
 
 ---
 

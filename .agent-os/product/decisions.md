@@ -131,7 +131,7 @@ Each decision is numbered, dated, and locked unless explicitly re-opened. When a
 - **Date:** 2026-04-18 (stupefied-faraday incident)
 - **Status:** locked
 - **Context:** A regression event established that ad-hoc code review was insufficient. Source: user feedback memory — *"Platinum review depth expected: verbatim diffs, file:line, pitfalls, commit plans, and verification steps on every review."*
-- **Decision:** Every substantive PR must pass the `/plat` pre-flight before push. The Error Ledger (`.agent/skills/error_memory/ERROR_LEDGER.md`) must be consulted before debugging any reported bug. Violations of the Seven Anti-Patterns (`docs/PLATINUM_QUALITY_STANDARDS.md`) block merge.
+- **Decision:** Every substantive PR must pass the `/plat` pre-flight before push. The Error Ledger (`.agent/skills/error_memory/ERROR_LEDGER.md`) must be consulted before debugging any reported bug. Violations of the Nine Anti-Patterns (`docs/PLATINUM_QUALITY_STANDARDS.md`) block merge.
 - **Consequences:**
   - All agents working on the repo must read `docs/PLATINUM_QUALITY_STANDARDS.md` before editing
   - Error memory is the first lookup on any bug report, not the last

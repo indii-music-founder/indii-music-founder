@@ -3,7 +3,9 @@ import { HttpsError } from 'firebase-functions/v2/https';
 
 const db = getFirestore();
 
-export type FSMState = 'IDLE' | 'ANALYZING' | 'GENERATING_ASSETS' | 'DISTRIBUTING' | 'MONITORING' | 'COMPLETED' | 'FAILED';
+// PACKAGE_STAGED (ISSUE-860): DDEX payloads exist in Storage but nothing has
+// been delivered to a DSP. MONITORING requires a real delivery/acknowledgement.
+export type FSMState = 'IDLE' | 'ANALYZING' | 'GENERATING_ASSETS' | 'DISTRIBUTING' | 'PACKAGE_STAGED' | 'MONITORING' | 'COMPLETED' | 'FAILED';
 
 export interface CampaignContext {
     releaseId: string;

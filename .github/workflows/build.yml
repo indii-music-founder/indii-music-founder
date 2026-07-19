@@ -51,7 +51,7 @@ jobs:
     - name: Use Node.js
       uses: actions/setup-node@v5
       with:
-        node-version: '22.x'
+        node-version: '24.x'
         cache: 'npm'
 
     - name: Install system dependencies (Linux)
@@ -64,6 +64,9 @@ jobs:
 
     - name: Lint
       run: npm run lint
+
+    - name: Frontend API boundary guard
+      run: npm run security:frontend-api-boundary
 
     - name: Typecheck
       run: npm run typecheck
@@ -82,7 +85,7 @@ jobs:
     - name: Use Node.js
       uses: actions/setup-node@v5
       with:
-        node-version: '22.x'
+        node-version: '24.x'
         cache: 'npm'
 
     - name: Install system dependencies (Linux)
@@ -111,11 +114,11 @@ jobs:
     - name: Build Electron App
       run: npm run build
       env:
+        NODE_OPTIONS: "--max-old-space-size=4096"
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         WIN_CSC_LINK: ${{ secrets.WINDOWS_CERTIFICATE }}
         WIN_CSC_KEY_PASSWORD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
         CSC_IDENTITY_AUTO_DISCOVERY: true
-        VITE_API_KEY: ${{ secrets.VITE_API_KEY }}
         VITE_USE_FINE_TUNED_AGENTS: ${{ secrets.VITE_USE_FINE_TUNED_AGENTS }}
         VITE_FUNCTIONS_URL: ${{ secrets.VITE_FUNCTIONS_URL }}
         VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}

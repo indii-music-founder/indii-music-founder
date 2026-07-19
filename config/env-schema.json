@@ -97,18 +97,25 @@
       ],
       "type": "string"
     },
-    "VITE_VERTEX_LOCATION": {
-      "default": "us-central1",
+    "VERTEX_PROJECT_ID": {
       "type": "string"
     },
-    "VITE_VERTEX_PROJECT_ID": {
-      "minLength": 1,
+    "VERTEX_LOCATION": {
+      "default": "global",
+      "type": "string"
+    },
+    "VERTEX_IMAGE_LOCATION": {
+      "default": "us",
+      "type": "string"
+    },
+    "VERTEX_VIDEO_LOCATION": {
+      "default": "us-central1",
       "type": "string"
     }
   },
   "required": [
-    "VITE_API_KEY",
-    "VITE_VERTEX_PROJECT_ID"
+    "VITE_FIREBASE_API_KEY",
+    "VITE_FIREBASE_PROJECT_ID"
   ],
   "type": "object"
 }

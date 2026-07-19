@@ -11,6 +11,17 @@ import { MusicTools } from '../tools/MusicTools';
 import { UniversalTools } from '../tools/UniversalTools';
 import systemPrompt from '@agents/distribution/prompt.md?raw';
 
+
+const distributionRetrievalConfig = {
+    'ddexReleases': { path: 'ddexReleases', requiresUserIdFilter: true },
+    'proprietaryIngestionReleases': { path: 'proprietaryIngestionReleases', requiresUserIdFilter: true },
+    'distribution_tasks': { path: 'distribution_tasks', requiresUserIdFilter: true },
+    'isrc_registry': { path: 'isrc_registry', requiresUserIdFilter: true },
+    'upc_registry': { path: 'upc_registry', requiresUserIdFilter: true }
+};
+const distributionRetrievalTools = buildDomainRetrievalTools('Distribution', distributionRetrievalConfig);
+const distributionRetrievalDeclarations = buildDomainRetrievalDeclarations('Distribution', distributionRetrievalConfig);
+
 export const DistributionAgent: AgentConfig = {
     id: "distribution",
     name: "Distribution Director",
@@ -20,6 +31,7 @@ export const DistributionAgent: AgentConfig = {
     systemPrompt: systemPrompt,
     get functions() {
         return {
+            ...distributionRetrievalTools,
             prepare_release: DistributionTools.prepare_release,
             run_audio_qc: DistributionTools.run_audio_qc,
             issue_isrc: DistributionTools.issue_isrc,
@@ -28,18 +40,22 @@ export const DistributionAgent: AgentConfig = {
             run_metadata_qc: DistributionTools.run_metadata_qc,
             generate_bwarm: DistributionTools.generate_bwarm,
             check_merlin_status: DistributionTools.check_merlin_status,
+            check_dsp_delivery_status: DistributionTools.check_dsp_delivery_status,
+            validate_metadata_readiness: DistributionTools.validate_metadata_readiness,
             create_music_metadata: MusicTools.create_music_metadata,
             verify_metadata_golden: MusicTools.verify_metadata_golden,
             update_track_metadata: MusicTools.update_track_metadata,
             browser_tool: UniversalTools.browser_tool,
             pro_scraper: UniversalTools.pro_scraper,
             payment_gate: UniversalTools.payment_gate,
-            credential_vault: UniversalTools.credential_vault
+            credential_vault: UniversalTools.credential_vault,
+            draft_dsp_metadata: McpTools.draft_dsp_metadata
         } as Record<string, import('@/services/agent/types').AnyToolFunction>;
     },
-    authorizedTools: ['prepare_release', 'run_audio_qc', 'issue_isrc', 'certify_tax_profile', 'calculate_payout', 'run_metadata_qc', 'generate_bwarm', 'check_merlin_status', 'create_music_metadata', 'verify_metadata_golden', 'update_track_metadata', 'browser_tool', 'pro_scraper', 'payment_gate', 'credential_vault'],
+    authorizedTools: ['list_domain_records', 'prepare_release', 'run_audio_qc', 'issue_isrc', 'certify_tax_profile', 'calculate_payout', 'run_metadata_qc', 'generate_bwarm', 'check_merlin_status', 'check_dsp_delivery_status', 'validate_metadata_readiness', 'create_music_metadata', 'verify_metadata_golden', 'update_track_metadata', 'browser_tool', 'pro_scraper', 'payment_gate', 'credential_vault', 'draft_dsp_metadata'],
     tools: [{
         functionDeclarations: [
+            ...distributionRetrievalDeclarations,
             {
                 name: "prepare_release",
                 description: "Prepare a release for distribution by generating a DDEX ERN 4.3 message.",
@@ -57,6 +73,24 @@ export const DistributionAgent: AgentConfig = {
                         releaseType: { type: "STRING", enum: ["Single", "EP", "Album"], description: "Single, EP, or Album" }
                     },
                     required: ["title", "artist", "upc", "isrc", "label", "genre", "language", "releaseDate"]
+                }
+            },
+            {
+                name: "draft_dsp_metadata",
+                description: "Draft an ERN XML fragment from release metadata via the remote MCP backend.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        releaseTitle: { type: "STRING" },
+                        artists: { type: "ARRAY", items: { type: "STRING" } },
+                        genre: { type: "STRING" },
+                        isrc: { type: "STRING" },
+                        upc: { type: "STRING" },
+                        duration: { type: "STRING" },
+                        releaseDate: { type: "STRING" },
+                        mode: { type: "STRING", enum: ["draft", "delivery"] }
+                    },
+                    required: ["releaseTitle", "artists", "genre", "upc", "isrc"]
                 }
             },
             {
@@ -175,6 +209,29 @@ export const DistributionAgent: AgentConfig = {
                 }
             },
             {
+                name: "check_dsp_delivery_status",
+                description: "Checks the delivery status of a release to DSPs (Digital Service Providers).",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        releaseId: { type: "STRING", description: "The ID of the release to check" },
+                        dspName: { type: "STRING", description: "Optional name of a specific DSP to check (e.g., Spotify, Apple Music)" }
+                    },
+                    required: ["releaseId"]
+                }
+            },
+            {
+                name: "validate_metadata_readiness",
+                description: "Validates if a release's metadata is ready and complete for distribution.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        releaseId: { type: "STRING", description: "The ID of the release to validate" }
+                    },
+                    required: ["releaseId"]
+                }
+            },
+            {
                 name: "create_music_metadata",
                 description: "Highly advanced tool that analyzes audio and creates industry-standard 'Golden Metadata'. This metadata is DDEX-ready and includes AI-detected genre, mood, and identifiers.",
                 parameters: {
@@ -268,6 +325,9 @@ export const DistributionAgent: AgentConfig = {
 };
 
 import { freezeAgentConfig } from '../FreezeDiagnostic';
+import { buildDomainRetrievalTools, buildDomainRetrievalDeclarations } from '../tools/DomainTools';
+import { McpTools } from '../tools/McpTools';
+
 
 // Freeze the schema to prevent cross-test contamination
 freezeAgentConfig(DistributionAgent);

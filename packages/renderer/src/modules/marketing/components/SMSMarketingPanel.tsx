@@ -1,51 +1,45 @@
 import React, { useState } from 'react';
 import {
-    MessageSquare, Phone, Users, Clock, Send,
-    CheckCircle, Loader2, AlertCircle
+    MessageSquare, Users, Send,
+    Loader2, AlertCircle, Info
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
-
-type Segment = 'All Fans' | 'Superfans' | 'VIPs';
-
-const SEGMENT_SIZES: Record<Segment, number> = {
-    'All Fans': 3142,
-    'Superfans': 847,
-    'VIPs': 234,
-};
+import { useToast } from '@/core/context/ToastContext';
+import { smsMarketingService, type SMSMember } from '@/services/marketing/SMSMarketingService';
+import { isProviderUnavailable } from '@/services/marketing/providerErrors';
 
 const SMS_LIMIT = 160;
 
+// ISSUE-665: no fan phone list with SMS consent is wired into indii yet, so
+// there is no real audience to send to. We keep the composer usable for
+// drafting, state that plainly, and never fabricate recipient counts,
+// sender verification, or delivery confirmations.
+const AUDIENCE: SMSMember[] = [];
+
 export default function SMSMarketingPanel() {
-    const [senderNumber, setSenderNumber] = useState('');
-    const [verified, setVerified] = useState(false);
-    const [verifying, setVerifying] = useState(false);
     const [message, setMessage] = useState('');
-    const [segment, setSegment] = useState<Segment>('All Fans');
-    const [scheduledTime, setScheduledTime] = useState('');
     const [sending, setSending] = useState(false);
-    const [sent, setSent] = useState(false);
+    const toast = useToast();
 
     const charCount = message.length;
     const overLimit = charCount > SMS_LIMIT;
-    const recipientCount = SEGMENT_SIZES[segment];
+    const hasAudience = AUDIENCE.length > 0;
 
-    const handleVerify = () => {
-        if (!senderNumber) return;
-        setVerifying(true);
-        setTimeout(() => {
-            setVerified(true);
-            setVerifying(false);
-        }, 1500);
-    };
-
-    const handleSend = () => {
-        if (!message || overLimit || !verified) return;
+    const handleSend = async () => {
+        if (!message || overLimit || !hasAudience || sending) return;
         setSending(true);
-        setTimeout(() => {
+        try {
+            const sentCount = await smsMarketingService.broadcastSMS(AUDIENCE, {
+                id: `sms_${Date.now()}`,
+                text: message,
+            });
+            toast.success(`SMS blast accepted by Twilio for ${sentCount.toLocaleString('en-US')} superfans.`);
+        } catch (e) {
+            toast.error(isProviderUnavailable(e)
+                ? e.message
+                : 'SMS blast failed — no messages were sent.');
+        } finally {
             setSending(false);
-            setSent(true);
-            setTimeout(() => setSent(false), 4000);
-        }, 1800);
+        }
     };
 
     return (
@@ -59,37 +53,20 @@ export default function SMSMarketingPanel() {
                 <p className="text-xs text-gray-500 mt-1">Send targeted SMS blasts to fans via Twilio.</p>
             </div>
 
-            {/* Sender Verification */}
-            <div className="p-4 rounded-xl bg-white/[0.03] border border-white/5">
-                <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1">
-                    <Phone size={10} /> Twilio Sender Number
-                </label>
-                <div className="flex gap-2">
-                    <input
-                        type="tel"
-                        value={senderNumber}
-                        onChange={e => setSenderNumber(e.target.value)}
-                        placeholder="+1 (555) 000-0000"
-                        disabled={verified}
-                        className="flex-1 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder-gray-600 focus:border-dept-marketing/50 outline-none disabled:opacity-50"
-                    />
-                    {verified ? (
-                        <div className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-green-500/10 border border-green-500/20 text-green-400 text-xs font-medium">
-                            <CheckCircle size={13} />
-                            Verified
-                        </div>
-                    ) : (
-                        <button
-                            onClick={handleVerify}
-                            disabled={verifying || !senderNumber}
-                            className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-dept-marketing/10 border border-dept-marketing/20 text-dept-marketing text-xs font-medium hover:bg-dept-marketing/20 transition-all disabled:opacity-40"
-                        >
-                            {verifying ? <Loader2 size={13} className="animate-spin" /> : <Phone size={13} />}
-                            Verify
-                        </button>
-                    )}
+            {/* Honest availability state */}
+            {!hasAudience && (
+                <div className="p-4 rounded-xl bg-white/[0.03] border border-white/5 flex items-start gap-3">
+                    <Info size={16} className="text-dept-marketing mt-0.5 flex-shrink-0" />
+                    <div>
+                        <p className="text-sm font-semibold text-white">No SMS audience connected yet</p>
+                        <p className="text-xs text-gray-400 mt-0.5">
+                            Sending requires a fan phone list with SMS consent, which isn't wired into
+                            indii yet. You can draft your message now — sending stays disabled until an
+                            audience is connected.
+                        </p>
+                    </div>
                 </div>
-            </div>
+            )}
 
             {/* Message Composer */}
             <div>
@@ -115,48 +92,17 @@ export default function SMSMarketingPanel() {
                 )}
             </div>
 
-            {/* Segment Picker */}
-            <div>
-                <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1">
-                    <Users size={10} /> Recipient Segment
-                </label>
-                <div className="flex gap-2">
-                    {(Object.keys(SEGMENT_SIZES) as Segment[]).map(s => (
-                        <button
-                            key={s}
-                            onClick={() => setSegment(s)}
-                            className={`flex-1 py-2.5 rounded-xl text-xs font-semibold transition-all ${
-                                segment === s
-                                    ? 'bg-dept-marketing/15 border border-dept-marketing/30 text-dept-marketing'
-                                    : 'bg-white/[0.03] border border-white/5 text-gray-400 hover:border-white/10'
-                            }`}
-                        >
-                            <span className="block">{s}</span>
-                            <span className="block text-[10px] font-normal mt-0.5 opacity-70">
-                                {SEGMENT_SIZES[s].toLocaleString()} recipients
-                            </span>
-                        </button>
-                    ))}
-                </div>
-            </div>
-
-            {/* Scheduled Send */}
-            <div>
-                <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5 flex items-center gap-1">
-                    <Clock size={10} /> Schedule Send (optional)
-                </label>
-                <input
-                    type="datetime-local"
-                    value={scheduledTime}
-                    onChange={e => setScheduledTime(e.target.value)}
-                    className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-gray-300 focus:border-dept-marketing/50 outline-none"
-                />
+            {/* Real audience summary — honest count only */}
+            <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/[0.03] border border-white/5 w-fit">
+                <Users size={14} className="text-dept-marketing" />
+                <span className="text-sm font-bold text-white">{AUDIENCE.length.toLocaleString('en-US')}</span>
+                <span className="text-xs text-gray-500">reachable superfans</span>
             </div>
 
             {/* Send Button */}
             <button
                 onClick={handleSend}
-                disabled={sending || !message || overLimit || !verified}
+                disabled={sending || !message || overLimit || !hasAudience}
                 className="flex items-center justify-center gap-2 py-3 rounded-xl bg-dept-marketing text-white font-semibold text-sm hover:bg-dept-marketing/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-dept-marketing/20"
             >
                 {sending ? (
@@ -167,30 +113,12 @@ export default function SMSMarketingPanel() {
                 ) : (
                     <>
                         <Send size={16} />
-                        Send Blast to {recipientCount.toLocaleString()} {segment}
+                        {hasAudience
+                            ? `Send Blast to ${AUDIENCE.length.toLocaleString('en-US')} superfans`
+                            : 'Send Blast (no audience connected)'}
                     </>
                 )}
             </button>
-
-            {/* Confirmation */}
-            <AnimatePresence>
-                {sent && (
-                    <motion.div
-                        initial={{ opacity: 0, y: -8 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0 }}
-                        className="p-4 rounded-xl bg-green-500/10 border border-green-500/20 flex items-start gap-3"
-                    >
-                        <CheckCircle size={16} className="text-green-400 mt-0.5 flex-shrink-0" />
-                        <div>
-                            <p className="text-sm font-semibold text-green-400">SMS Blast Sent</p>
-                            <p className="text-xs text-gray-400 mt-0.5">
-                                Delivered to <span className="text-white">{recipientCount.toLocaleString()} {segment}</span> via Twilio.
-                            </p>
-                        </div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
         </div>
     );
 }

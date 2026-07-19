@@ -2,6 +2,7 @@ import { StateCreator } from 'zustand';
 import { doc, onSnapshot, Unsubscribe } from 'firebase/firestore';
 import { db, auth } from '@/services/firebase';
 import type { GraphExecutionState, AgentGraph } from '@/services/agent/types';
+import type { AgentLoopExecution } from '@indii/shared';
 
 // Re-using the types defined in the shared firebase package
 export enum AgentTaskStateEnum {
@@ -37,6 +38,11 @@ export interface AgentOrchestrationSlice {
     activeGraphExecution: GraphExecutionState | null;
     activeGraphDefinition: AgentGraph | null;
     
+    // Agent Loops (Phase 2)
+    activeLoops: Record<string, AgentLoopExecution>;
+    setActiveLoops: (loops: Record<string, AgentLoopExecution>) => void;
+    updateLoopExecution: (execution: AgentLoopExecution) => void;
+    
     startListeningToGraph: (taskId: string) => Promise<void>;
     stopListeningToGraph: (taskId: string) => void;
 
@@ -47,8 +53,8 @@ export interface AgentOrchestrationSlice {
     setActiveGraphExecution: (execution: GraphExecutionState | null) => void;
 }
 
-const graphListeners: Record<string, Unsubscribe> = {};
-let activeExecutionListener: Unsubscribe | null = null;
+const graphListeners: Record<string, Unsubscribe> = {}; // Keep the unsubscribe function directly to prevent duplicate listeners
+let executionUnsubscribe: Unsubscribe | null = null;
 
 export const buildAgentOrchestrationState: (
     set: Parameters<StateCreator<AgentOrchestrationSlice>>[0],
@@ -58,20 +64,27 @@ export const buildAgentOrchestrationState: (
     activeGraphs: {},
     activeGraphExecution: null,
     activeGraphDefinition: null,
+    activeLoops: {},
+
+    setActiveLoops: (loops) => set({ activeLoops: loops }),
+    
+    updateLoopExecution: (execution) => set((state) => ({
+        activeLoops: {
+            ...state.activeLoops,
+            [execution.id]: execution
+        }
+    })),
 
     startListeningToGraph: async (taskId: string) => {
         if (graphListeners[taskId]) {
-            console.warn(`[AgentOrchestrationSlice] Already listening to graph: ${taskId}`);
             return;
         }
 
         const uid = auth.currentUser?.uid;
         if (!uid) {
-            console.warn('[AgentOrchestrationSlice] Cannot listen to graph without authenticated user.');
             return;
         }
 
-        console.info(`[AgentOrchestrationSlice] Starting listener for legacy graph: ${taskId}`);
         const graphRef = doc(db, 'agent_tasks', taskId);
 
         const unsubscribe = onSnapshot(
@@ -86,7 +99,6 @@ export const buildAgentOrchestrationState: (
                         }
                     }));
                 } else {
-                    console.warn(`[AgentOrchestrationSlice] Graph document missing or deleted: ${taskId}`);
                     set((state) => {
                         const nextGraphs = { ...state.activeGraphs };
                         delete nextGraphs[taskId];
@@ -94,8 +106,8 @@ export const buildAgentOrchestrationState: (
                     });
                 }
             },
-            (error) => {
-                console.error(`[AgentOrchestrationSlice] Firestore listener error for ${taskId}:`, error);
+            (_error) => {
+                // Ignore or handle differently
             }
         );
 
@@ -104,7 +116,6 @@ export const buildAgentOrchestrationState: (
 
     stopListeningToGraph: (taskId: string) => {
         if (graphListeners[taskId]) {
-            console.info(`[AgentOrchestrationSlice] Stopping listener for graph: ${taskId}`);
             graphListeners[taskId]();
             delete graphListeners[taskId];
 
@@ -123,45 +134,55 @@ export const buildAgentOrchestrationState: (
     setActiveGraphExecution: (execution) => set({ activeGraphExecution: execution }),
 
     startListeningToGraphExecution: async (executionId: string) => {
-        if (activeExecutionListener) {
-            console.info('[AgentOrchestrationSlice] Stopping existing active graph execution listener.');
-            activeExecutionListener();
-            activeExecutionListener = null;
-        }
-
         const uid = auth.currentUser?.uid;
         if (!uid) {
-            console.warn('[AgentOrchestrationSlice] Cannot listen to graph execution without authenticated user.');
             return;
         }
 
-        console.info(`[AgentOrchestrationSlice] Starting listener for graph execution: ${executionId}`);
+        // Clean up previous listeners before starting a new one
+        if (executionUnsubscribe) {
+            executionUnsubscribe();
+            executionUnsubscribe = null;
+        }
+
         // Path: users/{userId}/graphExecutions/{id}
         const executionRef = doc(db, 'users', uid, 'graphExecutions', executionId);
 
-        activeExecutionListener = onSnapshot(
+        const unsubscribe = onSnapshot(
             executionRef,
             (snapshot) => {
                 if (snapshot.exists()) {
                     const data = snapshot.data() as GraphExecutionState;
                     set({ activeGraphExecution: data });
                 } else {
-                    console.warn(`[AgentOrchestrationSlice] Graph execution missing or deleted: ${executionId}`);
                     set({ activeGraphExecution: null });
                 }
             },
-            (error) => {
-                console.error(`[AgentOrchestrationSlice] Firestore listener error for execution ${executionId}:`, error);
+            (_error) => {
+                // Ignore or handle differently
             }
         );
+        executionUnsubscribe = unsubscribe;
     },
 
     stopListeningToGraphExecution: () => {
-        if (activeExecutionListener) {
-            console.info('[AgentOrchestrationSlice] Stopping active graph execution listener.');
-            activeExecutionListener();
-            activeExecutionListener = null;
-            set({ activeGraphExecution: null });
+        if (executionUnsubscribe) {
+            executionUnsubscribe();
+            executionUnsubscribe = null;
         }
+        set({ activeGraphExecution: null });
     }
 });
+
+export function resetGraphListeners() {
+    Object.keys(graphListeners).forEach(key => {
+        if (graphListeners[key]) {
+            graphListeners[key]!();
+            delete graphListeners[key];
+        }
+    });
+    if (executionUnsubscribe) {
+        executionUnsubscribe();
+        executionUnsubscribe = null;
+    }
+}

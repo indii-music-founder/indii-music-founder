@@ -1,5 +1,5 @@
 ---
-description: Full-spectrum codebase bug hunter — surfaces security, data integrity, performance, and correctness issues across the entire indii stack. Covers both Big Game (surface-level) and Small Game (subtle) bugs. Fully autonomous — finds AND fixes all issues, then verifies and commits.
+description: Full-spectrum codebase bug hunter — surfaces security, data integrity, performance, and correctness issues across the entire indii stack. Covers both Big Game (surface-level) and Small Game (subtle) bugs. In HUNT mode it fixes, verifies, and commits; in AUDIT mode it records findings in OPEN_ISSUES.md and preserves supporting evidence only.
 ---
 
 # /hunter — Full-Spectrum Bug Hunter
@@ -9,7 +9,7 @@ description: Full-spectrum codebase bug hunter — surfaces security, data integ
 ## Mode Selection (NEW)
 
 - **HUNT** (default): Find ALL bugs + fix + verify + commit in this session.
-- **AUDIT** (find-only): Find ALL bugs + document for another agent to fix. Output: findings doc + GitHub issues.
+- **AUDIT** (find-only): Find ALL bugs + document for another agent to fix. Output: `.agent/test_ledger/OPEN_ISSUES.md` entries + supporting evidence doc + GitHub issues for Critical/High findings.
 
 Infer from context:
 - Explicit "audit" or "find-only" → AUDIT mode
@@ -98,6 +98,17 @@ grep -rn 'fetch(' packages/renderer/src/services/ --include='*.ts' | grep -v 're
 - Missing status check → Add `if (!response.ok)` with appropriate error handling
 - Missing retry → Wrap in retry logic for 429/5xx codes
 
+### 1.6 API System Integrity (NEW)
+```bash
+# Detect ghost test duplicates and legacy AI imports
+node scripts/verify-api-system-integrity.js
+```
+
+**AUTO-FIX:** For each finding:
+- Duplicate test files → Delete the redundant file that is in the incorrect location (prefer `__tests__/` for isolated tests, or standard paths).
+- Banned AI logic (`DirectImageEditor`, `FallbackClient`) → Refactor out and route through `httpsCallable` Firebase Cloud Functions.
+- `VITE_API_KEY` → Remove from client usage and route through Cloud Functions.
+
 ### 1.6 Vendor Chunk Conflicts
 ```bash
 # Check manualChunks (electron.vite.config.ts + packages/renderer/vite.config.ts) for React-dependent libs split from vendor-react
@@ -137,6 +148,16 @@ grep -rn 'Here is the.*code\|As an AI' packages/renderer/src/ --include='*.ts' -
 **AUTO-FIX:** For each finding:
 - Boilerplate text → Delete the text from the file completely.
 - Lazy placeholders (`// ... rest of code`) → You MUST read the original file, synthesize the missing logic, and implement it fully. NEVER just delete the placeholder without implementing the code.
+
+### 1.9 Infrastructure Identity Leaks (The Ghost Project Sweep)
+```bash
+# Suspended project IDs and old app credentials
+grep -rn 'indii-v-1-1\|223837784072' packages/ scripts/ execution/ load-tests/ --include='*.ts' --include='*.js' --include='*.sh' --include='*.py' | grep -v node_modules
+```
+
+**AUTO-FIX:** For each finding:
+- Ghost Project IDs → You MUST replace them with the active project `indii-music-founder` (and its active ID `148015878263`). 
+- Check the GitHub CLI `gh secret list` immediately. If the ghost ID leaked into the code, it probably leaked into the CI/CD pipeline secrets.
 
 ---
 
@@ -214,6 +235,11 @@ grep -rn 'toLocaleDateString\|toLocaleString\|toLocaleTimeString' packages/rende
 
 After ALL fixes are applied, run the full verification gauntlet:
 
+**For UI or Frontend Bugs:**
+- You MUST connect via the `chrome-devtools` MCP plugin.
+- Ensure no console errors remain.
+- Capture screenshots/DOM snapshots proving the UI renders without crashing and the bug is resolved.
+
 ```bash
 # Frontend
 npm run typecheck 2>&1 | tail -30
@@ -224,7 +250,7 @@ npm run build:studio 2>&1 | tail -20
 cd packages/firebase && npx tsc --noEmit 2>&1 | tail -20 && cd ../..
 
 # Firestore rules (if modified)
-firebase firestore:rules validate --project indii-v-1-1
+firebase firestore:rules validate --project indii-music-founder
 ```
 
 If any check fails, fix the error and re-run. Apply the **Two-Strike Rule**: if a fix fails twice, stop, log extensively, and propose an alternative approach.
@@ -259,20 +285,26 @@ If any check fails, fix the error and re-run. Apply the **Two-Strike Rule**: if 
 
 ### AUDIT Mode (find-only + handoff)
 
-1. **Consolidated findings doc** (`.agent/test_ledger/HUNT_AUDIT_<timestamp>.md`):
-   - House style: status | severity | module | evidence | files | fix direction | verified?
-   - One section per Big/Small Game phase so the fix agent can work methodically
-   - Include any "false leads" you discarded (grep artifacts, etc.) so fix agent doesn't re-check them
+1. **Open issues ledger** (`.agent/test_ledger/OPEN_ISSUES.md`):
+   - This is the source of truth for every confirmed finding.
+   - Add one issue block per finding using the existing ledger style: status, severity, module, location, summary, expected acceptance, honest fallback when relevant, fix direction, and DO NOT guardrail.
+   - Before adding a new issue, search for duplicates by feature, file path, and failure mode.
 
-2. **GitHub issues** (label `triage/ready-for-agent`):
+2. **Supporting findings doc** (`.agent/test_ledger/HUNT_AUDIT_<timestamp>.md`):
+   - Keep concise evidence, command results, and false leads only.
+   - Cross-reference the `OPEN_ISSUES.md` issue ID for each confirmed finding.
+   - Do not treat this file as the canonical fix queue.
+
+3. **GitHub issues** (label `triage/ready-for-agent`):
    - One issue per Critical/High finding
    - Body = finding block + fix direction + acceptance criteria
-   - Cross-link to findings doc
+   - Cross-link to the `OPEN_ISSUES.md` issue ID and supporting findings doc
 
-3. **Report:**
+4. **Report:**
    ```
    ✅ AUDIT COMPLETE
-   - Findings: .agent/test_ledger/HUNT_AUDIT_<timestamp>.md
+   - Ledger: .agent/test_ledger/OPEN_ISSUES.md
+   - Evidence: .agent/test_ledger/HUNT_AUDIT_<timestamp>.md
    - Issues: #<issue>, #<issue>, ... (highest severity)
    - Hand off — do not commit, push, or modify code
    ```
@@ -291,10 +323,12 @@ Do NOT commit, push, or log to Error Ledger/mem0 in AUDIT mode. The fixing agent
 4. **Verify after fixing.** Never commit code that doesn't pass typecheck and tests.
 5. **Log everything.** Every fix goes to Error Ledger AND mem0 for institutional memory.
 6. **Check deployed state.** If a bug involves configuration (API keys, env vars), verify the production deployment matches local config.
+7. **The Ponytail Rule.** Apply the simplest, most minimal fix possible. If a native platform feature or stdlib can do it, use it instead of writing custom logic.
 
 ### AUDIT Mode (find-only)
 
 1. **DO NOT FIX.** Document only.
-2. **DO NOT COMMIT.** Hand off the findings doc + GitHub issues to the fixing agent.
+2. **DO NOT COMMIT.** Hand off `OPEN_ISSUES.md`, the supporting findings doc, and GitHub issues to the fixing agent.
 3. **DO NOT LOG to Error Ledger / mem0.** The fixing agent owns the record-keeping after they fix.
 4. **Every finding gets characterized.** Severity, evidence, files, fix direction, verified-or-recon.
+5. **Every confirmed finding goes in `OPEN_ISSUES.md`.** The audit doc is supporting evidence only, not the source of truth.

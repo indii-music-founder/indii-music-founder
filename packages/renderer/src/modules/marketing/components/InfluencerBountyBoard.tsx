@@ -1,42 +1,43 @@
-import React, { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
     Trophy, Plus, Link2, DollarSign, Copy, CheckCircle,
-    Clock, Star, TrendingUp, Music, Video
+    Clock, Music, Video
 } from 'lucide-react';
-import { influencerBountyService } from '@/services/marketing/InfluencerBountyService';
+import { PersistedBountyLink, influencerBountyService } from '@/services/marketing/InfluencerBountyService';
 import { useToast } from '@/core/context/ToastContext';
 
 type ActionType = 'TikTok' | 'IG Reel' | 'YouTube Short';
-type BountyStatus = 'pending' | 'verified' | 'paid';
+type BountyStatus = 'link-only';
 
 interface Bounty {
     id: string;
     track: string;
     reward: number;
-    action: ActionType;
+    action?: string;
     influencer: string;
     link: string;
     status: BountyStatus;
     refCode: string;
-    views: number;
 }
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-interface LeaderboardEntry {
-    name: string;
-    bounties: number;
-    totalEarned: number;
-    totalViews: string;
-}
-
-// No hardcoded data — bounties come from InfluencerBountyService/Firestore.
-// Tracks and leaderboard are derived dynamically from bounty data.
 
 const STATUS_STYLES: Record<BountyStatus, string> = {
-    pending: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20',
-    verified: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
-    paid: 'bg-green-500/10 text-green-400 border-green-500/20',
+    'link-only': 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20',
 };
+
+const STATUS_LABELS: Record<BountyStatus, string> = {
+    'link-only': 'Link only',
+};
+
+const mapPersistedBounty = (bounty: PersistedBountyLink): Bounty => ({
+    id: bounty.id,
+    track: bounty.trackName,
+    reward: bounty.rewardAmount,
+    action: bounty.action,
+    influencer: bounty.influencerHandle,
+    link: bounty.targetUrl,
+    status: 'link-only',
+    refCode: bounty.referralCode,
+});
 
 export default function InfluencerBountyBoard() {
     const [bounties, setBounties] = useState<Bounty[]>([]);
@@ -46,32 +47,37 @@ export default function InfluencerBountyBoard() {
     const [influencerName, setInfluencerName] = useState('');
     const [copiedCode, setCopiedCode] = useState<string | null>(null);
     const [isCreating, setIsCreating] = useState(false);
+    const [isLoadingBounties, setIsLoadingBounties] = useState(true);
     const toast = useToast();
 
-    // Derive unique tracks from existing bounties
     const availableTracks = Array.from(new Set(bounties.map(b => b.track))).filter(Boolean);
     const selectedTrack = trackInput || availableTracks[0] || '';
 
-    // Derive leaderboard dynamically from bounties
-    const leaderboard = React.useMemo(() => {
-        const byInfluencer = new Map<string, { bounties: number; totalEarned: number; totalViews: number }>();
-        bounties.forEach(b => {
-            const existing = byInfluencer.get(b.influencer) || { bounties: 0, totalEarned: 0, totalViews: 0 };
-            existing.bounties++;
-            if (b.status === 'paid') existing.totalEarned += b.reward;
-            existing.totalViews += b.views;
-            byInfluencer.set(b.influencer, existing);
-        });
-        return Array.from(byInfluencer.entries())
-            .map(([name, data]) => ({
-                name,
-                bounties: data.bounties,
-                totalEarned: data.totalEarned,
-                totalViews: data.totalViews >= 1000000 ? `${(data.totalViews / 1000000).toFixed(1)}M` : data.totalViews >= 1000 ? `${(data.totalViews / 1000).toFixed(0)}K` : String(data.totalViews),
-            }))
-            .sort((a, b) => b.totalEarned - a.totalEarned)
-            .slice(0, 10);
-    }, [bounties]);
+    useEffect(() => {
+        let alive = true;
+
+        const loadBounties = async () => {
+            setIsLoadingBounties(true);
+            try {
+                const savedBounties = await influencerBountyService.listBountyLinks();
+                if (!alive) {
+                    return;
+                }
+
+                setBounties(savedBounties.map(mapPersistedBounty));
+            } finally {
+                if (alive) {
+                    setIsLoadingBounties(false);
+                }
+            }
+        };
+
+        void loadBounties();
+
+        return () => {
+            alive = false;
+        };
+    }, []);
 
     const handleCreateBounty = async () => {
         if (!influencerName) return;
@@ -81,7 +87,8 @@ export default function InfluencerBountyBoard() {
             const bounty = await influencerBountyService.generateBountyLink(
                 influencerName.startsWith('@') ? influencerName : `@${influencerName}`,
                 selectedTrack,
-                reward
+                reward,
+                action
             );
 
             const newBounty: Bounty = {
@@ -91,23 +98,22 @@ export default function InfluencerBountyBoard() {
                 action,
                 influencer: bounty.influencerId,
                 link: bounty.targetUrl,
-                status: 'pending',
+                status: 'link-only',
                 refCode: bounty.referralCode,
-                views: 0,
             };
 
             setBounties(prev => [newBounty, ...prev]);
             setInfluencerName('');
-            toast.success("Bounty and referral link created!");
+            toast.success("Referral link saved!");
         } catch (_error: unknown) {
-            toast.error("Failed to create bounty.");
+            toast.error("Failed to save referral link.");
         } finally {
             setIsCreating(false);
         }
     };
 
-    const handleCopyRefLink = (refCode: string) => {
-        void navigator.clipboard.writeText(`https://indii.vip/ref/${refCode}`);
+    const handleCopyRefLink = (link: string, refCode: string) => {
+        void navigator.clipboard.writeText(link);
         setCopiedCode(refCode);
         setTimeout(() => setCopiedCode(null), 2000);
     };
@@ -120,7 +126,10 @@ export default function InfluencerBountyBoard() {
                     <Trophy size={18} className="text-dept-marketing" />
                     Influencer Bounty Board
                 </h2>
-                <p className="text-xs text-gray-500 mt-1">Create tracked referral campaigns for micro-influencers to promote your sound.</p>
+                <p className="text-xs text-gray-500 mt-1">
+                    Create referral links for micro-influencers to promote your sound. Saved links are available now;
+                    tracking, leaderboard ranking, and payouts stay unavailable until the backend workers exist.
+                </p>
             </div>
 
             {/* Create Bounty Form */}
@@ -135,26 +144,22 @@ export default function InfluencerBountyBoard() {
                         <label className="text-xs text-gray-500 mb-1 flex items-center gap-1">
                             <Music size={9} /> Track
                         </label>
-                        <select
-                            value={selectedTrack}
-                            onChange={e => setTrackInput(e.target.value)}
-                            className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-dept-marketing/50 appearance-none cursor-pointer"
-                        >
-                            {availableTracks.length > 0 ? (
-                                availableTracks.map(t => <option key={t} value={t} className="bg-[#111]">{t}</option>)
-                            ) : (
-                                <option value="" className="bg-[#111]">Enter track name below</option>
-                            )}
-                        </select>
-                        {availableTracks.length === 0 && (
-                            <input
-                                type="text"
-                                value={trackInput}
+                        {availableTracks.length > 0 && (
+                            <select
+                                value={selectedTrack}
                                 onChange={e => setTrackInput(e.target.value)}
-                                placeholder="Track name"
-                                className="w-full mt-1 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder-gray-600 focus:border-dept-marketing/50 outline-none"
-                            />
+                                className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-dept-marketing/50 appearance-none cursor-pointer"
+                            >
+                                {availableTracks.map(t => <option key={t} value={t} className="bg-[#111]">{t}</option>)}
+                            </select>
                         )}
+                        <input
+                            type="text"
+                            value={trackInput}
+                            onChange={e => setTrackInput(e.target.value)}
+                            placeholder={availableTracks.length > 0 ? 'Or type a new track name' : 'Track name'}
+                            className="w-full mt-1 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder-gray-600 focus:border-dept-marketing/50 outline-none"
+                        />
                     </div>
 
                     {/* Reward */}
@@ -216,12 +221,12 @@ export default function InfluencerBountyBoard() {
                     {isCreating ? (
                         <>
                             <Clock size={15} className="animate-spin" />
-                            Generating Tracking Node...
+                            Saving Referral Link...
                         </>
                     ) : (
                         <>
                             <Plus size={15} />
-                            Create Bounty + Generate Referral Link
+                            Create Bounty + Save Link
                         </>
                     )}
                 </button>
@@ -229,92 +234,78 @@ export default function InfluencerBountyBoard() {
 
             {/* Active Bounties List */}
             <div>
-                <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">Active Bounties</h3>
+                <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">Saved Bounties</h3>
                 <div className="space-y-2">
-                    {bounties.map(b => (
-                        <div
-                            key={b.id}
-                            className="p-3 rounded-xl bg-white/[0.03] border border-white/5 hover:border-white/8 transition-all"
-                        >
-                            <div className="flex items-start gap-3">
-                                <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-2 flex-wrap">
-                                        <span className="text-sm font-semibold text-white">{b.influencer}</span>
-                                        <span className={`px-2 py-0.5 rounded-full border text-[10px] font-semibold ${STATUS_STYLES[b.status]}`}>
-                                            {b.status}
-                                        </span>
-                                        <span className="text-[10px] text-gray-600 bg-white/5 px-1.5 py-0.5 rounded">{b.action}</span>
-                                    </div>
-                                    <p className="text-[10px] text-gray-500 mt-0.5">
-                                        {b.track} &nbsp;·&nbsp; ${b.reward} reward
-                                        {b.views > 0 && <> &nbsp;·&nbsp; {b.views.toLocaleString()} views</>}
-                                    </p>
-                                    {b.link && (
-                                        <p className="text-[10px] text-dept-marketing mt-0.5 truncate">
-                                            <Link2 size={8} className="inline mr-1" />{b.link}
-                                        </p>
-                                    )}
-                                </div>
-                                <button
-                                    onClick={() => handleCopyRefLink(b.refCode)}
-                                    className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-white/5 border border-white/10 text-[10px] text-gray-400 hover:border-white/20 transition-all flex-shrink-0"
-                                    title={`https://indii.vip/ref/${b.refCode}`}
-                                >
-                                    {copiedCode === b.refCode
-                                        ? <CheckCircle size={10} className="text-green-400" />
-                                        : <Copy size={10} />
-                                    }
-                                    <span className="font-mono">{b.refCode}</span>
-                                </button>
-                            </div>
+                    {isLoadingBounties ? (
+                        <div className="py-12 text-center">
+                            <Clock size={28} className="mx-auto text-gray-700 mb-3 animate-spin" />
+                            <p className="text-sm text-gray-500">Loading saved referral links...</p>
                         </div>
-                    ))}
+                    ) : (
+                        bounties.map(b => (
+                            <div
+                                key={b.id}
+                                className="p-3 rounded-xl bg-white/[0.03] border border-white/5 hover:border-white/8 transition-all"
+                            >
+                                <div className="flex items-start gap-3">
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                            <span className="text-sm font-semibold text-white">{b.influencer}</span>
+                                            <span className={`px-2 py-0.5 rounded-full border text-[10px] font-semibold ${STATUS_STYLES[b.status]}`}>
+                                                {STATUS_LABELS[b.status]}
+                                            </span>
+                                            {b.action && (
+                                                <span className="text-[10px] text-gray-300 bg-white/5 px-1.5 py-0.5 rounded">
+                                                    {b.action}
+                                                </span>
+                                            )}
+                                        </div>
+                                        <p className="text-[10px] text-gray-500 mt-0.5">
+                                            {b.track} &nbsp;·&nbsp; ${b.reward} bounty
+                                        </p>
+                                        {b.link && (
+                                            <p className="text-[10px] text-dept-marketing mt-0.5 truncate">
+                                                <Link2 size={8} className="inline mr-1" />{b.link}
+                                            </p>
+                                        )}
+                                    </div>
+                                    <button
+                                        onClick={() => handleCopyRefLink(b.link, b.refCode)}
+                                        className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-white/5 border border-white/10 text-[10px] text-gray-400 hover:border-white/20 transition-all flex-shrink-0"
+                                        title={b.link}
+                                    >
+                                        {copiedCode === b.refCode
+                                            ? <CheckCircle size={10} className="text-green-400" />
+                                            : <Copy size={10} />
+                                        }
+                                        <span className="font-mono">{b.refCode}</span>
+                                    </button>
+                                </div>
+                            </div>
+                        ))
+                    )}
                 </div>
 
-                {bounties.length === 0 && (
+                {!isLoadingBounties && bounties.length === 0 && (
                     <div className="py-12 text-center">
                         <Trophy size={28} className="mx-auto text-gray-700 mb-3" />
-                        <p className="text-sm text-gray-500">No bounties created yet.</p>
-                        <p className="text-xs text-gray-600 mt-1">Use the form above to create your first influencer bounty.</p>
+                        <p className="text-sm text-gray-500">No saved referral links yet.</p>
+                        <p className="text-xs text-gray-600 mt-1">Use the form above to create your first link-only bounty.</p>
                     </div>
                 )}
             </div>
 
-            {/* Leaderboard */}
-            <div>
-                <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3 flex items-center gap-1.5">
-                    <Star size={11} /> Top Influencers
+            <div className="p-4 rounded-xl bg-amber-500/5 border border-amber-500/10">
+                <h3 className="text-xs font-bold text-amber-200 uppercase tracking-widest flex items-center gap-1.5">
+                    <DollarSign size={11} /> Tracking Unavailable
                 </h3>
-                <div className="rounded-xl border border-white/5 overflow-hidden">
-                    <table className="w-full text-xs">
-                        <thead>
-                            <tr className="border-b border-white/5 bg-white/[0.03]">
-                                {['#', 'Handle', 'Bounties', 'Total Views', 'Earned'].map(col => (
-                                    <th key={col} className="px-3 py-2.5 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">
-                                        {col}
-                                    </th>
-                                ))}
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {leaderboard.length > 0 ? leaderboard.map((e, i) => (
-                                <tr key={i} className="border-b border-white/5 last:border-0 hover:bg-white/[0.02] transition-colors">
-                                    <td className="px-3 py-2.5 text-gray-600 font-bold">#{i + 1}</td>
-                                    <td className="px-3 py-2.5 text-white font-medium">{e.name}</td>
-                                    <td className="px-3 py-2.5 text-gray-400">{e.bounties}</td>
-                                    <td className="px-3 py-2.5 text-gray-400 flex items-center gap-1">
-                                        <TrendingUp size={9} className="text-green-400" />{e.totalViews}
-                                    </td>
-                                    <td className="px-3 py-2.5 text-green-400 font-semibold">${e.totalEarned}</td>
-                                </tr>
-                            )) : (
-                                <tr>
-                                    <td colSpan={5} className="px-3 py-6 text-center text-gray-600 text-xs">No influencer data yet. Create bounties to populate the leaderboard.</td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
-                </div>
+                <p className="text-xs text-amber-100/80 mt-2 leading-5">
+                    Click tracking, conversion attribution, payout processing, and influencer ranking are not wired in this build.
+                    Saved referral links stay active, but the leaderboard will remain unavailable until the backend pipeline exists.
+                </p>
+                <p className="text-[10px] text-amber-100/60 mt-2">
+                    Manual review only. No payout claims are shown from local state.
+                </p>
             </div>
         </div>
     );

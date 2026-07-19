@@ -3,6 +3,7 @@
 
 # Logs
 logs
+.tmp/
 *.log
 npm-debug.log*
 yarn-debug.log*
@@ -51,6 +52,9 @@ test_output*.txt
 test_failures.txt
 test_results*.txt
 eslint_output.json
+# Loose QA smoke/verify screenshots (regenerated every test run)
+artifacts/*.png
+artifacts/live-agent-daisy-chain/
 
 # Build artifacts
 out/
@@ -113,7 +117,6 @@ implementation_plan.md
 _archive_pre_monorepo/
 packages/firebase/lib/
 dist/
-packages/shared/dist/
 electron/
 /functions/
 coverage/
@@ -170,3 +173,12 @@ test_results.json
 # Discovered Audit Files
 users.json
 anonymous_users_audit_report.json
+
+# npm isolated cache directories
+.npm-cache-isolated-*
+.npm-cache-isolated-*/
+
+
+# Python test fixtures
+python/tests/fixtures/
+client_secret_*.json

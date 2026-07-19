@@ -26,6 +26,15 @@ export interface AdCreative {
     callToAction: 'LEARN_MORE' | 'SHOP_NOW' | 'LISTEN_NOW';
 }
 
+/**
+ * ISSUE-845: a real zero-performance ad and a backend/network failure must
+ * never be indistinguishable — callers must check `available` before
+ * reading metrics.
+ */
+export type AdInsightsResult =
+    | { available: true; impressions: number; clicks: number; spend: number; ctr: number; cpc: number }
+    | { available: false; errorCode: 'INSIGHTS_UNAVAILABLE'; reason: string };
+
 export class AdAutomationService {
     /**
      * Deploys a micro-budget campaign for a specific creative.
@@ -65,9 +74,12 @@ export class AdAutomationService {
             });
 
             return result.data.campaignId;
-        } catch (_error: unknown) {
-            logger.warn('[AdAutomation] Campaign Cloud Function unavailable, using local ID.');
-            return `camp_${Date.now()}`;
+        } catch (error: unknown) {
+            // ISSUE-497: never fabricate a fake ID / false success. If the backend
+            // is unavailable, fail honestly so the caller does not claim a campaign
+            // was deployed when nothing happened.
+            logger.error('[AdAutomation] createAdCampaign failed:', error);
+            throw new Error('Marketing backend unavailable — could not create the ad campaign.');
         }
     }
 
@@ -96,9 +108,9 @@ export class AdAutomationService {
             });
 
             return result.data.adSetId;
-        } catch (_error: unknown) {
-            logger.warn('[AdAutomation] AdSet Cloud Function unavailable, using local ID.');
-            return `adset_${Date.now()}`;
+        } catch (error: unknown) {
+            logger.error('[AdAutomation] createAdSet failed:', error);
+            throw new Error('Marketing backend unavailable — could not create the ad set.');
         }
     }
 
@@ -122,16 +134,20 @@ export class AdAutomationService {
             });
 
             return result.data.adId;
-        } catch (_error: unknown) {
-            logger.warn('[AdAutomation] Ad Cloud Function unavailable, using local ID.');
-            return `ad_${Date.now()}`;
+        } catch (error: unknown) {
+            logger.error('[AdAutomation] createAd failed:', error);
+            throw new Error('Marketing backend unavailable — could not create the ad.');
         }
     }
 
     /**
      * Retrieves basic performance metrics for an active campaign.
+     *
+     * ISSUE-845: never coerce a backend/network failure into real-looking
+     * zero metrics — a missing Cloud Function deploy, auth failure, or
+     * provider API error must not read as "this ad has zero impressions."
      */
-    async getAdInsights(adId: string) {
+    async getAdInsights(adId: string): Promise<AdInsightsResult> {
         logger.info(`[AdAutomation] Fetching insights for ad ${adId}.`);
 
         try {
@@ -144,27 +160,26 @@ export class AdAutomationService {
             >(functionsWest1, 'getAdInsights');
 
             const result = await getInsightsFn({ adId });
-            return result.data;
-        } catch (_error: unknown) {
-            logger.warn(`[AdAutomation] Insights Cloud Function unavailable for ad ${adId}. Deploy Cloud Function 'getAdInsights'.`);
+            return { available: true, ...result.data };
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : String(error);
+            logger.warn(`[AdAutomation] Insights Cloud Function unavailable for ad ${adId}: ${message}`);
             return {
-                impressions: 0,
-                clicks: 0,
-                spend: 0,
-                ctr: 0,
-                cpc: 0
+                available: false,
+                errorCode: 'INSIGHTS_UNAVAILABLE',
+                reason: `Ad insights are unavailable for ${adId}: ${message}`,
             };
         }
     }
 
     /**
-     * Executes the Meta Andromeda Pipeline: deploys 15 creative variations 
+     * Executes the Meta PLP Pipeline: deploys 15 creative variations 
      * simultaneously for robust algorithmic A/B testing.
      */
-    async deployAndromedaPipeline(creatives: AdCreative[], config: AdBudgetConfig): Promise<string[]> {
-        logger.info(`[AdAutomation] Deploying Meta Andromeda Pipeline with ${creatives.length} variations...`);
+    async deployPLPPipeline(creatives: AdCreative[], config: AdBudgetConfig): Promise<string[]> {
+        logger.info(`[AdAutomation] Deploying Meta PLP Pipeline with ${creatives.length} variations...`);
 
-        // Enforce 15 variations as per Andromeda specification
+        // Enforce 15 variations as per PLP specification
         if (creatives.length > 15) creatives.length = 15;
 
         const campaignId = await this.createCampaign(config);
@@ -176,7 +191,7 @@ export class AdAutomationService {
             adIds.push(adId);
         }
 
-        logger.info(`[AdAutomation] Andromeda Pipeline deployed successfully. Ad IDs: ${adIds.join(', ')}`);
+        logger.info(`[AdAutomation] PLP Pipeline deployed successfully. Ad IDs: ${adIds.join(', ')}`);
         return adIds;
     }
 

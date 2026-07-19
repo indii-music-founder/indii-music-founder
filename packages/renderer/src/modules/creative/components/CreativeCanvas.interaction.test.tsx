@@ -13,6 +13,13 @@ const defaultStoreState = createMockStore({
     addUploadedImage: vi.fn(),
     currentProjectId: 'test-project',
     generatedHistory: [],
+    studioControls: {
+        aspectRatio: '1:1',
+        imageSize: '1k',
+        model: 'fast',
+        resolution: '1k',
+        useGrounding: false,
+    },
     initializeDesignHistory: vi.fn().mockResolvedValue(undefined),
 });
 
@@ -44,6 +51,7 @@ vi.mock('../services/CanvasOperationsService', () => ({
         addRectangle: vi.fn(),
         addCircle: vi.fn(),
         addText: vi.fn(),
+        addBlankSketchLayer: vi.fn(),
         initialize: vi.fn(),
         dispose: vi.fn(),
         updateBrushColor: vi.fn(),
@@ -51,6 +59,12 @@ vi.mock('../services/CanvasOperationsService', () => ({
         canUndo: vi.fn().mockReturnValue(false),
         canRedo: vi.fn().mockReturnValue(false),
         toJSON: vi.fn().mockResolvedValue({}),
+        getLayers: vi.fn().mockReturnValue([]),
+        selectLayer: vi.fn(),
+        toggleLayerVisibility: vi.fn(),
+        toggleLayerLock: vi.fn(),
+        deleteLayer: vi.fn(),
+        reorderLayer: vi.fn(),
     }
 }));
 vi.mock('../services/VideoDirector', () => ({ VideoDirector: { triggerAnimation: vi.fn().mockResolvedValue({ success: true }) } }));

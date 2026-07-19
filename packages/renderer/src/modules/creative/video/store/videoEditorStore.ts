@@ -28,6 +28,8 @@ export interface VideoClip {
     anchorY?: number; // 0 to 1 (percentage)
     borderRadius?: number;
     volume?: number; // 0 to 1
+    masterFingerprint?: string;
+    isrc?: string;
     // Text specific properties
     textColor?: string;
     fontSize?: number;
@@ -92,10 +94,10 @@ interface VideoEditorState {
 
     // Job Tracking
     jobId: string | null;
-    status: 'idle' | 'queued' | 'processing' | 'stitching' | 'completed' | 'failed';
+    status: 'idle' | 'queued' | 'processing' | 'stitching' | 'completed' | 'failed' | 'cancelled';
     progress: number;
     setJobId: (id: string | null) => void;
-    setStatus: (status: 'idle' | 'queued' | 'processing' | 'stitching' | 'completed' | 'failed') => void;
+    setStatus: (status: 'idle' | 'queued' | 'processing' | 'stitching' | 'completed' | 'failed' | 'cancelled') => void;
     setProgress: (progress: number) => void;
 
     // Membership
@@ -137,7 +139,7 @@ interface VideoEditorState {
     setIsPopoutActive: (active: boolean) => void;
 }
 
-const INITIAL_PROJECT: VideoProject = {
+export const INITIAL_PROJECT: VideoProject = {
     id: 'default-project',
     name: 'My Video Project',
     fps: 30,
@@ -149,17 +151,19 @@ const INITIAL_PROJECT: VideoProject = {
         { id: 'track-2', name: 'Text Overlay', type: 'text' },
         { id: 'track-3', name: 'Background Music', type: 'audio' },
     ],
-    clips: [
-        {
-            id: 'clip-1',
-            type: 'text',
-            text: 'Welcome to Remotion',
-            startFrame: 0,
-            durationInFrames: 90,
-            trackId: 'track-2',
-            name: 'Title Card'
-        }
-    ]
+    // Production projects deliberately start empty. Sample content must be an
+    // explicit template choice, never an exportable default.
+    clips: []
+};
+
+const isSafeDimension = (value: number) => Number.isInteger(value) && value >= 64 && value <= 8192;
+const isSafeFps = (value: number) => Number.isInteger(value) && value >= 1 && value <= 120;
+const sanitizeProjectSettings = (candidate: Partial<VideoProject>, _fallback: VideoProject): Partial<VideoProject> => {
+    const safe = { ...candidate };
+    if (safe.width !== undefined && !isSafeDimension(safe.width)) delete safe.width;
+    if (safe.height !== undefined && !isSafeDimension(safe.height)) delete safe.height;
+    if (safe.fps !== undefined && !isSafeFps(safe.fps)) delete safe.fps;
+    return safe;
 };
 
 // Setup BroadcastChannel for sync to popout window
@@ -324,9 +328,16 @@ export const useVideoEditorStore = create<VideoEditorState>((_set, get) => {
             return MembershipService.getMaxVideoDurationFrames(membershipTier, project.fps);
         },
 
-        setProject: (project) => set({ project }),
+        setProject: (project) => set((state) => ({
+            project: {
+                ...project,
+                width: isSafeDimension(project.width) ? project.width : state.project.width,
+                height: isSafeDimension(project.height) ? project.height : state.project.height,
+                fps: isSafeFps(project.fps) ? project.fps : state.project.fps,
+            }
+        })),
         updateProjectSettings: (settings) => set((state) => {
-            const newSettings = { ...settings };
+            const newSettings = sanitizeProjectSettings(settings, state.project);
 
             // Enforce duration limits based on membership tier
             if (newSettings.durationInFrames) {
@@ -368,33 +379,46 @@ export const useVideoEditorStore = create<VideoEditorState>((_set, get) => {
             };
         }),
 
-        removeTrack: (id) => set((state) => ({
-            project: {
-                ...state.project,
-                tracks: state.project.tracks.filter(t => t.id !== id),
-                clips: state.project.clips.filter(c => c.trackId !== id) // Remove clips in track
-            }
-        })),
+        removeTrack: (id) => set((state) => {
+            // An editor project must always retain an import target. Keeping the
+            // final track is safer than creating a zero-track project that later
+            // import/drop operations cannot route into.
+            if (state.project.tracks.length <= 1) return {};
+            return {
+                project: {
+                    ...state.project,
+                    tracks: state.project.tracks.filter(t => t.id !== id),
+                    clips: state.project.clips.filter(c => c.trackId !== id)
+                }
+            };
+        }),
 
         addClip: (clipData) => set((state) => {
             const newClip: VideoClip = {
                 id: uuidv4(),
                 ...clipData
             };
+            const requiredDuration = Math.max(
+                state.project.durationInFrames,
+                newClip.startFrame + newClip.durationInFrames
+            );
             return {
                 project: {
                     ...state.project,
-                    clips: [...state.project.clips, newClip]
+                    clips: [...state.project.clips, newClip],
+                    durationInFrames: requiredDuration
                 }
             };
         }),
 
-        updateClip: (id, updates) => set((state) => ({
-            project: {
-                ...state.project,
-                clips: state.project.clips.map(c => c.id === id ? { ...c, ...updates } : c)
-            }
-        })),
+        updateClip: (id, updates) => set((state) => {
+            const clips = state.project.clips.map(c => c.id === id ? { ...c, ...updates } : c);
+            const updated = clips.find(c => c.id === id);
+            const requiredDuration = updated
+                ? Math.max(state.project.durationInFrames, updated.startFrame + updated.durationInFrames)
+                : state.project.durationInFrames;
+            return { project: { ...state.project, clips, durationInFrames: requiredDuration } };
+        }),
 
         removeClip: (id) => set((state) => ({
             project: {
@@ -463,3 +487,7 @@ export const useVideoEditorStore = create<VideoEditorState>((_set, get) => {
         }),
     };
 });
+
+if (typeof window !== 'undefined') {
+    (window as any).useVideoEditorStore = useVideoEditorStore;
+}

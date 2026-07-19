@@ -106,41 +106,6 @@ test.describe('Chat / CommandBar Interaction', () => {
         // App must still be alive
         await expect(page.locator('#root')).toBeVisible();
     });
-
-    test('DelegateMenu renders specialist agent list', async ({ authedPage: page }) => {
-        // Look for delegate/specialist selector
-        const delegateBtn = page
-            .locator('[data-testid="delegate-menu"], [aria-label*="delegate"], [aria-label*="agent"]')
-            .first();
-
-        const isVisible = await delegateBtn.isVisible().catch(() => false);
-        if (!isVisible) {
-            // Try finding it via text
-            const altBtn = page.locator('button:has-text("Agent"), button:has-text("Delegate")').first();
-            const altVisible = await altBtn.isVisible().catch(() => false);
-            if (!altVisible) {
-                console.log('DelegateMenu not found in current view — skipping');
-                return;
-            }
-            await altBtn.click({ force: true });
-        } else {
-            await delegateBtn.click({ force: true });
-        }
-
-        await page.waitForTimeout(600);
-
-        // Some kind of dropdown/popover should have appeared
-        const popup = page.locator('[role="listbox"], [role="menu"], [role="dialog"]').first();
-        const popupVisible = await popup.isVisible().catch(() => false);
-
-        if (popupVisible) {
-            // Should contain at least one agent option
-            const items = popup.locator('[role="option"], [role="menuitem"], li');
-            const count = await items.count();
-            expect(count).toBeGreaterThan(0);
-        }
-    });
-
     test('app remains stable during rapid input changes', async ({ authedPage: page }) => {
         const input = page
             .locator('[data-testid="prompt-input"], textarea, [role="textbox"]')

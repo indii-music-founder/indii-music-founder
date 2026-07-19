@@ -42,8 +42,8 @@ export const ProRegistrationSection: React.FC<ProRegistrationSectionProps> = ({
                     <div className="bg-amber-50 border border-amber-200 p-4 rounded-xl flex gap-3 text-amber-800 shadow-sm">
                         <AlertTriangle className="w-5 h-5 flex-shrink-0 mt-0.5" />
                         <div>
-                            <h4 className="font-semibold mb-1">Required before releasing music</h4>
-                            <p className="text-sm">You must register with a PRO before your music generates performance royalties. PROs generally do not pay retroactively.</p>
+                            <h4 className="font-semibold mb-1">Recommended for performance-royalty collection</h4>
+                            <p className="text-sm">PRO membership and accurate work registration help match and collect the composition&apos;s performance royalties. They are not a technical prerequisite for delivering a recording to a DSP.</p>
                         </div>
                     </div>
 
@@ -60,21 +60,21 @@ export const ProRegistrationSection: React.FC<ProRegistrationSectionProps> = ({
                             <tbody className="divide-y divide-gray-100 text-gray-700">
                                 <tr>
                                     <td className="px-4 py-3 font-medium">Cost</td>
-                                    <td className="px-4 py-3 text-green-600 font-medium">Free</td>
-                                    <td className="px-4 py-3">$50</td>
+                                    <td className="px-4 py-3">See current terms</td>
+                                    <td className="px-4 py-3">See current terms</td>
                                     <td className="px-4 py-3">Invite-only</td>
                                 </tr>
                                 <tr>
-                                    <td className="px-4 py-3 font-medium">Payout</td>
-                                    <td className="px-4 py-3">Quarterly</td>
-                                    <td className="px-4 py-3">Quarterly</td>
-                                    <td className="px-4 py-3">Monthly</td>
+                                    <td className="px-4 py-3 font-medium">Distributions</td>
+                                    <td className="px-4 py-3">Per current BMI schedule</td>
+                                    <td className="px-4 py-3">Per current ASCAP schedule</td>
+                                    <td className="px-4 py-3">Per current SESAC schedule</td>
                                 </tr>
                                 <tr>
-                                    <td className="px-4 py-3 font-medium">Best for</td>
-                                    <td className="px-4 py-3">Most independent artists</td>
-                                    <td className="px-4 py-3">Songwriters & producers</td>
-                                    <td className="px-4 py-3">Established professionals</td>
+                                    <td className="px-4 py-3 font-medium">Eligibility</td>
+                                    <td className="px-4 py-3">Open application</td>
+                                    <td className="px-4 py-3">Open application</td>
+                                    <td className="px-4 py-3">Invitation</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -126,7 +126,7 @@ export const ProRegistrationSection: React.FC<ProRegistrationSectionProps> = ({
 
                         <div className="md:w-64 bg-slate-50 p-5 rounded-xl border border-slate-100">
                             <h4 className="font-semibold text-slate-800 mb-3">Timeline</h4>
-                            <p className="text-sm text-slate-600 mb-2"><strong>Expected completion:</strong><br /> 5-7 business days from Application Date ({applicationDate?.toLocaleDateString() ?? 'Recently'})</p>
+                            <p className="text-sm text-slate-600 mb-2"><strong>Expected completion:</strong><br /> 5-7 business days from Application Date ({applicationDate?.toLocaleDateString('en-US') ?? 'Recently'})</p>
                             <p className="text-sm text-slate-600"><strong>First payout cycle:</strong><br /> Q3 (Aug 2026)</p>
                         </div>
                     </div>
@@ -159,7 +159,7 @@ export const ProRegistrationSection: React.FC<ProRegistrationSectionProps> = ({
                                 </div>
                                 <div>
                                     <p className="text-gray-500 mb-0.5">Registration Date</p>
-                                    <p className="font-medium text-gray-900">{applicationDate ? new Date(applicationDate).toLocaleDateString() : 'N/A'}</p>
+                                    <p className="font-medium text-gray-900">{applicationDate ? new Date(applicationDate).toLocaleDateString('en-US') : 'N/A'}</p>
                                 </div>
                                 <div>
                                     <p className="text-gray-500 mb-0.5">Next Statement</p>

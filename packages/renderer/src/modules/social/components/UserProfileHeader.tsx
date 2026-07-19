@@ -15,6 +15,7 @@ interface UserProfileHeaderProps {
 
 export default function UserProfileHeader({ userId }: UserProfileHeaderProps) {
     const currentUser = useStore(useShallow((state: StoreState) => state.userProfile));
+    const setModule = useStore((state: StoreState) => state.setModule);
     const targetId = userId || currentUser?.id;
 
     const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -102,7 +103,7 @@ export default function UserProfileHeader({ userId }: UserProfileHeaderProps) {
     return (
         <div className="relative bg-bg-dark border-b border-gray-800">
             {/* Banner */}
-            <div className="h-48 w-full overflow-hidden bg-linear-to-r from-purple-900 to-blue-900">
+            <div className="h-48 w-full overflow-hidden bg-linear-to-r from-green-900 to-blue-900">
                 {bannerUrl && (
                     <img src={bannerUrl} alt="Banner" className="w-full h-full object-cover opacity-60" />
                 )}
@@ -116,7 +117,7 @@ export default function UserProfileHeader({ userId }: UserProfileHeaderProps) {
                             {photoURL ? (
                                 <img src={photoURL} alt={displayName || 'User'} className="w-full h-full object-cover" />
                             ) : (
-                                <div className="w-full h-full bg-linear-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-3xl font-bold text-white">
+                                <div className="w-full h-full bg-linear-to-br from-indigo-500 to-green-500 flex items-center justify-center text-3xl font-bold text-white">
                                     {displayName?.[0] || 'U'}
                                 </div>
                             )}
@@ -135,14 +136,14 @@ export default function UserProfileHeader({ userId }: UserProfileHeaderProps) {
 
                         {/* Meta Row */}
                         <div className="flex items-center gap-6 mt-4 text-sm text-gray-300">
-                            <div className="flex items-center gap-1.5 hover:text-white transition-colors cursor-pointer">
+                            <div className="flex items-center gap-1.5">
                                 <Users size={16} className="text-gray-500" />
                                 <span className="font-bold text-white">{socialStats?.followers || 0}</span> Followers
                             </div>
-                            <div className="flex items-center gap-1.5 hover:text-white transition-colors cursor-pointer">
+                            <div className="flex items-center gap-1.5">
                                 <span className="font-bold text-white">{socialStats?.following || 0}</span> Following
                             </div>
-                            <div className="flex items-center gap-1.5 hover:text-white transition-colors cursor-pointer">
+                            <div className="flex items-center gap-1.5">
                                 <span className="font-bold text-white">{socialStats?.drops || 0}</span> Drops
                             </div>
                         </div>
@@ -151,7 +152,10 @@ export default function UserProfileHeader({ userId }: UserProfileHeaderProps) {
                     {/* Actions */}
                     <div className="flex gap-3 mb-2">
                         {isOwnProfile ? (
-                            <button className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-lg font-medium text-sm flex items-center gap-2 border border-gray-700 transition-colors">
+                            <button
+                                onClick={() => { void setModule('settings'); }}
+                                className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-lg font-medium text-sm flex items-center gap-2 border border-gray-700 transition-colors"
+                            >
                                 <Edit size={16} />
                                 Edit Profile
                             </button>

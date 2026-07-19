@@ -3,7 +3,7 @@
  * Native inventory tracking: physical vs virtual stock across channels.
  * Bar chart (Recharts), per-product stock levels, channel status cards.
  */
-import React, { useState } from 'react';
+import React from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { Package, AlertTriangle, CheckCircle2, RefreshCw } from 'lucide-react';
 import { useInventory } from '../hooks/useInventory';
@@ -13,21 +13,13 @@ import { useInventory } from '../hooks/useInventory';
 
 const CHANNEL_COLORS: Record<string, string> = {
     Printful: 'text-blue-400',
-    Printify: 'text-purple-400',
+    Printify: 'text-green-400',
     Shopify: 'text-green-400',
     Direct: 'text-[#FFE135]',
 };
 
 export function InventoryTracker() {
     const { inventory, loading } = useInventory();
-    const [syncing, setSyncing] = useState(false);
-
-    const handleSync = async () => {
-        setSyncing(true);
-        await new Promise(r => setTimeout(r, 1500));
-        setSyncing(false);
-    };
-
     const lowStock = inventory.filter(i => i.physical <= i.reorderThreshold);
 
     // Derive chart data dynamically from inventory
@@ -46,12 +38,12 @@ export function InventoryTracker() {
                     <p className="text-xs text-neutral-500 mt-0.5">{inventory.length} SKUs across {Object.keys(CHANNEL_COLORS).length} channels</p>
                 </div>
                 <button
-                    onClick={handleSync}
-                    disabled={syncing}
+                    disabled
+                    title="Provider inventory sync is not configured. Inventory updates when Firestore data changes."
                     className="flex items-center gap-2 px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-xs text-neutral-400 hover:text-white hover:border-white/20 transition-all disabled:opacity-50"
                 >
-                    <RefreshCw size={12} className={syncing ? 'animate-spin' : ''} />
-                    Sync
+                    <RefreshCw size={12} />
+                    Provider sync unavailable
                 </button>
             </div>
 

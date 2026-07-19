@@ -58,7 +58,7 @@ export interface CortexEntityProfile {
 export interface RenderDirectives {
     /** Composite prompt for gemini-3-pro-image-preview */
     imagePrompt: string;
-    /** Composite prompt for veo-3.1-generate-preview */
+    /** Composite prompt for veo-3.1-generate-001 */
     veoPrompt: string;
     /** Summary of mood/genre for labeling */
     styleSummary: string;

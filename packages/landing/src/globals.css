@@ -162,3 +162,62 @@ body::after {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/* ──────────────────────────────────────────────────────────────────────────
+ * ISSUE-544: Keyboard Accessibility — Focus Rings & Readable Text
+ *
+ * Focus rings are intentionally visible for keyboard-only users.
+ * :focus-visible ensures mouse clicks do NOT show the ring.
+ * ──────────────────────────────────────────────────────────────────────────*/
+
+/* Global focus ring — amber on dark background for WCAG AA contrast */
+:focus-visible {
+  outline: 2px solid rgba(245, 158, 11, 0.8);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Remove browser default outline on mouse/touch — keyboard ring above takes over */
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Pill/rounded CTA buttons — tighter radius on ring */
+a:focus-visible,
+button:focus-visible {
+  outline: 2px solid rgba(245, 158, 11, 0.8);
+  outline-offset: 3px;
+  border-radius: 9999px;
+}
+
+/* Input fields — inset ring so border doesn't expand layout */
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 2px solid rgba(245, 158, 11, 0.7);
+  outline-offset: 0;
+  border-radius: 6px;
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+ * ISSUE-544: Minimum readable text size
+ * Prevents legally/functionally important text from going below 12px.
+ * ──────────────────────────────────────────────────────────────────────────*/
+footer,
+footer a,
+footer p,
+footer span {
+  font-size: max(0.75rem, 12px);
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+ * ISSUE-544: Touch target minimum — 44×44px on interactive elements
+ * ──────────────────────────────────────────────────────────────────────────*/
+@media (pointer: coarse) {
+  a,
+  button,
+  [role="button"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}

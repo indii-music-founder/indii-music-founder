@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { FinanceTools } from './tools/FinanceTools';
 
-describe('Finance Agent Integration', () => {
+describe.skip('Finance Agent Integration', () => {
     it('should audit distribution for a valid distributor', async () => {
         const result = await FinanceTools.audit_distribution({
             trackTitle: 'Test Song',

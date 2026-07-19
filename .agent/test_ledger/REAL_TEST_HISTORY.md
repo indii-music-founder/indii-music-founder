@@ -805,3 +805,92 @@
 - **Findings:** 0 new issues filed. All regression verification tests passed.
 - **Artifacts:** `artifacts/mega_v12_2026-06-11_results.md`
 
+---
+
+## 2026-06-13 - API Validation Persona - Universal API Deep Test
+- **Modules Tested:** Audio Intelligence, Creative Pipeline, Agent Orchestration (Workflow Lab), Finance/Metadata, Distribution, Social Pipeline
+- **Duration:** 30 minutes
+- **Findings:** 4 🔴 HIGH severity issues.
+- **Key Issues:**
+  1. Creative generation throwing 500 Google Generation Service errors
+  2. Workflow Runner infinite hang on template execution
+  3. Receipt OCR fetch failure to generativelanguage.googleapis.com
+  4. Distribution page denying access due to insufficient permissions
+- **Coverage Delta:** Deep testing of all major frontend API integrations against localhost:4242.
+- **UX Score:** 15/30
+
+---
+
+## 2026-06-13 - Mega Orchestrator - Creative Director Target
+- **Modules Tested:** Creative Pipeline
+- **Duration:** 1 minute
+- **Findings:**
+  - Scoped Runner: ✅ PASS
+  - Browser UI Pass: ⏭️ BLOCKED (localhost permission timeout prior to persistent grant)
+- **UX Score:** N/A
+
+---
+
+## 2026-06-15 - MegaTestAudioLoop
+- **Modules Tested:** Audio Analyzer, MusicLibrary persistence, Distribution metadata flow, downstream Creative/Video handoff
+- **Duration:** 5 minutes
+- **Findings:**
+  - Scoped Runner: ✅ PASS (21/21 test files, 135/135 tests, Python checks green)
+  - `npm run dev:web`: ❌ BLOCKED (`listen EPERM: operation not permitted ::1:4243`)
+  - Playwright `webServer`: ❌ BLOCKED (`listen EPERM: operation not permitted ::1:4242`)
+  - In-app browser probe: ❌ BLOCKED (browser security policy rejected `http://127.0.0.1:4242` before navigation)
+  - New product issues filed: 0
+- **UX Score:** N/A
+## 2026-06-16 - MegaTestAudioLoop Audio Analyzer
+- **Modules Tested:** Audio Analyzer ingestion, local technical analysis, Semantic Audio DNA, MusicLibrary persistence, Distribution metadata flow, downstream Creative/Video prompt handoff, Vite/API routing, build parity
+- **Duration:** ~18 minutes
+- **Findings:** 3 new 🔴 HIGH issues filed: ISSUE-431 unresolved conflict marker blocks Audio Analyzer/dev/build; ISSUE-432 local Vite API/proxy routes return broad CORS/404/SPA HTML instead of usable audio pipeline APIs; ISSUE-433 dev-served modules expose secret-shaped `VITE_` values.
+- **Coverage Delta:** Scoped unit/integration and Python checks remain green, but live UI/API/deployment parity is now hard blocked by renderer compilation failure.
+- **Artifacts:** `artifacts/mega_audio_analyzer_2026-06-16_results.md`; screenshots in `artifacts/mega_audio_analyzer_2026-06-16_screenshots/`
+
+## 2026-06-16 - MegaTestAudioLoop Audio Analyzer Re-run
+- **Modules Tested:** Audio Analyzer ingestion, local technical analysis, Semantic Audio DNA, MusicLibrary persistence, Distribution metadata flow, downstream Creative/Video prompt handoff, Vite/API routing, build and preview parity
+- **Duration:** ~20 minutes
+- **Findings:** 1 new 🔴 HIGH issue filed: ISSUE-434 Vite dev server starts on `4243` but is killed with signal 9 during connected-route/API probing.
+- **Coverage Delta:** Scoped runner now fails 5/21 unit/integration files on the existing fine-tuned-models transform blocker and 8/17 E2E tests. `npm run build` now passes, and direct Vite preview of `dist/renderer` deep links loads the unauthenticated shell, but preview API probes still reproduce ISSUE-432 (`OPTIONS 204`, empty `POST 404`, `GET` SPA HTML). Firestore emulator refusal remains covered by existing E2E infrastructure issues.
+- **Artifacts:** `artifacts/mega_audio_analyzer_2026-06-16T1518_results.md`; screenshots in `artifacts/mega_audio_analyzer_2026-06-16T1514_screenshots/`
+
+## 2026-06-16 - MegaTestAudioLoop Audio Analyzer API/Vite Re-run
+- **Modules Tested:** Audio Analyzer ingestion, local technical analysis, Semantic Audio DNA, MusicLibrary persistence, Distribution metadata flow, downstream Creative/Video prompt handoff, Vite/API routing, build and preview parity
+- **Duration:** ~14 minutes
+- **Findings:** Scoped Vitest/Python passed, scoped connected E2E failed 4 tests after `localhost:4242` connection refusal. New regressions filed: ISSUE-437 fixed API fallback still returns `OPTIONS 204` / `POST 404` / `GET` SPA HTML; ISSUE-438 fixed env exposure still leaks secret-shaped `VITE_` names. Existing ISSUE-435/436 remain present from the same run family.
+- **Coverage Delta:** Direct dev and preview routes are login-gated in fresh browser contexts; built preview serves Audio/Distribution chunks, but local API parity remains blocked.
+- **Artifacts:** `artifacts/mega_audio_analyzer_2026-06-16T1530_results.md`; evidence JSON in `artifacts/mega_audio_analyzer_2026-06-16T1530_live_api_evidence.json` and `artifacts/mega_audio_analyzer_2026-06-16T1530_preview_api_evidence.json`.
+
+## 2026-06-16 - MegaTestAudioLoop Audio Analyzer API/Preview Pass
+- **Modules Tested:** Audio Analyzer ingestion, local analysis, Semantic Audio DNA, MusicLibrary persistence, Distribution metadata, Creative/Video handoff, Vite dev/API routing, build and preview parity
+- **Duration:** ~30 minutes
+- **Findings:** Current ledger state for this run family: ISSUE-435 🔴 HIGH production renderer build externalizes Node-only audio/distribution modules; ISSUE-436 🟡 MEDIUM cache-disabled validation breaks reCAPTCHA/App Check script loading; ISSUE-437 🔴 HIGH audio API proxy regression returns 404/SPA HTML; ISSUE-438 🔴 HIGH secret-shaped VITE env exposure regression remains in dev modules.
+- **Coverage Delta:** Scoped runner stdout passed unit/Python checks, but generated Playwright artifacts showed 4 connected-route startup failures. API/env regressions are now tracked as ISSUE-437/438 after ISSUE-432/433 moved forward; `npm run build` completed; preview deep links and static assets were rechecked.
+- **Artifacts:** `artifacts/mega_audio_analyzer_2026-06-16T1530_results.md`; JSON evidence in `artifacts/mega_audio_analyzer_2026-06-16T1530_live_api_evidence.json` and `artifacts/mega_audio_analyzer_2026-06-16T1530_preview_api_evidence.json`.
+
+---
+
+## 2026-06-19 - Detroit Producer - Live Staging Scenario Test
+- **Modules Tested:** Creative Director (Direct Generation, Boardroom Chat), Video Producer, Social Media Department, Distribution Department, Finance Department, Workflow Lab, Booking Agent.
+- **Duration:** ~12 minutes
+- **Findings:** 2 new issues (1 HIGH, 1 MEDIUM)
+- **Key Issues:**
+  - ISSUE-230: Creative Director Direct Mode Image Generation fails with 401 Unauthorized API error.
+  - ISSUE-231: Social Media Department button in sidebar routes to `/mobile-remote` instead of `/social`.
+- **Coverage Delta:**
+  - ✅ Live App walk-through of all major departments.
+  - ✅ Re-authentication E2E validation.
+  - ✅ Prompt injection and generation triggers verification.
+- **UX Score:** 20/30
+- **Recording:** Available in the conversation artifacts.
+- **Issues Filed:** ISSUE-230 and ISSUE-231
+
+---
+
+## 2026-06-22 - MegaTestAudioLoop Audio Analyzer
+- **Modules Tested:** Audio Analyzer ingestion, local technical analysis, Semantic Audio DNA, MusicLibrary persistence, Distribution metadata flow, downstream Creative/Video prompt handoff, Vite/API routing, build and preview parity
+- **Duration:** ~67 minutes
+- **Findings:** Scoped unit/integration passed (21/21 files, 135/135 tests). Connected E2E failed 2/17: ISSUE-448 Creative handoff crash and ISSUE-449 Distribution metadata submission stuck before Done. Existing ISSUE-436/437/447 remain reproducible for cache-disabled App Check, local API/preview routing, and upload extraction/App Check blocking.
+- **Coverage Delta:** Added direct dev and built-preview API evidence for upload, analysis, metadata, MusicLibrary, Distribution, Creative handoff, and Video handoff candidates; `npm run build` completed successfully.
+- **Artifacts:** `artifacts/mega_audio_analyzer_2026-06-22_results.md`; JSON evidence in `artifacts/mega_audio_analyzer_2026-06-22_live_evidence.json` and `artifacts/mega_audio_analyzer_2026-06-22_preview_evidence.json`; screenshots in `artifacts/mega_audio_analyzer_2026-06-22_screenshots/`.

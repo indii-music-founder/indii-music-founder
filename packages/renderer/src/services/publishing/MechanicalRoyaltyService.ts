@@ -7,7 +7,7 @@
  *
  * Mechanical royalties are required whenever an artist distributes a cover song
  * (a recording of a composition they did not write). The statutory rate in the US
- * is 9.1¢ per copy for songs ≤ 5 minutes.
+ * (2026) is 13.1¢ per work or 2.52¢ per minute, whichever is larger, per 37 CFR §385.11.
  */
 
 import {
@@ -51,7 +51,11 @@ export type MechanicalLicense = MechanicalLicenseDocument;
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-const STATUTORY_RATE_USD = 0.091;   // 2024 US statutory mechanical rate (≤ 5 min)
+// 2026 US statutory mechanical rates per 37 CFR §385.11
+// For permanent-digital-downloads and physical: 13.1¢ per work or 2.52¢ per minute (whichever is larger)
+// For streams: separate per-stream rate applies
+const STATUTORY_RATE_PER_WORK_USD = 0.131;     // 13.1¢ per work minimum (2026)
+const STATUTORY_RATE_PER_MINUTE_USD = 0.0252;  // 2.52¢ per minute for works over ~5 min
 const COLLECTION = 'mechanical_licenses';
 const CF_BASE = import.meta.env.VITE_FUNCTIONS_BASE_URL ?? '';
 
@@ -78,6 +82,10 @@ export const MechanicalRoyaltyService = {
 
     /**
      * Create a new mechanical license record in Firestore for a cover track.
+     * Uses 2026 statutory rates: 13.1¢/work or 2.52¢/min, whichever is larger.
+     *
+     * When searchFailed is true, status is set to 'clearance_unknown' to block
+     * release until the user confirms the composition status.
      */
     async createLicense(params: {
         releaseId: string;
@@ -85,14 +93,33 @@ export const MechanicalRoyaltyService = {
         isrc?: string;
         composition: CompositionInfo;
         distributionCopies?: number;
+        durationSeconds?: number;
+        searchFailed?: boolean;
     }): Promise<MechanicalLicense> {
         const uid = auth.currentUser?.uid;
         if (!uid) throw new Error('Not authenticated');
 
         const copies = params.distributionCopies ?? 1000;
-        const fee = parseFloat((copies * STATUTORY_RATE_USD).toFixed(2));
+
+        // Compute per-copy rate using 2026 statutory rates
+        let ratePerCopy = STATUTORY_RATE_PER_WORK_USD;
+        if (params.durationSeconds) {
+            const minutes = Math.ceil(params.durationSeconds / 60);
+            const perMinuteRate = minutes * STATUTORY_RATE_PER_MINUTE_USD;
+            ratePerCopy = Math.max(STATUTORY_RATE_PER_WORK_USD, perMinuteRate);
+        }
+
+        const fee = Math.round(copies * ratePerCopy * 100) / 100;
 
         const licenseId = `ml_${uid}_${Date.now()}`;
+        // When search failed, mark as clearance_unknown (blocking). Otherwise, use composition status.
+        let status: MechanicalLicenseStatus;
+        if (params.searchFailed) {
+            status = 'clearance_unknown';
+        } else {
+            status = params.composition.controlled ? 'pending_search' : 'not_required';
+        }
+
         const license: Omit<MechanicalLicense, 'createdAt' | 'updatedAt'> = {
             id: licenseId,
             userId: uid,
@@ -100,9 +127,9 @@ export const MechanicalRoyaltyService = {
             trackTitle: params.trackTitle,
             isrc: params.isrc,
             composition: params.composition,
-            status: params.composition.controlled ? 'pending_search' : 'not_required',
+            status,
             distributionCopies: copies,
-            ratePerCopy: STATUTORY_RATE_USD,
+            ratePerCopy,
             totalFee: fee,
             requestedAt: Timestamp.now()
         };
@@ -157,10 +184,14 @@ export const MechanicalRoyaltyService = {
 
     /**
      * Fetch all mechanical licenses for the current user, optionally filtered by releaseId.
+     * Returns error signal (null) if auth fails or Firestore is unavailable (fail-closed).
      */
-    async getLicenses(releaseId?: string): Promise<MechanicalLicense[]> {
+    async getLicenses(releaseId?: string): Promise<MechanicalLicense[] | null> {
         const uid = auth.currentUser?.uid;
-        if (!uid) return [];
+        if (!uid) {
+            logger.warn('MechanicalRoyaltyService.getLicenses: user not authenticated; returning null to block distribution');
+            return null;
+        }
 
         try {
             const col = collection(db, COLLECTION, uid, 'licenses');
@@ -168,35 +199,45 @@ export const MechanicalRoyaltyService = {
             const snap = await getDocs(q);
             return snap.docs.map(d => ({ id: d.id, ...d.data() } as MechanicalLicense));
         } catch (err: unknown) {
-            logger.error('MechanicalRoyaltyService.getLicenses failed', err);
-            return [];
+            logger.error('MechanicalRoyaltyService.getLicenses failed (Firestore unavailable)', err);
+            return null;
         }
     },
 
     /**
      * Check if all cover tracks in a release have active or not-required licenses.
+     * Returns 'unknown' if licenses cannot be fetched (auth failure / Firestore unavailable).
+     * Only returns 'cleared' if explicitly approved or not applicable, NEVER if undetermined.
      */
     async isReleaseClearedForDistribution(releaseId: string): Promise<{
-        cleared: boolean;
+        status: 'cleared' | 'pending' | 'unknown';
         pendingTracks: string[];
     }> {
         const licenses = await this.getLicenses(releaseId);
+
+        if (licenses === null) {
+            logger.error('MechanicalRoyaltyService: Cannot determine clearance; failing closed', { releaseId });
+            return {
+                status: 'unknown',
+                pendingTracks: [],
+            };
+        }
+
         const pending = licenses.filter(
             l => l.status !== 'license_active' && l.status !== 'not_required'
         );
+
         return {
-            cleared: pending.length === 0,
+            status: pending.length === 0 ? 'cleared' : 'pending',
             pendingTracks: pending.map(l => l.trackTitle),
         };
     },
 
     /** Compute the total mechanical royalty fee for a set of licenses. */
     computeTotalFee(licenses: MechanicalLicense[]): number {
-        return parseFloat(
-            licenses
-                .filter(l => l.status !== 'not_required')
-                .reduce((sum, l) => sum + l.totalFee, 0)
-                .toFixed(2)
-        );
+        const totalCents = licenses
+            .filter(l => l.status !== 'not_required')
+            .reduce((sum, l) => sum + Math.round(l.totalFee * 100), 0);
+        return totalCents / 100;
     },
 };

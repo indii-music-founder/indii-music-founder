@@ -23,8 +23,23 @@ export interface MerlinReport {
 
 export interface BWarmWork {
     title: string;
-    writers: string[];
     isrc?: string;
+    artist?: string;
+    // ISSUE-792 FIX: Real writer data (never defaults like "John Doe")
+    writer_first: string;
+    writer_last: string;
+    writer_ipi?: string;
+    writer_role?: string; // C (Composer), A (Author), CA (Both)
+    // Publisher data (never "Self-Published" default)
+    publisher: string;
+    publisher_ipi?: string;
+    // Royalty split share (from actual metadata, not hardcoded 100%)
+    collection_share: number;
+    // Release date from metadata (not today's date)
+    release_date: string;
+    // Metadata helpers
+    id?: string;
+    iswc?: string;
     [key: string]: unknown;
 }
 
@@ -39,12 +54,19 @@ export interface TaxCalculationData {
     amount: number;
 }
 
+/**
+ * ISSUE-793: field names must match tax_withholding_engine.py's
+ * certify_user() exactly — this is the canonical shape for the
+ * distribution:certify-tax IPC call. Raw TIN is never persisted; the engine
+ * validates it in-memory and stores only tin_masked/tin_valid.
+ */
 export interface TaxCertificationData {
-    fullName: string;
+    full_name: string;
     country: string;
-    taxId: string; // TIN
-    usPerson: boolean;
-    signature: string;
+    tin: string;
+    is_us_person: boolean;
+    is_entity: boolean;
+    signed_under_perjury: boolean;
 }
 
 export interface TaxReport {
@@ -53,21 +75,51 @@ export interface TaxReport {
     tin_masked: string;
     tin_valid: boolean;
     certified: boolean;
-    payout_status: 'ACTIVE' | 'BLOCKED' | 'HOLD';
+    payout_status: 'ACTIVE' | 'HELD';
     cert_timestamp: string;
+    /** A percent value, e.g. 30.0 means 30% — NOT a 0-1 fraction. Divide by 100 to use in amount math. */
     withholding_rate: number;
 }
 
+/**
+ * CONTRACT LOCK (ISSUE-826): field names below MUST match what
+ * execution/finance/waterfall_payout.py reads verbatim — the IPC handler
+ * passes this payload through untranslated. The engine requires 'gross'
+ * (it exits 1 on 'gross_revenue') and reads 'recoupment', never 'expenses'.
+ */
 export interface WaterfallData {
-    gross_revenue: number;
-    splits: Record<string, number>; // userId -> percentage (0.0 to 1.0)
-    expenses?: number;
+    gross: number;
+    splits: Record<string, number>; // party -> fraction 0.0 to 1.0
+    /** Outstanding recoupable balance, applied after the platform fee. */
+    recoupment?: number;
+    /** Platform fee as a 0-1 fraction (0.15 = 15%). Python default: 0.15. */
+    indii_fee_percent?: number;
 }
 
+export interface WaterfallDistributionEntry {
+    /** Display string from the engine, e.g. "50.0%". */
+    split: string;
+    /** Payout amount in dollars. */
+    amount: number;
+}
+
+/**
+ * CONTRACT LOCK (ISSUE-826): mirrors the report dict printed by
+ * execution/finance/waterfall_payout.py exactly. Distributions are NESTED
+ * objects (split + amount), not flat numbers. "Net" for display purposes is
+ * total_distributed (post-fee, post-recoupment) — revenue_after_fee ignores
+ * recoupment.
+ */
 export interface WaterfallReport {
-    distributions: Record<string, number>; // userId -> amount
-    net_revenue: number;
-    processed_at: string;
+    gross: number;
+    platform_fee: { percent: string; amount: number };
+    revenue_after_fee: number;
+    recoupment: { starting_balance: number; applied: number; remaining_balance: number };
+    distributions: Record<string, WaterfallDistributionEntry>;
+    summary_status: 'PROCESSED';
+    total_distributed: number;
+    unallocated_balance: number;
+    processed_at: string; // ISO-8601 UTC (added to the engine in ISSUE-826)
 }
 
 export interface ContentIdData {
@@ -77,6 +129,20 @@ export interface ContentIdData {
         asset_id?: string;
         custom_id?: string;
     }>;
+    upc: string;
+    artist: string;
+    album_title?: string;
+    /**
+     * Required rights confirmation (ISSUE-786). A false copyright claim can
+     * suspend YouTube partner access — there is no default label, match
+     * policy, or territory. Every field must be an explicit, real value.
+     */
+    rights_attestation: {
+        exclusive_rights: true;
+        label: string;
+        match_policy: 'monetize' | 'track' | 'block';
+        territories: string[];
+    };
 }
 
 export interface ContentIdReport {
@@ -107,7 +173,17 @@ export interface IngestionTrack {
     duration?: number; // In seconds
     explicit?: boolean;
     filename?: string;
-    file_hash?: string; // MD5 hash
+    file_hash?: string; // MD5 hash used by the DDEX resource descriptor
+    /** Immutable upload-once master verified and staged by the desktop delivery boundary. */
+    master_asset?: {
+        content_hash: string;
+        download_url: string;
+        master_fingerprint: string;
+        mime_type: string;
+        original_file_name: string;
+        size_bytes: number;
+        storage_path: string;
+    };
     genre?: string;
     sub_genre?: string;
     language?: string;
@@ -239,4 +315,3 @@ export interface SFTPReport {
     remote_path: string;
     error?: string;
 }
-

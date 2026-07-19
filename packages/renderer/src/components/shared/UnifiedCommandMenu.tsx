@@ -8,9 +8,10 @@ import {
     AudioWaveform, FolderOpen, Video, Map, Briefcase,
     Settings, PenTool, LayoutDashboard, Radio, CreditCard,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    Building, ShieldAlert, Cpu, Workflow, Gem
+    Building, ShieldAlert, Cpu, Workflow, Gem, AlertCircle, Lightbulb, HelpCircle
 } from 'lucide-react';
 import { useGlobalShortcut } from '@/hooks/useGlobalShortcut';
+import { useBugReport } from '@/modules/debug';
 
 export function UnifiedCommandMenu() {
     const { isCommandMenuOpen, setCommandMenuOpen, setModule } = useStore(
@@ -20,6 +21,8 @@ export function UnifiedCommandMenu() {
             setModule: state.setModule
         }))
     );
+
+    const { reportBug, requestFeature } = useBugReport();
 
     // Toggle the menu when ⌘K is pressed
     useGlobalShortcut({
@@ -96,7 +99,7 @@ export function UnifiedCommandMenu() {
 
                     <Command.Group heading="Navigation" className="mb-2 text-slate-500 px-2 [&_[cmdk-item]]:px-4 [&_[cmdk-item]]:py-3 [&_[cmdk-item]]:rounded-lg [&_[cmdk-item]]:text-slate-300 [&_[cmdk-item][data-selected]]:bg-white/10 [&_[cmdk-item][data-selected]]:text-white">
                         <Command.Item onSelect={() => runCommand(() => setModule('dashboard'))} className="flex items-center gap-3 cursor-pointer">
-                            <LayoutDashboard className="w-4 h-4 text-purple-400" />
+                            <LayoutDashboard className="w-4 h-4 text-green-400" />
                             <span>Dashboard</span>
                         </Command.Item>
                         <Command.Item onSelect={() => runCommand(() => setModule('creative'))} className="flex items-center gap-3 cursor-pointer">
@@ -150,12 +153,27 @@ export function UnifiedCommandMenu() {
                             <span>Audio Fidelity Analyzer</span>
                         </Command.Item>
                         <Command.Item onSelect={() => runCommand(() => setModule('history'))} className="flex items-center gap-3 cursor-pointer">
-                            <FolderOpen className="w-4 h-4 text-purple-300" />
+                            <FolderOpen className="w-4 h-4 text-green-300" />
                             <span>History & Vault</span>
                         </Command.Item>
                         <Command.Item onSelect={() => runCommand(() => setModule('workflow'))} className="flex items-center gap-3 cursor-pointer">
                             <Workflow className="w-4 h-4 text-slate-400" />
                             <span>Workflow Blueprints</span>
+                        </Command.Item>
+                    </Command.Group>
+
+                    <Command.Group heading="Feedback & Help" className="mb-2 text-slate-500 px-2 [&_[cmdk-item]]:px-4 [&_[cmdk-item]]:py-3 [&_[cmdk-item]]:rounded-lg [&_[cmdk-item]]:text-slate-300 [&_[cmdk-item][data-selected]]:bg-white/10 [&_[cmdk-item][data-selected]]:text-white">
+                        <Command.Item onSelect={() => runCommand(() => reportBug())} className="flex items-center gap-3 cursor-pointer">
+                            <AlertCircle className="w-4 h-4 text-red-400" />
+                            <span>Report a Bug</span>
+                        </Command.Item>
+                        <Command.Item onSelect={() => runCommand(() => requestFeature())} className="flex items-center gap-3 cursor-pointer">
+                            <Lightbulb className="w-4 h-4 text-yellow-400" />
+                            <span>Request a Feature</span>
+                        </Command.Item>
+                        <Command.Item onSelect={() => runCommand(() => setModule('settings'))} className="flex items-center gap-3 cursor-pointer">
+                            <HelpCircle className="w-4 h-4 text-blue-400" />
+                            <span>Help & Keyboard Shortcuts</span>
                         </Command.Item>
                     </Command.Group>
 

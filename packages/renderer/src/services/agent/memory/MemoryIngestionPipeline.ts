@@ -3,7 +3,7 @@ import { INTELLIGENCE_MODELS, APPROVED_MODELS } from '@/core/config/intelligence
 import { cleanPrompt } from '@/utils/prompt';
 import { RequestBatcher } from '@/utils/RequestBatcher';
 import { logger } from '@/utils/logger';
-import type { Content, GenerationConfig } from 'firebase/ai';
+import type { Content, GenerationConfig } from '@/shared/types/ai.dto';
 import { MemorySummarizer } from './MemorySummarizer';
 import { memoryBankService } from './MemoryBankService';
 import type {
@@ -21,6 +21,7 @@ import { Timestamp } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { collection, addDoc, getDocs, query, where, orderBy, limit, serverTimestamp } from 'firebase/firestore';
 import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
+import { importWithRetry } from '@/utils/dynamicImport';
 
 // ============================================================================
 // TYPES
@@ -691,7 +692,7 @@ export class MemoryIngestionPipeline {
         if (!eventId) return;
 
         try {
-            const { doc: firestoreDoc, updateDoc } = await import('firebase/firestore');
+            const { doc: firestoreDoc, updateDoc } = await importWithRetry(() => import('firebase/firestore'));
             const eventRef = firestoreDoc(db, 'users', userId, 'ingestionEvents', eventId);
             await updateDoc(eventRef, {
                 ...updates,

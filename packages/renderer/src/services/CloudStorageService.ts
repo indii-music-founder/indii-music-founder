@@ -109,11 +109,24 @@ export class CloudStorageService {
     }
 
     /**
-     * Convert data URI to Blob
+     * Convert data URI to Blob.
+     *
+     * Decodes the base64 payload directly instead of fetch()ing the data: URI —
+     * fetch() on a data: URI is blocked by this app's CSP connect-src directive
+     * (data: is not an allowed scheme there), which made every caller of this
+     * method fail silently.
      */
     static async dataURItoBlob(dataURI: string): Promise<Blob> {
-        const response = await fetch(dataURI);
-        return response.blob();
+        const [header, base64] = dataURI.split(',');
+        const mimeMatch = /data:(.*?)(;base64)?$/.exec(header);
+        const mimeType = mimeMatch?.[1] || 'application/octet-stream';
+
+        const byteString = atob(base64);
+        const bytes = new Uint8Array(byteString.length);
+        for (let i = 0; i < byteString.length; i++) {
+            bytes[i] = byteString.charCodeAt(i);
+        }
+        return new Blob([bytes], { type: mimeType });
     }
 
     /**
@@ -209,6 +222,7 @@ export class CloudStorageService {
             await deleteObject(audioRef);
         } catch (error: unknown) {
             Logger.warn('CloudStorage', `Audio deletion failed for ${id}:`, error);
+            throw error;
         }
     }
 
@@ -248,5 +262,11 @@ export class CloudStorageService {
                 strategy: 'local'
             };
         }
+    }
+
+    /** Delete the exact object named by a persisted gs:// or download URL. */
+    static async deleteStorageUri(storageUri: string): Promise<void> {
+        if (!storageUri) throw new Error('Storage URI is required for deletion');
+        await deleteObject(ref(storage, storageUri));
     }
 }

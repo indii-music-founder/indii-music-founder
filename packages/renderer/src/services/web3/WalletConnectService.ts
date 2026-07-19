@@ -2,14 +2,12 @@
  * Item 236: WalletConnect v2 Integration Service
  *
  * Provides wallet connection capabilities for Web3 features.
- * Supports window.ethereum (MetaMask) and WalletConnect Cloud (Reown) for multi-chain wallet connectivity.
+ * Supports window.ethereum (MetaMask, Brave Wallet, Coinbase Wallet, etc.).
+ * WalletConnect Cloud remains disabled until the Reown/viem dependency chain ships without known high-severity ws advisories.
  *
- * Setup: Get a free projectId from https://cloud.reown.com
- * Env: VITE_WALLETCONNECT_PROJECT_ID
  */
 
 import { logger } from '@/utils/logger';
-
 export interface WalletInfo {
     address: string;
     chainId: number;
@@ -37,22 +35,15 @@ const CHAIN_NAMES: Record<number, string> = {
     56: 'BNB Chain'
 };
 
-const DEFAULT_CHAINS = [1, 137, 42161]; // Ethereum, Polygon, Arbitrum
-
 export class WalletConnectService {
-    private projectId: string;
     private connectedWallet: WalletInfo | null = null;
     private listeners: Map<string, Set<(...args: unknown[]) => void>> = new Map();
 
-    constructor() {
-        this.projectId = import.meta.env.VITE_WALLETCONNECT_PROJECT_ID || '';
-    }
-
     /**
-     * Check if WalletConnect is configured with a valid project ID.
+     * WalletConnect Cloud is disabled until the Reown/viem audit chain is remediated upstream.
      */
     isConfigured(): boolean {
-        return this.projectId.length > 0 && this.projectId !== 'MOCK_KEY_DO_NOT_USE';
+        return false;
     }
 
     /**
@@ -66,24 +57,11 @@ export class WalletConnectService {
      * Get the WalletConnect configuration for AppKit initialization.
      */
     getConfig(): WalletConnectConfig {
-        if (!this.isConfigured()) {
-            throw new Error('WalletConnect project ID not configured. Set VITE_WALLETCONNECT_PROJECT_ID in .env');
-        }
-
-        return {
-            projectId: this.projectId,
-            chains: DEFAULT_CHAINS,
-            metadata: {
-                name: 'indii Studio',
-                description: 'Autonomous-native creative platform for independent music producers',
-                url: 'https://indii.music',
-                icons: ['https://indii.music/icon.png'],
-            },
-        };
+        throw new Error('WalletConnect is temporarily unavailable while its upstream web3 dependency chain is remediated.');
     }
 
     /**
-     * Connect to a wallet via window.ethereum (MetaMask) or WalletConnect modal.
+     * Connect to a wallet via window.ethereum (MetaMask, Brave Wallet, Coinbase Wallet, etc.).
      * Item 236: Real implementation using EIP-1193 provider detection.
      */
     async connect(): Promise<WalletInfo> {
@@ -92,14 +70,9 @@ export class WalletConnectService {
             return await this.connectViaInjectedProvider();
         }
 
-        // Strategy 2: WalletConnect modal (requires projectId)
-        if (this.isConfigured()) {
-            return await this.connectViaWalletConnect();
-        }
-
         // No provider available
         throw new Error(
-            'No wallet provider detected. Install MetaMask or configure VITE_WALLETCONNECT_PROJECT_ID for WalletConnect.'
+            'No wallet provider detected. Install a browser wallet such as MetaMask to use Web3 features.'
         );
     }
 
@@ -111,7 +84,7 @@ export class WalletConnectService {
 
         try {
             // Request account access — this triggers the MetaMask popup
-            const accounts = await window.ethereum!.request({
+            const accounts = await window.ethereum.request({
                 method: 'eth_requestAccounts'
             }) as string[];
 
@@ -120,7 +93,7 @@ export class WalletConnectService {
             }
 
             // Get the current chain ID
-            const chainIdHex = await window.ethereum!.request({
+            const chainIdHex = await window.ethereum.request({
                 method: 'eth_chainId'
             }) as string;
             const chainId = parseInt(chainIdHex, 16);
@@ -144,22 +117,6 @@ export class WalletConnectService {
             logger.error('[WalletConnect] Injected provider connection failed:', error);
             throw new Error(`Wallet connection failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
         }
-    }
-
-    /**
-     * Connect via WalletConnect Cloud (Reown AppKit).
-     * Requires VITE_WALLETCONNECT_PROJECT_ID.
-     */
-    private async connectViaWalletConnect(): Promise<WalletInfo> {
-        logger.info('[WalletConnect] Initiating WalletConnect modal with projectId:', this.projectId.substring(0, 8) + '...');
-
-        // WalletConnect Cloud requires the @reown/appkit SDK which is loaded dynamically
-        // For the MVP phase, we guide users to install MetaMask
-        // The full WalletConnect QR integration requires the Reown AppKit React SDK
-        throw new Error(
-            'WalletConnect QR modal requires @reown/appkit, which is currently unsupported in this runtime. ' +
-            'Please install MetaMask or an injected browser wallet.'
-        );
     }
 
     /**

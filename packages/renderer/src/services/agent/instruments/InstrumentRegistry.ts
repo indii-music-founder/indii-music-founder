@@ -7,8 +7,9 @@ import { Instrument,
 import { ImageGenerationInstrument } from './ImageGenerationInstrument';
 import { VideoGenerationInstrument } from './VideoGenerationInstrument';
 import { CacheService } from '@/services/cache/CacheService';
-import { db } from '@/services/firebase';
-import { doc, setDoc, collection, getDocs } from 'firebase/firestore';
+import { db, functions } from '@/services/firebase';
+import { collection, getDocs } from 'firebase/firestore';
+import { httpsCallable } from 'firebase/functions';
 import { logger } from '@/utils/logger';
 
 class InstrumentRegistry {
@@ -71,22 +72,17 @@ class InstrumentRegistry {
   /**
    * Persist usage statistics after each execution to Firestore.
    */
-  private async persistUsageStats(instrumentId: string): Promise<void> {
-    const stats = this.usageStats.get(instrumentId);
-    if (!stats) return;
-
+  private async persistUsageStats(
+    instrumentId: string,
+    outcome: 'success' | 'failed',
+    executionId: string,
+  ): Promise<void> {
     try {
-      await setDoc(
-        doc(db, this.STATS_COLLECTION, instrumentId),
-        {
-          totalExecutions: stats.totalExecutions,
-          successfulExecutions: stats.successfulExecutions,
-          failedExecutions: stats.failedExecutions,
-          lastExecutionTime: stats.lastExecutionTime || null,
-          updatedAt: Date.now(),
-        },
-        { merge: true }
-      );
+      const recordUsage = httpsCallable<
+        { instrumentId: string; outcome: 'success' | 'failed'; executionId: string },
+        { success: boolean; duplicate?: boolean }
+      >(functions, 'recordInstrumentUsage');
+      await recordUsage({ instrumentId, outcome, executionId });
     } catch (error: unknown) {
       logger.warn(`[InstrumentRegistry] Failed to persist stats for ${instrumentId}:`, error);
     }
@@ -261,6 +257,8 @@ class InstrumentRegistry {
       failedExecutions: 0
     };
     stats.totalExecutions++;
+    let executionOutcome: 'success' | 'failed' = 'failed';
+    const executionId = crypto.randomUUID();
 
     try {
       // Execute with optional timeout
@@ -281,6 +279,7 @@ class InstrumentRegistry {
       if (result.success) {
         stats.successfulExecutions++;
         stats.lastExecutionTime = Date.now();
+        executionOutcome = 'success';
       } else {
         stats.failedExecutions++;
       }
@@ -297,7 +296,7 @@ class InstrumentRegistry {
     } finally {
       this.usageStats.set(instrumentId, stats);
       // Persist to Firestore (fire-and-forget, don't block execution return)
-      this.persistUsageStats(instrumentId);
+      void this.persistUsageStats(instrumentId, executionOutcome, executionId);
     }
   }
 

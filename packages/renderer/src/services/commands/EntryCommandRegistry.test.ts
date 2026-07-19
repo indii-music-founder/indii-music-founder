@@ -50,6 +50,16 @@ describe('EntryCommandRegistry', () => {
     expect(resolveEntryCommand('normal chat')).toBeUndefined();
   });
 
+  it('routes explicit remote connection requests without hijacking unrelated remote language', () => {
+    expect(resolveEntryCommand('Can you help me connect to the remote control, please?'))?.toMatchObject({
+      id: 'connect-remote',
+      launchMode: 'navigate',
+    });
+    expect(resolveEntryCommand('/pair-remote')).toMatchObject({ id: 'connect-remote' });
+    expect(resolveEntryCommand('I work remotely and need campaign help')).toBeUndefined();
+    expect(resolveEntryCommand('Connect my distributor account')).toBeUndefined();
+  });
+
   it('exposes dashboard commands without losing custom workflow', () => {
     const ids = getDashboardEntryCommands().map(command => command.id);
     expect(ids).toContain('design-cover');

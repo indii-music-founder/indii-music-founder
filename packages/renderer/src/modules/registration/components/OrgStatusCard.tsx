@@ -24,6 +24,10 @@ const STATUS_CONFIG: Record<RegistrationStatus, {
   submitted: { icon: Clock, label: 'Submitted', color: 'text-blue-400', dot: 'bg-blue-400' },
   confirmed: { icon: CheckCircle2, label: 'Confirmed', color: 'text-green-400', dot: 'bg-green-400' },
   error: { icon: AlertCircle, label: 'Error', color: 'text-red-400', dot: 'bg-red-400' },
+  // ISSUE-970: filed externally (real confirmation), but no durable local
+  // record yet — visually distinct from both 'submitted' and 'error' so it
+  // can never be mistaken for a clean success.
+  submitted_local_record_failed: { icon: AlertCircle, label: 'Filed — not saved locally', color: 'text-amber-400', dot: 'bg-amber-400' },
 };
 
 
@@ -37,7 +41,7 @@ export function OrgStatusCard({ adapter, status, confirmationNumber, isSelected,
       className={cn(
         'w-full text-left rounded-xl border p-4 transition-all duration-200 group',
         isSelected
-          ? 'border-purple-500/60 bg-purple-500/10 shadow-[0_0_0_1px_rgba(168,85,247,0.3)]'
+          ? 'border-green-500/60 bg-green-500/10 shadow-[0_0_0_1px_rgba(168,85,247,0.3)]'
           : 'border-white/[0.06] bg-white/[0.02] hover:border-white/10 hover:bg-white/[0.04]'
       )}
     >
@@ -64,15 +68,18 @@ export function OrgStatusCard({ adapter, status, confirmationNumber, isSelected,
           </div>
           <ChevronRight
             size={14}
-            className={cn('text-gray-600 transition-transform', isSelected && 'rotate-90 text-purple-400')}
+            className={cn('text-gray-600 transition-transform', isSelected && 'rotate-90 text-green-400')}
           />
         </div>
       </div>
 
-      {/* Confirmation number if confirmed */}
-      {status === 'confirmed' && confirmationNumber && (
+      {/* Confirmation number if confirmed, or if filed but not durably saved (ISSUE-970) */}
+      {(status === 'confirmed' || status === 'submitted_local_record_failed') && confirmationNumber && (
         <div className="mt-2 pt-2 border-t border-white/[0.04] text-[11px] text-gray-500">
           Confirmation: <span className="text-gray-300 font-mono">{confirmationNumber}</span>
+          {status === 'submitted_local_record_failed' && (
+            <span className="block text-amber-400/90 mt-0.5">Open this filing to retry saving locally.</span>
+          )}
         </div>
       )}
 
@@ -84,11 +91,14 @@ export function OrgStatusCard({ adapter, status, confirmationNumber, isSelected,
         </div>
       )}
 
-      {/* Manual step indicator */}
-      {adapter.requiresDesktop && status === 'not_started' && typeof window !== 'undefined' && !window.electronAPI && (
+      {/* Manual step indicator — ISSUE-972: shown regardless of platform.
+          Desktop browser automation doesn't actually work in any current
+          build (see BrowserAgentService.isConfigured()'s doc comment), so
+          this can no longer imply the desktop app makes filing automatic. */}
+      {adapter.requiresDesktop && status === 'not_started' && (
         <div className="mt-2 flex items-center gap-1 text-[11px] text-amber-500/80">
           <ExternalLink size={10} />
-          <span>Manual step required on web</span>
+          <span>Manual step required — automated filing isn&apos;t available yet</span>
         </div>
       )}
     </button>

@@ -4,12 +4,21 @@ This macro flowchart depicts the high-level system architecture of **indii** —
 
 ```mermaid
 graph TD
-    %% ===== Client Interface Layer =====
-    subgraph Client ["Client Interfaces"]
+    %% ===== Client Interface Layer & Device Routing =====
+    subgraph Client ["🖥️ CLIENT LAYER & DEVICE BOUNDARIES"]
         LP["Landing Page (packages/landing)"]
-        SA["Studio Web App (packages/renderer)"]
-        ED["Electron Desktop Shell (packages/main)"]
-        MR["indiiREMOTE (mobile-remote module)"]
+        
+        subgraph MobileDevice ["📱 MOBILE PHONE VIEWPORT"]
+            MR["indiiREMOTE (mobile-remote module)<br/>[STRICT MOBILE PATH: Only remote sync / no studio login]"]
+        end
+        
+        subgraph TabletDevice ["📱 IPAD / TABLET VIEWPORT"]
+            SA["Studio Web App (packages/renderer)<br/>[ADAPTIVE PATH: Full feature set matching profile subscription]"]
+        end
+        
+        subgraph DesktopDevice ["💻 DESKTOP / LAPTOP VIEWPORT"]
+            ED["Electron Desktop Shell (packages/main)<br/>[STRICT DESKTOP PATH: No browser-based studio login]"]
+        end
     end
 
     %% ===== State & Orchestration Layer =====
@@ -21,7 +30,7 @@ graph TD
         REG["Agent Registry (capability_registry.json)"]
     end
 
-    %% ===== Deterministic Business Harness Layer (NEW) =====
+    %% ===== Deterministic Business Harness Layer =====
     subgraph Harness ["Business Harness Engine (Deterministic State)"]
         MCP["indii-harness (MCP Server)"]
         COMP["HarnessCompilers (22 Domains)"]
@@ -55,7 +64,7 @@ graph TD
     subgraph AI ["Generative AI (Genkit 1.26 + Vertex AI)"]
         GTEXT["Gemini 3.1 Pro / Flash-Lite"]
         GIMG["Gemini 3 Pro Image (Nano Banana)"]
-        GTTS["Gemini 2.5 Pro TTS"]
+        GTTS["Gemini 3.1 Flash TTS Preview"]
         VEO["Veo 3.1 (Video Generation)"]
         RAG["Gemini File Search (Memory)"]
     end
@@ -98,15 +107,15 @@ graph TD
     AI --> RAG
     RAG --> FS
 
-    %% ===== Styling =====
-    classDef ui fill:#00D4FF,stroke:#0077AA,stroke-width:2px,color:#001018;
-    classDef logic fill:#8A2BE2,stroke:#5500AA,stroke-width:2px,color:#FFFFFF;
-    classDef harness fill:#FF00FF,stroke:#AA00AA,stroke-width:2px,color:#FFFFFF;
-    classDef data fill:#FF8C00,stroke:#AA5500,stroke-width:2px,color:#001018;
-    classDef ai fill:#39FF14,stroke:#1A8800,stroke-width:2px,color:#001018;
-    classDef ext fill:#FF3333,stroke:#AA0000,stroke-width:2px,color:#FFFFFF;
+    %% ===== Premium Investor HSL/Neon Styling =====
+    classDef client fill:#0F172A,stroke:#00D4FF,stroke-width:2px,color:#F8FAFC;
+    classDef logic fill:#1E1B4B,stroke:#8B5CF6,stroke-width:2px,color:#F8FAFC;
+    classDef harness fill:#2A0F35,stroke:#D946EF,stroke-width:2px,color:#F8FAFC;
+    classDef data fill:#2E150C,stroke:#FB923C,stroke-width:2px,color:#F8FAFC;
+    classDef ai fill:#0F2F1D,stroke:#4ADE80,stroke-width:2px,color:#F8FAFC;
+    classDef ext fill:#2D0C0F,stroke:#F87171,stroke-width:2px,color:#F8FAFC;
 
-    class LP,SA,ED,MR ui;
+    class LP,SA,ED,MR client;
     class ZS,COND,AGS,A2A,REG logic;
     class MCP,COMP,RUN,BMH harness;
     class LEGAL,MKT,BRAND,CRE,FIN,MUS,DIST,PUB,OTHER logic;

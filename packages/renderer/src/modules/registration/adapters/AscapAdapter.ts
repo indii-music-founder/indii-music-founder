@@ -77,12 +77,24 @@ export const AscapAdapter: OrgAdapter = {
 
       const result = await registerWithASCAP(userId, metadata as Parameters<typeof registerWithASCAP>[1]);
 
-      await persistOrgRecord(userId, track.id, 'ascap', data, result.workId);
+      const persisted = await persistOrgRecord(userId, track.id, 'ascap', data, result.workId);
+
+      if (!result.success) {
+        return {
+          success: false,
+          errorMessage: result.error ?? 'ASCAP registration requires manual completion.',
+          submittedAt: new Date(),
+          requiresManualStep: true,
+          manualStepUrl: 'https://www.ascap.com/myascap',
+          manualStepInstructions: 'Log in to ASCAP Works and register this title manually. Your form data is saved below.',
+        };
+      }
 
       return {
         success: true,
         confirmationNumber: result.workId,
         submittedAt: new Date(),
+        localRecordFailed: !persisted,
       };
     } catch (err: unknown) {
       logger.error('[AscapAdapter] Registration failed:', err);

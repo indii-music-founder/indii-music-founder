@@ -1,6 +1,8 @@
 import { StateCreator } from 'zustand';
 
-export type UploadStatus = 'pending' | 'uploading' | 'success' | 'error';
+import type { UploadTask } from 'firebase/storage';
+
+export type UploadStatus = 'pending' | 'uploading' | 'paused' | 'success' | 'error' | 'post-processing';
 
 export interface UploadQueueItem {
     id: string;
@@ -9,7 +11,8 @@ export interface UploadQueueItem {
     progress: number; // 0 to 100
     status: UploadStatus;
     error?: string;
-    type: 'image' | 'video' | 'music' | 'document';
+    type: 'image' | 'video' | 'music' | 'document' | 'archive';
+    uploadTask?: UploadTask;
 }
 
 export interface UploadQueueSlice {

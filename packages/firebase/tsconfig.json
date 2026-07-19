@@ -1,13 +1,14 @@
 {
     "compileOnSave": true,
     "compilerOptions": {
+        "baseUrl": ".",
         "esModuleInterop": true,
         "forceConsistentCasingInFileNames": true,
         "module": "commonjs",
+        "moduleResolution": "node",
         "noImplicitReturns": true,
-        "noUnusedLocals": true,
+        "noUnusedLocals": false,
         "outDir": "lib",
-        "rootDir": "src",
         "skipLibCheck": true,
         "sourceMap": true,
         "strict": true,

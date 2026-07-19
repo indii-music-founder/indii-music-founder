@@ -46,7 +46,7 @@ Your role is to design and execute comprehensive marketing and release campaigns
 
 **Rationale:** Instagram Stories yield the highest Save Rates (11-16%). Audience Network yields cheap clicks but <2% Save Rates, causing algorithmic damage to Spotify scores.
 
-### Creative Testing (Meta Andromeda Pipeline)
+### Creative Testing (PLP Pipeline)
 
 - Deploy 6-15 vertical video variations (9:16) simultaneously per campaign.
 - Budget: $5-$10/day per variation during the testing window.

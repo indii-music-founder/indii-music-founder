@@ -4,6 +4,7 @@ import { functions } from '@/services/firebase';
 import { httpsCallable } from 'firebase/functions';
 import { logger } from '@/utils/logger';
 import { getFineTunedModel } from '../fine-tuned-models';
+import { importWithRetry } from '@/utils/dynamicImport';
 
 // Module-level cache for ECB exchange rates (updates once daily, cache for 1 hour)
 const ECB_CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
@@ -37,7 +38,7 @@ let _ecbCache = loadEcbCache();
 
 export const FinanceTools = {
     analyze_receipt: wrapTool('analyze_receipt', async (args: { image_data: string, mime_type: string }) => {
-        const { AutonomousIntelligence, getResponseText } = await import('@/services/intelligence/AutonomousIntelligence');
+        const { AutonomousIntelligence, getResponseText } = await importWithRetry(() => import('@/services/intelligence/AutonomousIntelligence'));
 
         // Construct Multimodal Prompt
         const prompt = `You are an expert accountant. Extract the following data from this receipt image:
@@ -72,7 +73,7 @@ export const FinanceTools = {
     }),
 
     audit_distribution: wrapTool('audit_distribution', async (args: { trackTitle: string; distributor: string }) => {
-        const { DISTRIBUTORS } = await import('@/core/config/distributors');
+        const { DISTRIBUTORS } = await importWithRetry(() => import('@/core/config/distributors'));
 
         // 1. Check Distributor Config
         const distConfig = DISTRIBUTORS[args.distributor as keyof typeof DISTRIBUTORS];
@@ -102,36 +103,42 @@ export const FinanceTools = {
         };
 
         const rate = PAYOUT_RATES[args.platform] || PAYOUT_RATES['Other']!;
-        const gross = args.currentStreams * rate;
+        const grossCents = Math.round(args.currentStreams * rate * 100);
 
         // Standard management fee is ~20%
-        const MANAGER_FEE_PERCENT = 0.20;
+        const MANAGER_FEE_PERCENT = 20;
 
-        const projections = {
-            month_1: gross,
-            month_6: gross * 6,
-            year_1: gross * 12
+        const projectionsCents = {
+            month_1: grossCents,
+            month_6: grossCents * 6,
+            year_1: grossCents * 12
+        };
+
+        const managerFeeSavedCents = {
+            month_1: Math.round(projectionsCents.month_1 * (MANAGER_FEE_PERCENT / 100)),
+            month_6: Math.round(projectionsCents.month_6 * (MANAGER_FEE_PERCENT / 100)),
+            year_1: Math.round(projectionsCents.year_1 * (MANAGER_FEE_PERCENT / 100))
+        };
+
+        const netRevenueCents = {
+            month_1: Math.round(projectionsCents.month_1 * (args.rightsHolderSplit / 100)),
+            month_6: Math.round(projectionsCents.month_6 * (args.rightsHolderSplit / 100)),
+            year_1: Math.round(projectionsCents.year_1 * (args.rightsHolderSplit / 100))
         };
 
         const managerFeeSaved = {
-            month_1: projections.month_1 * MANAGER_FEE_PERCENT,
-            month_6: projections.month_6 * MANAGER_FEE_PERCENT,
-            year_1: projections.year_1 * MANAGER_FEE_PERCENT
-        };
-
-        const netRevenue = {
-            month_1: projections.month_1 * (args.rightsHolderSplit / 100),
-            month_6: projections.month_6 * (args.rightsHolderSplit / 100),
-            year_1: projections.year_1 * (args.rightsHolderSplit / 100)
+            month_1: managerFeeSavedCents.month_1 / 100,
+            month_6: managerFeeSavedCents.month_6 / 100,
+            year_1: managerFeeSavedCents.year_1 / 100
         };
 
         return toolSuccess({
             platform: args.platform,
             rate_per_stream: rate,
             projections: {
-                gross: projections,
+                gross: { month_1: projectionsCents.month_1 / 100, month_6: projectionsCents.month_6 / 100, year_1: projectionsCents.year_1 / 100 },
                 manager_fee_saved: managerFeeSaved,
-                net_to_rights_holder: netRevenue
+                net_to_rights_holder: { month_1: netRevenueCents.month_1 / 100, month_6: netRevenueCents.month_6 / 100, year_1: netRevenueCents.year_1 / 100 }
             },
             message: `Revenue forecast generated for ${args.currentStreams} streams on ${args.platform}. Estimated annual savings on manager fees: $${managerFeeSaved.year_1.toFixed(2)}.`
         }, `Revenue forecast generated.`);
@@ -139,7 +146,10 @@ export const FinanceTools = {
 
     generate_schedule_c: wrapTool('generate_schedule_c', async (args: { taxYear: number; totalIncome: number; totalExpenses: number; ownerName: string }) => {
         // Simplified Schedule C draft — full IRS-compliant version requires tax API integration
-        const netProfit = args.totalIncome - args.totalExpenses;
+        const incomeCents = Math.round(args.totalIncome * 100);
+        const expensesCents = Math.round(args.totalExpenses * 100);
+        const netProfitCents = incomeCents - expensesCents;
+        const netProfit = netProfitCents / 100;
         const taxPrepMode = "Active";
 
         return toolSuccess({
@@ -160,8 +170,11 @@ export const FinanceTools = {
             return toolError("Payee percentages must sum to 100%.", "INVALID_SPLIT");
         }
 
+        const totalRevenueCents = Math.round(args.totalRevenue * 100);
+
         const waterfall = args.payees.map(p => {
-            const payout = args.totalRevenue * (p.percentage / 100);
+            const payoutCents = Math.round(totalRevenueCents * (p.percentage / 100));
+            const payout = payoutCents / 100;
             return {
                 name: p.name,
                 percentage: p.percentage,
@@ -182,27 +195,47 @@ export const FinanceTools = {
         }, `Waterfall calculated for "${args.trackTitle}". Total Revenue: $${args.totalRevenue}. Flagged ${total1099s} payouts for 1099 processing.`);
     }),
 
-    initiate_split_escrow: wrapTool('initiate_split_escrow', async (args: { trackId: string; holdAmount: number; parties: string[] }) => {
-        // Item 135: Initiate split escrow via Stripe Connect Cloud Function
+    initiate_split_escrow: wrapTool('initiate_split_escrow', async (args: { trackId: string; holdAmountUsd: number; holdAmount?: number; parties: string[] }) => {
+        // Item 135: Initiate split escrow via Stripe Connect Cloud Function.
+        // ISSUE-853: amounts are typed — the tool takes USD dollars and converts
+        // to integer cents exactly once here; the backend contract is cents.
         try {
+            const usd = args.holdAmountUsd ?? args.holdAmount;
+            if (typeof usd !== 'number' || !isFinite(usd) || usd <= 0) {
+                return toolError('holdAmountUsd must be a positive number of US dollars.', 'INVALID_AMOUNT');
+            }
+            const amountCents = Math.round(usd * 100);
+
             const initEscrowFn = httpsCallable<
                 { trackId: string; holdAmount: number; parties: string[] },
-                { escrowAccount: string; status: string }
+                { escrowAccount: string; status: string; stripePaymentIntentId?: string; amountCents?: number; amountFormatted?: string; fundsHeld?: boolean }
             >(functions, 'initiateSplitEscrow');
 
             const result = await initEscrowFn({
                 trackId: args.trackId,
-                holdAmount: args.holdAmount,
+                holdAmount: amountCents,
                 parties: args.parties
             });
+
+            // Backend fails closed (ISSUE-853): success implies a real PaymentIntent.
+            const intentId = result.data.stripePaymentIntentId;
+            if (!intentId || result.data.fundsHeld !== true) {
+                return toolError(
+                    'ESCROW_NOT_FUNDED: Stripe did not confirm a payment intent for this escrow. No funds are held.',
+                    'ESCROW_NOT_FUNDED'
+                );
+            }
 
             return toolSuccess({
                 trackId: args.trackId,
                 escrowAccount: result.data.escrowAccount,
-                heldAmount: args.holdAmount,
+                stripePaymentIntentId: intentId,
+                amountCents,
+                amountFormatted: `$${(amountCents / 100).toFixed(2)}`,
+                fundsHeld: true,
                 pendingSignaturesFrom: args.parties,
                 status: result.data.status
-            }, `$${args.holdAmount} successfully held in Stripe Connect escrow account (${result.data.escrowAccount}) until mathematical split sign-off is complete from all parties.`);
+            }, `$${(amountCents / 100).toFixed(2)} held in Stripe escrow (payment intent ${intentId}) until split sign-off is complete from all parties.`);
         } catch (error: unknown) {
             logger.warn('[FinanceTools] Escrow Cloud Function unavailable:', error);
             return toolError(
@@ -214,8 +247,15 @@ export const FinanceTools = {
 
     compare_budget_vs_actuals: wrapTool('compare_budget_vs_actuals', async (args: { projectOrTourName: string; projectedBudget: number; actualExpenses: number; advancesReceived: number }) => {
         // Budget comparison tool (Item 139)
-        const variance = args.projectedBudget - args.actualExpenses;
-        const netPosition = args.advancesReceived - args.actualExpenses;
+        const projectedBudgetCents = Math.round(args.projectedBudget * 100);
+        const actualExpensesCents = Math.round(args.actualExpenses * 100);
+        const advancesReceivedCents = Math.round(args.advancesReceived * 100);
+
+        const varianceCents = projectedBudgetCents - actualExpensesCents;
+        const netPositionCents = advancesReceivedCents - actualExpensesCents;
+
+        const variance = varianceCents / 100;
+        const netPosition = netPositionCents / 100;
 
         return toolSuccess({
             projectOrTourName: args.projectOrTourName,
@@ -232,14 +272,17 @@ export const FinanceTools = {
         // Daily royalties prediction using industry average payout rates (Item 152)
         const RATE = args.platform.toLowerCase() === 'spotify' ? 0.0035 : 0.006;
         const predictedMonthlyStreams = args.dailyStreams * 30;
-        const estimatedMonthlyPayout = predictedMonthlyStreams * RATE;
+        
+        const dailyGrossCents = Math.round(args.dailyStreams * RATE * 100);
+        const estimatedMonthlyPayoutCents = dailyGrossCents * 30;
+        const estimatedMonthlyPayout = estimatedMonthlyPayoutCents / 100;
 
         return toolSuccess({
             trackId: args.trackId,
             platform: args.platform,
             currentDailyStreams: args.dailyStreams,
             predictedMonthlyStreams,
-            estimatedMonthlyPayout: Number(estimatedMonthlyPayout.toFixed(2)),
+            estimatedMonthlyPayout: estimatedMonthlyPayout,
             confidence: 0.88
         }, `Daily royalty prediction for ${args.trackId} on ${args.platform}: Based on ${args.dailyStreams} daily streams, estimated monthly payout is $${estimatedMonthlyPayout.toFixed(2)}.`);
     }),
@@ -382,12 +425,21 @@ export const FinanceTools = {
         }
     }),
 
+    // ISSUE-856: this tool never reads CSV file content, parses rows, validates
+    // columns, or reconciles totals — args.csvFiles are treated as bare
+    // filenames dropped into a prompt asking Gemini to DESCRIBE a mapping
+    // conceptually. It used to return status: 'Normalized into standard indii
+    // ledger format', letting an AI narrative pass for a deterministic
+    // imported ledger. A real CSV ingestion/reconciliation pipeline is a
+    // separate, larger build (parser, per-distributor schema mapping,
+    // row-level validation, totals reconciliation) — this fix only stops the
+    // false completion claim, labeling the output what it actually is: a
+    // draft mapping suggestion, not normalized ledger data.
     normalize_distributor_statements: wrapTool('normalize_distributor_statements', async (args: { csvFiles: string[] }) => {
-        // Item 179: Use Gemini to parse and normalize CSV structures from different distributors
-        const { AutonomousIntelligence, getResponseText } = await import('@/services/intelligence/AutonomousIntelligence');
+        const { AutonomousIntelligence, getResponseText } = await importWithRetry(() => import('@/services/intelligence/AutonomousIntelligence'));
 
         const prompt = `
-        You are a music industry financial analyst. The following CSV files have been uploaded 
+        You are a music industry financial analyst. The following CSV files have been uploaded
         from ${args.csvFiles.length} different music distributors:
         ${args.csvFiles.map((f, i) => `${i + 1}. ${f}`).join('\n')}
 
@@ -405,8 +457,8 @@ export const FinanceTools = {
             return toolSuccess({
                 filesProcessed: args.csvFiles.length,
                 normalizationAnalysis: analysisText,
-                status: 'Normalized into standard indii ledger format'
-            }, `Successfully analyzed and normalized ${args.csvFiles.length} distributor CSV statements into a unified format.`);
+                status: 'mapping_draft'
+            }, `Generated a draft normalization mapping suggestion for ${args.csvFiles.length} distributor statement(s). No files were actually parsed and no ledger rows were created — this is an AI-suggested column mapping only. Real CSV import, row validation, and totals reconciliation still need to happen before this can be trusted as ledger data.`);
         } catch (error: unknown) {
             logger.warn('[FinanceTools] Gemini normalization failed:', error);
             return toolError(

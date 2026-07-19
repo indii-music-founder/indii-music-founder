@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { zodToJsonSchema } from 'zod-to-json-schema';
 import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
 import type { AnyToolFunction } from '../types';
+import { importWithRetry } from '@/utils/dynamicImport';
 
 /** Typed Electron IPC bridge for brand tools */
 interface ElectronBrandBridge {
@@ -50,6 +51,21 @@ const AuditVisualAssetsSchema = z.object({
     compliant: z.boolean(),
     flagged_assets: z.array(z.string()),
     report: z.string()
+});
+
+const AnalyzeBrandSentimentSchema = z.object({
+    sentiment_score: z.number().min(0).max(100),
+    dominant_emotion: z.string(),
+    key_themes: z.array(z.string()),
+    public_perception_summary: z.string()
+});
+
+const GenerateBrandKitSchema = z.object({
+    name: z.string(),
+    colors: z.array(z.string()),
+    typography: z.array(z.string()),
+    voice_description: z.string(),
+    logo_concept: z.string()
 });
 
 // --- Tools Implementation ---
@@ -190,8 +206,8 @@ export const BrandTools = {
 
     save_brand_kit: wrapTool('save_brand_kit', async (args: { name: string; values: string[]; colors?: string[]; typography?: string[] }) => {
         try {
-            const { db, auth } = await import('@/services/firebase');
-            const { doc, setDoc, serverTimestamp } = await import('firebase/firestore');
+            const { db, auth } = await importWithRetry(() => import('@/services/firebase'));
+            const { doc, setDoc, serverTimestamp } = await importWithRetry(() => import('firebase/firestore'));
 
             const uid = auth.currentUser?.uid;
             if (!uid) {
@@ -217,8 +233,8 @@ export const BrandTools = {
 
     load_brand_kit: wrapTool('load_brand_kit', async () => {
         try {
-            const { db, auth } = await import('@/services/firebase');
-            const { doc, getDoc } = await import('firebase/firestore');
+            const { db, auth } = await importWithRetry(() => import('@/services/firebase'));
+            const { doc, getDoc } = await importWithRetry(() => import('firebase/firestore'));
 
             const uid = auth.currentUser?.uid;
             if (!uid) {
@@ -239,6 +255,46 @@ export const BrandTools = {
             logger.error('[BrandTools] Load brand kit failed:', error);
             return toolError(`Failed to load brand kit: ${error.message}`);
         }
+    }),
+
+    analyze_brand_sentiment: wrapTool('analyze_brand_sentiment', async (args: { text: string; context?: string }) => {
+        const schema = zodToJsonSchema(AnalyzeBrandSentimentSchema);
+        const prompt = `
+        Analyze the brand sentiment of the following text.
+        Context: ${args.context || 'General public discussion'}
+        Text: ${args.text}
+        
+        Evaluate the overall sentiment score (0-100), dominant emotion, key themes, and provide a summary of public perception.
+        Output a strict JSON object (no markdown) matching this schema:
+        ${JSON.stringify(schema, null, 2)}
+        `;
+
+        const data = await AutonomousIntelligence.generateStructuredData<z.infer<typeof AnalyzeBrandSentimentSchema>>(prompt, schema as Record<string, unknown>);
+        const validated = AnalyzeBrandSentimentSchema.parse(data);
+        return {
+            ...validated,
+            message: `Sentiment analyzed. Score: ${validated.sentiment_score}/100. Dominant emotion: ${validated.dominant_emotion}`
+        };
+    }),
+
+    generate_brand_kit: wrapTool('generate_brand_kit', async (args: { description: string; core_values: string[] }) => {
+        const schema = zodToJsonSchema(GenerateBrandKitSchema);
+        const prompt = `
+        Generate a comprehensive brand kit based on the following description and core values.
+        Description: ${args.description}
+        Core Values: ${args.core_values.join(', ')}
+        
+        Include suggested color hex codes, typography/font pairings, a description of the brand voice, and a logo concept.
+        Output a strict JSON object (no markdown) matching this schema:
+        ${JSON.stringify(schema, null, 2)}
+        `;
+
+        const data = await AutonomousIntelligence.generateStructuredData<z.infer<typeof GenerateBrandKitSchema>>(prompt, schema as Record<string, unknown>);
+        const validated = GenerateBrandKitSchema.parse(data);
+        return {
+            ...validated,
+            message: `Brand kit generated for described brand.`
+        };
     })
 } satisfies Record<string, AnyToolFunction>;
 
@@ -249,5 +305,7 @@ export const {
     generate_brand_guidelines,
     audit_visual_assets,
     save_brand_kit,
-    load_brand_kit
+    load_brand_kit,
+    analyze_brand_sentiment,
+    generate_brand_kit
 } = BrandTools;

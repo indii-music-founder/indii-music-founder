@@ -1,101 +1,60 @@
-import { db } from '@/services/firebase';
-import { doc, runTransaction } from 'firebase/firestore';
+import { auth, functions } from '@/services/firebase';
+import { httpsCallable } from 'firebase/functions';
 
 /**
  * IdentifierService
- * Responsible for generating and validating unique industry identifiers.
+ * Responsible for issuing and validating unique industry identifiers.
  * - ISRC (International Standard Recording Code)
  * - UPC (Universal Product Code / GTIN-12)
  * - ISWC (International Standard Musical Work Code) - Validation only
+ *
+ * ISSUE-781: Issuance is backend-only. This client previously generated
+ * checksum-valid ISRCs locally using 'QY1' — an IFPI documentation EXAMPLE
+ * registrant code, not one allocated to this company — which could collide
+ * with a real registrant and misattribute recordings. Real codes now come
+ * exclusively from the backend `assignDistributionIdentifier` pool
+ * (pre-provisioned, verified prefixes — see distributionRecords.ts). If the
+ * pool is exhausted or unconfigured, issuance fails closed with
+ * IDENTIFIER_SETUP_REQUIRED rather than fabricating a code.
  */
 
 export class IdentifierService {
-    // Configuration for internal generation
-    // In a real system, this would be dynamic per user or org
-    private static readonly DEFAULT_COUNTRY_CODE = 'US';
-    private static readonly DEFAULT_REGISTRANT_CODE = 'QY1'; // Example Registrant
-    private static readonly DEFAULT_ISRC_START_YEAR = 26;
-    private static readonly DEFAULT_ISRC_SEQUENCE_START = 100;
-    private static readonly DEFAULT_UPC_SEQUENCE_START = 10000000000;
-
-
     /**
-     * Fetch and increment the next sequence number from Firestore.
-     * Uses a transaction to ensure atomicity and uniqueness.
+     * Issue the next available ISRC from the backend-owned, pre-provisioned pool.
+     * Throws IDENTIFIER_SETUP_REQUIRED if no verified pool/prefix is configured.
      */
-    private static async getNextSequence(type: 'isrc' | 'upc', year?: number): Promise<number> {
-        const seqDocRef = doc(db, 'system_sequences', 'identifiers');
-
-        return await runTransaction(db, async (transaction) => {
-            const seqDoc = await transaction.get(seqDocRef);
-
-            if (!seqDoc.exists()) {
-                // Initialize if not exists
-                const initialData = {
-                    isrc: { lastYear: year || IdentifierService.DEFAULT_ISRC_START_YEAR, sequence: IdentifierService.DEFAULT_ISRC_SEQUENCE_START }, // Start at 100 for padding
-                    upc: { sequence: IdentifierService.DEFAULT_UPC_SEQUENCE_START } // 11 digits start
-                };
-                transaction.set(seqDocRef, initialData);
-                return type === 'isrc' ? initialData.isrc.sequence : initialData.upc.sequence;
-            }
-
-            const data = seqDoc.data();
-
-            if (type === 'isrc') {
-                const isrcData = data.isrc || { lastYear: year || IdentifierService.DEFAULT_ISRC_START_YEAR, sequence: IdentifierService.DEFAULT_ISRC_SEQUENCE_START };
-                let currentSeq = isrcData.sequence + 1;
-                let lastYear = isrcData.lastYear;
-
-                // Reset sequence if year has advanced
-                if (year && year > lastYear) {
-                    currentSeq = 1;
-                    lastYear = year;
-                }
-
-                transaction.update(seqDocRef, {
-                    'isrc.sequence': currentSeq,
-                    'isrc.lastYear': lastYear
-                });
-                return currentSeq;
-            } else {
-                const upcData = data.upc || { sequence: IdentifierService.DEFAULT_UPC_SEQUENCE_START };
-                const currentSeq = upcData.sequence + 1;
-                transaction.update(seqDocRef, { 'upc.sequence': currentSeq });
-                return currentSeq;
-            }
-        });
+    static async nextISRC(): Promise<string> {
+        const uid = auth.currentUser?.uid;
+        if (!uid) {
+            throw new Error('IDENTIFIER_SETUP_REQUIRED: You must be signed in to issue an ISRC.');
+        }
+        try {
+            const assign = httpsCallable<{ type: 'isrc'; assignedTo: string }, { isrc: string }>(functions, 'assignDistributionIdentifier');
+            const result = await assign({ type: 'isrc', assignedTo: uid });
+            return result.data.isrc;
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : String(err);
+            throw new Error(`IDENTIFIER_SETUP_REQUIRED: No verified ISRC pool is available (${message}).`);
+        }
     }
 
     /**
-     * Generate the next available ISRC automatically.
-     */
-    static async nextISRC(countryCode?: string, registrantCode?: string): Promise<string> {
-        const currentYear = new Date().getFullYear() % 100;
-        const sequence = await this.getNextSequence('isrc', currentYear);
-        return this.generateISRC(currentYear, sequence, countryCode, registrantCode);
-    }
-
-    /**
-     * Generate the next available UPC automatically.
+     * Issue the next available UPC from the backend-owned, pre-provisioned pool.
+     * Throws IDENTIFIER_SETUP_REQUIRED if no verified pool/prefix is configured.
      */
     static async nextUPC(): Promise<string> {
-        const sequence = await this.getNextSequence('upc');
-        return this.generateUPC(sequence.toString());
-    }
-
-    /**
-     * Format a valid ISRC string.
-     * Format: CC-XXX-YY-NNNNN
-     */
-    static generateISRC(
-        year: number,
-        sequence: number,
-        countryCode: string = this.DEFAULT_COUNTRY_CODE,
-        registrantCode: string = this.DEFAULT_REGISTRANT_CODE
-    ): string {
-        const yy = year.toString().padStart(2, '0').slice(-2);
-        const nnnnn = sequence.toString().padStart(5, '0');
-        return `${countryCode}${registrantCode}${yy}${nnnnn}`;
+        const uid = auth.currentUser?.uid;
+        if (!uid) {
+            throw new Error('IDENTIFIER_SETUP_REQUIRED: You must be signed in to issue a UPC.');
+        }
+        try {
+            const assign = httpsCallable<{ type: 'upc'; assignedTo: string }, { upc: string }>(functions, 'assignDistributionIdentifier');
+            const result = await assign({ type: 'upc', assignedTo: uid });
+            return result.data.upc;
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : String(err);
+            throw new Error(`IDENTIFIER_SETUP_REQUIRED: No verified UPC pool is available (${message}).`);
+        }
     }
 
     /**
@@ -106,18 +65,6 @@ export class IdentifierService {
         // Basic regex: 2 char country, 3 char registrant, 2 char year, 5 digit serial
         const regex = /^[A-Z]{2}[A-Z0-9]{3}\d{2}\d{5}$/;
         return regex.test(isrc);
-    }
-
-    /**
-     * Format a valid UPC (GTIN-12) from an 11-digit payload.
-     */
-    static generateUPC(payload: string): string {
-        if (!/^\d{11}$/.test(payload)) {
-            // If it's shorter, pad it; but we expect 11 digits from the sequence
-            payload = payload.padStart(11, '0');
-        }
-        const checkDigit = this.calculateGTINCheckDigit(payload);
-        return `${payload}${checkDigit}`;
     }
 
     /**

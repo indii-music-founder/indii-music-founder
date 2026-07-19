@@ -1,0 +1,46 @@
+# Slash Workflows / Commands
+
+If the user starts a prompt with any of the following slash commands (e.g. `/middle`), you MUST immediately read the corresponding file in `.agent/workflows/<command>.md` and execute its instructions verbatim. DO NOT explain what the command does, just execute it.
+
+Available commands:
+- `/start`
+- `/proceed`
+- `/middle`
+- `/end`
+- `/skill-skill`
+- `/review`
+- `/opp`
+- `/go`
+- `/get-git`
+- `/c`
+- `/away`
+- `/ci-validate`
+- `/flowchart`
+- `/db-sync`
+- `/auto-fix`
+- `/hunter`
+- `/issue-sweep`
+- `/better`
+- `/finish`
+- `/devex-review`
+- `/factory`
+- `/test`
+- `/training`
+- `/api`
+- `/to-prd`
+- `/to-issues`
+- `/grill-me`
+- `/zoom-out`
+- `/tdd`
+- `/mega`
+- `/mega-test`
+- `/real`
+- `/auto_qa`
+- `/issue`
+- `/a`
+- `/b`
+- `/d`
+- `/abcd`
+
+**Execution Rule:** 
+When the user types `/middle` (for example), you must silently read `.agent/workflows/middle.md` and act exactly as it specifies. Do not ask for permission.

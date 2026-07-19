@@ -130,7 +130,7 @@ describe('Firebase App Check Initialization', () => {
     expect(mocks.initializeAppCheck).not.toHaveBeenCalled();
   });
 
-  it('should initialize App Check in Electron environment WITH debug token', async () => {
+  it('should NOT initialize App Check in Electron environment (empty Referer headers)', async () => {
     Object.defineProperty(window, 'electronAPI', { value: {}, writable: true, configurable: true });
 
     vi.doMock('@/config/env', () => ({
@@ -145,7 +145,8 @@ describe('Firebase App Check Initialization', () => {
 
     await import('./firebase');
 
-    expect(mocks.initializeAppCheck).toHaveBeenCalled();
-    expect(mocks.ReCaptchaEnterpriseProvider).toHaveBeenCalledWith('test-key');
+    // App Check is always skipped in Electron because ReCaptcha Enterprise requires
+    // a web origin and Electron has empty Referer headers which Firebase blocks.
+    expect(mocks.initializeAppCheck).not.toHaveBeenCalled();
   });
 });

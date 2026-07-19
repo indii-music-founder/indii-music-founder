@@ -1,6 +1,6 @@
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { StateCreator } from 'zustand';
 import { HistoryItem } from '@/core/types/history';
+import { StoreState } from '@/core/store';
 import { z } from 'zod';
 import { AspectRatioSchema, VideoResolutionSchema, VideoJobStatusSchema } from '@/modules/creative/video/schemas';
 
@@ -83,7 +83,7 @@ export interface CreativeControlsSlice {
         useGrounding: boolean;
         personGeneration: 'allow_adult' | 'dont_allow' | 'allow_all';
         isTransitionMode: boolean;
-        isAndromedaMode: boolean;
+        isPLPMode: boolean;
 
         // ── Nano Banana API Extensions ─────────────────────────────────────
 
@@ -102,10 +102,7 @@ export interface CreativeControlsSlice {
         posePreservation: number;
         beatPulse: number;
         characterXRay: boolean;
-        synthIdEnabled: boolean;
-        selectedLanguage: string;
         omniReferenceVideo: string | null;
-        omniPipelineMode: 'pure-omni' | 'hybrid-veo';
         activePosePreset: string;
         lyricsText: string;
         typographyStyle: 'cyberpunk' | 'kinetic-neon' | 'liquid-gold' | 'minimal-infographic';
@@ -114,8 +111,8 @@ export interface CreativeControlsSlice {
     setStudioControls: (controls: Partial<CreativeControlsSlice['studioControls']>) => void;
     enableCoverArtMode: () => void;
     disableCoverArtMode: () => void;
-    enableAndromedaMode: () => void;
-    disableAndromedaMode: () => void;
+    enablePLPMode: () => void;
+    disablePLPMode: () => void;
 
     // Mode & Inputs
     generationMode: 'image' | 'video';
@@ -131,6 +128,9 @@ export interface CreativeControlsSlice {
     videoInputs: {
         firstFrame: HistoryItem | null;
         lastFrame: HistoryItem | null;
+        maskFrame: HistoryItem | null;
+        maskRange?: { startFrame: number; endFrame: number } | null;
+        isTemporalInpaint: boolean;
         isDaisyChain: boolean;
         timeOffset: number;
         ingredients: HistoryItem[];
@@ -218,10 +218,8 @@ export interface CreativeControlsSlice {
  * Factory that returns the controls/inputs portion of the creative slice.
  */
 export function buildCreativeControlsState(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    set: any,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    _get: any
+    set: Parameters<StateCreator<StoreState, [], [], CreativeControlsSlice>>[0],
+    _get: Parameters<StateCreator<StoreState, [], [], CreativeControlsSlice>>[1]
 ): CreativeControlsSlice {
     const whiskKeyMap: Record<WhiskCategory, keyof WhiskState> = {
         subject: 'subjects',
@@ -249,7 +247,7 @@ export function buildCreativeControlsState(
             useGrounding: false,
             personGeneration: 'allow_adult',
             isTransitionMode: false,
-            isAndromedaMode: false,
+            isPLPMode: false,
             // Nano Banana API defaults
             imageSize: '2K',
             batchCount: 1,
@@ -260,40 +258,37 @@ export function buildCreativeControlsState(
             posePreservation: 0.8,
             beatPulse: 0.5,
             characterXRay: true,
-            synthIdEnabled: true,
-            selectedLanguage: 'es',
             omniReferenceVideo: null,
-            omniPipelineMode: 'pure-omni',
             activePosePreset: 'guitar_solo',
             lyricsText: '',
             typographyStyle: 'cyberpunk',
             visualizerColor: '#8B5CF6',
         },
-        setStudioControls: (controls) => set((state: CreativeControlsSlice) => ({ studioControls: { ...state.studioControls, ...controls } })),
-        enableCoverArtMode: () => set((state: CreativeControlsSlice) => ({
+        setStudioControls: (controls) => set((state: StoreState) => ({ studioControls: { ...state.studioControls, ...controls } })),
+        enableCoverArtMode: () => set((state: StoreState) => ({
             studioControls: {
                 ...state.studioControls,
                 aspectRatio: '1:1', // Cover art mode enforces 1:1 format
                 isCoverArtMode: true
             }
         })),
-        disableCoverArtMode: () => set((state: CreativeControlsSlice) => ({
+        disableCoverArtMode: () => set((state: StoreState) => ({
             studioControls: {
                 ...state.studioControls,
                 aspectRatio: '16:9',
                 isCoverArtMode: false
             }
         })),
-        enableAndromedaMode: () => set((state: CreativeControlsSlice) => ({
+        enablePLPMode: () => set((state: StoreState) => ({
             studioControls: {
                 ...state.studioControls,
-                isAndromedaMode: true
+                isPLPMode: true
             }
         })),
-        disableAndromedaMode: () => set((state: CreativeControlsSlice) => ({
+        disablePLPMode: () => set((state: StoreState) => ({
             studioControls: {
                 ...state.studioControls,
-                isAndromedaMode: false
+                isPLPMode: false
             }
         })),
 
@@ -309,30 +304,31 @@ export function buildCreativeControlsState(
         videoInputs: {
             firstFrame: null,
             lastFrame: null,
+            maskFrame: null,
+            maskRange: null,
+            isTemporalInpaint: false,
             isDaisyChain: false,
             timeOffset: 0,
             ingredients: []
         },
-        setVideoInput: (key, value) => set((state: CreativeControlsSlice) => ({
+        setVideoInput: (key, value) => set((state: StoreState) => ({
             videoInputs: { ...state.videoInputs, [key]: value }
         })),
-        setVideoInputs: (inputs) => set((state: CreativeControlsSlice) => ({
+        setVideoInputs: (inputs) => set((state: StoreState) => ({
             videoInputs: { ...state.videoInputs, ...inputs }
         })),
 
         characterReferences: [],
-        addCharacterReference: (ref) => set((state: CreativeControlsSlice) => {
+        addCharacterReference: (ref) => set((state: StoreState) => {
             if (state.characterReferences.length >= 3) return state;
             return { characterReferences: [...state.characterReferences, ref] };
         }),
-        removeCharacterReference: (id) => set((state: CreativeControlsSlice) => ({
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            characterReferences: state.characterReferences.filter((r: any) => r.image.id !== id)
+        removeCharacterReference: (id) => set((state: StoreState) => ({
+            characterReferences: state.characterReferences.filter((r) => r.image.id !== id)
         })),
         clearCharacterReferences: () => set({ characterReferences: [] }),
-        updateCharacterReference: (id, updates) => set((state: CreativeControlsSlice) => ({
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            characterReferences: state.characterReferences.map((r: any) => r.image.id === id ? { ...r, ...updates } : r)
+        updateCharacterReference: (id, updates) => set((state: StoreState) => ({
+            characterReferences: state.characterReferences.map((r) => r.image.id === id ? { ...r, ...updates } : r)
         })),
 
         viewMode: 'direct',
@@ -348,7 +344,7 @@ export function buildCreativeControlsState(
             isGeneratingMockup: false,
             isGeneratingVideo: false,
         },
-        setShowroomState: (updates) => set((state: CreativeControlsSlice) => ({
+        setShowroomState: (updates) => set((state: StoreState) => ({
             showroomState: { ...state.showroomState, ...updates }
         })),
 
@@ -360,15 +356,14 @@ export function buildCreativeControlsState(
 
         isPromptBuilderOpen: false,
         setPromptBuilderOpen: (open) => set({ isPromptBuilderOpen: open }),
-        togglePromptBuilder: () => set((state: CreativeControlsSlice) => ({ isPromptBuilderOpen: !state.isPromptBuilderOpen })),
+        togglePromptBuilder: () => set((state: StoreState) => ({ isPromptBuilderOpen: !state.isPromptBuilderOpen })),
 
         selectedItem: null,
         setSelectedItem: (item) => set({ selectedItem: item }),
 
         savedPrompts: [],
-        savePrompt: (prompt) => set((state: CreativeControlsSlice) => ({ savedPrompts: [prompt, ...state.savedPrompts] })),
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        deletePrompt: (id) => set((state: CreativeControlsSlice) => ({ savedPrompts: state.savedPrompts.filter((p: any) => p.id !== id) })),
+        savePrompt: (prompt) => set((state: StoreState) => ({ savedPrompts: [prompt, ...state.savedPrompts] })),
+        deletePrompt: (id) => set((state: StoreState) => ({ savedPrompts: state.savedPrompts.filter((p) => p.id !== id) })),
 
         whiskState: {
             subjects: [],
@@ -378,7 +373,7 @@ export function buildCreativeControlsState(
             preciseReference: false,
             targetMedia: 'image' as TargetMedia
         },
-        addWhiskItem: (category, type, content, intelligenceCaption, explicitId) => set((state: CreativeControlsSlice) => {
+        addWhiskItem: (category, type, content, intelligenceCaption, explicitId) => set((state: StoreState) => {
             const newItem: WhiskItem = {
                 id: explicitId || crypto.randomUUID(),
                 type,
@@ -395,7 +390,7 @@ export function buildCreativeControlsState(
                 }
             };
         }),
-        updateWhiskItem: (category, id, updates) => set((state: CreativeControlsSlice) => {
+        updateWhiskItem: (category, id, updates) => set((state: StoreState) => {
             const key = whiskKeyMap[category];
             return {
                 whiskState: {
@@ -404,7 +399,7 @@ export function buildCreativeControlsState(
                 }
             };
         }),
-        removeWhiskItem: (category, id) => set((state: CreativeControlsSlice) => {
+        removeWhiskItem: (category, id) => set((state: StoreState) => {
             const key = whiskKeyMap[category];
             return {
                 whiskState: {
@@ -413,7 +408,7 @@ export function buildCreativeControlsState(
                 }
             };
         }),
-        toggleWhiskItem: (category, id) => set((state: CreativeControlsSlice) => {
+        toggleWhiskItem: (category, id) => set((state: StoreState) => {
             const key = whiskKeyMap[category];
             return {
                 whiskState: {
@@ -422,10 +417,10 @@ export function buildCreativeControlsState(
                 }
             };
         }),
-        setPreciseReference: (precise) => set((state: CreativeControlsSlice) => ({
+        setPreciseReference: (precise) => set((state: StoreState) => ({
             whiskState: { ...state.whiskState, preciseReference: precise }
         })),
-        setTargetMedia: (target) => set((state: CreativeControlsSlice) => ({
+        setTargetMedia: (target) => set((state: StoreState) => ({
             whiskState: { ...state.whiskState, targetMedia: target }
         })),
 
@@ -433,10 +428,10 @@ export function buildCreativeControlsState(
         setIsGenerating: (isGenerating) => set({ isGenerating }),
 
         activeVideoJobs: {},
-        addVideoJob: (job) => set((state: CreativeControlsSlice) => ({
+        addVideoJob: (job) => set((state: StoreState) => ({
             activeVideoJobs: { ...state.activeVideoJobs, [job.id]: job }
         })),
-        updateVideoJob: (id, updates) => set((state: CreativeControlsSlice) => {
+        updateVideoJob: (id, updates) => set((state: StoreState) => {
             const existingJob = state.activeVideoJobs[id];
             if (!existingJob) return state;
             return {
@@ -446,7 +441,7 @@ export function buildCreativeControlsState(
                 }
             };
         }),
-        removeVideoJob: (id) => set((state: CreativeControlsSlice) => {
+        removeVideoJob: (id) => set((state: StoreState) => {
             const newJobs = { ...state.activeVideoJobs };
             delete newJobs[id];
             return { activeVideoJobs: newJobs };
@@ -454,9 +449,8 @@ export function buildCreativeControlsState(
 
         // Clipboard Actions
         clipboardItems: [],
-        pinToClipboard: (item) => set((state: CreativeControlsSlice) => {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            if (state.clipboardItems.some((i: any) => i.id === item.id)) return state;
+        pinToClipboard: (item) => set((state: StoreState) => {
+            if (state.clipboardItems.some((i) => i.id === item.id)) return state;
             const newItem: ClipboardItem = {
                 id: item.id,
                 url: item.url,
@@ -467,9 +461,8 @@ export function buildCreativeControlsState(
             };
             return { clipboardItems: [newItem, ...state.clipboardItems] };
         }),
-        unpinFromClipboard: (id) => set((state: CreativeControlsSlice) => ({
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            clipboardItems: state.clipboardItems.filter((i: any) => i.id !== id)
+        unpinFromClipboard: (id) => set((state: StoreState) => ({
+            clipboardItems: state.clipboardItems.filter((i) => i.id !== id)
         })),
         clearClipboard: () => set({ clipboardItems: [] }),
     };

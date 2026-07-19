@@ -2,11 +2,13 @@ import React, { useState, useRef, useMemo, memo, useCallback, useEffect } from '
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { Play, Pause, Image as ImageIcon, Trash2, Maximize2, Upload, ArrowLeftToLine, ArrowRightToLine, Anchor, ThumbsUp, ThumbsDown, Download, Share2, RotateCw, Sparkles, Pin, Send } from 'lucide-react';
+import { Play, Pause, Image as ImageIcon, Trash2, Maximize2, Upload, ArrowLeftToLine, ArrowRightToLine, Anchor, ThumbsUp, ThumbsDown, Download, Share2, RotateCw, Pin, Send } from 'lucide-react';
 
 import { useToast } from '@/core/context/ToastContext';
 import { ActionableEmptyState } from '@/components/shared/ActionableEmptyState';
-import { SendToTarget, SendToPayload } from '@/types/handoff';
+import { SendToTarget, SendToPayload, CreativeStage, StageHandoffPayload } from '@/types/handoff';
+import { useResolvedStorageUrl } from '@/hooks/useResolvedStorageUrl';
+import { writeCreativeAssetDrag } from '@/services/creative/CreativeAssetDragService';
 
 import { HistoryItem } from '@/core/store';
 
@@ -35,15 +37,33 @@ interface GalleryItemProps {
     isPlaying: boolean;
     pinToClipboard: (item: HistoryItem) => void;
     sendToModule: (target: SendToTarget, payload: SendToPayload) => void;
+    sendToStage: (target: CreativeStage, payload: StageHandoffPayload) => void;
     key?: React.Key;
 }
 
-const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference, setSelectedItem, toast, generationMode, onDelete, setPrompt, setViewMode, playTrack, pauseTrack, resumeTrack, currentTrack, isPlaying, pinToClipboard, sendToModule }: GalleryItemProps) => {
+const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference, setSelectedItem, toast, generationMode, onDelete, setPrompt, setViewMode, playTrack, pauseTrack, resumeTrack, currentTrack, isPlaying, pinToClipboard, sendToModule, sendToStage }: GalleryItemProps) => {
     const [showSendMenu, setShowSendMenu] = useState(false);
+    const [imageLoadFailed, setImageLoadFailed] = useState(false);
+    const videoUrlToResolve = item.type === 'video' && !item.localPath ? item.url : null;
+    // ISSUE-920: prefer the small grid thumbnail when present; the resolver
+    // passes plain HTTPS/data URLs through and converts gs:// URIs.
+    const imageUrlToResolve = item.type === 'image' && item.url !== 'placeholder:dev-data-uri-too-large'
+        ? (item.thumbnailUrl || item.url)
+        : null;
+    const { url: resolvedVideoUrl } = useResolvedStorageUrl(videoUrlToResolve);
+    const { url: resolvedImageUrl } = useResolvedStorageUrl(imageUrlToResolve);
+
+    const playableVideoSrc = item.type === 'video'
+        ? (item.localPath ? `file://${item.localPath}` : resolvedVideoUrl || item.url)
+        : resolvedImageUrl || item.url;
+    // A raw gs:// URI can never render in an <img>; while unresolved (or after
+    // an onError) show the controlled fallback tile instead of broken alt text.
+    const displayImageSrc = resolvedImageUrl || item.thumbnailUrl || item.url;
+    const imageUnrenderable = imageLoadFailed || displayImageSrc.startsWith('gs://');
     return (
         <div
             draggable
-            onDragStart={(e) => e.dataTransfer.setData('text/plain', item.id)}
+            onDragStart={(e) => writeCreativeAssetDrag(e.dataTransfer, item, 'gallery')}
             onClick={() => onSelect(item)}
             onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
@@ -58,21 +78,21 @@ const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference
             className="group relative aspect-video bg-[#1a1a1a] rounded-lg border border-gray-800 overflow-hidden hover:border-gray-600 transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none"
         >
             {item.type === 'video' ? (
-                item.url.startsWith('data:image') ? (
+                playableVideoSrc.startsWith('data:image') ? (
                     <div className="relative w-full h-full">
                         <img
-                            src={item.url}
+                            src={playableVideoSrc}
                             alt={item.prompt}
                             loading="lazy"
                             decoding="async"
                             className="w-full h-full object-contain bg-black"
                         />
-                        <div className="absolute top-2 left-2 bg-purple-600/80 text-white text-[10px] font-bold px-2 py-0.5 rounded backdrop-blur-sm">
+                        <div className="absolute top-2 left-2 bg-green-600/80 text-white text-[10px] font-bold px-2 py-0.5 rounded backdrop-blur-sm">
                             STORYBOARD
                         </div>
                     </div>
                 ) : (
-                    <video src={item.url} className="w-full h-full object-contain bg-black" loop muted onMouseOver={e => e.currentTarget.play()} onMouseOut={e => e.currentTarget.pause()} />
+                    <video src={playableVideoSrc} className="w-full h-full object-contain bg-black" loop muted onMouseOver={e => e.currentTarget.play()} onMouseOut={e => e.currentTarget.pause()} />
                 )
             ) : item.type === 'music' ? (
                 <div className="w-full h-full flex flex-col items-center justify-center bg-gray-900 text-gray-400 p-4 text-center group-hover:text-white transition-colors">
@@ -87,12 +107,18 @@ const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference
                         <ImageIcon size={24} className="mb-2 opacity-20" />
                         <span className="text-[10px] font-mono leading-tight">DEV PREVIEW<br />(Size Limit)</span>
                     </div>
+                ) : imageUnrenderable ? (
+                    <div className="w-full h-full flex flex-col items-center justify-center bg-gray-900 text-gray-500 p-4 text-center" data-testid={`gallery-image-fallback-${item.id}`}>
+                        <ImageIcon size={24} className="mb-2 opacity-20" />
+                        <span className="text-[10px] font-mono leading-tight">{imageLoadFailed ? 'PREVIEW UNAVAILABLE' : 'LOADING PREVIEW…'}</span>
+                    </div>
                 ) : (
                     <img
-                        src={item.url}
+                        src={displayImageSrc}
                         alt={item.prompt}
                         loading="lazy"
                         decoding="async"
+                        onError={() => setImageLoadFailed(true)}
                         className="w-full h-full object-contain bg-black"
                     />
                 )
@@ -117,7 +143,7 @@ const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference
                                 <button
                                     onClick={(e) => { e.stopPropagation(); setVideoInput('lastFrame', item); toast.success("Set as Last Frame"); }}
                                     data-testid="set-last-frame-btn"
-                                    className="p-1.5 bg-gray-800/50 text-white rounded hover:bg-purple-600 transition-colors"
+                                    className="p-1.5 bg-gray-800/50 text-white rounded hover:bg-green-600 transition-colors"
                                     title="Set as Last Frame"
                                     aria-label="Set as Last Frame"
                                 >
@@ -165,6 +191,7 @@ const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference
                                                         // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                                         assetType: item.type as any,
                                                         prompt: item.prompt || 'Gallery Asset',
+                                                        targetView: 'design',
                                                         originModule: 'creative',
                                                         timestamp: Date.now()
                                                     });
@@ -184,6 +211,7 @@ const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference
                                                         // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                                         assetType: item.type as any,
                                                         prompt: item.prompt || 'Gallery Asset',
+                                                        targetView: 'visuals',
                                                         originModule: 'creative',
                                                         timestamp: Date.now()
                                                     });
@@ -203,6 +231,7 @@ const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference
                                                         // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                                         assetType: item.type as any,
                                                         prompt: item.prompt || 'Gallery Asset',
+                                                        targetView: 'conversation',
                                                         originModule: 'creative',
                                                         timestamp: Date.now()
                                                     });
@@ -222,6 +251,7 @@ const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference
                                                         // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                                         assetType: item.type as any,
                                                         prompt: item.prompt || 'Gallery Asset',
+                                                        targetView: 'rider',
                                                         originModule: 'creative',
                                                         timestamp: Date.now()
                                                     });
@@ -232,6 +262,129 @@ const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference
                                             >
                                                 <span>Tour Tech Rider</span>
                                             </button>
+                                            <div className="px-2.5 py-1 text-[8px] font-bold text-gray-500 uppercase tracking-widest border-t border-b border-white/5">
+                                                Creative Stages
+                                            </div>
+                                            {item.type === 'video' && (
+                                                <>
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            sendToStage('veo', {
+                                                                item,
+                                                                role: 'source-video',
+                                                                originStage: item.prompt.startsWith('Omni ') ? 'omni' : 'veo',
+                                                                timestamp: Date.now()
+                                                            });
+                                                            toast.success("Sent to Veo for frame-continuity generation!");
+                                                            setShowSendMenu(false);
+                                                        }}
+                                                        className="w-full px-2.5 py-1.5 text-[10px] text-gray-300 hover:bg-cyan-600/20 hover:text-cyan-300 transition-colors"
+                                                    >
+                                                        <span>→ Veo (continue)</span>
+                                                    </button>
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            sendToStage('omni', {
+                                                                item,
+                                                                role: 'source-video',
+                                                                originStage: item.prompt.startsWith('Omni ') ? 'omni' : 'veo',
+                                                                timestamp: Date.now()
+                                                            });
+                                                            toast.success("Sent to Omni for remixing!");
+                                                            setShowSendMenu(false);
+                                                        }}
+                                                        className="w-full px-2.5 py-1.5 text-[10px] text-gray-300 hover:bg-purple-600/20 hover:text-purple-300 transition-colors"
+                                                    >
+                                                        <span>→ Omni (source)</span>
+                                                    </button>
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            sendToStage('editor', {
+                                                                item,
+                                                                role: 'source-video',
+                                                                originStage: item.prompt.startsWith('Omni ') ? 'omni' : 'veo',
+                                                                timestamp: Date.now()
+                                                            });
+                                                            toast.success("Opening video in the timeline editor!");
+                                                            setShowSendMenu(false);
+                                                        }}
+                                                        className="w-full px-2.5 py-1.5 text-[10px] text-gray-300 hover:bg-emerald-600/20 hover:text-emerald-300 transition-colors"
+                                                    >
+                                                        <span>→ Timeline Editor</span>
+                                                    </button>
+                                                </>
+                                            )}
+                                            {item.type === 'image' && (
+                                                <>
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            sendToStage('veo', {
+                                                                item,
+                                                                role: 'first-frame',
+                                                                originStage: 'image',
+                                                                timestamp: Date.now()
+                                                            });
+                                                            toast.success("Sent to Veo as first frame!");
+                                                            setShowSendMenu(false);
+                                                        }}
+                                                        className="w-full px-2.5 py-1.5 text-[10px] text-gray-300 hover:bg-cyan-600/20 hover:text-cyan-300 transition-colors"
+                                                    >
+                                                        <span>→ Veo (frame)</span>
+                                                    </button>
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            sendToStage('omni', {
+                                                                item,
+                                                                role: 'first-frame',
+                                                                originStage: 'image',
+                                                                timestamp: Date.now()
+                                                            });
+                                                            toast.success("Sent to Omni as the starting frame!");
+                                                            setShowSendMenu(false);
+                                                        }}
+                                                        className="w-full px-2.5 py-1.5 text-[10px] text-gray-300 hover:bg-purple-600/20 hover:text-purple-300 transition-colors"
+                                                    >
+                                                        <span>→ Omni (start)</span>
+                                                    </button>
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            sendToStage('omni', {
+                                                                item,
+                                                                role: 'reference-image',
+                                                                originStage: 'image',
+                                                                timestamp: Date.now()
+                                                            });
+                                                            toast.success("Sent to Omni as reference!");
+                                                            setShowSendMenu(false);
+                                                        }}
+                                                        className="w-full px-2.5 py-1.5 text-[10px] text-gray-300 hover:bg-purple-600/20 hover:text-purple-300 transition-colors"
+                                                    >
+                                                        <span>→ Omni (ref)</span>
+                                                    </button>
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            sendToStage('editor', {
+                                                                item,
+                                                                role: 'image-input',
+                                                                originStage: 'image',
+                                                                timestamp: Date.now()
+                                                            });
+                                                            toast.success("Opening image in the timeline editor!");
+                                                            setShowSendMenu(false);
+                                                        }}
+                                                        className="w-full px-2.5 py-1.5 text-[10px] text-gray-300 hover:bg-emerald-600/20 hover:text-emerald-300 transition-colors"
+                                                    >
+                                                        <span>→ Timeline Editor</span>
+                                                    </button>
+                                                </>
+                                            )}
                                         </div>
                                     )}
                                 </div>
@@ -256,7 +409,7 @@ const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference
                             <Maximize2 size={14} />
                         </button>
                         <button
-                            onClick={(e) => { e.stopPropagation(); toast.success("Feedback recorded: Liked"); }}
+                            onClick={(e) => { e.stopPropagation(); toast.info("Liked"); }}
                             data-testid="like-btn"
                             className="p-1.5 bg-gray-800/50 text-white rounded hover:bg-blue-500 focus-visible:ring-2 focus-visible:ring-white/50 transition-colors"
                             title="Like"
@@ -279,7 +432,7 @@ const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference
                             <RotateCw size={14} />
                         </button>
                         <button
-                            onClick={(e) => { e.stopPropagation(); toast.success("Feedback recorded: Disliked"); }}
+                            onClick={(e) => { e.stopPropagation(); toast.info("Disliked"); }}
                             data-testid="dislike-btn"
                             className="p-1.5 bg-gray-800/50 text-white rounded hover:bg-orange-500 focus-visible:ring-2 focus-visible:ring-white/50 transition-colors"
                             title="Dislike"
@@ -288,12 +441,22 @@ const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference
                             <ThumbsDown size={14} />
                         </button>
                         <button
-                            onClick={(e) => {
+                            onClick={async (e) => {
                                 e.stopPropagation();
-                                import('@/utils/download').then(({ downloadAsset }) => {
-                                    downloadAsset(item.url, `${item.type}-export-${item.id.slice(0, 8)}`);
-                                    toast.success('Downloading asset...');
-                                });
+                                try {
+                                    const { downloadAsset } = await import('@/utils/download');
+                                    // ISSUE-921: Add proper file extension
+                                    const ext = item.type === 'video' ? '.mp4' : item.type === 'music' ? '.mp3' : '.png';
+                                    const filename = `${item.type}-export-${item.id.slice(0, 8)}${ext}`;
+                                    const success = await downloadAsset(item.url, filename);
+                                    if (success) {
+                                        toast.success('Asset downloaded successfully.');
+                                    } else {
+                                        toast.error('Failed to download asset.');
+                                    }
+                                } catch {
+                                    toast.error('Download failed.');
+                                }
                             }}
                             data-testid="download-asset-btn"
                             className="p-1.5 bg-gray-800/50 text-white rounded hover:bg-green-600 transition-colors"
@@ -346,11 +509,8 @@ const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference
                     <Download size={10} className="text-white" />
                 </div>
             )}
-            {item.origin === 'generated' && (
-                <div className="absolute bottom-2 left-2 flex items-center gap-1 bg-black/50 text-white/80 text-[8px] font-mono px-1.5 py-0.5 rounded backdrop-blur-sm pointer-events-none z-10 border border-white/10">
-                    <Sparkles size={8} /> SynthID
-                </div>
-            )}
+            {/* ISSUE-918: SynthID badge removed pending proper provenance tracking.
+                Generated assets don't have verified watermark metadata yet. */}
         </div>
     );
 });
@@ -364,7 +524,7 @@ export default function CreativeGallery({ compact = false, onSelect, className =
         setVideoInput, selectedItem, setSelectedItem, addCharacterReference, setPrompt, setViewMode,
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         playTrack, stopTrack, currentTrack, isPlaying, pauseTrack, resumeTrack,
-        pinToClipboard, sendToModule
+        pinToClipboard, sendToModule, sendToStage
     } = useStore(useShallow(state => ({
         generatedHistory: state.generatedHistory,
         removeItemFromProject: state.removeItemFromProject,
@@ -389,7 +549,8 @@ export default function CreativeGallery({ compact = false, onSelect, className =
         pauseTrack: state.pauseTrack,
         resumeTrack: state.resumeTrack,
         pinToClipboard: state.pinToClipboard,
-        sendToModule: state.sendToModule
+        sendToModule: state.sendToModule,
+        sendToStage: state.sendToStage
     })));
     const fileInputRef = useRef<HTMLInputElement>(null);
     const toast = useToast();
@@ -427,37 +588,62 @@ export default function CreativeGallery({ compact = false, onSelect, className =
         return [...filteredUploadedImages, ...filteredUploadedAudio, ...filteredGenerated].sort((a, b) => b.timestamp - a.timestamp);
     }, [uploadedImages, uploadedAudio, generatedHistory, searchQuery]);
 
-    const handleFileUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    // ISSUE-922: uploads are validated up front, each file's read AND durable
+    // persistence are awaited, and the toast reports real per-file outcomes —
+    // never a blanket success before anything actually saved.
+    const handleFileUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = e.target.files;
         if (!files || files.length === 0) return;
+        // Reset so re-selecting the same file after a failure fires again.
+        e.target.value = '';
 
-        Array.from(files).forEach(file => {
+        const MAX_UPLOAD_BYTES = 25 * 1024 * 1024; // data-URI storage — keep renderer memory bounded
+        let succeeded = 0;
+        let failed = 0;
+        const skipped: string[] = [];
+
+        const readAsDataUrl = (file: File) => new Promise<string>((resolve, reject) => {
             const reader = new FileReader();
-            reader.onload = (e) => {
-                if (e.target?.result) {
-                    const isVideo = file.type.startsWith('video/');
-                    const isAudio = file.type.startsWith('audio/');
-
-                    const newItem: HistoryItem = {
-                        id: crypto.randomUUID(),
-                        type: isAudio ? 'music' : (isVideo ? 'video' : 'image'),
-                        url: e.target.result as string,
-                        prompt: file.name,
-                        timestamp: Date.now(),
-                        projectId: currentProjectId,
-                        origin: 'uploaded'
-                    };
-
-                    if (isAudio) {
-                        addUploadedAudio(newItem);
-                    } else {
-                        addUploadedImage(newItem);
-                    }
-                }
-            };
+            reader.onload = () => (typeof reader.result === 'string' ? resolve(reader.result) : reject(new Error('Empty read result')));
+            reader.onerror = () => reject(reader.error ?? new Error('File read failed'));
             reader.readAsDataURL(file);
         });
-        toast.success(`${files.length} asset(s) uploaded.`);
+
+        for (const file of Array.from(files)) {
+            const isVideo = file.type.startsWith('video/');
+            const isAudio = file.type.startsWith('audio/');
+            const isImage = file.type.startsWith('image/');
+
+            if (!isVideo && !isAudio && !isImage) {
+                skipped.push(`${file.name} (unsupported type)`);
+                continue;
+            }
+            if (file.size > MAX_UPLOAD_BYTES) {
+                skipped.push(`${file.name} (over ${MAX_UPLOAD_BYTES / 1024 / 1024}MB limit)`);
+                continue;
+            }
+
+            try {
+                const dataUrl = await readAsDataUrl(file);
+                const newItem: HistoryItem = {
+                    id: crypto.randomUUID(),
+                    type: isAudio ? 'music' : (isVideo ? 'video' : 'image'),
+                    url: dataUrl,
+                    prompt: file.name,
+                    timestamp: Date.now(),
+                    projectId: currentProjectId,
+                    origin: 'uploaded'
+                };
+                const persisted = isAudio ? await addUploadedAudio(newItem) : await addUploadedImage(newItem);
+                if (persisted) { succeeded++; } else { failed++; }
+            } catch {
+                failed++;
+            }
+        }
+
+        if (succeeded > 0) toast.success(`${succeeded} asset(s) uploaded.`);
+        if (failed > 0) toast.error(`${failed} asset(s) failed to save — they may not survive a reload. Try again.`);
+        if (skipped.length > 0) toast.error(`Skipped: ${skipped.join(', ')}`);
     }, [addUploadedAudio, addUploadedImage, currentProjectId, toast]);
 
     const isEmpty = allItems.length === 0;
@@ -517,6 +703,7 @@ export default function CreativeGallery({ compact = false, onSelect, className =
                     }}
                 />
                 <input
+                    data-testid="gallery-upload-input"
                     type="file"
                     ref={fileInputRef}
                     className="hidden"
@@ -547,6 +734,7 @@ export default function CreativeGallery({ compact = false, onSelect, className =
                             Upload
                         </button>
                         <input
+                            data-testid="gallery-upload-input"
                             type="file"
                             ref={fileInputRef}
                             className="hidden"
@@ -602,6 +790,7 @@ export default function CreativeGallery({ compact = false, onSelect, className =
                                             isPlaying={isPlaying}
                                             pinToClipboard={pinToClipboard}
                                             sendToModule={sendToModule}
+                                            sendToStage={sendToStage}
                                         />
                                     ))}
                                 </div>

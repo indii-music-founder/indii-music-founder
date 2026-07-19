@@ -5,6 +5,7 @@ import { wrapTool, toolError, toolSuccess } from '../utils/ToolUtils';
 import type { AnyToolFunction } from '../types';
 import { logger } from '@/utils/logger';
 import { getFineTunedModel } from '../fine-tuned-models';
+import { importWithRetry } from '@/utils/dynamicImport';
 
 // ============================================================================
 // Types for LegalTools
@@ -88,8 +89,17 @@ Key Terms: ${args.terms}`;
     }) => {
         // Validation
         const total = args.contributors.reduce((acc, c) => acc + c.percentage, 0);
-        if (total !== 100) {
-            return toolSuccess({ error: `Percentages must add up to 100%. Current total: ${total}%` }, 'Failed to generate split sheet');
+        // ISSUE-829: an invalid split total must be a tool error, not a
+        // toolSuccess() carrying an error string in its data — agent
+        // orchestration otherwise treats this as a real generated artifact.
+        // Tolerance of 0.01 absorbs floating-point drift from fractional
+        // splits (e.g. three-way 33.33/33.33/33.34), not real invalid totals.
+        if (Math.abs(total - 100) > 0.01) {
+            return toolError(
+                `Split percentages must add up to 100%. Current total: ${total}%.`,
+                'INVALID_SPLIT_TOTAL',
+                { total, difference: Number((100 - total).toFixed(2)) }
+            );
         }
 
         const terms = `Track Title: ${args.trackTitle}\nContributors:\n` + args.contributors.map(c => `- ${c.name} (${c.role}): ${c.percentage}%`).join('\n');
@@ -116,8 +126,8 @@ Key Terms: ${args.terms}`;
 
         // Item 111: Wire to digital signature Cloud Function
         try {
-            const { functions } = await import('@/services/firebase');
-            const { httpsCallable } = await import('firebase/functions');
+            const { functions } = await importWithRetry(() => import('@/services/firebase'));
+            const { httpsCallable } = await importWithRetry(() => import('firebase/functions'));
 
             const sendForSigningFn = httpsCallable<
                 { contractId: string; signers: Array<{ name: string; email: string }>; provider: string },
@@ -144,6 +154,37 @@ Key Terms: ${args.terms}`;
                 'DIGITAL_SIGNATURE_UNAVAILABLE'
             );
         }
+    }),
+
+    summarize_contract_terms: wrapTool('summarize_contract_terms', async (args: {
+        contractText: string;
+        focusAreas?: string[];
+    }) => {
+        if (!args.contractText || typeof args.contractText !== 'string') {
+            throw new Error("Validation Error: 'contractText' is required and must be a string.");
+        }
+
+        const systemPrompt = `
+You are a senior entertainment lawyer.
+Analyze the provided contract text and provide a concise summary of its key terms.
+Focus on: Obligations, Term, Termination, Compensation, and Rights Granted.
+${args.focusAreas && args.focusAreas.length > 0 ? `Pay special attention to these focus areas: ${args.focusAreas.join(', ')}.` : ''}
+Output in Markdown format. Use bullet points for readability. Highlight any unusual or highly restrictive clauses.
+`;
+        const prompt = `Please summarize the following contract:\n\n${args.contractText}`;
+
+        const response = await AutonomousIntelligence.generateContent(
+            prompt,
+            getFineTunedModel('legal'),
+            undefined,
+            systemPrompt
+        );
+
+        const content = getResponseText(response);
+
+        return toolSuccess({
+            summary: content
+        }, "Contract terms summarized successfully.");
     }),
 
     generate_dmca_takedown: wrapTool('generate_dmca_takedown', async (args: { infringingUrl: string; originalWorkTitle: string; rightsholderName: string }) => {
@@ -191,7 +232,7 @@ Signature: ____________________________
         trackTitle?: string;
     }) => {
         // Navigate to Registration Center focused on Library of Congress
-        const { useStore } = await import('@/core/store');
+        const { useStore } = await importWithRetry(() => import('@/core/store'));
         const store = useStore.getState();
         store.setModule('registration');
         store.setRegistrationFocus({ orgId: 'loc', trackId: args.trackId ?? null });
@@ -214,7 +255,7 @@ Signature: ____________________________
         const orgNames: Record<string, string> = { ascap: 'ASCAP', bmi: 'BMI', sesac: 'SESAC' };
         const orgName = orgNames[args.orgId] ?? args.orgId.toUpperCase();
 
-        const { useStore } = await import('@/core/store');
+        const { useStore } = await importWithRetry(() => import('@/core/store'));
         const store = useStore.getState();
         store.setModule('registration');
         store.setRegistrationFocus({ orgId: args.orgId, trackId: args.trackId ?? null });
@@ -235,12 +276,12 @@ Signature: ____________________________
         // persists check results to Firestore for audit trail.
 
         try {
-            const { functions } = await import('@/services/firebase');
-            const { httpsCallable } = await import('firebase/functions');
+            const { functions } = await importWithRetry(() => import('@/services/firebase'));
+            const { httpsCallable } = await importWithRetry(() => import('firebase/functions'));
 
             const verifyFn = httpsCallable<
                 { trackTitle: string; originalArtist: string },
-                { status: string; songCode: string; publisher: string; rate: number; requiresClearance: boolean }
+                { status: string; songCode: string | null; publisher: string | null; rate: number; requiresClearance: boolean; guidance?: string; rateContext?: string }
             >(functions, 'verifyMechanicalLicense');
 
             const result = await verifyFn({
@@ -250,8 +291,8 @@ Signature: ____________________________
 
             // Persist the license check to Firestore
             try {
-                const { db, auth } = await import('@/services/firebase');
-                const { collection, addDoc, serverTimestamp } = await import('firebase/firestore');
+                const { db, auth } = await importWithRetry(() => import('@/services/firebase'));
+                const { collection, addDoc, serverTimestamp } = await importWithRetry(() => import('firebase/firestore'));
                 const userId = auth.currentUser?.uid;
                 if (userId) {
                     await addDoc(collection(db, `users/${userId}/mechanical_license_checks`), {
@@ -278,14 +319,14 @@ Signature: ____________________________
                 statutoryRate: result.data.rate,
                 requiresClearance: result.data.requiresClearance,
                 link: 'https://www.songfile.com/',
-            }, `Mechanical license verification for "${args.trackTitle}": Status=${result.data.status}, Publisher=${result.data.publisher}. ${result.data.requiresClearance ? 'Clearance required before delivery.' : 'License verified — cleared for delivery.'}`);
+            }, `Mechanical license check for "${args.trackTitle}": Status=${result.data.status}${result.data.publisher ? `, Publisher=${result.data.publisher}` : ''}. ${result.data.requiresClearance ? `Clearance required before delivery. ${result.data.guidance ?? 'Use SongFile (downloads/physical) and The MLC (streaming) to obtain a mechanical license.'}` : 'License verified — cleared for delivery.'}`);
         } catch (error: unknown) {
             logger.warn('[LegalTools] verifyMechanicalLicense Cloud Function unavailable:', error);
 
             // Fallback: Persist the check request for manual processing
             try {
-                const { db, auth } = await import('@/services/firebase');
-                const { collection, addDoc, serverTimestamp } = await import('firebase/firestore');
+                const { db, auth } = await importWithRetry(() => import('@/services/firebase'));
+                const { collection, addDoc, serverTimestamp } = await importWithRetry(() => import('firebase/firestore'));
                 const userId = auth.currentUser?.uid;
                 if (userId) {
                     await addDoc(collection(db, `users/${userId}/mechanical_license_checks`), {

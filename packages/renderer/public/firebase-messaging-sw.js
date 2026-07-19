@@ -3,11 +3,11 @@ importScripts('https://www.gstatic.com/firebasejs/10.8.0/firebase-messaging-comp
 
 const firebaseConfig = {
     apiKey: "", // REMOVED HARDCODED KEY - Inject via build or env
-    authDomain: "indii-v-1-1.firebaseapp.com",
-    projectId: "indii-v-1-1",
+    authDomain: "indii-music-founder.firebaseapp.com",
+    projectId: "indii-music-founder",
     storageBucket: "indii-alpha-electron",
-    messagingSenderId: "223837784072",
-    appId: "1:223837784072:web:28eabcf0c5dd985395e9bd",
+    messagingSenderId: "148015878263",
+    appId: "1:148015878263:web:febc76c0bd56f28cdbb672",
     measurementId: "G-KNWPRGE5JK"
 };
 

@@ -39,6 +39,8 @@ import type { AlwaysOnMemory, AlwaysOnMemoryCategory, MemoryTier } from '@/types
 import type { Directive } from '@/services/directive/DirectiveTypes';
 import type { MemoryInboxItem } from '@/core/store/slices/memoryAgentSlice';
 import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
+import { useToast } from '@/core/context/ToastContext';
+import { logger } from '@/utils/logger';
 
 // ─── Constants ──────────────────────────────────────────────────
 
@@ -52,7 +54,7 @@ const TIER_LABELS: Record<MemoryTier, string> = {
 const TIER_COLORS: Record<MemoryTier, string> = {
     working: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
     shortTerm: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-    longTerm: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
+    longTerm: 'bg-green-500/20 text-green-400 border-green-500/30',
     archived: 'bg-gray-500/20 text-gray-400 border-gray-500/30',
 };
 
@@ -72,9 +74,17 @@ const CATEGORY_LABELS: Partial<Record<AlwaysOnMemoryCategory | 'all', string>> =
     feedback: '📝 Feedback',
 };
 
+const getMemoryErrorMessage = (fallback: string, error: unknown) => {
+    if (error instanceof Error && error.message.trim()) {
+        return error.message;
+    }
+    return fallback;
+};
+
 // ─── Component ──────────────────────────────────────────────────
 
 export default function MemoryDashboard() {
+    const toast = useToast();
     const {
         user,
         memories,
@@ -179,10 +189,13 @@ export default function MemoryDashboard() {
         try {
             await ingestMemoryText(ingestText.trim());
             setIngestText('');
+        } catch (error: unknown) {
+            logger.error('[MemoryDashboard] Failed to ingest memory:', error);
+            toast.error(getMemoryErrorMessage('Failed to ingest memory', error));
         } finally {
             setIsIngesting(false);
         }
-    }, [ingestText, userId, ingestMemoryText]);
+    }, [ingestText, userId, ingestMemoryText, toast]);
 
     const handleQuery = useCallback(async () => {
         if (!queryText.trim() || !userId) return;
@@ -191,27 +204,38 @@ export default function MemoryDashboard() {
         try {
             const answer = await queryAlwaysOnMemory(queryText.trim());
             setQueryAnswer(answer);
+        } catch (error: unknown) {
+            logger.error('[MemoryDashboard] Failed to query memory:', error);
+            toast.error(getMemoryErrorMessage('Failed to query memory', error));
         } finally {
             setIsQuerying(false);
         }
-    }, [queryText, userId, queryAlwaysOnMemory]);
+    }, [queryText, userId, queryAlwaysOnMemory, toast]);
 
     const handleConsolidate = useCallback(async () => {
         if (!userId) return;
         setIsConsolidating(true);
         try {
             await triggerMemoryConsolidation();
+        } catch (error: unknown) {
+            logger.error('[MemoryDashboard] Failed to consolidate memory:', error);
+            toast.error(getMemoryErrorMessage('Failed to consolidate memory', error));
         } finally {
             setIsConsolidating(false);
         }
-    }, [userId, triggerMemoryConsolidation]);
+    }, [userId, triggerMemoryConsolidation, toast]);
 
     const handleDelete = useCallback(
         async (memoryId: string) => {
             if (!userId) return;
-            await deleteAlwaysOnMemory(memoryId);
+            try {
+                await deleteAlwaysOnMemory(memoryId);
+            } catch (error: unknown) {
+                logger.error('[MemoryDashboard] Failed to delete memory:', error);
+                toast.error(getMemoryErrorMessage('Failed to delete memory', error));
+            }
         },
-        [userId, deleteAlwaysOnMemory]
+        [userId, deleteAlwaysOnMemory, toast]
     );
 
     const handleRefresh = useCallback(() => {
@@ -227,7 +251,7 @@ export default function MemoryDashboard() {
     const formatDate = (timestamp: number | { toMillis: () => number } | null | undefined) => {
         if (!timestamp) return '—';
         const ms = typeof timestamp === 'object' && 'toMillis' in timestamp ? timestamp.toMillis() : timestamp;
-        return new Date(ms).toLocaleString(undefined, {
+        return new Date(ms).toLocaleString('en-US', {
             month: 'short',
             day: 'numeric',
             hour: '2-digit',
@@ -244,8 +268,8 @@ export default function MemoryDashboard() {
                 <div className="flex-shrink-0 border-b border-white/5 bg-[#0d1117]/80 backdrop-blur-xl">
                     <div className="flex items-center justify-between px-6 py-4">
                         <div className="flex items-center gap-3">
-                            <div className="p-2 rounded-xl bg-linear-to-br from-purple-600/30 to-violet-600/30 border border-purple-500/20">
-                                <Brain size={20} className="text-purple-400" />
+                            <div className="p-2 rounded-xl bg-linear-to-br from-green-600/30 to-violet-600/30 border border-green-500/20">
+                                <Brain size={20} className="text-green-400" />
                             </div>
                             <div>
                                 <h1 className="text-lg font-semibold tracking-tight">Memory Agent</h1>
@@ -288,7 +312,7 @@ export default function MemoryDashboard() {
                                     key={panel}
                                     onClick={() => setActivePanel(panel)}
                                     className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${activePanel === panel
-                                        ? 'bg-purple-600/20 text-purple-300 border border-purple-500/30'
+                                        ? 'bg-green-600/20 text-green-300 border border-green-500/30'
                                         : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'
                                         }`}
                                 >
@@ -425,13 +449,13 @@ function FeedPanel({
                             value={searchQuery}
                             onChange={(e) => onSearchChange(e.target.value)}
                             placeholder="Search memories..."
-                            className="w-full pl-9 pr-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-gray-200 placeholder:text-gray-600 focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/20"
+                            className="w-full pl-9 pr-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-gray-200 placeholder:text-gray-600 focus:outline-none focus:border-green-500/50 focus:ring-1 focus:ring-green-500/20"
                         />
                     </div>
                     <button
                         onClick={onConsolidate}
                         disabled={isConsolidating}
-                        className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-purple-600/20 text-purple-300 border border-purple-500/30 text-xs font-medium hover:bg-purple-600/30 transition-colors disabled:opacity-50"
+                        className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-green-600/20 text-green-300 border border-green-500/30 text-xs font-medium hover:bg-green-600/30 transition-colors disabled:opacity-50"
                     >
                         {isConsolidating ? <Loader2 size={12} className="animate-spin" /> : <Zap size={12} />}
                         Consolidate
@@ -441,7 +465,7 @@ function FeedPanel({
                     <select
                         value={filterCategory}
                         onChange={(e) => onFilterCategory(e.target.value as AlwaysOnMemoryCategory | 'all')}
-                        className="px-2 py-1 bg-white/5 border border-white/10 rounded-lg text-xs text-gray-300 focus:outline-none focus:border-purple-500/50"
+                        className="px-2 py-1 bg-white/5 border border-white/10 rounded-lg text-xs text-gray-300 focus:outline-none focus:border-green-500/50"
                     >
                         {Object.entries(CATEGORY_LABELS).map(([k, v]) => (
                             <option key={k} value={k}>{v}</option>
@@ -450,7 +474,7 @@ function FeedPanel({
                     <select
                         value={filterTier}
                         onChange={(e) => onFilterTier(e.target.value as MemoryTier | 'all')}
-                        className="px-2 py-1 bg-white/5 border border-white/10 rounded-lg text-xs text-gray-300 focus:outline-none focus:border-purple-500/50"
+                        className="px-2 py-1 bg-white/5 border border-white/10 rounded-lg text-xs text-gray-300 focus:outline-none focus:border-green-500/50"
                     >
                         <option value="all">All Tiers</option>
                         {Object.entries(TIER_LABELS).map(([k, v]) => (
@@ -481,7 +505,7 @@ function FeedPanel({
                                     transition={{ duration: 0.2 }}
                                     onClick={() => onSelect(m.id === selectedMemoryId ? null : m.id)}
                                     className={`px-4 py-3 cursor-pointer transition-colors group ${m.id === selectedMemoryId
-                                        ? 'bg-purple-500/5 border-l-2 border-l-purple-500'
+                                        ? 'bg-green-500/5 border-l-2 border-l-purple-500'
                                         : 'hover:bg-white/[0.02] border-l-2 border-l-transparent'
                                         }`}
                                 >
@@ -567,12 +591,12 @@ function QueryPanel({
                     }}
                     placeholder="Ask a question about your memories..."
                     rows={3}
-                    className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-sm text-gray-200 placeholder:text-gray-600 focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/20 resize-none"
+                    className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-sm text-gray-200 placeholder:text-gray-600 focus:outline-none focus:border-green-500/50 focus:ring-1 focus:ring-green-500/20 resize-none"
                 />
                 <button
                     onClick={onSubmit}
                     disabled={!queryText.trim() || isQuerying}
-                    className="absolute bottom-3 right-3 p-2 rounded-lg bg-purple-600 text-white hover:bg-purple-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    className="absolute bottom-3 right-3 p-2 rounded-lg bg-green-600 text-white hover:bg-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                     {isQuerying ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
                 </button>
@@ -584,7 +608,7 @@ function QueryPanel({
                     animate={{ opacity: 1, y: 0 }}
                     className="flex-1 overflow-y-auto bg-white/[0.02] border border-white/5 rounded-xl p-4"
                 >
-                    <div className="flex items-center gap-2 mb-3 text-xs text-purple-400 font-medium">
+                    <div className="flex items-center gap-2 mb-3 text-xs text-green-400 font-medium">
                         <Sparkles size={12} />
                         Answer
                     </div>
@@ -636,7 +660,7 @@ function IngestPanel({
                 }}
                 placeholder="Paste text, notes, articles, or anything you want to remember..."
                 rows={8}
-                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-sm text-gray-200 placeholder:text-gray-600 focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/20 resize-none"
+                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-sm text-gray-200 placeholder:text-gray-600 focus:outline-none focus:border-green-500/50 focus:ring-1 focus:ring-green-500/20 resize-none"
             />
 
             <div className="flex items-center justify-between">
@@ -646,7 +670,7 @@ function IngestPanel({
                 <button
                     onClick={onSubmit}
                     disabled={!ingestText.trim() || isIngesting}
-                    className="flex items-center gap-2 px-4 py-2 rounded-lg bg-purple-600 text-white text-sm font-medium hover:bg-purple-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    className="flex items-center gap-2 px-4 py-2 rounded-lg bg-green-600 text-white text-sm font-medium hover:bg-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                     {isIngesting ? (
                         <>
@@ -747,7 +771,7 @@ function MemoryDetail({
                         <label className="text-[10px] uppercase text-gray-600 font-medium tracking-wider">Topics</label>
                         <div className="flex flex-wrap gap-1.5 mt-1.5">
                             {memory.topics.map((t) => (
-                                <span key={t} className="px-2 py-0.5 rounded bg-purple-500/10 text-purple-400 border border-purple-500/20 text-[10px]">
+                                <span key={t} className="px-2 py-0.5 rounded bg-green-500/10 text-green-400 border border-green-500/20 text-[10px]">
                                     {t}
                                 </span>
                             ))}
@@ -809,7 +833,7 @@ function InsightsPanel({
     return (
         <div className="p-4">
             <h3 className="text-sm font-semibold text-gray-200 flex items-center gap-2 mb-4">
-                <Sparkles size={14} className="text-purple-400" />
+                <Sparkles size={14} className="text-green-400" />
                 Consolidation Insights
             </h3>
 
@@ -828,9 +852,9 @@ function InsightsPanel({
                             initial={{ opacity: 0, y: 5 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: i * 0.05 }}
-                            className="p-3 rounded-xl bg-purple-500/5 border border-purple-500/10"
+                            className="p-3 rounded-xl bg-green-500/5 border border-green-500/10"
                         >
-                            <p className="text-xs text-purple-300 leading-relaxed">{insight.insight}</p>
+                            <p className="text-xs text-green-300 leading-relaxed">{insight.insight}</p>
                             {insight.summary && (
                                 <p className="text-[10px] text-gray-500 mt-2">{insight.summary}</p>
                             )}
@@ -886,7 +910,7 @@ function DirectivesPanel({ directives }: { directives: Directive[] }) {
                             </p>
 
                             <div className="flex items-center gap-3">
-                                <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-purple-500/10 text-purple-400 border border-purple-500/20 text-[10px]">
+                                <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-green-500/10 text-green-400 border border-green-500/20 text-[10px]">
                                     <Sparkles size={10} />
                                     {directive.assignedAgent}
                                 </div>

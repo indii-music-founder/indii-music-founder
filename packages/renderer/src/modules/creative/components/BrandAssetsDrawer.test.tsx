@@ -20,7 +20,7 @@ vi.mock('@/services/firebase', async (importOriginal) => ({
 
 describe('BrandAssetsDrawer', () => {
     const mockUpdateBrandKit = vi.fn();
-    const mockAddUploadedImage = vi.fn();
+    const mockAddUploadedImage = vi.fn().mockResolvedValue(true);
     const mockSetActiveReferenceImage = vi.fn();
     const mockToast = { success: vi.fn(), error: vi.fn() };
     const mockOnClose = vi.fn();

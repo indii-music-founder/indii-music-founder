@@ -92,7 +92,7 @@ const OverviewTab = ({ data }: { data: ValidatedEarningsSummary }) => (
                 </div>
             </div>
             <div className="relative z-10">
-                <div className="text-lg font-bold text-white mt-2">{(data.totalDownloads || 0).toLocaleString()}</div>
+                <div className="text-lg font-bold text-white mt-2">{(data.totalDownloads || 0).toLocaleString('en-US')}</div>
                 <p className="text-xs text-gray-500 mt-1">Across all stores</p>
             </div>
         </div>
@@ -176,7 +176,8 @@ export const EarningsDashboard: React.FC = () => {
                     </div>
                 </div>
                 <div className="flex items-center space-x-2">
-                    <button className="px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-sm text-gray-300 transition-colors">
+                    {/* Static period label — no period selector exists yet (ISSUE-574/611) */}
+                    <span className="px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-gray-300">
                         {(() => {
                             if (!earningsSummary?.period?.endDate) {
                                 const m = new Date().toLocaleString('default', { month: 'long' });
@@ -185,10 +186,7 @@ export const EarningsDashboard: React.FC = () => {
                             const d = new Date(earningsSummary.period.endDate);
                             return d.toLocaleString('default', { month: 'long', year: 'numeric' });
                         })()}
-                    </button>
-                    <button className="px-4 py-2 bg-dept-creative hover:bg-dept-creative/90 text-white text-sm font-medium rounded-lg transition-colors shadow-lg shadow-dept-creative/20">
-                        Download Report
-                    </button>
+                    </span>
                 </div>
             </motion.div>
 
@@ -246,7 +244,7 @@ export const EarningsDashboard: React.FC = () => {
                                             <p className="text-sm font-medium text-gray-200 leading-none">{t.territoryName}</p>
                                             <p className="text-xs text-gray-500">{t.territoryCode}</p>
                                         </div>
-                                        <div className="font-medium text-white">+${t.revenue.toLocaleString()}</div>
+                                        <div className="font-medium text-white">+${t.revenue.toLocaleString('en-US')}</div>
                                     </div>
                                 ))}
                             </div>

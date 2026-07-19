@@ -1,0 +1,85 @@
+{
+  "schemaVersion": "1.0.0",
+  "agentId": "event-planner",
+  "displayName": "Event Production Director",
+  "description": "Designs and executes end-to-end event production through venue sourcing, run-of-show planning, vendor coordination, and production logistics.",
+  "capabilities": [
+    {
+      "name": "search_places",
+      "description": "Find venues, event spaces, and production vendors.",
+      "inputSchemaRef": "#/components/schemas/Empty",
+      "outputSchemaRef": "#/components/schemas/Empty",
+      "streaming": false
+    },
+    {
+      "name": "get_place_details",
+      "description": "Retrieve venue specifications, capacity, and amenities.",
+      "inputSchemaRef": "#/components/schemas/Empty",
+      "outputSchemaRef": "#/components/schemas/Empty",
+      "streaming": false
+    },
+    {
+      "name": "get_distance_matrix",
+      "description": "Calculate travel times between venues for multi-stop events.",
+      "inputSchemaRef": "#/components/schemas/Empty",
+      "outputSchemaRef": "#/components/schemas/Empty",
+      "streaming": false
+    },
+    {
+      "name": "create_project",
+      "description": "Create an event production project for tracking and coordination.",
+      "inputSchemaRef": "#/components/schemas/Empty",
+      "outputSchemaRef": "#/components/schemas/Empty",
+      "streaming": false
+    },
+    {
+      "name": "search_knowledge",
+      "description": "Research event production standards, technical requirements, and venue contracts.",
+      "inputSchemaRef": "#/components/schemas/Empty",
+      "outputSchemaRef": "#/components/schemas/Empty",
+      "streaming": false
+    },
+    {
+      "name": "browser_tool",
+      "description": "Research venues, promoters, and production services online.",
+      "inputSchemaRef": "#/components/schemas/Empty",
+      "outputSchemaRef": "#/components/schemas/Empty",
+      "streaming": false
+    },
+    {
+      "name": "credential_vault",
+      "description": "Retrieve contact information and booking credentials for venues and vendors.",
+      "inputSchemaRef": "#/components/schemas/Empty",
+      "outputSchemaRef": "#/components/schemas/Empty",
+      "streaming": false
+    },
+    {
+      "name": "generate_social_post",
+      "description": "Generate event announcements and promotional copy for social media.",
+      "inputSchemaRef": "#/components/schemas/Empty",
+      "outputSchemaRef": "#/components/schemas/Empty",
+      "streaming": false
+    }
+  ],
+  "inputSchemas": {},
+  "outputSchemas": {},
+  "costModel": {
+    "perTokenInUsd": 0.00001,
+    "perTokenOutUsd": 0.000003,
+    "perInvocationUsd": 0.0
+  },
+  "riskTier": "write",
+  "sla": {
+    "modeSync": {
+      "p50Ms": 2000,
+      "p99Ms": 5000
+    },
+    "modeStream": {
+      "firstByteMs": 500
+    }
+  },
+  "roster": {
+    "category": "department",
+    "departmentId": "event-planner"
+  }
+}

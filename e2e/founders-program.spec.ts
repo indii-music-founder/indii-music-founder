@@ -11,25 +11,23 @@ test.describe('Founders Program Flow', () => {
         });
     });
 
-    test('should render the manual payment instructions on founders-checkout', async ({ authedPage: page }) => {
+    test('should render the Stripe founders checkout on founders-checkout', async ({ authedPage: page }) => {
         await page.goto('/founders-checkout', { waitUntil: 'domcontentloaded' });
 
         // Verify the heading is visible
         const checkoutHeading = page.locator('h1:has-text("Back The")');
         await expect(checkoutHeading).toBeVisible();
 
-        // Check for direct funding sections
-        await expect(page.locator('h3:has-text("Cash App")')).toBeVisible();
-        await expect(page.locator('h3:has-text("Wire Transfer")')).toBeVisible();
-        await expect(page.locator('h3:has-text("Physical Check")')).toBeVisible();
-
-        // Check for the investment price info
-        await expect(page.locator('text=Investment Price: $2,500.00 USD')).toBeVisible();
+        // Check for the current Founder Pass card and Stripe checkout CTA
+        await expect(page.locator('h3:has-text("indii Founder Pass")')).toBeVisible();
+        await expect(page.locator('text=$2,500.00')).toBeVisible();
+        await expect(page.locator('text=USD One-Time')).toBeVisible();
+        await expect(page.locator('button:has-text("Proceed to Secure Stripe Checkout")')).toBeVisible();
     });
 
     test('should show Access Denied in the Founders Portal for non-founders', async ({ authedPage: page }) => {
-        // Try navigating to the portal
-        await page.goto('/dashboard', { waitUntil: 'domcontentloaded' });
+        // Navigate directly to the portal to avoid SPA router sync issues
+        await page.goto('/founders-portal', { waitUntil: 'domcontentloaded' });
 
         // Wait for store initialization
         await page.waitForFunction(() => (window as any).useStore !== undefined);
@@ -50,13 +48,6 @@ test.describe('Founders Program Flow', () => {
             }
         });
 
-        // Emulate changing module to founders portal
-        await page.evaluate(() => {
-            if ((window as any).useStore) {
-                (window as any).useStore.getState().setModule('founders-portal' as any);
-            }
-        });
-
         // Verify Access Denied is shown
         const deniedHeading = page.locator('h2:has-text("Access Denied")');
         await expect(deniedHeading).toBeVisible();
@@ -67,7 +58,8 @@ test.describe('Founders Program Flow', () => {
     });
 
     test('should render platform download options for verified founders', async ({ authedPage: page }) => {
-        await page.goto('/dashboard', { waitUntil: 'domcontentloaded' });
+        // Navigate directly to the portal to avoid SPA router sync issues
+        await page.goto('/founders-portal', { waitUntil: 'domcontentloaded' });
 
         // Wait for store initialization
         await page.waitForFunction(() => (window as any).useStore !== undefined);
@@ -85,13 +77,6 @@ test.describe('Founders Program Flow', () => {
                         updatedAt: new Date(Date.now() + 10000000).toISOString()
                     }
                 });
-            }
-        });
-
-        // Navigate to the portal module
-        await page.evaluate(() => {
-            if ((window as any).useStore) {
-                (window as any).useStore.getState().setModule('founders-portal' as any);
             }
         });
 

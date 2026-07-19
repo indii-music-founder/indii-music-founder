@@ -192,9 +192,9 @@ export default function ManufacturingPanel({ theme, productType, productId, desi
                 });
 
                 if (result.success) {
-                    toast.success(`Production Started! Order ID: ${result.orderId}`);
+                    toast.success(`Manufacturing request queued. ID: ${result.orderId}. Awaiting approval and provider confirmation.`);
                     if (!productId) {
-                        toast.info("Note: This order was created from a draft design.");
+                        toast.info("Note: This request was created from a draft design.");
                     }
                 }
             }
@@ -241,7 +241,7 @@ export default function ManufacturingPanel({ theme, productType, productId, desi
                         <button
                             onClick={() => setFulfillmentMode('pod')}
                             className={`p-3 rounded-lg border text-left transition-all relative ${fulfillmentMode === 'pod'
-                                ? 'bg-purple-500/20 border-purple-400 text-purple-400'
+                                ? 'bg-green-500/20 border-green-400 text-green-400'
                                 : 'bg-neutral-800 border-neutral-700 text-neutral-400 hover:border-neutral-500'
                                 }`}
                         >
@@ -260,7 +260,7 @@ export default function ManufacturingPanel({ theme, productType, productId, desi
 
                     {/* POD Provider Selection (when POD mode is active) */}
                     {fulfillmentMode === 'pod' && (
-                        <div className="mt-3 p-3 bg-purple-500/10 border border-purple-500/20 rounded-lg">
+                        <div className="mt-3 p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
                             {podConfigured ? (
                                 <div className="flex items-center gap-2">
                                     <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
@@ -269,14 +269,14 @@ export default function ManufacturingPanel({ theme, productType, productId, desi
                                         href="https://www.printful.com/dashboard"
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="ml-auto text-xs text-purple-400 hover:text-purple-300 flex items-center gap-1"
+                                        className="ml-auto text-xs text-green-400 hover:text-green-300 flex items-center gap-1"
                                     >
                                         Dashboard <ExternalLink className="w-3 h-3" />
                                     </a>
                                 </div>
                             ) : (
                                 <div className="space-y-2">
-                                    <p className="text-xs text-purple-300">
+                                    <p className="text-xs text-green-300">
                                         Connect your Printful account to enable automatic order fulfillment.
                                     </p>
                                     <p className="text-[10px] text-neutral-500">
@@ -294,7 +294,7 @@ export default function ManufacturingPanel({ theme, productType, productId, desi
                         <ShoppingBag className="w-3 h-3" />
                         Item Spec
                     </label>
-                    <div className={`p-4 rounded-xl border transition-colors cursor-pointer group ${theme.colors.surfaceHighlight} ${theme.colors.border} hover:border-yellow-400/50`}>
+                    <div className={`p-4 rounded-xl border transition-colors ${theme.colors.surfaceHighlight} ${theme.colors.border}`}>
                         <div className="flex justify-between items-start mb-2">
                             <h3 className={`font-medium ${theme.colors.text}`}>{productType} Premium</h3>
                             <span className="px-2 py-0.5 rounded text-[10px] bg-green-500/20 text-green-400 border border-green-500/20">
@@ -418,7 +418,7 @@ export default function ManufacturingPanel({ theme, productType, productId, desi
                         <span className={`${theme.colors.text} font-medium text-sm`}>Est. Project Profit</span>
                         <span className="text-green-500 font-bold font-mono text-lg flex items-center">
                             <DollarSign className="w-4 h-4" />
-                            {totalProfit.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            {totalProfit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </span>
                     </div>
                 </div>

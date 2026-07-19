@@ -2,6 +2,7 @@ import { db } from '@/services/firebase';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { z } from 'zod';
 import { Venue } from '../types';
+import { useStore } from '@/core/store';
 
 // Validation Schema
 export const RosterItemSchema = z.object({
@@ -16,12 +17,16 @@ export class RosterService {
     /**
      * Adds a venue to the user's roster.
      * Uses Firestore: users/{userId}/roster/{venueId}
+     * ISSUE-901: Gets authenticated user ID from Zustand store, not hardcoded.
      */
     static async addToRoster(venue: Venue): Promise<void> {
-        // In a real app, we'd get the current user ID from Auth Context
-        // For Alpha/Mock, we'll use a hardcoded dev user ID or get it from a store if available.
-        // Let's assume a dev-user for now since we are in "Guest Login" mode.
-        const userId = 'dev-user';
+        // ISSUE-901: Get the real authenticated user from the store
+        const state = useStore.getState();
+        const userId = state.user?.uid;
+
+        if (!userId) {
+            throw new Error('Cannot add to roster: User is not authenticated. Use real Auth context, not guest mode.');
+        }
 
         const rosterRef = doc(db, `users/${userId}/roster/${venue.id}`);
 

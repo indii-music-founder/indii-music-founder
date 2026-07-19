@@ -1,3 +1,5 @@
+import { logger } from '@/utils/logger';
+
 type RuntimeWindow = Window & {
     FIREBASE_E2E_MOCK?: unknown;
     FIREBASE_USER_MOCK?: Record<string, unknown>;
@@ -6,21 +8,23 @@ type RuntimeWindow = Window & {
 const trueLike = (value: unknown): boolean =>
     value === true || value === 'true' || value === '1';
 
+const isLocalDevHost = (): boolean =>
+    import.meta.env.DEV &&
+    typeof window !== 'undefined' &&
+    (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+
 export const isTestHarnessRuntime = (): boolean => {
     // SECURITY: Ensure E2E mocks are stripped out of production builds
     if (import.meta.env.PROD && import.meta.env.MODE !== 'test') return false;
 
-    const env = import.meta.env;
-    if (env.MODE === 'test' || trueLike(env.VITE_E2E) || trueLike(env.VITE_FIREBASE_E2E_MOCK)) {
+    if (import.meta.env.MODE === 'test' || trueLike(import.meta.env.VITE_E2E) || trueLike(import.meta.env.VITE_FIREBASE_E2E_MOCK)) {
         return true;
     }
 
     try {
         return typeof process !== 'undefined' && (
             process.env.VITEST === 'true' ||
-            process.env.NODE_ENV === 'test' ||
-            process.env.VITE_E2E === 'true' ||
-            process.env.VITE_FIREBASE_E2E_MOCK === 'true'
+            process.env.NODE_ENV === 'test'
         );
     } catch {
         return false;
@@ -28,31 +32,58 @@ export const isTestHarnessRuntime = (): boolean => {
 };
 
 export const isFirebaseE2EMockEnabled = (): boolean => {
-    if (!isTestHarnessRuntime()) return false;
+    if (!isTestHarnessRuntime() && !isLocalDevHost()) {
+        logger.debug('[e2eMode] Disabled: not test harness and not local dev host');
+        return false;
+    }
 
     if (typeof window !== 'undefined') {
         const winMock = (window as RuntimeWindow).FIREBASE_E2E_MOCK;
-        if (winMock === false || winMock === 'false') return false;
-        if (trueLike(winMock)) return true;
+        if (winMock === false || winMock === 'false') {
+            logger.debug('[e2eMode] Disabled: window.FIREBASE_E2E_MOCK is false');
+            return false;
+        }
+        if (trueLike(winMock)) {
+            logger.debug('[e2eMode] Enabled: window.FIREBASE_E2E_MOCK is true');
+            return true;
+        }
     }
 
     try {
         const lsMock = localStorage.getItem('FIREBASE_E2E_MOCK');
-        if (lsMock === 'false') return false;
-        if (trueLike(lsMock)) return true;
-    } catch {
-        // ignore
+        if (lsMock === 'false') {
+            logger.debug('[e2eMode] Disabled: localStorage FIREBASE_E2E_MOCK is false');
+            return false;
+        }
+        if (trueLike(lsMock)) {
+            logger.debug('[e2eMode] Enabled: localStorage FIREBASE_E2E_MOCK is true');
+            return true;
+        }
+    } catch (e) {
+        logger.warn('[e2eMode] Failed to read localStorage:', e);
     }
 
     try {
-        return trueLike(import.meta.env.VITE_FIREBASE_E2E_MOCK);
-    } catch {
+        const envMock = typeof import.meta !== 'undefined' && import.meta.env
+            ? import.meta.env.VITE_FIREBASE_E2E_MOCK
+            : undefined;
+        return trueLike(envMock);
+    } catch (e) {
+        logger.warn('[e2eMode] import.meta.env check failed, defaulting to false:', e);
         return false;
     }
 };
 
 export const getE2EMockUser = <T>(): T | null => {
     if (!isFirebaseE2EMockEnabled() || typeof window === 'undefined') return null;
+
+    try {
+        if (localStorage.getItem('FIREBASE_E2E_SIGNED_OUT') === '1') {
+            return null;
+        }
+    } catch {
+        // ignore
+    }
     
     const defaultUser = {
         uid: 'test-agent-123',

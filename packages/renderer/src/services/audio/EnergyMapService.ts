@@ -10,7 +10,7 @@
  */
 import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
-import { Schema } from 'firebase/ai';
+import type { Schema } from '@/shared/types/ai.dto';
 import { Logger } from '@/core/logger/Logger';
 import { withServiceError } from '@/lib/errors';
 import type { AudioFeatures } from './types';
@@ -76,8 +76,11 @@ export class EnergyMapService {
         technicalFeatures: AudioFeatures
     ): Promise<EmotionalNarrative> {
         return withServiceError('EnergyMap', 'mapEmotionalArc', async () => {
-            const base64Audio = await this.fileToBase64(file);
-            return this.mapEmotionalArcWithProxy(base64Audio, file.type || 'audio/mp3', technicalFeatures);
+            void file;
+            void technicalFeatures;
+            throw new Error(
+                'Raw browser master audio cannot be sent to Gemini. Use the protected canonical-master analysis receipt or a bounded desktop proxy.'
+            );
         });
     }
 
@@ -155,21 +158,6 @@ RULES:
             .join(', ');
     }
 
-    private fileToBase64(file: File): Promise<string> {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onload = () => {
-                const result = reader.result;
-                if (typeof result !== 'string') {
-                    reject(new Error('FileReader returned unexpected type'));
-                    return;
-                }
-                resolve(result.split(',')[1] ?? '');
-            };
-            reader.onerror = error => reject(error);
-        });
-    }
 }
 
 export const energyMapService = new EnergyMapService();

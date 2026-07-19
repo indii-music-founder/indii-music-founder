@@ -7,7 +7,7 @@ import { DesignCanvas, useCanvasControls, CanvasObject } from './components/Desi
 import { AssetLibrary } from './components/AssetLibrary';
 import { LayersPanel } from './components/LayersPanel';
 import { AutonomousGenerationDialog } from './components/AutonomousGenerationDialog';
-import { ConfirmDialog } from './components/ConfirmDialog';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { ExportDialog } from './components/ExportDialog';
 import EnhancedShowroom from './components/EnhancedShowroom';
 import { TemplatePicker } from './components/TemplatePicker';
@@ -21,6 +21,7 @@ import { useToast } from '@/core/context/ToastContext';
 import { cn } from '@/lib/utils';
 import { logger } from '@/utils/logger';
 import { secureRandomAlphanumeric } from '@/utils/crypto-random';
+import { resolveMerchViewMode } from '@/modules/handoffViews';
 
 type WorkMode = 'agent' | 'user';
 type ViewMode = 'design' | 'showroom';
@@ -77,7 +78,6 @@ export default function MerchDesigner() {
     const [showExportDialog, setShowExportDialog] = useState(false);
     const [showTemplates, setShowTemplates] = useState(false);
     const [showHistory, setShowHistory] = useState(false);
-    const [deleteConfirm, setDeleteConfirm] = useState<CanvasObject[]>([]);
 
     const toast = useToast();
 
@@ -99,7 +99,7 @@ export default function MerchDesigner() {
     } = useCanvasControls(fabricCanvas);
 
     // Canvas history hook (undo/redo)
-    const { undo, redo, canUndo, canRedo } = useCanvasHistory(fabricCanvas);
+    const { undo, redo, canUndo, canRedo, clearHistory, saveState } = useCanvasHistory(fabricCanvas);
 
     // Auto-save hook
     const { saveDesign, lastSaved, isSaving } = useAutoSave(
@@ -111,6 +111,20 @@ export default function MerchDesigner() {
 
     // Staged Handoff Hook Interceptor
     const consumeHandoff = useStore(state => state.consumeHandoff);
+    const pendingMerchHandoff = useStore(state => state.pendingHandoffs.merch);
+
+    // Adjust state during render (not in an effect) when a new handoff arrives —
+    // avoids the cascading-render pattern flagged by react-hooks/set-state-in-effect.
+    const [prevMerchHandoff, setPrevMerchHandoff] = useState(pendingMerchHandoff);
+    if (pendingMerchHandoff !== prevMerchHandoff) {
+        setPrevMerchHandoff(pendingMerchHandoff);
+        if (pendingMerchHandoff) {
+            const targetView = resolveMerchViewMode(pendingMerchHandoff.targetView);
+            if (targetView !== viewMode) {
+                setViewMode(targetView);
+            }
+        }
+    }
     
     useEffect(() => {
         if (!fabricCanvas) return;
@@ -151,7 +165,7 @@ export default function MerchDesigner() {
             toast.success('Autonomous asset added to canvas');
         } catch (error: unknown) {
             logger.error('Failed to add autonomous image:', error);
-            toast.error('Failed to add autonomous image');
+            throw error instanceof Error ? error : new Error('Failed to add autonomous image');
         }
     }, [addImage, toast]);
 
@@ -223,31 +237,47 @@ export default function MerchDesigner() {
         setLayers(newLayers);
     }, [layers]);
 
-    const handleDeleteLayer = useCallback((layer: CanvasObject) => {
-        // Show confirmation dialog for single layer
-        setDeleteConfirm([layer]);
-    }, []);
-
-    const handleDeleteLayers = useCallback((objects: CanvasObject[]) => {
-        // Show confirmation dialog for multiple layers (keyboard delete)
-        setDeleteConfirm(objects);
-    }, []);
-
-    const confirmDelete = useCallback(() => {
-        if (deleteConfirm.length === 0) return;
-
-        // Delete all objects in the confirmation list
-        deleteConfirm.forEach(obj => {
-            fabricCanvasRef.current?.remove(obj.fabricObject);
+    const handleDeleteLayer = useCallback(async (layer: CanvasObject) => {
+        const ok = await ConfirmDialog.call({
+            title: "Delete Layer?",
+            message: `Are you sure you want to delete "${layer.name}"? This action cannot be undone.`,
+            confirmText: "Delete",
+            cancelText: "Cancel",
+            variant: "destructive"
         });
+        if (ok) {
+            fabricCanvasRef.current?.remove(layer.fabricObject);
+            fabricCanvasRef.current?.discardActiveObject();
+            fabricCanvasRef.current?.renderAll();
+            toast.success(`1 layer deleted`);
+        }
+    }, [toast]);
 
-        fabricCanvasRef.current?.discardActiveObject();
-        fabricCanvasRef.current?.renderAll();
-        setDeleteConfirm([]);
-
-        const count = deleteConfirm.length;
-        toast.success(`${count} ${count === 1 ? 'layer' : 'layers'} deleted`);
-    }, [deleteConfirm, toast]);
+    const handleDeleteLayers = useCallback(async (objects: CanvasObject[]) => {
+        if (objects.length === 0) return;
+        const count = objects.length;
+        const title = count === 1 ? "Delete Layer?" : "Delete Layers?";
+        const message = count === 1 
+            ? `Are you sure you want to delete "${objects[0]!.name}"? This action cannot be undone.`
+            : `Are you sure you want to delete ${count} layers? This action cannot be undone.`;
+            
+        const ok = await ConfirmDialog.call({
+            title,
+            message,
+            confirmText: "Delete",
+            cancelText: "Cancel",
+            variant: "destructive"
+        });
+        
+        if (ok) {
+            objects.forEach(obj => {
+                fabricCanvasRef.current?.remove(obj.fabricObject);
+            });
+            fabricCanvasRef.current?.discardActiveObject();
+            fabricCanvasRef.current?.renderAll();
+            toast.success(`${count} ${count === 1 ? 'layer' : 'layers'} deleted`);
+        }
+    }, [toast]);
 
     const handleReorderLayer = useCallback((layer: CanvasObject, direction: 'up' | 'down') => {
         if (!fabricCanvasRef.current) return;
@@ -283,10 +313,14 @@ export default function MerchDesigner() {
         }
     }, [exportToImage, toast]);
 
-    // Save draft
+    // Save draft — ISSUE-933: only acknowledge success after a confirmed write.
     const handleSaveDraft = useCallback(async () => {
-        await saveDesign();
-        toast.success('Draft saved successfully');
+        const result = await saveDesign();
+        if (result.success) {
+            toast.success('Draft saved successfully');
+        } else {
+            toast.error(result.reason || 'Draft was not saved — please try again.');
+        }
     }, [saveDesign, toast]);
 
     // Apply template to canvas
@@ -297,7 +331,15 @@ export default function MerchDesigner() {
 
         // Clear existing objects if user confirms (or canvas is empty)
         if (canvas.getObjects().length > 0) {
-            // For now, just clear - could add confirmation dialog
+            const { ConfirmDialog } = await import('@/components/ui/ConfirmDialog');
+            const confirmed = await ConfirmDialog.call({
+                title: 'Apply Template',
+                message: 'Applying this template will replace all existing design elements. This action cannot be undone. Continue?',
+                confirmText: 'Apply Template',
+                cancelText: 'Cancel',
+                variant: 'destructive'
+            });
+            if (!confirmed) return;
             clear();
         }
 
@@ -365,12 +407,16 @@ export default function MerchDesigner() {
             // Parse the saved canvas JSON
             const canvasData = JSON.parse(version.canvasJSON);
 
-            // Clear current canvas
+            // Clear current canvas and undo/redo history
             clear();
+            clearHistory();
 
             // Load the saved state
             await canvas.loadFromJSON(canvasData);
             canvas.renderAll();
+
+            // Establish this loaded design as the new undo baseline
+            saveState();
 
             setDesignName(version.name);
             toast.success(`Restored "${version.name}"`);
@@ -378,7 +424,7 @@ export default function MerchDesigner() {
             logger.error('Failed to restore version:', error);
             toast.error('Failed to restore version');
         }
-    }, [clear, toast]);
+    }, [clear, clearHistory, saveState, toast]);
 
     // Background color change
     const handleBackgroundColorChange = useCallback((color: string) => {
@@ -455,7 +501,7 @@ export default function MerchDesigner() {
                                 <button
                                     onClick={toggleWorkMode}
                                     className={`flex items-center gap-2 px-4 py-2 rounded-lg border-2 font-medium text-sm transition-all ${workMode === 'agent'
-                                        ? 'bg-purple-500/20 border-purple-500 text-purple-300'
+                                        ? 'bg-green-500/20 border-green-500 text-green-300'
                                         : 'bg-blue-500/20 border-blue-500 text-blue-300'
                                         }`}
                                     title={workMode === 'agent' ? 'Autonomous assistance' : 'Full manual control'}
@@ -579,7 +625,7 @@ export default function MerchDesigner() {
                                 </button>
                                 {lastSaved && (
                                     <span className="text-[10px] text-neutral-600 mt-0.5">
-                                        Saved {new Date(lastSaved).toLocaleTimeString()}
+                                        Saved {new Date(lastSaved).toLocaleTimeString('en-US')}
                                     </span>
                                 )}
                             </div>
@@ -732,23 +778,6 @@ export default function MerchDesigner() {
                         <EnhancedShowroom initialAsset={exportedDesign} />
                     </div>
                 </div>
-            )}
-
-            {/* Delete Confirmation Dialog */}
-            {deleteConfirm.length > 0 && (
-                <ConfirmDialog
-                    title={deleteConfirm.length === 1 ? "Delete Layer?" : "Delete Layers?"}
-                    message={
-                        deleteConfirm.length === 1
-                            ? `Are you sure you want to delete "${deleteConfirm[0]!.name}"? This action cannot be undone.`
-                            : `Are you sure you want to delete ${deleteConfirm.length} layers? This action cannot be undone.`
-                    }
-                    confirmLabel="Delete"
-                    cancelLabel="Cancel"
-                    variant="danger"
-                    onConfirm={confirmDelete}
-                    onCancel={() => setDeleteConfirm([])}
-                />
             )}
 
             {/* Export Format Dialog */}

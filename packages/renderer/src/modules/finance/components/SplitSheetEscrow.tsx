@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { CheckCircle2, Clock, Lock, Unlock, DollarSign, Users, AlertTriangle, CreditCard, Loader2, Download } from 'lucide-react';
 import { getFunctions, httpsCallable } from 'firebase/functions';
+import { onSnapshot, collection, query, where, getFirestore } from 'firebase/firestore';
+import { useStore } from '@/core/store';
 import { logger } from '@/utils/logger';
 
 /* ================================================================== */
@@ -22,6 +24,8 @@ interface Collaborator {
 // In production, these are loaded from a Firestore 'split_sheets' collection.
 
 export function SplitSheetEscrow() {
+    const user = useStore(state => state.user);
+    const [escrowDocId, setEscrowDocId] = useState<string | null>(null);
     const [collaborators, setCollaborators] = useState<Collaborator[]>([]);
     const [releaseTitle, setReleaseTitle] = useState('');
     const [escrowAmount, setEscrowAmount] = useState(0);
@@ -33,10 +37,56 @@ export function SplitSheetEscrow() {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [exportUrl, setExportUrl] = useState<string | null>(null);
 
+    useEffect(() => {
+        if (!user) return;
+        const db = getFirestore();
+        const q = query(collection(db, 'split_escrows'), where('parties', 'array-contains', user.uid));
+
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            if (snapshot.empty) {
+                // No active escrow
+                return;
+            }
+            
+            // Just grab the first one for the dashboard
+            const docSnap = snapshot.docs[0];
+            const data = docSnap.data();
+            
+            setEscrowDocId(docSnap.id);
+            setEscrowAmount((data.holdAmountCents || 0) / 100);
+            
+            if (data.status === 'RELEASED') {
+                setReleased(true);
+            } else {
+                setReleased(false);
+            }
+            
+            // Hydrate collaborators from data.parties, data.splits, data.signoffs
+            const newCollaborators: Collaborator[] = (data.parties || []).map((uid: string) => ({
+                id: uid,
+                name: uid === user.uid ? 'You' : `User ${uid.slice(0, 4)}`, // Fallback names without full profiles
+                role: 'Collaborator',
+                splitPct: data.splits?.[uid] || 0,
+                signed: data.signoffs?.[uid] || false,
+                accountId: data.stripeAccountIds?.[uid]
+            }));
+            
+            setCollaborators(newCollaborators);
+            
+            if (data.trackId) {
+                setReleaseTitle(`Track: ${data.trackId}`);
+            }
+        }, (err) => {
+            logger.error('[SplitSheetEscrow] Escrow listener failed:', err);
+        });
+
+        return () => unsubscribe();
+    }, [user]);
+
     const signedCount = collaborators.filter(c => c.signed).length;
     const totalCount = collaborators.length;
-    const allSigned = signedCount === totalCount;
-    const progressPct = Math.round((signedCount / totalCount) * 100);
+    const allSigned = totalCount > 0 && signedCount === totalCount;
+    const progressPct = totalCount > 0 ? Math.round((signedCount / totalCount) * 100) : 0;
 
     /**
      * Item 202: Wire release to the real createTransfer Cloud Function.
@@ -44,35 +94,20 @@ export function SplitSheetEscrow() {
      * proportional to their split percentage.
      */
     const handleReleaseFunds = async () => {
-        if (!allSigned || releasing) return;
+        if (!allSigned || releasing || !escrowDocId) return;
+        
         setReleasing(true);
         setReleaseError(null);
-
-        const functions = getFunctions();
-        const createTransfer = httpsCallable<
-            { amount: number; destinationId: string; currency?: string },
-            { transferId: string }
-        >(functions, 'createTransfer');
-
+        
         try {
-            // Only attempt real transfers for collaborators with a connected account.
-            // Others are acknowledged but not transferred (they need to complete onboarding first).
-            const connectedCollaborators = collaborators.filter(c => c.accountId);
-            const totalCents = Math.round(escrowAmount * 100);
-            let remainingCents = totalCents;
-
-            const transferPromises = connectedCollaborators.map((c, index) => {
-                const isLast = index === connectedCollaborators.length - 1;
-                const splitAmount = isLast ? remainingCents : Math.round((totalCents * c.splitPct) / 100);
-                remainingCents -= splitAmount;
-                return createTransfer({ amount: splitAmount, destinationId: c.accountId! });
-            });
-
-            await Promise.all(transferPromises);
-            setReleased(true);
+            const functions = getFunctions();
+            const releaseEscrowFn = httpsCallable<{ escrowDocId: string }, { success: boolean, message: string }>(functions, 'releaseEscrow');
+            
+            await releaseEscrowFn({ escrowDocId });
+            // Firestore onSnapshot will pick up the 'RELEASED' status change
         } catch (err: unknown) {
-            logger.error('[SplitSheetEscrow] Transfer failed:', err);
-            setReleaseError(err instanceof Error ? err.message : 'Transfer failed. Please try again.');
+            logger.error('[SplitSheetEscrow] Release failed:', err);
+            setReleaseError(`Release failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
         } finally {
             setReleasing(false);
         }
@@ -98,7 +133,7 @@ export function SplitSheetEscrow() {
                 { url: string; storagePath: string }
             >(functions, 'exportSplitSheet');
             const result = await exportFn({
-                splitSheetId: `ss_${Date.now()}`,
+                splitSheetId: escrowDocId || `ss_${Date.now()}`,
                 releaseTitle: trimmedReleaseTitle,
                 collaborators,
                 totalEscrowAmount: escrowAmount || undefined,
@@ -146,7 +181,7 @@ export function SplitSheetEscrow() {
                     </div>
                     <div className="text-center">
                         <p className="text-xl font-black text-white">Funds Released!</p>
-                        <p className="text-sm text-emerald-400 mt-1">${escrowAmount.toLocaleString()} distributed via Stripe Connect</p>
+                        <p className="text-sm text-emerald-400 mt-1">${escrowAmount.toLocaleString('en-US')} distributed via Stripe Connect</p>
                     </div>
                     <div className="grid grid-cols-2 gap-3 w-full max-w-sm mt-2">
                         {collaborators.map(c => (
@@ -160,7 +195,7 @@ export function SplitSheetEscrow() {
                         ))}
                     </div>
                     <button
-                        onClick={() => { setReleased(false); setCollaborators([]); setEscrowAmount(0); }}
+                        onClick={() => { setReleased(false); setCollaborators([]); setEscrowAmount(0); setEscrowDocId(null); }}
                         className="text-xs text-gray-500 hover:text-gray-300 underline transition-colors mt-2"
                     >
                         Reset
@@ -174,7 +209,7 @@ export function SplitSheetEscrow() {
                             <DollarSign size={20} className="text-emerald-400" />
                         </div>
                         <div className="flex-1 space-y-3">
-                            <p className="text-2xl font-black text-white">${escrowAmount.toLocaleString()}</p>
+                            <p className="text-2xl font-black text-white">${escrowAmount.toLocaleString('en-US')}</p>
                             <p className="text-xs text-gray-500 mt-0.5">Total escrowed — locked until all parties sign</p>
                             <input
                                 type="text"
@@ -260,7 +295,7 @@ export function SplitSheetEscrow() {
                         <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3">Split Breakdown</h4>
                         <div className="flex w-full h-3 rounded-full overflow-hidden gap-px">
                             {collaborators.map((c, i) => {
-                                const colors = ['bg-blue-500', 'bg-purple-500', 'bg-emerald-500', 'bg-amber-500'];
+                                const colors = ['bg-blue-500', 'bg-green-500', 'bg-emerald-500', 'bg-amber-500'];
                                 return (
                                     <div
                                         key={c.id}
@@ -273,8 +308,8 @@ export function SplitSheetEscrow() {
                         </div>
                         <div className="flex flex-wrap gap-3 mt-3">
                             {collaborators.map((c, i) => {
-                                const colors = ['text-blue-400', 'text-purple-400', 'text-emerald-400', 'text-amber-400'];
-                                const dots = ['bg-blue-500', 'bg-purple-500', 'bg-emerald-500', 'bg-amber-500'];
+                                const colors = ['text-blue-400', 'text-green-400', 'text-emerald-400', 'text-amber-400'];
+                                const dots = ['bg-blue-500', 'bg-green-500', 'bg-emerald-500', 'bg-amber-500'];
                                 return (
                                     <div key={c.id} className="flex items-center gap-1.5">
                                         <div className={`w-2 h-2 rounded-full ${dots[i % dots.length]}`} />

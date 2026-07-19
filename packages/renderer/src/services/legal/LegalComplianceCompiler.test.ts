@@ -83,7 +83,7 @@ describe('LegalComplianceCompiler', () => {
     }, ctx);
 
     expect(run.findings.some(f => f.title === 'DDEX Compliance Issue')).toBe(true);
-    expect(run.agentBriefs.some(b => b.agentId === 'distribution_agent')).toBe(true);
+    expect(run.agentBriefs.some(b => b.agentId === 'distribution')).toBe(true);
     expect(run.output.reviewStatus).toBe('needs_review');
   });
 

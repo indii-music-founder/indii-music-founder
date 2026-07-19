@@ -58,7 +58,7 @@ export function __resetAuthRateLimit() {
 // NOTIFICATIONS
 // ============================================================================
 
-function notifyAuthSuccess(tokens: { idToken: string; accessToken?: string | null }) {
+function notifyAuthSuccess(tokens: { idToken: string; accessToken?: string | null; source?: string | null }) {
     const wins = BrowserWindow.getAllWindows();
     log.info(`[Auth] Notifying ${wins.length} window(s) of successful auth`);
     wins.forEach(w => {
@@ -160,8 +160,11 @@ async function redeemDesktopHandoffCode(code: string): Promise<AuthTokens | null
 // IPC HANDLERS
 // ============================================================================
 
+import { validateSender } from '../utils/ipc-security';
+
 export function registerAuthHandlers() {
-    ipcMain.handle('auth:login-google', async () => {
+    ipcMain.handle('auth:login-google', async (event) => {
+        validateSender(event);
         // NOTE: Explicitly disconnected from the external landing/login bridge.
         // Auth should occur in-renderer via Firebase signInWithPopup to avoid
         // cross-app handoff failures and stuck loading states.
@@ -169,7 +172,8 @@ export function registerAuthHandlers() {
         return { ok: false, reason: 'external-login-bridge-disabled' };
     });
 
-    ipcMain.handle('auth:complete-native-google', async (_event, payload: { idToken?: string; accessToken?: string | null; error?: string }) => {
+    ipcMain.handle('auth:complete-native-google', async (event, payload: { idToken?: string; accessToken?: string | null; error?: string }) => {
+        validateSender(event);
         if (payload?.error) {
             notifyAuthError(payload.error);
             return;
@@ -189,7 +193,8 @@ export function registerAuthHandlers() {
         notifyAuthSuccess({ idToken: payload.idToken, accessToken: payload.accessToken });
     });
 
-    ipcMain.handle('auth:logout', async () => {
+    ipcMain.handle('auth:logout', async (event) => {
+        validateSender(event);
         log.info('Logout requested');
         try {
             await authStorage.deleteToken();
@@ -236,6 +241,7 @@ export async function handleDeepLink(url: string) {
     try {
         const urlObj = new URL(url);
         const code = urlObj.searchParams.get('code');
+        const source = urlObj.searchParams.get('source');
         const error = urlObj.searchParams.get('error');
 
         if (error) {
@@ -315,7 +321,7 @@ export async function handleDeepLink(url: string) {
 
         if (idToken) {
             log.info(`[Auth] Success: Tokens validated and accepted. ID: ${idToken.substring(0, 20)}..., Access: ${!!accessToken}`);
-            notifyAuthSuccess({ idToken, accessToken });
+            notifyAuthSuccess({ idToken, accessToken, source });
         } else {
             log.info('[Auth] No tokens or errors found in deep link.');
         }

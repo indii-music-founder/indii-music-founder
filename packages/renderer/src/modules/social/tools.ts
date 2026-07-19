@@ -1,6 +1,7 @@
 import { AutonomousIntelligence as AI } from '../../services/intelligence/AutonomousIntelligence';
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
-import { Schema, SchemaType } from 'firebase/ai';
+import type { Schema } from '@/shared/types/ai.dto';
+const SchemaType = { OBJECT: 'OBJECT', ARRAY: 'ARRAY', STRING: 'STRING', NUMBER: 'NUMBER', BOOLEAN: 'BOOLEAN', INTEGER: 'INTEGER' } as const;
 import { logger } from '@/utils/logger';
 
 export interface SocialIdentity {
@@ -25,9 +26,11 @@ export const SOCIAL_TOOLS = {
                 INTELLIGENCE_MODELS.TEXT.AGENT
             );
             const rawText = typeof res.response.text === 'function' ? res.response.text() : (typeof res.response.text === 'string' ? res.response.text : '');
-            return rawText || "Failed to generate copy.";
-        } catch (_e: unknown) {
-            return "Error generating copy.";
+            if (!rawText.trim()) throw new Error('Copy generation returned no text.');
+            return rawText.trim();
+        } catch (error: unknown) {
+            logger.error('Social copy generation failed', error);
+            throw error instanceof Error ? error : new Error('Copy generation failed.');
         }
     },
 

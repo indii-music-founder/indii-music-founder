@@ -31,7 +31,7 @@ export const handleEscrowWebhook = onRequest(async (request, response) => {
         let data;
         try {
             data = JSON.parse(webhookPayload);
-        } catch (e) {
+        } catch (_e) {
             response.status(400).send("Bad Request: Invalid JSON");
             return;
         }

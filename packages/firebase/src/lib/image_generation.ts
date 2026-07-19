@@ -1,5 +1,7 @@
 import * as functions from "firebase-functions/v1";
+import * as admin from "firebase-admin";
 import { GoogleGenAI } from "@google/genai";
+import { validateAppCheckV1 } from "../middleware/appCheck";
 import { FUNCTION_INTELLIGENCE_MODELS, NANO_BANANA_CAPABILITIES, type NanoBananaTier } from "../config/models";
 import {
     GenerateImageRequestSchema,
@@ -8,7 +10,7 @@ import {
     type GenerateImageRequest,
 } from "./image";
 
-import { geminiApiKey, getGeminiApiKey } from "../config/secrets";
+import { getVertexAIClient } from "./vertexClient";
 import { enforceRateLimit, RATE_LIMITS } from "./rateLimit";
 
 // ============================================================================
@@ -72,6 +74,11 @@ interface GeminiGenerateContentResponse {
     candidates?: GeminiCandidate[];
 }
 
+interface StorageMedia {
+    mimeType: string;
+    data: string;
+}
+
 // ============================================================================
 // SERVICE
 // ============================================================================
@@ -95,33 +102,10 @@ export class GeminiImageService {
 
     private getClient(): GoogleGenAI {
         if (!this.client) {
-            const isTest = process.env.NODE_ENV === 'test' || process.env.VITEST === 'true';
-            const projectId = process.env.VITE_VERTEX_PROJECT_ID || process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT;
-
-            // Retrieve API key if configured (Production secrets or local .env)
-            let apiKey: string | null = null;
-            try {
-                apiKey = getGeminiApiKey();
-            } catch (_e) {
-                // Ignore key errors if we can fallback to Vertex AI
-            }
-
-            if (apiKey && !apiKey.includes("PLACEHOLDER")) {
-                console.log(`[GeminiImageService] Initializing with Google AI Studio API KEY (API_KEY: ${apiKey.substring(0, 4)}...)`);
-                this.client = new GoogleGenAI({ apiKey });
-            } else if (!isTest && projectId) {
-                // Production environment fallback: Use Vertex AI with ADC
-                const location = process.env.VERTEX_LOCATION || 'us-central1';
-                console.log(`[GeminiImageService] Initializing with VERTEX AI (Project: ${projectId}, Location: ${location})`);
-                this.client = new GoogleGenAI({
-                    vertexai: true,
-                    project: projectId,
-                    location: location
-                });
-            } else {
-                console.error("[GeminiImageService] Invalid or missing GEMINI_API_KEY. Operations will fail.");
-                throw new functions.https.HttpsError("failed-precondition", "Gemini API Key is missing or invalid.");
-            }
+            // Always use Vertex AI + ADC (no API key required)
+            const location = process.env.VERTEX_IMAGE_LOCATION || process.env.VERTEX_MEDIA_LOCATION || 'us';
+            this.client = getVertexAIClient(undefined, location);
+            console.log(`[GeminiImageService] Initialized with Vertex AI (ADC auth)`);
         }
         return this.client;
     }
@@ -129,7 +113,7 @@ export class GeminiImageService {
     /**
      * Resolves a NanoBananaTier to its corresponding model ID string.
      * @param tier - The tier to resolve.
-     * @returns The model ID string (e.g., 'gemini-3.1-flash-image-preview').
+     * @returns The model ID string (e.g., 'gemini-3.1-flash-image').
      */
     private resolveModelId(tier: NanoBananaTier | undefined | null): string {
         switch (tier) {
@@ -334,6 +318,40 @@ export class GeminiImageService {
         return [{ role: "user", parts }];
     }
 
+    private parseGsUri(uri: string): { bucket: string; path: string } {
+        const match = uri.match(/^gs:\/\/([^/]+)\/(.+)$/);
+        if (!match) {
+            throw new Error(`Expected gs:// URI, got ${uri}`);
+        }
+        return { bucket: match[1]!, path: match[2]! };
+    }
+
+    private async loadStorageImage(uri: string): Promise<StorageMedia> {
+        const { bucket, path } = this.parseGsUri(uri);
+        const file = admin.storage().bucket(bucket).file(path);
+        const [metadata] = await file.getMetadata();
+        const mimeType = metadata.contentType || "image/png";
+        if (!mimeType.startsWith("image/")) {
+            throw new Error(`Storage media must be an image. Got ${mimeType}`);
+        }
+        const [buffer] = await file.download();
+        return { mimeType, data: buffer.toString("base64") };
+    }
+
+    private async resolveEditMedia(
+        media?: string | null,
+        mediaUri?: string | null,
+        fallbackMimeType = "image/png"
+    ): Promise<StorageMedia | null> {
+        if (mediaUri) {
+            return this.loadStorageImage(mediaUri);
+        }
+        if (media) {
+            return { mimeType: fallbackMimeType, data: media };
+        }
+        return null;
+    }
+
     /**
      * Extracts results (images, text, thoughts) from the generic model response object.
      * 
@@ -442,6 +460,17 @@ export class GeminiImageService {
         }
         if (status === 429 || message.includes("429")) {
             throw new functions.https.HttpsError("resource-exhausted", "Gemini API rate limit exceeded. Please try again later.");
+        }
+        if (
+            message.includes("No image data found in edit response") ||
+            message.includes("No image data found in response") ||
+            message.includes("No candidates returned from Gemini API") ||
+            message.includes("No content parts in response")
+        ) {
+            throw new functions.https.HttpsError(
+                "failed-precondition",
+                "Gemini did not return an editable image for this request. Try a clearer prompt or a tighter mask."
+            );
         }
         if (status === 504 || status === 503 || message.includes("deadline") || err.name === 'AbortError') {
             throw new functions.https.HttpsError("deadline-exceeded", "Gemini API timed out during generation. The model may be overloaded.");
@@ -583,6 +612,18 @@ export class GeminiImageService {
             let contents: Record<string, unknown>[];
             const caps = NANO_BANANA_CAPABILITIES[modelId as keyof typeof NANO_BANANA_CAPABILITIES];
             const maxRefs = caps?.maxReferenceImages ?? 0;
+            const sourceImage = await this.resolveEditMedia(data.image, data.imageUri, data.imageMimeType || "image/png");
+            const sourceMask = await this.resolveEditMedia(data.mask, data.maskUri, data.maskMimeType || "image/png");
+            const resolvedReferenceImages = data.referenceImages?.length
+                ? data.referenceImages
+                : data.referenceImageUris?.length
+                    ? await Promise.all(data.referenceImageUris.slice(0, maxRefs).map(uri => this.loadStorageImage(uri)))
+                    : undefined;
+            const resolvedReferenceImage = data.referenceImageUri
+                ? await this.loadStorageImage(data.referenceImageUri)
+                : data.referenceImage
+                    ? { mimeType: data.refMimeType || "image/png", data: data.referenceImage }
+                    : null;
 
             if (data.conversationHistory && data.conversationHistory.length > 0) {
                 // Multi-turn edit: history + new turn
@@ -591,28 +632,28 @@ export class GeminiImageService {
                 const newParts: Record<string, unknown>[] = [];
 
                 // Source image
-                if (data.image) {
+                if (sourceImage) {
                     newParts.push({
                         inlineData: {
-                            mimeType: data.imageMimeType || "image/png",
-                            data: data.image,
+                            mimeType: sourceImage.mimeType,
+                            data: sourceImage.data,
                         },
                     });
                 }
 
                 // Mask
-                if (data.mask) {
+                if (sourceMask) {
                     newParts.push({
                         inlineData: {
-                            mimeType: data.maskMimeType || "image/png",
-                            data: data.mask,
+                            mimeType: sourceMask.mimeType,
+                            data: sourceMask.data,
                         },
                     });
                 }
 
                 // Reference images (new array field)
-                if (maxRefs > 0 && data.referenceImages && data.referenceImages.length > 0) {
-                    const imagesToAdd = data.referenceImages.slice(0, maxRefs);
+                if (maxRefs > 0 && resolvedReferenceImages && resolvedReferenceImages.length > 0) {
+                    const imagesToAdd = resolvedReferenceImages.slice(0, maxRefs);
                     for (const ref of imagesToAdd) {
                         newParts.push({
                             inlineData: {
@@ -624,17 +665,17 @@ export class GeminiImageService {
                 }
 
                 // Legacy single reference image (gate on maxRefs > 0 for consistency with single-turn)
-                if (maxRefs > 0 && data.referenceImage && !data.referenceImages?.length) {
+                if (maxRefs > 0 && resolvedReferenceImage && !resolvedReferenceImages?.length) {
                     newParts.push({
                         inlineData: {
-                            mimeType: data.refMimeType || "image/png",
-                            data: data.referenceImage,
+                            mimeType: resolvedReferenceImage.mimeType,
+                            data: resolvedReferenceImage.data,
                         },
                     });
                 }
 
                 // Prompt text
-                const promptText = data.mask
+                const promptText = sourceMask
                     ? `Edit the masked region of this image according to this instruction: ${data.prompt}`
                     : data.prompt;
                 newParts.push({ text: promptText });
@@ -650,21 +691,21 @@ export class GeminiImageService {
                 const parts: Record<string, unknown>[] = [];
 
                 // Source image first (consistent with multi-turn ordering)
-                if (data.image) {
+                if (sourceImage) {
                     parts.push({
                         inlineData: {
-                            mimeType: data.imageMimeType || "image/png",
-                            data: data.image,
+                            mimeType: sourceImage.mimeType,
+                            data: sourceImage.data,
                         },
                     });
                 }
 
                 // Mask
-                if (data.mask) {
+                if (sourceMask) {
                     parts.push({
                         inlineData: {
-                            mimeType: data.maskMimeType || "image/png",
-                            data: data.mask,
+                            mimeType: sourceMask.mimeType,
+                            data: sourceMask.data,
                         },
                     });
                 }
@@ -673,8 +714,8 @@ export class GeminiImageService {
                 const maxRefs = caps?.maxReferenceImages ?? 0;
 
                 // Reference images (new array field)
-                if (maxRefs > 0 && data.referenceImages && data.referenceImages.length > 0) {
-                    const imagesToAdd = data.referenceImages.slice(0, maxRefs);
+                if (maxRefs > 0 && resolvedReferenceImages && resolvedReferenceImages.length > 0) {
+                    const imagesToAdd = resolvedReferenceImages.slice(0, maxRefs);
                     for (const ref of imagesToAdd) {
                         parts.push({
                             inlineData: {
@@ -686,17 +727,17 @@ export class GeminiImageService {
                 }
 
                 // Legacy single reference image
-                if (maxRefs > 1 && data.referenceImage && !data.referenceImages?.length) {
+                if (maxRefs > 1 && resolvedReferenceImage && !resolvedReferenceImages?.length) {
                     parts.push({
                         inlineData: {
-                            mimeType: data.refMimeType || "image/png",
-                            data: data.referenceImage,
+                            mimeType: resolvedReferenceImage.mimeType,
+                            data: resolvedReferenceImage.data,
                         },
                     });
                 }
 
                 // Prompt text last (after images — consistent with multi-turn ordering)
-                const promptText = data.mask
+                const promptText = sourceMask
                     ? `Edit the masked region of this image according to this instruction: ${data.prompt}`
                     : data.prompt;
                 parts.push({ text: promptText });
@@ -741,9 +782,14 @@ export class GeminiImageService {
                     isAIGenerated: true,
                     timestamp: new Date().toISOString(),
                     promptSnippet: data.prompt.substring(0, 100),
-                    hasMultipleReferences: !!(data.referenceImages && data.referenceImages.length > 0),
-                    hasMask: !!data.mask,
+                    hasMultipleReferences: !!(resolvedReferenceImages && resolvedReferenceImages.length > 0),
+                    hasMask: !!sourceMask,
+                    hasStorageInputs: !!(data.imageUri || data.maskUri || data.referenceImageUri || (data.referenceImageUris && data.referenceImageUris.length > 0)),
                     isMultiTurn: !!(data.conversationHistory && data.conversationHistory.length > 0),
+                    sessionId: data.sessionId || null,
+                    routeId: data.routeId || null,
+                    routeLabel: data.routeLabel || null,
+                    routeReason: data.routeReason || null,
                 },
                 aiGenerationInfo: {
                     isFullyAIGenerated: false,
@@ -769,13 +815,13 @@ const service = new GeminiImageService();
 export const generateImageV3Fn = () => functions
     .region("us-central1")
     .runWith({
-        enforceAppCheck: true,
-        secrets: [geminiApiKey],
+        enforceAppCheck: false,
         timeoutSeconds: 120,
         // Bumped to 1GB: Pro 4K generation + long-context history needs parity with editImageFn
         memory: "1GB"
     })
     .https.onCall(async (data: unknown, context) => {
+        validateAppCheckV1(context);
         // 1. Authenticate
         if (!context.auth) {
             throw new functions.https.HttpsError("unauthenticated", "User must be authenticated.");
@@ -806,12 +852,12 @@ export const generateImageV3Fn = () => functions
 export const editImageFn = () => functions
     .region("us-central1")
     .runWith({
-        enforceAppCheck: true,
-        secrets: [geminiApiKey],
+        enforceAppCheck: false,
         timeoutSeconds: 120,
         memory: "1GB" // Bumped from 512MB — editing with references + 4K can exceed 512MB
     })
     .https.onCall(async (data: unknown, context) => {
+        validateAppCheckV1(context);
         // 1. Authenticate
         if (!context.auth) {
             throw new functions.https.HttpsError("unauthenticated", "User must be authenticated.");
@@ -830,7 +876,28 @@ export const editImageFn = () => functions
         }
 
         // 3. Delegate to Service
-        const result = await service.edit(validation.data);
+        let result: EditResponse;
+        try {
+            result = await service.edit(validation.data);
+        } catch (error: unknown) {
+            if (error instanceof functions.https.HttpsError) {
+                throw error;
+            }
+            const message = error instanceof Error ? error.message : String(error);
+            functions.logger.error("[editImage] Image edit service failed", {
+                message,
+                userId: context.auth.uid,
+                hasMask: Boolean(validation.data.maskUri),
+                hasReference: Boolean(validation.data.referenceImageUri),
+                model: validation.data.model,
+            });
+            throw new functions.https.HttpsError(
+                "internal",
+                message && message !== "internal"
+                    ? `Creative image edit failed: ${message}`
+                    : "Creative image edit failed inside the image service."
+            );
+        }
 
         // Map to candidates format for frontend compatibility
         const candidates = [

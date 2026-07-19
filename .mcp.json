@@ -1,9 +1,49 @@
 {
   "mcpServers": {
+    "firebase": {
+      "command": "npx",
+      "args": ["-y", "@anthropics/firebase-mcp@latest"],
+      "description": "Firebase project management, Firestore, Cloud Functions, and deployment tools"
+    },
+    "gcloud": {
+      "command": "gcloud",
+      "args": ["mcp-server", "start"],
+      "description": "Google Cloud CLI integration for gcloud commands and GCP project management"
+    },
+    "cloud-run": {
+      "command": "npx",
+      "args": ["-y", "@anthropics/cloud-run-mcp@latest"],
+      "description": "Google Cloud Run service management and deployment"
+    },
+    "gcp-observability": {
+      "command": "npx",
+      "args": ["-y", "@anthropics/gcp-observability-mcp@latest"],
+      "description": "GCP monitoring, logging, and observability tools (Cloud Logging, Cloud Monitoring)"
+    },
     "gemini-api-docs": {
       "command": "npx",
       "args": ["-y", "@google/gemini-api-docs-mcp@latest"],
       "description": "Live Gemini API documentation, SDK references, and model info. Prevents stale API code generation. See: ai.google.dev/gemini-api/docs/coding-agents"
+    },
+    "google-drive": {
+      "command": "npx",
+      "args": ["-y", "@anthropics/google-drive-mcp@latest"],
+      "description": "Google Drive file access, search, and management"
+    },
+    "google-maps": {
+      "command": "npx",
+      "args": ["-y", "@anthropics/google-maps-mcp@latest"],
+      "description": "Google Maps API integration for directions, geocoding, and place search"
+    },
+    "sentry": {
+      "command": "npx",
+      "args": ["-y", "@anthropics/sentry-mcp@latest"],
+      "description": "Sentry error tracking and monitoring integration"
+    },
+    "pencil": {
+      "command": "npx",
+      "args": ["-y", "@anthropics/pencil-mcp@latest"],
+      "description": "Pencil design and prototyping tools"
     }
   }
 }

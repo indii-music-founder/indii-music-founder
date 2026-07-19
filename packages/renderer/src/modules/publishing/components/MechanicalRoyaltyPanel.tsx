@@ -26,12 +26,13 @@ const STATUS_CONFIG: Record<MechanicalLicenseStatus, {
     color: string;
     bg: string;
 }> = {
-    pending_search:     { label: 'Pending Search',    icon: Clock,         color: 'text-yellow-400', bg: 'bg-yellow-400/10' },
-    rights_located:     { label: 'Rights Located',    icon: Search,        color: 'text-blue-400',   bg: 'bg-blue-400/10'   },
-    license_requested:  { label: 'Requested',         icon: Clock,         color: 'text-orange-400', bg: 'bg-orange-400/10' },
-    license_active:     { label: 'Licensed',          icon: CheckCircle,   color: 'text-green-400',  bg: 'bg-green-400/10'  },
-    license_denied:     { label: 'Denied',            icon: XCircle,       color: 'text-red-400',    bg: 'bg-red-400/10'    },
-    not_required:       { label: 'Not Required',      icon: CheckCircle,   color: 'text-gray-400',   bg: 'bg-gray-400/10'   },
+    pending_search:     { label: 'Pending Search',      icon: Clock,         color: 'text-yellow-400', bg: 'bg-yellow-400/10' },
+    rights_located:     { label: 'Rights Located',      icon: Search,        color: 'text-blue-400',   bg: 'bg-blue-400/10'   },
+    license_requested:  { label: 'Requested',           icon: Clock,         color: 'text-orange-400', bg: 'bg-orange-400/10' },
+    license_active:     { label: 'Licensed',            icon: CheckCircle,   color: 'text-green-400',  bg: 'bg-green-400/10'  },
+    license_denied:     { label: 'Denied',              icon: XCircle,       color: 'text-red-400',    bg: 'bg-red-400/10'    },
+    not_required:       { label: 'Not Required',        icon: CheckCircle,   color: 'text-gray-400',   bg: 'bg-gray-400/10'   },
+    clearance_unknown:  { label: 'Clearance Unknown',   icon: AlertCircle,   color: 'text-red-400',    bg: 'bg-red-400/10'    },
 };
 
 function StatusBadge({ status }: { status: MechanicalLicenseStatus }) {
@@ -70,6 +71,7 @@ function AddCoverTrackForm({ releaseId, onAdded, onCancel }: AddCoverFormProps) 
         setSearching(true);
         try {
             const composition = await MechanicalRoyaltyService.searchComposition(trackTitle.trim(), writer.trim() || undefined);
+            const searchFailed = composition === null;
 
             setSearching(false);
             setSubmitting(true);
@@ -85,9 +87,14 @@ function AddCoverTrackForm({ releaseId, onAdded, onCancel }: AddCoverFormProps) 
                     controlled: false,
                 },
                 distributionCopies: parseInt(copies, 10) || 1000,
+                searchFailed,
             });
 
-            toast.success(`License record created for "${trackTitle}"`);
+            if (searchFailed) {
+                toast.warning(`Songfile lookup unavailable. Record created with "clearance unknown" status — please verify manually.`);
+            } else {
+                toast.success(`License record created for "${trackTitle}"`);
+            }
             onAdded();
         } catch (_err: unknown) {
             toast.error('Failed to create license record');
@@ -315,7 +322,7 @@ export function MechanicalRoyaltyPanel({ releaseId = 'default' }: Props) {
             <div className="flex items-start justify-between">
                 <div>
                     <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                        <FileText size={20} className="text-purple-400" />
+                        <FileText size={20} className="text-green-400" />
                         Mechanical Licenses
                     </h2>
                     <p className="text-sm text-gray-400 mt-1">

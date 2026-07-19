@@ -66,9 +66,16 @@ vi.mock('../services/CanvasOperationsService', () => ({
         initialize: vi.fn(),
         dispose: vi.fn(),
         updateBrushColor: vi.fn(),
+        addBlankSketchLayer: vi.fn(),
         canUndo: vi.fn().mockReturnValue(false),
         canRedo: vi.fn().mockReturnValue(false),
         toJSON: vi.fn().mockResolvedValue({}),
+        getLayers: vi.fn().mockReturnValue([]),
+        selectLayer: vi.fn(),
+        toggleLayerVisibility: vi.fn(),
+        toggleLayerLock: vi.fn(),
+        deleteLayer: vi.fn(),
+        reorderLayer: vi.fn(),
     }
 }));
 
@@ -196,9 +203,9 @@ describe('Creative Director 12-Click Daisychain', () => {
                         setLocalPrompt(newPrompt);
                         mockSetPrompt(newPrompt);
                     },
-                    studioControls: { isAndromedaMode: false },
-                    enableAndromedaMode: vi.fn(),
-                    disableAndromedaMode: vi.fn(),
+                    studioControls: { isPLPMode: false },
+                    enablePLPMode: vi.fn(),
+                    disablePLPMode: vi.fn(),
                     addCharacterReference: mockAddCharacterReference,
                     userProfile: {
                         brandKit: {
@@ -252,6 +259,16 @@ describe('Creative Director 12-Click Daisychain', () => {
                     >
                         Go to Showroom
                     </button>
+                    <button
+                        data-testid="canvas-view-btn"
+                        onClick={() => {
+                            setLocalViewMode('canvas');
+                            mockSetViewMode('canvas');
+                        }}
+                        style={{ display: 'none' }}
+                    >
+                        Go to Canvas
+                    </button>
                     <IntelligencePromptBuilder
                         onAddTag={(tag: string) => {
                             setLocalPrompt(prev => prev ? `${prev}, ${tag}` : tag);
@@ -282,7 +299,7 @@ describe('Creative Director 12-Click Daisychain', () => {
         // --- CLICK 1: Like Item A in Gallery ---
         const likeBtn = screen.getAllByTestId('like-btn')[0]!;
         fireEvent.click(likeBtn);
-        expect(mockToastSuccess).toHaveBeenCalledWith("Feedback recorded: Liked");
+        expect(mockToastInfo).toHaveBeenCalledWith("Liked");
 
         // --- CLICK 2: Maximize Item A ---
         const maximizeButtons = screen.getAllByTestId('view-fullsize-btn');
@@ -365,6 +382,7 @@ describe('Creative Director 12-Click Daisychain', () => {
         });
 
         // --- CLICK 12: Switch to Canvas (Gallery removed — assets are in Omni-Panel) ---
+        // Canvas is now the unified base layer.
         const canvasBtn = screen.getByTestId('canvas-view-btn');
         fireEvent.click(canvasBtn);
         expect(mockSetViewMode).toHaveBeenCalledWith('canvas');

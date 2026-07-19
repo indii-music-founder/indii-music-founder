@@ -49,6 +49,13 @@ vi.mock('./hooks/useReleases', () => ({
     useReleases: (...args: any[]) => mockUseReleases(...args)
 }));
 
+const mockConfirmDialogCall = vi.fn().mockResolvedValue(true);
+vi.mock('@/components/ui/ConfirmDialog', () => ({
+    ConfirmDialog: {
+        call: (...args: any[]) => mockConfirmDialogCall(...args)
+    }
+}));
+
 vi.mock('./hooks/useReleaseList', () => ({
     useReleaseList: (...args: any[]) => mockUseReleaseList(...args)
 }));
@@ -334,12 +341,6 @@ describe('PublishingDashboard', () => {
             fireEvent.click(deleteBtn);
         });
 
-        // Click confirm in the bulk action modal
-        const confirmBtn = screen.getByRole('button', { name: 'Confirm' });
-        await act(async () => {
-            fireEvent.click(confirmBtn);
-        });
-
         await waitFor(() => {
             expect(mockToastPromise).toHaveBeenCalled();
             expect(mockDeleteRelease).toHaveBeenCalledWith('1');
@@ -385,12 +386,6 @@ describe('PublishingDashboard', () => {
         const archiveBtn = screen.getByRole('button', { name: /Archive/i });
         await act(async () => {
             fireEvent.click(archiveBtn);
-        });
-
-        // Click confirm in the bulk action modal
-        const confirmBtn = screen.getByRole('button', { name: 'Confirm' });
-        await act(async () => {
-            fireEvent.click(confirmBtn);
         });
 
         await waitFor(() => {

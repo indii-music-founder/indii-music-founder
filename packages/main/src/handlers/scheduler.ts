@@ -1,3 +1,4 @@
+import { validateSender } from '../utils/ipc-security';
 import { ipcMain } from 'electron';
 import log from 'electron-log';
 import { SchedulerService } from '../services/SchedulerService';
@@ -9,7 +10,8 @@ import type { CreateTaskRequest } from '../../src/services/scheduler/types';
  */
 export function registerSchedulerHandlers(): void {
     // Register a new task
-    ipcMain.handle('scheduler:register', (_event, request: CreateTaskRequest) => {
+    ipcMain.handle('scheduler:register', (event, request: CreateTaskRequest) => {
+        validateSender(event);
         try {
             const task = SchedulerService.register(request);
             return { success: true, task };
@@ -20,7 +22,8 @@ export function registerSchedulerHandlers(): void {
     });
 
     // Cancel/delete a task
-    ipcMain.handle('scheduler:cancel', (_event, taskId: string) => {
+    ipcMain.handle('scheduler:cancel', (event, taskId: string) => {
+        validateSender(event);
         try {
             const cancelled = SchedulerService.cancel(taskId);
             return { success: cancelled };
@@ -31,7 +34,8 @@ export function registerSchedulerHandlers(): void {
     });
 
     // Enable or disable a task
-    ipcMain.handle('scheduler:set-enabled', (_event, taskId: string, enabled: boolean) => {
+    ipcMain.handle('scheduler:set-enabled', (event, taskId: string, enabled: boolean) => {
+        validateSender(event);
         try {
             const updated = SchedulerService.setEnabled(taskId, enabled);
             return { success: updated };
@@ -42,7 +46,8 @@ export function registerSchedulerHandlers(): void {
     });
 
     // Get all tasks and status
-    ipcMain.handle('scheduler:status', () => {
+    ipcMain.handle('scheduler:status', (event) => {
+        validateSender(event);
         try {
             return { success: true, status: SchedulerService.status() };
         } catch (err) {
@@ -52,7 +57,8 @@ export function registerSchedulerHandlers(): void {
     });
 
     // Get a single task
-    ipcMain.handle('scheduler:get', (_event, taskId: string) => {
+    ipcMain.handle('scheduler:get', (event, taskId: string) => {
+        validateSender(event);
         try {
             const task = SchedulerService.get(taskId);
             return { success: true, task };

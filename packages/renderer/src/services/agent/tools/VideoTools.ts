@@ -4,6 +4,8 @@ import { VideoGeneration } from '@/services/video/VideoGenerationService';
 import { VideoGenerationOptions } from '@/modules/creative/video/schemas';
 import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
 import type { AnyToolFunction } from '../types';
+import { performanceVideoService } from '@/services/video/PerformanceVideoService';
+import { importWithRetry } from '@/utils/dynamicImport';
 
 // ============================================================================
 // FIX #10: Input Validation Constants
@@ -82,7 +84,7 @@ export const VideoTools = {
             return toolError(resolutionError, 'INVALID_INPUT');
         }
 
-        const { useStore } = await import('@/core/store');
+        const { useStore } = await importWithRetry(() => import('@/core/store'));
         const { userProfile, whiskState } = useStore.getState();
 
         // =====================================================================
@@ -95,7 +97,7 @@ export const VideoTools = {
         // Check if we should use Whisk synthesis (video mode or both)
         if (whiskState && (whiskState.targetMedia === 'video' || whiskState.targetMedia === 'both')) {
             // Import WhiskService dynamically to avoid circular deps
-            const { WhiskService } = await import('@/services/WhiskService');
+            const { WhiskService } = await importWithRetry(() => import('@/services/WhiskService'));
 
             // Synthesize video-optimized prompt with Subject/Scene/Style/Motion
             finalPrompt = WhiskService.synthesizeVideoPrompt(args.prompt, whiskState);
@@ -114,7 +116,7 @@ export const VideoTools = {
             }
         }
 
-        const { subscriptionService } = await import('@/services/subscription/SubscriptionService');
+        const { subscriptionService } = await importWithRetry(() => import('@/services/subscription/SubscriptionService'));
         const quotaCheck = await subscriptionService.canPerformAction('generateVideo', finalDuration || 4);
         if (!quotaCheck.allowed) {
             return toolError(`Quota exceeded: ${quotaCheck.reason || 'Insufficient funds or limits reached.'}`, 'QUOTA_EXCEEDED');
@@ -138,6 +140,9 @@ export const VideoTools = {
                 const completedJob = await VideoGeneration.waitForJob(videoJob.id);
                 finalUrl = completedJob.videoUrl || '';
             }
+            if (!finalUrl) {
+                return toolError('Video generation completed without an output URL.', 'GENERATION_OUTPUT_MISSING');
+            }
 
             const { addToHistory, currentProjectId } = useStore.getState();
             addToHistory({
@@ -159,7 +164,7 @@ export const VideoTools = {
     }),
 
     generate_motion_brush: wrapTool('generate_motion_brush', async (args: { image: string, mask: string, prompt?: string }) => {
-        const { Video } = await import('@/services/video/VideoService');
+        const { Video } = await importWithRetry(() => import('@/services/video/VideoService'));
 
         const imgMatch = args.image.match(/^data:(.+);base64,(.+)$/);
         const maskMatch = args.mask.match(/^data:(.+);base64,(.+)$/);
@@ -174,7 +179,7 @@ export const VideoTools = {
         const uri = await Video.generateMotionBrush(image, mask);
 
         if (uri) {
-            const { useStore } = await import('@/core/store');
+            const { useStore } = await importWithRetry(() => import('@/core/store'));
             const { addToHistory, currentProjectId } = useStore.getState();
             addToHistory({
                 id: crypto.randomUUID(),
@@ -192,7 +197,7 @@ export const VideoTools = {
     }),
 
     batch_edit_videos: wrapTool('batch_edit_videos', async (args: { prompt: string, videoIndices?: number[] }) => {
-        const { useStore } = await import('@/core/store');
+        const { useStore } = await importWithRetry(() => import('@/core/store'));
         const { uploadedImages, addToHistory, currentProjectId } = useStore.getState();
         const allVideos = uploadedImages.filter(img => img.type === 'video');
 
@@ -253,7 +258,7 @@ export const VideoTools = {
     }),
 
     extend_video: wrapTool('extend_video', async (args: { videoUrl: string, prompt: string, direction: 'start' | 'end' }) => {
-        const { extractVideoFrame } = await import('@/utils/video');
+        const { extractVideoFrame } = await importWithRetry(() => import('@/utils/video'));
         const frameData = await extractVideoFrame(args.videoUrl);
 
         if (!frameData) {
@@ -270,7 +275,7 @@ export const VideoTools = {
             options.firstFrame = frameData;
         }
 
-        const { useStore } = await import('@/core/store');
+        const { useStore } = await importWithRetry(() => import('@/core/store'));
         const { userProfile } = useStore.getState();
         options.userProfile = userProfile;
 
@@ -283,6 +288,9 @@ export const VideoTools = {
             if (!finalUrl) {
                 const completedJob = await VideoGeneration.waitForJob(videoJob.id);
                 finalUrl = completedJob.videoUrl || '';
+            }
+            if (!finalUrl) {
+                return toolError('Video extension completed without an output URL.', 'GENERATION_OUTPUT_MISSING');
             }
 
             const { addToHistory, currentProjectId } = useStore.getState();
@@ -304,7 +312,7 @@ export const VideoTools = {
     }),
 
     update_keyframe: wrapTool('update_keyframe', async (args: { clipId: string, property: 'scale' | 'opacity' | 'x' | 'y' | 'rotation', frame: number, value: number, easing?: 'linear' | 'easeIn' | 'easeOut' | 'easeInOut' }) => {
-        const { useVideoEditorStore } = await import('@/modules/creative/video/store/videoEditorStore');
+        const { useVideoEditorStore } = await importWithRetry(() => import('@/modules/creative/video/store/videoEditorStore'));
         const { updateKeyframe, addKeyframe, project } = useVideoEditorStore.getState();
         const clip = project.clips.find(c => c.id === args.clipId);
 
@@ -352,7 +360,7 @@ export const VideoTools = {
             return toolError("Invalid startImage data. Must be a base64 data URI.", 'INVALID_INPUT');
         }
 
-        const { useStore } = await import('@/core/store');
+        const { useStore } = await importWithRetry(() => import('@/core/store'));
         const { userProfile, whiskState } = useStore.getState();
 
         // =====================================================================
@@ -363,7 +371,7 @@ export const VideoTools = {
         let finalDuration = args.totalDuration;
 
         if (whiskState && (whiskState.targetMedia === 'video' || whiskState.targetMedia === 'both')) {
-            const { WhiskService } = await import('@/services/WhiskService');
+            const { WhiskService } = await importWithRetry(() => import('@/services/WhiskService'));
             finalPrompt = WhiskService.synthesizeVideoPrompt(args.prompt, whiskState);
             const videoParams = await WhiskService.getVideoParameters(whiskState);
 
@@ -401,7 +409,7 @@ export const VideoTools = {
     }),
 
     interpolate_sequence: wrapTool('interpolate_sequence', async (args: { firstFrame: string, lastFrame: string, prompt?: string }) => {
-        const { useStore } = await import('@/core/store');
+        const { useStore } = await importWithRetry(() => import('@/core/store'));
         const { userProfile } = useStore.getState();
         const results = await VideoGeneration.generateVideo({
             prompt: args.prompt || "Smooth transition between frames",
@@ -417,6 +425,9 @@ export const VideoTools = {
             if (!finalUrl) {
                 const completedJob = await VideoGeneration.waitForJob(videoJob.id);
                 finalUrl = completedJob.videoUrl || '';
+            }
+            if (!finalUrl) {
+                return toolError('Sequence interpolation completed without an output URL.', 'GENERATION_OUTPUT_MISSING');
             }
 
             const { addToHistory, currentProjectId } = useStore.getState();
@@ -447,9 +458,40 @@ export const VideoTools = {
         return toolError('Timeline orchestration is unavailable: no render queue backend is configured.', 'VIDEO_RENDER_QUEUE_UNAVAILABLE');
     }),
 
-    generate_andromeda_variations: wrapTool('generate_andromeda_variations', async (args: { basePrompt: string }) => {
+    generate_plp_variations: wrapTool('generate_plp_variations', async (args: { basePrompt: string }) => {
         void args;
         return toolError('Bulk video variation orchestration is unavailable: no A/B render queue backend is configured.', 'VIDEO_VARIATION_QUEUE_UNAVAILABLE');
+    }),
+
+    create_performance_video: wrapTool('create_performance_video', async (args: {
+        songUrl: string;
+        artistImageUrl?: string;
+        artistDescription?: string;
+        style?: string;
+        aspectRatio?: '9:16' | '16:9' | '1:1';
+        sceneCount?: number;
+    }) => {
+        if (!args.songUrl || args.songUrl.trim().length === 0) {
+            return toolError('Song URL is required.', 'INVALID_INPUT');
+        }
+
+        if (!args.artistImageUrl && !args.artistDescription) {
+            return toolError('Either artistImageUrl or artistDescription is required.', 'INVALID_INPUT');
+        }
+
+        try {
+            const result = await performanceVideoService.generate(args);
+            if (!result.videoUrl) {
+                return toolError('Performance video completed without an output URL.', 'GENERATION_OUTPUT_MISSING');
+            }
+            return toolSuccess(
+                { videoUrl: result.videoUrl, projectId: result.projectId },
+                `Performance video generated successfully: ${result.videoUrl}`
+            );
+        } catch (err) {
+            const errorMsg = err instanceof Error ? err.message : 'Unknown error';
+            return toolError(`Failed to generate performance video: ${errorMsg}`, 'PERFORMANCE_VIDEO_GENERATION_FAILED');
+        }
     })
 } satisfies Record<string, AnyToolFunction>;
 
@@ -464,5 +506,6 @@ export const {
     interpolate_sequence,
     orchestrate_video_render,
     orchestrate_timeline,
-    generate_andromeda_variations
+    generate_plp_variations,
+    create_performance_video
 } = VideoTools;

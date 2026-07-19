@@ -1,5 +1,6 @@
 import { wrapTool, toolError, toolSuccess } from '../utils/ToolUtils';
 import type { AnyToolFunction } from '../types';
+import { importWithRetry } from '@/utils/dynamicImport';
 
 // ============================================================================
 // AnalysisTools Implementation
@@ -7,9 +8,9 @@ import type { AnyToolFunction } from '../types';
 
 export const AnalysisTools = {
     analyze_contract: wrapTool('analyze_contract', async (args: { file_data: string, mime_type: string }) => {
-        const { creatorProtectionHarnessService } = await import('@/services/creator-protection');
-        const { functions } = await import('@/services/firebase');
-        const { httpsCallable } = await import('firebase/functions');
+        const { creatorProtectionHarnessService } = await importWithRetry(() => import('@/services/creator-protection'));
+        const { functions } = await importWithRetry(() => import('@/services/firebase'));
+        const { httpsCallable } = await importWithRetry(() => import('firebase/functions'));
         const analyzeContract = httpsCallable<
             { fileData: string; mimeType: string },
             { score?: number, summary?: string, risks?: string[] }
@@ -28,8 +29,8 @@ export const AnalysisTools = {
 
         // 1. Try reading cached stats from Firestore (written by SocialPlatformService.syncSpotifyStats)
         try {
-            const { db, auth } = await import('@/services/firebase');
-            const { doc, getDoc } = await import('firebase/firestore');
+            const { db, auth } = await importWithRetry(() => import('@/services/firebase'));
+            const { doc, getDoc } = await importWithRetry(() => import('firebase/firestore'));
 
             const uid = auth.currentUser?.uid;
             if (uid) {
@@ -47,13 +48,13 @@ export const AnalysisTools = {
                             timestamp: new Date(cached.fetchedAt).toISOString(),
                             stats: cached,
                             source: 'cache'
-                        }, `${args.dsp} stats loaded from cache (${Math.round(ageMs / 60000)} min old). Followers: ${cached.followers?.toLocaleString() ?? 'N/A'}.`);
+                        }, `${args.dsp} stats loaded from cache (${Math.round(ageMs / 60000)} min old). Followers: ${cached.followers?.toLocaleString('en-US') ?? 'N/A'}.`);
                     }
                 }
 
                 // 2. Cache miss or stale — attempt live sync for Spotify
                 if (args.dsp === 'Spotify') {
-                    const { syncSpotifyStats } = await import('@/services/social/SocialPlatformService');
+                    const { syncSpotifyStats } = await importWithRetry(() => import('@/services/social/SocialPlatformService'));
                     const live = await syncSpotifyStats(uid, args.artistId);
                     if (live.followers !== undefined) {
                         return toolSuccess({
@@ -62,7 +63,7 @@ export const AnalysisTools = {
                             timestamp: new Date(live.fetchedAt).toISOString(),
                             stats: live,
                             source: 'live'
-                        }, `${args.dsp} stats synced live. Followers: ${live.followers?.toLocaleString() ?? 'N/A'}.`);
+                        }, `${args.dsp} stats synced live. Followers: ${live.followers?.toLocaleString('en-US') ?? 'N/A'}.`);
                     }
                 }
             }

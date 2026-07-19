@@ -22,11 +22,11 @@ const BriefingStep: React.FC<BriefingStepProps> = ({
 }) => {
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <div className="bg-purple-500/10 border border-purple-500/20 p-4 rounded-xl flex items-start gap-3">
-                <BotMessageSquare className="text-purple-400 flex-shrink-0 mt-1" size={20} />
+            <div className="bg-green-500/10 border border-green-500/20 p-4 rounded-xl flex items-start gap-3">
+                <BotMessageSquare className="text-green-400 flex-shrink-0 mt-1" size={20} />
                 <div>
-                    <h4 className="text-purple-300 font-medium mb-1">AI Director</h4>
-                    <p className="text-sm text-purple-200/80">
+                    <h4 className="text-green-300 font-medium mb-1">AI Director</h4>
+                    <p className="text-sm text-green-200/80">
                         I've analyzed your idea: <span className="italic text-white">"{initialPrompt}"</span>.
                         To make this video perfect, I have a few questions.
                     </p>
@@ -44,7 +44,7 @@ const BriefingStep: React.FC<BriefingStepProps> = ({
                             value={answers[question] || ''}
                             onChange={(e) => onAnswerChange(question, e.target.value)}
                             placeholder="Your answer..."
-                            className="w-full bg-black/50 border border-gray-700 rounded-lg p-3 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 transition-colors"
+                            className="w-full bg-black/50 border border-gray-700 rounded-lg p-3 text-white placeholder-gray-500 focus:outline-none focus:border-green-500 transition-colors"
                         />
                     </div>
                 ))}
@@ -61,7 +61,7 @@ const BriefingStep: React.FC<BriefingStepProps> = ({
                 <button
                     onClick={onNext}
                     disabled={isThinking}
-                    className="flex items-center gap-2 px-6 py-3 bg-purple-600 hover:bg-purple-500 text-white rounded-lg font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex items-center gap-2 px-6 py-3 bg-green-600 hover:bg-green-500 text-white rounded-lg font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     {isThinking ? (
                         <>

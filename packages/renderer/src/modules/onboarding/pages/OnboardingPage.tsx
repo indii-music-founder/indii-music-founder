@@ -48,7 +48,10 @@ export default function OnboardingPage() {
         handleSaveBio,
         handleCancelEdit,
         handleRegenerateBio,
-        setEditedBio
+        setEditedBio,
+        resolvedMode,
+        setUserProfile,
+        addActiveAgent
     } = useOnboarding();
 
     const currentPhase = determinePhase(userProfile);
@@ -88,6 +91,54 @@ export default function OnboardingPage() {
         setIsDragOver(false);
         handleFileDrop(e);
     }, [handleFileDrop]);
+
+    if (resolvedMode === 'onboarding' && !userProfile.careerProfile) {
+        return (
+            <ModuleErrorBoundary moduleName="Onboarding">
+                <div className="flex flex-col h-full w-full bg-bg-dark text-white items-center justify-center p-6 relative overflow-y-auto">
+                    {/* Background Atmosphere */}
+                    <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                        <div className="absolute top-[-10%] right-[-10%] w-[40%] h-[40%] bg-dept-creative/10 blur-[120px] rounded-full" />
+                        <div className="absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] bg-cyan-600/10 blur-[120px] rounded-full" />
+                    </div>
+                    <div className="max-w-3xl text-center space-y-8 z-10 p-4">
+                        <div className="w-16 h-16 rounded-2xl bg-white flex items-center justify-center mx-auto mb-6 shadow-xl">
+                            <span className="text-black font-black text-2xl">i</span>
+                        </div>
+                        <h1 className="text-3xl lg:text-4xl font-extrabold tracking-tight">Choose Your Career Path</h1>
+                        <p className="text-gray-400 text-base lg:text-lg max-w-xl mx-auto">Select a path to automatically seat the most relevant specialist agents in your boardroom and customize your workspace.</p>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left mt-8">
+                            {[
+                                { id: 'dj', name: 'DJ / Performer', desc: 'Focuses on live performances, bookings, social media engagement, and creative set aesthetics.' },
+                                { id: 'sync_producer', name: 'Sync Producer', desc: 'Focuses on television/film sync licensing, publishing rights, and legal contracts.' },
+                                { id: 'touring_band', name: 'Touring Band', desc: 'Focuses on regional tour routing, road logistics, physical merchandise design, and finance.' },
+                                { id: 'label_manager', name: 'Label Manager', desc: 'Focuses on label operations, business finance, distribution delivery, and publishing administration.' }
+                            ].map(profile => (
+                                <button
+                                    key={profile.id}
+                                    onClick={() => {
+                                        setUserProfile({ ...userProfile, careerProfile: profile.id });
+                                        const seatingMap: Record<string, string[]> = {
+                                            dj: ['generalist', 'marketing', 'social', 'creative'],
+                                            sync_producer: ['generalist', 'legal', 'licensing', 'publishing'],
+                                            touring_band: ['generalist', 'road', 'marketing', 'merchandise', 'finance'],
+                                            label_manager: ['generalist', 'legal', 'finance', 'distribution', 'publishing']
+                                        };
+                                        const agentsToSeat = seatingMap[profile.id] || ['generalist'];
+                                        agentsToSeat.forEach(agentId => addActiveAgent(agentId));
+                                    }}
+                                    className="p-6 bg-white/5 border border-white/10 hover:border-dept-creative rounded-2xl hover:bg-white/10 transition-all group duration-300"
+                                >
+                                    <h3 className="text-lg font-bold group-hover:text-dept-creative transition-colors">{profile.name}</h3>
+                                    <p className="text-gray-400 text-xs mt-2 leading-relaxed">{profile.desc}</p>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            </ModuleErrorBoundary>
+        );
+    }
 
     return (
         <ModuleErrorBoundary moduleName="Onboarding">
@@ -221,7 +272,7 @@ export default function OnboardingPage() {
                                         className="flex justify-start"
                                     >
                                         <div className="bg-white/5 border border-white/10 p-4 rounded-2xl flex items-center gap-3">
-                                            <Loader2 className="animate-spin text-purple-400" size={18} />
+                                            <Loader2 className="animate-spin text-green-400" size={18} />
                                             <span className="text-xs text-gray-400 font-bold uppercase tracking-widest">indii is thinking...</span>
                                         </div>
                                     </motion.div>

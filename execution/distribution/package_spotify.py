@@ -6,7 +6,7 @@ Creates the directory structure required by Spotify's ingestion pipeline:
 
     /inbox/
       └── {batch_id}/
-          ├── {release_id}.xml      (Proprietary Ingestion IP Ingestion Protocol 4.3)
+          ├── {release_id}.xml      (DDEX Ingestion Protocol 4.3)
           ├── resources/
           │   ├── track_1.flac
           │   ├── track_2.flac
@@ -14,7 +14,7 @@ Creates the directory structure required by Spotify's ingestion pipeline:
           └── manifest.xml           (batch manifest)
 
 Requirements from Spotify's Content Provider Onboarding Guide:
-- Proprietary Ingestion IP Ingestion Protocol 4.3 XML validated against official XSD
+- DDEX Ingestion Protocol 4.3 XML validated against official XSD
 - All tracks must have valid ISRCs
 - Cover art: minimum 3000x3000 JPEG
 - Content must be delivered 5+ business days before street date
@@ -36,10 +36,8 @@ from xml.dom import minidom
 
 # Ensure sibling modules are importable
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-try:
-    from ingestion_generator import Proprietary Ingestion IPGenerator
-except ImportError:
-    pass
+from ingestion_generator import DDEXGenerator
+from xsd_validator import DDEXXSDValidator
 
 # Configure logging
 logging.basicConfig(
@@ -58,26 +56,41 @@ def calculate_md5(file_path: str) -> str:
     return hash_md5.hexdigest()
 
 
-def generate_manifest(batch_id: str, releases: List[Dict[str, Any]]) -> str:
+def generate_manifest(
+    batch_id: str,
+    releases: List[Dict[str, Any]],
+    manifest_namespace: str,
+) -> str:
     """Generate Spotify batch manifest XML.
 
     The manifest lists all releases included in a single batch delivery.
     Spotify uses this to track batch completeness and ordering.
     """
+    if not manifest_namespace.strip():
+        raise ValueError(
+            "DDEX_MANIFEST_NAMESPACE is required for the configured ERN choreography profile"
+        )
     root = ET.Element("ManifestMessage")
-    root.set("xmlns", "http://ingestion.net/xml/ern/43")
+    root.set("xmlns", manifest_namespace.strip())
 
     # Manifest Header
     header = ET.SubElement(root, "MessageHeader")
     ET.SubElement(header, "MessageId").text = f"MANIFEST-{batch_id}"
     ET.SubElement(header, "MessageCreatedDateTime").text = (
-        datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
+        datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     )
 
     # Sender (indii)
     sender = ET.SubElement(header, "MessageSender")
-    sender_dpid = os.environ.get("Proprietary Ingestion IP_SENDER_DPID", "PA-DPIDA-2025122604-E")
-    ET.SubElement(sender, "PartyId").text = sender_dpid
+    sender_dpid = os.environ.get("DDEX_SENDER_DPID", "")
+    if not sender_dpid.strip():
+        raise ValueError(
+            "DDEX_SENDER_DPID is required; a Spotify manifest cannot invent a sender identity"
+        )
+    ET.SubElement(sender, "PartyId").text = DDEXGenerator.canonicalize_dpid(
+        sender_dpid,
+        "DDEX_SENDER_DPID",
+    )
 
     # Release List in this batch
     release_list = ET.SubElement(root, "ReleaseList")
@@ -193,17 +206,66 @@ def package_spotify(
                     "error": "Cover art file missing. Spotify requires cover art (JPEG, 3000x3000 minimum)."
                 }
 
-        # ─── 4. Generate Proprietary Ingestion IP Ingestion Protocol 4.3 XML ──────────────────────────────────
-        try:
-            generator = Proprietary Ingestion IPGenerator()
-            xml_content = generator.generate_ern(metadata)
-        except NameError:
-            from ingestion_generator import Proprietary Ingestion IPGenerator
-            generator = Proprietary Ingestion IPGenerator()
-            xml_content = generator.generate_ern(metadata)
+        # ─── 4. Generate DDEX Ingestion Protocol 4.3 XML ──────────────────────────────────
+        generator = DDEXGenerator()
+        xml_content = generator.generate_ern(metadata)
+
+        validation = DDEXXSDValidator(require_xsd=True).validate_xml_string(xml_content)
+        if not validation["valid"] or validation.get("mode") != "xsd":
+            return {
+                "status": "FAIL",
+                "error": validation.get("summary", "DDEX ERN 4.3 XSD validation failed"),
+                "validation": validation,
+                "delivery_ready": False,
+            }
+
+        # The batch manifest belongs to the ERN choreography standard, not to
+        # the NewReleaseMessage schema. Both its namespace and entry-point XSD
+        # come from the licensed/bilateral delivery profile and must validate
+        # before any package directory is created.
+        manifest_namespace = os.environ.get("DDEX_MANIFEST_NAMESPACE", "").strip()
+        manifest_xsd_path = os.environ.get("DDEX_MANIFEST_XSD_PATH", "").strip()
+        if not manifest_namespace or not manifest_xsd_path:
+            return {
+                "status": "FAIL",
+                "error": (
+                    "DDEX_MANIFEST_NAMESPACE and DDEX_MANIFEST_XSD_PATH are required "
+                    "for a delivery-ready batched SFTP package"
+                ),
+                "validation": validation,
+                "delivery_ready": False,
+            }
+
+        batch_id = batch_id or f"BATCH-{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}-{uuid.uuid4().hex[:6].upper()}"
+        xml_filename = f"{release_id}.xml"
+        manifest_xml = generate_manifest(
+            batch_id,
+            [{
+                "release_id": release_id,
+                "xml_filename": xml_filename,
+                "action": "Insert",
+            }],
+            manifest_namespace,
+        )
+        manifest_validation = DDEXXSDValidator(
+            xsd_path=manifest_xsd_path,
+            require_xsd=True,
+        ).validate_xml_string(manifest_xml)
+        if not manifest_validation["valid"] or manifest_validation.get("mode") != "xsd":
+            return {
+                "status": "FAIL",
+                "error": manifest_validation.get(
+                    "summary",
+                    "DDEX choreography manifest XSD validation failed",
+                ),
+                "validation": {
+                    "ern": validation,
+                    "manifest": manifest_validation,
+                },
+                "delivery_ready": False,
+            }
 
         # ─── 5. Build Spotify package directory structure ──────────────────
-        batch_id = batch_id or f"BATCH-{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}-{uuid.uuid4().hex[:6].upper()}"
         base_output = output_path or os.path.dirname(staging_path)
         package_path = os.path.join(base_output, batch_id)
 
@@ -214,8 +276,7 @@ def package_spotify(
         resources_path = os.path.join(package_path, "resources")
         os.makedirs(resources_path)
 
-        # Write Ingestion Notification XML
-        xml_filename = f"{release_id}.xml"
+        # Write ERN XML
         with open(os.path.join(package_path, xml_filename), 'w', encoding='utf-8') as f:
             f.write(xml_content)
 
@@ -232,12 +293,6 @@ def package_spotify(
             shutil.copy2(cover_path, os.path.join(resources_path, cover_filename))
 
         # ─── 6. Generate and write manifest ────────────────────────────────
-        manifest_xml = generate_manifest(batch_id, [{
-            "release_id": release_id,
-            "xml_filename": xml_filename,
-            "action": "Insert"
-        }])
-
         with open(os.path.join(package_path, "manifest.xml"), 'w', encoding='utf-8') as f:
             f.write(manifest_xml)
 
@@ -260,12 +315,16 @@ def package_spotify(
             "track_count": len(processed_tracks),
             "files": package_files,
             "details": f"Spotify delivery package ready with {len(processed_tracks)} tracks.",
-            "delivery_ready": True
+            "delivery_ready": True,
+            "validation": {
+                "ern": validation,
+                "manifest": manifest_validation,
+            },
         }
 
     except Exception as e:
         logger.exception("Spotify packaging failed")
-        return {"status": "FAIL", "error": str(e)}
+        return {"status": "FAIL", "error": str(e), "delivery_ready": False}
 
 
 if __name__ == "__main__":

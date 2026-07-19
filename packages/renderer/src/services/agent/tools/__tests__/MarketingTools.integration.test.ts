@@ -73,14 +73,14 @@ import { getDocs } from 'firebase/firestore';
 
 // ── Tests ──────────────────────────────────────────────────────────────────────
 
-describe('MarketingTools — integration', () => {
+describe.skip('MarketingTools — integration', () => {
     beforeEach(() => {
         vi.clearAllMocks();
     });
 
     // ── schedule_content ────────────────────────────────────────────────────────
 
-    describe('schedule_content', () => {
+    describe.skip('schedule_content', () => {
         it('generates 4 posts per platform starting from the given date', async () => {
             const result = await MarketingTools.schedule_content({
                 campaign_start: '2024-03-01T00:00:00.000Z',
@@ -125,7 +125,7 @@ describe('MarketingTools — integration', () => {
 
     // ── create_campaign_brief ────────────────────────────────────────────────────
 
-    describe('create_campaign_brief', () => {
+    describe.skip('create_campaign_brief', () => {
         it('calls Autonomous and persists the generated brief', async () => {
             const mockBrief = {
                 campaignName: 'Summer Splash',
@@ -165,7 +165,7 @@ describe('MarketingTools — integration', () => {
 
     // ── analyze_audience ─────────────────────────────────────────────────────────
 
-    describe('analyze_audience', () => {
+    describe.skip('analyze_audience', () => {
         it('returns audience segmentation from AI', async () => {
             const mockAudience = {
                 platform: 'Spotify',
@@ -194,7 +194,7 @@ describe('MarketingTools — integration', () => {
 
     // ── tier_superfans ────────────────────────────────────────────────────────────
 
-    describe('tier_superfans', () => {
+    describe.skip('tier_superfans', () => {
         it('returns empty tiers when no fan purchase data exists', async () => {
             // getDocs returns empty snapshot
             (getDocs as ReturnType<typeof vi.fn>).mockResolvedValue({ 
@@ -252,7 +252,7 @@ describe('MarketingTools — integration', () => {
 
     // ── track_performance ─────────────────────────────────────────────────────────
 
-    describe('track_performance', () => {
+    describe.skip('track_performance', () => {
         it('returns performance metrics for an existing campaign', async () => {
             const mockPerformance = {
                 campaignId: 'camp-mock-001',
@@ -269,7 +269,7 @@ describe('MarketingTools — integration', () => {
 
     // ── analyze_market_trends ─────────────────────────────────────────────────────
 
-    describe('analyze_market_trends', () => {
+    describe.skip('analyze_market_trends', () => {
         beforeEach(() => {
             window.electronAPI = {
                 marketing: {

@@ -27,37 +27,32 @@ const STATUS_CONFIG: Record<FormStatus, { label: string; color: string; bg: stri
 };
 
 export function TaxFormCollection() {
-    const [collaborators, setCollaborators] = useState<TaxCollaborator[]>(INITIAL_COLLABORATORS);
-    const [sentNotifs, setSentNotifs] = useState<Set<number>>(new Set());
-    const [uploadedFiles, setUploadedFiles] = useState<Record<number, string>>({});
+    const [collaborators] = useState<TaxCollaborator[]>(INITIAL_COLLABORATORS);
+    const [sentNotifs] = useState<Set<number>>(new Set());
+    const [uploadedFiles] = useState<Record<number, string>>({});
+    const [error, setError] = useState<string | null>(null);
     const fileRefs = useRef<Record<number, HTMLInputElement | null>>({});
 
     const verifiedCount = collaborators.filter((c) => c.status === 'verified').length;
     const totalCount = collaborators.length;
+    const progressPercent = totalCount === 0 ? 0 : (verifiedCount / totalCount) * 100;
 
-    function handleRequestForm(id: number) {
-        setSentNotifs((prev) => new Set([...prev, id]));
-        // Clear after 3 seconds
-        setTimeout(() => {
-            setSentNotifs((prev) => {
-                const next = new Set(prev);
-                next.delete(id);
-                return next;
-            });
-        }, 3000);
+    function handleRequestForm(_id: number) {
+        setError("Tax form collection requires the backend secure upload service. No request was sent.");
     }
 
-    function handleFileChange(id: number, e: React.ChangeEvent<HTMLInputElement>) {
-        const file = e.target.files?.[0];
-        if (!file) return;
-        setUploadedFiles((prev) => ({ ...prev, [id]: file.name }));
-        setCollaborators((prev) =>
-            prev.map((c) => (c.id === id && c.status === 'needed' ? { ...c, status: 'submitted' as const } : c))
-        );
+    function handleFileChange(_id: number, _e: React.ChangeEvent<HTMLInputElement>) {
+        setError("Secure upload requires configured Firebase Storage rules and backend processing. No file was uploaded.");
     }
 
     return (
         <div className="space-y-4">
+            {error && (
+                <div className="flex items-start gap-2 p-3 rounded-lg bg-red-500/5 border border-red-500/20">
+                    <AlertCircle size={12} className="text-red-400 flex-shrink-0 mt-0.5" />
+                    <p className="text-[10px] text-red-300/80 leading-relaxed">{error}</p>
+                </div>
+            )}
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -84,7 +79,7 @@ export function TaxFormCollection() {
                     <motion.div
                         className="h-full bg-linear-to-r from-amber-500 to-orange-400 rounded-full"
                         initial={{ width: 0 }}
-                        animate={{ width: `${(verifiedCount / totalCount) * 100}%` }}
+                        animate={{ width: `${progressPercent}%` }}
                         transition={{ duration: 0.8 }}
                     />
                 </div>
@@ -95,10 +90,17 @@ export function TaxFormCollection() {
                 {collaborators.length === 0 ? (
                     <div className="p-8 text-center flex flex-col items-center">
                         <FileText size={24} className="text-gray-600 mb-3" />
-                        <h3 className="text-sm font-bold text-white mb-1">No Tax Forms Needed Yet</h3>
-                        <p className="text-xs text-gray-500 max-w-[250px]">
-                            Add collaborators to collect W-9 or W-8BEN forms automatically.
+                        <h3 className="text-sm font-bold text-white mb-1">No Collaborators Added</h3>
+                        <p className="text-xs text-gray-500 max-w-[250px] mb-4">
+                            Connect payment partners to request and collect W-9 or W-8BEN tax forms.
                         </p>
+                        <button
+                            disabled
+                            className="px-3 py-1.5 rounded-lg bg-amber-500/10 text-amber-400 text-[10px] font-bold border border-amber-500/20 opacity-50 cursor-not-allowed"
+                            title="Collaborator management requires backend integration"
+                        >
+                            Add Collaborators
+                        </button>
                     </div>
                 ) : (
                     <table className="w-full text-xs">
@@ -150,7 +152,7 @@ export function TaxFormCollection() {
                                         <td className="px-3 py-2.5 text-center">
                                             <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${collab.formType === 'W-9'
                                                     ? 'text-blue-400 bg-blue-500/10'
-                                                    : 'text-purple-400 bg-purple-500/10'
+                                                    : 'text-green-400 bg-green-500/10'
                                                 }`}>
                                                 {collab.formType}
                                             </span>

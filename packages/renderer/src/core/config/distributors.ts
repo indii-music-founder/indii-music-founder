@@ -1,8 +1,9 @@
 /**
  * Distributor Configuration
  *
- * indii.music operates as a registered System Identifier (PA-DPIDA-2025122604-E / New Detroit Music LLC)
- * and delivers directly to DSPs — no aggregator middlemen.
+ * Direct delivery is enabled only after the active entity's sender DPID and
+ * each partner agreement are configured. This catalog never proves that those
+ * external credentials or commercial relationships exist.
  *
  * This file has two sections:
  *
@@ -13,7 +14,7 @@
  *    on aggregator platforms. Used ONLY to import existing releases into indii.music, then
  *    migrate delivery to direct channels. These are NOT active delivery targets.
  *
- * All System Identifiers sourced from proprietary-registry.
+ * Recipient identifiers must be re-verified during partner onboarding.
  */
 
 export interface DistributorProfile {

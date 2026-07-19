@@ -9,6 +9,8 @@ import type { ToolFunctionArgs, AnyToolFunction } from '../types';
 import type { ToolExecutionContext } from '../ToolExecutionContext';
 import { MusicTools } from './MusicTools';
 import { CanvasTools } from './CanvasTools';
+import { importWithRetry } from '@/utils/dynamicImport';
+import { DEFAULT_PROJECT_ID } from '@/core/constants';
 
 /**
  * Extracts a specific frame from a 2x2 grid image using Canvas API.
@@ -101,7 +103,7 @@ interface SetEntityAnchorArgs extends ToolFunctionArgs {
 
 export const DirectorTools: Record<string, AnyToolFunction> = {
     generate_image: wrapTool('generate_image', async (args: GenerateImageArgs) => {
-        const { useStore } = await import('@/core/store');
+        const { useStore } = await importWithRetry(() => import('@/core/store'));
         const { studioControls, addToHistory, currentProjectId, userProfile, whiskState } = useStore.getState();
 
         let sourceImages: { mimeType: string; data: string }[] | undefined;
@@ -147,12 +149,12 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
         );
 
         if (hasWhiskRefs) {
-            const { WhiskService } = await import('@/services/WhiskService');
+            const { WhiskService } = await importWithRetry(() => import('@/services/WhiskService'));
             finalPrompt = WhiskService.synthesizeWhiskPrompt(args.prompt, whiskState);
 
             // If no source images yet and precise mode is on, get them from Whisk
             if (!sourceImages && whiskState?.preciseReference) {
-                const whiskSourceImages = WhiskService.getSourceMedia(whiskState);
+                const whiskSourceImages = await WhiskService.getSourceMedia(whiskState);
                 if (whiskSourceImages && whiskSourceImages.length > 0) {
                     sourceImages = whiskSourceImages;
                 }
@@ -162,7 +164,7 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
         // Get aspect ratio from locked style preset (if any)
         let effectiveAspectRatio = args.aspectRatio || studioControls.aspectRatio || '1:1';
         if (hasWhiskRefs) {
-            const { WhiskService } = await import('@/services/WhiskService');
+            const { WhiskService } = await importWithRetry(() => import('@/services/WhiskService'));
             const lockedAspectRatio = await WhiskService.getLockedAspectRatio(whiskState);
             if (lockedAspectRatio) {
                 effectiveAspectRatio = lockedAspectRatio;
@@ -195,7 +197,7 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
                         prompt: res.prompt,
                         type: 'image',
                         timestamp: Date.now(),
-                        projectId: currentProjectId || 'default-project'
+                        projectId: currentProjectId || DEFAULT_PROJECT_ID
                     });
                 });
                 const imageMarkdown = results.map((r: { id: string, url: string }) => `![Generated Image](${r.url})`).join('\n\n');
@@ -212,7 +214,7 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
     }),
 
     batch_edit_images: wrapTool('batch_edit_images', async (args: { prompt: string, imageIndices?: number[] }) => {
-        const { useStore } = await import('@/core/store');
+        const { useStore } = await importWithRetry(() => import('@/core/store'));
         const { uploadedImages, addToHistory, currentProjectId, addAgentMessage } = useStore.getState();
 
         if (uploadedImages.length === 0) {
@@ -294,8 +296,8 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
      * Unified High-Res Asset Tool for production-grade creative (4K)
      */
     generate_high_res_asset: wrapTool('generate_high_res_asset', async (args: GenerateHighResAssetArgs) => {
-        const { useStore } = await import('@/core/store');
-        const { userProfile, currentProjectId, addToHistory } = useStore.getState();
+        const { useStore } = await importWithRetry(() => import('@/core/store'));
+        const { userProfile, currentProjectId, addToHistory, studioControls } = useStore.getState();
 
         const isCover = ['cd_front', 'cd_back', 'vinyl_jacket', 'jacket', 'vinyl', 'booklet', 'cover'].includes(args.templateType);
         
@@ -310,6 +312,7 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
                 resolution: '4K',
                 aspectRatio: isCover ? '1:1' : '2:3',
                 isCoverArt: isCover,
+                model: studioControls?.model || 'fast',
                 userProfile
             });
 
@@ -321,7 +324,7 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
                     prompt: res.prompt,
                     type: 'image',
                     timestamp: Date.now(),
-                    projectId: currentProjectId || 'default-project',
+                    projectId: currentProjectId || DEFAULT_PROJECT_ID,
                     meta: `high_res_${args.templateType}`
                 });
 
@@ -340,8 +343,8 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
      * Renders a 2x2 grid of storyboards for visual planning.
      */
     render_cinematic_grid: wrapTool('render_cinematic_grid', async (args: { prompt: string }, context, toolContext) => {
-        const { useStore } = await import('@/core/store');
-        const { userProfile, characterReferences, currentProjectId, addToHistory } = useStore.getState();
+        const { useStore } = await importWithRetry(() => import('@/core/store'));
+        const { userProfile, characterReferences, currentProjectId, addToHistory, studioControls } = useStore.getState();
 
         // Include the first subject reference if available as a character anchor
         const sourceImages = characterReferences
@@ -360,6 +363,7 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
                 resolution: '4K',
                 aspectRatio: '16:9',
                 sourceImages: sourceImages.length > 0 ? sourceImages : undefined,
+                model: studioControls?.model || 'fast',
                 userProfile
             });
 
@@ -371,7 +375,7 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
                     prompt: res.prompt,
                     type: 'image',
                     timestamp: Date.now(),
-                    projectId: currentProjectId || 'default-project',
+                    projectId: currentProjectId || DEFAULT_PROJECT_ID,
                     meta: 'cinematic_grid'
                 });
 
@@ -392,7 +396,7 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
     }),
 
     extract_grid_frame: wrapTool('extract_grid_frame', async (args: ExtractGridFrameArgs, context, toolContext) => {
-        const { useStore } = await import('@/core/store');
+        const { useStore } = await importWithRetry(() => import('@/core/store'));
         const { generatedHistory, addToHistory, currentProjectId } = useStore.getState();
 
         let sourceImage;
@@ -443,7 +447,7 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
     }),
 
     set_entity_anchor: wrapTool('set_entity_anchor', async (args: SetEntityAnchorArgs) => {
-        const { useStore } = await import('@/core/store');
+        const { useStore } = await importWithRetry(() => import('@/core/store'));
         const { addToHistory, addCharacterReference, currentProjectId, whiskState } = useStore.getState();
 
         if (!args.image || !args.image.startsWith('data:image')) {
@@ -479,29 +483,77 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
         return DirectorTools.set_entity_anchor!(args);
     }),
 
-    analyze_audio: wrapTool('analyze_audio', async (args: { uploadedAudioIndex?: number; trackId?: string }) => {
-        const index = args.uploadedAudioIndex ?? 0;
-        return MusicTools.analyze_audio!({ uploadedAudioIndex: index });
+    analyze_audio: wrapTool('analyze_audio', async (args: { uploadedAudioIndex: number }) => {
+        return MusicTools.analyze_audio!({ uploadedAudioIndex: args.uploadedAudioIndex });
     }),
 
     canvas_push: wrapTool('canvas_push', async (args: { assetId: string; label?: string }) => {
-        const { useStore } = await import('@/core/store');
-        const { generatedHistory } = useStore.getState();
+        const { useStore } = await importWithRetry(() => import('@/core/store'));
+        const { generatedHistory, uploadedImages, userProfile } = useStore.getState();
         
-        const asset = generatedHistory.find(h => h.id === args.assetId);
+        const asset = generatedHistory.find(h => h.id === args.assetId) 
+            || uploadedImages.find(h => h.id === args.assetId)
+            || userProfile?.brandKit?.brandAssets?.find(a => a.id === args.assetId);
+            
         if (!asset) {
-            return toolError(`Asset with ID ${args.assetId} not found in history.`, "NOT_FOUND");
+            return toolError(`Asset with ID ${args.assetId} not found in history, uploads, or brand assets.`, "NOT_FOUND");
         }
 
         return CanvasTools.canvas_push!({
             type: 'markdown',
             title: args.label || `Asset: ${args.assetId}`,
             data: {
-                content: `![${args.label || 'Generated Asset'}](${asset.url})\n\n**Prompt:** ${asset.prompt}`
+                content: `![${args.label || 'Generated Asset'}](${asset.url})\n\n${'prompt' in asset && asset.prompt ? `**Prompt:** ${asset.prompt}` : ''}`
             },
             agentId: 'creative'
         });
-    })
+    }),
+
+    generate_moodboard: wrapTool('generate_moodboard', async (args: { theme: string, style?: string }) => {
+        const { useStore } = await importWithRetry(() => import('@/core/store'));
+        const { userProfile, currentProjectId, addToHistory, studioControls } = useStore.getState();
+        try {
+            const effectivePrompt = `A professional design moodboard for the theme "${args.theme}". ${args.style ? `Style: ${args.style}. ` : ''}Including color palettes, textures, and typography inspiration, cohesive visual aesthetic, high resolution, laid out as a moodboard collage`;
+
+            const results = await ImageGeneration.generateImages({
+                prompt: effectivePrompt,
+                count: 1,
+                resolution: '4K',
+                aspectRatio: '16:9',
+                model: studioControls?.model || 'fast',
+                userProfile
+            });
+
+            if (results.length > 0) {
+                const res = results[0]!;
+                addToHistory({
+                    id: res.id,
+                    url: res.url,
+                    prompt: res.prompt,
+                    type: 'image',
+                    timestamp: Date.now(),
+                    projectId: currentProjectId || DEFAULT_PROJECT_ID,
+                    meta: 'moodboard'
+                });
+
+                return toolSuccess({
+                    image_id: res.id,
+                    url: res.url
+                }, `Moodboard generated successfully for theme "${args.theme}".`);
+            }
+            return toolError("Generation completed but no image was returned.", "EMPTY_RESULT");
+        } catch (err: unknown) {
+            return handleGenerationError(err, 'generate_moodboard');
+        }
+    }),
+
+    analyze_visual_trends: wrapTool('analyze_visual_trends', async (args: { industry_or_genre: string }) => {
+        const analysisFramework = `1. Dominant Color Palettes\n2. Typography Trends\n3. Visual Motifs & Textures\n4. Photography / Illustration Styles\n5. Recommended Aesthetic Direction`;
+        return toolSuccess({
+            framework: analysisFramework,
+            topic: args.industry_or_genre
+        }, `Please provide a comprehensive visual trends analysis for "${args.industry_or_genre}" using your internal knowledge, structured around the provided framework. Note: This analysis is based on your general knowledge and is not a live data feed.`);
+    }),
 };
 
 /**
@@ -513,7 +565,7 @@ function handleGenerationError(err: unknown, toolName: string) {
     const error = err as any;
     const message = error.message || String(err);
     const lowerMessage = message.toLowerCase();
-    
+
     if (error.name === 'QuotaExceededError' || error.code === 'QUOTA_EXCEEDED' || message.includes('429') || lowerMessage.includes('quota') || lowerMessage.includes('rate limit')) {
         return toolError(
             `Quota exceeded for ${toolName}. Please wait a moment or try a lower-resolution setting.`,
@@ -534,5 +586,3 @@ function handleGenerationError(err: unknown, toolName: string) {
     // Fallback
     return toolError(`Image generation failed during ${toolName}: ${message}`, 'GENERATION_ERROR');
 }
-
-

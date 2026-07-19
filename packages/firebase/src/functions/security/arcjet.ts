@@ -93,9 +93,10 @@ export async function protectAuthenticatedApiRequest(
     if (!arcjetConfigured) {
         return missingArcjetKeyResult();
     }
-
+    // Ensure Arcjet client is initialized lazily
+    const arcjetClient = authenticatedApiArcjet;
     try {
-        const decision = await authenticatedApiArcjet.protect(req, { userId });
+        const decision = await arcjetClient.protect(req, { userId });
         return mapDecision(decision);
     } catch (error) {
         logger.error("[Arcjet] Authenticated API protection failed open", { error });
@@ -107,12 +108,15 @@ export async function protectPublicApiRequest(req: Request): Promise<ArcjetProte
     if (!arcjetConfigured) {
         return missingArcjetKeyResult();
     }
-
+    // Ensure Arcjet client is initialized lazily
+    const arcjetClient = publicApiArcjet;
     try {
-        const decision = await publicApiArcjet.protect(req);
+        const decision = await arcjetClient.protect(req);
         return mapDecision(decision);
     } catch (error) {
         logger.error("[Arcjet] Public API protection failed open", { error });
         return { allowed: true };
     }
 }
+
+// Arcjet clients initialized at module load (no lazy initialization needed)

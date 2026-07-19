@@ -18,6 +18,7 @@ import {
 import { VideoGenerationService } from '@/services/video/VideoGenerationService';
 import { subscriptionService } from '@/services/subscription/SubscriptionService';
 import { logger } from '@/utils/logger';
+import { importWithRetry } from '@/utils/dynamicImport';
 
 export class VideoGenerationInstrument implements Instrument {
   metadata: InstrumentMetadata = {
@@ -42,7 +43,7 @@ export class VideoGenerationInstrument implements Instrument {
       rateLimitPerMinute: 2
     },
     computeType: 'cloud',
-    preferredModel: 'veo-3.1-generate-preview',
+    preferredModel: 'veo-3.1-generate-001',
     tags: ['ai', 'video', 'generation', 'creative', 'premium'],
     examples: [
       {
@@ -164,7 +165,7 @@ export class VideoGenerationInstrument implements Instrument {
 
     try {
       // Get current user ID
-      const { auth } = await import('@/services/firebase');
+      const { auth } = await importWithRetry(() => import('@/services/firebase'));
       const userId = auth.currentUser?.uid;
 
       if (!userId) {

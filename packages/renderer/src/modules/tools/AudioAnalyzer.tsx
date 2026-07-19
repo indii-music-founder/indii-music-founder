@@ -10,6 +10,7 @@ import { useToast } from '@/core/context/ToastContext';
 import { TagMatrix } from './components/TagMatrix';
 import { AudioIntelligenceProfile } from '@/services/audio/types';
 import { audioAnalysisService } from '@/services/audio/AudioAnalysisService';
+import { detectM4ACodec } from '@/services/audio/M4ACodecProbe';
 import { AudioWaveformViewer } from '@/components/shared/AudioWaveformViewer';
 import { useStore } from '@/core/store';
 import { logger } from '@/utils/logger';
@@ -71,6 +72,22 @@ const AudioAnalyzer: React.FC = () => {
         return LOSSLESS_EXTENSIONS.has(ext);
     };
 
+    // ISSUE-961: M4A/MP4 is a container, not a codec — it can carry lossy
+    // AAC just as easily as lossless ALAC. Extension/MIME alone can't tell
+    // them apart; the actual sample-entry codec must be probed.
+    const M4A_MIME_TYPES = new Set(['audio/x-m4a', 'audio/mp4', 'audio/alac']);
+    const M4A_EXTENSIONS = new Set(['.m4a', '.alac']);
+    const isM4AContainer = (f: File): boolean => {
+        if (f.type && M4A_MIME_TYPES.has(f.type.toLowerCase())) return true;
+        const ext = '.' + f.name.split('.').pop()?.toLowerCase();
+        return M4A_EXTENSIONS.has(ext);
+    };
+
+    const isVerifiedDesktopLosslessCodec = (codec?: string): boolean => {
+        const normalized = codec?.toLowerCase() || '';
+        return normalized === 'alac' || normalized === 'flac' || normalized.startsWith('pcm_');
+    };
+
     const handleLoadClick = async (e: React.MouseEvent<HTMLLabelElement>) => {
         if (window.electronAPI) {
             e.preventDefault();
@@ -81,13 +98,27 @@ const AudioAnalyzer: React.FC = () => {
                     title: 'Select Lossless Master Track',
                     filters: [{ name: 'Lossless Audio', extensions: ['wav', 'flac', 'aif', 'aiff', 'm4a'] }]
                 });
-                
+
                 if (filePath) {
                     const pathStr = filePath as string;
                     const ext = '.' + pathStr.split('.').pop()?.toLowerCase();
                     if (!LOSSLESS_EXTENSIONS.has(ext)) {
                         toast.error(
                             `${ext.toUpperCase()} files are not accepted. Distributors require lossless masters (WAV, FLAC, or AIFF). Please select a lossless format.`
+                        );
+                        return;
+                    }
+
+                    // Electron already runs FFprobe for desktop analysis and
+                    // exposes stream metadata through audio:analyze. Do not
+                    // trust the selected extension: AAC can be inside M4A or
+                    // renamed to WAV. Only known lossless codecs may enter QC.
+                    const probe = await window.electronAPI.audio.analyze(pathStr);
+                    const audioStream = probe.streams?.find(stream => stream.codec_type === 'audio');
+                    if (probe.status !== 'success' || !isVerifiedDesktopLosslessCodec(audioStream?.codec_name)) {
+                        const codec = audioStream?.codec_name?.toUpperCase() || 'unknown';
+                        toast.error(
+                            `Desktop codec check rejected this master (${codec}). Distributors require PCM WAV/AIFF, FLAC, or ALAC-in-M4A — not AAC or another lossy codec.`
                         );
                         return;
                     }
@@ -132,6 +163,26 @@ const AudioAnalyzer: React.FC = () => {
             return;
         }
 
+        // ISSUE-961: extension/MIME says "M4A" but that only names the
+        // container — probe the actual sample-entry codec before trusting it.
+        if (isM4AContainer(uploadedFile)) {
+            const probe = await detectM4ACodec(uploadedFile);
+            if (probe.status === 'lossy') {
+                toast.error(
+                    `This M4A contains ${probe.codec.toUpperCase()} audio, a lossy codec. Distributors require a lossless master (WAV, FLAC, AIFF, or ALAC-in-M4A). Please re-export as lossless.`
+                );
+                e.target.value = '';
+                return;
+            }
+            if (probe.status === 'undetermined') {
+                toast.error(
+                    `This M4A file's audio codec could not be verified — the container may be corrupt or truncated. Please re-export as WAV, FLAC, or AIFF.`
+                );
+                e.target.value = '';
+                return;
+            }
+        }
+
         setFile(uploadedFile);
         if (audioUrl) {
             URL.revokeObjectURL(audioUrl);
@@ -144,7 +195,9 @@ const AudioAnalyzer: React.FC = () => {
 
     const runAnalysis = async (audioFile: File | string) => {
         setIsAnalyzing(true);
-        const extractToastId = toast.loading("Executing full technical and semantic audio scan...");
+        // ISSUE-997: this is a heuristic estimate (RMS-derived loudness, unweighted
+        // peak sample) — not a certified BS.1770 loudness/true-peak measurement.
+        const extractToastId = toast.loading("Estimating technical & semantic audio profile...");
 
         try {
             const { audioIntelligence } = await import('@/services/audio/AudioIntelligenceService');
@@ -182,11 +235,12 @@ const AudioAnalyzer: React.FC = () => {
         try {
             await audioAnalysisService.saveAnalysisToFirestore(profile.technical, file.name, { ...profile.semantic });
             toast.dismiss(toastId);
-            toast.success("Distribution standards and acoustic profile saved.");
+            toast.success("Estimated technical profile saved (not a certified distribution-compliance measurement).");
         } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : 'Unknown error';
             logger.error("Save failed", error);
             toast.dismiss(toastId);
-            toast.error("Failed to log audit.");
+            toast.error(`Failed to save analysis: ${message}`);
         } finally {
             setIsSaving(false);
         }
@@ -311,7 +365,7 @@ const AudioAnalyzer: React.FC = () => {
                                     </div>
 
                                     {/* Box 2: Visual & Agent Hooks */}
-                                    <div className="lg:col-span-2 bg-linear-to-br from-indigo-900/20 to-purple-900/20 border border-indigo-500/20 rounded-2xl p-6">
+                                    <div className="lg:col-span-2 bg-linear-to-br from-indigo-900/20 to-green-900/20 border border-indigo-500/20 rounded-2xl p-6">
                                         <h3 className="text-sm font-bold text-indigo-100 uppercase tracking-widest flex items-center gap-2 mb-6">
                                             <BrainCircuit size={16} className="text-indigo-400" />
                                             Creative Intelligence
@@ -350,7 +404,7 @@ const AudioAnalyzer: React.FC = () => {
                                         <div className="flex flex-wrap gap-3 mt-6 pt-5 border-t border-indigo-500/20">
                                             <Button
                                                 data-testid="send-to-video-studio-btn"
-                                                className="bg-linear-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold shadow-lg shadow-purple-500/20 transition-all duration-200 hover:shadow-purple-500/40 hover:scale-[1.02] active:scale-[0.98]"
+                                                className="bg-linear-to-r from-green-600 to-indigo-600 hover:from-green-500 hover:to-indigo-500 text-white font-bold shadow-lg shadow-green-500/20 transition-all duration-200 hover:shadow-green-500/40 hover:scale-[1.02] active:scale-[0.98]"
                                                 onClick={() => {
                                                     window.dispatchEvent(new Event('indii:dismiss_tour'));
                                                     setPendingPrompt(profile.semantic.targetPrompts.veo);
@@ -447,9 +501,14 @@ const AudioAnalyzer: React.FC = () => {
                                         <div>
                                             <h2 className="text-xl font-bold text-white flex items-center gap-2">
                                                 <Target className="text-dept-publishing" size={24} />
-                                                DSP Compliance Report
+                                                DSP Compliance Estimate
                                             </h2>
-                                            <p className="text-sm text-muted-foreground mt-1">Loudness Penalty and True Peak analysis for Spotify/Apple Music targets.</p>
+                                            <p className="text-sm text-muted-foreground mt-1">
+                                                Loudness Penalty and True Peak analysis for Spotify/Apple Music targets.
+                                                <span className="block text-yellow-400/80 mt-1">
+                                                    Heuristic estimate only — not a certified BS.1770 loudness/true-peak measurement. Confirm with a mastering engineer before final distribution.
+                                                </span>
+                                            </p>
                                         </div>
                                         <label onClick={handleLoadClick} className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold px-6 py-3 rounded-xl cursor-pointer transition-all flex items-center gap-3">
                                             <Upload size={18} /> Re-Audit New File
@@ -465,7 +524,7 @@ const AudioAnalyzer: React.FC = () => {
                                                     <Waves size={100} />
                                                 </div>
                                                 <div className="flex items-center gap-2 text-muted-foreground mb-6">
-                                                    <span className="text-sm font-bold uppercase tracking-wider">Integrated Loudness (LUFS)</span>
+                                                    <span className="text-sm font-bold uppercase tracking-wider">Integrated Loudness (Estimated LUFS)</span>
                                                 </div>
                                                 <div className="flex items-end gap-3 mb-4">
                                                     <span className="text-5xl font-mono text-white tracking-tighter">{profile.technical.audit.integratedLoudness.toFixed(1)}</span>

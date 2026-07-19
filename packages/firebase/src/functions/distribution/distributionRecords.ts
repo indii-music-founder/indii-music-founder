@@ -54,6 +54,46 @@ interface UpdateSftpIngestionRequest {
 
 const RELEASE_COLLECTIONS = ["proprietaryIngestionReleases", "ddexReleases", "releases"];
 
+// ISRC: 2-letter country, 3-char registrant, 2-digit year, 5-digit designation (ISO 3901)
+const ISRC_FORMAT = /^[A-Z]{2}[A-Z0-9]{3}\d{2}\d{5}$/;
+// UPC-A (12 digits) or EAN-13 (13 digits)
+const UPC_FORMAT = /^\d{12,13}$/;
+
+function normalizeIdentifier(type: IdentifierType, raw: string): string {
+    const code = raw.replace(/[\s-]/g, "").toUpperCase();
+    const format = type === "isrc" ? ISRC_FORMAT : UPC_FORMAT;
+    if (!format.test(code)) {
+        throw new functions.https.HttpsError(
+            "invalid-argument",
+            type === "isrc"
+                ? "ISRC must be 12 characters: 2-letter country, 3-char registrant, 2-digit year, 5-digit designation (ISO 3901)."
+                : "UPC must be 12 digits (UPC-A) or 13 digits (EAN-13).",
+        );
+    }
+    return code;
+}
+
+/**
+ * Fails if the code already exists in the registry (any status). Runs inside
+ * the caller's transaction so concurrent duplicate writes cannot both commit.
+ */
+async function assertIdentifierUnique(
+    tx: FirebaseFirestore.Transaction,
+    registryCollection: string,
+    codeField: string,
+    code: string,
+): Promise<void> {
+    const dup = await tx.get(
+        admin.firestore().collection(registryCollection).where(codeField, "==", code).limit(1),
+    );
+    if (!dup.empty) {
+        throw new functions.https.HttpsError(
+            "already-exists",
+            `${codeField.toUpperCase()} ${code} is already recorded in the registry.`,
+        );
+    }
+}
+
 function requireAuth(context: functions.https.CallableContext): string {
     if (!context.auth) {
         throw new functions.https.HttpsError("unauthenticated", "User must be authenticated.");
@@ -90,7 +130,8 @@ async function userCanAccessOrg(orgId: unknown, uid: string): Promise<boolean> {
     return org.ownerId === uid || memberListIncludes(org.members, uid);
 }
 
-async function findWritableReleaseRef(releaseId: string, uid: string): Promise<FirebaseFirestore.DocumentReference> {
+/** Exported for reuse by other trust boundaries that need the same release-ownership check (e.g. pandadocWebhook, ISSUE-864). */
+export async function findWritableReleaseRef(releaseId: string, uid: string): Promise<FirebaseFirestore.DocumentReference> {
     const db = admin.firestore();
 
     for (const collectionName of RELEASE_COLLECTIONS) {
@@ -156,6 +197,7 @@ async function assignIdentifier(
                 `${type.toUpperCase()} was already assigned. Try again.`,
             );
         }
+        await assertIdentifierUnique(tx, registryCollection, codeField, code);
 
         const now = admin.firestore.FieldValue.serverTimestamp();
         tx.update(poolDoc.ref, {
@@ -168,7 +210,13 @@ async function assignIdentifier(
             ...registryData,
             [codeField]: code,
             userId: uid,
-            status: "REGISTERED",
+            // Allocated from the platform's own verified pool — provenance is the pool doc.
+            status: "ALLOCATED_FROM_POOL",
+            provenance: {
+                source: "verified_pool",
+                poolDocId: poolDoc.id,
+                poolCollection,
+            },
             assignedAt: now,
             createdAt: now,
             updatedAt: now,
@@ -188,7 +236,12 @@ export const assignDistributionIdentifier = functions.https.onCall(
         const assignedTo = requireString(data.assignedTo, "assignedTo");
         const registryData: Record<string, unknown> = {};
 
-        if (data.releaseId) registryData.releaseId = requireString(data.releaseId, "releaseId");
+        if (data.releaseId) {
+            const releaseId = requireString(data.releaseId, "releaseId");
+            // Ownership gate: never attach identifiers to another user's release.
+            await findWritableReleaseRef(releaseId, uid);
+            registryData.releaseId = releaseId;
+        }
         if (data.trackTitle) registryData.trackTitle = requireString(data.trackTitle, "trackTitle");
         if (data.artistName) registryData.artistName = requireString(data.artistName, "artistName");
         if (data.releaseTitle) registryData.releaseTitle = requireString(data.releaseTitle, "releaseTitle");
@@ -210,14 +263,23 @@ export const recordDistributionIdentifier = functions.https.onCall(
         }
 
         const codeField = data.type;
-        const code = requireString(data[codeField], codeField);
+        const code = normalizeIdentifier(data.type, requireString(data[codeField], codeField));
         const releaseId = requireString(data.releaseId, "releaseId");
+        // Ownership gate: the release must exist and belong to the caller.
+        await findWritableReleaseRef(releaseId, uid);
+
         const now = admin.firestore.FieldValue.serverTimestamp();
         const payload: Record<string, unknown> = {
             [codeField]: code,
             releaseId,
             userId: uid,
-            status: "REGISTERED",
+            // User-supplied code — provenance is external and unverified. Never
+            // "REGISTERED": this endpoint has no authority evidence.
+            status: "RECORDED_EXTERNAL",
+            provenance: {
+                source: "user_supplied",
+                recordedBy: uid,
+            },
             assignedAt: now,
             createdAt: now,
             updatedAt: now,
@@ -229,7 +291,12 @@ export const recordDistributionIdentifier = functions.https.onCall(
         if (data.metadataSnapshot) payload.metadataSnapshot = assertRecord(data.metadataSnapshot, "metadataSnapshot");
 
         const registryCollection = data.type === "isrc" ? "isrc_registry" : "upc_registry";
-        const docRef = await admin.firestore().collection(registryCollection).add(payload);
+        const db = admin.firestore();
+        const docRef = db.collection(registryCollection).doc();
+        await db.runTransaction(async (tx) => {
+            await assertIdentifierUnique(tx, registryCollection, codeField, code);
+            tx.set(docRef, payload);
+        });
         return { id: docRef.id, [codeField]: code };
     },
 );
@@ -300,7 +367,8 @@ export const requestDistributionTakedown = functions.https.onCall(
                 distributorId,
                 reason,
                 requestedBy: uid,
-                status: "INITIATED",
+                status: "PENDING_NOTIFICATION",
+                manualRequired: true,
                 createdAt: now,
             });
             tx.set(distributionRequestRef, {
@@ -308,14 +376,16 @@ export const requestDistributionTakedown = functions.https.onCall(
                 distributorId,
                 reason,
                 requestedBy: uid,
-                status: "pending",
-                requestedAt: now,
+                status: "pending_notification",
+                manualRequired: true,
+                recordedAt: now,
             });
             tx.set(releaseRef, {
-                status: "takedown_requested",
+                takedownStatus: "pending_notification",
+                takedownNotificationStatus: "manual_required",
                 takedownReason: reason,
-                takedownRequestedAt: now,
-                takedownRequestedBy: uid,
+                takedownRecordedAt: now,
+                takedownRecordedBy: uid,
             }, { merge: true });
         });
 
@@ -324,7 +394,8 @@ export const requestDistributionTakedown = functions.https.onCall(
             distributionRequestId: distributionRequestRef.id,
             releaseId,
             distributorId,
-            status: "INITIATED",
+            status: "PENDING_NOTIFICATION",
+            manualRequired: true,
         };
     },
 );

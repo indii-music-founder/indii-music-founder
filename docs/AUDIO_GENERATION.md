@@ -7,7 +7,7 @@
 
 * **Stable Models:**
   * **Gemini 2.5 Flash TTS** (`gemini-2.5-flash-tts`): Optimized for real-time, low-latency applications.
-  * **Gemini 2.5 Pro TTS** (`gemini-2.5-pro-tts`): Optimized for high-fidelity, studio-quality performance.
+  * **Gemini 3.1 Flash TTS Preview** (`gemini-3.1-flash-tts-preview`): Optimized for controllable, low-latency speech generation.
 * **Status:** Fully stabilized and recommended for production use as of December 2025.
 * **Legacy Note:** These models replace the experimental `preview-tts` variants. All applications must migrate to the stable IDs.
 * **Access:** Available via the Gemini API in Google AI Studio, Vertex AI, and central project configuration (`@/core/config/ai-models`).
@@ -20,7 +20,7 @@ To ensure consistency and security policy compliance, always use the central mod
 import { AI_MODELS } from '@/core/config/ai-models';
 
 // Preferred Usage:
-const model = AI_MODELS.AUDIO.PRO; // 'gemini-2.5-pro-tts'
+const model = INTELLIGENCE_MODELS.AUDIO.TTS; // 'gemini-3.1-flash-tts-preview'
 ```
 
 ### Key Changes for Upgrading

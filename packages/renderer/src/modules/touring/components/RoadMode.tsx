@@ -80,8 +80,8 @@ const QUICK_ACTIONS: QuickAction[] = [
         id: 'reroute',
         icon: RefreshCw,
         label: 'Reroute',
-        color: 'text-purple-400',
-        bgColor: 'bg-purple-500/15 border-purple-500/20',
+        color: 'text-green-400',
+        bgColor: 'bg-green-500/15 border-green-500/20',
         prompt: 'I need to change my route. Check for traffic issues or road closures on my current path and suggest an alternative route to my next destination.',
         usePlacesAPI: false, // Conversational — needs the agent
     },
@@ -548,7 +548,7 @@ export const RoadMode: React.FC = () => {
                         onClick={toggleListening}
                         className={`flex-1 flex items-center justify-center gap-3 py-4 rounded-2xl font-bold text-sm transition-all ${isListening
                             ? 'bg-red-500 text-white shadow-lg shadow-red-500/30 animate-pulse'
-                            : 'bg-linear-to-r from-indigo-500 to-purple-600 text-white shadow-lg shadow-indigo-500/20'
+                            : 'bg-linear-to-r from-indigo-500 to-green-600 text-white shadow-lg shadow-indigo-500/20'
                             }`}
                     >
                         {isListening ? (

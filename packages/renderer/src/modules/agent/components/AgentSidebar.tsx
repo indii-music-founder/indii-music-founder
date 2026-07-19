@@ -1,8 +1,8 @@
 import React from 'react';
-import { Map, List, Mail, Globe, Settings, MessageSquare, ListTodo } from 'lucide-react';
+import { Map, List, Mail, Globe, MessageSquare, ListTodo, RotateCcw } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
-type AgentTab = 'scout' | 'campaigns' | 'inbox' | 'browser' | 'chat' | 'tasks';
+export type AgentTab = 'scout' | 'campaigns' | 'inbox' | 'browser' | 'chat' | 'tasks' | 'loops';
 
 interface AgentSidebarProps {
     activeTab: AgentTab;
@@ -15,6 +15,7 @@ const NAV_ITEMS: Array<{ id: AgentTab; icon: React.ComponentType<{ size?: string
     { id: 'chat', icon: MessageSquare, translationKey: 'agent.tabs.chat' },
     { id: 'tasks', icon: ListTodo, translationKey: 'agent.tabs.tasks' },
     { id: 'campaigns', icon: List, translationKey: 'agent.tabs.campaigns' },
+    { id: 'loops', icon: RotateCcw, translationKey: 'agent.tabs.loops' },
     { id: 'inbox', icon: Mail, translationKey: 'agent.tabs.inbox' },
 ];
 
@@ -50,13 +51,6 @@ export const AgentSidebar: React.FC<AgentSidebarProps> = ({ activeTab, setActive
 
                 <div className="flex-1" />
 
-                <button
-                    className="p-3 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-all duration-200"
-                    title={t('common.settings')}
-                    aria-label={t('common.settings')}
-                >
-                    <Settings size={22} />
-                </button>
             </div>
         </div>
     );

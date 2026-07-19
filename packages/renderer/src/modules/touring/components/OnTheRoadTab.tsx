@@ -1,12 +1,16 @@
 import { useTranslation } from 'react-i18next';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 
 import { motion } from 'motion/react';
-import { Navigation, Fuel, Clock, Crosshair } from 'lucide-react';
+import { Navigation, Fuel, Clock, Crosshair, TrendingUp, Receipt } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Itinerary, ItineraryStop, NearbyPlace, FuelLogistics } from '../types';
+import { getTotalMilesFromItinerary, calculateMileageCost } from '../milesTracking';
+import { ExpenseManualEntryModal } from '@/modules/finance/components/ExpenseManualEntryModal';
+import { Expense } from '@/services/finance/FinanceService';
+import { financeService } from '@/services/finance/FinanceService';
 
 import { TourMap } from './TourMap';
 import { logger } from '@/utils/logger';
@@ -15,6 +19,7 @@ interface OnTheRoadTabProps {
     currentLocation: string;
     setCurrentLocation: (loc: string) => void;
     handleFindGasStations: () => void;
+    handleFindNearbyPlaces?: (placeType: string) => void;
     isFindingPlaces: boolean;
     nearbyPlaces: NearbyPlace[];
     fuelLogistics?: FuelLogistics | null;
@@ -26,15 +31,21 @@ export const OnTheRoadTab: React.FC<OnTheRoadTabProps> = ({
     currentLocation,
     setCurrentLocation,
     handleFindGasStations,
+    handleFindNearbyPlaces,
     isFindingPlaces,
     nearbyPlaces,
     fuelLogistics,
     itinerary
 }) => {
     const { t } = useTranslation();
+    const [isLoggingMiles, setIsLoggingMiles] = useState(false);
+    const [showExpenseModal, setShowExpenseModal] = useState(false);
+
     // Find next stop logic
     const today = new Date();
     const nextStop = itinerary?.stops.find((s: ItineraryStop) => new Date(s.date) >= today) || itinerary?.stops[0];
+    const totalMiles = getTotalMilesFromItinerary(itinerary);
+    const mileageCost = calculateMileageCost(totalMiles);
 
     const handleLocateMe = () => {
         if (!navigator.geolocation) return;
@@ -51,14 +62,32 @@ export const OnTheRoadTab: React.FC<OnTheRoadTabProps> = ({
         );
     };
 
+    const handleQuickExpense = async (expenseData: Partial<Expense>) => {
+        // Pre-fill with Travel category and current stop location
+        const expenseWithDefaults: Partial<Expense> = {
+            ...expenseData,
+            category: 'Travel',
+            description: expenseData.description || `Expense at ${nextStop?.city || 'on tour'}`
+        };
+
+        try {
+            await financeService.addExpense(expenseWithDefaults);
+            logger.info('Quick expense logged:', expenseWithDefaults);
+        } catch (error) {
+            logger.error('Failed to log quick expense:', error);
+        }
+    };
+
     const range = fuelLogistics?.currentRangeMiles ?? 200;
 
     return (
         <div className="flex flex-col gap-6 h-full">
             {/* Top Row: Command Center & Map */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[400px]">
-                {/* Main Telemetry / Command Center */}
-                <Card className="lg:col-span-1 bg-[#161b22] border-gray-800 shadow-2xl flex flex-col justify-between overflow-hidden relative group">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Left Column: Command Center & Miles */}
+                <div className="flex flex-col gap-6 h-[400px]">
+                    {/* Main Telemetry / Command Center */}
+                    <Card className="bg-[#161b22] border-gray-800 shadow-2xl flex flex-col justify-between overflow-hidden relative group">
                     <div className="absolute top-0 right-0 p-4 opacity-50 group-hover:opacity-100 transition-opacity z-10">
                         <div className="flex items-center gap-2">
                             <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
@@ -83,7 +112,7 @@ export const OnTheRoadTab: React.FC<OnTheRoadTabProps> = ({
                                     <div className="text-sm text-blue-400 font-mono">{nextStop.venue || "Venue TBD"}</div>
                                     <div className="mt-3 flex items-center gap-2 text-xs text-gray-400 font-mono">
                                         <Clock size={12} />
-                                        <span>ETA: {new Date(nextStop.date).toLocaleDateString()} @ 16:00</span>
+                                        <span>ETA: {new Date(nextStop.date).toLocaleDateString('en-US')} @ 16:00</span>
                                     </div>
                                 </div>
                             ) : (
@@ -100,8 +129,37 @@ export const OnTheRoadTab: React.FC<OnTheRoadTabProps> = ({
                     </CardContent>
                 </Card>
 
+                    {/* Miles This Tour */}
+                    {totalMiles > 0 && (
+                        <Card className="bg-[#161b22] border-gray-800 shadow-2xl flex flex-col justify-between overflow-hidden relative group">
+                            <CardHeader>
+                                <CardTitle className="text-lg font-bold text-white flex items-center gap-2 mb-1">
+                                    <TrendingUp className="text-amber-500" size={20} />
+                                    Miles This Tour
+                                </CardTitle>
+                                <p className="text-xs text-gray-500 font-mono uppercase tracking-wider">Tax Deductible</p>
+                            </CardHeader>
+
+                            <CardContent className="flex-1 flex flex-col justify-center gap-4">
+                                <div className="bg-bg-dark p-4 rounded-lg border border-gray-800">
+                                    <div className="text-3xl font-mono text-white font-bold">{totalMiles.toLocaleString()} <span className="text-xs text-gray-600">mi</span></div>
+                                    <div className="text-sm text-amber-400 font-mono mt-2">≈ ${mileageCost.toFixed(2)} @ IRS rate</div>
+                                </div>
+
+                                <Button
+                                    onClick={() => setIsLoggingMiles(!isLoggingMiles)}
+                                    disabled={isLoggingMiles}
+                                    className="bg-amber-600 hover:bg-amber-700 w-full"
+                                >
+                                    {isLoggingMiles ? 'Logging to Finance...' : 'Log to Finance'}
+                                </Button>
+                            </CardContent>
+                        </Card>
+                    )}
+                </div>
+
                 {/* Map Display */}
-                <Card className="lg:col-span-2 bg-bg-dark border-gray-800 rounded-xl overflow-hidden relative shadow-2xl p-0">
+                <Card className="lg:col-span-2 bg-bg-dark border-gray-800 rounded-xl overflow-hidden relative shadow-2xl p-0 h-[400px]">
                     <TourMap
                         currentLocation={currentLocation}
                         // Map nearby places to markers
@@ -146,43 +204,74 @@ export const OnTheRoadTab: React.FC<OnTheRoadTabProps> = ({
                 <Card className="bg-[#161b22] border-gray-800 shadow-xl flex flex-col gap-4">
                     <CardHeader className="pb-0">
                         <CardTitle className="text-lg font-bold text-white flex items-center gap-2">
-                            <Fuel className="text-purple-500" size={18} />
+                            <Fuel className="text-green-500" size={18} />
                             Logistics Radar
                         </CardTitle>
                         <p className="text-xs text-gray-500 font-mono uppercase tracking-wider">Nearby Services</p>
                     </CardHeader>
 
                     <CardContent className="flex-1 flex flex-col gap-4 h-full">
-                        <div className="flex gap-2">
-                            <input
-                                type="text"
-                                placeholder={t('touring.hints.current_location')}
-                                value={currentLocation}
-                                onChange={(e) => setCurrentLocation(e.target.value)}
-                                className="flex-1 bg-bg-dark border border-gray-700 rounded-lg p-2 text-sm text-white focus:border-purple-500 outline-none"
-                            />
-                            <Button
-                                onClick={handleLocateMe}
-                                variant="secondary"
-                                className="px-3"
-                                title="Use Current Location"
-                            >
-                                <Crosshair size={18} />
-                            </Button>
-                            <Button
-                                onClick={handleFindGasStations}
-                                disabled={isFindingPlaces}
-                                className="bg-purple-500 hover:bg-purple-600"
-                            >
-                                {isFindingPlaces ? <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1 }}><Navigation size={18} /></motion.div> : <Navigation size={18} />}
-                            </Button>
+                        <div className="flex flex-col gap-2">
+                            <div className="flex gap-2">
+                                <input
+                                    type="text"
+                                    placeholder={t('touring.hints.current_location')}
+                                    value={currentLocation}
+                                    onChange={(e) => setCurrentLocation(e.target.value)}
+                                    className="flex-1 bg-bg-dark border border-gray-700 rounded-lg p-2 text-sm text-white focus:border-green-500 outline-none"
+                                />
+                                <Button
+                                    onClick={handleLocateMe}
+                                    variant="secondary"
+                                    className="px-3"
+                                    title="Use Current Location"
+                                >
+                                    <Crosshair size={18} />
+                                </Button>
+                                <Button
+                                    onClick={handleFindGasStations}
+                                    disabled={isFindingPlaces}
+                                    className="bg-green-500 hover:bg-green-600"
+                                >
+                                    {isFindingPlaces ? <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1 }}><Navigation size={18} /></motion.div> : <Navigation size={18} />}
+                                </Button>
+                            </div>
+
+                            {/* Place Type Selector & Quick Expense */}
+                            <div className="flex gap-2 flex-wrap items-center">
+                                {[
+                                    { type: 'gas_station', label: '⛽ Gas' },
+                                    { type: 'lodging', label: '🏨 Hotel' },
+                                    { type: 'restaurant', label: '🍽️ Food' },
+                                    { type: 'rest_area', label: '🛑 Rest' }
+                                ].map(({ type, label }) => (
+                                    <Button
+                                        key={type}
+                                        onClick={() => handleFindNearbyPlaces?.(type)}
+                                        disabled={isFindingPlaces}
+                                        variant="outline"
+                                        className="text-xs py-1 h-auto"
+                                    >
+                                        {label}
+                                    </Button>
+                                ))}
+                                <Button
+                                    onClick={() => setShowExpenseModal(true)}
+                                    variant="outline"
+                                    className="text-xs py-1 h-auto ml-auto text-amber-400 border-amber-400/30 hover:bg-amber-400/10"
+                                    title="Log an expense while on the road"
+                                >
+                                    <Receipt size={16} className="mr-1" />
+                                    Quick Expense
+                                </Button>
+                            </div>
                         </div>
 
                         <div className="flex-1 bg-bg-dark border border-gray-800 rounded-lg overflow-y-auto custom-scrollbar p-2">
                             {nearbyPlaces.length > 0 ? (
                                 <div className="space-y-2">
                                     {nearbyPlaces.map((place, i) => (
-                                        <div key={i} className="flex items-center justify-between p-3 bg-gray-800/30 rounded border border-gray-800 hover:border-purple-500/50 transition-colors">
+                                        <div key={i} className="flex items-center justify-between p-3 bg-gray-800/30 rounded border border-gray-800 hover:border-green-500/50 transition-colors">
                                             <div>
                                                 <div className="text-sm font-bold text-white">{place.name}</div>
                                                 <div className="text-xs text-gray-500">{place.vicinity}</div>
@@ -203,6 +292,14 @@ export const OnTheRoadTab: React.FC<OnTheRoadTabProps> = ({
                     </CardContent>
                 </Card>
             </div>
+
+            {/* Quick Expense Modal */}
+            {showExpenseModal && (
+                <ExpenseManualEntryModal
+                    onClose={() => setShowExpenseModal(false)}
+                    onAdd={handleQuickExpense}
+                />
+            )}
         </div>
     );
 };

@@ -111,7 +111,7 @@ export const ReleaseStatusCard: React.FC<ReleaseStatusCardProps> = ({
                         </h3>
                         <p className="text-sm text-gray-500 font-medium mb-1">{artistName}</p>
                         <p className="text-[10px] text-gray-600 uppercase tracking-wider">
-                            Released: {releaseDate ? new Date(releaseDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : 'TBD'}
+                            Released: {releaseDate ? new Date(releaseDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'TBD'}
                         </p>
                     </div>
 
@@ -181,12 +181,6 @@ export const ReleaseStatusCard: React.FC<ReleaseStatusCardProps> = ({
                                 <Share2 size={12} />
                             </button>
                         )}
-                        <button className="text-[11px] font-bold text-white hover:text-dept-distribution transition-colors ml-auto group/btn flex items-center gap-1 uppercase tracking-widest">
-                            VIEW DETAILS
-                            <svg className="w-3 h-3 transform transition-transform group-hover/btn:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                            </svg>
-                        </button>
                     </div>
                 </div>
             </div>

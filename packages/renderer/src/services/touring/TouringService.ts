@@ -17,11 +17,13 @@ import { TourItineraryDocument } from '@/types/firestore';
 import { z } from 'zod';
 import { logger } from '@/utils/logger';
 import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
+import { normalizeItinerary } from '@/modules/touring/itinerary';
 
 const ITINERARIES_COLLECTION = 'tour_itineraries';
 
 // Zod Schemas for Runtime Validation
 export const ItineraryStopSchema = z.object({
+    id: z.string().optional(),
     date: z.string(),
     city: z.string(),
     venue: z.string(),
@@ -36,7 +38,7 @@ export const ItinerarySchema = z.object({
     tourName: z.string(),
     stops: z.array(ItineraryStopSchema),
     totalDistance: z.string(),
-    estimatedBudget: z.string(),
+    estimatedBudget: z.string().optional(),
     createdAt: z.instanceof(Timestamp).optional(),
     updatedAt: z.instanceof(Timestamp).optional()
 });
@@ -104,11 +106,11 @@ export const TouringService = {
                 const data = docSnapshot.data() as TourItineraryDocument;
                 try {
                     const validated = ItinerarySchema.passthrough().parse(data);
-                    return {
+                    return normalizeItinerary({
                         ...validated,
                         id: docSnapshot.id,
                         createdAt: validated.createdAt
-                    } as Itinerary;
+                    } as Itinerary);
                 } catch (validationError: unknown) {
                     logger.warn(`Skipping invalid itinerary ${docSnapshot.id}:`, validationError);
                     return null;
@@ -123,20 +125,24 @@ export const TouringService = {
      */
     saveItinerary: async (itinerary: Omit<Itinerary, 'id'>) => {
         if (isFirebaseE2EMockEnabled()) {
-            const newItinerary: Itinerary = {
+            const newItinerary: Itinerary = normalizeItinerary({
                 ...itinerary,
                 id: `mock-itinerary-${Date.now()}`
-            };
+            });
             mockItineraries = [newItinerary, ...mockItineraries];
             notifyItineraryListeners();
             return;
         }
 
         // Validate input before sending to DB
-        const validated = ItinerarySchema.omit({ createdAt: true, updatedAt: true }).passthrough().parse(itinerary);
+        const validated = normalizeItinerary(
+            ItinerarySchema.omit({ createdAt: true, updatedAt: true }).passthrough().parse(itinerary) as Itinerary
+        );
+        const { estimatedBudget, ...rest } = validated;
 
         await addDoc(collection(db, ITINERARIES_COLLECTION), {
-            ...validated,
+            ...rest,
+            ...(estimatedBudget !== undefined ? { estimatedBudget } : {}),
             createdAt: serverTimestamp()
         });
     },

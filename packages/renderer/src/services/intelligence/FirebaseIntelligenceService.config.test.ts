@@ -103,6 +103,12 @@ vi.mock('./IntelligenceResponseCache', () => ({
 describe('FirebaseIntelligenceService Configuration Mapping', () => {
     let service: FirebaseIntelligenceService;
 
+    const latestBackendRequest = () => {
+        const calls = vi.mocked(fetch).mock.calls;
+        const call = [...calls].reverse().find(([url]) => String(url).includes('generateContentStream'));
+        return JSON.parse(call?.[1]?.body as string);
+    };
+
     beforeEach(() => {
         service = new FirebaseIntelligenceService();
         vi.clearAllMocks();
@@ -113,22 +119,17 @@ describe('FirebaseIntelligenceService Configuration Mapping', () => {
     });
 
     it('should map thinkingBudget and set includeThoughts in generateText', async () => {
-        const { getGenerativeModel } = await import('firebase/ai');
-
         await service.generateText('Prompt', 2048);
 
-        expect(getGenerativeModel).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
-            generationConfig: expect.objectContaining({
+        expect(latestBackendRequest().config).toMatchObject({
                 thinkingConfig: {
                     thinkingBudget: 2048,
                     includeThoughts: true
                 }
-            })
-        }));
+        });
     });
 
     it('should map thinkingBudget in generateStructuredData', async () => {
-        const { getGenerativeModel } = await import('firebase/ai');
         mockGenerateContent.mockResolvedValueOnce({
             response: { text: () => JSON.stringify({ success: true }) }
         });
@@ -136,22 +137,18 @@ describe('FirebaseIntelligenceService Configuration Mapping', () => {
 
         await service.generateStructuredData('Prompt', schema as Parameters<typeof service.generateStructuredData>[1], 1024);
 
-        expect(getGenerativeModel).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
-            generationConfig: expect.objectContaining({
+        expect(latestBackendRequest().config).toMatchObject({
                 thinkingConfig: {
                     thinkingBudget: 1024,
                     includeThoughts: true
                 }
-            })
-        }));
+        });
     });
 
     it('should configure dynamic retrieval in generateGroundedContent', async () => {
-        const { getGenerativeModel } = await import('firebase/ai');
-
         await service.generateGroundedContent('Search query', { dynamicThreshold: 0.7 });
 
-        expect(getGenerativeModel).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
+        expect(latestBackendRequest().config).toMatchObject({
             tools: expect.arrayContaining([
                 expect.objectContaining({
                     googleSearch: {},
@@ -163,18 +160,16 @@ describe('FirebaseIntelligenceService Configuration Mapping', () => {
                     }
                 })
             ])
-        }));
+        });
     });
 
     it('should use basic google search if no dynamic options provided', async () => {
-        const { getGenerativeModel } = await import('firebase/ai');
-
         await service.generateGroundedContent('Search query');
 
-        expect(getGenerativeModel).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
+        expect(latestBackendRequest().config).toMatchObject({
             tools: expect.arrayContaining([
                 { googleSearch: {}, googleSearchRetrieval: undefined }
             ])
-        }));
+        });
     });
 });

@@ -169,7 +169,8 @@ describe('CapturePreview', () => {
                 onTransmit={vi.fn()}
             />
         );
-        expect(screen.getByText('INGEST COMPLETE')).toBeInTheDocument();
+        // ISSUE-947: honest copy — it's a preview, not real OCR analysis.
+        expect(screen.getByText('PREVIEW READY')).toBeInTheDocument();
         expect(screen.getByText(/Transmit to Studio/)).toBeInTheDocument();
     });
 });

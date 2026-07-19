@@ -5,6 +5,7 @@ import ngrok from '@ngrok/ngrok';
 import { app as electronApp, BrowserWindow } from 'electron';
 import path from 'path';
 import crypto from 'crypto';
+import os from 'os';
 
 export interface RemoteConfig {
     port?: number;
@@ -35,18 +36,18 @@ class IndiiRemoteService {
     private password = '';
 
     constructor() {
-        console.info('[IndiiRemoteService] initialized');
+        console.log('[IndiiRemoteService] Service instantiated.');
     }
 
     public async start(config: RemoteConfig): Promise<string> {
         if (this.isRunning) {
-            console.info('[IndiiRemoteService] Already running at:', this.url);
+            console.log('[IndiiRemoteService] Remote service is already running on URL:', this.url);
             return this.url!;
         }
 
         // Mutex: if a startup is already in progress, return the pending promise
         if (this.pendingStart) {
-            console.info('[IndiiRemoteService] Startup already in progress, waiting...');
+            console.log('[IndiiRemoteService] Startup already in progress, awaiting...');
             return this.pendingStart;
         }
 
@@ -65,7 +66,6 @@ class IndiiRemoteService {
 
     private async _doStart(config: RemoteConfig): Promise<string> {
         try {
-            console.info('[IndiiRemoteService] Starting background infrastructure...');
             this.port = config.port || 3333;
             this.password = config.password;
 
@@ -112,13 +112,11 @@ class IndiiRemoteService {
             this.wss = new WebSocketServer({ server: this.server });
 
             this.wss.on('connection', (ws) => {
-                console.info('[IndiiRemoteService] Mobile client connected — awaiting auth...');
                 this.clients.add(ws);
 
                 // Require WS auth within 10 seconds
                 const authTimeout = setTimeout(() => {
                     if (!this.authenticatedClients.has(ws)) {
-                        console.warn('[IndiiRemoteService] Client failed to authenticate in time, disconnecting.');
                         ws.close(4001, 'Authentication timeout');
                     }
                 }, 10000);
@@ -134,7 +132,6 @@ class IndiiRemoteService {
                                 this.authenticatedClients.add(ws);
                                 clearTimeout(authTimeout);
                                 ws.send(JSON.stringify({ type: 'auth', success: true }));
-                                console.info('[IndiiRemoteService] Client authenticated via WS token.');
                                 this.broadcastStateToDesktop();
                                 return;
                             } else {
@@ -144,13 +141,12 @@ class IndiiRemoteService {
                         }
 
                         this.handleMobileMessage(ws, parsed);
-                    } catch (e) {
-                        console.error('[IndiiRemoteService] Failed to parse message', e);
+                    } catch (_e) {
+                        console.error('Error handling mobile message:', _e);
                     }
                 });
 
                 ws.on('close', () => {
-                    console.info('[IndiiRemoteService] Mobile client disconnected.');
                     clearTimeout(authTimeout);
                     this.clients.delete(ws);
                     this.broadcastStateToDesktop();
@@ -158,26 +154,34 @@ class IndiiRemoteService {
             });
 
             // 3. Start listening
-            const listenHost = config?.ngrokToken ? '0.0.0.0' : '127.0.0.1';
+            const listenHost = '0.0.0.0';
             await new Promise<void>((resolve) => {
                 this.server!.listen(this.port, listenHost, () => {
                     resolve();
                 });
             });
-            console.info(`[IndiiRemoteService] Local server listening on http://${listenHost}:${this.port}`);
 
             // 4. Start Ngrok Tunnel
             if (config?.ngrokToken) {
-                console.info(`[IndiiRemoteService] Establishing secure Ngrok tunnel...`);
                 const tunnel = await ngrok.connect({
                     addr: this.port,
                     authtoken: config.ngrokToken
                 });
                 this.url = tunnel.url();
-                console.info(`[IndiiRemoteService] GLOBAL ACCESS URL: ${this.url}`);
             } else {
-                this.url = `http://${listenHost}:${this.port}`;
-                console.warn(`[IndiiRemoteService] No Ngrok token provided. Running locally only at ${this.url}`);
+                // Determine LAN IP address for P2P connection fallback
+                const interfaces = os.networkInterfaces();
+                let localIp = '127.0.0.1';
+                for (const name of Object.keys(interfaces)) {
+                    for (const iface of interfaces[name] || []) {
+                        if (iface.family === 'IPv4' && !iface.internal) {
+                            localIp = iface.address;
+                            break;
+                        }
+                    }
+                    if (localIp !== '127.0.0.1') break;
+                }
+                this.url = `http://${localIp}:${this.port}`;
             }
 
             this.isRunning = true;
@@ -186,7 +190,6 @@ class IndiiRemoteService {
 
         } catch (error: unknown) {
             const msg = error instanceof Error ? error.message : String(error);
-            console.error('[IndiiRemoteService] Failed to start:', error);
             await this.stop();
             throw new IndiiRemoteError('START_FAILED', `Failed to start IndiiRemote: ${msg}`, error);
         }
@@ -200,19 +203,17 @@ class IndiiRemoteService {
             throw new IndiiRemoteError('INVALID_CONFIG', 'Password cannot be empty.');
         }
         this.password = newPassword;
-        console.info('[IndiiRemoteService] Password updated for new pairing session.');
     }
 
     public async stop(): Promise<void> {
-        console.info('[IndiiRemoteService] Shutting down remote service...');
         this.isRunning = false;
         this.url = null;
 
         // Disconnect Ngrok
         try {
             await ngrok.disconnect();
-        } catch (e) {
-            console.error('[IndiiRemoteService] Error disconnecting ngrok:', e);
+        } catch (_e) {
+            // ignore
         }
 
         // Close WebSocket clients
@@ -233,7 +234,6 @@ class IndiiRemoteService {
 
         this.expressApp = null;
         this.broadcastStateToDesktop();
-        console.info('[IndiiRemoteService] Shutdown complete.');
     }
 
     public getStatus() {
@@ -251,7 +251,6 @@ class IndiiRemoteService {
 
     // When the phone sends a command (e.g. Pause Render, Send Message to Agent)
     private handleMobileMessage(_ws: WebSocket, payload: Record<string, unknown>) {
-        console.info('[IndiiRemoteService] Received from phone:', payload);
 
         // Pass to Desktop IPC bus, so the React UI can listen and react!
         const windows = electronApp.isReady() ? BrowserWindow.getAllWindows() : [];
@@ -260,8 +259,8 @@ class IndiiRemoteService {
             if (!win.isDestroyed() && !win.webContents.isDestroyed()) {
                 try {
                     win.webContents.send('indii-remote:message-from-mobile', payload);
-                } catch (err) {
-                    console.warn('[IndiiRemoteService] Failed to send message to desktop:', err);
+                } catch (_err) {
+                    console.error('Error sending message to mobile:', _err);
                 }
             }
         }
@@ -284,8 +283,8 @@ class IndiiRemoteService {
             if (!win.isDestroyed() && !win.webContents.isDestroyed()) {
                 try {
                     win.webContents.send('indii-remote:status-updated', this.getStatus());
-                } catch (err) {
-                    console.warn('[IndiiRemoteService] Failed to broadcast state to desktop:', err);
+                } catch (_err) {
+                    console.error('Error broadcasting state to desktop:', _err);
                 }
             }
         }

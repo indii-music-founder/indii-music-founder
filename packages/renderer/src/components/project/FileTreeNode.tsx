@@ -14,6 +14,7 @@ import {
 import { FileNode } from '@/services/FileSystemService';
 import { cn } from '@/lib/utils';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
+import { createResourceAssetPayload, writeCreativeAssetDrag } from '@/services/creative/CreativeAssetDragService';
 
 // Reusing helper functions
 function getFileIcon(type?: FileNode['fileType']) {
@@ -28,7 +29,7 @@ function getFileIcon(type?: FileNode['fileType']) {
 
 function getFileIconColor(type?: FileNode['fileType']) {
     switch (type) {
-        case 'image': return 'text-purple-400';
+        case 'image': return 'text-green-400';
         case 'audio': return 'text-pink-400';
         case 'video': return 'text-blue-400';
         case 'document': return 'text-yellow-400';
@@ -119,7 +120,12 @@ export const FileTreeNode = memo(({
         }
         e.stopPropagation();
         e.dataTransfer.setData('nodeId', node.id);
-        e.dataTransfer.effectAllowed = 'move';
+        const assetPayload = createResourceAssetPayload(node);
+        if (assetPayload) {
+            writeCreativeAssetDrag(e.dataTransfer, assetPayload, 'resource-tree', 'copyMove');
+        } else {
+            e.dataTransfer.effectAllowed = 'move';
+        }
     };
 
     const handleDragOver = (e: React.DragEvent) => {

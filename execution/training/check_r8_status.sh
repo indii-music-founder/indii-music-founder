@@ -8,7 +8,7 @@ echo "----------------------------------------------------------------"
 # Get project ID from gcloud config if not specified
 PROJECT_ID=$(gcloud config get-value project 2>/dev/null)
 if [ -z "$PROJECT_ID" ]; then
-    PROJECT_ID="223837784072"
+    PROJECT_ID="148015878263"
 fi
 
 curl -s \

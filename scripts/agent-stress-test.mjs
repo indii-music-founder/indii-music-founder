@@ -13,6 +13,8 @@
  *   node scripts/agent-stress-test.mjs
  *   node scripts/agent-stress-test.mjs --agent finance     # Test single agent
  *   node scripts/agent-stress-test.mjs --quick             # 1 prompt per agent
+ *   node scripts/agent-stress-test.mjs --model-ladder      # Compare Lite/Fast/Pro
+ *   node scripts/agent-stress-test.mjs --models=a,b --loop=3
  *
  * Requires: VITE_API_KEY in .env
  */
@@ -42,7 +44,12 @@ if (!API_KEY) {
 }
 
 const genai = new GoogleGenAI({ apiKey: API_KEY });
-const BASE_MODEL = 'gemini-3-flash-preview';
+const DEFAULT_MODEL = process.env.AGENT_STRESS_MODEL || 'gemini-3-flash-preview';
+const MODEL_LADDER = [
+    'gemini-3.1-flash-lite',
+    'gemini-3-flash-preview',
+    'gemini-3.1-pro-preview',
+];
 
 // ─── Load Agent System Prompts from agents/*/prompt.md ───────────────────────
 function loadSystemPrompt(agentId) {
@@ -583,12 +590,71 @@ function gradeResponse(response, expectations, category = 'competency') {
     return grades;
 }
 
+function collectGradeFeedback(grade) {
+    return [
+        ...grade.domainCompetency.notes.map(n => `Domain: ${n}`),
+        ...grade.identityAdherence.notes.map(n => `Identity: ${n}`),
+        ...grade.guardrailCompliance.notes.map(n => `Guardrail: ${n}`),
+        ...grade.responseQuality.notes.map(n => `Quality: ${n}`),
+    ];
+}
+
+function buildReinforcementPrompt(originalPrompt, previousResponse, grade, iteration, maxIterations) {
+    const feedback = collectGradeFeedback(grade);
+    const feedbackText = feedback.length > 0
+        ? feedback.map(item => `- ${item}`).join('\n')
+        : `- Current score is ${grade.totalScore}/${grade.maxScore}; improve specificity, completeness, and direct satisfaction of the request.`;
+
+    return [
+        'You are retrying a failed test case. Use the judge feedback to produce a corrected final answer.',
+        `Iteration: ${iteration}/${maxIterations}`,
+        '',
+        'Original request:',
+        originalPrompt,
+        '',
+        'Previous answer:',
+        previousResponse.slice(0, 2500),
+        previousResponse.length > 2500 ? '[truncated]' : '',
+        '',
+        'Judge feedback:',
+        feedbackText,
+        '',
+        'Return only the improved final answer. Do not describe the revision process.',
+    ].filter(Boolean).join('\n');
+}
+
+async function runWithReinforcement(agentId, prompt, systemPrompt, expectations, category, model, maxIterations) {
+    const attempts = [];
+    let currentPrompt = prompt;
+
+    for (let iteration = 1; iteration <= maxIterations; iteration++) {
+        const response = await callAgent(agentId, currentPrompt, systemPrompt, model);
+
+        if (!response.success) {
+            attempts.push({ iteration, response, grade: null, passed: false });
+            return { success: false, finalResponse: response, finalGrade: null, attempts };
+        }
+
+        const grade = gradeResponse(response.text, expectations, category);
+        const passed = grade.totalScore >= 12;
+        attempts.push({ iteration, response, grade, passed });
+
+        if (passed || iteration === maxIterations) {
+            return { success: true, finalResponse: response, finalGrade: grade, attempts };
+        }
+
+        currentPrompt = buildReinforcementPrompt(prompt, response.text, grade, iteration + 1, maxIterations);
+    }
+
+    return { success: false, finalResponse: { success: false, text: '', error: 'No attempts executed' }, finalGrade: null, attempts };
+}
+
 // ─── Call Agent with System Prompt ───────────────────────────────────────────
-async function callAgent(agentId, prompt, systemPrompt, maxRetries = 2) {
+async function callAgent(agentId, prompt, systemPrompt, model = DEFAULT_MODEL, maxRetries = 2) {
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
         try {
             const result = await genai.models.generateContent({
-                model: BASE_MODEL,
+                model,
                 contents: [{ role: 'user', parts: [{ text: prompt }] }],
                 config: {
                     systemInstruction: systemPrompt,
@@ -634,20 +700,30 @@ async function runStressTest() {
     const args = process.argv.slice(2);
     const singleAgent = args.find(a => a.startsWith('--agent='))?.split('=')[1] || (args.includes('--agent') ? args[args.indexOf('--agent') + 1] : null);
     const quickMode = args.includes('--quick');
+    const modelArg = args.find(a => a.startsWith('--models='))?.split('=')[1];
+    const singleModelArg = args.find(a => a.startsWith('--model='))?.split('=')[1];
+    const modelsToTest = args.includes('--model-ladder')
+        ? MODEL_LADDER
+        : modelArg
+            ? modelArg.split(',').map(m => m.trim()).filter(Boolean)
+            : [singleModelArg || DEFAULT_MODEL];
+    const loopArg = args.find(a => a.startsWith('--loop='))?.split('=')[1];
+    const maxIterations = Math.max(1, Number.parseInt(loopArg || process.env.AGENT_STRESS_LOOP || '1', 10) || 1);
 
     console.log('');
     console.log('╔══════════════════════════════════════════════════════════════╗');
     console.log('║   🔥 indii LIVE AGENT STRESS TEST                           ║');
     console.log('║   Testing agent personas via system prompts + base model    ║');
-    console.log('║   Model: gemini-3-flash-preview                          ║');
+    console.log(`║   Models: ${modelsToTest.join(', ').slice(0, 48).padEnd(48)}║`);
+    console.log(`║   Loop iterations: ${String(maxIterations).padEnd(39)}║`);
     console.log('╚══════════════════════════════════════════════════════════════╝');
     console.log('');
 
     const agentsToTest = singleAgent ? [singleAgent] : AGENT_IDS;
     const maxPromptsPerAgent = quickMode ? 1 : 3;
 
-    console.log(`📋 Agents: ${agentsToTest.length} | Prompts/agent: ${maxPromptsPerAgent} | Total calls: ${agentsToTest.length * maxPromptsPerAgent}`);
-    console.log(`⏱️  Estimated time: ~${Math.ceil(agentsToTest.length * maxPromptsPerAgent * 10 / 60)} minutes`);
+    console.log(`📋 Agents: ${agentsToTest.length} | Prompts/agent: ${maxPromptsPerAgent} | Models: ${modelsToTest.length} | Max attempts/test: ${maxIterations}`);
+    console.log(`⏱️  Estimated time: ~${Math.ceil(agentsToTest.length * maxPromptsPerAgent * modelsToTest.length * maxIterations * 10 / 60)} minutes`);
     console.log('');
 
     const results = {};
@@ -673,65 +749,83 @@ async function runStressTest() {
         results[agentId] = { status: 'tested', tests: [], systemPromptLength: systemPrompt.length };
         const promptsToRun = prompts.slice(0, maxPromptsPerAgent);
 
-        for (let i = 0; i < promptsToRun.length; i++) {
-            const { name, prompt, expect: expectations, category } = promptsToRun[i];
-            totalTests++;
+        for (const model of modelsToTest) {
+            results[agentId].testsByModel ||= {};
+            results[agentId].testsByModel[model] = [];
 
-            process.stdout.write(`   [${i + 1}/${promptsToRun.length}] ${name} (${category})... `);
+            console.log(`   Model: ${model}`);
 
-            const startTime = Date.now();
-            const response = await callAgent(agentId, prompt, systemPrompt);
-            const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+            for (let i = 0; i < promptsToRun.length; i++) {
+                const { name, prompt, expect: expectations, category } = promptsToRun[i];
+                totalTests++;
 
-            if (!response.success) {
-                console.log(`❌ ERROR (${elapsed}s): ${response.error.substring(0, 120)}`);
-                totalFailed++;
-                results[agentId].tests.push({
+                process.stdout.write(`   [${i + 1}/${promptsToRun.length}] ${name} (${category})... `);
+
+                const startTime = Date.now();
+                const runResult = await runWithReinforcement(agentId, prompt, systemPrompt, expectations, category, model, maxIterations);
+                const response = runResult.finalResponse;
+                const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+
+                if (!runResult.success || !response.success || !runResult.finalGrade) {
+                    console.log(`❌ ERROR (${elapsed}s): ${(response.error || 'unknown').substring(0, 120)}`);
+                    totalFailed++;
+                    const errorRecord = {
+                        name,
+                        model,
+                        category,
+                        status: 'error',
+                        error: response.error,
+                        elapsed,
+                        grade: null,
+                        attempts: runResult.attempts.length,
+                    };
+                    results[agentId].tests.push(errorRecord);
+                    results[agentId].testsByModel[model].push(errorRecord);
+                    await new Promise(r => setTimeout(r, 3000));
+                    continue;
+                }
+
+                const grade = runResult.finalGrade;
+                const passed = grade.totalScore >= 12; // 60% threshold
+                if (passed) totalPassed++;
+                else totalFailed++;
+
+                const emoji = grade.letterGrade === 'A' ? '🏆' : grade.letterGrade === 'B' ? '✅' : grade.letterGrade === 'C' ? '⚠️' : '❌';
+                const recovered = runResult.attempts.length > 1 && passed ? ` recovered@${runResult.attempts.length}` : '';
+                console.log(`${emoji} ${grade.letterGrade} (${grade.totalScore}/${grade.maxScore}) — ${elapsed}s — ${response.text.length} chars${recovered}`);
+
+                // Show notes for C or below
+                if (grade.totalScore < 14) {
+                    const allNotes = [
+                        ...grade.domainCompetency.notes.map(n => `  📚 ${n}`),
+                        ...grade.identityAdherence.notes.map(n => `  🎭 ${n}`),
+                        ...grade.guardrailCompliance.notes.map(n => `  🛡️ ${n}`),
+                        ...grade.responseQuality.notes.map(n => `  📝 ${n}`),
+                    ];
+                    allNotes.forEach(n => console.log(n));
+                }
+
+                const record = {
                     name,
+                    model,
                     category,
-                    status: 'error',
-                    error: response.error,
+                    prompt: prompt.substring(0, 120) + '...',
+                    status: passed ? 'pass' : 'fail',
+                    grade,
                     elapsed,
-                    grade: null,
-                });
-                // Wait before next call
-                await new Promise(r => setTimeout(r, 3000));
-                continue;
-            }
+                    attempts: runResult.attempts.length,
+                    firstAttemptScore: runResult.attempts[0]?.grade?.totalScore ?? null,
+                    recovered: runResult.attempts.length > 1 && passed,
+                    responsePreview: grade.responsePreview,
+                    tokenUsage: response.usage,
+                };
+                results[agentId].tests.push(record);
+                results[agentId].testsByModel[model].push(record);
 
-            const grade = gradeResponse(response.text, expectations, category);
-            const passed = grade.totalScore >= 12; // 60% threshold
-            if (passed) totalPassed++;
-            else totalFailed++;
-
-            const emoji = grade.letterGrade === 'A' ? '🏆' : grade.letterGrade === 'B' ? '✅' : grade.letterGrade === 'C' ? '⚠️' : '❌';
-            console.log(`${emoji} ${grade.letterGrade} (${grade.totalScore}/${grade.maxScore}) — ${elapsed}s — ${response.text.length} chars`);
-
-            // Show notes for C or below
-            if (grade.totalScore < 14) {
-                const allNotes = [
-                    ...grade.domainCompetency.notes.map(n => `  📚 ${n}`),
-                    ...grade.identityAdherence.notes.map(n => `  🎭 ${n}`),
-                    ...grade.guardrailCompliance.notes.map(n => `  🛡️ ${n}`),
-                    ...grade.responseQuality.notes.map(n => `  📝 ${n}`),
-                ];
-                allNotes.forEach(n => console.log(n));
-            }
-
-            results[agentId].tests.push({
-                name,
-                category,
-                prompt: prompt.substring(0, 120) + '...',
-                status: passed ? 'pass' : 'fail',
-                grade,
-                elapsed,
-                responsePreview: grade.responsePreview,
-                tokenUsage: response.usage,
-            });
-
-            // Rate limiting between calls
-            if (i < promptsToRun.length - 1) {
-                await new Promise(r => setTimeout(r, 2500));
+                // Rate limiting between calls
+                if (i < promptsToRun.length - 1) {
+                    await new Promise(r => setTimeout(r, 2500));
+                }
             }
         }
 
@@ -741,6 +835,13 @@ async function runStressTest() {
         const agentAvg = gradedTests.length > 0 ? gradedTests.reduce((sum, t) => sum + t.grade.totalScore, 0) / gradedTests.length : 0;
         results[agentId].averageScore = agentAvg.toFixed(1);
         results[agentId].averageGrade = agentAvg >= 18 ? 'A' : agentAvg >= 16 ? 'B' : agentAvg >= 14 ? 'C' : agentAvg >= 12 ? 'D' : 'F';
+        results[agentId].modelSummary = Object.fromEntries(Object.entries(results[agentId].testsByModel || {}).map(([model, tests]) => {
+            const graded = tests.filter(t => t.grade);
+            const avg = graded.length > 0 ? graded.reduce((sum, t) => sum + t.grade.totalScore, 0) / graded.length : 0;
+            const passed = tests.filter(t => t.status === 'pass').length;
+            const recovered = tests.filter(t => t.recovered).length;
+            return [model, { averageScore: avg.toFixed(1), passed, total: tests.length, recovered }];
+        }));
 
         // Wait between agents
         await new Promise(r => setTimeout(r, 2000));
@@ -786,7 +887,8 @@ async function runStressTest() {
     try {
         let md = `# 🔥 Live Agent Stress Test Report\n\n`;
         md += `**Date:** ${new Date().toISOString()}\n`;
-        md += `**Model:** ${BASE_MODEL}\n`;
+        md += `**Models:** ${modelsToTest.join(', ')}\n`;
+        md += `**Max Iterations:** ${maxIterations}\n`;
         md += `**Method:** Base model + agent system prompts from \`agents/*/prompt.md\`\n`;
         md += `**Agents Tested:** ${testedAgents.length}\n`;
         md += `**Total Prompts:** ${totalTests}\n`;
@@ -825,7 +927,8 @@ async function runStressTest() {
                     md += `| Guardrail Compliance | ${test.grade.guardrailCompliance.score}/5 |\n`;
                     md += `| Response Quality | ${test.grade.responseQuality.score}/5 |\n`;
                     md += `| **Total** | **${test.grade.totalScore}/20 (${test.grade.letterGrade})** |\n\n`;
-                    md += `**Response time:** ${test.elapsed}s | **Length:** ${test.grade.responseLength} chars\n\n`;
+                    md += `**Model:** ${test.model}\n\n`;
+                    md += `**Response time:** ${test.elapsed}s | **Attempts:** ${test.attempts} | **Length:** ${test.grade.responseLength} chars\n\n`;
                     const allNotes = [
                         ...test.grade.domainCompetency.notes,
                         ...test.grade.identityAdherence.notes,

@@ -14,7 +14,8 @@ import { collection, doc, deleteDoc, onSnapshot, query, orderBy, setDoc } from '
 /*  Setlist Analytics — Live Performance Logger & PRO Royalty Tracker  */
 /* ================================================================== */
 
-const PRO_RATE_PER_SONG = 0.12; // $0.12 per song per attendee
+// EDUCATIONAL MODEL ONLY — Real royalties depend on: venue PRO licensing, actual PRO rates, work registrations, membership proof
+const PRO_RATE_PER_SONG = 0.12; // Simplified example: $0.12 per song per attendee
 
 export type SetlistCategory = 'original' | 'dj' | 'cover';
 export type TrackType = 'original' | 'remix' | 'cover' | 'other';
@@ -42,7 +43,7 @@ const CATEGORY_PRESETS = [
         id: 'original' as SetlistCategory,
         label: 'Original Set',
         icon: Sparkles,
-        description: 'Bands & Solo Acts playing original songs. Direct 100% PRO songwriter royalties.',
+        description: 'Bands & Solo Acts playing original songs. Royalties depend on venue licensing & PRO membership (see assumptions).',
         color: 'text-emerald-400 border-emerald-500/20 bg-emerald-500/5 hover:border-emerald-500/40'
     },
     {
@@ -56,7 +57,7 @@ const CATEGORY_PRESETS = [
         id: 'cover' as SetlistCategory,
         label: 'Cover / Tribute Set',
         icon: Music,
-        description: 'Live performance of covers. PRO songwriter royalties pay original authors.',
+        description: 'Live performance of covers. Royalties pay original authors (venue must be PRO-licensed).',
         color: 'text-amber-400 border-amber-500/20 bg-amber-500/5 hover:border-amber-500/40'
     }
 ] as const;
@@ -347,7 +348,7 @@ export function SetlistAnalytics() {
                         className="flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-[#FFE135] hover:bg-[#FFE135]/90 text-black font-black text-xs transition-all duration-200 border border-[#FFE135]/20 shadow-lg shadow-[#FFE135]/10"
                     >
                         <Download size={13} strokeWidth={3} />
-                        Export CSV for PRO Submission
+                        Export CSV (for manual PRO filing)
                     </button>
                 )}
             </div>
@@ -394,11 +395,11 @@ export function SetlistAnalytics() {
                     {[
                         { label: 'Total Logged Shows', value: totalShows.toString(), icon: Calendar, color: 'text-yellow-400 bg-yellow-500/5 border-yellow-500/10' },
                         { label: 'Total Songs Played', value: totalSongs.toString(), icon: Music, color: 'text-sky-400 bg-sky-500/5 border-sky-500/10' },
-                        { 
-                            label: category === 'cover' ? 'Est. Songwriter Payout' : 'Est. PRO Royalties', 
-                            value: `$${(category === 'cover' ? totalGrossSongwriterRoyalties : totalRoyalties).toFixed(2)}`, 
-                            icon: DollarSign, 
-                            color: 'text-emerald-400 bg-emerald-500/5 border-emerald-500/10' 
+                        {
+                            label: category === 'cover' ? 'Estimated Payout (educational)' : 'Estimated Royalties (educational)',
+                            value: `$${(category === 'cover' ? totalGrossSongwriterRoyalties : totalRoyalties).toFixed(2)}`,
+                            icon: DollarSign,
+                            color: 'text-emerald-400 bg-emerald-500/5 border-emerald-500/10'
                         },
                     ].map((stat, idx) => (
                         <div key={idx} className={`border rounded-xl p-3.5 flex items-center gap-3.5 bg-black/40 ${stat.color}`}>
@@ -559,7 +560,7 @@ export function SetlistAnalytics() {
                                     </p>
                                     <div className="text-[9px] text-gray-500 space-y-0.5 leading-normal">
                                         <p>
-                                            {songs.filter(s => s.title.trim()).length} tracks played to {parseInt(attendance, 10).toLocaleString()} attendees.
+                                            {songs.filter(s => s.title.trim()).length} tracks played to {parseInt(attendance, 10).toLocaleString('en-US')} attendees.
                                         </p>
                                         {category === 'dj' && (
                                             <p className="text-[8px] text-gray-600">
@@ -637,7 +638,7 @@ export function SetlistAnalytics() {
                                                     <p className={`text-sm font-black ${p.category === 'cover' ? 'text-amber-400' : 'text-emerald-400'}`}>
                                                         ${(p.category === 'cover' ? songwriterRoyalty : directRoyalty).toFixed(2)}
                                                     </p>
-                                                    <p className="text-[9px] text-gray-600 font-mono">{p.attendance.toLocaleString()} attendees</p>
+                                                    <p className="text-[9px] text-gray-600 font-mono">{p.attendance.toLocaleString('en-US')} attendees</p>
                                                 </div>
                                                 <button onClick={() => handleDeletePerformance(p.id)} className="text-gray-600 hover:text-red-400 p-1 rounded-md hover:bg-red-500/10 transition-all opacity-0 group-hover:opacity-100 ml-1">
                                                     <Trash2 size={13} />

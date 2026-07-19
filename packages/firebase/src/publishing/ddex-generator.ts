@@ -30,9 +30,37 @@ function formatISO8601Duration(seconds: number): string {
     return durationStr;
 }
 
+/** Escape a value for safe interpolation into XML content (ISSUE-859). */
+function escapeXml(value: unknown): string {
+    return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&apos;');
+}
+
+/**
+ * Configured DDEX sender party id (ISSUE-859). It must be the DPID issued to
+ * the active sender and supplied via runtime configuration. Compilation fails
+ * without it; this module never embeds or assumes an allocation.
+ */
+function requireSenderPartyId(): string {
+    const partyId = (process.env.DDEX_SENDER_PARTY_ID || '').trim();
+    if (!partyId) {
+        throw new HttpsError(
+            'failed-precondition',
+            'DDEX compilation blocked: DDEX_SENDER_PARTY_ID is not configured with the registered sender DPID.'
+        );
+    }
+    return partyId;
+}
+
 /**
  * Native DDEX Compilation Protocol
- * Generates XSD-validated DDEX XML for direct distribution to DSPs (Spotify, Apple Music).
+ * Generates structurally-checked DDEX ERN XML for direct distribution staging.
+ * NOTE: full XSD/profile validation is not performed here — output must pass
+ * conformance checks before live delivery.
  */
 export async function compileDDEXRelease(releaseId: string): Promise<string> {
     const releaseDoc = await db.collection('releases').doc(releaseId).get();
@@ -54,14 +82,20 @@ export async function compileDDEXRelease(releaseId: string): Promise<string> {
     }
     const durationXmlStr = formatISO8601Duration(durationRaw);
 
-    // Scaffolded DDEX XML generation (Electronic Release Notification Message 4.2)
+    const senderPartyId = requireSenderPartyId();
+
+    // DDEX XML generation (Electronic Release Notification Message 4.3 —
+    // ISSUE-784: was declaring the 4.2 namespace while the app told users
+    // "ERN 4.3". Matches the namespace already used by the canonical
+    // generator (IngestionParser.ts). All metadata values are XML-escaped
+    // (ISSUE-859).
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<ern:NewReleaseMessage xmlns:ern="http://ddex.net/xml/ern/42">
+<ern:NewReleaseMessage xmlns:ern="http://ddex.net/xml/ern/43">
     <MessageHeader>
-        <MessageThreadId>${data.releaseId}</MessageThreadId>
-        <MessageId>${data.releaseId}-${Date.now()}</MessageId>
+        <MessageThreadId>${escapeXml(data.releaseId)}</MessageThreadId>
+        <MessageId>${escapeXml(data.releaseId)}-${Date.now()}</MessageId>
         <MessageSender>
-            <PartyId>PADPIDA123456</PartyId>
+            <PartyId>${escapeXml(senderPartyId)}</PartyId>
             <PartyName>
                 <FullName>indii.music Core Engine</FullName>
             </PartyName>
@@ -71,10 +105,10 @@ export async function compileDDEXRelease(releaseId: string): Promise<string> {
     <ReleaseList>
         <Release>
             <ReleaseId>
-                <ICPN>${data.upc}</ICPN>
+                <ICPN>${escapeXml(data.upc)}</ICPN>
             </ReleaseId>
             <ReferenceTitle>
-                <TitleText>${data.title}</TitleText>
+                <TitleText>${escapeXml(data.title)}</TitleText>
             </ReferenceTitle>
             <ReleaseResourceReferenceList>
                 <ReleaseResourceReference>A1</ReleaseResourceReference>
@@ -82,7 +116,7 @@ export async function compileDDEXRelease(releaseId: string): Promise<string> {
             <ReleaseType>Album</ReleaseType>
             <ReleaseDetailsByTerritory>
                 <TerritoryCode>Worldwide</TerritoryCode>
-                <LabelName>${data.label}</LabelName>
+                <LabelName>${escapeXml(data.label)}</LabelName>
             </ReleaseDetailsByTerritory>
         </Release>
     </ReleaseList>
@@ -91,10 +125,10 @@ export async function compileDDEXRelease(releaseId: string): Promise<string> {
             <ResourceReference>A1</ResourceReference>
             <Type>Audio</Type>
             <SoundRecordingId>
-                <ISRC>${data.isrc}</ISRC>
+                <ISRC>${escapeXml(data.isrc)}</ISRC>
             </SoundRecordingId>
             <ReferenceTitle>
-                <TitleText>${data.title}</TitleText>
+                <TitleText>${escapeXml(data.title)}</TitleText>
             </ReferenceTitle>
             <Duration>${durationXmlStr}</Duration>
         </SoundRecording>
@@ -133,8 +167,9 @@ export async function dispatchPROPayload(releaseId: string): Promise<void> {
         releaseId,
         workTitle: data?.title || 'Unknown Work',
         iswc: data?.iswc || 'PENDING',
-        status: 'SUBMITTED',
-        submittedAt: new Date().toISOString(),
-        payload: proPayload
+        status: 'PREPARED',
+        preparedAt: new Date().toISOString(),
+        payload: proPayload,
+        requiresManualDelivery: true
     }, { merge: true });
 }

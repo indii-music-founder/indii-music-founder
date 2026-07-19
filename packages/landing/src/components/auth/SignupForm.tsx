@@ -5,7 +5,9 @@ import { Link } from 'react-router-dom';
 import { signUpWithEmail, getStudioUrl } from '@/lib/auth';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
+import { flushFounderFunnelQueue, trackFounderFunnelEvent } from '@/lib/founderFunnel';
 import { Loader2 } from 'lucide-react';
+import FounderPreviewContext from './FounderPreviewContext';
 
 export default function SignupForm() {
     // const router = useRouter();
@@ -15,7 +17,20 @@ export default function SignupForm() {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
+    // Detect founder traffic via ?source=founder query param
+    const isFounderSource = typeof window !== 'undefined' &&
+        (window.location.search.includes('source=founder') ||
+         window.location.hostname.startsWith('founder'));
+    const sourceSuffix = isFounderSource ? '?source=founder' : '';
 
+    useEffect(() => {
+        flushFounderFunnelQueue();
+        if (isFounderSource) {
+            void trackFounderFunnelEvent('founder_auth_viewed', {
+                variant: 'signup',
+            });
+        }
+    }, [isFounderSource]);
 
     useEffect(() => {
         // Skip if Firebase not initialized (SSR/build time)
@@ -36,7 +51,20 @@ export default function SignupForm() {
         setError(null);
 
         try {
-            await signUpWithEmail(email, password, displayName);
+            if (isFounderSource) {
+                await trackFounderFunnelEvent('founder_auth_submitted', {
+                    variant: 'signup',
+                });
+            }
+            const user = await signUpWithEmail(email, password, displayName);
+            if (isFounderSource) {
+                await trackFounderFunnelEvent('founder_auth_completed', {
+                    variant: 'signup',
+                }, {
+                    userId: user.uid,
+                    email: user.email,
+                });
+            }
             // Redirect to studio app
             window.location.href = getStudioUrl();
         } catch (err: unknown) {
@@ -53,11 +81,18 @@ export default function SignupForm() {
     return (
         <div className="w-full max-w-md space-y-8 bg-black/50 p-8 rounded-2xl border border-white/10 backdrop-blur-xl">
             <div className="text-center">
-                <h2 className="text-3xl font-bold tracking-tight text-white">Create account</h2>
+                <h2 className="text-3xl font-bold tracking-tight text-white">
+                    {isFounderSource ? 'Create Your Founder Preview Account' : 'Create account'}
+                </h2>
                 <p className="mt-2 text-sm text-gray-400">
-                    Start your journey with indii
+                    {isFounderSource
+                        ? 'Create your founder preview account to enter the guided walkthrough.'
+                        : 'Start your journey with indii'
+                    }
                 </p>
             </div>
+
+            <FounderPreviewContext variant="signup" />
 
             <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
                 <div className="space-y-4">
@@ -145,7 +180,7 @@ export default function SignupForm() {
                 <div className="text-center text-sm">
                     <span className="text-gray-500">Already have an account?</span>{' '}
                     <Link
-                        to="/login"
+                        to={`/login${sourceSuffix}`}
                         className="font-medium text-purple-400 hover:text-purple-300 transition-colors"
                     >
                         Sign in

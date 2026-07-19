@@ -1,27 +1,26 @@
 /**
- * SpeechGenerator — Extracted TTS generation logic from FirebaseIntelligenceService.
+ * SpeechGenerator — backend-only TTS generation.
  *
- * Handles text-to-speech via the gemini-2.5-pro-preview-tts model.
- * Supports both Firebase Autonomous SDK (normal mode) and direct @google/genai
- * SDK (fallback mode).
+ * Browser-side Firebase AI is disabled. Speech routes through the secured
+ * generateAudioV3 callable Cloud Function, which holds Google credentials on
+ * the server and atomically persists every successful result.
  */
 
-import { getGenerativeModel } from 'firebase/ai';
-import type { InlineDataPart as FirebaseInlineDataPart } from 'firebase/ai';
-import { getFirebaseAI } from '@/services/firebase';
+import { httpsCallable } from 'firebase/functions';
+import { functions } from '@/services/firebase';
 import type { IntelligenceContext } from '../IntelligenceContext';
-import type { GenerationConfig, ContentPart, GenerateSpeechResponse } from '@/shared/types/ai.dto';
+import type { GenerateSpeechResponse } from '@/shared/types/ai.dto';
 import { AppErrorCode, AppException } from '@/shared/types/errors';
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
-import { isAppCheckError } from '../appcheck';
-import { logger } from '@/utils/logger';
+import { resolveStorageUrl } from '@/services/storage/resolveStorageUrl';
 
-/**
- * Generate speech from text using gemini-2.5-pro-preview-tts.
- *
- * Supports both Firebase Autonomous SDK (with App Check) and direct @google/genai
- * SDK (fallback mode when App Check is unavailable).
- */
+interface GenerateSpeechCallableResponse {
+    mimeType?: string;
+    jobId?: string;
+    libraryAssetId?: string;
+    resultUri?: string;
+}
+
 export async function generateSpeech(
     ctx: IntelligenceContext,
     text: string,
@@ -31,102 +30,51 @@ export async function generateSpeech(
     if (!text || text.trim().length === 0) {
         throw new AppException(AppErrorCode.INVALID_ARGUMENT, 'Cannot generate speech for empty text');
     }
+    if (modelOverride && modelOverride !== INTELLIGENCE_MODELS.AUDIO.TTS) {
+        throw new AppException(
+            AppErrorCode.INVALID_ARGUMENT,
+            `Unsupported speech model override: ${modelOverride}`
+        );
+    }
 
     return ctx.mediaBreaker.execute(async () => {
         await ctx.ensureInitialized();
 
-        const modelName = modelOverride || INTELLIGENCE_MODELS.AUDIO.PRO;
-
-        const config: GenerationConfig = {
-            responseModalities: ['AUDIO'],
-            speechConfig: {
-                voiceConfig: {
-                    prebuiltVoiceConfig: {
-                        voiceName: voice
-                    }
-                }
-            }
-        };
-
-        // FALLBACK MODE: Use direct Gemini SDK (new @google/genai)
-        if (ctx.useFallbackMode && ctx.fallbackClient) {
-            try {
-                const result = await ctx.fallbackClient.models.generateContent({
-                    model: modelName,
-                    contents: [{ role: 'user', parts: [{ text }] }] as unknown as Record<string, unknown>[],
-                    config: config as unknown as Record<string, unknown>
-                });
-
-                const candidates = result.candidates;
-
-                if (!candidates || candidates.length === 0) {
-                    throw new Error('No candidates returned from TTS fallback model');
-                }
-
-                const parts = (candidates[0]!.content?.parts || []) as ContentPart[];
-                const audioPart = parts.find(p => 'inlineData' in p && p.inlineData?.mimeType.startsWith('audio/'));
-
-                if (!audioPart || !('inlineData' in audioPart)) {
-                    throw new Error('No audio data found in fallback response parts');
-                }
-
-                return {
-                    audio: {
-                        inlineData: {
-                            mimeType: audioPart.inlineData.mimeType,
-                            data: audioPart.inlineData.data
-                        }
-                    }
-                };
-            } catch (error: unknown) {
-                throw ctx.handleError(error);
-            }
-        }
-
-        // NORMAL MODE: Use Firebase Autonomous SDK
-        const firebaseAI = getFirebaseAI();
-
-        // Auto-switch to fallback if Firebase Autonomous is missing
-        if (!firebaseAI) {
-            logger.warn('[SpeechGenerator] Firebase Autonomous not available for speech, switching to fallback');
-            await ctx.initializeFallbackMode();
-            return generateSpeech(ctx, text, voice, modelOverride);
-        }
-
-        const modelCallback = getGenerativeModel(firebaseAI, {
-            model: modelName,
-            generationConfig: config as unknown as Record<string, unknown>
-        });
+        const generateSpeechFn = httpsCallable<
+            { prompt: string; voice: string; requestId: string },
+            GenerateSpeechCallableResponse
+        >(functions, 'generateAudioV3');
 
         try {
-            const result = await modelCallback.generateContent(text);
-            const candidates = result.response.candidates;
+            const result = await generateSpeechFn({
+                prompt: text,
+                voice,
+                requestId: crypto.randomUUID(),
+            });
 
-            if (!candidates || candidates.length === 0) {
-                throw new Error('No candidates returned from TTS model');
+            if (!result.data.resultUri || !result.data.libraryAssetId) {
+                throw new AppException(AppErrorCode.INTERNAL_ERROR, 'Speech backend returned no durable audio receipt');
             }
-
-            const audioPart = candidates[0]!.content?.parts?.find(p => p && 'inlineData' in p && p.inlineData?.mimeType.startsWith('audio/')) as FirebaseInlineDataPart | undefined;
-
-            if (!audioPart || !audioPart.inlineData) {
-                throw new Error('No audio data found in response parts');
+            const playbackUrl = await resolveStorageUrl(result.data.resultUri);
+            if (playbackUrl.startsWith('gs://')) {
+                throw new AppException(AppErrorCode.INTERNAL_ERROR, 'Stored speech could not be resolved for playback');
             }
 
             return {
                 audio: {
-                    inlineData: {
-                        mimeType: audioPart.inlineData.mimeType,
-                        data: audioPart.inlineData.data
+                    mimeType: result.data.mimeType || 'audio/wav',
+                    playbackUrl,
+                },
+                ...(result.data.libraryAssetId && result.data.resultUri
+                    ? {
+                        persistedAsset: {
+                            id: result.data.libraryAssetId,
+                            storageUrl: result.data.resultUri,
+                        },
                     }
-                }
+                    : {}),
             };
         } catch (error: unknown) {
-            // If we hit an App Check error during normal mode, switch to fallback
-            if (isAppCheckError(error) && !ctx.useFallbackMode) {
-                logger.warn('[SpeechGenerator] App Check error during speech, switching to fallback mode');
-                await ctx.initializeFallbackMode();
-                return generateSpeech(ctx, text, voice, modelOverride);
-            }
             throw ctx.handleError(error);
         }
     });

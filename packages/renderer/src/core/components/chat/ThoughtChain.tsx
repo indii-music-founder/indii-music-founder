@@ -20,7 +20,7 @@ export const ThoughtChain = memo(({ thoughts, messageId, compact }: ThoughtChain
 
     return (
         <div className={compact ? "mb-2 relative" : "mb-5 relative"}>
-            <div className={cn("absolute left-0 w-px bg-linear-to-b from-purple-500/30 to-transparent", compact ? "top-6 bottom-0" : "top-8 bottom-0")} />
+            <div className={cn("absolute left-0 w-px bg-linear-to-b from-green-500/30 to-transparent", compact ? "top-6 bottom-0" : "top-8 bottom-0")} />
             <button
                 id={buttonId}
                 onClick={() => setIsOpen(!isOpen)}
@@ -31,7 +31,7 @@ export const ThoughtChain = memo(({ thoughts, messageId, compact }: ThoughtChain
                     compact ? "mb-2 h-6 px-2" : "mb-3 h-8 px-3"
                 )}
             >
-                <div className={cn("w-1.5 h-1.5 rounded-full bg-purple-500 shadow-[0_0_8px_rgba(168,85,247,0.8)]", isOpen ? 'animate-pulse' : '')} />
+                <div className={cn("w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_8px_rgba(168,85,247,0.8)]", isOpen ? 'animate-pulse' : '')} />
                 <span className={cn("font-bold text-gray-400 uppercase tracking-[0.15em] flex items-center gap-1.5", compact ? "text-[8px]" : "text-[10px]")}>
                     <TextEffect per='char' preset='fade'>Cognitive Logic</TextEffect>
                 </span>
@@ -61,7 +61,7 @@ export const ThoughtChain = memo(({ thoughts, messageId, compact }: ThoughtChain
                                             ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
                                             : thought.type === 'error'
                                                 ? 'bg-red-500/20 text-red-300 border border-red-500/30'
-                                                : 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
+                                                : 'bg-green-500/20 text-green-300 border border-green-500/30'
                                             }`}>
                                             {thought.toolName}
                                         </span>

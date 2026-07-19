@@ -13,16 +13,116 @@ import { visualizer } from 'rollup-plugin-visualizer';
  * That returned HTML where the browser expected a script module, producing a
  * spinner that never resolves because the entry never executed.
  */
-import { defineConfig } from 'vite';
+import { defineConfig, type ResolvedConfig, type Plugin } from 'vite';
+import type { Connect } from 'vite';
 import { resolve } from 'path';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 
 const repoRoot = resolve(__dirname, '..', '..');
 
+const envSanitizerPlugin = (): Plugin => ({
+    name: 'env-sanitizer',
+    configResolved(config: ResolvedConfig) {
+        const secrets = [
+            'VITE_PINATA_SECRET',
+            'VITE_PINATA_JWT',
+            'VITE_DOCUSIGN_ACCESS_TOKEN',
+            'VITE_NGROK_AUTHTOKEN',
+            'VITE_PRINTFUL_API_KEY',
+            'VITE_MEM0_API_KEY',
+            'VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN',
+        ];
+        for (const key of secrets) {
+            if (key in config.env) {
+                delete config.env[key];
+            }
+        }
+        // ISSUE-765(d): any new Google API key (identifier, not a secret —
+        // see CLAUDE.md §3.1) must be added here explicitly, or the AIza
+        // sweep below silently strips it from every build.
+        const whitelist = new Set([
+            'VITE_FIREBASE_API_KEY',
+            'VITE_GOOGLE_MAPS_API_KEY',
+            'VITE_GOOGLE_MAPS_KEY',
+            'VITE_GOOGLE_OAUTH_CLIENT_ID',
+            'VITE_YOUTUBE_API_KEY',
+        ]);
+        for (const key of Object.keys(config.env)) {
+            const val = config.env[key];
+            if (typeof val === 'string' && val.includes('AIza') && !whitelist.has(key)) {
+                delete config.env[key];
+            }
+        }
+    }
+});
+
+const apiFallbackPlugin = (): Plugin => ({
+    name: 'api-fallback',
+    configureServer(server: { middlewares: Connect.Server }) {
+        server.middlewares.use((req: Connect.IncomingMessage, res: import('node:http').ServerResponse, next: Connect.NextFunction) => {
+            const url = req.url;
+            if (url && (url === '/api' || url.startsWith('/api/') || url.startsWith('/api?'))) {
+                res.statusCode = 404;
+                res.setHeader('Content-Type', 'application/json');
+                res.end(JSON.stringify({
+                    success: false,
+                    error: {
+                        code: 'NOT_FOUND',
+                        message: `API endpoint ${url} not found on local dev server. Use Firebase emulator or local main process instead.`
+                    }
+                }));
+                return;
+            }
+            next();
+        });
+    },
+    configurePreviewServer(server: { middlewares: Connect.Server }) {
+        server.middlewares.use((req: Connect.IncomingMessage, res: import('node:http').ServerResponse, next: Connect.NextFunction) => {
+            const url = req.url;
+            if (url && (url === '/api' || url.startsWith('/api/') || url.startsWith('/api?'))) {
+                res.statusCode = 404;
+                res.setHeader('Content-Type', 'application/json');
+                res.end(JSON.stringify({
+                    success: false,
+                    error: {
+                        code: 'NOT_FOUND',
+                        message: `API endpoint ${url} not found on built preview server. Use Firebase hosting API routing in production.`
+                    }
+                }));
+                return;
+            }
+            next();
+        });
+    }
+});
+
 export default defineConfig({
     root: __dirname,
     envDir: repoRoot,
+    envPrefix: [
+        'VITE_E2E',
+        'VITE_FIREBASE_',
+        'VITE_VERTEX_',
+        'VITE_FUNCTIONS_',
+        'VITE_USE_',
+        'VITE_INGESTION_',
+        'VITE_ENABLE_',
+        'VITE_SHOW_',
+        'VITE_SKIP_',
+        'VITE_A0_',
+        'VITE_APP_TARGET',
+        'VITE_APP_VERSION',
+        'VITE_RAG_',
+        'VITE_ADMIN_PIN',
+        'VITE_WALLETCONNECT_PROJECT_ID',
+        'VITE_EXPOSE_',
+        'VITE_GOOGLE_',
+        'VITE_META_',
+        'VITE_SPOTIFY_',
+        'VITE_TIKTOK_',
+        'VITE_YOUTUBE_',
+    ],
     plugins: [
         react(),
         tailwindcss(),
@@ -33,6 +133,8 @@ export default defineConfig({
             gzipSize: true,
             brotliSize: true,
         }),
+        envSanitizerPlugin(),
+        apiFallbackPlugin()
     ],
     resolve: {
         alias: {
@@ -49,20 +151,57 @@ export default defineConfig({
         port: 4243,
         host: 'localhost',
         strictPort: true,
-        // SPA fallback: any non-asset URL falls back to index.html. Vite already
-        // does this for the root, but explicit is safer if router routes change.
         fs: {
-            // Permit reading files outside the renderer package — the alias
-            // targets above point into the monorepo root.
             allow: [repoRoot],
+        },
+        watch: {
+            ignored: [
+                '**/node_modules/**',
+                '**/.git/**',
+                '**/.agent/**',
+                '**/dist/**',
+                '**/artifacts/**',
+            ],
         },
     },
     build: {
+        modulePreload: {
+            resolveDependencies(filename, deps) {
+                return deps.filter(dep => {
+                    const isHeavy = dep.includes('vendor-three') ||
+                                    dep.includes('vendor-fabric') ||
+                                    dep.includes('vendor-audio') ||
+                                    dep.includes('vendor-recharts') ||
+                                    dep.includes('vendor-video') ||
+                                    dep.includes('vendor-pdfjs') ||
+                                    dep.includes('vendor-tesseract') ||
+                                    dep.includes('vendor-reactflow') ||
+                                    dep.includes('vendor-yjs') ||
+                                    dep.includes('vendor-remotion');
+                    return !isHeavy;
+                });
+            }
+        },
         outDir: resolve(repoRoot, 'dist/renderer'),
         sourcemap: true,
         chunkSizeWarningLimit: 2500,
+        // ISSUE-548: Strip console.log/debug/info and debugger statements in production.
+        // Agent system prompt strings ("You are a ...") are functional feature code,
+        // not accidental leakage — they are intentionally client-side for offline use.
+        // Stripping console output removes runtime state exposure without breaking features.
+        minify: 'esbuild',
+        // esbuild drop options are passed via the vite esbuild config at top level
+        // (kept here for documentation; actual drop config lives below)
         rollupOptions: {
-            external: ['@remotion/renderer', '@remotion/cloudrun', '@remotion/cloudrun/client'],
+            external: [
+                '@remotion/renderer',
+                '@remotion/cloudrun',
+                '@remotion/cloudrun/client',
+                'fs',
+                'path',
+                'child_process',
+                'util'
+            ],
             input: {
                 index: resolve(__dirname, 'index.html'),
             },
@@ -90,6 +229,9 @@ export default defineConfig({
                     if (pkg === 'firebase' || pkg.startsWith('@firebase/')) {
                         return 'vendor-firebase';
                     }
+                    if (pkg === 'video.js' || pkg.startsWith('@videojs/') || pkg.startsWith('videojs-')) {
+                        return 'vendor-video';
+                    }
                     if (pkg === 'lucide-react') {
                         return 'vendor-lucide';
                     }
@@ -107,10 +249,6 @@ export default defineConfig({
                     }
                     if (pkg === 'remotion' || pkg.startsWith('@remotion/')) {
                         return 'vendor-remotion';
-                    }
-                    // Google Gen AI SDK
-                    if (pkg === '@google/genai') {
-                        return 'vendor-genai';
                     }
                     // Internationalization (i18n)
                     if (pkg === 'i18next' || pkg === 'react-i18next' || pkg.startsWith('i18next-')) {
@@ -145,6 +283,10 @@ export default defineConfig({
                 }
             }
         },
+    },
+    // ISSUE-548: Strip console/debugger statements in production (top-level esbuild option).
+    esbuild: {
+        drop: ['console', 'debugger'],
     },
     test: {
         environment: 'jsdom',

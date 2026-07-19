@@ -3,6 +3,7 @@ import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { useToast } from '@/core/context/ToastContext';
 import { Sparkles, Tags } from 'lucide-react';
+import { parseColor } from '@/utils/colorUtils';
 
 interface ImageSubMenuProps {
     onShowBrandAssets: () => void;
@@ -14,20 +15,33 @@ interface ImageSubMenuProps {
 export default function ImageSubMenu({ onShowBrandAssets, showBrandAssets, onTogglePromptBuilder, showPromptBuilder }: ImageSubMenuProps) {
     const {
         generatedHistory,
+        currentProjectId,
         setSelectedItem,
         setActiveReferenceImage,
+        setVideoInputs,
+        setGenerationMode,
         setViewMode,
         setCreativePrompt,
         userProfile
     } = useStore(useShallow(state => ({
         generatedHistory: state.generatedHistory,
+        currentProjectId: state.currentProjectId,
         setSelectedItem: state.setSelectedItem,
         setActiveReferenceImage: state.setActiveReferenceImage,
+        setVideoInputs: state.setVideoInputs,
+        setGenerationMode: state.setGenerationMode,
         setViewMode: state.setViewMode,
         setCreativePrompt: state.setCreativePrompt,
         userProfile: state.userProfile
     })));
     const toast = useToast();
+
+    // ISSUE-776: Edit/Reference/Remix must target the latest IMAGE in the
+    // ACTIVE project, not just generatedHistory[0] (which can be another
+    // project's item or a video).
+    const latestImage = generatedHistory.find(
+        item => item.type === 'image' && item.projectId === currentProjectId
+    ) ?? null;
 
     return (
         <div className="flex items-center gap-4 overflow-x-auto custom-scrollbar w-full">
@@ -37,40 +51,52 @@ export default function ImageSubMenu({ onShowBrandAssets, showBrandAssets, onTog
             >
                 Gallery
             </button>
-            <button className="text-xs text-purple-400 font-bold px-2 py-1 bg-purple-900/20 rounded">Image</button>
+            <span className="text-xs text-green-400 font-bold px-2 py-1 bg-green-900/20 rounded">Image</span>
 
             <button
                 onClick={onTogglePromptBuilder}
-                className={`text-xs px-2 py-1 rounded transition-colors flex items-center gap-1 ${showPromptBuilder ? 'bg-purple-500/20 text-purple-300' : 'text-gray-400 hover:text-white'}`}
+                className={`text-xs px-2 py-1 rounded transition-colors flex items-center gap-1 ${showPromptBuilder ? 'bg-green-500/20 text-green-300' : 'text-gray-400 hover:text-white'}`}
             >
                 <Tags size={12} /> Chips
             </button>
 
             <button
-                onClick={() => generatedHistory.length > 0 && setSelectedItem(generatedHistory[0] ?? null)}
-                className="text-xs text-gray-400 hover:text-white px-2 py-1 transition-colors"
+                onClick={() => latestImage && setSelectedItem(latestImage)}
+                disabled={!latestImage}
+                title={latestImage ? undefined : 'No image in this project yet'}
+                className="text-xs text-gray-400 hover:text-white px-2 py-1 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:text-gray-400"
             >
                 Edit
             </button>
             <button
                 onClick={() => {
-                    if (generatedHistory.length > 0) {
-                        setActiveReferenceImage(generatedHistory[0] ?? null);
-                        toast.success("Latest image set as reference");
+                    if (latestImage) {
+                        // Direct image generation consumes the shared ingredient list.
+                        // Keep the legacy selection for visual context, but write the
+                        // actual generator input and open the active generation surface.
+                        setActiveReferenceImage(latestImage);
+                        setVideoInputs({ ingredients: [latestImage] });
+                        setGenerationMode('image');
+                        setViewMode('direct');
+                        toast.success("Latest image added as a generation reference");
                     }
                 }}
-                className="text-xs text-gray-400 hover:text-white px-2 py-1 transition-colors"
+                disabled={!latestImage}
+                title={latestImage ? undefined : 'No image in this project yet'}
+                className="text-xs text-gray-400 hover:text-white px-2 py-1 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:text-gray-400"
             >
                 Reference
             </button>
             <button
                 onClick={() => {
-                    if (generatedHistory.length > 0) {
-                        setCreativePrompt(generatedHistory[0]!.prompt);
+                    if (latestImage) {
+                        setCreativePrompt(latestImage.prompt);
                         toast.success("Prompt copied from latest image");
                     }
                 }}
-                className="text-xs text-gray-400 hover:text-white px-2 py-1 transition-colors"
+                disabled={!latestImage}
+                title={latestImage ? undefined : 'No image in this project yet'}
+                className="text-xs text-gray-400 hover:text-white px-2 py-1 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:text-gray-400"
             >
                 Remix
             </button>
@@ -99,23 +125,26 @@ export default function ImageSubMenu({ onShowBrandAssets, showBrandAssets, onTog
                 </button>
                 {(userProfile.brandKit?.colors?.length || 0) > 0 && !showBrandAssets && (
                     <div className="flex gap-1">
-                        {userProfile.brandKit?.colors?.map((color, i) => (
-                            <button
-                                key={i}
-                                type="button"
-                                aria-label={`Copy color ${color}`}
-                                className="w-4 h-4 rounded-full border border-gray-600 hover:scale-110 cursor-pointer focus-visible:ring-2 focus-visible:ring-yellow-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a1a1a] transition-transform relative group outline-none"
-                                style={{ backgroundColor: color }}
-                                onClick={() => {
-                                    navigator.clipboard.writeText(color);
-                                    toast.success(`Copied ${color}`);
-                                }}
-                            >
-                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-1.5 py-0.5 bg-black text-white text-[9px] rounded opacity-0 group-hover:opacity-100 whitespace-nowrap pointer-events-none">
-                                    {color}
-                                </div>
-                            </button>
-                        ))}
+                        {userProfile.brandKit?.colors?.map((color, i) => {
+                            const parsed = parseColor(color);
+                            return (
+                                <button
+                                    key={i}
+                                    type="button"
+                                    aria-label={`Copy color ${parsed.label}`}
+                                    className="w-4 h-4 rounded-full border border-gray-600 hover:scale-110 cursor-pointer focus-visible:ring-2 focus-visible:ring-yellow-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a1a1a] transition-transform relative group outline-none"
+                                    style={{ backgroundColor: parsed.hex }}
+                                    onClick={() => {
+                                        navigator.clipboard.writeText(parsed.hex);
+                                        toast.success(`Copied ${parsed.label} (${parsed.hex})`);
+                                    }}
+                                >
+                                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-1.5 py-0.5 bg-black text-white text-[9px] rounded opacity-0 group-hover:opacity-100 whitespace-nowrap pointer-events-none">
+                                        {parsed.label}
+                                    </div>
+                                </button>
+                            );
+                        })}
                     </div>
                 )}
             </div>

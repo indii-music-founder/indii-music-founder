@@ -5,6 +5,7 @@
 export interface TextPart {
     text: string;
     thoughtSignature?: string;
+    [key: string]: unknown;
 }
 
 export interface InlineDataPart {
@@ -13,6 +14,7 @@ export interface InlineDataPart {
         data: string;
     };
     thoughtSignature?: string;
+    [key: string]: unknown;
 }
 
 export interface FunctionCallPart {
@@ -21,6 +23,7 @@ export interface FunctionCallPart {
         args: Record<string, unknown>;
     };
     thoughtSignature?: string;
+    [key: string]: unknown;
 }
 
 export interface FunctionResponsePart {
@@ -29,9 +32,19 @@ export interface FunctionResponsePart {
         response: Record<string, unknown>;
     };
     thoughtSignature?: string;
+    [key: string]: unknown;
 }
 
-export type ContentPart = TextPart | InlineDataPart | FunctionCallPart | FunctionResponsePart;
+export type ContentPart = {
+    text?: string;
+    inlineData?: InlineDataPart['inlineData'];
+    functionCall?: FunctionCallPart['functionCall'];
+    functionResponse?: FunctionResponsePart['functionResponse'];
+    thoughtSignature?: string;
+    [key: string]: unknown;
+};
+export type Part = ContentPart;
+export type Schema = Record<string, unknown>;
 
 export interface Content {
     role: 'user' | 'model' | 'system' | 'function';
@@ -279,6 +292,8 @@ export interface GenerateContentResponse {
     candidates?: Candidate[];
     promptFeedback?: PromptFeedback;
     usageMetadata?: UsageMetadata;
+    text?: () => string;
+    functionCalls?: () => FunctionCallPart['functionCall'][];
 }
 
 export interface VideoPrediction {
@@ -314,7 +329,14 @@ export interface AudioPart {
 }
 
 export interface GenerateSpeechResponse {
-    audio: AudioPart;
+    audio: {
+        mimeType: string;
+        playbackUrl: string;
+    };
+    persistedAsset?: {
+        id: string;
+        storageUrl: string;
+    };
 }
 
 export interface EmbedContentResponse {

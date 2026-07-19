@@ -1,7 +1,11 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+vi.unmock('@/services/MembershipService');
+vi.unmock('./MembershipService');
 import { MembershipService } from './MembershipService';
 import 'firebase/firestore';
+
+
 
 // -----------------------------------------------------------------------------
 // LEDGER'S TEST SUITE: COST CIRCUIT BREAKER

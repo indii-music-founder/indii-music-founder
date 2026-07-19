@@ -14,6 +14,8 @@ import { QuotaExceededError } from '@/shared/types/errors';
 import { metadataPersistenceService } from '@/services/persistence/MetadataPersistenceService';
 import { CreativeStorageService } from '@/services/creative/CreativeStorageService';
 import { CostControlService } from '@/services/billing/CostControlService';
+import { normalizeEditImageResult } from './editResponse';
+import { fetchAsBase64 } from '@/services/storage/safeStorageFetch';
 // ============================================================================
 // TYPES
 // ============================================================================
@@ -37,6 +39,12 @@ export interface ImageGenerationOptions {
     /** Person generation policy: ALLOW_ALL | ALLOW_ADULT | ALLOW_NONE */
     personGeneration?: string;
     sourceImages?: { mimeType: string; data: string }[]; // Reference images for composition
+    /** Already-uploaded references for callers that own the storage handoff. */
+    referenceUris?: string[];
+    referenceImages?: {
+        image: { uri?: string; imageBytes?: string; mimeType?: string };
+        referenceType: 'asset' | 'person' | 'face' | 'style' | 'subject'; // Allow likeness tuning for Face Swap
+    }[];
     projectContext?: string;
 
     // Distributor-aware options
@@ -71,6 +79,9 @@ export interface ImageGenerationOptions {
 
     /** Thought signature from a previous response for multi-turn continuity. */
     thoughtSignature?: string;
+
+    /** Optional creative session id used to link jobs back to the editor/session record. */
+    sessionId?: string;
 
     /** Optional artistic style directive. */
     style?: string;
@@ -117,6 +128,32 @@ export interface RemixOptions {
  * distributor-aware prompt injection and quota pre-flights.
  */
 export class ImageGenerationService {
+    private readonly inFlightGenerations = new Map<string, Promise<ImageGenerationResult[]>>();
+
+    private generationKey(options: ImageGenerationOptions): string {
+        // Deliberately includes the creative inputs which affect provider output;
+        // two concurrent clicks for the same request share one reservation/job.
+        return JSON.stringify({
+            userId: auth.currentUser?.uid,
+            prompt: options.prompt,
+            count: options.count ?? 1,
+            aspectRatio: options.aspectRatio,
+            resolution: options.resolution,
+            imageSize: options.imageSize,
+            model: options.model,
+            thinkingLevel: options.thinkingLevel,
+            includeThoughts: options.includeThoughts,
+            useGoogleSearch: options.useGoogleSearch,
+            useImageSearch: options.useImageSearch,
+            responseFormat: options.responseFormat,
+            seed: options.seed,
+            sessionId: options.sessionId,
+            sourceImages: options.sourceImages,
+            referenceUris: options.referenceUris,
+            referenceImages: options.referenceImages,
+        });
+    }
+
 
     /**
      * Retrieves architectural constraints for image generation based on user's distributor.
@@ -209,6 +246,11 @@ export class ImageGenerationService {
         }
     }
 
+    private async loadImageFromUri(uri: string): Promise<{ mimeType: string; data: string }> {
+        const { base64, mimeType } = await fetchAsBase64(uri);
+        return { mimeType, data: base64 };
+    }
+
     /**
      * Triggers the image generation pipeline via Cloud Functions.
      * Performs authentication pre-flights and quota checks.
@@ -219,6 +261,18 @@ export class ImageGenerationService {
      * @throws {QuotaExceededError} If usage limits are reached.
      */
     async generateImages(options: ImageGenerationOptions): Promise<ImageGenerationResult[]> {
+        const key = this.generationKey(options);
+        const existing = this.inFlightGenerations.get(key);
+        if (existing) return existing;
+
+        const request = this.generateImagesUncached(options).finally(() => {
+            this.inFlightGenerations.delete(key);
+        });
+        this.inFlightGenerations.set(key, request);
+        return request;
+    }
+
+    private async generateImagesUncached(options: ImageGenerationOptions): Promise<ImageGenerationResult[]> {
         logger.debug('[ImageGen DEBUG] Entering generateImages', options);
         const results: ImageGenerationResult[] = [];
         const count = options.count || 1;
@@ -252,6 +306,27 @@ export class ImageGenerationService {
         const quotaCheck = await subscriptionService.canPerformAction('generateImage', count, userId);
         logger.debug('[ImageGen DEBUG] Quota check result:', quotaCheck);
 
+        if (!quotaCheck.allowed) {
+            logger.error('[ImageGen] Quota exceeded');
+            let tier: SubscriptionTier = 'free' as SubscriptionTier;
+            try {
+                const sub = userId
+                    ? await subscriptionService.getSubscription(userId)
+                    : await subscriptionService.getCurrentSubscription();
+                tier = sub.tier;
+            } catch (e: unknown) {
+                logger.warn('Failed to fetch tier for QuotaExceededError, defaulting to free', e);
+            }
+
+            throw new QuotaExceededError(
+                'images',
+                tier,
+                quotaCheck.reason || 'Quota exceeded',
+                quotaCheck.currentUsage?.used || 0,
+                quotaCheck.currentUsage?.limit || count
+            );
+        }
+
         // Cost Control: Enforce budget limits before expensive API call
         const estimatedCost = count * 0.04; // $0.04 per image
         const uid = userId || auth.currentUser.uid;
@@ -268,11 +343,15 @@ export class ImageGenerationService {
 
         if (!costCheck.allowed) {
             const isInfraFailure = costCheck.reason?.includes('unavailable') || costCheck.reason?.includes('permission/auth check failed');
-            
+
             if (isInfraFailure) {
-                logger.warn('[ImageGenerationService] Cost ledger infra failure. Bypassing cost check to allow generation to proceed.', { reason: costCheck.reason });
-                // If the ledger is unreachable, we log and bypass to prevent complete system lockup.
-                // The backend function may still enforce limits or we can allow a safe fallback path.
+                // ISSUE-881: FAIL CLOSED. A cost-ledger outage must not turn paid
+                // image generation into unmetered generation — the backend callable
+                // has no reservation requirement of its own to catch this.
+                logger.error('[ImageGenerationService] Cost ledger unavailable — blocking generation (fail-closed).', { reason: costCheck.reason });
+                throw new Error(
+                    'Image generation is temporarily unavailable: the cost-control service could not verify your budget. Please try again in a moment.'
+                );
             } else if (costCheck.requiresConfirmation) {
                 const approved = await new Promise<boolean>((resolve) => {
                     import('@/core/store').then(({ useStore }) => {
@@ -308,46 +387,68 @@ export class ImageGenerationService {
                 throw new Error(`Image generation blocked: ${costCheck.reason}`);
             }
         }
-
-
-        if (!quotaCheck.allowed) {
-            logger.error('[ImageGen] Quota exceeded');
-            let tier: SubscriptionTier = 'free' as SubscriptionTier;
-            try {
-                const sub = userId
-                    ? await subscriptionService.getSubscription(userId)
-                    : await subscriptionService.getCurrentSubscription();
-                tier = sub.tier;
-            } catch (e: unknown) {
-                logger.warn('Failed to fetch tier for QuotaExceededError, defaulting to free', e);
-            }
-
-            throw new QuotaExceededError(
-                'images',
-                tier,
-                quotaCheck.reason || 'Quota exceeded',
-                quotaCheck.currentUsage?.used || 0,
-                quotaCheck.currentUsage?.limit || count
-            );
+        if (!costCheck.operationId) {
+            throw new Error('Image generation blocked: cost reservation receipt is missing.');
         }
 
         try {
             const generateImage = httpsCallable(functions, 'generateImageV3');
             logger.debug('[ImageGen DEBUG] Calling generateImageV3');
 
-            const fullPrompt = this.buildDistributorAwarePrompt(options);
+            let fullPrompt = this.buildDistributorAwarePrompt(options);
+
+            // Enhance prompt with headshot instruction if user headshots are included
+            if (options.userProfile?.brandKit?.referenceImages?.some(a => a.category === 'headshot')) {
+                fullPrompt += ' [Reference headshots provided: Use them as a visual likeness guide. Match facial features, appearance, ethnicity, and distinctive characteristics of the person in the reference images.]';
+            }
+
             const aspectRatio = this.getAspectRatio(options);
 
             // Resolve imageSize: prefer explicit imageSize, fall back to resolution.
             const imageSize = options.imageSize || this.normalizeImageResolution(options.resolution);
 
-            let referenceUri;
-            if (options.sourceImages && options.sourceImages.length > 0) {
-                const firstImg = options.sourceImages[0];
-                if (firstImg) {
-                    referenceUri = await CreativeStorageService.uploadReferenceMedia(uid, `data:${firstImg.mimeType};base64,${firstImg.data}`, 'image');
+            let referenceUris = options.referenceUris?.slice(0, 14);
+            const allReferenceImages: { mimeType: string; data: string }[] = [...(options.sourceImages || [])];
+
+            // Auto-inject user's stored headshots from profile
+            if (options.userProfile?.brandKit?.referenceImages?.length) {
+                const headshotAssets = options.userProfile.brandKit.referenceImages.filter(
+                    (asset) => asset.category === 'headshot'
+                );
+
+                if (headshotAssets.length > 0) {
+                    logger.debug(`[ImageGen] Found ${headshotAssets.length} user headshots, attempting to load`);
+
+                    const loadedHeadshots = await Promise.all(
+                        headshotAssets.map(async (asset) => {
+                            try {
+                                const img = await this.loadImageFromUri(asset.url);
+                                logger.debug(`[ImageGen] Successfully loaded headshot: ${asset.id}`);
+                                return img;
+                            } catch (e) {
+                                logger.warn(`[ImageGen] Failed to load headshot ${asset.id}:`, e);
+                                return null;
+                            }
+                        })
+                    );
+
+                    const validHeadshots = loadedHeadshots.filter((img): img is { mimeType: string; data: string } => img !== null);
+                    allReferenceImages.push(...validHeadshots);
+                    logger.debug(`[ImageGen] Injected ${validHeadshots.length} user headshots as reference images`);
                 }
             }
+
+            if (allReferenceImages.length > 0) {
+                const uploadedReferenceUris = (await Promise.all(
+                    allReferenceImages.slice(0, 14).map((img) =>
+                        CreativeStorageService.uploadReferenceMedia(uid, `data:${img.mimeType};base64,${img.data}`, 'image', { scope: 'objects' })
+                    )
+                )).filter((uri): uri is string => !!uri);
+                referenceUris = [...(referenceUris ?? []), ...uploadedReferenceUris]
+                    .filter((uri, index, all) => all.indexOf(uri) === index)
+                    .slice(0, 14);
+            }
+            const referenceUri = referenceUris?.[0];
 
             const payload: Record<string, unknown> = {
                 prompt: fullPrompt,
@@ -356,6 +457,8 @@ export class ImageGenerationService {
                 model: options.model || 'fast',
                 imageSize,
                 referenceUri,
+                referenceUris,
+                costReservationId: costCheck.operationId,
                 // Gemini 3 advanced config
                 thinkingLevel: options.thinkingLevel,
                 includeThoughts: options.includeThoughts,
@@ -365,6 +468,7 @@ export class ImageGenerationService {
                 // Multi-turn
                 conversationHistory: options.conversationHistory,
                 thoughtSignature: options.thoughtSignature,
+                sessionId: options.sessionId,
                 // Advanced control
                 style: options.style,
                 quality: options.quality,
@@ -374,6 +478,7 @@ export class ImageGenerationService {
                 useGrounding: options.useGrounding,
                 // Person generation safety filter
                 personGeneration: options.personGeneration,
+                referenceImages: options.referenceImages,
             };
 
             // Clean undefined values to reduce payload size
@@ -404,23 +509,28 @@ export class ImageGenerationService {
                 jobId?: string;
                 resultUri?: string;
                 resultUrl?: string;
+                resultUris?: string[];
                 textNarration?: string;
                 thoughtSignature?: string;
+                thoughtSummary?: string;
                 groundingMetadata?: Record<string, unknown>;
             }
             const data = result.data as GenerateImageResponse;
 
             // New gateway contract: image is already saved in Cloud Storage.
-            const generatedUri = data.resultUrl || data.resultUri;
-            if (generatedUri) {
-                results.push({
-                    id: data.jobId || crypto.randomUUID(),
+            const generatedUris = data.resultUris?.length
+                ? data.resultUris
+                : [data.resultUrl || data.resultUri].filter((uri): uri is string => !!uri);
+            if (generatedUris.length > 0) {
+                const storedResults = await Promise.all(generatedUris.map(async (generatedUri, index) => ({
+                    id: index === 0 && data.jobId ? data.jobId : `${data.jobId || crypto.randomUUID()}_${index + 1}`,
                     url: await this.resolveGeneratedAssetUrl(generatedUri),
                     prompt: options.prompt,
                     textNarration: data.textNarration,
-                    thoughtSignature: data.thoughtSignature,
+                    thoughtSignature: data.thoughtSignature || data.thoughtSummary,
                     groundingMetadata: data.groundingMetadata,
-                });
+                })));
+                results.push(...storedResults);
             }
 
             // Cloud Function returns { images: [...], textNarration?, thoughtSignature?, groundingMetadata? }
@@ -493,6 +603,11 @@ export class ImageGenerationService {
                 );
             }
         } catch (err: unknown) {
+            try {
+                await CostControlService.finalize(costCheck.operationId, 'VOIDED');
+            } catch (releaseError: unknown) {
+                logger.warn('[ImageGeneration] Cost reservation release requires reconciliation:', releaseError);
+            }
             const errObj = err as { code?: string; details?: unknown };
             const errorMsg = err instanceof Error ? err.message : String(err);
             logger.error('Image Generation Error', {
@@ -582,20 +697,17 @@ export class ImageGenerationService {
 
     async remixImage(options: RemixOptions): Promise<{ url: string } | null> {
         return withServiceError('ImageGeneration', 'remixImage', async () => {
-            // ── Direct SDK Pipeline ────────────────────────────────────────────
-            // Uses editImageDirectly (Gemini SDK) instead of Cloud Functions.
-            // This eliminates the Firebase Auth dependency that caused
-            // "Unauthenticated" errors when sessions expire or users aren't
-            // signed in. Matches the EditingService pattern.
-            const { editImageDirectly } = await import('@/services/intelligence/generators/DirectImageEditor');
+            const { functions } = await import('@/services/firebase');
+            const { httpsCallable } = await import('firebase/functions');
+            const editImageFn = httpsCallable(functions, 'editImage');
 
-            logger.info('[ImageGen] remixImage: using Direct SDK path', {
+            logger.info('[ImageGen] remixImage: using secured backend path', {
                 hasContent: !!options.contentImage,
                 hasStyle: !!options.styleImage,
                 promptSnippet: (options.prompt || '').substring(0, 60),
             });
 
-            const result = await editImageDirectly({
+            const result = await editImageFn({
                 image: {
                     mimeType: options.contentImage.mimeType,
                     data: options.contentImage.data,
@@ -604,14 +716,14 @@ export class ImageGenerationService {
                     mimeType: options.styleImage.mimeType,
                     data: options.styleImage.data,
                 } : undefined,
-                prompt: options.prompt || 'Create a cinematic remix that preserves the subject and composition while enhancing the mood and atmosphere.',
+                prompt: options.prompt || 'Remix this image',
+                model: 'pro'
             });
 
-            if (result) {
-                return { url: result.url };
-            }
+            const data = normalizeEditImageResult(result.data, options.prompt || 'Remix this image');
+            if (!data?.url) return null;
 
-            return null;
+            return { url: data.url };
         });
     }
 
@@ -735,7 +847,7 @@ export class ImageGenerationService {
 
             const editImageFn = httpsCallable(functions, 'editImage');
             const result = await editImageFn(options);
-            return result.data;
+            return normalizeEditImageResult(result.data, options.prompt);
         });
     }
 

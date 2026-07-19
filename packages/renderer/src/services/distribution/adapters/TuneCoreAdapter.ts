@@ -1,9 +1,11 @@
 import {
     BaseDistributorAdapter
 } from './BaseDistributorAdapter';
+import { earningsService } from '../EarningsService';
 import {
     DistributorId,
     DistributorRequirements,
+    DistributorCredentials,
     ReleaseStatus,
     ReleaseResult,
     DistributorEarnings,
@@ -62,6 +64,36 @@ export class TuneCoreAdapter extends BaseDistributorAdapter {
         }
     };
 
+    // ISSUE-814: the base class's connect() marks any adapter "connected" from
+    // mere apiKey presence, with no verification. Believe/OneRPM/UnitedMasters
+    // already override connect() to ping their real API and reject on 401/403 —
+    // TuneCore had the same apiBaseUrl but never did this check. Mirrors that
+    // exact, already-shipped pattern rather than inventing a new one.
+    async connect(credentials: DistributorCredentials): Promise<void> {
+        await super.connect(credentials);
+        if (credentials.apiKey) {
+            try {
+                const response = await fetch(`${this.apiBaseUrl}/version`, {
+                    headers: {
+                        'Authorization': `Bearer ${credentials.apiKey}`,
+                        ...this.getVersionedHeaders(),
+                    },
+                    signal: AbortSignal.timeout(5000),
+                });
+                if (response.status === 401 || response.status === 403) {
+                    throw new Error('Invalid API key or credentials for TuneCore');
+                }
+            } catch (err: unknown) {
+                if (err instanceof Error && err.message.includes('Invalid')) {
+                    this.connected = false;
+                    this.credentials = undefined;
+                    throw err;
+                }
+                logger.warn('[TuneCore] API connection verification warning:', err);
+            }
+        }
+    }
+
     async createRelease(metadata: ExtendedGoldenMetadata, assets: ReleaseAssets): Promise<ReleaseResult> {
         const isConnected = await this.isConnected();
         if (!isConnected) {
@@ -82,7 +114,8 @@ export class TuneCoreAdapter extends BaseDistributorAdapter {
 
             const releaseId = metadata.id || `TC-${Date.now()}`;
 
-            // 2. Attempt HTTP API delivery when API key is present (Item 211)
+            // 2. Attempt HTTP API delivery when API key is present (Item 211).
+            // success:true is reserved for a real accepted delivery (ISSUE-658).
             if (this.credentials?.apiKey) {
                 try {
                     const response = await fetch(`${this.apiBaseUrl}/releases`, {
@@ -103,37 +136,54 @@ export class TuneCoreAdapter extends BaseDistributorAdapter {
                         }),
                     });
 
-                    if (response.ok) {
-                        const data = await response.json();
+                    if (!response.ok) {
+                        logger.warn(`[TuneCore] API rejected the release (HTTP ${response.status}) — no delivery occurred.`);
                         return {
-                            success: true,
+                            success: false,
                             releaseId,
-                            distributorReleaseId: data.id || `TC-${releaseId}`,
-                            status: 'pending_review',
-                            metadata: {
-                                estimatedLiveDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
-                                reviewRequired: true,
-                                isrcAssigned: data.isrc || metadata.isrc,
-                            }
+                            status: 'failed',
+                            errors: [{ code: 'DELIVERY_REJECTED', message: `TuneCore API rejected the release (HTTP ${response.status}). Nothing was delivered.` }]
                         };
                     }
-                    logger.warn('[TuneCore] HTTP API returned non-OK, falling back to pending status');
+
+                    const data = await response.json();
+                    return {
+                        success: true,
+                        releaseId,
+                        distributorReleaseId: data.id || `TC-${releaseId}`,
+                        status: 'pending_review',
+                        metadata: {
+                            estimatedLiveDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+                            reviewRequired: true,
+                            isrcAssigned: data.isrc || metadata.isrc,
+                        }
+                    };
                 } catch (apiErr: unknown) {
-                    logger.warn('[TuneCore] HTTP API delivery failed, returning ERN-ready status:', apiErr);
+                    logger.warn('[TuneCore] API delivery unavailable — ERN is ready for manual submission, nothing was delivered:', apiErr);
+                    return {
+                        success: false,
+                        releaseId,
+                        status: 'ready_for_manual_submission',
+                        errors: [{ code: 'DELIVERY_UNAVAILABLE', message: 'TuneCore API delivery failed before acceptance. The DDEX ERN was generated — submit the release manually from your TuneCore account.' }],
+                        metadata: {
+                            reviewRequired: true,
+                            isrcAssigned: metadata.isrc,
+                            note: 'ERN generated. No delivery to TuneCore occurred.',
+                        }
+                    };
                 }
             }
 
-            // 3. Fallback: ERN generated and ready for manual submission
+            // 3. No API key: honest manual handoff — ERN generated, nothing delivered
             return {
-                success: true,
+                success: false,
                 releaseId,
-                distributorReleaseId: `TC-${releaseId}`,
-                status: 'pending_review',
+                status: 'ready_for_manual_submission',
+                errors: [{ code: 'MANUAL_DELIVERY_REQUIRED', message: 'No TuneCore API key configured — nothing was delivered. Add one in Settings > Integrations for automatic delivery, or submit the generated ERN manually from your TuneCore account.' }],
                 metadata: {
-                    estimatedLiveDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
                     reviewRequired: true,
-                    isrcAssigned: metadata.isrc || 'Pending Assignment',
-                    note: 'Add TuneCore API key in Settings > Integrations for automatic delivery.',
+                    isrcAssigned: metadata.isrc,
+                    note: 'ERN generated. No delivery to TuneCore occurred.',
                 }
             };
         } catch (e: unknown) {
@@ -211,8 +261,12 @@ export class TuneCoreAdapter extends BaseDistributorAdapter {
 
     async takedownRelease(_releaseId: string): Promise<ReleaseResult> {
         return {
-            success: true,
-            status: 'takedown_requested'
+            success: false,
+            status: 'ready_for_manual_submission',
+            errors: [{
+                code: 'TAKEDOWN_MANUAL_REQUIRED',
+                message: 'TuneCore takedown automation is not wired. Submit the takedown manually through TuneCore before marking it requested.',
+            }],
         };
     }
 
@@ -260,8 +314,12 @@ export class TuneCoreAdapter extends BaseDistributorAdapter {
         return baseEarnings;
     }
 
-    async getAllEarnings(_period: DateRange): Promise<DistributorEarnings[]> {
-        return [];
+    async getAllEarnings(period: DateRange): Promise<DistributorEarnings[]> {
+        const isConnected = await this.isConnected();
+        if (!isConnected) {
+            throw new Error('Not connected to TuneCore');
+        }
+        return await earningsService.getAllEarnings(this.id, period);
     }
 
     async validateMetadata(metadata: ExtendedGoldenMetadata): Promise<ValidationResult> {

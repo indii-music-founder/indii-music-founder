@@ -27,7 +27,7 @@ interface SavedReceipt extends ExtractedReceipt {
 
 const CATEGORY_COLORS: Record<string, string> = {
     Equipment: 'text-blue-400 bg-blue-500/10',
-    Software: 'text-purple-400 bg-purple-500/10',
+    Software: 'text-green-400 bg-green-500/10',
     Studio: 'text-amber-400 bg-amber-500/10',
     Meals: 'text-green-400 bg-green-500/10',
     Travel: 'text-cyan-400 bg-cyan-500/10',
@@ -85,51 +85,13 @@ export function ReceiptOCR() {
         setExtracted(null);
 
         try {
-            // Call Autonomous Vision service for receipt analysis via the GeminiFileService
-            const { AutonomousIntelligence } = await import('@/services/intelligence/AutonomousIntelligence');
-
-            // 1. Upload the file using resumable upload
-            const fileMeta = await AutonomousIntelligence.fileService.uploadFile(uploadedFile);
-
-
-            // 2. Wait for it to be active
-            await AutonomousIntelligence.fileService.waitForActive(fileMeta.name);
-
-            // 3. Analyze the URI
-            const jsonPrompt = `
-Analyze this receipt image and extract the following fields as JSON:
-{
-  "merchant": "Store/business name",
-  "amount": "$XX.XX format",
-  "date": "YYYY-MM-DD format",
-  "category": "One of: Equipment, Software, Studio, Meals, Travel, Other"
-}
-Return ONLY valid JSON, no markdown fences or extra text.`;
-
-            const responseText = await AutonomousIntelligence.analyzeFileURI(
-                fileMeta.uri,
-                fileMeta.mimeType,
-                jsonPrompt
+            throw new Error(
+                'Receipt OCR with file upload is not available. ' +
+                'File operations must use backend Cloud Functions instead.'
             );
-
-            // 4. Cleanup the file (fire and forget)
-            AutonomousIntelligence.fileService.deleteFile(fileMeta.name).catch((ce) => {
-                logger.warn('[ReceiptOCR] Failed to cleanup Gemini file', ce);
-            });
-
-            // Strip potential markdown code fences
-            const cleanJson = responseText.replace(/^```(?:json)?\s*\n?/i, '').replace(/\n?\s*```$/i, '').trim();
-            const parsed = JSON.parse(cleanJson) as ExtractedReceipt;
-
-            setExtracted({
-                merchant: parsed.merchant || 'Unknown',
-                amount: parsed.amount || '$0.00',
-                date: parsed.date || new Date().toISOString().slice(0, 10),
-                category: parsed.category || 'Other',
-            });
         } catch (error: unknown) {
-            logger.error('[ReceiptOCR] Analysis failed:', error);
-            setError(error instanceof Error ? error.message : 'Analysis failed. Please try again.');
+            logger.error('[ReceiptOCR] Analysis not available:', error);
+            setError(error instanceof Error ? error.message : 'Receipt analysis not available in this build.');
         } finally {
             setIsAnalyzing(false);
         }

@@ -11,7 +11,7 @@ This command is used whenever the user says "continue", when resuming work after
 ## 1. Context Synchronization
 - **Handoff Sync:** Read the latest checkpoints in `.agent/checkpoints/` and the active `task.md` or `implementation_plan.md`.
 - **Change Audit:** Run `git diff` or `git status` to see exactly what was touched in the last session.
-- **Mental Map Align:** Read the strategic flowcharts in `docs/flowcharts/` that map the architecture of what is currently being built.
+- **Mental Map Align:** Read the strategic flowcharts in `docs/flowcharts/` (specifically [01-grand-unified-macro.md](file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/docs/flowcharts/01-grand-unified-macro.md), [backend-only-api-boundary.md](file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/docs/flowcharts/backend-only-api-boundary.md), and [entire-app-architecture.md](file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/docs/flowcharts/entire-app-architecture.md)) that map the architecture, device boundaries, and API gateways of what is currently being built.
 
 ## 2. Hard Compliance Sweep
 Perform a rigorous automated scan against our core development constraints:
@@ -19,6 +19,7 @@ Perform a rigorous automated scan against our core development constraints:
 - **Model Policy Verification:** Ensure imports map to standard model constants (`AI_MODELS`) and that no banned models are configured or used.
 - **Security Check:** Scan local diffs for OpenAI secrets (`sk-`), Google API keys (`AIza`), or Github tokens (`ghp_`). Proactively quarantine them if found.
 - **Styling Consistency:** Verify that new styling changes follow Vanilla CSS patterns and do not inject ad-hoc utility frameworks unless explicitly approved.
+- **Test-Impact Check (the pre-commit gap):** Pre-commit runs lint + typecheck + security only — NOT the unit suite. If the diff renames or re-values any symbol referenced elsewhere by string/literal (agent ids, domain strings, status/enum unions), run the affected `npm test -- --run <files>` before continuing — a rename can pass typecheck and still break test assertions or routing. For an easily-mistyped class of literal, prefer a static guard test that scans all source so the entire class is caught at once.
 
 ## 3. Gap Filling Analysis
 - **Identify gaps:** Compare the original goals of the prompt or PRD vs what is currently represented in the codebase and task tracking.

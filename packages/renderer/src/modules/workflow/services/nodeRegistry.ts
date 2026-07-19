@@ -142,6 +142,52 @@ export const NODE_REGISTRY: Record<string, NodeDefinition> = {
                     { id: 'trigger_out', label: 'Done', type: 'TRIGGER' },
                     { id: 'video_output', label: 'Extended Video', type: 'VIDEO' }
                 ]
+            },
+            {
+                id: 'video-analyze-song',
+                label: 'Analyze Song',
+                description: 'Extract audio metadata: BPM, mood, structure, and timestamps.',
+                defaultPrompt: 'Analyze this audio file',
+                inputs: [
+                    { id: 'trigger', label: 'Start', type: 'TRIGGER' },
+                    { id: 'audio_input', label: 'Song', type: 'AUDIO', required: true }
+                ],
+                outputs: [
+                    { id: 'trigger_out', label: 'Done', type: 'TRIGGER' },
+                    { id: 'context_output', label: 'Audio Metadata', type: 'CONTEXT' }
+                ]
+            },
+            {
+                id: 'video-performance-clip',
+                label: 'Performance Clip (Img2Vid)',
+                description: 'Generate a performance video clip from an artist image. Optimized for beat-synced assembly.',
+                defaultPrompt: 'Artist performing with dynamic cinematic camera movement.',
+                inputs: [
+                    { id: 'trigger', label: 'Start', type: 'TRIGGER' },
+                    { id: 'image_input', label: 'Artist Image', type: 'IMAGE', required: true },
+                    { id: 'text_input', label: 'Scene Prompt', type: 'TEXT' },
+                    { id: 'duration_input', label: 'Duration (sec)', type: 'TEXT' }
+                ],
+                outputs: [
+                    { id: 'trigger_out', label: 'Done', type: 'TRIGGER' },
+                    { id: 'video_output', label: 'Performance Video', type: 'VIDEO' }
+                ]
+            },
+            {
+                id: 'video-beat-sync-assemble',
+                label: 'Beat-Sync Assemble',
+                description: 'Assemble performance video clips with the original song. Clips are beat-aligned based on BPM.',
+                defaultPrompt: 'Assemble performance video',
+                inputs: [
+                    { id: 'trigger', label: 'Start', type: 'TRIGGER' },
+                    { id: 'audio_input', label: 'Song URL', type: 'AUDIO', required: true },
+                    { id: 'image_input', label: 'Artist Image URL', type: 'IMAGE', required: true },
+                    { id: 'text_input', label: 'Performance Style', type: 'TEXT' }
+                ],
+                outputs: [
+                    { id: 'trigger_out', label: 'Done', type: 'TRIGGER' },
+                    { id: 'video_output', label: 'Final Video', type: 'VIDEO' }
+                ]
             }
         ]
     },

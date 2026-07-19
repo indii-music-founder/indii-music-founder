@@ -4,13 +4,47 @@ import { useShallow } from 'zustand/react/shallow';
 import { Loader2, Mail, Lock, LogIn, User, UserPlus, Calendar, ArrowLeft, CheckCircle2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
+import { flushFounderFunnelQueue, trackFounderFunnelEvent } from '@/services/founders/founderFunnel';
 
 /**
  * Item 305: COPPA Age Gate Utility
  * Calculate age from date of birth string. Returns -1 if invalid.
  */
+function normalizeDateOfBirth(input: string): string | null {
+    const trimmed = input.trim();
+    const isoMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(trimmed);
+    const usMatch = /^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/.exec(trimmed);
+
+    const year = isoMatch?.[1] ?? usMatch?.[3];
+    const month = isoMatch?.[2] ?? usMatch?.[1];
+    const day = isoMatch?.[3] ?? usMatch?.[2];
+    if (!year || !month || !day) return null;
+
+    const monthNumber = Number(month);
+    const dayNumber = Number(day);
+    if (monthNumber < 1 || monthNumber > 12 || dayNumber < 1 || dayNumber > 31) {
+        return null;
+    }
+
+    const normalized = `${year}-${monthNumber.toString().padStart(2, '0')}-${dayNumber.toString().padStart(2, '0')}`;
+    const parsed = new Date(`${normalized}T00:00:00`);
+    if (
+        Number.isNaN(parsed.getTime()) ||
+        parsed.getFullYear() !== Number(year) ||
+        parsed.getMonth() + 1 !== monthNumber ||
+        parsed.getDate() !== dayNumber
+    ) {
+        return null;
+    }
+
+    return normalized;
+}
+
 function calculateAge(dateOfBirth: string): number {
-    const dob = new Date(dateOfBirth);
+    const normalizedDob = normalizeDateOfBirth(dateOfBirth);
+    if (!normalizedDob) return -1;
+
+    const dob = new Date(`${normalizedDob}T00:00:00`);
     if (isNaN(dob.getTime())) return -1;
     const today = new Date();
     let age = today.getFullYear() - dob.getFullYear();
@@ -22,6 +56,8 @@ function calculateAge(dateOfBirth: string): number {
 }
 
 type AuthView = 'signin' | 'signup' | 'forgot-password';
+
+const FOUNDER_MODULES = ['Boardroom', 'Creative', 'Video', 'Distribution', 'Finance', 'Legal'];
 
 export default function LoginForm() {
     const {
@@ -53,6 +89,39 @@ export default function LoginForm() {
     const [dateOfBirth, setDateOfBirth] = useState('');
     const [isForgotPassword, setIsForgotPassword] = useState(false);
     const showGuestLogin = isFirebaseE2EMockEnabled();
+    const isFounderSource = typeof window !== 'undefined' &&
+        (window.location.search.includes('source=founder') ||
+         window.location.hostname.startsWith('founder'));
+
+    useEffect(() => {
+        if (!isFounderSource || typeof window === 'undefined') return;
+        try {
+            localStorage.setItem('indii_founder_preview_pending', 'true');
+            localStorage.setItem('indii_founder_funnel_active', 'true');
+        } catch {
+            // localStorage may be unavailable in private browsing contexts.
+        }
+    }, [isFounderSource]);
+
+    useEffect(() => {
+        flushFounderFunnelQueue();
+        if (isFounderSource) {
+            void trackFounderFunnelEvent('founder_auth_viewed', {
+                variant: isForgotPassword ? 'forgot-password' : (isSignUpMode ? 'signup' : 'signin'),
+                surface: 'renderer_login',
+            });
+        }
+    }, [isFounderSource, isForgotPassword, isSignUpMode]);
+
+    useEffect(() => {
+        if (isFounderSource || typeof window === 'undefined') return;
+        try {
+            localStorage.removeItem('indii_founder_preview_pending');
+            localStorage.removeItem('indii_founder_funnel_active');
+        } catch {
+            // localStorage may be unavailable in private browsing contexts.
+        }
+    }, [isFounderSource]);
 
     // Derive the view from store state + local forgot-password flag
     const view: AuthView = isForgotPassword ? 'forgot-password' : isSignUpMode ? 'signup' : 'signin';
@@ -95,9 +164,10 @@ export default function LoginForm() {
                 useStore.setState({ authError: 'Date of birth is required to create an account.' });
                 return;
             }
-            const age = calculateAge(dateOfBirth);
+            const normalizedDob = normalizeDateOfBirth(dateOfBirth);
+            const age = normalizedDob ? calculateAge(normalizedDob) : -1;
             if (age < 0) {
-                useStore.setState({ authError: 'Please enter a valid date of birth.' });
+                useStore.setState({ authError: 'Please enter a valid date of birth as MM/DD/YYYY or YYYY-MM-DD.' });
                 return;
             }
             if (age < 13) {
@@ -114,13 +184,37 @@ export default function LoginForm() {
                 return;
             }
             try {
+                if (isFounderSource) {
+                    await trackFounderFunnelEvent('founder_auth_submitted', {
+                        variant: 'signup',
+                        surface: 'renderer_login',
+                    });
+                }
                 await signUpWithEmail(email, password);
+                if (isFounderSource) {
+                    await trackFounderFunnelEvent('founder_auth_completed', {
+                        variant: 'signup',
+                        surface: 'renderer_login',
+                    });
+                }
             } catch (_err: unknown) {
                 // Error handled by store
             }
         } else {
             try {
+                if (isFounderSource) {
+                    await trackFounderFunnelEvent('founder_auth_submitted', {
+                        variant: 'login',
+                        surface: 'renderer_login',
+                    });
+                }
                 await loginWithEmail(email, password);
+                if (isFounderSource) {
+                    await trackFounderFunnelEvent('founder_auth_completed', {
+                        variant: 'login',
+                        surface: 'renderer_login',
+                    });
+                }
             } catch (_err: unknown) {
                 // Error handled by store
             }
@@ -151,6 +245,31 @@ export default function LoginForm() {
                     <p className="text-gray-400 font-mono text-xs uppercase tracking-[0.2em]">Founders Release • v1.0</p>
                 </div>
 
+                {isFounderSource && (
+                    <section className="mb-6 rounded-2xl border border-amber-500/20 bg-amber-500/5 p-4 text-left">
+                        <div className="inline-flex items-center gap-2 rounded-full border border-amber-500/20 bg-black/30 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-amber-300">
+                            <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
+                            Founder Preview
+                        </div>
+                        <p className="mt-4 text-sm leading-6 text-gray-200">
+                            Guided walkthrough entry. Sign in to meet the Conductor and move into the private preview.
+                        </p>
+                        <div className="mt-4 flex flex-wrap gap-2">
+                            {FOUNDER_MODULES.map((moduleName) => (
+                                <span
+                                    key={moduleName}
+                                    className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] font-medium text-gray-300"
+                                >
+                                    {moduleName}
+                                </span>
+                            ))}
+                        </div>
+                        <p className="mt-4 text-xs leading-5 text-gray-500">
+                            After sign-in: guided walkthrough, Boardroom access, and the founder preview path.
+                        </p>
+                    </section>
+                )}
+
                 {/* ── Forgot Password View ────────────────────────────────── */}
                 <AnimatePresence mode="wait">
                     {view === 'forgot-password' ? (
@@ -164,7 +283,7 @@ export default function LoginForm() {
                             <button
                                 type="button"
                                 onClick={() => switchView('signin')}
-                                className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-white transition-colors mb-6"
+                                className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-white transition-colors mb-6 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-400/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black rounded-md px-1"
                             >
                                 <ArrowLeft className="w-4 h-4" />
                                 Back to Sign In
@@ -201,7 +320,7 @@ export default function LoginForm() {
                                                 onChange={(e) => setEmail(e.target.value)}
                                                 placeholder="artist@indii.music"
                                                 autoComplete="email"
-                                                className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl focus:border-green-500/50 focus:ring-1 focus:ring-green-500/50 outline-none transition-all placeholder:text-gray-600"
+                                                className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl focus:border-green-500/50 focus:ring-2 focus:ring-green-500/50 focus-visible:outline-none transition-all placeholder:text-gray-600"
                                                 required
                                             />
                                         </div>
@@ -222,7 +341,7 @@ export default function LoginForm() {
                                     <button
                                         type="submit"
                                         disabled={authLoading}
-                                        className="group relative w-full flex items-center justify-center gap-3 px-6 py-4 bg-green-600 text-white rounded-2xl font-bold hover:bg-green-500 transition-all shadow-[0_0_30px_rgba(0,255,102,0.3)] hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50"
+                                        className="group relative w-full flex items-center justify-center gap-3 min-h-[44px] px-6 py-4 bg-green-600 text-white rounded-2xl font-bold hover:bg-green-500 transition-all shadow-[0_0_30px_rgba(0,255,102,0.3)] hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-400/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
                                     >
                                         {authLoading ? (
                                             <Loader2 className="w-5 h-5 animate-spin" />
@@ -247,22 +366,22 @@ export default function LoginForm() {
                         >
                             {/* Sign In / Create Account tab switcher */}
                             <div className="flex bg-white/5 border border-white/10 rounded-2xl p-1 mb-6">
-                                <button
-                                    type="button"
-                                    onClick={() => { switchView('signin'); setConfirmPassword(''); setDateOfBirth(''); }}
-                                    className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all ${!isSignUpMode ? 'bg-green-600 text-white shadow-[0_0_20px_rgba(0,255,102,0.4)]' : 'text-gray-400 hover:text-white'}`}
-                                >
-                                    <LogIn className="w-4 h-4" />
-                                    Sign In
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => { switchView('signup'); }}
-                                    data-testid="toggle-auth-mode"
-                                    className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all ${isSignUpMode ? 'bg-green-600 text-white shadow-[0_0_20px_rgba(0,255,102,0.4)]' : 'text-gray-400 hover:text-white'}`}
-                                >
-                                    <UserPlus className="w-4 h-4" />
-                                    Create Account
+                            <button
+                                type="button"
+                                onClick={() => { switchView('signin'); setConfirmPassword(''); setDateOfBirth(''); }}
+                                className={`flex-1 flex items-center justify-center gap-2 min-h-[44px] py-2.5 rounded-xl text-sm font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-400/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black ${!isSignUpMode ? 'bg-green-600 text-white shadow-[0_0_20px_rgba(0,255,102,0.4)]' : 'text-gray-400 hover:text-white'}`}
+                            >
+                                <LogIn className="w-4 h-4" />
+                                Sign In
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => { switchView('signup'); }}
+                                data-testid="toggle-auth-mode"
+                                className={`flex-1 flex items-center justify-center gap-2 min-h-[44px] py-2.5 rounded-xl text-sm font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-400/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black ${isSignUpMode ? 'bg-green-600 text-white shadow-[0_0_20px_rgba(0,255,102,0.4)]' : 'text-gray-400 hover:text-white'}`}
+                            >
+                                <UserPlus className="w-4 h-4" />
+                                Create Account
                                 </button>
                             </div>
 
@@ -281,14 +400,14 @@ export default function LoginForm() {
                                             onChange={(e) => setEmail(e.target.value)}
                                             placeholder="artist@indii.music"
                                             autoComplete="email"
-                                            className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl focus:border-green-500/50 focus:ring-1 focus:ring-green-500/50 outline-none transition-all placeholder:text-gray-600"
+                                            className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl focus:border-green-500/50 focus:ring-2 focus:ring-green-500/50 focus-visible:outline-none transition-all placeholder:text-gray-600"
                                             required
                                         />
                                     </div>
                                 </div>
 
                                 <div className="space-y-2">
-                                    <label className="text-xs font-mono text-gray-400 block ml-1 uppercase">Password</label>
+                                    <label className="text-sm font-mono text-gray-400 block ml-1 uppercase">Password</label>
                                     <div className="relative">
                                         <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
                                         <input
@@ -298,7 +417,7 @@ export default function LoginForm() {
                                             onChange={(e) => setPassword(e.target.value)}
                                             placeholder="••••••••"
                                             autoComplete={isSignUpMode ? 'new-password' : 'current-password'}
-                                            className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl focus:border-green-500/50 focus:ring-1 focus:ring-green-500/50 outline-none transition-all placeholder:text-gray-600"
+                                            className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl focus:border-green-500/50 focus:ring-2 focus:ring-green-500/50 focus-visible:outline-none transition-all placeholder:text-gray-600"
                                             required
                                         />
                                     </div>
@@ -327,7 +446,7 @@ export default function LoginForm() {
                                                         onChange={(e) => setConfirmPassword(e.target.value)}
                                                         placeholder="••••••••"
                                                         autoComplete="new-password"
-                                                        className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl focus:border-green-500/50 focus:ring-1 focus:ring-green-500/50 outline-none transition-all placeholder:text-gray-600"
+                                                        className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl focus:border-green-500/50 focus:ring-2 focus:ring-green-500/50 focus-visible:outline-none transition-all placeholder:text-gray-600"
                                                         required
                                                     />
                                                 </div>
@@ -340,15 +459,18 @@ export default function LoginForm() {
                                                     <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
                                                     <input
                                                         aria-label="date of birth"
-                                                        type="date"
+                                                        type="text"
+                                                        inputMode="numeric"
                                                         value={dateOfBirth}
                                                         onChange={(e) => setDateOfBirth(e.target.value)}
-                                                        max={new Date().toISOString().split('T')[0]}
-                                                        className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl focus:border-green-500/50 focus:ring-1 focus:ring-green-500/50 outline-none transition-all text-white [color-scheme:dark]"
+                                                        placeholder="MM/DD/YYYY"
+                                                        pattern="(\d{1,2}(/|-)\d{1,2}(/|-)\d{4})|(\d{4}-\d{2}-\d{2})"
+                                                        title="Use MM/DD/YYYY or YYYY-MM-DD"
+                                                        className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl focus:border-green-500/50 focus:ring-2 focus:ring-green-500/50 focus-visible:outline-none transition-all text-white [color-scheme:dark]"
                                                         required
                                                     />
                                                 </div>
-                                                <p className="text-[10px] text-gray-500 ml-1">You must be 13 or older to create an account.</p>
+                                                <p className="text-xs text-gray-500 ml-1">Use MM/DD/YYYY or YYYY-MM-DD. You must be 13 or older to create an account.</p>
                                             </div>
                                         </motion.div>
                                     )}
@@ -370,7 +492,7 @@ export default function LoginForm() {
                                     <button
                                         type="submit"
                                         disabled={authLoading}
-                                        className="group relative w-full flex items-center justify-center gap-3 px-6 py-4 bg-green-600 text-white rounded-2xl font-bold hover:bg-green-500 transition-all shadow-[0_0_30px_rgba(0,255,102,0.3)] hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50"
+                                        className="group relative w-full flex items-center justify-center gap-3 min-h-[44px] px-6 py-4 bg-green-600 text-white rounded-2xl font-bold hover:bg-green-500 transition-all shadow-[0_0_30px_rgba(0,255,102,0.3)] hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-400/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
                                     >
                                         {authLoading ? (
                                             <Loader2 className="w-5 h-5 animate-spin" />
@@ -395,7 +517,7 @@ export default function LoginForm() {
                                         <button
                                             type="button"
                                             onClick={() => switchView('forgot-password')}
-                                            className="text-xs text-gray-500 hover:text-dept-creative transition-colors font-mono"
+                                            className="text-sm text-gray-500 hover:text-dept-creative transition-colors font-mono focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-400/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black rounded-md px-1"
                                         >
                                             Forgot Password?
                                         </button>
@@ -418,7 +540,7 @@ export default function LoginForm() {
                                             }}
                                             disabled={authLoading}
                                             data-testid="guest-login-btn"
-                                            className="group relative w-full flex items-center justify-center gap-3 px-6 py-4 bg-linear-to-r from-amber-500/20 to-green-900/30 border border-amber-500/30 text-amber-200 rounded-2xl font-semibold hover:bg-amber-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50"
+                                            className="group relative w-full flex items-center justify-center gap-3 min-h-[44px] px-6 py-4 bg-linear-to-r from-amber-500/20 to-green-900/30 border border-amber-500/30 text-amber-200 rounded-2xl font-semibold hover:bg-amber-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
                                         >
                                             <User className="w-5 h-5 text-amber-400" />
                                             <span>Explore as Guest</span>
@@ -432,7 +554,7 @@ export default function LoginForm() {
             </motion.div>
 
             {/* Footer */}
-            <div className="absolute bottom-8 left-0 w-full text-center text-[10px] text-gray-600 font-mono tracking-widest uppercase pointer-events-none">
+            <div className="absolute bottom-8 left-0 w-full text-center text-xs text-gray-500 font-mono tracking-widest uppercase pointer-events-none px-4">
                 <a href="/privacy" className="hover:text-gray-400 transition-colors pointer-events-auto">Privacy Policy</a> • <a href="/terms" className="hover:text-gray-400 transition-colors pointer-events-auto">Terms of Service</a> • © 2026 New Detroit Music LLC
             </div>
         </div>

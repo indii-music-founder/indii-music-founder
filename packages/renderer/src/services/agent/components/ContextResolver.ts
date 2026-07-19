@@ -4,10 +4,11 @@ import type { AgentMessage } from '@/core/store';
 import { buildDistributorContext, getDistributorPromptContext } from '@/services/onboarding/DistributorContext';
 
 import { AgentContext, ProjectHandle, DistributorInfo } from '../types';
+import { importWithRetry } from '@/utils/dynamicImport';
 
 export class ContextResolver {
     async resolveContext(): Promise<AgentContext> {
-        const { useStore } = await import('@/core/store');
+        const { useStore } = await importWithRetry(() => import('@/core/store'));
         const state = useStore.getState();
         const { currentProjectId, projects, currentOrganizationId, userProfile, currentModule, conversationMode, activeAgents } = state;
         const currentProject = projects?.find(p => p.id === currentProjectId);
@@ -45,7 +46,7 @@ export class ContextResolver {
             userProfile,
             brandKit,
             activeModule: currentModule,
-            chatHistory: conversationMode === 'boardroom' ? state.boardroomMessages || [] : state.agentHistory || [],
+            chatHistory: conversationMode === 'boardroom' ? state.agentHistory || [] : state.agentHistory || [],
             conversationMode,
             seatedAgents: activeAgents,
             distributor,

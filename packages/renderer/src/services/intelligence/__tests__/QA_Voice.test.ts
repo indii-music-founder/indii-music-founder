@@ -2,7 +2,16 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { FirebaseIntelligenceService } from '../FirebaseIntelligenceService';
 
 // Hoist mocks
-const mockGenerateContent = vi.fn();
+const { mockGenerateSpeech, mockHttpsCallable } = vi.hoisted(() => {
+    const callable = vi.fn();
+    return {
+        mockGenerateSpeech: callable,
+        mockHttpsCallable: vi.fn(() => callable),
+    };
+});
+const { mockResolveStorageUrl } = vi.hoisted(() => ({
+    mockResolveStorageUrl: vi.fn(async () => 'https://storage.example/audio.wav'),
+}));
 
 // Mock Firebase Service
 vi.mock('@/services/firebase', () => ({
@@ -19,27 +28,12 @@ vi.mock('@/services/firebase', () => ({
     messaging: { getToken: vi.fn() }
 }));
 
-// Mock Google AutonomousIntelligence SDK (Fallback) - new @google/genai package
-vi.mock('@google/genai', () => ({
-    GoogleGenAI: vi.fn(function () {
-        return {
-            models: {
-                generateContent: mockGenerateContent,
-                generateContentStream: vi.fn(),
-                embedContent: vi.fn()
-            }
-        };
-    })
+vi.mock('firebase/functions', () => ({
+    httpsCallable: mockHttpsCallable
 }));
 
-// Mock firebase/ai
-vi.mock('firebase/ai', () => ({
-    __esModule: true,
-    getGenerativeModel: vi.fn(() => ({
-        generateContent: mockGenerateContent
-    })),
-    Schema: {},
-    Tool: {}
+vi.mock('@/services/storage/resolveStorageUrl', () => ({
+    resolveStorageUrl: mockResolveStorageUrl,
 }));
 
 vi.mock('firebase/remote-config', () => ({
@@ -50,8 +44,14 @@ vi.mock('firebase/remote-config', () => ({
 vi.mock('@/config/env', () => ({
     env: {
         VITE_API_KEY: 'mock-key',
-        apiKey: 'mock-key'
+        apiKey: 'mock-key',
+        appCheckKey: 'test-app-check-key'
     }
+}));
+
+vi.mock('../appcheck', () => ({
+    isAppCheckConfigured: () => true,
+    isAppCheckError: vi.fn()
 }));
 
 vi.mock('../billing/TokenUsageService', () => ({
@@ -67,6 +67,14 @@ describe('Voice Interface QA', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
+        mockGenerateSpeech.mockResolvedValue({
+            data: {
+                mimeType: 'audio/wav',
+                jobId: 'audio-job-1',
+                libraryAssetId: 'audio-job-1',
+                resultUri: 'gs://test-bucket/creative/user-123/audio/outputs/audio.wav'
+            }
+        });
         service = new FirebaseIntelligenceService();
     });
 
@@ -76,40 +84,19 @@ describe('Voice Interface QA', () => {
     });
 
     it('should sanitize special characters', async () => {
-        mockGenerateContent.mockResolvedValue({
-            // Firebase AI SDK format
-            response: {
-                candidates: [{
-                    content: {
-                        parts: [{
-                            inlineData: {
-                                mimeType: 'audio/mp3',
-                                data: 'base64audio'
-                            }
-                        }]
-                    }
-                }]
-            },
-            // Direct @google/genai SDK format
-            candidates: [{
-                content: {
-                    parts: [{
-                        inlineData: {
-                            mimeType: 'audio/mp3',
-                            data: 'base64audio'
-                        }
-                    }]
-                }
-            }]
-        });
-
         const result = await service.generateSpeech('Hello 🌍! @#$%^&*()', 'Kore');
         expect(result).toBeDefined();
-        expect(result.audio.inlineData.data).toBe('base64audio');
+        expect(result.audio.playbackUrl).toBe('https://storage.example/audio.wav');
+        expect(mockHttpsCallable).toHaveBeenCalledWith(expect.anything(), 'generateAudioV3');
+        expect(mockGenerateSpeech).toHaveBeenCalledWith(expect.objectContaining({
+            prompt: 'Hello 🌍! @#$%^&*()',
+            voice: 'Kore',
+            requestId: expect.stringMatching(/^[0-9a-f-]{36}$/i)
+        }));
     });
 
     it('should throw error on API failure', async () => {
-        mockGenerateContent.mockRejectedValue(new Error('API Down'));
+        mockGenerateSpeech.mockRejectedValue(new Error('API Down'));
 
         await expect(service.generateSpeech('Hello', 'Kore'))
             .rejects.toThrow('API Down');

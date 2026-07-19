@@ -5,11 +5,12 @@ import { db, auth } from '@/services/firebase';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { subscriptionService } from '@/services/subscription/SubscriptionService';
 import { QuotaExceededError } from '@/shared/types/errors';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+ 
 import { CostControlService } from '@/services/billing/CostControlService';
 import { UserProfile } from '@/modules/workflow/types';
 import { getVideoConstraints } from '../onboarding/DistributorContext';
-import { VideoGenerationOptionsSchema, VideoGenerationOptions, VideoAspectRatioSchema } from '@/modules/creative/video/schemas';
+import { GenerateVideoSchema } from '@indii/shared';
+import { VideoGenerationOptionsSchema, VideoGenerationOptions, VideoAspectRatioSchema, DirectorSettingsSchema } from '@/modules/creative/video/schemas';
 import { z } from 'zod';
 import { InputSanitizer } from '@/services/intelligence/utils/InputSanitizer';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -20,18 +21,29 @@ import { httpsCallable } from 'firebase/functions';
 import { functions } from '@/services/firebase';
 import { CreativeStorageService } from '@/services/creative/CreativeStorageService';
 import { neuralCortex, type RenderDirectives } from '@/services/intelligence/NeuralCortexService';
+import { COLLECTIONS } from '@/core/config/collections';
+import { resolveStorageUrl } from '@/services/storage/resolveStorageUrl';
 
 
 type VideoAspectRatio = z.infer<typeof VideoAspectRatioSchema>;
 
-const DEFAULT_VIDEO_MODEL = INTELLIGENCE_MODELS.VIDEO.PRO; // 'veo-3.1-generate-preview'
+const DEFAULT_VIDEO_MODEL = INTELLIGENCE_MODELS.VIDEO.PRO; // 'veo-3.1-generate-001' (GA)
 
-/** Strip undefined values from an object to prevent Firestore rejection. */
-function stripUndefined<T extends Record<string, unknown>>(obj: T): T {
-    return Object.fromEntries(
-        Object.entries(obj).filter(([, v]) => v !== undefined)
-    ) as T;
+const VIDEO_MODEL_TIERS = {
+    'veo-3.1-lite-generate-001': 'lite',
+    'veo-3.1-fast-generate-001': 'fast',
+    'veo-3.1-generate-001': 'pro',
+} as const;
+
+/** Convert the UI's canonical GA provider IDs into the shared gateway tier. */
+export function normalizeVideoModelTier(model?: string): 'lite' | 'fast' | 'pro' {
+    if (!model) return 'fast';
+    if (model === 'lite' || model === 'fast' || model === 'pro') return model;
+    const tier = VIDEO_MODEL_TIERS[model as keyof typeof VIDEO_MODEL_TIERS];
+    if (tier) return tier;
+    throw new Error(`Unsupported video model "${model}". Choose an approved GA Veo model.`);
 }
+
 
 /**
  * VideoGenerationService - Client-side orchestrator for Intelligence video production
@@ -255,13 +267,16 @@ export class VideoGenerationService {
     }
 
 
-    /**
-     * Estimate the cost of video generation based on duration and model.
-     * Pricing: fast=$0.10/sec, pro=$0.40/sec
-     */
-    private estimateVideoCost(durationSeconds: number, model?: string): number {
+    public estimateVideoCost(durationSeconds: number, model?: string): number {
         const actualModel = model || DEFAULT_VIDEO_MODEL;
-        const rate = actualModel.includes('pro') ? 0.40 : 0.10;
+        let rate = 0.10; // Default/fast rate
+        // Match GA and legacy-preview IDs so old saved jobs still price correctly.
+        if (actualModel.includes('lite')) {
+            rate = 0.05;
+        } else if (!actualModel.includes('fast') && /veo-3\.1-generate-(001|preview)/.test(actualModel)) {
+            // The pro model id carries no 'pro' marker — it's the bare generate id.
+            rate = 0.40;
+        }
         return durationSeconds * rate;
     }
 
@@ -302,7 +317,7 @@ export class VideoGenerationService {
     /**
      * Triggers a standard (atomic) video generation job.
      * Enriches the prompt, analyzes temporal context, and calls the
-     * @google/genai SDK directly via FirebaseIntelligenceService (no Cloud Functions).
+     * secured generateVideoV3 Firebase Cloud Function.
      * Writes results to Firestore for UI subscription compatibility.
      * 
      * @param options - Configuration for the video generation request.
@@ -315,6 +330,10 @@ export class VideoGenerationService {
             const errorMsg = validation.error.issues.map(i => i.message).join(', ');
             throw new Error(`Invalid video parameters: ${errorMsg}`);
         }
+        // Normalize before quota/cost reservation. A retired preview model must
+        // never reserve spend and a canonical GA ID must not later fail the
+        // shared gateway schema that accepts only tier names.
+        const modelTier = normalizeVideoModelTier(options.model);
 
         const currentUser = auth.currentUser;
         if (!currentUser) {
@@ -328,6 +347,34 @@ export class VideoGenerationService {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             throw new QuotaExceededError('video_duration', tierInfo.tier as any, quotaCheck.reason || 'Limit reached', 1, 1);
         }
+
+        const videoDuration = options.durationSeconds || options.duration || 8;
+        const estimatedCost = this.estimateVideoCost(videoDuration, modelTier);
+        let costReservationId: string | undefined;
+        if (!options.skipCostCheck && !options.costReservationId) {
+            const costCheck = await CostControlService.checkAndReserve({
+                operationType: 'video',
+                estimatedCost,
+                userId,
+                metadata: {
+                    durationSeconds: videoDuration,
+                    model: modelTier,
+                    resolution: options.resolution,
+                    aspectRatio: options.aspectRatio,
+                    mode: options.mode || 'video_remix',
+                    sourceVideoUri: options.sourceVideoUri,
+                    maskFrameUri: options.maskFrameUri,
+                    maskTrackUri: options.maskTrackUri,
+                },
+            });
+
+            if (!costCheck.allowed) {
+                throw new Error(`Video generation blocked: ${costCheck.reason}`);
+            }
+
+            costReservationId = costCheck.operationId;
+        }
+        const effectiveCostReservationId = options.costReservationId || costReservationId;
 
         logger.info('[VideoGeneration] 🎬 generateVideo() called (via Gateway):', {
             promptPreview: options.prompt.substring(0, 100),
@@ -393,6 +440,26 @@ export class VideoGenerationService {
 
         const durationSec = options.duration || options.durationSeconds;
         const clampedDuration = durationSec ? Math.min(8, Math.max(4, durationSec)) : undefined;
+        const fps = options.fps ?? 24;
+        const directorDuration = clampedDuration ?? durationSec ?? 6;
+        const directorSettings = DirectorSettingsSchema.parse({
+            fps,
+            durationSeconds: directorDuration,
+            totalFrames: Math.round(directorDuration * fps),
+            aspectRatio: options.aspectRatio,
+            resolution: options.resolution,
+            seed: options.seed,
+            firstFrameUri,
+            lastFrameUri,
+            cameraMovement: options.cameraMovement,
+            motionStrength: options.motionStrength,
+        });
+        const referenceRoles = options.inputManifest?.filter(input => ['ingredient', 'character_reference', 'whisk_reference'].includes(input.role)) ?? [];
+        const inputManifest = [
+            ...(firstFrameUri ? [{ role: 'first_frame' as const, uri: firstFrameUri }] : []),
+            ...(lastFrameUri ? [{ role: 'last_frame' as const, uri: lastFrameUri }] : []),
+            ...(referenceUris ?? []).map((uri, index) => ({ role: referenceRoles[index]?.role ?? 'ingredient' as const, uri })),
+        ];
 
         const sanitizedPrompt = InputSanitizer.sanitize(options.prompt);
         const enrichedPrompt = this.enrichPrompt(sanitizedPrompt, {
@@ -406,27 +473,44 @@ export class VideoGenerationService {
             const generateVideoV3 = httpsCallable(functions, 'generateVideoV3');
             
             const payload = {
+                mode: options.mode,
                 prompt: enrichedPrompt,
                 firstFrameUri,
                 lastFrameUri,
+                sourceVideoUri: options.sourceVideoUri,
+                maskFrameUri: options.maskFrameUri,
+                maskTrackUri: options.maskTrackUri,
+                frameRange: options.frameRange,
+                skipCostCheck: options.skipCostCheck,
                 referenceUris: referenceUris && referenceUris.length > 0 ? referenceUris : undefined,
                 aspectRatio: options.aspectRatio,
-                model: options.model,
+                model: modelTier,
                 resolution: options.resolution,
                 durationSeconds: clampedDuration,
+                directorSettings,
                 personGeneration: options.personGeneration,
                 negativePrompt: options.negativePrompt,
                 seed: options.seed,
+                costEstimate: estimatedCost,
+                costReservationId: effectiveCostReservationId,
+                parentId: options.parentId,
+                inputManifest: inputManifest.length > 0 ? inputManifest : undefined,
             };
 
             const compactedPayload = Object.fromEntries(
                 Object.entries(payload).filter(([, v]) => v !== undefined && v !== null)
             );
 
-            const res = await generateVideoV3(compactedPayload);
+            const payloadValidation = GenerateVideoSchema.safeParse(compactedPayload);
+            if (!payloadValidation.success) {
+                const errorMsg = payloadValidation.error.issues.map(issue => issue.message).join(', ');
+                throw new Error(`Invalid video gateway payload: ${errorMsg}`);
+            }
+
+            const res = await generateVideoV3(payloadValidation.data);
             const data = res.data as { jobId: string };
 
-            // We return a placeholder URL; the actual video will be resolved by waitForJob or the UI listener
+            // Return a job token here; the actual video URL resolves via waitForJob or the UI listener
             return [{
                 id: data.jobId,
                 url: '', 
@@ -442,7 +526,7 @@ export class VideoGenerationService {
      * Subscribes to a video job status.
      */
     subscribeToJob(jobId: string, callback: (job: VideoJob | null) => void): () => void {
-        const jobRef = doc(db, 'videoJobs', jobId);
+        const jobRef = doc(db, COLLECTIONS.VIDEO.JOBS, jobId);
         let maxQualityLevel = 0;
 
         const getQualityLevel = (q?: string): number => {
@@ -486,8 +570,27 @@ export class VideoGenerationService {
             unsub = this.subscribeToJob(jobId, async (job: VideoJob | null) => {
                 if (!job) return;
 
-                if (job.status === 'completed' || job.status === 'failed') {
-                    if (job.status === 'completed') {
+                // 'stitching' is only a terminal (resolve-now) state for genuine
+                // multi-segment long-form jobs, which have segmentUrls to assemble
+                // (ISSUE-878). A single-generation job can also transiently report
+                // 'stitching' as an intermediate progress marker before its final
+                // 'completed' event carries the real output — that case must keep
+                // waiting, not resolve early with an empty output (ISSUE-878 follow-up).
+                const isLongFormStitching = job.status === 'stitching' && !!job.segmentUrls?.length;
+
+                if (job.status === 'completed' || isLongFormStitching || job.status === 'failed' || job.status === 'cancelled') {
+                    if (job.status === 'cancelled') {
+                        reject(new Error(job.error || 'Video generation cancelled by user.'));
+                        return;
+                    }
+                    if (isLongFormStitching) {
+                        // Multi-segment long-form video: all segments are ready for assembly
+                        // UI should use segmentUrls to build a timeline/project
+                        resolve({
+                            ...job,
+                            output: job.output || { metadata: job.output?.metadata },
+                        });
+                    } else if (job.status === 'completed') {
                         // Enforce MIME Type Guard for Veo 3.1 Compliance
                         const mimeType = job.output?.metadata?.mime_type;
                         if (mimeType && mimeType !== 'video/mp4') {
@@ -496,25 +599,34 @@ export class VideoGenerationService {
                         }
 
                         // Lens 🎥 Integrity Check: Verify Video Asset Availability (404 Protection)
-                        const videoUrl = job.output?.url;
+                        const videoUrl = job.output?.url || job.videoUrl || job.url;
+                        const playableUrl = videoUrl ? await resolveStorageUrl(videoUrl) : videoUrl;
                         // Skip integrity check for blob URLs — they are in-memory and always valid.
                         // HEAD requests are not supported on the blob: protocol.
-                        if (videoUrl && typeof videoUrl === 'string' && !videoUrl.startsWith('blob:')) {
+                        if (playableUrl && typeof playableUrl === 'string' && !playableUrl.startsWith('blob:') && !playableUrl.startsWith('gs://') && (playableUrl.startsWith('http://') || playableUrl.startsWith('https://'))) {
                             try {
                                 // HEAD request to verify existence without downloading payload
-                                const response = await fetch(videoUrl, { method: 'HEAD' });
-                                if (!response.ok) {
+                                const response = await fetch(playableUrl, { method: 'HEAD' });
+                                if (response.status === 404) {
                                     reject(new Error(`Asset Integrity Failure: Video URL is unreachable (${response.status}).`));
                                     return;
                                 }
                             } catch (e: unknown) {
-                                // Network error during verification should not block generation unless strictly required.
-                                // We log the warning for debugging purposes, but proceed with strict verification logic.
+                                // Network error during verification should not block generation.
+                                // Log for debugging but allow completion.
                                 logger.warn("Lens: Video verification check failed", e);
                             }
+                        } else if (playableUrl?.startsWith('gs://')) {
+                            reject(new Error('Asset Integrity Failure: Video URL could not be resolved from Storage.'));
+                            return;
                         }
 
-                        resolve(job);
+                        resolve({
+                            ...job,
+                            output: job.output ? { ...job.output, url: playableUrl } : { url: playableUrl },
+                            videoUrl: playableUrl,
+                            url: playableUrl,
+                        });
                     } else {
                         // Enhanced Safety Reporting
                         let errorMsg = job.error || 'Video generation failed.';
@@ -550,7 +662,7 @@ export class VideoGenerationService {
      * sequentially via the direct SDK, then writes results to Firestore.
      * 
      * @param options - Configuration for long-form generation including totalDuration.
-     * @returns A promise resolving to the main jobId placeholder.
+     * @returns A promise resolving to the main jobId token.
      */
     async generateLongFormVideo(options: {
         prompt: string;
@@ -574,6 +686,10 @@ export class VideoGenerationService {
     }): Promise<{ id: string, url: string, prompt: string }[]> {
         // Security: Sanitize Prompt (Redact PII)
         const sanitizedPrompt = InputSanitizer.sanitize(options.prompt);
+        // Long-form callers also accept UI model strings, so reject retired IDs
+        // before their aggregate reservation and pass a gateway-safe tier to
+        // every generated segment.
+        const modelTier = normalizeVideoModelTier(options.model);
 
         // Pre-flight duration quota check
         const quotaCheck = await subscriptionService.canPerformAction('generateVideo', options.totalDuration);
@@ -588,6 +704,25 @@ export class VideoGenerationService {
             );
         }
 
+        const estimatedCost = this.estimateVideoCost(options.totalDuration, modelTier);
+        const costCheck = await CostControlService.checkAndReserve({
+            operationType: 'video',
+            estimatedCost,
+            userId: auth.currentUser?.uid || 'unknown',
+            metadata: {
+                durationSeconds: options.totalDuration,
+                model: modelTier,
+                resolution: options.resolution,
+                aspectRatio: options.aspectRatio,
+                mode: 'long_form',
+            },
+        });
+
+        if (!costCheck.allowed) {
+            throw new Error(`Video generation blocked: ${costCheck.reason}`);
+        }
+        const longFormReservationId = costCheck.operationId;
+
         const jobId = `long_${uuidv4()}`;
         const { useStore } = await import('@/core/store');
         const orgId = useStore.getState().currentOrganizationId;
@@ -598,6 +733,8 @@ export class VideoGenerationService {
         }, options.userProfile);
 
         const targetAspectRatio = this.determineTargetAspectRatio(options);
+        const validatedTargetAspectRatio = VideoAspectRatioSchema.safeParse(targetAspectRatio);
+        const normalizedLongFormAspectRatio = validatedTargetAspectRatio.success ? validatedTargetAspectRatio.data : '16:9';
 
         // Construct segment-wise prompts for sequential generation
         const BLOCK_DURATION = 8;
@@ -608,7 +745,7 @@ export class VideoGenerationService {
 
         // Write initial long-form job to Firestore
         const { setDoc, serverTimestamp } = await import('firebase/firestore');
-        const jobRef = doc(db, 'videoJobs', jobId);
+        const jobRef = doc(db, COLLECTIONS.VIDEO.JOBS, jobId);
         await setDoc(jobRef, {
             id: jobId,
             userId: auth.currentUser?.uid,
@@ -619,6 +756,8 @@ export class VideoGenerationService {
             totalSegments: numBlocks,
             completedSegments: 0,
             segmentUrls: [],
+            costEstimate: estimatedCost,
+            costReservationId: longFormReservationId,
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp(),
         });
@@ -648,29 +787,39 @@ export class VideoGenerationService {
                 }
 
                 // Generate segment — with firstFrame from previous segment's last frame
-                // Uses withRetry for production-grade error recovery:
-                //   - Retries on 429, 503, network errors with exponential backoff + jitter
-                //   - Fails fast on 400, 401, 403, quota, safety violations
-                //   - Respects Retry-After headers when present
+                // Uses withRetry for production-grade error recovery
                 const videoUrl = await this.withRetry(
-                    () => AutonomousIntelligence.generateVideo({
-                        prompt: segmentPrompt,
-                        model: options.model || DEFAULT_VIDEO_MODEL,
-                        image: previousLastFrame
-                            ? { imageBytes: previousLastFrame, mimeType: 'image/jpeg' }
-                            : undefined,
-                        config: stripUndefined({
-                            aspectRatio: targetAspectRatio || '16:9',
-                            resolution: options.resolution,
+                    async () => {
+                        const results = await this.generateVideo({
+                            prompt: segmentPrompt,
+                            model: modelTier,
+                            skipCostCheck: true,
+                            image: previousLastFrame
+                                ? { imageBytes: previousLastFrame, mimeType: 'image/jpeg' }
+                                : undefined,
+                            aspectRatio: normalizedLongFormAspectRatio,
+                            resolution: options.resolution as "720p" | "1080p" | "4k",
                             durationSeconds: BLOCK_DURATION,
                             negativePrompt: options.negativePrompt,
                             seed: options.seed,
                             referenceImages: options.referenceImages,
-                        }),
-                    }),
+                        });
+                        
+                        const jobId = results[0]?.id;
+                        if (!jobId) throw new Error('Failed to get jobId from generateVideo');
+                        
+                        // Wait for the video job to complete via backend webhook/status update
+                        const completedJob = await this.waitForJob(jobId, 600000); // 10 min timeout per segment
+                        const jobResultUrl = completedJob?.output?.url || completedJob?.videoUrl || completedJob?.url;
+                        console.log('DEBUG_LONG_FORM:', { jobId, completedJob, jobResultUrl });
+                        if (!completedJob || !jobResultUrl) {
+                            throw new Error('Video generation failed or timed out without returning a result URL.');
+                        }
+                        return jobResultUrl;
+                    },
                     `Segment ${i + 1}/${numBlocks}`,
                     3,   // maxRetries
-                    2000 // baseDelayMs — start at 2s since Veo jobs are inherently slow
+                    2000 // baseDelayMs
                 );
 
                 segmentUrls.push(videoUrl);
@@ -726,35 +875,34 @@ export class VideoGenerationService {
 
             options.onProgress?.(numBlocks, numBlocks);
 
-            // Mark as completed with all segment URLs
+            // Mark as stitching (all segments ready for assembly)
+            // videoUrl and output.url remain undefined until stitching is complete
             const { updateDoc } = await import('firebase/firestore');
             await updateDoc(jobRef, {
-                status: 'completed',
-                videoUrl: segmentUrls[0]!, // Primary URL is first segment
+                status: 'stitching',
                 segmentUrls,
-                'output.url': segmentUrls[0]!,
                 'output.metadata.quality': 'pro',
                 'output.metadata.mime_type': 'video/mp4',
                 'chainState.complete': true,
                 'chainState.totalSegments': numBlocks,
                 updatedAt: serverTimestamp(),
-                completedAt: serverTimestamp(),
             });
 
             return [{
                 id: jobId,
-                url: segmentUrls[0]!,
+                url: segmentUrls[0] || '',
                 prompt: options.prompt
             }];
         } catch (error: unknown) {
             const { updateDoc } = await import('firebase/firestore');
             const errorMsg = error instanceof Error ? error.message : String(error);
+            const isCancelled = errorMsg.toLowerCase().includes('cancelled');
 
             await updateDoc(jobRef, {
-                status: 'failed',
+                status: isCancelled ? 'cancelled' : 'failed',
                 error: errorMsg,
                 segmentUrls,
-                'chainState.failedAtSegment': segmentUrls.length,
+                ...(isCancelled ? { cancelledAt: serverTimestamp() } : { 'chainState.failedAtSegment': segmentUrls.length }),
                 updatedAt: serverTimestamp(),
             }).catch(e => logger.warn('[VideoGeneration] Failed to update long-form job status:', e));
 
@@ -848,4 +996,3 @@ export class VideoGenerationService {
 }
 
 export const VideoGeneration = new VideoGenerationService();
-

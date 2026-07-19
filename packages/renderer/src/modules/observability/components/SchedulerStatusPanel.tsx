@@ -41,7 +41,7 @@ function formatCountdown(nextRunAt?: string): string {
 }
 
 function formatTime(iso: string): string {
-    return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    return new Date(iso).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 }
 
 // ── Sub-components ──────────────────────────────────────────────────────────
@@ -214,7 +214,7 @@ export function SchedulerStatusPanel() {
 
     if (loading) {
         return (
-            <Card className="bg-linear-to-br from-purple-500/10 to-slate-900/5 border-purple-500/20">
+            <Card className="bg-linear-to-br from-green-500/10 to-slate-900/5 border-green-500/20">
                 <CardContent className="p-6 flex items-center justify-center gap-2 text-muted-foreground text-sm">
                     <RefreshCw size={14} className="animate-spin" />
                     Loading scheduler…
@@ -229,15 +229,15 @@ export function SchedulerStatusPanel() {
     // ── Render: full panel ──────────────────────────────────────────────────
 
     return (
-        <Card className="bg-linear-to-br from-purple-500/10 to-slate-900/5 border-purple-500/20">
+        <Card className="bg-linear-to-br from-green-500/10 to-slate-900/5 border-green-500/20">
             <CardHeader className="pb-2">
                 <div className="flex items-center justify-between">
-                    <CardTitle className="text-sm font-semibold flex items-center gap-2 text-purple-300">
+                    <CardTitle className="text-sm font-semibold flex items-center gap-2 text-green-300">
                         <Zap size={14} />
                         Task Scheduler
                     </CardTitle>
                     <div className="flex items-center gap-2">
-                        <Badge variant="outline" className="text-[10px] border-purple-500/30 text-purple-300">
+                        <Badge variant="outline" className="text-[10px] border-green-500/30 text-green-300">
                             {activeTasks.length} / {tasks.length} active
                         </Badge>
                         <button
@@ -260,7 +260,7 @@ export function SchedulerStatusPanel() {
                     {[
                         { label: 'Active', value: activeTasks.length.toString(), color: 'text-emerald-400' },
                         { label: 'Total', value: tasks.length.toString(), color: 'text-slate-300' },
-                        { label: 'Fired', value: (status?.totalFireCount ?? 0).toString(), color: 'text-purple-400' },
+                        { label: 'Fired', value: (status?.totalFireCount ?? 0).toString(), color: 'text-green-400' },
                     ].map(({ label, value, color }) => (
                         <div key={label} className="text-center p-2 rounded-md bg-white/3">
                             <p className={`text-lg font-bold ${color}`}>{value}</p>

@@ -17,6 +17,7 @@
 
 import * as functions from "firebase-functions/v1";
 import * as admin from "firebase-admin";
+import { validateAppCheckV1 } from "../middleware/appCheck";
 import {
     spotifyClientId,
     spotifyClientSecret,
@@ -51,8 +52,9 @@ function assertAuth(context: functions.https.CallableContext): string {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const analyticsExchangeToken = functions
-    .runWith({ enforceAppCheck: true,  secrets: ALL_SECRETS, timeoutSeconds: 30  })
+    .runWith({ enforceAppCheck: false,  secrets: ALL_SECRETS, timeoutSeconds: 30  })
     .https.onCall(async (data: unknown, context) => {
+        validateAppCheckV1(context);
         const uid = assertAuth(context);
         const { platform, code, redirectUri, codeVerifier } = data as {
             platform: string;
@@ -111,8 +113,9 @@ export const analyticsExchangeToken = functions
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const analyticsRefreshToken = functions
-    .runWith({ enforceAppCheck: true,  secrets: ALL_SECRETS, timeoutSeconds: 30  })
+    .runWith({ enforceAppCheck: false,  secrets: ALL_SECRETS, timeoutSeconds: 30  })
     .https.onCall(async (data: unknown, context) => {
+        validateAppCheckV1(context);
         const uid = assertAuth(context);
         const { platform } = data as { platform: string };
         if (!platform) {
@@ -174,8 +177,9 @@ export const analyticsRefreshToken = functions
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const analyticsRevokeToken = functions
-    .runWith({ enforceAppCheck: true,  secrets: ALL_SECRETS, timeoutSeconds: 15  })
+    .runWith({ enforceAppCheck: false,  secrets: ALL_SECRETS, timeoutSeconds: 15  })
     .https.onCall(async (data: unknown, context) => {
+        validateAppCheckV1(context);
         const uid = assertAuth(context);
         const { platform } = data as { platform: string };
         if (!platform) {
@@ -413,10 +417,23 @@ async function refreshInstagramLongLivedToken(accessToken: string): Promise<Inst
 // ── Firestore helpers ─────────────────────────────────────────────────────────
 
 async function storeToken(uid: string, platform: string, token: StoredToken): Promise<void> {
-    await tokenPath(uid, platform).set({
+    const tokenData = {
         ...token,
         platform,
         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
         connectedAt: admin.firestore.FieldValue.serverTimestamp(),
-    }, { merge: true });
+    };
+
+    await tokenPath(uid, platform).set(tokenData, { merge: true });
+
+    // Dual-write to socialTokens for platforms that support posting (ISSUE-766 Layer 1 fix)
+    const postingPlatforms = ['instagram', 'tiktok', 'youtube'];
+    if (postingPlatforms.includes(platform)) {
+        const socialTokenPath = admin.firestore()
+            .collection('users')
+            .doc(uid)
+            .collection('socialTokens')
+            .doc(platform);
+        await socialTokenPath.set(tokenData, { merge: true });
+    }
 }

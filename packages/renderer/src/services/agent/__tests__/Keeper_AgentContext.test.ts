@@ -60,6 +60,17 @@ mockGenerateContent
 vi.mock('@/services/intelligence/AutonomousIntelligence', () => ({
     AutonomousIntelligence: {
         generateContent: (...args: any[]) => mockGenerateContent(...args),
+        generateContentStream: vi.fn().mockImplementation(async (...args: any[]) => {
+            const result = await mockGenerateContent(...args);
+            return {
+                stream: {
+                    [Symbol.asyncIterator]: async function* () {
+                        yield { text: () => result?.response?.text?.() || '' };
+                    }
+                },
+                response: Promise.resolve(result)
+            };
+        }),
         batchEmbedContents: vi.fn((texts: string[]) => Promise.resolve(Array(texts.length).fill(Array(768).fill(0)))),
         embedContent: vi.fn().mockResolvedValue({ values: Array(768).fill(0) })
     }
@@ -180,6 +191,9 @@ vi.mock('../context/AgentExecutionContext', () => ({
 describe('📚 Keeper: Context & Persistence Integration', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        vi.mocked(ContextManager.truncateContext).mockReturnValue([{ role: 'user', parts: [{ text: 'TRUNCATED' }] }]);
+        vi.mocked(ContextManager.estimateTokens).mockReturnValue(10);
+        vi.mocked(ContextManager.estimateContextTokens).mockReturnValue(100);
         // Setup initial store state
         useStore.setState({
             agentHistory: [],

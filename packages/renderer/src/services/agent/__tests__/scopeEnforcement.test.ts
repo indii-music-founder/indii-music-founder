@@ -16,7 +16,7 @@ describe('Department registry — Phase 1 hierarchical agent system', () => {
             const expectedHeads = [
                 'finance', 'legal', 'distribution', 'marketing', 'brand',
                 'music', 'video', 'social', 'publicist', 'publishing',
-                'licensing', 'road', 'merchandise', 'creative', 'producer',
+                'licensing', 'road', 'hospitality', 'event-planner', 'merchandise', 'creative', 'producer',
                 'director', 'screenwriter', 'devops', 'security', 'curriculum',
                 'keeper',
             ];

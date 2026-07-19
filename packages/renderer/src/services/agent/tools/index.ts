@@ -53,6 +53,9 @@ import { HarnessTools } from './HarnessTools';
 import { consult_specialist, seat_agent, unseat_agent } from './SwarmTools';
 import { FoundationalTools } from './FoundationalTools';
 import { BillingTools } from './BillingTools';
+import { EmailTools } from './EmailTools';
+import { McpTools } from './McpTools';
+import { RemoteSupportTools } from './RemoteSupportTools';
 import { AnyToolFunction } from '../types';
 
 export const TOOL_REGISTRY: Record<string, AnyToolFunction> = {
@@ -118,6 +121,9 @@ export const TOOL_REGISTRY: Record<string, AnyToolFunction> = {
     ...ReleaseHarnessTools,
     ...CreatorProtectionTools,
     ...HarnessTools,
+    ...EmailTools,
+    ...McpTools,
+    ...RemoteSupportTools,
 };
 
 
@@ -149,7 +155,8 @@ AVAILABLE TOOLS:
 23. generate_crisis_response(issue: string, sentiment: string, platform: string) - Generate crisis response.
 24. extend_video(videoUrl: string, direction: string, frame: number) - Extend video (direction: 'forwards' or 'backwards').
 25. update_keyframe(clipId: string, property: string, frame: number, value: number, easing: string) - Add or update a keyframe.
-26. list_organizations() - List all organizations.
+26. create_performance_video(songUrl: string, artistImageUrl?: string, artistDescription?: string, style?: string, aspectRatio?: string, sceneCount?: number) - Generate a beat-synced performance music video from an uploaded song and AI artist.
+27. list_organizations() - List all organizations.
 27. switch_organization(orgId: string) - Switch to a different organization.
 28. create_organization(name: string) - Create a new organization.
 29. get_organization_details() - Get details of current organization.
@@ -268,4 +275,9 @@ AVAILABLE TOOLS:
 119. update_agent_memory(agentId: string, action: 'add'|'remove', knowledge: string) - Permanently update an agent's procedural instructions.
 120. create_artifact(filename: string, content: string, artifactType?: string, requestFeedback?: boolean) - Create an artifact document to present structured information to the user.
 121. multi_replace_file_content(targetFile: string, instruction: string, description: string, replacementChunks: array) - Modify multiple non-contiguous blocks of text in a single file.
+--- EMAIL ---
+271. list_email_accounts() - List connected email accounts for the user.
+272. read_emails(provider: string, forceSync?: boolean, maxResults?: number) - Read recent emails from a connected provider (e.g. 'gmail').
+273. send_email(accountId: string, to: string, subject: string, body: string) - Send an email from a connected account.
+274. reply_to_email(accountId: string, to: string, subject: string, body: string, threadId: string, inReplyTo: string) - Reply to an existing email thread.
 `;

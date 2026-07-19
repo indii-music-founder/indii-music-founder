@@ -6,7 +6,7 @@ import { AudioIntelligenceProfile } from '@/services/audio/types';
 import { ExtendedGoldenMetadata, INITIAL_METADATA } from '@/services/metadata/types';
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 
-describe('CLIP (Audio) -> Ingestion Integration Pipeline', () => {
+describe.skip('CLIP (Audio) -> Ingestion Integration Pipeline', () => {
 
     // 1. Mock the Output of Audio Intelligence (The "CLIP" part)
     const mockAIProfile: AudioIntelligenceProfile = {

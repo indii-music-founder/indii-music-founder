@@ -2,6 +2,7 @@ import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
 import type { AnyToolFunction } from '../types';
 import { db } from '@/services/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { importWithRetry } from '@/utils/dynamicImport';
 
 export const AutonomousTools = {
     /**
@@ -16,7 +17,7 @@ export const AutonomousTools = {
         audioUrl?: string,
         licenseType: 'Personal' | 'Commercial' | 'Exclusive'
     }) => {
-        const { useStore } = await import('@/core/store');
+        const { useStore } = await importWithRetry(() => import('@/core/store'));
         const { userProfile } = useStore.getState();
 
         if (!userProfile?.id) {

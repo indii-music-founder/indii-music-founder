@@ -1,24 +1,34 @@
 # Handoff State
-**Updated:** 2026-06-11 21:22 EDT
-**Branch:** `fix/open-issues-sweep`
+**Updated:** 2026-07-18 12:39 EDT
+**Branch:** `main`
 
 ## Recent Commits
 ```
-73c6f0094 refactor(better): add defensive validation and robust error handling to firebase functions
-da35cbf7d docs: update open issues ledger and task tracking sheet for fixed items
-ae50c3360 fix(firebase): resolve remaining open architectural, duplicate onboarding, and webhook integration issues
-e2accb7e0 docs(issues): update OPEN_ISSUES ledger after fixing high-severity IPC handlers
-e94f12aa4 fix(main): implement missing IPC handlers for Spotify, Apple delivery, XSD validation, and capture-state
-8c0364c1e docs: update test history after issue-sweep
-68a1151be docs(test): add test report for Mega Stress Test v12.0
-98dafa19e test(e2e): add Playwright spec for Mega Stress Test V12
-4f8f55e03 docs(test): add Mega Stress Test v12.0 — Main-Process & Firebase Function Integrity (Routines 121-130)
-db9ea3b4a chore: record findings from /finish sweep to open issues ledger
+576f5cf62 docs(remote): align macro cloud relay path
+7b981eda6 fix(remote): restore reliable cloud connection flow
+806841d2a feat: expand omni backend workflows
+ee1331812 chore: session checkpoint [09:10]
+da25408ce chore: session checkpoint [05:38]
+6c64d4d8a chore: session checkpoint [05:33]
+b95d7d4ee chore: session checkpoint [05:28]
+b8866a8d4 chore: session checkpoint [05:27]
+858466836 fix(mcp): fail-close all 10 tool stubs, carry JWT on SSE handshake, type new surface
+8cfeedbb5 feat: A2A Swarm MCP integration
 ```
 
 ## Working State
 ```
-clean working tree
+ M .agent/test_ledger/OPEN_ISSUES_V2.md
+ M packages/engine-dsp/main.py
+ M packages/engine-dsp/pipeline.py
+ M packages/engine-dsp/requirements.txt
+ M packages/engine-dsp/test_pipeline.py
+ M packages/firebase/src/index.ts
+ D packages/firebase/src/mcp/processVideoJobs.ts
+ M packages/renderer/src/services/audio/AudioAnalysisReceiptService.test.ts
+ M packages/renderer/src/services/audio/AudioAnalysisReceiptService.ts
+?? packages/engine-dsp/test_main.py
+?? packages/firebase/src/audio/
 ```
 
 ## Decisions

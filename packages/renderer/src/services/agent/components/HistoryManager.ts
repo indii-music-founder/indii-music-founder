@@ -2,6 +2,7 @@ import type { AgentMessage } from '@/core/store';
 import { SummaryService } from '../utils/SummaryService';
 import { Logger } from '@/core/logger/Logger';
 import { alwaysOnMemoryEngine } from '../memory/AlwaysOnMemoryEngine';
+import { importWithRetry } from '@/utils/dynamicImport';
 
 /**
  * HistoryManager: Manages the "Active Memory" of a conversation.
@@ -25,10 +26,10 @@ export class HistoryManager {
      * @returns A promise resolving to the list of clean agent messages.
      */
     async getRecentHistory(): Promise<AgentMessage[]> {
-        const { useStore } = await import('@/core/store');
+        const { useStore } = await importWithRetry(() => import('@/core/store'));
         const state = useStore.getState();
 
-        const currentHistory = state.conversationMode === 'boardroom' ? state.boardroomMessages : state.agentHistory;
+        const currentHistory = state.conversationMode === 'boardroom' ? state.agentHistory : state.agentHistory;
 
         // Filter out system messages and internal logs for the conversation window
         const cleanHistory = (currentHistory || []).filter(m =>
@@ -60,7 +61,7 @@ export class HistoryManager {
      * @returns A promise resolving to the compiled history string for LLM context.
      */
     async getCompiledView(): Promise<string> {
-        const { useStore } = await import('@/core/store');
+        const { useStore } = await importWithRetry(() => import('@/core/store'));
         const state = useStore.getState();
         const userId = state.userProfile?.uid;
 
@@ -118,8 +119,8 @@ ${formattedRecent}
             const history = await this.getRecentHistory();
             if (history.length === 0) return;
 
-            const { doc, setDoc, serverTimestamp } = await import('firebase/firestore');
-            const { db } = await import('@/services/firebase');
+            const { doc, setDoc, serverTimestamp } = await importWithRetry(() => import('firebase/firestore'));
+            const { db } = await importWithRetry(() => import('@/services/firebase'));
 
             const transcript = this.formatHistory(history);
             const docRef = doc(db, `users/${userId}/session_transcripts/${sessionId}`);
@@ -152,8 +153,8 @@ ${formattedRecent}
         if (!userId || !query) return [];
 
         try {
-            const { collection, getDocs, orderBy, query: firestoreQuery, limit: firestoreLimit } = await import('firebase/firestore');
-            const { db } = await import('@/services/firebase');
+            const { collection, getDocs, orderBy, query: firestoreQuery, limit: firestoreLimit } = await importWithRetry(() => import('firebase/firestore'));
+            const { db } = await importWithRetry(() => import('@/services/firebase'));
 
             // Firestore doesn't support full-text search, so we fetch recent transcripts
             // and filter client-side. For production, this would be backed by a search index.

@@ -14,20 +14,22 @@ const PLATFORM_LIMITS = {
 
 interface CreatePostModalProps {
     onClose: () => void;
-    onSave: (post: ScheduledPost) => void;
+    onSave: (post: ScheduledPost) => Promise<boolean>;
+    initialScheduledDate?: string;
 }
 
-export default function CreatePostModal({ onClose, onSave }: CreatePostModalProps) {
+export default function CreatePostModal({ onClose, onSave, initialScheduledDate }: CreatePostModalProps) {
     const { t } = useTranslation();
     const toast = useToast();
     const [platform, setPlatform] = useState<'Twitter' | 'Instagram'>('Twitter');
     const [copy, setCopy] = useState('');
     const [selectedImage, setSelectedImage] = useState<ImageAsset | null>(null);
-    const [scheduledDate, setScheduledDate] = useState<string>(new Date().toISOString().split('T')[0]!);
+    const [scheduledDate, setScheduledDate] = useState<string>(initialScheduledDate || new Date().toLocaleDateString('sv-SE'));
     const [scheduledTime, setScheduledTime] = useState<string>('12:00');
 
     const [isGenerating, setIsGenerating] = useState(false);
     const [isAssetDrawerOpen, setIsAssetDrawerOpen] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
 
     // IDs for accessibility
     const copyInputId = useId();
@@ -59,13 +61,24 @@ export default function CreatePostModal({ onClose, onSave }: CreatePostModalProp
         }
     };
 
-    const handleSave = () => {
+    const handleSave = async () => {
         if (isOverLimit) {
             toast.error(`Post exceeds character limit for ${platform}`);
             return;
         }
 
         const timestamp = new Date(`${scheduledDate}T${scheduledTime}`).getTime();
+
+        // Validate timestamp is finite and in future
+        if (!Number.isFinite(timestamp)) {
+            toast.error('Invalid date or time selected');
+            return;
+        }
+
+        if (timestamp <= Date.now()) {
+            toast.error('Post must be scheduled for a future time');
+            return;
+        }
 
         const newPostData = {
             id: crypto.randomUUID(),
@@ -88,8 +101,15 @@ export default function CreatePostModal({ onClose, onSave }: CreatePostModalProp
         }
 
         // Pass validated data
-        onSave(validation.data as unknown as ScheduledPost);
-        onClose();
+        setIsSaving(true);
+        try {
+            if (await onSave(validation.data as unknown as ScheduledPost)) onClose();
+            else toast.error('Could not schedule this post. Your draft is still available.');
+        } catch {
+            toast.error('Could not schedule this post. Your draft is still available.');
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     return (
@@ -144,7 +164,7 @@ export default function CreatePostModal({ onClose, onSave }: CreatePostModalProp
                             <button
                                 onClick={handleGenerateCopy}
                                 disabled={isGenerating}
-                                className="text-xs flex items-center gap-1.5 text-purple-400 hover:text-purple-300 transition-colors disabled:opacity-50"
+                                className="text-xs flex items-center gap-1.5 text-green-400 hover:text-green-300 transition-colors disabled:opacity-50"
                             >
                                 {isGenerating ? <Loader2 size={12} className="animate-spin" aria-hidden="true" /> : <Wand2 size={12} aria-hidden="true" />}
                                 {isGenerating ? 'Generating...' : 'Generate with AI'}
@@ -247,7 +267,7 @@ export default function CreatePostModal({ onClose, onSave }: CreatePostModalProp
                     </button>
                     <button
                         onClick={handleSave}
-                        disabled={isOverLimit}
+                        disabled={isOverLimit || isSaving}
                         className="px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold rounded-lg transition-colors shadow-lg shadow-blue-900/20 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         Schedule Post

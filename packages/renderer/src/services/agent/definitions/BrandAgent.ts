@@ -2,6 +2,31 @@ import { AgentConfig } from "../types";
 import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import { audioIntelligence } from '@/services/audio/AudioIntelligenceService';
 import systemPrompt from '@agents/brand/prompt.md?raw';
+import { buildDomainRetrievalTools, buildDomainRetrievalDeclarations } from '../tools/DomainTools';
+
+const brandRetrievalConfig = {
+    brand_guidelines: {
+        path: 'brand_guidelines',
+        requiresUserIdFilter: true,
+        description: 'Brand bibles, tone of voice guidelines, and visual identity pillars.',
+        defaultLimit: 5
+    },
+    visual_assets: {
+        path: 'visual_assets',
+        requiresUserIdFilter: true,
+        description: 'Logos, color palettes, typography, and approved visual assets.',
+        defaultLimit: 10
+    },
+    moodboards: {
+        path: 'moodboards',
+        requiresUserIdFilter: true,
+        description: 'Creative moodboards and thematic inspirations.',
+        defaultLimit: 5
+    }
+};
+
+const brandRetrievalTools = buildDomainRetrievalTools('Brand', brandRetrievalConfig);
+const brandRetrievalDeclarations = buildDomainRetrievalDeclarations('Brand', brandRetrievalConfig);
 
 export const BrandAgent: AgentConfig = {
     id: 'brand',
@@ -11,6 +36,7 @@ export const BrandAgent: AgentConfig = {
     category: 'department',
     systemPrompt: systemPrompt,
     functions: {
+        ...brandRetrievalTools,
         verify_output: async (args: { goal: string, content: string }) => {
             const prompt = `Critique the following content against the stated goal/guidelines.
             Goal: ${args.goal}
@@ -84,7 +110,7 @@ export const BrandAgent: AgentConfig = {
             };
         },
         analyze_audio: async (args: { uploadedAudioIndex: number }) => {
-            const { useStore } = await import('@/core/store');
+            const { useStore } = await importWithRetry(() => import('@/core/store'));
             const { uploadedAudio } = useStore.getState();
             const audioItem = uploadedAudio[args.uploadedAudioIndex || 0];
 
@@ -102,11 +128,39 @@ export const BrandAgent: AgentConfig = {
             } catch (e: unknown) {
                 return { success: false, error: e instanceof Error ? e.message : String(e) };
             }
-        }
+        },
+        analyze_brand_sentiment: async (args: { text: string; context?: string }) => {
+            const prompt = `Analyze the brand sentiment of the following text.
+            Context: ${args.context || 'General public discussion'}
+            Text: ${args.text}
+            
+            Evaluate the overall sentiment, dominant emotion, key themes, and provide a summary of public perception.`;
+            try {
+                const response = await AutonomousIntelligence.generateText(prompt, { maxOutputTokens: 8192, temperature: 1.0 });
+                return { success: true, data: { analysis: response } };
+            } catch (e: unknown) {
+                return { success: false, error: e instanceof Error ? e.message : String(e) };
+            }
+        },
+        generate_brand_kit: async (args: { description: string; core_values: string[] }) => {
+            const prompt = `Generate a comprehensive brand kit based on the following description and core values.
+            Description: ${args.description}
+            Core Values: ${args.core_values.join(', ')}
+            
+            Include suggested color hex codes, typography/font pairings, a description of the brand voice, and a logo concept.`;
+            try {
+                const response = await AutonomousIntelligence.generateText(prompt, { maxOutputTokens: 8192, temperature: 1.0 });
+                return { success: true, data: { brandKit: response } };
+            } catch (e: unknown) {
+                return { success: false, error: e instanceof Error ? e.message : String(e) };
+            }
+        },
+        fetch_brand_kit: McpTools.fetch_brand_kit
     },
-    authorizedTools: ['verify_output', 'analyze_brand_consistency', 'generate_brand_guidelines', 'audit_visual_assets', 'analyze_audio'],
+    authorizedTools: ['verify_output', 'analyze_brand_consistency', 'generate_brand_guidelines', 'audit_visual_assets', 'analyze_audio', 'analyze_brand_sentiment', 'generate_brand_kit', 'list_domain_records', 'fetch_brand_kit'],
     tools: [{
         functionDeclarations: [
+            ...brandRetrievalDeclarations,
             {
                 name: 'verify_output',
                 description: 'Critique and verify generated content against a goal (Brand Bible).',
@@ -166,12 +220,49 @@ export const BrandAgent: AgentConfig = {
                     },
                     required: []
                 }
+            },
+            {
+                name: 'analyze_brand_sentiment',
+                description: 'Analyze public sentiment or text for brand perception, dominant emotions, and key themes.',
+                parameters: {
+                    type: 'OBJECT',
+                    properties: {
+                        text: { type: 'STRING', description: 'The text, comments, or articles to analyze.' },
+                        context: { type: 'STRING', description: 'Optional context regarding the source of the text.' }
+                    },
+                    required: ['text']
+                }
+            },
+            {
+                name: 'generate_brand_kit',
+                description: 'Generate a complete brand kit including colors, typography, and voice based on a description.',
+                parameters: {
+                    type: 'OBJECT',
+                    properties: {
+                        description: { type: 'STRING', description: 'A description of the brand identity or vibe.' },
+                        core_values: { type: 'ARRAY', description: 'List of core values.', items: { type: 'STRING' } }
+                    },
+                    required: ['description', 'core_values']
+                }
+            },
+            {
+                name: "fetch_brand_kit",
+                description: "Fetch the artist's brand kit from the remote MCP backend.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        artistId: { type: "STRING" }
+                    },
+                    required: ["artistId"]
+                }
             }
         ]
     }]
 };
 
 import { freezeAgentConfig } from '../FreezeDiagnostic';
+import { importWithRetry } from '@/utils/dynamicImport';
+import { McpTools } from '../tools/McpTools';
 
 // Freeze the schema to prevent cross-test contamination
 freezeAgentConfig(BrandAgent);

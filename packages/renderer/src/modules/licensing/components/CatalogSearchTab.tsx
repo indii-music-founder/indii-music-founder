@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Search, Filter, SlidersHorizontal, Music, Play, Plus } from 'lucide-react';
+import { Search, Filter, Music, Play } from 'lucide-react';
 
 interface CatalogTrack {
     id: string;
@@ -76,10 +76,6 @@ export function CatalogSearchTab({ catalog = [] }: CatalogSearchTabProps) {
                             <div className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full border-2 border-emerald-500/20 border-t-emerald-400 animate-spin" />
                         )}
                     </div>
-                    <button className="flex items-center gap-2 bg-white/5 hover:bg-white/10 text-white px-4 py-3 rounded-xl border border-white/10 transition-colors h-full">
-                        <SlidersHorizontal size={18} />
-                        <span className="text-sm font-semibold">Filters</span>
-                    </button>
                 </div>
 
                 {/* Genre Pills */}
@@ -165,11 +161,6 @@ export function CatalogSearchTab({ catalog = [] }: CatalogSearchTabProps) {
                                             <span className="px-2 py-0.5 bg-white/5 text-gray-300 text-[10px] font-medium rounded">{track.bpm} BPM</span>
                                         </div>
                                     </div>
-                                </div>
-                                <div className="absolute right-4 bottom-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <button className="w-8 h-8 rounded-full bg-emerald-500 hover:bg-emerald-400 text-white flex items-center justify-center shadow-lg shadow-emerald-500/20">
-                                        <Plus className="w-4 h-4" />
-                                    </button>
                                 </div>
                             </motion.div>
                         ))

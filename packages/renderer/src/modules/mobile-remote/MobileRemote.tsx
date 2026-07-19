@@ -1,7 +1,7 @@
 /**
- * Mobile Remote — Phone Control Interface for indii
+ * Mobile Remote — Mobile Control Interface for indii
  *
- * A glassmorphism-styled, phone-optimized remote control for the indii studio.
+ * A glassmorphism-styled, touch-optimized remote control for the indii studio.
  * Functions as a companion device — not a full app rebuild.
  *
  * Features:
@@ -20,20 +20,21 @@
 
 import { useEffect, useCallback, useState, useRef, lazy, Suspense } from 'react';
 import {
-  DESKTOP_HEARTBEAT_STALE_MS,
-  isFreshDesktopState,
+  isFreshStudioState,
   remoteRelayService,
+  studioStateFreshnessRemainingMs,
   type DesktopState,
 } from '@/services/agent/RemoteRelayService';
 import { auth } from '@/services/firebase';
 import { onAuthStateChanged, signInWithCustomToken } from 'firebase/auth';
 import { logger } from '@/utils/logger';
 import {
-  LayoutDashboard, Grip, MessageSquare, Image, Music2,
+  LayoutDashboard, LayoutGrid, Grip, MessageSquare, Navigation,
   CheckSquare, QrCode, Smartphone, LucideIcon, WifiOff, AlertCircle, RefreshCw
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { getRemoteConnectionPhase } from './RemoteConnectionState';
 
 // Helper for haptic feedback
 // eslint-disable-next-line react-refresh/only-export-components
@@ -43,17 +44,19 @@ export const triggerHaptic = (pattern: number | number[] = 50) => {
   }
 };
 
-// Lazy load sub-components for performance on phone
+// Lazy load sub-components for performance on remote devices
 const StatusDashboard = lazy(() => import('./components/StatusDashboard'));
-const CommandPad = lazy(() => import('./components/CommandPad'));
+const QuickCaptureView = lazy(() => import('./components/QuickCaptureView'));
+const StreamView = lazy(() => import('./components/StreamView'));
+const SettingsView = lazy(() => import('./components/SettingsView'));
 const AgentChat = lazy(() => import('./components/AgentChat'));
-const GenerationMonitor = lazy(() => import('./components/GenerationMonitor'));
-const TransportBar = lazy(() => import('./components/TransportBar'));
-const ApprovalQueue = lazy(() => import('./components/ApprovalQueue'));
+const RoadMode = lazy(() =>
+  import('@/modules/touring/components/RoadMode').then(module => ({ default: module.RoadMode }))
+);
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-type TabId = 'status' | 'control' | 'chat' | 'generate' | 'transport' | 'approve';
+type TabId = 'home' | 'capture' | 'boardroom' | 'road' | 'stream' | 'settings';
 
 interface Tab {
   id: TabId;
@@ -62,113 +65,40 @@ interface Tab {
 }
 
 const TABS: Tab[] = [
-  { id: 'status', icon: LayoutDashboard, label: 'Status' },
-  { id: 'control', icon: Grip, label: 'Control' },
-  { id: 'chat', icon: MessageSquare, label: 'Chat' },
-  { id: 'generate', icon: Image, label: 'Create' },
-  { id: 'transport', icon: Music2, label: 'Audio' },
-  { id: 'approve', icon: CheckSquare, label: 'Approve' },
+  { id: 'home', icon: LayoutDashboard, label: 'Home' },
+  { id: 'capture', icon: MessageSquare, label: 'Capture' },
+  { id: 'boardroom', icon: LayoutGrid, label: 'Boardroom' },
+  { id: 'road', icon: Navigation, label: 'Road' },
+  { id: 'stream', icon: CheckSquare, label: 'Stream' },
+  { id: 'settings', icon: Grip, label: 'Settings' },
 ];
 
-// We import QRCodeRenderer dynamically so it doesn't inflate load times if not used
-import { QRCodeSVG } from 'qrcode.react';
+const TRANSIENT_HEARTBEAT_GRACE_MS = 10_000;
 
-// ─── Pairing Modal (Cloud Relay version) ─────────────────────────────────────
+// ─── Pairing Help ────────────────────────────────────────────────────────────
 
 function PairingModal({ onClose }: { onClose: () => void }) {
-  const [qrUrl, setQrUrl] = useState<string>('');
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    let active = true;
-
-    const generateCode = async () => {
-      try {
-        setLoading(true);
-        const currentUser = auth.currentUser;
-        if (!currentUser) {
-          throw new Error('Not authenticated on desktop');
-        }
-
-        const idToken = await currentUser.getIdToken();
-        const { endpointService } = await import('@/core/config/EndpointService');
-        const createUrl = endpointService.getFunctionUrl('createHandoffCode');
-
-        const response = await fetch(createUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ idToken }),
-        });
-
-        if (!response.ok) {
-          throw new Error(await response.text());
-        }
-
-        const data = await response.json();
-        if (!data.code) {
-          throw new Error('No pairing code returned');
-        }
-
-        if (active) {
-          const isDev = window.location.hostname === 'localhost' || window.location.hostname.startsWith('192.168.');
-          const base = isDev ? window.location.origin + '/mobile-remote' : 'https://indii.music/mobile-remote';
-          setQrUrl(`${base}?code=${data.code}`);
-          setLoading(false);
-        }
-      } catch (err) {
-        logger.error('[PairingModal] Failed to generate handoff code:', err);
-        if (active) {
-          setError(err instanceof Error ? err.message : 'Failed to generate code');
-          setLoading(false);
-        }
-      }
-    };
-
-    generateCode();
-
-    return () => {
-      active = false;
-    };
-  }, []);
-
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/90 backdrop-blur-2xl p-6"
     >
-      <motion.div 
+      <motion.div
         initial={{ scale: 0.9, opacity: 0, y: 20 }}
         animate={{ scale: 1, opacity: 1, y: 0 }}
-        exit={{ scale: 0.9, opacity: 0, y: 20 }}
+        exit={{ opacity: 0, y: 20 }}
         transition={{ type: 'spring', damping: 25, stiffness: 300 }}
         className="bg-[#1c1c1e] border border-white/10 rounded-[32px] p-8 max-w-sm w-full flex flex-col items-center shadow-[0_32px_64px_-16px_rgba(0,0,0,0.6)]"
       >
         <div className="w-14 h-14 rounded-2xl bg-blue-500/10 flex items-center justify-center mb-6 border border-blue-500/20">
           <QrCode className="w-7 h-7 text-blue-400" />
         </div>
-
-        <h2 className="text-2xl font-bold text-white mb-2 text-center tracking-tight">Connect Remote</h2>
+        <h2 className="text-2xl font-bold text-white mb-2 text-center tracking-tight">Pair from Studio</h2>
         <p className="text-[#a1a1a6] text-center text-sm mb-8 leading-relaxed">
-          Scan this code to link your phone. Once connected, you can control your studio from anywhere in the world.
+          Open the desktop Studio, then go to Settings → Mobile Remote and scan its pairing code. Controller pages cannot create Studio pairing codes.
         </p>
-
-        <div className="bg-white p-5 rounded-3xl mb-8 shadow-[0_0_40px_rgba(255,255,255,0.1)] flex items-center justify-center w-[220px] h-[220px]">
-          {loading ? (
-            <div className="w-full h-full flex items-center justify-center text-gray-400">
-               <div className="w-6 h-6 border-2 border-gray-300 border-t-transparent rounded-full animate-spin" />
-            </div>
-          ) : error ? (
-            <div className="text-red-500 text-xs text-center px-4 font-semibold">
-              {error}
-            </div>
-          ) : (
-            <QRCodeSVG value={qrUrl} size={180} />
-          )}
-        </div>
-
         <button
           onClick={onClose}
           className="w-full h-12 flex items-center justify-center rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-white text-base font-semibold transition-all active:scale-[0.98] cursor-pointer"
@@ -176,12 +106,6 @@ function PairingModal({ onClose }: { onClose: () => void }) {
         >
           Close
         </button>
-
-        <div className="mt-6 flex items-center gap-2 text-[#636366] text-[10px] font-medium uppercase tracking-[0.2em]">
-          <span className="w-1 h-1 rounded-full bg-[#636366]" />
-          Powered by indii Cloud Relay
-          <span className="w-1 h-1 rounded-full bg-[#636366]" />
-        </div>
       </motion.div>
     </motion.div>
   );
@@ -204,16 +128,20 @@ export default function MobileRemote() {
   const [connectionStatus, setConnectionStatus] = useState<'idle' | 'pairing' | 'connected' | 'error'>(() =>
     remoteRelayService.isAuthenticated() ? 'pairing' : 'idle'
   );
-  const [activeTab, setActiveTab] = useState<TabId>('status');
+  const [activeTab, setActiveTab] = useState<TabId>('home');
   const [showPairingModal, setShowPairingModal] = useState(false);
-  const [_desktopState, setDesktopState] = useState<DesktopState | null>(null);
+  const [desktopState, setDesktopState] = useState<DesktopState | null>(null);
 
   // Reconnection state machine
   const [isReconnecting, setIsReconnecting] = useState(false);
   const [reconnectAttempts, setReconnectAttempts] = useState(0);
+  const [subscriptionEpoch, setSubscriptionEpoch] = useState(0);
   const maxReconnectAttempts = 5;
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const stalePresenceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const transientHeartbeatTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pairingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const refreshFeedbackTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Track auth readiness to re-subscribe when auth becomes available
   const [isAuth, setIsAuth] = useState(() => remoteRelayService.isAuthenticated());
@@ -285,6 +213,9 @@ export default function MobileRemote() {
   // Keep refs of connection status to avoid tearing down subscription in useEffect
   const isPairedRef = useRef(isPaired);
   const connectionStatusRef = useRef(connectionStatus);
+  const desktopStateRef = useRef<DesktopState | null>(null);
+  const gracePeriodUntilRef = useRef<number>(0);
+
   useEffect(() => {
     isPairedRef.current = isPaired;
     connectionStatusRef.current = connectionStatus;
@@ -300,37 +231,141 @@ export default function MobileRemote() {
     const markDesktopOffline = () => {
       const currentIsPaired = isPairedRef.current;
       const currentStatus = connectionStatusRef.current;
+
+      // If the page is hidden, do NOT mark desktop offline yet, as the timer is throttled
+      if (typeof document !== 'undefined' && document.visibilityState === 'hidden') {
+        logger.info('[MobileRemote] Page is hidden. Deferring offline state transition.');
+        return;
+      }
+
       if (currentIsPaired || currentStatus === 'connected') {
-        logger.warn('[MobileRemote] Desktop heartbeat went stale. Initiating auto-reconnect sequence…');
-        setIsPaired(false);
-        setIsReconnecting(true);
+        if (transientHeartbeatTimeoutRef.current) return;
+
+        logger.info('[MobileRemote] Desktop heartbeat stale. Holding paired state during transient grace window…');
         setConnectionStatus('pairing');
-        setReconnectAttempts(1);
+        transientHeartbeatTimeoutRef.current = setTimeout(() => {
+          transientHeartbeatTimeoutRef.current = null;
+          if (isFreshStudioState(desktopStateRef.current)) {
+            setConnectionStatus('connected');
+            setIsReconnecting(false);
+            setReconnectAttempts(0);
+            scheduleStalePresenceCheck(desktopStateRef.current);
+            return;
+          }
+
+          logger.warn('[MobileRemote] Desktop heartbeat still stale after grace window. Initiating auto-reconnect sequence…');
+          // Pairing is an authenticated relationship, not a heartbeat. Keep the
+          // controls available in Standby so a durable command can wake Studio.
+          setIsReconnecting(true);
+          setConnectionStatus('pairing');
+          setReconnectAttempts(1);
+        }, TRANSIENT_HEARTBEAT_GRACE_MS);
       } else {
-        setIsPaired(false);
         setConnectionStatus('idle');
         setIsReconnecting(false);
       }
     };
 
-    const unsub = remoteRelayService.onDesktopState((state) => {
-      setDesktopState(state);
+    const scheduleStalePresenceCheck = (state: DesktopState | null) => {
       if (stalePresenceTimeoutRef.current) {
         clearTimeout(stalePresenceTimeoutRef.current);
         stalePresenceTimeoutRef.current = null;
       }
 
-      if (isFreshDesktopState(state)) {
+      const remainingMs = studioStateFreshnessRemainingMs(state);
+      if (remainingMs <= 0) {
+        markDesktopOffline();
+        return;
+      }
+
+      stalePresenceTimeoutRef.current = setTimeout(() => {
+        stalePresenceTimeoutRef.current = null;
+        // Timers can fire a few milliseconds early. Re-check the canonical
+        // freshness predicate and reschedule instead of losing the stale edge.
+        if (isFreshStudioState(desktopStateRef.current)) {
+          scheduleStalePresenceCheck(desktopStateRef.current);
+          return;
+        }
+        markDesktopOffline();
+      }, remainingMs);
+    };
+
+    const unsub = remoteRelayService.onDesktopState((state) => {
+      setDesktopState(state);
+      desktopStateRef.current = state;
+
+      if (stalePresenceTimeoutRef.current) {
+        clearTimeout(stalePresenceTimeoutRef.current);
+        stalePresenceTimeoutRef.current = null;
+      }
+
+      const isVisible = typeof document === 'undefined' || document.visibilityState === 'visible';
+
+      if (isFreshStudioState(state)) {
+        if (transientHeartbeatTimeoutRef.current) {
+          clearTimeout(transientHeartbeatTimeoutRef.current);
+          transientHeartbeatTimeoutRef.current = null;
+        }
         setIsPaired(true);
         setConnectionStatus('connected');
         setIsReconnecting(false);
         setReconnectAttempts(0);
-        stalePresenceTimeoutRef.current = setTimeout(markDesktopOffline, DESKTOP_HEARTBEAT_STALE_MS);
+        
+        if (isVisible) scheduleStalePresenceCheck(state);
       } else {
-        // If we were previously connected, trigger automatic reconnection sequence
-        markDesktopOffline();
+        // If state is not fresh, only trigger offline/standby transition if visible AND we are past the grace period
+        if (isVisible && Date.now() > gracePeriodUntilRef.current) {
+          markDesktopOffline();
+        }
       }
+    }, (error) => {
+      logger.error('[MobileRemote] Desktop state subscription failed:', error);
+      setConnectionStatus('error');
+      setIsReconnecting(false);
     });
+
+    // Visibility change listener to handle remote sleep/wake
+    const onVisibilityChange = () => {
+      if (typeof document === 'undefined') return;
+      
+      if (document.visibilityState === 'visible') {
+        logger.info('[MobileRemote] App regained visibility. Refreshing connection state...');
+        if (stalePresenceTimeoutRef.current) {
+          clearTimeout(stalePresenceTimeoutRef.current);
+          stalePresenceTimeoutRef.current = null;
+        }
+        
+        setIsReconnecting(false);
+        setReconnectAttempts(0);
+        
+        // Set the grace period for 15 seconds
+        gracePeriodUntilRef.current = Date.now() + 15000;
+        
+        // Wait 15 seconds for Firestore sync before checking presence
+        stalePresenceTimeoutRef.current = setTimeout(() => {
+          stalePresenceTimeoutRef.current = null;
+          logger.info('[MobileRemote] Delayed visibility check running...');
+          if (isFreshStudioState(desktopStateRef.current)) {
+            scheduleStalePresenceCheck(desktopStateRef.current);
+          } else {
+            markDesktopOffline();
+          }
+        }, 15000);
+      } else {
+        if (stalePresenceTimeoutRef.current) {
+          clearTimeout(stalePresenceTimeoutRef.current);
+          stalePresenceTimeoutRef.current = null;
+        }
+        if (transientHeartbeatTimeoutRef.current) {
+          clearTimeout(transientHeartbeatTimeoutRef.current);
+          transientHeartbeatTimeoutRef.current = null;
+        }
+      }
+    };
+
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', onVisibilityChange);
+    }
 
     return () => {
       unsub();
@@ -338,8 +373,15 @@ export default function MobileRemote() {
         clearTimeout(stalePresenceTimeoutRef.current);
         stalePresenceTimeoutRef.current = null;
       }
+      if (transientHeartbeatTimeoutRef.current) {
+        clearTimeout(transientHeartbeatTimeoutRef.current);
+        transientHeartbeatTimeoutRef.current = null;
+      }
+      if (typeof document !== 'undefined') {
+        document.removeEventListener('visibilitychange', onVisibilityChange);
+      }
     };
-  }, [isAuth]);
+  }, [isAuth, subscriptionEpoch]);
 
   // Handle active retry polling for reconnects
   useEffect(() => {
@@ -352,10 +394,10 @@ export default function MobileRemote() {
     }
 
     if (reconnectAttempts > maxReconnectAttempts) {
-      logger.error('[MobileRemote] Max reconnection attempts reached. Marking as disconnected.');
+      logger.warn('[MobileRemote] Active reconnection window ended. Remaining in Standby.');
       queueMicrotask(() => {
         setIsReconnecting(false);
-        setConnectionStatus('idle');
+        setConnectionStatus(isPairedRef.current ? 'pairing' : 'idle');
       });
       return;
     }
@@ -365,6 +407,7 @@ export default function MobileRemote() {
     logger.info(`[MobileRemote] Auto-reconnect attempt ${reconnectAttempts}/${maxReconnectAttempts} in ${delay}ms…`);
 
     reconnectTimeoutRef.current = setTimeout(() => {
+      setSubscriptionEpoch(epoch => epoch + 1);
       setReconnectAttempts(prev => prev + 1);
     }, delay);
 
@@ -374,11 +417,11 @@ export default function MobileRemote() {
   }, [isReconnecting, reconnectAttempts]);
 
   // Safety timeout: if stuck in 'pairing' for >10s initially, fall back to 'idle'
-  const pairingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
-    if (connectionStatus === 'pairing' && !isReconnecting) {
+    if (connectionStatus === 'pairing' && !isReconnecting && !isPaired) {
       pairingTimeoutRef.current = setTimeout(() => {
         setConnectionStatus('idle');
+        setIsPaired(false);
         logger.info('[MobileRemote] Pairing timeout — desktop not found, falling back to idle');
       }, 10_000);
     } else {
@@ -390,7 +433,7 @@ export default function MobileRemote() {
     return () => {
       if (pairingTimeoutRef.current) clearTimeout(pairingTimeoutRef.current);
     };
-  }, [connectionStatus, isReconnecting]);
+  }, [connectionStatus, isReconnecting, isPaired]);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const sendCommand = useCallback((command: { type: string; payload: any }) => {
@@ -413,7 +456,7 @@ export default function MobileRemote() {
       commandStr = `[RAW] ${JSON.stringify(command)}`;
     }
 
-    remoteRelayService.sendCommand(commandStr).catch(err => {
+    remoteRelayService.sendCommand(commandStr, undefined, undefined, 'studio').catch(err => {
       logger.error('[MobileRemote] Failed to send command to relay:', err);
     });
   }, [isPaired]);
@@ -421,6 +464,20 @@ export default function MobileRemote() {
   const handleManualRetry = () => {
     triggerHaptic(50);
     logger.info('[MobileRemote] Manual reconnect triggered by user');
+    if (stalePresenceTimeoutRef.current) {
+      clearTimeout(stalePresenceTimeoutRef.current);
+      stalePresenceTimeoutRef.current = null;
+    }
+    if (transientHeartbeatTimeoutRef.current) {
+      clearTimeout(transientHeartbeatTimeoutRef.current);
+      transientHeartbeatTimeoutRef.current = null;
+    }
+    if (reconnectTimeoutRef.current) {
+      clearTimeout(reconnectTimeoutRef.current);
+      reconnectTimeoutRef.current = null;
+    }
+    gracePeriodUntilRef.current = 0;
+    setSubscriptionEpoch(epoch => epoch + 1);
     setReconnectAttempts(1);
     setIsReconnecting(true);
     setConnectionStatus('pairing');
@@ -454,9 +511,13 @@ export default function MobileRemote() {
       setIsRefreshing(true);
       triggerHaptic([50, 100, 50]);
       handleManualRetry();
-      setTimeout(() => {
+      if (refreshFeedbackTimeoutRef.current) {
+        clearTimeout(refreshFeedbackTimeoutRef.current);
+      }
+      refreshFeedbackTimeoutRef.current = setTimeout(() => {
          setIsRefreshing(false);
          setPullProgress(0);
+         refreshFeedbackTimeoutRef.current = null;
       }, 1500);
     } else {
       setPullProgress(0);
@@ -464,44 +525,62 @@ export default function MobileRemote() {
     touchStartY.current = 0;
   };
 
+  useEffect(() => {
+    return () => {
+      if (refreshFeedbackTimeoutRef.current) {
+        clearTimeout(refreshFeedbackTimeoutRef.current);
+        refreshFeedbackTimeoutRef.current = null;
+      }
+    };
+  }, []);
+
   // ─── Render ────────────────────────────────────────────────────────────────
+
+  const connectionPhase = getRemoteConnectionPhase({
+    authenticated: isAuth,
+    paired: isPaired,
+    reconnecting: isReconnecting,
+    status: connectionStatus,
+  });
 
   const renderTabContent = () => {
     switch (activeTab) {
-      case 'status':
+      case 'home':
         return (
           <Suspense fallback={<TabFallback />}>
-            <StatusDashboard connectionStatus={connectionStatus} isPaired={isPaired} />
+            <div className="space-y-6 pt-4">
+              <StatusDashboard connectionStatus={connectionStatus} isPaired={isPaired} onTabChange={setActiveTab} />
+            </div>
           </Suspense>
         );
-      case 'control':
+      case 'capture':
         return (
           <Suspense fallback={<TabFallback />}>
-            <CommandPad onSendCommand={sendCommand} isPaired={isPaired} />
+            <QuickCaptureView isPaired={isPaired} />
           </Suspense>
         );
-      case 'chat':
+      case 'boardroom':
         return (
           <Suspense fallback={<TabFallback />}>
             <AgentChat onSendCommand={sendCommand} isPaired={isPaired} />
           </Suspense>
         );
-      case 'generate':
+      case 'road':
         return (
           <Suspense fallback={<TabFallback />}>
-            <GenerationMonitor />
+            <RoadMode />
           </Suspense>
         );
-      case 'transport':
+      case 'stream':
         return (
           <Suspense fallback={<TabFallback />}>
-            <TransportBar onSendCommand={sendCommand} isPaired={isPaired} />
+            <StreamView />
           </Suspense>
         );
-      case 'approve':
+      case 'settings':
         return (
           <Suspense fallback={<TabFallback />}>
-            <ApprovalQueue onSendCommand={sendCommand} isPaired={isPaired} />
+            <SettingsView desktopState={desktopState} isPaired={isPaired} />
           </Suspense>
         );
       default:
@@ -510,7 +589,10 @@ export default function MobileRemote() {
   };
 
   return (
-    <div className="min-h-screen bg-[#000] text-white flex flex-col font-sans selection:bg-blue-500/30 overflow-hidden relative pb-safe-bottom">
+    <div
+      data-connection-phase={connectionPhase}
+      className="min-h-screen bg-black text-white flex flex-col font-sans selection:bg-blue-500/30 overflow-hidden relative pb-safe-bottom"
+    >
       {/* ─── Premium Background ────────────────────────────────────────── */}
       <div className="fixed inset-0 z-0 pointer-events-none">
         <div className="absolute inset-0 bg-[#0a0a0c]" />
@@ -534,7 +616,7 @@ export default function MobileRemote() {
             animate={{ opacity: 1, x: 0 }}
             className="flex items-center gap-3"
           >
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
+            <div className="w-8 h-8 rounded-xl bg-linear-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
               <Smartphone className="w-4 h-4 text-white" />
             </div>
             <h1 className="text-base font-bold text-white tracking-tight">
@@ -544,45 +626,49 @@ export default function MobileRemote() {
 
           <div className="flex items-center gap-3">
             <AnimatePresence mode="wait">
-              {isPaired && connectionStatus === 'connected' ? (
-                <motion.div 
-                  key="connected"
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.8 }}
-                  className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-green-500/10 border border-green-500/20 shadow-[0_0_15px_rgba(34,197,94,0.1)]"
-                >
-                  <div className="w-2 h-2 rounded-full bg-green-400 shadow-[0_0_8px_rgba(74,222,128,0.6)] animate-pulse" />
-                  <span className="text-[10px] font-bold text-green-400 uppercase tracking-[0.15em]">
-                    Active
-                  </span>
-                </motion.div>
-              ) : isReconnecting ? (
-                <motion.div 
-                  key="reconnecting"
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.8 }}
-                  className="flex items-center gap-2 px-3.5 py-2 rounded-full bg-amber-500/10 border border-amber-500/20 shadow-[0_0_12px_rgba(245,158,11,0.15)]"
-                >
-                  <RefreshCw className="w-3.5 h-3.5 text-amber-400 animate-spin" />
-                  <span className="text-[10px] font-black text-amber-400 uppercase tracking-[0.15em]">
-                    Retry {reconnectAttempts}/{maxReconnectAttempts}
-                  </span>
-                </motion.div>
-              ) : connectionStatus === 'pairing' ? (
-                <motion.div 
-                  key="pairing"
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.8 }}
-                  className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20"
-                >
-                  <div className="w-3 h-3 rounded-full border-2 border-amber-400 border-t-transparent animate-spin" />
-                  <span className="text-[10px] font-bold text-amber-400 uppercase tracking-[0.15em]">
-                    Linking
-                  </span>
-                </motion.div>
+              {isPaired ? (
+                connectionStatus === 'connected' ? (
+                  desktopState?.sleepMode ? (
+                    <motion.div
+                      key="sleeping"
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.8 }}
+                      className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 shadow-[0_0_15px_rgba(245,158,11,0.1)]"
+                    >
+                      <div className="w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.6)]" />
+                      <span className="text-[10px] font-bold text-amber-400 uppercase tracking-[0.15em]">
+                        Sleeping
+                      </span>
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      key="connected"
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.8 }}
+                      className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-green-500/10 border border-green-500/20 shadow-[0_0_15px_rgba(34,197,94,0.1)]"
+                    >
+                      <div className="w-2 h-2 rounded-full bg-green-400 shadow-[0_0_8px_rgba(74,222,128,0.6)] animate-pulse" />
+                      <span className="text-[10px] font-bold text-green-400 uppercase tracking-[0.15em]">
+                        Active
+                      </span>
+                    </motion.div>
+                  )
+                ) : (
+                  <motion.div
+                    key="standby"
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.8 }}
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-500/10 border border-zinc-500/20"
+                  >
+                    <div className="w-2 h-2 rounded-full bg-zinc-500 animate-pulse" />
+                    <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-[0.15em]">
+                      Standby
+                    </span>
+                  </motion.div>
+                )
               ) : (
                 <motion.button
                   key="idle"
@@ -629,7 +715,7 @@ export default function MobileRemote() {
             <div 
               className={cn(
                 "rounded-full bg-white/10 flex items-center justify-center backdrop-blur-md shadow-lg border border-white/20 transition-all",
-                isRefreshing ? "w-10 h-10 animate-spin" : "w-8 h-8"
+                isRefreshing ? "size-10 animate-spin" : "size-8"
               )}
               style={{
                 transform: `scale(${Math.min(1, pullProgress / 60)}) rotate(${pullProgress * 3}deg)`
@@ -646,7 +732,7 @@ export default function MobileRemote() {
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
-                className="mb-6 p-4 rounded-[24px] bg-gradient-to-r from-amber-500/10 via-[#1c1c1e] to-amber-500/5 border border-amber-500/20 shadow-[0_15px_30px_rgba(245,158,11,0.08)] flex items-center justify-between"
+                className="mb-6 p-4 rounded-[24px] bg-linear-to-r from-amber-500/10 via-[#1c1c1e] to-amber-500/5 border border-amber-500/20 shadow-[0_15px_30px_rgba(245,158,11,0.08)] flex items-center justify-between"
               >
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded-xl bg-amber-500/20 flex items-center justify-center">
@@ -696,7 +782,7 @@ export default function MobileRemote() {
                   style={{ minHeight: '56px' }}
                 >
                   <QrCode className="w-5 h-5" />
-                  Show Pairing Code
+                  Pairing Instructions
                 </motion.button>
 
                 <motion.button
@@ -711,7 +797,7 @@ export default function MobileRemote() {
               </div>
               
               <p className="mt-12 text-[#48484a] text-xs font-bold uppercase tracking-[0.2em]">
-                Secure Cloud Relay v1.60
+                Remote Protocol v1
               </p>
             </motion.div>
           ) : (
@@ -727,11 +813,10 @@ export default function MobileRemote() {
         </div>
       </main>
 
-      {/* ─── Premium Bottom Navigation ──────────────────────────────────── */}
       <nav className="fixed bottom-0 inset-x-0 z-40 px-6 pb-safe-bottom mb-6 pointer-events-none">
-        <div className="max-w-md mx-auto h-[72px] bg-white/[0.03] backdrop-blur-3xl border border-white/10 rounded-[28px] shadow-[0_20px_40px_rgba(0,0,0,0.4)] flex items-center justify-around px-2 pointer-events-auto relative overflow-hidden">
+        <div className="max-w-md mx-auto h-[72px] bg-white/3 backdrop-blur-3xl border border-white/10 rounded-[28px] shadow-[0_20px_40px_rgba(0,0,0,0.4)] flex items-center justify-around px-2 pointer-events-auto relative overflow-hidden">
           {/* Subtle Inner Glow */}
-          <div className="absolute inset-0 bg-gradient-to-b from-white/[0.02] to-transparent pointer-events-none" />
+          <div className="absolute inset-0 bg-linear-to-b from-white/2 to-transparent pointer-events-none" />
           
           {TABS.map((tab) => {
             const isActive = activeTab === tab.id;
@@ -756,7 +841,7 @@ export default function MobileRemote() {
                   {isActive && (
                     <motion.div
                       layoutId="active-tab-bg"
-                      className="absolute inset-1.5 rounded-2xl bg-white/[0.05]"
+                      className="absolute inset-1.5 rounded-2xl bg-white/5"
                       initial={false}
                       transition={{ type: 'spring', bounce: 0.2, duration: 0.6 }}
                     />

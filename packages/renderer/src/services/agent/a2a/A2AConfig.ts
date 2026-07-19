@@ -21,21 +21,20 @@ export const MY_AGENT_ID = 'indii-conductor';
  * 3. Default to 'loopback' (in-process, zero external deps)
  */
 export async function getA2AConfig(): Promise<A2AConfig> {
-  const envVars = import.meta.env as Record<string, string | undefined>;
-  const explicitMode = envVars.VITE_A2A_MODE as 'loopback' | 'http' | undefined;
+  const explicitMode = import.meta.env.VITE_A2A_MODE as 'loopback' | 'http' | undefined;
+  const sidecarUrl = import.meta.env.VITE_A2A_SIDECAR_URL || '';
 
   if (explicitMode) {
-    const baseUrl = envVars.VITE_A2A_SIDECAR_URL || 'http://localhost:50080/a2a';
-    logger.info(`[A2AConfig] Explicit mode: ${explicitMode}, baseUrl: ${baseUrl}`);
-    return { mode: explicitMode, baseUrl };
+    logger.info(`[A2AConfig] Explicit mode: ${explicitMode}, baseUrl: ${sidecarUrl}`);
+    return { mode: explicitMode, baseUrl: sidecarUrl };
   }
 
   // If HTTP sidecar URL is provided, check if it's reachable
-  if (envVars.VITE_A2A_SIDECAR_URL) {
-    const isReachable = await checkSidecarAvailable(envVars.VITE_A2A_SIDECAR_URL);
+  if (sidecarUrl) {
+    const isReachable = await checkSidecarAvailable(sidecarUrl);
     if (isReachable) {
-      logger.info(`[A2AConfig] Sidecar reachable at ${envVars.VITE_A2A_SIDECAR_URL}, using HTTP transport`);
-      return { mode: 'http', baseUrl: envVars.VITE_A2A_SIDECAR_URL };
+      logger.info(`[A2AConfig] Sidecar reachable at ${sidecarUrl}, using HTTP transport`);
+      return { mode: 'http', baseUrl: sidecarUrl };
     }
   }
 

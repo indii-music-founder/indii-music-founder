@@ -29,6 +29,7 @@ import AssetSpotlight from '@/modules/dashboard/components/AssetSpotlight';
 import { BatchingStatus } from './agent/BatchingStatus';
 import { cn } from '@/lib/utils';
 import { TextEffect } from '@/components/motion-primitives/text-effect';
+import { AgentSwitcherStrip } from './AgentSwitcherStrip';
 export default function RightPanel() {
 
     const {
@@ -42,7 +43,10 @@ export default function RightPanel() {
         userProfile,
         isAgentProcessing,
         rightPanelView: view,
-        setRightPanelView: setView
+        setRightPanelView: setView,
+        generatedHistory,
+        rightPanelWidth,
+        setRightPanelWidth
     } = useStore(
         useShallow(state => ({
             currentModule: state.currentModule,
@@ -55,12 +59,29 @@ export default function RightPanel() {
             userProfile: state.userProfile,
             isAgentProcessing: state.isAgentProcessing,
             rightPanelView: state.rightPanelView,
-            setRightPanelView: state.setRightPanelView
+            setRightPanelView: state.setRightPanelView,
+            generatedHistory: state.generatedHistory,
+            rightPanelWidth: state.rightPanelWidth,
+            setRightPanelWidth: state.setRightPanelWidth
         }))
     );
 
     const chatEndRef = React.useRef<HTMLDivElement>(null);
     const [isCreationsCollapsed, setIsCreationsCollapsed] = React.useState(true);
+    const [shouldPulseCreations, setShouldPulseCreations] = React.useState(false);
+
+    React.useEffect(() => {
+        if (generatedHistory.length === 0 || typeof window === 'undefined') return;
+        const key = `indii:creations-affordance-seen:${userProfile?.id || 'anonymous'}`;
+        setShouldPulseCreations(window.localStorage.getItem(key) !== 'true');
+    }, [generatedHistory.length, userProfile?.id]);
+
+    const acknowledgeCreationsAffordance = React.useCallback(() => {
+        if (typeof window !== 'undefined') {
+            window.localStorage.setItem(`indii:creations-affordance-seen:${userProfile?.id || 'anonymous'}`, 'true');
+        }
+        setShouldPulseCreations(false);
+    }, [userProfile?.id]);
 
     React.useEffect(() => {
         if (view === 'messages') {
@@ -113,13 +134,16 @@ export default function RightPanel() {
                                 Archives
                             </button>
                         </div>
-                        <button
-                            onClick={toggleRightPanel}
-                            className="p-1.5 hover:bg-white/10 rounded-lg text-gray-400 hover:text-white transition-colors"
-                            aria-label="Close Panel"
-                        >
-                            <ChevronRight size={16} />
-                        </button>
+                        <div className="flex items-center gap-3">
+                            <AgentSwitcherStrip />
+                            <button
+                                onClick={toggleRightPanel}
+                                className="p-1.5 hover:bg-white/10 rounded-lg text-gray-400 hover:text-white transition-colors"
+                                aria-label="Close Panel"
+                            >
+                                <ChevronRight size={16} />
+                            </button>
+                        </div>
                     </div>
 
                     <div className="flex-1 overflow-hidden relative flex flex-col">
@@ -134,7 +158,7 @@ export default function RightPanel() {
                                 <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
                                     {agentHistory.length === 0 ? (
                                         <div className="h-full flex flex-col items-center justify-center text-center p-8 opacity-40">
-                                            <MessageSquare size={32} className="mb-4 text-purple-400" />
+                                            <MessageSquare size={32} className="mb-4 text-green-400" />
                                             <TextEffect preset="fade" className="text-sm font-medium">No messages yet</TextEffect>
                                             <TextEffect preset="fade" delay={0.5} className="text-xs mt-1">Start a conversation with indii to see it here.</TextEffect>
                                         </div>
@@ -150,7 +174,7 @@ export default function RightPanel() {
                                             ))}
                                             {isAgentProcessing && (
                                                 <div className="flex items-center gap-2 px-3 py-2 text-gray-500 text-xs">
-                                                    <Sparkles size={12} className="animate-pulse text-purple-400" />
+                                                    <Sparkles size={12} className="animate-pulse text-green-400" />
                                                     indii is thinking…
                                                 </div>
                                             )}
@@ -168,21 +192,30 @@ export default function RightPanel() {
                                 <BatchingStatus />
 
                                 {/* Asset Spotlight integration — collapsible */}
-                                <div className="border-t border-white/5 bg-black/20 shrink-0">
+                                <div className="border-t border-green-500/25 bg-gradient-to-r from-green-500/10 via-green-500/5 to-transparent shrink-0">
                                     <button
-                                        onClick={() => setIsCreationsCollapsed(prev => !prev)}
-                                        className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-white/5 transition-colors group"
+                                        onClick={() => {
+                                            setIsCreationsCollapsed(prev => !prev);
+                                            acknowledgeCreationsAffordance();
+                                        }}
+                                        className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-green-500/10 transition-colors group"
                                         aria-label={isCreationsCollapsed ? 'Expand Your Creations' : 'Collapse Your Creations'}
+                                        aria-expanded={!isCreationsCollapsed}
                                         data-testid="toggle-creations-btn"
                                     >
-                                        <h4 className="text-[10px] uppercase tracking-wider text-gray-500 font-bold flex items-center gap-2 group-hover:text-gray-300 transition-colors">
-                                            <Sparkles size={10} className="text-purple-400" />
+                                        <h4 className="text-[10px] uppercase tracking-wider text-green-300/90 font-bold flex items-center gap-2 group-hover:text-green-200 transition-colors">
+                                            <Sparkles size={11} className={isCreationsCollapsed && shouldPulseCreations ? "text-green-400 animate-pulse" : "text-green-400"} />
                                             Your Creations
+                                            {generatedHistory.length > 0 && (
+                                                <span className="ml-auto mr-2 px-1.5 py-0.5 text-[8px] font-mono bg-green-400/20 text-green-300 rounded border border-green-400/40">
+                                                    {generatedHistory.length}
+                                                </span>
+                                            )}
                                         </h4>
                                         {isCreationsCollapsed ? (
-                                            <ChevronUp size={12} className="text-gray-500 group-hover:text-gray-300 transition-colors" />
+                                            <ChevronUp size={12} className="text-green-400/70 group-hover:text-green-300 transition-colors" />
                                         ) : (
-                                            <ChevronDown size={12} className="text-gray-500 group-hover:text-gray-300 transition-colors" />
+                                            <ChevronDown size={12} className="text-green-400/70 group-hover:text-green-300 transition-colors" />
                                         )}
                                     </button>
                                     <motion.div
@@ -300,10 +333,35 @@ export default function RightPanel() {
         <motion.aside
             aria-label="Context panel"
             initial={false}
-            animate={{ width: isRightPanelOpen ? 320 : 48 }}
+            animate={{ width: isRightPanelOpen ? rightPanelWidth : 48 }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            className="h-full border-l border-border bg-card/80 backdrop-blur-xl shrink-0 hidden lg:flex flex-col overflow-hidden z-20 shadow-2xl"
+            className="h-full border-l border-border bg-card/80 backdrop-blur-xl shrink-0 hidden lg:flex flex-col overflow-hidden z-20 shadow-2xl relative"
         >
+            {isRightPanelOpen && (
+                <div 
+                    className="absolute left-0 top-0 bottom-0 w-1.5 cursor-col-resize hover:bg-white/10 active:bg-white/20 transition-colors z-50"
+                    onPointerDown={(e) => {
+                        const startX = e.clientX;
+                        const startWidth = rightPanelWidth;
+                        
+                        const onPointerMove = (moveEvent: PointerEvent) => {
+                            const delta = startX - moveEvent.clientX;
+                            const newWidth = Math.max(320, Math.min(800, startWidth + delta));
+                            setRightPanelWidth(newWidth);
+                        };
+                        
+                        const onPointerUp = () => {
+                            window.removeEventListener('pointermove', onPointerMove);
+                            window.removeEventListener('pointerup', onPointerUp);
+                            document.body.style.cursor = '';
+                        };
+                        
+                        document.body.style.cursor = 'col-resize';
+                        window.addEventListener('pointermove', onPointerMove);
+                        window.addEventListener('pointerup', onPointerUp);
+                    }}
+                />
+            )}
             <AnimatePresence mode="wait">
                 {!isRightPanelOpen ? (
                     <motion.div
@@ -347,6 +405,34 @@ export default function RightPanel() {
                                     </button>
                                 );
                             })}
+                            
+                            {/* Creations Affordance */}
+                            {generatedHistory.length > 0 && (
+                                <button
+                                    onClick={() => {
+                                        acknowledgeCreationsAffordance();
+                                        setRightPanelTab('assets');
+                                        toggleRightPanel();
+                                    }}
+                                    className="relative mt-auto pt-4 group flex justify-center w-full"
+                                    title="View Recent Creations"
+                                    aria-label="View Recent Creations"
+                                >
+                                    <div className={`absolute inset-0 top-4 bg-green-500/20 blur-xl rounded-full opacity-50 group-hover:opacity-100 transition-opacity ${shouldPulseCreations ? 'animate-pulse' : ''}`} />
+                                    <div className="relative w-8 h-8 rounded-lg overflow-hidden border-2 border-white/10 group-hover:border-green-400/50 transition-colors shadow-[0_0_15px_rgba(34,197,94,0.2)]">
+                                        {generatedHistory[0].type === 'image' && generatedHistory[0].url ? (
+                                            <img src={generatedHistory[0].url} alt="Recent creation" className="w-full h-full object-cover" />
+                                        ) : (
+                                            <div className="w-full h-full bg-white/5 flex items-center justify-center">
+                                                <Sparkles size={14} className="text-green-400" />
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="absolute top-2.5 right-0 min-w-4 h-4 rounded-full bg-green-500 flex items-center justify-center text-[9px] font-bold text-white border-2 border-[#0d1117] px-1 shadow-sm">
+                                        {generatedHistory.length > 99 ? '99+' : generatedHistory.length}
+                                    </div>
+                                </button>
+                            )}
                         </div>
                     </motion.div>
                 ) : (

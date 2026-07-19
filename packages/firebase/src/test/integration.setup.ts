@@ -7,6 +7,9 @@ import { Request, Response } from 'express';
  * This expects standard application default credentials or a service account key in the environment.
  */
 export function initializeRealServices() {
+    if (!process.env.ARCJET_KEY) {
+        process.env.ARCJET_KEY = 'ajkey_test_key_integration';
+    }
     if (admin.apps.length === 0) {
         admin.initializeApp({
             projectId: process.env.VITE_FIREBASE_PROJECT_ID || 'indii-production',
@@ -19,7 +22,14 @@ export function initializeRealServices() {
  * Tears down REAL Firebase Admin services.
  */
 export async function teardownServices() {
-    await Promise.all(admin.apps.map(app => app?.delete()));
+    if (admin.apps.length > 0) {
+        try {
+            await admin.firestore().terminate();
+        } catch {
+            // ignore
+        }
+        await Promise.all(admin.apps.map(app => app?.delete()));
+    }
 }
 
 /**

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CreativeStorageService } from '../CreativeStorageService';
-import { uploadBytes, uploadString } from 'firebase/storage';
+import { ref as storageRef, uploadBytes, uploadString } from 'firebase/storage';
 
 vi.mock('@/services/firebase', () => ({
     storage: {
@@ -31,5 +31,30 @@ describe('CreativeStorageService', () => {
         expect(result).toBe(uri);
         expect(uploadBytes).not.toHaveBeenCalled();
         expect(uploadString).not.toHaveBeenCalled();
+    });
+
+    it('uploads scoped vault assets into owner-scoped folders', async () => {
+        await CreativeStorageService.uploadReferenceMedia('user', 'data:image/png;base64,AAA', 'image', { scope: 'objects' });
+
+        expect(storageRef).toHaveBeenCalledWith(expect.anything(), expect.stringContaining('users/user/vault/objects/'));
+        expect(uploadString).toHaveBeenCalled();
+    });
+
+    it('uploads session media into the owner-scoped temp video namespace', async () => {
+        await CreativeStorageService.uploadReferenceMedia('user', 'data:image/png;base64,AAA', 'image', {
+            scope: 'masks',
+            sessionId: 'session-123',
+        });
+
+        expect(storageRef).toHaveBeenCalledWith(expect.anything(), expect.stringContaining('creative/user/video/tmp/session-123/masks/'));
+    });
+
+    it('uploads project media into the owner-scoped project namespace', async () => {
+        await CreativeStorageService.uploadReferenceMedia('user', 'data:image/png;base64,AAA', 'image', {
+            scope: 'objects',
+            projectId: 'project-123',
+        });
+
+        expect(storageRef).toHaveBeenCalledWith(expect.anything(), expect.stringContaining('creative/user/projects/project-123/objects/'));
     });
 });

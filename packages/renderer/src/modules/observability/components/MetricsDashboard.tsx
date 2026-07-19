@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { TrendingUp, Cpu, DollarSign, Timer, AlertTriangle, Loader2 } from 'lucide-react';
+import { TrendingUp, Cpu, DollarSign, Timer, Clock3, AlertTriangle, Loader2 } from 'lucide-react';
 import { MetricsService, SystemMetrics } from '@/services/agent/observability/MetricsService';
 
 type TimeRange = 1 | 7 | 30;
@@ -36,6 +36,14 @@ function StatCard({
             </div>
         </div>
     );
+}
+
+function formatDuration(ms: number): string {
+    if (ms >= 1000) {
+        return `${(ms / 1000).toFixed(1)}s`;
+    }
+
+    return `${Math.round(ms)}ms`;
 }
 
 export const MetricsDashboard: React.FC = () => {
@@ -112,10 +120,10 @@ export const MetricsDashboard: React.FC = () => {
             {metrics && !loading && (
                 <>
                     {/* Stat cards */}
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4">
                         <StatCard
                             label="Total Executions"
-                            value={metrics.totalExecutions.toLocaleString()}
+                            value={metrics.totalExecutions.toLocaleString('en-US')}
                             icon={TrendingUp}
                             color="text-emerald-400"
                         />
@@ -139,14 +147,17 @@ export const MetricsDashboard: React.FC = () => {
                         />
                         <StatCard
                             label="Avg Latency"
-                            value={
-                                metrics.avgLatencyMs > 1000
-                                    ? `${(metrics.avgLatencyMs / 1000).toFixed(1)}s`
-                                    : `${Math.round(metrics.avgLatencyMs)}ms`
-                            }
+                            value={formatDuration(metrics.avgLatencyMs)}
                             icon={Timer}
                             color={metrics.avgLatencyMs > 10000 ? 'text-red-400' : 'text-slate-300'}
                             sub={`Error rate: ${(metrics.errorRate * 100).toFixed(1)}%`}
+                        />
+                        <StatCard
+                            label="Tail Latency"
+                            value={formatDuration(metrics.p95LatencyMs)}
+                            icon={Clock3}
+                            color={metrics.p95LatencyMs > 10000 ? 'text-red-400' : 'text-slate-300'}
+                            sub={`Completed traces: ${metrics.completedExecutions}/${metrics.totalExecutions}`}
                         />
                     </div>
 

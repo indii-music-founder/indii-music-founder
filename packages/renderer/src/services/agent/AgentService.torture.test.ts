@@ -3,6 +3,7 @@ import { AgentService } from './AgentService';
 import { useStore } from '@/core/store';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { AutonomousIntelligence as AI } from '@/services/intelligence/AutonomousIntelligence';
+import { importWithRetry } from '@/utils/dynamicImport';
 
 // --- MOCKS ---
 
@@ -117,7 +118,7 @@ vi.mock('./registry', () => {
         id: 'generalist',
         name: 'indii Conductor',
         description: 'Central Studio Head',
-        color: 'bg-purple-600',
+        color: 'bg-green-600',
         category: 'hub',
         getSystemPrompt: () => [
             'You are indii, the central Conductor.',
@@ -199,7 +200,7 @@ describe('🛡️ Shield: Agent Torture Test', () => {
 
     it('🛡️ Sandbox Escape: TOOL_REGISTRY does NOT contain dangerous tools', async () => {
         // Import the mocked tools to verify the registry
-        const { TOOL_REGISTRY } = await import('./tools');
+        const { TOOL_REGISTRY } = await importWithRetry(() => import('./tools'));
 
         // Verify dangerous tools are NOT in the registry
         expect(TOOL_REGISTRY).not.toHaveProperty('exec_shell');

@@ -4,6 +4,8 @@ import { ProfileSlice } from './profileSlice';
 import { SubscriptionSlice } from './subscriptionSlice';
 import { logger } from '@/utils/logger';
 
+let financeUnsubscribe: (() => void) | null = null;
+
 export interface FinanceSlice {
     finance: {
         earningsSummary: EarningsSummary | null;
@@ -35,7 +37,10 @@ export const createFinanceSlice: StateCreator<FinanceSlice & ProfileSlice & Subs
             const { financeService } = await import('@/services/finance/FinanceService');
 
             // Clear previous subscription before creating a new one
-            state.clearSubscription?.('finance-earnings');
+            if (financeUnsubscribe) {
+                financeUnsubscribe();
+                financeUnsubscribe = null;
+            }
 
             const unsubscribe = financeService.subscribeToEarnings(userId, (data: EarningsSummary | null) => {
                 set((state) => ({
@@ -48,8 +53,7 @@ export const createFinanceSlice: StateCreator<FinanceSlice & ProfileSlice & Subs
                 }));
             });
 
-            // Register the unsubscribe so it's cleaned up when no longer needed
-            state.registerSubscription?.('finance-earnings', unsubscribe);
+            financeUnsubscribe = unsubscribe;
         } catch (error: unknown) {
             const message = error instanceof Error ? error.message : 'Failed to fetch earnings';
             set((state) => ({
@@ -63,4 +67,11 @@ export const createFinanceSlice: StateCreator<FinanceSlice & ProfileSlice & Subs
     }
 
 });
+
+export function resetFinanceListener() {
+    if (financeUnsubscribe) {
+        financeUnsubscribe();
+        financeUnsubscribe = null;
+    }
+}
 

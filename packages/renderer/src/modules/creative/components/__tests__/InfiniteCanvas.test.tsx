@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render } from '@testing-library/react';
+import { render, fireEvent, screen, waitFor } from '@testing-library/react';
 import InfiniteCanvas from '../InfiniteCanvas';
-import React from 'react';
+import React, { act } from 'react';
 
 // Mock the store
 const mockUseStore = vi.fn();
@@ -10,28 +10,40 @@ vi.mock('@/core/store', () => ({
 }));
 
 // Mock services to prevent errors
+import { ImageGeneration } from '@/services/image/ImageGenerationService';
 vi.mock('@/services/image/ImageGenerationService', () => ({
     ImageGeneration: { generateImages: vi.fn() }
 }));
 vi.mock('@/services/image/EditingService', () => ({
     Editing: { editImage: vi.fn() }
 }));
+const mockDetectObjects = vi.fn();
+vi.mock('@/services/image/ImageAnalysisService', () => ({
+    imageAnalysisService: {
+        detectObjects: (...args: any[]) => mockDetectObjects(...args),
+    }
+}));
 
+const mockToast = {
+    error: vi.fn(),
+    success: vi.fn(),
+    info: vi.fn(),
+    warning: vi.fn(),
+};
 vi.mock('@/core/context/ToastContext', () => ({
-    useToast: () => ({
-        toast: {
-            error: vi.fn(),
-            success: vi.fn(),
-            info: vi.fn(),
-            warning: vi.fn(),
-        }
-    })
+    useToast: () => mockToast
 }));
 
 describe('InfiniteCanvas Culling', () => {
     let mockContext: any;
 
     beforeEach(() => {
+        mockDetectObjects.mockReset();
+        mockToast.error.mockReset();
+        mockToast.success.mockReset();
+        mockToast.info.mockReset();
+        mockToast.warning.mockReset();
+
         // Mock Canvas context
         mockContext = {
             fillStyle: '',
@@ -46,6 +58,8 @@ describe('InfiniteCanvas Culling', () => {
             lineTo: vi.fn(),
             stroke: vi.fn(),
             strokeRect: vi.fn(),
+            fillText: vi.fn(),
+            measureText: vi.fn(() => ({ width: 80 })),
             setLineDash: vi.fn(),
         };
 
@@ -54,6 +68,8 @@ describe('InfiniteCanvas Culling', () => {
             if (type === '2d') return mockContext;
             return null;
         });
+
+        vi.spyOn(HTMLCanvasElement.prototype, 'toDataURL').mockReturnValue('data:image/png;base64,canvas-data');
 
         // Mock window.Image
         global.Image = class {
@@ -79,7 +95,9 @@ describe('InfiniteCanvas Culling', () => {
                 selectCanvasImage: vi.fn(),
                 currentProjectId: 'test-project',
                 generatedHistory: [],
-                uploadedImages: []
+                uploadedImages: [],
+                failedVariationBatch: null,
+                setFailedVariationBatch: vi.fn()
             };
             return selector ? selector(state) : state;
         });
@@ -121,7 +139,9 @@ describe('InfiniteCanvas Culling', () => {
                 selectCanvasImage: vi.fn(),
                 currentProjectId: 'p1',
                 generatedHistory: [],
-                uploadedImages: []
+                uploadedImages: [],
+                failedVariationBatch: null,
+                setFailedVariationBatch: vi.fn()
             };
             return selector ? selector(state) : state;
         });
@@ -168,7 +188,9 @@ describe('InfiniteCanvas Culling', () => {
                 selectCanvasImage: vi.fn(),
                 currentProjectId: 'p1',
                 generatedHistory: [],
-                uploadedImages: []
+                uploadedImages: [],
+                failedVariationBatch: null,
+                setFailedVariationBatch: vi.fn()
             };
             return selector ? selector(state) : state;
         });
@@ -186,5 +208,193 @@ describe('InfiniteCanvas Culling', () => {
 
         // Offscreen should NOT be drawn (this expectation will fail before optimization)
         expect(offScreenCalls.length).toBe(0);
+    });
+
+    it('runs real object detection and renders bounding boxes', async () => {
+        const visibleImage = {
+            id: 'img1',
+            base64: 'data:image/png;base64,1',
+            x: 0,
+            y: 0,
+            width: 100,
+            height: 100,
+            aspect: 1,
+            projectId: 'p1'
+        };
+
+        mockDetectObjects.mockResolvedValueOnce([
+            {
+                label: 'face',
+                box: { xmin: 100, ymin: 120, xmax: 300, ymax: 420 }
+            }
+        ]);
+
+        mockUseStore.mockImplementation((selector: any) => {
+            const state = {
+                canvasImages: [visibleImage],
+                addCanvasImage: vi.fn(),
+                updateCanvasImage: vi.fn(),
+                removeCanvasImage: vi.fn(),
+                selectedCanvasImageId: null,
+                selectCanvasImage: vi.fn(),
+                currentProjectId: 'p1',
+                generatedHistory: [],
+                uploadedImages: [],
+                failedVariationBatch: null,
+                setFailedVariationBatch: vi.fn()
+            };
+            return selector ? selector(state) : state;
+        });
+
+        render(<InfiniteCanvas />);
+        await act(async () => {
+            fireEvent.click(screen.getByRole('button', { name: /Detect Objects/i }));
+        });
+
+        await waitFor(() => {
+            expect(mockDetectObjects).toHaveBeenCalledOnce();
+            expect(mockDetectObjects).toHaveBeenCalledWith('data:image/png;base64,1');
+            expect(mockToast.success).toHaveBeenCalledWith('Detected 1 object.');
+        });
+
+        const overlayCalls = mockContext.strokeRect.mock.calls.filter((args: any[]) =>
+            args[0] === 10 && args[1] === 12 && args[2] === 20 && args[3] === 30
+        );
+        expect(overlayCalls.length).toBeGreaterThan(0);
+    });
+
+    it('preserves every source layer when one layer is not ready to flatten', () => {
+        const removeCanvasImage = vi.fn();
+        const images = [
+            { id: 'ready-layer', base64: 'data:image/png;base64,ready', x: 0, y: 0, width: 100, height: 100, aspect: 1, projectId: 'p1' },
+            { id: 'pending-layer', base64: 'data:image/png;base64,pending', x: 100, y: 0, width: 100, height: 100, aspect: 1, projectId: 'p1' },
+        ];
+
+        global.Image = class {
+            onload: (() => void) | null = null;
+            naturalWidth = 0;
+            complete = false;
+            width = 100;
+            height = 100;
+            set src(_value: string) {}
+        } as any;
+
+        mockUseStore.mockImplementation((selector: any) => {
+            const state = {
+                canvasImages: images,
+                addCanvasImage: vi.fn(),
+                updateCanvasImage: vi.fn(),
+                removeCanvasImage,
+                selectedCanvasImageId: null,
+                selectCanvasImage: vi.fn(),
+                currentProjectId: 'p1',
+                generatedHistory: [],
+                uploadedImages: [],
+                failedVariationBatch: null,
+                setFailedVariationBatch: vi.fn()
+            };
+            return selector ? selector(state) : state;
+        });
+
+        render(<InfiniteCanvas />);
+        fireEvent.click(screen.getByRole('button', { name: 'Flatten Canvas' }));
+
+        expect(mockToast.error).toHaveBeenCalledWith(expect.stringContaining('still loading or unavailable'));
+        expect(removeCanvasImage).not.toHaveBeenCalled();
+    });
+
+    it('aborts flatten if pre-flatten snapshot save fails', async () => {
+        const saveDesignVersion = vi.fn().mockRejectedValue(new Error('Network error'));
+        const removeCanvasImage = vi.fn();
+        
+        const images = [
+            { id: 'layer1', base64: 'data:image/png;base64,1', x: 0, y: 0, width: 100, height: 100, aspect: 1, projectId: 'p1' },
+            { id: 'layer2', base64: 'data:image/png;base64,2', x: 50, y: 50, width: 100, height: 100, aspect: 1, projectId: 'p1' },
+        ];
+
+        global.Image = class {
+            onload: (() => void) | null = null;
+            naturalWidth = 100;
+            complete = true;
+            width = 100;
+            height = 100;
+            set src(_value: string) {}
+        } as any;
+
+        mockUseStore.mockImplementation((selector: any) => {
+            const state = {
+                canvasImages: images,
+                addCanvasImage: vi.fn(),
+                updateCanvasImage: vi.fn(),
+                removeCanvasImage,
+                selectedCanvasImageId: null,
+                selectCanvasImage: vi.fn(),
+                currentProjectId: 'p1',
+                generatedHistory: [],
+                uploadedImages: [],
+                saveDesignVersion,
+                failedVariationBatch: null,
+                setFailedVariationBatch: vi.fn()
+            };
+            return selector ? selector(state) : state;
+        });
+
+        render(<InfiniteCanvas />);
+        fireEvent.click(screen.getByRole('button', { name: 'Flatten Canvas' }));
+
+        await waitFor(() => {
+            expect(saveDesignVersion).toHaveBeenCalled();
+            expect(mockToast.error).toHaveBeenCalledWith('Flatten was not performed because its recovery revision could not be saved.');
+            expect(removeCanvasImage).not.toHaveBeenCalled();
+        });
+    });
+
+    it('displays failed variation batch UI and allows retry', async () => {
+        const setFailedVariationBatch = vi.fn();
+        const failedBatch = {
+            source: { id: 'img1', base64: 'data:image/png;base64,1', x: 0, y: 0, width: 100, height: 100, aspect: 1, projectId: 'p1' },
+            prompt: 'Test prompt',
+            mimeType: 'image/png',
+            base64Data: 'base64,1',
+            projectId: 'p1',
+            slots: [1, 2] // slots 1 and 2 failed
+        };
+
+        mockUseStore.mockImplementation((selector: any) => {
+            const state = {
+                canvasImages: [failedBatch.source],
+                addCanvasImage: vi.fn(),
+                updateCanvasImage: vi.fn(),
+                removeCanvasImage: vi.fn(),
+                selectedCanvasImageId: null,
+                selectCanvasImage: vi.fn(),
+                currentProjectId: 'p1',
+                generatedHistory: [],
+                uploadedImages: [],
+                failedVariationBatch: failedBatch,
+                setFailedVariationBatch,
+                addToHistory: vi.fn()
+            };
+            return selector ? selector(state) : state;
+        });
+
+        render(<InfiniteCanvas />);
+
+        // The button should be visible
+        const resumeBtn = screen.getByRole('button', { name: /Retry Failed Variations/i });
+        expect(resumeBtn).toBeInTheDocument();
+        expect(resumeBtn).toHaveTextContent(/Retry 2 failed/i);
+        
+        // Mock successful generation for the retry
+        (ImageGeneration.generateImages as any).mockResolvedValue([{ id: 'gen1', url: 'data:image/png;base64,new' }]);
+
+        fireEvent.click(resumeBtn);
+
+        await waitFor(() => {
+            // Check if generateImages was called
+            expect(ImageGeneration.generateImages).toHaveBeenCalled();
+            // It should try to resume and immediately clear the batch (since it processes it)
+            expect(setFailedVariationBatch).toHaveBeenCalledWith(null);
+        });
     });
 });

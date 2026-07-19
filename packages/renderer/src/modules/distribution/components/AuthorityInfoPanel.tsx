@@ -15,7 +15,7 @@ export function AuthorityInfoPanel() {
                 </div>
                 <div className="flex items-center justify-between p-2.5 rounded-lg bg-white/[0.02]">
                     <div className="flex items-center gap-2">
-                        <Activity size={12} className="text-purple-400" />
+                        <Activity size={12} className="text-green-400" />
                         <span className="text-xs text-gray-300">API Calls</span>
                     </div>
                     <span className="text-xs font-bold text-white">2.4k / 10k</span>

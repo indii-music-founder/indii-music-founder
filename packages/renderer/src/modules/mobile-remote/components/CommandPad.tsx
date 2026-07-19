@@ -14,12 +14,12 @@ import { useShallow } from 'zustand/react/shallow';
 import { remoteRelayService } from '@/services/agent/RemoteRelayService';
 import { logger } from '@/utils/logger';
 import {
-  Palette, Video, Music, DollarSign, Calendar, TrendingUp, Bot, Users, Activity,
+  Palette, Video, Music, DollarSign, Calendar, TrendingUp, Bot, Users, Activity, Image as ImageIcon,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   CheckSquare, ThumbsUp, ShoppingBag, MapPin, Sparkles, Mic, LucideIcon, Rocket, Zap,
   Cpu, Headphones, Share2, Layers, Settings, FileText, Globe, BarChart3, Shield,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  MessageSquare, Package, Wand2, Play, Pause
+  MessageSquare, Package, Wand2, Play, Pause, Navigation
 } from 'lucide-react';
 import type { ModuleId } from '@/core/constants';
 import { motion } from 'framer-motion';
@@ -69,7 +69,7 @@ export default function CommandPad({ onSendCommand, isPaired }: CommandPadProps)
     triggerHaptic([40, 60]);
     navigateTo(moduleId);
     if (isPaired) {
-      remoteRelayService.sendCommand(prompt).catch(err => {
+      remoteRelayService.sendCommand(prompt, undefined, undefined, 'studio').catch(err => {
         logger.error(`[CommandPad] Failed to trigger agent action:`, err);
       });
     }
@@ -87,8 +87,23 @@ export default function CommandPad({ onSendCommand, isPaired }: CommandPadProps)
         remoteRelayService.sendCommand(
           '[GENERATE_IMAGE] Create a stunning visual — cinematic lighting, bold composition',
           undefined,
-          { aspectRatio: '1:1', type: 'generate_image' }
+          { aspectRatio: '1:1', type: 'generate_image' },
+          'studio'
         ).catch(err => logger.error('[CommandPad] Generate failed:', err));
+      },
+    },
+    {
+      id: 'show-me',
+      icon: ImageIcon,
+      label: 'Show Me',
+      color: 'bg-fuchsia-500/10 text-fuchsia-400 border-fuchsia-500/20 hover:bg-fuchsia-500/20',
+      glow: 'shadow-fuchsia-500/15 hover:shadow-fuchsia-500/30',
+      action: () => {
+        triggerHaptic(40);
+        // ISSUE-REMOTE-SHOW-20260622: surface the latest desktop visual artifact on the phone.
+        remoteRelayService.sendCommand('[SHOW]', undefined, undefined, 'studio').catch(err =>
+          logger.error('[CommandPad] Show Me failed:', err)
+        );
       },
     },
     {
@@ -104,12 +119,22 @@ export default function CommandPad({ onSendCommand, isPaired }: CommandPadProps)
     {
       id: 'voice-note',
       icon: Mic,
-      label: 'Voice Note',
+      label: 'Live Moment',
       color: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20',
       glow: 'shadow-emerald-500/15 hover:shadow-emerald-500/30',
       action: () => {
         triggerHaptic(40);
         navigateTo('capture' as ModuleId);
+      },
+    },
+    {
+      id: 'road-mode',
+      icon: Navigation,
+      label: 'Road Mode',
+      color: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20',
+      glow: 'shadow-emerald-500/15 hover:shadow-emerald-500/30',
+      action: () => {
+        navigateTo('road');
       },
     },
     {
@@ -131,7 +156,10 @@ export default function CommandPad({ onSendCommand, isPaired }: CommandPadProps)
       glow: 'shadow-amber-500/15 hover:shadow-amber-500/30',
       action: () => {
         remoteRelayService.sendCommand(
-          "Let's brainstorm. Give me 5 creative ideas for my next project based on my profile and recent work."
+          "Let's brainstorm. Give me 5 creative ideas for my next project based on my profile and recent work.",
+          undefined,
+          undefined,
+          'studio'
         ).catch(err => logger.error('[CommandPad] Brainstorm failed:', err));
       },
     },
@@ -176,8 +204,8 @@ export default function CommandPad({ onSendCommand, isPaired }: CommandPadProps)
       description: 'Highest velocity releases',
       moduleId: 'marketing',
       agentPrompt: 'Draft an aggressive, target-audience marketing sprint focusing on maximizing playlist placements and TikTok engagement for our top-performing track.',
-      color: 'border-purple-500/25 bg-purple-500/[0.03] text-purple-400 hover:bg-purple-500/[0.08]',
-      glow: 'shadow-purple-500/5 hover:shadow-purple-500/15',
+      color: 'border-green-500/25 bg-green-500/[0.03] text-green-400 hover:bg-green-500/[0.08]',
+      glow: 'shadow-green-500/5 hover:shadow-green-500/15',
     },
     {
       id: 'agent_activity',
@@ -242,7 +270,7 @@ export default function CommandPad({ onSendCommand, isPaired }: CommandPadProps)
   ];
 
   const moduleButtons = [
-    { id: 'creative', icon: Palette, label: 'Creative', accent: 'text-purple-400 border-purple-500/15 hover:bg-purple-500/5' },
+    { id: 'creative', icon: Palette, label: 'Creative', accent: 'text-green-400 border-green-500/15 hover:bg-green-500/5' },
     { id: 'video', icon: Video, label: 'Video', accent: 'text-pink-400 border-pink-500/15 hover:bg-pink-500/5' },
     { id: 'audio-analyzer', icon: Music, label: 'Audio', accent: 'text-amber-400 border-amber-500/15 hover:bg-amber-500/5' },
     { id: 'distribution', icon: Globe, label: 'Distro', accent: 'text-blue-400 border-blue-500/15 hover:bg-blue-500/5' },
@@ -268,21 +296,21 @@ export default function CommandPad({ onSendCommand, isPaired }: CommandPadProps)
           </div>
         </div>
         
-        <div className="grid grid-cols-2 gap-3.5">
+        <div className="flex overflow-x-auto gap-3.5 pb-2 -mx-2 px-2 snap-x snap-mandatory hide-scrollbar">
           {quickActions.map((action, idx) => (
             <motion.button
               key={action.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
               transition={{ delay: idx * 0.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={action.action}
               className={cn(
-                "relative overflow-hidden flex flex-col items-start gap-4 p-5 rounded-[28px] border backdrop-blur-xl transition-all duration-300 shadow-xl cursor-pointer",
+                "relative overflow-hidden flex flex-col items-start gap-3 p-4 rounded-[28px] border backdrop-blur-xl transition-all duration-300 shadow-xl cursor-pointer shrink-0 snap-center",
                 action.color,
                 action.glow
               )}
-              style={{ minHeight: '120px', minWidth: '44px' }}
+              style={{ minHeight: '110px', width: '130px', minWidth: '44px' }}
             >
               <div className="w-10 h-10 rounded-[16px] bg-white/5 flex items-center justify-center border border-white/10">
                 <action.icon className="w-5 h-5" />
@@ -318,7 +346,7 @@ export default function CommandPad({ onSendCommand, isPaired }: CommandPadProps)
               whileTap={{ scale: 0.95 }}
               onClick={() => triggerHubAction(card.moduleId, card.agentPrompt)}
               className={cn(
-                "group relative overflow-hidden flex flex-col items-start p-4.5 rounded-[28px] border bg-white/[0.01] backdrop-blur-xl transition-all duration-300 shadow-xl cursor-pointer text-left",
+                "group relative overflow-hidden flex flex-col items-start p-4.5 rounded-[28px] border border-t-white/10 border-l-white/5 bg-white/[0.01] backdrop-blur-3xl transition-all duration-300 shadow-2xl cursor-pointer text-left",
                 card.color,
                 card.glow
               )}

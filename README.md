@@ -16,7 +16,7 @@ indii is not just a platform; it is a **Digital Handshake**. It is a multi-tenan
 [![TypeScript](https://img.shields.io/badge/Language-TypeScript-3178C6?logo=typescript)](https://www.typescriptlang.org)
 [![Electron](https://img.shields.io/badge/Desktop-Electron_33-47848F?logo=electron)](https://www.electronjs.org)
 [![Intelligence](https://img.shields.io/badge/Intelligence-Gemini_3-4285F4?logo=google)](https://ai.google.dev)
-[![Node](https://img.shields.io/badge/Node-%3E%3D22.0.0-339933?logo=node.js)](https://nodejs.org)
+[![Node](https://img.shields.io/badge/Node-%3E%3D24.0.0-339933?logo=node.js)](https://nodejs.org)
 
 ---
 
@@ -35,7 +35,7 @@ cd indii-music-founder
 make prime                  # installs deps, runs health check
 
 # 3. Configure secrets (3 min)
-cp .env.example .env        # then fill in your VITE_API_KEY + Firebase keys
+cp .env.example .env        # then fill in your Firebase keys
 
 # 4. Launch (30 sec)
 make dev-web                # Vite-only on :4243 — fastest iteration loop
@@ -76,11 +76,11 @@ To ensure 99.9% reliability in probabilistic AI workflows, indii operates on a r
 ├──────────────────────────────────────────────────────────────┤
 │  Layer 2: ORCHESTRATION (Intelligence)                       │
 │  A2A swarm protocol — reasons, routes, manages               │
-│  → agents/ + src/services/agent/                             │
+│  → agents/ + packages/renderer/src/services/agent/           │
 ├──────────────────────────────────────────────────────────────┤
 │  Layer 3: EXECUTION (Deterministic)                          │
 │  Hard-coded scripts for API calls, file ops, Proprietary Ingestion IP generation  │
-│  → execution/ + python/tools/                                │
+│  → execution/ + python/                                      │
 └──────────────────────────────────────────────────────────────┘
 
 **The Multiplier Effect:** By pushing complexity into deterministic execution layers, we avoid the "compound error" trap (where 90% accuracy over 5 biological steps leads to 59% overall success). Determinism at the base allows for reliability at the peak.
@@ -300,16 +300,16 @@ await timelineOrchestrator.activateTimeline('user-123', timeline.id);
 ### Architecture
 
 ```
-src/services/timeline/
+packages/renderer/src/services/timeline/
 ├── TimelineOrchestratorService.ts    # Core engine (creation, lifecycle, progress)
 ├── TimelinePhaseTemplates.ts         # 4 pre-built campaign templates
 ├── TimelineTypes.ts                  # Type definitions
 └── TimelineOrchestratorService.test.ts  # 25 unit tests
 
-src/services/agent/tools/
+packages/renderer/src/services/agent/tools/
 └── TimelineTools.ts                  # 9 agent tools (registered in TOOL_REGISTRY)
 
-functions/src/timeline/
+packages/firebase/src/timeline/
 ├── pollTimelineMilestones.ts         # Cloud Scheduler: finds due milestones
 └── milestone_execution.ts            # Inngest: Gemini server-side execution
 ```
@@ -384,7 +384,7 @@ All platform OAuth tokens are stored encrypted in Firestore (`users/{uid}/analyt
 ### Server-Side Token Security
 
 ```
-Cloud Functions (functions/src/analytics/platformTokenExchange.ts)
+Cloud Functions (packages/firebase/src/analytics/platformTokenExchange.ts)
 ├── analyticsExchangeToken   — code → token exchange (Spotify PKCE, TikTok, Instagram)
 ├── analyticsRefreshToken    — rotate expired tokens
 └── analyticsRevokeToken     — revoke + delete from Firestore
@@ -556,7 +556,7 @@ Firebase API keys are **identifiers, not secrets** — security is enforced via 
 | AI SDK | `@google/genai` 1.30 + Genkit 1.26 | Unified Google Gen AI SDK |
 | AI Models | Gemini 3 Pro / Flash / Image | See [Model Policy](MODEL_POLICY.md) |
 | Video AI | Veo 3.1 | `veo-3.1-generate-preview` |
-| TTS | Gemini 2.5 Pro TTS | `gemini-2.5-pro-tts` |
+| TTS | Gemini 3.1 Flash TTS Preview | `gemini-3.1-flash-tts-preview` |
 | Embeddings | `text-embedding-004` | Vector similarity search |
 | Jobs | Inngest 3.46 | Reliable background task orchestration |
 | Payments | Stripe 20.1 | Subscription billing and payouts |
@@ -575,7 +575,7 @@ All AI interactions follow a strict model policy. Manual model string hardcoding
 | Fast Routing | `gemini-3-flash-preview` | MEDIUM |
 | Image Generation | `gemini-3-pro-image-preview` | — |
 | Video Generation | `veo-3.1-generate-preview` | — |
-| Text-to-Speech | `gemini-2.5-pro-tts` | — |
+| Text-to-Speech | `gemini-3.1-flash-tts-preview` | — |
 
 > **Banned Models:** `gemini-1.5-*`, `gemini-2.0-*`, `gemini-pro`, `gemini-pro-vision` — runtime validation enforces this.
 
@@ -587,7 +587,7 @@ All AI interactions follow a strict model policy. Manual model string hardcoding
 
 ### Prerequisites
 
-- **Node.js:** >= 22.0.0
+- **Node.js:** >= 24.0.0
 - **Make:** Pre-installed on macOS/Linux (Windows: use WSL or Git Bash)
 - **Firebase CLI:** `npm install -g firebase-tools`
 - **Docker:** (Optional) Required for Agent Zero Sidecar execution
@@ -612,7 +612,6 @@ cp .env.example .env
 
 | Variable | Purpose |
 |----------|---------|
-| `VITE_API_KEY` | Gemini / Google AI key |
 | `VITE_FIREBASE_API_KEY` | Firebase project identifier |
 | `VITE_FIREBASE_PROJECT_ID` | Firebase project ID |
 | `VITE_FIREBASE_AUTH_DOMAIN` | Firebase auth domain |
@@ -622,8 +621,10 @@ cp .env.example .env
 
 | Variable | Purpose |
 |----------|---------|
-| `VITE_VERTEX_PROJECT_ID` | Vertex AI project |
-| `VITE_VERTEX_LOCATION` | Vertex AI region |
+| `VERTEX_PROJECT_ID` | Backend Vertex AI project override |
+| `VERTEX_LOCATION` | Backend default Vertex AI location |
+| `VERTEX_IMAGE_LOCATION` | Backend image model location, defaults to `us` |
+| `VERTEX_VIDEO_LOCATION` | Backend video model location |
 | `VITE_GOOGLE_MAPS_API_KEY` | Google Maps |
 | `VITE_SKIP_ONBOARDING` | Skip onboarding in dev |
 | `VITE_FIREBASE_APP_CHECK_KEY` | App Check (required in prod) |
@@ -700,11 +701,12 @@ The project includes a rich catalog of 20+ automation scripts for environment se
 indii maintains a **"Zero-Regression"** policy with multi-layer testing:
 
 ```bash
-npm test                   # Vitest in watch mode
+npm test                   # Vitest in watch mode across all packages
 npm test -- --run          # Vitest once (CI mode)
+npm run test:renderer      # Run tests for a specific workspace package
 npm run test:e2e           # Playwright E2E (60+ specs)
-npm run lint               # ESLint check
-npm run typecheck          # TypeScript type checking
+npm run lint               # ESLint check across all packages
+npm run typecheck          # TypeScript type checking (all packages)
 ```
 
 | Layer | Tool | Coverage |
@@ -737,7 +739,7 @@ Push to main → Lint → Unit Tests → E2E Tests → Build Landing → Build S
 | Target | Platform | Hosting |
 |--------|----------|---------|
 | Studio App | Web (SPA) | Firebase Hosting → `dist/` |
-| Landing Page | Web | Firebase Hosting → `landing-page/dist/` |
+| Landing Page | Web | Firebase Hosting → `packages/landing/dist/` |
 | Desktop (macOS) | Electron | DMG/ZIP distribution |
 | Desktop (Windows) | Electron | NSIS installer |
 | Desktop (Linux) | Electron | AppImage |
@@ -749,25 +751,26 @@ Push to main → Lint → Unit Tests → E2E Tests → Build Landing → Build S
 
 ```
 indii-music-founder/
-├── src/                    # React application source
-│   ├── core/               # App infrastructure (store, contexts, themes)
-│   ├── modules/            # 36 lazy-loaded feature modules
-│   ├── services/           # 40+ business logic services
-│   ├── components/         # Shared UI components (Radix-based)
-│   ├── hooks/              # Custom React hooks
-│   ├── lib/                # Utility libraries
-│   ├── types/              # TypeScript type definitions
-│   └── config/             # App configuration
-├── agents/                 # 20 AI agent definitions (A2A swarm)
-├── execution/              # Deterministic scripts (Layer 3)
+├── packages/
+│   ├── renderer/               # Main React application source (indii studio)
+│   ├── main/                   # Electron desktop wrapper
+│   ├── firebase/               # Firebase Cloud Functions (Node.js 22, Gen 2)
+│   ├── shared/                 # Shared types and schemas
+│   ├── landing/                # Separate marketing site (React + Vite)
+│   ├── sdk/                    # SDKs
+│   ├── admin-dashboard/        # Admin dashboard
+│   ├── mcp-server-local/       # Local MCP server
+│   ├── mcp-server-harness/     # Harness MCP server
+│   └── engine-dsp/             # DSP Engine
+├── agents/                 # 20 AI agent definitions (A2A Swarm Protocol)
+├── execution/              # Deterministic scripts for agent tools (Layer 3)
 ├── directives/             # AI agent SOPs (Layer 1)
-├── python/                 # Python tools and API handlers
-├── functions/              # Firebase Cloud Functions (Gen 2)
-├── electron/               # Electron desktop wrapper
-├── e2e/                    # Playwright E2E tests (60+ specs)
-├── landing-page/           # Marketing site (React + Vite)
-├── docs/                   # Documentation
-└── scripts/                # Build and utility scripts
+├── e2e/                    # Playwright E2E tests (60+ spec files)
+├── docs/                   # Documentation (specs, plans, design, testing)
+├── .agent/                 # Agent system configuration and error memory
+├── scripts/                # Build and utility scripts
+├── python/                 # Python scripts
+└── python-functions/       # Experimental Python cloud functions (not the production creative gateway)
 ```
 
 ---
@@ -929,15 +932,21 @@ The `WorkflowEngine` now executes every node type with real service calls:
 
 ### v0.1.0-beta.3 — April 2026
 
-**Indii Growth Protocol & Meta Andromeda Pipeline**
+**Indii Growth Protocol & PLP: The Three Pillars**
 
-- **Creative Studio Integration**: Integrated the 15-variant (10 images, 5 videos via Veo 3.1) Meta Andromeda batch generation pipeline.
-- **Automated Deployment**: Andromeda directly interfaces with `AdAutomationService` to seamlessly deploy variants to Meta networks (Instagram exclusively) for algorithmic A/B testing and stream-velocity spikes.
-- **Dashboard Observability**: Real-time viral scoring, algorithmic velocity trends, and CPS Kill-Switch status indicators are now natively integrated into `PlatformCard.tsx`.
+PLP (Promote · Launch · Push) is the operational backbone of indii — a unified three-pillar system that orchestrates every release from creative testing through global scaling. [Learn more](docs/PLP_THREE_PILLARS.md).
+
+- **PROMOTE**: Design, test, and optimize 15-variant creative assets (10 images, 5 videos via Veo 3.1) across Meta networks (Instagram Stories/Reels/Feed) with autonomous A/B testing and cost-per-save optimization.
+- **LAUNCH**: Execute metadata-optimized, DSP-ready release coordination across Spotify, Apple Music, Amazon Music with full DDEX compliance, ISRC generation, and smart contract splits.
+- **PUSH**: Scale post-release momentum through 28-day front-loaded budget allocation, Saver Lookalike audiences, and autonomous playlist curator outreach driven by stream velocity analytics.
+
+- **Creative Studio Integration**: 15-variant batch generation with real-time performance tracking, kill-switch automation (CPS < 5%), and audience evolution.
+- **Automated Deployment**: PLP directly interfaces with `AdAutomationService` for seamless variant deployment to Meta networks for algorithmic A/B testing.
+- **Dashboard Observability**: Real-time viral scoring, stream velocity trends, and CPS Kill-Switch status indicators across all three pillars integrated into the Analytics module.
 
 **Command Bar Enhancements (UI/UX)**
 
-- **Slash Commands**: Introduced `/deploy-andromeda` and `/status-blitz` intercepts directly in the Command Bar (`PromptArea.tsx`).
+- **Slash Commands**: `/deploy-plp` (activate full workflow), `/promote-status` (check variant health), `/launch-readiness` (DSP metadata validation), `/push-analytics` (stream velocity & growth metrics).
 - **Accessibility**: 100% WCAG 2.1 AA compliance achieved on dynamic UI elements and Delegate Menus, verified by automated `jest-axe` tests.
 
 **Indii Conductor (Agentic Harness) Hardening**

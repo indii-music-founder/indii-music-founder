@@ -15,6 +15,7 @@ import * as crypto from "crypto";
 import * as functions from "firebase-functions/v1";
 import * as admin from "firebase-admin";
 import { pandadocWebhookSecret } from "../config/secrets";
+import { findWritableReleaseRef } from "../functions/distribution/distributionRecords";
 
 const REGION = "us-central1";
 
@@ -40,7 +41,8 @@ interface PandaDocWebhookEvent {
 
 /**
  * Webhook handler for PandaDoc document state changes.
- * SECURITY: Validates the request comes from PandaDoc IP ranges.
+ * SECURITY: Requires a valid HMAC-SHA256 x-signature (timing-safe compare).
+ * Fails closed if the shared secret is not configured.
  */
 export const pandadocWebhook = functions
     .region(REGION)
@@ -56,27 +58,34 @@ export const pandadocWebhook = functions
             return;
         }
 
-        // Verify PandaDoc HMAC-SHA256 signature
-        // Configure shared secret in PandaDoc Dashboard → Webhooks → Shared Key
+        // Verify PandaDoc HMAC-SHA256 signature (ISSUE-863: FAIL CLOSED).
+        // Configure shared secret in PandaDoc Dashboard → Webhooks → Shared Key.
+        // This webhook marks contracts signed and queues automation — an
+        // unverified request must never reach those writes.
         const secret = process.env.PANDADOC_WEBHOOK_SECRET || (() => {
             try { return pandadocWebhookSecret.value(); } catch { return ""; }
         })();
-        if (secret) {
-            const signature = req.headers['x-signature'] as string | undefined;
-            if (!signature) {
-                console.warn('[PandaDoc] Rejected request: missing x-signature header');
-                res.status(401).send("Unauthorized");
-                return;
-            }
-            const expected = crypto
-                .createHmac('sha256', secret)
-                .update(JSON.stringify(req.body))
-                .digest('hex');
-            if (signature !== expected) {
-                console.warn('[PandaDoc] Rejected request: invalid signature');
-                res.status(401).send("Unauthorized");
-                return;
-            }
+        if (!secret) {
+            console.error('[PandaDoc] Rejected request: PANDADOC_WEBHOOK_SECRET is not configured — failing closed.');
+            res.status(500).send("Webhook verification is not configured");
+            return;
+        }
+        const signature = req.headers['x-signature'] as string | undefined;
+        if (!signature) {
+            console.warn('[PandaDoc] Rejected request: missing x-signature header');
+            res.status(401).send("Unauthorized");
+            return;
+        }
+        const expected = crypto
+            .createHmac('sha256', secret)
+            .update(JSON.stringify(req.body))
+            .digest('hex');
+        const signatureBuf = Buffer.from(signature);
+        const expectedBuf = Buffer.from(expected);
+        if (signatureBuf.length !== expectedBuf.length || !crypto.timingSafeEqual(signatureBuf, expectedBuf)) {
+            console.warn('[PandaDoc] Rejected request: invalid signature');
+            res.status(401).send("Unauthorized");
+            return;
         }
 
         try {
@@ -92,11 +101,6 @@ export const pandadocWebhook = functions
             for (const event of payload.data) {
                 console.log(`[PandaDoc Webhook] Event: ${event.status} for doc: ${event.id}`);
 
-                // Only process completed documents
-                if (event.status !== "document.completed") {
-                    continue;
-                }
-
                 // Extract metadata tokens (artist info, track info, etc.)
                 const tokens: Record<string, string> = {};
                 if (event.tokens) {
@@ -111,6 +115,33 @@ export const pandadocWebhook = functions
                     console.warn(`[PandaDoc Webhook] No userId found for doc ${event.id}. Skipping.`);
                     continue;
                 }
+
+                // Multi-signer tracking updates
+                const contractRef = db.doc(`users/${userId}/contracts/${event.id}`);
+                const contractSnap = await contractRef.get();
+                if (contractSnap.exists && event.recipients) {
+                    const allSigned = event.recipients.every(r => r.has_completed);
+                    const someSigned = event.recipients.some(r => r.has_completed);
+                    const contractStatus = allSigned ? "signed" : (someSigned ? "partially_signed" : "sent_for_signing");
+
+                    await contractRef.update({
+                        status: contractStatus,
+                        signers: event.recipients.map(r => ({
+                            name: `${r.first_name} ${r.last_name}`,
+                            email: r.email,
+                            status: r.has_completed ? "signed" : "pending",
+                            signedAt: r.has_completed ? new Date().toISOString() : null
+                        })),
+                        updatedAt: admin.firestore.FieldValue.serverTimestamp()
+                    });
+                    console.log(`[PandaDoc Webhook] Updated contract ${event.id} status to ${contractStatus}`);
+                }
+
+                // Only process completed documents for career events
+                if (event.status !== "document.completed") {
+                    continue;
+                }
+
 
                 // Record career event
                 const careerEvent = {
@@ -145,21 +176,44 @@ export const pandadocWebhook = functions
                 console.log(`[PandaDoc Webhook] Career event recorded for user ${userId}: ${event.name}`);
 
                 // ──────────────────────────────────────────────
-                // AUTO-PIPELINE TRIGGERS
+                // AUTO-PIPELINE TRIGGERS (ISSUE-864)
+                //
+                // Trust boundary: an HMAC-verified webhook proves the event came
+                // from PandaDoc, NOT that a document with "distribution" or
+                // "publishing" in its filename is an approved automation trigger.
+                // Automation requires:
+                //   1. An exact, allow-listed documentType tag (set server-side at
+                //      creation in pandadocCreateDocument/PandaDocService — never
+                //      inferred from the free-text document name).
+                //   2. At least one recipient actually completed signing.
+                //   3. For distribution: the releaseId must be owned by userId.
+                //   4. Idempotent per (document, status) — PandaDoc retries must
+                //      not queue duplicate pipeline jobs.
                 // ──────────────────────────────────────────────
 
                 const documentType = event.metadata?.documentType || tokens['document_type'] || '';
-                const docNameLower = event.name.toLowerCase();
+                const hasCompletedSigner = (event.recipients || []).some(r => r.has_completed);
+                if (!hasCompletedSigner) {
+                    console.warn(`[PandaDoc Webhook] document.completed with no completed recipients for doc ${event.id}. Skipping automation.`);
+                    continue;
+                }
 
-                // TRIGGER 1: Publishing Agreement → Queue ISWC Mapping
-                // When a self-publishing agreement is signed, extract writer info
-                // and register the composition via the iswcMapper Cloud Function.
-                if (
-                    documentType === 'publishing_agreement' ||
-                    docNameLower.includes('publishing') ||
-                    docNameLower.includes('songwriter') ||
-                    docNameLower.includes('composition')
-                ) {
+                const idempotencyKey = `${event.id}_${event.status}`;
+                const idempotencyRef = db.collection('pandadoc_webhook_automation').doc(idempotencyKey);
+                const alreadyProcessed = await db.runTransaction(async (tx) => {
+                    const snap = await tx.get(idempotencyRef);
+                    if (snap.exists) return true;
+                    tx.set(idempotencyRef, { documentId: event.id, status: event.status, userId, processedAt: admin.firestore.FieldValue.serverTimestamp() });
+                    return false;
+                });
+                if (alreadyProcessed) {
+                    console.log(`[PandaDoc Webhook] Automation already processed for ${idempotencyKey}. Skipping duplicate.`);
+                    continue;
+                }
+
+                // TRIGGER 1: Publishing Agreement → Queue ISWC Mapping.
+                // Exact documentType match only — no document-name inference.
+                if (documentType === 'publishing_agreement') {
                     console.log(`[PandaDoc Webhook] Publishing agreement detected. Queuing ISWC mapping.`);
 
                     await db.collection('iswc_mapper_queue').add({
@@ -177,36 +231,37 @@ export const pandadocWebhook = functions
                     });
                 }
 
-                // TRIGGER 2: Distribution Agreement → ISRC + DDEX + Delivery
-                // When a distribution agreement or release approval is signed,
-                // trigger the post-mastering pipeline: assign ISRC → generate DDEX → deliver to DSPs.
-                if (
-                    documentType === 'distribution_agreement' ||
-                    documentType === 'release_approval' ||
-                    docNameLower.includes('distribution') ||
-                    docNameLower.includes('release approval')
-                ) {
+                // TRIGGER 2: Distribution Agreement → ISRC + DDEX + Delivery.
+                // Exact documentType match AND verified release ownership.
+                if (documentType === 'distribution_agreement' || documentType === 'release_approval') {
                     const releaseId = tokens['release_id'] || event.metadata?.releaseId;
-                    if (releaseId) {
-                        console.log(`[PandaDoc Webhook] Distribution agreement signed. Triggering pipeline for release ${releaseId}.`);
-
-                        // Queue the auto-pipeline job
-                        await db.collection('distribution_pipeline_queue').add({
-                            releaseId,
-                            userId,
-                            pandadocDocumentId: event.id,
-                            trigger: 'pandadoc_signed',
-                            steps: {
-                                isrcAssignment: 'pending',
-                                ddexGeneration: 'pending',
-                                dspDelivery: 'pending',
-                            },
-                            status: 'queued',
-                            createdAt: admin.firestore.FieldValue.serverTimestamp(),
-                        });
-                    } else {
+                    if (!releaseId) {
                         console.warn(`[PandaDoc Webhook] Distribution agreement signed but no releaseId found. Skipping pipeline.`);
+                        continue;
                     }
+
+                    try {
+                        await findWritableReleaseRef(releaseId, userId);
+                    } catch (ownershipErr) {
+                        console.error(`[PandaDoc Webhook] Release ${releaseId} is not owned by user ${userId}. Refusing to queue distribution automation.`, ownershipErr);
+                        continue;
+                    }
+
+                    console.log(`[PandaDoc Webhook] Distribution agreement signed. Triggering pipeline for release ${releaseId}.`);
+
+                    await db.collection('distribution_pipeline_queue').add({
+                        releaseId,
+                        userId,
+                        pandadocDocumentId: event.id,
+                        trigger: 'pandadoc_signed',
+                        steps: {
+                            isrcAssignment: 'pending',
+                            ddexGeneration: 'pending',
+                            dspDelivery: 'pending',
+                        },
+                        status: 'queued',
+                        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+                    });
                 }
             }
 

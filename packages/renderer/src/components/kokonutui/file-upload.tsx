@@ -43,6 +43,8 @@ interface FileUploadProps {
   className?: string;
   multiple?: boolean;
   immediate?: boolean;
+  externalProgress?: number;
+  externalStatus?: FileStatus;
 }
 
 const DEFAULT_MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB

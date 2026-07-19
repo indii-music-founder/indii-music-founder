@@ -2,6 +2,33 @@ import { AgentConfig } from "../types";
 import { freezeAgentConfig } from '../FreezeDiagnostic';
 import { DirectorTools } from '../tools/DirectorTools';
 import systemPrompt from '@agents/creative/prompt.md?raw';
+import { buildDomainRetrievalTools, buildDomainRetrievalDeclarations } from '../tools/DomainTools';
+import { McpTools } from '../tools/McpTools';
+
+const creativeRetrievalConfig = {
+    canvases: {
+        path: 'canvases',
+        requiresUserIdFilter: true,
+        description: 'Active design canvases, moodboards, and visual workspaces.',
+        defaultLimit: 5
+    },
+    storyboards: {
+        path: 'storyboards',
+        requiresUserIdFilter: true,
+        description: 'Multi-shot sequence plans and video storyboards.',
+        defaultLimit: 5
+    },
+    concept_art: {
+        path: 'concept_art',
+        requiresUserIdFilter: true,
+        description: 'Generated concept art, high-res assets, and reference images.',
+        defaultLimit: 10
+    }
+};
+
+const creativeRetrievalTools = buildDomainRetrievalTools('Creative', creativeRetrievalConfig);
+const creativeRetrievalDeclarations = buildDomainRetrievalDeclarations('Creative', creativeRetrievalConfig);
+
 
 /**
  * Creative Agent — Visual Identity & Asset Generation Specialist
@@ -16,6 +43,7 @@ export const CreativeAgent: AgentConfig = {
     systemPrompt: systemPrompt,
     get functions() {
         return {
+            ...creativeRetrievalTools,
             generate_image: DirectorTools.generate_image,
             batch_edit_images: DirectorTools.batch_edit_images,
             run_showroom_mockup: DirectorTools.run_showroom_mockup,
@@ -25,6 +53,10 @@ export const CreativeAgent: AgentConfig = {
             add_character_reference: DirectorTools.add_character_reference,
             analyze_audio: DirectorTools.analyze_audio,
             canvas_push: DirectorTools.canvas_push,
+            generate_moodboard: DirectorTools.generate_moodboard,
+            analyze_visual_trends: DirectorTools.analyze_visual_trends,
+            queue_remotion_render: McpTools.queue_remotion_render,
+            audit_asset_resolutions: McpTools.audit_asset_resolutions,
         } as Record<string, import('@/services/agent/types').AnyToolFunction>;
     },
     authorizedTools: [
@@ -37,9 +69,15 @@ export const CreativeAgent: AgentConfig = {
         'add_character_reference',
         'analyze_audio',
         'canvas_push',
+        'generate_moodboard',
+        'analyze_visual_trends',
+        'list_domain_records',
+        'queue_remotion_render',
+        'audit_asset_resolutions'
     ],
     tools: [{
         functionDeclarations: [
+            ...creativeRetrievalDeclarations,
             {
                 name: 'generate_image',
                 description: 'Generate Intelligence images using text prompts with support for aspect ratios, reference images, and brand guidelines. Images are automatically saved to history.',
@@ -139,11 +177,10 @@ export const CreativeAgent: AgentConfig = {
             },
             {
                 name: 'analyze_audio',
-                description: 'Perform "Audio-to-Visual" analysis to extract BPM, key, mood, and energy from a track to guide artistic direction.',
+                description: 'Perform "Audio-to-Visual" analysis to extract BPM, key, mood, and energy from an uploaded track to guide artistic direction.',
                 parameters: {
                     type: 'OBJECT',
                     properties: {
-                        trackId: { type: 'STRING', description: 'Optional ID of the track to analyze. If omitted, uses the current project track.' },
                         uploadedAudioIndex: { type: 'NUMBER', description: 'Optional index of a recently uploaded audio file.' }
                     },
                     required: []
@@ -159,6 +196,55 @@ export const CreativeAgent: AgentConfig = {
                         label: { type: 'STRING', description: 'Optional label for the canvas element.' }
                     },
                     required: ['assetId']
+                }
+            },
+            {
+                name: 'generate_moodboard',
+                description: 'Generate a visual moodboard comprising color palettes, textures, and aesthetic inspiration for a given theme.',
+                parameters: {
+                    type: 'OBJECT',
+                    properties: {
+                        theme: { type: 'STRING', description: 'The core theme, concept, or genre for the moodboard.' },
+                        style: { type: 'STRING', description: 'Optional specific visual style (e.g., "cyberpunk", "minimalist").' }
+                    },
+                    required: ['theme']
+                }
+            },
+            {
+                name: 'analyze_visual_trends',
+                description: 'Structure a visual and aesthetic trends discussion from general knowledge for a specific industry or music genre (not live data).',
+                parameters: {
+                    type: 'OBJECT',
+                    properties: {
+                        industry_or_genre: { type: 'STRING', description: 'The industry or music genre to analyze (e.g., "electronic music", "streetwear").' }
+                    },
+                    required: ['industry_or_genre']
+                }
+            },
+            {
+                name: "queue_remotion_render",
+                description: "Queue a Remotion video render using the remote MCP backend.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        compositionId: { type: "STRING" },
+                        inputProps: { type: "OBJECT" }
+                    },
+                    required: ["compositionId"]
+                }
+            },
+            {
+                name: "audit_asset_resolutions",
+                description: "Audit visual asset resolutions against DSP constraints using the remote MCP backend.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        assetUrls: {
+                            type: "ARRAY",
+                            items: { type: "STRING" }
+                        }
+                    },
+                    required: ["assetUrls"]
                 }
             }
         ]

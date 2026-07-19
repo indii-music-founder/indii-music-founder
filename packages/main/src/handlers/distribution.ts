@@ -14,6 +14,7 @@ import { z } from 'zod';
 
 import { AgentSupervisor } from '../utils/AgentSupervisor';
 import { credentialService } from '../services/CredentialService';
+import { stageCanonicalMasters } from '../services/MasterAudioStagingService';
 
 interface StagedFile {
     type: 'content' | 'path';
@@ -255,18 +256,25 @@ export const setupDistributionHandlers = () => {
     ipcMain.handle('distribution:generate-content-id-csv', async (event, data: unknown) => {
         try {
             validateSender(event);
-            // Enforce structured JSON return from Python script
+            // ISSUE-789: unwrap the script's structured JSON to the top-level
+            // `csv` field the renderer (DistributionService.generateContentIdAssets)
+            // actually reads, and surface RightsVerificationError messages
+            // (ISSUE-786) as the returned error rather than a generic failure.
             const storagePath = getStoragePath();
-            const result = await AgentSupervisor.execute('distribution', 'content_id_csv_generator.py', [
-                JSON.stringify(data),
-                '--storage-path',
-                storagePath
-            ], { timeoutMs: 30000 }, undefined, {}, [0]); // Redact JSON data
+            const result = await AgentSupervisor.execute<{ status?: string; csv?: string; recordCount?: number; error?: string }>(
+                'distribution', 'content_id_csv_generator.py', [
+                    JSON.stringify(data),
+                    '--storage-path',
+                    storagePath
+                ], { timeoutMs: 30000 }, undefined, {}, [0]); // Redact JSON data
 
             if (typeof result !== 'object' || result === null) {
-                 throw new Error("Invalid output format: content_id_csv_generator.py must return structured JSON.");
+                throw new Error("Invalid output format: content_id_csv_generator.py must return structured JSON.");
             }
-            return { success: true, report: result };
+            if (result.status !== 'SUCCESS' || !result.csv) {
+                return { success: false, error: result.error || 'Content ID CSV generation failed.' };
+            }
+            return { success: true, csv: result.csv, recordCount: result.recordCount, report: result };
         } catch (error) {
             return { success: false, error: error instanceof Error ? error.message : String(error) };
         }
@@ -309,7 +317,7 @@ export const setupDistributionHandlers = () => {
         try {
             validateSender(event);
             const storagePath = getStoragePath();
-            const result = await AgentSupervisor.execute<Record<string, unknown>>('distribution', 'ddex_generator.py', [
+            const result = await AgentSupervisor.execute<Record<string, unknown>>('distribution', 'ingestion_generator.py', [
                 JSON.stringify(metadata),
                 '--storage-path',
                 storagePath
@@ -447,12 +455,17 @@ export const setupDistributionHandlers = () => {
      * Progress events are streamed back as 'distribution:submit-progress'.
      */
     ipcMain.handle('distribution:submit-release', async (event, releaseData: Record<string, unknown>) => {
+        let cleanupStagedMasters: (() => Promise<void>) | undefined;
         try {
             validateSender(event);
 
             if (!releaseData || typeof releaseData !== 'object') {
                 throw new Error('Missing or invalid release data');
             }
+
+            const stagedMasters = await stageCanonicalMasters(releaseData);
+            cleanupStagedMasters = stagedMasters.cleanup;
+            releaseData = stagedMasters.releaseData;
 
             const storagePath = getStoragePath();
 
@@ -488,7 +501,12 @@ export const setupDistributionHandlers = () => {
 
             const result = await AgentSupervisor.execute<Record<string, unknown>>(
                 'distribution',
-                'ddex_build.py',
+                // ISSUE-968: this pointed at 'ddex_build.py', which has never existed —
+                // every desktop submission failed with a missing-file error before
+                // reaching QC/ISRC/DDEX at all. ingestion_build.py is the actual
+                // end-to-end orchestrator (QC -> ISRC -> DDEX ERN XML -> SFTP) and
+                // accepts this exact <release_json> [--storage-path PATH] signature.
+                'ingestion_build.py',
                 [JSON.stringify(releaseData), '--storage-path', storagePath],
                 { timeoutMs: 300000 },  // 5 min for large releases
                 (progress, log) => {
@@ -512,6 +530,14 @@ export const setupDistributionHandlers = () => {
             return { success: result.status === 'SUCCESS', report: result };
         } catch (error) {
             return { success: false, error: error instanceof Error ? error.message : String(error) };
+        } finally {
+            if (cleanupStagedMasters) {
+                try {
+                    await cleanupStagedMasters();
+                } catch (cleanupError) {
+                    log.warn('[Distribution] Failed to clean canonical master staging directory:', cleanupError);
+                }
+            }
         }
     });
 
@@ -631,11 +657,9 @@ export const setupDistributionHandlers = () => {
             const tempFile = path.join(os.tmpdir(), `xsd-validation-${crypto.randomUUID()}.xml`);
             await fs.writeFile(tempFile, xmlContent, 'utf-8');
 
-            const storagePath = getStoragePath();
             const report = await AgentSupervisor.execute<Record<string, unknown>>('distribution', 'xsd_validator.py', [
                 tempFile,
-                '--storage-path',
-                storagePath
+                '--require-xsd'
             ], { timeoutMs: 30000 });
 
             // Clean up temp file
@@ -646,10 +670,8 @@ export const setupDistributionHandlers = () => {
             }
 
             return {
-                success: report.valid,
-                errors: report.errors,
-                warnings: report.warnings,
-                message: report.summary
+                success: report.valid === true && report.mode === 'xsd',
+                report
             };
         } catch (error) {
             log.error('[Distribution] XSD validation failed:', error);

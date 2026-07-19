@@ -258,11 +258,11 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
             setCommandBarInput('');
             setCommandBarAttachments([]);
 
-            if (currentInput.trim() === '/deploy-andromeda') {
+            if (currentInput.trim() === '/deploy-plp') {
                 const state = useStore.getState();
                 state.setModule('creative');
-                state.enableAndromedaMode();
-                toast.success('Andromeda Pipeline Armed. Enter a prompt to begin 15-variant batch generation.');
+                state.enablePLPMode();
+                toast.success('PLP Pipeline Armed. Enter a prompt to begin 15-variant batch generation.');
                 setIsLocalProcessing(false);
                 return;
             }
@@ -285,7 +285,7 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
             }
 
             // --- DNA INFUSION: Slash Command Interceptor ---
-            if (currentInput.trim().startsWith('/') && !currentInput.trim().startsWith('/deploy-andromeda') && !currentInput.trim().startsWith('/status-blitz')) {
+            if (currentInput.trim().startsWith('/') && !currentInput.trim().startsWith('/deploy-plp') && !currentInput.trim().startsWith('/status-blitz')) {
                 const parts = currentInput.trim().split(' ');
                 const command = parts[0]!.substring(1); // Extract 'mega' from '/mega'
                 
@@ -308,8 +308,30 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
 
             try {
                 const processedAttachments = currentAttachments.length > 0 ? await processAttachments(currentAttachments) : undefined;
+
+                // ISSUE-479: when the Creative editor canvas is open, attach its flattened
+                // view (base image + the user's colored highlights) so the agent can actually
+                // SEE what the user is referring to ("can you see the item I highlighted?").
+                let outgoingAttachments = processedAttachments;
+                try {
+                    if (useStore.getState().viewMode === 'editor') {
+                        const { canvasOps } = await import('@/modules/creative/services/CanvasOperationsService');
+                        if (canvasOps.isInitialized() && canvasOps.hasContent()) {
+                            const visual = await canvasOps.prepareVisualPrompt();
+                            if (visual?.data) {
+                                outgoingAttachments = [
+                                    ...(processedAttachments || []),
+                                    { mimeType: visual.mimeType, base64: visual.data },
+                                ];
+                            }
+                        }
+                    }
+                } catch (visErr: unknown) {
+                    logger.warn('PromptArea: could not attach canvas visual to message:', visErr);
+                }
+
                 const targetAgentId = isIndiiMode ? undefined : (knownAgentIds.includes(currentModule) ? currentModule : undefined);
-                await agentService.sendMessage(currentInput, processedAttachments, targetAgentId);
+                await agentService.sendMessage(currentInput, outgoingAttachments, targetAgentId);
                 setIsLocalProcessing(false);
             } catch (error: unknown) {
                 logger.error('PromptArea: Failed to send message:', error);
@@ -337,7 +359,7 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
     const roundedClass = isMobile ? "rounded-lg" : "rounded-full";
 
     const modePickerButtonClasses = isBoardroom
-        ? "bg-purple-600/30 border-purple-500/40 hover:bg-purple-600/50 shadow-[0_0_10px_rgba(168,85,247,0.3)]"
+        ? "bg-green-600/30 border-green-500/40 hover:bg-green-600/50 shadow-[0_0_10px_rgba(34,197,94,0.3)]"
         : conversationMode === 'department'
             ? "bg-blue-600/30 border-blue-500/40 hover:bg-blue-600/50"
             : "bg-pink-600/30 border-pink-500/40 hover:bg-pink-600/50";
@@ -349,7 +371,7 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                 "glass transition-all relative focus-within:ring-2",
                 isDocked ? "rounded-none border-x-0 border-b-0 border-t border-white/10 px-1" : "rounded-3xl",
                 isIndiiMode
-                    ? "border-purple-500/50 ring-purple-500/20 shadow-[0_0_30px_rgba(168,85,247,0.15)] bg-purple-950/30"
+                    ? "border-green-500/50 ring-green-500/20 shadow-[0_0_30px_rgba(34,197,94,0.15)] bg-green-950/30"
                     : `${colors.border} ${colors.ring} bg-white/4 shadow-[0_8px_32px_rgba(0,0,0,0.4)]`,
                 isDragging && "ring-4 ring-blue-500/50 bg-blue-500/20",
                 className
@@ -488,7 +510,7 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                             </button>
 
                             <AnimatePresence>
-                                {showModePicker && modeButtonRect && typeof document !== 'undefined' && createPortal(
+                                {showModePicker && modeButtonRect && typeof document !== 'undefined' && (createPortal(
                                     <div className="fixed inset-0 z-9999">
                                         <motion.div 
                                             initial={{ opacity: 0 }}
@@ -516,7 +538,7 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                                         </motion.div>
                                     </div>,
                                     document.body
-                                )}
+                                ) as any)}
                             </AnimatePresence>
                         </div>
 
@@ -573,7 +595,7 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                         ) : (
                             (() => {
                                 const themeClasses = isIndiiMode
-                                    ? "bg-purple-600 hover:bg-purple-500 shadow-purple-500/20"
+                                    ? "bg-green-600 hover:bg-green-500 shadow-green-500/20"
                                     : "bg-white/20 hover:bg-white/30 border border-white/10";
 
                                 return (

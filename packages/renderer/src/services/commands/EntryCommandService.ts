@@ -17,6 +17,7 @@ import {
   type EntryCommandSurface,
 } from './EntryCommandRegistry';
 import { entryCommandSyncService } from './EntryCommandSyncService';
+import { requestSettingsSection } from '@/modules/settings/SettingsNavigation';
 
 export interface EntryCommandHandleResult {
   handled: boolean;
@@ -86,7 +87,15 @@ class EntryCommandService {
     }
 
     if (command.launchMode === 'navigate') {
-      useStore.getState().setModule('workflow');
+      if (command.id === 'connect-remote') {
+        requestSettingsSection('remote');
+        await useStore.getState().setModule('settings');
+        useStore.getState().clearEntryCommandWorkflow();
+        const text = 'Opening Mobile Remote settings so you can pair this Studio, check its connection, or recover an existing controller.';
+        this.addMessage('model', text, command.id, options.source);
+        return { handled: true, responseText: text, agentId: command.id };
+      }
+      await useStore.getState().setModule('workflow');
       useStore.getState().clearEntryCommandWorkflow();
       const text = 'Opening Workflow Lab so you can build or run a custom automation pipeline.';
       this.addMessage('model', text, command.id, options.source);

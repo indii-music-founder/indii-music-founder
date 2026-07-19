@@ -4,6 +4,7 @@ import { httpsCallable } from 'firebase/functions';
 import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
 import type { AnyToolFunction } from '../types';
 import { logger } from '@/utils/logger';
+import { importWithRetry } from '@/utils/dynamicImport';
 
 // Tool: DevOps Infrastructure (Real GKE/GCE via Cloud Functions)
 // This tool interacts with Google Cloud Platform services through Firebase Cloud Functions.
@@ -56,7 +57,7 @@ interface RestartResult {
  * Prevents Agent hallucination or injection from triggering destructive infra changes.
  */
 async function requireApproval(action: string, details: string): Promise<boolean> {
-    const { useStore } = await import('@/core/store');
+    const { useStore } = await importWithRetry(() => import('@/core/store'));
     const { requestApproval } = useStore.getState();
     const approved = await requestApproval(
         `[DevOps Security] Agent is requesting to execute: **${action}**\n\nDetails: ${details}`,
@@ -212,13 +213,10 @@ export const DevOpsTools = {
             const result = await runChaosFn(args);
             return toolSuccess(result.data, `Chaos mesh test completed for ${args.targetService}.`);
         } catch (_error: unknown) {
-            return toolSuccess({
-                targetService: args.targetService,
-                duration: args.duration,
-                testId: `chaos_${Date.now()}`,
-                status: 'Queued',
-                note: 'Deploy Cloud Function "runChaosMeshTests" for live fault injection.'
-            }, `Chaos mesh test queued for ${args.targetService} for ${args.duration}.`);
+            return toolError(
+                `Chaos mesh test for ${args.targetService} requires deployed Cloud Function 'runChaosMeshTests'. To queue for duration ${args.duration}, deploy the function first.`,
+                'CHAOS_MESH_UNAVAILABLE'
+            );
         }
     }),
 
@@ -236,12 +234,10 @@ export const DevOpsTools = {
                 status: result.data.status
             }, `Circuit breaker configured for ${args.serviceName}. Threshold: ${args.threshold}%. Fallback: ${args.fallbackBehavior}.`);
         } catch (_error: unknown) {
-            return toolSuccess({
-                serviceName: args.serviceName,
-                threshold: args.threshold,
-                fallbackBehavior: args.fallbackBehavior,
-                status: 'Configured (local)'
-            }, `Circuit breaker configured for ${args.serviceName}. Deploy Cloud Function 'configureCircuitBreaker' for live mesh config.`);
+            return toolError(
+                `Circuit breaker configuration for ${args.serviceName} requires deployed Cloud Function 'configureCircuitBreaker' (threshold: ${args.threshold}%, fallback: ${args.fallbackBehavior}).`,
+                'CIRCUIT_BREAKER_UNAVAILABLE'
+            );
         }
     }),
 
@@ -259,11 +255,10 @@ export const DevOpsTools = {
                 configApplied: result.data.configApplied
             }, `WebSocket keep-alives configured for ${args.serviceId} with ${args.pingInterval}s interval.`);
         } catch (_error: unknown) {
-            return toolSuccess({
-                serviceId: args.serviceId,
-                pingInterval: args.pingInterval,
-                status: 'Configured (local)'
-            }, `WebSocket keep-alives configured for ${args.serviceId}. Deploy Cloud Function for production mesh config.`);
+            return toolError(
+                `WebSocket keep-alive configuration for ${args.serviceId} requires deployed Cloud Function 'configureWebSocketKeepalive' (interval: ${args.pingInterval}s).`,
+                'WEBSOCKET_KEEPALIVE_UNAVAILABLE'
+            );
         }
     }),
 
@@ -312,12 +307,10 @@ export const DevOpsTools = {
                 status: result.data.status
             }, `Sentry crash reporting configured for ${args.environment}.`);
         } catch (_error: unknown) {
-            return toolSuccess({
-                environment: args.environment,
-                provider: 'Sentry',
-                features: ['Native Crash Reporting', 'C++ / V8 Catching', 'Minidump Analysis'],
-                status: 'Configured (local mode)'
-            }, `Sentry crash reporting configured for ${args.environment}. Deploy Cloud Function for DSN provisioning.`);
+            return toolError(
+                `Sentry crash reporting for ${args.environment} requires: (1) Electron main process (Desktop app) or (2) deployed Cloud Function 'configureSentryCrashReporting' (web). Configure environment variable VITE_SENTRY_DSN if running in browser.`,
+                'SENTRY_CONFIG_UNAVAILABLE'
+            );
         }
     }),
 
@@ -335,12 +328,10 @@ export const DevOpsTools = {
                 ...result.data
             }, `Watchdog recovery executed for ${args.agentId}. Action: ${result.data.actionTaken}`);
         } catch (_error: unknown) {
-            return toolSuccess({
-                agentId: args.agentId,
-                loopThreshold: args.loopThreshold,
-                actionTaken: 'Terminate and Re-prime Context',
-                status: 'Watchdog Active (local mode)'
-            }, `Watchdog recovery triggered for ${args.agentId}. Deploy Cloud Function for live agent process control.`);
+            return toolError(
+                `Watchdog recovery for ${args.agentId} (threshold: ${args.loopThreshold}) requires deployed Cloud Function 'triggerWatchdogRecovery'. Manual recovery: restart the agent context and check for infinite loops or resource exhaustion.`,
+                'WATCHDOG_RECOVERY_UNAVAILABLE'
+            );
         }
     }),
 
@@ -360,13 +351,10 @@ export const DevOpsTools = {
                 status: result.data.status
             }, `Logical partitioning configured for '${args.collection}' across ${args.shards} shards.`);
         } catch (_error: unknown) {
-            return toolSuccess({
-                collection: args.collection,
-                shardsConfigured: args.shards,
-                strategy: 'Hash-based Partitioning',
-                capacityLimit: '> 10k events/sec',
-                status: 'Prepared (deploy Cloud Function for live config)'
-            }, `Logical partitioning strategy prepared for '${args.collection}'. Deploy Cloud Function 'configureLogicalSharding' for production setup.`);
+            return toolError(
+                `Logical sharding configuration for '${args.collection}' requires deployed Cloud Function 'configureLogicalSharding' (shards: ${args.shards}, strategy: hash-based partitioning).`,
+                'LOGICAL_SHARDING_UNAVAILABLE'
+            );
         }
     }),
 
@@ -386,12 +374,10 @@ export const DevOpsTools = {
                 status: result.data.status
             }, `QA Sandbox '${args.environmentName}' provisioned at ${result.data.url}.`);
         } catch (_error: unknown) {
-            return toolSuccess({
-                environmentName: args.environmentName,
-                snapshotUsed: args.snapshotId,
-                url: `https://qa-${crypto.randomUUID().slice(0, 8)}.sandbox.indii.os`,
-                status: 'Ready for Testing (local mode)'
-            }, `QA Sandbox '${args.environmentName}' provisioned locally. Deploy Cloud Function 'provisionQASandbox' for real GCP environment.`);
+            return toolError(
+                `QA Sandbox '${args.environmentName}' requires deployed Cloud Function 'provisionQASandbox' to provision from snapshot ${args.snapshotId}. Manual setup: contact DevOps for GCP sandbox provisioning.`,
+                'QA_SANDBOX_UNAVAILABLE'
+            );
         }
     })
 } satisfies Record<string, AnyToolFunction>;

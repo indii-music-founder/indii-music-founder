@@ -82,7 +82,7 @@ describe('QCPanel', () => {
         });
     });
 
-    it('should call generateContentIdAssets when CID button is clicked', async () => {
+    it('should call generateContentIdAssets with an explicit rights attestation when CID button is clicked (ISSUE-786)', async () => {
         (distributionService.generateContentIdAssets as import("vitest").Mock).mockResolvedValue('ISRC,Title\nUS123,Test');
 
         render(<QCPanel />);
@@ -90,12 +90,41 @@ describe('QCPanel', () => {
         fireEvent.change(screen.getByPlaceholderText(/Enter title/i), { target: { value: 'Test Title' } });
         fireEvent.change(screen.getByPlaceholderText(/Avoid generic names/i), { target: { value: 'Test Artist' } });
         fireEvent.change(screen.getByPlaceholderText(/US-XXX/i), { target: { value: 'USABC2600001' } });
+        fireEvent.change(screen.getByTestId('qc-input-upc'), { target: { value: '123456789012' } });
+        fireEvent.click(screen.getByTestId('qc-input-exclusive-rights'));
+        fireEvent.change(screen.getByTestId('qc-input-rights-label'), { target: { value: 'Real Label LLC' } });
+        fireEvent.change(screen.getByTestId('qc-input-match-policy'), { target: { value: 'monetize' } });
+        fireEvent.change(screen.getByTestId('qc-input-territories'), { target: { value: 'US, CA' } });
         fireEvent.click(screen.getByText('Gen CID CSV'));
 
         await waitFor(() => {
-            expect(distributionService.generateContentIdAssets).toHaveBeenCalled();
+            expect(distributionService.generateContentIdAssets).toHaveBeenCalledWith(expect.objectContaining({
+                upc: '123456789012',
+                artist: 'Test Artist',
+                rights_attestation: {
+                    exclusive_rights: true,
+                    label: 'Real Label LLC',
+                    match_policy: 'monetize',
+                    territories: ['US', 'CA']
+                }
+            }));
         });
 
         expect(screen.getByText(/US123,Test/)).toBeDefined();
+    });
+
+    it('blocks Content ID generation without a rights attestation (ISSUE-786)', async () => {
+        render(<QCPanel />);
+
+        fireEvent.change(screen.getByPlaceholderText(/Enter title/i), { target: { value: 'Test Title' } });
+        fireEvent.change(screen.getByPlaceholderText(/Avoid generic names/i), { target: { value: 'Test Artist' } });
+        fireEvent.change(screen.getByPlaceholderText(/US-XXX/i), { target: { value: 'USABC2600001' } });
+        fireEvent.change(screen.getByTestId('qc-input-upc'), { target: { value: '123456789012' } });
+        // Deliberately leave the exclusive-rights checkbox unchecked and label/policy/territories empty.
+        fireEvent.click(screen.getByText('Gen CID CSV'));
+
+        await waitFor(() => {
+            expect(distributionService.generateContentIdAssets).not.toHaveBeenCalled();
+        });
     });
 });

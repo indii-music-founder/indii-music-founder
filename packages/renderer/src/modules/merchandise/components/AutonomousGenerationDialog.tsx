@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { X, Sparkles, Loader2 } from 'lucide-react';
 import { MerchCard } from './MerchCard';
 import { MerchButton } from './MerchButton';
@@ -13,7 +13,7 @@ import { logger } from '@/utils/logger';
 export interface AutonomousGenerationDialogProps {
     isOpen: boolean;
     onClose: () => void;
-    onImageGenerated: (url: string, name: string) => void;
+    onImageGenerated: (url: string, name: string) => Promise<void>;
 }
 
 export const AutonomousGenerationDialog: React.FC<AutonomousGenerationDialogProps> = ({
@@ -23,6 +23,7 @@ export const AutonomousGenerationDialog: React.FC<AutonomousGenerationDialogProp
 }) => {
     const [prompt, setPrompt] = useState('');
     const [isGenerating, setIsGenerating] = useState(false);
+    const generationInFlightRef = useRef(false);
     const toast = useToast();
     const { currentProjectId, addToHistory, userProfile } = useStore(useShallow(state => ({
         currentProjectId: state.currentProjectId,
@@ -31,11 +32,13 @@ export const AutonomousGenerationDialog: React.FC<AutonomousGenerationDialogProp
     })));
 
     const handleGenerate = async () => {
+        if (generationInFlightRef.current) return;
         if (!prompt.trim()) {
             toast.error('Please enter a prompt');
             return;
         }
 
+        generationInFlightRef.current = true;
         setIsGenerating(true);
         const loadingId = toast.loading('Generating autonomous asset...');
 
@@ -50,7 +53,10 @@ export const AutonomousGenerationDialog: React.FC<AutonomousGenerationDialogProp
             if (result && result.length > 0) {
                 const imageUrl = result[0]!.url;
 
-                // Add to history
+                // A generated URL is not a completed design action until Fabric
+                // has decoded and inserted it into the active canvas.
+                await onImageGenerated(imageUrl, `Gen: ${prompt.substring(0, 30)}...`);
+
                 if (currentProjectId) {
                     addToHistory({
                         id: result[0]!.id,
@@ -61,9 +67,6 @@ export const AutonomousGenerationDialog: React.FC<AutonomousGenerationDialogProp
                         projectId: currentProjectId
                     });
                 }
-
-                // Add to canvas
-                onImageGenerated(imageUrl, `Gen: ${prompt.substring(0, 30)}...`);
 
                 toast.dismiss(loadingId);
                 toast.success('Image generated successfully!');
@@ -93,6 +96,7 @@ export const AutonomousGenerationDialog: React.FC<AutonomousGenerationDialogProp
                 toast.error('Failed to generate image. Please try again.');
             }
         } finally {
+            generationInFlightRef.current = false;
             setIsGenerating(false);
         }
     };

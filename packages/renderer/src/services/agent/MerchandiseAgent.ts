@@ -2,6 +2,17 @@ import { BaseAgent } from './BaseAgent';
 import { z } from 'zod';
 import { FunctionDeclaration } from './types';
 import systemPrompt from '@agents/merchandise/prompt.md?raw';
+import { importWithRetry } from '@/utils/dynamicImport';
+import { buildDomainRetrievalTools, buildDomainRetrievalDeclarations } from './tools/DomainTools';
+
+const merchandiseRetrievalConfig = {
+    'merchandise': { path: 'merchandise', requiresUserIdFilter: true },
+    'print_jobs': { path: 'print_jobs', requiresUserIdFilter: true },
+    'merchandise_inventory': { path: 'merchandise_inventory', requiresUserIdFilter: true },
+    'pod_orders': { path: 'pod_orders', requiresUserIdFilter: true }
+};
+const merchandiseRetrievalTools = buildDomainRetrievalTools('Merchandise', merchandiseRetrievalConfig);
+const merchandiseRetrievalDeclarations = buildDomainRetrievalDeclarations('Merchandise', merchandiseRetrievalConfig);
 
 /**
  * MerchandiseAgent - Autonomous-First Merchandise Creation
@@ -203,13 +214,14 @@ export class MerchandiseAgent extends BaseAgent {
             color: 'bg-yellow-400',
             category: 'specialist',
             systemPrompt,
-            authorizedTools: ['search_assets', 'create_product_mockup', 'generate_product_video',
+            authorizedTools: ['list_domain_records', 'search_assets', 'create_product_mockup', 'generate_product_video',
                 'submit_to_production', 'ask_clarification', 'list_product_types'],
-            tools: [{ functionDeclarations: MERCHANDISE_TOOLS }],
+            tools: [{ functionDeclarations: [...merchandiseRetrievalDeclarations, ...MERCHANDISE_TOOLS] }],
             functions: {
+                ...merchandiseRetrievalTools,
                 search_assets: async (args, _context) => {
                     const { query, projectId, limit = 10 } = args as { query: string; projectId?: string; limit?: number };
-                    const { useStore } = await import('@/core/store');
+                    const { useStore } = await importWithRetry(() => import('@/core/store'));
                     const { generatedHistory, uploadedImages } = useStore.getState();
 
                     // Combine histories for full asset discovery
@@ -259,8 +271,8 @@ export class MerchandiseAgent extends BaseAgent {
                         purpose?: string;
                     };
 
-                    const { Editing } = await import('@/services/image/EditingService');
-                    const { useStore } = await import('@/core/store');
+                    const { Editing } = await importWithRetry(() => import('@/services/image/EditingService'));
+                    const { useStore } = await importWithRetry(() => import('@/core/store'));
 
                     // Extract image data from URL or data URL
                     let imageData: { mimeType: string; data: string };
@@ -399,7 +411,7 @@ Style: High-end commercial product photography, 8K resolution, professional stud
                         duration?: number;
                     };
 
-                    const { MerchandiseService } = await import('@/services/merchandise/MerchandiseService');
+                    const { MerchandiseService } = await importWithRetry(() => import('@/services/merchandise/MerchandiseService'));
 
                     const enhancedPrompt = `CINEMATIC PRODUCT VIDEO:
 
@@ -438,7 +450,7 @@ Style: Premium brand commercial, 4K cinematic quality.`;
                         colors?: string[];
                     };
 
-                    const { MerchandiseService } = await import('@/services/merchandise/MerchandiseService');
+                    const { MerchandiseService } = await importWithRetry(() => import('@/services/merchandise/MerchandiseService'));
 
                     // Calculate costs
                     const baseCosts: Record<string, number> = {

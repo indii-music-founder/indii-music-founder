@@ -218,14 +218,19 @@ vi.mock('../relay/telegramLink', () => ({ generateTelegramLinkCode: vi.fn(), get
 vi.mock('../email/sendEmail', () => ({ sendEmail: vi.fn() }));
 vi.mock('../email/tokenManager', () => ({ emailExchangeToken: vi.fn(), emailRefreshToken: vi.fn(), emailRevokeToken: vi.fn() }));
 vi.mock('../analytics/platformTokenExchange', () => ({ analyticsExchangeToken: vi.fn(), analyticsRefreshToken: vi.fn(), analyticsRevokeToken: vi.fn() }));
-vi.mock('../devops/storageMaintenance', () => ({ cleanupOrphanedVideos: vi.fn(), trackStorageQuotas: vi.fn(), flagVideosForArchival: vi.fn() }));
+vi.mock('../devops/storageMaintenance', () => ({ cleanupExpiredVideoTemps: vi.fn(), cleanupOrphanedVideos: vi.fn(), trackStorageQuotas: vi.fn(), flagVideosForArchival: vi.fn() }));
 
 // Import functions AFTER mocks
-import { triggerVideoJob, renderVideo } from '../index';
+import { triggerVideoJob, renderVideo, cancelVideoJob } from '../index';
 
 describe('Video Functions', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+    });
+
+    it('exports cancelVideoJob from the Firebase root entry', () => {
+        expect(cancelVideoJob).toBeDefined();
+        expect(typeof cancelVideoJob).toBe('function');
     });
 
     describe('triggerVideoJob', () => {
@@ -289,6 +294,71 @@ describe('Video Functions', () => {
     });
 
     describe('renderVideo', () => {
+        it('forwards the canonical master audio to the stitch job', async () => {
+            const context: any = { auth: { uid: 'user123' } };
+            const data = {
+                compositionId: 'performance-video-123',
+                inputProps: {
+                    project: {
+                        width: 1920,
+                        height: 1080,
+                        tracks: [
+                            { id: 'video-1', type: 'video', name: 'Performance' },
+                            { id: 'audio-1', type: 'audio', name: 'Master' }
+                        ],
+                        clips: [
+                            {
+                                id: 'scene-1',
+                                type: 'video',
+                                src: 'https://cdn.example.com/scene.mp4',
+                                trackId: 'video-1',
+                                startFrame: 0,
+                                durationInFrames: 240
+                            },
+                            {
+                                id: 'master-audio',
+                                type: 'audio',
+                                src: 'https://cdn.example.com/master.wav',
+                                masterFingerprint: 'sha256-master',
+                                isrc: 'USABC2600001',
+                                trackId: 'audio-1',
+                                startFrame: 0,
+                                durationInFrames: 240,
+                                volume: 1
+                            }
+                        ]
+                    }
+                }
+            };
+
+            const result = await (renderVideo as any)(data, context);
+
+            expect(result).toEqual({
+                success: true,
+                renderId: 'performance-video-123',
+                message: 'Render job queued.'
+            });
+            expect(mocks.inngest.send).toHaveBeenCalledWith(expect.objectContaining({
+                name: 'video/stitch.requested',
+                data: expect.objectContaining({
+                    audioClips: [{
+                        id: 'master-audio',
+                        url: 'https://cdn.example.com/master.wav',
+                        masterFingerprint: 'sha256-master',
+                        isrc: 'USABC2600001',
+                        trackId: 'audio-1',
+                        startFrame: 0,
+                        durationInFrames: 240,
+                        volume: 1
+                    }],
+                    audioMix: {
+                        mode: 'master_over_native',
+                        preserveNativeAudio: true
+                    }
+                })
+            }));
+        });
+
         it('should process job correctly', async () => {
             // Setup mock for firestore get to return job data
             mocks.firestore.get.mockResolvedValue({

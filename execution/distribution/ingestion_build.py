@@ -5,7 +5,7 @@ ingestion_build.py - End-to-End Release Submission Orchestrator
 Chains the full distribution pipeline in a single invocation:
   1. QC validate metadata
   2. Assign ISRC (if not provided)
-  3. Generate Proprietary Ingestion IP Ingestion Protocol 4.3 XML
+  3. Generate DDEX Ingestion Protocol 4.3 XML
   4. SFTP upload to distributor endpoint
 
 Emits JSON progress events to stdout so the Electron AgentSupervisor
@@ -16,9 +16,12 @@ Usage:
 """
 
 import argparse
+import hashlib
 import json
 import logging
 import os
+import re
+import shutil
 import sys
 import tempfile
 from typing import Any, Dict
@@ -37,10 +40,66 @@ _DIR = os.path.dirname(os.path.abspath(__file__))
 if _DIR not in sys.path:
     sys.path.insert(0, _DIR)
 
-from qc_validator import QCValidator
-from isrc_manager import IdentityManager
-from ingestion_generator import Proprietary Ingestion IPGenerator
-from sftp_uploader import SFTPUploader
+from qc_validator import QCValidator  # noqa: E402
+from isrc_manager import IdentityManager  # noqa: E402
+from ingestion_generator import DDEXGenerator  # noqa: E402
+from sftp_uploader import SFTPUploader  # noqa: E402
+from xsd_validator import DDEXXSDValidator  # noqa: E402
+
+
+def _file_digest(file_path: str, algorithm: str) -> str:
+    """Hash a staged master without loading a potentially multi-GB file into memory."""
+    if algorithm == "md5":
+        digest = hashlib.md5(usedforsecurity=False)
+    else:
+        digest = hashlib.new(algorithm)
+    with open(file_path, "rb") as source:
+        for chunk in iter(lambda: source.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _safe_resource_name(index: int, original_file_name: str) -> str:
+    base_name = os.path.basename(original_file_name)
+    stem, extension = os.path.splitext(base_name)
+    safe_stem = re.sub(r"[^A-Za-z0-9._-]+", "-", stem).strip(".-") or "master"
+    safe_extension = extension.lower() if re.fullmatch(r"\.[A-Za-z0-9]{1,8}", extension) else ".audio"
+    return f"{index:02d}-{safe_stem}{safe_extension}"
+
+
+def _stage_master_resources(tracks: list[Dict[str, Any]], package_path: str) -> None:
+    """Copy verified canonical masters into the immutable delivery package."""
+    resources_path = os.path.join(package_path, "resources")
+    os.makedirs(resources_path, exist_ok=True)
+
+    for index, track in enumerate(tracks, 1):
+        master_asset = track.get("master_asset")
+        if not isinstance(master_asset, dict):
+            raise ValueError(f"Track {index} is missing its canonical master_asset")
+
+        local_path = master_asset.get("local_path")
+        expected_sha256 = str(master_asset.get("content_hash", "")).lower()
+        expected_size = master_asset.get("size_bytes")
+        if not isinstance(local_path, str) or not os.path.isfile(local_path) or os.path.islink(local_path):
+            raise ValueError(f"Track {index} canonical master is not a regular local file")
+        if not re.fullmatch(r"[a-f0-9]{64}", expected_sha256):
+            raise ValueError(f"Track {index} canonical master has an invalid SHA-256 digest")
+        if not isinstance(expected_size, int) or os.path.getsize(local_path) != expected_size:
+            raise ValueError(f"Track {index} canonical master size verification failed")
+        if _file_digest(local_path, "sha256") != expected_sha256:
+            raise ValueError(f"Track {index} canonical master SHA-256 verification failed")
+
+        resource_name = _safe_resource_name(
+            index,
+            str(master_asset.get("original_file_name") or track.get("filename") or "master.audio"),
+        )
+        destination = os.path.join(resources_path, resource_name)
+        shutil.copyfile(local_path, destination)
+
+        # DDEX's HashSumAlgorithmType below is MD5, so derive that digest from
+        # the verified bytes rather than mislabeling the SHA-256 content address.
+        track["filename"] = f"resources/{resource_name}"
+        track["file_hash"] = _file_digest(destination, "md5")
 
 
 def emit(step: str, status: str, progress: int, detail: str = "", data: Any = None) -> None:
@@ -92,44 +151,85 @@ def run(release: Dict[str, Any], storage_path: str, dry_run: bool) -> Dict[str, 
     emit("isrc", "done", 45, f"ISRC assigned to {len(tracks)} track(s)", {"tracks": [t.get("isrc") for t in tracks]})
 
     # -----------------------------------------------------------------------
-    # STEP 3 — Proprietary Ingestion IP XML Generation
+    # STEP 3 — Package canonical master resources and generate DDEX XML
     # -----------------------------------------------------------------------
-    emit("ingestion", "running", 50, "Generating Proprietary Ingestion IP Ingestion Protocol 4.3 XML…")
-    generator = Proprietary Ingestion IPGenerator()
+    emit("ingestion", "running", 50, "Generating DDEX Ingestion Protocol 4.3 XML…")
+    generator = DDEXGenerator()
 
-    # Normalise the release dict into the shape expected by Proprietary Ingestion IPGenerator
+    safe_release_id = re.sub(r"[^A-Za-z0-9._-]+", "-", str(release.get("releaseId", "release"))).strip(".-")
+    if not safe_release_id:
+        raise ValueError("Release ID cannot be converted into a safe package name")
+    package_path = os.path.join(storage_path, "packages", safe_release_id)
+    shutil.rmtree(package_path, ignore_errors=True)
+    os.makedirs(package_path, exist_ok=True)
+    try:
+        _stage_master_resources(tracks, package_path)
+    except (OSError, ValueError) as error:
+        shutil.rmtree(package_path, ignore_errors=True)
+        emit("ingestion", "error", 50, f"Canonical master staging failed: {error}")
+        return {
+            "status": "FAIL",
+            "stage": "master_staging",
+            "errors": [str(error)],
+            "delivery_ready": False,
+        }
+
+    # Normalise the release dict into the shape expected by DDEXGenerator
     # Ensure mandatory cover fields are present if using artwork_url
     if "artwork_url" in release and "cover_filename" not in release:
         release["cover_filename"] = "cover.jpg"
     
-    ingestion_metadata = {**release, "tracks": tracks}
-    xml_string = generator.generate_ern(ingestion_metadata)
-    
     # If a UPC was assigned during Identity management, ensure it's in metadata
+    ingestion_metadata = {**release, "tracks": tracks}
     if not ingestion_metadata.get("upc"):
         ingestion_metadata["upc"] = id_manager.generate_upc()
 
-    xml_path = os.path.join(storage_path, f"ingestion_{release.get('releaseId', 'release')}.xml")
-    os.makedirs(storage_path, exist_ok=True)
+    xml_string = generator.generate_ern(ingestion_metadata)
+
+    # A draft/dry-run may use the structural validator for local feedback, but
+    # an actual partner upload must prove conformance against the configured
+    # licensed ERN 4.3 XSD. No SFTP mutation happens before this gate passes.
+    sftp_config: Dict[str, Any] = release.get("sftpConfig") or {}
+    require_xsd = bool(sftp_config) and not dry_run
+    validation = DDEXXSDValidator(require_xsd=require_xsd).validate_xml_string(xml_string)
+    if not validation["valid"] or (require_xsd and validation.get("mode") != "xsd"):
+        emit(
+            "ingestion",
+            "error",
+            65,
+            f"DDEX validation failed: {validation.get('summary', 'unknown validation error')}",
+            validation,
+        )
+        return {
+            "status": "FAIL",
+            "stage": "ddex_validation",
+            "validation": validation,
+            "errors": validation.get("errors", []),
+        }
+
+    xml_path = os.path.join(package_path, f"{safe_release_id}.xml")
     with open(xml_path, "w", encoding="utf-8") as f:
         f.write(xml_string)
 
-    emit("ingestion", "done", 70, f"Proprietary Ingestion IP XML written → {xml_path}", {"xml_path": xml_path})
+    emit("ingestion", "done", 70, f"DDEX XML written → {xml_path}", {"xml_path": xml_path})
 
     # -----------------------------------------------------------------------
     # STEP 4 — SFTP Upload (skipped in dry-run mode)
     # -----------------------------------------------------------------------
-    sftp_config: Dict[str, Any] = release.get("sftpConfig") or {}
     if dry_run or not sftp_config:
         reason = "dry-run mode" if dry_run else "no sftpConfig provided"
         emit("sftp", "done", 100, f"SFTP upload skipped ({reason})")
         return {
             "status": "SUCCESS",
             "xml_path": xml_path,
+            "package_path": package_path,
             "xml": xml_string,
             "tracks": tracks,
             "sftp_skipped": True,
             "sftp_skip_reason": reason,
+            "validation": validation,
+            "xsd_validated": validation.get("mode") == "xsd",
+            "delivery_ready": False,
         }
 
     host = str(sftp_config.get("host", "unknown"))
@@ -143,7 +243,7 @@ def run(release: Dict[str, Any], storage_path: str, dry_run: bool) -> Dict[str, 
         username=str(sftp_config.get("user", "")),
         password=os.environ.get("SFTP_PASSWORD"),
         key_path=os.environ.get("SFTP_KEY_PATH"),
-        local_path=xml_path,
+        local_path=package_path,
         remote_path=str(sftp_config.get("remotePath", "/")),
     )
 
@@ -153,6 +253,7 @@ def run(release: Dict[str, Any], storage_path: str, dry_run: bool) -> Dict[str, 
             "status": "FAIL",
             "stage": "sftp",
             "xml_path": xml_path,
+            "package_path": package_path,
             "sftp_error": sftp_result.get("error"),
         }
 
@@ -160,14 +261,18 @@ def run(release: Dict[str, Any], storage_path: str, dry_run: bool) -> Dict[str, 
     return {
         "status": "SUCCESS",
         "xml_path": xml_path,
+        "package_path": package_path,
         "xml": xml_string,
         "tracks": tracks,
         "sftp": sftp_result,
+        "validation": validation,
+        "xsd_validated": True,
+        "delivery_ready": True,
     }
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="indii Proprietary Ingestion IP Build Orchestrator")
+    parser = argparse.ArgumentParser(description="indii DDEX Build Orchestrator")
     parser.add_argument("release_json", help="JSON string containing release metadata")
     parser.add_argument("--storage-path", default=os.path.join(tempfile.gettempdir(), "indii-dist"),
                         help="Working directory for output files")

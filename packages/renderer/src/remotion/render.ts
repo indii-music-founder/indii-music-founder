@@ -1,7 +1,6 @@
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { bundle } from '@remotion/bundler';
-import { renderMedia, selectComposition } from '@remotion/renderer';
 import { logger } from '@/utils/logger';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -11,6 +10,7 @@ const COMP_ID = process.argv[2] || 'LogoReveal';
 const OUTPUT_DIR = path.resolve(__dirname, '../../docs/assets');
 
 async function render() {
+  const { renderMedia, selectComposition } = await import('@remotion/renderer');
   logger.info(`🎬 Bundling Remotion project...`);
 
   const bundleLocation = await bundle({

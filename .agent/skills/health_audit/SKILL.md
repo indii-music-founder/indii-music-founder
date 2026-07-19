@@ -1,6 +1,6 @@
 ---
 name: health-audit
-version: 1.1.0
+version: 1.1.1
 description: |
   Full-spectrum engineering health audit for indii. Scans build health,
   tests, module completeness, service layer, agent fleet, security posture,
@@ -150,6 +150,25 @@ echo "=== ANTI-AI SLOP ==="
 echo "Placeholders: $(grep -rn '\.\.\. rest of code\|\.\.\. implementations here\|TODO.*implement' packages/renderer/src/ --include='*.ts' --include='*.tsx' 2>/dev/null | wc -l | tr -d ' ')"
 echo "Boilerplate: $(grep -rn 'Here is the.*code\|As an AI' packages/renderer/src/ --include='*.ts' --include='*.tsx' 2>/dev/null | wc -l | tr -d ' ')"
 ```
+
+### 12. Repository-Native Quality Gates
+
+Run the repository's own architecture and workspace checks. Generic TypeScript,
+lint, and unit-test scans do not cover these boundaries.
+
+```bash
+echo "=== REPOSITORY GATES ==="
+node scripts/check-test-quality.js
+npm run security:frontend-api-boundary
+npm run check:dep-drift
+npm run build:ci
+npm run build:firebase
+npm run build:landing
+npm run build:mcp
+```
+
+Treat a health command that discovers tests but skips all of them as a failed
+readiness signal even when the process exits with status 0.
 
 ## Report Generation
 

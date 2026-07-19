@@ -1,18 +1,17 @@
 /**
  * WalletConnectPanel — Item 236
- * Real wallet connection via window.ethereum (MetaMask EIP-1193)
- * and WalletConnect v2 URI deep-link for mobile wallets.
+ * Real wallet connection via window.ethereum (MetaMask EIP-1193).
+ * WalletConnect mobile wallet support is disabled until its upstream dependency chain is remediated.
  */
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Wallet, CheckCircle2, Copy, LogOut, Link2, Shield, AlertCircle } from 'lucide-react';
 import { walletConnectService } from '@/services/web3/WalletConnectService';
 import { logger } from '@/utils/logger';
+import { WalletConnectDialog } from '@/components/ui/WalletConnectDialog';
 
 const STORAGE_KEY = 'indii_wallet_address';
 const CHAIN_KEY = 'indii_wallet_chain';
-
-type WalletProvider = 'metamask' | 'walletconnect';
 
 function truncateAddress(addr: string) {
     return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
@@ -26,27 +25,31 @@ function chainName(chainId: string): string {
     return chains[chainId] || `Chain ${parseInt(chainId, 16)}`;
 }
 
-declare global {
-    interface Window {
-        ethereum?: {
-            request: (args: { method: string; params?: unknown[] }) => Promise<unknown>;
-            isMetaMask?: boolean;
-            on?: (event: string, handler: (...args: unknown[]) => void) => void;
-            removeListener?: (event: string, handler: (...args: unknown[]) => void) => void;
-        };
-    }
+interface EthereumProvider {
+    request: (args: { method: string; params?: unknown[] }) => Promise<unknown>;
+    isMetaMask?: boolean;
+    on?: (event: string, handler: (...args: unknown[]) => void) => void;
+    removeListener?: (event: string, handler: (...args: unknown[]) => void) => void;
 }
 
 export function WalletConnectPanel() {
+    const ethereum = typeof window !== 'undefined' ? window.ethereum as EthereumProvider | undefined : undefined;
     const [address, setAddress] = useState<string | null>(() => localStorage.getItem(STORAGE_KEY));
     const [chain, setChain] = useState<string>(() => localStorage.getItem(CHAIN_KEY) || '0x1');
-    const [connecting, setConnecting] = useState<WalletProvider | null>(null);
     const [copied, setCopied] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
+    function handleDisconnect() {
+        localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem(CHAIN_KEY);
+        setAddress(null);
+        setError(null);
+        walletConnectService.disconnect().catch((err) => { logger.error('[WalletConnect] disconnect error:', err); });
+    }
+
     // Listen for MetaMask account/chain changes
     useEffect(() => {
-        if (typeof window === 'undefined' || !window.ethereum?.on) return;
+        if (!ethereum?.on) return;
 
         const onAccountsChanged = (...args: unknown[]) => {
             const accounts = args[0] as string[];
@@ -63,64 +66,14 @@ export function WalletConnectPanel() {
             setChain(id);
         };
 
-        window.ethereum.on('accountsChanged', onAccountsChanged);
-        window.ethereum.on('chainChanged', onChainChanged);
+        ethereum.on('accountsChanged', onAccountsChanged);
+        ethereum.on('chainChanged', onChainChanged);
 
         return () => {
-            window.ethereum?.removeListener?.('accountsChanged', onAccountsChanged);
-            window.ethereum?.removeListener?.('chainChanged', onChainChanged);
+            ethereum?.removeListener?.('accountsChanged', onAccountsChanged);
+            ethereum?.removeListener?.('chainChanged', onChainChanged);
         };
-    }, []);
-
-    const handleConnect = async (provider: WalletProvider) => {
-        setConnecting(provider);
-        setError(null);
-
-        try {
-            if (provider === 'metamask') {
-                if (typeof window === 'undefined' || !window.ethereum) {
-                    throw new Error('MetaMask not installed. Please install the MetaMask browser extension.');
-                }
-                // Request account access via EIP-1193
-                const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' }) as string[];
-                const chainId = await window.ethereum.request({ method: 'eth_chainId' }) as string;
-
-                localStorage.setItem(STORAGE_KEY, accounts[0]!);
-                localStorage.setItem(CHAIN_KEY, chainId as string);
-                setAddress(accounts[0] ?? null);
-                setChain(chainId as string);
-
-            } else {
-                // WalletConnect v2: uses WalletConnectService (backed by @reown/appkit when project ID is set)
-                if (!walletConnectService.isConfigured()) {
-                    throw new Error(
-                        'WalletConnect project ID not set. Add VITE_WALLETCONNECT_PROJECT_ID to .env ' +
-                        '(get a free key at cloud.reown.com)'
-                    );
-                }
-                const info = await walletConnectService.connect();
-                if (info.address) {
-                    localStorage.setItem(STORAGE_KEY, info.address);
-                    localStorage.setItem(CHAIN_KEY, `0x${info.chainId.toString(16)}`);
-                    setAddress(info.address);
-                    setChain(`0x${info.chainId.toString(16)}`);
-                }
-            }
-        } catch (err: unknown) {
-            const msg = err instanceof Error ? err.message : 'Connection failed';
-            setError(msg);
-        } finally {
-            setConnecting(null);
-        }
-    };
-
-    const handleDisconnect = () => {
-        localStorage.removeItem(STORAGE_KEY);
-        localStorage.removeItem(CHAIN_KEY);
-        setAddress(null);
-        setError(null);
-        walletConnectService.disconnect().catch((err) => { logger.error('[WalletConnect] disconnect error:', err); });
-    };
+    }, [ethereum]);
 
     const handleCopy = async () => {
         if (!address) return;
@@ -219,50 +172,20 @@ export function WalletConnectPanel() {
                             Connect a wallet to unlock Web3 features
                         </p>
 
-                        {/* MetaMask */}
                         <button
-                            onClick={() => handleConnect('metamask')}
-                            disabled={!!connecting}
-                            className="w-full flex items-center gap-3 p-4 bg-white/[0.02] border border-white/5 rounded-xl hover:border-orange-400/30 hover:bg-orange-400/5 transition-all group disabled:opacity-50"
+                            onClick={async () => {
+                                const info = await WalletConnectDialog.call({});
+                                if (info) {
+                                    localStorage.setItem(STORAGE_KEY, info.address);
+                                    localStorage.setItem(CHAIN_KEY, `0x${info.chainId.toString(16)}`);
+                                    setAddress(info.address);
+                                    setChain(`0x${info.chainId.toString(16)}`);
+                                }
+                            }}
+                            className="w-full flex items-center justify-center gap-2 p-4 bg-white/10 border border-white/20 rounded-xl hover:bg-white/20 transition-all font-bold text-white"
                         >
-                            <div className="w-10 h-10 rounded-xl bg-orange-400/10 border border-orange-400/20 flex items-center justify-center text-lg flex-shrink-0">
-                                🦊
-                            </div>
-                            <div className="flex-1 text-left">
-                                <div className="text-sm font-bold text-white group-hover:text-orange-400 transition-colors">MetaMask</div>
-                                <div className="text-[11px] text-neutral-500">
-                                    {typeof window !== 'undefined' && window.ethereum?.isMetaMask
-                                        ? 'Ready to connect'
-                                        : 'Browser extension wallet'}
-                                </div>
-                            </div>
-                            {connecting === 'metamask' ? (
-                                <div className="w-4 h-4 border-2 border-orange-400 border-t-transparent rounded-full animate-spin" />
-                            ) : (
-                                <Link2 size={14} className="text-neutral-600 group-hover:text-orange-400 transition-colors" />
-                            )}
-                        </button>
-
-                        {/* WalletConnect */}
-                        <button
-                            onClick={() => handleConnect('walletconnect')}
-                            disabled={!!connecting}
-                            className="w-full flex items-center gap-3 p-4 bg-white/[0.02] border border-white/5 rounded-xl hover:border-blue-400/30 hover:bg-blue-400/5 transition-all group disabled:opacity-50"
-                        >
-                            <div className="w-10 h-10 rounded-xl bg-blue-400/10 border border-blue-400/20 flex items-center justify-center text-lg flex-shrink-0">
-                                🔗
-                            </div>
-                            <div className="flex-1 text-left">
-                                <div className="text-sm font-bold text-white group-hover:text-blue-400 transition-colors">WalletConnect</div>
-                                <div className="text-[11px] text-neutral-500">
-                                    {walletConnectService.isConfigured() ? 'Scan QR with any mobile wallet' : 'Requires VITE_WALLETCONNECT_PROJECT_ID'}
-                                </div>
-                            </div>
-                            {connecting === 'walletconnect' ? (
-                                <div className="w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
-                            ) : (
-                                <Link2 size={14} className="text-neutral-600 group-hover:text-blue-400 transition-colors" />
-                            )}
+                            <Link2 size={16} />
+                            Connect Wallet
                         </button>
 
                         <p className="text-center text-[10px] text-neutral-700 pt-2">

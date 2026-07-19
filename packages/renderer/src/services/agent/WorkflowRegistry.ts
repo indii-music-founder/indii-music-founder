@@ -137,12 +137,12 @@ export const WORKFLOW_REGISTRY: Record<string, WorkflowDefinition> = {
     'INDII_GROWTH_PROTOCOL': {
         id: 'INDII_GROWTH_PROTOCOL',
         name: 'indii Growth Protocol',
-        description: 'Automated Meta Andromeda creative pipeline and 28-day algorithmic spike campaign.',
+        description: 'Automated Meta PLP creative pipeline and 28-day algorithmic spike campaign.',
         steps: [
             {
                 id: 'video_generation',
-                agentId: 'workflow',
-                prompt: 'Trigger a Node recipe instructing the Video Agent (using veo-3.1-generate-preview) to mass-generate 6 to 15 unique 9:16 vertical video variations. Enforce the 3-Second Hook rule.',
+                agentId: 'creative',
+                prompt: 'Trigger a Node recipe instructing the Video Agent (using veo-3.1-generate-001) to mass-generate 6 to 15 unique 9:16 vertical video variations. Enforce the 3-Second Hook rule.',
                 priority: 'URGENT'
             },
             {

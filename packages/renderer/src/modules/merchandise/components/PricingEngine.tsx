@@ -53,8 +53,8 @@ export function PricingEngine({ products = [] }: PricingEngineProps) {
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h3 className="text-lg font-bold text-white">Dynamic Pricing Engine</h3>
-                    <p className="text-xs text-neutral-500 mt-0.5">AI-recommended prices vs. indie benchmarks</p>
+                    <h3 className="text-lg font-bold text-white">Pricing Estimator</h3>
+                    <p className="text-xs text-neutral-500 mt-0.5">Static baseline estimates (not live market data)</p>
                 </div>
                 {applied.size > 0 && (
                     <div className="text-right">
@@ -68,7 +68,7 @@ export function PricingEngine({ products = [] }: PricingEngineProps) {
             <div className="flex items-start gap-2 p-3 bg-white/[0.02] border border-white/5 rounded-xl">
                 <Info size={12} className="text-neutral-600 flex-shrink-0 mt-0.5" />
                 <p className="text-[11px] text-neutral-500 leading-relaxed">
-                    Suggestions based on average independent artist margins across Printful, Printify, and direct-to-fan channels. Benchmark = industry median.
+                    Suggestions based on default starter benchmarks. These are static reference values, not live provider pricing or market analysis. For accurate pricing, verify current costs with Printful, Printify, or your distributor.
                 </p>
             </div>
 

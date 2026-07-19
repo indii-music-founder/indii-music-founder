@@ -137,35 +137,46 @@ export const redeemHandoffCode = onRequest({ cors: true }, async (req: Request, 
     }
 
     try {
-        // 2. Lookup the code
         const docRef = db.collection('auth_handoffs').doc(code);
-        const doc = await docRef.get();
 
-        if (!doc.exists) {
-            res.status(404).send('Invalid or expired code');
+        // Run transaction for atomic read/write to prevent concurrent reuse
+        const result = await db.runTransaction(async (transaction) => {
+            const doc = await transaction.get(docRef);
+
+            if (!doc.exists) {
+                return { status: 404, message: 'Invalid or expired code' };
+            }
+
+            const data = doc.data();
+            if (!data) {
+                return { status: 404, message: 'Invalid or expired code' };
+            }
+
+            const expiresAt = data.expiresAt.toDate();
+            if (expiresAt < new Date()) {
+                transaction.delete(docRef);
+                return { status: 404, message: 'Code expired' };
+            }
+
+            // Perform write operation first
+            transaction.delete(docRef);
+
+            return {
+                status: 200,
+                idToken: data.idToken,
+                accessToken: data.accessToken,
+                userId: data.userId
+            };
+        });
+
+        if (result.status !== 200) {
+            res.status(result.status).send(result.message);
             return;
         }
 
-        const data = doc.data();
-        if (!data) {
-            res.status(404).send('Invalid or expired code');
-            return;
-        }
-
-        // 3. Check expiration
-        const expiresAt = data.expiresAt.toDate();
-        if (expiresAt < new Date()) {
-            await docRef.delete();
-            res.status(404).send('Code expired');
-            return;
-        }
-
-        // 4. Return tokens, custom token, and delete the code (one-time use)
-        const { idToken, accessToken, userId } = data;
-        const customToken = await admin.auth().createCustomToken(userId);
-        await docRef.delete();
-
-        res.status(200).json({ idToken, accessToken, customToken });
+        // Custom token generation cannot run inside firestore transaction (it's an external network call)
+        const customToken = await admin.auth().createCustomToken(result.userId!);
+        res.status(200).json({ idToken: result.idToken, accessToken: result.accessToken, customToken });
     } catch (err) {
         console.error('Error redeeming handoff code:', err);
         res.status(500).send('Internal Server Error');

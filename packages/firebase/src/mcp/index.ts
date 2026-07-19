@@ -3,30 +3,95 @@ import * as express from 'express';
 import cors from 'cors';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js';
-import { CallToolRequestSchema, ErrorCode, ListToolsRequestSchema, McpError } from '@modelcontextprotocol/sdk/types.js';
+import { McpToolRegistry } from './registry.js';
 
-const ENFORCE_APP_CHECK = process.env.ENFORCE_APP_CHECK === 'true' || process.env.NODE_ENV === 'production';
+import {
+    draftDspMetadata,
+    generatePlaylistPitch,
+    scheduleCampaignWaterfall,
+    fetchBrandKit,
+    queueRemotionRender,
+    auditAssetResolutions,
+    registerSplitSheet,
+    draftCwrRegistration,
+    auditSampleClearance,
+    calculateRecoupment,
+    stageStripePayouts
+} from './tools/index.js';
+
+import * as admin from 'firebase-admin';
+
+// Re-enable appCheck enforcement if needed in the future, but for now we rely on Bearer token (JWT)
+// const mcpApiKey = defineSecret('MCP_API_KEY');
 
 const app = express.default();
 app.use(cors({ origin: true }));
 
-const server = new Server(
-    {
-        name: 'indii-remote-mcp-server',
-        version: '0.1.0',
-    },
-    {
-        capabilities: {
-            tools: {},
-        },
+// Validate Firebase Auth JWT instead of static API key
+app.use(async (req, res, next) => {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        res.status(401).send('Unauthorized: Missing or invalid Authorization header');
+        return;
     }
-);
+
+    const token = authHeader.split('Bearer ')[1].trim();
+    try {
+        const decodedToken = await admin.auth().verifyIdToken(token);
+        // Attach the verified caller for tool-level authorization. Real tool
+        // implementations MUST scope data access to this uid, never to
+        // model-supplied ids like artistId (see ISSUE-1086 / ISSUE-1083).
+        (req as express.Request & { user?: admin.auth.DecodedIdToken }).user = decodedToken;
+        next();
+    } catch (error) {
+        console.error('[MCP Server] Error verifying Firebase Auth token:', error);
+        res.status(401).send('Unauthorized: Invalid Firebase Auth token');
+        return;
+    }
+});
+
+// We define the tool list once
+const toolsList = [
+    draftDspMetadata,
+    generatePlaylistPitch,
+    scheduleCampaignWaterfall,
+    fetchBrandKit,
+    queueRemotionRender,
+    auditAssetResolutions,
+    registerSplitSheet,
+    draftCwrRegistration,
+    auditSampleClearance,
+    calculateRecoupment,
+    stageStripePayouts
+];
 
 // Map to hold active SSE transports
 const transports = new Map<string, SSEServerTransport>();
 
 app.get('/sse', async (req, res) => {
     console.log(`[MCP Server] New SSE connection request`);
+
+    // The user was attached by the auth middleware
+    const user = (req as express.Request & { user?: admin.auth.DecodedIdToken }).user;
+    if (!user) {
+        res.status(401).send('Unauthorized: Missing user context');
+        return;
+    }
+
+    const server = new Server(
+        {
+            name: 'indii-remote-mcp-server',
+            version: '0.1.0',
+        },
+        {
+            capabilities: {
+                tools: {},
+            },
+        }
+    );
+
+    const registry = new McpToolRegistry(toolsList);
+    registry.register(server, { user });
 
     // In production this endpoint URL should match what Cloud Run exposes.
     const messageUrl = `${req.baseUrl || ''}/message`;
@@ -61,111 +126,7 @@ app.post('/message', async (req, res) => {
     await transport.handlePostMessage(req, res);
 });
 
-server.setRequestHandler(ListToolsRequestSchema, async () => {
-    return {
-        tools: [
-            {
-                name: 'format_dsp_metadata',
-                description: 'Format digital service provider metadata based on strict release requirements.',
-                inputSchema: {
-                    type: 'object',
-                    properties: {
-                        releaseTitle: { type: 'string', description: 'The title of the release' },
-                        artists: {
-                            type: 'array',
-                            items: { type: 'string' },
-                            description: 'List of primary artists',
-                        },
-                        genre: { type: 'string' },
-                    },
-                    required: ['releaseTitle', 'artists', 'genre'],
-                },
-            },
-        ],
-    };
-});
-
-server.setRequestHandler(CallToolRequestSchema, async (request) => {
-    if (request.params.name === 'format_dsp_metadata') {
-        const args = request.params.arguments as unknown as {
-            releaseTitle: string;
-            artists: string[];
-            genre: string;
-        };
-        const upc = `19${Math.floor(1000000000 + Math.random() * 9000000000)}`;
-        const messageId = `indii-msg-${Date.now()}`;
-        const releaseDate = new Date().toISOString().split('T')[0];
-        
-        const ddexXml = `<?xml version="1.0" encoding="utf-8"?>
-<ern:NewReleaseMessage xmlns:ern="http://ddex.net/xml/ern/411">
-  <MessageHeader>
-    <MessageThreadId>${messageId}</MessageThreadId>
-    <MessageId>${messageId}</MessageId>
-    <MessageSender>
-      <PartyId>PADPIDA2014120901U</PartyId>
-      <PartyName>
-        <FullName>Indii Music</FullName>
-      </PartyName>
-    </MessageSender>
-    <MessageCreatedDateTime>${new Date().toISOString()}</MessageCreatedDateTime>
-  </MessageHeader>
-  <ResourceList>
-    <SoundRecording>
-      <ResourceReference>A1</ResourceReference>
-      <Type>Audio</Type>
-      <SoundRecordingId>
-        <ISRC>USABC1234567</ISRC>
-      </SoundRecordingId>
-      <ReferenceTitle>
-        <TitleText>${args.releaseTitle}</TitleText>
-      </ReferenceTitle>
-      <Duration>PT3M30S</Duration>
-    </SoundRecording>
-  </ResourceList>
-  <ReleaseList>
-    <Release>
-      <ReleaseId>
-        <ICPN IsEan="false">${upc}</ICPN>
-      </ReleaseId>
-      <ReferenceTitle>
-        <TitleText>${args.releaseTitle}</TitleText>
-      </ReferenceTitle>
-      <ReleaseResourceReferenceList>
-        <ReleaseResourceReference>A1</ReleaseResourceReference>
-      </ReleaseResourceReferenceList>
-      <ReleaseType>Album</ReleaseType>
-      <ReleaseDetailsByTerritory>
-        <TerritoryCode>Worldwide</TerritoryCode>
-        <DisplayArtist>
-          <PartyName>
-            <FullName>${args.artists.join(', ')}</FullName>
-          </PartyName>
-          <ArtistRole>MainArtist</ArtistRole>
-        </DisplayArtist>
-        <Title>
-          <TitleText>${args.releaseTitle}</TitleText>
-        </Title>
-        <Genre>
-          <GenreText>${args.genre}</GenreText>
-        </Genre>
-        <OriginalReleaseDate>${releaseDate}</OriginalReleaseDate>
-      </ReleaseDetailsByTerritory>
-    </Release>
-  </ReleaseList>
-</ern:NewReleaseMessage>`;
-
-        return {
-            content: [{
-                type: 'text',
-                text: ddexXml
-            }]
-        };
-    }
-
-    throw new McpError(ErrorCode.MethodNotFound, `Unknown tool: ${request.params.name}`);
-});
-
 export const mcpEndpoint = functions
-    .runWith({ enforceAppCheck: ENFORCE_APP_CHECK })
+    .runWith({ enforceAppCheck: false })
     .https.onRequest(app);
 export const expressApp = app;

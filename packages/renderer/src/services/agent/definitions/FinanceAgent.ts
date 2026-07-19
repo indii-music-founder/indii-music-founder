@@ -3,6 +3,19 @@ import systemPrompt from "@agents/finance/prompt.md?raw";
 import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { UniversalTools } from '../tools/UniversalTools';
+
+const financeRetrievalConfig = {
+    'revenue': { path: 'revenue', requiresUserIdFilter: true },
+    'expenses': { path: 'expenses', requiresUserIdFilter: true },
+    'payouts': { path: 'payouts', requiresUserIdFilter: true },
+    'earnings': { path: 'earnings', requiresUserIdFilter: true },
+    'recoupment_balances': { path: 'recoupment_balances', requiresUserIdFilter: true },
+    'tax_profiles': { path: 'tax_profiles', requiresUserIdFilter: true },
+    'ledger': { path: 'ledger', requiresUserIdFilter: true }
+};
+const financeRetrievalTools = buildDomainRetrievalTools('Finance', financeRetrievalConfig);
+const financeRetrievalDeclarations = buildDomainRetrievalDeclarations('Finance', financeRetrievalConfig);
+
 export const FinanceAgent: AgentConfig = {
     id: "finance",
     name: 'Finance Director',
@@ -11,6 +24,7 @@ export const FinanceAgent: AgentConfig = {
     category: 'department',
     systemPrompt: systemPrompt,
     functions: {
+        ...financeRetrievalTools,
         analyze_budget: async (args: { amount: number; breakdown: string }) => {
             const efficiency = args.amount < 50000 ? "High" : "Medium";
             const managerFeeSaved = args.amount * 0.20;
@@ -41,7 +55,7 @@ export const FinanceAgent: AgentConfig = {
             Query: ${args.query}`;
 
             try {
-                const response = await AutonomousIntelligence.generateText(prompt);
+                const response = await AutonomousIntelligence.generateText(prompt, { maxOutputTokens: 8192, temperature: 1.0 });
                 return { success: true, data: { answer: response } };
             } catch (error: unknown) {
                 const message = error instanceof Error ? error.message : String(error);
@@ -92,7 +106,7 @@ export const FinanceAgent: AgentConfig = {
              */
             const prompt = `Audit the track "${args.trackTitle}" for distribution readiness on ${args.distributor}. List 3 common metadata pitfalls for this specific platform.`;
             try {
-                const advice = await AutonomousIntelligence.generateText(prompt);
+                const advice = await AutonomousIntelligence.generateText(prompt, { maxOutputTokens: 8192, temperature: 1.0 });
                 return { success: true, data: { status: "Audited", advice } };
             } catch (error: unknown) {
                 const message = error instanceof Error ? error.message : String(error);
@@ -164,10 +178,13 @@ export const FinanceAgent: AgentConfig = {
         credential_vault: UniversalTools.credential_vault,
         payment_gate: UniversalTools.payment_gate,
         browser_tool: UniversalTools.browser_tool,
+        calculate_recoupment: McpTools.calculate_recoupment,
+        stage_stripe_payouts: McpTools.stage_stripe_payouts,
     },
-    authorizedTools: ['analyze_budget', 'audit_metadata', 'search_knowledge', 'analyze_receipt', 'audit_distribution', 'credential_vault', 'payment_gate', 'browser_tool', 'generate_tax_report', 'forecast_revenue'],
+    authorizedTools: ['list_domain_records', 'analyze_budget', 'audit_metadata', 'search_knowledge', 'analyze_receipt', 'audit_distribution', 'credential_vault', 'payment_gate', 'browser_tool', 'generate_tax_report', 'forecast_revenue', 'calculate_recoupment', 'stage_stripe_payouts'],
     tools: [{
         functionDeclarations: [
+            ...financeRetrievalDeclarations,
             {
                 name: "analyze_budget",
                 description: "Analyze a project budget and calculate the 'indii Dividend' savings.",
@@ -301,12 +318,37 @@ export const FinanceAgent: AgentConfig = {
                     },
                     required: ["current_monthly_streams", "growth_rate_percent"]
                 }
+            },
+            {
+                name: "calculate_recoupment",
+                description: "Calculate the recoupment status of a specific release using the remote MCP backend.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        releaseId: { type: "STRING" }
+                    },
+                    required: ["releaseId"]
+                }
+            },
+            {
+                name: "stage_stripe_payouts",
+                description: "Stage Stripe Connect payouts for splits via the remote MCP backend.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        releaseId: { type: "STRING" }
+                    },
+                    required: ["releaseId"]
+                }
             }
         ]
     }]
 };
 
 import { freezeAgentConfig } from '../FreezeDiagnostic';
+import { buildDomainRetrievalTools, buildDomainRetrievalDeclarations } from '../tools/DomainTools';
+import { McpTools } from '../tools/McpTools';
+
 
 // Freeze the schema to prevent cross-test contamination
 freezeAgentConfig(FinanceAgent);

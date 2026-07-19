@@ -1,26 +1,27 @@
 import { useTranslation } from 'react-i18next';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 import { motion, AnimatePresence } from 'motion/react';
 import { useToast } from '@/core/context/ToastContext';
+import { useStore } from '@/core/store';
 import { functions } from '@/services/firebase';
 import { httpsCallable } from 'firebase/functions';
 import { PlanningTab } from './components/PlanningTab';
 import { OnTheRoadTab } from './components/OnTheRoadTab';
+import { TourBookTab } from './components/TourBookTab';
 import { useTouring } from './hooks/useTouring';
 import { Itinerary, ItineraryStop, NearbyPlace, LogisticsReport, EmergencyContact } from './types';
 
 import { RoadMode } from './components/RoadMode';
 import { useMobile } from '@/hooks/useMobile';
 import { RoadManagerSidebar, TouringTab } from './components/RoadManagerSidebar';
-import { RiderChecklist } from './components/RiderChecklist';
-import { Phone, Calendar, CheckSquare, Navigation, Plus, Edit2, Trash2 } from 'lucide-react';
+import { Phone, Calendar, Navigation, Plus, Edit2, Trash2 } from 'lucide-react';
 import { TourRouteOptimizer } from './components/TourRouteOptimizer';
-import { TechnicalRiderGenerator } from './components/TechnicalRiderGenerator';
 import { SetlistAnalytics } from './components/SetlistAnalytics';
-import { VisaChecklist } from './components/VisaChecklist';
 import { logger } from '@/utils/logger';
 import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
+import { resolveTouringTab } from '@/modules/handoffViews';
+import { createTouringStopId } from './itinerary';
 
 interface EmergencyContactsPanelProps {
     contacts: EmergencyContact[];
@@ -223,6 +224,7 @@ const RoadManager: React.FC = () => {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         loading: touringLoading
     } = useTouring();
+    const pendingTouringHandoff = useStore(state => state.pendingHandoffs.touring);
 
     // Core State
     const [locations, setLocations] = useState<string[]>([]);
@@ -232,7 +234,15 @@ const RoadManager: React.FC = () => {
     const [isGenerating, setIsGenerating] = useState(false);
 
     // Feature Tabs
-    const [activeTab, setActiveTab] = useState<TouringTab>('planning');
+    const [activeTab, setActiveTab] = useState<TouringTab>('plan');
+
+    useEffect(() => {
+        if (!pendingTouringHandoff) return;
+        const pendingTab = resolveTouringTab(pendingTouringHandoff.targetView);
+        if (pendingTab && activeTab !== pendingTab) {
+            setActiveTab(pendingTab);
+        }
+    }, [activeTab, pendingTouringHandoff]);
 
     // Logistics State
     const [isCheckingLogistics, setIsCheckingLogistics] = useState(false);
@@ -297,6 +307,7 @@ const RoadManager: React.FC = () => {
 
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const mappedStops: ItineraryStop[] = (rawResult.stops || []).map((stop: any) => ({
+                id: createTouringStopId(),
                 city: stop.city || '',
                 date: stop.date || '',
                 venue: stop.venue || '',
@@ -308,13 +319,13 @@ const RoadManager: React.FC = () => {
             await saveItinerary({
                 stops: mappedStops,
                 totalDistance: rawResult.totalDistanceMiles ? `${rawResult.totalDistanceMiles} miles` : '0 miles',
-                estimatedBudget: 'TBD',
+                estimatedBudget: rawResult.estimatedBudget != null ? String(rawResult.estimatedBudget) : undefined,
                 tourName: `Tour ${startDate} - ${locations[0]}`
             });
 
             toast.success("Itinerary generated and saved");
-        } catch (_error: unknown) {
-            // logger.error("Itinerary Generation Failed:", error);
+        } catch (error: unknown) {
+            logger.error("Itinerary Generation Failed:", error);
             toast.error("Failed to generate itinerary");
         } finally {
             setIsGenerating(false);
@@ -331,15 +342,15 @@ const RoadManager: React.FC = () => {
             const result = response.data as LogisticsReport;
             setLogisticsReport(result);
             toast.success("Logistics check complete");
-        } catch (_error: unknown) {
-            // logger.error("Logistics Check Failed:", error);
+        } catch (error: unknown) {
+            logger.error("Logistics Check Failed:", error);
             toast.error("Failed to check logistics");
         } finally {
             setIsCheckingLogistics(false);
         }
     };
 
-    const handleFindGasStations = async () => {
+    const handleFindNearbyPlaces = async (placeType: string = 'gas_station') => {
         if (!currentLocation) {
             toast.error("Please enter a location");
             return;
@@ -347,16 +358,21 @@ const RoadManager: React.FC = () => {
         setIsFindingPlaces(true);
         try {
             const findPlaces = httpsCallable(functions, 'findPlaces');
-            const response = await findPlaces({ location: currentLocation, type: 'gas_station' });
+            const response = await findPlaces({ location: currentLocation, type: placeType });
             const result = response.data as { places: NearbyPlace[] };
             setNearbyPlaces(result.places);
-            toast.success("Found gas stations nearby");
+            const typeLabel = placeType.replace('_', ' ');
+            toast.success(`Found ${typeLabel} nearby`);
         } catch (error: unknown) {
             logger.error("Find Places Failed:", error);
-            toast.error("Failed to find gas stations");
+            toast.error("Failed to find nearby places");
         } finally {
             setIsFindingPlaces(false);
         }
+    };
+
+    const handleFindGasStations = async () => {
+        await handleFindNearbyPlaces('gas_station');
     };
 
 
@@ -364,9 +380,23 @@ const RoadManager: React.FC = () => {
     const handleUpdateStop = async (updatedStop: Itinerary['stops'][number]) => {
         if (!itinerary) return;
 
+        if (!updatedStop.id) {
+            logger.error("Failed to update stop: missing stable stop id", updatedStop);
+            toast.error("Failed to update stop");
+            return;
+        }
+
+        const stopIndex = itinerary.stops.findIndex(s => s.id === updatedStop.id);
+
+        if (stopIndex === -1) {
+            logger.error("Failed to update stop: could not resolve itinerary index for stop", updatedStop);
+            toast.error("Failed to update stop");
+            return;
+        }
+
         // Optimistic UI Update
-        const newStops = itinerary.stops.map(s => {
-            if (s.date === updatedStop.date) {
+        const newStops = itinerary.stops.map((s, index) => {
+            if (index === stopIndex) {
                 return updatedStop;
             }
             return s;
@@ -374,12 +404,8 @@ const RoadManager: React.FC = () => {
         setCurrentItinerary({ ...itinerary, stops: newStops });
 
         try {
-            // Find index of stop
-            const index = itinerary.stops.findIndex(s => s.date === updatedStop.date);
-            if (index !== -1) {
-                await updateItineraryStop(index, updatedStop);
-                toast.success("Day sheet updated");
-            }
+            await updateItineraryStop(stopIndex, updatedStop);
+            toast.success("Day sheet updated");
         } catch (err: unknown) {
             logger.error("Failed to update stop", err);
             toast.error("Failed to update stop");
@@ -393,7 +419,7 @@ const RoadManager: React.FC = () => {
                 <RoadManagerSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
 
                 {/* ── CENTER — Main Content ──────────────────────────── */}
-                <div className="flex-1 flex flex-col min-w-0 overflow-y-auto selection:bg-yellow-500/30">
+                <div className="flex-1 flex flex-col min-w-0 overflow-y-auto custom-scrollbar selection:bg-yellow-500/30">
                     <main className="flex-1 p-6 md:p-8 w-full">
                         <AnimatePresence mode="wait">
                             <motion.div
@@ -404,23 +430,38 @@ const RoadManager: React.FC = () => {
                                 transition={{ duration: 0.2, ease: 'easeOut' }}
                                 className="h-full"
                             >
-                                {activeTab === 'planning' && (
-                                    <PlanningTab
-                                        startDate={startDate}
-                                        setStartDate={setStartDate}
-                                        endDate={endDate}
-                                        setEndDate={setEndDate}
-                                        locations={locations}
-                                        newLocation={newLocation}
-                                        setNewLocation={setNewLocation}
-                                        handleAddLocation={handleAddLocation}
-                                        handleRemoveLocation={handleRemoveLocation}
-                                        handleGenerateItinerary={handleGenerateItinerary}
-                                        isGenerating={isGenerating}
+                                {activeTab === 'plan' && (
+                                    <div className="flex gap-6 h-full">
+                                        <div className="flex-1 overflow-y-auto custom-scrollbar">
+                                            <PlanningTab
+                                                startDate={startDate}
+                                                setStartDate={setStartDate}
+                                                endDate={endDate}
+                                                setEndDate={setEndDate}
+                                                locations={locations}
+                                                newLocation={newLocation}
+                                                setNewLocation={setNewLocation}
+                                                handleAddLocation={handleAddLocation}
+                                                handleRemoveLocation={handleRemoveLocation}
+                                                handleGenerateItinerary={handleGenerateItinerary}
+                                                isGenerating={isGenerating}
+                                                itinerary={itinerary}
+                                                handleCheckLogistics={handleCheckLogistics}
+                                                isCheckingLogistics={isCheckingLogistics}
+                                                logisticsReport={logisticsReport}
+                                                onUpdateStop={handleUpdateStop}
+                                            />
+                                        </div>
+                                        <div className="hidden xl:flex w-96 flex-col border-l border-gray-800 p-6 overflow-y-auto custom-scrollbar flex-shrink-0">
+                                            <h3 className="text-sm font-bold text-white mb-4">Route Optimization</h3>
+                                            <TourRouteOptimizer />
+                                        </div>
+                                    </div>
+                                )}
+
+                                {activeTab === 'tour-book' && (
+                                    <TourBookTab
                                         itinerary={itinerary}
-                                        handleCheckLogistics={handleCheckLogistics}
-                                        isCheckingLogistics={isCheckingLogistics}
-                                        logisticsReport={logisticsReport}
                                         onUpdateStop={handleUpdateStop}
                                     />
                                 )}
@@ -430,39 +471,16 @@ const RoadManager: React.FC = () => {
                                         currentLocation={currentLocation}
                                         setCurrentLocation={setCurrentLocation}
                                         handleFindGasStations={handleFindGasStations}
+                                        handleFindNearbyPlaces={handleFindNearbyPlaces}
                                         isFindingPlaces={isFindingPlaces}
                                         nearbyPlaces={nearbyPlaces}
                                         itinerary={itinerary}
                                     />
                                 )}
 
-                                {activeTab === 'rider' && (
-                                    <div className="h-full">
-                                        <RiderChecklist />
-                                    </div>
-                                )}
-
-                                {activeTab === 'route-optimizer' && (
-                                    <div className="h-full p-6 overflow-y-auto">
-                                        <TourRouteOptimizer />
-                                    </div>
-                                )}
-
-                                {activeTab === 'tech-rider' && (
-                                    <div className="h-full p-6 overflow-y-auto">
-                                        <TechnicalRiderGenerator />
-                                    </div>
-                                )}
-
-                                {activeTab === 'setlist' && (
+                                {activeTab === 'insights' && (
                                     <div className="h-full p-6 overflow-y-auto">
                                         <SetlistAnalytics />
-                                    </div>
-                                )}
-
-                                {activeTab === 'visa' && (
-                                    <div className="h-full p-6 overflow-y-auto">
-                                        <VisaChecklist />
                                     </div>
                                 )}
                             </motion.div>
@@ -470,10 +488,9 @@ const RoadManager: React.FC = () => {
                     </main>
                 </div>
 
-                {/* ── RIGHT PANEL — On The Road Info ─────────────────── */}
+                {/* ── RIGHT PANEL — Tour Info ─────────────────────────── */}
                 <aside className="hidden lg:flex w-72 2xl:w-80 flex-col border-l border-white/5 overflow-y-auto p-3 gap-3 flex-shrink-0">
                     <ItinerarySummaryPanel itinerary={itinerary} />
-                    <RiderQuickPanel onNavigate={() => setActiveTab('rider')} />
                     <EmergencyContactsPanel
                         contacts={emergencyContacts}
                         onSave={saveEmergencyContact}
@@ -517,29 +534,6 @@ function ItinerarySummaryPanel({ itinerary }: { itinerary: Itinerary | null }) {
                         <p className="text-[10px] text-gray-500">Total Distance</p>
                     </div>
                 </div>
-            </div>
-        </div>
-    );
-}
-
-
-function RiderQuickPanel({ onNavigate }: { onNavigate?: () => void }) {
-    return (
-        <div className="rounded-xl bg-white/[0.02] border border-white/5 p-3">
-            <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3 px-1">Rider Checklist</h3>
-            <div className="flex flex-col items-center justify-center py-3 text-center">
-                <CheckSquare size={14} className="text-gray-600 mb-1.5" />
-                <p className="text-[10px] text-gray-600">No active rider</p>
-                {onNavigate ? (
-                    <button
-                        onClick={onNavigate}
-                        className="text-[10px] text-yellow-500/70 hover:text-yellow-400 mt-1 transition-colors underline underline-offset-2"
-                    >
-                        Create one in Rider tab →
-                    </button>
-                ) : (
-                    <p className="text-[10px] text-gray-700 mt-0.5">Create a rider in the Rider tab</p>
-                )}
             </div>
         </div>
     );

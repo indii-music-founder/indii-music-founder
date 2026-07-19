@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { MarketplaceService } from './MarketplaceService';
 
 // --- Mocks ---
@@ -12,7 +12,9 @@ const {
     mockOrderBy,
     mockDoc,
     mockUpdateDoc,
-    mockGetDoc
+    mockGetDoc,
+    mockHttpsCallable,
+    mockCallable
 } = vi.hoisted(() => {
     return {
         mockAddDoc: vi.fn(),
@@ -23,7 +25,9 @@ const {
         mockOrderBy: vi.fn(),
         mockDoc: vi.fn(),
         mockUpdateDoc: vi.fn(),
-        mockGetDoc: vi.fn()
+        mockGetDoc: vi.fn(),
+        mockHttpsCallable: vi.fn(),
+        mockCallable: vi.fn()
     }
 });
 
@@ -57,6 +61,10 @@ vi.mock('firebase/firestore', () => ({
     Timestamp: {
         now: () => ({ toDate: () => new Date() })
     }
+}));
+
+vi.mock('firebase/functions', () => ({
+    httpsCallable: mockHttpsCallable.mockImplementation(() => mockCallable)
 }));
 
 // --- Test Suite ---
@@ -134,18 +142,53 @@ describe('MarketplaceService', () => {
     });
 
     describe('purchaseProduct', () => {
-        it('should throw error as payments are disabled', async () => {
-            mockGetDoc.mockResolvedValue({
-                exists: () => true,
-                data: () => ({ inventory: 10, price: 1000 })
+        const originalLocation = window.location;
+
+        beforeEach(() => {
+            delete (window as any).location;
+            window.location = { href: '', origin: 'https://indii.music', pathname: '/marketplace' } as any;
+        });
+
+        afterEach(() => {
+            window.location = originalLocation as any;
+        });
+
+        it('never trusts a client-supplied price — calls the server-authoritative checkout function and redirects', async () => {
+            mockCallable.mockResolvedValueOnce({
+                data: { checkoutUrl: 'https://checkout.stripe.com/session-1', sessionId: 'cs_1' }
             });
 
-            await expect(MarketplaceService.purchaseProduct(
-                'prod-1',
-                'buyer-1',
-                'seller-1',
-                1000
-            )).rejects.toThrow(); // Payment flow now goes through Stripe, may error differently
+            await MarketplaceService.purchaseProduct('prod-1', 'direct');
+
+            // ISSUE-977 fix: the client never sends a price/amount at all — the
+            // Cloud Function loads it from Firestore.
+            expect(mockHttpsCallable).toHaveBeenCalledWith(expect.anything(), 'createMarketplaceCheckout');
+            expect(mockCallable).toHaveBeenCalledWith(expect.objectContaining({ productId: 'prod-1', source: 'direct' }));
+            expect(mockCallable.mock.calls[0]![0]).not.toHaveProperty('amount');
+            expect(mockCallable.mock.calls[0]![0]).not.toHaveProperty('price');
+            expect(window.location.href).toBe('https://checkout.stripe.com/session-1');
+        });
+
+        it('throws and does not redirect when no checkout URL is returned', async () => {
+            mockCallable.mockResolvedValueOnce({ data: { checkoutUrl: '', sessionId: '' } });
+
+            await expect(MarketplaceService.purchaseProduct('prod-1')).rejects.toThrow();
+            expect(window.location.href).toBe('');
+        });
+    });
+
+    describe('hasCompletedPurchase', () => {
+        it('returns true only when a completed purchase record exists for that buyer+product', async () => {
+            mockGetDocs.mockResolvedValueOnce({ empty: false, docs: [{}] });
+            await expect(MarketplaceService.hasCompletedPurchase('buyer-1', 'prod-1')).resolves.toBe(true);
+            expect(mockWhere).toHaveBeenCalledWith('buyerId', '==', 'buyer-1');
+            expect(mockWhere).toHaveBeenCalledWith('productId', '==', 'prod-1');
+            expect(mockWhere).toHaveBeenCalledWith('status', '==', 'completed');
+        });
+
+        it('returns false when no matching purchase exists', async () => {
+            mockGetDocs.mockResolvedValueOnce({ empty: true, docs: [] });
+            await expect(MarketplaceService.hasCompletedPurchase('buyer-1', 'prod-1')).resolves.toBe(false);
         });
     });
 });

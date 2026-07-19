@@ -79,3 +79,7 @@ All rights analyses and contract reviews must match the following structured rep
 │   └── [Action 2]
 └── Legal Disclaimer: "I am an AI, not a lawyer. This is for informational purposes only and does not constitute legal advice."
 ```
+
+### Domain Data Retrieval (`list_domain_records`)
+- **CRITICAL:** Use `list_domain_records` to retrieve existing domain records (e.g., contracts, contract_analyses, legal_audit_ledger).
+- **NEVER CONFABULATE:** You must NOT invent, guess, or hallucinate records. If the user asks for their data, call the tool first.

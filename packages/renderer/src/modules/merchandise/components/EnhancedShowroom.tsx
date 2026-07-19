@@ -150,6 +150,7 @@ export default function EnhancedShowroom({ initialAsset = null, productId }: Enh
     const [isGeneratingMockup, setIsGeneratingMockup] = useState(false);
     const [isGeneratingVideo, setIsGeneratingVideo] = useState(false);
     const [currentVideoJobId, setCurrentVideoJobId] = useState<string | null>(null);
+    const [submittedVideoContext, setSubmittedVideoContext] = useState<{ projectId: string; motionPrompt: string } | null>(null);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
     const unsubscribeRef = useRef<(() => void) | null>(null);
@@ -181,22 +182,29 @@ export default function EnhancedShowroom({ initialAsset = null, productId }: Enh
                 setVideoResult(job.videoUrl);
                 setIsGeneratingVideo(false);
                 setCurrentVideoJobId(null);
+                setSubmittedVideoContext(null);
                 toast.success("Video generated successfully!");
 
-                // Save to history
-                if (currentProjectId) {
+                // Save to history using the immutable submitted context, not the live state
+                if (submittedVideoContext) {
                     addToHistory({
                         id: job.id,
                         url: job.videoUrl,
-                        prompt: `Merchandise Video: ${motionPrompt}`,
+                        prompt: `Merchandise Video: ${submittedVideoContext.motionPrompt}`,
                         type: 'video',
                         timestamp: Date.now(),
-                        projectId: currentProjectId
+                        projectId: submittedVideoContext.projectId
                     });
                 }
-            } else if (job.status === 'failed') {
+            } else if (job.status === 'completed') {
                 setIsGeneratingVideo(false);
                 setCurrentVideoJobId(null);
+                setSubmittedVideoContext(null);
+                toast.error('Video generation completed without a playable output. Please retry.');
+            } else if (job.status === 'failed' || job.status === 'cancelled') {
+                setIsGeneratingVideo(false);
+                setCurrentVideoJobId(null);
+                setSubmittedVideoContext(null);
                 toast.error(`Video generation failed: ${job.error || 'Unknown error'}`);
             }
         });
@@ -207,7 +215,7 @@ export default function EnhancedShowroom({ initialAsset = null, productId }: Enh
                 unsubscribeRef.current = null;
             }
         };
-    }, [currentVideoJobId, toast, motionPrompt, addToHistory, currentProjectId]);
+    }, [currentVideoJobId, submittedVideoContext, toast, addToHistory]);
 
     // Get current placement options based on product type
     const currentPlacements = placementOptions[productType] || placementOptions['t-shirt'] || [];
@@ -433,6 +441,12 @@ Style: Premium brand commercial, 4K cinematic quality.`;
 
             toast.dismiss(loadingId);
             toast.success("Video generation started! This may take a few minutes...");
+
+            // Capture immutable context at submission time — not live state
+            setSubmittedVideoContext({
+                projectId: currentProjectId || '',
+                motionPrompt
+            });
 
             // Set job ID to trigger subscription
             setCurrentVideoJobId(jobId);

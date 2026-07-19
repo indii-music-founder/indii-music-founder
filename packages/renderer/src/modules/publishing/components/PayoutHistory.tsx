@@ -34,6 +34,21 @@ export const PayoutHistory: React.FC<PayoutHistoryProps> = ({
     onViewDetails,
     className = ''
 }) => {
+    const exportCsv = () => {
+        const header = 'id,date,amount,currency,status,method';
+        const rows = payouts.map(p =>
+            [p.id, p.date, p.amount, p.currencyCode, p.status, p.method]
+                .map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')
+        );
+        const blob = new Blob([[header, ...rows].join('\n')], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'payout-history.csv';
+        a.click();
+        URL.revokeObjectURL(url);
+    };
+
     const statusConfig = {
         pending: { label: 'Pending', color: 'text-yellow-500', bg: 'bg-yellow-500/10', icon: <Clock size={12} /> },
         processing: { label: 'Processing', color: 'text-blue-500', bg: 'bg-blue-500/10', icon: <Clock size={12} /> },
@@ -51,7 +66,11 @@ export const PayoutHistory: React.FC<PayoutHistoryProps> = ({
                     </h3>
                     <p className="text-xs text-gray-500 font-medium mt-1">Settled payouts and pending transactions</p>
                 </div>
-                <button className="flex items-center gap-2 px-3 py-1.5 bg-gray-900 border border-gray-800 rounded-lg text-[10px] font-black text-gray-400 hover:text-white transition-all uppercase tracking-widest">
+                <button
+                    onClick={exportCsv}
+                    disabled={payouts.length === 0}
+                    className="flex items-center gap-2 px-3 py-1.5 bg-gray-900 border border-gray-800 rounded-lg text-[10px] font-black text-gray-400 hover:text-white transition-all uppercase tracking-widest disabled:opacity-40 disabled:cursor-not-allowed"
+                >
                     <Download size={14} />
                     Export CSV
                 </button>
@@ -81,8 +100,8 @@ export const PayoutHistory: React.FC<PayoutHistoryProps> = ({
                                 initial={{ opacity: 0, x: -10 }}
                                 animate={{ opacity: 1, x: 0 }}
                                 transition={{ delay: i * 0.05 }}
-                                className="group p-5 hover:bg-gray-900/40 transition-all cursor-pointer flex items-center justify-between"
-                                onClick={() => onViewDetails?.(payout.id)}
+                                className={`group p-5 hover:bg-gray-900/40 transition-all flex items-center justify-between ${onViewDetails ? 'cursor-pointer' : ''}`}
+                                onClick={onViewDetails ? () => onViewDetails(payout.id) : undefined}
                             >
                                 <div className="flex items-center gap-4">
                                     <div className={`w-12 h-12 rounded-2xl bg-gray-900 border border-gray-800 flex items-center justify-center text-gray-500 group-hover:text-white transition-all group-hover:border-gray-700`}>
@@ -92,7 +111,7 @@ export const PayoutHistory: React.FC<PayoutHistoryProps> = ({
                                         <div className="flex items-center gap-2 mb-1">
                                             <span className="text-lg font-black text-white tracking-tighter">
                                                 {payout.currencyCode === 'USD' ? '$' : payout.currencyCode}
-                                                {payout.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                                {payout.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                                             </span>
                                             <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded-md ${statusConfig[payout.status].bg} ${statusConfig[payout.status].color} border border-current opacity-20 group-hover:opacity-100 transition-opacity`}>
                                                 {statusConfig[payout.status].icon}
@@ -100,7 +119,7 @@ export const PayoutHistory: React.FC<PayoutHistoryProps> = ({
                                             </div>
                                         </div>
                                         <p className="text-xs font-bold text-gray-500 uppercase tracking-tighter">
-                                            {new Date(payout.date).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })} • {payout.method}
+                                            {new Date(payout.date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })} • {payout.method}
                                         </p>
                                     </div>
                                 </div>
@@ -132,11 +151,11 @@ export const PayoutHistory: React.FC<PayoutHistoryProps> = ({
 
             <div className="p-4 bg-gray-900/30 border-t border-gray-800 flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                    <ArrowUpRight size={14} className="text-purple-500" />
+                    <ArrowUpRight size={14} className="text-green-500" />
                     <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Total Lifetime Earnings</span>
                 </div>
                 <span className="text-sm font-black text-white tracking-tighter">
-                    ${payouts.reduce((acc, curr) => acc + curr.amount, 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                    ${payouts.reduce((acc, curr) => acc + curr.amount, 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
                 </span>
             </div>
         </div>

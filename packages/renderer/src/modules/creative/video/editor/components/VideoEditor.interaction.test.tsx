@@ -27,6 +27,13 @@ vi.mock('firebase/functions', () => ({
     getFunctions: vi.fn()
 }));
 
+vi.mock('../utils/mediaMetadata', () => ({
+    resolveMediaDurationSeconds: vi.fn().mockResolvedValue(10),
+    getMediaDurationFromFile: vi.fn().mockResolvedValue(0),
+    durationSecondsToFrames: (durationSeconds: number, fps: number, fallback = 150) =>
+        durationSeconds > 0 ? Math.round(durationSeconds * fps) : fallback,
+}));
+
 vi.mock('@/services/firebase', () => ({
     functions: {},
     functionsWest1: {},
@@ -67,7 +74,7 @@ vi.mock('./VideoEditorSidebar', () => ({
             <div
                 data-testid="draggable-asset"
                 draggable
-                onDragStart={(e) => onLibraryDragStart(e, { id: 'asset1', type: 'video', url: 'vid.mp4' })}
+                onDragStart={(e) => onLibraryDragStart(e, { id: 'asset1', type: 'video', url: 'https://example.com/vid.mp4' })}
             >
                 Asset 1
             </div>
@@ -168,25 +175,41 @@ describe('VideoEditor Integration', () => {
         });
     });
 
-    it('handles drag and drop from library', () => {
+    it('handles drag and drop from library', async () => {
         render(<VideoEditor />);
 
         // 1. Start Drag on Sidebar Item
         const asset = screen.getByTestId('draggable-asset');
         const dataTransfer = { setData: vi.fn(), getData: vi.fn(), dropEffect: 'none' };
 
-        // Mock getData to return what setData set (simplified)
-        dataTransfer.getData.mockReturnValue(JSON.stringify({ id: 'asset1', type: 'video', url: 'vid.mp4' }));
-
         fireEvent.dragStart(asset, { dataTransfer });
-        expect(dataTransfer.setData).toHaveBeenCalledWith('application/json', expect.stringContaining('asset1'));
+
+        // The handler uses writeCreativeAssetDrag, which sets multiple formats
+        expect(dataTransfer.setData).toHaveBeenCalledWith(
+            'application/x-indii-creative-asset+json',
+            JSON.stringify({
+                version: 1,
+                kind: 'creative-asset',
+                source: 'editor-library',
+                asset: { id: 'asset1', type: 'video', url: 'https://example.com/vid.mp4', name: 'Untitled video', prompt: '' }
+            })
+        );
+
+        // Mock getData to return exactly what setData produced, so the drop
+        // handler parses the real serialized contract, not a stale fixture.
+        dataTransfer.getData.mockImplementation((format: string) => {
+            if (format === 'application/x-indii-creative-asset+json') {
+                return JSON.stringify({
+                    version: 1,
+                    kind: 'creative-asset',
+                    source: 'editor-library',
+                    asset: { id: 'asset1', type: 'video', url: 'https://example.com/vid.mp4', name: 'Untitled video', prompt: '' }
+                });
+            }
+            return '';
+        });
 
         // 2. Drop on Timeline Container (VideoEditor has the drop handler on the bottom div)
-        // We need to target the container that has onDrop.
-        // In VideoEditor.tsx, it's the div wrapping VideoTimeline.
-        // We can find it by its class or structure, or add a testid to it in the source if needed.
-        // For now, let's try to find it by generic queries or structure.
-        // It's the parent of video-timeline.
         const timelineWrapper = screen.getByTestId('video-timeline').parentElement;
 
         fireEvent.drop(timelineWrapper!, {
@@ -195,10 +218,13 @@ describe('VideoEditor Integration', () => {
             currentTarget: { getBoundingClientRect: () => ({ left: 0 }) }
         });
 
-        expect(mockAddClip).toHaveBeenCalledWith(expect.objectContaining({
-            src: 'vid.mp4',
-            type: 'video'
-        }));
+        // handleDrop resolves duration asynchronously before calling addClip.
+        await waitFor(() => {
+            expect(mockAddClip).toHaveBeenCalledWith(expect.objectContaining({
+                src: 'https://example.com/vid.mp4',
+                type: 'video'
+            }));
+        });
         expect(mockToast.success).toHaveBeenCalledWith('Asset added to timeline');
     });
 });

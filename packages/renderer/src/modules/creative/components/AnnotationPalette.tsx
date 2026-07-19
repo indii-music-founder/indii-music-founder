@@ -22,12 +22,6 @@ export default function AnnotationPalette({
 
     return (
         <div className={`flex ${isVertical ? 'flex-col' : 'flex-row'} gap-2 items-center bg-transparent border-0 h-auto w-auto`}>
-            <div className={isVertical ? 'mb-1' : 'mr-2'}>
-                <div className="w-9 h-9 rounded-xl bg-linear-to-br from-yellow-400 to-purple-600 flex items-center justify-center shadow-lg">
-                    <span className="text-[10px] font-bold text-white">ID</span>
-                </div>
-            </div>
-
             <div className={`flex ${isVertical ? 'flex-col' : 'flex-row'} gap-2 items-center`}>
                 {STUDIO_COLORS.map((color) => {
                     const hasDefinition = !!colorDefinitions[color.id];

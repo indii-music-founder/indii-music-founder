@@ -34,14 +34,14 @@ export const RiderChecklist: React.FC = () => {
             animate={{ opacity: 1, scale: 1 }}
         >
             <Card className="bg-[#161b22] border-gray-800 h-full relative overflow-hidden flex flex-col shadow-2xl">
-                <div className="absolute top-0 right-0 w-64 h-64 bg-purple-500/5 blur-3xl rounded-full -mr-20 -mt-20 pointer-events-none" />
+                <div className="absolute top-0 right-0 w-64 h-64 bg-green-500/5 blur-3xl rounded-full -mr-20 -mt-20 pointer-events-none" />
 
                 {/* Header */}
                 <div className="z-10 border-b border-gray-800">
                     <CardHeader className="flex flex-row items-end justify-between pb-4">
                         <div>
                             <CardTitle className="text-xl font-black text-white flex items-center gap-3 uppercase tracking-tighter italic">
-                                <ListTodo className="text-purple-500" size={28} />
+                                <ListTodo className="text-green-500" size={28} />
                                 Hospitality Rider
                             </CardTitle>
                             <p className="text-xs text-gray-500 font-mono uppercase tracking-widest mt-1 ml-10">Backstage Inventory</p>
@@ -66,12 +66,12 @@ export const RiderChecklist: React.FC = () => {
                                 onChange={(e) => setNewItemLabel(e.target.value)}
                                 placeholder={t('touring.hints.add_requirement')}
                                 aria-label="New item name"
-                                className="flex-1 bg-bg-dark border border-gray-700 rounded-lg px-4 py-3 text-sm text-white focus:border-purple-500 focus:ring-1 focus:ring-purple-500/50 outline-none placeholder:text-gray-600 transition-all font-mono"
+                                className="flex-1 bg-bg-dark border border-gray-700 rounded-lg px-4 py-3 text-sm text-white focus:border-green-500 focus:ring-1 focus:ring-green-500/50 outline-none placeholder:text-gray-600 transition-all font-mono"
                             />
                             <select
                                 value={newItemCategory}
                                 onChange={(e) => setNewItemCategory(e.target.value as RiderItem['category'])}
-                                className="bg-bg-dark border border-gray-700 rounded-lg px-3 py-3 text-xs text-gray-400 focus:border-purple-500 outline-none cursor-pointer uppercase font-bold tracking-wider"
+                                className="bg-bg-dark border border-gray-700 rounded-lg px-3 py-3 text-xs text-gray-400 focus:border-green-500 outline-none cursor-pointer uppercase font-bold tracking-wider"
                                 aria-label="Category"
                             >
                                 <option value="essential">Essential</option>
@@ -81,7 +81,7 @@ export const RiderChecklist: React.FC = () => {
                             <Button
                                 type="submit"
                                 disabled={!newItemLabel.trim()}
-                                className="p-3 bg-purple-600 hover:bg-purple-500 text-white rounded-lg shadow-[0_0_15px_rgba(147,51,234,0.3)] h-auto"
+                                className="p-3 bg-green-600 hover:bg-green-500 text-white rounded-lg shadow-[0_0_15px_rgba(147,51,234,0.3)] h-auto"
                                 aria-label="Add Item"
                             >
                                 <Plus size={18} />
@@ -92,7 +92,7 @@ export const RiderChecklist: React.FC = () => {
                     <div className="space-y-2 flex-1 overflow-y-auto custom-scrollbar pr-1">
                         {loading ? (
                             <div className="flex items-center justify-center py-12 flex-col gap-3">
-                                <Loader2 className="animate-spin text-purple-500" size={32} />
+                                <Loader2 className="animate-spin text-green-500" size={32} />
                                 <span className="text-xs text-gray-600 uppercase tracking-widest animate-pulse">Syncing Inventory...</span>
                             </div>
                         ) : items.length === 0 ? (
@@ -118,16 +118,16 @@ export const RiderChecklist: React.FC = () => {
                                                 toggleItem(item.id, !item.completed);
                                             }
                                         }}
-                                        className={`group flex items-center gap-4 p-3 rounded-lg border cursor-pointer transition-all duration-200 relative overflow-hidden focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[#161b22] outline-none ${item.completed
+                                        className={`group flex items-center gap-4 p-3 rounded-lg border cursor-pointer transition-all duration-200 relative overflow-hidden focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[#161b22] outline-none ${item.completed
                                             ? 'bg-green-950/10 border-green-900/30 opacity-60'
-                                            : 'bg-bg-dark border-gray-800 hover:border-purple-500/50 hover:shadow-[0_4px_12px_rgba(0,0,0,0.2)]'
+                                            : 'bg-bg-dark border-gray-800 hover:border-green-500/50 hover:shadow-[0_4px_12px_rgba(0,0,0,0.2)]'
                                             }`}
                                     >
                                         {/* Checkbox Visual */}
                                         <div className="relative w-5 h-5 flex-shrink-0">
                                             <div className={`absolute inset-0 rounded flex items-center justify-center border transition-all ${item.completed
                                                 ? 'bg-green-500 border-green-500'
-                                                : 'bg-transparent border-gray-600 group-hover:border-purple-400 group-focus-visible:border-purple-400'
+                                                : 'bg-transparent border-gray-600 group-hover:border-green-400 group-focus-visible:border-green-400'
                                                 }`}>
                                                 {item.completed && <Check className="text-black" size={12} strokeWidth={3} />}
                                             </div>

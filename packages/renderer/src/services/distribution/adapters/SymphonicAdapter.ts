@@ -80,18 +80,44 @@ export class SymphonicAdapter extends BaseDistributorAdapter {
                     metadata, INGESTION_CONFIG.SYSTEM_IDENTIFIER, 'symphonic', assets
                 );
 
-                if (ernResult.success && ernResult.xml && window.electronAPI.distribution?.stageRelease) {
-                    const stagingResult = await window.electronAPI.distribution.stageRelease(
-                        folderReleaseId,
-                        [{ type: 'content', data: ernResult.xml, name: 'batch.xml' }]
-                    );
-
-                    if (stagingResult.success && stagingResult.packagePath) {
-                        // Item 213: Execute real SFTP delivery via base class uploadBundle
-                        await this.uploadBundle(stagingResult.packagePath, `/deliveries/${folderReleaseId}`);
-                        logger.info(`[Symphonic] SFTP delivery complete for ${folderReleaseId}`);
-                    }
+                // success:true requires every delivery step to be confirmed (ISSUE-658):
+                // a skipped ERN, staging, or upload step must never report processing.
+                if (!ernResult.success || !ernResult.xml) {
+                    return {
+                        success: false,
+                        status: 'failed',
+                        releaseId,
+                        errors: [{ code: 'ERN_FAILED', message: ernResult.error || 'ERN generation failed — nothing was delivered to Symphonic.' }]
+                    };
                 }
+
+                if (!window.electronAPI.distribution?.stageRelease) {
+                    return {
+                        success: false,
+                        status: 'failed',
+                        releaseId,
+                        errors: [{ code: 'STAGING_UNAVAILABLE', message: 'Release staging is unavailable in this environment — nothing was delivered to Symphonic.' }]
+                    };
+                }
+
+                const stagingResult = await window.electronAPI.distribution.stageRelease(
+                    folderReleaseId,
+                    [{ type: 'content', data: ernResult.xml, name: 'batch.xml' }]
+                );
+
+                if (!stagingResult.success || !stagingResult.packagePath) {
+                    return {
+                        success: false,
+                        status: 'failed',
+                        releaseId,
+                        errors: [{ code: 'STAGING_FAILED', message: 'Failed to stage the release package — nothing was delivered to Symphonic.' }]
+                    };
+                }
+
+                // Item 213: Execute real SFTP delivery via base class uploadBundle
+                // (throws on failure, which the outer catch reports as failed)
+                await this.uploadBundle(stagingResult.packagePath, `/deliveries/${folderReleaseId}`);
+                logger.info(`[Symphonic] SFTP delivery complete for ${folderReleaseId}`);
 
                 return {
                     success: true,
@@ -148,20 +174,21 @@ export class SymphonicAdapter extends BaseDistributorAdapter {
         };
     }
 
-    async getReleaseStatus(_releaseId: string): Promise<ReleaseStatus> {
-        return 'in_review';
-    }
+
 
     async takedownRelease(releaseId: string): Promise<ReleaseResult> {
         const isConnected = await this.isConnected();
         if (!isConnected) {
             throw new Error('Not connected to Symphonic');
         }
-        logger.info(`[Symphonic] Issuing Takedown for ${releaseId}`);
         return {
-            success: true,
-            status: 'takedown_requested',
+            success: false,
+            status: 'ready_for_manual_submission',
             distributorReleaseId: releaseId,
+            errors: [{
+                code: 'TAKEDOWN_MANUAL_REQUIRED',
+                message: 'Symphonic takedown automation is not wired. Submit the takedown manually through the Symphonic dashboard or a confirmed SFTP takedown package.',
+            }],
         };
     }
 
@@ -199,22 +226,172 @@ export class SymphonicAdapter extends BaseDistributorAdapter {
         return await earningsService.getAllEarnings(this.id, period);
     }
 
+    async getReleaseStatus(releaseId: string): Promise<ReleaseStatus> {
+        if (!this.credentials?.sftpHost || !window.electronAPI?.sftp) {
+            return 'in_review';
+        }
+
+        try {
+            const result = await window.electronAPI.sftp.listDirectory('/status/');
+            if (result.success && result.files) {
+                const statusFile = result.files.find((f: { name: string }) => f.name.includes(releaseId));
+                if (statusFile) {
+                    if (statusFile.name.includes('DELIVERED') || statusFile.name.includes('LIVE')) return 'live';
+                    if (statusFile.name.includes('ERROR') || statusFile.name.includes('FAILED')) return 'failed';
+                    return 'processing';
+                }
+            }
+        } catch (e) {
+            logger.warn('[Symphonic] Status check failed:', e);
+        }
+
+        return 'in_review';
+    }
+
     async validateMetadata(metadata: ExtendedGoldenMetadata): Promise<ValidationResult> {
         const errors: ValidationResult['errors'] = [];
-        if (!metadata.isrc) {
-            errors.push({ code: 'MISSING_ISRC', message: 'Symphonic requires ISRC', field: 'isrc', severity: 'error' });
+        const req = this.requirements.metadata;
+
+        if (req.requiredFields) {
+            for (const field of req.requiredFields) {
+                let val = '';
+                if (field === 'trackTitle' || field === 'title') val = metadata.trackTitle || '';
+                else if (field === 'artistName' || field === 'artist') val = metadata.artistName || '';
+                else if (field === 'genre') val = metadata.genre || '';
+                else if (field === 'labelName' || field === 'label') val = metadata.labelName || '';
+
+                if (!val) {
+                    errors.push({
+                        code: `MISSING_${field.toUpperCase()}`,
+                        message: `${this.name} requires ${field}`,
+                        field,
+                        severity: 'error'
+                    });
+                }
+            }
         }
-        if (!metadata.upc) {
-            errors.push({ code: 'MISSING_UPC', message: 'Symphonic requires UPC', field: 'upc', severity: 'error' });
+
+        if (req.maxTitleLength && metadata.trackTitle && metadata.trackTitle.length > req.maxTitleLength) {
+            errors.push({
+                code: 'TITLE_TOO_LONG',
+                message: `Title must be ${req.maxTitleLength} characters or less`,
+                field: 'trackTitle',
+                severity: 'error'
+            });
         }
+        if (req.maxArtistNameLength && metadata.artistName && metadata.artistName.length > req.maxArtistNameLength) {
+            errors.push({
+                code: 'ARTIST_TOO_LONG',
+                message: `Artist name must be ${req.maxArtistNameLength} characters or less`,
+                field: 'artistName',
+                severity: 'error'
+            });
+        }
+
+        if (req.isrcRequired && !metadata.isrc) {
+            errors.push({ code: 'MISSING_ISRC', message: 'ISRC is required for Symphonic', field: 'isrc', severity: 'error' });
+        }
+        if (req.upcRequired && !metadata.upc) {
+            errors.push({ code: 'MISSING_UPC', message: 'UPC is required for Symphonic', field: 'upc', severity: 'error' });
+        }
+        if (req.genreRequired && !metadata.genre) {
+            errors.push({ code: 'MISSING_GENRE', message: 'Genre is required for Symphonic', field: 'genre', severity: 'error' });
+        }
+        if (req.languageRequired && !metadata.language) {
+            errors.push({ code: 'MISSING_LANGUAGE', message: 'Language is required for Symphonic', field: 'language', severity: 'error' });
+        }
+
         return {
             isValid: errors.length === 0,
             errors,
-            warnings: [],
+            warnings: []
         };
     }
 
-    async validateAssets(_assets: ReleaseAssets): Promise<ValidationResult> {
-        return { isValid: true, errors: [], warnings: [] };
+    async validateAssets(assets: ReleaseAssets): Promise<ValidationResult> {
+        const errors: ValidationResult['errors'] = [];
+        const cReq = this.requirements.coverArt;
+        const aReq = this.requirements.audio;
+
+        if (assets.coverArt) {
+            const { width, height, sizeBytes, url } = assets.coverArt;
+            if (width < cReq.minWidth || height < cReq.minHeight) {
+                errors.push({
+                    code: 'COVER_TOO_SMALL',
+                    message: `Cover art must be at least ${cReq.minWidth}x${cReq.minHeight}px`,
+                    field: 'coverArt',
+                    severity: 'error'
+                });
+            }
+            if (cReq.maxWidth && cReq.maxHeight && (width > cReq.maxWidth || height > cReq.maxHeight)) {
+                errors.push({
+                    code: 'COVER_TOO_LARGE',
+                    message: `Cover art must be at most ${cReq.maxWidth}x${cReq.maxHeight}px`,
+                    field: 'coverArt',
+                    severity: 'error'
+                });
+            }
+            if (cReq.maxSizeBytes && sizeBytes > cReq.maxSizeBytes) {
+                errors.push({
+                    code: 'COVER_SIZE_LIMIT',
+                    message: `Cover art size is too large (max ${cReq.maxSizeBytes / (1024 * 1024)}MB)`,
+                    field: 'coverArt',
+                    severity: 'error'
+                });
+            }
+            if (cReq.allowedFormats) {
+                const ext = url.split('.').pop()?.toLowerCase();
+                if (!ext || !(cReq.allowedFormats as string[]).includes(ext)) {
+                    errors.push({
+                        code: 'COVER_FORMAT_INVALID',
+                        message: `Cover art format must be one of: ${cReq.allowedFormats.join(', ')}`,
+                        field: 'coverArt',
+                        severity: 'error'
+                    });
+                }
+            }
+        } else {
+            errors.push({ code: 'MISSING_COVER_ART', message: 'Cover art is required', field: 'coverArt', severity: 'error' });
+        }
+
+        const audioFiles = assets.audioFiles || (assets.audioFile ? [assets.audioFile] : []);
+        if (audioFiles.length > 0) {
+            audioFiles.forEach((file, index) => {
+                const { url, sampleRate, bitDepth } = file;
+                const ext = url.split('.').pop()?.toLowerCase();
+                if (aReq.allowedFormats && ext && !aReq.allowedFormats.includes(ext)) {
+                    errors.push({
+                        code: 'AUDIO_FORMAT_INVALID',
+                        message: `Track ${index + 1} format must be one of: ${aReq.allowedFormats.join(', ')}`,
+                        field: `audioFiles[${index}]`,
+                        severity: 'error'
+                    });
+                }
+                if (aReq.minSampleRate && sampleRate && sampleRate < aReq.minSampleRate) {
+                    errors.push({
+                        code: 'AUDIO_SAMPLE_RATE_LOW',
+                        message: `Track ${index + 1} sample rate must be at least ${aReq.minSampleRate}Hz`,
+                        field: `audioFiles[${index}]`,
+                        severity: 'error'
+                    });
+                }
+                if (aReq.minBitDepth && bitDepth && bitDepth < aReq.minBitDepth) {
+                    errors.push({
+                        code: 'AUDIO_BIT_DEPTH_LOW',
+                        message: `Track ${index + 1} bit depth must be at least ${aReq.minBitDepth} bit`,
+                        field: `audioFiles[${index}]`,
+                        severity: 'error'
+                    });
+                }
+            });
+        } else {
+            errors.push({ code: 'MISSING_AUDIO', message: 'Audio asset is required', field: 'audioFile', severity: 'error' });
+        }
+
+        return {
+            isValid: errors.length === 0,
+            errors,
+            warnings: []
+        };
     }
 }

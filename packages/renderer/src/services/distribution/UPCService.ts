@@ -82,17 +82,24 @@ export class UPCService {
         return response.id;
     }
 
-    /** Look up a registry record by UPC string. Returns null if not found. */
+    /**
+     * Look up a registry record by UPC string. Returns null if not found.
+     * Owner-scoped: registry reads are restricted to the caller's own rows (ISSUE-888).
+     */
     async getByUPC(upc: string): Promise<UPCRegistryEntry | null> {
-        const q = query(this.registryRef, where('upc', '==', upc), limit(1));
+        const userId = auth.currentUser?.uid;
+        if (!userId) return null;
+        const q = query(this.registryRef, where('userId', '==', userId), where('upc', '==', upc), limit(1));
         const snap = await getDocs(q);
         if (snap.empty) return null;
         return { id: snap.docs[0]!.id, ...snap.docs[0]!.data() } as UPCRegistryEntry;
     }
 
-    /** Look up the UPC assigned to a specific release. Returns null if not assigned. */
+    /** Look up the caller's UPC for a specific release (owner-scoped, ISSUE-888). */
     async getByRelease(releaseId: string): Promise<UPCRegistryEntry | null> {
-        const q = query(this.registryRef, where('releaseId', '==', releaseId), limit(1));
+        const userId = auth.currentUser?.uid;
+        if (!userId) return null;
+        const q = query(this.registryRef, where('userId', '==', userId), where('releaseId', '==', releaseId), limit(1));
         const snap = await getDocs(q);
         if (snap.empty) return null;
         return { id: snap.docs[0]!.id, ...snap.docs[0]!.data() } as UPCRegistryEntry;

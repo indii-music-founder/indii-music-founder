@@ -67,6 +67,8 @@ function getGitState() {
 }
 
 function getCronExpression(minutes) {
+    if (minutes === 5) return '*/5 * * * *';
+    if (minutes === 10) return '*/10 * * * *';
     if (minutes === 15) return '*/15 * * * *';
     if (minutes === 30) return '*/30 * * * *';
     if (minutes === 60) return '0 * * * *';
@@ -76,19 +78,15 @@ function getCronExpression(minutes) {
 }
 
 function getNextInterval(consecutiveNoChanges) {
-    if (consecutiveNoChanges === 0) return 15;
-    if (consecutiveNoChanges === 1) return 30;
-    if (consecutiveNoChanges === 2) return 60;
-    if (consecutiveNoChanges === 3) return 120;
-    if (consecutiveNoChanges === 4) return 240;
-    return 480; // 8 hours maximum
+    if (consecutiveNoChanges === 0) return 5;
+    return 10;
 }
 
 async function executeSync() {
     logMessage('--- Starting Git Monitor Sync Cycle ---');
     
     let state = {
-        currentIntervalMinutes: 15,
+        currentIntervalMinutes: 5,
         currentTaskId: "",
         consecutiveNoChangesRuns: 0,
         lastCheckTime: new Date().toISOString()
@@ -155,8 +153,7 @@ async function executeSync() {
             runCommand('npm run typecheck');
 
             logMessage('Running tests validation...');
-            // Running specific workspace or fast sharded validation to prevent long-running timeouts
-            runCommand('npm test -- --run');
+            runCommand('NODE_OPTIONS="--max-old-space-size=4096" npm test -- --run --pool=threads');
             
             logMessage('Validation successful. Pushing local commits to origin...');
             runCommand(`git push origin ${branchName}`);
@@ -205,6 +202,74 @@ async function executeSync() {
     state.consecutiveNoChangesRuns = consecutiveNoChanges;
     state.lastCheckTime = new Date().toISOString();
     fs.writeFileSync(STATE_FILE_PATH, JSON.stringify(state, null, 2));
+
+    function checkGitHubActions() {
+        logMessage('Checking GitHub Actions for failed workflows...');
+        try {
+            // Check authentication cleanly before proceeding
+            let authSuccess = false;
+            try {
+                execSync('gh auth status', { stdio: 'ignore' });
+                authSuccess = true;
+            } catch (authError) {
+                if (process.env.GITHUB_TOKEN) {
+                    logMessage('gh auth status failed with GITHUB_TOKEN set. Retrying with cleared GITHUB_TOKEN...');
+                    const originalToken = process.env.GITHUB_TOKEN;
+                    delete process.env.GITHUB_TOKEN;
+                    try {
+                        execSync('gh auth status', { stdio: 'ignore' });
+                        authSuccess = true;
+                    } catch (retryError) {
+                        process.env.GITHUB_TOKEN = originalToken; // restore if it still fails
+                    }
+                }
+            }
+
+            if (!authSuccess) {
+                logMessage('Warning: GitHub CLI (gh) is not authenticated or not installed. Run `gh auth login` to enable CI pipeline monitoring. Skipping.');
+                return;
+            }
+
+            const ghOutput = runCommand('gh run list --limit 10 --json status,conclusion,name,url,createdAt,headBranch,databaseId');
+            const runs = JSON.parse(ghOutput);
+            
+            const failedRuns = runs.filter(r => r.conclusion === 'failure');
+            
+            if (failedRuns.length > 0) {
+                const issuesPath = path.resolve('.agent/test_ledger/OPEN_ISSUES.md');
+                const issuesContent = fs.existsSync(issuesPath) ? fs.readFileSync(issuesPath, 'utf-8') : '';
+                let appended = false;
+                
+                for (const run of failedRuns) {
+                    if (!issuesContent.includes(run.url)) {
+                        logMessage(`Found newly failed CI pipeline: ${run.name} (${run.url}). Logging to OPEN_ISSUES.md...`);
+                        const issueEntry = `\n### ISSUE-CI-${run.databaseId}: CI Pipeline Failure (${run.name})\n- **Status:** ⏳ OPEN\n- **Severity:** 🔴 HIGH\n- **Module:** CI/CD\n- **Summary:** The GitHub Actions workflow \`${run.name}\` failed on branch \`${run.headBranch}\`.\n- **Link:** [View Logs](${run.url})\n- **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.\n`;
+                        fs.appendFileSync(issuesPath, issueEntry);
+                        appended = true;
+                    }
+                }
+                
+                // ISSUE-OPUS-002 Fix: Immediately commit the appended CI issues to prevent silent clobbering.
+                if (appended) {
+                    try {
+                        logMessage('Immediately committing new CI issues to OPEN_ISSUES.md to prevent concurrent write loss...');
+                        runCommand(`git add "${issuesPath}"`);
+                        runCommand(`git commit -m "test(ledger): log ISSUE-CI pipeline failures"`);
+                        logMessage('CI issues committed successfully.');
+                    } catch (e) {
+                        logMessage(`Warning: Could not auto-commit CI issues. Error: ${e.message}`);
+                    }
+                }
+            } else {
+                logMessage('No recent failed workflows found.');
+            }
+        } catch (e) {
+            logMessage(`Warning: Could not check GitHub Actions. Error: ${e.message}`);
+        }
+    }
+
+    // Run the GitHub actions check
+    checkGitHubActions();
 
     logMessage('--- Git Monitor Sync Cycle Complete ---');
     console.log(JSON.stringify(result, null, 2));

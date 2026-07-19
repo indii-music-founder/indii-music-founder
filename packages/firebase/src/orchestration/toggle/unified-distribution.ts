@@ -21,38 +21,44 @@ export const triggerUnifiedDistribution = onCall(async (request) => {
         // 1. Prepare assets (DDEX Generation)
         const ddexPayload = await compileDDEXRelease(releaseId);
 
-        // 2. Execute concurrent distribution using Promise.all
-        // This is where we break away from piecemeal sequential integrations
-        console.log(`Executing concurrent distribution for ${releaseId}...`);
+        // 2. Execute concurrent distribution staging using Promise.all
+        // Staged for Delivery: XML payload generated and saved to Firebase Storage. 
+        // Final SFTP/API dispatch to DSPs is pending upstream integration.
+        console.log(`Staging concurrent distribution payloads for ${releaseId}...`);
         
         const distributionTasks = [
-            withCircuitBreaker('SpotifyDispatch', () => dispatchToSpotify(ddexPayload, releaseId)),
-            withCircuitBreaker('AppleMusicDispatch', () => dispatchToAppleMusic(ddexPayload, releaseId)),
-            withCircuitBreaker('TidalDispatch', () => dispatchToTidal(ddexPayload, releaseId)),
-            withCircuitBreaker('PRODispatch', () => dispatchToPerformanceRightsOrganizations(releaseId))
+            withCircuitBreaker('SpotifyStage', () => stageForSpotify(ddexPayload, releaseId)),
+            withCircuitBreaker('AppleMusicStage', () => stageForAppleMusic(ddexPayload, releaseId)),
+            withCircuitBreaker('TidalStage', () => stageForTidal(ddexPayload, releaseId)),
+            withCircuitBreaker('PROStage', () => stageForPerformanceRightsOrganizations(releaseId))
         ];
 
         const results = await Promise.allSettled(distributionTasks);
 
         const failures = results.filter(r => r.status === 'rejected');
         if (failures.length > 0) {
-            console.error('Some distribution targets failed:', failures);
-            await fsm.transition('FAILED', 'Partial distribution failure.');
+            console.error('Some distribution staging targets failed:', failures);
+            await fsm.transition('FAILED', 'Partial distribution staging failure.');
             return { success: false, status: 'PARTIAL_FAILURE' };
         }
 
-        await fsm.transition('MONITORING');
-        return { success: true, status: 'DISTRIBUTED' };
+        // ISSUE-860: only XML was staged to Storage — nothing was delivered to
+        // any DSP, so MONITORING (which implies awaiting DSP acknowledgement)
+        // would be a lie. Stay in PACKAGE_STAGED until a real delivery job runs.
+        await fsm.transition('PACKAGE_STAGED');
+        return { success: true, status: 'PACKAGE_STAGED', delivered: false };
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('Unified Distribution Error:', error);
-        await fsm.transition('FAILED', error.message);
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        await fsm.transition('FAILED', errorMessage);
         throw new HttpsError('internal', 'Unified distribution failed.');
     }
 });
 
-// Real XML upload implementation to Firebase Storage
-async function dispatchToSpotify(payload: string, releaseId: string) {
+// Staged for Delivery: XML payload generated and saved to Firebase Storage.
+// Final SFTP/API dispatch to DSPs is pending upstream integration.
+async function stageForSpotify(payload: string, releaseId: string) {
     const bucket = getStorage().bucket();
     const destFile = bucket.file(`distribution/packages/${releaseId}/spotify.xml`);
     await destFile.save(payload, {
@@ -61,28 +67,28 @@ async function dispatchToSpotify(payload: string, releaseId: string) {
             cacheControl: 'public, max-age=31536000',
         }
     });
-    return 'spotify_uploaded';
+    return 'spotify_staged';
 }
 
-async function dispatchToAppleMusic(payload: string, releaseId: string) {
+async function stageForAppleMusic(payload: string, releaseId: string) {
     const bucket = getStorage().bucket();
     const destFile = bucket.file(`distribution/packages/${releaseId}/apple.xml`);
     await destFile.save(payload, {
         contentType: 'application/xml',
     });
-    return 'apple_uploaded';
+    return 'apple_staged';
 }
 
-async function dispatchToTidal(payload: string, releaseId: string) {
+async function stageForTidal(payload: string, releaseId: string) {
     const bucket = getStorage().bucket();
     const destFile = bucket.file(`distribution/packages/${releaseId}/tidal.xml`);
     await destFile.save(payload, {
         contentType: 'application/xml',
     });
-    return 'tidal_uploaded';
+    return 'tidal_staged';
 }
 
-async function dispatchToPerformanceRightsOrganizations(releaseId: string) {
+async function stageForPerformanceRightsOrganizations(releaseId: string) {
     await dispatchPROPayload(releaseId);
-    return 'pro_dispatched';
+    return 'pro_staged';
 }
