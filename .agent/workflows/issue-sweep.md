@@ -1,6 +1,6 @@
 ---
 description: >-
-  End-to-end issue sweep — branch uncommitted work → fix all CodeRabbit and Sentry issues →
+  End-to-end issue sweep — synchronize main → fix all CodeRabbit and Sentry issues →
   validate → generate the next Regression Gauntlet mega test plan → execute it via /mega-test →
   report. A complete closed-loop quality cycle. Run after any significant block of work.
 ---
@@ -33,7 +33,7 @@ description: >-
 
 ---
 
-## Phase 1: Capture & Branch Uncommitted Work
+## Phase 1: Synchronize Main and Bound the Work
 
 ### Step 1 — Assess the working tree
 
@@ -44,16 +44,18 @@ git status --short && git branch --show-current
 
 Summarize what is uncommitted. If the working tree is clean, skip to Phase 2.
 
-### Step 2 — Create a new branch and commit all uncommitted work
+### Step 2 — Require current main and isolate task scope
 
-Determine an appropriate branch name based on the staged files (e.g., `chore/test-ledger-updates`,
-`fix/open-issues-sweep`). Then:
+Do not create a branch. Fetch and require current `main`; if unrelated changes already exist, stop and report them rather than bundling them into the sweep:
 
 ```bash
-git checkout -b <branch-name> && git add -A && git commit -m "chore: capture uncommitted work before issue sweep" && git push -u origin <branch-name>
+git fetch origin
+test "$(git branch --show-current)" = "main"
+git merge-base --is-ancestor origin/main HEAD
+git status --short
 ```
 
-> **Rule:** Never sweep against a dirty `main`. Isolate first, fix second.
+> **Rule:** Never sweep across unrelated dirty work. Keep this sweep to one coherent validated commit on `main`.
 
 ---
 
@@ -192,20 +194,9 @@ npm run lint 2>&1 | tail -20
 
 All lint errors must be resolved. Warnings are acceptable but document them.
 
-### Step 10 — Commit all fixes with a structured message
+### Step 10 — Keep fixes uncommitted until the closed loop completes
 
-```bash
-git add <files...> && git commit -m "fix(sweep): resolve Sentry and CodeRabbit issues
-
-- <brief description of each fix, one line per fix>
-- Validated: typecheck ✅ lint ✅"
-```
-
-Then push:
-
-```bash
-git push
-```
+Do not commit or push at this phase. Keep all related sweep files together so the completed fix, regression coverage, ledger evidence, and test history become one coherent `main` commit after Phase 8 passes.
 
 ---
 
@@ -277,13 +268,9 @@ Save to:
 .agent/test_ledger/MEGA_STRESS_TEST_V<N>_<THEME>.md
 ```
 
-### Step 15 — Commit the new test plan
+### Step 15 — Add the new test plan to the same delivery
 
-```bash
-git add .agent/test_ledger/MEGA_STRESS_TEST_V<N>_*.md && \
-git commit -m "docs(test): add Mega Stress Test v<N>.0 — <Thematic Title> (Routines <X>-<Y>)" && \
-git push
-```
+Do not commit or push yet. The test plan belongs to the same coherent sweep delivery.
 
 ---
 
@@ -298,13 +285,9 @@ For each issue fixed in this sweep, update its status line in `.agent/test_ledge
 + - **Status:** ✅ FIXED (sweep: <date> — <brief description>)
 ```
 
-### Step 17 — Commit the ledger update
+### Step 17 — Add the ledger update to the same delivery
 
-```bash
-git add .agent/test_ledger/OPEN_ISSUES.md && \
-git commit -m "docs(issues): update OPEN_ISSUES ledger after issue sweep" && \
-git push
-```
+Do not commit or push yet. The ledger evidence belongs to the same coherent sweep delivery.
 
 ---
 
@@ -345,13 +328,7 @@ test.describe('Mega Stress Test V<N> — <Title>', () => {
 });
 ```
 
-Commit the spec:
-
-```bash
-git add e2e/mega-stress-test-vN.spec.ts && \
-git commit -m "test(e2e): add Playwright spec for Mega Stress Test V<N>" && \
-git push
-```
+Keep the spec in the same uncommitted sweep delivery.
 
 ---
 
@@ -383,8 +360,9 @@ Any newly discovered bugs (not regressions) are logged as OPEN and deferred to n
 
 ```bash
 echo "## $(date +%Y-%m-%d) — issue-sweep + Mega Test V<N> — <PASS>✅ <FAIL>❌ <NEW> new issues" >> .agent/test_ledger/REAL_TEST_HISTORY.md
-git add .agent/test_ledger/REAL_TEST_HISTORY.md && git commit -m "docs: update test history after issue-sweep" && git push
 ```
+
+After all Phase 8 verification passes, stage only the sweep's related files, create one structured commit on `main`, push with `git push origin HEAD:main`, and monitor the exact CI SHA until green.
 
 ---
 
@@ -428,7 +406,7 @@ git add .agent/test_ledger/REAL_TEST_HISTORY.md && git commit -m "docs: update t
 - Total issues tracked: <N>
 
 ### Git
-- Branch: <branch-name>
+- Branch: main
 - Commits: <N>
 - Status: pushed ✅
 - Ready for PR: YES / NO (if regressions exist, NO)
@@ -442,7 +420,7 @@ The sweep is **complete** when ALL of the following are true:
 
 | Criterion | Status |
 |-----------|--------|
-| Uncommitted work captured on a named branch | ✅ |
+| Work completed as one coherent commit on current `main` | ✅ |
 | Sentry: zero unresolved issues (or all actioned) | ✅ |
 | CodeRabbit: all Critical/Major comments fixed | ✅ |
 | `typecheck` passes (exit 0) | ✅ |
@@ -455,7 +433,7 @@ The sweep is **complete** when ALL of the following are true:
 | Sweep + test report produced | ✅ |
 
 > **When all criteria are met, the sweep is sealed.** 🧹
-> The branch is production-ready. Open a PR or merge to `main`.
+> The pushed `main` SHA is production-ready only after its exact CI run is green.
 
 ---
 
@@ -464,7 +442,7 @@ The sweep is **complete** when ALL of the following are true:
 ```
 /issue-sweep  ──────────────────────────────────────────────────────────┐
 │                                                                        │
-│  Phase 1: Branch uncommitted work                                      │
+│  Phase 1: Synchronize main and bound task scope                        │
 │  Phase 2: Fix Sentry issues                                            │
 │  Phase 3: Fix CodeRabbit PR comments                                   │
 │  Phase 4: Validate (typecheck + lint)                                  │
@@ -483,3 +461,4 @@ Related workflows:
   /auto-fix    → Lightweight version of Phase 2+3 only (no test plan)
   /ci-validate → Run all 4 test shards locally before pushing to main
 ```
+> **Mainline delivery gate:** Before any code, git, CI, push, or optional branch action, read and obey [`branch-safety.md`](branch-safety.md). Direct-to-`main` is mandatory unless the user explicitly requests a branch.

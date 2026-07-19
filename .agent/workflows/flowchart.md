@@ -113,3 +113,4 @@ To maintain all visual architecture maps in a central, structured registry:
    - A short description/purpose block
    - The complete ` ```mermaid ` diagram block
    - The detailed step-by-step transition breakdown directly below it.
+> **Mainline delivery gate:** Before any code, git, CI, push, or optional branch action, read and obey [`branch-safety.md`](branch-safety.md). Direct-to-`main` is mandatory unless the user explicitly requests a branch.

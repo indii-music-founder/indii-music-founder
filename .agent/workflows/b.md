@@ -36,14 +36,14 @@ If you cannot satisfy all four, DO NOT write `FIXED`. Set `🟠 BLOCKED — <rea
 - Maintain this background loop indefinitely.
 
 ## 2. Swarm Coordination (The ABCD Protocol)
-- **Role Definition (ABCD):** **A finds** → **B (you) fixes the ledger's issues & commits** → **C ships** (green CI on branch + main → Firebase) → **D independently verifies your fixes against the real code and re-opens any fake/incomplete one.** Read only the ledger; fix per the protocol. **Because D runs the test and re-opens fakes, do it right the first time: RUN THE TEST and confirm green before you mark `✅ FIXED`** — a status D can disprove in one command is worse than an honest `🟠 BLOCKED`.
+- **Role Definition (ABCD):** **A finds** → **B (you) fixes the ledger's issues in one coherent `main` commit** → **C ships** (exact main SHA green → Firebase) → **D independently verifies your fixes against the real code and re-opens any fake/incomplete one.** Read only the ledger; fix per the protocol. **Because D runs the test and re-opens fakes, do it right the first time: RUN THE TEST and confirm green before you mark `✅ FIXED`** — a status D can disprove in one command is worse than an honest `🟠 BLOCKED`.
 - **Claiming Work:** When you find an issue in `.agent/test_ledger/OPEN_ISSUES.md`, immediately change its status to `🟡 IN PROGRESS (Agent B)`. This signals the other agents to skip it.
-- **Conflict Avoidance (concurrency-safe — learned from ISSUE-OPUS-002):** `git pull --rebase origin main` before reading `OPEN_ISSUES.md` and before committing. When you update an issue's status, **`git add` + commit that change immediately** — an uncommitted ledger edit gets silently overwritten by another agent's sync. Never rewrite the whole file from a stale snapshot (that clobbers others' entries).
+- **Conflict Avoidance:** Before beginning a bounded fix cycle, require a clean tree and run `git fetch origin && git merge --ff-only origin/main`. Keep related status and code changes in the single coherent task commit; do not create micro-commits. Stop if `origin/main` advances before push, and never rewrite the ledger from a stale snapshot.
 - **Handoffs:** If you get stuck, change the status to `🟠 BLOCKED - Handoff to Agent [X]` in `OPEN_ISSUES.md` and let the others try.
 
 ## 3. Manage Workspace Integrity
 - Periodically check `git status`.
-- If there are uncommitted functional changes in the workspace (excluding scratch/test files), stage and commit them.
+- If there are uncommitted functional changes, prove they belong to the bounded current task and include them in its one coherent commit; report unrelated work instead of bundling or separately committing it.
 - Let `git_monitor_sync.js` handle the typechecking, testing, and pushing of these commits to `origin/main`.
 
 ## 4. Autonomous Issue Resolution
@@ -57,3 +57,4 @@ If you cannot satisfy all four, DO NOT write `FIXED`. Set `🟠 BLOCKED — <rea
 ## 5. Continuity Loop
 - When you are finished with an iteration, do NOT stop. 
 - Tell the user that the "B-Engine" is online, wait for the background cron to fire, and immediately resume the cycle when it does.
+> **Mainline delivery gate:** Before any code, git, CI, push, or optional branch action, read and obey [`branch-safety.md`](branch-safety.md). Direct-to-`main` is mandatory unless the user explicitly requests a branch.
