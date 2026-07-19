@@ -83,3 +83,4 @@ Since all items are autonomously transferred to the open issues list, clear the 
 
 ### Step 7 — Job Done
 Once the items are transferred and the ledger is cleared, this agent's job is done. The Fixer agents (via the `/issue` workflow) will autonomously pick up these new open issues from `.agent/test_ledger/OPEN_ISSUES.md` and fix them.
+> **Mainline delivery gate:** Before any code, git, CI, push, or optional branch action, read and obey [`branch-safety.md`](branch-safety.md). Direct-to-`main` is mandatory unless the user explicitly requests a branch.

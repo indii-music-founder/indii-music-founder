@@ -66,9 +66,9 @@ These commands are called by the Core Pipeline or can be invoked directly as nee
 - **Purpose:** Acts as the continuous supervisor, maintaining system flow by running git sync cycles, committing workspace changes, and triggering issue resolution autonomously.
 - **When to use:** Used to put the agent into a persistent background monitor mode while the user steps away.
 
-### `/away` — Autonomous CI Monitor & Merge Loop
-- **Purpose:** Executes an autonomous loop to monitor branch CI using the browser subagent, automatically fixing errors until green, then merging to main.
-- **When to use:** When the user steps away from the keyboard and wants the agent to drive a branch across the finish line.
+### `/away` — Autonomous Main CI Monitor
+- **Purpose:** Monitors the exact CI run for the latest direct `main` push, fixes logged root causes one coherent commit at a time, and stops when `main` is green.
+- **When to use:** When the user steps away and wants the agent to drive the current `main` delivery across the finish line.
 
 ### `/ci-validate` — Pre-Push CI Validation
 - **Purpose:** Comprehensive pre-push CI validation with commit consolidation to prevent bloat.
@@ -195,3 +195,4 @@ Beyond `.agent/skills/`, three additional skill registries exist. They are part 
 ---
 
 *(Note: Any legacy `/live_test_*.md` files or undocumented one-off commands have been deprecated in favor of this standardized suite).*
+> **Mainline delivery gate:** Before any code, git, CI, push, or optional branch action, read and obey [`branch-safety.md`](branch-safety.md). Direct-to-`main` is mandatory unless the user explicitly requests a branch.

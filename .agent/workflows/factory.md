@@ -31,7 +31,7 @@ When `/factory` is invoked, the primary agent acts as the **Floor Manager** and 
 - **Role:** To seal and ship the app, and investigate pipeline failures.
 - **Task:** Waits for the Test Orchestrator to complete its list and the Fix Agent to clear the queue. It then executes the `/ci-validate` workflow (`npm run typecheck`, `npm run lint`, `npm test`). 
 - **Auto-Healing CI:** If CI fails (e.g., GitHub Actions or local test suites), the Publisher immediately parses the failure logs, diagnoses the root cause, documents it in `.agent/skills/error_memory/ERROR_LEDGER.md` to build institutional memory, and routes the specific failures back to `.agent/test_ledger/OPEN_ISSUES.md` so the Fix Agent can patch them. It loops this until green.
-- **Output:** If the tests pass and the branch is green, it consolidates the commits, writes a detailed summary artifact, and pushes the branch to `origin main`.
+- **Output:** If local validation passes, it verifies that the work is one coherent commit on `main`, pushes with `git push origin HEAD:main`, and monitors the exact resulting CI run until green.
 
 ---
 
@@ -41,5 +41,6 @@ When the user types `/factory`, you (the orchestrating agent) must:
 1. Acknowledge the command and begin the Factory startup sequence.
 2. Use the `invoke_subagent` tool to spawn the **Test Orchestrator** and the **Fix Agent** in parallel.
 3. Monitor their status. You do not need to actively poll; simply wait for the subagents to report back via messages.
-4. Once both the testing loop and the fixing queue are completed, spawn the **QA & Publisher** subagent to finalize the push.
+4. Once both loops complete, run the **QA & Publisher** on `main`; branches are forbidden unless the user explicitly requested one.
 5. Provide a master summary of everything that was broken, fixed, and pushed.
+> **Mainline delivery gate:** Before any code, git, CI, push, or optional branch action, read and obey [`branch-safety.md`](branch-safety.md). Direct-to-`main` is mandatory unless the user explicitly requests a branch.

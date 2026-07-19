@@ -391,13 +391,13 @@ Only after `/ci-validate` passes all green do you proceed to push.
 
 ---
 
-## 13. PUSH TO BRANCH
+## 13. PUSH DIRECTLY TO MAIN
 
 After both `/go` and `/ci-validate` pass:
 
 ```bash
-git checkout -b mega/session-<YYYY-MM-DD>
-git add -A
+git add <mega-session-files>
 git commit -m "chore: mega menu sweep <DATE> — <PASS>✅ <FAIL>❌ <NEW_ISSUE_COUNT> issues"
-git push origin mega/session-<YYYY-MM-DD>
+git push origin HEAD:main
 ```
+> **Mainline delivery gate:** Before any code, git, CI, push, or optional branch action, read and obey [`branch-safety.md`](branch-safety.md). Direct-to-`main` is mandatory unless the user explicitly requests a branch.

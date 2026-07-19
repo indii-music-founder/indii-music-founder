@@ -107,3 +107,4 @@ NEXT STEPS:
 | "Node Modules: missing" | Fresh machine, need bootstrap | Run `npm install` before work |
 | "Active Task: none" + "Plan: missing" | Fresh start | Describe what you want built |
 | "Error Ledger: [patterns]" | Known issues in flight | Watch for these in `/go` |
+> **Mainline delivery gate:** Before any code, git, CI, push, or optional branch action, read and obey [`branch-safety.md`](branch-safety.md). Direct-to-`main` is mandatory unless the user explicitly requests a branch.

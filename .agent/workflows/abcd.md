@@ -14,7 +14,7 @@ Use this command when you want one launch point for the whole internal engine sy
 | --- | --- | --- | --- | --- |
 | Engine A | `/a` | Finder: run real tests and log real issues | No | `.agent/test_ledger/OPEN_ISSUES.md` |
 | Engine B | `/b` | Fixer: claim one issue, fix it, verify locally, commit | Yes | Code + ledger fix evidence |
-| Engine C | `/c` | Shipper: keep branch/main CI green and deployment-safe | Yes, for CI/release issues | GitHub Actions + deployment evidence |
+| Engine C | `/c` | Shipper: keep the exact pushed main SHA green and deployment-safe | Yes, for CI/release issues | GitHub Actions + deployment evidence |
 | Engine D | `/d` | Verifier: audit FIXED/shipped claims and re-open fakes | No product code | Ledger verification/re-open notes |
 
 ## 1. Discovery Contract
@@ -33,7 +33,7 @@ Run the engines in this order:
 
 1. **Start Engine A (`/a`)** so the issue ledger is fed by real tests and real browser findings.
 2. **Start Engine B (`/b`)** so one open issue is claimed, fixed, verified locally, and committed.
-3. **Start Engine C (`/c`)** so the branch and main stay green and CI/CD failures become first-class issues.
+3. **Start Engine C (`/c`)** so the exact pushed `main` SHA reaches green and CI/CD failures become first-class issues.
 4. **Start Engine D (`/d`)** so B/C claims are independently checked against real code and tests.
 
 If the user explicitly says "launch A then B then D", run A, B, and D first. C can join later; D must not pretend CI/deploy verification happened unless it actually checked the evidence.
@@ -53,7 +53,8 @@ The `/abcd` loop is healthy when:
 
 - A is writing only evidence-backed findings.
 - B is marking issues fixed only with code evidence and local verification.
-- C shows branch and main CI are green or files honest CI issues.
+- C shows the exact pushed `main` SHA is green or files honest CI issues.
 - D samples B/C claims and either confirms them or re-opens them with evidence.
 
 The workflow is not complete just because one engine says "done"; D's verification and C's CI evidence close the loop.
+> **Mainline delivery gate:** Before any code, git, CI, push, or optional branch action, read and obey [`branch-safety.md`](branch-safety.md). Direct-to-`main` is mandatory unless the user explicitly requests a branch.

@@ -32,3 +32,4 @@ description: Automatically identify and run relevant tests based on the current 
 
 * If found matched tests: **Run them**.
 * Else: `npm run typecheck`.
+> **Mainline delivery gate:** Before any code, git, CI, push, or optional branch action, read and obey [`branch-safety.md`](branch-safety.md). Direct-to-`main` is mandatory unless the user explicitly requests a branch.

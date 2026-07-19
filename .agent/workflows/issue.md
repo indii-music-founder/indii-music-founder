@@ -406,3 +406,4 @@ Output:
 | "Finishing" a test by `test.skip(...)` with a generic reason | A skipped test is zero coverage, not a fix. Write the real test or keep the issue OPEN. |
 | Closing a CI failure by deleting/skipping the test or loosening the assertion | Green-by-deletion is a fake FIXED. Find the root cause. |
 | Resolving strict-mode violations with `.first()`/`.last()`/`.nth()` | Strict-mode violation means elements are duplicated in UI. Resolve duplicates, don't paper over them with `.first()`. |
+> **Mainline delivery gate:** Before any code, git, CI, push, or optional branch action, read and obey [`branch-safety.md`](branch-safety.md). Direct-to-`main` is mandatory unless the user explicitly requests a branch.

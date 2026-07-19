@@ -35,20 +35,21 @@ Catch package.json/package-lock.json/node_modules disagreements before they caus
   - Never silently downgrade or upgrade a runtime dependency without checking its usage pattern first (e.g. grep for the imported API surface) — a dev-tooling version gap (eslint, typescript) is lower risk than a runtime dependency gap (uuid, firebase-admin) that 30+ files call directly.
 - Re-run `npm run check:dep-drift` after any fix — it must report clean before proceeding to the gauntlet.
 
-## 2.5 Commit & Push All Work (MANDATORY)
-Ensure agent work is saved to GitHub **before** closing:
+## 2.5 Commit & Push One Coherent Mainline Change (MANDATORY)
+Ensure the current task is delivered through `main` **before** closing:
 - **Check status:** `git status --short`
-- **Commit any uncommitted changes:** If dirty files exist, commit them with conventional message
-- **Push to GitHub:** `git push origin $(git branch --show-current)`
+- **Require main:** `test "$(git branch --show-current)" = "main"` unless the user explicitly requested a branch
+- **Commit task scope once:** Commit only the current task's related files with one conventional message; do not create checkpoint commits
+- **Push to GitHub:** `git push origin HEAD:main`
 - **Verify remote:** Confirm commits arrived on GitHub (no "ahead of origin")
-- **This step is MANDATORY:** No session ends with unpushed work
+- **Verify CI:** Inspect the workflow run for the exact pushed SHA and continue root-cause fixes until green
 
 ## 3. Standardized Closing Process
 Execute the formal note-taking and checkpointing process:
 - **Documentation:** Generate a summary of the session's learnings, key decisions made, bugs fixed, and pattern improvements. Update `.agent/skills/error_memory/ERROR_LEDGER.md` with any new patterns discovered.
 - **Pattern Report:** Include delta: "Risk score improved from X to Y" or "Added Z new patterns to watch"
 - **Checkpoints:** Update the agent's distributed checkpoint in `.agent/checkpoints/` with the final state of the work so the next session can pick up cleanly.
-- **Session Checkpoint Script:** Always execute `bash .claude/scripts/checkpoint.sh` before ending the session to commit the final state and ensure the next session picks up cleanly.
+- **Session Checkpoint Script:** Execute `bash .claude/scripts/checkpoint.sh` only to write the ignored local handoff snapshot. The script must never stage, commit, or push.
 
 ## 4. Final Architecture Update (via `/flowchart`)
 If any architecture, state flow, or logic shifted during the execution phase:
@@ -70,6 +71,7 @@ Signal "we're done" and leave a perfectly clean repository and environment:
 - Invoke the **`/ci-validate`** command.
 - This will run the auto-fix phase, the hunter bug scan, commit consolidation, and all testing shards.
 - **Do not exit this phase until the CI script passes flawlessly.**
-- **Push Commits to GitHub (MANDATORY):** Once all CI validation checks pass flawlessly, you MUST run `git push origin $(git branch --show-current)` to ensure all local commits are pushed to GitHub, synchronizing the work and triggering the remote deployment pipeline.
+- **Push Commit to GitHub (MANDATORY):** Once local validation passes, run `git push origin HEAD:main`, then inspect the exact remote CI run and fix its logged root cause until `main` is green.
 
 > **No post-gauntlet edits:** The push is the last action. Do not run `/better` or any other code-modifying workflow after `/ci-validate` passes — any change after the gauntlet means the gauntlet must run again.
+> **Mainline delivery gate:** Before any code, git, CI, push, or optional branch action, read and obey [`branch-safety.md`](branch-safety.md). Direct-to-`main` is mandatory unless the user explicitly requests a branch.

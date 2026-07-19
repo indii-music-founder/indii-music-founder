@@ -25,3 +25,4 @@ Executes the dataset generation and/or the cloud AI fine-tuning jobs for the mul
 - Datasets are formatted strictly according to the gold JSONL requirements.
 - Cost constraints are respected (user approval required for paid API execution).
 - Walkthrough report generated containing the updated dataset row counts and the status of the cloud training job.
+> **Mainline delivery gate:** Before any code, git, CI, push, or optional branch action, read and obey [`branch-safety.md`](branch-safety.md). Direct-to-`main` is mandatory unless the user explicitly requests a branch.

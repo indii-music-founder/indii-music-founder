@@ -37,3 +37,4 @@ This workflow allows Antigravity to autonomously test the application and report
 ## Usage
 
 Run directly when INDEX signals a build is ready, or use via trigger.
+> **Mainline delivery gate:** Before any code, git, CI, push, or optional branch action, read and obey [`branch-safety.md`](branch-safety.md). Direct-to-`main` is mandatory unless the user explicitly requests a branch.

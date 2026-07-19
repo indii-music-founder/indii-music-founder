@@ -75,10 +75,10 @@ If agent reports being stuck, blocked, or unable to proceed:
 4. **Verify Locally:** Ensure changes don't break adjacent code
 5. **Elevation Pass (via `/better`):** Run the `/better` command on the specific files you just modified to audit for structural integrity, performance, and defensive resilience *before* moving on.
 6. **Mark Complete:** Update the active task ledger with `[x]` checkbox. If no matching ledger exists, summarize completion evidence in the final response instead of editing an unrelated stale file.
-7. **Commit:** `git add -A && git commit -m "<type>: <description>"` (conventional format)
+7. **Accumulate:** Keep this task's related changes uncommitted while additional `/go` tasks remain. Do not emit checkpoint or per-iteration commits.
 8. **Loop or Exit:**
    - If tasks remain: re-invoke `/go`
-   - If all tasks done: move to Final Verification
+   - If all tasks done: move to Final Verification, stage only the bounded task files, create one conventional commit on `main`, and push with `git push origin HEAD:main`
 
 ## 6. Unsticking Protocol (When Agent Reports Blocked)
 
@@ -127,3 +127,4 @@ If agent reports being stuck, blocked, or unable to proceed:
 | Want to unstick and push through blockers | `/go` (Error Ledger + fix protocol) |
 
 > **Note on polish:** `/better` runs exactly once per task, in Step 5 of the Execution Loop, scoped to the files just modified. Do NOT run an additional whole-session `/better` pass when the loop exits — that belongs to `/end`.
+> **Mainline delivery gate:** Before any code, git, CI, push, or optional branch action, read and obey [`branch-safety.md`](branch-safety.md). Direct-to-`main` is mandatory unless the user explicitly requests a branch.

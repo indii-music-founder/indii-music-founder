@@ -61,7 +61,7 @@ If the command is invoked with an inline argument (e.g. `/skill-skill [argument]
   - **Routing:** Directs to `/to-prd` for PRDs, `/to-issues` for issue tickets, or `/flowchart` for visual diagrams.
 
 - **`/skill-skill git`**
-  - **Action:** Manage repository state, sync branches, and validate commits.
+  - **Action:** Manage the single `main` delivery lane and validate its one pending commit; branches require an explicit user request.
   - **Routing:** Directs to `/get-git` for sync and push validation.
 
 ---
@@ -89,7 +89,7 @@ Evaluate the task against this routing matrix if no specific arguments are passe
 - **Need a daily health check (integration tests, Sentry, dashboard)?** ➔ `/health_audit` (Daily Health Check)
 
 ### Operations & CI
-- **About to `git push` a substantive branch?** ➔ `/plat` (Platinum pre-push gate — `.claude/commands/plat.md`)
+- **About to push the coherent `main` commit?** ➔ `/plat` (Platinum pre-push gate — `.claude/commands/plat.md`)
 - **Need pre-push CI validation?** ➔ `/ci-validate` (Full 4-shard test run with commit consolidation)
 - **Need git sync, fetch, or push validation?** ➔ `/get-git` (Git Repository Sync & Monitor)
 - **Stepping away and want autonomous CI monitoring?** ➔ `/away` (Autonomous CI Monitor & Merge Loop)
@@ -123,3 +123,4 @@ RATIONALE:
 
 NEXT ACTION: [Run recommended command / file-edit target]
 ```
+> **Mainline delivery gate:** Before any code, git, CI, push, or optional branch action, read and obey [`branch-safety.md`](branch-safety.md). Direct-to-`main` is mandatory unless the user explicitly requests a branch.

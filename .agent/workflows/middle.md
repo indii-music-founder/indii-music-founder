@@ -50,3 +50,4 @@ As complex logic, state transitions, or component architectures are built:
 **Repeat the `/middle` process until all tasks in the active task ledger are marked complete, or until the current user objective is verified complete when no matching ledger exists.**
 
 > **Note on polish:** Do NOT run a separate `/better` pass at the end of `/middle`. The `/go` loop already runs `/better` on each task's modified files (Step 5), and `/end` runs the final session-wide pass. Triple-polishing the same files burns time and tokens without adding quality.
+> **Mainline delivery gate:** Before any code, git, CI, push, or optional branch action, read and obey [`branch-safety.md`](branch-safety.md). Direct-to-`main` is mandatory unless the user explicitly requests a branch.

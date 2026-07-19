@@ -10,8 +10,8 @@ This command must be run at the beginning of any new feature, prompt, or session
 
 ## 1. Smart Context Assessment
 Before taking any action, analyze the current workspace:
-- Invoke **`/get-git`** to fetch origin, rebase remote changes, and check if our branch is ahead/behind.
-- Check `git branch` and `git status`. Are we on a clean slate?
+- Invoke **`/get-git`** to fetch `origin/main`, require the active branch to be `main`, and fast-forward safely before any edits.
+- Check `git branch --show-current` and `git status --short`. A non-`main` branch is a hard stop unless the user explicitly requested that branch for this task.
 - Review any open files or recently modified files.
 - **Clarification Gate:** If the user's prompt is underspecified, ASK clarifying questions right now to determine *exactly what* needs to be built.
 - **Alignment:** If the task requires deep specialization, invoke **`/review`** to explicitly align on persona and constraints before proceeding.
@@ -45,3 +45,4 @@ Determine if any additional workflows are needed for this specific feature:
 **When complete, output a summary of the initialized state and proceed to the first task or request user confirmation to begin execution.**
 
 > **Note on polish:** Do NOT run `/better` here — nothing has been built yet. Polish happens exactly twice in the pipeline: per-task inside `/go` (Step 5, scoped to the files just modified), and once in `/end` before the final `/ci-validate` gauntlet.
+> **Mainline delivery gate:** Before any code, git, CI, push, or optional branch action, read and obey [`branch-safety.md`](branch-safety.md). Direct-to-`main` is mandatory unless the user explicitly requests a branch.

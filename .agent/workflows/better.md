@@ -279,7 +279,7 @@ Output a final summary:
 **Breaking Changes:** None (or list if user approved)
 ```
 
-Then commit: `git add -A && git commit -m "refactor(better): [summary of changes]" && git push origin [branch]`
+When `/better` is standalone, commit the bounded task once on `main`: `git add <task-files> && git commit -m "refactor(better): [summary of changes]" && git push origin HEAD:main`. When called from `/go` or `/end`, return verified edits without making an intermediate commit.
 
 ### AUDIT Mode (find-only + handoff)
 
@@ -340,3 +340,4 @@ If a change causes a failure:
 - **Error Ledger:** If you discover a novel bug pattern during elevation, add it to `.agent/skills/error_memory/ERROR_LEDGER.md`.
 - **Platinum Standards:** All changes must comply with `docs/PLATINUM_QUALITY_STANDARDS.md`.
 - **Model Policy:** If improving AI-related code, enforce the approved model list from `GEMINI.md`.
+> **Mainline delivery gate:** Before any code, git, CI, push, or optional branch action, read and obey [`branch-safety.md`](branch-safety.md). Direct-to-`main` is mandatory unless the user explicitly requests a branch.

@@ -38,3 +38,4 @@ Output the results of the database sync gate:
 [✓] Storage Upload Boundaries: Enforced by Owner UID
 [✓] Public Wildcards Scan: Passed (0 leaks detected)
 ```
+> **Mainline delivery gate:** Before any code, git, CI, push, or optional branch action, read and obey [`branch-safety.md`](branch-safety.md). Direct-to-`main` is mandatory unless the user explicitly requests a branch.

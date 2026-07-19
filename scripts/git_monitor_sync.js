@@ -34,35 +34,30 @@ function runCommand(cmd, ignoreError = false) {
 }
 
 function getGitState() {
+    let fetchSucceeded = true;
     try {
-        logMessage('Fetching remote tracking branch status...');
+        logMessage('Fetching origin/main...');
         execSync('git fetch origin', { stdio: 'ignore' });
     } catch (e) {
-        logMessage('Warning: Could not fetch from origin (offline or remote access blocked).');
+        fetchSucceeded = false;
+        logMessage('CRITICAL: Could not fetch origin/main. Mainline delivery is blocked.');
     }
 
     const statusOutput = runCommand('git status -sb');
     const hasLocalChanges = runCommand('git status --short').length > 0;
-    
-    // Parse branch status line, e.g. "## main...origin/main [ahead 1, behind 2]"
     const firstLine = statusOutput.split('\n')[0];
     const branchName = runCommand('git rev-parse --abbrev-ref HEAD');
-
-    let aheadCount = 0;
-    let behindCount = 0;
-
-    const aheadMatch = firstLine.match(/\[ahead (\d+)/);
-    const behindMatch = firstLine.match(/behind (\d+)/);
-
-    if (aheadMatch) aheadCount = parseInt(aheadMatch[1], 10);
-    if (behindMatch) behindCount = parseInt(behindMatch[1], 10);
+    const divergence = runCommand('git rev-list --left-right --count origin/main...HEAD').split(/\s+/);
+    const behindCount = parseInt(divergence[0], 10);
+    const aheadCount = parseInt(divergence[1], 10);
 
     return {
         branchName,
         hasLocalChanges,
         aheadCount,
         behindCount,
-        firstLine
+        firstLine,
+        fetchSucceeded
     };
 }
 
@@ -100,7 +95,7 @@ async function executeSync() {
         }
     }
 
-    const { branchName, hasLocalChanges, aheadCount, behindCount, firstLine } = getGitState();
+    let { branchName, hasLocalChanges, aheadCount, behindCount, firstLine, fetchSucceeded } = getGitState();
     logMessage(`Current Branch: ${branchName}`);
     logMessage(`Git status line: ${firstLine}`);
     logMessage(`Local uncommitted changes: ${hasLocalChanges ? 'YES' : 'NO'}`);
@@ -110,44 +105,34 @@ async function executeSync() {
     let syncError = null;
 
     try {
-        // 1. Check for behind status -> Pull and rebase
+        if (!fetchSucceeded) {
+            throw new Error('origin-main-fetch-failed');
+        }
+        if (branchName !== 'main') {
+            throw new Error(`non-main-branch-blocked:${branchName}`);
+        }
+        if (behindCount > 0 && aheadCount > 0) {
+            throw new Error(`main-diverged:behind-${behindCount}:ahead-${aheadCount}`);
+        }
+        if (behindCount > 0 && hasLocalChanges) {
+            throw new Error(`main-behind-with-dirty-worktree:${behindCount}`);
+        }
         if (behindCount > 0) {
-            logMessage(`Pulling and rebasing from origin/${branchName}...`);
-            let stashed = false;
-            if (hasLocalChanges) {
-                logMessage('Stashing local uncommitted changes before rebase...');
-                runCommand('git stash');
-                stashed = true;
-            }
-
-            try {
-                runCommand(`git pull --rebase origin ${branchName}`);
-                logMessage('Pull and rebase completed successfully.');
-                syncPerformed = true;
-            } catch (err) {
-                logMessage(`CRITICAL: Rebase failed! Error: ${err.message}`);
-                throw err;
-            } finally {
-                if (stashed) {
-                    logMessage('Restoring stashed local changes...');
-                    try {
-                        runCommand('git stash pop');
-                        logMessage('Stashed changes restored successfully.');
-                    } catch (popErr) {
-                        logMessage('WARNING: Stash pop failed due to conflicts. Manual resolution required.');
-                        syncError = 'stash-pop-conflict';
-                    }
-                }
-            }
+            logMessage(`Fast-forwarding main by ${behindCount} commit(s)...`);
+            runCommand('git merge --ff-only origin/main');
+            behindCount = 0;
+            syncPerformed = true;
+        }
+        if (aheadCount > 1) {
+            throw new Error(`multiple-unpushed-commits-blocked:${aheadCount}`);
+        }
+        if (aheadCount === 1 && hasLocalChanges) {
+            throw new Error('unpushed-commit-with-dirty-worktree');
         }
 
-        // 2. Check for ahead status -> Run validation and push
-        if (aheadCount > 0 && !syncError) {
-            logMessage(`Verifying local commits (${aheadCount} ahead) before pushing...`);
-            
-            if (aheadCount > 10) {
-                logMessage(`WARNING: Commit count (${aheadCount}) is greater than 10. Recommend consolidation/squashing to prevent bloat.`);
-            }
+        // Validate and push exactly one coherent mainline commit.
+        if (aheadCount === 1) {
+            logMessage('Verifying the single mainline commit before pushing...');
 
             logMessage('Running typecheck validation...');
             runCommand('npm run typecheck');
@@ -155,8 +140,8 @@ async function executeSync() {
             logMessage('Running tests validation...');
             runCommand('NODE_OPTIONS="--max-old-space-size=4096" npm test -- --run --pool=threads');
             
-            logMessage('Validation successful. Pushing local commits to origin...');
-            runCommand(`git push origin ${branchName}`);
+            logMessage('Validation successful. Pushing explicit HEAD:main refspec...');
+            runCommand('git push origin HEAD:main');
             logMessage('Push completed successfully.');
             syncPerformed = true;
         }
@@ -204,7 +189,8 @@ async function executeSync() {
     fs.writeFileSync(STATE_FILE_PATH, JSON.stringify(state, null, 2));
 
     function checkGitHubActions() {
-        logMessage('Checking GitHub Actions for failed workflows...');
+        const currentSha = runCommand('git rev-parse HEAD', true);
+        logMessage(`Checking GitHub Actions for main SHA ${currentSha}...`);
         try {
             // Check authentication cleanly before proceeding
             let authSuccess = false;
@@ -230,38 +216,29 @@ async function executeSync() {
                 return;
             }
 
-            const ghOutput = runCommand('gh run list --limit 10 --json status,conclusion,name,url,createdAt,headBranch,databaseId');
+            const ghOutput = runCommand(`gh run list --branch main --commit ${currentSha} --limit 20 --json status,conclusion,name,url,createdAt,headBranch,headSha,databaseId`);
             const runs = JSON.parse(ghOutput);
-            
-            const failedRuns = runs.filter(r => r.conclusion === 'failure');
-            
+            const matchingRuns = runs.filter(r => r.headBranch === 'main' && r.headSha === currentSha);
+            const failedRuns = matchingRuns.filter(r => r.conclusion === 'failure');
+
+            result.ci = matchingRuns.map(r => ({
+                name: r.name,
+                status: r.status,
+                conclusion: r.conclusion,
+                url: r.url,
+                headSha: r.headSha
+            }));
+
             if (failedRuns.length > 0) {
-                const issuesPath = path.resolve('.agent/test_ledger/OPEN_ISSUES.md');
-                const issuesContent = fs.existsSync(issuesPath) ? fs.readFileSync(issuesPath, 'utf-8') : '';
-                let appended = false;
-                
                 for (const run of failedRuns) {
-                    if (!issuesContent.includes(run.url)) {
-                        logMessage(`Found newly failed CI pipeline: ${run.name} (${run.url}). Logging to OPEN_ISSUES.md...`);
-                        const issueEntry = `\n### ISSUE-CI-${run.databaseId}: CI Pipeline Failure (${run.name})\n- **Status:** ⏳ OPEN\n- **Severity:** 🔴 HIGH\n- **Module:** CI/CD\n- **Summary:** The GitHub Actions workflow \`${run.name}\` failed on branch \`${run.headBranch}\`.\n- **Link:** [View Logs](${run.url})\n- **Fix Direction:** Investigate the action logs and fix the broken tests or deployment.\n`;
-                        fs.appendFileSync(issuesPath, issueEntry);
-                        appended = true;
-                    }
+                    logMessage(`CI FAILED for current main SHA: ${run.name} (${run.url}). Inspect this run's logs before changing code.`);
                 }
-                
-                // ISSUE-OPUS-002 Fix: Immediately commit the appended CI issues to prevent silent clobbering.
-                if (appended) {
-                    try {
-                        logMessage('Immediately committing new CI issues to OPEN_ISSUES.md to prevent concurrent write loss...');
-                        runCommand(`git add "${issuesPath}"`);
-                        runCommand(`git commit -m "test(ledger): log ISSUE-CI pipeline failures"`);
-                        logMessage('CI issues committed successfully.');
-                    } catch (e) {
-                        logMessage(`Warning: Could not auto-commit CI issues. Error: ${e.message}`);
-                    }
-                }
+            } else if (matchingRuns.some(r => r.status !== 'completed')) {
+                logMessage('CI is still in progress for the current main SHA. Do not push another commit yet.');
+            } else if (matchingRuns.length > 0 && matchingRuns.every(r => r.conclusion === 'success')) {
+                logMessage('CI is green for the current main SHA. Delivery cycle complete.');
             } else {
-                logMessage('No recent failed workflows found.');
+                logMessage('No CI run is visible yet for the current main SHA. Do not infer success.');
             }
         } catch (e) {
             logMessage(`Warning: Could not check GitHub Actions. Error: ${e.message}`);

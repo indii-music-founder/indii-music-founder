@@ -4,11 +4,16 @@
 
 cd "$(git rev-parse --show-toplevel 2>/dev/null)" || exit 0
 
-if [ ! -f .agent/HANDOFF_STATE.md ]; then
+HANDOFF_PATH=".agent/checkpoints/local/HANDOFF_STATE.md"
+if [ ! -f "$HANDOFF_PATH" ]; then
+  HANDOFF_PATH=".agent/HANDOFF_STATE.md"
+fi
+
+if [ ! -f "$HANDOFF_PATH" ]; then
   exit 0
 fi
 
-HANDOFF=$(cat .agent/HANDOFF_STATE.md)
+HANDOFF=$(cat "$HANDOFF_PATH")
 
 # Detect fresh machine: node_modules absent or empty
 FRESH_MACHINE=false
@@ -19,9 +24,9 @@ fi
 if [ "$FRESH_MACHINE" = true ]; then
   # Inject handoff + walk prompt
   jq -Rs '{"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":("## Mobile session detected — run /walk to resume and drive to prime\n\n" + .)}}' \
-    .agent/HANDOFF_STATE.md
+    "$HANDOFF_PATH"
 else
   # Standard context injection
   jq -Rs '{"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":("## Resuming from previous session:\n\n" + .)}}' \
-    .agent/HANDOFF_STATE.md
+    "$HANDOFF_PATH"
 fi
