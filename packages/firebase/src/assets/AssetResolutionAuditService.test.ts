@@ -1,10 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { auditReleaseArtwork, resolveOwnedArtworkObjectPath, type AssetAuditRepository, type InspectedArtwork } from './AssetResolutionAuditService.js';
+import { auditReleaseArtwork, releaseAttachmentForAudit, resolveOwnedArtworkObjectPath, type AssetAuditRepository, type InspectedArtwork } from './AssetResolutionAuditService.js';
 
 function repository(storagePath = 'artwork/owner-1/cover.png'): AssetAuditRepository {
     return {
-        findRelease: vi.fn().mockResolvedValue({ releaseId: 'release-1', ownerUid: 'owner-1', sourceDocumentReference: 'releases/release-1', storagePath }),
+        findRelease: vi.fn().mockResolvedValue({ releaseId: 'release-1', ownerUid: 'owner-1', sourceDocumentReference: 'releases/release-1', storagePath, generationProvenance: { source: 'not_recorded' } }),
         findAudit: vi.fn().mockResolvedValue(undefined),
         persistAudit: vi.fn().mockResolvedValue(undefined),
     };
@@ -39,7 +39,7 @@ describe('auditReleaseArtwork', () => {
 
     it('returns unknown when only an unstable URL or claimed metadata exists', async () => {
         const repo = repository();
-        vi.mocked(repo.findRelease).mockResolvedValue({ releaseId: 'release-1', ownerUid: 'owner-1', sourceDocumentReference: 'releases/release-1' });
+        vi.mocked(repo.findRelease).mockResolvedValue({ releaseId: 'release-1', ownerUid: 'owner-1', sourceDocumentReference: 'releases/release-1', generationProvenance: { source: 'not_recorded' } });
         const inspector = { inspect: vi.fn() };
         const result = await auditReleaseArtwork('owner-1', 'release-1', { repository: repo, inspector });
         expect(result.status).toBe('unknown');
@@ -62,6 +62,23 @@ describe('auditReleaseArtwork', () => {
         vi.mocked(repo.findRelease).mockResolvedValue(undefined);
         await expect(auditReleaseArtwork('owner-1', 'release-1', { repository: repo, inspector: { inspect: vi.fn() } }))
             .rejects.toThrow('does not exist for the authenticated owner');
+    });
+});
+
+describe('releaseAttachmentForAudit', () => {
+    it('pins measured bytes, the rules version, and explicitly missing generation provenance', async () => {
+        const result = await auditReleaseArtwork('owner-1', 'release-1', {
+            repository: repository(),
+            inspector: { inspect: vi.fn().mockResolvedValue(inspected()) },
+        });
+        const attachment = releaseAttachmentForAudit({ ...result, auditId: result.auditId! });
+        expect(attachment).toMatchObject({
+            schemaVersion: 'release-cover-art-conformance.v1',
+            requirementsProfileVersion: 'dsp-cover-art-baseline.v1',
+            generationProvenance: { source: 'not_recorded' },
+            artwork: { sha256: 'a'.repeat(64), generation: '42' },
+        });
+        expect(JSON.stringify(attachment)).not.toContain('download_url');
     });
 });
 
