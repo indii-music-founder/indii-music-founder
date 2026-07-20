@@ -14,6 +14,23 @@ const ALLOWED_VIDEO_EXTENSIONS = new Set([
     '.mp4', '.webm', '.mov', '.avi', '.mkv'
 ]);
 
+function isPathInsideSystemRoot(resolvedPath: string): boolean {
+    const normalizedPath = path.normalize(resolvedPath);
+
+    return SYSTEM_ROOTS.some(root => {
+        const normalizedRoot = path.normalize(root);
+        const pathForComparison = process.platform === 'win32'
+            ? normalizedPath.toLowerCase()
+            : normalizedPath;
+        const rootForComparison = process.platform === 'win32'
+            ? normalizedRoot.toLowerCase()
+            : normalizedRoot;
+
+        return pathForComparison === rootForComparison
+            || pathForComparison.startsWith(rootForComparison + path.sep);
+    });
+}
+
 /**
  * Validates that an audio file path is safe to access.
  * Enforces:
@@ -43,7 +60,7 @@ export function validateSafeAudioPath(filePath: string): string {
     }
 
     // 3. Block System Directories
-    if (SYSTEM_ROOTS.some(root => resolvedPath.startsWith(root))) {
+    if (isPathInsideSystemRoot(resolvedPath)) {
         throw new Error(`Security Violation: Access to system directory '${resolvedPath}' is denied`);
     }
 
