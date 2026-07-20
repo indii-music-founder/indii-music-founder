@@ -1245,6 +1245,38 @@ describe('Firestore Security Rules', () => {
         });
     });
 
+    describe('users/{uid}/assetAuditReceipts/{auditId}', () => {
+        const auditPath = ['users', ALICE_UID, 'assetAuditReceipts', 'asset_audit_receipt'];
+        const receipt = {
+            schemaVersion: 'asset-resolution-audit.v1',
+            ownerUid: ALICE_UID,
+            releaseId: 'release-owner',
+            status: 'compliant',
+        };
+
+        beforeEach(async () => {
+            if (requireEmulator()) return;
+            await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                await setDoc(doc(ctx.firestore(), ...auditPath), receipt);
+            });
+        });
+
+        it('lets only the owner read a server-generated asset audit receipt', async () => {
+            if (requireEmulator()) return;
+            await assertSucceeds(getDoc(doc(verifiedCtx(ALICE_UID).firestore(), ...auditPath)));
+            await assertFails(getDoc(doc(verifiedCtx(BOB_UID).firestore(), ...auditPath)));
+            await assertFails(getDoc(doc(unauthCtx().firestore(), ...auditPath)));
+        });
+
+        it('denies every client mutation of an asset audit receipt', async () => {
+            if (requireEmulator()) return;
+            const db = verifiedCtx(ALICE_UID).firestore();
+            await assertFails(setDoc(doc(db, 'users', ALICE_UID, 'assetAuditReceipts', 'forged'), receipt));
+            await assertFails(updateDoc(doc(db, ...auditPath), { status: 'non_compliant' }));
+            await assertFails(deleteDoc(doc(db, ...auditPath)));
+        });
+    });
+
     // ──────────────────────────────────────────────────────────────────────
     // 14. AUDIO ASSETS (/audio_assets/{docId})
     // ──────────────────────────────────────────────────────────────────────

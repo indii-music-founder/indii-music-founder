@@ -1073,6 +1073,13 @@ service cloud.firestore {
       allow read, write: if isOwner(userId);
     }
 
+    // Server-generated MCP evidence receipts. The authenticated owner may read
+    // the byte-level audit result, but cannot forge, alter, or erase evidence.
+    match /users/{userId}/assetAuditReceipts/{auditId} {
+      allow read: if isOwner(userId);
+      allow create, update, delete: if false;
+    }
+
     // PODCredentialService — POD provider API keys, field-level per provider.
     match /users/{userId}/integrations/{docId} {
       allow read, write: if isOwner(userId);

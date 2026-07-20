@@ -1,36 +1,41 @@
-import { IndiiMcpTool, McpContext } from '../types.js';
-import { verifyOwnership } from '../helpers.js';
+import { auditReleaseArtwork } from '../../assets/AssetResolutionAuditService.js';
+import { failedOperationResult, operationResult, requireString, toolResponse } from '../helpers.js';
+import { IndiiMcpTool } from '../types.js';
 
 export const auditAssetResolutions: IndiiMcpTool = {
     name: 'audit_asset_resolutions',
-    description: 'Verifies if distributed assets meet DSP requirements (e.g. 3000x3000px cover art).',
+    description: 'Byte-inspects owner-scoped release artwork against the versioned DSP cover-art baseline.',
     inputSchema: {
         type: 'object',
-        properties: {
-            releaseId: { type: 'string' }
-        },
-        required: ['releaseId']
+        properties: { releaseId: { type: 'string', description: 'Authenticated owner release identifier.' } },
+        required: ['releaseId'],
     },
-        handler: async (rawArgs: Record<string, unknown>, context: McpContext) => {
-        const targetUserId = (rawArgs as any).userId || (rawArgs as any).artistId || (rawArgs as any).ownerId || context.user.uid;
+    handler: async (args, context) => {
+        const actorUid = context.user.uid;
+        let releaseId = 'unknown';
         try {
-            verifyOwnership(context, targetUserId);
-        } catch (e: any) {
-            return {
-                isError: true,
-                content: [{ type: 'text', text: e.message }]
-            };
+            releaseId = requireString(args, 'releaseId', 200);
+            const audit = await auditReleaseArtwork(actorUid, releaseId);
+            return toolResponse(operationResult({
+                tool: 'audit_asset_resolutions',
+                actorUid,
+                status: 'succeeded',
+                resourceType: 'release_artwork_audit',
+                resourceId: audit.auditId ?? releaseId,
+                evidence: audit.artwork ? [{ type: 'storage_object_generation', reference: `${audit.artwork.storagePath}#${audit.artwork.generation}`, sha256: audit.artwork.sha256 }] : [],
+                warnings: audit.warnings,
+                data: audit as unknown as Record<string, unknown>,
+            }));
+        } catch (error) {
+            return toolResponse(failedOperationResult({
+                tool: 'audit_asset_resolutions',
+                actorUid,
+                resourceType: 'release',
+                resourceId: releaseId,
+                code: error instanceof TypeError ? 'INVALID_ARGUMENT' : 'ASSET_AUDIT_FAILED',
+                message: error instanceof Error ? error.message : 'Asset audit failed.',
+                retryable: false,
+            }));
         }
-        const uid = context.user.uid;
-        const db = (await import('firebase-admin')).firestore();
-        const docRef = await db.collection('mcpJobs').add({
-            tool: 'audit_asset_resolutions',
-            args: rawArgs,
-            initiatorUid: uid,
-            createdAt: (await import('firebase-admin')).firestore.FieldValue.serverTimestamp()
-        });
-        return {
-            content: [{ type: 'text', text: `Successfully executed audit_asset_resolutions. Job ID: ${docRef.id}` }]
-        };
-    }
+    },
 };
