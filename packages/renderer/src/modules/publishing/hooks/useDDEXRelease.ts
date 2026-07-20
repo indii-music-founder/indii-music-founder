@@ -50,7 +50,10 @@ export type WizardStep =
   | 'complete';
 
 // Initial extended metadata
-const INITIAL_EXTENDED_METADATA: Partial<ExtendedGoldenMetadata> = {
+// Factory, not a module constant: INGESTION_CONFIG getters throw when the
+// ingestion env vars are absent (fail-closed by design), so they must not be
+// read at import time or the whole app dies at boot instead of at wizard use.
+const createInitialExtendedMetadata = (): Partial<ExtendedGoldenMetadata> => ({
   trackTitle: '',
   artistName: '',
   isrc: '',
@@ -74,7 +77,7 @@ const INITIAL_EXTENDED_METADATA: Partial<ExtendedGoldenMetadata> = {
     aiToolsUsed: [],
     humanContribution: ''
   }
-};
+});
 
 // Initial assets
 const INITIAL_ASSETS: Partial<ReleaseAssets> = {
@@ -195,7 +198,7 @@ export function useDDEXRelease(): UseDDEXReleaseReturn {
   }, [userProfile?.brandKit?.socials?.distributor]);
 
   const [currentStep, setCurrentStep] = useState<WizardStep>('metadata');
-  const [metadata, setMetadata] = useState<Partial<ExtendedGoldenMetadata>>(INITIAL_EXTENDED_METADATA);
+  const [metadata, setMetadata] = useState<Partial<ExtendedGoldenMetadata>>(createInitialExtendedMetadata);
   const [selectedDistributors, setSelectedDistributors] = useState<DistributorId[]>([userDistributor]);
   const [assets, setAssets] = useState<Partial<ReleaseAssets>>(INITIAL_ASSETS);
   const [uploadProgress, setUploadProgress] = useState({ audio: 0, cover: 0 });
@@ -544,7 +547,7 @@ export function useDDEXRelease(): UseDDEXReleaseReturn {
   // Reset wizard
   const resetWizard = useCallback(() => {
     setCurrentStep('metadata');
-    setMetadata(INITIAL_EXTENDED_METADATA);
+    setMetadata(createInitialExtendedMetadata());
     setSelectedDistributors([userDistributor]); // Use user's preferred distributor
     setAssets(INITIAL_ASSETS);
     setIsSubmitting(false);

@@ -16385,3 +16385,18 @@ All scoped work from ISSUE-511/913/957/958 consolidated effort:
 - **Module:** components/shared/FirstRunTour.tsx, core/components/command-bar/PromptArea.tsx, core/components/RightPanel.tsx
 - **Evidence:** Green `bg-green-600` buttons carried purple `rgba(168,85,247,…)` box-shadows (old brand color leftovers) in FirstRunTour pill, PromptArea Boardroom mode button, and composer focus glow. FirstRunTour pill at `fixed bottom-4 right-4 z-[150]` sat on top of the RightPanel composer send button.
 - **Fix:** All three shadows repointed to green rgba(34,197,94,…); tour pill moved to bottom-center (`left-1/2 -translate-x-1/2`). Bonus: "Your Creations" bar in RightPanel given green gradient/border/label treatment for visibility; PlanningTab date inputs stack below 2xl to stop native date input truncation ("mr 🗓").
+
+### ISSUE-1092: App died at boot for any env without ingestion vars — INGESTION_CONFIG fail-closed getters read at module scope
+- **Status:** ✅ FIXED (2026-07-20)
+- **Severity:** 🔴 CRITICAL (white-screen boot crash: "Uncaught Error: [IngestionConfig] Missing required environment variable VITE_INGESTION_ENTITY_NAME" — dev server unusable)
+- **Module:** services/metadata/types.ts, modules/publishing/hooks/useDDEXRelease.ts (root); core/config/ingestion.ts (design intact)
+- **Evidence:** Fresh `npm run dev:web` boot rendered the error screen before login. `INITIAL_METADATA` (types.ts:243) and `INITIAL_EXTENDED_METADATA` (useDDEXRelease.ts:53) read `INGESTION_CONFIG.ENTITY_NAME`/`SYSTEM_IDENTIFIER` in module-scope constants, so the deliberate fail-closed env check (20M investor IP work, commit 300f59817) threw at import time app-wide instead of at publishing-wizard use.
+- **Fix (root, fail-closed preserved):** types.ts `labelName`/`dpid` are now getters on INITIAL_METADATA (spread invokes them at use time); useDDEXRelease's constant became `createInitialExtendedMetadata()` factory. Missing env still throws — but only when distribution/publishing features are actually used. Verified: app boots to login; 118 tests across ingestion/distribution/touring/publishing pass.
+- **Pattern (ledger-worthy):** fail-closed config getters must NEVER be dereferenced in module-scope constants; keep reads inside functions/factories/getters.
+
+### ISSUE-1093: Road Manager double-sidebar chrome — module sidebar not collapsible, dead Settings affordance
+- **Status:** ✅ FIXED (2026-07-20)
+- **Severity:** 🟡 MEDIUM (nested-nav depth: global sidebar + full-width module sidebar duplicated wayfinding; ISSUE-704 IA retained per William's 2026-07-03/07-15 decisions)
+- **Module:** modules/touring/components/RoadManagerSidebar.tsx
+- **Fix:** Sidebar collapses to a 64px icon rail (chevron toggle, persisted via localStorage `indii_roadmgr_sidebar_collapsed`, tooltips on icons, aria-expanded); removed decorative no-op Settings icon (dead affordance); nav scrollbar now custom-scrollbar; duplicate bg-green-500 class cleaned.
+- **Evidence:** Playwright mock-harness screenshots: expanded, collapsed, and collapsed-after-reload (persistence) all render correctly; touring tests 15/15 pass.

@@ -246,8 +246,11 @@ export const INITIAL_METADATA: ExtendedGoldenMetadata = {
     isrc: '',
     explicit: false,
     genre: '',
-    labelName: INGESTION_CONFIG.ENTITY_NAME,
-    dpid: INGESTION_CONFIG.SYSTEM_IDENTIFIER,
+    // Getters, not eager values: INGESTION_CONFIG throws when the ingestion env
+    // vars are absent (fail-closed by design). Getters defer that check to the
+    // point of use (spread/read) instead of crashing the app at import time.
+    get labelName() { return INGESTION_CONFIG.ENTITY_NAME; },
+    get dpid() { return INGESTION_CONFIG.SYSTEM_IDENTIFIER; },
     splits: [],
     pro: 'None',
     publisher: 'Self-Published',
