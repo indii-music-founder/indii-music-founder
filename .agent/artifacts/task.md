@@ -61,15 +61,24 @@ Finish every issue in `.agent/test_ledger/OPEN_ISSUES.md` that is not `✅ FIXED
   - **Status:** ✅ FIXED (2026-07-12) — packaging failures leave a durable `packaging_failed` draft with the true error and idempotent retry; no successful/submitted copy is shown without completed packaging.
 - [x] ISSUE-969 — Distribution submission builds "delivery" metadata with no audit trail
   - **Status:** ✅ FIXED (2026-07-20) — submission requires canonical master and cover references; Electron re-verifies their bytes and hashes, Python packages them as explicit resources, and SFTP receives the package directory rather than XML-only metadata. Partner acknowledgement remains the external delivery-acceptance evidence in `docs/RELEASE_CHECKLIST.md`.
-- [ ] ISSUE-972 — Registration desktop automation wired to a nonexistent Electron API
-- [ ] ISSUE-980 — CRM "Launch Drop" marks metadata-only campaigns active, no real creation
-- [ ] ISSUE-982 — Quick Capture treats `null` queue result as success, can erase input
-- [ ] ISSUE-983 — "Save to Notes" clears media after queue acceptance without verifying persistence
-- [ ] ISSUE-984 — Dispatch tasks have no atomic claim; multiple desktop listeners can double-process
-- [ ] ISSUE-987 — Voice memo bytes always relabeled WebM; empty/unsupported recordings not caught
-- [ ] ISSUE-988 — Venue pin capture can hang indefinitely; rejects valid zero latitude
-- [ ] ISSUE-989 — Generation timeout doesn't cancel pending command; late recovery/retry double-spends
-- [ ] ISSUE-990 — "Recent Generates" mixes every relay response image into gallery, no command-type scoping
+- [x] ISSUE-972 — Registration desktop automation wired to a nonexistent Electron API
+  - **Status:** ✅ FIXED (2026-07-12) — automation preflight is unconditionally unavailable until a real allowlisted, checkpointed Electron browser bridge exists; registration UI consistently directs the user to a manual draft/handoff rather than implying desktop automation can submit a filing.
+- [x] ISSUE-980 — CRM "Launch Drop" marks metadata-only campaigns active, no real creation
+  - **Status:** ✅ FIXED (2026-07-12) — a campaign with no deliverable URL remains a draft at both UI and store boundaries; it cannot count as an active fan-facing drop.
+- [x] ISSUE-982 — Quick Capture treats `null` queue result as success, can erase input
+  - **Status:** ✅ FIXED (2026-07-12) — dispatch must return a durable task ID; failed queue creation preserves the capture, avoids success haptics, cleans up unlinked uploaded media, and offers local export.
+- [x] ISSUE-983 — "Save to Notes" clears media after queue acceptance without verifying persistence
+  - **Status:** ✅ FIXED (2026-07-12) — deterministic media-capture types wait for a direct notes-tool receipt before clearing; failed/timeout capture remains recoverable. Free-form agent-command receipt support is separate shared-agent work.
+- [x] ISSUE-984 — Dispatch tasks have no atomic claim; multiple desktop listeners can double-process
+  - **Status:** ✅ FIXED (2026-07-12) — a Firestore transaction atomically transitions `pending` dispatch work to `processing`; only the winner executes. Executor lease recovery remains a separate crash-recovery enhancement.
+- [x] ISSUE-987 — Voice memo bytes always relabeled WebM; empty/unsupported recordings not caught
+  - **Status:** ✅ FIXED (2026-07-12) — MediaRecorder negotiates and preserves its actual MIME/extension; empty and sub-minimum recordings never reach a successful save path.
+- [x] ISSUE-988 — Venue pin capture can hang indefinitely; rejects valid zero latitude
+  - **Status:** ✅ FIXED (2026-07-12) — explicit geolocation timeout/options, coordinate-range validation, confirmation, accuracy/timestamp payloads, and stale-callback guards preserve valid zero-axis locations and recover from provider failure.
+- [x] ISSUE-989 — Generation timeout doesn't cancel pending command; late recovery/retry double-spends
+  - **Status:** ✅ FIXED (2026-07-12) — timeout/unmount atomically cancels an unclaimed command; a late desktop backlog scan cannot invoke it. Already-claimed work is reported honestly rather than silently retried as a new request.
+- [x] ISSUE-990 — "Recent Generates" mixes every relay response image into gallery, no command-type scoping
+  - **Status:** ✅ FIXED (2026-07-12) — the gallery accepts only responses tied to a confirmed `generate_image` command and quarantines unmatched image responses.
 - [ ] ISSUE-994 — Performance Video sends final render callable the wrong request/response
 - [ ] ISSUE-1007 — "Cover Art" mode promises distributor compliance but never verifies delivered file
 - [ ] ISSUE-1013 — Social account wizard drops creative profile/banner assets before signup handoff
