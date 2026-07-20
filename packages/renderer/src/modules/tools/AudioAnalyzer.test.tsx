@@ -127,6 +127,7 @@ describe('AudioAnalyzer (Sonic DNA Console)', () => {
         // The file input is hidden but there is text "Import Track"
         expect(screen.getByText('Load Audio Master')).toBeInTheDocument();
         expect(screen.getByText('Upload an audio master to extract precise metadata via Intelligence-driven acoustic analysis.')).toBeInTheDocument();
+        expect(screen.getByTestId('import-track-input')).toHaveAttribute('accept', '.wav,.flac');
     });
 
     it('handles file upload and triggers analysis', async () => {

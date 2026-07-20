@@ -10,7 +10,6 @@ import { useToast } from '@/core/context/ToastContext';
 import { TagMatrix } from './components/TagMatrix';
 import { AudioIntelligenceProfile } from '@/services/audio/types';
 import { audioAnalysisService } from '@/services/audio/AudioAnalysisService';
-import { detectM4ACodec } from '@/services/audio/M4ACodecProbe';
 import { AudioWaveformViewer } from '@/components/shared/AudioWaveformViewer';
 import { useStore } from '@/core/store';
 import { logger } from '@/utils/logger';
@@ -50,42 +49,29 @@ const AudioAnalyzer: React.FC = () => {
     };
 
     /**
-     * Lossless format enforcement — distributors (DistroKid, TuneCore, CD Baby,
-     * UnitedMasters) universally require lossless masters (WAV/FLAC/AIFF).
-     * MP3/AAC/OGG are lossy and will be rejected at QC.
+     * Canonical-master enforcement: only formats measured by the immutable
+     * WAV/FLAC parser may enter this distribution-QC workflow. AIFF and ALAC
+     * can be lossless, but they are deliberately not advertised until they
+     * have the same end-to-end byte validation and delivery support.
      */
     const LOSSLESS_MIME_TYPES = new Set([
         'audio/wav', 'audio/x-wav', 'audio/wave',
         'audio/flac', 'audio/x-flac',
-        'audio/aiff', 'audio/x-aiff',
-        'audio/x-m4a', 'audio/mp4', // ALAC containers
-        'audio/alac',
     ]);
-    const LOSSLESS_EXTENSIONS = new Set(['.wav', '.flac', '.aif', '.aiff', '.m4a', '.alac']);
-    const LOSSLESS_ACCEPT = '.wav,.flac,.aif,.aiff,.m4a';
+    const LOSSLESS_EXTENSIONS = new Set(['.wav', '.flac']);
+    const LOSSLESS_ACCEPT = '.wav,.flac';
 
     const isLosslessFormat = (f: File): boolean => {
         // Check MIME type first
         if (f.type && LOSSLESS_MIME_TYPES.has(f.type.toLowerCase())) return true;
-        // Fallback: check file extension (some browsers don't set MIME for FLAC/AIFF)
+        // Fallback: some browsers omit a MIME type for FLAC.
         const ext = '.' + f.name.split('.').pop()?.toLowerCase();
         return LOSSLESS_EXTENSIONS.has(ext);
     };
 
-    // ISSUE-961: M4A/MP4 is a container, not a codec — it can carry lossy
-    // AAC just as easily as lossless ALAC. Extension/MIME alone can't tell
-    // them apart; the actual sample-entry codec must be probed.
-    const M4A_MIME_TYPES = new Set(['audio/x-m4a', 'audio/mp4', 'audio/alac']);
-    const M4A_EXTENSIONS = new Set(['.m4a', '.alac']);
-    const isM4AContainer = (f: File): boolean => {
-        if (f.type && M4A_MIME_TYPES.has(f.type.toLowerCase())) return true;
-        const ext = '.' + f.name.split('.').pop()?.toLowerCase();
-        return M4A_EXTENSIONS.has(ext);
-    };
-
     const isVerifiedDesktopLosslessCodec = (codec?: string): boolean => {
         const normalized = codec?.toLowerCase() || '';
-        return normalized === 'alac' || normalized === 'flac' || normalized.startsWith('pcm_');
+        return normalized === 'flac' || normalized.startsWith('pcm_');
     };
 
     const handleLoadClick = async (e: React.MouseEvent<HTMLLabelElement>) => {
@@ -96,7 +82,7 @@ const AudioAnalyzer: React.FC = () => {
             try {
                 const filePath = await window.electronAPI.selectFile({
                     title: 'Select Lossless Master Track',
-                    filters: [{ name: 'Lossless Audio', extensions: ['wav', 'flac', 'aif', 'aiff', 'm4a'] }]
+                    filters: [{ name: 'Canonical Master Audio', extensions: ['wav', 'flac'] }]
                 });
 
                 if (filePath) {
@@ -104,21 +90,21 @@ const AudioAnalyzer: React.FC = () => {
                     const ext = '.' + pathStr.split('.').pop()?.toLowerCase();
                     if (!LOSSLESS_EXTENSIONS.has(ext)) {
                         toast.error(
-                            `${ext.toUpperCase()} files are not accepted. Distributors require lossless masters (WAV, FLAC, or AIFF). Please select a lossless format.`
+                            `${ext.toUpperCase()} files are not accepted. This canonical-master workflow currently accepts measured WAV or FLAC only.`
                         );
                         return;
                     }
 
                     // Electron already runs FFprobe for desktop analysis and
                     // exposes stream metadata through audio:analyze. Do not
-                    // trust the selected extension: AAC can be inside M4A or
-                    // renamed to WAV. Only known lossless codecs may enter QC.
+                    // trust the selected extension: renamed or compressed data
+                    // must not enter QC. Only known canonical codecs may enter.
                     const probe = await window.electronAPI.audio.analyze(pathStr);
                     const audioStream = probe.streams?.find(stream => stream.codec_type === 'audio');
                     if (probe.status !== 'success' || !isVerifiedDesktopLosslessCodec(audioStream?.codec_name)) {
                         const codec = audioStream?.codec_name?.toUpperCase() || 'unknown';
                         toast.error(
-                            `Desktop codec check rejected this master (${codec}). Distributors require PCM WAV/AIFF, FLAC, or ALAC-in-M4A — not AAC or another lossy codec.`
+                            `Desktop codec check rejected this master (${codec}). This canonical-master workflow accepts PCM WAV or FLAC only.`
                         );
                         return;
                     }
@@ -156,31 +142,11 @@ const AudioAnalyzer: React.FC = () => {
         if (!isLosslessFormat(uploadedFile)) {
             const ext = uploadedFile.name.split('.').pop()?.toUpperCase() || 'unknown';
             toast.error(
-                `${ext} files are not accepted. Distributors require lossless masters (WAV, FLAC, or AIFF). Please re-export your track in a lossless format.`
+                `${ext} files are not accepted. This canonical-master workflow accepts measured WAV or FLAC only. Please re-export your track as WAV or FLAC.`
             );
             // Reset the input so the same file can be re-selected after conversion
             e.target.value = '';
             return;
-        }
-
-        // ISSUE-961: extension/MIME says "M4A" but that only names the
-        // container — probe the actual sample-entry codec before trusting it.
-        if (isM4AContainer(uploadedFile)) {
-            const probe = await detectM4ACodec(uploadedFile);
-            if (probe.status === 'lossy') {
-                toast.error(
-                    `This M4A contains ${probe.codec.toUpperCase()} audio, a lossy codec. Distributors require a lossless master (WAV, FLAC, AIFF, or ALAC-in-M4A). Please re-export as lossless.`
-                );
-                e.target.value = '';
-                return;
-            }
-            if (probe.status === 'undetermined') {
-                toast.error(
-                    `This M4A file's audio codec could not be verified — the container may be corrupt or truncated. Please re-export as WAV, FLAC, or AIFF.`
-                );
-                e.target.value = '';
-                return;
-            }
         }
 
         setFile(uploadedFile);

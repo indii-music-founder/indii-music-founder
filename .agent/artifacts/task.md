@@ -31,29 +31,36 @@ Finish every issue in `.agent/test_ledger/OPEN_ISSUES.md` that is not `✅ FIXED
   - **Status:** PARTIAL (2026-07-20) — all active Python delivery/package paths require configured sender/recipient DPIDs and XSD-mode validation before SFTP or `delivery_ready`; desktop submission now stages both the upload-once Firebase master and a canonical cover object, verifies SHA-256 and measured media properties in Electron and Python, derives DDEX MD5 values from the delivered bytes, and sends an XML-plus-resources package directory. The reachable Firebase-only compiler/stager is retired and now fails closed. Remaining before closure is external only: provision the founder's issued DPID/licensed XSDs and recipient profile, then retain partner acceptance from a real test delivery. Founder actions are in `docs/RELEASE_CHECKLIST.md`.
 - [x] ISSUE-786 — YouTube/Meta rights exports default to claims user may not legally hold
   - **Status:** Codeable fix landed; requires new provisioned key (external action).
-- [ ] ISSUE-807 — Video "Audio" toggle promises a control that's only prompt text
-- [ ] ISSUE-813 — ISWC readiness treats any supplied code as registered, no provenance check
+- [x] ISSUE-807 — Video "Audio" toggle promises a control that's only prompt text
+  - **Status:** ✅ FIXED (2026-07-12) — the off state says `Silent (requested)` and its tooltip states that Veo has no API-level audio toggle; tests prove the prompt-only limitation is visible rather than promised as a deterministic control.
+- [x] ISSUE-813 — ISWC readiness treats any supplied code as registered, no provenance check
+  - **Status:** ✅ FIXED (2026-07-12) — caller-supplied ISWCs remain `draft`; only a validated confirmation record with assigning-society and reference evidence may be registered. External CISAC/PRO confirmation is a founder/provider action, not a local claim.
 - [x] ISSUE-814 — Distributor "connect" succeeds with unverified credentials
   - **Status:** Code landed verifying credentials before marking connected.
 - [x] ISSUE-820 — Short-form social delivery queues to token/platform names the worker doesn't support
   - **Status:** Queueing now validates worker name against configured platforms.
 - [x] ISSUE-856 — Distributor statement normalization is prompt-only but reports success
   - **Status:** Now returns a typed success/error response with actual statement count.
-- [ ] ISSUE-869 — Temporal inpaint selectable with Lite/Fast models, then fails
+- [x] ISSUE-869 — Temporal inpaint selectable with Lite/Fast models, then fails
+  - **Status:** ✅ FIXED (2026-07-12) — unsupported temporal inpaint is rejected before the backend cost-reservation read and the UI gives an actionable alternative. A client-readable capability receipt remains a separate future enhancement; the product does not claim unsupported models work.
 - [x] ISSUE-938 — Enhanced Showroom video jobs can hang forever or save to wrong project
   - **Status:** ✅ FIXED (2026-07-14) — captures immutable projectId/prompt at submission, uses captured values on completion.
 - [ ] ISSUE-939 — Inventory "Sync" is only a 1.5-second animation
 - [ ] ISSUE-946 — Discord/Telegram webhook auto-announcement event wiring still unbuilt
-- [ ] ISSUE-961 — Audio Distribution QC treats every M4A/MP4 as lossless master, no codec inspection
-  - **Status:** PARTIAL (2026-07-17) — every canonical-master creator now uses one byte-level WAV/FLAC gate; measured codec/container/sample rate/bit depth/channels persist with the master and Electron independently rechecks downloaded bytes before DDEX. Remaining before full acceptance: add equally authoritative AIFF/ALAC parsing (or explicitly retire those picker options) and persist a server-verified technical probe for non-desktop delivery workers.
+- [x] ISSUE-961 — Audio Distribution QC treats every M4A/MP4 as lossless master, no codec inspection
+  - **Status:** ✅ FIXED (2026-07-20) — canonical-master intake now advertises and accepts only byte-measured WAV/FLAC; AIFF/ALAC/M4A options were explicitly retired until they have the same immutable parser, worker probe, and DDEX-delivery support. Canonical masters persist measured technical properties and are independently rechecked before DDEX.
 - [ ] ISSUE-1083 — Audio profiling callable accepted arbitrary Storage paths and queued an unauthenticated placeholder engine target
   - **Status:** PARTIAL (2026-07-17) — the callable is now exported, App Check/auth guarded, requires the authenticated owner's server-verified immutable content-addressed master, and queues only its verified hash/generation/reference with a same-project OIDC service identity. Remaining before closure: provision the private engine-dsp Cloud Run service, queue, invoker service account/IAM, and runtime configuration; deploy; then prove a real task profiles a master and persists an authenticated analysis receipt.
 - [ ] ISSUE-1084 — engine-dsp ignored the verified master contract, loaded whole files into memory, and never called Gemini or persisted provenance
   - **Status:** PARTIAL (2026-07-17) — upload-once persistence now invokes one authoritative verify-and-queue callable; worker code generation-pins and re-hashes the canonical WAV/FLAC, independently probes technical properties, streams open-source DSP measurements, sends the authenticated GCS master reference to Vertex Gemini through `google-genai`, and writes a leased/idempotent owner-readable receipt. Remaining before closure: deploy the private worker/rules with runtime IAM and at least 2 GiB memory, process a real master through Cloud Tasks, and verify the resulting hash+generation receipt and model charge behavior in production.
-- [ ] ISSUE-962 — Browser Audio QC base64-encodes + sends full master twice in parallel, no size/duration limit
-- [ ] ISSUE-963 — Publishing asset validation converts decode failures into compliant-looking metadata
-- [ ] ISSUE-964 — Publishing marks release submitted/metadata-complete when packaging fails
-- [ ] ISSUE-969 — Distribution submission builds "delivery" metadata with no audit trail
+- [x] ISSUE-962 — Browser Audio QC base64-encodes + sends full master twice in parallel, no size/duration limit
+  - **Status:** ✅ FIXED (2026-07-20) — browser semantic analysis rejects raw-master Gemini upload; normal ingestion persists once, queues the protected worker, waits on an owner/hash/generation-bound receipt, and hydrates its result. The remaining live-worker proof belongs to ISSUE-1083/1084 and is documented in the founder/operator checklist.
+- [x] ISSUE-963 — Publishing asset validation converts decode failures into compliant-looking metadata
+  - **Status:** ✅ FIXED (2026-07-12) — byte-level WAV/FLAC validation rejects renamed, corrupt, compressed, low-rate, unsupported-bit-depth, and non-stereo masters before Storage; cover failures cannot fabricate compliant dimensions.
+- [x] ISSUE-964 — Publishing marks release submitted/metadata-complete when packaging fails
+  - **Status:** ✅ FIXED (2026-07-12) — packaging failures leave a durable `packaging_failed` draft with the true error and idempotent retry; no successful/submitted copy is shown without completed packaging.
+- [x] ISSUE-969 — Distribution submission builds "delivery" metadata with no audit trail
+  - **Status:** ✅ FIXED (2026-07-20) — submission requires canonical master and cover references; Electron re-verifies their bytes and hashes, Python packages them as explicit resources, and SFTP receives the package directory rather than XML-only metadata. Partner acknowledgement remains the external delivery-acceptance evidence in `docs/RELEASE_CHECKLIST.md`.
 - [ ] ISSUE-972 — Registration desktop automation wired to a nonexistent Electron API
 - [ ] ISSUE-980 — CRM "Launch Drop" marks metadata-only campaigns active, no real creation
 - [ ] ISSUE-982 — Quick Capture treats `null` queue result as success, can erase input

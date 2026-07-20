@@ -170,4 +170,17 @@ describe('AudioAnalyzer Interaction: Save Analysis', () => {
             expect(mockToast.success).toHaveBeenCalledWith('Estimated technical profile saved (not a certified distribution-compliance measurement).');
         });
     });
+
+    it('rejects AIFF and ALAC containers instead of advertising unverified canonical-master support', async () => {
+        render(<AudioAnalyzer />);
+        const input = screen.getByTestId('import-track-input');
+
+        fireEvent.change(input, {
+            target: { files: [new File(['not-a-canonical-master'], 'master.aiff', { type: 'audio/aiff' })] },
+        });
+
+        await waitFor(() => {
+            expect(mockToast.error).toHaveBeenCalledWith(expect.stringMatching(/WAV or FLAC only/i));
+        });
+    });
 });
