@@ -27,6 +27,7 @@ import { AppInitializationProvider } from '@/providers/AppInitializationProvider
 
 const AppShell = lazy(() => import('./AppShell'));
 const BugReportDialog = lazy(() => import('@/modules/debug/BugReportDialog').then(m => ({ default: m.BugReportDialog })));
+const InstagramOAuthCallback = lazy(() => import('@/modules/analytics/components/InstagramOAuthCallback').then(m => ({ default: m.InstagramOAuthCallback })));
 
 export function isRemoteSurfaceDevice(
     mobile: Pick<MobileState, 'isAnyPhone' | 'isTablet' | 'isTouchDevice'>
@@ -149,9 +150,13 @@ export default function App() {
         if (path === '/terms' || path === '/legal/terms') return 'terms';
         return null;
     }, [location.pathname]);
+    const isInstagramOAuthCallback = useMemo(
+        () => (location.pathname.replace(/\/+$/, '') || '/') === '/auth/instagram/callback',
+        [location.pathname],
+    );
 
     // URL sync must not rewrite public legal routes back to a persisted module.
-    useURLSync({ disabled: !!publicLegalPage });
+    useURLSync({ disabled: !!publicLegalPage || isInstagramOAuthCallback });
 
     // Determine if current module should show chrome (sidebar, command bar, etc.)
     const showChrome = useMemo(
@@ -180,6 +185,8 @@ export default function App() {
                 <LoadingFallback />
             ) : !user ? (
                 <UnauthenticatedApp />
+            ) : isInstagramOAuthCallback ? (
+                <Suspense fallback={<LoadingFallback />}><InstagramOAuthCallback /></Suspense>
             ) : (
                 <Suspense fallback={<LoadingFallback />}>
                     <AppShell

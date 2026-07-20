@@ -26,8 +26,7 @@
  * Firestore token path: users/{uid}/analyticsTokens/instagram
  */
 
-import { db, functions as firebaseFunctions } from '@/services/firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { functions as firebaseFunctions } from '@/services/firebase';
 import { httpsCallable } from 'firebase/functions';
 import { auth } from '@/services/firebase';
 import type { PlatformData, StreamDataPoint } from './types';
@@ -40,15 +39,24 @@ import { logger } from '@/utils/logger';
 // same graph as publishing; graph.instagram.com is the incompatible Basic
 // Display API token model.
 const GRAPH_BASE = 'https://graph.facebook.com/v23.0';
-const TOKEN_COLLECTION = (uid: string) =>
-    doc(db, 'users', uid, 'analyticsTokens', 'instagram');
-
 // ── Meta/Instagram API response types ─────────────────────────────────────────
 
-interface IGStoredToken {
-    accessToken: string;
-    expiresAt: number;
-    igUserId: string;
+export interface InstagramPageChoice {
+    facebookPageId: string;
+    facebookPageName: string;
+    instagramBusinessAccountId: string;
+    instagramUsername?: string;
+}
+
+export type InstagramCallbackResult =
+    | { kind: 'connected' }
+    | { kind: 'page_selection_required'; intentId: string; pages: InstagramPageChoice[] };
+
+interface InstagramExchangeResponse {
+    ok: boolean;
+    requiresPageSelection?: boolean;
+    intentId?: string;
+    pages?: InstagramPageChoice[];
 }
 
 interface IGUserResponse {
@@ -143,31 +151,54 @@ export class InstagramAnalyticsService {
             state,
         });
 
-        window.location.href = `https://www.facebook.com/v18.0/dialog/oauth?${params.toString()}`;
+        window.location.href = `https://www.facebook.com/v23.0/dialog/oauth?${params.toString()}`;
     }
 
     /**
      * Handle the OAuth callback.
      * The code is exchanged for a token via the `analyticsExchangeToken` Cloud Function.
      */
-    async handleCallback(code: string, state: string, facebookPageId?: string): Promise<void> {
+    async beginCallback(code: string, state: string): Promise<InstagramCallbackResult> {
         const storedState = sessionStorage.getItem('instagram_oauth_state');
         if (state !== storedState) {
             throw new Error('OAuth state mismatch — possible CSRF attack.');
         }
 
-        const exchangeFn = httpsCallable<unknown, { ok: boolean }>(
+        const exchangeFn = httpsCallable<unknown, InstagramExchangeResponse>(
             firebaseFunctions, 'analyticsExchangeToken'
         );
 
-        await exchangeFn({
+        const response = await exchangeFn({
             platform:    'instagram',
             code,
             redirectUri: this.redirectUri,
-            ...(facebookPageId ? { facebookPageId } : {}),
         });
+        const data = response.data;
+        if (data.ok && data.requiresPageSelection === true && isPageSelectionResponse(data)) {
+            return { kind: 'page_selection_required', intentId: data.intentId, pages: data.pages };
+        }
+        if (!data.ok) throw new Error('Instagram connection was not accepted. Reconnect and try again.');
 
         sessionStorage.removeItem('instagram_oauth_state');
+        return { kind: 'connected' };
+    }
+
+    /** Finalize a server-owned Page choice created during the callback. */
+    async finalizePageSelection(intentId: string, facebookPageId: string): Promise<void> {
+        const finalizeFn = httpsCallable<unknown, { ok: boolean }>(
+            firebaseFunctions, 'analyticsFinalizeInstagramConnection'
+        );
+        const response = await finalizeFn({ intentId, facebookPageId });
+        if (!response.data.ok) throw new Error('Instagram Page selection was not accepted. Reconnect and try again.');
+        sessionStorage.removeItem('instagram_oauth_state');
+    }
+
+    /** Compatibility wrapper for existing callers that do not support Page choice. */
+    async handleCallback(code: string, state: string): Promise<void> {
+        const result = await this.beginCallback(code, state);
+        if (result.kind === 'page_selection_required') {
+            throw new Error('Choose the Facebook Page connected to the Instagram account to finish connecting.');
+        }
     }
 
     /**
@@ -182,13 +213,13 @@ export class InstagramAnalyticsService {
      * Check if Instagram is connected and token is valid.
      */
     async isConnected(): Promise<boolean> {
-        const uid = auth.currentUser?.uid;
-        if (!uid) return false;
         try {
-            const snap = await getDoc(TOKEN_COLLECTION(uid));
-            if (!snap.exists()) return false;
-            const token = snap.data() as IGStoredToken;
-            return !!token.accessToken && token.expiresAt > Date.now();
+            if (!auth.currentUser) return false;
+            const statusFn = httpsCallable<unknown, { connected?: boolean }>(
+                firebaseFunctions, 'analyticsGetConnectionStatus'
+            );
+            const response = await statusFn({ platform: 'instagram' });
+            return response.data.connected === true;
         } catch (err: unknown) {
             logger.error('[InstagramAnalyticsService] Failed to check connection:', err);
             Sentry.captureException(err);
@@ -399,24 +430,8 @@ export class InstagramAnalyticsService {
 
     // ── Internal ──────────────────────────────────────────────────────────────
 
-    private async _getValidToken(): Promise<{ token: string; igUserId: string }> {
-        const uid = auth.currentUser?.uid;
-        if (!uid) throw new Error('Not authenticated.');
-
-        const snap = await getDoc(TOKEN_COLLECTION(uid));
-        if (!snap.exists()) throw new Error('Instagram not connected.');
-
-        const stored = snap.data() as IGStoredToken;
-
-        if (!stored.expiresAt || stored.expiresAt < Date.now() + 5 * 60 * 1000) {
-            const refreshFn = httpsCallable<unknown, { ok: boolean; accessToken: string; expiresAt: number }>(
-                firebaseFunctions, 'analyticsRefreshToken'
-            );
-            const result = await refreshFn({ platform: 'instagram' });
-            return { token: result.data.accessToken, igUserId: stored.igUserId };
-        }
-
-        return { token: stored.accessToken, igUserId: stored.igUserId };
+    private async _getValidToken(): Promise<never> {
+        throw new Error('Instagram credentials are server-only. Browser-side Graph requests are disabled until the authenticated analytics proxy is available.');
     }
 
     private async _fetch<T>(url: string, token: string): Promise<T> {
@@ -436,6 +451,14 @@ export class InstagramAnalyticsService {
         }
         return res.json() as Promise<T>;
     }
+}
+
+function isPageSelectionResponse(value: InstagramExchangeResponse): value is Required<Pick<InstagramExchangeResponse, 'intentId' | 'pages'>> & InstagramExchangeResponse {
+    return typeof value.intentId === 'string'
+        && /^[A-Za-z0-9_-]{1,128}$/.test(value.intentId)
+        && Array.isArray(value.pages)
+        && value.pages.length > 0
+        && value.pages.every(page => typeof page.facebookPageId === 'string' && typeof page.facebookPageName === 'string' && typeof page.instagramBusinessAccountId === 'string');
 }
 
 export const instagramAnalyticsService = new InstagramAnalyticsService();

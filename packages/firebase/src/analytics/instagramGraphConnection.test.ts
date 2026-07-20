@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { MetaInstagramConnectionError, exchangeFacebookInstagramConnection } from './instagramGraphConnection.js';
+import { MetaInstagramConnectionError, exchangeFacebookInstagramConnection, resolveFacebookInstagramConnection } from './instagramGraphConnection.js';
 
 const input = {
     code: 'authorization-code',
@@ -52,6 +52,24 @@ describe('exchangeFacebookInstagramConnection', () => {
                 { facebookPageId: 'page-2', instagramBusinessAccountId: 'ig-2', instagramUsername: 'another_music' },
             ],
         } satisfies Partial<MetaInstagramConnectionError>);
+    });
+
+    it('keeps the token server-side while returning only safe Page choices for a deferred selection', async () => {
+        const fetcher = vi.fn()
+            .mockResolvedValueOnce(okJson({ access_token: 'short-token' }))
+            .mockResolvedValueOnce(okJson({ access_token: 'long-token', expires_in: 5_184_000 }))
+            .mockResolvedValueOnce(okJson({ data: [
+                { id: 'page-1', name: 'indii', instagram_business_account: { id: 'ig-1', username: 'indii_music' } },
+                { id: 'page-2', name: 'another', instagram_business_account: { id: 'ig-2', username: 'another_music' } },
+            ] }));
+
+        const result = await resolveFacebookInstagramConnection(input, fetcher);
+
+        expect(result.accessToken).toBe('long-token');
+        expect(result.pages).toEqual([
+            { facebookPageId: 'page-1', facebookPageName: 'indii', instagramBusinessAccountId: 'ig-1', instagramUsername: 'indii_music' },
+            { facebookPageId: 'page-2', facebookPageName: 'another', instagramBusinessAccountId: 'ig-2', instagramUsername: 'another_music' },
+        ]);
     });
 
     it('fails closed when no selected Page is linked to an Instagram professional account', async () => {

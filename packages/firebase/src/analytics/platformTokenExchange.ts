@@ -17,6 +17,7 @@
 
 import * as functions from "firebase-functions/v1";
 import * as admin from "firebase-admin";
+import { randomUUID } from 'node:crypto';
 import { validateAppCheckV1 } from "../middleware/appCheck";
 import {
     spotifyClientId,
@@ -26,7 +27,12 @@ import {
     metaAppId,
     metaAppSecret,
 } from "../config/secrets";
-import { MetaInstagramConnectionError, exchangeFacebookInstagramConnection } from './instagramGraphConnection';
+import {
+    MetaInstagramConnectionError,
+    type FacebookInstagramConnection,
+    type InstagramPageOption,
+    resolveFacebookInstagramConnection,
+} from './instagramGraphConnection';
 
 // ── Secrets (imported from centralized config/secrets.ts) ─────────────────────
 const ALL_SECRETS = [
@@ -38,6 +44,9 @@ const ALL_SECRETS = [
 // ── Firestore collection path ─────────────────────────────────────────────────
 const tokenPath = (uid: string, platform: string) =>
     admin.firestore().collection("users").doc(uid).collection("analyticsTokens").doc(platform);
+const pendingInstagramIntentPath = (uid: string, intentId: string) =>
+    admin.firestore().collection('users').doc(uid).collection('serverSocialConnectionIntents').doc(intentId);
+const PENDING_INSTAGRAM_INTENT_TTL_MS = 10 * 60 * 1000;
 
 // ── Helper: make authenticated assertion ─────────────────────────────────────
 function assertAuth(context: functions.https.CallableContext): string {
@@ -94,40 +103,84 @@ export const analyticsExchangeToken = functions
         }
 
         if (platform === "instagram") {
-            let connection;
+            let resolution;
             try {
-                connection = await exchangeFacebookInstagramConnection({
+                resolution = await resolveFacebookInstagramConnection({
                     code,
                     redirectUri,
                     appId: metaAppId.value(),
                     appSecret: metaAppSecret.value(),
-                    ...(facebookPageId ? { facebookPageId } : {}),
                 });
             } catch (error) {
-                if (error instanceof MetaInstagramConnectionError) {
-                    throw new functions.https.HttpsError('failed-precondition', error.message, {
-                        code: error.code,
-                        pages: error.pages,
-                    });
-                }
+                if (error instanceof MetaInstagramConnectionError) throw metaConnectionError(error);
                 throw error;
             }
-            await storeToken(uid, "instagram", {
-                accessToken: connection.accessToken,
-                expiresAt: Date.now() + connection.expiresIn * 1000,
-                igUserId: connection.igUserId,
-                facebookPageId: connection.facebookPageId,
-                ...(connection.instagramUsername ? { instagramUsername: connection.instagramUsername } : {}),
-            });
-            return {
-                ok: true,
-                expiresIn: connection.expiresIn,
-                facebookPageId: connection.facebookPageId,
-                instagramUsername: connection.instagramUsername,
-            };
+            if (!facebookPageId && resolution.pages.length > 1) {
+                const intentId = await createPendingInstagramIntent(uid, resolution.accessToken, resolution.expiresIn, resolution.pages);
+                return { ok: true, requiresPageSelection: true, intentId, pages: resolution.pages };
+            }
+            const selectedPage = facebookPageId
+                ? resolution.pages.find(page => page.facebookPageId === facebookPageId)
+                : resolution.pages[0];
+            if (!selectedPage) {
+                throw metaConnectionError(new MetaInstagramConnectionError(
+                    'INVALID_FACEBOOK_PAGE_SELECTION',
+                    'The selected Facebook Page is not linked to an authorized Instagram professional account.',
+                    resolution.pages,
+                ));
+            }
+            const connection = connectionFromPage(resolution.accessToken, resolution.expiresIn, selectedPage);
+            await storeInstagramConnection(uid, connection);
+            return instagramConnectionResponse(connection);
         }
 
         throw new functions.https.HttpsError("invalid-argument", `Unsupported platform: ${platform}`);
+    });
+
+/** Finalize one short-lived server-only Meta Page selection without reusing an OAuth code. */
+export const analyticsFinalizeInstagramConnection = functions
+    .runWith({ enforceAppCheck: false, secrets: ALL_SECRETS, timeoutSeconds: 15 })
+    .https.onCall(async (data: unknown, context) => {
+        validateAppCheckV1(context);
+        const uid = assertAuth(context);
+        const { intentId, facebookPageId } = data as { intentId?: string; facebookPageId?: string };
+        if (!isSafeIdentifier(intentId) || !isSafeIdentifier(facebookPageId)) {
+            throw new functions.https.HttpsError('invalid-argument', 'intentId and facebookPageId are required safe identifiers.');
+        }
+        const intent = await consumePendingInstagramIntent(uid, intentId);
+        const page = Array.isArray(intent.pages) && intent.pages.find(candidate => candidate.facebookPageId === facebookPageId);
+        if (!page || !intent.accessToken || !Number.isFinite(intent.tokenExpiresIn)) {
+            throw new functions.https.HttpsError('failed-precondition', 'The selected Facebook Page is not available for this Instagram connection.');
+        }
+        const connection = connectionFromPage(intent.accessToken, intent.tokenExpiresIn, page);
+        await storeInstagramConnection(uid, connection);
+        return instagramConnectionResponse(connection);
+    });
+
+/** Return connection metadata only; OAuth tokens never leave the backend. */
+export const analyticsGetConnectionStatus = functions
+    .runWith({ enforceAppCheck: false, timeoutSeconds: 15 })
+    .https.onCall(async (data: unknown, context) => {
+        validateAppCheckV1(context);
+        const uid = assertAuth(context);
+        const platform = (data as { platform?: unknown }).platform;
+        if (platform !== 'instagram') {
+            throw new functions.https.HttpsError('invalid-argument', 'Only Instagram connection status is available from this endpoint.');
+        }
+        const snapshot = await tokenPath(uid, platform).get();
+        if (!snapshot.exists) return { connected: false };
+        const token = snapshot.data() as StoredToken;
+        const expiresAt = typeof token.expiresAt === 'number' ? token.expiresAt : undefined;
+        if (!token.accessToken || !expiresAt || expiresAt <= Date.now()) {
+            return { connected: false, ...(expiresAt ? { expiresAt } : {}) };
+        }
+        return {
+            connected: true,
+            expiresAt,
+            ...(typeof token.igUserId === 'string' ? { igUserId: token.igUserId } : {}),
+            ...(typeof token.facebookPageId === 'string' ? { facebookPageId: token.facebookPageId } : {}),
+            ...(typeof token.instagramUsername === 'string' ? { instagramUsername: token.instagramUsername } : {}),
+        };
     });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -250,6 +303,96 @@ interface StoredToken {
     scope?: string;
     openId?: string;
     [key: string]: unknown;
+}
+
+interface PendingInstagramIntent {
+    platform: 'instagram';
+    accessToken: string;
+    tokenExpiresIn: number;
+    pages: InstagramPageOption[];
+    expiresAt: admin.firestore.Timestamp;
+}
+
+function isSafeIdentifier(value: unknown): value is string {
+    return typeof value === 'string' && /^[A-Za-z0-9_-]{1,128}$/.test(value);
+}
+
+function metaConnectionError(error: MetaInstagramConnectionError): functions.https.HttpsError {
+    const status = error.code === 'META_TOKEN_EXCHANGE_FAILED' ? 'internal' : 'failed-precondition';
+    return new functions.https.HttpsError(status, error.message, {
+        code: error.code,
+        pages: error.pages,
+    });
+}
+
+async function createPendingInstagramIntent(
+    uid: string,
+    accessToken: string,
+    tokenExpiresIn: number,
+    pages: InstagramPageOption[],
+): Promise<string> {
+    const intentId = randomUUID();
+    await pendingInstagramIntentPath(uid, intentId).create({
+        platform: 'instagram',
+        accessToken,
+        tokenExpiresIn,
+        pages,
+        expiresAt: admin.firestore.Timestamp.fromMillis(Date.now() + PENDING_INSTAGRAM_INTENT_TTL_MS),
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+    return intentId;
+}
+
+async function consumePendingInstagramIntent(uid: string, intentId: string): Promise<PendingInstagramIntent> {
+    const intentRef = pendingInstagramIntentPath(uid, intentId);
+    const intent = await admin.firestore().runTransaction(async transaction => {
+        const snapshot = await transaction.get(intentRef);
+        if (!snapshot.exists) return undefined;
+        const candidate = snapshot.data() as PendingInstagramIntent;
+        if (candidate.platform !== 'instagram' || !candidate.expiresAt || candidate.expiresAt.toMillis() <= Date.now()) {
+            transaction.delete(intentRef);
+            return undefined;
+        }
+        transaction.delete(intentRef);
+        return candidate;
+    });
+    if (!intent) {
+        throw new functions.https.HttpsError('not-found', 'Instagram Page selection has expired or was already used. Reconnect Instagram and try again.');
+    }
+    return intent;
+}
+
+function connectionFromPage(
+    accessToken: string,
+    expiresIn: number,
+    page: InstagramPageOption,
+): FacebookInstagramConnection {
+    return {
+        accessToken,
+        expiresIn,
+        facebookPageId: page.facebookPageId,
+        igUserId: page.instagramBusinessAccountId,
+        ...(page.instagramUsername ? { instagramUsername: page.instagramUsername } : {}),
+    };
+}
+
+async function storeInstagramConnection(uid: string, connection: FacebookInstagramConnection): Promise<void> {
+    await storeToken(uid, 'instagram', {
+        accessToken: connection.accessToken,
+        expiresAt: Date.now() + connection.expiresIn * 1000,
+        igUserId: connection.igUserId,
+        facebookPageId: connection.facebookPageId,
+        ...(connection.instagramUsername ? { instagramUsername: connection.instagramUsername } : {}),
+    });
+}
+
+function instagramConnectionResponse(connection: FacebookInstagramConnection) {
+    return {
+        ok: true,
+        expiresIn: connection.expiresIn,
+        facebookPageId: connection.facebookPageId,
+        ...(connection.instagramUsername ? { instagramUsername: connection.instagramUsername } : {}),
+    };
 }
 
 async function exchangeSpotifyCode(

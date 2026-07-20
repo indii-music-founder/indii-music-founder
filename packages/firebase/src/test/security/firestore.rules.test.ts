@@ -1277,6 +1277,41 @@ describe('Firestore Security Rules', () => {
         });
     });
 
+    describe('users/{uid}/server-only social OAuth records', () => {
+        const tokenPath = ['users', ALICE_UID, 'analyticsTokens', 'instagram'];
+        const socialTokenPath = ['users', ALICE_UID, 'socialTokens', 'instagram'];
+        const intentPath = ['users', ALICE_UID, 'serverSocialConnectionIntents', 'intent-1'];
+
+        beforeEach(async () => {
+            if (requireEmulator()) return;
+            await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                const db = ctx.firestore();
+                await setDoc(doc(db, ...tokenPath), { accessToken: 'secret', expiresAt: 9_999_999_999_999 });
+                await setDoc(doc(db, ...socialTokenPath), { accessToken: 'secret' });
+                await setDoc(doc(db, ...intentPath), { accessToken: 'secret', platform: 'instagram' });
+            });
+        });
+
+        it('denies owner, cross-owner, and unauthenticated token or intent reads', async () => {
+            if (requireEmulator()) return;
+            for (const targetPath of [tokenPath, socialTokenPath, intentPath]) {
+                await assertFails(getDoc(doc(verifiedCtx(ALICE_UID).firestore(), ...targetPath)));
+                await assertFails(getDoc(doc(verifiedCtx(BOB_UID).firestore(), ...targetPath)));
+                await assertFails(getDoc(doc(unauthCtx().firestore(), ...targetPath)));
+            }
+        });
+
+        it('denies every client token or intent mutation', async () => {
+            if (requireEmulator()) return;
+            for (const targetPath of [tokenPath, socialTokenPath, intentPath]) {
+                const db = verifiedCtx(ALICE_UID).firestore();
+                await assertFails(setDoc(doc(db, ...targetPath), { accessToken: 'forged' }));
+                await assertFails(updateDoc(doc(db, ...targetPath), { accessToken: 'mutated' }));
+                await assertFails(deleteDoc(doc(db, ...targetPath)));
+            }
+        });
+    });
+
     // ──────────────────────────────────────────────────────────────────────
     // 14. AUDIO ASSETS (/audio_assets/{docId})
     // ──────────────────────────────────────────────────────────────────────

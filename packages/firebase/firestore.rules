@@ -253,6 +253,20 @@ service cloud.firestore {
         allow write: if false;
       }
 
+      // OAuth credentials and transient OAuth selection intents are backend-only.
+      // The client receives safe connection metadata through authenticated callables.
+      match /analyticsTokens/{platform} {
+        allow read, write: if false;
+      }
+
+      match /socialTokens/{platform} {
+        allow read, write: if false;
+      }
+
+      match /serverSocialConnectionIntents/{intentId} {
+        allow read, write: if false;
+      }
+
       // ── Memory Inbox (agent handshake requests) ──────────────────────────
       match /memoryInbox/{itemId} {
         // Only the owning user can read their inbox items
