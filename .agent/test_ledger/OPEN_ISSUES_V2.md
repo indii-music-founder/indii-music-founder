@@ -67,3 +67,17 @@
   4. **Publicist Backends**: `scheduleCampaignWaterfall` updates real campaign timelines in Firestore. `generatePlaylistPitch` synthesizes pitch templates using backend Vertex/Gemini and optionally sends them via SendGrid.
   5. **Brand Backends**: [FIXED 2026-07-20] `fetchBrandKit` returns the user's actual `brandKit` data structure from their profile document, with uid ownership enforcement and focused unit coverage.
   6. **Distribution Backends**: `draft_dsp_metadata_xml` fetches Audio DNA and artist profile from Firestore, formatting it properly per DDEX standards.
+
+### ISSUE-1094: Material assets lack a living ownership, provenance, restriction, and value-evidence register
+
+- **Status:** 🟡 PARTIAL (2026-07-20 — register and founder evidence checklist created; asset-by-asset evidence collection remains open)
+- **Severity:** 🔴 HIGH (chain-of-title, diligence, customer-rights, and valuation risk)
+- **Module:** `docs/data-room/13_IP_ASSET_REGISTER.md`, `docs/RELEASE_CHECKLIST.md`, all asset-producing product flows
+- **Evidence:** Existing IP assignment, AI authorship, rights, audio-provenance, and valuation documents are distributed across the repository. They do not provide one current record that distinguishes platform-owned software/know-how from vendor licences, user-controlled catalog, datasets, brand assets, and unverified claims.
+- **Impact:** The company can overstate ownership, fail to preserve evidence required for a rights dispute or diligence process, treat customer music as platform value, or lose track of restrictions on datasets, generated outputs, and third-party dependencies.
+- **Fix:** Maintain the IP asset register for every material asset. Each record must include rights posture, holder/source, evidence, restrictions, value rationale, review state, and accountable owner. Future issue completion must update the register or explain why no material asset was created.
+- **Acceptance:**
+  1. Executed founder/contributor assignments, current dependency-licence audit, domain/brand ownership, and material vendor terms are referenced from the register.
+  2. Every non-public dataset is classified before use; customer/artist content remains distinct from platform-owned IP.
+  3. Each material audio, model, brand, and delivery asset has provenance/rights evidence or is marked `unknown`/`needs counsel`—never implied owned.
+  4. Each work loop performs the register gate and founder-only actions are recorded in `docs/RELEASE_CHECKLIST.md`.

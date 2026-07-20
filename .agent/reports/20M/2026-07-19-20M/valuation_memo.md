@@ -28,6 +28,27 @@ Customer-count arithmetic is not valuation. A buyer-quality multiple requires co
 
 Before external circulation, rebuild the A/B/C/D/H ledger at the current commit. Code proves implementation, tests prove only their exercised paths, internal documents are claims, and external records prove commercial acceptance. Direct-delivery, customer, revenue, legal ownership, and margin statements receive zero external credit without their source artifacts.
 
+## IP asset bridge for investor questions
+
+The current value discussion must separate four buckets: transferable platform
+software/know-how, licensed or vendor-dependent capability,
+customer-controlled music/catalog rights, and unknown or restricted assets. The
+living source is `docs/data-room/13_IP_ASSET_REGISTER.md`.
+
+The platform's code, tests, workflow specifications, and audio/distribution
+implementation can support a replacement-cost and strategic-workflow argument
+only to the degree that assignment, dependency licence, operational provenance,
+and transferability evidence are current. Customer masters, compositions,
+uploads, likenesses, and unverified datasets receive no platform-IP value by
+default. Provider model weights and partner/DSP relationships are not owned IP.
+
+The current evidence posture is therefore **provisional**: the register exists
+and identifies the evidence required, but executed assignments, current
+dependency licensing, domain/brand/trademark records, data permissions, and
+rights-specific records must be retained before an investor or acquirer should
+credit the full IP thesis. This is a risk deduction and diligence action, not a
+reason to exaggerate an asset claim.
+
 ## Action plan
 
 1. Re-audit the current merged backend and flagship workflows.

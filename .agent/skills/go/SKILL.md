@@ -94,10 +94,11 @@ If a match is found, apply the documented fix. If this is a new error, document 
    - UI change → browser subagent screenshot
    - Service change → run relevant unit test file
 4. **Mark** `[x]` in `task.md` immediately upon completion
-5. **Commit cadence:** Commit after each completed WO item (not each line change)
+5. **IP & asset register gate:** Before declaring a material task complete, assess whether it created or materially changed platform IP, brand/creative material, model configuration, datasets, customer-controlled content, or a third-party licence dependency. Update `docs/data-room/13_IP_ASSET_REGISTER.md`, or explicitly record why no material asset was created. Put any human/counsel/counterparty/registration prerequisite in `docs/RELEASE_CHECKLIST.md`.
+6. **Commit cadence:** Commit after each completed WO item (not each line change)
    - Message format: `feat(wo-N): brief description`
    - Example: `feat(wo-1): gate shell modules behind dev flag`
-6. **Recurse** — if tasks remain, loop back to Step 2
+7. **Recurse** — if tasks remain, loop back to Step 2
 
 ### Dependency Detection
 
