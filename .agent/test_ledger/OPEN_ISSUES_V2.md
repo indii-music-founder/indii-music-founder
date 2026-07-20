@@ -11,12 +11,14 @@
 > same status vocabulary (🔴 OPEN / 🟡 PARTIAL / ✅ FIXED / WONTFIX), same append-only discipline.
 > Issue numbering CONTINUES from the archive — entries ≤ ISSUE-1089 live in `OPEN_ISSUES.md`
 > (sealed archive, 1.7MB+; never renumber, never move entries between files). New entries start
-> at ISSUE-1090 and are appended HERE. Cross-references like ISSUE-1083 resolve in the archive.
+> at ISSUE-1092 and are appended HERE. ISSUE-1090 and ISSUE-1091 already
+> identify unrelated archived issues, so they are intentionally not reused.
+> Cross-references like ISSUE-1083 resolve in the archive.
 > When searching for a pattern, grep BOTH files.
 
 ## Session 2026-07-18 — A2A Swarm MCP Integration (remote tool backbone)
 
-### ISSUE-1090: A2A Swarm MCP integration — remote tool suite wired end-to-end but not yet functional or live-verified
+### ISSUE-1092: A2A Swarm MCP integration — remote tool suite wired end-to-end but not yet functional or live-verified
 
 - **Status:** 🟡 PARTIAL (2026-07-18 — architecture landed; auth + honesty defects fixed in follow-ups; uid plumbing completed; NOT live-verified against a deployed endpoint)
 - **Severity:** 🔴 HIGH (flagship agent capability; money/legal tools in scope)
@@ -48,7 +50,7 @@
   - Legal: verifiable split-sheet PDFs (pdfkit or similar) to a secure GCS bucket.
   - Boardroom validation: `e2e/mcp-boardroom-collaboration.spec.ts` — Publicist delegates artwork to Creative via A2A, Creative executes `queue_remotion_render`, synthesized response returns to the Boardroom.
 
-### ISSUE-1091: MCP Tool Suite Expansion (Real Business Logic Integration)
+### ISSUE-1093: MCP Tool Suite Expansion (Real Business Logic Integration)
 
 - **Status:** 🟡 PARTIAL (2026-07-20 — Brand backend fetchBrandKit and Finance calculateRecoupment now read Firestore ledgers; remaining Finance Stripe/Legal/Creative/Publicist/Distribution backends still open)
 - **Status:** 🟡 PARTIAL (2026-07-20 — Brand backend fetchBrandKit now reads the authenticated user profile brandKit from Firestore; remaining Finance/Legal/Creative/Publicist/Distribution backends still open)
