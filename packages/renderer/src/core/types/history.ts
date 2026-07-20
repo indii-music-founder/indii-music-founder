@@ -14,6 +14,12 @@ export interface HistoryItem {
     tags?: string[];
     subject?: string;
     origin?: 'generated' | 'uploaded' | 'canvas-export' | 'editor';
+    /** Provider/model evidence recorded at generation time; never inferred later from image bytes. */
+    generationProvenance?: {
+        provider: string;
+        model: string;
+        version?: string;
+    };
     localPath?: string; // Path to locally saved file (Electron/Veo)
     /** ID of the source HistoryItem this was derived from (e.g., canvas-export of a generated image) */
     parentId?: string;
