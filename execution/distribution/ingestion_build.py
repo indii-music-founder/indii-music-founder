@@ -102,6 +102,36 @@ def _stage_master_resources(tracks: list[Dict[str, Any]], package_path: str) -> 
         track["file_hash"] = _file_digest(destination, "md5")
 
 
+def _stage_cover_resource(release: Dict[str, Any], package_path: str) -> None:
+    """Copy a desktop-verified canonical cover into the delivery package."""
+    cover_asset = release.get("cover_asset")
+    if not isinstance(cover_asset, dict):
+        raise ValueError("Release is missing its canonical cover_asset")
+    local_path = cover_asset.get("local_path")
+    expected_sha256 = str(cover_asset.get("content_hash", "")).lower()
+    expected_size = cover_asset.get("size_bytes")
+    mime_type = cover_asset.get("mime_type")
+    width = cover_asset.get("width")
+    height = cover_asset.get("height")
+    if not isinstance(local_path, str) or not os.path.isfile(local_path) or os.path.islink(local_path):
+        raise ValueError("Canonical cover is not a regular local file")
+    if not re.fullmatch(r"[a-f0-9]{64}", expected_sha256):
+        raise ValueError("Canonical cover has an invalid SHA-256 digest")
+    if not isinstance(expected_size, int) or os.path.getsize(local_path) != expected_size:
+        raise ValueError("Canonical cover size verification failed")
+    if _file_digest(local_path, "sha256") != expected_sha256:
+        raise ValueError("Canonical cover SHA-256 verification failed")
+    if mime_type not in {"image/jpeg", "image/png"} or not isinstance(width, int) or not isinstance(height, int) or width < 3000 or height < 3000 or width != height:
+        raise ValueError("Canonical cover must be measured square JPEG/PNG at least 3000px")
+    extension = ".png" if mime_type == "image/png" else ".jpg"
+    destination = os.path.join(package_path, "resources", f"cover-{expected_sha256[:16]}{extension}")
+    shutil.copyfile(local_path, destination)
+    release["cover_filename"] = f"resources/{os.path.basename(destination)}"
+    release["cover_hash"] = _file_digest(destination, "md5")
+    release["cover_width"] = width
+    release["cover_height"] = height
+
+
 def emit(step: str, status: str, progress: int, detail: str = "", data: Any = None) -> None:
     """Print a structured progress line that AgentSupervisor parses."""
     payload: Dict[str, Any] = {
@@ -164,9 +194,10 @@ def run(release: Dict[str, Any], storage_path: str, dry_run: bool) -> Dict[str, 
     os.makedirs(package_path, exist_ok=True)
     try:
         _stage_master_resources(tracks, package_path)
+        _stage_cover_resource(release, package_path)
     except (OSError, ValueError) as error:
         shutil.rmtree(package_path, ignore_errors=True)
-        emit("ingestion", "error", 50, f"Canonical master staging failed: {error}")
+        emit("ingestion", "error", 50, f"Canonical delivery-asset staging failed: {error}")
         return {
             "status": "FAIL",
             "stage": "master_staging",

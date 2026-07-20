@@ -53,6 +53,23 @@ def write_staging_directory(root: str) -> None:
     Path(root, "cover.jpg").write_bytes(b"cover-art-fixture")
 
 
+def attach_verified_cover(release: dict, storage_path: str) -> bytes:
+    """Add the same canonical-cover contract Electron supplies to Python."""
+    cover_bytes = b"canonical-cover-art-fixture"
+    cover_path = Path(storage_path, "verified-cover.jpg")
+    cover_path.write_bytes(cover_bytes)
+    release["cover_asset"] = {
+        "content_hash": hashlib.sha256(cover_bytes).hexdigest(),
+        "local_path": str(cover_path),
+        "mime_type": "image/jpeg",
+        "original_file_name": "cover.jpg",
+        "size_bytes": len(cover_bytes),
+        "width": 3000,
+        "height": 3000,
+    }
+    return cover_bytes
+
+
 class TestDDEXDeliveryReadiness(unittest.TestCase):
     def test_manifest_requires_configured_sender_dpid(self):
         with patch.dict(os.environ, {"DDEX_SENDER_DPID": ""}):
@@ -106,6 +123,7 @@ class TestDDEXDeliveryReadiness(unittest.TestCase):
                 "size_bytes": len(master_bytes),
                 "storage_path": "masters/owner/hash/original.flac",
             }
+            attach_verified_cover(release, storage_path)
             qc_class.return_value.validate_metadata.return_value = {
                 "valid": True,
                 "errors": [],
@@ -151,6 +169,7 @@ class TestDDEXDeliveryReadiness(unittest.TestCase):
                 "size_bytes": len(master_bytes),
                 "storage_path": "masters/owner/hash/original.flac",
             }
+            cover_bytes = attach_verified_cover(release, storage_path)
 
             with patch.object(ingestion_build, "QCValidator") as qc_class, \
                     patch.object(ingestion_build, "IdentityManager"), \
@@ -169,8 +188,10 @@ class TestDDEXDeliveryReadiness(unittest.TestCase):
 
             uploaded_path = Path(uploader.upload.call_args.kwargs["local_path"])
             staged_master = uploaded_path / "resources" / "01-signal-path.flac"
+            staged_cover = uploaded_path / "resources" / f"cover-{hashlib.sha256(cover_bytes).hexdigest()[:16]}.jpg"
             self.assertTrue(uploaded_path.is_dir())
             self.assertEqual(staged_master.read_bytes(), master_bytes)
+            self.assertEqual(staged_cover.read_bytes(), cover_bytes)
             self.assertEqual(Path(result["xml_path"]).parent, uploaded_path)
             generated_release = generator_class.return_value.generate_ern.call_args.args[0]
             self.assertEqual(generated_release["tracks"][0]["filename"], "resources/01-signal-path.flac")
@@ -178,7 +199,50 @@ class TestDDEXDeliveryReadiness(unittest.TestCase):
                 generated_release["tracks"][0]["file_hash"],
                 hashlib.md5(master_bytes).hexdigest(),
             )
+            self.assertEqual(
+                generated_release["cover_filename"],
+                f"resources/{staged_cover.name}",
+            )
             self.assertTrue(result["delivery_ready"])
+
+    def test_live_ingestion_blocks_sftp_when_canonical_cover_is_missing(self):
+        release = release_fixture()
+        release["sftpConfig"] = {
+            "host": "delivery.example.test",
+            "user": "provider",
+            "remotePath": "/incoming/release-test-001",
+        }
+        uploader = MagicMock()
+        master_bytes = b"canonical-master-cover-required"
+
+        with tempfile.TemporaryDirectory() as storage_path, \
+                patch.object(ingestion_build, "QCValidator") as qc_class, \
+                patch.object(ingestion_build, "IdentityManager"), \
+                patch.object(ingestion_build, "DDEXGenerator"), \
+                patch.object(ingestion_build, "SFTPUploader", return_value=uploader):
+            source_path = Path(storage_path, "verified-source.flac")
+            source_path.write_bytes(master_bytes)
+            release["tracks"][0]["master_asset"] = {
+                "content_hash": hashlib.sha256(master_bytes).hexdigest(),
+                "local_path": str(source_path),
+                "master_fingerprint": "SONIC-cover-required",
+                "mime_type": "audio/flac",
+                "original_file_name": "signal-path.flac",
+                "size_bytes": len(master_bytes),
+                "storage_path": "masters/owner/hash/original.flac",
+            }
+            qc_class.return_value.validate_metadata.return_value = {
+                "valid": True,
+                "errors": [],
+                "warnings": [],
+            }
+
+            result = ingestion_build.run(release, storage_path, dry_run=False)
+
+        self.assertEqual(result["status"], "FAIL")
+        self.assertEqual(result["stage"], "master_staging")
+        self.assertIn("canonical cover_asset", result["errors"][0])
+        uploader.upload.assert_not_called()
 
     def test_spotify_package_is_not_delivery_ready_without_xsd_proof(self):
         validation = {

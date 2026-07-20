@@ -105,6 +105,14 @@ class TestFullPipeline(unittest.TestCase):
 
     def setUp(self):
         """Create a temporary staging directory with mock files."""
+        # The production generator deliberately refuses fabricated sender
+        # identities. Keep this isolated integration fixture explicit instead
+        # of depending on a developer shell to provide a DPID.
+        self._ddex_identity = patch.dict(os.environ, {
+            "DDEX_SENDER_DPID": "PA-DPIDA-2014122301-Q",
+            "DDEX_RECIPIENT_DPID": "PA-DPIDA-3897722461-G",
+        })
+        self._ddex_identity.start()
         self.staging_dir = tempfile.mkdtemp(prefix="indii_pipeline_test_")
         self.release_data = json.loads(json.dumps(MOCK_RELEASE))  # Deep copy
 
@@ -127,6 +135,7 @@ class TestFullPipeline(unittest.TestCase):
     def tearDown(self):
         """Clean up temporary files."""
         shutil.rmtree(self.staging_dir, ignore_errors=True)
+        self._ddex_identity.stop()
 
     # ─── Step 1: Identity Generation ───────────────────────────────────
 

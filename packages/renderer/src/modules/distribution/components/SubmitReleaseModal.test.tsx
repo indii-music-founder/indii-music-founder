@@ -3,9 +3,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { SubmitReleaseModal } from './SubmitReleaseModal';
 
-const { mockListCanonicalTracks, mockSubmitRelease, mockUserProfile } = vi.hoisted(() => ({
+const { mockListCanonicalTracks, mockSubmitRelease, mockPersistCoverArt, mockUserProfile } = vi.hoisted(() => ({
     mockListCanonicalTracks: vi.fn(),
     mockSubmitRelease: vi.fn(),
+    mockPersistCoverArt: vi.fn(),
     mockUserProfile: {
         id: 'user-1',
         displayName: 'Test Artist',
@@ -31,6 +32,10 @@ vi.mock('@/services/metadata/TrackLibraryService', () => ({
 
 vi.mock('@/services/distribution/DistributionService', () => ({
     distributionService: { submitRelease: mockSubmitRelease },
+}));
+
+vi.mock('@/services/distribution/CanonicalCoverArtService', () => ({
+    canonicalCoverArtService: { persistFromUrl: mockPersistCoverArt },
 }));
 
 const CANONICAL_TRACK = {
@@ -71,6 +76,14 @@ describe('SubmitReleaseModal (ISSUE-969)', () => {
         vi.clearAllMocks();
         mockListCanonicalTracks.mockResolvedValue([CANONICAL_TRACK]);
         mockSubmitRelease.mockResolvedValue({ status: 'success' });
+        mockPersistCoverArt.mockResolvedValue({
+            content_hash: 'b'.repeat(64),
+            download_url: 'https://firebasestorage.googleapis.com/v0/b/indii-test/o/covers%2Fuser-1%2Fcover?alt=media',
+            mime_type: 'image/png',
+            original_file_name: 'cover.png',
+            size_bytes: 4096,
+            storage_path: `covers/user-1/${'b'.repeat(64)}/original.png`,
+        });
     });
 
     const fillBasicMetadata = () => {
@@ -110,7 +123,15 @@ describe('SubmitReleaseModal (ISSUE-969)', () => {
 
         await waitFor(() => expect(mockSubmitRelease).toHaveBeenCalled());
         const [releaseData] = mockSubmitRelease.mock.calls[0]!;
-        expect(releaseData.artwork_url).toBe('https://cdn.example.com/cover.png');
+        expect(mockPersistCoverArt).toHaveBeenCalledWith('https://cdn.example.com/cover.png', {
+            userId: 'user-1',
+            originalFileName: 'Main Cover',
+        });
+        expect(releaseData.artwork_url).toContain('firebasestorage.googleapis.com');
+        expect(releaseData.cover_asset).toMatchObject({
+            storage_path: `covers/user-1/${'b'.repeat(64)}/original.png`,
+            content_hash: 'b'.repeat(64),
+        });
         expect(releaseData.tracks[0].filename).toBe('master.wav');
         expect(releaseData.tracks[0].duration).toBe(210);
         expect(releaseData.tracks[0].sample_rate).toBe(48000);

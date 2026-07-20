@@ -217,6 +217,14 @@ export interface IngestionMetadata {
     releaseDate?: string; // Legacy/UI alias 
     artwork_url?: string;
     artworkUrl?: string; // UI alias
+    cover_asset?: {
+        content_hash: string;
+        download_url: string;
+        mime_type: 'image/jpeg' | 'image/png';
+        original_file_name: string;
+        size_bytes: number;
+        storage_path: string;
+    };
     cover_filename?: string;
     cover_hash?: string;
     p_line?: string;
