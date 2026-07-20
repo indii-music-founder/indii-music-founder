@@ -36,7 +36,10 @@ import { logger } from '@/utils/logger';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-const GRAPH_BASE = 'https://graph.instagram.com';
+// Facebook Login grants a Facebook Graph user token. Keep analytics on the
+// same graph as publishing; graph.instagram.com is the incompatible Basic
+// Display API token model.
+const GRAPH_BASE = 'https://graph.facebook.com/v23.0';
 const TOKEN_COLLECTION = (uid: string) =>
     doc(db, 'users', uid, 'analyticsTokens', 'instagram');
 
@@ -147,7 +150,7 @@ export class InstagramAnalyticsService {
      * Handle the OAuth callback.
      * The code is exchanged for a token via the `analyticsExchangeToken` Cloud Function.
      */
-    async handleCallback(code: string, state: string): Promise<void> {
+    async handleCallback(code: string, state: string, facebookPageId?: string): Promise<void> {
         const storedState = sessionStorage.getItem('instagram_oauth_state');
         if (state !== storedState) {
             throw new Error('OAuth state mismatch — possible CSRF attack.');
@@ -161,6 +164,7 @@ export class InstagramAnalyticsService {
             platform:    'instagram',
             code,
             redirectUri: this.redirectUri,
+            ...(facebookPageId ? { facebookPageId } : {}),
         });
 
         sessionStorage.removeItem('instagram_oauth_state');

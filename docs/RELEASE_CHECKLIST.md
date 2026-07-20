@@ -297,12 +297,16 @@ to paste credentials into source control or chat.
 
 ### Social Platform Developer Registrations (ISSUE-766, added 2026-07-08)
 
-The full posting pipeline (X/Twitter, Instagram, TikTok, YouTube, Spotify) is built,
-but every credential is a `MOCK_KEY_DO_NOT_USE` placeholder. No social feature works
-until these developer apps exist. Each requires the company's accounts and, in several
-cases, a platform review process — start these early, approvals take days to weeks.
+The Instagram code now uses Facebook Login and the Facebook Graph Page model end to
+end: it resolves a Page-linked Instagram professional account before storing a
+posting token. It cannot publish until the company's Meta app, Page/account link,
+approved permissions, and a controlled live test exist. No credential or provider
+approval is represented as present merely because the code is ready.
 
-- [ ] **Meta (Instagram/Facebook):** create a Meta developer app for New Detroit Music LLC; enable Instagram Graph API; request `instagram_content_publish` + pages permissions (requires Meta App Review with a screencast of the posting flow). Store `META_APP_ID` / `META_APP_SECRET`.
+- [ ] **Meta (Instagram/Facebook):** create or transfer a Meta developer app to New Detroit Music LLC; enable Facebook Login and Instagram Graph API; link the professional `@indii_music` account to the company-owned Facebook Page. Record the Page ID and the Instagram professional-account ID returned by the controlled connection—not a manually copied handle.
+- [ ] **Meta redirect and permissions:** register the exact production, staging, and local callback URLs used by the app; request `instagram_basic`, `instagram_manage_insights`, `instagram_content_publish`, `pages_show_list`, and `pages_read_engagement`. Record the app ID, Page owner, permitted domains, redirect URLs, and the account responsible for renewal/recovery. Keep `META_APP_SECRET` only in Firebase Functions secrets.
+- [ ] **Meta App Review / Advanced Access:** submit a minimal, truthful screencast showing sign-in, explicit Page selection when more than one is linked, media selection, a human approval gate, and publication; include current privacy-policy and terms URLs, test-user instructions if requested, and the precise permission rationale. Save the review submission ID, decision, date, reviewer feedback, and remediation owner.
+- [ ] **Controlled post-approval proof:** after Meta approves the scopes, connect a non-customer QA Page/account, publish one non-customer image or Reel through the production route, and save the provider media ID, Page ID, Instagram account ID, timestamp, release/asset reference, and any rejection text. Do not post customer media for the first proof.
 - [ ] **TikTok:** register a TikTok for Developers app; apply for the **Content Posting API** (separate TikTok approval). Store `TIKTOK_CLIENT_KEY` / `TIKTOK_CLIENT_SECRET`.
 - [ ] **X / Twitter:** create a developer project; posting via API v2 requires the **paid Basic tier** (~$100/mo) — decide if X posting ships in v1 or is deferred. Store client id/secret.
 - [ ] **Spotify:** create a Spotify developer app (client id/secret); request extended quota mode before public launch (dev mode caps at 25 users).
