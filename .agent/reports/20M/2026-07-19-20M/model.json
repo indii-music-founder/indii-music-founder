@@ -1,0 +1,615 @@
+{
+  "company": "indii",
+  "as_of": "set-at-run-time",
+  "currency": "USD",
+  "founder_scenarios": [
+    {
+      "label": "10 founders at $2,500",
+      "total_units": 10,
+      "gross_one_time_cash": 25000.0,
+      "arr": 0,
+      "units": [
+        {
+          "count": 10,
+          "price": 2500.0
+        }
+      ]
+    },
+    {
+      "label": "10 founders at $5,000",
+      "total_units": 10,
+      "gross_one_time_cash": 50000.0,
+      "arr": 0,
+      "units": [
+        {
+          "count": 10,
+          "price": 5000.0
+        }
+      ]
+    },
+    {
+      "label": "5 founders at $2,500 and 5 at $5,000",
+      "total_units": 10,
+      "gross_one_time_cash": 37500.0,
+      "arr": 0,
+      "units": [
+        {
+          "count": 5,
+          "price": 2500.0
+        },
+        {
+          "count": 5,
+          "price": 5000.0
+        }
+      ]
+    }
+  ],
+  "subscriber_scenarios": [
+    {
+      "subscribers": 10,
+      "monthly_price": 10.0,
+      "mrr": 100.0,
+      "arr": 1200.0
+    },
+    {
+      "subscribers": 10,
+      "monthly_price": 19.0,
+      "mrr": 190.0,
+      "arr": 2280.0
+    },
+    {
+      "subscribers": 10,
+      "monthly_price": 29.0,
+      "mrr": 290.0,
+      "arr": 3480.0
+    },
+    {
+      "subscribers": 10,
+      "monthly_price": 49.0,
+      "mrr": 490.0,
+      "arr": 5880.0
+    },
+    {
+      "subscribers": 10,
+      "monthly_price": 79.0,
+      "mrr": 790.0,
+      "arr": 9480.0
+    },
+    {
+      "subscribers": 10,
+      "monthly_price": 99.0,
+      "mrr": 990.0,
+      "arr": 11880.0
+    },
+    {
+      "subscribers": 25,
+      "monthly_price": 10.0,
+      "mrr": 250.0,
+      "arr": 3000.0
+    },
+    {
+      "subscribers": 25,
+      "monthly_price": 19.0,
+      "mrr": 475.0,
+      "arr": 5700.0
+    },
+    {
+      "subscribers": 25,
+      "monthly_price": 29.0,
+      "mrr": 725.0,
+      "arr": 8700.0
+    },
+    {
+      "subscribers": 25,
+      "monthly_price": 49.0,
+      "mrr": 1225.0,
+      "arr": 14700.0
+    },
+    {
+      "subscribers": 25,
+      "monthly_price": 79.0,
+      "mrr": 1975.0,
+      "arr": 23700.0
+    },
+    {
+      "subscribers": 25,
+      "monthly_price": 99.0,
+      "mrr": 2475.0,
+      "arr": 29700.0
+    },
+    {
+      "subscribers": 50,
+      "monthly_price": 10.0,
+      "mrr": 500.0,
+      "arr": 6000.0
+    },
+    {
+      "subscribers": 50,
+      "monthly_price": 19.0,
+      "mrr": 950.0,
+      "arr": 11400.0
+    },
+    {
+      "subscribers": 50,
+      "monthly_price": 29.0,
+      "mrr": 1450.0,
+      "arr": 17400.0
+    },
+    {
+      "subscribers": 50,
+      "monthly_price": 49.0,
+      "mrr": 2450.0,
+      "arr": 29400.0
+    },
+    {
+      "subscribers": 50,
+      "monthly_price": 79.0,
+      "mrr": 3950.0,
+      "arr": 47400.0
+    },
+    {
+      "subscribers": 50,
+      "monthly_price": 99.0,
+      "mrr": 4950.0,
+      "arr": 59400.0
+    },
+    {
+      "subscribers": 100,
+      "monthly_price": 10.0,
+      "mrr": 1000.0,
+      "arr": 12000.0
+    },
+    {
+      "subscribers": 100,
+      "monthly_price": 19.0,
+      "mrr": 1900.0,
+      "arr": 22800.0
+    },
+    {
+      "subscribers": 100,
+      "monthly_price": 29.0,
+      "mrr": 2900.0,
+      "arr": 34800.0
+    },
+    {
+      "subscribers": 100,
+      "monthly_price": 49.0,
+      "mrr": 4900.0,
+      "arr": 58800.0
+    },
+    {
+      "subscribers": 100,
+      "monthly_price": 79.0,
+      "mrr": 7900.0,
+      "arr": 94800.0
+    },
+    {
+      "subscribers": 100,
+      "monthly_price": 99.0,
+      "mrr": 9900.0,
+      "arr": 118800.0
+    },
+    {
+      "subscribers": 250,
+      "monthly_price": 10.0,
+      "mrr": 2500.0,
+      "arr": 30000.0
+    },
+    {
+      "subscribers": 250,
+      "monthly_price": 19.0,
+      "mrr": 4750.0,
+      "arr": 57000.0
+    },
+    {
+      "subscribers": 250,
+      "monthly_price": 29.0,
+      "mrr": 7250.0,
+      "arr": 87000.0
+    },
+    {
+      "subscribers": 250,
+      "monthly_price": 49.0,
+      "mrr": 12250.0,
+      "arr": 147000.0
+    },
+    {
+      "subscribers": 250,
+      "monthly_price": 79.0,
+      "mrr": 19750.0,
+      "arr": 237000.0
+    },
+    {
+      "subscribers": 250,
+      "monthly_price": 99.0,
+      "mrr": 24750.0,
+      "arr": 297000.0
+    },
+    {
+      "subscribers": 500,
+      "monthly_price": 10.0,
+      "mrr": 5000.0,
+      "arr": 60000.0
+    },
+    {
+      "subscribers": 500,
+      "monthly_price": 19.0,
+      "mrr": 9500.0,
+      "arr": 114000.0
+    },
+    {
+      "subscribers": 500,
+      "monthly_price": 29.0,
+      "mrr": 14500.0,
+      "arr": 174000.0
+    },
+    {
+      "subscribers": 500,
+      "monthly_price": 49.0,
+      "mrr": 24500.0,
+      "arr": 294000.0
+    },
+    {
+      "subscribers": 500,
+      "monthly_price": 79.0,
+      "mrr": 39500.0,
+      "arr": 474000.0
+    },
+    {
+      "subscribers": 500,
+      "monthly_price": 99.0,
+      "mrr": 49500.0,
+      "arr": 594000.0
+    },
+    {
+      "subscribers": 1000,
+      "monthly_price": 10.0,
+      "mrr": 10000.0,
+      "arr": 120000.0
+    },
+    {
+      "subscribers": 1000,
+      "monthly_price": 19.0,
+      "mrr": 19000.0,
+      "arr": 228000.0
+    },
+    {
+      "subscribers": 1000,
+      "monthly_price": 29.0,
+      "mrr": 29000.0,
+      "arr": 348000.0
+    },
+    {
+      "subscribers": 1000,
+      "monthly_price": 49.0,
+      "mrr": 49000.0,
+      "arr": 588000.0
+    },
+    {
+      "subscribers": 1000,
+      "monthly_price": 79.0,
+      "mrr": 79000.0,
+      "arr": 948000.0
+    },
+    {
+      "subscribers": 1000,
+      "monthly_price": 99.0,
+      "mrr": 99000.0,
+      "arr": 1188000.0
+    },
+    {
+      "subscribers": 2500,
+      "monthly_price": 10.0,
+      "mrr": 25000.0,
+      "arr": 300000.0
+    },
+    {
+      "subscribers": 2500,
+      "monthly_price": 19.0,
+      "mrr": 47500.0,
+      "arr": 570000.0
+    },
+    {
+      "subscribers": 2500,
+      "monthly_price": 29.0,
+      "mrr": 72500.0,
+      "arr": 870000.0
+    },
+    {
+      "subscribers": 2500,
+      "monthly_price": 49.0,
+      "mrr": 122500.0,
+      "arr": 1470000.0
+    },
+    {
+      "subscribers": 2500,
+      "monthly_price": 79.0,
+      "mrr": 197500.0,
+      "arr": 2370000.0
+    },
+    {
+      "subscribers": 2500,
+      "monthly_price": 99.0,
+      "mrr": 247500.0,
+      "arr": 2970000.0
+    },
+    {
+      "subscribers": 5000,
+      "monthly_price": 10.0,
+      "mrr": 50000.0,
+      "arr": 600000.0
+    },
+    {
+      "subscribers": 5000,
+      "monthly_price": 19.0,
+      "mrr": 95000.0,
+      "arr": 1140000.0
+    },
+    {
+      "subscribers": 5000,
+      "monthly_price": 29.0,
+      "mrr": 145000.0,
+      "arr": 1740000.0
+    },
+    {
+      "subscribers": 5000,
+      "monthly_price": 49.0,
+      "mrr": 245000.0,
+      "arr": 2940000.0
+    },
+    {
+      "subscribers": 5000,
+      "monthly_price": 79.0,
+      "mrr": 395000.0,
+      "arr": 4740000.0
+    },
+    {
+      "subscribers": 5000,
+      "monthly_price": 99.0,
+      "mrr": 495000.0,
+      "arr": 5940000.0
+    },
+    {
+      "subscribers": 10000,
+      "monthly_price": 10.0,
+      "mrr": 100000.0,
+      "arr": 1200000.0
+    },
+    {
+      "subscribers": 10000,
+      "monthly_price": 19.0,
+      "mrr": 190000.0,
+      "arr": 2280000.0
+    },
+    {
+      "subscribers": 10000,
+      "monthly_price": 29.0,
+      "mrr": 290000.0,
+      "arr": 3480000.0
+    },
+    {
+      "subscribers": 10000,
+      "monthly_price": 49.0,
+      "mrr": 490000.0,
+      "arr": 5880000.0
+    },
+    {
+      "subscribers": 10000,
+      "monthly_price": 79.0,
+      "mrr": 790000.0,
+      "arr": 9480000.0
+    },
+    {
+      "subscribers": 10000,
+      "monthly_price": 99.0,
+      "mrr": 990000.0,
+      "arr": 11880000.0
+    },
+    {
+      "subscribers": 20000,
+      "monthly_price": 10.0,
+      "mrr": 200000.0,
+      "arr": 2400000.0
+    },
+    {
+      "subscribers": 20000,
+      "monthly_price": 19.0,
+      "mrr": 380000.0,
+      "arr": 4560000.0
+    },
+    {
+      "subscribers": 20000,
+      "monthly_price": 29.0,
+      "mrr": 580000.0,
+      "arr": 6960000.0
+    },
+    {
+      "subscribers": 20000,
+      "monthly_price": 49.0,
+      "mrr": 980000.0,
+      "arr": 11760000.0
+    },
+    {
+      "subscribers": 20000,
+      "monthly_price": 79.0,
+      "mrr": 1580000.0,
+      "arr": 18960000.0
+    },
+    {
+      "subscribers": 20000,
+      "monthly_price": 99.0,
+      "mrr": 1980000.0,
+      "arr": 23760000.0
+    }
+  ],
+  "acquisition_targets": [
+    {
+      "target_enterprise_value": 20000000.0,
+      "arr_multiple": 4.0,
+      "required_arr": 5000000.0,
+      "monthly_price": 10.0,
+      "required_subscribers": 41667
+    },
+    {
+      "target_enterprise_value": 20000000.0,
+      "arr_multiple": 4.0,
+      "required_arr": 5000000.0,
+      "monthly_price": 19.0,
+      "required_subscribers": 21930
+    },
+    {
+      "target_enterprise_value": 20000000.0,
+      "arr_multiple": 4.0,
+      "required_arr": 5000000.0,
+      "monthly_price": 29.0,
+      "required_subscribers": 14368
+    },
+    {
+      "target_enterprise_value": 20000000.0,
+      "arr_multiple": 4.0,
+      "required_arr": 5000000.0,
+      "monthly_price": 49.0,
+      "required_subscribers": 8504
+    },
+    {
+      "target_enterprise_value": 20000000.0,
+      "arr_multiple": 4.0,
+      "required_arr": 5000000.0,
+      "monthly_price": 79.0,
+      "required_subscribers": 5275
+    },
+    {
+      "target_enterprise_value": 20000000.0,
+      "arr_multiple": 4.0,
+      "required_arr": 5000000.0,
+      "monthly_price": 99.0,
+      "required_subscribers": 4209
+    },
+    {
+      "target_enterprise_value": 20000000.0,
+      "arr_multiple": 5.0,
+      "required_arr": 4000000.0,
+      "monthly_price": 10.0,
+      "required_subscribers": 33334
+    },
+    {
+      "target_enterprise_value": 20000000.0,
+      "arr_multiple": 5.0,
+      "required_arr": 4000000.0,
+      "monthly_price": 19.0,
+      "required_subscribers": 17544
+    },
+    {
+      "target_enterprise_value": 20000000.0,
+      "arr_multiple": 5.0,
+      "required_arr": 4000000.0,
+      "monthly_price": 29.0,
+      "required_subscribers": 11495
+    },
+    {
+      "target_enterprise_value": 20000000.0,
+      "arr_multiple": 5.0,
+      "required_arr": 4000000.0,
+      "monthly_price": 49.0,
+      "required_subscribers": 6803
+    },
+    {
+      "target_enterprise_value": 20000000.0,
+      "arr_multiple": 5.0,
+      "required_arr": 4000000.0,
+      "monthly_price": 79.0,
+      "required_subscribers": 4220
+    },
+    {
+      "target_enterprise_value": 20000000.0,
+      "arr_multiple": 5.0,
+      "required_arr": 4000000.0,
+      "monthly_price": 99.0,
+      "required_subscribers": 3368
+    },
+    {
+      "target_enterprise_value": 20000000.0,
+      "arr_multiple": 6.0,
+      "required_arr": 3333333.3333333335,
+      "monthly_price": 10.0,
+      "required_subscribers": 27778
+    },
+    {
+      "target_enterprise_value": 20000000.0,
+      "arr_multiple": 6.0,
+      "required_arr": 3333333.3333333335,
+      "monthly_price": 19.0,
+      "required_subscribers": 14620
+    },
+    {
+      "target_enterprise_value": 20000000.0,
+      "arr_multiple": 6.0,
+      "required_arr": 3333333.3333333335,
+      "monthly_price": 29.0,
+      "required_subscribers": 9579
+    },
+    {
+      "target_enterprise_value": 20000000.0,
+      "arr_multiple": 6.0,
+      "required_arr": 3333333.3333333335,
+      "monthly_price": 49.0,
+      "required_subscribers": 5669
+    },
+    {
+      "target_enterprise_value": 20000000.0,
+      "arr_multiple": 6.0,
+      "required_arr": 3333333.3333333335,
+      "monthly_price": 79.0,
+      "required_subscribers": 3517
+    },
+    {
+      "target_enterprise_value": 20000000.0,
+      "arr_multiple": 6.0,
+      "required_arr": 3333333.3333333335,
+      "monthly_price": 99.0,
+      "required_subscribers": 2806
+    },
+    {
+      "target_enterprise_value": 20000000.0,
+      "arr_multiple": 8.0,
+      "required_arr": 2500000.0,
+      "monthly_price": 10.0,
+      "required_subscribers": 20834
+    },
+    {
+      "target_enterprise_value": 20000000.0,
+      "arr_multiple": 8.0,
+      "required_arr": 2500000.0,
+      "monthly_price": 19.0,
+      "required_subscribers": 10965
+    },
+    {
+      "target_enterprise_value": 20000000.0,
+      "arr_multiple": 8.0,
+      "required_arr": 2500000.0,
+      "monthly_price": 29.0,
+      "required_subscribers": 7184
+    },
+    {
+      "target_enterprise_value": 20000000.0,
+      "arr_multiple": 8.0,
+      "required_arr": 2500000.0,
+      "monthly_price": 49.0,
+      "required_subscribers": 4252
+    },
+    {
+      "target_enterprise_value": 20000000.0,
+      "arr_multiple": 8.0,
+      "required_arr": 2500000.0,
+      "monthly_price": 79.0,
+      "required_subscribers": 2638
+    },
+    {
+      "target_enterprise_value": 20000000.0,
+      "arr_multiple": 8.0,
+      "required_arr": 2500000.0,
+      "monthly_price": 99.0,
+      "required_subscribers": 2105
+    }
+  ]
+}

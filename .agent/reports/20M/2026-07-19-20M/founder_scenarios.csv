@@ -1,0 +1,4 @@
+label,total_units,gross_one_time_cash,arr
+"10 founders at $2,500",10,25000.0,0
+"10 founders at $5,000",10,50000.0,0
+"5 founders at $2,500 and 5 at $5,000",10,37500.0,0
