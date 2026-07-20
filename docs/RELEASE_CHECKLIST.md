@@ -135,6 +135,15 @@ verification question.
   enters the DDEX package. Keep the original design/source file and written
   artwork-use permission with the release evidence; the package hash proves
   delivery identity, not copyright ownership.
+- [ ] **If the selected test cover was AI-generated, save an artwork provenance
+  card before delivery:** immutable object path/generation/SHA-256, creation
+  date, prompt/input-rights reference, provider, model, provider-returned
+  version or request/reference ID when available, human reviewer, and the
+  distributor-rule/audit receipt. If the provider does not return a version or
+  provenance token, record `not supplied`—do not fill the gap from a model
+  nickname or a later guess. Keep the card separate from copyright/ownership:
+  technical conformance and an AI-provider record do not prove exclusive title,
+  copyrightability, or clearance of supplied inputs.
 - [ ] Submit one controlled package through the configured partner route and
   retain the partner acknowledgement/rejection, timestamp, package hash,
   sanitized correlation ID, and any validation report in the release evidence
@@ -214,6 +223,12 @@ materials should contain only a redacted reference, date, and owner.
   retention/deletion evidence; model/provider terms; and a clear statement
   that provider weights and customer prompts/uploads are not company-owned by
   default.
+- [ ] **AI-created creative evidence:** for every investor-facing or
+  commercially delivered generated asset, retain the provenance card above
+  plus the human direction/review record and rights basis for every uploaded
+  reference. State plainly whether the company is claiming platform workflow
+  value, a licence-limited output, or a customer-controlled asset; never call
+  provider model weights or customer inputs company-owned IP.
 - [ ] **Customer music and rights:** per-release master/composition ownership,
   split and sample evidence, territories/terms, registrations and delivery
   acknowledgements. Never add customer catalog to platform-IP value without an

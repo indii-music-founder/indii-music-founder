@@ -3,18 +3,23 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { SubmitReleaseModal } from './SubmitReleaseModal';
 
-const { mockListCanonicalTracks, mockSubmitRelease, mockPersistCoverArt, mockSetDoc, mockAuditArtwork, mockUserProfile } = vi.hoisted(() => ({
+const { mockListCanonicalTracks, mockSubmitRelease, mockPersistCoverArt, mockSetDoc, mockAuditArtwork, mockUserProfile, mockGeneratedHistory } = vi.hoisted(() => ({
     mockListCanonicalTracks: vi.fn(),
     mockSubmitRelease: vi.fn(),
     mockPersistCoverArt: vi.fn(),
     mockSetDoc: vi.fn(),
     mockAuditArtwork: vi.fn(),
+    mockGeneratedHistory: [] as Array<Record<string, unknown>>,
     mockUserProfile: {
         id: 'user-1',
         displayName: 'Test Artist',
         brandKit: {
             releaseDetails: {},
-            brandAssets: [{ url: 'https://cdn.example.com/cover.png', description: 'Main Cover' }],
+            brandAssets: [{
+                url: 'https://cdn.example.com/cover.png',
+                description: 'Main Cover',
+                generationProvenance: { provider: 'google', model: 'gemini-image-3' },
+            }],
             referenceImages: [],
         },
     },
@@ -25,7 +30,7 @@ vi.mock('@/core/context/ToastContext', () => ({
 }));
 
 vi.mock('@/core/store', () => ({
-    useStore: (selector: any) => selector({ userProfile: mockUserProfile }),
+    useStore: (selector: any) => selector({ userProfile: mockUserProfile, generatedHistory: mockGeneratedHistory }),
 }));
 
 vi.mock('@/services/metadata/TrackLibraryService', () => ({
@@ -88,6 +93,7 @@ describe('SubmitReleaseModal (ISSUE-969)', () => {
         mockSubmitRelease.mockResolvedValue({ status: 'success' });
         mockSetDoc.mockResolvedValue(undefined);
         mockAuditArtwork.mockResolvedValue({ data: { status: 'compliant' } });
+        mockGeneratedHistory.length = 0;
         mockPersistCoverArt.mockResolvedValue({
             content_hash: 'b'.repeat(64),
             download_url: 'https://firebasestorage.googleapis.com/v0/b/indii-test/o/covers%2Fuser-1%2Fcover?alt=media',
@@ -95,6 +101,11 @@ describe('SubmitReleaseModal (ISSUE-969)', () => {
             original_file_name: 'cover.png',
             size_bytes: 4096,
             storage_path: `covers/user-1/${'b'.repeat(64)}/original.png`,
+            generation_provenance: {
+                source: 'generated',
+                provider: 'google',
+                model: 'gemini-image-3',
+            },
         });
     });
 
@@ -138,6 +149,7 @@ describe('SubmitReleaseModal (ISSUE-969)', () => {
         expect(mockPersistCoverArt).toHaveBeenCalledWith('https://cdn.example.com/cover.png', {
             userId: 'user-1',
             originalFileName: 'Main Cover',
+            generationProvenance: { provider: 'google', model: 'gemini-image-3' },
         });
         expect(releaseData.artwork_url).toContain('firebasestorage.googleapis.com');
         expect(releaseData.cover_asset).toMatchObject({
@@ -155,6 +167,11 @@ describe('SubmitReleaseModal (ISSUE-969)', () => {
             expect.objectContaining({
                 userId: 'user-1',
                 coverArtStoragePath: `covers/user-1/${'b'.repeat(64)}/original.png`,
+                coverArtGenerationProvenance: {
+                    source: 'generated',
+                    provider: 'google',
+                    model: 'gemini-image-3',
+                },
             }),
         );
         expect(mockAuditArtwork).toHaveBeenCalledWith({ releaseId: releaseData.releaseId });
@@ -180,5 +197,38 @@ describe('SubmitReleaseModal (ISSUE-969)', () => {
             size_bytes: CANONICAL_TRACK.masterAsset.sizeBytes,
             storage_path: CANONICAL_TRACK.masterAsset.storagePath,
         });
+    });
+
+    it('offers a measured generated cover with its recorded provider and model evidence', async () => {
+        mockGeneratedHistory.push({
+            id: 'generated-cover-1',
+            type: 'image',
+            origin: 'generated',
+            url: 'https://cdn.example.com/generated-cover.png',
+            generationProvenance: { provider: 'google', model: 'gemini-image-3' },
+            distributorCompliance: { valid: true },
+        });
+        render(<SubmitReleaseModal open onClose={vi.fn()} />);
+
+        expect(await screen.findByRole('option', { name: 'Generated cover — gemini-image-3' })).toHaveValue('https://cdn.example.com/generated-cover.png');
+    });
+
+    it('keeps the draft and offers a replacement action when server cover conformance fails', async () => {
+        mockAuditArtwork.mockResolvedValueOnce({ data: { status: 'non_compliant' } });
+        render(<SubmitReleaseModal open onClose={vi.fn()} />);
+        await waitFor(() => expect(mockListCanonicalTracks).toHaveBeenCalled());
+
+        fillBasicMetadata();
+        fireEvent.change(screen.getByTestId('release-track-select'), { target: { value: 'SONIC-master-1' } });
+        fireEvent.change(screen.getByTestId('release-artwork-select'), { target: { value: 'https://cdn.example.com/cover.png' } });
+        fireEvent.click(screen.getByTestId('release-submit-button'));
+
+        await waitFor(() => expect(screen.getByTestId('cover-art-repair')).toBeInTheDocument());
+        expect(screen.getByTestId('release-title-input')).toHaveValue('Album');
+        expect(screen.getByTestId('release-artwork-select')).toHaveValue('https://cdn.example.com/cover.png');
+        expect(mockSubmitRelease).not.toHaveBeenCalled();
+
+        fireEvent.click(screen.getByTestId('choose-replacement-cover'));
+        expect(screen.getByTestId('release-artwork-select')).toHaveValue('');
     });
 });

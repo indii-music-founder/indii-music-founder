@@ -39,6 +39,12 @@ export interface BrandAsset {
     category?: 'headshot' | 'bodyshot' | 'clothing' | 'environment' | 'logo' | 'other';
     tags?: string[];
     subject?: string; // e.g. "Dave", "The Band"
+    /** Generation evidence is recorded when the asset is created, never inferred from its bytes later. */
+    generationProvenance?: {
+        provider: string;
+        model: string;
+        version?: string;
+    };
 }
 
 export interface BrandKit {
