@@ -9,6 +9,9 @@ import { trackLibrary } from '@/services/metadata/TrackLibraryService';
 import { canonicalCoverArtService } from '@/services/distribution/CanonicalCoverArtService';
 import type { ExtendedGoldenMetadata } from '@/services/metadata/types';
 import type { BrandAsset } from '@/types/User';
+import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
+import { httpsCallable } from 'firebase/functions';
+import { db, functions } from '@/services/firebase';
 
 interface PipelineStep {
     id: string;
@@ -173,6 +176,30 @@ export const SubmitReleaseModal: React.FC<Props> = ({ open, onClose, onSubmitted
                     },
                 }],
             };
+            // The desktop pipeline has its own local package builder, but it
+            // must first establish the same durable release/audit evidence as
+            // the browser publishing wizard. Only canonical references—not
+            // credentials or mutable download URLs—are persisted here.
+            const releaseRef = doc(db, 'proprietaryIngestionReleases', releaseData.releaseId);
+            await setDoc(releaseRef, {
+                userId: ownerId,
+                title: releaseData.title,
+                status: 'cover_art_audit_pending',
+                coverArtStoragePath: coverAsset.storage_path,
+                coverArtContentHash: coverAsset.content_hash,
+                coverArtGenerationProvenance: { source: 'not_recorded' },
+                createdAt: serverTimestamp(),
+                updatedAt: serverTimestamp(),
+            });
+            const audit = httpsCallable<{ releaseId: string }, { status: 'compliant' | 'non_compliant' | 'unknown' }>(functions, 'auditReleaseArtworkForDelivery');
+            const audited = await audit({ releaseId: releaseData.releaseId });
+            if (audited.data.status !== 'compliant') {
+                await setDoc(releaseRef, {
+                    status: 'cover_art_audit_failed',
+                    updatedAt: serverTimestamp(),
+                }, { merge: true });
+                throw new Error(`Cover art needs repair: server conformance status is ${audited.data.status}. Replace or re-export the artwork before delivery.`);
+            }
             const result = await distributionService.submitRelease(releaseData, (evt) => {
                 if (evt.progress !== undefined) {
                     setOverallProgress(evt.progress);

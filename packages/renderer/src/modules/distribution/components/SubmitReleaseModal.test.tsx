@@ -3,10 +3,12 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { SubmitReleaseModal } from './SubmitReleaseModal';
 
-const { mockListCanonicalTracks, mockSubmitRelease, mockPersistCoverArt, mockUserProfile } = vi.hoisted(() => ({
+const { mockListCanonicalTracks, mockSubmitRelease, mockPersistCoverArt, mockSetDoc, mockAuditArtwork, mockUserProfile } = vi.hoisted(() => ({
     mockListCanonicalTracks: vi.fn(),
     mockSubmitRelease: vi.fn(),
     mockPersistCoverArt: vi.fn(),
+    mockSetDoc: vi.fn(),
+    mockAuditArtwork: vi.fn(),
     mockUserProfile: {
         id: 'user-1',
         displayName: 'Test Artist',
@@ -37,6 +39,14 @@ vi.mock('@/services/distribution/DistributionService', () => ({
 vi.mock('@/services/distribution/CanonicalCoverArtService', () => ({
     canonicalCoverArtService: { persistFromUrl: mockPersistCoverArt },
 }));
+
+vi.mock('@/services/firebase', () => ({ db: {}, functions: {} }));
+vi.mock('firebase/firestore', () => ({
+    doc: vi.fn((_db, collection, id) => ({ path: `${collection}/${id}` })),
+    serverTimestamp: vi.fn(() => 'server-timestamp'),
+    setDoc: mockSetDoc,
+}));
+vi.mock('firebase/functions', () => ({ httpsCallable: vi.fn(() => mockAuditArtwork) }));
 
 const CANONICAL_TRACK = {
     id: 'SONIC-master-1',
@@ -76,6 +86,8 @@ describe('SubmitReleaseModal (ISSUE-969)', () => {
         vi.clearAllMocks();
         mockListCanonicalTracks.mockResolvedValue([CANONICAL_TRACK]);
         mockSubmitRelease.mockResolvedValue({ status: 'success' });
+        mockSetDoc.mockResolvedValue(undefined);
+        mockAuditArtwork.mockResolvedValue({ data: { status: 'compliant' } });
         mockPersistCoverArt.mockResolvedValue({
             content_hash: 'b'.repeat(64),
             download_url: 'https://firebasestorage.googleapis.com/v0/b/indii-test/o/covers%2Fuser-1%2Fcover?alt=media',
@@ -138,6 +150,14 @@ describe('SubmitReleaseModal (ISSUE-969)', () => {
         expect(releaseData.tracks[0].channels).toBe(2);
         expect(releaseData.tracks[0].codec).toBe('PCM');
         expect(releaseData.tracks[0].bit_depth).toBe(24);
+        expect(mockSetDoc).toHaveBeenCalledWith(
+            expect.anything(),
+            expect.objectContaining({
+                userId: 'user-1',
+                coverArtStoragePath: `covers/user-1/${'b'.repeat(64)}/original.png`,
+            }),
+        );
+        expect(mockAuditArtwork).toHaveBeenCalledWith({ releaseId: releaseData.releaseId });
     });
 
     it('submits the immutable canonical master reference instead of analysis-cache metadata alone', async () => {
