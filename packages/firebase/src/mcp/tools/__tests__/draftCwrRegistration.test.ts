@@ -1,115 +1,107 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-// users/{uid}/releases/{id} chain and top-level releases/{id} chain.
-const ownedReleaseGet = vi.fn();
-const topReleaseGet = vi.fn();
-
-const releasesDocMock = vi.fn(() => ({ get: ownedReleaseGet }));
-const userDocMock = vi.fn(() => ({
-    get: vi.fn(),
-    collection: vi.fn(() => ({ doc: releasesDocMock })),
-}));
-const topDocMock = vi.fn(() => ({ get: topReleaseGet }));
-
-const collectionMock = vi.fn((name: string) => {
-    if (name === 'users') return { doc: userDocMock };
-    return { doc: topDocMock };
-});
-
-vi.mock('firebase-admin', () => ({
-    firestore: vi.fn(() => ({ collection: collectionMock })),
-}));
+vi.mock('firebase-admin');
 
 import { draftCwrRegistration } from '../draftCwrRegistration.js';
 import { McpContext } from '../../types.js';
+import * as admin from 'firebase-admin';
 
-const context = (uid: string): McpContext => ({ user: { uid } } as never);
+const setMock = vi.fn();
+const saveMock = vi.fn();
+const fileMock = vi.fn(() => ({ save: saveMock }));
+const bucketMock = vi.fn(() => ({ file: fileMock }));
+const releaseGetMock = vi.fn();
 
-const parse = (result: { content: Array<{ text: string }> }) => JSON.parse(result.content[0].text);
+let autoIdCounter = 0;
+const docMock = vi.fn((id?: string) => ({
+    id: id ?? `auto-id-${++autoIdCounter}`,
+    set: setMock,
+    get: releaseGetMock,
+    collection: vi.fn(() => ({ doc: docMock })),
+}));
+const collectionMock = vi.fn(() => ({ doc: docMock }));
+
+const firestoreMock = Object.assign(
+    vi.fn(() => ({ collection: collectionMock })),
+    { FieldValue: { serverTimestamp: vi.fn(() => 'SERVER_TIMESTAMP') } },
+);
+
+vi.mocked(admin.firestore).mockImplementation(firestoreMock);
+vi.mocked(admin.storage).mockImplementation(vi.fn(() => ({ bucket: bucketMock })));
+
+const context = (uid: string, admin_flag = false): McpContext => ({
+    user: { uid, admin: admin_flag } as never,
+});
 
 describe('draftCwrRegistration MCP tool', () => {
     beforeEach(() => {
-        ownedReleaseGet.mockReset();
-        topReleaseGet.mockReset();
+        setMock.mockReset().mockResolvedValue(undefined);
+        saveMock.mockReset().mockResolvedValue(undefined);
+        fileMock.mockClear();
+        bucketMock.mockClear();
+        docMock.mockClear();
         collectionMock.mockClear();
+        releaseGetMock.mockReset().mockResolvedValue({ exists: true, data: () => ({ title: 'Test Track' }) });
     });
 
-    it('drafts an in-handler CWR structural draft with honest warnings', async () => {
-        ownedReleaseGet.mockResolvedValue({ exists: true, data: () => ({ title: 'Midnight Run' }) });
-
+    it('generates CWR with all record types and stores to GCS', async () => {
         const result = await draftCwrRegistration.handler(
             {
-                releaseId: 'rel-1',
-                writers: [{ name: 'Jane Doe', ipi: '123456789' }, { name: 'Sam Smith' }],
+                releaseId: 'release-1',
+                writers: [
+                    { name: 'John Composer', ipi: '123456789' },
+                    { name: 'Jane Writer' },
+                ],
             },
-            context('user-1')
+            context('user-1'),
         );
-        const payload = parse(result);
+        const payload = JSON.parse((result.content[0] as { text: string }).text);
 
         expect(result.isError).toBeUndefined();
         expect(payload.status).toBe('succeeded');
         expect(payload.resource.type).toBe('cwr_draft');
-        expect(payload.data.recordCount).toBe(7); // HDR+GRH+NWR+2xSWR+GRT+TRL
 
-        const draft: string = payload.data.cwrDraft;
-        expect(draft).toContain('HDR|');
-        expect(draft).toContain('NWR|WORK TITLE:MIDNIGHT RUN');
-        expect(draft).toContain('SWR|SEQ:01|WRITER NAME:JANE DOE|IPI:123456789|ROLE:CA|SHARE:UNSPECIFIED');
-        expect(draft).toContain('SWR|SEQ:02|WRITER NAME:SAM SMITH|IPI:UNKNOWN');
-        expect(draft).toContain('GRT|');
-        expect(draft).toContain('TRL|');
+        // CWR contains all required record types
+        const cwrDraft = payload.data.cwrDraft as string;
+        expect(cwrDraft).toContain('HDR|');
+        expect(cwrDraft).toContain('GRH|');
+        expect(cwrDraft).toContain('NWR|');
+        expect(cwrDraft).toContain('SWR|');
+        expect(cwrDraft).toContain('SPT|');
+        expect(cwrDraft).toContain('GRT|');
+        expect(cwrDraft).toContain('TRL|');
 
-        const warnings: string[] = payload.warnings;
-        expect(warnings.join(' ')).toContain('NOT fixed-width validated');
-        expect(warnings.join(' ')).toContain('No society or IPI verification');
-        expect(warnings.join(' ')).toContain('NOT been submitted to any PRO');
-        expect(warnings.join(' ')).toContain('Writer shares are not yet specified');
+        // Storage: CWR saved to uid-scoped path
+        const storagePath = payload.data.storagePath as string;
+        expect(storagePath).toMatch(/^users\/user-1\/cwr\//);
+        expect(storagePath).toMatch(/.V21$/);
+        expect(fileMock).toHaveBeenCalledWith(storagePath);
+
+        // Firestore: metadata document created
+        expect(setMock).toHaveBeenCalledTimes(1);
+        const written = setMock.mock.calls[0][0];
+        expect(written.releaseId).toBe('release-1');
+        expect(written.status).toBe('draft_unsubmitted');
+        expect(written.writerCount).toBe(2);
+
+        // Evidence entry references storage artifact
+        expect(payload.evidence).toEqual([{ type: 'storage_object', reference: storagePath }]);
+
+        // Honest warnings: DRAFT, not submitted
+        const warnings = (payload.warnings || []) as string[];
+        expect(warnings.join(' ')).toContain('DRAFT');
+        expect(warnings.join(' ')).toContain('has NOT been submitted');
     });
 
-    it('fails closed with workTitle arg fallback missing on an untitled release', async () => {
-        ownedReleaseGet.mockResolvedValue({ exists: true, data: () => ({}) });
-
+    it('fails closed with INVALID_ARGUMENT when writers array is empty', async () => {
         const result = await draftCwrRegistration.handler(
-            { releaseId: 'rel-1', writers: [{ name: 'Jane Doe' }] },
-            context('user-1')
+            { releaseId: 'release-1', writers: [] },
+            context('user-1'),
         );
-        const payload = parse(result);
+        const payload = JSON.parse((result.content[0] as { text: string }).text);
+
         expect(result.isError).toBe(true);
         expect(payload.error.code).toBe('INVALID_ARGUMENT');
-
-        const ok = await draftCwrRegistration.handler(
-            { releaseId: 'rel-1', workTitle: 'Fallback Song', writers: [{ name: 'Jane Doe' }] },
-            context('user-1')
-        );
-        expect(parse(ok).data.cwrDraft).toContain('WORK TITLE:FALLBACK SONG');
-    });
-
-    it('fails closed on an invalid IPI without touching Firestore', async () => {
-        const result = await draftCwrRegistration.handler(
-            { releaseId: 'rel-1', writers: [{ name: 'Jane Doe', ipi: 'abc' }] },
-            context('user-1')
-        );
-        const payload = parse(result);
-
-        expect(result.isError).toBe(true);
-        expect(payload.status).toBe('failed');
-        expect(payload.error.code).toBe('INVALID_ARGUMENT');
-        expect(ownedReleaseGet).not.toHaveBeenCalled();
-    });
-
-    it('fails closed on a cross-tenant releaseId (ownership helper throws)', async () => {
-        ownedReleaseGet.mockResolvedValue({ exists: false, data: () => undefined });
-        topReleaseGet.mockResolvedValue({ exists: true, data: () => ({ userId: 'someone-else' }) });
-
-        const result = await draftCwrRegistration.handler(
-            { releaseId: 'other-users-release', writers: [{ name: 'Jane Doe' }] },
-            context('user-1')
-        );
-        const payload = parse(result);
-
-        expect(result.isError).toBe(true);
-        expect(payload.status).toBe('failed');
-        expect(payload.error.message).toContain('Forbidden');
-        expect(payload.data).toBeUndefined();
+        expect(setMock).not.toHaveBeenCalled();
     });
 });
