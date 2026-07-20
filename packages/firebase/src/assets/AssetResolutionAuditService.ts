@@ -30,6 +30,19 @@ export interface ReleaseArtworkReference {
     ownerUid: string;
     sourceDocumentReference: string;
     storagePath?: string;
+    generationProvenance: ArtworkGenerationProvenance;
+}
+
+/**
+ * Technical artwork conformance does not establish who created the image or
+ * who owns it. Preserve that distinction in every receipt: missing generation
+ * evidence is recorded as missing rather than inferred from the file itself.
+ */
+export interface ArtworkGenerationProvenance {
+    source: 'generated' | 'uploaded' | 'not_recorded';
+    provider?: string;
+    model?: string;
+    version?: string;
 }
 
 export interface InspectedArtwork {
@@ -50,6 +63,7 @@ export interface AssetResolutionAudit {
     releaseId: string;
     status: 'compliant' | 'non_compliant' | 'unknown';
     profile: ArtworkRequirementProfile;
+    generationProvenance: ArtworkGenerationProvenance;
     sourceDocumentReference: string;
     artwork?: InspectedArtwork;
     checks: Array<{ code: string; passed: boolean | null; message: string }>;
@@ -85,11 +99,13 @@ function record(value: unknown): Record<string, unknown> | undefined {
 function releaseStoragePath(data: Record<string, unknown>): string | undefined {
     const assets = record(data.assets);
     const coverArt = record(assets?.coverArt);
+    const canonicalCover = record(data.cover_asset);
     const candidates = [
         data.coverArtStoragePath,
         coverArt?.storagePath,
         coverArt?.path,
         assets?.coverArtStoragePath,
+        canonicalCover?.storage_path,
         data.coverArtUrl,
         assets?.coverArtUrl,
     ];
@@ -100,6 +116,49 @@ function releaseStoragePath(data: Record<string, unknown>): string | undefined {
     // audits only stable Cloud Storage object references, never arbitrary URLs.
     if (/^https?:\/\//i.test(candidate)) return undefined;
     return candidate.replace(/^\/+/, '');
+}
+
+function boundedOptionalString(value: unknown, maximum = 256): string | undefined {
+    return typeof value === 'string' && value.trim() && value.trim().length <= maximum
+        ? value.trim()
+        : undefined;
+}
+
+function releaseGenerationProvenance(data: Record<string, unknown>): ArtworkGenerationProvenance {
+    const assets = record(data.assets);
+    const coverArt = record(assets?.coverArt);
+    const canonicalCover = record(data.cover_asset);
+    const candidate = record(canonicalCover?.generation_provenance)
+        ?? record(coverArt?.generationProvenance)
+        ?? record(data.coverArtGenerationProvenance);
+    const source = candidate?.source;
+    if (source !== 'generated' && source !== 'uploaded') return { source: 'not_recorded' };
+    const provider = boundedOptionalString(candidate?.provider);
+    const model = boundedOptionalString(candidate?.model);
+    const version = boundedOptionalString(candidate?.version);
+    return {
+        source,
+        ...(provider ? { provider } : {}),
+        ...(model ? { model } : {}),
+        ...(version ? { version } : {}),
+    };
+}
+
+export function releaseAttachmentForAudit(audit: AssetResolutionAudit & { auditId: string }): Record<string, unknown> {
+    return {
+        schemaVersion: 'release-cover-art-conformance.v1',
+        auditId: audit.auditId,
+        auditStatus: audit.status,
+        requirementsProfileVersion: audit.profile.profileId,
+        generationProvenance: audit.generationProvenance,
+        ...(audit.artwork ? {
+            artwork: {
+                storagePath: audit.artwork.storagePath,
+                generation: audit.artwork.generation,
+                sha256: audit.artwork.sha256,
+            },
+        } : {}),
+    };
 }
 
 export function resolveOwnedArtworkObjectPath(ownerUid: string, reference: string, expectedBucket: string): string {
@@ -145,6 +204,7 @@ function firestoreRepository(firestore: Firestore): AssetAuditRepository {
                     ownerUid,
                     sourceDocumentReference: reference.path,
                     ...(releaseStoragePath(data) ? { storagePath: releaseStoragePath(data) } : {}),
+                    generationProvenance: releaseGenerationProvenance(data),
                 };
             }
             return undefined;
@@ -158,14 +218,24 @@ function firestoreRepository(firestore: Firestore): AssetAuditRepository {
             const ownerRef = firestore.collection('users').doc(audit.ownerUid);
             const auditRef = ownerRef.collection('assetAuditReceipts').doc(audit.auditId);
             await firestore.runTransaction(async transaction => {
-                const [owner, existing] = await Promise.all([transaction.get(ownerRef), transaction.get(auditRef)]);
+                const releaseRef = firestore.doc(audit.sourceDocumentReference);
+                const [owner, existing, release] = await Promise.all([
+                    transaction.get(ownerRef), transaction.get(auditRef), transaction.get(releaseRef),
+                ]);
                 if (!owner.exists) throw new Error('Owner profile no longer exists.');
                 if (existing.exists) return;
+                if (!release.exists) throw new Error('Release no longer exists.');
                 transaction.create(auditRef, {
                     ...audit,
                     alreadyExists: false,
                     createdAt: admin.firestore.FieldValue.serverTimestamp(),
                 });
+                // The release points only to immutable receipt identity and
+                // byte provenance. A mutable download URL never becomes
+                // conformance evidence.
+                transaction.set(releaseRef, {
+                    coverArtConformanceReceipt: releaseAttachmentForAudit(audit),
+                }, { merge: true });
             });
         },
     };
@@ -217,6 +287,7 @@ export async function auditReleaseArtwork(
             releaseId,
             status: 'unknown',
             profile: DSP_COVER_ART_BASELINE,
+            generationProvenance: release.generationProvenance,
             sourceDocumentReference: release.sourceDocumentReference,
             checks: [{ code: 'CANONICAL_ARTWORK_REFERENCE', passed: null, message: 'No stable Cloud Storage cover-art reference is recorded.' }],
             warnings: ['A URL or claimed width/height is not byte-level evidence. Upload or link canonical owner-scoped artwork.'],
@@ -243,6 +314,7 @@ export async function auditReleaseArtwork(
         releaseId,
         status,
         profile: DSP_COVER_ART_BASELINE,
+        generationProvenance: release.generationProvenance,
         sourceDocumentReference: release.sourceDocumentReference,
         artwork,
         checks,
