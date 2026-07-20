@@ -89,7 +89,8 @@ Finish every issue in `.agent/test_ledger/OPEN_ISSUES.md` that is not `✅ FIXED
   - **Status:** ✅ FIXED (verified 2026-07-20) — the stage is continuously labeled “Preview only — not saved,” and clearing populated local state requires explicit confirmation. The UI therefore makes no persistence or render-output claim. A Storage-backed, versioned, renderable 3D scene pipeline remains a separate product capability, not an implied implementation.
 - [x] ISSUE-1016 — Sequence Architect trajectory can't affect synthesized frame or Director handoff
   - **Status:** ✅ FIXED (verified 2026-07-20) — editing the trajectory labels the target stale and blocks Director Mode; Apply & re-synthesize creates a new target tied to the exact revised text before handoff is permitted. The focused regression proves both blocked stale handoff and revised-target transfer. Durable cross-reload trajectory/job lineage remains a separate enhancement.
-- [ ] ISSUE-1025 — Mobile Controller impersonates desktop presence, falsely reports "Studio Connected"
+- [x] ISSUE-1025 — Mobile Controller impersonates desktop presence, falsely reports "Studio Connected"
+  - **Status:** ✅ FIXED (reverified 2026-07-20) — the Controller route, including a desktop-sized `/mobile-remote` page, is excluded from the Studio executor hook; only a fresh server-verified Studio lease can publish presence, claim Studio work, or write responses. Controller commands have an explicit `studio`/`cloud` target and client Firestore rules deny self-promotion/claim/response writes. Verification: 62 focused controller/relay tests and 143 Firestore-emulator rule assertions passed. Hardware-backed first-enrollment attestation is a separate production hardening action in `docs/RELEASE_CHECKLIST.md`, not a reason to restore the reported false connected/command-race behavior.
 
 ## PHASE 2 — Every OPEN Issue (88 items, ledger order)
 
