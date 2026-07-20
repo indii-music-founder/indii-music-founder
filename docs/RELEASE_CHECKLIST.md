@@ -186,6 +186,12 @@ evidence. The living record is [the IP asset register](data-room/13_IP_ASSET_REG
   composition rights evidence, split approvals, sample clearances, and any
   registration/delivery acknowledgements. Customer catalog is not platform IP
   unless there is a specific written transfer.
+- [ ] For each composition that needs an ISWC, submit or confirm the work through
+  the applicable PRO/CISAC-authorized process; retain the assigning society,
+  date, official work title/composer match, ISWC confirmation/reference, and
+  any conflict correspondence. A code entered in the app is only a draft claim
+  until that evidence exists; do not represent it to an investor, partner, or
+  royalty service as registered without the confirmation record.
 - [ ] Run and save a current dependency-licence report before investor,
   acquisition, or major commercial diligence; route non-permissive or unclear
   results to counsel.
@@ -201,6 +207,26 @@ These are GCP Console settings changes an agent cannot make. The code-side fixes
 - [x] Create a **dedicated YouTube Data API key** (service separation — the code currently reuses the Firebase key, which is referrer-blocked from Electron and violates API Credentials Policy §3.2.3). Add it as `VITE_GOOGLE_YOUTUBE_API_KEY` once the code fix lands.
 - [x] Add `VITE_GOOGLE_MAPS_API_KEY` as a GitHub Actions repo secret so the hosted web build gets the key (deploy.yml injection is a code-side fix, but the secret value must be created by you).
 - [x] Vertex AI: re-verify the 20 fine-tuned agent endpoints against the live tuningJobs API (registry last synced 2026-06-21; Anti-Pattern #9 protocol). Requires `gcloud auth login` on the machine running the check.
+
+### Cloud Deployment & Production-Evidence Access
+
+Live verification of private Cloud Run services, Cloud Tasks, Firebase Functions,
+and production receipts requires an active Google Cloud user session. This is an
+operator-access prerequisite, not a reason to weaken service authentication or
+to paste credentials into source control or chat.
+
+- [ ] Before a production verification/deployment session, run `gcloud auth login`
+  on the operator machine and select the company account with access to
+  `indii-music-founder`; confirm `gcloud config get-value project` returns
+  `indii-music-founder`.
+- [ ] Maintain the equivalent Firebase CLI session with `firebase login --reauth`
+  when a scoped Functions/Rules deployment is needed. Complete browser/device
+  authorization in the terminal/browser flow; never paste one-time OAuth codes
+  into project files, release records, or investor materials.
+- [ ] Save the date, operator, target project, deployed revision/function
+  names, and redacted proof result in the relevant release evidence record.
+  Do not record bearer tokens, service-account keys, task bodies containing
+  private media references, or customer audio.
 
 ### Social Platform Developer Registrations (ISSUE-766, added 2026-07-08)
 
