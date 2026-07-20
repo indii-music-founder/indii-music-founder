@@ -3,6 +3,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import AutonomousLab from './AutonomousLab';
 import { useStore } from '@/core/store';
+import { ImageGeneration } from '@/services/image/ImageGenerationService';
 
 // Mock dependencies
 vi.mock('@/core/store');
@@ -41,6 +42,7 @@ describe('AutonomousLab (Sequence Architect)', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
+        window.scrollTo = vi.fn();
         mockStoreRef = {
             current: {
                 userProfile: { id: 'user-1' },
@@ -63,6 +65,8 @@ describe('AutonomousLab (Sequence Architect)', () => {
             }
             return mockStoreRef.current;
         });
+        vi.mocked(ImageGeneration.captionImage).mockResolvedValue('A moonlit stage conclusion');
+        vi.mocked(ImageGeneration.remixImage).mockResolvedValue({ url: 'https://assets.example.test/original-target.png' } as never);
     });
 
     it('renders the Sequence Architect header and initial state', () => {
@@ -92,5 +96,31 @@ describe('AutonomousLab (Sequence Architect)', () => {
         // The synthesize button should become enabled now that we have a seed image
         const synthesizeBtn = screen.getByRole('button', { name: /Synthesize Sequence/i });
         expect(synthesizeBtn).not.toBeDisabled();
+    });
+
+    it('blocks Director Mode for an edited trajectory until it synthesizes a matching target frame', async () => {
+        render(<AutonomousLab />);
+        const dropzone = screen.getByText('Drop asset here').parentElement?.parentElement;
+        fireEvent.drop(dropzone!, { dataTransfer: { getData: () => 'image-1', files: [] } });
+
+        fireEvent.click(screen.getByRole('button', { name: /Synthesize Sequence/i }));
+        await screen.findByText('Engine Trajectory');
+
+        fireEvent.click(screen.getByText('Engine Trajectory'));
+        const trajectory = screen.getByPlaceholderText('Review and edit the cinematic trajectory...');
+        fireEvent.change(trajectory, { target: { value: 'A dawn performance finale with gold light.' } });
+        expect(screen.getByText('Draft only — target frame unchanged')).toBeInTheDocument();
+
+        fireEvent.click(screen.getAllByRole('button', { name: /Enter Director Mode/i })[0]!);
+        expect(mockStoreRef.current.setVideoInputs).not.toHaveBeenCalled();
+
+        vi.mocked(ImageGeneration.remixImage).mockResolvedValueOnce({ url: 'https://assets.example.test/revised-target.png' } as never);
+        fireEvent.click(screen.getByRole('button', { name: /Apply & re-synthesize/i }));
+        await screen.findByText('Applied to target frame');
+
+        fireEvent.click(screen.getAllByRole('button', { name: /Enter Director Mode/i })[0]!);
+        expect(mockStoreRef.current.setVideoInputs).toHaveBeenCalledWith(expect.objectContaining({
+            lastFrame: expect.objectContaining({ url: 'https://assets.example.test/revised-target.png' }),
+        }));
     });
 });

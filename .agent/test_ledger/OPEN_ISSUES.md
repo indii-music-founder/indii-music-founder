@@ -15638,6 +15638,8 @@ Naming fix: `LabelDealRecoupmentService.ts` collection literal `'labelDeals'` �
 
 - **Fix progress (2026-07-13):** `AutonomousLab.tsx` now records which trajectory text produced the current target frame. Editing the text immediately labels it “Draft only — target frame unchanged”; the new **Apply & re-synthesize** action produces and records a new target image from that exact edited prompt. Director Mode refuses the stale target until the edit is applied, so it cannot silently hand off the prior conclusion frame. A failed update preserves the prior target and editable revised prompt for retry. Renderer typecheck, focused lint, and diff integrity checks pass. **Remaining:** no durable trajectory revision/job manifest is persisted across reload, and no focused interaction fixture yet captures the revised prompt through the Director request payload.
 
+- **Regression closure (2026-07-20):** Added an interaction fixture that synthesizes an initial target, edits the trajectory, proves Director Mode does not call `setVideoInputs` while the target is stale, applies the edit, and then proves the handoff carries the revised target frame. This closes the stale-target/handoff behavior; durable cross-reload job lineage remains separate work.
+
 ### ISSUE-1017: Clearing every Sequence Architect segment leaves “Enter Director Mode” enabled, then crashes handoff
 
 - **Status:** ✅ FIXED (2026-07-11)
