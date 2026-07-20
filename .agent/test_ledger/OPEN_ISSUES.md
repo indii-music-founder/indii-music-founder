@@ -14666,7 +14666,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-939: Inventory “Sync” is only a 1.5-second animation
 
-- **Status:** ✅ FIXED (2026-07-13 — simulated success removed; provider sync remains unconfigured)
+- **Status:** ✅ FIXED (reverified 2026-07-20 — simulated success removed; provider sync remains unconfigured)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Merchandise / Inventory
 - **Evidence:** `InventoryTracker.handleSync()` sets local `syncing`, waits 1.5 seconds, and clears it without calling Firestore, Shopify, Printful, Printify, or any provider service (`InventoryTracker.tsx:21-29`). The UI presents four channels and a Sync button (`:14-19`, `:43-55`).
@@ -14675,6 +14675,8 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 - **Acceptance:** Sync produces provider operation IDs/timestamps and changed fixture inventory; unavailable providers show setup/error and never animate as success.
 
 - **Fix progress (2026-07-13):** `InventoryTracker` no longer runs the fake 1.5-second “Sync” animation. Its disabled control explicitly says `Provider sync unavailable` and explains that inventory updates only from Firestore changes, so it cannot imply a successful external stock refresh. **Remaining:** actual provider jobs, per-provider timestamps/statuses, and retry/setup flows.
+
+- **Regression verification (2026-07-20):** `InventoryTracker.test.tsx` asserts there is no enabled `Sync` button, the only control is disabled with the explicit Firestore-only explanation, and no-inventory state remains honest. Renderer typecheck and scoped ESLint pass.
 
 ### ISSUE-940: Social AI copy failures are inserted as post copy and announced as successful generation
 

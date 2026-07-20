@@ -45,7 +45,8 @@ Finish every issue in `.agent/test_ledger/OPEN_ISSUES.md` that is not `✅ FIXED
   - **Status:** ✅ FIXED (2026-07-12) — unsupported temporal inpaint is rejected before the backend cost-reservation read and the UI gives an actionable alternative. A client-readable capability receipt remains a separate future enhancement; the product does not claim unsupported models work.
 - [x] ISSUE-938 — Enhanced Showroom video jobs can hang forever or save to wrong project
   - **Status:** ✅ FIXED (2026-07-14) — captures immutable projectId/prompt at submission, uses captured values on completion.
-- [ ] ISSUE-939 — Inventory "Sync" is only a 1.5-second animation
+- [x] ISSUE-939 — Inventory "Sync" is only a 1.5-second animation
+  - **Status:** ✅ FIXED (reverified 2026-07-20) — the UI has no Sync action or simulated delay. It renders only a disabled `Provider sync unavailable` control that explains inventory updates arrive through Firestore changes; focused component regression, renderer typecheck, and scoped ESLint pass. A real provider-operation pipeline remains a separate capability and is not implied by this inventory view.
 - [ ] ISSUE-946 — Discord/Telegram webhook auto-announcement event wiring still unbuilt
 - [x] ISSUE-961 — Audio Distribution QC treats every M4A/MP4 as lossless master, no codec inspection
   - **Status:** ✅ FIXED (2026-07-20) — canonical-master intake now advertises and accepts only byte-measured WAV/FLAC; AIFF/ALAC/M4A options were explicitly retired until they have the same immutable parser, worker probe, and DDEX-delivery support. Canonical masters persist measured technical properties and are independently rechecked before DDEX.
