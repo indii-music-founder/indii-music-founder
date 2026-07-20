@@ -50,17 +50,17 @@
 
 ### ISSUE-1091: MCP Tool Suite Expansion (Real Business Logic Integration)
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL (2026-07-20 — Brand backend fetchBrandKit and Finance calculateRecoupment now read Firestore ledgers; remaining Finance Stripe/Legal/Creative/Publicist/Distribution backends still open)
 - **Severity:** 🔴 HIGH
 - **Module:** `packages/firebase/src/mcp/tools/**`, `packages/firebase/src/functions/triggers/**`
 - **Scope:** The 11 MCP tools currently execute stub logic that merely returns hardcoded strings or writes a row to a job queue. The true business logic and third-party API integrations need to be wired up for the tools to perform actual work.
 - **Evidence:** 
-  - Tools like `calculateRecoupment` return a static `$0.00` string.
+  - [FIXED 2026-07-20] `calculateRecoupment` no longer returns static hardcoded figures; it reads Firestore recoupment and earnings ledgers.
   - Tools like `stageStripePayouts` write to the `payoutJobs` collection, but the downstream `processPayoutJobs` trigger merely logs the event without calling Stripe.
 - **Acceptance:**
-  1. **Finance Backends**: `calculateRecoupment` uses BigQuery or Stripe Node SDK to sum up real earnings vs marketing spend. `stageStripePayouts` stages real transfers via the Stripe API for split recipients.
+  1. **Finance Backends**: [PARTIAL 2026-07-20] `calculateRecoupment` now reads `recoupment_balances` and `earnings` from Firestore instead of hardcoded figures; `stageStripePayouts` still needs to stage real transfers via the Stripe API for split recipients.
   2. **Legal Backends**: `registerSplitSheet` generates a verifiable PDF using `pdfkit` (or similar) and saves it to a secure GCS bucket. `draftCwrRegistration` generates valid Common Works Registration files. `auditSampleClearance` integrates with an Audio API or database to verify sample lineage.
   3. **Creative Backends**: `queueRemotionRender` successfully dispatches Remotion Lambda renders via Inngest. `auditAssetResolutions` uses `sharp` to validate image/video dimensions inside Cloud Storage.
   4. **Publicist Backends**: `scheduleCampaignWaterfall` updates real campaign timelines in Firestore. `generatePlaylistPitch` synthesizes pitch templates using backend Vertex/Gemini and optionally sends them via SendGrid.
-  5. **Brand Backends**: `fetchBrandKit` returns the user's actual `brandKit` data structure from their profile document.
+  5. **Brand Backends**: [FIXED 2026-07-20] `fetchBrandKit` returns the user's actual `brandKit` data structure from their profile document, with uid ownership enforcement and focused unit coverage.
   6. **Distribution Backends**: `draft_dsp_metadata_xml` fetches Audio DNA and artist profile from Firestore, formatting it properly per DDEX standards.
