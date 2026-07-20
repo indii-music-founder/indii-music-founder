@@ -103,6 +103,7 @@ describe.skip('Creative Gateway (Integration)', () => {
         expect(doc.exists).toBe(true);
         expect(doc.data()?.status).toBe('completed');
         expect(doc.data()?.resultUri).toBe(result.resultUri);
+        expect(doc.data()?.provider).toBe('vertex');
 
         // Verify Storage file
         const bucket = storage.bucket();

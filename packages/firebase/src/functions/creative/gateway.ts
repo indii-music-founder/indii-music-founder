@@ -1169,6 +1169,10 @@ export const generateImageV3 = onCall({ timeoutSeconds: 120, memory: '1GiB', sec
   }
   let outputCompleted = false;
   const outputUris: string[] = [];
+  // Record the selected backend, not credentials or provider response data.
+  // The explicit production deployment value makes this durable evidence of
+  // postpaid Vertex routing for image jobs.
+  const mediaProvider = getMediaProvider();
 
   try {
     await safeDbSet(jobId, {
@@ -1177,12 +1181,13 @@ export const generateImageV3 = onCall({ timeoutSeconds: 120, memory: '1GiB', sec
       sessionId,
       status: 'processing',
       type: 'image',
+      provider: mediaProvider,
       prompt,
       requestedCount: count,
       costReservationId,
       createdAt: new Date().toISOString()
     });
-    const ai = getAiClient('image');
+    const ai = getAiClient('image', mediaProvider === 'vertex');
     const imageAi = ai as unknown as {
       interactions?: { create: (data: Record<string, unknown>) => Promise<unknown> };
       models: { generateContent: (data: Record<string, unknown>) => Promise<unknown> };
@@ -1303,6 +1308,7 @@ export const generateImageV3 = onCall({ timeoutSeconds: 120, memory: '1GiB', sec
     
     await safeDbUpdate(jobId, {
       status: 'completed',
+      provider: mediaProvider,
       resultUri: outputUris[0],
       resultUris: outputUris,
       outputCount: outputUris.length,
@@ -1311,6 +1317,11 @@ export const generateImageV3 = onCall({ timeoutSeconds: 120, memory: '1GiB', sec
       completedAt: new Date().toISOString()
     });
     outputCompleted = true;
+    console.info('[generateImageV3] Image generation completed', {
+      jobId,
+      provider: mediaProvider,
+      outputCount: outputUris.length,
+    });
     try {
       await finalizeOperationReservation({ userId, operationId: costReservationId, outcome: 'SETTLED' });
     } catch (settlementError) {
