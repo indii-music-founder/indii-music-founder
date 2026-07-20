@@ -160,6 +160,7 @@ export { cleanupExpiredVideoTemps, cleanupOrphanedVideos, trackStorageQuotas, fl
 export { fetchStorageAssetForCanvas } from './functions/storage/fetchStorageAssetForCanvas';
 export { verifyMasterAudio } from './functions/storage/verifyMasterAudio';
 export { processAudioIngestion } from './distribution/ingestion';
+export { auditReleaseArtworkForDelivery } from './assets/auditReleaseArtwork';
 
 // Remote Relay — Server-Side Agent Processing (replaces desktop-browser-dependent relay)
 export { processRelayCommand } from './relay/relayCommandProcessor';

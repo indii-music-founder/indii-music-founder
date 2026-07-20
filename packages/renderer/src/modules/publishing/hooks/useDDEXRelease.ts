@@ -5,12 +5,13 @@
 
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import { collection, addDoc, updateDoc, doc, serverTimestamp } from 'firebase/firestore';
-import { db } from '@/services/firebase';
+import { httpsCallable } from 'firebase/functions';
+import { db, functions } from '@/services/firebase';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { INGESTION_CONFIG } from '@/core/config/ingestion';
-import { StorageService } from '@/services/StorageService';
 import { masterAudioService } from '@/services/audio/MasterAudioService';
+import { canonicalCoverArtService } from '@/services/distribution/CanonicalCoverArtService';
 import { agentService } from '@/services/agent/AgentService';
 import type { ExtendedGoldenMetadata, DDEXReleaseRecord } from '@/services/metadata/types';
 import type { DistributorId, ReleaseAssets } from '@/services/distribution/types/distributor';
@@ -296,25 +297,28 @@ export function useDDEXRelease(): UseDDEXReleaseReturn {
         return masterAsset.downloadUrl;
       }
 
-      // Non-audio release collateral retains its ordinary packaging path.
-      const path = `orgs/${activeOrg.id}/releases/packaging/${Date.now()}_${file.name}`;
-      const url = await StorageService.uploadFileWithProgress(
-        file,
-        path,
-        (progress) => {
-          setUploadProgress(prev => ({ ...prev, [type]: progress }));
-        }
-      );
+      // Cover art is a release-critical asset, not disposable packaging
+      // collateral. Keep one immutable content-addressed object so the server
+      // conformance audit can pin its generation and digest to the release.
+      setUploadProgress(prev => ({ ...prev, cover: 10 }));
+      const coverAsset = await canonicalCoverArtService.persistFile(file, {
+        userId: userProfile.id,
+        originalFileName: file.name,
+      });
+      setUploadProgress(prev => ({ ...prev, cover: 100 }));
       const coverInfo = {
-        url,
-        mimeType: file.type,
-        sizeBytes: file.size,
+        url: coverAsset.download_url,
+        mimeType: coverAsset.mime_type,
+        sizeBytes: coverAsset.size_bytes,
         width: imageDimensions.width,
         height: imageDimensions.height,
+        storagePath: coverAsset.storage_path,
+        contentHash: coverAsset.content_hash,
+        generationProvenance: { source: 'uploaded' as const },
       };
       setSubmitError(null);
       updateAssets({ coverArt: coverInfo });
-      return url;
+      return coverAsset.download_url;
     } catch (error: unknown) {
       logger.error(`Error uploading ${type} asset:`, error);
       throw error;
@@ -448,7 +452,10 @@ export function useDDEXRelease(): UseDDEXReleaseReturn {
             ...(metadata.isrc?.trim() ? { isrc: metadata.isrc.trim() } : {}),
             coverArtUrl: assets.coverArt?.url || '',
             coverArtWidth: assets.coverArt?.width || 3000,
-            coverArtHeight: assets.coverArt?.height || 3000
+            coverArtHeight: assets.coverArt?.height || 3000,
+            ...(assets.coverArt?.storagePath ? { coverArtStoragePath: assets.coverArt.storagePath } : {}),
+            ...(assets.coverArt?.contentHash ? { coverArtContentHash: assets.coverArt.contentHash } : {}),
+            ...(assets.coverArt?.generationProvenance ? { coverArtGenerationProvenance: assets.coverArt.generationProvenance } : {}),
           },
           status: 'draft',
           distributors: selectedDistributors.map(id => ({
@@ -468,6 +475,25 @@ export function useDDEXRelease(): UseDDEXReleaseReturn {
 
         docId = docRef.id;
         setReleaseId(docId);
+      }
+
+      // A browser-measured image is only preflight evidence. Before a release
+      // can enter packaging, the backend must inspect the immutable object and
+      // attach the resulting receipt to this exact release record.
+      try {
+        const audit = httpsCallable<{ releaseId: string }, { status: 'compliant' | 'non_compliant' | 'unknown' }>(functions, 'auditReleaseArtworkForDelivery');
+        const audited = await audit({ releaseId: docId });
+        if (audited.data.status !== 'compliant') {
+          throw new Error(`Cover art needs repair: server conformance status is ${audited.data.status}. Replace or re-export the artwork before packaging.`);
+        }
+      } catch (auditError: unknown) {
+        const auditErrorMessage = auditError instanceof Error ? auditError.message : 'Cover-art conformance audit failed';
+        await updateDoc(doc(db, 'proprietaryIngestionReleases', docId), {
+          status: 'cover_art_audit_failed',
+          coverArtAuditError: auditErrorMessage,
+          updatedAt: serverTimestamp(),
+        });
+        throw new Error(`Release cover art was not verified: ${auditErrorMessage}`);
       }
 
       // ISSUE-964: packaging must succeed before the release is ever

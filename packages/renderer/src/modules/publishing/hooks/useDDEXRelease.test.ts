@@ -2,12 +2,14 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useDDEXRelease } from './useDDEXRelease';
 
-const { mockAddDoc, mockUpdateDoc, mockRunAgent, mockUploadFile, mockPersistMaster, docIds } = vi.hoisted(() => ({
+const { mockAddDoc, mockUpdateDoc, mockRunAgent, mockUploadFile, mockPersistMaster, mockPersistCover, mockAuditArtwork, docIds } = vi.hoisted(() => ({
     mockAddDoc: vi.fn(),
     mockUpdateDoc: vi.fn(),
     mockRunAgent: vi.fn(),
     mockUploadFile: vi.fn(),
     mockPersistMaster: vi.fn(),
+    mockPersistCover: vi.fn(),
+    mockAuditArtwork: vi.fn(),
     docIds: { counter: 0 },
 }));
 
@@ -22,6 +24,14 @@ vi.mock('firebase/firestore', () => ({
 vi.mock('@/services/firebase', () => ({
     db: {},
     storage: {},
+    functions: {},
+}));
+
+vi.mock('firebase/functions', () => ({
+    httpsCallable: vi.fn((_functions, name) => {
+        if (name !== 'auditReleaseArtworkForDelivery') throw new Error(`Unexpected callable ${name}`);
+        return mockAuditArtwork;
+    }),
 }));
 
 vi.mock('@/services/StorageService', () => ({
@@ -30,6 +40,10 @@ vi.mock('@/services/StorageService', () => ({
 
 vi.mock('@/services/audio/MasterAudioService', () => ({
     masterAudioService: { persist: mockPersistMaster },
+}));
+
+vi.mock('@/services/distribution/CanonicalCoverArtService', () => ({
+    canonicalCoverArtService: { persistFile: mockPersistCover },
 }));
 
 vi.mock('@/services/agent/AgentService', () => ({
@@ -75,6 +89,7 @@ describe('useDDEXRelease.submitRelease (ISSUE-964)', () => {
         docIds.counter = 0;
         mockAddDoc.mockImplementation(async () => ({ id: `release-${++docIds.counter}` }));
         mockUpdateDoc.mockResolvedValue(undefined);
+        mockAuditArtwork.mockResolvedValue({ data: { status: 'compliant' } });
     });
 
     it('only marks metadata_complete after packaging actually succeeds', async () => {
@@ -106,7 +121,12 @@ describe('useDDEXRelease.submitRelease (ISSUE-964)', () => {
                     contentHash: 'content-hash',
                     masterFingerprint: 'SONIC-master',
                 },
-                coverArt: VALID_COVER_ART,
+                coverArt: {
+                    ...VALID_COVER_ART,
+                    storagePath: 'covers/user-1/cover-hash/original.png',
+                    contentHash: 'cover-hash',
+                    generationProvenance: { source: 'uploaded' },
+                },
             });
         });
 
@@ -120,6 +140,9 @@ describe('useDDEXRelease.submitRelease (ISSUE-964)', () => {
                 audioContentHash: 'content-hash',
                 masterFingerprint: 'SONIC-master',
                 isrc: 'USABC2600001',
+                coverArtStoragePath: 'covers/user-1/cover-hash/original.png',
+                coverArtContentHash: 'cover-hash',
+                coverArtGenerationProvenance: { source: 'uploaded' },
             }),
         }));
         expect(mockRunAgent).toHaveBeenCalledWith(
@@ -146,6 +169,21 @@ describe('useDDEXRelease.submitRelease (ISSUE-964)', () => {
         expect(result.current.currentStep).toBe('review');
         expect(result.current.submitError).toContain('Packaging failed');
         expect(result.current.releaseId).toBe('release-1');
+    });
+
+    it('refuses packaging and records repair state when the backend artwork audit is not compliant', async () => {
+        mockAuditArtwork.mockResolvedValue({ data: { status: 'non_compliant' } });
+        const { result } = renderHook(() => useDDEXRelease());
+        act(() => { result.current.updateAssets({ audioFile: VALID_AUDIO_FILE, coverArt: VALID_COVER_ART }); });
+
+        await act(async () => {
+            await expect(result.current.submitRelease()).rejects.toThrow(/cover art was not verified/i);
+        });
+
+        expect(mockRunAgent).not.toHaveBeenCalled();
+        expect(mockUpdateDoc).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
+            status: 'cover_art_audit_failed',
+        }));
     });
 
     it('retries against the same draft instead of creating a duplicate release', async () => {
@@ -210,6 +248,14 @@ describe('useDDEXRelease.uploadAsset (ISSUE-963)', () => {
             sizeBytes: 44,
             storagePath: 'masters/user-1/content-hash/original.wav',
             uploadedAt: '2026-07-17T00:00:00.000Z',
+        });
+        mockPersistCover.mockResolvedValue({
+            content_hash: 'cover-hash',
+            download_url: 'https://storage.example.com/canonical-cover.png',
+            mime_type: 'image/png',
+            original_file_name: 'cover.png',
+            size_bytes: 44,
+            storage_path: 'covers/user-1/cover-hash/original.png',
         });
     });
 
@@ -303,6 +349,29 @@ describe('useDDEXRelease.uploadAsset (ISSUE-963)', () => {
         });
 
         expect(result.current.assets.coverArt).toBeUndefined();
+        vi.unstubAllGlobals();
+    });
+
+    it('persists release cover art once at a canonical path instead of timestamped packaging storage', async () => {
+        class ValidImage {
+            naturalWidth = 3000;
+            naturalHeight = 3000;
+            onload: (() => void) | null = null;
+            set src(_value: string) { queueMicrotask(() => this.onload?.()); }
+        }
+        vi.stubGlobal('Image', ValidImage);
+        const { result } = renderHook(() => useDDEXRelease());
+        const cover = new File(['png'], 'cover.png', { type: 'image/png' });
+
+        await act(async () => { await result.current.uploadAsset('cover', cover); });
+
+        expect(mockPersistCover).toHaveBeenCalledWith(cover, { userId: 'user-1', originalFileName: 'cover.png' });
+        expect(mockUploadFile).not.toHaveBeenCalled();
+        expect(result.current.assets.coverArt).toEqual(expect.objectContaining({
+            storagePath: 'covers/user-1/cover-hash/original.png',
+            contentHash: 'cover-hash',
+            generationProvenance: { source: 'uploaded' },
+        }));
         vi.unstubAllGlobals();
     });
 });

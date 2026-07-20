@@ -63,6 +63,16 @@ describe('CanonicalCoverArtService', () => {
         expect(storageMocks.uploadBytes).not.toHaveBeenCalled();
     });
 
+    it('content-addresses a directly selected file without first creating a packaging copy', async () => {
+        const bytes = new Uint8Array([137, 80, 78, 71]);
+        const file = new File([bytes], 'cover.png', { type: 'image/png' });
+        Object.defineProperty(file, 'arrayBuffer', { value: async () => bytes.buffer });
+        const result = await canonicalCoverArtService.persistFile(file, { userId: 'owner-1' });
+
+        expect(result.storage_path).toMatch(/^covers\/owner-1\/[a-f0-9]{64}\/original\.png$/);
+        expect(storageMocks.uploadBytes).toHaveBeenCalledOnce();
+    });
+
     it('fails closed for unsupported or unreadable artwork', async () => {
         vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(new Blob([new Uint8Array([1])]), { headers: { 'content-type': 'image/webp' } })));
         await expect(canonicalCoverArtService.persistFromUrl('https://assets.example.test/cover.webp', { userId: 'owner-1' }))

@@ -40,7 +40,7 @@ function originalFileName(value: string | undefined, mimeType: CanonicalCoverRef
     return name.slice(0, 512);
 }
 
-async function sha256(bytes: ArrayBuffer): Promise<string> {
+async function sha256(bytes: BufferSource): Promise<string> {
     const digest = await crypto.subtle.digest('SHA-256', bytes);
     return Array.from(new Uint8Array(digest), value => value.toString(16).padStart(2, '0')).join('');
 }
@@ -58,18 +58,14 @@ function assertExistingMetadata(metadata: Awaited<ReturnType<typeof getMetadata>
 
 /** Stores selected artwork once under an owner-scoped, content-addressed immutable reference. */
 export class CanonicalCoverArtService {
-    async persistFromUrl(sourceUrl: string, options: { userId: string; originalFileName?: string }): Promise<CanonicalCoverReference> {
+    private async persistBytes(
+        rawBytes: ArrayBuffer,
+        rawMimeType: string,
+        options: { userId: string; originalFileName?: string },
+    ): Promise<CanonicalCoverReference> {
         const ownerId = requireOwnerId(options.userId);
-        let response: Response;
-        try {
-            response = await fetch(sourceUrl, { method: 'GET', redirect: 'error' });
-        } catch {
-            throw new Error('The selected cover art could not be read. Upload it to your brand assets again before delivery.');
-        }
-        if (!response.ok) throw new Error(`The selected cover art could not be downloaded (HTTP ${response.status}).`);
-
-        const bytes = await response.arrayBuffer();
-        const mimeType = normalizedMimeType(response.headers.get('content-type') || '');
+        const bytes = new Uint8Array(rawBytes);
+        const mimeType = normalizedMimeType(rawMimeType);
         if (!bytes.byteLength || bytes.byteLength > MAX_COVER_BYTES) {
             throw new Error('Release cover art must be between 1 byte and 50 MB.');
         }
@@ -87,7 +83,7 @@ export class CanonicalCoverArtService {
         } catch (error) {
             if (!objectNotFound(error)) throw error;
             try {
-                await uploadBytes(coverRef, new Uint8Array(bytes), {
+                await uploadBytes(coverRef, bytes, {
                     contentType: mimeType,
                     customMetadata: {
                         contentHash,
@@ -116,6 +112,26 @@ export class CanonicalCoverArtService {
             size_bytes: bytes.byteLength,
             storage_path: storagePath,
         };
+    }
+
+    /** Content-address a directly selected release cover without first creating a packaging copy. */
+    async persistFile(file: File, options: { userId: string; originalFileName?: string }): Promise<CanonicalCoverReference> {
+        return this.persistBytes(await file.arrayBuffer(), file.type, {
+            ...options,
+            originalFileName: options.originalFileName ?? file.name,
+        });
+    }
+
+    async persistFromUrl(sourceUrl: string, options: { userId: string; originalFileName?: string }): Promise<CanonicalCoverReference> {
+        let response: Response;
+        try {
+            response = await fetch(sourceUrl, { method: 'GET', redirect: 'error' });
+        } catch {
+            throw new Error('The selected cover art could not be read. Upload it to your brand assets again before delivery.');
+        }
+        if (!response.ok) throw new Error(`The selected cover art could not be downloaded (HTTP ${response.status}).`);
+
+        return this.persistBytes(await response.arrayBuffer(), response.headers.get('content-type') || '', options);
     }
 }
 

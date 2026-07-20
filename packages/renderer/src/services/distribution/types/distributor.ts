@@ -118,6 +118,14 @@ export interface ReleaseAssets {
     sizeBytes: number;
     name?: string;
     path?: string;
+    storagePath?: string;
+    contentHash?: string;
+    generationProvenance?: {
+      source: 'generated' | 'uploaded' | 'not_recorded';
+      provider?: string;
+      model?: string;
+      version?: string;
+    };
   };
   lyricsFile?: {
     name?: string;
