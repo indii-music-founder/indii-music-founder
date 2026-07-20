@@ -15599,6 +15599,8 @@ Naming fix: `LabelDealRecoupmentService.ts` collection literal `'labelDeals'` �
 
 - **Fix progress (2026-07-13):** `AccountCreationWizard.tsx` now saves the platform, identity, selected assets, and transfer acknowledgements in a user/project-scoped local draft (`indii:social-account-setup:<user>:<project>`), restoring it when the wizard reopens. The final step shows each exact selected image with Download, Open, and Copy-link handoff actions plus platform/crop guidance. An invalid/missing URL now displays a repair instruction, and an eligible selected asset must be deliberately transferred before the screen can claim “Ready to Create”; otherwise it says “Finish asset handoff.” The external signup page remains an explicit browser handoff—no platform upload is claimed or attempted. Renderer typecheck and diff integrity checks pass. **Remaining:** durable cloud synchronization of drafts, live expiry/access validation for remote asset URLs, provider-authorized upload APIs, and focused component fixtures for restored/expired drafts.
 
+- **Regression closure (2026-07-20):** Added focused component coverage for a restored project-scoped draft: a selected valid profile asset keeps the final screen at “Finish asset handoff” until Copy-link succeeds and persists the transfer acknowledgement; an inaccessible saved `gs://` reference remains explicitly unavailable and never produces “Ready to Create.” Provider-authorized asset upload and cross-device draft sync remain future integrations, not success claims.
+
 ### ISSUE-1014: Video Workflow’s 3D Stage Builder cannot receive the GLB/GLTF files it tells creators to drop
 
 - **Status:** 🟡 PARTIAL (2026-07-12 — structural decode gate and progress status added; browser interaction/load-error coverage remains)
