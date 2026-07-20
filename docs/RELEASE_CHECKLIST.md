@@ -225,6 +225,29 @@ materials should contain only a redacted reference, date, and owner.
   is; who controls it; what supports that statement today; why it matters; what
   it does *not* prove; and the exact next action if evidence is incomplete.
 
+### Mobile Studio executor attestation (ISSUE-1025 residual hardening)
+
+The Controller cannot self-publish Studio presence or claim Studio commands:
+those actions already require a short-lived server-verified executor lease. The
+remaining real-world decision is how first enrollment proves that the caller is
+an approved installed Studio rather than merely another same-account client.
+
+- [ ] Choose the trust mechanism with security counsel/engineering: a
+  notarized-code-signing challenge, managed-device certificate/MDM identity, or
+  another server-verifiable credential appropriate to supported desktop
+  platforms. Do not describe a browser cookie, MAC address, or a client-supplied
+  device ID as hardware attestation.
+- [ ] Define enrollment eligibility, revocation, rotation, recovery after a
+  lost/replaced machine, lease lifetime, audit-log retention, and the person
+  allowed to approve a new Studio device.
+- [ ] Store the issuer configuration and public verification material in the
+  approved secret/configuration system; keep device identifiers, enrollment
+  secrets, and challenge responses out of Git, Firestore client documents, and
+  investor materials.
+- [ ] Test enrollment, lease renewal, expired/revoked credential rejection, and
+  a second same-account browser attempting to impersonate Studio. Retain a
+  redacted test record with date, build/revision, operator, and result.
+
 ### Google Cloud Console — Maps & API Keys (ISSUE-764 / ISSUE-765, added 2026-07-08)
 
 These are GCP Console settings changes an agent cannot make. The code-side fixes
