@@ -68,7 +68,7 @@ describe('registerSplitSheet MCP tool', () => {
         expect(collectionMock).toHaveBeenCalledWith('split_sheets');
         expect(setMock).toHaveBeenCalledTimes(1);
         const written = setMock.mock.calls[0][0];
-        expect(Object.keys(written).sort()).toEqual(['collaborators', 'createdAt', 'initiatorUid', 'sha256', 'status', 'trackId']);
+        expect(Object.keys(written).sort()).toEqual(['collaborators', 'createdAt', 'initiatorUid', 'pdfStoragePath', 'sha256', 'status', 'textStoragePath', 'trackId']);
         expect(written.trackId).toBe('track-1');
         expect(written.initiatorUid).toBe('user-1');
         expect(written.status).toBe('recorded_unsigned');
@@ -78,23 +78,34 @@ describe('registerSplitSheet MCP tool', () => {
         ]);
         expect(JSON.stringify(written)).not.toContain('do-not-store');
 
-        // Storage artifact under caller's own scope
+        // Storage artifacts (text + PDF) under caller's own scope
         expect(fileMock).toHaveBeenCalledWith(`users/user-1/split_sheets/${payload.resource.id}.txt`);
+        expect(fileMock).toHaveBeenCalledWith(`users/user-1/split_sheets/${payload.resource.id}.pdf`);
         const savedText = saveMock.mock.calls[0][0] as string;
         expect(savedText).toContain('track: track-1');
         expect(savedText).toContain('initiator: user-1');
         // Deterministic ordering: sorted by name (Ana before Zed)
         expect(savedText.indexOf('Ana Producer')).toBeLessThan(savedText.indexOf('Zed Writer'));
+        // PDF bytes saved as second call
+        const savedPdfBytes = saveMock.mock.calls[1][0];
+        expect(savedPdfBytes).toBeInstanceOf(Buffer);
 
-        // Evidence entry references the artifact with its sha256
-        expect(payload.evidence).toEqual([
-            { type: 'storage_object', reference: `users/user-1/split_sheets/${payload.resource.id}.txt`, sha256: written.sha256 },
-        ]);
+        // Evidence entries reference both artifacts
+        expect(payload.evidence).toHaveLength(2);
+        expect(payload.evidence[0]).toEqual({
+            type: 'storage_object',
+            reference: `users/user-1/split_sheets/${payload.resource.id}.txt`,
+            sha256: written.sha256,
+        });
         expect(payload.evidence[0].sha256).toMatch(/^[0-9a-f]{64}$/);
+        expect(payload.evidence[1]).toEqual({
+            type: 'storage_object',
+            reference: `users/user-1/split_sheets/${payload.resource.id}.pdf`,
+        });
 
-        // Honest warnings: recorded but not countersigned, no PDF
+        // Honest warnings: recorded but not countersigned, PDF is draft
         expect(payload.warnings.join(' ')).toContain('NOT countersigned');
-        expect(payload.warnings.join(' ')).toContain('No PDF contract');
+        expect(payload.warnings.join(' ')).toContain('DRAFT');
     });
 
     it('fails closed with INVALID_ARGUMENT when percentages do not sum to 100', async () => {

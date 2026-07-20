@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 
 import * as admin from 'firebase-admin';
+import { PDFDocument, rgb } from 'pdf-lib';
 
 import { failedOperationResult, operationResult, optionalIdempotencyKey, requireString, toolResponse, verifyReleaseOwnership, OwnershipFirestore } from '../helpers.js';
 import { IndiiMcpTool } from '../types.js';
@@ -8,6 +9,78 @@ import { IndiiMcpTool } from '../types.js';
 const MAX_COLLABORATORS = 20;
 const MAX_NAME_LENGTH = 200;
 const SUM_TOLERANCE = 0.01;
+
+async function generateSplitSheetPDF(
+    trackId: string,
+    collaborators: SplitCollaborator[],
+    sha256: string,
+    createdAt: Date
+): Promise<Uint8Array> {
+    const doc = await PDFDocument.create();
+    const page = doc.addPage([612, 792]); // Letter size
+    const { height } = page.getSize();
+    let y = height - 40;
+    const fontSize = 10;
+    const lineHeight = 14;
+
+    // Header
+    page.drawText('INDII SPLIT SHEET', {
+        x: 40,
+        y,
+        size: 16,
+        color: rgb(0.1, 0.1, 0.1),
+    });
+    y -= lineHeight * 2;
+
+    // Draft watermark
+    page.drawText('DRAFT — UNSIGNED', {
+        x: 40,
+        y,
+        size: 10,
+        color: rgb(0.8, 0.2, 0.2),
+    });
+    y -= lineHeight * 1.5;
+
+    // Track and metadata
+    page.drawText(`Track: ${trackId}`, { x: 40, y, size: fontSize, color: rgb(0, 0, 0) });
+    y -= lineHeight;
+    page.drawText(`Generated: ${createdAt.toISOString().split('T')[0]}`, { x: 40, y, size: fontSize, color: rgb(0, 0, 0) });
+    y -= lineHeight;
+    page.drawText(`SHA256: ${sha256.slice(0, 32)}...`, { x: 40, y, size: fontSize, color: rgb(0.4, 0.4, 0.4) });
+    y -= lineHeight * 2;
+
+    // Collaborators header
+    page.drawText('COLLABORATORS', { x: 40, y, size: 11, color: rgb(0.1, 0.1, 0.1) });
+    y -= lineHeight;
+
+    // Draw table headers
+    page.drawText('Name', { x: 40, y, size: fontSize, color: rgb(0.3, 0.3, 0.3) });
+    page.drawText('Share', { x: 400, y, size: fontSize, color: rgb(0.3, 0.3, 0.3) });
+    y -= lineHeight;
+
+    // Draw collaborators (sorted by name for determinism)
+    const sorted = [...collaborators].sort((a, b) => a.name.localeCompare(b.name, 'en'));
+    for (const collab of sorted) {
+        if (y < 60) {
+            // Add new page if needed
+            page.drawText('(continued on next page)', { x: 40, y, size: 8, color: rgb(0.6, 0.6, 0.6) });
+            break;
+        }
+        page.drawText(collab.name.slice(0, 50), { x: 40, y, size: fontSize, color: rgb(0, 0, 0) });
+        page.drawText(`${collab.percentage.toFixed(4)}%`, { x: 400, y, size: fontSize, color: rgb(0, 0, 0) });
+        y -= lineHeight;
+    }
+
+    y -= lineHeight;
+    page.drawText('This is a DRAFT document and is not a legally binding agreement.', {
+        x: 40,
+        y,
+        size: 8,
+        color: rgb(0.5, 0.5, 0.5),
+    });
+
+    return doc.save();
+}
 
 interface SplitCollaborator {
     name: string;
@@ -94,10 +167,20 @@ export const registerSplitSheet: IndiiMcpTool = {
 
             const canonicalText = canonicalSplitSheetText(actorUid, trackId, collaborators);
             const sha256 = createHash('sha256').update(canonicalText, 'utf8').digest('hex');
-            const storagePath = `users/${actorUid}/split_sheets/${docId}.txt`;
+            const textStoragePath = `users/${actorUid}/split_sheets/${docId}.txt`;
+            const pdfStoragePath = `users/${actorUid}/split_sheets/${docId}.pdf`;
+            const createdAt = new Date();
 
-            await admin.storage().bucket().file(storagePath).save(canonicalText, {
+            // Generate and save canonical text
+            await admin.storage().bucket().file(textStoragePath).save(canonicalText, {
                 contentType: 'text/plain; charset=utf-8',
+                resumable: false,
+            });
+
+            // Generate and save PDF
+            const pdfBytes = await generateSplitSheetPDF(trackId, collaborators, sha256, createdAt);
+            await admin.storage().bucket().file(pdfStoragePath).save(Buffer.from(pdfBytes), {
+                contentType: 'application/pdf',
                 resumable: false,
             });
 
@@ -108,6 +191,8 @@ export const registerSplitSheet: IndiiMcpTool = {
                 initiatorUid: actorUid,
                 status: 'recorded_unsigned',
                 sha256,
+                textStoragePath,
+                pdfStoragePath,
                 createdAt: admin.firestore.FieldValue.serverTimestamp(),
             });
 
@@ -118,17 +203,21 @@ export const registerSplitSheet: IndiiMcpTool = {
                 resourceType: 'split_sheet',
                 resourceId: docId,
                 idempotencyKey,
-                evidence: [{ type: 'storage_object', reference: storagePath, sha256 }],
+                evidence: [
+                    { type: 'storage_object', reference: textStoragePath, sha256 },
+                    { type: 'storage_object', reference: pdfStoragePath },
+                ],
                 warnings: [
-                    'Split sheet recorded and hashed, but NOT countersigned by collaborators.',
-                    'No PDF contract has been rendered yet; this record is not a signed agreement.',
+                    'Split sheet recorded with PDF artifact, but NOT countersigned by collaborators.',
+                    'PDF is a DRAFT for reference; this record is not a legally binding agreement.',
                 ],
                 data: {
                     trackId,
                     collaborators: collaborators.map((c) => ({ name: c.name, percentage: c.percentage })),
                     status: 'recorded_unsigned',
                     sha256,
-                    storagePath,
+                    textStoragePath,
+                    pdfStoragePath,
                 },
             }));
         } catch (error) {
