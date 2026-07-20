@@ -11,6 +11,8 @@ This command can be dropped in at *any* time by either the user or the agent whe
 ## 1. Goal & Task Assessment
 - **Evaluate Context:** Parse the active goal, modified files, open files, and the state of `task.md` or `implementation_plan.md`.
 - **Identify Domain:** Is this a testing issue, database rules adjustment, styling alignment, performance bottleneck, deployment concern, architecture question, or strategic mapping task?
+- **Reconcile issue identity before routing:** When issue work is in scope, read the active ledger and any referenced archive. Verify that every issue identifier resolves to one subject only; treat a duplicate identifier, stale status, or contradictory evidence as a ledger-integrity defect. Normalize the map before selecting implementation work so a fix cannot be credited to the wrong issue.
+- **Distinguish code proof from external proof:** A passing local test proves only its local contract. Route deployment, billing, partner-delivery, legal-registration, or authenticated endpoint acceptance to a controlled live verification step, and retain `PARTIAL` until that evidence exists.
 
 ## 2. Manifest & Skill Scan
 Scan our centralized command manifests:
@@ -96,6 +98,7 @@ Evaluate the task against this routing matrix if no specific arguments are passe
 - **Want a fully automated overnight test-fix-deploy loop?** ➔ `/factory` (Automated Test & Fix Loop)
 - **Clearing the issue backlog in `OPEN_ISSUES.md`?** ➔ `/issue` (The Fix Agent)
 - **Sweeping CodeRabbit and Sentry after a big block of work?** ➔ `/issue-sweep` (End-to-End Issue Sweep)
+- **Reconciling a new active ledger with an archive or correcting issue IDs?** ➔ `/start`, then `/issue-sweep` in plan/reconciliation mode before changing product code.
 - **Need to auto-patch Sentry/CodeRabbit issues?** ➔ `/auto-fix` (Auto-Fix Sentry & CodeRabbit)
 - **Are database rules or storage schemas shifting?** ➔ `/db-sync` (Security Rules Synchronizer)
 
@@ -107,6 +110,8 @@ Evaluate the task against this routing matrix if no specific arguments are passe
 - **Discovering, debugging, or planning API endpoints?** ➔ `/api` (The API Knowledge Base)
 - **Preparing AI agent training datasets?** ➔ `/training` (AI Agent Dataset Generation & Fine-Tuning)
 - **DX feeling sluggish?** ➔ `/devex-review` (Developer Experience Audit)
+- **Does a tool persist financial, legal, or job-state intent without a verified worker?** ➔ `/middle` → `/go` with TDD and the relevant persistence/security skill; model the full state machine and approval boundary rather than returning a queued or completed claim.
+- **Does a deployed private SSE/API path need authentication proof?** ➔ `/api`, then a bounded controlled live probe; verify identity binding, reconnect behavior, and unauthorized denial without relaxing access controls.
 
 ---
 
