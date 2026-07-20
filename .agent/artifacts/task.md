@@ -79,7 +79,8 @@ Finish every issue in `.agent/test_ledger/OPEN_ISSUES.md` that is not `✅ FIXED
   - **Status:** ✅ FIXED (2026-07-12) — timeout/unmount atomically cancels an unclaimed command; a late desktop backlog scan cannot invoke it. Already-claimed work is reported honestly rather than silently retried as a new request.
 - [x] ISSUE-990 — "Recent Generates" mixes every relay response image into gallery, no command-type scoping
   - **Status:** ✅ FIXED (2026-07-12) — the gallery accepts only responses tied to a confirmed `generate_image` command and quarantines unmatched image responses.
-- [ ] ISSUE-994 — Performance Video sends final render callable the wrong request/response
+- [x] ISSUE-994 — Performance Video sends final render callable the wrong request/response
+  - **Status:** ✅ FIXED (verified 2026-07-20) — the performance service submits the callable’s required `{ compositionId, inputProps: { project } }` envelope, waits for the owned render job’s real terminal asset, and fails visibly for queue, stitch, or missing-output errors. The canonical master’s URL, fingerprint, ISRC, timing, and gain travel in the audio timeline and stitch request under the explicit `master_over_native` mix policy. Focused renderer and Firebase render-contract suites pass (14 tests). A shared cross-package render contract and render-only retry that preserves already-generated scenes remain separate enhancements; they do not reintroduce the reported false-success/request-shape defect.
 - [ ] ISSUE-1007 — "Cover Art" mode promises distributor compliance but never verifies delivered file
 - [ ] ISSUE-1013 — Social account wizard drops creative profile/banner assets before signup handoff
 - [ ] ISSUE-1015 — Built 3D music-video stage is local preview only, can't save/render
