@@ -47,7 +47,8 @@ Finish every issue in `.agent/test_ledger/OPEN_ISSUES.md` that is not `✅ FIXED
   - **Status:** ✅ FIXED (2026-07-14) — captures immutable projectId/prompt at submission, uses captured values on completion.
 - [x] ISSUE-939 — Inventory "Sync" is only a 1.5-second animation
   - **Status:** ✅ FIXED (reverified 2026-07-20) — the UI has no Sync action or simulated delay. It renders only a disabled `Provider sync unavailable` control that explains inventory updates arrive through Firestore changes; focused component regression, renderer typecheck, and scoped ESLint pass. A real provider-operation pipeline remains a separate capability and is not implied by this inventory view.
-- [ ] ISSUE-946 — Discord/Telegram webhook auto-announcement event wiring still unbuilt
+- [x] ISSUE-946 — Discord/Telegram webhook auto-announcement event wiring still unbuilt
+  - **Status:** ✅ FIXED (reverified 2026-07-20) — Test/Send performs validated provider POSTs and reports only real 2xx success or provider/network failure; Telegram requires and sends a Chat ID. The unbuilt release/tour/drop automation remains visibly disabled and labeled “Not yet wired,” so no event delivery is implied. Focused panel suite (7), renderer typecheck, and scoped ESLint pass. Credential-at-rest hardening is separately tracked by ISSUE-840.
 - [x] ISSUE-961 — Audio Distribution QC treats every M4A/MP4 as lossless master, no codec inspection
   - **Status:** ✅ FIXED (2026-07-20) — canonical-master intake now advertises and accepts only byte-measured WAV/FLAC; AIFF/ALAC/M4A options were explicitly retired until they have the same immutable parser, worker probe, and DDEX-delivery support. Canonical masters persist measured technical properties and are independently rechecked before DDEX.
 - [ ] ISSUE-1083 — Audio profiling callable accepted arbitrary Storage paths and queued an unauthenticated placeholder engine target
