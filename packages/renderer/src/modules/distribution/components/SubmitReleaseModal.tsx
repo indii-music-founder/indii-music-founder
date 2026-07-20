@@ -35,8 +35,9 @@ interface Props {
 
 export const SubmitReleaseModal: React.FC<Props> = ({ open, onClose, onSubmitted }) => {
     const { success: toastSuccess, error: toastError } = useToast();
-    const { userProfile } = useStore(useShallow(state => ({
-        userProfile: state.userProfile
+    const { userProfile, generatedHistory } = useStore(useShallow(state => ({
+        userProfile: state.userProfile,
+        generatedHistory: state.generatedHistory,
     })));
 
     const [title, setTitle] = useState('');
@@ -54,13 +55,27 @@ export const SubmitReleaseModal: React.FC<Props> = ({ open, onClose, onSubmitted
     const [loadingTracks, setLoadingTracks] = useState(false);
     const [selectedMasterFingerprint, setSelectedMasterFingerprint] = useState('');
     const [selectedCoverUrl, setSelectedCoverUrl] = useState('');
+    const [coverRepairMessage, setCoverRepairMessage] = useState<string | null>(null);
 
     const [submitting, setSubmitting] = useState(false);
 
     const coverAssets: BrandAsset[] = [
         ...(userProfile?.brandKit?.brandAssets || []),
         ...(userProfile?.brandKit?.referenceImages || []),
-    ];
+        ...(generatedHistory || [])
+            .filter(item => (
+                item.type === 'image' &&
+                item.origin === 'generated' &&
+                item.distributorCompliance?.valid === true &&
+                item.generationProvenance !== undefined
+            ))
+            .map(item => ({
+                id: item.id,
+                url: item.url,
+                description: `Generated cover — ${item.generationProvenance!.model}`,
+                generationProvenance: item.generationProvenance,
+            })),
+    ].filter((asset, index, assets) => assets.findIndex(candidate => candidate.url === asset.url) === index);
 
     useEffect(() => {
         if (open && userProfile) {
@@ -102,6 +117,7 @@ export const SubmitReleaseModal: React.FC<Props> = ({ open, onClose, onSubmitted
         setSubmitting(false);
         setSelectedMasterFingerprint('');
         setSelectedCoverUrl('');
+        setCoverRepairMessage(null);
     };
 
     const handleClose = () => {
@@ -136,6 +152,7 @@ export const SubmitReleaseModal: React.FC<Props> = ({ open, onClose, onSubmitted
 
         setSubmitting(true);
         setDone(false);
+        setCoverRepairMessage(null);
         setSteps(INITIAL_STEPS);
         setOverallProgress(0);
 
@@ -143,6 +160,7 @@ export const SubmitReleaseModal: React.FC<Props> = ({ open, onClose, onSubmitted
             const coverAsset = await canonicalCoverArtService.persistFromUrl(selectedCoverUrl, {
                 userId: ownerId,
                 originalFileName: selectedCover?.description,
+                generationProvenance: selectedCover?.generationProvenance,
             });
             const releaseData: IngestionMetadata = {
                 releaseId: `release-${crypto.randomUUID()}`,
@@ -187,7 +205,7 @@ export const SubmitReleaseModal: React.FC<Props> = ({ open, onClose, onSubmitted
                 status: 'cover_art_audit_pending',
                 coverArtStoragePath: coverAsset.storage_path,
                 coverArtContentHash: coverAsset.content_hash,
-                coverArtGenerationProvenance: { source: 'not_recorded' },
+                coverArtGenerationProvenance: coverAsset.generation_provenance,
                 createdAt: serverTimestamp(),
                 updatedAt: serverTimestamp(),
             });
@@ -230,6 +248,7 @@ export const SubmitReleaseModal: React.FC<Props> = ({ open, onClose, onSubmitted
         } catch (err: unknown) {
             const msg = err instanceof Error ? err.message : 'Submission failed';
             toastError(msg);
+            setCoverRepairMessage(msg);
             // Mark any running step as error
             setSteps(prev => prev.map(s => s.status === 'running' ? { ...s, status: 'error', detail: msg } : s));
         } finally {
@@ -394,6 +413,24 @@ export const SubmitReleaseModal: React.FC<Props> = ({ open, onClose, onSubmitted
                                     ))}
                                 </select>
                             </div>
+
+                            {coverRepairMessage && (
+                                <div data-testid="cover-art-repair" className="rounded-lg border border-dept-marketing/30 bg-dept-marketing/10 p-3">
+                                    <p className="text-xs font-bold text-dept-marketing">Cover art needs repair before delivery.</p>
+                                    <p className="mt-1 text-[11px] text-gray-300">Your release draft is preserved. Choose a replacement from your brand assets, then submit again.</p>
+                                    <button
+                                        type="button"
+                                        data-testid="choose-replacement-cover"
+                                        onClick={() => {
+                                            setSelectedCoverUrl('');
+                                            setCoverRepairMessage(null);
+                                        }}
+                                        className="mt-2 text-[10px] font-black uppercase tracking-widest text-white underline underline-offset-4"
+                                    >
+                                        Choose replacement cover
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     )}
 

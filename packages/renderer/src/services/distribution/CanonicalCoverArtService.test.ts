@@ -33,6 +33,7 @@ describe('CanonicalCoverArtService', () => {
 
         expect(result.storage_path).toBe(`covers/owner-1/${result.content_hash}/original.png`);
         expect(result.mime_type).toBe('image/png');
+        expect(result.generation_provenance).toEqual({ source: 'not_recorded' });
         expect(storageMocks.uploadBytes).toHaveBeenCalledWith(
             expect.objectContaining({ fullPath: result.storage_path }),
             expect.any(Uint8Array),
@@ -45,6 +46,25 @@ describe('CanonicalCoverArtService', () => {
                 }),
             }),
         );
+    });
+
+    it('carries generation evidence supplied by the selected asset without inventing a version', async () => {
+        const bytes = new Uint8Array([137, 80, 78, 71]);
+        vi.stubGlobal('fetch', vi.fn().mockResolvedValue(
+            new Response(new Blob([bytes]), { headers: { 'content-type': 'image/png' } }),
+        ));
+
+        const result = await canonicalCoverArtService.persistFromUrl('https://assets.example.test/generated-cover.png', {
+            userId: 'owner-1',
+            generationProvenance: { provider: 'google', model: 'gemini-image-3' },
+        });
+
+        expect(result.generation_provenance).toEqual({
+            source: 'generated',
+            provider: 'google',
+            model: 'gemini-image-3',
+        });
+        expect(result.generation_provenance).not.toHaveProperty('version');
     });
 
     it('reuses only an existing object carrying matching immutable ownership metadata', async () => {

@@ -12,6 +12,18 @@ export interface CanonicalCoverReference {
     original_file_name: string;
     size_bytes: number;
     storage_path: string;
+    generation_provenance: {
+        source: 'generated' | 'uploaded' | 'not_recorded';
+        provider?: string;
+        model?: string;
+        version?: string;
+    };
+}
+
+export interface CoverGenerationProvenance {
+    provider: string;
+    model: string;
+    version?: string;
 }
 
 function objectNotFound(error: unknown): boolean {
@@ -61,7 +73,7 @@ export class CanonicalCoverArtService {
     private async persistBytes(
         rawBytes: ArrayBuffer,
         rawMimeType: string,
-        options: { userId: string; originalFileName?: string },
+        options: { userId: string; originalFileName?: string; generationProvenance?: CoverGenerationProvenance },
     ): Promise<CanonicalCoverReference> {
         const ownerId = requireOwnerId(options.userId);
         const bytes = new Uint8Array(rawBytes);
@@ -111,18 +123,21 @@ export class CanonicalCoverArtService {
             original_file_name: fileName,
             size_bytes: bytes.byteLength,
             storage_path: storagePath,
+            generation_provenance: options.generationProvenance
+                ? { source: 'generated', ...options.generationProvenance }
+                : { source: 'not_recorded' },
         };
     }
 
     /** Content-address a directly selected release cover without first creating a packaging copy. */
-    async persistFile(file: File, options: { userId: string; originalFileName?: string }): Promise<CanonicalCoverReference> {
+    async persistFile(file: File, options: { userId: string; originalFileName?: string; generationProvenance?: CoverGenerationProvenance }): Promise<CanonicalCoverReference> {
         return this.persistBytes(await file.arrayBuffer(), file.type, {
             ...options,
             originalFileName: options.originalFileName ?? file.name,
         });
     }
 
-    async persistFromUrl(sourceUrl: string, options: { userId: string; originalFileName?: string }): Promise<CanonicalCoverReference> {
+    async persistFromUrl(sourceUrl: string, options: { userId: string; originalFileName?: string; generationProvenance?: CoverGenerationProvenance }): Promise<CanonicalCoverReference> {
         let response: Response;
         try {
             response = await fetch(sourceUrl, { method: 'GET', redirect: 'error' });
