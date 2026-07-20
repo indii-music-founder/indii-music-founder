@@ -14,6 +14,11 @@ const ALLOWED_VIDEO_EXTENSIONS = new Set([
     '.mp4', '.webm', '.mov', '.avi', '.mkv'
 ]);
 
+function hasHiddenPathSegment(resolvedPath: string): boolean {
+    return resolvedPath.split(path.sep)
+        .some(segment => segment.startsWith('.') && segment !== '.' && segment !== '..');
+}
+
 function isPathInsideSystemRoot(resolvedPath: string): boolean {
     const normalizedPath = path.normalize(resolvedPath);
 
@@ -65,8 +70,7 @@ export function validateSafeAudioPath(filePath: string): string {
     }
 
     // 4. Block Hidden Files (Optional, but good practice)
-    const segments = resolvedPath.split(path.sep);
-    if (segments.some(segment => segment.startsWith('.') && segment !== '.' && segment !== '..')) {
+    if (hasHiddenPathSegment(resolvedPath)) {
         throw new Error("Security Violation: Access to hidden files is denied");
     }
 
@@ -119,7 +123,11 @@ export function validateSafeVideoOutputPath(filePath: string, allowedRoots: stri
         throw new Error(`Security Violation: Output directory '${resolvedDir}' is not in an allowed location`);
     }
 
-    // 4. Block Hidden Files/Dirs in the filename part
+    // 4. Block Hidden Files/Dirs in the resolved output location
+    if (hasHiddenPathSegment(resolvedDir)) {
+        throw new Error("Security Violation: Hidden directories are not allowed");
+    }
+
     const filename = path.basename(filePath);
     if (filename.startsWith('.')) {
         throw new Error("Security Violation: Hidden files are not allowed");

@@ -1,8 +1,6 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { validateSafeAudioPath } from './file-security';
+import { validateSafeAudioPath, validateSafeVideoOutputPath } from './file-security';
 import fs from 'fs';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import path from 'path';
 
 // Mock fs to control realpathSync behavior without touching the disk
 vi.mock('fs', async (importOriginal) => {
@@ -15,6 +13,49 @@ vi.mock('fs', async (importOriginal) => {
         },
         realpathSync: vi.fn(),
     };
+});
+
+describe('Shield 🛡️: Video Output Path Validation Security', () => {
+
+    afterEach(() => {
+        vi.clearAllMocks();
+    });
+
+    it('should allow valid output paths inside allowed roots', () => {
+        vi.mocked(fs.realpathSync).mockImplementation((targetPath: fs.PathLike) => {
+            const value = String(targetPath);
+            if (value === '/Users/indii/Videos') return '/Users/indii/Videos';
+            if (value === '/Users/indii') return '/Users/indii';
+            return value;
+        });
+
+        expect(validateSafeVideoOutputPath('/Users/indii/Videos/render.mp4', ['/Users/indii']))
+            .toBe('/Users/indii/Videos/render.mp4');
+    });
+
+    it('should block output paths inside hidden directories', () => {
+        vi.mocked(fs.realpathSync).mockImplementation((targetPath: fs.PathLike) => {
+            const value = String(targetPath);
+            if (value === '/Users/indii/Videos/.staging') return '/Users/indii/Videos/.staging';
+            if (value === '/Users/indii/Videos') return '/Users/indii/Videos';
+            return value;
+        });
+
+        expect(() => validateSafeVideoOutputPath('/Users/indii/Videos/.staging/render.mp4', ['/Users/indii/Videos']))
+            .toThrow(/Security Violation: Hidden directories are not allowed/);
+    });
+
+    it('should block hidden output filenames', () => {
+        vi.mocked(fs.realpathSync).mockImplementation((targetPath: fs.PathLike) => {
+            const value = String(targetPath);
+            if (value === '/Users/indii/Videos') return '/Users/indii/Videos';
+            if (value === '/Users/indii') return '/Users/indii';
+            return value;
+        });
+
+        expect(() => validateSafeVideoOutputPath('/Users/indii/Videos/.render.mp4', ['/Users/indii']))
+            .toThrow(/Security Violation: Hidden files are not allowed/);
+    });
 });
 
 describe('Shield 🛡️: Audio Path Validation Security', () => {
