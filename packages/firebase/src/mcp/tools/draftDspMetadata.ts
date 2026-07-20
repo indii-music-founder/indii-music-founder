@@ -157,6 +157,22 @@ export const draftDspMetadata: IndiiMcpTool = {
       </ReleaseDetailsByTerritory>
     </Release>
   </ReleaseList>
+  <DealList>
+    <Deal>
+      <DealId>
+        <DDEX_DealId>indii-deal-draft-no-terms</DDEX_DealId>
+      </DealId>
+      <DealType>01</DealType>
+      <DealTerms>
+        <Commercial>
+          <Usage>
+            <UseType>AllUses</UseType>
+          </Usage>
+          <TermsNote>COMMERCIAL TERMS NOT SET — this is a structural draft with placeholder deal configuration. Actual terms must be negotiated and confirmed with recipients before delivery.</TermsNote>
+        </Commercial>
+      </DealTerms>
+    </Deal>
+  </DealList>
 </ern:NewReleaseMessage>`;
 
         return {
