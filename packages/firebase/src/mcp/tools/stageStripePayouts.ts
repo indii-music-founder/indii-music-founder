@@ -1,42 +1,214 @@
-import { IndiiMcpTool, McpContext } from '../types.js';
-import { verifyOwnership } from '../helpers.js';
+import * as admin from 'firebase-admin';
+
+import { failedOperationResult, operationResult, requireString, toolResponse } from '../helpers.js';
+import { IndiiMcpTool } from '../types.js';
+
+const TOOL_NAME = 'stage_stripe_payouts';
+const RESOURCE_TYPE = 'payout_job';
+const MAX_EARNINGS_DOC_IDS = 100;
+const PAYOUT_PERIOD_PATTERN = /^\d{4}-(0[1-9]|1[0-2])$/;
+const NO_MONEY_MOVED_WARNING =
+    'Figures were staged from internal Firestore ledgers only. NO Stripe transfer, payout, or money movement was created or scheduled. Explicit approval and a real Stripe Connect integration are still required before any funds move.';
+
+/** Micros-first ledger read, mirroring calculateRecoupment conventions. */
+function ledgerMicros(microsValue: unknown, decimalValue?: unknown): number {
+    if (Number.isSafeInteger(microsValue)) return Number(microsValue);
+    if (typeof decimalValue === 'number' && Number.isFinite(decimalValue)) return Math.round(decimalValue * 1_000_000);
+    return 0;
+}
+
+interface EarningsPeriod {
+    startDate?: string;
+    endDate?: string;
+}
+
+function periodOverlapsMonth(period: unknown, payoutPeriod: string): boolean | null {
+    if (!period || typeof period !== 'object') return null;
+    const { startDate, endDate } = period as EarningsPeriod;
+    if (typeof startDate !== 'string' || typeof endDate !== 'string') return null;
+    // ISO date strings (YYYY-MM-DD) compare correctly lexicographically.
+    const monthStart = `${payoutPeriod}-01`;
+    const monthEnd = `${payoutPeriod}-31`;
+    return startDate <= monthEnd && endDate >= monthStart;
+}
 
 export const stageStripePayouts: IndiiMcpTool = {
-    name: 'stage_stripe_payouts',
-    description: 'Prepares royalty payouts for one-click approval.',
+    name: TOOL_NAME,
+    description:
+        'Stages a royalty payout figure from real Firestore earnings and recoupment ledgers for later human approval. Never moves money — creates no Stripe transfer or payout.',
     inputSchema: {
         type: 'object',
         properties: {
-            artistId: { type: 'string' },
-            payoutPeriod: { type: 'string' }
+            artistId: { type: 'string', description: 'Must equal the authenticated caller uid (admins may act on behalf of an artist).' },
+            payoutPeriod: { type: 'string', description: 'Payout period in YYYY-MM format.' },
         },
-        required: ['artistId', 'payoutPeriod']
+        required: ['artistId', 'payoutPeriod'],
     },
-    handler: async (rawArgs: Record<string, unknown>, context: McpContext) => {
-        const targetUserId = (rawArgs as any).userId || (rawArgs as any).artistId || (rawArgs as any).ownerId || context.user.uid;
+    handler: async (args, context) => {
+        const actorUid = context.user.uid;
+
+        let artistId = 'unknown';
+        let payoutPeriod = 'unknown';
         try {
-            verifyOwnership(context, targetUserId);
-        } catch (e: any) {
-            return {
-                isError: true,
-                content: [{ type: 'text', text: e.message }]
-            };
+            artistId = requireString(args, 'artistId', 200);
+            payoutPeriod = requireString(args, 'payoutPeriod', 16);
+        } catch (error) {
+            return toolResponse(failedOperationResult({
+                tool: TOOL_NAME,
+                actorUid,
+                resourceType: RESOURCE_TYPE,
+                resourceId: 'none',
+                code: 'INVALID_ARGUMENT',
+                message: error instanceof Error ? error.message : 'Invalid arguments.',
+                retryable: false,
+            }));
         }
-        const uid = context.user.uid;
 
-        const { artistId, payoutPeriod } = rawArgs as any;
-        
-        const db = (await import('firebase-admin')).firestore();
-        const docRef = await db.collection('payoutJobs').add({
-            status: 'staged',
-            artistId,
-            payoutPeriod,
-            initiatorUid: uid,
-            createdAt: (await import('firebase-admin')).firestore.FieldValue.serverTimestamp()
-        });
+        // The artistId argument IS the payout target. It must be the
+        // authenticated caller (or the caller must be an admin). Never derive
+        // the authorization target from other model-supplied args.
+        if (artistId !== actorUid && context.user.admin !== true) {
+            return toolResponse(failedOperationResult({
+                tool: TOOL_NAME,
+                actorUid,
+                resourceType: RESOURCE_TYPE,
+                resourceId: 'none',
+                code: 'FORBIDDEN',
+                message: `Forbidden: caller ${actorUid} cannot stage payouts for artist ${artistId}.`,
+                retryable: false,
+            }));
+        }
 
-        return {
-            content: [{ type: 'text', text: `Successfully staged Stripe payouts for artist ${artistId} for period ${payoutPeriod}. Job ID: ${docRef.id}.` }]
-        };
-    }
+        if (!PAYOUT_PERIOD_PATTERN.test(payoutPeriod)) {
+            return toolResponse(failedOperationResult({
+                tool: TOOL_NAME,
+                actorUid,
+                resourceType: RESOURCE_TYPE,
+                resourceId: 'none',
+                code: 'INVALID_ARGUMENT',
+                message: `payoutPeriod must be in YYYY-MM format; received "${payoutPeriod}".`,
+                retryable: false,
+            }));
+        }
+
+        try {
+            const firestore = admin.firestore();
+            const [earningsSnap, balancesSnap] = await Promise.all([
+                firestore.collection('earnings').where('userId', '==', artistId).get(),
+                firestore.collection('recoupment_balances').where('userId', '==', artistId).get(),
+            ]);
+
+            const warnings: string[] = [NO_MONEY_MOVED_WARNING];
+
+            // Filter earnings to the requested payout period. Earnings docs
+            // carry `period: { startDate, endDate }` (see ingestEarningsReport).
+            // If NO doc carries period metadata, aggregate everything honestly.
+            const anyPeriodMetadata = earningsSnap.docs.some(doc => periodOverlapsMonth((doc.data() || {}).period, payoutPeriod) !== null);
+            let excludedNoPeriodCount = 0;
+            const matchedDocs = earningsSnap.docs.filter(doc => {
+                const overlap = periodOverlapsMonth((doc.data() || {}).period, payoutPeriod);
+                if (overlap === null) {
+                    if (anyPeriodMetadata) excludedNoPeriodCount += 1;
+                    return !anyPeriodMetadata;
+                }
+                return overlap;
+            });
+            if (!anyPeriodMetadata && earningsSnap.docs.length > 0) {
+                warnings.push(`No earnings documents carry period metadata; ALL ${earningsSnap.docs.length} earnings documents for artist ${artistId} were aggregated regardless of payoutPeriod ${payoutPeriod}.`);
+            }
+            if (excludedNoPeriodCount > 0) {
+                warnings.push(`${excludedNoPeriodCount} earnings document(s) lacked period metadata and were EXCLUDED from this staging; reconcile them manually.`);
+            }
+
+            let earningsNetMicros = 0;
+            const earningsDocIds: string[] = [];
+            matchedDocs.forEach(doc => {
+                const data = doc.data() || {};
+                earningsNetMicros += ledgerMicros(data.netRevenueMicros, data.netRevenue);
+                earningsDocIds.push(doc.id);
+            });
+
+            let outstandingRecoupmentMicros = 0;
+            balancesSnap.docs.forEach(doc => {
+                const data = doc.data() || {};
+                outstandingRecoupmentMicros += Math.max(0, ledgerMicros(data.balanceMicros, data.balance));
+            });
+
+            const stagedNetMicros = Math.max(0, earningsNetMicros - outstandingRecoupmentMicros);
+
+            if (matchedDocs.length === 0 || stagedNetMicros <= 0) {
+                warnings.push(
+                    matchedDocs.length === 0
+                        ? `No earnings documents matched artist ${artistId} for period ${payoutPeriod}; there is nothing to stage and no payout job was written.`
+                        : `Net earnings (${earningsNetMicros} micros) do not exceed outstanding recoupment (${outstandingRecoupmentMicros} micros); nothing to stage and no payout job was written.`,
+                );
+                return toolResponse(operationResult({
+                    tool: TOOL_NAME,
+                    actorUid,
+                    status: 'succeeded',
+                    resourceType: RESOURCE_TYPE,
+                    resourceId: 'none',
+                    warnings,
+                    data: {
+                        artistId,
+                        payoutPeriod,
+                        stagedNetMicros: 0,
+                        earningsCount: matchedDocs.length,
+                        earningsNetMicros,
+                        outstandingRecoupmentMicros,
+                    },
+                }));
+            }
+
+            let persistedEarningsDocIds = earningsDocIds;
+            if (earningsDocIds.length > MAX_EARNINGS_DOC_IDS) {
+                persistedEarningsDocIds = earningsDocIds.slice(0, MAX_EARNINGS_DOC_IDS);
+                warnings.push(`earningsDocIds truncated to ${MAX_EARNINGS_DOC_IDS} of ${earningsDocIds.length} contributing earnings documents on the payout job record.`);
+            }
+
+            // Whitelisted fields only — never persist raw args.
+            const docRef = await firestore.collection('payoutJobs').add({
+                artistId,
+                payoutPeriod,
+                stagedNetMicros,
+                earningsDocIds: persistedEarningsDocIds,
+                outstandingRecoupmentMicros,
+                status: 'staged_pending_approval',
+                initiatorUid: actorUid,
+                createdAt: admin.firestore.FieldValue.serverTimestamp(),
+            });
+
+            return toolResponse(operationResult({
+                tool: TOOL_NAME,
+                actorUid,
+                status: 'succeeded',
+                resourceType: RESOURCE_TYPE,
+                resourceId: docRef.id,
+                approvalRequired: true,
+                warnings,
+                evidence: [{ type: 'firestore_document', reference: `payoutJobs/${docRef.id}` } as never],
+                data: {
+                    artistId,
+                    payoutPeriod,
+                    payoutJobId: docRef.id,
+                    stagedNetMicros,
+                    earningsCount: matchedDocs.length,
+                    earningsNetMicros,
+                    outstandingRecoupmentMicros,
+                    status: 'staged_pending_approval',
+                },
+            }));
+        } catch (error) {
+            return toolResponse(failedOperationResult({
+                tool: TOOL_NAME,
+                actorUid,
+                resourceType: RESOURCE_TYPE,
+                resourceId: 'none',
+                code: 'LEDGER_READ_FAILED',
+                message: error instanceof Error ? error.message : 'Payout staging failed reading Firestore ledgers.',
+                retryable: true,
+                warnings: [NO_MONEY_MOVED_WARNING],
+            }));
+        }
+    },
 };

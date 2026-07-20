@@ -1,9 +1,20 @@
-import { IndiiMcpTool, McpContext } from '../types.js';
-import { verifyOwnership } from '../helpers.js';
+import { failedOperationResult, requireString, toolResponse } from '../helpers.js';
+import { IndiiMcpTool, McpContext, McpToolResponse } from '../types.js';
 
+const TOOL_NAME = 'audit_sample_clearance';
+
+/**
+ * FAIL-CLOSED STUB (ISSUE-1098).
+ *
+ * No sample-lineage / sample-clearance analysis backend exists anywhere in the
+ * repo. This tool therefore performs NO work and returns an honest failure:
+ * no Firestore write, no queued job, no fabricated result. The previous
+ * implementation wrote a decorative `mcpJobs` document (persisting raw args)
+ * and derived its authorization target from model-supplied args — both removed.
+ */
 export const auditSampleClearance: IndiiMcpTool = {
-    name: 'audit_sample_clearance',
-    description: 'Checks for flagged copyrighted material in a track.',
+    name: TOOL_NAME,
+    description: 'Checks for flagged copyrighted material in a track. Currently unavailable: no sample-clearance analysis backend exists yet, so this tool always fails closed.',
     inputSchema: {
         type: 'object',
         properties: {
@@ -11,26 +22,32 @@ export const auditSampleClearance: IndiiMcpTool = {
         },
         required: ['trackId']
     },
-        handler: async (rawArgs: Record<string, unknown>, context: McpContext) => {
-        const targetUserId = (rawArgs as any).userId || (rawArgs as any).artistId || (rawArgs as any).ownerId || context.user.uid;
+    handler: async (rawArgs: Record<string, unknown>, context: McpContext): Promise<McpToolResponse> => {
+        const actorUid = context.user.uid;
+
+        let trackId: string;
         try {
-            verifyOwnership(context, targetUserId);
-        } catch (e: any) {
-            return {
-                isError: true,
-                content: [{ type: 'text', text: e.message }]
-            };
+            trackId = requireString(rawArgs, 'trackId');
+        } catch (error: unknown) {
+            return toolResponse(failedOperationResult({
+                tool: TOOL_NAME,
+                actorUid,
+                resourceType: 'track',
+                resourceId: 'invalid',
+                code: 'INVALID_ARGUMENT',
+                message: error instanceof Error ? error.message : String(error),
+                retryable: false,
+            }));
         }
-        const uid = context.user.uid;
-        const db = (await import('firebase-admin')).firestore();
-        const docRef = await db.collection('mcpJobs').add({
-            tool: 'audit_sample_clearance',
-            args: rawArgs,
-            initiatorUid: uid,
-            createdAt: (await import('firebase-admin')).firestore.FieldValue.serverTimestamp()
-        });
-        return {
-            content: [{ type: 'text', text: `Successfully executed audit_sample_clearance. Job ID: ${docRef.id}` }]
-        };
+
+        return toolResponse(failedOperationResult({
+            tool: TOOL_NAME,
+            actorUid,
+            resourceType: 'track',
+            resourceId: trackId,
+            code: 'BACKEND_UNAVAILABLE',
+            message: 'No sample-clearance analysis backend exists yet; no audit was performed and no job was queued.',
+            retryable: false,
+        }));
     }
 };

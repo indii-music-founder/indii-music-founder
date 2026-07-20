@@ -2,11 +2,57 @@ import { createHash, randomUUID } from 'node:crypto';
 
 import { McpContext, McpOperationResult, McpOperationStatus, McpToolResponse } from './types.js';
 
+/**
+ * Compares uids only — it performs NO resource lookup. `targetUserId` must
+ * come from a trusted source (typically `context.user.uid` itself or a
+ * server-derived value). NEVER feed it a model/args-derived target: the old
+ * `rawArgs.userId || ... || context.user.uid` pattern makes this check
+ * decorative. For resource-level authorization use `verifyReleaseOwnership`.
+ */
 export function verifyOwnership(context: McpContext, targetUserId: string) {
     if (!context?.user) throw new Error('Unauthorized: Missing user context');
     if (context.user.uid !== targetUserId && context.user.admin !== true) {
         throw new Error(`Forbidden: User ${context.user.uid} is not authorized to act on behalf of ${targetUserId}`);
     }
+}
+
+interface OwnershipDocSnapshot {
+    exists: boolean;
+    data(): Record<string, unknown> | undefined;
+}
+interface OwnershipDocRef {
+    get(): Promise<OwnershipDocSnapshot>;
+    collection(name: string): OwnershipCollectionRef;
+}
+interface OwnershipCollectionRef {
+    doc(id: string): OwnershipDocRef;
+}
+/** Minimal structural view of a Firestore instance — keeps helpers decoupled from firebase-admin types. */
+export interface OwnershipFirestore {
+    collection(name: string): OwnershipCollectionRef;
+}
+
+/**
+ * Resource-level authorization: verifies that `releaseId` belongs to the
+ * authenticated caller `uid`. Mirrors AssetResolutionAuditService.findRelease:
+ * checks `users/{uid}/releases/{releaseId}` first, then top-level
+ * `releases/{releaseId}` requiring its `userId ?? ownerUid` to equal `uid`.
+ * Throws a single Forbidden message for both not-found and not-owned so
+ * existence of other users' releases is never leaked.
+ */
+export async function verifyReleaseOwnership(firestore: OwnershipFirestore, uid: string, releaseId: string): Promise<void> {
+    if (typeof releaseId !== 'string' || !releaseId.trim() || releaseId.length > 200 || releaseId.includes('/')) {
+        throw new TypeError('releaseId must be a non-empty string no longer than 200 characters without "/".');
+    }
+    const id = releaseId.trim();
+    const owned = await firestore.collection('users').doc(uid).collection('releases').doc(id).get();
+    if (owned.exists) return;
+    const topLevel = await firestore.collection('releases').doc(id).get();
+    if (topLevel.exists) {
+        const data = topLevel.data() ?? {};
+        if ((data.userId ?? data.ownerUid) === uid) return;
+    }
+    throw new Error('Forbidden: release not found or not owned by caller');
 }
 
 export function requireString(args: Record<string, unknown>, key: string, maxLength = 256): string {
