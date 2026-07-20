@@ -51,6 +51,7 @@
 ### ISSUE-1091: MCP Tool Suite Expansion (Real Business Logic Integration)
 
 - **Status:** 🟡 PARTIAL (2026-07-20 — Brand backend fetchBrandKit and Finance calculateRecoupment now read Firestore ledgers; remaining Finance Stripe/Legal/Creative/Publicist/Distribution backends still open)
+- **Status:** 🟡 PARTIAL (2026-07-20 — Brand backend fetchBrandKit now reads the authenticated user profile brandKit from Firestore; remaining Finance/Legal/Creative/Publicist/Distribution backends still open)
 - **Severity:** 🔴 HIGH
 - **Module:** `packages/firebase/src/mcp/tools/**`, `packages/firebase/src/functions/triggers/**`
 - **Scope:** The 11 MCP tools currently execute stub logic that merely returns hardcoded strings or writes a row to a job queue. The true business logic and third-party API integrations need to be wired up for the tools to perform actual work.
