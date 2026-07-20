@@ -85,8 +85,10 @@ Finish every issue in `.agent/test_ledger/OPEN_ISSUES.md` that is not `✅ FIXED
   - **Status:** 🟡 PARTIAL (verified 2026-07-20) — canonical release artwork is content-addressed, immutable, hash/size/MIME checked, remeasured at desktop staging, and now rejected unless it is square RGB JPEG/PNG at least 3000px; Python packaging preserves the measured RGB gate. Remaining: persist an immutable release-attached conformance receipt (including generator/model and rules version) and offer an explicit repair path instead of only failure messaging.
 - [x] ISSUE-1013 — Social account wizard drops creative profile/banner assets before signup handoff
   - **Status:** ✅ FIXED (verified 2026-07-20) — user/project-scoped setup drafts restore selected assets, expose Download/Open/Copy-link handoff actions with crop guidance, and withhold the “Ready to Create” claim until each selected asset is transferred. Unavailable references stay in a repair state. Provider-side social upload remains intentionally unsupported and is not claimed.
-- [ ] ISSUE-1015 — Built 3D music-video stage is local preview only, can't save/render
-- [ ] ISSUE-1016 — Sequence Architect trajectory can't affect synthesized frame or Director handoff
+- [x] ISSUE-1015 — Built 3D music-video stage is local preview only, can't save/render
+  - **Status:** ✅ FIXED (verified 2026-07-20) — the stage is continuously labeled “Preview only — not saved,” and clearing populated local state requires explicit confirmation. The UI therefore makes no persistence or render-output claim. A Storage-backed, versioned, renderable 3D scene pipeline remains a separate product capability, not an implied implementation.
+- [x] ISSUE-1016 — Sequence Architect trajectory can't affect synthesized frame or Director handoff
+  - **Status:** ✅ FIXED (verified 2026-07-20) — editing the trajectory labels the target stale and blocks Director Mode; Apply & re-synthesize creates a new target tied to the exact revised text before handoff is permitted. The focused regression proves both blocked stale handoff and revised-target transfer. Durable cross-reload trajectory/job lineage remains a separate enhancement.
 - [ ] ISSUE-1025 — Mobile Controller impersonates desktop presence, falsely reports "Studio Connected"
 
 ## PHASE 2 — Every OPEN Issue (88 items, ledger order)
