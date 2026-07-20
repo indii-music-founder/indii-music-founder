@@ -3,12 +3,14 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { stageCanonicalCoverArt } from './CanonicalCoverArtStagingService';
 
-function png(width = 3000, height = 3000): Uint8Array {
-    const bytes = new Uint8Array(24);
+function png(width = 3000, height = 3000, colorType = 2): Uint8Array {
+    const bytes = new Uint8Array(26);
     bytes.set([137, 80, 78, 71, 13, 10, 26, 10], 0);
     bytes.set([0, 0, 0, 13, 73, 72, 68, 82], 8);
     new DataView(bytes.buffer).setUint32(16, width);
     new DataView(bytes.buffer).setUint32(20, height);
+    bytes[24] = 8;
+    bytes[25] = colorType;
     return bytes;
 }
 
@@ -35,7 +37,7 @@ describe('stageCanonicalCoverArt', () => {
         const bytes = png();
         vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(responseBody(bytes))));
         const staged = await stageCanonicalCoverArt(asset(bytes));
-        expect(staged.coverAsset).toMatchObject({ width: 3000, height: 3000, local_path: expect.stringContaining('indii-ddex-cover-') });
+        expect(staged.coverAsset).toMatchObject({ width: 3000, height: 3000, color_space: 'rgb', local_path: expect.stringContaining('indii-ddex-cover-') });
         expect('download_url' in staged.coverAsset).toBe(false);
         await staged.cleanup();
     });
@@ -60,5 +62,11 @@ describe('stageCanonicalCoverArt', () => {
         const bytes = png(2999, 2999);
         vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(responseBody(bytes))));
         await expect(stageCanonicalCoverArt(asset(bytes))).rejects.toThrow('at least 3000px');
+    });
+
+    it('rejects transparent PNG artwork instead of treating it as RGB delivery art', async () => {
+        const bytes = png(3000, 3000, 6);
+        vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(responseBody(bytes))));
+        await expect(stageCanonicalCoverArt(asset(bytes))).rejects.toThrow('transparent PNG');
     });
 });

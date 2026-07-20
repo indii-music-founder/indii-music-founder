@@ -113,6 +113,7 @@ def _stage_cover_resource(release: Dict[str, Any], package_path: str) -> None:
     mime_type = cover_asset.get("mime_type")
     width = cover_asset.get("width")
     height = cover_asset.get("height")
+    color_space = cover_asset.get("color_space")
     if not isinstance(local_path, str) or not os.path.isfile(local_path) or os.path.islink(local_path):
         raise ValueError("Canonical cover is not a regular local file")
     if not re.fullmatch(r"[a-f0-9]{64}", expected_sha256):
@@ -121,8 +122,8 @@ def _stage_cover_resource(release: Dict[str, Any], package_path: str) -> None:
         raise ValueError("Canonical cover size verification failed")
     if _file_digest(local_path, "sha256") != expected_sha256:
         raise ValueError("Canonical cover SHA-256 verification failed")
-    if mime_type not in {"image/jpeg", "image/png"} or not isinstance(width, int) or not isinstance(height, int) or width < 3000 or height < 3000 or width != height:
-        raise ValueError("Canonical cover must be measured square JPEG/PNG at least 3000px")
+    if mime_type not in {"image/jpeg", "image/png"} or not isinstance(width, int) or not isinstance(height, int) or width < 3000 or height < 3000 or width != height or color_space != "rgb":
+        raise ValueError("Canonical cover must be measured square RGB JPEG/PNG at least 3000px")
     extension = ".png" if mime_type == "image/png" else ".jpg"
     destination = os.path.join(package_path, "resources", f"cover-{expected_sha256[:16]}{extension}")
     shutil.copyfile(local_path, destination)

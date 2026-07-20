@@ -74,4 +74,14 @@ describe('resolveOwnedArtworkObjectPath', () => {
         expect(() => resolveOwnedArtworkObjectPath('owner-1', 'artwork/owner-2/cover.png', 'project.appspot.com'))
             .toThrow('not scoped');
     });
+
+    it('accepts only the canonical immutable cover-object shape', () => {
+        const hash = 'c'.repeat(64);
+        expect(resolveOwnedArtworkObjectPath('owner-1', `gs://project.appspot.com/covers/owner-1/${hash}/original.png`, 'project.appspot.com'))
+            .toBe(`covers/owner-1/${hash}/original.png`);
+        expect(() => resolveOwnedArtworkObjectPath('owner-1', 'covers/owner-1/not-a-hash/original.png', 'project.appspot.com'))
+            .toThrow('canonical cover path is invalid');
+        expect(() => resolveOwnedArtworkObjectPath('owner-1', `covers/owner-1/${hash}/alternate.png`, 'project.appspot.com'))
+            .toThrow('canonical cover path is invalid');
+    });
 });
