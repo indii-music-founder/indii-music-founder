@@ -17,6 +17,10 @@ export async function downloadAsset(url: string, defaultFilename: string = 'down
             document.body.removeChild(a);
         } else {
             const response = await fetch(url);
+            if (!response.ok) {
+                throw new Error(`Download failed with ${response.status} ${response.statusText}`);
+            }
+
             const blob = await response.blob();
             const blobUrl = URL.createObjectURL(blob);
             a.href = blobUrl;
