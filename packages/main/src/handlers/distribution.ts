@@ -15,6 +15,7 @@ import { z } from 'zod';
 import { AgentSupervisor } from '../utils/AgentSupervisor';
 import { credentialService } from '../services/CredentialService';
 import { stageCanonicalMasters } from '../services/MasterAudioStagingService';
+import { stageCanonicalCoverArt } from '../services/CanonicalCoverArtStagingService';
 
 interface StagedFile {
     type: 'content' | 'path';
@@ -456,6 +457,7 @@ export const setupDistributionHandlers = () => {
      */
     ipcMain.handle('distribution:submit-release', async (event, releaseData: Record<string, unknown>) => {
         let cleanupStagedMasters: (() => Promise<void>) | undefined;
+        let cleanupStagedCover: (() => Promise<void>) | undefined;
         try {
             validateSender(event);
 
@@ -465,7 +467,9 @@ export const setupDistributionHandlers = () => {
 
             const stagedMasters = await stageCanonicalMasters(releaseData);
             cleanupStagedMasters = stagedMasters.cleanup;
-            releaseData = stagedMasters.releaseData;
+            const stagedCover = await stageCanonicalCoverArt(releaseData.cover_asset);
+            cleanupStagedCover = stagedCover.cleanup;
+            releaseData = { ...stagedMasters.releaseData, cover_asset: stagedCover.coverAsset };
 
             const storagePath = getStoragePath();
 
@@ -536,6 +540,13 @@ export const setupDistributionHandlers = () => {
                     await cleanupStagedMasters();
                 } catch (cleanupError) {
                     log.warn('[Distribution] Failed to clean canonical master staging directory:', cleanupError);
+                }
+            }
+            if (cleanupStagedCover) {
+                try {
+                    await cleanupStagedCover();
+                } catch (cleanupError) {
+                    log.warn('[Distribution] Failed to clean canonical cover staging directory:', cleanupError);
                 }
             }
         }

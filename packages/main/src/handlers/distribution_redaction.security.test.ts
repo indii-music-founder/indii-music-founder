@@ -26,6 +26,7 @@ const mocks = vi.hoisted(() => ({
     os: { tmpdir: vi.fn(() => '/mock/tmp') },
     credentialService: { getCredentials: vi.fn(() => null), saveCredentials: vi.fn(), deleteCredentials: vi.fn() },
     stageCanonicalMasters: vi.fn(),
+    stageCanonicalCoverArt: vi.fn(),
 }));
 
 // Mock modules — must cover ALL imports in distribution.ts
@@ -74,6 +75,10 @@ vi.mock('../services/CredentialService', () => ({
 
 vi.mock('../services/MasterAudioStagingService', () => ({
     stageCanonicalMasters: mocks.stageCanonicalMasters,
+}));
+
+vi.mock('../services/CanonicalCoverArtStagingService', () => ({
+    stageCanonicalCoverArt: mocks.stageCanonicalCoverArt,
 }));
 
 vi.mock('fs/promises', () => mocks.fs);
@@ -227,6 +232,20 @@ describe('🛡️ Shield: Distribution PII Redaction', () => {
             releaseData: stagedRelease,
             stagingPath: '/mock/tmp/indii-ddex-master',
         });
+        const cleanupCover = vi.fn();
+        mocks.stageCanonicalCoverArt.mockResolvedValue({
+            cleanup: cleanupCover,
+            coverAsset: {
+                content_hash: 'b'.repeat(64),
+                local_path: '/mock/tmp/indii-ddex-cover/cover.jpg',
+                mime_type: 'image/jpeg',
+                original_file_name: 'cover.jpg',
+                size_bytes: 4096,
+                storage_path: `covers/user-1/${'b'.repeat(64)}/original.jpg`,
+                width: 3000,
+                height: 3000,
+            },
+        });
         mocks.agentSupervisor.execute.mockResolvedValue({ status: 'SUCCESS' });
 
         await invoke('distribution:submit-release', { title: 'Verified Master Release', tracks: [] });
@@ -236,6 +255,9 @@ describe('🛡️ Shield: Distribution PII Redaction', () => {
         const childPayload = JSON.parse(executeArgs[2][0]);
         expect(childPayload.tracks[0].master_asset.local_path).toContain('indii-ddex-master');
         expect(childPayload.tracks[0].master_asset.download_url).toBeUndefined();
+        expect(childPayload.cover_asset.local_path).toContain('indii-ddex-cover');
+        expect(childPayload.cover_asset.download_url).toBeUndefined();
         expect(cleanup).toHaveBeenCalledOnce();
+        expect(cleanupCover).toHaveBeenCalledOnce();
     });
 });

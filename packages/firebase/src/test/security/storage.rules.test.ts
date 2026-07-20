@@ -24,7 +24,7 @@ describe('immutable canonical masters', () => {
     });
 
     afterAll(async () => {
-        await testEnv.cleanup();
+        await testEnv?.cleanup();
     });
 
     function ownerStorage() {
@@ -87,5 +87,82 @@ describe('immutable canonical masters', () => {
                 ownerId: 'other-user',
             },
         }));
+    });
+});
+
+describe('immutable canonical cover art', () => {
+    let testEnv: RulesTestEnvironment;
+
+    beforeAll(async () => {
+        testEnv = await initializeTestEnvironment({
+            projectId: `${PROJECT_ID}-covers`,
+            storage: {
+                host: '127.0.0.1',
+                port: 9199,
+                rules: readFileSync(resolve(process.cwd(), 'packages/firebase/storage.rules'), 'utf8'),
+            },
+        });
+    });
+
+    afterAll(async () => {
+        await testEnv?.cleanup();
+    });
+
+    function ownerStorage() {
+        return testEnv.authenticatedContext(OWNER_ID, {
+            email: 'owner@example.com',
+            firebase: { sign_in_provider: 'password' },
+        }).storage();
+    }
+
+    function otherUserStorage() {
+        return testEnv.authenticatedContext('other-user', {
+            email: 'other@example.com',
+            firebase: { sign_in_provider: 'password' },
+        }).storage();
+    }
+
+    const metadata = {
+        contentType: 'image/png',
+        customMetadata: {
+            contentHash: HASH,
+            immutable: 'true',
+            ownerId: OWNER_ID,
+            originalFileName: 'release-cover.png',
+        },
+    };
+
+    it('allows an owner to create a canonical JPEG/PNG cover exactly once', async () => {
+        const cover = ref(ownerStorage(), `covers/${OWNER_ID}/${HASH}/original.png`);
+        await assertSucceeds(uploadBytes(cover, new Uint8Array([137, 80, 78, 71]), metadata));
+        await assertFails(uploadBytes(cover, new Uint8Array([137, 80, 78, 72]), metadata));
+    });
+
+    it('rejects mutable, malformed, and cross-owner canonical cover writes', async () => {
+        const missingProtection = ref(ownerStorage(), `covers/${OWNER_ID}/${'b'.repeat(64)}/original.jpg`);
+        await assertFails(uploadBytes(missingProtection, new Uint8Array([1]), {
+            contentType: 'image/jpeg',
+            customMetadata: { contentHash: 'b'.repeat(64), ownerId: OWNER_ID },
+        }));
+
+        const malformed = ref(ownerStorage(), `covers/${OWNER_ID}/not-a-hash/original.png`);
+        await assertFails(uploadBytes(malformed, new Uint8Array([1]), metadata));
+
+        const foreign = ref(otherUserStorage(), `covers/${OWNER_ID}/${HASH}/original.png`);
+        await assertFails(getMetadata(foreign));
+        await assertFails(uploadBytes(foreign, new Uint8Array([1]), {
+            ...metadata,
+            customMetadata: { ...metadata.customMetadata, ownerId: 'other-user' },
+        }));
+    });
+
+    it('prevents owner deletion and replacement after canonical cover creation', async () => {
+        const cover = ref(ownerStorage(), `covers/${OWNER_ID}/${'c'.repeat(64)}/original.png`);
+        const coverMetadata = {
+            ...metadata,
+            customMetadata: { ...metadata.customMetadata, contentHash: 'c'.repeat(64) },
+        };
+        await assertSucceeds(uploadBytes(cover, new Uint8Array([137, 80, 78, 71]), coverMetadata));
+        await assertFails(deleteObject(cover));
     });
 });

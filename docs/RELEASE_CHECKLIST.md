@@ -128,6 +128,13 @@ verification question.
   territories, rights holder, master hash, cover-art hash, and a named internal
   approver. Do not use a client or unreleased artist's work without written
   permission for this transmission.
+- [ ] Prepare the test cover as a square **JPEG or PNG**, at least **3000 ×
+  3000 px**, and no more than **50 MB**. Select it from the artist's brand
+  assets in the app: the app content-addresses it under the authenticated
+  owner, makes that object create-once, and measures the bytes again before it
+  enters the DDEX package. Keep the original design/source file and written
+  artwork-use permission with the release evidence; the package hash proves
+  delivery identity, not copyright ownership.
 - [ ] Submit one controlled package through the configured partner route and
   retain the partner acknowledgement/rejection, timestamp, package hash,
   sanitized correlation ID, and any validation report in the release evidence

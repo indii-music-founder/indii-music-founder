@@ -6,6 +6,7 @@ import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import type { IngestionMetadata } from '@/types/distribution';
 import { trackLibrary } from '@/services/metadata/TrackLibraryService';
+import { canonicalCoverArtService } from '@/services/distribution/CanonicalCoverArtService';
 import type { ExtendedGoldenMetadata } from '@/services/metadata/types';
 import type { BrandAsset } from '@/types/User';
 
@@ -123,45 +124,55 @@ export const SubmitReleaseModal: React.FC<Props> = ({ open, onClose, onSubmitted
             return;
         }
 
+        const ownerId = userProfile?.uid || userProfile?.id;
+        if (!ownerId) {
+            toastError('An authenticated owner is required before submitting a release.');
+            return;
+        }
+        const selectedCover = coverAssets.find(asset => asset.url === selectedCoverUrl);
+
         setSubmitting(true);
         setDone(false);
         setSteps(INITIAL_STEPS);
         setOverallProgress(0);
 
-        const releaseData: IngestionMetadata = {
-            releaseId: `release-${crypto.randomUUID()}`,
-            title: title.trim(),
-            artist: artist.trim(),
-            artists: [artist.trim()],
-            label: label.trim() || 'Indii Records',
-            genre: genre,
-            release_date: releaseDate || undefined,
-            artwork_url: selectedCoverUrl,
-            tracks: [{
-                title: trackTitle.trim(),
-                isrc: isrc.trim() || undefined,
+        try {
+            const coverAsset = await canonicalCoverArtService.persistFromUrl(selectedCoverUrl, {
+                userId: ownerId,
+                originalFileName: selectedCover?.description,
+            });
+            const releaseData: IngestionMetadata = {
+                releaseId: `release-${crypto.randomUUID()}`,
+                title: title.trim(),
                 artist: artist.trim(),
                 artists: [artist.trim()],
-                filename: masterAsset.originalFileName,
-                duration: selectedTrack.durationSeconds,
-                bit_depth: audioProperties.bitDepth,
-                channels: audioProperties.channels,
-                codec: audioProperties.codec,
-                sample_rate: audioProperties.sampleRate,
-                master_asset: {
-                    content_hash: masterAsset.contentHash,
-                    download_url: masterAsset.downloadUrl,
-                    master_fingerprint: masterAsset.masterFingerprint,
-                    mime_type: masterAsset.mimeType,
-                    original_file_name: masterAsset.originalFileName,
-                    size_bytes: masterAsset.sizeBytes,
-                    storage_path: masterAsset.storagePath,
-                },
-            }],
-        };
-
-        try {
-             
+                label: label.trim() || 'Indii Records',
+                genre: genre,
+                release_date: releaseDate || undefined,
+                artwork_url: coverAsset.download_url,
+                cover_asset: coverAsset,
+                tracks: [{
+                    title: trackTitle.trim(),
+                    isrc: isrc.trim() || undefined,
+                    artist: artist.trim(),
+                    artists: [artist.trim()],
+                    filename: masterAsset.originalFileName,
+                    duration: selectedTrack.durationSeconds,
+                    bit_depth: audioProperties.bitDepth,
+                    channels: audioProperties.channels,
+                    codec: audioProperties.codec,
+                    sample_rate: audioProperties.sampleRate,
+                    master_asset: {
+                        content_hash: masterAsset.contentHash,
+                        download_url: masterAsset.downloadUrl,
+                        master_fingerprint: masterAsset.masterFingerprint,
+                        mime_type: masterAsset.mimeType,
+                        original_file_name: masterAsset.originalFileName,
+                        size_bytes: masterAsset.sizeBytes,
+                        storage_path: masterAsset.storagePath,
+                    },
+                }],
+            };
             const result = await distributionService.submitRelease(releaseData, (evt) => {
                 if (evt.progress !== undefined) {
                     setOverallProgress(evt.progress);
