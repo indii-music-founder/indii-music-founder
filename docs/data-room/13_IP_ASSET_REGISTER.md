@@ -76,19 +76,30 @@ artifact exists; it does **not** replace counsel's review of legal sufficiency.
 
 - [ ] Store the executed founder IP assignment and any contributor/contractor
   assignments in the controlled legal evidence location; link the redacted
-  reference here.
+  reference here. **Founder packet:** entity legal name, execution date,
+  signatory, scope (past and future work), governing law, and storage
+  reference—never the unredacted document in the repository.
 - [ ] Export and retain a current dependency licence report; flag copyleft,
   source-available, commercial-use, attribution, and notice obligations for
-  counsel review.
+  counsel review. **Founder packet:** report date, commit SHA, package manager
+  lockfile(s), reviewer, exceptions, and remediation owner.
 - [ ] Record domain registrar ownership, renewal owner, and recovery contact
-  for every material indii domain.
+  for every material indii domain. **Founder packet:** registrar, registrant
+  entity, account-recovery process, MFA owner, renewal date, DNS operator, and
+  a redacted ownership export/screenshot reference.
 - [ ] Complete a trademark strategy review for the product/company marks and
-  record the search/filing/registration reference and territories.
+  record the search/filing/registration reference and territories. **Founder
+  packet:** exact mark, goods/services classes, jurisdictions, search date,
+  counsel decision, application/registration number if any, and known conflicts.
 - [ ] Classify every non-public training/evaluation dataset before it is used
-  for model tuning, retrieval, or external sharing.
+  for model tuning, retrieval, or external sharing. **Founder packet:** source,
+  contributor/contract authority, licence/consent, allowed use, retention,
+  deletion route, access owner, and whether the dataset can transfer to a buyer.
 - [ ] For each commercial release, preserve the separate master and composition
   chain-of-title, split approvals, sample-clearance evidence, registrations,
-  and recipient delivery acknowledgement. See the DDEX evidence bundle in
+  and recipient delivery acknowledgement. **Founder packet:** release/recording
+  identity, work identity, rights holder, territory/term, evidence reference,
+  exceptions, and responsible operator. See the DDEX evidence bundle in
   [the founder release checklist](../RELEASE_CHECKLIST.md#direct-ddex-delivery-activation-issue-784-added-2026-07-20).
 
 ## Change protocol for engineering work
@@ -109,7 +120,7 @@ record before declaring the issue complete:
 
 Use this register with the [valuation thesis](00_VALUATION_THESIS.md),
 [legal/compliance materials](10_LEGAL_COMPLIANCE.md), and [chain-of-title
-materials](03_IP_ASSIGNMENT.md). A valuation must separate:
+materials](../IP_ASSIGNMENT.md). A valuation must separate:
 
 - transferable platform IP;
 - licensed or vendor-dependent capability;

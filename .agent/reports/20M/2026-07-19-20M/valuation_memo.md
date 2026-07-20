@@ -49,6 +49,17 @@ rights-specific records must be retained before an investor or acquirer should
 credit the full IP thesis. This is a risk deduction and diligence action, not a
 reason to exaggerate an asset claim.
 
+## IP answer matrix
+
+| Investor question | Current answer posture | Evidence reviewable today | Restriction / next proof |
+|---|---|---|---|
+| What does indii own? | Platform code, documented workflows, and internal operating know-how are the platform-IP thesis, subject to legal chain-of-title and dependency evidence. | IP asset register; source/test/architecture evidence; IP-assignment and AI-authorship records. | Technical proof is not a substitute for executed assignment coverage, contributor records, or a patent/trade-secret conclusion. |
+| What belongs to artists or customers? | Masters, compositions, uploads, likenesses, cover art, and rights records are customer-controlled or licensed by default. | Rights posture in the IP register; applicable agreement only in the controlled data room. | Do not include catalog value unless a specific written transfer supports that right. |
+| What is licensed or vendor-dependent? | Models, cloud services, APIs, SDKs, open-source dependencies, stock media, and partners are not blanket-owned platform IP. | Current dependency-licence report and material terms must be refreshed for the reviewed commit. | Missing licence, consent, portability, assignment, or vendor-account evidence remains a valuation deduction. |
+| What can a buyer review today? | The register, redacted evidence references, technical artifacts, and the action register are available; sensitive originals stay in the controlled room. | `docs/data-room/13_IP_ASSET_REGISTER.md`, `docs/IP_ASSIGNMENT.md`, `docs/AI_AUTHORSHIP_DISCLOSURE.md`, and `docs/RELEASE_CHECKLIST.md`. | Evidence completeness is still provisional; review must validate legal sufficiency and currentness. |
+| What prevents transfer in diligence? | Gaps can include assignment coverage, domain/trademark proof, data permission, rights consent, vendor transferability, and founder/second-operator dependence. | The checklist names each required human/counsel/counterparty artifact. | The accountable founder, counsel, registrar, vendor, rights holder, or partner must produce the missing proof before it receives full transferability credit. |
+| Why does this matter to value? | It supports a risk-adjusted replacement-value/transferability argument, separate from revenue multiples. | This memo's assumptions and the IP bridge. | It does not set an asset-specific transaction price, guarantee a buyer outcome, or credit unverified customer content. |
+
 ## Action plan
 
 1. Re-audit the current merged backend and flagship workflows.
