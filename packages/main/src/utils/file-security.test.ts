@@ -128,4 +128,13 @@ describe('Shield 🛡️: Audio Path Validation Security', () => {
         });
     });
 
+    it('should allow user paths that only share a prefix with system roots', () => {
+        const safePaths = ['/Users/indii/Music/song.mp3', '/various/artists/demo.mp3', '/usr-local/audio/song.wav'];
+
+        safePaths.forEach(safePath => {
+            vi.mocked(fs.realpathSync).mockReturnValue(safePath);
+            expect(validateSafeAudioPath(safePath)).toBe(safePath);
+        });
+    });
+
 });
