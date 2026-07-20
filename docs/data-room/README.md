@@ -25,6 +25,7 @@ docs/data-room/
 ├── 10_LEGAL/                           # Stripe TOS, GCP TOS, Anthropic/Google terms
 ├── 11_RETENTION_TERM_SHEET.md          # William's draft package
 ├── 12_SUCCESSION_PLAN.md               # Successor candidate(s) & transition
+├── 13_IP_ASSET_REGISTER.md              # Living IP, provenance, restrictions, and value-evidence register
 ├── INDEPENDENT_REVIEW_SCOPE.md         # Scope for external reviewer
 ├── REVIEWER_CANDIDATES.md              # Reviewer selection options
 ├── REVIEWER_BRIEFING.md                # Day-1 briefing for reviewer
@@ -204,6 +205,16 @@ docs/data-room/
 
 ---
 
+### 13_IP_ASSET_REGISTER.md ✅
+
+**Status:** Created 2026-07-20
+**Content:** Living, evidence-backed inventory of platform IP, brand assets,
+model/configuration assets, datasets, customer-controlled music rights, and
+third-party licences. It separates creation, ownership, restrictions, and
+value evidence so diligence and product claims do not overstate title.
+
+---
+
 ### INDEPENDENT_REVIEW_SCOPE.md ✅
 
 **Status:** Committed 2026-04-26 (commit `b7b27523`)  
@@ -265,6 +276,7 @@ Use this as your entry point:
 - [ ] Read 02_ENTITY_STRUCTURE.md — confirm ownership
 - [ ] Read 03_IP_ASSIGNMENT.md — confirm clean title
 - [ ] Read 04_AI_AUTHORSHIP_DISCLOSURE.md — confirm no licensing conflicts
+- [ ] Read 13_IP_ASSET_REGISTER.md — distinguish owned, licensed, customer-controlled, and unverified assets
 - [ ] Read 05_KNOWN_GAPS.md — understand deferred work
 - [ ] Read 01_ARCHITECTURE.md — understand system design
 - [ ] Read INDEPENDENT_REVIEW_SCOPE.md — see what external reviewer checked

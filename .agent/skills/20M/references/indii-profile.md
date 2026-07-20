@@ -18,6 +18,7 @@ There are ten paid founder units unless the user explicitly changes the cap. Mod
 - Product breadth includes creative/media, audio/upload analysis, distribution readiness, payments, rights/finance, marketing, desktop, and agents. Verify each end to end.
 - Direct DSP delivery/relationships require agreements, credentials, production acknowledgements, and settlement evidence; adapters/specs/fixtures do not prove acceptance.
 - Founder dependence, chain of title, domains/brand, security, vendor transfer, and second-operator readiness materially affect value.
+- `docs/data-room/13_IP_ASSET_REGISTER.md` is the required current source for ownership, provenance, restrictions, and value evidence. Treat customer music/catalog as customer-controlled unless a specific written transfer is evidenced.
 
 ## Vertical thesis
 

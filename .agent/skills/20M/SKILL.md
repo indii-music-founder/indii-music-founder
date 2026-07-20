@@ -45,6 +45,20 @@ For indii, read [references/indii-profile.md](references/indii-profile.md). Pres
 
 Use the weakest relevant grade when a conclusion depends on several claims.
 
+### 2A. Build the IP asset bridge
+
+Read `docs/data-room/13_IP_ASSET_REGISTER.md` and classify every material
+asset used in the valuation or investor answer as one of: transferable platform
+IP, licensed/vendor-dependent capability, customer-controlled rights/content,
+or unknown/restricted. For each claimed asset, cite the underlying assignment,
+licence, provenance record, immutable artifact, registry, or agreement.
+
+Do not count customer masters/compositions, user uploads, provider model weights,
+unverified datasets, or internal documents as company-owned IP. Discount missing
+chain-of-title, brand/domain, dataset, vendor-transfer, or rights evidence in
+the current valuation; record human/counsel/counterparty actions in
+`docs/RELEASE_CHECKLIST.md`.
+
 ### 3. Verify product truth
 
 For each flagship workflow record separately: UI exists, backend connected, authenticated end-to-end run reproduced, and external/commercial acceptance proven. Check signup/auth, payment, core workflow, upload/audio analysis, creative work, distribution boundary, rights/finance, agents, security, operations, and data export.
@@ -105,6 +119,11 @@ Every prepared question needs:
 - **Deep answer:** up to two minutes, covering the problem, mechanism, evidence, boundary, and next proof.
 
 Put “What does it do?” and “Why do I need it?” first. Explain customer pain and changed workflow before modules, architecture, valuation, or the acquisition target. Never invent traction, partnerships, distribution status, legal ownership, security assurance, or metrics.
+
+For IP, always prepare answers to: “What do you own?”, “What belongs to the
+artist/customer?”, “What is licensed or vendor-dependent?”, “What evidence can
+I review today?”, and “What would prevent transfer in diligence?” Use the IP
+asset bridge, not a generic claim that all assets are owned.
 
 ### 12. Write and validate
 

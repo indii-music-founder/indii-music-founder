@@ -160,6 +160,29 @@ audio/cover-art resources referenced in the package were received; and the
 recipient's acknowledgement is retained. An XML file in Cloud Storage, an XSD
 pass, or a successful SFTP connection alone is *not* delivery acceptance.
 
+### Intellectual Property & Value Evidence (added 2026-07-20)
+
+The platform's code, brand, operational know-how, datasets, and customer music
+rights are different asset classes. Do not treat an uploaded master, a generated
+image, a model output, or a repository commit as company-owned IP without
+evidence. The living record is [the IP asset register](data-room/13_IP_ASSET_REGISTER.md).
+
+- [ ] File or locate the executed founder IP assignment and every contractor or
+  contributor assignment; store the documents in the controlled legal evidence
+  location and record only their references in the IP register.
+- [ ] Record domain registrar ownership/recovery contacts and complete a
+  trademark search/filing decision for the `indii` marks with counsel.
+- [ ] Before using any non-public dataset for model tuning, retrieval, or
+  sharing, record its source, permission/licence, permitted purpose, retention,
+  and removal path in the IP register.
+- [ ] For every commercially released recording, preserve distinct master and
+  composition rights evidence, split approvals, sample clearances, and any
+  registration/delivery acknowledgements. Customer catalog is not platform IP
+  unless there is a specific written transfer.
+- [ ] Run and save a current dependency-licence report before investor,
+  acquisition, or major commercial diligence; route non-permissive or unclear
+  results to counsel.
+
 ### Google Cloud Console — Maps & API Keys (ISSUE-764 / ISSUE-765, added 2026-07-08)
 
 These are GCP Console settings changes an agent cannot make. The code-side fixes

@@ -1,6 +1,6 @@
 # Report contract
 
-Write: decision summary; proven-vs-claimed ledger; product/transferability table; current asset bridge; remediation gate/value bridge; replacement-stack and vertical-fit pricing; subscriber matrix; founder scenarios; target acquisition path; risk/action register; assumptions; dated source ledger.
+Write: decision summary; proven-vs-claimed ledger; product/transferability table; **IP asset bridge** (owned vs licensed vs customer-controlled vs unknown, evidence, restrictions, and transferability); current asset bridge; remediation gate/value bridge; replacement-stack and vertical-fit pricing; subscriber matrix; founder scenarios; target acquisition path; risk/action register; assumptions; dated source ledger.
 
 Investor-room runs also require the one-page brief, short/deep live-answer card, diligence Q&A, evidence ledger, and never-overclaim sheet.
 

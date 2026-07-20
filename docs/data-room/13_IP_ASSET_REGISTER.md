@@ -1,0 +1,120 @@
+# Intellectual Property & Asset Register
+
+**Purpose:** Maintain a conservative, evidence-backed inventory of the assets
+created, controlled, or used by indii. This is an operating register for the
+founder, product team, counsel, and diligence—not a legal opinion, valuation,
+or assertion that an asset is owned merely because it appears in a repository.
+
+**Owner of the register:** Founder / delegated IP operations owner
+**Review cadence:** update at each material release, new dataset/model/vendor,
+brand asset launch, rights acquisition, or transaction diligence request.
+
+## Rules of use
+
+1. **Created is not automatically owned.** Record the author/source,
+   assignment or licence, and evidence separately.
+2. **Platform IP and user/artist IP are distinct.** Customer masters,
+   compositions, lyrics, likenesses, artwork, metadata, and contracts remain
+   customer-controlled unless a written agreement says otherwise.
+3. **An AI-assisted output needs provenance, not assumptions.** Record the
+   provider, model/tool, input-rights status, human direction/review, and any
+   provider-returned provenance. Do not call AI output copyrightable,
+   exclusively owned, watermark-protected, or registrable without the required
+   evidence and counsel review.
+4. **Keep secrets out of this register.** Reference a secret-manager record or
+   agreement location; never place credentials, private keys, customer PII, or
+   unredacted contracts here.
+5. **Value is evidence-based.** Use a commercial/strategic rationale and
+   verifiable evidence. Feature count, an internal estimate, or source code
+   alone is not a valuation.
+
+## Required record fields
+
+Every material asset must have a stable ID and these fields:
+
+| Field | Required content |
+|---|---|
+| Asset ID / class | Stable identifier and one class below |
+| Description / location | What it is and the repository, storage, registry, or agreement reference |
+| Rights posture | `owned`, `licensed`, `customer-controlled`, `open-source`, `unknown`, or `restricted` |
+| Rights holder / contributor | Legal entity or source; do not infer from a Git name alone |
+| Evidence | Assignment, licence, commit/tag, registration, hash, invoice, or signed agreement reference |
+| Restrictions | Licence obligations, consent, territory, term, data-use, attribution, export, or approval limits |
+| Value rationale | Revenue, defensibility, replacement cost, strategic dependency, or customer value; mark `unmeasured` when no evidence exists |
+| Review state | `verified`, `needs founder evidence`, `needs counsel`, `not applicable`, or `retired` |
+| Last reviewed | Date and accountable owner |
+
+## Asset classes
+
+| Class | Examples | Default posture until evidenced |
+|---|---|---|
+| Platform software | Source code, tests, architectures, workflows, build/release tooling | `owned` only when chain-of-title evidence supports it; dependencies remain `open-source`/`licensed` |
+| Brand & creative | Names, logos, domain names, artwork, templates, marketing copy | `unknown` until trademark/domain/design source and assignment evidence are recorded |
+| Product data & know-how | Schemas, non-public operational playbooks, pricing logic, prompts, internal specifications | `restricted`; preserve access controls and origin evidence |
+| Model/configuration assets | Prompt libraries, evaluation fixtures, fine-tuning manifests, model routing/configuration | Platform-owned configuration is distinct from third-party model weights and provider services |
+| Datasets & training material | Curated datasets, annotations, audio/video/image source material | `unknown` until source, permission, licence, retention, and permitted training/use are evidenced |
+| Music & rights records | Masters, compositions, splits, ISRC/ISWC, DDEX packages, registrations | Normally `customer-controlled` or `licensed`; platform ownership requires explicit written transfer |
+| Customer/user submissions | Uploaded media, personal data, contracts, likenesses | Never count as platform IP by default; handle under user terms, consent, privacy, and retention rules |
+| Third-party/vendor assets | APIs, SDKs, fonts, stock media, open-source dependencies, cloud configurations | `licensed` or `open-source`; record the relevant terms and obligations |
+
+## Initial register — platform and operating assets
+
+These entries establish the starting inventory. `Verified` means the cited
+artifact exists; it does **not** replace counsel's review of legal sufficiency.
+
+| Asset ID | Asset / location | Rights posture & evidence | Value rationale / review state |
+|---|---|---|---|
+| IP-PLATFORM-001 | indii source code, tests, technical documentation, and workflows in this repository | `owned` claim documented in [IP assignment](../IP_ASSIGNMENT.md) and [AI authorship disclosure](../AI_AUTHORSHIP_DISCLOSURE.md); third-party dependencies require separate licence review | Core product and replacement-cost asset. **Needs founder evidence:** retain executed founder/contributor assignment and current dependency licence report. |
+| IP-PLATFORM-002 | Canonical audio ingestion, DSP/Gemini analysis, DDEX packaging, and provenance implementation | Platform software; current technical evidence includes source, tests, and release/issue records. It does **not** establish ownership of any artist audio processed by it. | Strategic workflow asset. **Verified technically / needs counsel evidence** for any patent/trade-secret strategy. |
+| IP-BRAND-001 | `indii`/`indii.music` names, logos, visual system, domains, and brand files under `docs/assets/` | `unknown` until domain registrar record, design source/assignment, and trademark search/filing evidence are linked | Brand and go-to-market asset. **Needs founder evidence.** |
+| IP-MODEL-001 | Agent prompts, routing, evaluations, and non-public operational configurations | `restricted`; platform configuration is distinct from third-party model weights. Provider terms and training/source permissions must be linked per material model/data source. | Potential operating know-how. **Needs provenance and access-control review.** |
+| IP-DATA-001 | Internal training/evaluation datasets and annotations | `unknown` until every source is classified with permissions, applicable licence, allowed purpose, retention, and removal path | May be valuable only if lawful, documented, and transferable. **Needs founder/counsel review.** |
+| IP-MUSIC-001 | Artist masters, compositions, cover art, DDEX payloads, registrations, and royalty records | `customer-controlled` or `licensed` by default. DDEX/ISRC/ISWC records demonstrate administration/provenance, not ownership. | Supports platform service value; never include in platform IP valuation without rights-specific evidence. **Needs per-release rights record.** |
+
+## Founder actions — highest leverage evidence
+
+- [ ] Store the executed founder IP assignment and any contributor/contractor
+  assignments in the controlled legal evidence location; link the redacted
+  reference here.
+- [ ] Export and retain a current dependency licence report; flag copyleft,
+  source-available, commercial-use, attribution, and notice obligations for
+  counsel review.
+- [ ] Record domain registrar ownership, renewal owner, and recovery contact
+  for every material indii domain.
+- [ ] Complete a trademark strategy review for the product/company marks and
+  record the search/filing/registration reference and territories.
+- [ ] Classify every non-public training/evaluation dataset before it is used
+  for model tuning, retrieval, or external sharing.
+- [ ] For each commercial release, preserve the separate master and composition
+  chain-of-title, split approvals, sample-clearance evidence, registrations,
+  and recipient delivery acknowledgement. See the DDEX evidence bundle in
+  [the founder release checklist](../RELEASE_CHECKLIST.md#direct-ddex-delivery-activation-issue-784-added-2026-07-20).
+
+## Change protocol for engineering work
+
+When a work loop creates or materially changes an asset, add or update its
+record before declaring the issue complete:
+
+1. Identify whether the output is platform IP, customer-controlled content,
+   licensed third-party material, or unknown.
+2. Attach a non-secret evidence reference and integrity reference (commit/tag,
+   immutable storage generation, SHA-256, agreement ID, or registry entry).
+3. State restrictions and what the product must **not** claim.
+4. State a cautious value rationale or `unmeasured`.
+5. Add a founder checklist item when the next required action needs a human
+   account holder, counsel, counterparty, payment, signature, or registration.
+
+## Diligence and valuation use
+
+Use this register with the [valuation thesis](00_VALUATION_THESIS.md),
+[legal/compliance materials](10_LEGAL_COMPLIANCE.md), and [chain-of-title
+materials](03_IP_ASSIGNMENT.md). A valuation must separate:
+
+- transferable platform IP;
+- licensed or vendor-dependent capability;
+- customer-controlled catalog/rights;
+- unverified or non-transferable data; and
+- external commercial acceptance/revenue evidence.
+
+No row is a claim of a transaction price, legal title, copyright registration,
+or trademark registration without the linked source evidence.
