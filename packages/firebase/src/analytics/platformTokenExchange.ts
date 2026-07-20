@@ -26,6 +26,7 @@ import {
     metaAppId,
     metaAppSecret,
 } from "../config/secrets";
+import { MetaInstagramConnectionError, exchangeFacebookInstagramConnection } from './instagramGraphConnection';
 
 // ── Secrets (imported from centralized config/secrets.ts) ─────────────────────
 const ALL_SECRETS = [
@@ -56,11 +57,12 @@ export const analyticsExchangeToken = functions
     .https.onCall(async (data: unknown, context) => {
         validateAppCheckV1(context);
         const uid = assertAuth(context);
-        const { platform, code, redirectUri, codeVerifier } = data as {
+        const { platform, code, redirectUri, codeVerifier, facebookPageId } = data as {
             platform: string;
             code: string;
             redirectUri: string;
             codeVerifier?: string;
+            facebookPageId?: string;
         };
 
         if (!platform || !code || !redirectUri) {
@@ -92,16 +94,37 @@ export const analyticsExchangeToken = functions
         }
 
         if (platform === "instagram") {
-            const igToken = await exchangeInstagramCode(code, redirectUri);
-            // Exchange short-lived token for long-lived token (60 days)
-            const longLived = await getInstagramLongLivedToken(igToken.access_token);
+            let connection;
+            try {
+                connection = await exchangeFacebookInstagramConnection({
+                    code,
+                    redirectUri,
+                    appId: metaAppId.value(),
+                    appSecret: metaAppSecret.value(),
+                    ...(facebookPageId ? { facebookPageId } : {}),
+                });
+            } catch (error) {
+                if (error instanceof MetaInstagramConnectionError) {
+                    throw new functions.https.HttpsError('failed-precondition', error.message, {
+                        code: error.code,
+                        pages: error.pages,
+                    });
+                }
+                throw error;
+            }
             await storeToken(uid, "instagram", {
-                accessToken: longLived.access_token,
-                refreshToken: longLived.access_token, // Instagram uses same token for refresh
-                expiresAt: Date.now() + (longLived.expires_in ?? 5183944) * 1000,
-                igUserId: igToken.user_id,
+                accessToken: connection.accessToken,
+                expiresAt: Date.now() + connection.expiresIn * 1000,
+                igUserId: connection.igUserId,
+                facebookPageId: connection.facebookPageId,
+                ...(connection.instagramUsername ? { instagramUsername: connection.instagramUsername } : {}),
             });
-            return { ok: true, expiresIn: longLived.expires_in };
+            return {
+                ok: true,
+                expiresIn: connection.expiresIn,
+                facebookPageId: connection.facebookPageId,
+                instagramUsername: connection.instagramUsername,
+            };
         }
 
         throw new functions.https.HttpsError("invalid-argument", `Unsupported platform: ${platform}`);
@@ -152,11 +175,10 @@ export const analyticsRefreshToken = functions
             newExpiry  = Date.now() + (r.expires_in ?? 86400) * 1000;
             newRefresh = r.refresh_token ?? stored.refreshToken;
         } else if (platform === "instagram") {
-            // Instagram long-lived tokens are refreshed via a GET request
-            const r = await refreshInstagramLongLivedToken(stored.accessToken);
-            newAccess  = r.access_token;
-            newExpiry  = Date.now() + (r.expires_in ?? 5183944) * 1000;
-            newRefresh = r.access_token; // same token acts as refresh
+            throw new functions.https.HttpsError(
+                'failed-precondition',
+                'Instagram Graph access requires reconnecting before the Facebook token expires.',
+            );
         } else {
             throw new functions.https.HttpsError("invalid-argument", `Unsupported platform: ${platform}`);
         }
@@ -333,86 +355,6 @@ async function refreshTikTokToken(refreshToken: string): Promise<TikTokTokenResp
 // ─────────────────────────────────────────────────────────────────────────────
 // Instagram Graph API token operations
 // ─────────────────────────────────────────────────────────────────────────────
-
-interface InstagramShortLivedToken {
-    access_token: string;
-    token_type: string;
-    user_id: string;
-}
-
-interface InstagramLongLivedToken {
-    access_token: string;
-    token_type: string;
-    expires_in: number;
-}
-
-/**
- * Exchange authorization code for short-lived Instagram token.
- * Short-lived tokens expire in 1 hour; we immediately upgrade to long-lived.
- */
-async function exchangeInstagramCode(
-    code: string,
-    redirectUri: string,
-): Promise<InstagramShortLivedToken> {
-    const params = new URLSearchParams({
-        client_id:     metaAppId.value(),
-        client_secret: metaAppSecret.value(),
-        grant_type:    "authorization_code",
-        redirect_uri:  redirectUri,
-        code,
-    });
-
-    const res = await fetch("https://api.instagram.com/oauth/access_token", {
-        method:  "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body:    params.toString(),
-    });
-
-    if (!res.ok) {
-        const err = await res.text();
-        throw new functions.https.HttpsError("internal", `Instagram token exchange failed: ${err}`);
-    }
-    return res.json() as Promise<InstagramShortLivedToken>;
-}
-
-/**
- * Exchange a short-lived Instagram token for a long-lived token (valid 60 days).
- * Long-lived tokens can be refreshed before expiry via refreshInstagramLongLivedToken.
- */
-async function getInstagramLongLivedToken(shortLivedToken: string): Promise<InstagramLongLivedToken> {
-    const params = new URLSearchParams({
-        grant_type:    "ig_exchange_token",
-        client_secret: metaAppSecret.value(),
-        access_token:  shortLivedToken,
-    });
-
-    const res = await fetch(`https://graph.instagram.com/access_token?${params.toString()}`);
-
-    if (!res.ok) {
-        const err = await res.text();
-        throw new functions.https.HttpsError("internal", `Instagram long-lived token exchange failed: ${err}`);
-    }
-    return res.json() as Promise<InstagramLongLivedToken>;
-}
-
-/**
- * Refresh a long-lived Instagram token (must be done within 60 days of expiry).
- * Refreshed tokens are valid for another 60 days.
- */
-async function refreshInstagramLongLivedToken(accessToken: string): Promise<InstagramLongLivedToken> {
-    const params = new URLSearchParams({
-        grant_type:   "ig_refresh_token",
-        access_token: accessToken,
-    });
-
-    const res = await fetch(`https://graph.instagram.com/refresh_access_token?${params.toString()}`);
-
-    if (!res.ok) {
-        const err = await res.text();
-        throw new functions.https.HttpsError("internal", `Instagram token refresh failed: ${err}`);
-    }
-    return res.json() as Promise<InstagramLongLivedToken>;
-}
 
 // ── Firestore helpers ─────────────────────────────────────────────────────────
 
