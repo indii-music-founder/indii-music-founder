@@ -125,6 +125,33 @@ artist/customer?”, “What is licensed or vendor-dependent?”, “What eviden
 I review today?”, and “What would prevent transfer in diligence?” Use the IP
 asset bridge, not a generic claim that all assets are owned.
 
+### IP investor-answer protocol
+
+Treat an IP question as a diligence request, not a branding opportunity. For
+each answer, retrieve the relevant row(s) from
+`docs/data-room/13_IP_ASSET_REGISTER.md` and state, in this order:
+
+1. **Asset and posture:** name the asset and say whether it is transferable
+   platform IP, licensed/vendor-dependent capability, customer-controlled
+   content, or unknown/restricted.
+2. **Evidence available today:** cite the non-secret assignment, licence,
+   registry, immutable artifact, commit/tag, or agreement reference. Distinguish
+   a technical artifact from legal chain-of-title evidence.
+3. **Value mechanism and boundary:** explain the replacement-cost, workflow,
+   defensibility, or strategic value without assigning a transaction value to
+   the asset; name the restriction or deduction.
+4. **Next proof and accountable owner:** if evidence is incomplete, identify
+   the exact document, registry result, counterparty acknowledgement, or
+   counsel decision required and point to the matching actionable item in
+   `docs/RELEASE_CHECKLIST.md`.
+
+Do not use “we own it” when the register says `unknown`, `restricted`,
+`licensed`, or `customer-controlled`. Do not call code, a generated output,
+an artist upload, a provider model weight, a DDEX package, or a partner
+configuration a proprietary company asset merely because the product can use
+it. If the investor asks about a newly-created capability, add a dated IP
+register delta before treating it as valuation support.
+
 ### 12. Write and validate
 
 Follow [references/report-contract.md](references/report-contract.md), attach assumption/source ledgers, and run:

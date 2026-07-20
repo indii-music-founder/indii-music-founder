@@ -50,6 +50,57 @@
 
 **Deep answer:** Capital should buy value-inflecting evidence: a secure independently reproduced journey, arm's-length paying users with retention and cost-to-serve data, and clean partner/IP/operational transferability. Those proofs change the company from a large working product into an evidence-backed business.
 
+## What intellectual property do you own?
+
+**Short answer:** We distinguish the platform we are building from customer
+music. The current evidence supports a platform-IP position for the codebase,
+operating workflows, and internal product know-how, subject to documented
+chain-of-title and dependency evidence. Artist masters, compositions,
+likenesses, and uploads are not treated as indii-owned IP without a specific
+written transfer.
+
+**Deep answer:** The IP register separates transferable platform software and
+know-how, licensed/vendor-dependent capability, customer-controlled rights,
+and unknown or restricted assets. The valuable platform thesis is the connected
+workflow and its reproducibility—not ownership of an artist's catalog or a
+provider's model weights. For each material asset we track its posture,
+evidence, restrictions, value rationale, and review state. An investor can
+review the appropriate redacted assignment, licence, provenance, registry, or
+agreement reference in the controlled data room. We do not convert a repository
+commit, generated output, DDEX package, user upload, or configured partner into
+a legal-title or transaction-value claim.
+
+## What can I review today, and what still blocks transfer?
+
+**Short answer:** Today we can show the current IP asset register, technical
+artifacts, the IP-assignment and AI-authorship records, and the checklist of
+evidence still needed. The material open transfer gates are executed assignment
+coverage, current dependency licensing, domain/brand evidence, data permissions,
+vendor transferability, and rights-specific records.
+
+**Deep answer:** We answer each diligence question as asset → evidence →
+restriction → next proof. The controlled room can provide a redacted reference
+to the assignment, licence, registry, agreement, immutable artifact, or source
+tag—not credentials or customer data. If a record is incomplete, we say so and
+name the accountable action in `docs/RELEASE_CHECKLIST.md`: a founder,
+contributor, counsel, registrar, vendor, rights holder, or partner must supply
+the relevant proof. That incompleteness is a valuation/transferability
+deduction, not something we conceal with a broad ownership claim.
+
+## How does that IP support value?
+
+**Short answer:** It supports a cautious, risk-adjusted replacement-value and
+transferability argument before revenue supports a separate multiple. It does
+not justify a guaranteed asset price or a claim to customer catalog value.
+
+**Deep answer:** The asset bridge asks whether the workflow can be transferred,
+reproduced, operated independently, and used without unresolved rights or
+vendor constraints. Technical evidence can support implementation and
+replacement-cost reasoning; commercial acceptance, clean chain of title,
+licence posture, defensibility, and buyer-operability determine how much risk
+must be deducted. The current valuation remains a planning range, not an
+appraisal or transaction-price promise.
+
 ## What does $20M mean?
 
 **Short answer:** It is the north star, not today's valuation. The central math is about $4M–$5M of quality ARR at 4×–5×, plus buyer-grade retention, margin, controls, and transferability.
@@ -58,4 +109,4 @@
 
 ## Unknown question protocol
 
-Answer: direct answer → why it matters → strongest proof → material boundary → next proof. Never invent traction, partnerships, live distribution, security assurance, legal ownership, or metrics.
+Answer: direct answer → why it matters → strongest proof → material boundary → next proof. For IP, also name the asset posture (`platform`, `licensed/vendor-dependent`, `customer-controlled`, or `unknown/restricted`) and the real-world owner of the next evidence. Never invent traction, partnerships, live distribution, security assurance, legal ownership, or metrics.

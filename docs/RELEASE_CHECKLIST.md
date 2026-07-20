@@ -196,6 +196,35 @@ evidence. The living record is [the IP asset register](data-room/13_IP_ASSET_REG
   acquisition, or major commercial diligence; route non-permissive or unclear
   results to counsel.
 
+#### Founder investor-room IP packet
+
+Prepare this packet before a diligence meeting. Keep originals and sensitive
+documents in the controlled legal data room; the repository and investor
+materials should contain only a redacted reference, date, and owner.
+
+- [ ] **Chain of title:** executed founder and contributor assignments; entity
+  name, execution dates, signatories, scope, and legal-evidence location.
+- [ ] **Brand and domains:** registrar ownership/recovery proof, renewal dates,
+  DNS/MFA operator, trademark search result, filing/registration numbers,
+  jurisdictions/classes, and known conflicts.
+- [ ] **Software and vendors:** dependency-licence report at a named commit,
+  material provider terms, transfer/assignment limits, key-person accounts,
+  and a remediation owner for every exception.
+- [ ] **Data and AI:** dataset inventory; source/permission/allowed-use/
+  retention/deletion evidence; model/provider terms; and a clear statement
+  that provider weights and customer prompts/uploads are not company-owned by
+  default.
+- [ ] **Customer music and rights:** per-release master/composition ownership,
+  split and sample evidence, territories/terms, registrations and delivery
+  acknowledgements. Never add customer catalog to platform-IP value without an
+  executed, rights-specific transfer.
+- [ ] **Room-ready index:** a one-page mapping from each material asset ID in
+  `docs/data-room/13_IP_ASSET_REGISTER.md` to its redacted evidence reference,
+  restriction, review state, and the person accountable for the next proof.
+- [ ] **Answer rehearsal:** be able to state, for each material asset: what it
+  is; who controls it; what supports that statement today; why it matters; what
+  it does *not* prove; and the exact next action if evidence is incomplete.
+
 ### Google Cloud Console — Maps & API Keys (ISSUE-764 / ISSUE-765, added 2026-07-08)
 
 These are GCP Console settings changes an agent cannot make. The code-side fixes
