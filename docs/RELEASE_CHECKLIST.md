@@ -81,6 +81,85 @@ closed instead of emitting a hard-coded/placeholder sender `PartyId` — they re
   as a Firebase Functions runtime env var / secret. Until set, DDEX compilation
   and the MCP metadata draft tool both throw `failed-precondition`.
 
+### Direct DDEX Delivery Activation (ISSUE-784, added 2026-07-20)
+
+The application deliberately fails closed until these real-world prerequisites
+exist. Do not substitute example identifiers, downloaded schema copies of
+unknown provenance, or a local packaging result for partner authorization.
+
+**Recommended order:** establish the DDEX identity and licence first, select
+the recipient and its delivery profile second, then run one non-commercial
+test delivery. Do not configure production transport credentials until the
+recipient has supplied its test/onboarding instructions.
+
+**Bring to the DDEX/partner conversation:** legal company name and address,
+primary business and technical contacts, the label/distributor role indii will
+perform, intended recipient(s), a non-commercial test release, and confirmation
+that indii controls the sound-recording master and cover art for that test.
+This avoids a technical integration being delayed by an ownership or contact
+verification question.
+
+- [ ] Accept the DDEX Implementation Licence and retain the licensed ERN 4.3
+  and any recipient choreography/profile XSD packages in the approved secure
+  configuration location. Record licence version, effective date, download
+  source, and SHA-256 of each received XSD/archive. DDEX says the ERN message
+  XSD and allowed-values XSD must be validated together; use the recipient's
+  requested profile, not merely a generic schema pass. [DDEX validation
+  guidance](https://kb.ddex.net/general-implementation-guidance/validating-ddex-messages/offline-xml-validation/)
+- [ ] Confirm the company sender DPID at DDEX and resolve the two historical
+  repository values before configuring it. The DPID is allocated with the
+  implementation licence; check the DDEX registry/email, record the
+  human-readable form and the hyphen-free XML form, and identify the person
+  responsible for keeping the registry record current. Store only the
+  confirmed runtime value in the approved secret/environment path. [DPID
+  guidance and application](https://kb.ddex.net/general-implementation-guidance/licensing-the-standards/ddex-party-identifier-%28dpid%29/)
+- [ ] Obtain the recipient/partner DPID, endpoint, transport credentials, and
+  applicable delivery-profile requirements directly from the intended partner.
+  Ask explicitly for: the ERN/profile version, test-versus-live flag rules,
+  XML/file naming and package-directory conventions, required resource codecs
+  and artwork specifications, territories/deal data, acknowledgement/error
+  channel, retry/idempotency rules, and their support escalation contact.
+  Store credentials in the approved secret manager—never in a release draft,
+  local `.env`, chat, or source control.
+- [ ] Choose and approve a non-commercial test release whose master and cover
+  art may be transmitted. Confirm it has the required rights evidence and
+  partner-approved metadata before testing. Prepare a one-page test-release
+  packet with release title, UPC, track title, ISRC, artist/label, release date,
+  territories, rights holder, master hash, cover-art hash, and a named internal
+  approver. Do not use a client or unreleased artist's work without written
+  permission for this transmission.
+- [ ] Submit one controlled package through the configured partner route and
+  retain the partner acknowledgement/rejection, timestamp, package hash,
+  sanitized correlation ID, and any validation report in the release evidence
+  record. If it fails, retain the original rejection verbatim and open an
+  engineering issue against the exact validation code—do not alter source data
+  just to make the package appear accepted.
+- [ ] Confirm the partner accepted both the ERN package and every required
+  resource (canonical master and cover art). Only that acknowledgement closes
+  the external acceptance portion of ISSUE-784.
+
+#### Evidence bundle to save after the test
+
+Create one access-controlled evidence folder per recipient/test release. Save
+the following; redact credentials, private keys, SFTP hostnames, and personal
+contact details before attaching anything to a ticket:
+
+- [ ] DDEX licence/DPID allocation confirmation and registry update owner.
+- [ ] Recipient onboarding/profile document and the exact XSD/AVS versions.
+- [ ] Sanitized test-release packet and written approval to transmit it.
+- [ ] ERN XML SHA-256, resource filenames/hashes, validation output, and
+  package manifest hash.
+- [ ] Submission timestamp, partner correlation/reference ID, and the complete
+  acknowledgement or rejection.
+- [ ] A short outcome note: **accepted**, **rejected**, or **transport failed**;
+  recipient; environment (test/live); and the next owner/action.
+
+**Definition of done:** DDEX allocation is real and recorded; code is configured
+with the confirmed sender identity and recipient profile; the same canonical
+audio/cover-art resources referenced in the package were received; and the
+recipient's acknowledgement is retained. An XML file in Cloud Storage, an XSD
+pass, or a successful SFTP connection alone is *not* delivery acceptance.
+
 ### Google Cloud Console — Maps & API Keys (ISSUE-764 / ISSUE-765, added 2026-07-08)
 
 These are GCP Console settings changes an agent cannot make. The code-side fixes

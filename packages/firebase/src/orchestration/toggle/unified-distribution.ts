@@ -1,94 +1,22 @@
-import { onCall, HttpsError } from 'firebase-functions/v2/https';
-import { compileDDEXRelease, dispatchPROPayload } from '../../publishing/ddex-generator';
-import { CampaignFSM } from '../fsm/machine';
-import { withCircuitBreaker } from '../circuit-breaker';
-import { getStorage } from 'firebase-admin/storage';
+import { HttpsError, onCall } from 'firebase-functions/v2/https';
 
 /**
- * Unified Distribution Toggle Wrapper
- * Replaces sequential API calls with concurrent Promise.all execution for DSPs and Agencies.
+ * Retired compatibility endpoint for the old Firebase-only distribution flow.
+ *
+ * It previously emitted incomplete XML and wrote it to provider-named Storage
+ * paths without XSD/profile validation, canonical master packaging, a
+ * recipient DPID, or partner transport. Direct delivery is now intentionally
+ * owned by the canonical desktop/Python package path, which fails closed until
+ * the DDEX licence, recipient profile, XSDs, and partner route are configured.
  */
 export const triggerUnifiedDistribution = onCall(async (request) => {
     if (!request.auth) throw new HttpsError('unauthenticated', 'User must be authenticated.');
 
-    const { releaseId } = request.data as { releaseId: string };
+    const releaseId = typeof request.data?.releaseId === 'string' ? request.data.releaseId.trim() : '';
     if (!releaseId) throw new HttpsError('invalid-argument', 'Missing releaseId.');
 
-    const fsm = new CampaignFSM(releaseId);
-    await fsm.transition('DISTRIBUTING');
-
-    try {
-        // 1. Prepare assets (DDEX Generation)
-        const ddexPayload = await compileDDEXRelease(releaseId);
-
-        // 2. Execute concurrent distribution staging using Promise.all
-        // Staged for Delivery: XML payload generated and saved to Firebase Storage. 
-        // Final SFTP/API dispatch to DSPs is pending upstream integration.
-        console.log(`Staging concurrent distribution payloads for ${releaseId}...`);
-        
-        const distributionTasks = [
-            withCircuitBreaker('SpotifyStage', () => stageForSpotify(ddexPayload, releaseId)),
-            withCircuitBreaker('AppleMusicStage', () => stageForAppleMusic(ddexPayload, releaseId)),
-            withCircuitBreaker('TidalStage', () => stageForTidal(ddexPayload, releaseId)),
-            withCircuitBreaker('PROStage', () => stageForPerformanceRightsOrganizations(releaseId))
-        ];
-
-        const results = await Promise.allSettled(distributionTasks);
-
-        const failures = results.filter(r => r.status === 'rejected');
-        if (failures.length > 0) {
-            console.error('Some distribution staging targets failed:', failures);
-            await fsm.transition('FAILED', 'Partial distribution staging failure.');
-            return { success: false, status: 'PARTIAL_FAILURE' };
-        }
-
-        // ISSUE-860: only XML was staged to Storage — nothing was delivered to
-        // any DSP, so MONITORING (which implies awaiting DSP acknowledgement)
-        // would be a lie. Stay in PACKAGE_STAGED until a real delivery job runs.
-        await fsm.transition('PACKAGE_STAGED');
-        return { success: true, status: 'PACKAGE_STAGED', delivered: false };
-
-    } catch (error: unknown) {
-        console.error('Unified Distribution Error:', error);
-        const errorMessage = error instanceof Error ? error.message : String(error);
-        await fsm.transition('FAILED', errorMessage);
-        throw new HttpsError('internal', 'Unified distribution failed.');
-    }
+    throw new HttpsError(
+        'failed-precondition',
+        'Canonical DDEX delivery is required. This retired Firebase staging path cannot create or deliver a partner package.'
+    );
 });
-
-// Staged for Delivery: XML payload generated and saved to Firebase Storage.
-// Final SFTP/API dispatch to DSPs is pending upstream integration.
-async function stageForSpotify(payload: string, releaseId: string) {
-    const bucket = getStorage().bucket();
-    const destFile = bucket.file(`distribution/packages/${releaseId}/spotify.xml`);
-    await destFile.save(payload, {
-        contentType: 'application/xml',
-        metadata: {
-            cacheControl: 'public, max-age=31536000',
-        }
-    });
-    return 'spotify_staged';
-}
-
-async function stageForAppleMusic(payload: string, releaseId: string) {
-    const bucket = getStorage().bucket();
-    const destFile = bucket.file(`distribution/packages/${releaseId}/apple.xml`);
-    await destFile.save(payload, {
-        contentType: 'application/xml',
-    });
-    return 'apple_staged';
-}
-
-async function stageForTidal(payload: string, releaseId: string) {
-    const bucket = getStorage().bucket();
-    const destFile = bucket.file(`distribution/packages/${releaseId}/tidal.xml`);
-    await destFile.save(payload, {
-        contentType: 'application/xml',
-    });
-    return 'tidal_staged';
-}
-
-async function stageForPerformanceRightsOrganizations(releaseId: string) {
-    await dispatchPROPayload(releaseId);
-    return 'pro_staged';
-}
