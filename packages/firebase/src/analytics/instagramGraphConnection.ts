@@ -15,6 +15,12 @@ export interface FacebookInstagramConnection {
     instagramUsername?: string;
 }
 
+export interface FacebookInstagramResolution {
+    accessToken: string;
+    expiresIn: number;
+    pages: InstagramPageOption[];
+}
+
 export class MetaInstagramConnectionError extends Error {
     constructor(
         readonly code: 'META_TOKEN_EXCHANGE_FAILED' | 'NO_LINKED_INSTAGRAM_BUSINESS_ACCOUNT' | 'PAGE_SELECTION_REQUIRED' | 'INVALID_FACEBOOK_PAGE_SELECTION',
@@ -87,6 +93,30 @@ export async function exchangeFacebookInstagramConnection(
     input: { code: string; redirectUri: string; appId: string; appSecret: string; facebookPageId?: string },
     fetcher: GraphFetcher = fetch,
 ): Promise<FacebookInstagramConnection> {
+    const resolution = await resolveFacebookInstagramConnection(input, fetcher);
+    if (!input.facebookPageId && resolution.pages.length > 1) {
+        throw new MetaInstagramConnectionError('PAGE_SELECTION_REQUIRED', 'Choose the Facebook Page connected to the Instagram account to publish from.', resolution.pages);
+    }
+    const selected = input.facebookPageId
+        ? resolution.pages.find(page => page.facebookPageId === input.facebookPageId)
+        : resolution.pages[0];
+    if (!selected) {
+        throw new MetaInstagramConnectionError('INVALID_FACEBOOK_PAGE_SELECTION', 'The selected Facebook Page is not linked to an authorized Instagram professional account.', resolution.pages);
+    }
+    return {
+        accessToken: resolution.accessToken,
+        expiresIn: resolution.expiresIn,
+        facebookPageId: selected.facebookPageId,
+        igUserId: selected.instagramBusinessAccountId,
+        ...(selected.instagramUsername ? { instagramUsername: selected.instagramUsername } : {}),
+    };
+}
+
+/** Resolve the token and Page options without exposing the token to a client. */
+export async function resolveFacebookInstagramConnection(
+    input: { code: string; redirectUri: string; appId: string; appSecret: string },
+    fetcher: GraphFetcher = fetch,
+): Promise<FacebookInstagramResolution> {
     const shortLived = await readGraphToken(fetcher, graphUrl('/oauth/access_token', {
         client_id: input.appId,
         client_secret: input.appSecret,
@@ -110,20 +140,9 @@ export async function exchangeFacebookInstagramConnection(
     if (pages.length === 0) {
         throw new MetaInstagramConnectionError('NO_LINKED_INSTAGRAM_BUSINESS_ACCOUNT', 'No Facebook Page linked to an Instagram professional account was found.');
     }
-    if (!input.facebookPageId && pages.length > 1) {
-        throw new MetaInstagramConnectionError('PAGE_SELECTION_REQUIRED', 'Choose the Facebook Page connected to the Instagram account to publish from.', pages);
-    }
-    const selected = input.facebookPageId
-        ? pages.find(page => page.facebookPageId === input.facebookPageId)
-        : pages[0];
-    if (!selected) {
-        throw new MetaInstagramConnectionError('INVALID_FACEBOOK_PAGE_SELECTION', 'The selected Facebook Page is not linked to an authorized Instagram professional account.', pages);
-    }
     return {
         accessToken: longLived.access_token!,
         expiresIn: longLived.expires_in ?? 5_184_000,
-        facebookPageId: selected.facebookPageId,
-        igUserId: selected.instagramBusinessAccountId,
-        ...(selected.instagramUsername ? { instagramUsername: selected.instagramUsername } : {}),
+        pages,
     };
 }

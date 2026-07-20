@@ -26,7 +26,8 @@ interface PlatformCard {
     platform: string;
     label: string;
     color: string;
-    connectUrl: string;
+    connectUrl?: string;
+    manageInAnalytics?: boolean;
     icon: React.ReactNode;
     stats?: PlatformStats;
     connected: boolean;
@@ -64,7 +65,7 @@ function StatPill({ label, value, icon }: { label: string; value: number | undef
 
 const PLATFORM_META = [
     { platform: 'spotify', label: 'Spotify', color: 'from-green-600 to-green-400', connectUrl: 'https://accounts.spotify.com/authorize' },
-    { platform: 'instagram', label: 'Instagram', color: 'from-pink-600 to-orange-400', connectUrl: 'https://api.instagram.com/oauth/authorize' },
+    { platform: 'instagram', label: 'Instagram', color: 'from-pink-600 to-orange-400', manageInAnalytics: true },
     { platform: 'tiktok', label: 'TikTok', color: 'from-cyan-600 to-blue-400', connectUrl: 'https://www.tiktok.com/auth/authorize' },
     { platform: 'youtube', label: 'YouTube', color: 'from-red-600 to-red-400', connectUrl: 'https://accounts.google.com/o/oauth2/auth' },
     { platform: 'twitter', label: 'X (Twitter)', color: 'from-gray-600 to-gray-400', connectUrl: 'https://twitter.com/i/oauth2/authorize' },
@@ -128,9 +129,7 @@ export default function SocialAnalyticsDashboard() {
                     if (snap.exists()) {
                         return { platform: meta.platform, stats: snap.data() as PlatformStats, connected: true };
                     }
-                    const tokenRef = doc(db, 'users', uid, 'socialTokens', meta.platform);
-                    const tokenSnap = await getDoc(tokenRef);
-                    return { platform: meta.platform, stats: undefined, connected: tokenSnap.exists() };
+                    return { platform: meta.platform, stats: undefined, connected: false };
                 }
 
                 return { platform: meta.platform, stats: liveStats, connected: true };
@@ -266,13 +265,13 @@ export default function SocialAnalyticsDashboard() {
                         </div>
 
                         {/* Connect / Manage action */}
-                        {!card.connected && (
-                            <a
-                                href={card.connectUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="shrink-0 flex items-center gap-1 px-3 py-2 rounded-xl border border-white/10 text-[10px] font-bold uppercase tracking-widest text-gray-400 hover:text-white hover:border-white/20 transition-all"
-                            >
+                        {!card.connected && card.manageInAnalytics && (
+                            <a href="/analytics" className="shrink-0 flex items-center gap-1 px-3 py-2 rounded-xl border border-white/10 text-[10px] font-bold uppercase tracking-widest text-gray-400 hover:text-white hover:border-white/20 transition-all">
+                                Manage in Analytics
+                            </a>
+                        )}
+                        {!card.connected && !card.manageInAnalytics && card.connectUrl && (
+                            <a href={card.connectUrl} target="_blank" rel="noopener noreferrer" className="shrink-0 flex items-center gap-1 px-3 py-2 rounded-xl border border-white/10 text-[10px] font-bold uppercase tracking-widest text-gray-400 hover:text-white hover:border-white/20 transition-all">
                                 Connect <ExternalLink size={9} />
                             </a>
                         )}
