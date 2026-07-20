@@ -111,6 +111,13 @@ export function resolveOwnedArtworkObjectPath(ownerUid: string, reference: strin
         }
         objectPath = reference.slice(slash + 1);
     }
+    if (objectPath.startsWith('covers/')) {
+        const canonicalCover = objectPath.match(/^covers\/([^/]+)\/([a-f0-9]{64})\/original\.(jpe?g|png)$/);
+        if (!canonicalCover || canonicalCover[1] !== ownerUid) {
+            throw new Error('Artwork canonical cover path is invalid for the authenticated owner.');
+        }
+        return objectPath;
+    }
     const ownerPrefixes = [`users/${ownerUid}/`, `artwork/${ownerUid}/`, `cover-art/${ownerUid}/`, `releases/${ownerUid}/`];
     if (!ownerPrefixes.some(prefix => objectPath.startsWith(prefix))) {
         throw new Error('Artwork Storage path is not scoped to the authenticated owner.');

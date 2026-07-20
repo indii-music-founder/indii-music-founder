@@ -18,7 +18,7 @@ export interface CanonicalCoverAsset {
 
 export interface StagedCanonicalCover {
     cleanup: () => Promise<void>;
-    coverAsset: Omit<CanonicalCoverAsset, 'download_url'> & { local_path: string; width: number; height: number };
+    coverAsset: Omit<CanonicalCoverAsset, 'download_url'> & { local_path: string; width: number; height: number; color_space: 'rgb' };
 }
 
 function requireString(value: unknown, name: string): string {
@@ -69,10 +69,13 @@ function parseCoverAsset(value: unknown): CanonicalCoverAsset {
     return { content_hash, download_url, mime_type, original_file_name, size_bytes, storage_path };
 }
 
-function imageDimensions(bytes: Buffer, mimeType: CanonicalCoverAsset['mime_type']): { width: number; height: number } {
+function inspectImage(bytes: Buffer, mimeType: CanonicalCoverAsset['mime_type']): { width: number; height: number; color_space: 'rgb' } {
     if (mimeType === 'image/png') {
-        if (bytes.length < 24 || !bytes.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]))) throw new Error('Canonical cover bytes are not PNG.');
-        return { width: bytes.readUInt32BE(16), height: bytes.readUInt32BE(20) };
+        if (bytes.length < 26 || !bytes.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]))) throw new Error('Canonical cover bytes are not PNG.');
+        const colorType = bytes[25];
+        if (colorType === 6 || colorType === 4) throw new Error('Canonical cover must not use transparent PNG artwork.');
+        if (colorType !== 2) throw new Error('Canonical PNG cover must use RGB truecolor encoding.');
+        return { width: bytes.readUInt32BE(16), height: bytes.readUInt32BE(20), color_space: 'rgb' };
     }
     if (bytes.length < 4 || bytes[0] !== 0xff || bytes[1] !== 0xd8) throw new Error('Canonical cover bytes are not JPEG.');
     for (let offset = 2; offset + 9 < bytes.length;) {
@@ -80,7 +83,8 @@ function imageDimensions(bytes: Buffer, mimeType: CanonicalCoverAsset['mime_type
         const marker = bytes[offset + 1] ?? 0;
         const length = bytes.readUInt16BE(offset + 2);
         if ([0xc0, 0xc1, 0xc2, 0xc3, 0xc5, 0xc6, 0xc7, 0xc9, 0xca, 0xcb, 0xcd, 0xce, 0xcf].includes(marker) && length >= 7) {
-            return { height: bytes.readUInt16BE(offset + 5), width: bytes.readUInt16BE(offset + 7) };
+            if (bytes[offset + 9] !== 3) throw new Error('Canonical JPEG cover must use RGB color encoding.');
+            return { height: bytes.readUInt16BE(offset + 5), width: bytes.readUInt16BE(offset + 7), color_space: 'rgb' };
         }
         offset += 2 + length;
     }
@@ -99,11 +103,11 @@ export async function stageCanonicalCoverArt(value: unknown): Promise<StagedCano
         const bytes = Buffer.from(await response.arrayBuffer());
         if (bytes.byteLength !== asset.size_bytes) throw new Error('Canonical cover size does not match stored metadata.');
         if (crypto.createHash('sha256').update(bytes).digest('hex') !== asset.content_hash) throw new Error('Canonical cover SHA-256 verification failed.');
-        const { width, height } = imageDimensions(bytes, asset.mime_type);
+        const { width, height, color_space } = inspectImage(bytes, asset.mime_type);
         if (width < 3000 || height < 3000 || width !== height) throw new Error(`Canonical cover must be square and at least 3000px (measured ${width}x${height}).`);
         await fs.writeFile(localPath, bytes, { mode: 0o600, flag: 'wx' });
         const { download_url: _downloadUrl, ...stagedAsset } = asset;
-        return { cleanup, coverAsset: { ...stagedAsset, local_path: localPath, width, height } };
+        return { cleanup, coverAsset: { ...stagedAsset, local_path: localPath, width, height, color_space } };
     } catch (error) {
         await cleanup();
         throw error;

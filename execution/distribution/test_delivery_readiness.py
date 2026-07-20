@@ -66,6 +66,7 @@ def attach_verified_cover(release: dict, storage_path: str) -> bytes:
         "size_bytes": len(cover_bytes),
         "width": 3000,
         "height": 3000,
+        "color_space": "rgb",
     }
     return cover_bytes
 
@@ -243,6 +244,16 @@ class TestDDEXDeliveryReadiness(unittest.TestCase):
         self.assertEqual(result["stage"], "master_staging")
         self.assertIn("canonical cover_asset", result["errors"][0])
         uploader.upload.assert_not_called()
+
+    def test_package_staging_rejects_cover_without_measured_rgb_receipt(self):
+        release = release_fixture()
+        with tempfile.TemporaryDirectory() as storage_path:
+            attach_verified_cover(release, storage_path)
+            release["cover_asset"]["color_space"] = "cmyk"
+            package_path = Path(storage_path, "package")
+            (package_path / "resources").mkdir(parents=True)
+            with self.assertRaisesRegex(ValueError, "RGB JPEG/PNG"):
+                ingestion_build._stage_cover_resource(release, str(package_path))
 
     def test_spotify_package_is_not_delivery_ready_without_xsd_proof(self):
         validation = {
