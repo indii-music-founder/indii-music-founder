@@ -50,6 +50,14 @@ describe('getMediaProvider', () => {
         expect(getMediaProvider()).toBe('vertex');
     });
 
+    it('uses the explicit production Vertex value even when a key is present', async () => {
+        process.env.NODE_ENV = 'production';
+        process.env.MEDIA_PROVIDER = 'vertex';
+        process.env.GEMINI_API_KEY = 'synthetic-test-key';
+        const getMediaProvider = await loadGetMediaProvider();
+        expect(getMediaProvider()).toBe('vertex');
+    });
+
     it('ignores unknown MEDIA_PROVIDER values and falls back to the env default', async () => {
         process.env.NODE_ENV = 'production';
         process.env.MEDIA_PROVIDER = 'banana';

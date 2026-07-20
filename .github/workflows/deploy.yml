@@ -587,6 +587,9 @@ jobs:
       - name: Deploy Cloud Functions
         env:
           INFLUENCER_BOUNTY_BASE_URL: https://app.indii.music
+          # Production media generation uses postpaid Vertex AI via ADC. The
+          # API-key provider remains an explicit emergency-only override.
+          MEDIA_PROVIDER: vertex
         run: |
           # Firebase Tools copies stale CPU metadata from existing gen1 endpoints
           # during deploy validation. These two functions were created with bad
@@ -595,7 +598,7 @@ jobs:
           npx --no-install firebase functions:delete createTransfer --region us-central1 --project indii-music-founder --force --non-interactive || true
           npx --no-install firebase functions:delete calculateFuelLogistics --region us-central1 --project indii-music-founder --force --non-interactive || true
           npx --no-install firebase functions:delete agentLoopCron --region us-central1 --project indii-music-founder --force --non-interactive || true
-          printf 'INFLUENCER_BOUNTY_BASE_URL=%s\n' "$INFLUENCER_BOUNTY_BASE_URL" > packages/firebase/.env.indii-music-founder
+          printf 'INFLUENCER_BOUNTY_BASE_URL=%s\nMEDIA_PROVIDER=%s\n' "$INFLUENCER_BOUNTY_BASE_URL" "$MEDIA_PROVIDER" > packages/firebase/.env.indii-music-founder
           rm -rf packages/firebase/lib
           npm run build -w packages/firebase
           if [ ! -f packages/firebase/lib/index.js ]; then
