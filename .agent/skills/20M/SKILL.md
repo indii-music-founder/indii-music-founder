@@ -158,6 +158,16 @@ Follow [references/report-contract.md](references/report-contract.md), attach as
 
 ```bash
 python3 scripts/validate_report.py --report REPORT.md --model OUTPUT_DIR/model.json
+python3 scripts/validate_report.py --report REPORT.md --model OUTPUT_DIR/model.json \
+  --room \
+  --ip-register docs/data-room/13_IP_ASSET_REGISTER.md \
+  --live-answer-card OUTPUT_DIR/live_answer_card.md \
+  --investor-qa OUTPUT_DIR/investor_qa.md
 ```
+
+The investor-room command validates the memo, live-answer card, Q&A index, and
+authoritative IP register's minimum diligence structure. It does not certify
+legal title or value; use it to catch a missing answer or evidence source before
+the meeting.
 
 If commercial facts conflict or essential evidence is unavailable, issue a provisional range and exact verification plan—not a definitive valuation.
