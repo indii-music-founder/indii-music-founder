@@ -1,0 +1,14 @@
+{
+  "company": "indii",
+  "as_of": "set-at-run-time",
+  "currency": "USD",
+  "subscriber_milestones": [10, 25, 50, 100, 250, 500, 1000, 2500, 5000, 10000, 20000],
+  "monthly_prices": [10, 19, 29, 49, 79, 99],
+  "founder_scenarios": [
+    {"label": "10 founders at $2,500", "units": [{"count": 10, "price": 2500}]},
+    {"label": "10 founders at $5,000", "units": [{"count": 10, "price": 5000}]},
+    {"label": "5 founders at $2,500 and 5 at $5,000", "units": [{"count": 5, "price": 2500}, {"count": 5, "price": 5000}]}
+  ],
+  "target_enterprise_values": [20000000],
+  "acquisition_multiples": [4, 5, 6, 8]
+}
