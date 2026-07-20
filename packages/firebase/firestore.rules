@@ -1628,10 +1628,9 @@ service cloud.firestore {
       allow read: if isAuthenticated() && resource.data.get('initiatorUid', null) == request.auth.uid;
       allow create, update, delete: if false;
     }
-    match /mcpJobs/{jobId} {
-      allow read: if isAuthenticated() && resource.data.get('initiatorUid', null) == request.auth.uid;
-      allow create, update, delete: if false;
-    }
+    // Note: mcpJobs collection removed (2026-07-20) — audit_sample_clearance is fail-closed,
+    // no tool writes to this collection. Durable intent queues (payoutJobs, mcpRenderJobs,
+    // campaigns) await processors per ISSUE-1100.
 
     // =========================================================================
     // Deny all other access by default
