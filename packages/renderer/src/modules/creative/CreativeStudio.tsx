@@ -523,6 +523,12 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
                                     timestamp: Date.now(),
                                     projectId: currentProjectId,
                                     origin: 'generated',
+                                    ...(isCoverArt ? {
+                                        generationProvenance: {
+                                            provider: 'google',
+                                            model: studioControls.model,
+                                        },
+                                    } : {}),
                                     ...(compliance && { distributorCompliance: compliance })
                                 });
                             });
