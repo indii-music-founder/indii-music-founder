@@ -233,7 +233,8 @@ import { geminiApiKey, inngestEventKey, inngestSigningKey, getGeminiApiKey } fro
 // Lazy Initialize Inngest Client — factory lives in lib/inngestClient.ts so
 // non-index.ts callers (MCP tools, Inngest step functions) can use it without
 // importing this entire file and its admin.initializeApp() side effect.
-export { getInngestClient } from "./lib/inngestClient";
+import { getInngestClient } from "./lib/inngestClient";
+export { getInngestClient };
 
 /**
  * Security Helper: Enforce Admin Access
