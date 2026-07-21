@@ -187,18 +187,19 @@ pass, or a successful SFTP connection alone is *not* delivery acceptance.
 - [ ] **DDEX DPID (already covered in "Direct DDEX Delivery Activation" above):** Confirm the company sender Party ID during DDEX licence acceptance. Cross-reference section above for licence details.
 - [ ] **Meta Rights Manager Account:** Complete the [Meta Rights Manager application](https://about.fb.com/news/2023/01/helping-creators-and-publishers-manage-intellectual-property/) from a company-owned Facebook Page. This allows indii to administer copyright claims on behalf of artists' releases on Instagram/Facebook. Record the account ID and Page link.
 
-**Company-level business decisions (requires founder choice; not blocker for engineering):**
+**Business model decision — RESOLVED (2026-07-21, founder decision):** indii does NOT register or administer on behalf of artists for MLC or SoundExchange. **Artists keep their own data and their own registered accounts** — indii does not want to hold or manage another party's royalty-administration relationship. indii's role is to help artists **track and surface** what they're owed (dashboard/visibility into MLC/SoundExchange/PRO royalty data), not to be the registered rights-holder or administrator of record. This applies as a general principle across MLC, SoundExchange, and PRO/IPI — each artist owns their own registrations; indii is a tracking layer on top, not an intermediary of record.
 
-- [ ] **MLC Membership Model:** Decide if indii acts as the **administrator** (one company membership) for mechanicals indii self-administers, or if each artist joins individually. Both models are valid in the industry. If choosing administrator model, [join The MLC](https://www.themlc.com/membership) (free); record the account ID. If per-artist model, document this in the in-app onboarding.
-- [ ] **SoundExchange Representation Model:** Decide if indii registers as the **rights administrator** or if artists register individually for performer and sound-recording-owner roles. [SoundExchange registration is free](https://www.soundexchange.com/register/); document the chosen model and account ID if company-level.
+- [x] ~~MLC Membership Model~~ — **Decided:** per-artist self-administration. Each artist joins The MLC individually if they self-administer. No company-level MLC account.
+- [x] ~~SoundExchange Representation Model~~ — **Decided:** per-artist self-administration. Each artist registers individually for performer/sound-recording-owner roles. No company-level SoundExchange account.
 
 **Per-artist identity (belongs in the in-app Registration Center, NOT on this checklist):**
 
-These are tracked per-track/per-artist in the app, not here:
-- Artist joins a PRO (ASCAP/BMI/SESAC) as a songwriter and receives an IPI number — this is the writer's own relationship, not indii's.
+These are tracked per-track/per-artist in the app, not here — indii's job is to surface/aggregate visibility into these, not hold the registration itself:
+- Artist joins a PRO (ASCAP/BMI/SESAC) as a songwriter and receives an IPI number — this is the writer's own relationship, not indii's. **Product note (2026-07-21):** the app's agent/orchestration layer (including forthcoming computer-use-capable agents) may eventually be able to walk an artist through this registration interactively — not build-now, but a real future direction worth remembering.
 - Artist registers works through that PRO (never self-issued ISWCs).
 - Artist files Copyright Office registrations for their own compositions and sound recordings.
 - Artist applies for YouTube Content ID (requires exclusive rights, artist's own decision).
+- Artist owns their own MLC and SoundExchange accounts (see resolved decision above) — indii tracks/aggregates royalty visibility, never registers on their behalf.
 
 **Evidence to retain:**
 
@@ -206,9 +207,9 @@ These are tracked per-track/per-artist in the app, not here:
 - [ ] GS1 Company Prefix assignment and renewal dates.
 - [ ] DDEX DPID confirmation (cross-ref Direct DDEX section).
 - [ ] Meta Rights Manager account ID, Page link, and approval date.
-- [ ] Documentation of MLC/SoundExchange model chosen (business record, not evidence docs).
+- [x] MLC/SoundExchange model — resolved above (per-artist self-administration; indii tracks, never registers on their behalf).
 
-**Definition of done:** indii can mint valid ISRCs, GTINs, and DDEX identifiers for releases; Meta Rights Manager is ready for claim administration; the chosen MLC/SoundExchange model is documented and in-app onboarding reflects it. The per-artist side (PRO/ISWC/Copyright) is surfaced as guidance/links in the Registration Center.
+**Definition of done:** indii can mint valid ISRCs, GTINs, and DDEX identifiers for releases; Meta Rights Manager is ready for claim administration; per-artist MLC/SoundExchange/PRO onboarding in the Registration Center reflects the tracking-not-administering model. The per-artist side (PRO/ISWC/Copyright) is surfaced as guidance/links in the Registration Center.
 
 ### Intellectual Property & Value Evidence (added 2026-07-20)
 
