@@ -161,7 +161,7 @@ export function resolveRemoteCommandExecutionTarget(
 
 export interface AgentDispatchTask {
     id?: string;
-    type: 'voice_memo' | 'quick_contact' | 'receipt_log' | 'agent_command' | 'live_moment' | 'media_capture' | 'document_scan' | 'venue_log';
+    type: 'voice_memo' | 'quick_contact' | 'receipt_log' | 'agent_command' | 'live_moment' | 'media_capture' | 'document_scan' | 'venue_log' | 'computer_task';
     payload: {
         audioUrl?: string;
         videoUrl?: string;
@@ -174,6 +174,15 @@ export interface AgentDispatchTask {
         lng?: number;
         accuracyMeters?: number;
         capturedAt?: string;
+        /**
+         * CE-4, ISSUE-1113: goal-driven computer control dispatched from a remote origin
+         * (phone/cloud). Only meaningful for type: 'computer_task'. `constraints` is a plain
+         * human-readable string (not structured JSON) so it composes naturally into the
+         * agent instruction the desktop executor sends through the normal handshake path —
+         * see docs/COMPUTER_EXECUTION_EXTENSION.md §3.5.
+         */
+        goal?: string;
+        constraints?: string;
     };
     status: 'pending' | 'processing' | 'completed' | 'failed';
     executorId?: string;

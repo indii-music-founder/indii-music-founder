@@ -117,6 +117,34 @@ export function isLocalP2PCommand(commandId: string): boolean {
     return commandId.startsWith('p2p-');
 }
 
+/**
+ * Pure preflight for the `computer_task` dispatch branch (CE-4, ISSUE-1113). Extracted so
+ * the two guard conditions — desktop capability present, goal non-empty — are unit-testable
+ * without mounting the full hook. Returns an error string, or null when the task may proceed
+ * to the lease check.
+ */
+export function validateComputerTaskDispatch(
+    task: Pick<AgentDispatchTask, 'payload'>,
+    hasComputerApi: boolean
+): string | null {
+    if (!hasComputerApi) {
+        return 'Computer control requires the indii desktop app — this Studio session cannot execute computer_task.';
+    }
+    if (!task.payload.goal || !task.payload.goal.trim()) {
+        return 'computer_task is missing a goal';
+    }
+    return null;
+}
+
+/** Builds the natural-language instruction routed through agentService for a computer_task. */
+export function buildComputerTaskInstruction(task: Pick<AgentDispatchTask, 'payload'>): string {
+    let text = `Use the computer_drive tool to achieve this goal on the desktop: ${task.payload.goal}`;
+    if (task.payload.constraints) {
+        text += `\n\nConstraints: ${task.payload.constraints}`;
+    }
+    return text;
+}
+
 /** Write relay diagnostics to Firestore (console is stripped in prod by terser) */
 async function writeDiagnostic(stage: string, details?: Record<string, unknown>) {
     const uid = getRealAuthenticatedUserId(auth.currentUser);
@@ -951,6 +979,38 @@ Format the findings and then CALL the \`save_scout_leads_to_map\` tool to plot t
                         }
 
                         logger.info(`[RemoteRelay/Firestore] Dispatching to Agent Service: "${text}"`);
+                        await agentService.sendMessage(text, undefined, 'generalist', {
+                            source: 'mobile-remote'
+                        });
+                        await remoteRelayService.updateDispatchTaskStatus(task.id, 'completed');
+                        break;
+                    }
+                    case 'computer_task': {
+                        // CE-4, ISSUE-1113: goal-driven computer control from a remote origin.
+                        // Two guards specific to this task type, on top of the atomic claim above:
+                        //   1. Desktop must be the Electron Studio app — no computer control on web.
+                        //   2. Desktop must hold a currently-valid Studio executor lease.
+                        // Neither auto-approves the action itself — the goal is routed through
+                        // agentService.sendMessage() exactly like every other dispatch type, so
+                        // computer_drive's own DigitalHandshake gate (requiresApproval: true,
+                        // ToolRiskRegistry.ts) still pauses for the desktop user's approval.
+                        // A phone-originated task is therefore never auto-approved (docs §5.7).
+                        const hasComputerApi = typeof window !== 'undefined' && !!window.electronAPI?.computer;
+                        const guardError = validateComputerTaskDispatch(task, hasComputerApi);
+                        if (guardError) {
+                            throw new Error(guardError);
+                        }
+
+                        const { studioExecutorLeaseService } = await import('@/services/agent/StudioExecutorLeaseService');
+                        try {
+                            await studioExecutorLeaseService.getLease();
+                        } catch (leaseErr: unknown) {
+                            throw new Error(`No valid Studio executor lease — computer_task refused: ${leaseErr instanceof Error ? leaseErr.message : String(leaseErr)}`);
+                        }
+
+                        const text = buildComputerTaskInstruction(task);
+
+                        logger.info(`[RemoteRelay/Firestore] 🖱️ Dispatching computer_task to Agent Service: "${task.payload.goal}"`);
                         await agentService.sendMessage(text, undefined, 'generalist', {
                             source: 'mobile-remote'
                         });
