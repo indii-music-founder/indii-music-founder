@@ -20,7 +20,7 @@
 
 ### ISSUE-1092: A2A Swarm MCP integration — remote tool suite wired end-to-end but not yet functional or live-verified
 
-- **Status:** 🟡 PARTIAL (2026-07-18 — architecture landed; auth + honesty defects fixed in follow-ups; uid plumbing completed; NOT live-verified against a deployed endpoint). **Path to FIXED: ISSUE-1100 plan (P0 workers + P8 live deploy). Founder wants this FIXED, not PARTIAL (directive 2026-07-20).**
+- **Status:** 🟡 PARTIAL (2026-07-20 — P0 job-queue worker reality landed: no orphan queues, all durable intents have real consumers or explicit no-auto-processing labels. Acceptance #1 and #2 below are now satisfied. ONLY remaining blocker is acceptance #3 (P8 live deploy verification) — founder cloud action, cannot be completed by the agent alone.)
 - **Severity:** 🔴 HIGH (flagship agent capability; money/legal tools in scope)
 - **Module:** `packages/firebase/src/mcp/**` (server), `packages/renderer/src/services/agent/harness/McpClientService.ts` + `tools/McpTools.ts` (client), 6 agent definitions, `e2e/mcp-a2a-routing.spec.ts`
 - **Scope (commit 8cfeedbb5 and follow-ups):** Direct SSE connections from the app to the `mcpEndpoint` Cloud Function validated via Firebase Auth JWTs (decentralized "Option B" — no proxy-callable middleman). 11 remote tools registered server-side and bridged into the agent harness: Distribution (`draft_dsp_metadata_xml`), Finance (`calculate_recoupment`, `stage_stripe_payouts`), Brand (`fetch_brand_kit`), Publicist (`schedule_campaign_waterfall`, `generate_playlist_pitch`), Creative (`queue_remotion_render`, `audit_asset_resolutions`), Legal (`register_split_sheet`, `draft_cwr_registration`, `audit_sample_clearance`).
@@ -52,7 +52,7 @@
 
 ### ISSUE-1093: MCP Tool Suite Expansion (Real Business Logic Integration)
 
-- **Status:** 🟡 PARTIAL (2026-07-20 — DONE: fetchBrandKit, calculateRecoupment, auditAssetResolutions, generatePlaylistPitch are real. REMAINING: register_split_sheet PDF, draft_cwr full file, draft_dsp fuller DDEX, stage_stripe_payouts Connect staging, schedule_campaign_waterfall Inngest exec, queue_remotion_render ffmpeg canvas, audit_sample_clearance vendor. **Path to FIXED: ISSUE-1100 plan P1–P7. Founder wants this FIXED, not PARTIAL (directive 2026-07-20).**)
+- **Status:** 🟡 PARTIAL (2026-07-20 — P1-P6 + P7a ALL LANDED: register_split_sheet (PDF), draft_cwr_registration (full CWR v2.1), draft_dsp_metadata_xml (fuller DDEX), stage_stripe_payouts (Connect staging), schedule_campaign_waterfall (Inngest), queue_remotion_render (ffmpeg canvas), audit_sample_clearance (P7a metadata check) are all real. ONLY remaining blocker is P7b (fingerprint vendor integration) — requires founder to choose a vendor (ACRCloud/Pex) and supply an API key; cannot be completed by the agent alone.)
 - **Severity:** 🔴 HIGH
 - **Module:** `packages/firebase/src/mcp/tools/**`, `packages/firebase/src/functions/triggers/**`
 - **Scope:** The 11 MCP tools currently execute stub logic that merely returns hardcoded strings or writes a row to a job queue. The true business logic and third-party API integrations need to be wired up for the tools to perform actual work.
@@ -137,26 +137,28 @@
 
 ### ISSUE-1100: MCP backend completion plan — real backends for all 11 tools + job-queue workers + live verification
 
-- **Status:** 🔴 OPEN (PLAN OF RECORD — this entry is the sequenced build plan; each sub-item flips its owning tool/issue toward FIXED as it lands)
+- **Status:** 🟡 PARTIAL (2026-07-20 — P0–P7a ALL LANDED, commits ed8890269 / a770ac1f0 / 2ad295172 / 966393107 / 27a901787 / 4c4bf088f / acb3cf981 / 68fb3a399. Every buildable-without-credentials slice is done. Only P7b (vendor fingerprinting, credential-gated) and P8 (live deploy verification, founder cloud action) remain — both were always founder-gated, not buildable by the agent alone.)
 - **Severity:** 🔴 HIGH (this is the work that lets ISSUE-1092 and ISSUE-1093 be marked FIXED rather than PARTIAL, per founder directive 2026-07-20)
-- **Module:** `packages/firebase/src/mcp/tools/**`, `packages/firebase/src/mcp/**`, `packages/firebase/src/stripe/**`, `packages/firebase/src/functions/orchestration/inngest.ts`, `packages/firebase/firestore.rules`, new Inngest/worker functions
+- **Module:** `packages/firebase/src/mcp/tools/**`, `packages/firebase/src/mcp/**`, `packages/firebase/src/stripe/**`, `packages/firebase/src/lib/inngestClient.ts`, `packages/firebase/src/lib/notify.ts`, `packages/firebase/src/lib/campaign_waterfall.ts`, `packages/firebase/src/lib/canvas_render.ts`, `packages/firebase/firestore.rules`
 - **Governing goal:** Every MCP tool either performs real, verifiable work or fails closed with an honest message. No fabricated success (MCLEAR rule). Money movement is staged for human approval, never auto-executed. Visuals only — never music generation ([[no-music-generation-ever]]).
 
-#### Current truth table (as of commit 8ce3d1611, after ISSUE-1095..1099)
+#### Truth table (as of commit 68fb3a399, after P0–P7a)
 
-| Tool | Domain | State | Remaining to "done" |
+| Tool | Domain | State | Notes |
 |---|---|---|---|
 | `fetch_brand_kit` | Brand | ✅ real | — |
 | `calculate_recoupment` | Finance | ✅ real | — |
 | `audit_asset_resolutions` | Creative | ✅ real | — |
 | `generate_playlist_pitch` | Publicist | ✅ real (Vertex, grounded) | optional: SendGrid/Resend send behind approval |
-| `register_split_sheet` | Legal | 🟡 Firestore + hashed text artifact | real PDF contract (P1) |
-| `draft_cwr_registration` | Legal | 🟡 structural DRAFT text | complete fixed-width CWR v2.1 + GCS store (P2) |
-| `draft_dsp_metadata_xml` | Distribution | 🟡 ERN fragment draft | fuller DDEX ERN 4.x: recipient/asset/deal blocks, profile note (P4) |
-| `stage_stripe_payouts` | Finance | 🟡 ledger math → payoutJobs | resolve Connect accounts, stage real transfer batch (P3) |
-| `schedule_campaign_waterfall` | Publicist | 🟡 Firestore timeline, engine:'none' | Inngest dispatch + consuming function (P5) |
-| `queue_remotion_render` | Creative | 🟡 durable intent, no consumer | ffmpeg canvas renderer via Inngest (P6) |
-| `audit_sample_clearance` | Legal | 🔴 fail-closed | vendor integration (P7, credential-gated) |
+| `register_split_sheet` | Legal | ✅ real (P1) | pdf-lib PDF + hashed text, uid-scoped GCS |
+| `draft_cwr_registration` | Legal | ✅ real (P2) | full CWR v2.1 (HDR/GRH/NWR/SWR/SPT/GRT/TRL), GCS store |
+| `draft_dsp_metadata_xml` | Distribution | ✅ real (P4) | ERN with ResourceList/ReleaseList/DealList |
+| `stage_stripe_payouts` | Finance | ✅ real (P3) | real Connect account verification, payoutBatches; no transfer call |
+| `schedule_campaign_waterfall` | Publicist | ✅ real (P5) | Inngest step.sleepUntil dispatch, emailOptIn-gated outreach |
+| `queue_remotion_render` | Creative | ✅ real (P6) | ffmpeg canvas MP4 via Inngest, artist's own audio only |
+| `audit_sample_clearance` | Legal | 🟡 P7a real / P7b gated | metadata-declaration verdict; fingerprint vendor still founder-gated |
+
+**Job-queue worker reality (P0):** orphan `mcpJobs` collection removed; `payoutJobs`/`mcpRenderJobs`/`campaigns`/`payoutBatches` all have real consumers or explicit no-auto-processing labels; Firestore rules deny all client writes.
 
 #### Decision record (founder 2026-07-20 — "do all of those, put them all on the plan")
 
