@@ -5,7 +5,11 @@ import { z } from "zod";
 import { geminiApiKey } from "../config/secrets";
 import crypto from "crypto";
 
-const influencerBountyBaseUrl = defineString("INFLUENCER_BOUNTY_BASE_URL");
+// Default empty — runtime code below already fails closed with a clean
+// HttpsError when this resolves empty (see the bounty-link handler); the
+// default only stops this unrelated param from blocking deploy of every
+// other function in the codebase.
+const influencerBountyBaseUrl = defineString("INFLUENCER_BOUNTY_BASE_URL", { default: "" });
 
 export const CampaignStatusSchema = z.enum(['PENDING', 'EXECUTING', 'DONE', 'FAILED']);
 
