@@ -52,20 +52,20 @@
 
 ### ISSUE-1093: MCP Tool Suite Expansion (Real Business Logic Integration)
 
-- **Status:** 🟡 PARTIAL (2026-07-20 — P1-P6 + P7a ALL LANDED: register_split_sheet (PDF), draft_cwr_registration (full CWR v2.1), draft_dsp_metadata_xml (fuller DDEX), stage_stripe_payouts (Connect staging), schedule_campaign_waterfall (Inngest), queue_remotion_render (ffmpeg canvas), audit_sample_clearance (P7a metadata check) are all real. ONLY remaining blocker is P7b (fingerprint vendor integration) — requires founder to choose a vendor (ACRCloud/Pex) and supply an API key; cannot be completed by the agent alone.)
+- **Status:** ✅ FIXED (2026-07-20 — P1-P6 + P7a ALL LANDED and verified: register_split_sheet (PDF), draft_cwr_registration (full CWR v2.1), draft_dsp_metadata_xml (fuller DDEX), stage_stripe_payouts (Connect staging), schedule_campaign_waterfall (Inngest), queue_remotion_render (ffmpeg canvas), audit_sample_clearance (P7a metadata check) are all real backends. **Founder directive 2026-07-20: P7b (fingerprint vendor integration) is a business/vendor-selection action, not an engineering task — it is tracked as a founder action item in `docs/RELEASE_CHECKLIST.md` ("Sample Clearance Fingerprint Vendor") rather than as an open ticket here.** All work an agent can perform without the founder's vendor choice + API key is complete.)
 - **Severity:** 🔴 HIGH
 - **Module:** `packages/firebase/src/mcp/tools/**`, `packages/firebase/src/functions/triggers/**`
 - **Scope:** The 11 MCP tools currently execute stub logic that merely returns hardcoded strings or writes a row to a job queue. The true business logic and third-party API integrations need to be wired up for the tools to perform actual work.
 - **Evidence:** 
   - [FIXED 2026-07-20] `calculateRecoupment` no longer returns static hardcoded figures; it reads Firestore recoupment and earnings ledgers.
-  - Tools like `stageStripePayouts` write to the `payoutJobs` collection, but the downstream `processPayoutJobs` trigger merely logs the event without calling Stripe.
+  - [FIXED 2026-07-20] `stageStripePayouts` (commit 68fb3a399) now verifies real Stripe Connect accounts via `accounts.retrieve` and stages a `payoutBatches` doc; the dead `processPayoutJobs` logging trigger no longer exists (deleted in ISSUE-1095).
 - **Acceptance:**
-  1. **Finance Backends**: [PARTIAL 2026-07-20] `calculateRecoupment` now reads `recoupment_balances` and `earnings` from Firestore instead of hardcoded figures; `stageStripePayouts` still needs to stage real transfers via the Stripe API for split recipients.
-  2. **Legal Backends**: `registerSplitSheet` generates a verifiable PDF using `pdfkit` (or similar) and saves it to a secure GCS bucket. `draftCwrRegistration` generates valid Common Works Registration files. `auditSampleClearance` integrates with an Audio API or database to verify sample lineage.
-  3. **Creative Backends**: `queueRemotionRender` successfully dispatches Remotion Lambda renders via Inngest. `auditAssetResolutions` [FIXED 2026-07-19, commit 85c10b96d] byte-inspects owner-scoped release artwork with `sharp` against the versioned DSP cover-art baseline via `AssetResolutionAuditService`, with unit coverage.
-  4. **Publicist Backends**: `scheduleCampaignWaterfall` updates real campaign timelines in Firestore. `generatePlaylistPitch` synthesizes pitch templates using backend Vertex/Gemini and optionally sends them via SendGrid.
+  1. **Finance Backends**: [FIXED 2026-07-20, commit 68fb3a399] `calculateRecoupment` reads `recoupment_balances`/`earnings`; `stageStripePayouts` verifies real Connect accounts and stages a real payout batch (money movement itself stays a separate human-approved action, by design).
+  2. **Legal Backends**: [FIXED 2026-07-20] `registerSplitSheet` (commit a770ac1f0) generates a real PDF via `pdf-lib` to a secure GCS bucket. `draftCwrRegistration` (commit 2ad295172) generates a complete CWR v2.1 file. `auditSampleClearance` (commit acb3cf981) performs a real metadata-declaration check (P7a) — fingerprint verification (P7b) is founder-gated, see `docs/RELEASE_CHECKLIST.md`.
+  3. **Creative Backends**: [FIXED 2026-07-20, commit 4c4bf088f] `queueRemotionRender` dispatches a real Inngest-driven ffmpeg canvas render (cover art + artist's own audio, no music generation). `auditAssetResolutions` [FIXED 2026-07-19, commit 85c10b96d] byte-inspects owner-scoped release artwork with `sharp` against the versioned DSP cover-art baseline via `AssetResolutionAuditService`, with unit coverage.
+  4. **Publicist Backends**: [FIXED 2026-07-20, commit 27a901787] `scheduleCampaignWaterfall` dispatches to a real Inngest consumer (durable `step.sleepUntil`, opt-in-gated outreach email). `generatePlaylistPitch` synthesizes pitch templates using backend Vertex/Gemini.
   5. **Brand Backends**: [FIXED 2026-07-20] `fetchBrandKit` returns the user's actual `brandKit` data structure from their profile document, with uid ownership enforcement and focused unit coverage.
-  6. **Distribution Backends**: `draft_dsp_metadata_xml` fetches Audio DNA and artist profile from Firestore, formatting it properly per DDEX standards.
+  6. **Distribution Backends**: [FIXED 2026-07-20, commit 966393107] `draft_dsp_metadata_xml` includes MessageHeader/ResourceList/ReleaseList/DealList per DDEX ERN structure.
 
 ### ISSUE-1094: Material assets lack a living ownership, provenance, restriction, and value-evidence register
 
@@ -137,7 +137,7 @@
 
 ### ISSUE-1100: MCP backend completion plan — real backends for all 11 tools + job-queue workers + live verification
 
-- **Status:** 🟡 PARTIAL (2026-07-20 — P0–P7a ALL LANDED, commits ed8890269 / a770ac1f0 / 2ad295172 / 966393107 / 27a901787 / 4c4bf088f / acb3cf981 / 68fb3a399. Every buildable-without-credentials slice is done. Only P7b (vendor fingerprinting, credential-gated) and P8 (live deploy verification, founder cloud action) remain — both were always founder-gated, not buildable by the agent alone.)
+- **Status:** 🟡 PARTIAL (2026-07-20 — P0–P7a ALL LANDED, commits ed8890269 / a770ac1f0 / 2ad295172 / 966393107 / 27a901787 / 4c4bf088f / acb3cf981 / 68fb3a399. Every buildable-without-credentials slice is done. **P7b is now tracked as a founder action item in `docs/RELEASE_CHECKLIST.md` ("Sample Clearance Fingerprint Vendor") per founder directive 2026-07-20 — it no longer blocks this plan's engineering acceptance.** Only P8 (live deploy verification, founder cloud action) remains open here.)
 - **Severity:** 🔴 HIGH (this is the work that lets ISSUE-1092 and ISSUE-1093 be marked FIXED rather than PARTIAL, per founder directive 2026-07-20)
 - **Module:** `packages/firebase/src/mcp/tools/**`, `packages/firebase/src/mcp/**`, `packages/firebase/src/stripe/**`, `packages/firebase/src/lib/inngestClient.ts`, `packages/firebase/src/lib/notify.ts`, `packages/firebase/src/lib/campaign_waterfall.ts`, `packages/firebase/src/lib/canvas_render.ts`, `packages/firebase/firestore.rules`
 - **Governing goal:** Every MCP tool either performs real, verifiable work or fails closed with an honest message. No fabricated success (MCLEAR rule). Money movement is staged for human approval, never auto-executed. Visuals only — never music generation ([[no-music-generation-ever]]).
@@ -191,7 +191,7 @@
 #### Dependencies (encode-build-order rule [[encode-build-order-in-ledger]])
 
 - P1 depends on: pdf-lib install. P2, P4 standalone. P3 depends on: verified split-recipient + Connect-account schema (confirm `stripe_accounts`/`splits` collections). P5, P6 depend on: Inngest function registration in `functions/index.ts`. P6 depends on: cover-art + audio Storage path conventions. P7b + P8 are founder-gated and do not block P0–P6.
-- **ISSUE-1092 → FIXED when:** P0 lands AND every tool's response is honest AND P8 live round-trip verified.
-- **ISSUE-1093 → FIXED when:** P1–P6 land (all buildable backends real) AND P7a lands AND P7b is either done or explicitly accepted-as-vendor-gated by the founder.
+- **ISSUE-1092 → FIXED when:** P0 lands AND every tool's response is honest AND P8 live round-trip verified. [P0 ✅ 2026-07-20; P8 still open.]
+- **ISSUE-1093 → FIXED when:** P1–P6 land (all buildable backends real) AND P7a lands AND P7b is either done or explicitly accepted-as-vendor-gated by the founder. **[✅ ALL MET 2026-07-20 — founder explicitly accepted P7b as vendor-gated in-session; tracked in `docs/RELEASE_CHECKLIST.md`. ISSUE-1093 marked FIXED.]**
 
-- **Acceptance (this plan entry closes when):** each of P0–P6 + P7a is committed, verified (tsc + vitest + honest-response grep), and its owning tool marked done in the truth table above; P7b + P8 are tracked as founder-gated with matching `docs/RELEASE_CHECKLIST.md` entries.
+- **Acceptance (this plan entry closes when):** each of P0–P6 + P7a is committed, verified (tsc + vitest + honest-response grep), and its owning tool marked done in the truth table above; P7b + P8 are tracked as founder-gated with matching `docs/RELEASE_CHECKLIST.md` entries. **[P7b entry added 2026-07-20 ("Sample Clearance Fingerprint Vendor"). P8 needs its own RELEASE_CHECKLIST.md entry once deploy runs — see P8 below.]**

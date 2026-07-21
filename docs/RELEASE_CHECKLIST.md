@@ -275,6 +275,27 @@ These are GCP Console settings changes an agent cannot make. The code-side fixes
 - [x] Add `VITE_GOOGLE_MAPS_API_KEY` as a GitHub Actions repo secret so the hosted web build gets the key (deploy.yml injection is a code-side fix, but the secret value must be created by you).
 - [x] Vertex AI: re-verify the 20 fine-tuned agent endpoints against the live tuningJobs API (registry last synced 2026-06-21; Anti-Pattern #9 protocol). Requires `gcloud auth login` on the machine running the check.
 
+### Sample Clearance Fingerprint Vendor (ISSUE-1100 P7b, added 2026-07-20)
+
+The `audit_sample_clearance` MCP tool performs a real metadata-declaration check
+(P7b's predecessor, P7a, shipped 2026-07-20): it reads whether a track's own
+Firestore doc declares samples/interpolations and returns
+DECLARED-BUT-UNVERIFIED or NONE-DECLARED. It has never listened to audio and
+cannot detect an *undeclared* sample. Closing that gap requires a paid
+third-party audio-fingerprinting vendor — a business decision and account
+signup, not a coding task.
+
+- [ ] Choose a vendor: **ACRCloud** or **Pex** (or another audio-fingerprinting
+  API with music-industry sample/cover detection). Compare pricing, coverage,
+  and API response format before committing.
+- [ ] Create the vendor account and generate an API key/access token.
+- [ ] Store the key in GCP Secret Manager via `firebase functions:secrets:set
+  <VENDOR>_API_KEY` — never in `.env`, source control, or chat.
+- [ ] Tell the coding agent the vendor and secret name so it can wire the
+  fingerprint call into `audit_sample_clearance` and add a real match/no-match
+  result alongside the existing metadata check. Never let the tool claim a
+  fingerprint verdict it did not actually run.
+
 ### Cloud Deployment & Production-Evidence Access
 
 Live verification of private Cloud Run services, Cloud Tasks, Firebase Functions,
