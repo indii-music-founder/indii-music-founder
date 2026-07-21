@@ -1624,6 +1624,10 @@ service cloud.firestore {
       allow read: if isAuthenticated() && resource.data.get('initiatorUid', null) == request.auth.uid;
       allow create, update, delete: if false;
     }
+    match /payoutBatches/{batchId} {
+      allow read: if isAuthenticated() && resource.data.get('initiatorUid', null) == request.auth.uid;
+      allow create, update, delete: if false;
+    }
     match /mcpRenderJobs/{jobId} {
       allow read: if isAuthenticated() && resource.data.get('initiatorUid', null) == request.auth.uid;
       allow create, update, delete: if false;

@@ -2,13 +2,86 @@ import * as admin from 'firebase-admin';
 
 import { failedOperationResult, operationResult, requireString, toolResponse } from '../helpers.js';
 import { IndiiMcpTool } from '../types.js';
+import { stripe } from '../../stripe/config.js';
 
 const TOOL_NAME = 'stage_stripe_payouts';
 const RESOURCE_TYPE = 'payout_job';
 const MAX_EARNINGS_DOC_IDS = 100;
 const PAYOUT_PERIOD_PATTERN = /^\d{4}-(0[1-9]|1[0-2])$/;
 const NO_MONEY_MOVED_WARNING =
-    'Figures were staged from internal Firestore ledgers only. NO Stripe transfer, payout, or money movement was created or scheduled. Explicit approval and a real Stripe Connect integration are still required before any funds move.';
+    'Figures were staged and Stripe Connect accounts were verified as payout-capable. NO Stripe transfer, payout, or money movement was created or scheduled — a separate, explicitly human-approved action is required before any funds move.';
+
+interface PayoutRecipient {
+    uid: string;
+    percentage: number;
+    stripeAccountId?: string;
+}
+
+interface ResolvedRecipient extends PayoutRecipient {
+    amountMicros: number;
+    accountStatus: 'verified' | 'blocked' | 'missing';
+    blockReason?: string;
+}
+
+/**
+ * Reads split recipients for an artist from users/{artistId}/splits. If no
+ * split documents exist, the artist is the sole 100% recipient (their own
+ * users/{artistId}.stripeAccountId is used as the payout target).
+ */
+async function readSplitRecipients(
+    firestore: FirebaseFirestore.Firestore,
+    artistId: string,
+): Promise<PayoutRecipient[]> {
+    const splitsSnap = await firestore.collection('users').doc(artistId).collection('splits').get();
+    if (splitsSnap.empty) {
+        const userSnap = await firestore.collection('users').doc(artistId).get();
+        const userData = userSnap.exists ? userSnap.data() || {} : {};
+        const stripeAccountId = typeof userData.stripeAccountId === 'string' && userData.stripeAccountId.trim()
+            ? userData.stripeAccountId.trim()
+            : undefined;
+        return [{ uid: artistId, percentage: 100, stripeAccountId }];
+    }
+    return splitsSnap.docs.map((doc) => {
+        const data = doc.data() || {};
+        const percentage = typeof data.percentage === 'number' && Number.isFinite(data.percentage) ? data.percentage : 0;
+        const stripeAccountId = typeof data.stripeAccountId === 'string' && data.stripeAccountId.trim()
+            ? data.stripeAccountId.trim()
+            : undefined;
+        return { uid: doc.id, percentage, stripeAccountId };
+    });
+}
+
+/** Confirms a Stripe Connect account is actually payout-capable. Never assumes — always calls Stripe. */
+async function verifyStripeAccount(accountId: string): Promise<{ verified: boolean; reason?: string }> {
+    try {
+        const account = await stripe.accounts.retrieve(accountId);
+        if (!account.payouts_enabled) return { verified: false, reason: 'Stripe account is not payouts_enabled.' };
+        if (!account.charges_enabled) return { verified: false, reason: 'Stripe account is not charges_enabled.' };
+        const transfersCapability = account.capabilities?.transfers;
+        if (transfersCapability !== 'active') {
+            return { verified: false, reason: `Stripe account transfers capability is "${transfersCapability ?? 'unset'}", not active.` };
+        }
+        return { verified: true };
+    } catch (error) {
+        return { verified: false, reason: error instanceof Error ? error.message : 'Stripe account lookup failed.' };
+    }
+}
+
+/** Resolves and verifies every split recipient's Stripe account, distributing stagedNetMicros by percentage. */
+async function resolveRecipients(recipients: PayoutRecipient[], stagedNetMicros: number): Promise<ResolvedRecipient[]> {
+    const resolved = await Promise.all(recipients.map(async (recipient): Promise<ResolvedRecipient> => {
+        const amountMicros = Math.round(stagedNetMicros * (recipient.percentage / 100));
+        if (!recipient.stripeAccountId) {
+            return { ...recipient, amountMicros, accountStatus: 'missing', blockReason: `No stripeAccountId on file for ${recipient.uid}.` };
+        }
+        const verification = await verifyStripeAccount(recipient.stripeAccountId);
+        if (!verification.verified) {
+            return { ...recipient, amountMicros, accountStatus: 'blocked', blockReason: verification.reason };
+        }
+        return { ...recipient, amountMicros, accountStatus: 'verified' };
+    }));
+    return resolved;
+}
 
 /** Micros-first ledger read, mirroring calculateRecoupment conventions. */
 function ledgerMicros(microsValue: unknown, decimalValue?: unknown): number {
@@ -166,6 +239,17 @@ export const stageStripePayouts: IndiiMcpTool = {
                 warnings.push(`earningsDocIds truncated to ${MAX_EARNINGS_DOC_IDS} of ${earningsDocIds.length} contributing earnings documents on the payout job record.`);
             }
 
+            // Resolve split recipients (or the artist alone, 100%) and verify
+            // each Stripe Connect account is actually payout-capable. A missing
+            // or blocked account is a BLOCKING warning, never a silent skip.
+            const recipients = await readSplitRecipients(firestore, artistId);
+            const resolvedRecipients = await resolveRecipients(recipients, stagedNetMicros);
+            const blockedRecipients = resolvedRecipients.filter((r) => r.accountStatus !== 'verified');
+            blockedRecipients.forEach((r) => {
+                warnings.push(`BLOCKING: recipient ${r.uid} (${r.percentage}%) cannot receive funds — ${r.blockReason}`);
+            });
+            const allBlocked = blockedRecipients.length === resolvedRecipients.length;
+
             // Whitelisted fields only — never persist raw args.
             const docRef = await firestore.collection('payoutJobs').add({
                 artistId,
@@ -178,6 +262,32 @@ export const stageStripePayouts: IndiiMcpTool = {
                 createdAt: admin.firestore.FieldValue.serverTimestamp(),
             });
 
+            const transferGroupId = `payout_${artistId}_${payoutPeriod}_${docRef.id}`;
+            const batchRecipients = resolvedRecipients.map((r) => ({
+                uid: r.uid,
+                percentage: r.percentage,
+                amountMicros: r.amountMicros,
+                stripeAccountId: r.stripeAccountId ?? null,
+                accountStatus: r.accountStatus,
+                ...(r.blockReason ? { blockReason: r.blockReason } : {}),
+            }));
+            const batchRef = await firestore.collection('payoutBatches').add({
+                artistId,
+                payoutPeriod,
+                payoutJobId: docRef.id,
+                transferGroupId,
+                stagedNetMicros,
+                recipients: batchRecipients,
+                status: allBlocked ? 'blocked_no_verified_recipients' : 'staged_pending_approval',
+                initiatorUid: actorUid,
+                createdAt: admin.firestore.FieldValue.serverTimestamp(),
+            });
+
+            if (allBlocked) {
+                warnings.push('No recipient has a verified, payout-capable Stripe Connect account. This batch cannot proceed to approval until at least one account is fixed.');
+            }
+            warnings.push('No approval endpoint exists yet to execute this staged batch — createTransfer is intentionally not wired to this tool ([[Explicit permission required]]: money movement stays a separate human-approved action).');
+
             return toolResponse(operationResult({
                 tool: TOOL_NAME,
                 actorUid,
@@ -186,16 +296,22 @@ export const stageStripePayouts: IndiiMcpTool = {
                 resourceId: docRef.id,
                 approvalRequired: true,
                 warnings,
-                evidence: [{ type: 'firestore_document', reference: `payoutJobs/${docRef.id}` } as never],
+                evidence: [
+                    { type: 'firestore_document', reference: `payoutJobs/${docRef.id}` } as never,
+                    { type: 'firestore_document', reference: `payoutBatches/${batchRef.id}` } as never,
+                ],
                 data: {
                     artistId,
                     payoutPeriod,
                     payoutJobId: docRef.id,
+                    payoutBatchId: batchRef.id,
+                    transferGroupId,
                     stagedNetMicros,
                     earningsCount: matchedDocs.length,
                     earningsNetMicros,
                     outstandingRecoupmentMicros,
-                    status: 'staged_pending_approval',
+                    recipients: batchRecipients,
+                    status: allBlocked ? 'blocked_no_verified_recipients' : 'staged_pending_approval',
                 },
             }));
         } catch (error) {
