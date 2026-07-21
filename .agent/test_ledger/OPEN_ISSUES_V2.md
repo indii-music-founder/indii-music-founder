@@ -140,7 +140,7 @@
 
 ### ISSUE-1100: MCP backend completion plan — real backends for all 11 tools + job-queue workers + live verification
 
-- **Status:** 🟡 PARTIAL (2026-07-20 — P0–P7a ALL LANDED, commits ed8890269 / a770ac1f0 / 2ad295172 / 966393107 / 27a901787 / 4c4bf088f / acb3cf981 / 68fb3a399. Every buildable-without-credentials slice is done. **P7b is now tracked as a founder action item in `docs/RELEASE_CHECKLIST.md` ("Sample Clearance Fingerprint Vendor") per founder directive 2026-07-20 — it no longer blocks this plan's engineering acceptance.** Only P8 (live deploy verification, founder cloud action) remains open here.)
+- **Status:** ✅ FIXED (2026-07-21 — P0–P8 ALL LANDED, commits ed8890269 / a770ac1f0 / 2ad295172 / 966393107 / 27a901787 / 4c4bf088f / acb3cf981 / 68fb3a399 / f0ea412f1 / 0ed982938 / 5125259f7 / 1fdcd7813 / 8b6951e8a. P8 live verification is done: real ID-token → SSE → tool-call round-trip confirmed against the deployed `mcpEndpoint`, see ISSUE-1092 for the full defect chain that surfaced and got fixed along the way. **P7b remains tracked as a founder action item in `docs/RELEASE_CHECKLIST.md` ("Sample Clearance Fingerprint Vendor") per founder directive 2026-07-20 — explicitly accepted as vendor-gated, not a plan blocker.**)
 - **Severity:** 🔴 HIGH (this is the work that lets ISSUE-1092 and ISSUE-1093 be marked FIXED rather than PARTIAL, per founder directive 2026-07-20)
 - **Module:** `packages/firebase/src/mcp/tools/**`, `packages/firebase/src/mcp/**`, `packages/firebase/src/stripe/**`, `packages/firebase/src/lib/inngestClient.ts`, `packages/firebase/src/lib/notify.ts`, `packages/firebase/src/lib/campaign_waterfall.ts`, `packages/firebase/src/lib/canvas_render.ts`, `packages/firebase/firestore.rules`
 - **Governing goal:** Every MCP tool either performs real, verifiable work or fails closed with an honest message. No fabricated success (MCLEAR rule). Money movement is staged for human approval, never auto-executed. Visuals only — never music generation ([[no-music-generation-ever]]).
@@ -193,11 +193,11 @@
 
 #### Dependencies (encode-build-order rule [[encode-build-order-in-ledger]])
 
-- P1 depends on: pdf-lib install. P2, P4 standalone. P3 depends on: verified split-recipient + Connect-account schema (confirm `stripe_accounts`/`splits` collections). P5, P6 depend on: Inngest function registration in `functions/index.ts`. P6 depends on: cover-art + audio Storage path conventions. P7b + P8 are founder-gated and do not block P0–P6.
-- **ISSUE-1092 → FIXED when:** P0 lands AND every tool's response is honest AND P8 live round-trip verified. [P0 ✅ 2026-07-20; P8 still open.]
+- P1 depends on: pdf-lib install. P2, P4 standalone. P3 depends on: verified split-recipient + Connect-account schema (confirm `stripe_accounts`/`splits` collections). P5, P6 depend on: Inngest function registration in `functions/index.ts`. P6 depends on: cover-art + audio Storage path conventions. P7b is founder-gated and does not block P0–P8.
+- **ISSUE-1092 → FIXED when:** P0 lands AND every tool's response is honest AND P8 live round-trip verified. **[✅ ALL MET 2026-07-21 — P0 landed 2026-07-20; P8 live SSE round-trip verified 2026-07-21 with a real Firebase ID token against the deployed mcpEndpoint. ISSUE-1092 marked FIXED.]**
 - **ISSUE-1093 → FIXED when:** P1–P6 land (all buildable backends real) AND P7a lands AND P7b is either done or explicitly accepted-as-vendor-gated by the founder. **[✅ ALL MET 2026-07-20 — founder explicitly accepted P7b as vendor-gated in-session; tracked in `docs/RELEASE_CHECKLIST.md`. ISSUE-1093 marked FIXED.]**
 
-- **Acceptance (this plan entry closes when):** each of P0–P6 + P7a is committed, verified (tsc + vitest + honest-response grep), and its owning tool marked done in the truth table above; P7b + P8 are tracked as founder-gated with matching `docs/RELEASE_CHECKLIST.md` entries. **[P7b entry added 2026-07-20 ("Sample Clearance Fingerprint Vendor"). P8 needs its own RELEASE_CHECKLIST.md entry once deploy runs — see P8 below.]**
+- **Acceptance (this plan entry closes when):** each of P0–P6 + P7a is committed, verified (tsc + vitest + honest-response grep), and its owning tool marked done in the truth table above; P7b is tracked as founder-gated with a matching `docs/RELEASE_CHECKLIST.md` entry; P8 live round-trip is verified against the deployed endpoint. **[ALL MET. P7b entry added 2026-07-20 ("Sample Clearance Fingerprint Vendor"). P8 verified live 2026-07-21 — five real defects found and fixed along the way (dead registry never wired to any endpoint, Gen1→Gen2 migration, message-URL prefix reconstruction, trust-proxy HTTPS detection, parsedBody stream fix); see ISSUE-1092 for full detail. This plan entry is CLOSED.]**
 
 ---
 
