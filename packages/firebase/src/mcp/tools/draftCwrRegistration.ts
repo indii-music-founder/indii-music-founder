@@ -197,7 +197,8 @@ export const draftCwrRegistration: IndiiMcpTool = {
             }
 
             const { cwrDraft, recordCount } = buildCwrDraft(workTitle, releaseId, writers);
-            const docId = firestore.collection('cwr_drafts').doc().id;
+            const cwrDraftsCollection = admin.firestore().collection('cwr_drafts');
+            const docId = cwrDraftsCollection.doc().id;
             const storagePath = `users/${actorUid}/cwr/${docId}.V21`;
 
             // Store CWR draft to Cloud Storage
@@ -207,7 +208,7 @@ export const draftCwrRegistration: IndiiMcpTool = {
             });
 
             // Record metadata in Firestore
-            await firestore.collection('cwr_drafts').doc(docId).set({
+            await cwrDraftsCollection.doc(docId).set({
                 releaseId,
                 workTitle,
                 writerCount: writers.length,
