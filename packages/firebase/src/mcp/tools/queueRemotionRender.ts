@@ -49,11 +49,11 @@ function sanitizeAnimationSpec(raw: unknown): SanitizedAnimationSpec {
     return out;
 }
 
-const NO_PROCESSOR_WARNING = 'Render intent recorded durably in mcpRenderJobs, but NO rendering backend (Remotion/Inngest) consumes this queue yet — no video will be produced until that backend ships.';
+const RENDER_DISPATCHED_WARNING = 'Render intent dispatched to Inngest — a real ffmpeg canvas MP4 will be composed from the release cover art synced to the artist\'s own uploaded audio (durationSeconds is clamped to 3-8s regardless of animationSpec). Poll mcpRenderJobs status for queued -> rendering -> complete/failed.';
 
 export const queueRemotionRender: IndiiMcpTool = {
     name: 'queue_remotion_render',
-    description: 'Records a durable video render intent (mcpRenderJobs) for an owned release. No rendering backend consumes this queue yet.',
+    description: 'Records a durable video render intent (mcpRenderJobs) for an owned release and dispatches it to Inngest, which composes a real looping canvas MP4 from the release cover art synced to the artist\'s own uploaded audio. NO music generation.',
     inputSchema: {
         type: 'object',
         properties: {
@@ -83,8 +83,16 @@ export const queueRemotionRender: IndiiMcpTool = {
                 canvasType,
                 animationSpec,
                 initiatorUid: actorUid,
-                status: 'queued_no_processor',
+                status: 'queued',
                 createdAt: admin.firestore.FieldValue.serverTimestamp(),
+            });
+
+            const { getInngestClient } = await import('../../lib/inngestClient.js');
+            const inngest = getInngestClient();
+            await inngest.send({
+                name: 'mcp/render.requested',
+                data: { jobId: docRef.id, uid: actorUid, releaseId, canvasType, animationSpec },
+                user: { id: actorUid },
             });
 
             return toolResponse(operationResult({
@@ -93,7 +101,7 @@ export const queueRemotionRender: IndiiMcpTool = {
                 status: 'succeeded',
                 resourceType: 'render_intent',
                 resourceId: docRef.id,
-                warnings: [NO_PROCESSOR_WARNING],
+                warnings: [RENDER_DISPATCHED_WARNING],
                 data: { jobId: docRef.id, canvasType },
             }));
         } catch (error) {

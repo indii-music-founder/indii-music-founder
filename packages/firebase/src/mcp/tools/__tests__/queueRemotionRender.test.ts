@@ -2,6 +2,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('firebase-admin');
 
+const sendMock = vi.fn();
+vi.mock('../../../lib/inngestClient.js', () => ({
+    getInngestClient: () => ({ send: sendMock }),
+}));
+
 import { queueRemotionRender } from '../queueRemotionRender.js';
 import { McpContext } from '../../types.js';
 import * as admin from 'firebase-admin';
@@ -44,9 +49,10 @@ describe('queueRemotionRender MCP tool', () => {
         addMock.mockReset().mockResolvedValue({ id: 'job-123' });
         releaseGetMock.mockReset();
         topLevelGetMock.mockReset();
+        sendMock.mockReset().mockResolvedValue(undefined);
     });
 
-    it('writes a whitelisted mcpRenderJobs doc, dropping unknown animationSpec keys, with honest no-processor warning', async () => {
+    it('writes a whitelisted mcpRenderJobs doc, dropping unknown animationSpec keys, and dispatches to Inngest', async () => {
         releaseGetMock.mockResolvedValueOnce({ exists: true, data: () => ({}) });
 
         const result = await queueRemotionRender.handler({
@@ -68,7 +74,7 @@ describe('queueRemotionRender MCP tool', () => {
         expect(payload.status).toBe('succeeded');
         expect(payload.resource.type).toBe('render_intent');
         expect(payload.data).toEqual({ jobId: 'job-123', canvasType: 'Spotify' });
-        expect(payload.warnings.join(' ')).toMatch(/NO rendering backend .*no video will be produced/);
+        expect(payload.warnings.join(' ')).toMatch(/dispatched to Inngest/);
 
         expect(addMock).toHaveBeenCalledTimes(1);
         const written = addMock.mock.calls[0][0];
@@ -82,11 +88,20 @@ describe('queueRemotionRender MCP tool', () => {
                 textOverlay: 'New single',
             },
             initiatorUid: 'user-1',
-            status: 'queued_no_processor',
+            status: 'queued',
             createdAt: 'SERVER_TIMESTAMP',
         });
         expect(written.animationSpec).not.toHaveProperty('callbackUrl');
         expect(written.animationSpec).not.toHaveProperty('userId');
+
+        // Dispatches the render event to Inngest with whitelisted data only
+        expect(sendMock).toHaveBeenCalledTimes(1);
+        const sentEvent = sendMock.mock.calls[0][0];
+        expect(sentEvent.name).toBe('mcp/render.requested');
+        expect(sentEvent.data.jobId).toBe('job-123');
+        expect(sentEvent.data.uid).toBe('user-1');
+        expect(sentEvent.data.releaseId).toBe('rel-1');
+        expect(sentEvent.data.canvasType).toBe('Spotify');
     });
 
     it('rejects a cross-tenant release without writing anything', async () => {

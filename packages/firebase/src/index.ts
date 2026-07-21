@@ -22,6 +22,7 @@ import { GenerateSpeechRequestSchema } from "./lib/audio";
 
 import { executeWorkflowStepFn } from "./functions/agent/executeWorkflowStep";
 import { campaignWaterfallFn } from "./lib/campaign_waterfall";
+import { canvasRenderFn } from "./lib/canvas_render";
 import { LongFormVideoJobSchema, generateLongFormVideoFn, stitchVideoFn } from "./lib/long_form_video";
 import { generateVideoFn } from "./lib/video_generation";
 import { generateVideoDirect } from "./lib/video_generation_direct";
@@ -830,9 +831,12 @@ export const inngestApi = functions
         // MCP campaign waterfall dispatch (P5, ISSUE-1100)
         const campaignWaterfall = campaignWaterfallFn(inngestClient);
 
+        // MCP canvas render compose (P6, ISSUE-1100)
+        const canvasRender = canvasRenderFn(inngestClient);
+
         const handler = serve({
             client: inngestClient,
-            functions: [generateVideo, generateLongFormVideo, stitchVideo, executeMilestone, executeWorkflowStep, campaignWaterfall],
+            functions: [generateVideo, generateLongFormVideo, stitchVideo, executeMilestone, executeWorkflowStep, campaignWaterfall, canvasRender],
             signingKey: inngestSigningKey.value(),
         });
 
