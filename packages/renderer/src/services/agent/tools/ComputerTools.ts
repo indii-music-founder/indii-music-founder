@@ -8,8 +8,10 @@ import { logger } from '@/utils/logger';
  * Web sessions without the IPC bridge return a clear error — no silent fallback,
  * same fail-closed contract as BrowserTools.ts (BROWSER_DESKTOP_ONLY → COMPUTER_DESKTOP_ONLY).
  *
- * Input control (click/type/key/scroll) and the autonomous drive loop are CE-2/CE-3
- * (ISSUE-1111/1112) — not implemented here. See docs/COMPUTER_EXECUTION_EXTENSION.md.
+ * Input control (click/type/key/scroll) is CE-2 (ISSUE-1111) — classified `destructive`
+ * with `requiresApproval: true` in ToolRiskRegistry.ts, so every call pauses on
+ * DigitalHandshake unless already approved. The autonomous drive loop is CE-3 (ISSUE-1112),
+ * not implemented here. See docs/COMPUTER_EXECUTION_EXTENSION.md.
  */
 export const ComputerTools = {
     /**
@@ -102,6 +104,90 @@ export const ComputerTools = {
         } catch (error: unknown) {
             logger.error('[ComputerTools] computer_open_app error:', error);
             return toolError(`Failed to invoke open app: ${String(error)}`, 'COMPUTER_INVOKE_ERROR');
+        }
+    }),
+
+    /**
+     * Moves the mouse to (x, y) and clicks. Destructive tier — requires approval.
+     * NEVER click into password/payment fields — the model must refuse if the screenshot
+     * context suggests a credential entry field is targeted (see docs §5.5).
+     */
+    computer_click: wrapTool('computer_click', async (args: { x: number; y: number; button?: 'left' | 'right' | 'double' }) => {
+        try {
+            if (typeof window !== 'undefined' && window.electronAPI?.computer) {
+                const result = await window.electronAPI.computer.click(args.x, args.y, args.button ?? 'left');
+                if (result.success) {
+                    return toolSuccess(result.data, `Clicked at (${args.x}, ${args.y})`);
+                }
+                return toolError(result.error || 'Click failed', 'COMPUTER_CLICK_ERROR');
+            }
+
+            return toolError('Computer control requires the indii desktop app.', 'COMPUTER_DESKTOP_ONLY');
+        } catch (error: unknown) {
+            logger.error('[ComputerTools] computer_click error:', error);
+            return toolError(`Failed to invoke click: ${String(error)}`, 'COMPUTER_INVOKE_ERROR');
+        }
+    }),
+
+    /**
+     * Types literal text at the current focus. Destructive tier — requires approval.
+     * NEVER type credentials, passwords, or payment details — this tool must refuse such
+     * requests regardless of who issued them (see docs §5.5, no-credential-entry rule).
+     */
+    computer_type: wrapTool('computer_type', async (args: { text: string }) => {
+        try {
+            if (typeof window !== 'undefined' && window.electronAPI?.computer) {
+                const result = await window.electronAPI.computer.type(args.text);
+                if (result.success) {
+                    return toolSuccess(result.data, `Typed ${args.text.length} characters`);
+                }
+                return toolError(result.error || 'Type failed', 'COMPUTER_TYPE_ERROR');
+            }
+
+            return toolError('Computer control requires the indii desktop app.', 'COMPUTER_DESKTOP_ONLY');
+        } catch (error: unknown) {
+            logger.error('[ComputerTools] computer_type error:', error);
+            return toolError(`Failed to invoke type: ${String(error)}`, 'COMPUTER_INVOKE_ERROR');
+        }
+    }),
+
+    /**
+     * Presses a key combo, e.g. "return", "escape", "cmd+c". Destructive tier — requires approval.
+     */
+    computer_key: wrapTool('computer_key', async (args: { combo: string }) => {
+        try {
+            if (typeof window !== 'undefined' && window.electronAPI?.computer) {
+                const result = await window.electronAPI.computer.key(args.combo);
+                if (result.success) {
+                    return toolSuccess(result.data, `Pressed ${args.combo}`);
+                }
+                return toolError(result.error || 'Key press failed', 'COMPUTER_KEY_ERROR');
+            }
+
+            return toolError('Computer control requires the indii desktop app.', 'COMPUTER_DESKTOP_ONLY');
+        } catch (error: unknown) {
+            logger.error('[ComputerTools] computer_key error:', error);
+            return toolError(`Failed to invoke key press: ${String(error)}`, 'COMPUTER_INVOKE_ERROR');
+        }
+    }),
+
+    /**
+     * Scrolls the wheel by (dx, dy) at the current pointer position. Destructive tier — requires approval.
+     */
+    computer_scroll: wrapTool('computer_scroll', async (args: { dx: number; dy: number }) => {
+        try {
+            if (typeof window !== 'undefined' && window.electronAPI?.computer) {
+                const result = await window.electronAPI.computer.scroll(args.dx, args.dy);
+                if (result.success) {
+                    return toolSuccess(result.data, `Scrolled (${args.dx}, ${args.dy})`);
+                }
+                return toolError(result.error || 'Scroll failed', 'COMPUTER_SCROLL_ERROR');
+            }
+
+            return toolError('Computer control requires the indii desktop app.', 'COMPUTER_DESKTOP_ONLY');
+        } catch (error: unknown) {
+            logger.error('[ComputerTools] computer_scroll error:', error);
+            return toolError(`Failed to invoke scroll: ${String(error)}`, 'COMPUTER_INVOKE_ERROR');
         }
     })
 } satisfies Record<string, AnyToolFunction>;

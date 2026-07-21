@@ -1,14 +1,24 @@
 import log from 'electron-log';
 import { ipcMain, IpcMainInvokeEvent } from 'electron';
 import { z } from 'zod';
-import { ComputerScreenshotSchema, ComputerOpenAppSchema } from '../utils/validation';
+import {
+    ComputerScreenshotSchema,
+    ComputerOpenAppSchema,
+    ComputerClickSchema,
+    ComputerTypeSchema,
+    ComputerKeySchema,
+    ComputerScrollSchema
+} from '../utils/validation';
 import { validateSender } from '../utils/ipc-security';
 import { computerExecutionService } from '../services/ComputerExecutionService';
+import { computerAllowlistStore } from '../services/computer/ComputerAllowlistStore';
 
 /**
- * Computer capability IPC handlers (CE-1, ISSUE-1110).
+ * Computer capability IPC handlers.
+ * CE-1 (ISSUE-1110): read path (permissions, screenshot, list/open app).
+ * CE-2 (ISSUE-1111): input control (click/type/key/scroll), kill switch, allowlist mgmt.
  * Same security posture as handlers/agent.ts: validateSender + Zod on every channel,
- * uniform { success, data?, error? } envelopes. Input control (click/type) is CE-2.
+ * uniform { success, data?, error? } envelopes.
  */
 export function registerComputerHandlers() {
     ipcMain.handle('computer:check-permissions', async (event: IpcMainInvokeEvent) => {
@@ -55,6 +65,147 @@ export function registerComputerHandlers() {
             return { success: true, data: { app: validatedApp } };
         } catch (error) {
             log.error('Computer Open App Failed:', error);
+            if (error instanceof z.ZodError) {
+                return { success: false, error: `Validation Error: ${error.errors[0].message}` };
+            }
+            return { success: false, error: String(error) };
+        }
+    });
+
+    // --- Input control (CE-2, ISSUE-1111) ------------------------------------
+
+    ipcMain.handle('computer:click', async (event: IpcMainInvokeEvent, args: unknown) => {
+        try {
+            validateSender(event);
+            const { x, y, button } = ComputerClickSchema.parse(args);
+            await computerExecutionService.click(x, y, button);
+            return { success: true, data: { x, y, button } };
+        } catch (error) {
+            log.error('Computer Click Failed:', error);
+            if (error instanceof z.ZodError) {
+                return { success: false, error: `Validation Error: ${error.errors[0].message}` };
+            }
+            return { success: false, error: String(error) };
+        }
+    });
+
+    ipcMain.handle('computer:type', async (event: IpcMainInvokeEvent, args: unknown) => {
+        try {
+            validateSender(event);
+            const { text } = ComputerTypeSchema.parse(args);
+            await computerExecutionService.type(text);
+            return { success: true, data: { length: text.length } };
+        } catch (error) {
+            log.error('Computer Type Failed:', error);
+            if (error instanceof z.ZodError) {
+                return { success: false, error: `Validation Error: ${error.errors[0].message}` };
+            }
+            return { success: false, error: String(error) };
+        }
+    });
+
+    ipcMain.handle('computer:key', async (event: IpcMainInvokeEvent, args: unknown) => {
+        try {
+            validateSender(event);
+            const { combo } = ComputerKeySchema.parse(args);
+            await computerExecutionService.key(combo);
+            return { success: true, data: { combo } };
+        } catch (error) {
+            log.error('Computer Key Failed:', error);
+            if (error instanceof z.ZodError) {
+                return { success: false, error: `Validation Error: ${error.errors[0].message}` };
+            }
+            return { success: false, error: String(error) };
+        }
+    });
+
+    ipcMain.handle('computer:scroll', async (event: IpcMainInvokeEvent, args: unknown) => {
+        try {
+            validateSender(event);
+            const { dx, dy } = ComputerScrollSchema.parse(args);
+            await computerExecutionService.scroll(dx, dy);
+            return { success: true, data: { dx, dy } };
+        } catch (error) {
+            log.error('Computer Scroll Failed:', error);
+            if (error instanceof z.ZodError) {
+                return { success: false, error: `Validation Error: ${error.errors[0].message}` };
+            }
+            return { success: false, error: String(error) };
+        }
+    });
+
+    // --- Kill switch -----------------------------------------------------------
+
+    ipcMain.handle('computer:abort', async (event: IpcMainInvokeEvent) => {
+        try {
+            validateSender(event);
+            computerExecutionService.abort();
+            return { success: true, data: { aborted: true } };
+        } catch (error) {
+            log.error('Computer Abort Failed:', error);
+            return { success: false, error: String(error) };
+        }
+    });
+
+    ipcMain.handle('computer:reset-abort', async (event: IpcMainInvokeEvent) => {
+        try {
+            validateSender(event);
+            computerExecutionService.resetAbort();
+            return { success: true, data: { aborted: false } };
+        } catch (error) {
+            log.error('Computer Reset Abort Failed:', error);
+            return { success: false, error: String(error) };
+        }
+    });
+
+    ipcMain.handle('computer:get-abort-state', async (event: IpcMainInvokeEvent) => {
+        try {
+            validateSender(event);
+            return { success: true, data: { aborted: computerExecutionService.isAborted() } };
+        } catch (error) {
+            log.error('Computer Get Abort State Failed:', error);
+            return { success: false, error: String(error) };
+        }
+    });
+
+    // --- Allowlist management --------------------------------------------------
+    // No renderer UI yet (tracked in ISSUE-1111 as a residual item) — these channels let a
+    // trusted operator (e.g. a settings screen built later, or manual store editing) manage
+    // which apps computer_open_app may launch. Fail-closed by default: empty list = nothing allowed.
+
+    ipcMain.handle('computer:allowlist-get', async (event: IpcMainInvokeEvent) => {
+        try {
+            validateSender(event);
+            return { success: true, data: { apps: computerAllowlistStore.getAll() } };
+        } catch (error) {
+            log.error('Computer Allowlist Get Failed:', error);
+            return { success: false, error: String(error) };
+        }
+    });
+
+    ipcMain.handle('computer:allowlist-add', async (event: IpcMainInvokeEvent, app: unknown) => {
+        try {
+            validateSender(event);
+            const validatedApp = ComputerOpenAppSchema.parse(app);
+            computerAllowlistStore.add(validatedApp);
+            return { success: true, data: { apps: computerAllowlistStore.getAll() } };
+        } catch (error) {
+            log.error('Computer Allowlist Add Failed:', error);
+            if (error instanceof z.ZodError) {
+                return { success: false, error: `Validation Error: ${error.errors[0].message}` };
+            }
+            return { success: false, error: String(error) };
+        }
+    });
+
+    ipcMain.handle('computer:allowlist-remove', async (event: IpcMainInvokeEvent, app: unknown) => {
+        try {
+            validateSender(event);
+            const validatedApp = ComputerOpenAppSchema.parse(app);
+            computerAllowlistStore.remove(validatedApp);
+            return { success: true, data: { apps: computerAllowlistStore.getAll() } };
+        } catch (error) {
+            log.error('Computer Allowlist Remove Failed:', error);
             if (error instanceof z.ZodError) {
                 return { success: false, error: `Validation Error: ${error.errors[0].message}` };
             }

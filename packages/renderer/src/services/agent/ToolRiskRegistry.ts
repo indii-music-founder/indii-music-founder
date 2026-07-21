@@ -250,6 +250,12 @@ export const TOOL_RISK_REGISTRY: Record<string, ToolRiskMetadata> = {
 
     // Code Execution (destructive — runs arbitrary code on host)
     execute_code: { riskTier: 'destructive', permissionTier: 'plugin', requiresApproval: true, description: 'Executes arbitrary Python code via the sidecar — requires explicit user approval' },
+
+    // Computer input control (destructive — CE-2, ISSUE-1111. Controls the real mouse/keyboard.)
+    computer_click: { riskTier: 'destructive', permissionTier: 'plugin', requiresApproval: true, description: 'Moves the mouse and clicks on the host desktop — requires explicit user approval' },
+    computer_type: { riskTier: 'destructive', permissionTier: 'plugin', requiresApproval: true, description: 'Types text into the currently focused field on the host desktop — requires explicit user approval' },
+    computer_key: { riskTier: 'destructive', permissionTier: 'plugin', requiresApproval: true, description: 'Sends a key combo to the host desktop — requires explicit user approval' },
+    computer_scroll: { riskTier: 'destructive', permissionTier: 'plugin', requiresApproval: true, description: 'Scrolls on the host desktop — requires explicit user approval' },
     update_agent_memory: { riskTier: 'destructive', permissionTier: 'plugin', requiresApproval: true, description: "Permanently modify an agent's system instructions (brain surgery)" },
 
     // =========================================================================

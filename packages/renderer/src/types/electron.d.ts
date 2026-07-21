@@ -153,12 +153,22 @@ export interface ElectronAPI {
         updateKnowledge: (filePath: string, action: string, knowledge: unknown) => Promise<{ success: boolean; error?: string }>;
     };
 
-    // Computer Capability (CE-1, ISSUE-1110 — read path only; input control is CE-2/ISSUE-1111)
+    // Computer Capability (CE-1: read path, ISSUE-1110. CE-2: input control + kill switch, ISSUE-1111)
     computer?: {
         checkPermissions: () => Promise<{ success: boolean; data?: { platform: string; supported: boolean; screenRecording: string; accessibility: string; guidance: string[] }; error?: string }>;
         screenshot: (options?: { displayId?: number }) => Promise<{ success: boolean; data?: { base64: string; width: number; height: number; displayId: number }; error?: string }>;
         listApps: () => Promise<{ success: boolean; data?: { apps: string[] }; error?: string }>;
         openApp: (app: string) => Promise<{ success: boolean; data?: { app: string }; error?: string }>;
+        click: (x: number, y: number, button?: 'left' | 'right' | 'double') => Promise<{ success: boolean; data?: { x: number; y: number; button: string }; error?: string }>;
+        type: (text: string) => Promise<{ success: boolean; data?: { length: number }; error?: string }>;
+        key: (combo: string) => Promise<{ success: boolean; data?: { combo: string }; error?: string }>;
+        scroll: (dx: number, dy: number) => Promise<{ success: boolean; data?: { dx: number; dy: number }; error?: string }>;
+        abort: () => Promise<{ success: boolean; data?: { aborted: boolean }; error?: string }>;
+        resetAbort: () => Promise<{ success: boolean; data?: { aborted: boolean }; error?: string }>;
+        getAbortState: () => Promise<{ success: boolean; data?: { aborted: boolean }; error?: string }>;
+        allowlistGet: () => Promise<{ success: boolean; data?: { apps: string[] }; error?: string }>;
+        allowlistAdd: (app: string) => Promise<{ success: boolean; data?: { apps: string[] }; error?: string }>;
+        allowlistRemove: (app: string) => Promise<{ success: boolean; data?: { apps: string[] }; error?: string }>;
     };
 
 

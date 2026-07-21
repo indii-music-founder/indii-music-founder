@@ -167,6 +167,36 @@ export const ComputerScreenshotSchema = z.object({
     displayId: z.number().int().nonnegative().optional()
 }).optional();
 
-// Must start alphanumeric so a crafted value can never be parsed as a CLI flag by `open`.
+// Must start alphanumeric so a crafted value can never be parsed as a CLI flag by `open`/`cliclick`.
 export const ComputerOpenAppSchema = z.string().min(1).max(255)
     .regex(/^[A-Za-z0-9][A-Za-z0-9 ()._+-]*$/, 'App must be a plain application name or bundle id');
+
+// Computer input control (CE-2, ISSUE-1111). Screen-coordinate bounds are generous (8K) —
+// actual bounds checking against the real display happens in NativeMacProvider at click time.
+export const ComputerClickSchema = z.object({
+    x: z.number().int().min(0).max(8192),
+    y: z.number().int().min(0).max(8192),
+    button: z.enum(['left', 'right', 'double']).default('left')
+});
+
+// No control characters — text goes to cliclick's `t:` verb via execFile (no shell), so this
+// guards against embedding stray newlines/escapes that could desync the argv, not injection.
+const ALLOWED_CONTROL_CODES = new Set([0x09, 0x0A, 0x0D]); // tab, LF, CR — everything else 0x00-0x1F is blocked
+export const ComputerTypeSchema = z.object({
+    text: z.string().min(1).max(4000).refine(t => {
+        for (let i = 0; i < t.length; i++) {
+            const code = t.charCodeAt(i);
+            if (code <= 0x1F && !ALLOWED_CONTROL_CODES.has(code)) return false;
+        }
+        return true;
+    }, { message: 'Text must not contain control characters' })
+});
+
+export const ComputerKeySchema = z.object({
+    combo: z.string().min(1).max(64).regex(/^[a-zA-Z0-9+_-]+$/, 'Combo must be alphanumeric key names joined by "+"')
+});
+
+export const ComputerScrollSchema = z.object({
+    dx: z.number().int().min(-2000).max(2000),
+    dy: z.number().int().min(-2000).max(2000)
+});

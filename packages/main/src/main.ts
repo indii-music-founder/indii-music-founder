@@ -1,5 +1,5 @@
 import { validateSender } from './utils/ipc-security';
-import { app, BrowserWindow, shell, ipcMain, Tray, Menu, nativeImage, Notification, powerMonitor, crashReporter, protocol, net } from 'electron';
+import { app, BrowserWindow, shell, ipcMain, Tray, Menu, nativeImage, Notification, powerMonitor, crashReporter, protocol, net, globalShortcut } from 'electron';
 import path from 'path';
 import log from 'electron-log';
 import { accessControlService } from './security/AccessControlService';
@@ -86,6 +86,7 @@ import { sftpService } from './services/SFTPService';
 import { setupDistributionHandlers as registerDistributionHandlers } from './handlers/distribution';
 import { registerAgentHandlers } from './handlers/agent';
 import { registerComputerHandlers } from './handlers/computer';
+import { computerExecutionService } from './services/ComputerExecutionService';
 import { registerBrandHandlers } from './handlers/brand';
 import { registerPublicistHandlers } from './handlers/publicist';
 import { registerMarketingHandlers } from './handlers/marketing';
@@ -487,6 +488,23 @@ if (!gotTheLock) {
         registerDistributionHandlers();
         registerAgentHandlers();
         registerComputerHandlers();
+
+        // Computer capability kill switch (CE-2, ISSUE-1111): global hotkey works even if the
+        // renderer is unresponsive, so the user can always reclaim the machine from an
+        // in-progress autonomous input session. Registration failure (e.g. combo already
+        // claimed by the OS/another app) is non-fatal — the in-app abort button still works.
+        try {
+            const registered = globalShortcut.register('CommandOrControl+Shift+Escape', () => {
+                computerExecutionService.abort();
+                log.warn('[Main] Computer control kill switch triggered via global hotkey.');
+            });
+            if (!registered) {
+                log.warn('[Main] Failed to register computer kill-switch global hotkey (already in use).');
+            }
+        } catch (err) {
+            log.warn('[Main] Computer kill-switch hotkey registration threw:', err);
+        }
+
         registerBrandHandlers();
         registerPublicistHandlers();
         registerMarketingHandlers();
@@ -657,7 +675,8 @@ app.on('window-all-closed', () => {
 
 app.on('will-quit', async () => {
     isQuitting = true;
-    
+    globalShortcut.unregisterAll();
+
     // Item 166: Disable console logging during shutdown to avoid write EIO if terminal/pipe is gone
     log.transports.console.level = false;
     

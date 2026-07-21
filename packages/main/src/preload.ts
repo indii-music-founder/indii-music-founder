@@ -113,12 +113,22 @@ contextBridge.exposeInMainWorld('electronAPI', {
         updateKnowledge: (filePath: string, action: 'add' | 'remove', content: string) => ipcRenderer.invoke('agent:update-knowledge', filePath, action, content),
         getCapabilityRegistry: () => ipcRenderer.invoke('agent:get-capability-registry'),
     },
-    // Computer Capability (CE-1, ISSUE-1110 — read path only; input control is CE-2/ISSUE-1111)
+    // Computer Capability (CE-1: read path, ISSUE-1110. CE-2: input control + kill switch, ISSUE-1111)
     computer: {
         checkPermissions: () => ipcRenderer.invoke('computer:check-permissions'),
         screenshot: (options?: { displayId?: number }) => ipcRenderer.invoke('computer:screenshot', options),
         listApps: () => ipcRenderer.invoke('computer:list-apps'),
         openApp: (app: string) => ipcRenderer.invoke('computer:open-app', app),
+        click: (x: number, y: number, button?: 'left' | 'right' | 'double') => ipcRenderer.invoke('computer:click', { x, y, button }),
+        type: (text: string) => ipcRenderer.invoke('computer:type', { text }),
+        key: (combo: string) => ipcRenderer.invoke('computer:key', { combo }),
+        scroll: (dx: number, dy: number) => ipcRenderer.invoke('computer:scroll', { dx, dy }),
+        abort: () => ipcRenderer.invoke('computer:abort'),
+        resetAbort: () => ipcRenderer.invoke('computer:reset-abort'),
+        getAbortState: () => ipcRenderer.invoke('computer:get-abort-state'),
+        allowlistGet: () => ipcRenderer.invoke('computer:allowlist-get'),
+        allowlistAdd: (app: string) => ipcRenderer.invoke('computer:allowlist-add', app),
+        allowlistRemove: (app: string) => ipcRenderer.invoke('computer:allowlist-remove', app),
     },
 
     // Video (Local Asset Management)
