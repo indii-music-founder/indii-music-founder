@@ -38,6 +38,8 @@ flowchart TD
     class RetryGate,ResultGate gate
 ```
 
+## Transition Breakdown
+
 1. The deployed workflow must explicitly supply `MEDIA_PROVIDER=vertex`; the
    gateway then selects the ADC-backed Vertex client for production requests.
 2. A request is validated and its normal cost reservation is created before a
