@@ -1337,3 +1337,24 @@
 - **Blocks:** ISSUE-1152 (browser receipt-hydration UI has nothing real to hydrate against until this is live).
 
 ---
+
+### ISSUE-1184: Tax Form Collection (ISSUE-1118) needs one live end-to-end browser pass before real tax season — never click-tested with a real signed-in session
+
+- **Status:** 🟡 NEEDS LIVE VERIFICATION — code complete, deployed, unit/component-tested only
+- **Severity:** 🟠 HIGH (compliance-facing feature; a real-world integration gap here reproduces the exact false-success failure mode ISSUE-1118 was built to fix)
+- **Module:** Finance / TaxFormCollection / `TaxFormService` / `requestTaxFormUpload` / `submitTaxForm` / `TaxFormUploadPage`
+- **Why this exists as its own ticket, not folded into ISSUE-1118's closure:** ISSUE-1118 was marked FIXED on real code, real Storage/Firestore, 44 passing tests (fully mocked Firebase), and a confirmed live Cloud Functions deploy (`requestTaxFormUpload`/`submitTaxForm` both show `Successful update operation.` in CI run [29874018363](https://github.com/indii-music-founder/indii-music-founder/actions/runs/29874018363)). None of that is the same as a human clicking through the real flow with a real signed-in Firebase session — this sandbox had no `VITE_FIREBASE_API_KEY`/project ID configured, so that pass was never run. Per the McLear rule, "deployed and unit-tested" must not get silently rounded up to "verified working."
+- **What needs to happen:** With a real signed-in artist account:
+  1. Add a collaborator (US and non-US, to confirm W-9 vs W-8BEN derivation).
+  2. Upload a form (PDF, then PNG/JPEG) — confirm it lands in Storage under `tax_docs/{uid}/{collaboratorId}/...` and the Firestore doc flips to `on_file`.
+  3. Refresh the page — confirm the upload survives (proves the Firestore subscription, not local state).
+  4. Download the uploaded form — confirm the signed URL actually opens the file.
+  5. Click "Request" — confirm a real email lands (Resend) containing a working `https://app.indii.music/tax-form-upload?token=...` link.
+  6. Open that link in a separate, signed-out browser/incognito session — confirm the collaborator upload page renders (proves the `isTaxFormUploadPage` pre-auth route bypass actually works live, not just in unit tests) and a real submission completes.
+  7. Attempt to reuse the same link a second time — confirm it's rejected (`409`, single-use enforcement).
+  8. Mark reviewed, delete an uploaded file, and remove a collaborator — confirm all three durable-delete/status paths behave as coded.
+- **Acceptance:** All 8 steps above pass against the real deployed environment with a real account; any deviation from coded behavior gets logged here with the exact repro, not silently patched without a ticket.
+- **Depends on:** Nothing further — code and deploy are both already done (ISSUE-1118). This is pure verification.
+- **Not required before:** Founder's own manual use of the feature — this ticket exists so the gap is tracked and visible, not because the feature is expected to fail.
+
+---
