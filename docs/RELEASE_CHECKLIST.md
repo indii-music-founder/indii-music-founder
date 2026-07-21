@@ -121,13 +121,20 @@ verification question.
   channel, retry/idempotency rules, and their support escalation contact.
   Store credentials in the approved secret manager—never in a release draft,
   local `.env`, chat, or source control.
-- [ ] Choose and approve a non-commercial test release whose master and cover
+- [ ] **REAL-WORLD ACTION (you, wearing the artist/user hat — added 2026-07-21):**
+  Choose and approve a non-commercial test release whose master and cover
   art may be transmitted. Confirm it has the required rights evidence and
   partner-approved metadata before testing. Prepare a one-page test-release
   packet with release title, UPC, track title, ISRC, artist/label, release date,
   territories, rights holder, master hash, cover-art hash, and a named internal
   approver. Do not use a client or unreleased artist's work without written
-  permission for this transmission.
+  permission for this transmission. **This step cannot happen until the app
+  itself is far enough along to actually run it — it is not an engineering
+  blocker, it's a real-world step you perform once the platform is ready.
+  Nothing needs to stay on any agent to-do list or open-issue tracker waiting
+  on this — it only needs to happen once, when you're ready to run the live
+  test. Remove/check this off only after you've actually uploaded and the
+  partner has acknowledged receipt (see the evidence bundle below).**
 - [ ] Prepare the test cover as a square **JPEG or PNG**, at least **3000 ×
   3000 px**, and no more than **50 MB**. Select it from the artist's brand
   assets in the app: the app content-addresses it under the authenticated

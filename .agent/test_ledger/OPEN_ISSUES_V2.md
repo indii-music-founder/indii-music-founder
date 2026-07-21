@@ -1271,3 +1271,39 @@
 - **Do not:** Do not expose raw `gs://`/download-token URLs as handoff authority, make failed jobs look completed, duplicate ISSUE-1123/1157/1159 implementations, automatically crop/reframe or publish, or claim music rights from an acoustic match.
 
 ---
+
+### ISSUE-1182: [NEEDS RESEARCH BEFORE BUILD] Agent-assisted PRO/SoundExchange/rights-org selection guidance for artists
+
+- **Status:** 🔵 RESEARCH REQUIRED — do NOT build until research below is complete and reviewed
+- **Severity:** — (product opportunity, not a defect)
+- **Module:** Registration Center / Agent orchestration & tool layer
+- **Origin:** Founder note, 2026-07-21 — indii already has an orchestration/tool layer, and some agents now have computer-use capability. This raises a real question: could an agent help an artist figure out which PRO (ASCAP/BMI/SESAC) is the right fit for them, walk them through SoundExchange registration, or similarly navigate other founder-adjacent registrations described in `docs/RELEASE_CHECKLIST.md` § "Music-Identity & Royalty Registration Prerequisites"? This is explicitly the per-artist side (see [[docs/RELEASE_CHECKLIST.md]] resolved decision: artists own their own MLC/SoundExchange/PRO registrations; indii tracks, never administers).
+- **Why research-first, not build-first:** This touches real external websites/forms the artist would need to actually submit (ASCAP/BMI/SESAC applications, SoundExchange registration, MLC signup) — before any agent capability is built here, need to establish: (a) which of these sites/flows are even automatable vs. require the artist's own judgment/legal signature, (b) whether computer-use agents acting on a user's behalf on third-party sites raises any ToS/legal concern for those specific providers, (c) whether a simpler "decision-support" (compare PROs, recommend one, deep-link to their signup) is the right scope vs. actual form-filling automation, (d) what data indii would need to collect from the artist to make a real recommendation (genre, catalog size, current PRO status, etc.), and (e) how this interacts with the existing Registration Center's per-track PRO/Copyright/SoundExchange/MLC tracking already in the app.
+- **Research questions to resolve before scoping a build:**
+  1. For each of PRO selection, SoundExchange registration, MLC signup — is the realistic agent role "decision support + deep link" or "guided form-fill via computer-use"? What's the ToS/legal risk of the latter for each provider?
+  2. What existing Registration Center code (per the app's own description: "tracks Copyright, ASCAP/BMI/SESAC, SoundExchange, and MLC per track") already covers, and where's the actual gap this would fill?
+  3. Is there a simple decision-support heuristic (e.g. based on genre/catalog/existing affiliations) that's accurate enough to recommend a PRO, or does this require an actual legal/financial advisor disclaimer?
+  4. What's the MVP scope — one provider (e.g. just SoundExchange, since registration is free and low-stakes) vs. all three PRO options plus MLC plus SoundExchange at once?
+- **Do NOT build any of this until the above is answered and reviewed with the founder.**
+
+---
+
+### ISSUE-1183: engine-dsp Cloud Run deployment — infrastructure creation gated on explicit founder go-ahead
+
+- **Status:** 🟡 AWAITING FOUNDER GO-AHEAD — code/tests complete (see ISSUE-1170), infra provisioning not yet authorized
+- **Severity:** 🔴 CRITICAL (blocks ISSUE-1170 completion and ISSUE-1152's browser-receipt-hydration remainder)
+- **Module:** `packages/engine-dsp` / Cloud Run / IAM
+- **Why this is its own tracked item, not silently rolled into ISSUE-1170:** Deploying this service means creating real, billable production GCP infrastructure — a new Cloud Run service plus two new service accounts plus new IAM grants (Storage read, Firestore write, Vertex AI use, Cloud Run Invoker). Per this session's safety practice, infrastructure/IAM changes on the live production project get an explicit founder go-ahead before an agent touches them, rather than an agent inferring consent. This ticket exists so that go-ahead is a persistent, visible decision point instead of a one-off chat question that gets lost.
+- **What's ready to deploy (per ISSUE-1170):** Container, Firestore rules, and all code are locally proven (9 Python tests, 140/140 Firestore emulator tests, container builds and passes health/legacy-rejection smoke tests).
+- **What deploying requires (see ISSUE-1170 for full detail):**
+  1. Build + push the container image to Artifact Registry.
+  2. Create `engine-dsp-runtime` service account (Storage object read scoped to the master-audio bucket, Firestore write, Vertex AI user).
+  3. Create `engine-dsp-invoker` service account (Cloud Tasks OIDC signing identity; gets `roles/run.invoker` on the new service — and ONLY that identity, no public access).
+  4. Deploy Cloud Run with `GOOGLE_CLOUD_PROJECT`, `MASTER_AUDIO_BUCKET` (real bucket name), `VERTEX_LOCATION=global`, `GEMINI_AUDIO_MODEL` (default acceptable).
+  5. Set `ENGINE_DSP_URL`, `ENGINE_DSP_SERVICE_ACCOUNT`, `ENGINE_DSP_AUDIENCE` on the Firebase Functions side (currently required with no fallback — task creation throws until set).
+  6. Upload one small synthetic WAV, enqueue a real task, confirm a Firestore receipt lands, confirm retry doesn't double-charge Gemini.
+- **Acceptance:** Founder explicitly authorizes proceeding (in chat or by updating this ticket's status); once authorized, an agent session executes steps 1-6 above and records live verification evidence in this ticket and in ISSUE-1170.
+- **Depends on:** ISSUE-1170 (code/test completeness — already satisfied).
+- **Blocks:** ISSUE-1152 (browser receipt-hydration UI has nothing real to hydrate against until this is live).
+
+---
