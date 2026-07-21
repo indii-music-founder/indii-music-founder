@@ -56,6 +56,24 @@ vi.mock('./right-panel/KnowledgePanel', () => ({
     ),
 }));
 
+vi.mock('./right-panel/ArtifactsPanel', () => ({
+    default: ({ toggleRightPanel }: { toggleRightPanel: () => void }) => (
+        <div data-testid="artifacts-panel">
+            Artifacts Panel Content
+            <button onClick={toggleRightPanel} data-testid="close-artifacts">Close</button>
+        </div>
+    ),
+}));
+
+vi.mock('./right-panel/ToolApprovalsPanel', () => ({
+    default: ({ toggleRightPanel }: { toggleRightPanel: () => void }) => (
+        <div data-testid="tool-approvals-panel">
+            Approvals Panel Content
+            <button onClick={toggleRightPanel} data-testid="close-approvals">Close</button>
+        </div>
+    ),
+}));
+
 vi.mock('./agent/AgentChat', () => ({
     AgentChat: ({ toggleRightPanel }: { toggleRightPanel: () => void }) => (
         <div data-testid="agent-chat">
@@ -128,10 +146,12 @@ describe('RightPanel', () => {
         expect(screen.getByTitle('Expand Panel')).toBeInTheDocument();
         expect(screen.getByTitle('Context Controls')).toBeInTheDocument();
         expect(screen.getByTitle('Project Assets')).toBeInTheDocument();
+        expect(screen.getByTitle('Approvals')).toBeInTheDocument();
         expect(screen.getByTitle('Omni Agent')).toBeInTheDocument();
 
         expect(screen.queryByTestId('studio-controls-panel')).not.toBeInTheDocument();
         expect(screen.queryByTestId('assets-panel')).not.toBeInTheDocument();
+        expect(screen.queryByTestId('tool-approvals-panel')).not.toBeInTheDocument();
     });
 
     it('toggles panel when expand button is clicked', () => {
@@ -182,6 +202,34 @@ describe('RightPanel', () => {
         });
         render(<RightPanel />);
         expect(await screen.findByTestId('assets-panel')).toBeInTheDocument();
+    });
+
+    it('switches to Approvals tab when Approvals icon is clicked (ISSUE-1116)', () => {
+        render(<RightPanel />);
+        fireEvent.click(screen.getByTitle('Approvals'));
+        expect(mockSetRightPanelTab).toHaveBeenCalledWith('approvals');
+    });
+
+    it('renders ToolApprovalsPanel when open and tab is approvals (ISSUE-1116)', async () => {
+        (useStore as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
+            ...defaultState,
+            rightPanelTab: 'approvals',
+            isRightPanelOpen: true,
+        });
+        render(<RightPanel />);
+        expect(await screen.findByTestId('tool-approvals-panel')).toBeInTheDocument();
+    });
+
+    it('calls toggleRightPanel from within the Approvals panel close button', async () => {
+        (useStore as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
+            ...defaultState,
+            rightPanelTab: 'approvals',
+            isRightPanelOpen: true,
+        });
+        render(<RightPanel />);
+        const closeButton = await screen.findByTestId('close-approvals');
+        fireEvent.click(closeButton);
+        expect(mockToggleRightPanel).toHaveBeenCalled();
     });
 
     it('renders Agent content when open and tab is agent', () => {
