@@ -90,7 +90,9 @@ graph TD
     class Legal,Finance,Creative,Publicist,Brand,Distro tool
 ```
 
-## Key architectural facts (each verified live, 2026-07-21)
+## Transition Breakdown
+
+Key architectural facts, each verified live, 2026-07-21:
 
 1. **Gen2, not Gen1.** Gen1 Cloud Functions hard-kill any HTTP response at their execution ceiling (60s default / 540s max) regardless of `timeoutSeconds` — fundamentally incompatible with SSE, which must stay open indefinitely. Confirmed live: auth succeeded, session established, then a 502 "Truncated response body" at exactly the ceiling. Gen1→Gen2 requires `firebase functions:delete <name> --region=<region>` first — `firebase deploy` refuses an in-place upgrade.
 2. **`maxInstances: 1` is deliberate, not an oversight.** Sessions live in an in-process `Map`. Cloud Run doesn't guarantee session affinity across instances by default, so a `/message` POST could land on a different instance than the one holding its session and 404. Capping at one instance guarantees every request reaches the same `Map`; Node's event loop still serves many concurrent SSE connections fine on that one instance. The real long-term fix for horizontal scale is moving session state to Firestore/Redis.
