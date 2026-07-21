@@ -125,7 +125,14 @@ app.post('/message', async (req, res) => {
         return;
     }
 
-    await session.transport.handlePostMessage(req, res);
+    // Firebase Functions v2's onRequest already consumes and JSON-parses the
+    // body before this handler runs (exposing it as req.body), so the
+    // request stream itself is drained by the time we get here. Passing
+    // req.body as handlePostMessage's third argument tells the SDK to use
+    // it directly instead of re-reading the (already-exhausted) raw stream
+    // — without this it throws "stream is not readable" (live test,
+    // 2026-07-21).
+    await session.transport.handlePostMessage(req, res, req.body);
 });
 
 // Gen2 (Cloud Run under the hood) — Gen1 killed every SSE connection at its
