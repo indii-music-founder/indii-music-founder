@@ -12,6 +12,9 @@
     "firestore": {
       "port": 8080
     },
+    "auth": {
+      "port": 9099
+    },
     "functions": {
       "port": 5001,
       "host": "127.0.0.1"
