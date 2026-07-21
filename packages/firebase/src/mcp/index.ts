@@ -1,4 +1,4 @@
-import * as functions from "firebase-functions/v1";
+import { onRequest } from "firebase-functions/v2/https";
 import * as admin from 'firebase-admin';
 import * as express from 'express';
 import cors from 'cors';
@@ -109,7 +109,31 @@ app.post('/message', async (req, res) => {
     await session.transport.handlePostMessage(req, res);
 });
 
-export const mcpEndpoint = functions
-    .runWith({ enforceAppCheck: false })
-    .https.onRequest(app);
+// Gen2 (Cloud Run under the hood) — Gen1 killed every SSE connection at its
+// ~60s execution ceiling regardless of timeoutSeconds, since Gen1 functions
+// are fundamentally request/response and don't support a connection meant to
+// stay open indefinitely. Verified live (2026-07-21): a Gen1 deploy of this
+// exact code authenticated and established the session correctly, then was
+// hard-killed at 62.5s with a 502 "Truncated response body" — proving Gen2
+// migration, not the auth/registry wiring, was the remaining blocker.
+//
+// maxInstances: 1 is deliberate, not an oversight: sessions live in the
+// in-process `sessions` Map above. Cloud Run does not guarantee session
+// affinity across instances by default, so a POST /message routed to a
+// different instance than the one holding its session would 404. Capping at
+// one instance guarantees every request reaches the same in-memory Map.
+// Concurrency is left at its Gen2 default so that instance can still serve
+// many simultaneous SSE connections (Node's event loop, not multiple
+// instances, is what's shared here). Trades horizontal scalability for
+// correctness — the real long-term fix is moving session state to
+// Firestore/Redis so multiple instances can share it.
+export const mcpEndpoint = onRequest(
+    {
+        region: 'us-central1',
+        timeoutSeconds: 3600,
+        memory: '256MiB',
+        maxInstances: 1,
+    },
+    app,
+);
 export const expressApp = app;
