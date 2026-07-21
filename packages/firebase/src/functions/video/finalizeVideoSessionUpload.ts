@@ -295,8 +295,15 @@ export async function finalizeStagedVideoUpload(
     });
 }
 
+export const VIDEO_SESSION_UPLOAD_TRIGGER_OPTIONS = {
+    bucket: 'indii-music-founder.firebasestorage.app',
+    timeoutSeconds: 540,
+    memory: '1GiB',
+    region: 'us-central1',
+} as const;
+
 export const finalizeVideoSessionUpload = onObjectFinalized(
-    { timeoutSeconds: 540, memory: '1GiB', region: 'us-central1' },
+    VIDEO_SESSION_UPLOAD_TRIGGER_OPTIONS,
     async (event) => {
         const path = event.data.name;
         if (!path?.startsWith('session-media/') || !path.includes('/staging/original.')) return;

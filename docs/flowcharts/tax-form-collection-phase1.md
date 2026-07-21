@@ -181,3 +181,12 @@ Fix: added `isTaxFormUploadPage` in `App.tsx`, checked *before* the `!user` gate
 ### Verification
 
 Emulator-validated rules, `packages/firebase && npm run build` clean, 44 unit/component tests (12 new for Phase 2: 4 `requestTaxFormUpload`, 8 `submitTaxForm`, 6 `TaxFormUploadPage`, plus 2 rewritten `TaxFormService.requestForm` cases asserting the link is embedded in the email). No live-cloud round-trip in this environment (no Firebase credentials in this sandbox's `.env`) — recommend one live pass after deploy.
+
+## Transition Breakdown
+
+1. The artist creates an owner-scoped collaborator record; the live Firestore subscription makes that durable record the UI source of truth.
+2. An artist-side upload validates PDF/image type and size, stores the object under the owner's `tax_docs` path, and advances the collaborator record only after Storage succeeds.
+3. A request action invokes the authenticated callable, which verifies ownership, creates a single-use expiring token, and sends the collaborator a public upload link.
+4. The signed-out collaborator opens the pre-auth route and submits the token plus validated file bytes to the rate-limited HTTP function.
+5. A Firestore transaction rejects missing, expired, or consumed tokens and atomically consumes a valid token before the Admin SDK stores the document and marks the collaborator `on_file`.
+6. Owner-only download and deletion remain separate artist actions; neither request delivery nor collaborator upload implies IRS verification.

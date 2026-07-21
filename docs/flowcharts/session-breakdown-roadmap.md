@@ -2,6 +2,12 @@
 
 This map captures the required delivery sequence for ISSUE-1175 through ISSUE-1181. It is a planning artifact only: the active ledger remains the source of truth for requirements and closure evidence.
 
+## Current implementation boundary (2026-07-21)
+
+- ISSUE-1175 has a deployed foundation: versioned media/session/proxy contracts, owner-bound resumable staging, immutable generation/hash finalization, cancellation receipts, private Firestore/Storage rules, renderer upload orchestration, and a fixture-tested FFmpeg proxy pipeline.
+- ISSUE-1175 remains **OPEN/PARTIAL**. Worker queue/persistence, cost settlement, restart recovery, dependency-aware cleanup races, representative rotated VFR HEVC/HDR fixtures, Creative Video session UI, and a real authenticated upload-to-proxy smoke test are not yet proven.
+- ISSUE-1176 through ISSUE-1181 remain **OPEN and unstarted**. The dependency gate below remains authoritative; no later issue may bypass unfinished ISSUE-1175 evidence.
+
 ```mermaid
 flowchart TD
     Artist["Artist uploads one long phone recording"] --> Gate1175["ISSUE-1175: owner-bound resumable upload gate"]
@@ -39,6 +45,8 @@ flowchart TD
     class Original,Proxy,Manifest,Alignment,Plan,Receipt,Library,Handoff data
     class ApprovalGate,PlayableGate,PublishGate gate
 ```
+
+## Transition Breakdown
 
 1. ISSUE-1175 establishes the only acceptable source identity: a private, immutable original and a derived proxy manifest with a deterministic presentation-time map. Later work must consume these receipts rather than an opaque client URL.
 2. ISSUE-1176 compares the ISSUE-1175 guide derivative with the independently verified canonical master. Its output is durable alignment evidence or an honest review/no-match state, never a fabricated offset.

@@ -6,9 +6,19 @@ vi.mock('firebase-functions/v2/storage', () => ({
     onObjectFinalized: vi.fn((_options, handler) => handler),
 }));
 
-import { finalizeStagedVideoUpload } from './finalizeVideoSessionUpload';
+import {
+    finalizeStagedVideoUpload,
+    VIDEO_SESSION_UPLOAD_TRIGGER_OPTIONS,
+} from './finalizeVideoSessionUpload';
 
 describe('finalizeStagedVideoUpload', () => {
+    it('binds the event trigger to the private production bucket without ambient Firebase config', () => {
+        expect(VIDEO_SESSION_UPLOAD_TRIGGER_OPTIONS).toMatchObject({
+            bucket: 'indii-music-founder.firebasestorage.app',
+            timeoutSeconds: 540,
+        });
+    });
+
     it('hashes one generation, promotes it once, and returns an immutable owner-bound original receipt', async () => {
         const bytes = Buffer.from('immutable phone recording bytes');
         const sessionId = 'a'.repeat(40);

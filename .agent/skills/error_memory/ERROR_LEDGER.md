@@ -1,3 +1,13 @@
+## 2026-07-21 Cloud Functions v2 Timeout Limits Depend on Trigger Type — Storage Finalizers Max Out at 540 Seconds
+
+**SEVERITY:** Medium (all local tests, TypeScript builds, unit-test shards, and the application build passed, but production deployment rejected the function configuration)
+
+**MISTAKE:** `finalizeVideoSessionUpload`, a `firebase-functions/v2/storage` `onObjectFinalized` handler, was configured with `timeoutSeconds: 3600`. Firebase permits that ceiling for some v2 HTTP/task workloads, but the deployed Storage event trigger reported a 540-second maximum and stopped the production deployment during function validation.
+
+**FIX:** Set the Storage finalizer to `timeoutSeconds: 540`, bind its `bucket` option explicitly to `indii-music-founder.firebasestorage.app`, rebuild `packages/firebase`, rerun its focused tests, and redeploy. The explicit bucket also prevents unrelated local unit suites that import the root Firebase index from throwing at module initialization when `FIREBASE_CONFIG` is absent. Exact-SHA CI run `29874018363` proved the timeout correction through all 20 unit-test shards, lint, typecheck, builds, staging deployment, staging E2E, and production deployment; the later `/end` gauntlet exposed and covered the ambient-config import case.
+
+**PREVENTION:** Choose timeout limits from the function's actual trigger class, not merely its Gen1/Gen2 generation, and declare the intended bucket in event-trigger options rather than depending on ambient Firebase config at module import. Before shipping a new event handler, verify the provider's limit for that trigger and keep long media processing in a separately queued worker; the Storage finalizer should validate, copy/claim, persist a receipt, and enqueue—not perform an hour-long transcode inline.
+
 ## 2026-07-21 App.tsx's `STANDALONE_MODULES` Does NOT Bypass the Login Gate — Any Truly Public Page Needs Its Own Pre-Auth Route
 
 **SEVERITY:** Medium (would have shipped a public collaborator-facing page that 100% of its unauthenticated audience could never reach)
