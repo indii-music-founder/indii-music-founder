@@ -296,7 +296,7 @@ export async function finalizeStagedVideoUpload(
 }
 
 export const finalizeVideoSessionUpload = onObjectFinalized(
-    { timeoutSeconds: 3600, memory: '1GiB', region: 'us-central1' },
+    { timeoutSeconds: 540, memory: '1GiB', region: 'us-central1' },
     async (event) => {
         const path = event.data.name;
         if (!path?.startsWith('session-media/') || !path.includes('/staging/original.')) return;
