@@ -342,16 +342,45 @@
 ### ISSUE-1118: TaxFormCollection shows a false "Collected" status for W-9/W-8BEN uploads — the file is never actually stored anywhere
 
 - **Re-ticketed from:** ISSUE-721 (2026-07-21 housecleaning; original status was: `🟠 BLOCKED`)
-- **Status:** 🟠 BLOCKED
+- **Status:** ✅ FIXED (2026-07-21 — founder directive: real collection required for public release, both phases built and verified same session)
 - **Severity:** 🟠 HIGH (false compliance signal — real regulatory/1099 risk, though no PII actually leaves the browser since nothing is transmitted)
-- **Fix:** Replaced the fake success states for document upload and requests with honest error messages. The UI now explicitly alerts the user that secure upload capabilities require backend storage rules.
-- **Blocker:** Requires a secure Firebase Storage setup with appropriate security rules for sensitive PII, plus backend API logic.
 - **Module:** Finance / TaxFormCollection
-- **Depends on:** nothing — parallel-safe
-- **Summary:** `handleFileChange` takes an uploaded W-9/W-8BEN file (a document containing real SSN/TIN/EIN) and does nothing with it except store the filename string in local `useState` and flip the collaborator's status to `submitted`. There is no Storage upload, no Firestore write, no backend call anywhere in the file — confirmed via grep (zero `httpsCallable`/firestore hits). The actual `File` object is discarded; only its name string is kept in ephemeral memory. The UI counts this collaborator toward `{verifiedCount}/{totalCount} Collected` as if their real tax form is on file, but a page refresh loses it entirely — and even before a refresh, nothing was ever actually collected anywhere durable. A business relying on this screen to confirm 1099/backup-withholding compliance would be trusting a number that was never real.
-- **Companion finding (same file):** `handleRequestForm` (the "send form request to collaborator" action) shows a fake success indicator (a 3-second "sent" checkmark via `setSentNotifs`) with zero actual email/notification dispatched — no `httpsCallable`, no email service call. This differs from `StripeConnectOnboarding`'s honest pattern in the same module (which explicitly errors "requires the createStripeConnectAccount backend... No onboarding link was created" rather than faking success) — TaxFormCollection should follow that same honest-failure pattern instead of animating a fake confirmation.
-- **Fix Direction:** (1) Wire `handleFileChange` to a real upload path — Firebase Storage under a properly access-controlled path (tax documents are sensitive; verify Storage security rules restrict read access to the artist + authorized finance ops only) plus a Firestore record marking real submission. (2) Wire `handleRequestForm` to a real notification path (e.g. `ResendEmailService`, already used elsewhere in this codebase per `MyContracts.tsx`) or replace the fake-success indicator with `StripeConnectOnboarding`'s honest "not wired yet" error pattern until the real send exists.
-- **Files:** `packages/renderer/src/modules/finance/components/TaxFormCollection.tsx`
+- **Founder decisions locked in before build:** (1) "Reviewed" stays a manual artist action — the artist is always the final signoff on compliance state, never automated. (2) Retention is artist-deletable anytime (Option A) — the IRS recordkeeping duty falls on the taxpayer, not the software; a delete button is not our compliance problem. (3) Full delivery: Phase 1 (artist-side) + Phase 2 (collaborator self-serve token link) both built in one pass, not deferred.
+
+#### What shipped
+
+**Phase 1 — artist-side real collection:**
+- `packages/renderer/src/services/finance/TaxFormService.ts` (NEW) — real Storage upload (`tax_docs/{uid}/{collaboratorId}/{ts}-{fileName}`), real Firestore records (`users/{uid}/tax_collaborators/{id}`), real email via `ResendEmailService`, artist-controlled delete (file-only or full collaborator removal).
+- `packages/renderer/src/modules/finance/components/TaxFormCollection.tsx` — rewritten to subscribe live to Firestore (survives refresh), honest status machine (`needed → requested → on_file → reviewed`, artist-only "Mark Reviewed"), honest error surfacing on every failure path, no fake checkmarks.
+- `packages/renderer/src/components/ui/AddTaxCollaboratorDialog.tsx` (NEW) — react-call multi-field dialog per house rule (no `window.prompt`), wired into `AppShell.tsx`.
+- `packages/firebase/storage.rules` — new `tax_docs/{userId}/{collaboratorId}/{fileName}` block: owner-only read/create/delete, PDF/PNG/JPEG only, ≤20MB, no update (versioned re-uploads), artist-deletable anytime per founder decision.
+- `packages/firebase/firestore.rules` — new `users/{userId}/tax_collaborators/{collaboratorId}` block, owner-scoped.
+
+**Phase 2 — collaborator self-serve token link (the "automated collection" the component title always promised):**
+- `packages/firebase/src/functions/finance/requestTaxFormUpload.ts` (NEW, onCall) — artist mints a single-use 64-hex token (7-day expiry) scoped to one collaborator under their own uid path; rate-limited; App-Check-soft (Electron-aware via `validateAppCheckV2`, not the old hard `enforceAppCheck:true` that blocks desktop — ISSUE-677 family).
+- `packages/firebase/src/functions/finance/submitTaxForm.ts` (NEW, onRequest, unauthenticated, IP rate-limited) — the collaborator (no indii account) posts the file; token is the entire auth boundary, consumed atomically in a Firestore transaction (single-use enforced against races), writes to Storage via Admin SDK, updates the collaborator doc to `on_file`.
+- `packages/firebase/firestore.rules` — new `taxFormRequests/{token}` block, `allow read, write: if false` (server-only via Admin SDK).
+- `packages/renderer/src/modules/finance/pages/TaxFormUploadPage.tsx` (NEW) — public standalone page at `/tax-form-upload?token=...`.
+- `packages/renderer/src/core/App.tsx` — **real architectural finding along the way:** `STANDALONE_MODULES` only hides chrome for *already-authenticated* users; it does NOT bypass the login wall. A collaborator with no indii account would have hit `<LoginForm />` before ever reaching the upload page. Added a new `isTaxFormUploadPage` branch checked *before* the `!user` gate, mirroring the existing `publicLegalPage` carve-out — the only other route in the app that bypasses auth entirely.
+- `packages/renderer/src/services/finance/TaxFormService.ts` — `requestForm` now calls `requestTaxFormUpload` first and embeds the real one-time link in the `ResendEmailService` notification body before marking `requested`.
+
+#### Verification (real, not asserted)
+
+- `packages/firebase/src && npm run build` — clean (root `tsc -b` does not cover this package per ERROR_LEDGER 2026-07-21; used the real gate).
+- `npm run typecheck` (root) — 0 errors. `npm run lint` — 0 errors, 114 warnings (unchanged baseline).
+- Both `storage.rules` and `firestore.rules` compiled clean via `firebase emulators:start --only firestore,storage` (local, no live-cloud auth needed).
+- 44 new unit/component tests, all passing: `TaxFormService.test.ts` (14), `TaxFormCollection.test.tsx` (12), `TaxFormUploadPage.test.tsx` (6), `requestTaxFormUpload.test.ts` (4), `submitTaxForm.test.ts` (8) — covering rejection paths (bad MIME, oversize, expired/consumed/missing token, email failure leaves status unchanged), not just the happy path.
+- Full suite: `npm test -- --run` → 5161 passed, 0 regressions attributable to this change (2 unrelated failures are a concurrent agent's in-progress, uncommitted ISSUE-1175 `functions/video/` work).
+- **Caveat, stated plainly (McLear rule):** live browser verification against a real signed-in Firebase session was not possible in this environment (no `VITE_FIREBASE_API_KEY`/project ID configured in this sandbox's `.env`) — coverage rests on the emulator + fully-mocked unit/component suite, not an end-to-end click-through with real auth. Recommend one live pass (add collaborator → upload → refresh → download → request → collaborator link → submit) after deploy, before relying on this for actual 1099 season.
+
+#### Acceptance (all met at the code level; live-deploy pass still recommended)
+
+1. ✅ Upload persists in real Storage + Firestore; survives refresh (Firestore subscription, not local state).
+2. ✅ Email request is real (`ResendEmailService` → Resend), embeds a real one-time collaborator upload link, honest failure on send error (status not advanced).
+3. ✅ Download is owner-only (`getDownloadURL` behind Storage rules).
+4. ✅ Collaborator (no account) can submit directly via a single-use, 7-day, atomically-consumed token link — the actual automation promised by the feature.
+5. ✅ Artist retains final signoff (manual "Mark Reviewed") and can delete anytime (Option A, founder-directed).
+6. ✅ No fake success anywhere in either phase; every failure path surfaces an honest error.
 
 ---
 

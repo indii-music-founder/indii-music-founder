@@ -1107,6 +1107,24 @@ service cloud.firestore {
       allow read, write: if isOwner(userId);
     }
 
+    // Tax Form Collection (ISSUE-1118) — W-9/W-8BEN collaborator records.
+    // Owner-scoped; artist may delete anytime (retention is the taxpayer's
+    // duty, not ours). Actual file bytes live in Storage at
+    // tax_docs/{userId}/{collaboratorId}/{fileName}; this doc tracks status
+    // and metadata only.
+    match /users/{userId}/tax_collaborators/{collaboratorId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // Single-use collaborator upload tokens (ISSUE-1118 Phase 2). The
+    // collaborator has no indii account, so the token itself — validated
+    // and consumed only by the submitTaxForm Cloud Function via the Admin
+    // SDK — is the entire auth boundary. No client, including the artist,
+    // may read or write these directly.
+    match /taxFormRequests/{token} {
+      allow read, write: if false;
+    }
+
     // =========================================================================
     // Licensing Clearances (ISSUE-827: Sync clearance workflow)
     // =========================================================================

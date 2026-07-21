@@ -98,6 +98,10 @@ export { ingestEarningsReport } from './functions/finance/ingestEarningsReport';
 export { calculateRoyaltyAllocations } from './functions/finance/calculateRoyaltyAllocations';
 export { setRecoupmentBalance } from './functions/finance/setRecoupmentBalance';
 
+// Tax Form Collection (ISSUE-1118 Phase 2: collaborator self-serve upload link)
+export { requestTaxFormUpload } from './functions/finance/requestTaxFormUpload';
+export { submitTaxForm } from './functions/finance/submitTaxForm';
+
 // Distribution Functions (Item 218: Delivery Status Polling)
 export { pollDeliveryStatus } from './distribution/pollDeliveryStatus';
 

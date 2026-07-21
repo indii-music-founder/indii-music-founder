@@ -223,6 +223,25 @@ service firebase.storage {
     }
 
     // ========================================
+    // TAX DOCUMENTS (Sensitive PII — W-9/W-8BEN)
+    // ========================================
+
+    // Owner-uploaded tax forms for payment collaborators. Retention is the
+    // artist's call, not ours (IRS recordkeeping duty falls on the taxpayer,
+    // not the software) — artist may delete anytime. No update: a corrected
+    // file is a new upload under a new fileName, keeping prior versions
+    // addressable until the artist explicitly deletes them.
+    match /tax_docs/{userId}/{collaboratorId}/{fileName} {
+      allow read: if isAuthenticated() && request.auth.uid == userId;
+      allow delete: if isAuthenticated() && request.auth.uid == userId;
+      allow create: if isAuthenticated() &&
+                      request.auth.uid == userId &&
+                      isUnderSizeLimit(20) &&
+                      request.resource.contentType in ['application/pdf', 'image/png', 'image/jpeg'];
+      allow update: if false;
+    }
+
+    // ========================================
     // APP RELEASES (Founders)
     // ========================================
 

@@ -28,6 +28,7 @@ import { AppInitializationProvider } from '@/providers/AppInitializationProvider
 const AppShell = lazy(() => import('./AppShell'));
 const BugReportDialog = lazy(() => import('@/modules/debug/BugReportDialog').then(m => ({ default: m.BugReportDialog })));
 const InstagramOAuthCallback = lazy(() => import('@/modules/analytics/components/InstagramOAuthCallback').then(m => ({ default: m.InstagramOAuthCallback })));
+const TaxFormUploadPage = lazy(() => import('@/modules/finance/pages/TaxFormUploadPage').then(m => ({ default: m.TaxFormUploadPage })));
 
 export function isRemoteSurfaceDevice(
     mobile: Pick<MobileState, 'isAnyPhone' | 'isTablet' | 'isTouchDevice'>
@@ -154,9 +155,16 @@ export default function App() {
         () => (location.pathname.replace(/\/+$/, '') || '/') === '/auth/instagram/callback',
         [location.pathname],
     );
+    // Public, unauthenticated collaborator tax-form upload (ISSUE-1118 Phase 2).
+    // The collaborator has no indii account, so this route must bypass the
+    // login gate entirely — same treatment as publicLegalPage above.
+    const isTaxFormUploadPage = useMemo(
+        () => (location.pathname.replace(/\/+$/, '') || '/') === '/tax-form-upload',
+        [location.pathname],
+    );
 
     // URL sync must not rewrite public legal routes back to a persisted module.
-    useURLSync({ disabled: !!publicLegalPage || isInstagramOAuthCallback });
+    useURLSync({ disabled: !!publicLegalPage || isInstagramOAuthCallback || isTaxFormUploadPage });
 
     // Determine if current module should show chrome (sidebar, command bar, etc.)
     const showChrome = useMemo(
@@ -181,6 +189,8 @@ export default function App() {
         <AppInitializationProvider>
             {publicLegalPage ? (
                 <PublicLegalPage type={publicLegalPage} />
+            ) : isTaxFormUploadPage ? (
+                <Suspense fallback={<LoadingFallback />}><TaxFormUploadPage /></Suspense>
             ) : authLoading ? (
                 <LoadingFallback />
             ) : !user ? (
