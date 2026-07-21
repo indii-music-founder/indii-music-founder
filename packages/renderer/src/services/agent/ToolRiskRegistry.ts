@@ -70,6 +70,10 @@ export const TOOL_RISK_REGISTRY: Record<string, ToolRiskMetadata> = {
     browser_navigate: { riskTier: 'read', permissionTier: 'builtin', requiresApproval: false, description: 'Read-only operation' },
     browser_snapshot: { riskTier: 'read', permissionTier: 'builtin', requiresApproval: false, description: 'Read-only operation' },
 
+    // Computer (read) — CE-1, ISSUE-1110
+    computer_check_permissions: { riskTier: 'read', permissionTier: 'builtin', requiresApproval: false, description: 'Preflight macOS Screen Recording / Accessibility permission status' },
+    computer_list_apps: { riskTier: 'read', permissionTier: 'builtin', requiresApproval: false, description: 'List running, user-facing applications' },
+
     // Distribution (read)
     list_timeline_templates: { riskTier: 'read', permissionTier: 'builtin', requiresApproval: false, description: 'Read-only operation' },
     list_timelines: { riskTier: 'read', permissionTier: 'builtin', requiresApproval: false, description: 'Read-only operation' },
@@ -213,6 +217,12 @@ export const TOOL_RISK_REGISTRY: Record<string, ToolRiskMetadata> = {
 
     // Browser (write — actions)
     browser_action: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Standard write operation' },
+
+    // Computer (write — CE-1, ISSUE-1110). Screen contents and app launches are sensitive
+    // even though they aren't "destructive" in the delete/rotate sense; require approval
+    // on first use per docs/COMPUTER_EXECUTION_EXTENSION.md §3.2 and §5.
+    computer_screenshot: { riskTier: 'write', permissionTier: 'plugin', requiresApproval: true, description: 'Capture desktop screen contents — sensitive, requires approval' },
+    computer_open_app: { riskTier: 'write', permissionTier: 'plugin', requiresApproval: true, description: 'Launch a native application on the host machine' },
 
     // Verification
     verify_output: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Standard write operation' },

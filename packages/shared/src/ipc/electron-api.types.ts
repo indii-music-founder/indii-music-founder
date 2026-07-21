@@ -106,6 +106,28 @@ export interface ElectronAgentAPI {
     updateKnowledge: (filePath: string, action: string, knowledge: unknown) => Promise<{ success: boolean; error?: string }>;
 }
 
+export interface ComputerPermissionStatusData {
+    platform: string;
+    supported: boolean;
+    screenRecording: string;
+    accessibility: string;
+    guidance: string[];
+}
+
+export interface ComputerScreenshotData {
+    base64: string;
+    width: number;
+    height: number;
+    displayId: number;
+}
+
+export interface ElectronComputerAPI {
+    checkPermissions: () => Promise<{ success: boolean; data?: ComputerPermissionStatusData; error?: string }>;
+    screenshot: (options?: { displayId?: number }) => Promise<{ success: boolean; data?: ComputerScreenshotData; error?: string }>;
+    listApps: () => Promise<{ success: boolean; data?: { apps: string[] }; error?: string }>;
+    openApp: (app: string) => Promise<{ success: boolean; data?: { app: string }; error?: string }>;
+}
+
 export interface ElectronVideoAPI {
     saveAsset: (url: string, filename: string) => Promise<unknown>;
     openFolder: (filePath?: string) => Promise<unknown>;
@@ -241,6 +263,7 @@ export interface ElectronAPI {
     marketing: ElectronMarketingAPI;
     security: ElectronSecurityAPI;
     agent: ElectronAgentAPI;
+    computer: ElectronComputerAPI;
     video: ElectronVideoAPI;
     daw: ElectronDawAPI;
     distribution: ElectronDistributionAPI;

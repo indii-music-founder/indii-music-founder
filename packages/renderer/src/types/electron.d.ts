@@ -153,6 +153,14 @@ export interface ElectronAPI {
         updateKnowledge: (filePath: string, action: string, knowledge: unknown) => Promise<{ success: boolean; error?: string }>;
     };
 
+    // Computer Capability (CE-1, ISSUE-1110 — read path only; input control is CE-2/ISSUE-1111)
+    computer?: {
+        checkPermissions: () => Promise<{ success: boolean; data?: { platform: string; supported: boolean; screenRecording: string; accessibility: string; guidance: string[] }; error?: string }>;
+        screenshot: (options?: { displayId?: number }) => Promise<{ success: boolean; data?: { base64: string; width: number; height: number; displayId: number }; error?: string }>;
+        listApps: () => Promise<{ success: boolean; data?: { apps: string[] }; error?: string }>;
+        openApp: (app: string) => Promise<{ success: boolean; data?: { app: string }; error?: string }>;
+    };
+
 
     // Autonomous Sidecar (Docker container management — restart handled by health checks)
     sidecar?: {

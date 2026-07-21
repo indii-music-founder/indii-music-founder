@@ -3,7 +3,7 @@
 > This file is written by the /real test agent and consumed by a fixing agent.
 > The test agent NEVER modifies code. The fix agent NEVER runs tests.
 >
-> **Last updated:** 2026-07-20 (audit completed, ISSUE-1095..1099 appended, fixes applied)
+> **Last updated:** 2026-07-20 (Computer Execution plan ISSUE-1110..1114 appended; earlier: ISSUE-1095..1099 audit + fixes)
 > **Branch:** `main` (direct commits)
 >
 > **Ledger protocol (V2):** This is the ACTIVE master ledger. It operates exactly like the original:
@@ -195,3 +195,60 @@
 - **ISSUE-1093 → FIXED when:** P1–P6 land (all buildable backends real) AND P7a lands AND P7b is either done or explicitly accepted-as-vendor-gated by the founder. **[✅ ALL MET 2026-07-20 — founder explicitly accepted P7b as vendor-gated in-session; tracked in `docs/RELEASE_CHECKLIST.md`. ISSUE-1093 marked FIXED.]**
 
 - **Acceptance (this plan entry closes when):** each of P0–P6 + P7a is committed, verified (tsc + vitest + honest-response grep), and its owning tool marked done in the truth table above; P7b + P8 are tracked as founder-gated with matching `docs/RELEASE_CHECKLIST.md` entries. **[P7b entry added 2026-07-20 ("Sample Clearance Fingerprint Vendor"). P8 needs its own RELEASE_CHECKLIST.md entry once deploy runs — see P8 below.]**
+
+---
+
+## Session 2026-07-20 — Computer Execution capability (Execution Layer extension)
+
+> Source: founder-directed audit + design pass. Full architecture in `docs/COMPUTER_EXECUTION_EXTENSION.md`
+> (Phase-1 audit answers, extension-point table, provider comparison, security posture).
+> Mandate: extend the existing Execution Layer — no redesign, no LangChain, no new orchestrator.
+> Audit conclusion: the Layer already dispatches to Electron (Browser Brain–Body–Bridge) and to a
+> remote-origin desktop executor (RemoteRelayService + Studio executor lease). Computer = one new
+> capability module + one new Electron body.
+
+### ISSUE-1110: CE-1 — Computer capability bridge + read path (screenshot, app list/open, permission preflight)
+- **Status:** 🔴 OPEN
+- **Severity:** 🟡 MEDIUM (new capability, foundation slice)
+- **Module:** packages/main (handlers/computer.ts, services/ComputerExecutionService.ts, preload.ts), packages/renderer (tools/ComputerTools.ts, ToolRiskRegistry.ts)
+- **Evidence:** No `electronAPI.computer.*` namespace exists; no ComputerTools module in TOOL_REGISTRY. Browser capability proves the pattern (`BrowserTools.ts` → `handlers/agent.ts` → Puppeteer body).
+- **Expected (acceptance):** New IPC namespace with `validateSender` + Zod schemas mirroring `handlers/agent.ts`; `ComputerExecutionService` behind a `ComputerProvider` interface; tools `computer_check_permissions` (read), `computer_screenshot` (write), `computer_list_apps` (read), `computer_open_app` (write); macOS TCC preflight (Screen Recording + Accessibility via `systemPreferences.isTrustedAccessibilityClient`) returns actionable guidance, never mid-run failure; web build fails closed with `COMPUTER_DESKTOP_ONLY` (mirror of `BROWSER_DESKTOP_ONLY`); risk entries added to `TOOL_RISK_REGISTRY`; typecheck + lint + `npm test -- --run` green.
+- **Depends on:** founder approval of `docs/COMPUTER_EXECUTION_EXTENSION.md` (provider choice: Gemini Computer Use brain + @jitsi/robotjs body). Nothing else — standalone slice.
+
+### ISSUE-1111: CE-2 — Computer input body (click/type/key/scroll) + kill switch + app allowlist, handshake-gated
+- **Status:** 🔴 OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** packages/main (computer provider impl, kill switch, allowlist), packages/renderer (ComputerTools input tools, ToolRiskRegistry)
+- **Evidence:** No OS-level input control exists anywhere in the codebase; `execute_code` sets the precedent that host-level actions are `destructive / requiresApproval: true`.
+- **Expected (acceptance):** `computer_click` / `computer_type` / `computer_key` / `computer_scroll` classified `destructive`, `requiresApproval: true` — unapproved calls pause with `WAITING_ON_HANDSHAKE` via existing DigitalHandshake flow (no engine changes); kill switch (global hotkey + UI stop) checked in main process before EVERY action; app allowlist enforced in main process, not renderer; refuse `type` when macOS SecureInput is active; input provider = maintained robotjs fork (`@jitsi/robotjs`), AppleScript/cliclick fallback if native module packaging fights Electron Forge; NO credential entry ever (system-prompt + main-process enforcement).
+- **Depends on:** ISSUE-1110 (bridge + provider interface).
+
+### ISSUE-1112: CE-3 — ComputerAgentDriver autonomous loop + `computer_drive` tool + session tracking
+- **Status:** 🔴 OPEN
+- **Severity:** 🟡 MEDIUM
+- **Module:** packages/renderer (ComputerAgentDriver.ts, ComputerTools, INTELLIGENCE_MODELS config), Firestore (`users/{uid}/computerSessions/{id}`)
+- **Evidence:** `BrowserAgentDriver.ts` is the proven loop shape (capture → reason → act → repeat, max-step bounded, `INTELLIGENCE_MODELS.BROWSER.AGENT`). No computer equivalent exists.
+- **Expected (acceptance):** `ComputerAgentDriver` mirrors the browser loop with coordinate action space; model resolved from new `INTELLIGENCE_MODELS.COMPUTER.AGENT` config key — NO hardcoded model/endpoint IDs (Platinum Anti-Pattern #9; `/plat` grep must stay clean); `computer_drive` registered as `destructive / requiresApproval: true`; session doc tracks status + per-step action log (screenshot hashes/metadata only, never raw frames in Firestore); kill switch re-checked every step; per-step audit inherited from BaseAgent loop (`agent_audit` + GEAP fingerprints) verified present.
+- **Depends on:** ISSUE-1111 (input body).
+
+### ISSUE-1113: CE-4 — Remote dispatch of computer tasks (phone/cloud → desktop) via existing relay + lease
+- **Status:** 🔴 OPEN
+- **Severity:** 🟢 LOW (later phase; desktop-local value ships without it)
+- **Module:** packages/renderer (RemoteRelayService command vocabulary, StudioExecutorLeaseService integration), packages/firebase (lease validation)
+- **Evidence:** `RemoteRelayService.ts` (Firestore broker: `users/{uid}/remote-relay-commands` → desktop → `remote-relay-responses`) and `issueStudioExecutorLease` already ship — computer tasks are a new command type on an existing channel.
+- **Expected (acceptance):** New relay command `{type: 'computer_task', goal, constraints}`; desktop executes ONLY while holding a valid executor lease; remote-originated tasks always land in the handshake/memory-inbox approval queue — never auto-approved in v1; response carries session doc reference.
+- **Depends on:** ISSUE-1112 (driver + sessions).
+
+### ISSUE-1114: CE-5 — Computer capability hardening (Windows provider, session-scoped grants, redaction)
+- **Status:** 🔴 OPEN
+- **Severity:** 🟢 LOW (post-MVP hardening)
+- **Module:** packages/main (NativeWinProvider, secure-input coverage), packages/renderer (session-scoped approval grants)
+- **Evidence:** CE-1..CE-3 target macOS first (founder's machine); Windows desktop target exists (NSIS build) and will need parity.
+- **Expected (acceptance):** Windows input/screenshot provider behind the same `ComputerProvider` interface; session-scoped approval grants (approve once per drive session instead of per-action) as a DigitalHandshake-compatible relaxation; screenshot redaction pass before any frame leaves the machine; `/plat` GO verdict on the full capability.
+- **Depends on:** ISSUE-1112 (mac path proven). Windows work parallelizable with ISSUE-1113.
+
+#### Dependencies (encode-build-order rule [[encode-build-order-in-ledger]])
+
+- Build order: **1110 → 1111 → 1112 → {1113, 1114 in parallel}**.
+- 1110 is gated on ONE founder decision: approve the architecture in `docs/COMPUTER_EXECUTION_EXTENSION.md` (brain = Gemini Computer Use via Vertex, body = @jitsi/robotjs local). Rejected alternatives recorded there: LangChain (redesign — forbidden), Anthropic/OpenAI CUA (second vendor, fallback only), Browserbase/Stagehand (browser-only, future cloud target).
+- No entry here blocks or is blocked by the MCP backend plan (ISSUE-1100 P-series) — independent tracks.

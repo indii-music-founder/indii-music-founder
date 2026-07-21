@@ -85,6 +85,7 @@ import { registerSFTPHandlers } from './handlers/sftp';
 import { sftpService } from './services/SFTPService';
 import { setupDistributionHandlers as registerDistributionHandlers } from './handlers/distribution';
 import { registerAgentHandlers } from './handlers/agent';
+import { registerComputerHandlers } from './handlers/computer';
 import { registerBrandHandlers } from './handlers/brand';
 import { registerPublicistHandlers } from './handlers/publicist';
 import { registerMarketingHandlers } from './handlers/marketing';
@@ -485,6 +486,7 @@ if (!gotTheLock) {
         registerSFTPHandlers();
         registerDistributionHandlers();
         registerAgentHandlers();
+        registerComputerHandlers();
         registerBrandHandlers();
         registerPublicistHandlers();
         registerMarketingHandlers();

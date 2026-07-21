@@ -35,6 +35,7 @@ import { AutonomousTools } from './AutonomousTools';
 import { CommerceTools } from './CommerceTools';
 import { BigQueryTools } from './BigQueryTools';
 import { BrowserTools } from './BrowserTools';
+import { ComputerTools } from './ComputerTools';
 import { Web3Tools } from './Web3Tools';
 import { CoreVaultTools } from './CoreVaultTools';
 import { CaptainsLogTools } from './CaptainsLogTools';
@@ -100,6 +101,7 @@ export const TOOL_REGISTRY: Record<string, AnyToolFunction> = {
     ...CommerceTools,
     ...BigQueryTools,
     ...BrowserTools,
+    ...ComputerTools,
     ...Web3Tools,
     // Memory Architecture Layer 3 & 4
     ...CoreVaultTools,

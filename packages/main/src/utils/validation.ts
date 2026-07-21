@@ -161,3 +161,12 @@ export const BrandConsistencySchema = z.object({
     }, { message: "Invalid asset path (Traversal detected or unsupported extension)" }),
     brandKit: z.record(z.any())
 });
+
+// Computer capability (CE-1, ISSUE-1110)
+export const ComputerScreenshotSchema = z.object({
+    displayId: z.number().int().nonnegative().optional()
+}).optional();
+
+// Must start alphanumeric so a crafted value can never be parsed as a CLI flag by `open`.
+export const ComputerOpenAppSchema = z.string().min(1).max(255)
+    .regex(/^[A-Za-z0-9][A-Za-z0-9 ()._+-]*$/, 'App must be a plain application name or bundle id');
