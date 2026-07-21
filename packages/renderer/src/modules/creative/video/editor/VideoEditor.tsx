@@ -8,6 +8,7 @@ import { StudioToolbar } from '@/components/studio/StudioToolbar';
 import { useTimelineDrag } from './hooks/useTimelineDrag';
 import { VideoEditorSidebar } from './components/VideoEditorSidebar';
 import { useVideoEditor } from './hooks/useVideoEditor';
+import { useVideoProjectPersistence } from './hooks/useVideoProjectPersistence';
 import AnnotationPalette from "../../components/AnnotationPalette";
 import EditDefinitionsPanel from "../../components/EditDefinitionsPanel";
 import { STUDIO_COLORS, CreativeColor } from '../../constants';
@@ -43,7 +44,10 @@ export const VideoEditor: React.FC<VideoEditorProps> = ({ initialVideo }) => {
 
     const { handleDragStart } = useTimelineDrag();
 
+    useVideoProjectPersistence();
+
     const isPopoutActive = useVideoEditorStore(state => state.isPopoutActive);
+    const isLoadingProject = useVideoEditorStore(state => state.isLoadingProject);
 
     const handleAddTrackVideo = React.useCallback(() => addTrack('video'), [addTrack]);
     const handleFrameUpdate = React.useCallback((frame: number) => setCurrentTime(frame), [setCurrentTime]);
@@ -61,6 +65,14 @@ export const VideoEditor: React.FC<VideoEditorProps> = ({ initialVideo }) => {
     const handleUpdateReferenceImage = React.useCallback((colorId: string, image: { mimeType: string; data: string } | null) => {
         setReferenceImages(prev => ({ ...prev, [colorId]: image }));
     }, []);
+
+    if (isLoadingProject) {
+        return (
+            <div className="flex items-center justify-center h-full bg-[--background] text-[--foreground] text-sm text-gray-400">
+                Loading project timeline…
+            </div>
+        );
+    }
 
     return (
         <div className="flex flex-col h-full bg-[--background] text-[--foreground]">

@@ -10,7 +10,12 @@ import { httpsCallable } from 'firebase/functions';
 vi.mock('../../store/videoEditorStore', () => {
     const mockStore = vi.fn();
     (mockStore as any).subscribe = vi.fn(() => () => { });
-    (mockStore as any).getState = vi.fn(() => ({ isPlaying: false, currentTime: 0 }));
+    // getState() must reflect whatever mockImplementation the test's beforeEach
+    // configures (via mockStore() with no selector), not a separate hardcoded
+    // stub — otherwise store actions read through getState() (as
+    // useVideoProjectPersistence does) throw "not a function" against fields
+    // that only exist on the real mockState object.
+    (mockStore as any).getState = () => mockStore();
     return {
         useVideoEditorStore: mockStore,
         VideoProject: {},
@@ -114,7 +119,7 @@ describe('VideoEditor Integration', () => {
 
         (useToast as unknown as import("vitest").Mock).mockReturnValue(mockToast);
 
-        (useVideoEditorStore as unknown as import("vitest").Mock).mockReturnValue({
+        const mockState = {
             project: mockProject,
             setProject: mockSetProject,
             updateClip: mockUpdateClip,
@@ -126,8 +131,21 @@ describe('VideoEditor Integration', () => {
             setCurrentTime: mockSetCurrentTime,
             setSelectedClipId: mockSetSelectedClipId,
             isPlaying: false,
-            currentTime: 0
-        });
+            currentTime: 0,
+            isPopoutActive: false,
+            isLoadingProject: false,
+            setIsLoadingProject: vi.fn(),
+            resetProjectForId: vi.fn(),
+            loadProjectFromDoc: vi.fn(),
+        };
+        // A selector-based mock (not mockReturnValue) so `useVideoEditorStore(state
+        // => state.someField)` actually reads that field, matching real Zustand
+        // selector semantics — mockReturnValue would return the whole fixed
+        // object regardless of the selector passed in, which broke ISSUE-1147's
+        // `isLoadingProject` gate (it was always a truthy object).
+        (useVideoEditorStore as unknown as import("vitest").Mock).mockImplementation(
+            (selector?: (s: typeof mockState) => unknown) => (selector ? selector(mockState) : mockState)
+        );
 
         (httpsCallable as import("vitest").Mock).mockReturnValue(vi.fn().mockResolvedValue({
             data: { success: true, renderId: 'r1' }

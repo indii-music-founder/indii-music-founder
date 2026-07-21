@@ -782,6 +782,12 @@ service cloud.firestore {
       allow create: if isVerifiedUser() && request.resource.data.userId == request.auth.uid;
     }
 
+    // ISSUE-1147: one persisted video-editor project doc per app project ID.
+    match /videoProjects/{projectId} {
+      allow read, update, delete: if isVerifiedUser() && resource.data.userId == request.auth.uid;
+      allow create: if isVerifiedUser() && request.resource.data.userId == request.auth.uid;
+    }
+
     match /earnings_reports/{reportId} {
       allow read: if isVerifiedUser() && resource.data.userId == request.auth.uid;
       allow create, update: if isVerifiedUser() && request.resource.data.userId == request.auth.uid;

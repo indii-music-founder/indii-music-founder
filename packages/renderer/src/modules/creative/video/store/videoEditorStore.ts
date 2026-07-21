@@ -137,6 +137,12 @@ interface VideoEditorState {
     // Popout Viewer State
     isPopoutActive: boolean;
     setIsPopoutActive: (active: boolean) => void;
+
+    // Persistence (ISSUE-1147)
+    isLoadingProject: boolean;
+    resetProjectForId: (projectId: string) => void;
+    loadProjectFromDoc: (project: VideoProject) => void;
+    setIsLoadingProject: (loading: boolean) => void;
 }
 
 export const INITIAL_PROJECT: VideoProject = {
@@ -155,6 +161,16 @@ export const INITIAL_PROJECT: VideoProject = {
     // explicit template choice, never an exportable default.
     clips: []
 };
+
+// ISSUE-1147: a fresh, empty timeline stamped with the requesting app-project's
+// ID — used when opening a project that has no persisted video-editor doc yet.
+// Never reused across two different project IDs (that was the isolation bug).
+export const blankProjectForId = (projectId: string): VideoProject => ({
+    ...INITIAL_PROJECT,
+    id: projectId,
+    tracks: INITIAL_PROJECT.tracks.map(t => ({ ...t })),
+    clips: [],
+});
 
 const isSafeDimension = (value: number) => Number.isInteger(value) && value >= 64 && value <= 8192;
 const isSafeFps = (value: number) => Number.isInteger(value) && value >= 1 && value <= 120;
@@ -284,6 +300,12 @@ export const useVideoEditorStore = create<VideoEditorState>((_set, get) => {
 
         isPopoutActive: false,
         setIsPopoutActive: (active) => set({ isPopoutActive: active }),
+
+        // Persistence (ISSUE-1147)
+        isLoadingProject: false,
+        setIsLoadingProject: (loading) => set({ isLoadingProject: loading }),
+        resetProjectForId: (projectId) => set({ project: blankProjectForId(projectId), selectedClipId: null }),
+        loadProjectFromDoc: (project) => set({ project, selectedClipId: null }),
 
         setJobId: (id) => set({ jobId: id }),
         setStatus: (status) => set({ status }),
