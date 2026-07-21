@@ -1,3 +1,44 @@
+## 2026-07-21 Root `tsc --noEmit` and `npm run typecheck` Both Exclude `packages/firebase` — Neither Catches Real Errors There
+
+**SEVERITY:** High (multiple "typecheck clean" claims this session were false — the check never touched the files in question; caught only when the real deploy pipeline's build step failed)
+
+**MISTAKE:**
+- Ran bare `tsc --noEmit` from the repo root repeatedly throughout a session doing heavy `packages/firebase/src/mcp/**` work, treating a clean result as proof the code type-checked.
+- Root `tsconfig.json` has `"include": []` and uses **project references** (`"references": [...]`) — a bare `tsc --noEmit` with no `-b`/`--build` flag and no direct file args type-checks **zero files**. It reports "clean" unconditionally, regardless of what's actually broken.
+- `npm run typecheck` (the documented CI command) is `tsc -b packages/shared packages/main packages/renderer` — note `packages/firebase` is **not in that list**. It also never checks Firebase Functions code.
+- The actual gate for that package is `cd packages/firebase && npm run build` (plain `tsc`, `strict: true`, its own `tsconfig.json`) — this is what the Firebase CLI's deploy pipeline runs, and it caught a real error (`draftCwrRegistration.ts` — a `firestore` variable that had been narrowed to a decorative `OwnershipFirestore` interface losing `.doc()`/`.set()`) that both of the above passed cleanly on, multiple times, across multiple commits.
+
+**FIX:** For any change touching `packages/firebase/src/**`, run `cd packages/firebase && npm run build` as the real verification step — not root `tsc --noEmit`, not `npm run typecheck`. If the change also touches `packages/shared`/`main`/`renderer`, run both; they check disjoint file sets.
+
+**PREVENTION:** Before trusting "typecheck passed" as evidence in ANY package inside this monorepo, confirm which packages a given typecheck command actually covers (check `tsconfig.json`'s `include`/`references` and the exact `npm run typecheck` script) — do not assume a repo-root command reaches every workspace. This generalizes beyond `packages/firebase`: any workspace member not listed in the root `typecheck` script's `-b` args is silently unchecked by that command.
+
+---
+
+## 2026-07-21 Wiring a Cloud Functions SSE Endpoint — 5 Real Defects Only Live Testing Caught
+
+**SEVERITY:** Critical (a live MCP endpoint had been non-functional/unauthenticated for an unknown period — the registry that was supposed to serve 11 real tool backends was never imported by any file, and nothing in local tests, typecheck, or code review caught it)
+
+**MISTAKE (the meta-lesson):** All of the below passed local unit tests, typecheck, and code review. **None of them are catchable without actually running the real request against a real deployed instance.** Local mocks of `firebase-admin`, Express, and the MCP SDK all "worked" because the mocks matched what the code EXPECTED, not what the real platform actually does.
+
+**Five defects found, each only by deploying and testing live, in order:**
+
+1. **Dead code masquerading as done.** `mcp/registry.ts`'s `McpToolRegistry` — the per-session, auth-aware tool dispatcher a ledger entry described as already built and working — was imported by **zero files**. The live `mcpEndpoint` export was a stale pre-registry file with one hardcoded tool and no auth at all. `grep -rl "McpToolRegistry"` across the whole repo would have caught this in seconds; it was never run because the ledger's prose was trusted instead.
+   - **PREVENTION:** For any "is X wired up" claim in a ledger/plan, grep for actual imports of the class/function in question before trusting the prose. A described architecture and a connected one are different facts.
+
+2. **Cloud Functions Gen1 hard-kills any HTTP response after ~60s (default) / 540s (max)**, regardless of `timeoutSeconds` tuning — because Gen1 is fundamentally request/response, not built for a connection meant to stay open indefinitely (SSE). No error until deployed and connected: logs showed successful auth, successful session establishment, then a flat "Truncated response body... request timed out" 502 at the ceiling.
+   - **PREVENTION:** Any Cloud Function serving SSE/long-lived streaming MUST be Gen2 (`firebase-functions/v2/https onRequest`, runs on Cloud Run) from the start. Upgrading Gen1→Gen2 in place is NOT supported by `firebase deploy` — requires `firebase functions:delete <name> --region=<region>` first, then a fresh deploy under the same name.
+
+3. **`req.baseUrl`/`req.originalUrl` do not contain the Cloud Functions function-name path segment** (e.g. `/mcpEndpoint`) — the platform strips it before Express ever sees the request, on both Gen1 and Gen2. Any code that advertises a follow-up URL to a client (e.g. MCP's SSE `event: endpoint` handshake) by deriving it from the incoming request path will silently drop that prefix and hand the client a URL that 404s.
+   - **PREVENTION:** Never derive a client-facing callback URL from `req.originalUrl`/`req.baseUrl` on Cloud Functions. Reconstruct the function-name prefix explicitly (e.g. from the `Host` header pattern: does it end in `.cloudfunctions.net`?) if the URL must survive a `cloudfunctions.net`-style external hostname.
+
+4. **`req.protocol` reports `'http'` even for a real HTTPS caller.** Cloud Functions/Cloud Run terminates TLS at the load balancer and forwards internally over plain HTTP; Express only honors `X-Forwarded-Proto` (which IS set correctly) when told `app.set('trust proxy', true)`. Any code building an absolute URL from `req.protocol` will silently downgrade to `http://`, which these domains don't actually serve.
+   - **PREVENTION:** Always `app.set('trust proxy', true)` for any Express app deployed behind Cloud Functions/Cloud Run/any managed load balancer — or just hardcode `https://` if the domain is known to be TLS-only regardless of the internal hop.
+
+5. **Firebase Functions v2's `onRequest` pre-parses the JSON body**, exposing it as `req.body` and consuming the underlying stream in the process. Any library that tries to read the raw request stream itself a second time (e.g. `getRawBody(req)`) gets "stream is not readable" — because it already was.
+   - **PREVENTION:** When wrapping a library that expects to read `req` as a raw stream (many SSE/webhook SDKs do — check for an optional "already-parsed body" parameter first), pass Express's already-parsed `req.body` through explicitly rather than letting the library re-read the stream.
+
+**Verification pattern that actually caught all 5:** mint a real Firebase ID token (service-account custom-token → Identity Toolkit `signInWithCustomToken` exchange, note: the public Web API key is HTTP-referrer-restricted, so server-side calls need a `Referer` header matching an allowed origin), connect with the ACTUAL client SDK/library against the ACTUAL deployed URL, and read the real response. Anything less (mocked SSE, curl without full protocol semantics, "it typechecks") will not surface this class of defect.
+
 ## 2026-07-21 Vitest child_process/promisify Module-Resolution Quirk (mocked execFile silently bypassed)
 
 **SEVERITY:** Medium (no test crash — the mock silently doesn't apply, so tests either false-pass against real syscalls or false-fail with confusing errors)
