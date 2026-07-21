@@ -187,10 +187,10 @@ export const draftCwrRegistration: IndiiMcpTool = {
             const writers = parseWriters(args.writers);
             const workTitleArg = typeof args.workTitle === 'string' && args.workTitle.trim() ? args.workTitle.trim().slice(0, 200) : undefined;
 
-            const firestore = admin.firestore() as unknown as OwnershipFirestore;
-            await verifyReleaseOwnership(firestore, actorUid, releaseId);
+            const firestore = admin.firestore();
+            await verifyReleaseOwnership(firestore as unknown as OwnershipFirestore, actorUid, releaseId);
 
-            const releaseTitle = await readReleaseTitle(firestore, actorUid, releaseId);
+            const releaseTitle = await readReleaseTitle(firestore as unknown as OwnershipFirestore, actorUid, releaseId);
             const workTitle = releaseTitle ?? workTitleArg;
             if (!workTitle) {
                 throw new InvalidCwrArgumentError('Release document has no title and no workTitle argument was provided — cannot draft a CWR work registration without a work title.');
