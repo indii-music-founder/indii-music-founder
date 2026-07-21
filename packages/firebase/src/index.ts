@@ -21,6 +21,7 @@ import { GenerateSpeechRequestSchema } from "./lib/audio";
 
 
 import { executeWorkflowStepFn } from "./functions/agent/executeWorkflowStep";
+import { campaignWaterfallFn } from "./lib/campaign_waterfall";
 import { LongFormVideoJobSchema, generateLongFormVideoFn, stitchVideoFn } from "./lib/long_form_video";
 import { generateVideoFn } from "./lib/video_generation";
 import { generateVideoDirect } from "./lib/video_generation_direct";
@@ -228,13 +229,10 @@ const validateOrgAccess = async (userId: string, orgId?: string | null) => {
 // Import Shared Secrets
 import { geminiApiKey, inngestEventKey, inngestSigningKey, getGeminiApiKey } from "./config/secrets";
 
-// Lazy Initialize Inngest Client
-export const getInngestClient = () => {
-    return new Inngest({
-        id: "indii-music-functions",
-        eventKey: inngestEventKey.value()
-    });
-};
+// Lazy Initialize Inngest Client — factory lives in lib/inngestClient.ts so
+// non-index.ts callers (MCP tools, Inngest step functions) can use it without
+// importing this entire file and its admin.initializeApp() side effect.
+export { getInngestClient } from "./lib/inngestClient";
 
 /**
  * Security Helper: Enforce Admin Access
@@ -807,7 +805,8 @@ export const inngestApi = functions
     .runWith({
         enforceAppCheck: false,
         secrets: [inngestSigningKey, inngestEventKey, geminiApiKey],
-        timeoutSeconds: 540 // 9 minutes
+        timeoutSeconds: 540, // 9 minutes
+        memory: "2GB" // ffmpeg canvas rendering (canvasRenderFn) needs headroom beyond the 256MB v1 default
     })
 
     .https.onRequest(async (req, res) => {
@@ -828,9 +827,12 @@ export const inngestApi = functions
         // Agent Orchestration (offloaded triad execution)
         const executeWorkflowStep = executeWorkflowStepFn(inngestClient);
 
+        // MCP campaign waterfall dispatch (P5, ISSUE-1100)
+        const campaignWaterfall = campaignWaterfallFn(inngestClient);
+
         const handler = serve({
             client: inngestClient,
-            functions: [generateVideo, generateLongFormVideo, stitchVideo, executeMilestone, executeWorkflowStep],
+            functions: [generateVideo, generateLongFormVideo, stitchVideo, executeMilestone, executeWorkflowStep, campaignWaterfall],
             signingKey: inngestSigningKey.value(),
         });
 

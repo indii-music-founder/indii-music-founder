@@ -57,13 +57,14 @@ function optionalBudget(args: Record<string, unknown>): number | undefined {
 
 export const scheduleCampaignWaterfall: IndiiMcpTool = {
     name: 'schedule_campaign_waterfall',
-    description: 'Persists a deterministic draft campaign timeline (announce → pre-save → teaser → release → follow-up → recap) for an owned release. Draft only — no automated execution is scheduled.',
+    description: 'Persists a deterministic campaign timeline (announce → pre-save → teaser → release → follow-up → recap) for an owned release and dispatches it to Inngest for durable, date-gated execution. Outreach emails require the campaign\'s own emailOptIn flag.',
     inputSchema: {
         type: 'object',
         properties: {
             releaseId: { type: 'string', description: 'Authenticated owner release identifier.' },
             campaignStartDate: { type: 'string', description: 'Release day anchor, YYYY-MM-DD.' },
             budget: { type: 'number', description: 'Optional campaign budget (USD), must be >= 0.' },
+            emailOptIn: { type: 'boolean', description: 'Must be true for the outreach step (playlist_pitch_followup) to send an email. Defaults to false.' },
         },
         required: ['releaseId', 'campaignStartDate'],
     },
@@ -75,6 +76,7 @@ export const scheduleCampaignWaterfall: IndiiMcpTool = {
             const startDateString = requireString(args, 'campaignStartDate', 10);
             const startDate = parseCampaignStartDate(startDateString);
             const budget = optionalBudget(args);
+            const emailOptIn = args.emailOptIn === true;
 
             const admin = await import('firebase-admin');
             const firestore = admin.firestore();
@@ -88,11 +90,20 @@ export const scheduleCampaignWaterfall: IndiiMcpTool = {
                 startDate: startDateString,
                 ...(budget !== undefined ? { budget } : {}),
                 events,
-                status: 'draft_scheduled',
-                engine: 'none',
+                status: 'scheduled',
+                engine: 'inngest',
+                emailOptIn,
                 createdAt: admin.firestore.FieldValue.serverTimestamp(),
             };
             const docRef = await firestore.collection('campaigns').add(campaignDoc);
+
+            const { getInngestClient } = await import('../../lib/inngestClient.js');
+            const inngest = getInngestClient();
+            await inngest.send({
+                name: 'mcp/campaign.scheduled',
+                data: { campaignId: docRef.id, uid: actorUid, events },
+                user: { id: actorUid },
+            });
 
             return toolResponse(operationResult({
                 tool: 'schedule_campaign_waterfall',
@@ -102,7 +113,10 @@ export const scheduleCampaignWaterfall: IndiiMcpTool = {
                 resourceId: docRef.id,
                 data: { campaignId: docRef.id, events } as Record<string, unknown>,
                 warnings: [
-                    'Timeline persisted as a DRAFT plan only. No automated execution (Inngest/background dispatch) is wired yet — nothing will run without further action.',
+                    'Timeline dispatched to Inngest for durable, date-gated execution — each step fires on its own date, not immediately.',
+                    emailOptIn
+                        ? 'emailOptIn is true: the playlist_pitch_followup step will send an outreach email when its date arrives.'
+                        : 'emailOptIn is false (default): no email will be sent for any step, including playlist_pitch_followup.',
                 ],
             }));
         } catch (error) {

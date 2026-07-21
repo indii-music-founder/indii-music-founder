@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const ownedGetMock = vi.fn();
 const addMock = vi.fn();
+const sendMock = vi.fn();
 
 const releaseDocRef = {
     get: ownedGetMock,
@@ -22,6 +23,10 @@ vi.mock('firebase-admin', () => {
     return { firestore, default: { firestore } };
 });
 
+vi.mock('../../../lib/inngestClient.js', () => ({
+    getInngestClient: () => ({ send: sendMock }),
+}));
+
 import { scheduleCampaignWaterfall } from '../scheduleCampaignWaterfall.js';
 import { McpContext } from '../../types.js';
 
@@ -31,8 +36,10 @@ describe('scheduleCampaignWaterfall MCP tool', () => {
     beforeEach(() => {
         ownedGetMock.mockReset();
         addMock.mockReset();
+        sendMock.mockReset();
         ownedGetMock.mockResolvedValue({ exists: true, data: () => ({}) });
         addMock.mockResolvedValue({ id: 'camp-1' });
+        sendMock.mockResolvedValue(undefined);
     });
 
     it('persists a deterministic waterfall with correct month-boundary dates and whitelisted fields only', async () => {
@@ -54,18 +61,38 @@ describe('scheduleCampaignWaterfall MCP tool', () => {
             ['playlist_pitch_followup', '2026-03-08'],
             ['recap_ugc_push', '2026-03-19'],
         ]);
-        expect(payload.warnings[0]).toMatch(/DRAFT/);
+        expect(payload.warnings[0]).toMatch(/Inngest/);
+        expect(payload.warnings[1]).toMatch(/emailOptIn is false/);
 
         const written = addMock.mock.calls[0][0];
         expect(Object.keys(written).sort()).toEqual(
-            ['budget', 'createdAt', 'engine', 'events', 'initiatorUid', 'releaseId', 'startDate', 'status'].sort(),
+            ['budget', 'createdAt', 'emailOptIn', 'engine', 'events', 'initiatorUid', 'releaseId', 'startDate', 'status'].sort(),
         );
         expect(written.initiatorUid).toBe('user-1');
-        expect(written.status).toBe('draft_scheduled');
-        expect(written.engine).toBe('none');
+        expect(written.status).toBe('scheduled');
+        expect(written.engine).toBe('inngest');
+        expect(written.emailOptIn).toBe(false);
         expect(written).not.toHaveProperty('userId');
         expect(written).not.toHaveProperty('extraField');
         expect(written.events.every((e: { status: string }) => e.status === 'planned')).toBe(true);
+
+        // Dispatches the durable waterfall event to Inngest
+        expect(sendMock).toHaveBeenCalledTimes(1);
+        const sentEvent = sendMock.mock.calls[0][0];
+        expect(sentEvent.name).toBe('mcp/campaign.scheduled');
+        expect(sentEvent.data.campaignId).toBe('camp-1');
+        expect(sentEvent.data.uid).toBe('user-1');
+        expect(sentEvent.data.events).toEqual(written.events);
+    });
+
+    it('persists emailOptIn:true and reflects it in the warnings', async () => {
+        const result = await scheduleCampaignWaterfall.handler(
+            { releaseId: 'rel-1', campaignStartDate: '2026-03-05', emailOptIn: true },
+            context('user-1'),
+        );
+        const payload = JSON.parse(result.content[0].text);
+        expect(addMock.mock.calls[0][0].emailOptIn).toBe(true);
+        expect(payload.warnings[1]).toMatch(/emailOptIn is true/);
     });
 
     it('omits budget when not supplied', async () => {
