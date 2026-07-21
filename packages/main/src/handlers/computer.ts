@@ -7,7 +7,9 @@ import {
     ComputerClickSchema,
     ComputerTypeSchema,
     ComputerKeySchema,
-    ComputerScrollSchema
+    ComputerScrollSchema,
+    ComputerSessionIdSchema,
+    ComputerGrantSessionSchema
 } from '../utils/validation';
 import { validateSender } from '../utils/ipc-security';
 import { computerExecutionService } from '../services/ComputerExecutionService';
@@ -206,6 +208,54 @@ export function registerComputerHandlers() {
             return { success: true, data: { apps: computerAllowlistStore.getAll() } };
         } catch (error) {
             log.error('Computer Allowlist Remove Failed:', error);
+            if (error instanceof z.ZodError) {
+                return { success: false, error: `Validation Error: ${error.errors[0].message}` };
+            }
+            return { success: false, error: String(error) };
+        }
+    });
+
+    // --- Session-scoped approval grants (CE-5, ISSUE-1114) ----------------------
+    // Real, tested primitive. NOT wired into any enforcement point yet — see
+    // ComputerExecutionService's class doc and ISSUE-1116.
+
+    ipcMain.handle('computer:grant-session', async (event: IpcMainInvokeEvent, args: unknown) => {
+        try {
+            validateSender(event);
+            const { sessionId, ttlMs } = ComputerGrantSessionSchema.parse(args);
+            const grant = computerExecutionService.grantSession(sessionId, ttlMs);
+            return { success: true, data: grant };
+        } catch (error) {
+            log.error('Computer Grant Session Failed:', error);
+            if (error instanceof z.ZodError) {
+                return { success: false, error: `Validation Error: ${error.errors[0].message}` };
+            }
+            return { success: false, error: String(error) };
+        }
+    });
+
+    ipcMain.handle('computer:revoke-grant', async (event: IpcMainInvokeEvent, sessionId: unknown) => {
+        try {
+            validateSender(event);
+            const validatedId = ComputerSessionIdSchema.parse(sessionId);
+            computerExecutionService.revokeGrant(validatedId);
+            return { success: true, data: { sessionId: validatedId } };
+        } catch (error) {
+            log.error('Computer Revoke Grant Failed:', error);
+            if (error instanceof z.ZodError) {
+                return { success: false, error: `Validation Error: ${error.errors[0].message}` };
+            }
+            return { success: false, error: String(error) };
+        }
+    });
+
+    ipcMain.handle('computer:has-grant', async (event: IpcMainInvokeEvent, sessionId: unknown) => {
+        try {
+            validateSender(event);
+            const validatedId = ComputerSessionIdSchema.parse(sessionId);
+            return { success: true, data: { hasGrant: computerExecutionService.hasActiveGrant(validatedId) } };
+        } catch (error) {
+            log.error('Computer Has Grant Failed:', error);
             if (error instanceof z.ZodError) {
                 return { success: false, error: `Validation Error: ${error.errors[0].message}` };
             }

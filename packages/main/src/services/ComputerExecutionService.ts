@@ -1,13 +1,14 @@
 import { systemPreferences } from 'electron';
 import { ComputerProvider, ComputerScreenshot, ClickButton } from './computer/ComputerProvider';
 import { NativeMacProvider } from './computer/NativeMacProvider';
+import { NativeWinProvider } from './computer/NativeWinProvider';
 import { computerAllowlistStore } from './computer/ComputerAllowlistStore';
 
 export type PermissionState = 'granted' | 'denied' | 'not-determined' | 'restricted' | 'unknown' | 'unsupported';
 
 export interface ComputerPermissionStatus {
     platform: NodeJS.Platform;
-    /** Whether this platform has a Computer provider at all (CE-1: macOS only). */
+    /** Whether this platform has a Computer provider at all. */
     supported: boolean;
     screenRecording: PermissionState;
     accessibility: PermissionState;
@@ -15,27 +16,50 @@ export interface ComputerPermissionStatus {
     guidance: string[];
 }
 
+export interface ComputerSessionGrant {
+    sessionId: string;
+    grantedAt: number;
+    expiresAt: number;
+}
+
+const DEFAULT_GRANT_TTL_MS = 15 * 60 * 1000; // 15 minutes — one drive session's worth of leeway
+
 /**
  * ComputerExecutionService — main-process entry for the Computer capability.
  *
  * Owns platform detection, TCC permission preflight, the kill switch (ISSUE-1111 CE-2),
- * the app allowlist, and delegation to the active ComputerProvider. Windows lands in
- * CE-5 (ISSUE-1114) behind the same interface.
+ * the app allowlist, session-scoped approval grants (ISSUE-1114 CE-5), and delegation to
+ * the active ComputerProvider (macOS via NativeMacProvider, Windows via NativeWinProvider).
  *
  * Kill switch: every input-control method (click/type/key/scroll) checks the abort flag
  * BEFORE executing, per docs/COMPUTER_EXECUTION_EXTENSION.md §5.3. The flag is set by
  * either the renderer (IPC `computer:abort`) or a global hotkey registered in main.ts —
  * both routes exist so the user can always reclaim the machine even if the renderer
  * process is unresponsive.
+ *
+ * Session grants: a real, tested primitive (create/check/revoke/expire) for "approve once
+ * per drive session instead of per action" — the UX relaxation ISSUE-1114 asks for. It is
+ * NOT wired into any enforcement point here: real per-action approval enforcement doesn't
+ * exist yet anywhere in the tool-dispatch path (see ISSUE-1116, logged separately). Wiring
+ * a Computer-only enforcement check here would create a second, inconsistent approval
+ * system alongside whatever ISSUE-1116 eventually builds platform-wide — so this class
+ * exposes the grant primitive for that future wiring to consume, and stops there.
  */
 export class ComputerExecutionService {
     private provider: ComputerProvider | null;
     private aborted = false;
+    private grants = new Map<string, ComputerSessionGrant>();
 
     constructor(provider?: ComputerProvider | null) {
         this.provider = provider !== undefined
             ? provider
-            : (process.platform === 'darwin' ? new NativeMacProvider() : null);
+            : ComputerExecutionService.defaultProviderForPlatform();
+    }
+
+    private static defaultProviderForPlatform(): ComputerProvider | null {
+        if (process.platform === 'darwin') return new NativeMacProvider();
+        if (process.platform === 'win32') return new NativeWinProvider();
+        return null;
     }
 
     isSupported(): boolean {
@@ -62,17 +86,60 @@ export class ComputerExecutionService {
         }
     }
 
+    // --- Session-scoped approval grants (CE-5, ISSUE-1114) ------------------------
+
+    grantSession(sessionId: string, ttlMs = DEFAULT_GRANT_TTL_MS): ComputerSessionGrant {
+        const now = Date.now();
+        const grant: ComputerSessionGrant = { sessionId, grantedAt: now, expiresAt: now + ttlMs };
+        this.grants.set(sessionId, grant);
+        return grant;
+    }
+
+    revokeGrant(sessionId: string): void {
+        this.grants.delete(sessionId);
+    }
+
+    hasActiveGrant(sessionId: string, now = Date.now()): boolean {
+        const grant = this.grants.get(sessionId);
+        if (!grant) return false;
+        if (grant.expiresAt <= now) {
+            this.grants.delete(sessionId);
+            return false;
+        }
+        return true;
+    }
+
+    getGrant(sessionId: string): ComputerSessionGrant | undefined {
+        return this.hasActiveGrant(sessionId) ? this.grants.get(sessionId) : undefined;
+    }
+
     // --- Permissions ---------------------------------------------------------
 
     getPermissionStatus(): ComputerPermissionStatus {
         const platform = process.platform;
-        if (platform !== 'darwin' || !this.provider) {
+        if (!this.provider) {
             return {
                 platform,
                 supported: false,
                 screenRecording: 'unsupported',
                 accessibility: 'unsupported',
-                guidance: [`Computer control is macOS-only in this build. Windows support is tracked as ISSUE-1114 (CE-5).`]
+                guidance: [`Computer control has no provider for platform "${platform}" in this build.`]
+            };
+        }
+
+        if (platform === 'win32') {
+            // Windows has no TCC-style screen/accessibility permission model to preflight —
+            // PowerShell/SendKeys/mouse_event run under the same process privileges as indii.
+            return { platform, supported: true, screenRecording: 'granted', accessibility: 'granted', guidance: [] };
+        }
+
+        if (platform !== 'darwin') {
+            return {
+                platform,
+                supported: false,
+                screenRecording: 'unsupported',
+                accessibility: 'unsupported',
+                guidance: ['Computer control supports macOS and Windows only in this build.']
             };
         }
 
@@ -94,7 +161,7 @@ export class ComputerExecutionService {
 
     private requireProvider(): ComputerProvider {
         if (!this.provider) {
-            throw new Error('Computer control is not supported on this platform (macOS-only in CE-1/CE-2; Windows tracked as ISSUE-1114).');
+            throw new Error(`Computer control is not supported on this platform ("${process.platform}"). Supported: macOS, Windows.`);
         }
         return this.provider;
     }

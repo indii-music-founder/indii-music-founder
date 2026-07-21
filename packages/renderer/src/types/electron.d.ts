@@ -169,6 +169,9 @@ export interface ElectronAPI {
         allowlistGet: () => Promise<{ success: boolean; data?: { apps: string[] }; error?: string }>;
         allowlistAdd: (app: string) => Promise<{ success: boolean; data?: { apps: string[] }; error?: string }>;
         allowlistRemove: (app: string) => Promise<{ success: boolean; data?: { apps: string[] }; error?: string }>;
+        grantSession: (sessionId: string, ttlMs?: number) => Promise<{ success: boolean; data?: { sessionId: string; grantedAt: number; expiresAt: number }; error?: string }>;
+        revokeGrant: (sessionId: string) => Promise<{ success: boolean; data?: { sessionId: string }; error?: string }>;
+        hasGrant: (sessionId: string) => Promise<{ success: boolean; data?: { hasGrant: boolean }; error?: string }>;
     };
 
 

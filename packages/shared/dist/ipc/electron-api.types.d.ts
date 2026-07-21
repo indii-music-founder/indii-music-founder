@@ -292,6 +292,29 @@ export interface ElectronComputerAPI {
         };
         error?: string;
     }>;
+    grantSession: (sessionId: string, ttlMs?: number) => Promise<{
+        success: boolean;
+        data?: {
+            sessionId: string;
+            grantedAt: number;
+            expiresAt: number;
+        };
+        error?: string;
+    }>;
+    revokeGrant: (sessionId: string) => Promise<{
+        success: boolean;
+        data?: {
+            sessionId: string;
+        };
+        error?: string;
+    }>;
+    hasGrant: (sessionId: string) => Promise<{
+        success: boolean;
+        data?: {
+            hasGrant: boolean;
+        };
+        error?: string;
+    }>;
 }
 export interface ElectronVideoAPI {
     saveAsset: (url: string, filename: string) => Promise<unknown>;

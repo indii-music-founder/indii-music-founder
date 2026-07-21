@@ -200,3 +200,11 @@ export const ComputerScrollSchema = z.object({
     dx: z.number().int().min(-2000).max(2000),
     dy: z.number().int().min(-2000).max(2000)
 });
+
+// Computer session-scoped approval grants (CE-5, ISSUE-1114)
+export const ComputerSessionIdSchema = z.string().min(1).max(128).regex(/^[A-Za-z0-9_-]+$/, 'Session id must be alphanumeric, dashes, or underscores');
+
+export const ComputerGrantSessionSchema = z.object({
+    sessionId: ComputerSessionIdSchema,
+    ttlMs: z.number().int().positive().max(60 * 60 * 1000).optional() // capped at 1 hour
+});

@@ -14,7 +14,10 @@ const mocks = vi.hoisted(() => ({
         scroll: vi.fn().mockResolvedValue(undefined),
         abort: vi.fn(),
         resetAbort: vi.fn(),
-        isAborted: vi.fn(() => false)
+        isAborted: vi.fn(() => false),
+        grantSession: vi.fn((sessionId: string, ttlMs?: number) => ({ sessionId, grantedAt: 1000, expiresAt: 1000 + (ttlMs ?? 900_000) })),
+        revokeGrant: vi.fn(),
+        hasActiveGrant: vi.fn(() => false)
     },
     computerAllowlistStore: {
         getAll: vi.fn(() => ['Safari']),
@@ -63,7 +66,8 @@ describe('🛡️ Shield: Computer IPC Security Test (ISSUE-1110/1111)', () => {
             'computer:check-permissions', 'computer:screenshot', 'computer:list-apps', 'computer:open-app',
             'computer:click', 'computer:type', 'computer:key', 'computer:scroll',
             'computer:abort', 'computer:reset-abort', 'computer:get-abort-state',
-            'computer:allowlist-get', 'computer:allowlist-add', 'computer:allowlist-remove'
+            'computer:allowlist-get', 'computer:allowlist-add', 'computer:allowlist-remove',
+            'computer:grant-session', 'computer:revoke-grant', 'computer:has-grant'
         ];
         for (const channel of expected) {
             expect(handlers[channel]).toBeDefined();
@@ -172,6 +176,39 @@ describe('🛡️ Shield: Computer IPC Security Test (ISSUE-1110/1111)', () => {
             const result = await invoke('computer:allowlist-add', goodEvent, 'Safari');
             expect(result.success).toBe(true);
             expect(mocks.computerAllowlistStore.add).toHaveBeenCalledWith('Safari');
+        });
+    });
+
+    describe('session grant channels (CE-5, ISSUE-1114)', () => {
+        it('grants a session with a valid id and forwards ttlMs', async () => {
+            const result = await invoke('computer:grant-session', goodEvent, { sessionId: 'sess-1', ttlMs: 60000 });
+            expect(result.success).toBe(true);
+            expect(mocks.computerExecutionService.grantSession).toHaveBeenCalledWith('sess-1', 60000);
+        });
+
+        it('rejects a session id with disallowed characters', async () => {
+            const result = await invoke('computer:grant-session', goodEvent, { sessionId: 'sess/../evil' });
+            expect(result.success).toBe(false);
+            expect(mocks.computerExecutionService.grantSession).not.toHaveBeenCalled();
+        });
+
+        it('rejects a grant-session request from an untrusted sender', async () => {
+            const result = await invoke('computer:grant-session', badEvent, { sessionId: 'sess-1' });
+            expect(result.success).toBe(false);
+            expect(mocks.computerExecutionService.grantSession).not.toHaveBeenCalled();
+        });
+
+        it('revokes a grant by session id', async () => {
+            const result = await invoke('computer:revoke-grant', goodEvent, 'sess-1');
+            expect(result.success).toBe(true);
+            expect(mocks.computerExecutionService.revokeGrant).toHaveBeenCalledWith('sess-1');
+        });
+
+        it('checks grant status by session id', async () => {
+            mocks.computerExecutionService.hasActiveGrant.mockReturnValueOnce(true);
+            const result = await invoke('computer:has-grant', goodEvent, 'sess-1');
+            expect(result.success).toBe(true);
+            expect(result.data).toEqual({ hasGrant: true });
         });
     });
 });

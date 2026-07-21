@@ -97,7 +97,7 @@ describe('ComputerExecutionService', () => {
             const svc = new ComputerExecutionService(null);
             const status = svc.getPermissionStatus();
             expect(status.supported).toBe(false);
-            expect(status.guidance[0]).toMatch(/ISSUE-1114/);
+            expect(status.guidance[0]).toMatch(/no provider/i);
         });
     });
 
@@ -129,6 +129,73 @@ describe('ComputerExecutionService', () => {
             const status = svc.getPermissionStatus();
             expect(status.accessibility).toBe('denied');
             expect(status.guidance.some(g => /Accessibility/.test(g))).toBe(true);
+        });
+    });
+
+    describe('permission status (win32, provider present) — CE-5, ISSUE-1114', () => {
+        let platformSpy: ReturnType<typeof vi.spyOn>;
+        beforeEach(() => {
+            platformSpy = vi.spyOn(process, 'platform', 'get').mockReturnValue('win32');
+        });
+        afterEach(() => {
+            platformSpy.mockRestore();
+        });
+
+        it('reports supported+granted without a TCC-style preflight (no permission model on Windows)', () => {
+            const svc = new ComputerExecutionService(fakeProvider());
+            const status = svc.getPermissionStatus();
+            expect(status.supported).toBe(true);
+            expect(status.screenRecording).toBe('granted');
+            expect(status.accessibility).toBe('granted');
+            expect(status.guidance).toHaveLength(0);
+            // Windows has no TCC prompt to check — must not call the macOS-only APIs.
+            expect(mocks.getMediaAccessStatus).not.toHaveBeenCalled();
+            expect(mocks.isTrustedAccessibilityClient).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('session-scoped approval grants (CE-5, ISSUE-1114)', () => {
+        it('has no active grant for a session that was never granted', () => {
+            const svc = new ComputerExecutionService(fakeProvider());
+            expect(svc.hasActiveGrant('session-a')).toBe(false);
+            expect(svc.getGrant('session-a')).toBeUndefined();
+        });
+
+        it('grantSession makes hasActiveGrant true and returns the grant record', () => {
+            const svc = new ComputerExecutionService(fakeProvider());
+            const grant = svc.grantSession('session-a', 60_000);
+            expect(grant.sessionId).toBe('session-a');
+            expect(grant.expiresAt).toBeGreaterThan(grant.grantedAt);
+            expect(svc.hasActiveGrant('session-a')).toBe(true);
+            expect(svc.getGrant('session-a')).toEqual(grant);
+        });
+
+        it('revokeGrant immediately clears an active grant', () => {
+            const svc = new ComputerExecutionService(fakeProvider());
+            svc.grantSession('session-a');
+            expect(svc.hasActiveGrant('session-a')).toBe(true);
+            svc.revokeGrant('session-a');
+            expect(svc.hasActiveGrant('session-a')).toBe(false);
+        });
+
+        it('a grant expires after its TTL and hasActiveGrant reports false past expiry', () => {
+            const svc = new ComputerExecutionService(fakeProvider());
+            const grant = svc.grantSession('session-a', 1000);
+            expect(svc.hasActiveGrant('session-a', grant.grantedAt + 500)).toBe(true);
+            expect(svc.hasActiveGrant('session-a', grant.grantedAt + 1001)).toBe(false);
+        });
+
+        it('grants are independent per session id', () => {
+            const svc = new ComputerExecutionService(fakeProvider());
+            svc.grantSession('session-a');
+            expect(svc.hasActiveGrant('session-a')).toBe(true);
+            expect(svc.hasActiveGrant('session-b')).toBe(false);
+        });
+
+        it('grantSession without an explicit ttlMs uses a sane non-zero default', () => {
+            const svc = new ComputerExecutionService(fakeProvider());
+            const grant = svc.grantSession('session-default');
+            expect(grant.expiresAt - grant.grantedAt).toBeGreaterThan(0);
         });
     });
 });

@@ -129,6 +129,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
         allowlistGet: () => ipcRenderer.invoke('computer:allowlist-get'),
         allowlistAdd: (app: string) => ipcRenderer.invoke('computer:allowlist-add', app),
         allowlistRemove: (app: string) => ipcRenderer.invoke('computer:allowlist-remove', app),
+        grantSession: (sessionId: string, ttlMs?: number) => ipcRenderer.invoke('computer:grant-session', { sessionId, ttlMs }),
+        revokeGrant: (sessionId: string) => ipcRenderer.invoke('computer:revoke-grant', sessionId),
+        hasGrant: (sessionId: string) => ipcRenderer.invoke('computer:has-grant', sessionId),
     },
 
     // Video (Local Asset Management)

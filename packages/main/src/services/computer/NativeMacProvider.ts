@@ -2,6 +2,7 @@ import { desktopCapturer, screen } from 'electron';
 import { execFile } from 'child_process';
 import { promisify } from 'util';
 import { ComputerProvider, ComputerCapabilities, ComputerScreenshot, ClickButton } from './ComputerProvider';
+import { redactScreenshotPng } from './redactScreenshot';
 
 const execFileAsync = promisify(execFile);
 
@@ -100,7 +101,7 @@ export class NativeMacProvider implements ComputerProvider {
 
         const size = image.getSize();
         return {
-            base64: image.toPNG().toString('base64'),
+            base64: redactScreenshotPng(image.toPNG()).toString('base64'),
             width: size.width,
             height: size.height,
             displayId: target.id
