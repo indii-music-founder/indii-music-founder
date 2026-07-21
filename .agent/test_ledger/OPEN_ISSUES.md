@@ -465,7 +465,7 @@ Read-only audit of highest-risk surfaces. All findings logged to `OPEN_ISSUES.md
 
 **ISSUE-765: Google API surface audit (Maps Integration)**
 - OAuth already whitelisted in `vite.config.ts`; Geocoding + Places APIs confirmed **enabled on the business account** by founder.
-- **Status:** Code is ready; backend integration awaits Firebase Cloud Function wiring for distance/routing.
+- **Status:** ✅ SUPERSEDED (2026-07-21 housecleaning — stale session-summary block; canonical `### ISSUE-765` entry below is FIXED. Remaining GCP-console items tracked in `docs/RELEASE_CHECKLIST.md` § "Google Cloud Console — Maps & API Keys".)
 
 **ISSUE-766: Social media marketing stack (Instagram Posting) — 3-LAYER BLOCK IDENTIFIED**
 - **Layer 1 — Split-brain token store (code defect):** OAuth connect writes `analyticsTokens/instagram`; poster reads `socialTokens/instagram` (never written). Grep confirms `socialTokens` is read 3 places, written 0. **Fix:** Dual-write exchanged token to `socialTokens` in `storeToken()` for posting-eligible platforms.
@@ -7892,7 +7892,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ## ISSUE-499: Build PLP Meta Ads backend (4 cloud functions) — BLOCKED on Meta Business account
 
-- **Status:** 🚧 BLOCKED / PLANNED — **Severity:** 🟠 HIGH (feature incomplete) — **Module:** `packages/firebase` + `services/marketing/AdAutomationService.ts`
+- **Status:** ✅ CLOSED (RE-TICKETED → ISSUE-1173, 2026-07-21 housecleaning — content moved to OPEN_ISSUES_V2.md; this entry retained for history only)
 - **Decision (William, 2026-06-24):** PLP should be a _real, gated_ ad pipeline. **But William has no Meta Business account available right now**, so this is parked until he does. Do NOT start until the prerequisites below exist. The financial-safety frontend (confirmation gate + honest failure, ISSUE-495/497) is already merged (#200), so PLP is safe in the meantime — it generates variants and reports honestly that no campaign launched.
 - **What's missing:** the frontend (`AdAutomationService.ts`) calls four Firebase callables that **do not exist**: `createAdCampaign` (`:59`), `createAdSet` (`:83`), `createAd` (`:114`), `getAdInsights` (`:144`) — plus `pauseAdCampaign` (`:215`) used by the CPS kill-switch. They must be implemented in `packages/firebase/src` against the **Meta Marketing API** (Graph API).
 
@@ -11074,7 +11074,7 @@ Systematically compared the broken state (`main`, post-#196) against the last GR
 
 ### ISSUE-694: IAM invoker remediation is INCOMPLETE — webhooks/healthchecks now reach the edge, but desktop REFINE round-trip and healthCheck parity still need proof
 
-- **Status:** 🟠 PARTIALLY REMEDIATED (2026-07-03 live probes)
+- **Status:** ✅ CLOSED (RE-TICKETED → ISSUE-1117, 2026-07-21 housecleaning — content moved verbatim to OPEN_ISSUES_V2.md; this entry retained for history only)
 - **Severity:** 🟠 HIGH (remaining: external integrations + monitoring)
 - **Module:** Cloud Functions IAM (continuation of ISSUE-672/673)
 - **Summary:** Re-probes after the invoker grants: `editImage`, `renderVideo`, `triggerVideoJob`, `requestAccountDeletion` now return **401 (healthy)** ✅. A direct `gcloud functions deploy healthCheck` for `packages/firebase` now succeeds (`buildId: 39234474-bbf9-464b-8dfe-dae776544036`, `status: ACTIVE`), and the live edge probes on 2026-07-03 show the webhook/monitoring surfaces are no longer GFE-403 blocked: `pandadocWebhook` and `telegramWebhook` return **401 Unauthorized** without their secrets, `healthCheckWest1` returns **200**, and `healthCheck` returns **200** with a `degraded` body because its Firestore ping still fails. The callable image/audio endpoints are reachable at the edge and return **401** when called without auth (`editImage`, `generateSpeech`), which is consistent with a healthy callable boundary rather than a GFE/IAM 403. An `editImage` execution log also appears in Cloud Logging. External webhook deliveries are no longer edge-blocked; the remaining work is the desktop-app REFINE checklist plus deciding whether the degraded `healthCheck` Firestore ping is acceptable or needs a separate fix.
@@ -11486,7 +11486,7 @@ PASS 7 (departments, continuing 2026-07-03): ISSUE-712..715
 
 ### ISSUE-721: TaxFormCollection shows a false "Collected" status for W-9/W-8BEN uploads — the file is never actually stored anywhere
 
-- **Status:** 🟠 BLOCKED
+- **Status:** ✅ CLOSED (RE-TICKETED → ISSUE-1118, 2026-07-21 housecleaning — content moved verbatim to OPEN_ISSUES_V2.md; this entry retained for history only)
 - **Severity:** 🟠 HIGH (false compliance signal — real regulatory/1099 risk, though no PII actually leaves the browser since nothing is transmitted)
 - **Fix:** Replaced the fake success states for document upload and requests with honest error messages. The UI now explicitly alerts the user that secure upload capabilities require backend storage rules.
 - **Blocker:** Requires a secure Firebase Storage setup with appropriate security rules for sensitive PII, plus backend API logic.
@@ -12631,7 +12631,7 @@ Original fix steps (CI secret in deploy.yml, enable Geocoding+Places in GCP) sti
 
 ### ISSUE-768: No v1.64.x GitHub Release exists — updater manifests 404, installed 1.50.0 builds cannot update
 
-- **Status:** 🟡 IN PROGRESS
+- **Status:** ✅ CLOSED (RE-TICKETED → ISSUE-1119, 2026-07-21 housecleaning — content moved verbatim to OPEN_ISSUES_V2.md; this entry retained for history only)
 - **Evidence (live probe 2026-07-08):** Pushed `v1.64.5` tag to trigger the release workflow. The initial run failed on macOS build due to Node.js Out Of Memory (OOM). Globally set `NODE_OPTIONS: "--max-old-space-size=6144"` in workflow templates. Re-pushing tag will start the release build again.
 
 ### ISSUE-769: GCP project `indiios-v-1-1` suspended — decommission and purge references
@@ -12973,7 +12973,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-784: DDEX compiler emits a fake DPID and an ERN 4.2 document while the app claims ERN 4.3
 
-- **Status:** 🟡 PARTIAL (2026-07-17) — identity/schema delivery gates are implemented; compiler consolidation and live partner proof remain open
+- **Status:** ✅ CLOSED (RE-TICKETED → ISSUE-1120, 2026-07-21 housecleaning — content moved verbatim to OPEN_ISSUES_V2.md; this entry retained for history only)
 - **Severity:** 🔴 CRITICAL (partner delivery rejection / identity spoofing)
 - **Module:** Firebase Publishing / DDEX
 - **Evidence:** `packages/firebase/src/publishing/ddex-generator.ts:57-65` declares ERN 4.2 and hardcodes `<PartyId>PADPIDA123456</PartyId>`. `AuthorityPanel.tsx:103-105,192-207` tells users it generated ERN 4.3.
@@ -12987,7 +12987,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 - **Canonical-master transport fix (2026-07-17):** Distribution selection now reads the owner-scoped upload-once track catalog rather than the analysis cache and carries a typed `master_asset` reference plus measured sample rate/channel count. Electron accepts only content-addressed Firebase Storage master URLs, streams bytes into a private temporary directory, enforces declared size and SHA-256, removes the signed URL before spawning Python, and cleans the temporary files in all outcomes. Python independently verifies the master, copies it under `resources/`, derives the MD5 named in the ERN from those exact bytes, writes XML inside the package, and uploads the directory rather than an XML-only file. Focused proof: 27 Python distribution tests and 17 renderer/main security/component tests pass. ISSUE-784 remains partial because cover-art transport, compiler consolidation, licensed production profiles/DPIDs, and partner acceptance are still outstanding.
 ### ISSUE-785: Founder music-identity and royalty-registration checklist is incomplete and not connected to release readiness
 
-- **Status:** ⏳ BACKLOG — consolidated (FOUNDER + PRODUCT)
+- **Status:** ✅ CLOSED (RE-TICKETED → ISSUE-1121, 2026-07-21 housecleaning — content moved verbatim to OPEN_ISSUES_V2.md; this entry retained for history only)
 - **Severity:** 🔴 HIGH
 - **Module:** Registration Center / Founder operations
 - **Summary:** The Registration Center tracks Copyright, ASCAP/BMI/SESAC, SoundExchange, and MLC per track, but does not track the organization-level prerequisites that make identifier issuance, DDEX delivery, or platform rights management legitimate.
@@ -13156,7 +13156,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-800: Merlin readiness assumes exclusive rights instead of collecting proof
 
-- **Status:** ⏳ BACKLOG — consolidated
+- **Status:** ✅ CLOSED (RE-TICKETED → ISSUE-1122, 2026-07-21 housecleaning — content moved verbatim to OPEN_ISSUES_V2.md; this entry retained for history only)
 - **Severity:** 🟠 HIGH
 - **Module:** Distribution / Keys Layer / Merlin
 - **Evidence:** `KeysPanel.tsx:53-59` maps every catalog track to `exclusive_rights: true`. The Python check also defaults missing `exclusive_rights` to `True` (`keys_manager.py:86-90`) and awards readiness points for that assumption (`:110-114`).
@@ -13253,7 +13253,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-809: Video editor export has no completed cloud artifact path and local export overwrites a fixed temp path
 
-- **Status:** ⏳ BACKLOG — consolidated
+- **Status:** ✅ CLOSED (RE-TICKETED → ISSUE-1123, 2026-07-21 housecleaning — content moved verbatim to OPEN_ISSUES_V2.md; this entry retained for history only)
 - **Severity:** 🟠 HIGH
 - **Module:** Creative Suite / Video editor
 - **Evidence:** `useVideoEditor.ts:117-125` calls `renderVideo`, then only toasts “Cloud render started successfully!” if it gets a `renderId`/`success`; it does not poll, store a job, fetch the final URL, or add the rendered asset to history. Local export uses a hardcoded output path (`/tmp/video.mp4` or `C:\\video.mp4`) at `:144-160`, so repeated exports overwrite the same location and never ask the user for a destination.
@@ -13433,7 +13433,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-826: Waterfall payout UI, TypeScript contract, and Python engine use incompatible payload/report shapes
 
-- **Status:** ⏳ BACKLOG — consolidated
+- **Status:** ✅ CLOSED (RE-TICKETED → ISSUE-1124, 2026-07-21 housecleaning — content moved verbatim to OPEN_ISSUES_V2.md; this entry retained for history only)
 - **Severity:** 🟠 HIGH
 - **Module:** Distribution / Finance bank layer
 - **Evidence:** `WaterfallData` defines `gross_revenue` (`types/distribution.ts:61-64`), and `BankPanel.tsx:49-52` sends that field. The Python waterfall engine requires `gross` and exits when it is missing (`waterfall_payout.py:105-116`). If the payload were corrected, the report still would not match the UI contract: the engine returns `gross`, `platform_fee`, nested `distributions`, `summary_status`, and `total_distributed` (`:79-90`), while `WaterfallReport` expects flat numeric `distributions`, `net_revenue`, and `processed_at` (`types/distribution.ts:67-70`), and the UI renders those missing fields (`BankPanel.tsx:296-323`).
@@ -13579,7 +13579,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-840: Credential storage falls back to localStorage and raw Firestore fields
 
-- **Status:** ⏳ BACKLOG — consolidated
+- **Status:** ✅ CLOSED (RE-TICKETED → ISSUE-1125, 2026-07-21 housecleaning — content moved verbatim to OPEN_ISSUES_V2.md; this entry retained for history only)
 - **Severity:** 🔴 HIGH (secret handling)
 - **Module:** Security / Credential storage
 - **Evidence:** `UniversalTools.credential_vault()` claims shared credential operations should fail closed when no real bridge exists (`UniversalTools.ts:5-10`), but if `window.electronAPI?.credentials` is unavailable it stores/retrieves arbitrary credentials in `localStorage` under `indii_vault_${service}` (`:78-99`). `PODCredentialService.saveCredential()` stores provider API keys directly as Firestore fields under `users/{uid}/integrations/pod_credentials` and only comments that KMS encryption should be considered (`PODCredentialService.ts:32-40`, `:61-66`).
@@ -13608,7 +13608,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-843: Multiple active user-scoped feature collections are missing Firestore rules
 
-- **Status:** ⏳ BACKLOG — consolidated
+- **Status:** ✅ CLOSED (RE-TICKETED → ISSUE-1126, 2026-07-21 housecleaning — content moved verbatim to OPEN_ISSUES_V2.md; this entry retained for history only)
 - **Severity:** 🟠 HIGH
 - **Module:** Firebase / Firestore rules / Cross-module persistence
 - **Evidence:** Active renderer paths include `users/{uid}/analyticsTokens/spotify` (`SpotifyService.ts:55-56`), `users/{uid}/socialTokens/{platform}` (`SocialPlatformService.ts:66-81`), `users/{uid}/merchandiseMockups` (`CommerceTools.ts:27-38`), `users/{uid}/limitedDrops` (`CommerceTools.ts:85-103`), `users/{uid}/brandKit/current` (`BrandTools.ts:217-245`), and `users/{uid}/proprietaryIngestionReleases` (`PublishingTools.ts:20-24`). The owner-scoped rules list only selected subcollections such as `contacts`, `licensingDeals`, `pod_orders`, `press_releases`, `publishingCatalog`, `tasks`, and `web3Contracts` (`firestore.rules:329-346`), then denies all unmatched paths (`firestore.rules:1230-1234`).
@@ -13618,7 +13618,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-844: Pre-save builder exposes a shareable campaign URL without publishing a page or storing leads
 
-- **Status:** ⏳ BACKLOG — consolidated
+- **Status:** ✅ CLOSED (RE-TICKETED → ISSUE-1127, 2026-07-21 housecleaning — content moved verbatim to OPEN_ISSUES_V2.md; this entry retained for history only)
 - **Severity:** 🟠 HIGH
 - **Module:** Marketing / Pre-save campaigns
 - **Evidence:** `PreSaveCampaignBuilder` derives a public `indii.vip/presave/{slug}` URL from local input (`PreSaveCampaignBuilder.tsx:35-37`), displays DSP pre-save buttons regardless of whether links are entered (`:195-200`), shows a QR placeholder (`:220-225`), and only supports copy/share actions (`:42-70`, `:231-245`). `PreSaveCampaignService.createCampaign()` only logs and returns `ps_${Date.now()}` while Firestore persistence is commented out (`PreSaveCampaignService.ts:41-49`); `recordLead()` also only logs with persistence commented out (`:55-60`).
@@ -13649,7 +13649,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-847: Social analytics connection state can be inferred from denied or stale token/cache paths
 
-- **Status:** ⏳ BACKLOG — consolidated
+- **Status:** ✅ CLOSED (RE-TICKETED → ISSUE-1128, 2026-07-21 housecleaning — content moved verbatim to OPEN_ISSUES_V2.md; this entry retained for history only)
 - **Severity:** 🟠 HIGH
 - **Module:** Social / Analytics / Firestore rules
 - **Evidence:** Social tokens are read from `users/{uid}/socialTokens/{platform}` (`SocialPlatformService.ts:66-81`) and stats are cached to `users/{uid}/platformStats/{platform}` (`SocialPlatformService.ts:447-448`, `:518-519`, `:565-566`, `:606-607`, `:653-654`). The dashboard marks a platform connected when live stats exist, a cached `platformStats` doc exists, or a `socialTokens` doc exists (`SocialAnalyticsDashboard.tsx:120-136`). Firestore rules for `users/{userId}` do not include `socialTokens` or `platformStats` in the allowed subcollections (`packages/firebase/firestore.rules:329-346`) and deny unmatched paths (`:1230-1234`).
@@ -13670,7 +13670,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-849: Limited-drop wizard says a drop is live and fans will be notified without persistence or notification backend
 
-- **Status:** ⏳ BACKLOG — consolidated
+- **Status:** ✅ CLOSED (RE-TICKETED → ISSUE-1129, 2026-07-21 housecleaning — content moved verbatim to OPEN_ISSUES_V2.md; this entry retained for history only)
 - **Severity:** 🟠 HIGH
 - **Module:** Merchandise / Limited drops
 - **Evidence:** `DropCampaignWizard.handleSubmit()` waits 1.5 seconds and sets local `submitted` state only (`DropCampaignWizard.tsx:79-82`). The success view says “Drop Scheduled!”, “is live,” and “Fans will be notified when the countdown hits zero” (`:138-151`). The wizard captures pre-sale and superfan-only toggles (`:221-237`) but does not save a drop, publish a landing page, configure gating, or queue notifications before “Launch Drop” (`:269-274`).
@@ -13690,7 +13690,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-851: Storefront deployment creates one fixed-price Stripe link for all items
 
-- **Status:** ⏳ BACKLOG — consolidated
+- **Status:** ✅ CLOSED (RE-TICKETED → ISSUE-1130, 2026-07-21 housecleaning — content moved verbatim to OPEN_ISSUES_V2.md; this entry retained for history only)
 - **Severity:** 🟠 HIGH
 - **Module:** Commerce / Storefront / Stripe
 - **Evidence:** `CommerceTools.deploy_storefront_preview()` tells the user “Storefront deployed ... with N real Stripe Payment Links” after calling `createStripePaymentLinks` (`CommerceTools.ts:53-62`). The Cloud Function creates one Stripe product named `{campaignName} - Storefront Items`, puts all item names into the description, creates a single `$25.00` USD price, creates one payment link with quantity 1, and returns it as both `storefrontUrl` and the only `paymentLinks` entry (`paymentLinks.ts:19-38`).
@@ -13732,7 +13732,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 - **Fix applied (2026-07-10):** `signEscrow` now transitions to `FULLY_SIGNED` (never `RELEASED`) when all parties sign, stamps `fullySignedAt`, and returns `fundsReleased: false` with an honest message that payout execution (capture + transfers) is a separate step. `RELEASED` is reserved for a future payout step with Stripe receipts. Deployed.
 ### ISSUE-855: Split escrow UI treats zero collaborators as ready to release
 
-- **Status:** ⏳ BACKLOG — consolidated
+- **Status:** ✅ CLOSED (RE-TICKETED → ISSUE-1131, 2026-07-21 housecleaning — content moved verbatim to OPEN_ISSUES_V2.md; this entry retained for history only)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Finance / Split escrow UI
 - **Evidence:** `SplitSheetEscrow` initializes `collaborators` as an empty array (`SplitSheetEscrow.tsx:24-30`), computes `allSigned = signedCount === totalCount` (`:36-39`), and computes `progressPct` as `signedCount / totalCount` (`:39`). With zero collaborators, `allSigned` is true and `progressPct` is `NaN`, so the escrow banner can show “Ready to Release” (`:162-166`) and the release button path renders as enabled for the all-signed state (`:271-284`).
@@ -13753,7 +13753,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-857: Royalty forecasts use fixed approximate rates and fixed confidence as if they are verified projections
 
-- **Status:** ⏳ BACKLOG — consolidated
+- **Status:** ✅ CLOSED (RE-TICKETED → ISSUE-1132, 2026-07-21 housecleaning — content moved verbatim to OPEN_ISSUES_V2.md; this entry retained for history only)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Finance / Revenue forecasting
 - **Evidence:** `forecast_revenue()` uses hard-coded approximate per-stream rates and assumes the same stream count repeats for month 1, month 6, and year 1 (`FinanceTools.ts:92-144`). `predict_daily_royalties()` uses only two fixed rates (`Spotify` = `$0.0035`, all other platforms = `$0.006`) and returns `confidence: 0.88` without source data, territory, subscription mix, distributor fee, currency, or historical variance (`:251-267`).
@@ -13763,7 +13763,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-858: DDEX readiness treats local metadata fields as delivery authority
 
-- **Status:** ⏳ BACKLOG — consolidated
+- **Status:** ✅ CLOSED (RE-TICKETED → ISSUE-1133, 2026-07-21 housecleaning — content moved verbatim to OPEN_ISSUES_V2.md; this entry retained for history only)
 - **Severity:** 🟠 HIGH
 - **Module:** Distribution / DDEX readiness
 - **Evidence:** `buildDistributionReadiness()` validates identifier formats and checks that `metadata.dpid` plus ISRC/UPC/ISWC/catalog number exist (`ReleaseHarnessAdapters.ts:140-155`). It then exposes `authorityLevel: 'package_ready'` when `ddexPackageReady` and `selectedStores.length > 0` (`:168-176`). The compiler turns that into a 100 score with rationale “Metadata, identifiers, and DPID are present” (`DistributionDdexCompiler.ts:35-41`) and recommends delivery approval (`:60-71`).
@@ -13950,7 +13950,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-875: Video duration is normalized after client cost reservation
 
-- **Status:** ⏳ BACKLOG — consolidated
+- **Status:** ✅ CLOSED (RE-TICKETED → ISSUE-1134, 2026-07-21 housecleaning — content moved verbatim to OPEN_ISSUES_V2.md; this entry retained for history only)
 - **Severity:** 🟠 HIGH
 - **Module:** Creative Suite / Veo / Cost reservation
 - **Evidence:** The UI exposes duration choices independently of resolution (`DirectGenerationTab.tsx:244-264`, `VeoSettingsPanel.tsx:72-90`, `StudioControlsPanel.tsx:912-927`) and resolution choices include `720p`, `1080p`, and `4k` (`StudioSettingsPanel.tsx:100-104`, `:214-220`). The client reserves cost from the raw requested duration (`VideoGenerationService.ts:330-347`). The backend then normalizes all non-720p jobs or any frame-input job to 8 seconds (`gateway.ts:303-308`) before recalculating server cost (`gateway.ts:1186-1193`) and rejecting mismatched reservations (`:1197-1201`).
@@ -13960,7 +13960,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-876: “No People” video safety setting is overridden for frame-based jobs
 
-- **Status:** ⏳ BACKLOG — consolidated
+- **Status:** ✅ CLOSED (RE-TICKETED → ISSUE-1135, 2026-07-21 housecleaning — content moved verbatim to OPEN_ISSUES_V2.md; this entry retained for history only)
 - **Severity:** 🟠 HIGH
 - **Module:** Creative Suite / Veo / Safety controls
 - **Evidence:** The UI exposes “Person Generation” with `No People` / `dont_allow` (`StudioSettingsPanel.tsx:131-135`, `:238-243`) and sends `personGeneration` into video generation (`VideoWorkflow.tsx:669-680`). The backend worker calls `normalizePersonGeneration(job.personGeneration, hasFrameInput)` when building the Veo config (`gateway.ts:904-913`). That normalizer returns `allow_adult` whenever a first frame, reference URI, or last frame is present, before checking `dont_allow` (`gateway.ts:317-324`).
@@ -13970,7 +13970,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-877: Long-form video reserves requested duration but generates full 8-second blocks
 
-- **Status:** ⏳ BACKLOG — consolidated
+- **Status:** ✅ CLOSED (RE-TICKETED → ISSUE-1136, 2026-07-21 housecleaning — content moved verbatim to OPEN_ISSUES_V2.md; this entry retained for history only)
 - **Severity:** 🟠 HIGH
 - **Module:** Creative Suite / Long-form Veo / Billing + quota
 - **Evidence:** Direct generation can select a 10-second duration (`DirectGenerationTab.tsx:94`, `:244-264`) and `VideoWorkflow` sends long-form when duration is over 8 seconds (`VideoWorkflow.tsx:614-634`). `generateLongFormVideo()` checks quota and reserves cost against `options.totalDuration` (`VideoGenerationService.ts:647-672`), but then computes `numBlocks = Math.ceil(totalDuration / 8)` and generates every segment with `durationSeconds: 8` while skipping per-segment cost checks (`:692-755`).
@@ -14000,7 +14000,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-880: Video grounding preflight uses an image model ID the gateway rejects
 
-- **Status:** ⏳ BACKLOG — consolidated
+- **Status:** ✅ CLOSED (RE-TICKETED → ISSUE-1137, 2026-07-21 housecleaning — content moved verbatim to OPEN_ISSUES_V2.md; this entry retained for history only)
 - **Severity:** 🟠 HIGH
 - **Module:** Creative Suite / Veo grounding / Image preflight
 - **Evidence:** When video grounding is enabled without a first frame, `VideoGenerationService` calls `ImageGeneration.generateImages()` with `model: 'imagen-4.0-generate-001'` and catches failures, continuing without a grounded first frame (`VideoGenerationService.ts:363-384`). That service submits to `generateImageV3` (`ImageGenerationService.ts:343-410`), but the shared gateway schema only accepts image `model` values `lite`, `fast`, `pro`, or `legacy` (`packages/firebase/src/shared/creative.ts:10-18`).
@@ -14021,7 +14021,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 - **Fix applied (2026-07-10):** `ImageGenerationService.generateImages()` no longer bypasses cost control on ledger infra failures — cost-ledger unavailability now throws a clear "cost-control service could not verify your budget" error before any model call (fail-closed).
 ### ISSUE-882: Sync-license checkout activates a license without license terms or usage scope
 
-- **Status:** ⏳ BACKLOG — consolidated
+- **Status:** ✅ CLOSED (RE-TICKETED → ISSUE-1138, 2026-07-21 housecleaning — content moved verbatim to OPEN_ISSUES_V2.md; this entry retained for history only)
 - **Severity:** 🟠 HIGH
 - **Module:** Licensing / Stripe checkout / License records
 - **Evidence:** The license purchase flow sends Stripe metadata containing only `type`, `trackTitle`, `artist`, `connectedAccountId`, and `artistAmount` plus optional caller metadata (`LicensingService.ts:119-146`). The webhook then transfers `artistAmount` and creates an `active` `licenses` document with title, artist, `licenseType: 'sync'`, amount, and session ID (`webhookHandler.ts:69-113`). The app’s `License` type expects usage and optional agreement URL/date bounds (`types.ts:6-18`), but the webhook does not persist licensee, agreement URL, territory, media/use type, term, exclusivity, master/composition rights, contract version, or accepted terms.
@@ -14108,7 +14108,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-890: “Complete” GDPR data export omits major app data and uses two inconsistent implementations
 
-- **Status:** ⏳ BACKLOG — consolidated
+- **Status:** ✅ CLOSED (RE-TICKETED → ISSUE-1139, 2026-07-21 housecleaning — content moved verbatim to OPEN_ISSUES_V2.md; this entry retained for history only)
 - **Severity:** 🔴 HIGH (privacy/compliance trust)
 - **Module:** Privacy / Data export
 - **Evidence:** The UI says “Download a complete copy of all your indii.music data” (`PrivacySettingsPanel.tsx:52-56`) but calls the renderer-side `DataExportService.exportUserData(uid)` (`:29-38`), not the deployed `exportUserData` callable. The renderer exporter reads only a fixed subcollection list (`DataExportService.ts:25-38`), lists only `users/{uid}` storage with one nested level (`:65-98`), and cannot read server-only/root collections such as subscriptions, licenses, Stripe ledger data, distribution registries, social/analytics token metadata, org-owned records, audit queues, or generated job records. The backend callable is a second, different partial exporter that includes only profile, projects, history, organizations, and knowledge (`index.ts:1387-1446`).
@@ -14118,7 +14118,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-891: Account deletion can be partial while the UI reports permanent removal
 
-- **Status:** ⏳ BACKLOG — consolidated
+- **Status:** ✅ CLOSED (RE-TICKETED → ISSUE-1140, 2026-07-21 housecleaning — content moved verbatim to OPEN_ISSUES_V2.md; this entry retained for history only)
 - **Severity:** 🔴 HIGH (privacy/compliance trust)
 - **Module:** Privacy / Account deletion
 - **Evidence:** `PrivacySettingsPanel` calls `requestAccountDeletion` and ignores the callable result (`PrivacySettingsPanel.tsx:98-105`), then renders “Account deletion complete” and “Your data has been permanently removed” (`:112-122`). The callable deletes only the first 500 docs from a fixed subcollection list (`index.ts:1478-1497`), deletes the root user doc, and deletes the Auth user (`:1499-1508`); it does not delete Cloud Storage files, root-level collections such as `subscriptions`, `licenses`, `user_credits`, `scheduledPosts`, `isrc_registry`, `upc_registry`, `stripe_webhook_deliveries`, org records, or nested subcollections beyond the first page. It returns `success: errors.length === 0` with error details (`:1513-1518`), but the UI does not inspect that result.
@@ -14138,7 +14138,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-893: Resized-image tool returns synthetic `gs://` paths for missing variants and still says variants were resolved
 
-- **Status:** ⏳ BACKLOG — consolidated
+- **Status:** ✅ CLOSED (RE-TICKETED → ISSUE-1141, 2026-07-21 housecleaning — content moved verbatim to OPEN_ISSUES_V2.md; this entry retained for history only)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Media agent tools / Firebase Storage derivatives
 - **Evidence:** `get_resized_image_variants()` derives variant names like `${basePath}_${dim}${ext}` and tries `getDownloadURL()` (`MediaTools.ts:314-340`). If the object is missing or access is denied, the catch stores `gs://${bucket}/${variantPath}` instead of failing or marking the variant missing (`:336-344`), and the tool returns success with “Resolved Firebase Extension resized variants” (`:347`).
@@ -14158,7 +14158,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-895: Screenwriter “Generate AI Scene” is a timer with hard-coded storyboard content
 
-- **Status:** ⏳ BACKLOG — consolidated
+- **Status:** ✅ CLOSED (RE-TICKETED → ISSUE-1142, 2026-07-21 housecleaning — content moved verbatim to OPEN_ISSUES_V2.md; this entry retained for history only)
 - **Severity:** 🟠 HIGH
 - **Module:** Screenwriter / Storyboard / Veo prompts
 - **Evidence:** `generateNextScene()` is explicitly labeled “Simulate AI generation of next scene” (`ScreenwriterDashboard.tsx:233-234`), waits `setTimeout(..., 1200)` (`:235-250`), and appends the same hard-coded recording-cabin description/camera angle/Veo prompt every time (`:237-247`). The button is wired as an active generation action in the dashboard (`:303`, `:440`).
@@ -14168,7 +14168,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-896: Screenwriter Veo handoff collapses storyboard structure into one prompt string
 
-- **Status:** ⏳ BACKLOG — consolidated
+- **Status:** ✅ CLOSED (RE-TICKETED → ISSUE-1143, 2026-07-21 housecleaning — content moved verbatim to OPEN_ISSUES_V2.md; this entry retained for history only)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Screenwriter → Creative Studio / Veo handoff
 - **Evidence:** The Veo prompt tab says output “directly exports to generative pipelines” (`ScreenwriterDashboard.tsx:573-599`), but `handleOpenCreativeStudio()` only joins all scenes into a single text block, calls `setCreativePrompt(handoffPrompt)`, sets generation mode/view, and switches to Creative (`:213-228`). It does not populate `VideoWorkflow` storyboard slots, per-scene duration, camera metadata, seed/aspect controls, or a structured `pendingStageHandoff.veo` payload; `VideoWorkflow` then uses the shared `creativePrompt` as one `localPrompt` (`VideoWorkflow.tsx:213-285`, `:511-539`).
@@ -14343,7 +14343,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 - **Fix applied (2026-07-10):** `Contact` interface (both `types.ts` and the Zod `ContactSchema` — two parallel definitions that needed to stay in sync) gains an optional verified `email` field. `CreateContactModal.tsx` collects it explicitly (with format validation, optional but never guessed). `PitchDraftingModal.tsx`'s "Open in Mail" no longer constructs a `mailto:` from lowercased name + outlet — it only renders when `contact.email` exists, uses that exact address, and displays it in the button label for confirmation before the user leaves the app. Without a verified email, a disabled "No Verified Email" indicator shows instead (Copy remains available). New test file added covering both paths — asserts zero `mailto:` links exist without a verified email, and the exact address (not a guessed one) is used when present.
 ### ISSUE-913: A generation started in one project is filed into whichever project is active when it finishes
 
-- **Status:** ⏳ BACKLOG — consolidated
+- **Status:** ✅ CLOSED (2026-07-21 housecleaning — duplicate: the later ISSUE-913 entry "Gallery State — Project Context Binding" in this file is marked FIXED (commit d3db49bde) and covers this exact bug. Fix verified live in `useDirectGeneration.ts` (submissionProjectId captured at submission, backend data.projectId preferred at completion).)
 - **Severity:** 🟠 HIGH
 - **Module:** Creative Suite / Direct generation / Project isolation
 - **Evidence:** `useDirectGeneration` intentionally keeps `currentProjectIdRef` synchronized to the *currently selected* project (`useDirectGeneration.ts:184-185`). Both queued-job completion and immediate image completion stamp their resulting `HistoryItem.projectId` from `currentProjectIdRef.current` (`:212-227`, `:354-367`). `activeJobs` records only id/prompt/status/progress and does not capture the project that submitted the job (`:378-381`, `:490-493`).
@@ -14353,7 +14353,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-914: Selecting multiple reference files can retain only the last file that finishes reading
 
-- **Status:** ⏳ BACKLOG — consolidated
+- **Status:** ✅ CLOSED (RE-TICKETED → ISSUE-1144, 2026-07-21 housecleaning — content moved verbatim to OPEN_ISSUES_V2.md; this entry retained for history only)
 - **Severity:** 🟠 HIGH
 - **Module:** Creative Suite / Reference ingredients
 - **Evidence:** `IngredientDropZone.handleFiles()` starts one `FileReader` per selected file, but every asynchronous `onload` calls `onChange([...ingredients, newIngredient])` using the same pre-read `ingredients` closure (`IngredientDropZone.tsx:33-63`). When two or three reads complete, each callback replaces the parent value from the same base array rather than accumulating prior results.
@@ -14373,7 +14373,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-916: Video assets can be selected as image frames/references and are then uploaded with image semantics
 
-- **Status:** ⏳ BACKLOG — consolidated
+- **Status:** ✅ CLOSED (RE-TICKETED → ISSUE-1145, 2026-07-21 housecleaning — content moved verbatim to OPEN_ISSUES_V2.md; this entry retained for history only)
 - **Severity:** 🟠 HIGH
 - **Module:** Creative Suite / Veo frames / Reference intake
 - **Evidence:** Reference mode accepts both `image/*` and `video/*` and creates video ingredients (`IngredientDropZone.tsx:30-41`, `:49-59`), despite helper copy describing reference images. Direct video generation uses the first ingredient URL as `firstFrame` (`useDirectGeneration.ts:423-426`), and `VideoGenerationService` uploads every first frame/reference with media type `'image'` (`VideoGenerationService.ts:386-417`). `CreativeGallery` also enables Set as First/Last Frame for every non-music asset, including videos (`CreativeGallery.tsx:116-139`). The Video Stage extraction path has the same unsafe fallback: if neither Storage extraction nor player capture yields a still, `createFrameAnchor()` returns the original `activeVideo` rather than failure (`VideoStage.tsx:105-175`), and its buttons then write that returned video as `firstFrame`/`lastFrame`/`maskFrame` while logging that a frame was set (`:389-433`). `CreativeStorageService` attempts image compression and image content metadata whenever the caller says `'image'` (`CreativeStorageService.ts:155-171`).
@@ -14403,7 +14403,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-919: Deleting a generated Gallery asset only hides it locally, so it reappears and remains in Project Assets
 
-- **Status:** ⏳ BACKLOG — consolidated
+- **Status:** ✅ CLOSED (RE-TICKETED → ISSUE-1146, 2026-07-21 housecleaning — content moved verbatim to OPEN_ISSUES_V2.md; this entry retained for history only)
 - **Severity:** 🟠 HIGH
 - **Module:** Creative Suite / Gallery deletion / Persistence
 - **Evidence:** The Gallery delete button calls `_handleDelete()` (`CreativeGallery.tsx:394-401`, `:583-591`). Generated assets route to `removeItemFromProject()`, which only filters the in-memory `generatedHistory` array and explicitly leaves master storage unchanged (`creativeHistorySlice.ts:228-231`). There is no persisted project-membership/tombstone update and no linked file-node removal. The next cloud snapshot can merge the same document back into history (`creativeHistorySlice.ts:124-169`). Uploaded-origin items instead call the hard-delete path, with no confirmation.
@@ -14453,7 +14453,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-924: Video Editor timeline/project state is entirely volatile and shared as one global default project
 
-- **Status:** ⏳ BACKLOG — consolidated
+- **Status:** ✅ CLOSED (RE-TICKETED → ISSUE-1147, 2026-07-21 housecleaning — content moved verbatim to OPEN_ISSUES_V2.md; this entry retained for history only)
 - **Severity:** 🔴 CRITICAL (creative work loss)
 - **Module:** Creative Suite / Video Editor / Persistence
 - **Evidence:** `useVideoEditorStore` is a plain module-level Zustand store initialized with one hard-coded `INITIAL_PROJECT` id `default-project` (`videoEditorStore.ts:140-163`, `:204-221`). No persistence middleware, project-keyed storage service, Firestore subscription, local draft save, dirty-state warning, or unload recovery is wired in the editor/store. Every editor instance reads and mutates this same singleton project.
@@ -14627,10 +14627,10 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-936: Enhanced Showroom handoffs fail unless the product asset is already an inline data URL
 
-- **Status:** ✅ FIXED (2026-07-13 — URL and data-URI assets resolve through a validated media boundary)
+- **Status:** ✅ CLOSED (RE-TICKETED → ISSUE-1174, 2026-07-21 housecleaning — content moved to OPEN_ISSUES_V2.md; this entry retained for history only)
 - **Fix applied (2026-07-13):** `ShowroomService` now resolves its source asset through the shared URL/data-URI image resolver before calling image generation. It preserves the actual MIME type and rejects unreadable/non-image sources with a typed error instead of treating a URL string as base64 image bytes. Renderer typecheck and diff integrity pass.
 
-- **Status:** ⏳ BACKLOG — consolidated
+- **Status (duplicate line, same entry):** ✅ CLOSED (RE-TICKETED → ISSUE-1174, 2026-07-21 housecleaning)
 - **Severity:** 🟠 HIGH
 - **Module:** Merchandise / Enhanced Showroom / Cross-module handoff
 - **Evidence:** The component accepts `initialAsset` and stores it unchanged (`EnhancedShowroom.tsx:132-141`). Mockup generation then requires `productAsset` to match `^data:(.+);base64,(.+)$` and throws “Invalid asset data” for every HTTPS, blob, `file://`, canonical `gs://`, or raw SVG asset (`:325-340`). This is not only an external-handoff case: the Designer advertises SVG in its Export to Showroom dialog (`ExportDialog.tsx:11-16`); Fabric returns raw `<svg ...>` markup for that choice (`DesignCanvas.tsx:749-752`), then the parent labels it exported and opens `EnhancedShowroom` with that raw value (`MerchDesigner.tsx:303-314`, `:760-763`). Creative/merch handoffs commonly carry durable URLs/Storage URIs, not inline base64.
@@ -14793,7 +14793,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-950: Campaign image retry uses stale state and the last failed job can be relabeled complete
 
-- **Status:** ⏳ BACKLOG — consolidated
+- **Status:** ✅ CLOSED (RE-TICKETED → ISSUE-1148, 2026-07-21 housecleaning — content moved verbatim to OPEN_ISSUES_V2.md; this entry retained for history only)
 - **Severity:** 🟠 HIGH
 - **Module:** Marketing / Batch image generation
 - **Evidence:** Retry Failed first schedules failed rows to become pending with `setPostStates`, then immediately calls `handleStartGeneration()`, whose closure filters the pre-update `postStates` for pending rows (`IntelligenceImageBatchModal.tsx:49-55`, `:110-122`). It can therefore find zero jobs and report “All posts already have images.” Separately, the service emits an error event for a failed post but, after the loop, always emits a final `complete` event using the last post’s ID (`CampaignIntelligenceService.ts:300-349`). The modal maps that event to `status: 'complete'`; its result reconciliation only converts `generating`—not false `complete`—rows with no URL back to error (`IntelligenceImageBatchModal.tsx:67-98`).
@@ -14814,7 +14814,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-952: AI campaign output bypasses business validation and can create empty, off-brief, or unschedulable plans
 
-- **Status:** ⏳ BACKLOG — consolidated
+- **Status:** ✅ CLOSED (RE-TICKETED → ISSUE-1149, 2026-07-21 housecleaning — content moved verbatim to OPEN_ISSUES_V2.md; this entry retained for history only)
 - **Severity:** 🟠 HIGH
 - **Module:** Marketing / Intelligence campaign generation
 - **Evidence:** `generateCampaign()` asks for `durationDays * postsPerDay` posts but its response schema only requires an array and basic field presence; it does not constrain array size, day bounds/integer status, requested platform membership, copy length, hashtag format, or posting-time format (`CampaignIntelligenceService.ts:43-100`). The result cleanup accepts any array—including empty—and `planToCampaignAsset()` maps it directly (`:102-147`). The UI enables Create for any non-null plan and does not validate the plan or a cleared/past `startDate` (`IntelligenceCampaignModal.tsx:102-122`, `:329-343`, `:410-425`).
@@ -14889,7 +14889,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-959: Product Showroom relabels every JPEG/WebP source as PNG and does not verify file decoding
 
-- **Status:** ⏳ BACKLOG — consolidated
+- **Status:** ✅ CLOSED (RE-TICKETED → ISSUE-1150, 2026-07-21 housecleaning — content moved verbatim to OPEN_ISSUES_V2.md; this entry retained for history only)
 - **Severity:** 🟠 HIGH
 - **Module:** Creative Studio / Product Showroom
 - **Evidence:** The uploader explicitly accepts PNG, JPEG, and WebP, then FileReader stores only the data URL string and no MIME metadata (`ShowroomUI.tsx:49-69`, `:160-164`). `ShowroomService` strips everything before the comma and always sends the remaining bytes to image generation as `mimeType: 'image/png'` (`ShowroomService.ts:54-67`). Neither path handles FileReader errors, decodes dimensions, checks transparency despite “Upload a transparent graphic,” or verifies that the bytes match the declared media type (`ShowroomUI.tsx:414-420`).
@@ -14899,7 +14899,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-960: Product Showroom draft and results are global across projects and survive project switches
 
-- **Status:** ⏳ BACKLOG — consolidated
+- **Status:** ✅ CLOSED (RE-TICKETED → ISSUE-1151, 2026-07-21 housecleaning — content moved verbatim to OPEN_ISSUES_V2.md; this entry retained for history only)
 - **Severity:** 🟠 HIGH (cross-project creative contamination)
 - **Module:** Creative Studio / Product Showroom
 - **Evidence:** `showroomState` is a single unkeyed Zustand object containing the product asset, prompts, mockup, and in-flight flags; `setShowroomState` merges globally with no project boundary or persistence (`creativeControlsSlice.ts:159-170`, `:343-355`). `ShowroomUI` reads the live `currentProjectId` only when creating an uploaded input and when sending the displayed result to Veo (`ShowroomUI.tsx:29-69`, `:300-315`). The generated mockup/video inherits the original input’s project ID in the service (`ShowroomService.ts:78-86`, `:131-139`), even if another project is active when the awaited operation completes.
@@ -14924,7 +14924,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-962: Browser Audio QC base64-encodes and sends the full master twice in parallel with no size/duration limit
 
-- **Status:** PARTIAL (2026-07-17) — browser raw-master Gemini uploads are now prohibited; protected server-receipt retrieval remains to be wired into browser UI
+- **Status:** ✅ CLOSED (RE-TICKETED → ISSUE-1152, 2026-07-21 housecleaning — content moved verbatim to OPEN_ISSUES_V2.md; this entry retained for history only)
 - **Severity:** 🔴 CRITICAL (browser crash / provider-limit failure / excess cost)
 - **Module:** Audio Analyzer / Semantic and emotional analysis
 - **Evidence:** The UI has no file size or duration gate before analysis (`AudioAnalyzer.tsx:120-143`). In browser mode, semantic analysis reads the entire lossless master into a base64 string and sends it inline (`AudioIntelligenceService.ts:229-273`, `:315-329`). At the same time, `energyMapService.mapEmotionalArc(file, ...)` independently reads the same complete file into another base64 string and sends another model request (`AudioIntelligenceService.ts:137-169`; `EnergyMapService.ts:74-80`, `:130-144`, `:158-170`). The comment assumes “typical masters (5–10 MB),” but uncompressed production WAV/AIFF files can be far larger; no request-size/cost budget or cancellation exists.
@@ -14965,7 +14965,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-965: Closing or replacing a Publishing release draft abandons uploaded masters and cover art
 
-- **Status:** ⏳ BACKLOG — consolidated
+- **Status:** ✅ CLOSED (RE-TICKETED → ISSUE-1153, 2026-07-21 housecleaning — content moved verbatim to OPEN_ISSUES_V2.md; this entry retained for history only)
 - **Severity:** 🟠 HIGH (creative asset loss / storage leak)
 - **Module:** Publishing / Create Release draft lifecycle
 - **Evidence:** The wizard keeps all metadata/assets only in component state (`useDDEXRelease.ts:217-232`) but uploads audio and cover bytes immediately to `orgs/{org}/releases/packaging/...` before any release record exists (`:253-300`). “Replace File/Image” only clears the local asset reference (`ReleaseWizard.tsx:580-585`, `:632-637`), and both header close and terminal Done directly call `onClose` (`:851-867`, `:898-909`) with no dirty-state confirmation, draft persistence, deletion, or resumable-upload manifest. Upload `onChange` handlers also await without local error handling (`:595-601`, `:649-655`).
@@ -15028,7 +15028,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-971: Registration manual fallbacks claim form data is saved/downloadable but provide only a portal link
 
-- **Status:** ⏳ BACKLOG — consolidated
+- **Status:** ✅ CLOSED (RE-TICKETED → ISSUE-1154, 2026-07-21 housecleaning — content moved verbatim to OPEN_ISSUES_V2.md; this entry retained for history only)
 - **Severity:** 🟠 HIGH (manual filing data loss)
 - **Module:** Registration Center / Manual provider handoff
 - **Evidence:** LoC’s web fallback says “Your pre-filled registration details are ready below — you can download them,” while ASCAP says “Your form data is saved below” (`LocAdapter.ts:117-126`; `AscapAdapter.ts:82-107`). `SubmissionResultView` renders only the instruction string, an Open Provider link, and Back to form; it shows no field snapshot and has no copy/download/export action (`RegistrationForm.tsx:421-445`). LoC’s web/manual catch also does not call `persistOrgRecord`, so even the snapshot in memory is not saved (`LocAdapter.ts:114-135`).
@@ -15058,7 +15058,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-974: Marketplace can sell songs, albums, merch, tickets, and services with no deliverable or fulfillment contract
 
-- **Status:** ⏳ BACKLOG — consolidated
+- **Status:** ✅ CLOSED (RE-TICKETED → ISSUE-1155, 2026-07-21 housecleaning — content moved verbatim to OPEN_ISSUES_V2.md; this entry retained for history only)
 - **Severity:** 🔴 CRITICAL (paid item cannot be fulfilled)
 - **Module:** Marketplace / Product creation and buyer delivery
 - **Evidence:** The listing modal exposes six product types but only stem packs collect files; every other type creates a product with `images: []` and empty metadata (`CreateProductModal.tsx:26-39`, `:83-92`, `:167-181`). The `Product` model has only generic images/inventory/metadata and no required asset, SKU/variants, ticket event, service terms, shipping, license, or delivery policy (`marketplace/types.ts:12-25`). Repository-wide marketplace purchase code creates Checkout/purchase/revenue records but has no buyer entitlement, signed-download, ticket issuance, shipping order, service booking, refund, or digital delivery path (`MarketplaceService.ts:165-264`).
@@ -15078,7 +15078,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-976: Stem-pack upload and listing lifecycle leaves partial/orphaned files on failure, close, replace, or delete
 
-- **Status:** ⏳ BACKLOG — consolidated
+- **Status:** ✅ CLOSED (RE-TICKETED → ISSUE-1156, 2026-07-21 housecleaning — content moved verbatim to OPEN_ISSUES_V2.md; this entry retained for history only)
 - **Severity:** 🟠 HIGH (creative asset leak / storage cost)
 - **Module:** Marketplace / Stem pack creation
 - **Evidence:** Four stems upload concurrently via `Promise.all` into a timestamp draft path before the product document is created (`MarketplaceService.ts:41-64`; `CreateProductModal.tsx:61-92`). If any upload or the later product write fails, completed uploads are neither recorded nor deleted. Closing/replacing a selected local file has no draft/cleanup semantics, and `deleteProduct()` only sets `isActive: false` without deleting or retaining/accounting for stem objects (`MarketplaceService.ts:148-163`). There is no stable upload session, per-file progress/result, retry manifest, or garbage collector.
@@ -15284,7 +15284,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-992: Published macOS 1.64.6 update is ad-hoc/unsigned and ShipIt rejects its missing resource seal
 
-- **Status:** 🟡 MITIGATED (2026-07-10) — pipeline hardened + broken releases pulled from feed; full fix blocked on founder-supplied Apple signing credentials
+- **Status:** ✅ CLOSED (2026-07-21 housecleaning — engineering mitigation fully shipped: pipeline fails closed, broken releases pulled. The ONLY remaining work is founder-supplied Apple Developer ID certificate + notarization credentials, tracked in `docs/RELEASE_CHECKLIST.md` § "Apple Developer ID / macOS Notarization". Not an engineering issue; removed from the open ledger per founder directive.)
 - **Severity:** 🔴 CRITICAL (published desktop update cannot install; release trust-chain failure)
 - **Module:** macOS packaging / code signing / notarization / auto-update
 - **Observed error:** `Code signature at .../com.indii.music.ShipIt/update.../indii.music.app/ did not pass validation: code has no resources but signature indicates they must be present`
@@ -15321,7 +15321,7 @@ Separate cost ledger started: `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`.
 
 ### ISSUE-995: Client-side Cloud Run renders are explicitly public and storyboard compile calls a queued marker a shareable URL
 
-- **Status:** ⏳ BACKLOG — consolidated
+- **Status:** ✅ CLOSED (RE-TICKETED → ISSUE-1157, 2026-07-21 housecleaning — content moved verbatim to OPEN_ISSUES_V2.md; this entry retained for history only)
 - **Severity:** 🔴 CRITICAL (unreleased creative output disclosure and false completion)
 - **Module:** Creative Suite / Cloud render / Storyboard compilation
 - **Evidence:** The renderer-side `RenderService` invokes the Cloud Run client with `privacy: 'public'` for every render (`RenderService.ts:28-73`) and takes Cloud Run configuration from Vite-exposed environment values (`remotion.cloudrun.ts:21-46`). It returns `CLOUD_QUEUED:{renderId}:{bucket}` when no public URL is present (`RenderService.ts:86-96`). `StoryboardTimeline.handleCompileVideo()` calls this renderer path then immediately toasts “Showreel dispatched successfully! URL: {result}” (`StoryboardTimeline.tsx:318-342`), even when `result` is that queue marker. The Veo-to-Remotion auto-render path also treats any render completion as non-blocking and stores no private entitlement/output record (`VeoToRemotionBridge.ts:174-194`).
@@ -15453,7 +15453,7 @@ Naming fix: `LabelDealRecoupmentService.ts` collection literal `'labelDeals'` �
 
 ### ISSUE-1005: Generated-audio library service writes to an unruled path while rules authorize a different collection
 
-- **Status:** 🟡 PARTIAL (2026-07-11 — service/rules path mismatch and destructive cleanup behavior fixed; generation integration/emulator proof remains)
+- **Status:** ✅ CLOSED (RE-TICKETED → ISSUE-1158, 2026-07-21 housecleaning — content moved verbatim to OPEN_ISSUES_V2.md; this entry retained for history only)
 - **Severity:** 🔴 CRITICAL (generated audio cannot become a durable user-library asset)
 - **Module:** Audio generation / Audio library persistence
 - **Evidence:** `AudioPersistenceService` describes a user-specific audio library and its list/save/delete operations construct `users/${userId}/audio` (`AudioPersistenceService.ts:44-50`, `:67-90`, `:95-117`). The Firestore rules define no `match /users/{userId}/audio/{...}` policy; the only audio-assets rule is for the unrelated root path `/audio_assets/{docId}` (`firestore.rules:1210-1213`), with all unmatched paths denied by the final catch-all (`:1235-1236`). The service’s base constructor itself uses `audio_assets`, but its overridden collection accessor computes the user path and then returns `super.collection` anyway (`AudioPersistenceService.ts:38-42`, `:54-62`), making the declared model contradictory even before any integration adds/reuses base methods.
@@ -15513,7 +15513,7 @@ Naming fix: `LabelDealRecoupmentService.ts` collection literal `'labelDeals'` �
 
 ### ISSUE-1008: PLP counts queued video jobs with empty URLs as generated variants and can deploy them as ad creatives
 
-- **Status:** 🟡 PARTIAL (2026-07-17 — lifecycle/UI/retry coverage complete; live provider/emulator proof remains)
+- **Status:** ✅ CLOSED (RE-TICKETED → ISSUE-1159, 2026-07-21 housecleaning — content moved verbatim to OPEN_ISSUES_V2.md; this entry retained for history only)
 - **Severity:** 🔴 CRITICAL (paid campaign can be built from nonexistent video assets)
 - **Module:** Creative Suite / PLP 15-variant pipeline / Ad handoff
 - **Evidence:** PLP starts five `VideoGeneration.generateVideo()` calls alongside ten image calls and treats every fulfilled array with a first item as a completed variant (`CreativeStudio.tsx:191-245`). But `generateVideo()` explicitly returns only `{ id: jobId, url: '' }` while the video is queued, instructing callers to use a job listener for the eventual URL (`VideoGenerationService.ts:484-492`). PLP immediately adds that empty URL to history as a `video` (`CreativeStudio.tsx:221-237`), increments its “N/15 Variants generated” count, and includes its ID in `creativeSeeds`; after user confirmation it sends those IDs to `deployPLPPipeline` (`:243-273`). It creates no subscription, terminal-state check, output URL readback, or failure/retry path for the five video jobs.
@@ -15527,7 +15527,7 @@ Naming fix: `LabelDealRecoupmentService.ts` collection literal `'labelDeals'` �
 
 ### ISSUE-1009: Infinite Canvas flatten silently drops unloaded layers, deletes the originals, and reports success
 
-- **Status:** 🟡 PARTIAL (2026-07-12 — immediate undo plus a durable pre-flatten revision; browser fixture coverage remains)
+- **Status:** ✅ CLOSED (RE-TICKETED → ISSUE-1160, 2026-07-21 housecleaning — content moved verbatim to OPEN_ISSUES_V2.md; this entry retained for history only)
 - **Severity:** 🔴 CRITICAL (destructive creative data loss)
 - **Module:** Creative Suite / Infinite Canvas / Flatten layers
 - **Evidence:** `handleFlatten()` computes a composite and draws a layer only if its cached browser image is already `complete` with a positive natural width (`InfiniteCanvas.tsx:780-815`). It does not await pending loads, resolve a missing cache entry, count skipped layers, or abort. Immediately afterward it removes every source canvas image, adds the partial PNG, selects it, and toasts “Layers flattened successfully!” (`:817-835`). A slow Storage URL, fresh upload, network delay, cache eviction, or image decode failure therefore causes that layer to be omitted permanently from the flattened result.
@@ -15541,7 +15541,7 @@ Naming fix: `LabelDealRecoupmentService.ts` collection literal `'labelDeals'` �
 
 ### ISSUE-1010: One failed Infinite Canvas variation discards successful paid sibling results
 
-- **Status:** 🟡 PARTIAL (2026-07-12 — failed-slot retry added; explicit batch persistence/late-completion coverage remains)
+- **Status:** ✅ CLOSED (RE-TICKETED → ISSUE-1161, 2026-07-21 housecleaning — content moved verbatim to OPEN_ISSUES_V2.md; this entry retained for history only)
 - **Severity:** 🟠 HIGH (paid creative outputs become inaccessible after partial batch failure)
 - **Module:** Creative Suite / Infinite Canvas / Generate variations
 - **Evidence:** Variation generation deliberately starts four independent `ImageGeneration.generateImages()` calls in parallel (`InfiniteCanvas.tsx:658-667`) but waits with `Promise.all` (`:669`). If any one request rejects, control goes directly to the catch that only says “Failed to generate variations” (`:713-716`); it never processes the fulfilled sibling results. Only after the all-success wait does the code add outputs to canvas/history (`:672-711`). Each sibling is a real generation request with its own cost check, provider call, storage/metadata processing, and potentially an output before a different sibling fails (`ImageGenerationService.ts:258-575`).
@@ -15591,7 +15591,7 @@ Naming fix: `LabelDealRecoupmentService.ts` collection literal `'labelDeals'` �
 
 ### ISSUE-1014: Video Workflow’s 3D Stage Builder cannot receive the GLB/GLTF files it tells creators to drop
 
-- **Status:** 🟡 PARTIAL (2026-07-12 — structural decode gate and progress status added; browser interaction/load-error coverage remains)
+- **Status:** ✅ CLOSED (RE-TICKETED → ISSUE-1162, 2026-07-21 housecleaning — content moved verbatim to OPEN_ISSUES_V2.md; this entry retained for history only)
 - **Severity:** 🔴 CRITICAL (custom music-video set construction is blocked at intake)
 - **Module:** Creative Suite / Video Workflow / 3D Stage Builder
 - **Evidence:** The active Video Workflow lazy-loads and renders `SceneBuilder` (`VideoWorkflow.tsx:26-27`, `:1053`). Its only file intake handlers (`onDragOver`, `onDrop`) live on `DroppableArea` (`SceneBuilder.tsx:82-102`), but that element is rendered with Tailwind `pointer-events-none` (`:104-112`). It therefore cannot become the drag target or receive the events that call `URL.createObjectURL`/`onDrop`; no parent supplies alternative handlers or file picker. The UI nevertheless directs users to “Drag and drop any .glb or .gltf 3D assets” to build a custom music-video stage (`:163-179`).
@@ -15745,7 +15745,7 @@ Naming fix: `LabelDealRecoupmentService.ts` collection literal `'labelDeals'` �
 
 ### ISSUE-1043: GitHub Release Missing Updater Manifest Files
 
-- **Status:** ⏳ BACKLOG — consolidated (blocks Founders Version One installation; blocked on ISSUE-992 founder signing secrets)
+- **Status:** ✅ CLOSED (RE-TICKETED → ISSUE-1163, 2026-07-21 housecleaning — content moved verbatim to OPEN_ISSUES_V2.md; this entry retained for history only)
 - **Severity:** 🔴 CRITICAL (installers cannot check for updates)
 - **Error Message:** "Founders Version One cannot be installed yet because the latest GitHub release is missing its updater manifest. Publish a repaired release with latest-mac.yml, latest.yml, and latest-linux.yml, then check again." (produced by `packages/main/src/updater.ts:49` when electron-updater 404s on a manifest)
 - **Root Cause (investigated 2026-07-13, supersedes the original guess of "published manually or by workflow failure"):** This error is the direct, predictable consequence of the ISSUE-992 mitigation plus an empty fallback release. Chain of events, all verified against the live GitHub Releases API:
@@ -15804,7 +15804,7 @@ Naming fix: `LabelDealRecoupmentService.ts` collection literal `'labelDeals'` �
 
 ### ISSUE-1045: App icon/favicon gives no visual cue for which surface is open (web / Electron / remote)
 
-- **Status:** ⏳ BACKLOG — consolidated (requested by William, 2026-07-12 — noticed while juggling multiple open browser/app tabs and couldn't tell them apart at a glance)
+- **Status:** ✅ CLOSED (RE-TICKETED → ISSUE-1164, 2026-07-21 housecleaning — content moved verbatim to OPEN_ISSUES_V2.md; this entry retained for history only)
 - **Severity:** 🟡 MEDIUM (UX/orientation — no data or security impact)
 - **Module:** Branding / Build assets (web manifest, Electron packaging, mobile-remote PWA)
 - **Request:** Same core mark (the "double eye"/`II` logo), but recolored per runtime surface so the browser tab, the Dock/taskbar icon, and the phone remote icon are each visually distinct at a glance — one color for web browser, one for the Electron desktop app, one for the remote/mobile app.
@@ -16226,7 +16226,7 @@ All scoped work from ISSUE-511/913/957/958 consolidated effort:
 - **Acceptance:** Secret scanning finds no credential literal in tracked or untracked ISSUE-777 artifacts; the browser proof still runs through an authenticated session without embedding credentials; the exposed credential is confirmed rotated or invalidated.
 
 ### ISSUE-1081: Deploy-managed Firebase API-key restrictions repeatedly block the canonical localhost:4243 renderer *(renumbered 2026-07-17 — was mislabeled ISSUE-1074, colliding with the fixed analyze_visual_trends entry)*
-- **Status:** 🟡 PARTIAL (2026-07-17 — persistent repo fix complete; cloud rollout/probe pending)
+- **Status:** ✅ CLOSED (RE-TICKETED → ISSUE-1167, 2026-07-21 housecleaning — content moved verbatim to OPEN_ISSUES_V2.md; this entry retained for history only)
 - **Severity:** 🟠 HIGH
 - **Module:** Firebase Authentication / Google Cloud API key / Local web and Electron renderer testing
 - **Evidence:** `npm run dev:web`, `packages/renderer/vite.config.ts`, and `electron.vite.config.ts` all designate port 4243 for the renderer. A credential-validation probe from both `http://localhost:4243/` and `http://127.0.0.1:4243/` returns `PERMISSION_DENIED: Requests from referer ... are blocked.` The deploy workflow's “Repair Firebase web API key restrictions” step overwrites the key allowlist with production origins only, so each deployment preserves/reintroduces the local block. The UI error mapper only recognized static referer error codes and leaked Firebase's dynamic `auth/requests-from-referer-http://localhost:4243-are-blocked` message.
@@ -16235,7 +16235,7 @@ All scoped work from ISSUE-511/913/957/958 consolidated effort:
 - **Acceptance:** After deployment, invalid-credential probes using both 4243 referrers reach Firebase credential validation rather than `PERMISSION_DENIED`; an actual local sign-in can load the authenticated shell; the next deployment retains both local origins; dynamic referer codes never render raw Firebase text. Unit coverage for the dynamic error passes. Live Cloud update could not be applied directly because the local `gcloud` session requires interactive reauthentication, so the authenticated deployment workflow is the rollout path.
 
 ### ISSUE-1077: Production speech generation bypasses the durable audio library and calls an unsupported non-TTS model contract
-- **Status:** 🟡 PARTIAL (2026-07-17 — code/test fix complete; deployed Cloud audio proof pending)
+- **Status:** ✅ CLOSED (RE-TICKETED → ISSUE-1165, 2026-07-21 housecleaning — content moved verbatim to OPEN_ISSUES_V2.md; this entry retained for history only)
 - **Severity:** 🔴 CRITICAL
 - **Module:** Gemini TTS / Creative audio / Cloud Storage / Firestore / cost control
 - **Evidence:** The active renderer speech path called the legacy `generateSpeech` function, which returned base64 only and never created `audio_assets`. The separate `generateAudioV3` callable had no caller, used the generic `gemini-3-flash-preview` text model with `responseModalities: ["AUDIO"]`, accepted a fictional duration control, created no cost reservation, wrote no audio-library metadata, and returned a `gs://` URI that a browser cannot play directly. Its generated Storage path also did not match `CloudStorageService.deleteAudio`, so deletion would target a different object. Google currently documents `gemini-3.1-flash-tts-preview` plus the Interactions audio response contract for TTS.
@@ -16244,7 +16244,7 @@ All scoped work from ISSUE-511/913/957/958 consolidated effort:
 - **Acceptance:** Deploy the function, renderer, Firestore rules, and Storage rules; invoke production `generateAudioV3` as a real authenticated user; resolve and fetch the returned Storage receipt and verify those bytes decode as WAV; verify the exact Storage object and owner-scoped `audio_assets` document exist after a fresh read; repeat the same request ID and prove no second generation/reservation occurs; play the resolved object through the authenticated client path; delete it through the owner client path; confirm both Storage and metadata are removed; confirm cross-user read/delete remain denied. Local/emulator results are guardrails only and do not close this issue.
 
 ### ISSUE-1078: Production stale cost-reservation reconciliation is flooding Error Reporting and can refund completed media
-- **Status:** 🟡 PARTIAL (2026-07-17 — completed-job reconciliation added for new job-linked holds; live backlog remediation pending)
+- **Status:** ✅ CLOSED (RE-TICKETED → ISSUE-1166, 2026-07-21 housecleaning — content moved verbatim to OPEN_ISSUES_V2.md; this entry retained for history only)
 - **Severity:** 🔴 HIGH
 - **Module:** Cost control / scheduled reconciliation / creative generation
 - **Evidence:** The authenticated Google Cloud dashboard shows `[CostControl] Reservation expiry reconciliation skipped ...` as the top error with roughly 15.7k events in the last 24 hours. The expiry worker previously voided every stale APPROVED hold without checking whether its associated creative job had actually completed. A successful media output whose immediate SETTLED write failed could therefore be refunded later, while malformed/legacy holds repeatedly throw and flood monitoring.
@@ -16269,7 +16269,7 @@ All scoped work from ISSUE-511/913/957/958 consolidated effort:
 - **Fix:** Removed `failedVariationBatch` from `partialize` with an explanatory comment. In-memory store residency alone delivers the intended fix (retry UI survives canvas unmount/navigation); a retry batch does not need to survive a full page reload. InfiniteCanvas suite passes 6/6 including the new retry-UI test.
 
 ### ISSUE-1082: Production AI generation depended on prepaid AI Studio credits — hard cutoff with no alerting, no postpaid path, no dev/prod spend isolation
-- **Status:** 🟡 PARTIAL (2026-07-17 — code + cloud alerting complete; prod rollout on next deploy)
+- **Status:** ✅ CLOSED (RE-TICKETED → ISSUE-1168, 2026-07-21 housecleaning — content moved verbatim to OPEN_ISSUES_V2.md; this entry retained for history only)
 - **Severity:** 🔴 CRITICAL (was the live cause of "creative is down")
 - **Module:** Creative gateway / `packages/firebase/src/functions/creative/gateway.ts` / GCP monitoring + billing
 - **Evidence:** The gateway preferred the AI Studio API key (prepaid credits) and only fell back to Vertex ADC on API-*key* errors — billing exhaustion (`RESOURCE_EXHAUSTED` / "prepayment credits are depleted") rode the dead key path straight to users. No notification channels, no alert policies, and no budget existed on the GCP project, so depletion was discovered via a failing unit test.
@@ -16277,7 +16277,7 @@ All scoped work from ISSUE-511/913/957/958 consolidated effort:
 - **Acceptance (residual):** deploy functions so prod actually routes via Vertex; live-verify one `generateImageV3` call succeeds on Vertex billing; confirm a test alert email arrives. AI Studio credits remain optional (dev/QA only).
 
 ### ISSUE-1083: Audio profiling callable accepted arbitrary Storage paths and queued an unauthenticated placeholder engine target
-- **Status:** 🟡 PARTIAL (2026-07-17 — code and local proof complete; Cloud Run/Cloud Tasks provisioning and live receipt pending)
+- **Status:** ✅ CLOSED (RE-TICKETED → ISSUE-1169, 2026-07-21 housecleaning — content moved verbatim to OPEN_ISSUES_V2.md; this entry retained for history only)
 - **Severity:** 🔴 CRITICAL
 - **Module:** Canonical master ingestion / Cloud Tasks / engine-dsp
 - **Evidence:** `packages/firebase/src/distribution/ingestion.ts` accepted any authenticated caller's `filePath`, checked only whether that object existed, and then posted the caller-controlled reference without an identity token. The fallback target was the literal placeholder `https://engine-dsp-service-url/profile`. The callable was not exported from `packages/firebase/src/index.ts`, so its apparent success path was not deployable from this source tree.
@@ -16287,7 +16287,7 @@ All scoped work from ISSUE-511/913/957/958 consolidated effort:
 - **Acceptance (residual):** Provision a private `engine-dsp` Cloud Run service and `dsp-processing-queue`; grant the configured service account Cloud Run Invoker and the function permission to enqueue/sign as that identity; configure `ENGINE_DSP_URL`, `ENGINE_DSP_SERVICE_ACCOUNT`, and optional queue/location/audience overrides; deploy; enqueue a real canonical master; verify Cloud Tasks sends an accepted OIDC request; and prove the worker stores a hash/generation-bound analysis receipt without copying or mutating the master.
 
 ### ISSUE-1084: engine-dsp ignored the verified master contract, loaded whole files into memory, and never called Gemini or persisted provenance
-- **Status:** 🟡 PARTIAL (2026-07-17 — code/container/rules proof complete; private Cloud Run deployment and live receipt pending)
+- **Status:** ✅ CLOSED (RE-TICKETED → ISSUE-1170, 2026-07-21 housecleaning — content moved verbatim to OPEN_ISSUES_V2.md; this entry retained for history only)
 - **Severity:** 🔴 CRITICAL
 - **Module:** `packages/engine-dsp` / canonical master intelligence / Vertex Gemini / Firestore provenance
 - **Evidence:** The worker accepted the obsolete `{filePath, masterAssetId}` request rather than the server-verified bucket/path/fingerprint/hash/generation/owner tuple. It trusted a hard-coded bucket, checked only 12 WAV magic bytes, then downloaded the entire object into memory. It accepted no FLAC, did not re-hash bytes or pin a Storage generation, returned two transient librosa numbers, had no Gemini call, no idempotency, no Firestore receipt, and retained a fake `/render` response. No renderer path called the newly exported profiling callable, so upload-once ingestion still ended after a separate verification call.
@@ -16298,7 +16298,7 @@ All scoped work from ISSUE-511/913/957/958 consolidated effort:
 - **Acceptance (residual):** Provision/deploy `engine-dsp` as private Cloud Run with at least 2 GiB memory; set `MASTER_AUDIO_BUCKET`, `GEMINI_AUDIO_MODEL`, `VERTEX_LOCATION`, and the Firebase task variables; grant the runtime service account least-privilege Storage object read, Datastore/Firestore write, and Vertex AI use; grant only the task identity Cloud Run Invoker; deploy Firestore rules and the callable; enqueue a real canonical WAV and FLAC; prove Cloud Tasks OIDC is accepted, DSP and Gemini both analyze the same hash/generation, a single owner-readable complete receipt persists, retry returns the same receipt without a second model call, and no master object is copied/mutated.
 
 ### GH-ISSUE-233: Weekly Demo Audit 2026-07-13 — GO
-- **Status:** OPEN
+- **Status:** ✅ CLOSED (2026-07-21 housecleaning — audit verdict was GO; per its own acceptance criterion there is nothing to fix. GitHub issue #233 closed.)
 - **Severity:** 🟢 LOW
 - **Link:** https://github.com/indii-music-founder/indii-music-founder/issues/233
 - **Summary:** Automated weekly demo-readiness audit. Verdict: **GO**
@@ -16314,7 +16314,7 @@ All scoped work from ISSUE-511/913/957/958 consolidated effort:
 - **Fix:** Deleted all 7 dead constants and their orphaned comments. Single source of truth is `middleware/appCheck.ts`. `packages/firebase` tsc build clean; lint warnings for these sites gone.
 
 ### ISSUE-1086: mcpEndpoint has no app-layer auth — currently shielded only by IAM invoker 403
-- **Status:** 🔴 OPEN (decision needed before endpoint is ever opened)
+- **Status:** ✅ CLOSED (RE-TICKETED → ISSUE-1171, 2026-07-21 housecleaning — content moved verbatim to OPEN_ISSUES_V2.md; this entry retained for history only)
 - **Severity:** 🟡 MEDIUM (dormant; no active exposure verified 2026-07-17)
 - **Module:** packages/firebase/src/mcp/index.ts (`mcpEndpoint`, Gen 1 onRequest)
 - **Evidence:** Express app with `cors({ origin: true })`, `enforceAppCheck: false`, and no `validateAppCheck*`/auth middleware on `/sse` or `/message`. Live check: `gcloud functions get-iam-policy mcpEndpoint --region=us-central1` returns an EMPTY policy (no `allUsers` invoker) → unauthenticated calls 403 at the platform layer today, matching the fleet-wide IAM lockdown. Exposure if opened: one stateless tool (`draft_dsp_metadata_xml`) — compute/cost abuse only, no Firestore/Storage/secret access.

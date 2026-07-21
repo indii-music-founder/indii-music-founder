@@ -176,6 +176,40 @@ audio/cover-art resources referenced in the package were received; and the
 recipient's acknowledgement is retained. An XML file in Cloud Storage, an XSD
 pass, or a successful SFTP connection alone is *not* delivery acceptance.
 
+### Music-Identity & Royalty Registration Prerequisites (ISSUE-785, added 2026-07-21)
+
+**IMPORTANT SPLIT:** These are **company-level registrations** that indii performs once to serve every artist on the platform — NOT per-artist tasks. Per-artist identity (PRO membership, ISWC registration, Copyright Office filing) belongs in the in-app Registration Center, not here.
+
+**Company-level firm actions (required before any artist can release through indii):**
+
+- [ ] **US ISRC Rights-Owner Prefix:** Apply using New Detroit Music LLC's legal entity name at [US ISRC Agency](https://redesign.usisrc.org/apply-for-an-isrc-account/?user-is-manager=false). Cost: **$95/year** for up to 100,000 codes. This prefix is what allows indii to mint valid ISRCs for every release that flows through the system. (Reference: ISSUE-785 notes current price; re-verify at time of purchase.)
+- [ ] **GS1 Company Prefix (GTIN/UPC):** Choose the tier at [GS1 US](https://store.gs1us.org/gs1-company-prefix/p) — either single GTINs (**$30 each, no renewal**) or a Company Prefix for bulk (**$250 initial, $50/year for 1–10 codes**, larger tiers available). This allows indii to issue valid barcodes to releases for distribution/retail. Record the assigned prefix and the expiry/renewal date.
+- [ ] **DDEX DPID (already covered in "Direct DDEX Delivery Activation" above):** Confirm the company sender Party ID during DDEX licence acceptance. Cross-reference section above for licence details.
+- [ ] **Meta Rights Manager Account:** Complete the [Meta Rights Manager application](https://about.fb.com/news/2023/01/helping-creators-and-publishers-manage-intellectual-property/) from a company-owned Facebook Page. This allows indii to administer copyright claims on behalf of artists' releases on Instagram/Facebook. Record the account ID and Page link.
+
+**Company-level business decisions (requires founder choice; not blocker for engineering):**
+
+- [ ] **MLC Membership Model:** Decide if indii acts as the **administrator** (one company membership) for mechanicals indii self-administers, or if each artist joins individually. Both models are valid in the industry. If choosing administrator model, [join The MLC](https://www.themlc.com/membership) (free); record the account ID. If per-artist model, document this in the in-app onboarding.
+- [ ] **SoundExchange Representation Model:** Decide if indii registers as the **rights administrator** or if artists register individually for performer and sound-recording-owner roles. [SoundExchange registration is free](https://www.soundexchange.com/register/); document the chosen model and account ID if company-level.
+
+**Per-artist identity (belongs in the in-app Registration Center, NOT on this checklist):**
+
+These are tracked per-track/per-artist in the app, not here:
+- Artist joins a PRO (ASCAP/BMI/SESAC) as a songwriter and receives an IPI number — this is the writer's own relationship, not indii's.
+- Artist registers works through that PRO (never self-issued ISWCs).
+- Artist files Copyright Office registrations for their own compositions and sound recordings.
+- Artist applies for YouTube Content ID (requires exclusive rights, artist's own decision).
+
+**Evidence to retain:**
+
+- [ ] ISRC prefix certificate and registrant account details.
+- [ ] GS1 Company Prefix assignment and renewal dates.
+- [ ] DDEX DPID confirmation (cross-ref Direct DDEX section).
+- [ ] Meta Rights Manager account ID, Page link, and approval date.
+- [ ] Documentation of MLC/SoundExchange model chosen (business record, not evidence docs).
+
+**Definition of done:** indii can mint valid ISRCs, GTINs, and DDEX identifiers for releases; Meta Rights Manager is ready for claim administration; the chosen MLC/SoundExchange model is documented and in-app onboarding reflects it. The per-artist side (PRO/ISWC/Copyright) is surfaced as guidance/links in the Registration Center.
+
 ### Intellectual Property & Value Evidence (added 2026-07-20)
 
 The platform's code, brand, operational know-how, datasets, and customer music

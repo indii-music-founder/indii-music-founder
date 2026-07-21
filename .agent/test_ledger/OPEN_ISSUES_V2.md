@@ -72,7 +72,7 @@
 
 ### ISSUE-1094: Material assets lack a living ownership, provenance, restriction, and value-evidence register
 
-- **Status:** 🟡 PARTIAL (2026-07-20 — register and founder evidence checklist created; asset-by-asset evidence collection remains open)
+- **Status:** ✅ CLOSED (2026-07-21 housecleaning — register + code-review gate built and verified. Remaining work is founder-only asset-by-asset evidence collection, tracked in `docs/RELEASE_CHECKLIST.md` § "Intellectual Property & Value Evidence". Not an engineering issue; removed from the open ledger per founder directive.)
 - **Severity:** 🔴 HIGH (chain-of-title, diligence, customer-rights, and valuation risk)
 - **Module:** `docs/data-room/13_IP_ASSET_REGISTER.md`, `docs/RELEASE_CHECKLIST.md`, all asset-producing product flows
 - **Evidence:** Existing IP assignment, AI authorship, rights, audio-provenance, and valuation documents are distributed across the repository. They do not provide one current record that distinguishes platform-owned software/know-how from vendor licences, user-controlled catalog, datasets, brand assets, and unverified claims.
@@ -279,7 +279,7 @@
 - **Depends on:** ISSUE-1112 (mac path proven — done, PARTIAL for the same class of reason). Windows work was parallelizable with ISSUE-1113 (now ✅ FIXED, since its own gap was ISSUE-1116, unrelated to Windows hardware).
 
 ### ISSUE-1115: Artist Operating Profile (AOP) as a first-class execution input — not yet built
-- **Status:** 🔴 OPEN (deprioritized — does not block or reorder CE-4/CE-5)
+- **Status:** ✅ CLOSED (RE-TICKETED → ISSUE-1172, 2026-07-21 housecleaning — content moved verbatim to OPEN_ISSUES_V2.md; this entry retained for history only)
 - **Severity:** 🟢 LOW (design/data-model gap, no immediate consumer)
 - **Module:** none yet — no code exists for this. Candidate: new Firestore doc `users/{uid}/aop` (or similar), read by `DigitalHandshake`/`ComputerExecutionService` at decision time.
 - **Evidence:** Founder-shared architecture note (2026-07-20 chat) describes execution decisions as informed by an "Artist Operating Profile" — preferences, business goals, creative boundaries, permissions, installed software, connected services, security policies, automation preferences. Today that information is scattered: static tool config in `ToolRiskRegistry.ts`, per-directive compute allocation in `DigitalHandshake.ts`, no per-user record of e.g. "has this artist opted into autonomous computer control" or "is `cliclick` installed on this machine."
@@ -310,3 +310,956 @@
 - Build order: **1110 → 1111 → 1112 → {1113, 1114 in parallel}**. ISSUE-1115 is out-of-band — not part of this build order. ISSUE-1116 is also out-of-band (correctness finding, platform-wide scope) — does not block or reorder 1113/1114.
 - 1110 is gated on ONE founder decision: approve the architecture in `docs/COMPUTER_EXECUTION_EXTENSION.md` (brain = Gemini Computer Use via Vertex, body = @jitsi/robotjs local). Rejected alternatives recorded there: LangChain (redesign — forbidden), Anthropic/OpenAI CUA (second vendor, fallback only), Browserbase/Stagehand (browser-only, future cloud target).
 - No entry here blocks or is blocked by the MCP backend plan (ISSUE-1100 P-series) — independent tracks.
+
+---
+
+## Housecleaning Re-Ticket Batch (2026-07-21)
+
+> Founder directive: every incomplete item in the ledger (OPEN / PARTIAL / IN PROGRESS / BLOCKED / BACKLOG) was closed and re-opened here verbatim under a fresh number. Original numbers and statuses are recorded per entry. Founder-only real-world work was removed from the ledger entirely and lives in `docs/RELEASE_CHECKLIST.md`.
+
+**Mapping:** 694→1117, 721→1118, 768→1119, 784→1120, 785→1121, 800→1122, 809→1123, 826→1124, 840→1125, 843→1126, 844→1127, 847→1128, 849→1129, 851→1130, 855→1131, 857→1132, 858→1133, 875→1134, 876→1135, 877→1136, 880→1137, 882→1138, 890→1139, 891→1140, 893→1141, 895→1142, 896→1143, 914→1144, 916→1145, 919→1146, 924→1147, 950→1148, 952→1149, 959→1150, 960→1151, 962→1152, 965→1153, 971→1154, 974→1155, 976→1156, 995→1157, 1005→1158, 1008→1159, 1009→1160, 1010→1161, 1014→1162, 1043→1163, 1045→1164, 1077→1165, 1078→1166, 1081→1167, 1082→1168, 1083→1169, 1084→1170, 1086→1171, 1115→1172
+
+---
+
+### ISSUE-1117: IAM invoker remediation is INCOMPLETE — webhooks/healthchecks now reach the edge, but desktop REFINE round-trip and healthCheck parity still need proof
+
+- **Re-ticketed from:** ISSUE-694 (2026-07-21 housecleaning; original status was: `🟠 PARTIALLY REMEDIATED (2026-07-03 live probes)`)
+- **Status:** 🟠 PARTIALLY REMEDIATED (2026-07-03 live probes)
+- **Severity:** 🟠 HIGH (remaining: external integrations + monitoring)
+- **Module:** Cloud Functions IAM (continuation of ISSUE-672/673)
+- **Summary:** Re-probes after the invoker grants: `editImage`, `renderVideo`, `triggerVideoJob`, `requestAccountDeletion` now return **401 (healthy)** ✅. A direct `gcloud functions deploy healthCheck` for `packages/firebase` now succeeds (`buildId: 39234474-bbf9-464b-8dfe-dae776544036`, `status: ACTIVE`), and the live edge probes on 2026-07-03 show the webhook/monitoring surfaces are no longer GFE-403 blocked: `pandadocWebhook` and `telegramWebhook` return **401 Unauthorized** without their secrets, `healthCheckWest1` returns **200**, and `healthCheck` returns **200** with a `degraded` body because its Firestore ping still fails. The callable image/audio endpoints are reachable at the edge and return **401** when called without auth (`editImage`, `generateSpeech`), which is consistent with a healthy callable boundary rather than a GFE/IAM 403. An `editImage` execution log also appears in Cloud Logging. External webhook deliveries are no longer edge-blocked; the remaining work is the desktop-app REFINE checklist plus deciding whether the degraded `healthCheck` Firestore ping is acceptable or needs a separate fix.
+- **Acceptance checklist for closing 672/673/677 (do ALL of these, from the DESKTOP app):**
+  1. Magic Edit REFINE with annotations → edit result appears in CandidateReview.
+  2. No-annotation REFINE (remix path — `ImageGeneration.remixImage` also calls the `editImage` callable, `ImageGenerationService.ts:597-610`).
+  3. Agent-initiated edit: ask Creative Director chat to edit an image (`EditImageWithAnnotationsTool.ts:67` → same callable — EVERY department agent's image editing rode this 403).
+  4. Confirm `ENFORCE_APP_CHECK` runtime value permits desktop (Electron sends no App Check token — ISSUE-677): verify a desktop callable succeeds, not just web.
+  5. Probe the remaining edge states after granting: `pandadocWebhook`, `telegramWebhook`, `healthCheck`, `healthCheckWest1`, and re-probe `generateSpeech`.
+  6. Confirm an `editImage` execution log actually appears: `gcloud logging read 'resource.labels.function_name="editImage" textPayload:"Function execution started"' --freshness=1h`.
+- **Files:** cross-ref ISSUE-672/673/677; `packages/renderer/src/services/image/ImageGenerationService.ts:597-610`; `packages/renderer/src/services/agent/tools/EditImageWithAnnotationsTool.ts:67`
+
+---
+
+### ISSUE-1118: TaxFormCollection shows a false "Collected" status for W-9/W-8BEN uploads — the file is never actually stored anywhere
+
+- **Re-ticketed from:** ISSUE-721 (2026-07-21 housecleaning; original status was: `🟠 BLOCKED`)
+- **Status:** 🟠 BLOCKED
+- **Severity:** 🟠 HIGH (false compliance signal — real regulatory/1099 risk, though no PII actually leaves the browser since nothing is transmitted)
+- **Fix:** Replaced the fake success states for document upload and requests with honest error messages. The UI now explicitly alerts the user that secure upload capabilities require backend storage rules.
+- **Blocker:** Requires a secure Firebase Storage setup with appropriate security rules for sensitive PII, plus backend API logic.
+- **Module:** Finance / TaxFormCollection
+- **Depends on:** nothing — parallel-safe
+- **Summary:** `handleFileChange` takes an uploaded W-9/W-8BEN file (a document containing real SSN/TIN/EIN) and does nothing with it except store the filename string in local `useState` and flip the collaborator's status to `submitted`. There is no Storage upload, no Firestore write, no backend call anywhere in the file — confirmed via grep (zero `httpsCallable`/firestore hits). The actual `File` object is discarded; only its name string is kept in ephemeral memory. The UI counts this collaborator toward `{verifiedCount}/{totalCount} Collected` as if their real tax form is on file, but a page refresh loses it entirely — and even before a refresh, nothing was ever actually collected anywhere durable. A business relying on this screen to confirm 1099/backup-withholding compliance would be trusting a number that was never real.
+- **Companion finding (same file):** `handleRequestForm` (the "send form request to collaborator" action) shows a fake success indicator (a 3-second "sent" checkmark via `setSentNotifs`) with zero actual email/notification dispatched — no `httpsCallable`, no email service call. This differs from `StripeConnectOnboarding`'s honest pattern in the same module (which explicitly errors "requires the createStripeConnectAccount backend... No onboarding link was created" rather than faking success) — TaxFormCollection should follow that same honest-failure pattern instead of animating a fake confirmation.
+- **Fix Direction:** (1) Wire `handleFileChange` to a real upload path — Firebase Storage under a properly access-controlled path (tax documents are sensitive; verify Storage security rules restrict read access to the artist + authorized finance ops only) plus a Firestore record marking real submission. (2) Wire `handleRequestForm` to a real notification path (e.g. `ResendEmailService`, already used elsewhere in this codebase per `MyContracts.tsx`) or replace the fake-success indicator with `StripeConnectOnboarding`'s honest "not wired yet" error pattern until the real send exists.
+- **Files:** `packages/renderer/src/modules/finance/components/TaxFormCollection.tsx`
+
+---
+
+### ISSUE-1119: No v1.64.x GitHub Release exists — updater manifests 404, installed 1.50.0 builds cannot update
+
+- **Re-ticketed from:** ISSUE-768 (2026-07-21 housecleaning; original status was: `🟡 IN PROGRESS`)
+- **Status:** 🟡 IN PROGRESS
+- **Evidence (live probe 2026-07-08):** Pushed `v1.64.5` tag to trigger the release workflow. The initial run failed on macOS build due to Node.js Out Of Memory (OOM). Globally set `NODE_OPTIONS: "--max-old-space-size=6144"` in workflow templates. Re-pushing tag will start the release build again.
+
+---
+
+### ISSUE-1120: DDEX compiler emits a fake DPID and an ERN 4.2 document while the app claims ERN 4.3
+
+- **Re-ticketed from:** ISSUE-784 (2026-07-21 housecleaning; original status was: `🟡 PARTIAL (2026-07-17) — identity/schema delivery gates are implemented; compiler consolidation and live partner proof remain open`)
+- **Scope note (2026-07-21):** engineering remainder ONLY. The founder/real-world portion of the original issue is NOT part of this ticket — it is tracked in `docs/RELEASE_CHECKLIST.md` § "Direct DDEX Delivery Activation (ISSUE-784)". Do not block this ticket on it.
+- **Status:** 🟡 PARTIAL (2026-07-17) — identity/schema delivery gates are implemented; compiler consolidation and live partner proof remain open
+- **Severity:** 🔴 CRITICAL (partner delivery rejection / identity spoofing)
+- **Module:** Firebase Publishing / DDEX
+- **Evidence:** `packages/firebase/src/publishing/ddex-generator.ts:57-65` declares ERN 4.2 and hardcodes `<PartyId>PADPIDA123456</PartyId>`. `AuthorityPanel.tsx:103-105,192-207` tells users it generated ERN 4.3.
+- **Fix:** Require the verified DDEX DPID from server configuration, use one canonical ERN 4.3 compiler, XML-escape all user data, and validate against the official XSD/business profile before delivery.
+- **Founder action:** Obtain the free DDEX Implementation Licence/DPID; a DPID uniquely identifies the message sender/recipient ([DDEX guidance](https://kb.ddex.net/general-implementation-guidance/licensing-the-standards/ddex-party-identifier-%28dpid%29/), [licence FAQ](https://ddex.net/implementation/frequently-asked-questions/)).
+- **Acceptance:** No fallback DPID exists; missing DPID blocks live packaging; output passes the selected ERN 4.3 profile validator.
+
+- **Fix applied (2026-07-10):** Both non-canonical generators corrected to declare the real ERN 4.3 namespace (`http://ddex.net/xml/ern/43`), matching the canonical generator (`IngestionParser.ts`, already correctly 4.3) that `AuthorityPanel.tsx`/`DistributionTools.ts` actually use in production: `ddex-generator.ts` was 4.2 (that function, `compileDDEXRelease`, is confirmed dead/unexported code — not deployed, per ISSUE-859/860 finding — but its declared version now matches reality regardless), and the MCP `draft_dsp_metadata_xml` tool was 4.1.1 (deployed, fixed live). DPID and XML-escaping were already fixed under ISSUE-859/861. **Not done:** full consolidation into one single canonical compiler (the acceptance criterion's larger ask) — three separate DDEX XML generators still exist in the codebase; only the live one was ever correct, the two dead/secondary ones now at least declare the right version. No XSD/profile validator is available to verify against the DDEX 4.3 business profile. Deployed: mcpEndpoint.
+
+- **Additional fix (2026-07-17):** The desktop Python path now assigns UPC before compilation, requires configured sender and recipient DPIDs, uses the official `http://ddex.net/xml/ern/43` namespace, and runs `DDEXXSDValidator(require_xsd=True)` before any live SFTP mutation. Spotify/Apple package builders no longer report `delivery_ready` without XSD-mode proof; Spotify's batched manifest separately requires its choreography namespace and entry-point XSD. Draft/dry-run generation may still use structural lint, but is explicitly `delivery_ready: false`. Focused proof: 26 Python distribution tests pass, including no-DPID, missing-XSD, missing-manifest-profile, official-namespace, and no-upload-before-validation assertions. Founder activation still requires an issued DPID, licensed ERN/choreography XSD files, bilateral recipient profile, and a partner-accepted test batch.
+- **Canonical-master transport fix (2026-07-17):** Distribution selection now reads the owner-scoped upload-once track catalog rather than the analysis cache and carries a typed `master_asset` reference plus measured sample rate/channel count. Electron accepts only content-addressed Firebase Storage master URLs, streams bytes into a private temporary directory, enforces declared size and SHA-256, removes the signed URL before spawning Python, and cleans the temporary files in all outcomes. Python independently verifies the master, copies it under `resources/`, derives the MD5 named in the ERN from those exact bytes, writes XML inside the package, and uploads the directory rather than an XML-only file. Focused proof: 27 Python distribution tests and 17 renderer/main security/component tests pass. ISSUE-784 remains partial because cover-art transport, compiler consolidation, licensed production profiles/DPIDs, and partner acceptance are still outstanding.
+
+---
+
+### ISSUE-1121: Founder music-identity and royalty-registration checklist is incomplete and not connected to release readiness
+
+- **Re-ticketed from:** ISSUE-785 (2026-07-21 housecleaning; original status was: `⏳ BACKLOG — consolidated (FOUNDER + PRODUCT)`)
+- **Scope note (2026-07-21):** engineering remainder ONLY. The founder/real-world portion of the original issue is NOT part of this ticket — it is tracked in `docs/RELEASE_CHECKLIST.md` § "Founder Music-Identity & Royalty Registrations (ISSUE-785)". Do not block this ticket on it.
+- **Status:** ⏳ BACKLOG — consolidated (FOUNDER + PRODUCT)
+- **Severity:** 🔴 HIGH
+- **Module:** Registration Center / Founder operations
+- **Summary:** The Registration Center tracks Copyright, ASCAP/BMI/SESAC, SoundExchange, and MLC per track, but does not track the organization-level prerequisites that make identifier issuance, DDEX delivery, or platform rights management legitimate.
+- **Founder checklist (verify prices again at purchase):**
+  1. **US ISRC Rights Owner prefix:** apply using the legal rights-owner identity; current official page lists **$95** and up to 100,000 codes/year ([US ISRC Agency](https://redesign.usisrc.org/apply-for-an-isrc-account/?user-is-manager=false)). Music videos need distinct ISRCs from audio recordings.
+  2. **GTIN/UPC ownership:** choose official GS1 single GTINs (**$30 each, no renewal**) or a Company Prefix (currently **$250 initial/$50 annual for 1–10**, larger tiers available) ([GS1 US](https://store.gs1us.org/gs1-company-prefix/p)).
+  3. **DDEX:** accept the free Implementation Licence and obtain the company DPID; membership is optional for using the standards ([DDEX](https://ddex.net/implementation/frequently-asked-questions/)).
+  4. **PRO + IPI:** join one appropriate PRO as writer; decide whether a separate publisher affiliation/entity is required. Store writer and publisher IPI/IP-name numbers separately. IPI is authoritative system data—not app-generated ([CISAC IPI](https://www.cisac.org/services/information-services/ipi)).
+  5. **ISWC:** register complete works through the affiliated society/authorized agency; the app must never self-issue ISWCs ([official ISWC guidance](https://www.iswc.org/get-iswc)).
+  6. **The MLC:** join only for shares the founder/company self-administers; membership is free and does not replace a PRO ([The MLC](https://www.themlc.com/membership)).
+  7. **SoundExchange:** register both performer and sound-recording copyright-owner roles as applicable; registration is free ([SoundExchange](https://www.soundexchange.com/register/)).
+  8. **U.S. Copyright Office:** select the correct composition/sound-recording/group route; current electronic fees include $45 Single, $65 Standard, and $65 group album registration ([official fee schedule](https://www.copyright.gov/about/fees.html), [music guidance](https://www.copyright.gov/register/pa-sr.html)).
+  9. **Platform rights:** apply for Meta Rights Manager from an owned Facebook Page ([Meta](https://about.fb.com/news/2023/01/helping-creators-and-publishers-manage-intellectual-property/)); separately evaluate YouTube Content ID eligibility or use an approved distributor/administrator. YouTube requires exclusive rights and demonstrated need ([YouTube](https://support.google.com/youtube/answer/1311402)).
+  10. **Optional identity/discovery IDs:** capture ISNI, Spotify artist URI, Apple artist ID, YouTube channel/content-owner IDs, and platform catalog IDs when assigned; label them optional, imported identifiers—not release blockers.
+- **Product fix:** Add an organization-level “Founder Readiness” record with owner, official account URL, status, verified identifier/prefix, fee/renewal date, evidence document, and secret/config handoff. Keep per-track registrations separate.
+- **Acceptance:** Release readiness distinguishes founder prerequisites, release IDs, recording IDs, work IDs, party IDs, and optional discovery IDs; nothing is marked complete from a locally generated value alone.
+
+---
+
+### ISSUE-1122: Merlin readiness assumes exclusive rights instead of collecting proof
+
+- **Re-ticketed from:** ISSUE-800 (2026-07-21 housecleaning; original status was: `⏳ BACKLOG — consolidated`)
+- **Status:** ⏳ BACKLOG — consolidated
+- **Severity:** 🟠 HIGH
+- **Module:** Distribution / Keys Layer / Merlin
+- **Evidence:** `KeysPanel.tsx:53-59` maps every catalog track to `exclusive_rights: true`. The Python check also defaults missing `exclusive_rights` to `True` (`keys_manager.py:86-90`) and awards readiness points for that assumption (`:110-114`).
+- **External constraint:** Merlin’s own membership path says applicants must control digital rights free from third-party obligations and comply with Merlin content policy before applying ([Merlin membership path](https://merlinnetwork.org/path-to-merlin-membership/)).
+- **Impact:** The app can report Merlin readiness for catalog it has not verified, including tracks distributed through another admin, containing samples, or under conflicting licenses.
+- **Fix:** Replace the heuristic with a rights-evidence checklist: master owner, territory, existing distributor/admin obligations, samples/loops, content-policy status, takedown/claim conflicts, and supporting documents. Missing proof should be `UNKNOWN`, not `true`.
+- **Acceptance:** Catalog with no explicit rights evidence returns `NOT_READY` and lists every missing proof item.
+
+---
+
+### ISSUE-1123: Video editor export has no completed cloud artifact path and local export overwrites a fixed temp path
+
+- **Re-ticketed from:** ISSUE-809 (2026-07-21 housecleaning; original status was: `⏳ BACKLOG — consolidated`)
+- **Status:** ⏳ BACKLOG — consolidated
+- **Severity:** 🟠 HIGH
+- **Module:** Creative Suite / Video editor
+- **Evidence:** `useVideoEditor.ts:117-125` calls `renderVideo`, then only toasts “Cloud render started successfully!” if it gets a `renderId`/`success`; it does not poll, store a job, fetch the final URL, or add the rendered asset to history. Local export uses a hardcoded output path (`/tmp/video.mp4` or `C:\\video.mp4`) at `:144-160`, so repeated exports overwrite the same location and never ask the user for a destination.
+- **Impact:** Cloud export can leave the user with no downloadable artifact. Local export can overwrite previous renders and may fail access checks.
+- **Fix:** Add render-job lifecycle state, polling/subscription, completed asset persistence, user-selected save destination, and unique filenames.
+- **Acceptance:** Cloud render fixture ends with a gallery asset/download URL; local render prompts for or safely creates a unique output path.
+
+---
+
+### ISSUE-1124: Waterfall payout UI, TypeScript contract, and Python engine use incompatible payload/report shapes
+
+- **Re-ticketed from:** ISSUE-826 (2026-07-21 housecleaning; original status was: `⏳ BACKLOG — consolidated`)
+- **Status:** ⏳ BACKLOG — consolidated
+- **Severity:** 🟠 HIGH
+- **Module:** Distribution / Finance bank layer
+- **Evidence:** `WaterfallData` defines `gross_revenue` (`types/distribution.ts:61-64`), and `BankPanel.tsx:49-52` sends that field. The Python waterfall engine requires `gross` and exits when it is missing (`waterfall_payout.py:105-116`). If the payload were corrected, the report still would not match the UI contract: the engine returns `gross`, `platform_fee`, nested `distributions`, `summary_status`, and `total_distributed` (`:79-90`), while `WaterfallReport` expects flat numeric `distributions`, `net_revenue`, and `processed_at` (`types/distribution.ts:67-70`), and the UI renders those missing fields (`BankPanel.tsx:296-323`).
+- **Impact:** The “Launch Waterfall” path either fails immediately or renders undefined/nested values, so payout simulations cannot be trusted.
+- **Fix:** Define one shared schema for request and response, map legacy aliases at IPC boundaries, and update UI rendering to match nested distribution objects or flatten the report intentionally.
+- **Acceptance:** A `$1,000` / 50-30-20 fixture completes through React → IPC → Python → UI with a timestamp, correct net revenue, and numeric displayed party amounts.
+
+---
+
+### ISSUE-1125: Credential storage falls back to localStorage and raw Firestore fields
+
+- **Re-ticketed from:** ISSUE-840 (2026-07-21 housecleaning; original status was: `⏳ BACKLOG — consolidated`)
+- **Status:** ⏳ BACKLOG — consolidated
+- **Severity:** 🔴 HIGH (secret handling)
+- **Module:** Security / Credential storage
+- **Evidence:** `UniversalTools.credential_vault()` claims shared credential operations should fail closed when no real bridge exists (`UniversalTools.ts:5-10`), but if `window.electronAPI?.credentials` is unavailable it stores/retrieves arbitrary credentials in `localStorage` under `indii_vault_${service}` (`:78-99`). `PODCredentialService.saveCredential()` stores provider API keys directly as Firestore fields under `users/{uid}/integrations/pod_credentials` and only comments that KMS encryption should be considered (`PODCredentialService.ts:32-40`, `:61-66`).
+- **Impact:** Production secrets can be written to browser storage or client-readable Firestore documents instead of OS secure storage / server-side secret management.
+- **Fix:** Remove localStorage credential fallback from production builds. Route all provider credentials through Electron safeStorage/keychain or server-side secret storage with encryption, least-privilege access, and redacted reads.
+- **Acceptance:** Web/renderer credential save attempts fail closed unless an approved secure credential backend is available; no API key is returned to the renderer after storage.
+
+---
+
+### ISSUE-1126: Multiple active user-scoped feature collections are missing Firestore rules
+
+- **Re-ticketed from:** ISSUE-843 (2026-07-21 housecleaning; original status was: `⏳ BACKLOG — consolidated`)
+- **Status:** ⏳ BACKLOG — consolidated
+- **Severity:** 🟠 HIGH
+- **Module:** Firebase / Firestore rules / Cross-module persistence
+- **Evidence:** Active renderer paths include `users/{uid}/analyticsTokens/spotify` (`SpotifyService.ts:55-56`), `users/{uid}/socialTokens/{platform}` (`SocialPlatformService.ts:66-81`), `users/{uid}/merchandiseMockups` (`CommerceTools.ts:27-38`), `users/{uid}/limitedDrops` (`CommerceTools.ts:85-103`), `users/{uid}/brandKit/current` (`BrandTools.ts:217-245`), and `users/{uid}/proprietaryIngestionReleases` (`PublishingTools.ts:20-24`). The owner-scoped rules list only selected subcollections such as `contacts`, `licensingDeals`, `pod_orders`, `press_releases`, `publishingCatalog`, `tasks`, and `web3Contracts` (`firestore.rules:329-346`), then denies all unmatched paths (`firestore.rules:1230-1234`).
+- **Impact:** Analytics connections, social tokens, brand kits, merch mockups, and limited-drop records can fail with `permission-denied`, often in code paths that log/catch errors and still show optimistic UI.
+- **Fix:** Generate a Firestore collection inventory from source references, classify sensitive data, and add explicit tested rules for every intended client-readable/writable path. Move secret/token paths server-side where possible.
+- **Acceptance:** Rules tests cover every `users/{uid}/...` collection used by the renderer; missing-rule regressions fail CI.
+
+---
+
+### ISSUE-1127: Pre-save builder exposes a shareable campaign URL without publishing a page or storing leads
+
+- **Re-ticketed from:** ISSUE-844 (2026-07-21 housecleaning; original status was: `⏳ BACKLOG — consolidated`)
+- **Status:** ⏳ BACKLOG — consolidated
+- **Severity:** 🟠 HIGH
+- **Module:** Marketing / Pre-save campaigns
+- **Evidence:** `PreSaveCampaignBuilder` derives a public `indii.vip/presave/{slug}` URL from local input (`PreSaveCampaignBuilder.tsx:35-37`), displays DSP pre-save buttons regardless of whether links are entered (`:195-200`), shows a QR placeholder (`:220-225`), and only supports copy/share actions (`:42-70`, `:231-245`). `PreSaveCampaignService.createCampaign()` only logs and returns `ps_${Date.now()}` while Firestore persistence is commented out (`PreSaveCampaignService.ts:41-49`); `recordLead()` also only logs with persistence commented out (`:55-60`).
+- **Impact:** A founder can share a URL that may not resolve to a hosted landing page, and fan email/phone collection can be lost because no published campaign or lead storage is created.
+- **Fix:** Add an explicit publish flow that writes a campaign document, provisions/validates the public route, generates a real QR code, validates required DSP links, and stores consented leads server-side.
+- **Acceptance:** Copy/share is disabled until a campaign has a persisted ID, routable URL, real QR payload, and lead-capture backend; submitted test leads appear in the campaign lead collection with consent metadata.
+
+---
+
+### ISSUE-1128: Social analytics connection state can be inferred from denied or stale token/cache paths
+
+- **Re-ticketed from:** ISSUE-847 (2026-07-21 housecleaning; original status was: `⏳ BACKLOG — consolidated`)
+- **Status:** ⏳ BACKLOG — consolidated
+- **Severity:** 🟠 HIGH
+- **Module:** Social / Analytics / Firestore rules
+- **Evidence:** Social tokens are read from `users/{uid}/socialTokens/{platform}` (`SocialPlatformService.ts:66-81`) and stats are cached to `users/{uid}/platformStats/{platform}` (`SocialPlatformService.ts:447-448`, `:518-519`, `:565-566`, `:606-607`, `:653-654`). The dashboard marks a platform connected when live stats exist, a cached `platformStats` doc exists, or a `socialTokens` doc exists (`SocialAnalyticsDashboard.tsx:120-136`). Firestore rules for `users/{userId}` do not include `socialTokens` or `platformStats` in the allowed subcollections (`packages/firebase/firestore.rules:329-346`) and deny unmatched paths (`:1230-1234`).
+- **Impact:** Connection status can be wrong in both directions: rules can block token/cache reads while UI shows generic sync errors, or stale cache/token docs can mark a platform connected even when live API sync is failing.
+- **Fix:** Move OAuth tokens server-side, expose sanitized connection metadata, add explicit rules for non-secret analytics cache if client-readable, and separate `connected`, `authorized`, `liveSyncOk`, and `cacheOnly` UI states.
+- **Acceptance:** A denied token/cache read shows a permission/configuration error; stale cache cannot mark live sync connected; rules tests cover `platformStats` and reject client access to raw OAuth tokens.
+
+---
+
+### ISSUE-1129: Limited-drop wizard says a drop is live and fans will be notified without persistence or notification backend
+
+- **Re-ticketed from:** ISSUE-849 (2026-07-21 housecleaning; original status was: `⏳ BACKLOG — consolidated`)
+- **Status:** ⏳ BACKLOG — consolidated
+- **Severity:** 🟠 HIGH
+- **Module:** Merchandise / Limited drops
+- **Evidence:** `DropCampaignWizard.handleSubmit()` waits 1.5 seconds and sets local `submitted` state only (`DropCampaignWizard.tsx:79-82`). The success view says “Drop Scheduled!”, “is live,” and “Fans will be notified when the countdown hits zero” (`:138-151`). The wizard captures pre-sale and superfan-only toggles (`:221-237`) but does not save a drop, publish a landing page, configure gating, or queue notifications before “Launch Drop” (`:269-274`).
+- **Impact:** A user can believe a scarcity campaign is live while no drop, audience gate, countdown page, or fan notification exists outside the modal.
+- **Fix:** Wire the wizard to a real `limitedDrops` create/publish service, validate selected products and future date/time, and queue/email/SMS notification jobs only after provider credentials and audience segments are verified.
+- **Acceptance:** “Launch Drop” returns a persisted drop ID and notification job status; without backend support, the UI shows “draft created” or “setup required,” never “live.”
+
+---
+
+### ISSUE-1130: Storefront deployment creates one fixed-price Stripe link for all items
+
+- **Re-ticketed from:** ISSUE-851 (2026-07-21 housecleaning; original status was: `⏳ BACKLOG — consolidated`)
+- **Status:** ⏳ BACKLOG — consolidated
+- **Severity:** 🟠 HIGH
+- **Module:** Commerce / Storefront / Stripe
+- **Evidence:** `CommerceTools.deploy_storefront_preview()` tells the user “Storefront deployed ... with N real Stripe Payment Links” after calling `createStripePaymentLinks` (`CommerceTools.ts:53-62`). The Cloud Function creates one Stripe product named `{campaignName} - Storefront Items`, puts all item names into the description, creates a single `$25.00` USD price, creates one payment link with quantity 1, and returns it as both `storefrontUrl` and the only `paymentLinks` entry (`paymentLinks.ts:19-38`).
+- **Impact:** Multi-item storefronts have no per-item pricing, quantities, SKUs, tax/shipping configuration, inventory, fulfillment metadata, or split payout routing, yet are presented as deployed real checkout.
+- **Fix:** Accept structured items with SKU, title, unit amount, currency, quantity/stock, tax/shipping settings, fulfillment provider, and payout metadata. Return one verified checkout/cart or itemized payment links.
+- **Acceptance:** A two-item storefront creates two distinct prices/line items with correct item data and rejects unpriced items; user-facing copy says “checkout preview” unless the public storefront and fulfillment path are complete.
+
+---
+
+### ISSUE-1131: Split escrow UI treats zero collaborators as ready to release
+
+- **Re-ticketed from:** ISSUE-855 (2026-07-21 housecleaning; original status was: `⏳ BACKLOG — consolidated`)
+- **Status:** ⏳ BACKLOG — consolidated
+- **Severity:** 🟡 MEDIUM
+- **Module:** Finance / Split escrow UI
+- **Evidence:** `SplitSheetEscrow` initializes `collaborators` as an empty array (`SplitSheetEscrow.tsx:24-30`), computes `allSigned = signedCount === totalCount` (`:36-39`), and computes `progressPct` as `signedCount / totalCount` (`:39`). With zero collaborators, `allSigned` is true and `progressPct` is `NaN`, so the escrow banner can show “Ready to Release” (`:162-166`) and the release button path renders as enabled for the all-signed state (`:271-284`).
+- **Impact:** Empty setup state looks like a release-ready escrow and can produce invalid progress styles/copy.
+- **Fix:** Require `totalCount > 0`, escrow amount > 0, valid splits totaling 100, and connected accounts before `allSigned` or release-ready UI can be true.
+- **Acceptance:** With zero collaborators, the UI shows setup-required, progress is 0%, and release controls are disabled with a specific missing-collaborators reason.
+
+---
+
+### ISSUE-1132: Royalty forecasts use fixed approximate rates and fixed confidence as if they are verified projections
+
+- **Re-ticketed from:** ISSUE-857 (2026-07-21 housecleaning; original status was: `⏳ BACKLOG — consolidated`)
+- **Status:** ⏳ BACKLOG — consolidated
+- **Severity:** 🟡 MEDIUM
+- **Module:** Finance / Revenue forecasting
+- **Evidence:** `forecast_revenue()` uses hard-coded approximate per-stream rates and assumes the same stream count repeats for month 1, month 6, and year 1 (`FinanceTools.ts:92-144`). `predict_daily_royalties()` uses only two fixed rates (`Spotify` = `$0.0035`, all other platforms = `$0.006`) and returns `confidence: 0.88` without source data, territory, subscription mix, distributor fee, currency, or historical variance (`:251-267`).
+- **Impact:** Users can treat rough estimates as high-confidence royalty forecasts, which affects budgets, recoupment, and payout planning.
+- **Fix:** Mark these as rough calculators unless backed by actual distributor/DSR history. Add source, assumptions, confidence rationale, territory/currency/platform mix, distributor cut, and date of rate table.
+- **Acceptance:** No tool returns fixed high confidence without historical data; estimate output includes assumptions and `confidenceSource`, or is labeled `rough_estimate`.
+
+---
+
+### ISSUE-1133: DDEX readiness treats local metadata fields as delivery authority
+
+- **Re-ticketed from:** ISSUE-858 (2026-07-21 housecleaning; original status was: `⏳ BACKLOG — consolidated`)
+- **Status:** ⏳ BACKLOG — consolidated
+- **Severity:** 🟠 HIGH
+- **Module:** Distribution / DDEX readiness
+- **Evidence:** `buildDistributionReadiness()` validates identifier formats and checks that `metadata.dpid` plus ISRC/UPC/ISWC/catalog number exist (`ReleaseHarnessAdapters.ts:140-155`). It then exposes `authorityLevel: 'package_ready'` when `ddexPackageReady` and `selectedStores.length > 0` (`:168-176`). The compiler turns that into a 100 score with rationale “Metadata, identifiers, and DPID are present” (`DistributionDdexCompiler.ts:35-41`) and recommends delivery approval (`:60-71`).
+- **Impact:** A typed-in DPID and selected store names can make the package look delivery-ready without proof of a registered sender DPID, DSP recipient identities, delivery agreement, SFTP/API credentials, feed profile, or XSD-validation receipt.
+- **Fix:** Split `metadataComplete` from `deliveryAuthorityReady`. Require verified sender DPID, verified recipient SystemIdentity per selected store, active delivery credentials, feed profile, and validation receipts before `package_ready`.
+- **Acceptance:** A release with local DPID text but no verified DDEX onboarding remains `metadata_only`; selected stores without recipient credentials are listed as blocked.
+
+---
+
+### ISSUE-1134: Video duration is normalized after client cost reservation
+
+- **Re-ticketed from:** ISSUE-875 (2026-07-21 housecleaning; original status was: `⏳ BACKLOG — consolidated`)
+- **Status:** ⏳ BACKLOG — consolidated
+- **Severity:** 🟠 HIGH
+- **Module:** Creative Suite / Veo / Cost reservation
+- **Evidence:** The UI exposes duration choices independently of resolution (`DirectGenerationTab.tsx:244-264`, `VeoSettingsPanel.tsx:72-90`, `StudioControlsPanel.tsx:912-927`) and resolution choices include `720p`, `1080p`, and `4k` (`StudioSettingsPanel.tsx:100-104`, `:214-220`). The client reserves cost from the raw requested duration (`VideoGenerationService.ts:330-347`). The backend then normalizes all non-720p jobs or any frame-input job to 8 seconds (`gateway.ts:303-308`) before recalculating server cost (`gateway.ts:1186-1193`) and rejecting mismatched reservations (`:1197-1201`).
+- **Impact:** Valid-looking requests such as 4s/6s at 1080p, 4s/6s with first/last frames, or 5s from Veo settings can fail after reservation with “Cost reservation estimate does not match,” or be silently treated as a longer job.
+- **Fix:** Compute the exact backend-normalized duration before client reservation and show the normalized duration in UI. Remove unsupported duration choices for the current resolution/input mode.
+- **Acceptance:** Every UI duration/resolution/frame combination either reserves the same duration the backend will use or is blocked before reservation with a clear message.
+
+---
+
+### ISSUE-1135: “No People” video safety setting is overridden for frame-based jobs
+
+- **Re-ticketed from:** ISSUE-876 (2026-07-21 housecleaning; original status was: `⏳ BACKLOG — consolidated`)
+- **Status:** ⏳ BACKLOG — consolidated
+- **Severity:** 🟠 HIGH
+- **Module:** Creative Suite / Veo / Safety controls
+- **Evidence:** The UI exposes “Person Generation” with `No People` / `dont_allow` (`StudioSettingsPanel.tsx:131-135`, `:238-243`) and sends `personGeneration` into video generation (`VideoWorkflow.tsx:669-680`). The backend worker calls `normalizePersonGeneration(job.personGeneration, hasFrameInput)` when building the Veo config (`gateway.ts:904-913`). That normalizer returns `allow_adult` whenever a first frame, reference URI, or last frame is present, before checking `dont_allow` (`gateway.ts:317-324`).
+- **Impact:** A user can explicitly choose “No People,” provide a start/end/reference frame, and still submit a Veo config that allows adults.
+- **Fix:** Do not override an explicit `dont_allow`; if the provider requires `allow_adult` for image-conditioned video, block the combination before submit and explain the constraint.
+- **Acceptance:** `dont_allow` remains `dont_allow` in the worker config, or the job is rejected before generation with a capability message.
+
+---
+
+### ISSUE-1136: Long-form video reserves requested duration but generates full 8-second blocks
+
+- **Re-ticketed from:** ISSUE-877 (2026-07-21 housecleaning; original status was: `⏳ BACKLOG — consolidated`)
+- **Status:** ⏳ BACKLOG — consolidated
+- **Severity:** 🟠 HIGH
+- **Module:** Creative Suite / Long-form Veo / Billing + quota
+- **Evidence:** Direct generation can select a 10-second duration (`DirectGenerationTab.tsx:94`, `:244-264`) and `VideoWorkflow` sends long-form when duration is over 8 seconds (`VideoWorkflow.tsx:614-634`). `generateLongFormVideo()` checks quota and reserves cost against `options.totalDuration` (`VideoGenerationService.ts:647-672`), but then computes `numBlocks = Math.ceil(totalDuration / 8)` and generates every segment with `durationSeconds: 8` while skipping per-segment cost checks (`:692-755`).
+- **Impact:** A 10-second long-form request reserves/quota-checks 10 seconds but actually generates 16 seconds. Non-multiples of 8 are under-reserved and under-quotaed.
+- **Fix:** Normalize billable/generated duration to `ceil(totalDuration / 8) * 8` before quota and cost reservation, or trim/stitch the final output to the requested duration.
+- **Acceptance:** Long-form cost, quota, displayed duration, generated segment count, and final output length agree for 10s, 15s, and exact 16s fixtures.
+
+---
+
+### ISSUE-1137: Video grounding preflight uses an image model ID the gateway rejects
+
+- **Re-ticketed from:** ISSUE-880 (2026-07-21 housecleaning; original status was: `⏳ BACKLOG — consolidated`)
+- **Status:** ⏳ BACKLOG — consolidated
+- **Severity:** 🟠 HIGH
+- **Module:** Creative Suite / Veo grounding / Image preflight
+- **Evidence:** When video grounding is enabled without a first frame, `VideoGenerationService` calls `ImageGeneration.generateImages()` with `model: 'imagen-4.0-generate-001'` and catches failures, continuing without a grounded first frame (`VideoGenerationService.ts:363-384`). That service submits to `generateImageV3` (`ImageGenerationService.ts:343-410`), but the shared gateway schema only accepts image `model` values `lite`, `fast`, `pro`, or `legacy` (`packages/firebase/src/shared/creative.ts:10-18`).
+- **Impact:** The “Google Search Grounding” video path can reserve image cost, fail schema validation, log the error, and then generate an ungrounded video without telling the user.
+- **Fix:** Use a schema-supported grounded image model/tier, or add an explicit Imagen model route with validation and cost handling. If preflight fails, surface the failure instead of silently continuing ungrounded.
+- **Acceptance:** A grounded video request produces a valid first-frame URI before Veo submission, or the user sees a blocking “grounding preflight failed” error.
+
+---
+
+### ISSUE-1138: Sync-license checkout activates a license without license terms or usage scope
+
+- **Re-ticketed from:** ISSUE-882 (2026-07-21 housecleaning; original status was: `⏳ BACKLOG — consolidated`)
+- **Status:** ⏳ BACKLOG — consolidated
+- **Severity:** 🟠 HIGH
+- **Module:** Licensing / Stripe checkout / License records
+- **Evidence:** The license purchase flow sends Stripe metadata containing only `type`, `trackTitle`, `artist`, `connectedAccountId`, and `artistAmount` plus optional caller metadata (`LicensingService.ts:119-146`). The webhook then transfers `artistAmount` and creates an `active` `licenses` document with title, artist, `licenseType: 'sync'`, amount, and session ID (`webhookHandler.ts:69-113`). The app’s `License` type expects usage and optional agreement URL/date bounds (`types.ts:6-18`), but the webhook does not persist licensee, agreement URL, territory, media/use type, term, exclusivity, master/composition rights, contract version, or accepted terms.
+- **Impact:** A payment can create an “active sync license” that is not legally scoped enough to prove what was licensed.
+- **Fix:** Require a signed/accepted license agreement or immutable license terms object before checkout, store it by ID, and have the webhook activate that exact agreement after payment.
+- **Acceptance:** No `status: active` license is created unless it references a versioned agreement, licensee, usage, territory, term, rights covered, and Stripe session/payment ID.
+
+---
+
+### ISSUE-1139: “Complete” GDPR data export omits major app data and uses two inconsistent implementations
+
+- **Re-ticketed from:** ISSUE-890 (2026-07-21 housecleaning; original status was: `⏳ BACKLOG — consolidated`)
+- **Status:** ⏳ BACKLOG — consolidated
+- **Severity:** 🔴 HIGH (privacy/compliance trust)
+- **Module:** Privacy / Data export
+- **Evidence:** The UI says “Download a complete copy of all your indii.music data” (`PrivacySettingsPanel.tsx:52-56`) but calls the renderer-side `DataExportService.exportUserData(uid)` (`:29-38`), not the deployed `exportUserData` callable. The renderer exporter reads only a fixed subcollection list (`DataExportService.ts:25-38`), lists only `users/{uid}` storage with one nested level (`:65-98`), and cannot read server-only/root collections such as subscriptions, licenses, Stripe ledger data, distribution registries, social/analytics token metadata, org-owned records, audit queues, or generated job records. The backend callable is a second, different partial exporter that includes only profile, projects, history, organizations, and knowledge (`index.ts:1387-1446`).
+- **Impact:** Users receive a file labeled as a complete GDPR data export even though large categories of their platform data can be missing.
+- **Fix:** Route export through one backend-owned exporter with a maintained collection manifest, nested pagination, Cloud Storage manifest generation, root/org collection coverage, redaction policy for secrets, and explicit omitted-data reasons.
+- **Acceptance:** Export tests seed each user-owned data category and prove it appears in the export or is listed in an `omitted` section with legal/business rationale.
+
+---
+
+### ISSUE-1140: Account deletion can be partial while the UI reports permanent removal
+
+- **Re-ticketed from:** ISSUE-891 (2026-07-21 housecleaning; original status was: `⏳ BACKLOG — consolidated`)
+- **Status:** ⏳ BACKLOG — consolidated
+- **Severity:** 🔴 HIGH (privacy/compliance trust)
+- **Module:** Privacy / Account deletion
+- **Evidence:** `PrivacySettingsPanel` calls `requestAccountDeletion` and ignores the callable result (`PrivacySettingsPanel.tsx:98-105`), then renders “Account deletion complete” and “Your data has been permanently removed” (`:112-122`). The callable deletes only the first 500 docs from a fixed subcollection list (`index.ts:1478-1497`), deletes the root user doc, and deletes the Auth user (`:1499-1508`); it does not delete Cloud Storage files, root-level collections such as `subscriptions`, `licenses`, `user_credits`, `scheduledPosts`, `isrc_registry`, `upc_registry`, `stripe_webhook_deliveries`, org records, or nested subcollections beyond the first page. It returns `success: errors.length === 0` with error details (`:1513-1518`), but the UI does not inspect that result.
+- **Impact:** A user can be told deletion is complete while data remains in storage and root/server collections, and while partial deletion errors are hidden.
+- **Fix:** Make deletion an auditable backend job with a full data-location manifest, recursive/paginated deletes, Storage cleanup, external-service tasks, retention exemptions, and user-visible final status. UI must render `partial_failed` if the callable reports errors or pending tasks.
+- **Acceptance:** Seeded deletion tests prove all erasable user-owned docs/files are removed, retained legal/financial records are listed with retention reason, and the UI never claims permanent removal on partial failure.
+
+---
+
+### ISSUE-1141: Resized-image tool returns synthetic `gs://` paths for missing variants and still says variants were resolved
+
+- **Re-ticketed from:** ISSUE-893 (2026-07-21 housecleaning; original status was: `⏳ BACKLOG — consolidated`)
+- **Status:** ⏳ BACKLOG — consolidated
+- **Severity:** 🟡 MEDIUM
+- **Module:** Media agent tools / Firebase Storage derivatives
+- **Evidence:** `get_resized_image_variants()` derives variant names like `${basePath}_${dim}${ext}` and tries `getDownloadURL()` (`MediaTools.ts:314-340`). If the object is missing or access is denied, the catch stores `gs://${bucket}/${variantPath}` instead of failing or marking the variant missing (`:336-344`), and the tool returns success with “Resolved Firebase Extension resized variants” (`:347`).
+- **Impact:** Downstream social/poster/thumbnail flows can receive non-downloadable, non-existent derivative URIs and believe resized assets are ready.
+- **Fix:** Return per-dimension states (`ready`, `missing`, `permission_denied`, `extension_pending`) and only include usable download URLs in the ready map. Trigger or queue derivative generation explicitly if supported.
+- **Acceptance:** Missing derivative objects produce `missing` entries and no success wording that says they were resolved.
+
+---
+
+### ISSUE-1142: Screenwriter “Generate AI Scene” is a timer with hard-coded storyboard content
+
+- **Re-ticketed from:** ISSUE-895 (2026-07-21 housecleaning; original status was: `⏳ BACKLOG — consolidated`)
+- **Status:** ⏳ BACKLOG — consolidated
+- **Severity:** 🟠 HIGH
+- **Module:** Screenwriter / Storyboard / Veo prompts
+- **Evidence:** `generateNextScene()` is explicitly labeled “Simulate AI generation of next scene” (`ScreenwriterDashboard.tsx:233-234`), waits `setTimeout(..., 1200)` (`:235-250`), and appends the same hard-coded recording-cabin description/camera angle/Veo prompt every time (`:237-247`). The button is wired as an active generation action in the dashboard (`:303`, `:440`).
+- **Impact:** Users can believe the Screenwriter generated a scene from their concept when it only inserted canned content, polluting downstream storyboard/Veo planning.
+- **Fix:** Route scene generation through the screenwriter agent/model with the current concept, tone, previous scenes, and target duration, or rename the button to “Add template scene.”
+- **Acceptance:** A generated scene changes with concept/tone/history and includes model provenance; offline/unavailable mode shows an honest template/manual-add state.
+
+---
+
+### ISSUE-1143: Screenwriter Veo handoff collapses storyboard structure into one prompt string
+
+- **Re-ticketed from:** ISSUE-896 (2026-07-21 housecleaning; original status was: `⏳ BACKLOG — consolidated`)
+- **Status:** ⏳ BACKLOG — consolidated
+- **Severity:** 🟡 MEDIUM
+- **Module:** Screenwriter → Creative Studio / Veo handoff
+- **Evidence:** The Veo prompt tab says output “directly exports to generative pipelines” (`ScreenwriterDashboard.tsx:573-599`), but `handleOpenCreativeStudio()` only joins all scenes into a single text block, calls `setCreativePrompt(handoffPrompt)`, sets generation mode/view, and switches to Creative (`:213-228`). It does not populate `VideoWorkflow` storyboard slots, per-scene duration, camera metadata, seed/aspect controls, or a structured `pendingStageHandoff.veo` payload; `VideoWorkflow` then uses the shared `creativePrompt` as one `localPrompt` (`VideoWorkflow.tsx:213-285`, `:511-539`).
+- **Impact:** Multi-scene storyboards lose per-scene timing and generation boundaries; a three-scene music-video plan becomes one prompt for one video job.
+- **Fix:** Create a typed Screenwriter→Veo handoff contract that maps each scene to storyboard slots with prompt, duration, camera angle, ordering, and optional reference assets.
+- **Acceptance:** Opening Creative from Screenwriter creates a visible storyboard/timeline with one slot per scene and preserves scene duration/camera/prompt metadata.
+
+---
+
+### ISSUE-1144: Selecting multiple reference files can retain only the last file that finishes reading
+
+- **Re-ticketed from:** ISSUE-914 (2026-07-21 housecleaning; original status was: `⏳ BACKLOG — consolidated`)
+- **Status:** ⏳ BACKLOG — consolidated
+- **Severity:** 🟠 HIGH
+- **Module:** Creative Suite / Reference ingredients
+- **Evidence:** `IngredientDropZone.handleFiles()` starts one `FileReader` per selected file, but every asynchronous `onload` calls `onChange([...ingredients, newIngredient])` using the same pre-read `ingredients` closure (`IngredientDropZone.tsx:33-63`). When two or three reads complete, each callback replaces the parent value from the same base array rather than accumulating prior results.
+- **Impact:** A user can select three character/style references and silently end up with one. Which file survives depends on read timing, making identity/style consistency nondeterministic.
+- **Fix:** Read the accepted files as a batch (`Promise.all`) and call `onChange` once with all new ingredients, or expose a functional updater contract so each completion appends to the latest value. Preserve input order and enforce the cap after validation.
+- **Acceptance:** A three-file selection with deliberately out-of-order FileReader completion retains all three in selection order exactly once.
+
+---
+
+### ISSUE-1145: Video assets can be selected as image frames/references and are then uploaded with image semantics
+
+- **Re-ticketed from:** ISSUE-916 (2026-07-21 housecleaning; original status was: `⏳ BACKLOG — consolidated`)
+- **Status:** ⏳ BACKLOG — consolidated
+- **Severity:** 🟠 HIGH
+- **Module:** Creative Suite / Veo frames / Reference intake
+- **Evidence:** Reference mode accepts both `image/*` and `video/*` and creates video ingredients (`IngredientDropZone.tsx:30-41`, `:49-59`), despite helper copy describing reference images. Direct video generation uses the first ingredient URL as `firstFrame` (`useDirectGeneration.ts:423-426`), and `VideoGenerationService` uploads every first frame/reference with media type `'image'` (`VideoGenerationService.ts:386-417`). `CreativeGallery` also enables Set as First/Last Frame for every non-music asset, including videos (`CreativeGallery.tsx:116-139`). The Video Stage extraction path has the same unsafe fallback: if neither Storage extraction nor player capture yields a still, `createFrameAnchor()` returns the original `activeVideo` rather than failure (`VideoStage.tsx:105-175`), and its buttons then write that returned video as `firstFrame`/`lastFrame`/`maskFrame` while logging that a frame was set (`:389-433`). `CreativeStorageService` attempts image compression and image content metadata whenever the caller says `'image'` (`CreativeStorageService.ts:155-171`).
+- **Impact:** MP4/WebM bytes can be mislabeled or rejected as JPEG input, causing generation failure or corrupt frame continuity. The UI confirms “Set as First Frame” before any MIME validation.
+- **Fix:** Restrict frame/reference controls to actual still images, or explicitly extract a selected video frame to a validated image blob before handoff. Validate detected MIME independently of the caller category.
+- **Acceptance:** Video assets cannot enter an image URI field unchanged; choosing one requires a frame picker/extraction step, and outbound first/last/reference URIs resolve to supported `image/*` objects. Storage/player extraction failure leaves the previous frame state unchanged, reports failure, and never logs or displays “frame set” with the original video URL.
+
+---
+
+### ISSUE-1146: Deleting a generated Gallery asset only hides it locally, so it reappears and remains in Project Assets
+
+- **Re-ticketed from:** ISSUE-919 (2026-07-21 housecleaning; original status was: `⏳ BACKLOG — consolidated`)
+- **Status:** ⏳ BACKLOG — consolidated
+- **Severity:** 🟠 HIGH
+- **Module:** Creative Suite / Gallery deletion / Persistence
+- **Evidence:** The Gallery delete button calls `_handleDelete()` (`CreativeGallery.tsx:394-401`, `:583-591`). Generated assets route to `removeItemFromProject()`, which only filters the in-memory `generatedHistory` array and explicitly leaves master storage unchanged (`creativeHistorySlice.ts:228-231`). There is no persisted project-membership/tombstone update and no linked file-node removal. The next cloud snapshot can merge the same document back into history (`creativeHistorySlice.ts:124-169`). Uploaded-origin items instead call the hard-delete path, with no confirmation.
+- **Impact:** Generated items can reappear immediately or after reload, while uploaded items may be permanently removed by the visually identical action. Project Assets can retain a supposedly deleted file.
+- **Fix:** Define explicit “Remove from project” versus “Delete everywhere” actions. Persist project removal/tombstone state and remove linked file nodes; require confirmation for durable Storage/Firestore deletion and surface partial failures.
+- **Acceptance:** Remove-from-project remains removed after snapshot/reload but stays in the master library; delete-everywhere removes history, file node, and storage object (or reports exactly what failed).
+
+---
+
+### ISSUE-1147: Video Editor timeline/project state is entirely volatile and shared as one global default project
+
+- **Re-ticketed from:** ISSUE-924 (2026-07-21 housecleaning; original status was: `⏳ BACKLOG — consolidated`)
+- **Status:** ⏳ BACKLOG — consolidated
+- **Severity:** 🔴 CRITICAL (creative work loss)
+- **Module:** Creative Suite / Video Editor / Persistence
+- **Evidence:** `useVideoEditorStore` is a plain module-level Zustand store initialized with one hard-coded `INITIAL_PROJECT` id `default-project` (`videoEditorStore.ts:140-163`, `:204-221`). No persistence middleware, project-keyed storage service, Firestore subscription, local draft save, dirty-state warning, or unload recovery is wired in the editor/store. Every editor instance reads and mutates this same singleton project.
+- **Impact:** Refreshing/restarting can erase a complete edit; switching app projects can show or mutate the previous project’s timeline. Multiple videos do not get isolated editor documents.
+- **Fix:** Persist versioned video-project documents keyed by the canonical app project/editor project ID, autosave debounced edits, restore on open, migrate the legacy default, and warn/recover on unsaved failure. Scope popout sync to the same project ID.
+- **Acceptance:** Two app projects maintain independent timelines across navigation and full restart; offline edits recover and later sync without overwriting the other project.
+
+---
+
+### ISSUE-1148: Campaign image retry uses stale state and the last failed job can be relabeled complete
+
+- **Re-ticketed from:** ISSUE-950 (2026-07-21 housecleaning; original status was: `⏳ BACKLOG — consolidated`)
+- **Status:** ⏳ BACKLOG — consolidated
+- **Severity:** 🟠 HIGH
+- **Module:** Marketing / Batch image generation
+- **Evidence:** Retry Failed first schedules failed rows to become pending with `setPostStates`, then immediately calls `handleStartGeneration()`, whose closure filters the pre-update `postStates` for pending rows (`IntelligenceImageBatchModal.tsx:49-55`, `:110-122`). It can therefore find zero jobs and report “All posts already have images.” Separately, the service emits an error event for a failed post but, after the loop, always emits a final `complete` event using the last post’s ID (`CampaignIntelligenceService.ts:300-349`). The modal maps that event to `status: 'complete'`; its result reconciliation only converts `generating`—not false `complete`—rows with no URL back to error (`IntelligenceImageBatchModal.tsx:67-98`).
+- **Impact:** Retry can do nothing, and a failed final image can show as completed with no image URL. Counts, Retry visibility, and the user’s decision to apply an incomplete campaign become unreliable.
+- **Fix:** Pass an explicit failed-post snapshot into a single generation function instead of relying on asynchronous state mutation. Model batch-level completion separately from per-post completion, and derive each row’s terminal state from an actual persisted URL/result.
+- **Acceptance:** With first/middle/last-item failures, every failed row remains Error with no success badge; Retry invokes generation exactly once for exactly those IDs; a successful retry supplies URLs and changes only those rows to Complete; zero-work messaging is accurate.
+
+---
+
+### ISSUE-1149: AI campaign output bypasses business validation and can create empty, off-brief, or unschedulable plans
+
+- **Re-ticketed from:** ISSUE-952 (2026-07-21 housecleaning; original status was: `⏳ BACKLOG — consolidated`)
+- **Status:** ⏳ BACKLOG — consolidated
+- **Severity:** 🟠 HIGH
+- **Module:** Marketing / Intelligence campaign generation
+- **Evidence:** `generateCampaign()` asks for `durationDays * postsPerDay` posts but its response schema only requires an array and basic field presence; it does not constrain array size, day bounds/integer status, requested platform membership, copy length, hashtag format, or posting-time format (`CampaignIntelligenceService.ts:43-100`). The result cleanup accepts any array—including empty—and `planToCampaignAsset()` maps it directly (`:102-147`). The UI enables Create for any non-null plan and does not validate the plan or a cleared/past `startDate` (`IntelligenceCampaignModal.tsx:102-122`, `:329-343`, `:410-425`).
+- **Impact:** A nominally successful generation can yield zero posts, days outside the campaign, unselected/unsupported platforms, over-limit copy, invalid schedule hints, or an empty/past start date, then be saved as a campaign that cannot execute as requested.
+- **Fix:** Parse model output through a runtime schema parameterized by the brief; enforce or visibly reconcile exact counts, day range, selected/supported platforms, platform copy limits, nonempty prompts, and valid future local start date. Reject/regenerate malformed output rather than silently coercing it.
+- **Acceptance:** Fixtures with empty posts, wrong platform, day 0/out-of-range/fractional day, excess count, over-limit Twitter copy, or invalid/missing start date cannot be created; a valid fixture preserves the requested platform/count/day distribution and passes execution schema validation.
+
+---
+
+### ISSUE-1150: Product Showroom relabels every JPEG/WebP source as PNG and does not verify file decoding
+
+- **Re-ticketed from:** ISSUE-959 (2026-07-21 housecleaning; original status was: `⏳ BACKLOG — consolidated`)
+- **Status:** ⏳ BACKLOG — consolidated
+- **Severity:** 🟠 HIGH
+- **Module:** Creative Studio / Product Showroom
+- **Evidence:** The uploader explicitly accepts PNG, JPEG, and WebP, then FileReader stores only the data URL string and no MIME metadata (`ShowroomUI.tsx:49-69`, `:160-164`). `ShowroomService` strips everything before the comma and always sends the remaining bytes to image generation as `mimeType: 'image/png'` (`ShowroomService.ts:54-67`). Neither path handles FileReader errors, decodes dimensions, checks transparency despite “Upload a transparent graphic,” or verifies that the bytes match the declared media type (`ShowroomUI.tsx:414-420`).
+- **Impact:** Valid JPEG/WebP artwork can be rejected or misdecoded by the model, renamed/spoofed/corrupt files can enter an expensive request, and users receive no actionable explanation for format-specific failures.
+- **Fix:** Preserve validated MIME/extension/dimensions with the HistoryItem or upload metadata, decode the image before enabling Generate, and pass the real supported MIME/bytes to the service. Require transparency only if the compositor truly needs it and provide a preview/conversion path.
+- **Acceptance:** Known PNG/JPEG/WebP fixtures produce matching request MIME and valid decoded bytes; renamed, corrupt, zero-dimension, oversize, and unsupported fixtures are blocked before generation with a specific error; transparency requirements are tested and accurately stated.
+
+---
+
+### ISSUE-1151: Product Showroom draft and results are global across projects and survive project switches
+
+- **Re-ticketed from:** ISSUE-960 (2026-07-21 housecleaning; original status was: `⏳ BACKLOG — consolidated`)
+- **Status:** ⏳ BACKLOG — consolidated
+- **Severity:** 🟠 HIGH (cross-project creative contamination)
+- **Module:** Creative Studio / Product Showroom
+- **Evidence:** `showroomState` is a single unkeyed Zustand object containing the product asset, prompts, mockup, and in-flight flags; `setShowroomState` merges globally with no project boundary or persistence (`creativeControlsSlice.ts:159-170`, `:343-355`). `ShowroomUI` reads the live `currentProjectId` only when creating an uploaded input and when sending the displayed result to Veo (`ShowroomUI.tsx:29-69`, `:300-315`). The generated mockup/video inherits the original input’s project ID in the service (`ShowroomService.ts:78-86`, `:131-139`), even if another project is active when the awaited operation completes.
+- **Impact:** Switching projects displays another project’s artwork, scene, and result; a generation started in A can finish while B is visible yet file itself into A, and Send to Veo can stamp the same displayed result as B. Users cannot tell which project owns the paid output.
+- **Fix:** Key showroom sessions by project or clear/confirm on project switch, capture immutable project/input/prompt snapshots at submission, and route completion/handoff/history consistently to that captured target with a visible project label. Persist recoverable drafts if promised.
+- **Acceptance:** A→B switch never exposes or mutates A’s draft without an explicit transfer; completing A while B is active files and labels the result only in A; Send to Veo cannot rewrite ownership to B; switching back restores A only if per-project draft persistence is intentional.
+
+---
+
+### ISSUE-1152: Browser Audio QC base64-encodes and sends the full master twice in parallel with no size/duration limit
+
+- **Re-ticketed from:** ISSUE-962 (2026-07-21 housecleaning; original status was: `PARTIAL (2026-07-17) — browser raw-master Gemini uploads are now prohibited; protected server-receipt retrieval remains to be wired into browser UI`)
+- **Status:** PARTIAL (2026-07-17) — browser raw-master Gemini uploads are now prohibited; protected server-receipt retrieval remains to be wired into browser UI
+- **Severity:** 🔴 CRITICAL (browser crash / provider-limit failure / excess cost)
+- **Module:** Audio Analyzer / Semantic and emotional analysis
+- **Evidence:** The UI has no file size or duration gate before analysis (`AudioAnalyzer.tsx:120-143`). In browser mode, semantic analysis reads the entire lossless master into a base64 string and sends it inline (`AudioIntelligenceService.ts:229-273`, `:315-329`). At the same time, `energyMapService.mapEmotionalArc(file, ...)` independently reads the same complete file into another base64 string and sends another model request (`AudioIntelligenceService.ts:137-169`; `EnergyMapService.ts:74-80`, `:130-144`, `:158-170`). The comment assumes “typical masters (5–10 MB),” but uncompressed production WAV/AIFF files can be far larger; no request-size/cost budget or cancellation exists.
+- **Impact:** Large/long masters can allocate multiple copies of the bytes plus ~33% base64 overhead, freeze or kill the renderer, exceed model/request limits twice, consume duplicate upload/token cost, and leave the user with a generic connectivity error.
+- **Fix:** Enforce measured size/duration/channel limits before allocation; create one bounded, content-addressed analysis proxy server-side (or one reusable compressed proxy), stream/upload once, reuse its handle for both analyses, expose cost/limits, and support cancellation/cleanup. Keep local technical QC available when semantic analysis is skipped.
+- **Acceptance:** Boundary tests just below/above limits give deterministic behavior; a large master never creates two full browser base64 copies or two raw-media uploads; both semantic jobs reuse one proxy ID; cancellation aborts requests and cleans temporary media; oversize/offline users can still run clearly labeled local technical QC without a false deep-analysis success.
+- **Fix applied (2026-07-12):** Added `MAX_BROWSER_ANALYSIS_BYTES` (50MB raw, exported from `AudioIntelligenceService.ts`) — a hard gate in the non-Electron-proxy branch of `analyze()` that throws a clear, actionable error (oversized master → "too large for browser-based deep analysis... Local technical QC is still available") BEFORE any base64 encoding or model request happens; the limit is sized to keep the base64-encoded payload safely under Gemini's documented inlineData limit (currently ~100MB, with older docs citing 20MB) while comfortably covering real mastered audio. Eliminated the double-encode: `analyzeSemantic(file, ...)` was refactored into `analyzeSemanticWithBase64(base64Data, mimeType, ...)`; the browser branch now calls `fileToBase64()` exactly ONCE and passes that single base64 string to both the semantic Gemini call and `energyMapService.mapEmotionalArcWithProxy()` (an existing method previously only used by the Electron/FFmpeg-proxy path) — so a master that previously got read+encoded twice (2x memory, 2x upload bytes, 2x token cost) now gets read+encoded once. Tests: new `AudioIntelligenceService.test.ts` (3 cases) prove an oversized file is rejected before any encoding/model call occurs, a file at exactly the limit is allowed, and the semantic + energy-map calls receive the byte-identical base64 payload (single spy-counted `fileToBase64` call). Full `packages/renderer/src/services/audio/`, `modules/tools/`, and `services/ingestion/` suites green (41 tests), typecheck/lint clean. **Not done:** no duration or channel-count gate (only raw byte size); no server-side bounded content-addressed proxy (the Electron path's existing FFmpeg MP3 proxy already avoids this problem for desktop users — browser/web users still send raw lossless bytes, just once instead of twice now); no cancellation/cleanup support. These require a new backend endpoint and are a larger follow-up beyond this pass's scope.
+
+- **Ordering correction (2026-07-12):** The browser size gate is now at the beginning of `analyze()`, before fingerprinting or `audioAnalysisService.analyze()`. Previously it was only before base64 conversion, after those paths could already read/decode the entire oversized master. The focused regression asserts an over-limit browser file never reaches technical analysis.
+
+- **Canonical-master correction (2026-07-17):** The single shared base64 upload was still not an upload-once/provenance-safe solution: it sent a raw browser master directly to Gemini outside the immutable Storage object and could not be tied to the server analysis receipt. `AudioIntelligenceService` now permits local technical QC but rejects the non-Electron semantic branch before either semantic or energy-map Gemini call. `EnergyMapService.mapEmotionalArc(file, ...)` has the same hard guard, preventing bypass callers from base64-encoding a master. Desktop continues to use its existing bounded MP3 proxy path; protected web analysis is queued by `MasterAudioService.persist()` and the Engine DSP worker. Focused tests prove the browser path makes no Gemini/energy-map request and the direct Energy Map raw-file API rejects. **Still open:** browser UI must read/poll the owner-scoped `audio_analysis_receipts` document and hydrate semantic/marketing/video metadata once the worker finishes; until that is implemented, web callers receive a truthful pending-receipt error rather than a false deep-analysis success. No deployment, worker receipt, or Gemini request was performed in this change.
+
+---
+
+### ISSUE-1153: Closing or replacing a Publishing release draft abandons uploaded masters and cover art
+
+- **Re-ticketed from:** ISSUE-965 (2026-07-21 housecleaning; original status was: `⏳ BACKLOG — consolidated`)
+- **Status:** ⏳ BACKLOG — consolidated
+- **Severity:** 🟠 HIGH (creative asset loss / storage leak)
+- **Module:** Publishing / Create Release draft lifecycle
+- **Evidence:** The wizard keeps all metadata/assets only in component state (`useDDEXRelease.ts:217-232`) but uploads audio and cover bytes immediately to `orgs/{org}/releases/packaging/...` before any release record exists (`:253-300`). “Replace File/Image” only clears the local asset reference (`ReleaseWizard.tsx:580-585`, `:632-637`), and both header close and terminal Done directly call `onClose` (`:851-867`, `:898-909`) with no dirty-state confirmation, draft persistence, deletion, or resumable-upload manifest. Upload `onChange` handlers also await without local error handling (`:595-601`, `:649-655`).
+- **Impact:** Accidental close/navigation/replacement permanently loses entered rights metadata and disconnects paid/private media objects from any release; repeated attempts accumulate orphaned masters and artwork with no user-visible inventory or deletion path.
+- **Fix:** Create an owned draft/upload session before media transfer, autosave fields and asset references, confirm discard, and implement explicit replace/discard cleanup with resumable recovery and retention rules. Surface per-asset upload errors without unhandled rejection.
+- **Acceptance:** Reload/close during every wizard step restores the same draft and uploaded assets; explicit Discard deletes or queues cleanup for all session-owned unreferenced objects; Replace removes the prior owned object only after the new one is durably linked; failed upload remains retryable and creates no orphan.
+
+---
+
+### ISSUE-1154: Registration manual fallbacks claim form data is saved/downloadable but provide only a portal link
+
+- **Re-ticketed from:** ISSUE-971 (2026-07-21 housecleaning; original status was: `⏳ BACKLOG — consolidated`)
+- **Status:** ⏳ BACKLOG — consolidated
+- **Severity:** 🟠 HIGH (manual filing data loss)
+- **Module:** Registration Center / Manual provider handoff
+- **Evidence:** LoC’s web fallback says “Your pre-filled registration details are ready below — you can download them,” while ASCAP says “Your form data is saved below” (`LocAdapter.ts:117-126`; `AscapAdapter.ts:82-107`). `SubmissionResultView` renders only the instruction string, an Open Provider link, and Back to form; it shows no field snapshot and has no copy/download/export action (`RegistrationForm.tsx:421-445`). LoC’s web/manual catch also does not call `persistOrgRecord`, so even the snapshot in memory is not saved (`LocAdapter.ts:114-135`).
+- **Impact:** Users leave the app for a manual portal without the promised packet and can lose all reviewed legal names, shares, identifiers, and answers on navigation/remount, forcing error-prone re-entry into a binding filing.
+- **Fix:** Persist a versioned manual filing draft before opening the portal and render a redacted review plus copy/download packet in the provider’s actual field format. Clearly separate sensitive fields, omit secrets, and provide resume/mark-submitted-with-evidence controls.
+- **Acceptance:** Every `requiresManualStep` result has a durable draft ID and visible/exportable field snapshot matching the reviewed values; reload resumes it; portal opening does not destroy it; the app never says saved/downloadable without those artifacts; sensitive data is redacted/encrypted per field policy.
+
+---
+
+### ISSUE-1155: Marketplace can sell songs, albums, merch, tickets, and services with no deliverable or fulfillment contract
+
+- **Re-ticketed from:** ISSUE-974 (2026-07-21 housecleaning; original status was: `⏳ BACKLOG — consolidated`)
+- **Status:** ⏳ BACKLOG — consolidated
+- **Severity:** 🔴 CRITICAL (paid item cannot be fulfilled)
+- **Module:** Marketplace / Product creation and buyer delivery
+- **Evidence:** The listing modal exposes six product types but only stem packs collect files; every other type creates a product with `images: []` and empty metadata (`CreateProductModal.tsx:26-39`, `:83-92`, `:167-181`). The `Product` model has only generic images/inventory/metadata and no required asset, SKU/variants, ticket event, service terms, shipping, license, or delivery policy (`marketplace/types.ts:12-25`). Repository-wide marketplace purchase code creates Checkout/purchase/revenue records but has no buyer entitlement, signed-download, ticket issuance, shipping order, service booking, refund, or digital delivery path (`MarketplaceService.ts:165-264`).
+- **Impact:** A buyer can be charged for an empty song/album, unshippable merch, nonexistent ticket, or undefined service, with no artifact or entitlement to receive.
+- **Fix:** Use discriminated product schemas with required fulfillment data per type and provision verified delivery/entitlement only from the paid webhook. Keep incomplete products as private drafts and show seller readiness checks.
+- **Acceptance:** Each visible product type has fixtures proving required fields and post-payment fulfillment; missing audio/artwork/license, merch SKU/shipping, event/date/capacity, or service scope/scheduling blocks activation; a paid clean-session buyer can access exactly the purchased entitlement and refunds revoke/adjust it correctly.
+
+---
+
+### ISSUE-1156: Stem-pack upload and listing lifecycle leaves partial/orphaned files on failure, close, replace, or delete
+
+- **Re-ticketed from:** ISSUE-976 (2026-07-21 housecleaning; original status was: `⏳ BACKLOG — consolidated`)
+- **Status:** ⏳ BACKLOG — consolidated
+- **Severity:** 🟠 HIGH (creative asset leak / storage cost)
+- **Module:** Marketplace / Stem pack creation
+- **Evidence:** Four stems upload concurrently via `Promise.all` into a timestamp draft path before the product document is created (`MarketplaceService.ts:41-64`; `CreateProductModal.tsx:61-92`). If any upload or the later product write fails, completed uploads are neither recorded nor deleted. Closing/replacing a selected local file has no draft/cleanup semantics, and `deleteProduct()` only sets `isActive: false` without deleting or retaining/accounting for stem objects (`MarketplaceService.ts:148-163`). There is no stable upload session, per-file progress/result, retry manifest, or garbage collector.
+- **Impact:** Partial batches, rule failures, abandoned modals, and deleted listings retain private masters indefinitely; retry creates new timestamp paths and duplicates storage.
+- **Fix:** Create an owned draft/session first, upload idempotently per slot with checksums, commit listing references transactionally, and implement explicit discard/replace/delete retention cleanup. Surface per-file state and resume safely.
+- **Acceptance:** Failure in each of four slots leaves successful files linked to a resumable draft or removed; retry reuses checksum/session without duplication; explicit discard/delete follows documented retention and removes unreferenced objects; a scheduled orphan scan finds zero objects after test scenarios.
+
+---
+
+### ISSUE-1157: Client-side Cloud Run renders are explicitly public and storyboard compile calls a queued marker a shareable URL
+
+- **Re-ticketed from:** ISSUE-995 (2026-07-21 housecleaning; original status was: `⏳ BACKLOG — consolidated`)
+- **Status:** ⏳ BACKLOG — consolidated
+- **Severity:** 🔴 CRITICAL (unreleased creative output disclosure and false completion)
+- **Module:** Creative Suite / Cloud render / Storyboard compilation
+- **Evidence:** The renderer-side `RenderService` invokes the Cloud Run client with `privacy: 'public'` for every render (`RenderService.ts:28-73`) and takes Cloud Run configuration from Vite-exposed environment values (`remotion.cloudrun.ts:21-46`). It returns `CLOUD_QUEUED:{renderId}:{bucket}` when no public URL is present (`RenderService.ts:86-96`). `StoryboardTimeline.handleCompileVideo()` calls this renderer path then immediately toasts “Showreel dispatched successfully! URL: {result}” (`StoryboardTimeline.tsx:318-342`), even when `result` is that queue marker. The Veo-to-Remotion auto-render path also treats any render completion as non-blocking and stores no private entitlement/output record (`VeoToRemotionBridge.ts:174-194`).
+- **Impact:** Private masters, drafts, and source clips can be rendered to public Cloud Run/GCS output by default; anyone with the output URL may access unreleased material. When an output is not yet available, the interface labels an internal queue token as a finished shareable URL, encouraging users to share a non-asset and losing a reliable route back to the job.
+- **Fix:** Move render initiation and output authorization to a server-owned service identity; default outputs to private, project/organization-scoped storage and issue short-lived authorized URLs only after completion. Return a typed lifecycle receipt (`queued`, `running`, `completed`, `failed`) rather than overloaded strings, persist it against the project, and render distinct queue/completion UI.
+- **Acceptance:** A clean unauthenticated/other-user request cannot list, fetch, or guess an unpublished render; output access is limited to authorized project members and expires/revokes correctly; compile UI shows a job ID/status while queued and displays Copy/Download only after a final asset readback; a public-share action requires explicit user intent and produces a separately auditable share policy/URL; no renderer bundle contains credentials capable of creating arbitrary Cloud Run renders.
+- **Status:** ✅ FIXED (2026-07-12, remaining work documented; see notes below) — the queue-marker-as-URL false claim is fixed; server-owned identity and private-by-default storage remain open
+- **Fix applied (2026-07-12):** `RenderService.renderComposition()` previously encoded "no public URL yet" as a `CLOUD_QUEUED:{renderId}:{bucket}` string indistinguishable from a real URL, and `StoryboardTimeline.handleCompileVideo()` always toasted it as "Showreel dispatched successfully! URL: {result}" regardless of which case it was. Return type is now `RenderResult = string | QueuedRenderResult` (`RenderService.ts`) — a genuine completed render still returns a plain string URL, but an in-flight render returns a typed `{ status: 'queued', renderId, bucketName }` object that cannot be concatenated into a fake link. `StoryboardTimeline.tsx` now branches on `typeof result`: a real URL gets "render complete" messaging, a queued result gets an honest "queued, no shareable link yet" toast naming the render ID instead of a bogus URL. Tests: new `RenderComposition cloud queue (ISSUE-995)` block in `RenderService.test.ts` (2 cases) — asserts a real `publicUrl` still returns as a string, and asserts a missing `publicUrl` returns the typed queued object rather than a string. Full `RenderService.test.ts` suite (4 tests) green, typecheck/lint clean. **Not done:** the actual privacy/authorization architecture is untouched — `renderCompositionCloud()` still passes `privacy: 'public'` to every Cloud Run render (`RenderService.ts:46`), so unreleased masters/drafts are still rendered to a publicly-reachable GCS output by default. Fixing that requires a server-owned render identity, private-by-default bucket policy, and short-lived signed URLs issued only after completion — genuine backend/infra work requiring live GCP configuration changes I cannot safely make or verify from this environment. `VeoToRemotionBridge.ts`'s auto-render path (via `VideoRenderOrchestrator.startRender()`) was reviewed and found to already be honest — it never surfaces a queue marker as a URL, only logs `cloudResponse.publicUrl` when present — so it needed no change for this slice.
+
+---
+
+### ISSUE-1158: Generated-audio library service writes to an unruled path while rules authorize a different collection
+
+- **Re-ticketed from:** ISSUE-1005 (2026-07-21 housecleaning; original status was: `🟡 PARTIAL (2026-07-11 — service/rules path mismatch and destructive cleanup behavior fixed; generation integration/emulator proof remains)`)
+- **Status:** 🟡 PARTIAL (2026-07-11 — service/rules path mismatch and destructive cleanup behavior fixed; generation integration/emulator proof remains)
+- **Severity:** 🔴 CRITICAL (generated audio cannot become a durable user-library asset)
+- **Module:** Audio generation / Audio library persistence
+- **Evidence:** `AudioPersistenceService` describes a user-specific audio library and its list/save/delete operations construct `users/${userId}/audio` (`AudioPersistenceService.ts:44-50`, `:67-90`, `:95-117`). The Firestore rules define no `match /users/{userId}/audio/{...}` policy; the only audio-assets rule is for the unrelated root path `/audio_assets/{docId}` (`firestore.rules:1210-1213`), with all unmatched paths denied by the final catch-all (`:1235-1236`). The service’s base constructor itself uses `audio_assets`, but its overridden collection accessor computes the user path and then returns `super.collection` anyway (`AudioPersistenceService.ts:38-42`, `:54-62`), making the declared model contradictory even before any integration adds/reuses base methods.
+- **Impact:** Audio metadata read/save/delete requests can fail with `permission-denied`; a generated sound, music, or TTS result may exist only in volatile UI state rather than surviving reload or appearing in its library. Delete can also leave the Storage object untouched when the metadata pre-read is denied.
+- **Fix:** Choose one canonical owned-audio document model and make service, rules, storage paths, and client selectors agree. Prefer `users/{uid}/audio/{audioId}` with owner-only schema-validated rules, or use root `audio_assets` consistently with immutable `userId`; remove the misleading override. Await and surface persistence/cleanup outcomes rather than treating an in-memory addition as a saved library asset.
+- **Acceptance:** Emulator tests allow an authenticated user to list/create/read/delete only their own generated-audio metadata, reject cross-user access and owner/type/URI spoofing, and cover the exact path the service calls; successful generation survives a clean reload with a playable authorized URL; forced metadata/storage failures retain a retryable pending result with no saved claim; delete either removes both metadata and owned storage object or exposes a durable cleanup-retry state.
+
+- **Fix progress (2026-07-11):** Standardized `AudioPersistenceService` on the already-authorized root `audio_assets` collection, removed the misleading user-subcollection override, added owner-filtered listing, forced authenticated ownership on writes, and changed unauthenticated operations from silent success to explicit failure. Delete now verifies ownership and retains metadata when Storage cleanup fails; `CloudStorageService.deleteAudio()` propagates cleanup failures instead of swallowing them. Added four focused ownership/query/cleanup tests; Vitest, ESLint, renderer TypeScript, and diff checks pass. Remaining before FIXED: connect generated audio creation to awaited metadata persistence with retryable UI state, add emulator coverage for the existing root rules (live edition lookup was unavailable because Firebase credentials require reauthentication), and verify clean-reload playback.
+
+- **Additional progress (2026-07-12):** The audio-library store now has `persistGeneratedAsset()` and `retryAudioPersistence()` rather than only an in-memory `addGeneratedAsset()`: it presents a new result as `pending`, marks it `saved` only after `AudioPersistenceService.saveAudioMetadata()` resolves, and retains a visible `failed` result with an error for retry if persistence rejects. Reloaded library entries are explicitly `saved`. The root `audio_assets` rule now validates owner/document-id consistency, the allowed generation types, bounded duration, required prompt/MIME/timestamp, and requires either a playable storage URL or a bounded data URI; it rejects cross-user and owner/id/type/URI spoofing. Added emulator cases for valid owner create/read, cross-user denial, malformed payload denial, and immutable-owner spoofing. Renderer typecheck and the focused service test pass; Firebase TypeScript build passes. `npm run test:rules --workspace=@indii/firebase` reports 120 passing cases but the harness skips emulator-backed assertions when localhost:8080 is unavailable, so rules behavior still needs a real Emulator run. **Remaining:** repo-wide search confirms there is still no audio generator or UI call site that invokes either persistence action—the new handoff prevents a future generator from falsely claiming save, but does not by itself create a producer. Wire each actual sound/music/TTS completion to `persistGeneratedAsset()` and perform a clean-reload playback test before closing.
+- **Production-path progress (2026-07-17):** The real renderer speech producer now calls `generateAudioV3`, and the callable itself owns the durable lifecycle instead of trusting a second client write: idempotent request claim, server cost reservation, supported Gemini 3.1 TTS request, playable WAV wrapping, owner-scoped Storage upload, atomic `creative_jobs` + `audio_assets` completion, reservation settlement/void, failed-commit cleanup, and stored-result replay. Reloaded library reads resolve the `gs://` object to a client playback URL, while delete targets that exact URI and owner Storage rules permit deletion without weakening create/update validation. Focused tests pass. **Still PARTIAL:** only a deployed authenticated Cloud run proving generation, fresh-read playback, idempotent replay, and owner deletion can close ISSUE-1005; local/emulator evidence is explicitly non-acceptance.
+
+---
+
+### ISSUE-1159: PLP counts queued video jobs with empty URLs as generated variants and can deploy them as ad creatives
+
+- **Re-ticketed from:** ISSUE-1008 (2026-07-21 housecleaning; original status was: `🟡 PARTIAL (2026-07-17 — lifecycle/UI/retry coverage complete; live provider/emulator proof remains)`)
+- **Status:** 🟡 PARTIAL (2026-07-17 — lifecycle/UI/retry coverage complete; live provider/emulator proof remains)
+- **Severity:** 🔴 CRITICAL (paid campaign can be built from nonexistent video assets)
+- **Module:** Creative Suite / PLP 15-variant pipeline / Ad handoff
+- **Evidence:** PLP starts five `VideoGeneration.generateVideo()` calls alongside ten image calls and treats every fulfilled array with a first item as a completed variant (`CreativeStudio.tsx:191-245`). But `generateVideo()` explicitly returns only `{ id: jobId, url: '' }` while the video is queued, instructing callers to use a job listener for the eventual URL (`VideoGenerationService.ts:484-492`). PLP immediately adds that empty URL to history as a `video` (`CreativeStudio.tsx:221-237`), increments its “N/15 Variants generated” count, and includes its ID in `creativeSeeds`; after user confirmation it sends those IDs to `deployPLPPipeline` (`:243-273`). It creates no subscription, terminal-state check, output URL readback, or failure/retry path for the five video jobs.
+- **Impact:** PLP can display and save video “variants” that have no playable media, include them in a campaign configuration, and report a successful 15-variant batch despite queued, failed, or output-less video jobs. This risks broken ads, misleading creative review, and spend against absent assets.
+- **Fix:** Model image and video outputs as typed lifecycle records. Count/present video jobs as queued until a persisted terminal result has an authorized playable URL; subscribe or poll with immutable PLP batch/job context, then add only completed output receipts to history and campaign eligibility. Prevent ad deployment until each selected creative is provider-validated and has a render URL/asset ID, while preserving failed jobs with retry/diagnostics.
+- **Acceptance:** A PLP fixture with five queued video jobs reports 10 completed images plus 5 queued videos—not 15 generated—and adds no empty-URL history item or campaign creative; completed videos become eligible only after a terminal job record supplies a validated URL; failed/completed-without-URL/cancelled jobs remain visible with retry and never enter ad deployment; mixed completion order, project switching, and duplicate listener events yield one immutable asset record per job and an accurate batch summary.
+
+- **Fix progress (2026-07-12):** Added `awaitCompletedPlpVideoVariant()` and routed all five PLP video slots through `VideoGeneration.waitForJob()`. Empty queued tokens are no longer counted, stored, or offered to ad deployment; a video becomes eligible only after a terminal job supplies a playable URL, and missing job/output IDs reject the slot. PLP now captures the initiating project ID for all session/history writes and blocks campaign launch if the creator switches projects while jobs are pending, instead directing them back to the owning project. Renderer typecheck and Creative Studio suite pass (6 tests; jsdom emits non-fatal `window.scrollTo` warnings). Remaining before FIXED: visible queued/failed slot state, targeted retry, and duplicate terminal-event coverage.
+
+- **Focused interaction completion (2026-07-17):** Added an explicit 15-slot PLP batch model and visible status panel. The UI distinguishes queued/completed/failed slots, exposes per-slot diagnostics, retries only failed slots, blocks rapid duplicate retries/launches, and keeps output/history ownership bound to the project that started the batch. Only terminal outputs with playable URLs enter history or campaign eligibility; the first terminal event is immutable and duplicate terminal events cannot duplicate history. Campaign launch requires all 15 validated outputs and fails closed after an ambiguous deployment response so a blind retry cannot create duplicate paid spend. Focused component/integration/service coverage passes 62 tests across Creative Studio, PLP lifecycle/status, auth, and video generation; renderer typecheck and scoped ESLint pass. Remaining before FIXED: a live provider/emulator generation receipt. That proof is intentionally not fabricated or run against paid production generation without an approved test fixture/budget.
+
+---
+
+### ISSUE-1160: Infinite Canvas flatten silently drops unloaded layers, deletes the originals, and reports success
+
+- **Re-ticketed from:** ISSUE-1009 (2026-07-21 housecleaning; original status was: `🟡 PARTIAL (2026-07-12 — immediate undo plus a durable pre-flatten revision; browser fixture coverage remains)`)
+- **Status:** 🟡 PARTIAL (2026-07-12 — immediate undo plus a durable pre-flatten revision; browser fixture coverage remains)
+- **Severity:** 🔴 CRITICAL (destructive creative data loss)
+- **Module:** Creative Suite / Infinite Canvas / Flatten layers
+- **Evidence:** `handleFlatten()` computes a composite and draws a layer only if its cached browser image is already `complete` with a positive natural width (`InfiniteCanvas.tsx:780-815`). It does not await pending loads, resolve a missing cache entry, count skipped layers, or abort. Immediately afterward it removes every source canvas image, adds the partial PNG, selects it, and toasts “Layers flattened successfully!” (`:817-835`). A slow Storage URL, fresh upload, network delay, cache eviction, or image decode failure therefore causes that layer to be omitted permanently from the flattened result.
+- **Impact:** A creator can flatten a multi-layer composition during normal loading and irreversibly lose one or more artwork layers while seeing a success message. The resulting flattened image may look superficially valid, making the missing elements difficult to detect before export or publishing.
+- **Fix:** Build flattening as a non-destructive transaction: resolve and decode every source at its exact bytes/dimensions, render off-canvas, validate the composite, then offer an undoable replace/keep-sources choice. If any layer is pending, inaccessible, tainted, or fails decode, keep all originals and show the exact failed layer with retry/repair controls; never claim success on a partial composite.
+- **Acceptance:** A fixture with one delayed, one failed-decode, one CORS-inaccessible, and one normal layer never deletes any source or emits success until every required layer is decoded and rendered; a successful flatten contains every source pixel in z-order and creates a recoverable revision/undo record; retry after the delayed layer resolves produces one complete composite without duplicate layers; forced canvas/export failure leaves original layers intact and reports a typed error.
+
+- **Fix progress (2026-07-12):** Flatten preflights every cached layer and aborts with the exact unavailable layer before rendering or deleting anything. Canvas serialization is guarded; taint/export failure reports that originals were preserved and returns before source removal. A successful flatten now snapshots all source-layer records before replacement and exposes an Undo Flatten control; undo removes only the replacement and restores the original layers/selects a restored layer. If the replacement was manually removed, undo fails safely rather than duplicating layers. Renderer typecheck and the focused Infinite Canvas suites pass (29 tests). Remaining before FIXED: persist revision history across reloads and add delayed/decode/CORS browser fixtures.
+
+- **Durable recovery (2026-07-12):** `handleFlatten()` now awaits `saveDesignVersion()` before deleting any source layer. This uses the existing Firestore-backed design-version system to retain the exact canvas snapshot across reload, and flatten fails closed if that recovery snapshot cannot be saved. The local immediate Undo remains for convenience; restoring the durable version is the reload-safe recovery path.
+
+---
+
+### ISSUE-1161: One failed Infinite Canvas variation discards successful paid sibling results
+
+- **Re-ticketed from:** ISSUE-1010 (2026-07-21 housecleaning; original status was: `🟡 PARTIAL (2026-07-12 — failed-slot retry added; explicit batch persistence/late-completion coverage remains)`)
+- **Status:** 🟡 PARTIAL (2026-07-12 — failed-slot retry added; explicit batch persistence/late-completion coverage remains)
+- **Severity:** 🟠 HIGH (paid creative outputs become inaccessible after partial batch failure)
+- **Module:** Creative Suite / Infinite Canvas / Generate variations
+- **Evidence:** Variation generation deliberately starts four independent `ImageGeneration.generateImages()` calls in parallel (`InfiniteCanvas.tsx:658-667`) but waits with `Promise.all` (`:669`). If any one request rejects, control goes directly to the catch that only says “Failed to generate variations” (`:713-716`); it never processes the fulfilled sibling results. Only after the all-success wait does the code add outputs to canvas/history (`:672-711`). Each sibling is a real generation request with its own cost check, provider call, storage/metadata processing, and potentially an output before a different sibling fails (`ImageGenerationService.ts:258-575`).
+- **Impact:** A transient failure in one of four requests can hide the other completed variants from the canvas and gallery, while the creator sees a total-failure toast. Those successful outputs may still incur cost and storage/metadata artifacts but have no visible selection, download, retry, or cleanup route.
+- **Fix:** Use typed `Promise.allSettled` batch receipts, preserve every fulfilled output with its request/result lineage, and report completed/failed counts separately. Tie each request to a batch ID, allow retry of only failed slots, and reconcile/clean up any provider output that cannot be made recoverable in the canvas/history.
+- **Acceptance:** With 3 successful and 1 rejected variation fixtures, all three successful images appear once on canvas/history in deterministic slots, the summary reports `3 generated, 1 failed`, and the failed slot can be retried without regenerating or charging the successes; all-failed and cancellation cases preserve the source image and expose no false success; late completions after a retry/project switch cannot duplicate, orphan, or misfile a result.
+
+- **Fix progress (2026-07-12):** Replaced fail-fast `Promise.all` with indexed `Promise.allSettled`. Fulfilled sibling outputs are placed in deterministic request slots and saved to history; partial batches report exact generated/failed counts, while all-failed batches preserve the source. Added a Retry N failed control that retains source/prompt/byte payload and retries only rejected/empty slots; completed slots are never re-requested. Retry refuses to run after a project switch or if the original source is gone, preventing misfiled or orphaned output. Renderer typecheck and focused Infinite Canvas suites pass (29 tests). Remaining before FIXED: durable batch receipts/idempotency across reload and targeted late-completion/project-switch regression fixtures.
+
+---
+
+### ISSUE-1162: Video Workflow’s 3D Stage Builder cannot receive the GLB/GLTF files it tells creators to drop
+
+- **Re-ticketed from:** ISSUE-1014 (2026-07-21 housecleaning; original status was: `🟡 PARTIAL (2026-07-12 — structural decode gate and progress status added; browser interaction/load-error coverage remains)`)
+- **Status:** 🟡 PARTIAL (2026-07-12 — structural decode gate and progress status added; browser interaction/load-error coverage remains)
+- **Severity:** 🔴 CRITICAL (custom music-video set construction is blocked at intake)
+- **Module:** Creative Suite / Video Workflow / 3D Stage Builder
+- **Evidence:** The active Video Workflow lazy-loads and renders `SceneBuilder` (`VideoWorkflow.tsx:26-27`, `:1053`). Its only file intake handlers (`onDragOver`, `onDrop`) live on `DroppableArea` (`SceneBuilder.tsx:82-102`), but that element is rendered with Tailwind `pointer-events-none` (`:104-112`). It therefore cannot become the drag target or receive the events that call `URL.createObjectURL`/`onDrop`; no parent supplies alternative handlers or file picker. The UI nevertheless directs users to “Drag and drop any .glb or .gltf 3D assets” to build a custom music-video stage (`:163-179`).
+- **Impact:** The advertised 3D-stage creative workflow accepts no model asset in normal pointer-event behavior. Creators cannot construct a custom set, and a browser/device-specific non-response offers no visible error or alternate intake path.
+- **Fix:** Make a real, accessible drop target receive pointer events (while preserving any decorative overlay separately), add a file-picker fallback, validate extension plus detected GLTF/GLB structure/size, and expose loading/error/progress per asset. Add a browser-level interaction test that dispatches an actual `DataTransfer` drop rather than mocking the 3D canvas alone.
+- **Acceptance:** Dragging valid `.glb` and `.gltf` fixtures onto the visible Stage Builder invokes intake exactly once, adds a loadable asset, and reports readable progress; invalid, corrupt, oversize, multi-file, cancellation, and decode-error fixtures preserve the scene and show actionable errors; keyboard users can choose the same file via a picker; the drop target remains usable above the canvas without preventing camera controls outside the target.
+
+- **Fix progress (2026-07-12):** Moved drag/drop handling to the Stage Builder container so the decorative overlay remains pointer-transparent and OrbitControls are not blocked. Added an accessible Add Model picker, case-insensitive GLB/GLTF validation, empty/100 MB guards, collision-safe IDs, and object-URL cleanup on clear/unmount. Intake now validates GLB magic/header and parseable GLTF `asset.version` before creating an object URL; it shows a visible validation status and rejects multi-file drops. Added structural-fixture tests; focused Stage Builder suites pass (9 tests) and renderer typecheck passes. Remaining before FIXED: a real-browser DataTransfer/picker test and model-loader error status per asset (the WebGL loader’s final decode can still fail after the structural gate).
+
+- **Loader-error recovery (2026-07-12):** Each GLTF model now renders inside a reporting error boundary. A final drei/WebGL decode failure is isolated to that asset (the stage does not crash) and produces a visible repair alert explaining that the creator can keep the original, remove it, or choose a different GLB/GLTF file. Clear also removes stale asset-error state. Renderer typecheck and both focused Stage Builder suites pass (9 tests). **Remaining:** a real-browser `DataTransfer` drop/picker exercise is still required; WebGL loader failures are now handled rather than silent.
+
+---
+
+### ISSUE-1163: GitHub Release Missing Updater Manifest Files
+
+- **Re-ticketed from:** ISSUE-1043 (2026-07-21 housecleaning; original status was: `⏳ BACKLOG — consolidated (blocks Founders Version One installation; blocked on ISSUE-992 founder signing secrets)`)
+- **Scope note (2026-07-21):** engineering remainder ONLY. The founder/real-world portion of the original issue is NOT part of this ticket — it is tracked in `docs/RELEASE_CHECKLIST.md` § "Apple Developer ID / macOS Notarization". Do not block this ticket on it.
+- **Status:** ⏳ BACKLOG — consolidated (blocks Founders Version One installation; blocked on ISSUE-992 founder signing secrets)
+- **Severity:** 🔴 CRITICAL (installers cannot check for updates)
+- **Error Message:** "Founders Version One cannot be installed yet because the latest GitHub release is missing its updater manifest. Publish a repaired release with latest-mac.yml, latest.yml, and latest-linux.yml, then check again." (produced by `packages/main/src/updater.ts:49` when electron-updater 404s on a manifest)
+- **Root Cause (investigated 2026-07-13, supersedes the original guess of "published manually or by workflow failure"):** This error is the direct, predictable consequence of the ISSUE-992 mitigation plus an empty fallback release. Chain of events, all verified against the live GitHub Releases API:
+  1. `v1.64.5` and `v1.64.6` were built and published by `release.yml` with ALL required assets — including `latest-mac.yml`, `latest.yml`, `latest-linux.yml` (verified via `gh release view`: 10 assets each). The manifests are NOT missing from those releases.
+  2. On 2026-07-10 both were deliberately flipped to **Pre-release** as the ISSUE-992 incident pull (their macOS builds are ad-hoc signed; ShipIt refuses them). That mitigation is correct and must NOT be reverted.
+  3. The stable updater channel (`updater.ts` → `allowPrerelease: false`, `releaseType: 'release'`) therefore skips both and resolves "latest" = `v1.50.0` (published 2026-05-19, predates the hardened workflow).
+  4. `v1.50.0` has **ZERO assets** (verified: `assets: []`). electron-updater requests `latest-mac.yml` from it, gets 404, and `formatUpdaterErrorMessage()` maps that to this error. Every stable-channel desktop client shows it on every check.
+- **Why it will recur without systemic fixes (write-downs for prevention):**
+  1. **Feed-level blind spot in `release.yml`:** the "Verify updater manifest was published" gate (lines 184-217) only checks assets on the *tag's own release*. It never verifies (a) the release is non-prerelease, or (b) what the stable feed actually resolves as "latest" serves valid manifests. A green release run can still leave every installed client broken — exactly the current state. Fix: add a post-publish feed check that fetches `https://github.com/indii-music-founder/indii-music-founder/releases/latest/download/latest-mac.yml` (and `latest.yml`, `latest-linux.yml`), asserts HTTP 200, and asserts the manifest `version:` matches the tag being released.
+  2. **No empty-release guard:** nothing detects a "latest" release with zero assets (the `v1.50.0` state). Once a repaired release exists, delete `v1.50.0` or backfill it; add an assets-not-empty check on the resolved latest release to `/plat` or a scheduled CI check.
+  3. **Incident-pull runbook gap:** flipping a bad release to prerelease changes which release the feed resolves — the 2026-07-10 pull correctly stopped serving broken installers but silently converted the failure mode from "update fails to install" to "cannot check for updates at all," because nobody verified the resulting fallback. Add to `docs/RELEASE_CHECKLIST.md`: after any prerelease flip/deletion, curl the three `releases/latest/download/latest*.yml` URLs and confirm 200 + a signed, verified version.
+  4. **Error swallowing + race in publish step:** `release.yml:172` runs `gh release create ... 2>/dev/null || true` across 3 concurrent matrix runners. This hides ALL failures (auth, permissions), not just "already exists." Make idempotency explicit (`gh release view || gh release create`) and stop discarding stderr.
+  5. **Publisher-facing copy shown to end users:** `updater.ts:49` tells the *user* to "Publish a repaired release with latest-mac.yml…" — that instruction is for the maintainer, not the artist. Replace with user-appropriate copy ("Updates are temporarily unavailable; your current version keeps working") while logging the technical detail.
+  6. **Vestigial Release Please workflow:** `.github/workflows/release-please.yml` runs have all been cancelled at the 24h timeout since May and it plays no role in the current tag flow — either fix or remove it to avoid future confusion about what creates releases.
+- **Fix (sequenced — the ONLY safe repair path):**
+  1. **Founder prerequisite (ISSUE-992):** add the 5 Apple signing/notarization secrets to GitHub Actions. `release.yml` now fails closed on macOS without them, so no repaired release can ship at all until this is done.
+  2. Cut a new tag (`v1.64.7`+) so `release.yml` builds, signature-verifies, and publishes a **non-prerelease** release with all installers + all three manifests.
+  3. Confirm the stable feed resolves to it (curl the three `releases/latest/download/latest*.yml` URLs → 200, correct version), then delete or backfill the empty `v1.50.0`.
+  4. Implement prevention items 1-5 above in `release.yml`, `updater.ts`, and `docs/RELEASE_CHECKLIST.md`.
+- **DO NOT:** Do not upload manifests to `v1.50.0` — its manifests would reference installer assets that don't exist there (or unverified ones), pointing every client at a dead or untrusted download. Do not rebuild locally and upload unsigned artifacts — that recreates ISSUE-992. Do not un-prerelease `v1.64.5`/`v1.64.6` — they are confirmed ad-hoc signed and ShipIt rejects them.
+- **Verification:** A stable-channel desktop client (source: github, channel: stable) completes `checkForUpdates()` with no error; `releases/latest/download/latest-mac.yml` returns 200 with the new version; new release is non-prerelease with ≥10 assets including all three manifests.
+- **Related:** ISSUE-992 (root incident — ad-hoc signed macOS builds; its mitigation created this state)
+
+---
+
+---
+
+### ISSUE-1164: App icon/favicon gives no visual cue for which surface is open (web / Electron / remote)
+
+- **Re-ticketed from:** ISSUE-1045 (2026-07-21 housecleaning; original status was: `⏳ BACKLOG — consolidated (requested by William, 2026-07-12 — noticed while juggling multiple open browser/app tabs and couldn't tell them apart at a glance)`)
+- **Status:** ⏳ BACKLOG — consolidated (requested by William, 2026-07-12 — noticed while juggling multiple open browser/app tabs and couldn't tell them apart at a glance)
+- **Severity:** 🟡 MEDIUM (UX/orientation — no data or security impact)
+- **Module:** Branding / Build assets (web manifest, Electron packaging, mobile-remote PWA)
+- **Request:** Same core mark (the "double eye"/`II` logo), but recolored per runtime surface so the browser tab, the Dock/taskbar icon, and the phone remote icon are each visually distinct at a glance — one color for web browser, one for the Electron desktop app, one for the remote/mobile app.
+- **Evidence (current state, verified):** There is currently exactly ONE icon per platform, no per-surface variation:
+  - Web/PWA: `packages/renderer/public/favicon.svg` + `indii-logo.svg`, both referenced from the single `packages/renderer/public/manifest.json` used for every browser tab AND the installed PWA.
+  - Electron desktop: separate native icon set already exists (`build/icon.icns`, `build/icon.ico`, `build/icon.png`, `assets/icon-studio.icns`) — packaged app already CAN look different from the web favicon, but hasn't been deliberately color-coded as part of one coherent 3-way scheme.
+  - Mobile remote: the `mobile-remote` module (see ISSUE-1044) is served from the SAME SPA/manifest as regular desktop-web — it has no distinct icon/manifest of its own, so a phone that has the remote view installed as a PWA is visually identical to a phone/desktop with the regular studio installed.
+- **Impact:** With the web app, the Electron app, and the phone remote view potentially all open at once, there's no glanceable way to tell which one is which from the icon alone (tab strip, Dock, home-screen icon, alt-tab switcher).
+- **Fix:** Define one base mark with 3 official colorways (e.g. via a shared SVG + fill-color token): (1) web browser favicon/tab icon, (2) Electron desktop app icon (Dock/taskbar/installer), (3) remote/mobile PWA icon (phone home screen). Give the mobile-remote module its own `manifest.json`/icon set distinct from the main studio manifest so it can carry the third color independently, and update the Electron `build/icon.*` assets to use the second color deliberately (not just "whatever it happens to be now").
+- **Acceptance:** Looking only at the icon (browser tab, Dock, phone home screen) is enough to tell which of the 3 surfaces (web / Electron / remote) is open, with no other UI visible.
+- **DO NOT:** Do not change the core mark/shape — only the color per surface. Do not fork the manifest content (share_target, shortcuts, etc.) beyond what's needed to give the remote module its own icon identity.
+
+---
+
+### ISSUE-1165: Production speech generation bypasses the durable audio library and calls an unsupported non-TTS model contract
+- **Re-ticketed from:** ISSUE-1077 (2026-07-21 housecleaning; original status was: `🟡 PARTIAL (2026-07-17 — code/test fix complete; deployed Cloud audio proof pending)`)
+- **Status:** 🟡 PARTIAL (2026-07-17 — code/test fix complete; deployed Cloud audio proof pending)
+- **Severity:** 🔴 CRITICAL
+- **Module:** Gemini TTS / Creative audio / Cloud Storage / Firestore / cost control
+- **Evidence:** The active renderer speech path called the legacy `generateSpeech` function, which returned base64 only and never created `audio_assets`. The separate `generateAudioV3` callable had no caller, used the generic `gemini-3-flash-preview` text model with `responseModalities: ["AUDIO"]`, accepted a fictional duration control, created no cost reservation, wrote no audio-library metadata, and returned a `gs://` URI that a browser cannot play directly. Its generated Storage path also did not match `CloudStorageService.deleteAudio`, so deletion would target a different object. Google currently documents `gemini-3.1-flash-tts-preview` plus the Interactions audio response contract for TTS.
+- **Impact:** Agent voice/audio can disappear on reload, successful output is absent from the user library, spend is unreserved, duplicate retries can regenerate and rebill, raw PCM can be mislabeled as WAV, and deleting the library record can leak the real Storage object.
+- **Fix progress:** `SpeechGenerator` now calls `generateAudioV3`; the callable validates a supported voice and UUID request ID, reserves audio cost on the server, uses the documented Gemini 3.1 Flash TTS Interactions request, wraps raw 24 kHz PCM in a valid WAV container, uploads under the owner-scoped Creative audio namespace, atomically commits the completed job and `audio_assets` metadata, settles/voids the reservation, compensates failed metadata commits, and replays completed duplicate requests from durable Storage. Audio-library reads resolve `gs://` to playback URLs and deletion targets the exact stored URI. Storage rules now separate owner delete from create/update MIME/size checks. Focused callable, billing, pricing, speech, and persistence tests are in place.
+- **Acceptance:** Deploy the function, renderer, Firestore rules, and Storage rules; invoke production `generateAudioV3` as a real authenticated user; resolve and fetch the returned Storage receipt and verify those bytes decode as WAV; verify the exact Storage object and owner-scoped `audio_assets` document exist after a fresh read; repeat the same request ID and prove no second generation/reservation occurs; play the resolved object through the authenticated client path; delete it through the owner client path; confirm both Storage and metadata are removed; confirm cross-user read/delete remain denied. Local/emulator results are guardrails only and do not close this issue.
+
+---
+
+### ISSUE-1166: Production stale cost-reservation reconciliation is flooding Error Reporting and can refund completed media
+- **Re-ticketed from:** ISSUE-1078 (2026-07-21 housecleaning; original status was: `🟡 PARTIAL (2026-07-17 — completed-job reconciliation added for new job-linked holds; live backlog remediation pending)`)
+- **Status:** 🟡 PARTIAL (2026-07-17 — completed-job reconciliation added for new job-linked holds; live backlog remediation pending)
+- **Severity:** 🔴 HIGH
+- **Module:** Cost control / scheduled reconciliation / creative generation
+- **Evidence:** The authenticated Google Cloud dashboard shows `[CostControl] Reservation expiry reconciliation skipped ...` as the top error with roughly 15.7k events in the last 24 hours. The expiry worker previously voided every stale APPROVED hold without checking whether its associated creative job had actually completed. A successful media output whose immediate SETTLED write failed could therefore be refunded later, while malformed/legacy holds repeatedly throw and flood monitoring.
+- **Impact:** Completed paid generations can become unbilled, stale holds may remain unresolved, and the monitoring flood can hide new production failures.
+- **Fix progress:** New server-owned audio reservations include `metadata.jobId`, and the expiry reconciler now reads that durable job: completed jobs are SETTLED, incomplete jobs are VOIDED, and an uncertain Firestore read fails without refunding. The remaining 15.7k-event legacy backlog and its exact malformed reservation shapes still require live inspection and one-time remediation.
+- **Acceptance:** Inspect representative production errors and reservation documents without exposing user data; classify every legacy failure shape; safely settle completed outputs and void only confirmed abandoned work; make the worker idempotent; deploy; verify Error Reporting stops accumulating the signature across at least two scheduler windows; reconcile aggregate ledgers and confirm no double refund/charge.
+
+---
+
+### ISSUE-1167: Deploy-managed Firebase API-key restrictions repeatedly block the canonical localhost:4243 renderer *(renumbered 2026-07-17 — was mislabeled ISSUE-1074, colliding with the fixed analyze_visual_trends entry)*
+- **Re-ticketed from:** ISSUE-1081 (2026-07-21 housecleaning; original status was: `🟡 PARTIAL (2026-07-17 — persistent repo fix complete; cloud rollout/probe pending)`)
+- **Status:** 🟡 PARTIAL (2026-07-17 — persistent repo fix complete; cloud rollout/probe pending)
+- **Severity:** 🟠 HIGH
+- **Module:** Firebase Authentication / Google Cloud API key / Local web and Electron renderer testing
+- **Evidence:** `npm run dev:web`, `packages/renderer/vite.config.ts`, and `electron.vite.config.ts` all designate port 4243 for the renderer. A credential-validation probe from both `http://localhost:4243/` and `http://127.0.0.1:4243/` returns `PERMISSION_DENIED: Requests from referer ... are blocked.` The deploy workflow's “Repair Firebase web API key restrictions” step overwrites the key allowlist with production origins only, so each deployment preserves/reintroduces the local block. The UI error mapper only recognized static referer error codes and leaked Firebase's dynamic `auth/requests-from-referer-http://localhost:4243-are-blocked` message.
+- **Impact:** Local browser acceptance cannot authenticate on the app's canonical port, which blocks realistic cross-surface and creative-flow testing. Users see a raw infrastructure error even though the failure is an application-owned deployment configuration.
+- **Fix:** Persist `http://localhost:4243/*` and `http://127.0.0.1:4243/*` in the deploy-managed browser-referrer allowlist and its post-update authentication probe. Normalize every `auth/requests-from-referer-<origin>-are-blocked` code to a safe support message. Correct the domain guide to separate hostname-only Firebase Auth authorized domains from scheme/port/path Google Cloud API-key referrer rules.
+- **Acceptance:** After deployment, invalid-credential probes using both 4243 referrers reach Firebase credential validation rather than `PERMISSION_DENIED`; an actual local sign-in can load the authenticated shell; the next deployment retains both local origins; dynamic referer codes never render raw Firebase text. Unit coverage for the dynamic error passes. Live Cloud update could not be applied directly because the local `gcloud` session requires interactive reauthentication, so the authenticated deployment workflow is the rollout path.
+
+---
+
+### ISSUE-1168: Production AI generation depended on prepaid AI Studio credits — hard cutoff with no alerting, no postpaid path, no dev/prod spend isolation
+- **Re-ticketed from:** ISSUE-1082 (2026-07-21 housecleaning; original status was: `🟡 PARTIAL (2026-07-17 — code + cloud alerting complete; prod rollout on next deploy)`)
+- **Status:** 🟡 PARTIAL (2026-07-17 — code + cloud alerting complete; prod rollout on next deploy)
+- **Severity:** 🔴 CRITICAL (was the live cause of "creative is down")
+- **Module:** Creative gateway / `packages/firebase/src/functions/creative/gateway.ts` / GCP monitoring + billing
+- **Evidence:** The gateway preferred the AI Studio API key (prepaid credits) and only fell back to Vertex ADC on API-*key* errors — billing exhaustion (`RESOURCE_EXHAUSTED` / "prepayment credits are depleted") rode the dead key path straight to users. No notification channels, no alert policies, and no budget existed on the GCP project, so depletion was discovered via a failing unit test.
+- **Fix:** (1) `getMediaProvider()` policy: production defaults to Vertex AI via ADC on the postpaid project (`MEDIA_PROVIDER` env override; dev/QA defaults to the AI Studio key so testing never drains prod). (2) `wrapWithFallback` now also falls back to Vertex on prepaid-billing exhaustion. (3) Cloud infra created live: email notification channel (`notificationChannels/11054218369120817035`), log-based alert policy `AI generation billing/quota exhaustion (RESOURCE_EXHAUSTED)` (`alertPolicies/6390119791058322700`, 1h rate-limit, runbook in docs), and billing budget `indii-music-founder monthly spend guardrail` ($200/mo, alerts at 50/75/90/100% — adjust amount in console as real spend data lands). Billing Budgets API enabled. (4) `.env.example` documents `MEDIA_PROVIDER`. Unit tests: `mediaProvider.test.ts` 5/5.
+- **Acceptance (residual):** deploy functions so prod actually routes via Vertex; live-verify one `generateImageV3` call succeeds on Vertex billing; confirm a test alert email arrives. AI Studio credits remain optional (dev/QA only).
+
+---
+
+### ISSUE-1169: Audio profiling callable accepted arbitrary Storage paths and queued an unauthenticated placeholder engine target
+- **Re-ticketed from:** ISSUE-1083 (2026-07-21 housecleaning; original status was: `🟡 PARTIAL (2026-07-17 — code and local proof complete; Cloud Run/Cloud Tasks provisioning and live receipt pending)`)
+- **Status:** 🟡 PARTIAL (2026-07-17 — code and local proof complete; Cloud Run/Cloud Tasks provisioning and live receipt pending)
+- **Severity:** 🔴 CRITICAL
+- **Module:** Canonical master ingestion / Cloud Tasks / engine-dsp
+- **Evidence:** `packages/firebase/src/distribution/ingestion.ts` accepted any authenticated caller's `filePath`, checked only whether that object existed, and then posted the caller-controlled reference without an identity token. The fallback target was the literal placeholder `https://engine-dsp-service-url/profile`. The callable was not exported from `packages/firebase/src/index.ts`, so its apparent success path was not deployable from this source tree.
+- **Impact:** One user could dispatch another user's existing object for profiling; the downstream worker had no cryptographic caller identity, no immutable hash/generation binding, and no safe configured target. The upload-once master could therefore leave its protected channel or be replaced between enqueue and processing.
+- **Fix:** Exported the callable and added the repository's App Check/auth boundary. Runtime configuration now fails closed before any large master is streamed. Dispatch reuses `verifyMasterAudioObject` to enforce the owner-scoped content-addressed path, Storage metadata, byte-level SHA-256, fingerprint, immutable marker, and generation. The Cloud Task contains only the server-verified master reference plus owner, fingerprint, hash, and generation and uses an OIDC token from a same-project Google service account; the fake URL fallback was removed.
+- **Local proof:** `audio_ingestion.test.ts` proves missing engine configuration causes no verification/stream or task, cross-owner paths cannot reach task creation, and successful tasks carry the verified identity tuple plus the expected OIDC service account/audience. Together with `verify_master_audio.test.ts`, 6 focused tests pass; Firebase TypeScript and scoped ESLint are clean.
+- **Acceptance (residual):** Provision a private `engine-dsp` Cloud Run service and `dsp-processing-queue`; grant the configured service account Cloud Run Invoker and the function permission to enqueue/sign as that identity; configure `ENGINE_DSP_URL`, `ENGINE_DSP_SERVICE_ACCOUNT`, and optional queue/location/audience overrides; deploy; enqueue a real canonical master; verify Cloud Tasks sends an accepted OIDC request; and prove the worker stores a hash/generation-bound analysis receipt without copying or mutating the master.
+
+---
+
+### ISSUE-1170: engine-dsp ignored the verified master contract, loaded whole files into memory, and never called Gemini or persisted provenance
+- **Re-ticketed from:** ISSUE-1084 (2026-07-21 housecleaning; original status was: `🟡 PARTIAL (2026-07-17 — code/container/rules proof complete; private Cloud Run deployment and live receipt pending)`)
+- **Status:** 🟡 PARTIAL (2026-07-17 — code/container/rules proof complete; private Cloud Run deployment and live receipt pending)
+- **Severity:** 🔴 CRITICAL
+- **Module:** `packages/engine-dsp` / canonical master intelligence / Vertex Gemini / Firestore provenance
+- **Evidence:** The worker accepted the obsolete `{filePath, masterAssetId}` request rather than the server-verified bucket/path/fingerprint/hash/generation/owner tuple. It trusted a hard-coded bucket, checked only 12 WAV magic bytes, then downloaded the entire object into memory. It accepted no FLAC, did not re-hash bytes or pin a Storage generation, returned two transient librosa numbers, had no Gemini call, no idempotency, no Firestore receipt, and retained a fake `/render` response. No renderer path called the newly exported profiling callable, so upload-once ingestion still ended after a separate verification call.
+- **Impact:** The secured Firebase entrance and the worker could not communicate. Even if manually adapted, a replaced object could be analyzed under the wrong identity, large masters could exhaust memory, Cloud Tasks retries could repeat paid analysis, Gemini and downstream marketing/video consumers received nothing durable, and the claimed upload-once provenance chain ended at an HTTP response.
+- **Fix:** The upload-once `MasterAudioService` now calls `processAudioIngestion` as its single server boundary instead of streaming the same master through a separate verifier first; it does not report ingestion success unless the queued identity matches the local hash/fingerprint and includes a Storage generation. The task carries the Firebase default Storage bucket in addition to that verified tuple. The Python worker strictly rejects legacy/extra fields and cross-owner paths; allows only the configured canonical bucket and WAV/FLAC objects; uses current-generation preconditions before download and after model analysis; rechecks owner/hash/fingerprint/immutable metadata, size, SHA-256 bytes, container, codec, sample rate, bit depth, stereo layout, frames, and duration. SoundFile processes blocks for peak/RMS/clipping/zero-crossing/transient measurements; librosa runs bounded tempo analysis. The supported `google-genai` SDK sends Vertex AI the authenticated `gs://` reference (no base64 duplicate) with a bounded structured schema that explicitly forbids legal-rights inference. Firestore transactions lease an owner+hash+generation receipt, replay completed work to prevent duplicate Gemini charges, and reject stale workers. The old fake render endpoint is removed. The container runs as UID 10001 with one worker and only the required libsndfile OS dependency.
+- **Rules audit:** The existing `(default)` Standard/native Firestore database in `nam5` receives a server-write-only `audio_analysis_receipts` collection. Authenticated clients may read only records whose existing `userId` equals their UID; create/update/delete are unconditionally denied. Red-team score for this added match: 5/5 (no client update bypass, no request-data authority, no cross-user read, no schema-pollution write path).
+- **Local proof:** 9 Python tests pass, including real PCM decode/block measurements, mono rejection, GCS-not-inline Gemini transport, current-generation precondition, cached receipt replay, and failed-lease retry state. Ruff and Python compile pass. Firebase focused suites pass 7 tests with TypeScript/scoped ESLint clean. Sixteen renderer master/track/publishing tests prove the upload invokes the profiling boundary, propagates the canonical identity, and refuses false success when the route rejects. The full Firestore emulator suite passes 140/140, including owner read, client write denial, and cross-account denial for the new receipt. The Docker image builds and its non-root container passes `/healthz` plus legacy-payload rejection smoke tests.
+- **Acceptance (residual):** Provision/deploy `engine-dsp` as private Cloud Run with at least 2 GiB memory; set `MASTER_AUDIO_BUCKET`, `GEMINI_AUDIO_MODEL`, `VERTEX_LOCATION`, and the Firebase task variables; grant the runtime service account least-privilege Storage object read, Datastore/Firestore write, and Vertex AI use; grant only the task identity Cloud Run Invoker; deploy Firestore rules and the callable; enqueue a real canonical WAV and FLAC; prove Cloud Tasks OIDC is accepted, DSP and Gemini both analyze the same hash/generation, a single owner-readable complete receipt persists, retry returns the same receipt without a second model call, and no master object is copied/mutated.
+
+---
+
+### ISSUE-1171: mcpEndpoint has no app-layer auth — currently shielded only by IAM invoker 403
+- **Re-ticketed from:** ISSUE-1086 (2026-07-21 housecleaning; original status was: `🔴 OPEN (decision needed before endpoint is ever opened)`)
+- **Status:** 🔴 OPEN (decision needed before endpoint is ever opened)
+- **Severity:** 🟡 MEDIUM (dormant; no active exposure verified 2026-07-17)
+- **Module:** packages/firebase/src/mcp/index.ts (`mcpEndpoint`, Gen 1 onRequest)
+- **Evidence:** Express app with `cors({ origin: true })`, `enforceAppCheck: false`, and no `validateAppCheck*`/auth middleware on `/sse` or `/message`. Live check: `gcloud functions get-iam-policy mcpEndpoint --region=us-central1` returns an EMPTY policy (no `allUsers` invoker) → unauthenticated calls 403 at the platform layer today, matching the fleet-wide IAM lockdown. Exposure if opened: one stateless tool (`draft_dsp_metadata_xml`) — compute/cost abuse only, no Firestore/Storage/secret access.
+- **Impact:** The IAM 403 also blocks every legitimate external MCP client, so the endpoint is dead-to-the-world; anyone "fixing" that by binding `allUsers` would silently ship an unauthenticated public endpoint.
+- **Expected (acceptance):** Decide the auth model before granting any invoker: MCP clients cannot mint Firebase App Check tokens, so the gate must be a bearer/API key check or OIDC (Cloud Run IAM with authenticated callers). Implement the gate in the Express app, THEN bind the invoker. Until then, leave IAM as-is.
+- **Honest fallback:** If remote MCP is not on the roadmap, delete the export instead of carrying an unauthenticated endpoint behind an IAM accident.
+
+---
+
+### ISSUE-1172: Artist Operating Profile (AOP) as a first-class execution input — not yet built
+- **Re-ticketed from:** ISSUE-1115 (2026-07-21 housecleaning; original status was: `🔴 OPEN (deprioritized — does not block or reorder CE-4/CE-5)`)
+- **Status:** 🔴 OPEN (deprioritized — does not block or reorder CE-4/CE-5)
+- **Severity:** 🟢 LOW (design/data-model gap, no immediate consumer)
+- **Module:** none yet — no code exists for this. Candidate: new Firestore doc `users/{uid}/aop` (or similar), read by `DigitalHandshake`/`ComputerExecutionService` at decision time.
+- **Evidence:** Founder-shared architecture note (2026-07-20 chat) describes execution decisions as informed by an "Artist Operating Profile" — preferences, business goals, creative boundaries, permissions, installed software, connected services, security policies, automation preferences. Today that information is scattered: static tool config in `ToolRiskRegistry.ts`, per-directive compute allocation in `DigitalHandshake.ts`, no per-user record of e.g. "has this artist opted into autonomous computer control" or "is `cliclick` installed on this machine."
+- **Expected (acceptance):** Not specified yet — this entry exists to record the gap, not to scope the build. A future pass should define the AOP schema, decide where it's read from (Firestore vs local store vs both), and identify the first real consumer (candidate: CE-4's remote-task approval flow, so a phone-originated `computer_task` checks AOP permissions in addition to the executor lease).
+- **Depends on:** Nothing. Does not block ISSUE-1113/1114 and is not scheduled ahead of them — logged for future prioritization only, per explicit founder instruction to work the encoded order without inserting new work ahead of it.
+
+---
+
+### ISSUE-1173: Build PLP Meta Ads backend (4 cloud functions) — BLOCKED on Meta Business account
+
+- **Re-ticketed from:** ISSUE-499 (2026-07-21 housecleaning; original status was: `🚧 BLOCKED / PLANNED — **Severity:** 🟠 HIGH (feature incomplete) — **Module:** `packages/firebase` + `services/marketing/AdAutomationService.ts``)
+- **Scope note (2026-07-21):** engineering remainder ONLY (build the 4 PLP Meta Ads cloud functions to code-complete, fail-closed until credentials exist). The Meta Business account / App Review portion is founder work tracked in `docs/RELEASE_CHECKLIST.md` § "Social Platform Developer Registrations (ISSUE-766)". Do not block this ticket on it.
+
+- **Status:** 🚧 BLOCKED / PLANNED — **Severity:** 🟠 HIGH (feature incomplete) — **Module:** `packages/firebase` + `services/marketing/AdAutomationService.ts`
+- **Decision (William, 2026-06-24):** PLP should be a _real, gated_ ad pipeline. **But William has no Meta Business account available right now**, so this is parked until he does. Do NOT start until the prerequisites below exist. The financial-safety frontend (confirmation gate + honest failure, ISSUE-495/497) is already merged (#200), so PLP is safe in the meantime — it generates variants and reports honestly that no campaign launched.
+- **What's missing:** the frontend (`AdAutomationService.ts`) calls four Firebase callables that **do not exist**: `createAdCampaign` (`:59`), `createAdSet` (`:83`), `createAd` (`:114`), `getAdInsights` (`:144`) — plus `pauseAdCampaign` (`:215`) used by the CPS kill-switch. They must be implemented in `packages/firebase/src` against the **Meta Marketing API** (Graph API).
+
+---
+
+### ISSUE-1174: Enhanced Showroom handoffs fail unless the product asset is already an inline data URL
+
+- **Re-ticketed from:** ISSUE-936 (2026-07-21 housecleaning; original status was: `✅ FIXED (2026-07-13 — URL and data-URI assets resolve through a validated media boundary)`)
+
+- **Status:** ✅ FIXED (2026-07-13 — URL and data-URI assets resolve through a validated media boundary)
+- **Fix applied (2026-07-13):** `ShowroomService` now resolves its source asset through the shared URL/data-URI image resolver before calling image generation. It preserves the actual MIME type and rejects unreadable/non-image sources with a typed error instead of treating a URL string as base64 image bytes. Renderer typecheck and diff integrity pass.
+
+- **Status:** ⏳ BACKLOG — consolidated
+- **Severity:** 🟠 HIGH
+- **Module:** Merchandise / Enhanced Showroom / Cross-module handoff
+- **Evidence:** The component accepts `initialAsset` and stores it unchanged (`EnhancedShowroom.tsx:132-141`). Mockup generation then requires `productAsset` to match `^data:(.+);base64,(.+)$` and throws “Invalid asset data” for every HTTPS, blob, `file://`, canonical `gs://`, or raw SVG asset (`:325-340`). This is not only an external-handoff case: the Designer advertises SVG in its Export to Showroom dialog (`ExportDialog.tsx:11-16`); Fabric returns raw `<svg ...>` markup for that choice (`DesignCanvas.tsx:749-752`), then the parent labels it exported and opens `EnhancedShowroom` with that raw value (`MerchDesigner.tsx:303-314`, `:760-763`). Creative/merch handoffs commonly carry durable URLs/Storage URIs, not inline base64.
+- **Impact:** “Sent to Merch Designer/Showroom” can preview an asset but fail at the actual mockup step, forcing re-upload and breaking lineage.
+- **Fix:** Resolve/fetch authorized storage and local asset schemes through the shared media resolver, validate image MIME, and upload/pass a durable reference URI without requiring base64 in React state.
+- **Acceptance:** Data URL, HTTPS, `gs://`, and Designer-exported SVG fixtures all reach composite generation with the intended image bytes (SVG may be safely rasterized at an explicit resolution); unsupported/local-inaccessible schemes show a repair action and never produce a false export/success toast.
+
+---
+
+## Session 2026-07-21 — Long iPhone Recording → Session Breakdown, Master Sync, Dialogue Cleanup, and Selects
+
+> **Founder product direction:** An artist can upload one messy, long real-world phone recording containing lip-sync/performance footage, announcements, corrected takes, candid moments, profanity after mistakes, setup time, and unusable material. indii preserves the original, synchronizes performance footage to the artist's canonical master, cleans spoken audio non-destructively, proposes organized selects, and requires Director's Cut approval before compiling a persistent timeline or rendering anything.
+>
+> **Encoded delivery order:** ISSUE-1175 → ISSUE-1176 → ISSUE-1177 → ISSUE-1178 → ISSUE-1179 → ISSUE-1180 → ISSUE-1181. Do not skip ahead by creating a parallel upload, timeline, render, or social-delivery architecture. The first customer-visible MVP is ISSUE-1175 through ISSUE-1180; ISSUE-1181 completes downstream variants and handoff.
+>
+> **Existing prerequisites—reuse, do not duplicate:** ISSUE-1169/1170 own canonical-master verification and production analysis; ISSUE-1147 owns durable project-scoped timeline persistence; ISSUE-1123 owns completed editor-export artifacts; ISSUE-1157 owns private server-controlled rendering; ISSUE-1159 owns the terminal/playable-asset eligibility rule for Social/Campaign; ISSUE-1145 owns typed video/image asset handling; ISSUE-1168 owns production Gemini routing and spend alerting.
+>
+> **Non-negotiable architecture boundary:** Deterministic media/DSP code owns timestamps, proxy/original mapping, guide-audio matching, drift correction, audio filters, loudness, and rendering. Gemini may transcribe, classify, compare takes, explain recommendations, and return a bounded structured plan; it must never invent edit boundaries, perform sample-accurate synchronization, execute arbitrary editing code, or directly mutate the timeline. Originals and canonical masters are immutable inputs. All edits and cleanup are reversible derivatives.
+
+### ISSUE-1175: Secure long-recording ingestion must preserve the original and produce an auditable edit-proxy manifest
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🔴 HIGH (foundation for the entire Session Breakdown workflow; raw unreleased footage and masters are privacy-sensitive)
+- **Module:** New shared session-media contracts; `packages/renderer/src/services/video/VideoUploadService.ts`; Firebase owner-scoped upload/session functions and Storage rules; new long-media worker; Creative Video session UI
+- **Depends on / coordinates with:** ISSUE-1145 typed media boundaries. Do not reuse the existing generated-video upload contract unchanged.
+- **Evidence:** `VideoUploadService` provides browser resumable upload and progress but caps inputs at 500 MB and treats them as ordinary generated video. Storage rules allow `/videos/{uid}/**` up to 500 MB while `/creative/{uid}/**` is capped at 100 MB. `getMediaDuration.ts` securely probes an owned object but only returns duration; it does not preserve an immutable source receipt, normalize HEVC/HDR/VFR footage, extract guide audio, or create proxies. Current timeline imports use the whole media URL and have no proxy/original identity or presentation-timestamp mapping.
+- **Impact:** A real iPhone session can exceed current limits, fail mid-upload, display with the wrong rotation or color, drift after variable-frame-rate decoding, expose private footage through an inappropriate URL lifecycle, or force analysis/rendering to operate on the only copy. Every later synchronization and cut decision would inherit unreliable timing.
+- **Required implementation:** Define versioned shared contracts for `CanonicalMediaRef`, `VideoSession`, and `ProxyManifest`. Issue server-authorized resumable upload sessions bound to authenticated owner, organization, project, expected size/MIME, and idempotency key. Preserve the original as a generation-pinned, hash-verified private object and never overwrite it. Produce a private H.264/AAC 720p constant-frame-rate Rec.709 editing proxy with orientation baked in; retain the technical inspection and explicit proxy-time ↔ original-presentation-time mapping. Extract a guide-audio derivative, waveform data, thumbnails/contact sheet, duration, stream/codec metadata, HDR/VFR flags, and processing provenance. Persist retry-safe job state, cost estimate/reservation, cancellation, retention, failed-staging cleanup, and dependency-aware deletion behavior. Send proxies/keyframes—not the original HDR asset—to later model analysis.
+- **Data/ownership rules:** Store durable time in integer microseconds. Every source, proxy, guide, and manifest record must carry owner/project identity, bucket/path, Storage generation, SHA-256, MIME, byte size, worker/schema version, and creation receipt. Clients may not manufacture completed manifests or replace original-generation identity. Cross-user reads, updates, resumptions, and deletes must fail closed.
+- **Acceptance:** (1) A large interrupted upload resumes without duplicating or replacing original bytes. (2) Cross-owner upload-session use and media access are denied. (3) Rotated VFR HEVC/HDR fixtures create correctly oriented, playable private SDR/CFR proxies. (4) Proxy↔original mapping remains within one output frame at beginning, middle, and end. (5) The original hash/generation is unchanged through proxying and deletion of a proxy never deletes the original. (6) Retry returns the same completed manifest without duplicate processing or charge. (7) Cancellation and retention cleanup remove only eligible staging/derivative objects and leave an auditable terminal state.
+- **Verification:** Add Storage/Firestore emulator ownership tests, callable/job idempotency tests, interrupted-upload tests, FFprobe/transcode fixtures for rotation/HDR/VFR/HEVC, time-map assertions, worker cleanup tests, and a real authenticated upload/proxy smoke test before closure.
+- **Do not:** Do not store raw video bytes in Firestore, expose permanent public/download-token URLs as identity, transcode over the source, silently discard HDR/VFR evidence, or route this through the short Veo-generation payload merely because both produce video files.
+
+---
+
+### ISSUE-1176: Phone guide audio cannot yet align repeated or partial performances to the immutable canonical master
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🔴 HIGH (core product differentiator; incorrect matching produces visible lip-sync failure)
+- **Module:** New media/DSP synchronization worker and shared `MasterTimingProfile` / `MasterSyncAlignment` contracts; canonical-master analysis sidecars; session job APIs
+- **Depends on:** ISSUE-1175 for verified proxy/guide audio; ISSUE-1169 and ISSUE-1170 must provide the live verified canonical-master path and receipt before production enablement.
+- **Evidence:** `AcousticFingerprintService`/`FingerprintService` can compute or compare whole-file fingerprints in renderer/Electron contexts, but cannot locate a noisy partial occurrence within a long session, distinguish repeated takes, estimate drift, or persist alignment evidence. Existing master analysis has tempo, beat count, RMS/peak/clipping, transient energy, and semantic timestamps, but no reusable beat timestamps, onset map, chroma sequence, landmark index, or section timing. `VideoIngestionPipeline` only snaps an imported clip to a nearby beat; it is not source-to-master synchronization.
+- **Impact:** Artists who naturally lip-sync or perform to music playing in the room cannot replace the phone audio with the clean master or intercut multiple takes safely. Bluetooth delay, room echo, speech, compression, dropped frames, VFR normalization, repeated choruses, and demo/final-version differences make a single offset or Gemini guess unsafe.
+- **Required implementation:** Create a versioned, generation-pinned `MasterTimingProfile` sidecar keyed by canonical master content hash + Storage generation, containing bounded matching primitives such as beat/onset timestamps, chroma/spectral sequences, fingerprint landmarks, and sections when reliable. Build a server-side, idempotent multi-window alignment job that compares the guide track to an authenticated artist-owned canonical master, discovers full and partial/repeated plays, creates confidence-bearing anchors, fits bounded linear or piecewise-linear mappings, reports initial offset, drift PPM, discontinuities, residual error, candidate versions, and no-match/needs-review states. Persist immutable alignment evidence separately from the mutable timeline. Provide an explicit manual-nudge/master-version override that adds auditable manual anchors rather than rewriting evidence.
+- **Required contract:** `MasterSyncAlignment` must bind owner, source/proxy/guide generation, canonical master fingerprint/hash/generation, time-map version, ordered `{videoUs, masterUs, confidence, method}` anchors, fit model, residual P95, drift, status, aggregate confidence, algorithm version, and manual overrides. Timeline consumers reference the alignment ID; they do not copy an unexplained offset.
+- **Confidence policy:** Only high-confidence, non-ambiguous matches may auto-lock. Wrong versions, repeated-section ambiguity, excessive drift, discontinuities, poor evidence, or conflicting candidates require artist review. A no-match is a valid successful result and must never be converted into a fabricated alignment.
+- **Acceptance:** (1) Noisy/reverberant fixtures containing speech, simulated speaker/Bluetooth delay, codec loss, and partial performances align to the known master within 40 ms and remain within one output frame at beginning, middle, and end. (2) Multiple takes map to the same continuous master clock. (3) Wrong-version and repeated-chorus ambiguity never auto-lock. (4) Slow drift is represented by bounded anchors/mapping rather than destructive master resampling. (5) Cross-user master selection is rejected. (6) Retry reuses the alignment receipt without recomputing paid/expensive work. (7) Manual nudges are reversible and provenance-stamped.
+- **Verification:** Extend `packages/engine-dsp/test_pipeline.py`-style synthetic fixtures with known offsets, repeated passages, noise/reverb, missing frequency bands, drift, discontinuities, wrong-version/no-match cases, and false-match thresholds. Add owner/provenance/API tests and one rendered audio/visual marker fixture that verifies sync at three timeline positions.
+- **Do not:** Gemini must not choose sample-accurate offsets. Do not rely on whole-file hash/Hamming similarity, a single correlation window, BPM equality, or mutating/stretching the canonical master. Never infer ownership or usage rights merely because audio matched.
+
+---
+
+### ISSUE-1177: Long sessions lack grounded transcription, take detection, and a validated non-destructive edit-plan contract
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🔴 HIGH (without this layer the user still has to manually review the entire recording)
+- **Module:** New session-analysis pipeline; shared `SessionSegment` / `SessionEditPlan` schemas; Gemini/Vertex backend; transcript and analysis receipts
+- **Depends on:** ISSUE-1175 deterministic media evidence; ISSUE-1176 sync evidence for performance regions; ISSUE-1168 production model routing/cost controls before paid rollout.
+- **Evidence:** No persistent service currently combines word-timestamp transcription, VAD/silence, scene boundaries, audio-quality evidence, and master-match regions into session segments. Gemini can understand audio/video and compare language intent, but the editor has no versioned schema for setup, spoken takes, performances, candid/BTS moments, failed takes, bloopers, alternatives, or rejected ranges. Nothing currently prevents an LLM from returning out-of-range or ungrounded cut timestamps.
+- **Impact:** A recording containing “the show is Friday… shit, wrong date,” repeated announcements, candid conversation, and a lip-sync performance cannot be organized automatically or explained honestly. Automatic deletion of profanity/mistakes would also destroy potentially useful bloopers and violate creator intent.
+- **Required implementation:** Generate deterministic candidate boundaries from VAD, silence, scene changes, audio-quality measurements, proxy/original time mapping, and master-match regions. Produce durable word-level timestamps through a production transcription path, then provide only bounded evidence plus proxy/keyframes/transcript to Gemini for semantic classification and comparison. Return a strict, versioned, server-validated `SessionEditPlan` whose segments classify `performance | spoken | candid | failed_take | setup | unknown`, preserve every original range, identify alternatives/bloopers/hooks, record reasons/confidence/quality flags, and reference sync/audio recipes without executing them. Validate ordering, bounds, overlaps, evidence references, ownership, schema/model/worker versions, and source/master generations before persistence.
+- **Product rules:** Profanity, mistakes, silence, and failed takes are classifications—not automatic deletion rules. Gemini may recommend a best take and explain that it contains the corrected date, but may not silently rewrite facts or fabricate replacement speech. Rejected/setup material remains recoverable. Low-confidence results become review flags. Re-analysis creates a new immutable plan version and never silently changes an approved version.
+- **Acceptance:** (1) A representative fixture with setup, three announcement attempts, corrected event information, profanity after a failure, candid speech, silence, and a lip-sync segment produces grounded classifications without deleting any source range. (2) Every proposed boundary maps to deterministic evidence and is valid in original/proxy time. (3) Performance segments reference real ISSUE-1176 alignments. (4) Invalid, overlapping, stale-generation, or out-of-range model output fails closed. (5) Retry reuses cached deterministic/transcript receipts and cannot double-charge. (6) A no-speech/no-match session returns an honest limited result. (7) Provider/model/schema/worker and cost provenance are stored.
+- **Verification:** Unit-test schema and semantic validation, malicious/out-of-range structured responses, corrected-fact and repeated-take fixtures, profanity/blooper preservation, no-speech and model-failure fallbacks, idempotency/cost settlement, and cross-user denial. Add an integration test that rebuilds the same plan from persisted evidence without reuploading source media.
+- **Do not:** Do not send private originals to consumer AI Studio, expose raw provider reasoning, treat model confidence as timing precision, auto-censor profanity, synthesize words the artist did not say, or let the model write Remotion/FFmpeg commands.
+
+---
+
+### ISSUE-1178: Spoken takes and performance clips need non-destructive cleanup, master replacement, ambience blending, and music ducking
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH (finishing gap forces artists into a second audio application after indii finds the right take)
+- **Module:** New server-side audio-recipe/processing worker; shared `AudioRecipe` and derivative receipt contracts; Video session preview and Remotion/FFmpeg mixing
+- **Depends on:** ISSUE-1175 guide/original assets; ISSUE-1176 synchronized performance mapping; ISSUE-1177 classified spoken/performance regions.
+- **Evidence:** Existing audio QC is heuristic and explicitly does not provide authoritative FFmpeg loudness processing. No production path performs conservative denoise, rumble/hum reduction, leveling, compression, de-essing/dereverberation, speech-driven ducking, or room-tone handling. The timeline supports simple volume/keyframes and `MyComposition` can render audio clips, but there is no approved filter-graph/recipe contract, processed-derivative receipt, or truthful damage assessment.
+- **Impact:** Selected announcements may remain noisy, quiet, inconsistent, or reverberant; master-backed performance footage cannot intentionally choose “clean master only” versus “blend room/crowd ambience”; spoken posts cannot add the artist's own song underneath without manual mixing elsewhere. Aggressive automatic restoration can produce metallic voices or falsely imply unrecoverable audio was repaired.
+- **Required implementation:** Define immutable/versioned `AudioRecipe` records and retry-safe derivative jobs. Support user-selectable `Natural` (default), `Clean`, `Studio`, and `Rescue` profiles implemented as bounded, documented filter graphs. Baseline operations may include high-pass/rumble and hum reduction, conservative denoise, leveling/compression, de-essing/dereverberation where evidence supports it, true loudness/peak measurement and normalization, and short-fade/room-tone continuity. Performance mode must use the ISSUE-1176 map to replace phone playback with the untouched master or blend an approved amount of guide ambience. Spoken mode may mix an authenticated artist-owned master beneath speech using a deterministic ducking envelope. Preserve the original audio and every recipe/derivative; preview before approval and make cleanup fully disableable/changeable.
+- **Quality/honesty policy:** Detect and disclose severe clipping, speech masked by music, extreme wind, distant reverberant speech, or overlapping speakers. When safe restoration is unlikely, recommend another take, captions/silent B-roll, voice-over, or master-only use; never report “repaired” merely because a job emitted bytes. Do not reconstruct or alter spoken words.
+- **Acceptance:** (1) Spoken output meets the selected loudness/true-peak target without clipping and with no silent channel loss. (2) Natural preset remains conservative in objective and listening fixtures. (3) Performance output stays within ISSUE-1176 sync tolerance at beginning/middle/end. (4) Master bytes/generation never change. (5) Guide ambience blend and speech ducking are reproducible from the stored recipe. (6) Cleanup can be bypassed or changed without re-ingesting media. (7) Severely damaged fixtures are flagged, not falsely marked repaired. (8) Retry does not create duplicate derivatives/charges and cross-user masters cannot be mixed.
+- **Verification:** Add deterministic filter-graph unit tests, LUFS/true-peak assertions, synthetic noise/hum/wind/clipping/reverb fixtures, before/after derivative lineage tests, sync regression tests, preset snapshot/version tests, owner checks, cancellation/cleanup tests, and human-listening review notes for golden fixtures before closure.
+- **Do not:** Do not overwrite original/guide/master audio, promise perfect restoration, default to aggressive isolation, use a generated imitation of the master, or publish a processed derivative without artist approval.
+
+---
+
+### ISSUE-1179: Session Breakdown needs a Director's Cut review surface with immutable approvals and low-confidence gates
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🔴 HIGH (human approval is the safety and trust boundary for editorial decisions)
+- **Module:** New `packages/renderer/src/modules/creative/video/session/**`; Director's Cut/selects UI; session state/services; approval receipts
+- **Depends on:** ISSUE-1177 edit-plan versions; ISSUE-1176 synchronization evidence; ISSUE-1178 audio recipes/previews. Timeline compilation remains in ISSUE-1180.
+- **Evidence:** The current Video Studio has Director/review patterns for generated video, but no long-session chapter/selects view, transcript keep/remove review, repeated-take alternatives, master-sync confidence display, before/after dialogue preview, manual nudge, immutable plan approval, or stale-plan protection. Current editor state cannot represent an approval receipt tied to exact source/master/plan generations.
+- **Impact:** Automatically selected footage could conceal a corrected take, choose the wrong master passage, remove an intentional candid moment, apply unwanted cleanup, or render stale analysis. Without a simple review layer, the user must enter a full nonlinear editor just to understand what indii found.
+- **Required implementation:** Build a project-scoped Session Breakdown review showing processing status, chapters, transcript, suggested keep/remove ranges, best/alternate takes, candid/BTS and optional blooper groups, setup/rejected material, audio/visual quality flags, source and output durations, sync candidate/confidence/evidence, clean-master preview, guide/master/ambience modes, cleanup before/after, cost state, and explicit repair actions. Allow per-segment keep/reject/blooper decisions, trim-handle changes, sync nudges/master-version selection, audio-recipe choice, approve selected, and open-in-timeline intent. Persist immutable `ApprovalReceipt` records binding owner/project, source/proxy/master generations, alignment and plan version, accepted/rejected IDs, boundary/audio overrides, approver, and timestamp.
+- **Approval rules:** Analysis completion never equals approval. Low-confidence sync, ambiguous master, stale source/plan, excessive drift, damaged audio, or validation failures require explicit action and cannot be batch-approved invisibly. Re-analysis after approval produces a new candidate plan; it does not mutate the receipt. Every recommendation must remain explainable and reversible.
+- **Acceptance:** (1) Reload restores the exact reviewed plan and decisions. (2) Approval of a stale/replaced plan or generation is rejected. (3) Low-confidence items require individual acknowledgement. (4) User can recover rejected/setup material and promote a failed take to blooper. (5) Sync nudge and audio choices update a new review version without rewriting raw analysis. (6) No render, timeline mutation, social draft, or publishing occurs merely because analysis finished. (7) Cross-project/cross-user review and approval are denied. (8) UI is keyboard accessible and usable on the supported desktop/web surfaces.
+- **Verification:** Add reducer/service tests for plan/version transitions, stale approval and ownership denial, component tests for every classification and empty/error state, interaction tests for trim/nudge/audio preview/batch approval, accessibility tests, reload persistence tests, and one end-to-end long-session review fixture.
+- **Do not:** Do not hide rejected footage permanently, fabricate certainty, auto-approve on timeout, use private download URLs as record identity, or implement timeline/render side effects inside UI components.
+
+---
+
+### ISSUE-1180: Approved session selects cannot compile into a durable master-relative timeline or render exact source ranges
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🔴 HIGH (first customer-visible MVP completion; without this, approved selects cannot become an editable video)
+- **Module:** Shared `TimelineSourceClip` schema; `videoEditorStore.ts`; timeline project persistence/compiler; preview components; `MyComposition.tsx`; render contract
+- **Hard dependency:** ISSUE-1147 durable project-scoped timeline persistence must be resolved first or in the same ordered implementation. Also depends on ISSUE-1179 approval receipts and ISSUE-1176/1178 sync/audio references. Do not create a second session-only timeline database.
+- **Evidence:** `VideoClip` currently has timeline `startFrame`/duration, URL, volume, fingerprint/ISRC, and keyframes but no source in/out, canonical media generation, original/proxy identity, alignment ID, master-relative range, timing map, guide-audio policy, audio-recipe reference, or sync lock. `MyComposition` starts each media source at its beginning, so cut-up takes cannot reliably preview/render exact source ranges. The editor store is currently ephemeral/project-insufficient per ISSUE-1147.
+- **Impact:** Approved takes may play from the wrong source position, lose sync after trimming/reordering, render differently from preview, disappear on reload, bleed between projects, or break lineage to the original/master/approval. Multiple takes cannot be intercut over one continuous master safely.
+- **Required implementation:** Extend the single durable project/timeline contract with canonical asset references, integer-microsecond source in/out, proxy↔original mapping version, alignment ID, master-relative in/out, timeline placement, sync-lock/detach state, guide/master/ambience audio policy, audio-recipe ID, and approval/plan provenance. Implement a pure, idempotent compiler from one valid ISSUE-1179 approval receipt to a project-scoped timeline revision. Preview uses the proxy and applies exact source ranges/mapping; final render resolves authorized originals and canonical master server-side and applies the same range/timing/audio semantics. Sync Lock preserves the video↔master relationship while trimming or intercutting; explicit detach is auditable. Reject stale or cross-owner references.
+- **MVP boundary:** One long source video and one canonical master per session; multiple detected takes from that source may be intercut. Multi-phone/multicamera synchronization, native iOS Share Sheet/background transfer, automatic reframing, learned artist editing profiles, and autonomous publishing are follow-up work, not hidden scope here.
+- **Acceptance:** (1) Three takes from one source intercut over one continuous master and remain within one frame at beginning/middle/end. (2) Preview and final Remotion output honor identical source ranges, mapping, sync locks, and audio recipes. (3) Reload restores the exact project with no cross-project bleed. (4) Re-running the compiler for the same approval is idempotent. (5) Manual trims preserve sync until explicit detach. (6) Final render reads original/private assets through authorized server resolution, never the proxy as final quality. (7) Stale generations, missing approval, and cross-owner assets fail closed with repairable errors.
+- **Verification:** Extend `videoEditorStore.test.ts` with source bounds, sync-lock trim/move/detach, project isolation, and master-time conversion tests. Add compiler idempotency/provenance tests, Remotion source-range tests, private asset resolution tests, and a rendered flash/click-marker fixture asserting A/V sync at three positions.
+- **Do not:** Do not store frame-only source truth, copy opaque URL strings into the timeline as provenance, mutate a project before approval, render final output from the proxy, or bypass ISSUE-1147 with a parallel persistence store.
+
+---
+
+### ISSUE-1181: Approved session timelines need private derivative receipts and typed Social/Campaign handoff—not client URLs or premature publishing
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH (completes value delivery while protecting unreleased footage and explicit publishing consent)
+- **Module:** Private render lifecycle; generated asset library; platform-variant jobs; Social/Campaign typed handoff; lineage and deletion
+- **Depends on:** ISSUE-1180 durable compiled timeline; ISSUE-1123 completed export artifact lifecycle; ISSUE-1157 private server-owned rendering; reuse ISSUE-1159's terminal/playable-asset eligibility pattern. Do not duplicate those systems or PLP/Meta Ads work.
+- **Evidence:** Session outputs need 9:16/1:1/16:9 derivatives and downstream Social/Campaign availability, but existing issues already establish that render completion must produce durable playable artifacts, rendering/private resolution belongs on the server, and queued/failed/output-less jobs are ineligible for handoff. Passing client-supplied URLs would lose ownership, provenance, and terminal-state guarantees.
+- **Impact:** Raw or failed assets could be scheduled, private unreleased media could leak, the wrong master/edit version could be published, retries could duplicate variants/spend, and deleting a source could strand undocumented derivatives.
+- **Required implementation:** From an approved ISSUE-1180 project revision, reserve/execute idempotent private render jobs and produce terminal `DerivativeAssetReceipt` records binding owner/project, source session/generations, canonical master identity/ISRC, alignment, plan/approval/timeline revision, audio recipe, renderer/schema versions, aspect ratio, codec, duration, checksums, cost receipt, and private output identity. Generate explicitly requested platform variants without silently reframing/cropping artist intent. Insert only completed/playable derivatives into the asset library. Create typed `SocialHandoffDraft`/Campaign references containing asset IDs and proposed metadata—not arbitrary URLs. Resolve private bytes server-side only during an explicit authorized delivery action; posting/scheduling remains a separate user approval. Implement dependency-aware deletion and lineage display.
+- **Safety/cost rules:** Show estimated render/variant cost before paid work; enforce duration/size/concurrency budgets; cancellation and retry cannot double-charge; AI/model/provider provenance is recorded where used. No automatic publishing, fact correction, censorship, public URL creation, or artist-wide preference learning without separate explicit opt-in.
+- **Acceptance:** (1) Queued, failed, cancelled, output-less, stale-approval, or non-playable renders cannot enter Social/Campaign. (2) Another user cannot read or hand off a derivative. (3) Every variant preserves lineage to source, master, sync map, edit plan, approval, timeline, audio recipe, and render receipt. (4) Handoff carries a typed asset ID and terminal state, never a client-supplied URL. (5) Scheduling/posting requires a separate explicit approval and cannot occur from analysis/render completion. (6) Retry is idempotent and does not duplicate variants/charges. (7) Dependency-aware deletion warns about and handles derivatives without silently deleting the immutable source/master.
+- **Verification:** Add terminal-state eligibility tests, cross-user private-output tests, idempotent render/variant tests, lineage/schema validation, asset-library insertion tests, Social/Campaign handoff contract tests, deletion-graph tests, and an end-to-end approved-session → private render → library → draft (not posted) fixture.
+- **Do not:** Do not expose raw `gs://`/download-token URLs as handoff authority, make failed jobs look completed, duplicate ISSUE-1123/1157/1159 implementations, automatically crop/reframe or publish, or claim music rights from an acoustic match.
+
+---
