@@ -46,8 +46,15 @@ app.get('/sse', async (req, res) => {
 
     console.log(`[MCP Server] New SSE connection request for uid ${decoded.uid}`);
 
-    // In production this endpoint URL should match what Cloud Functions exposes.
-    const messageUrl = `${req.baseUrl || ''}/message`;
+    // Build a fully-qualified absolute URL rather than a bare relative path.
+    // req.baseUrl's value for a route mounted at the app root is inconsistent
+    // between Cloud Functions generations (observed empty on Gen2, live test
+    // 2026-07-21), and the MCP SDK client resolves a leading-slash relative
+    // path against the origin ROOT — silently dropping any function-name
+    // path prefix and 404ing the POST /message leg. Deriving from
+    // req.originalUrl preserves whatever prefix actually got this request
+    // here, regardless of platform-specific path-rewriting behavior.
+    const messageUrl = `${req.protocol}://${req.get('host')}${req.originalUrl.replace(/\/sse(?:\?.*)?$/, '/message')}`;
     const transport = new SSEServerTransport(messageUrl, res);
     const sessionId = transport.sessionId;
 
