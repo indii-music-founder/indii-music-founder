@@ -10,6 +10,10 @@ import { McpContext } from './types.js';
 import * as toolModules from './tools/index.js';
 
 const ALL_TOOLS = Object.values(toolModules);
+// Stateless across sessions (its internal tools Map is built once and never
+// mutated; only .register(server, context) below is per-session) — built
+// once here rather than re-constructed on every single SSE connection.
+const registry = new McpToolRegistry(ALL_TOOLS);
 
 const app = express.default();
 // Cloud Functions/Cloud Run terminates TLS at the load balancer and forwards
@@ -83,7 +87,6 @@ app.get('/sse', async (req, res) => {
     );
 
     const context: McpContext = { user: decoded };
-    const registry = new McpToolRegistry(ALL_TOOLS);
     registry.register(server, context);
 
     sessions.set(sessionId, { context, transport });
