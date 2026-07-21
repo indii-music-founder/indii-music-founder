@@ -63,6 +63,11 @@ export const INTELLIGENCE_MODELS = {
     BROWSER: {
         AGENT: APPROVED_MODELS.BROWSER_AGENT,
     },
+    // CE-3, ISSUE-1112: reuses BROWSER_AGENT — same screenshot-reasoning loop shape
+    // (capture -> reason -> act), just coordinate-space instead of CSS-selector-space.
+    COMPUTER: {
+        AGENT: APPROVED_MODELS.BROWSER_AGENT,
+    },
     EMBEDDING: {
         DEFAULT: APPROVED_MODELS.EMBEDDING_DEFAULT,
     }

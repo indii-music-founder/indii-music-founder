@@ -445,6 +445,7 @@ service cloud.firestore {
       match /agent_audit/{auditId} { allow read, write: if isOwner(userId); }
       match /agent_dispatch_queue/{taskId} { allow read, write: if isOwner(userId); }
       match /browserHistory/{entryId} { allow read, write: if isOwner(userId); }
+      match /computerSessions/{sessionId} { allow read, write: if isOwner(userId); }
       match /contacts/{contactId} { allow read, write: if isOwner(userId); }
       match /crisis_responses/{responseId} { allow read, write: if isOwner(userId); }
       match /email_pitches/{pitchId} { allow read, write: if isOwner(userId); }

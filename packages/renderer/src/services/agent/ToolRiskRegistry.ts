@@ -256,6 +256,7 @@ export const TOOL_RISK_REGISTRY: Record<string, ToolRiskMetadata> = {
     computer_type: { riskTier: 'destructive', permissionTier: 'plugin', requiresApproval: true, description: 'Types text into the currently focused field on the host desktop — requires explicit user approval' },
     computer_key: { riskTier: 'destructive', permissionTier: 'plugin', requiresApproval: true, description: 'Sends a key combo to the host desktop — requires explicit user approval' },
     computer_scroll: { riskTier: 'destructive', permissionTier: 'plugin', requiresApproval: true, description: 'Scrolls on the host desktop — requires explicit user approval' },
+    computer_drive: { riskTier: 'destructive', permissionTier: 'plugin', requiresApproval: true, description: 'Autonomously drives the host desktop toward a goal via a screenshot-reason-act loop — requires explicit user approval' },
     update_agent_memory: { riskTier: 'destructive', permissionTier: 'plugin', requiresApproval: true, description: "Permanently modify an agent's system instructions (brain surgery)" },
 
     // =========================================================================

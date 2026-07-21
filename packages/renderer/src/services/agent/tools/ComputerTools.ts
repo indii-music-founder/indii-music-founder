@@ -1,6 +1,8 @@
 import { wrapTool, toolError, toolSuccess } from '../utils/ToolUtils';
 import type { AnyToolFunction } from '../types';
 import { logger } from '@/utils/logger';
+import { importWithRetry } from '@/utils/dynamicImport';
+import type { DocumentReference } from 'firebase/firestore';
 
 /**
  * ComputerTools: OS-level "Hands & Eyes" — CE-1 (ISSUE-1110), read path only.
@@ -10,8 +12,9 @@ import { logger } from '@/utils/logger';
  *
  * Input control (click/type/key/scroll) is CE-2 (ISSUE-1111) — classified `destructive`
  * with `requiresApproval: true` in ToolRiskRegistry.ts, so every call pauses on
- * DigitalHandshake unless already approved. The autonomous drive loop is CE-3 (ISSUE-1112),
- * not implemented here. See docs/COMPUTER_EXECUTION_EXTENSION.md.
+ * DigitalHandshake unless already approved. `computer_drive` (CE-3, ISSUE-1112) is the
+ * autonomous goal-driven loop built on top of these primitives. See
+ * docs/COMPUTER_EXECUTION_EXTENSION.md.
  */
 export const ComputerTools = {
     /**
@@ -188,6 +191,66 @@ export const ComputerTools = {
         } catch (error: unknown) {
             logger.error('[ComputerTools] computer_scroll error:', error);
             return toolError(`Failed to invoke scroll: ${String(error)}`, 'COMPUTER_INVOKE_ERROR');
+        }
+    }),
+
+    /**
+     * Autonomously drives the desktop toward a goal via screenshot-reason-act loop
+     * (CE-3, ISSUE-1112). Destructive tier — requires approval, same as the primitives
+     * it composes. Writes a session doc to users/{uid}/computerSessions/{id} — stores a
+     * step log (action + SHA-256 screenshot hash, never raw frames) and status, matching
+     * the existing videoJobs status-doc pattern.
+     */
+    computer_drive: wrapTool('computer_drive', async (args: { goal: string; maxSteps?: number }) => {
+        try {
+            if (typeof window === 'undefined' || !window.electronAPI?.computer) {
+                return toolError('Computer control requires the indii desktop app.', 'COMPUTER_DESKTOP_ONLY');
+            }
+            if (!args.goal || !args.goal.trim()) {
+                return toolError('A non-empty goal is required.', 'COMPUTER_DRIVE_INVALID_GOAL');
+            }
+
+            const { computerAgentDriver } = await importWithRetry(() => import('../ComputerAgentDriver'));
+            const { db, auth } = await importWithRetry(() => import('@/services/firebase'));
+            const { collection, addDoc, updateDoc, serverTimestamp } = await importWithRetry(() => import('firebase/firestore'));
+
+            const uid = auth.currentUser?.uid;
+            let sessionRef: DocumentReference | undefined;
+            if (uid) {
+                try {
+                    sessionRef = await addDoc(collection(db, 'users', uid, 'computerSessions'), {
+                        goal: args.goal,
+                        status: 'running',
+                        startedAt: serverTimestamp(),
+                        maxSteps: args.maxSteps ?? 15,
+                    });
+                } catch (sessionErr: unknown) {
+                    logger.warn('[ComputerTools] Failed to create computer session doc:', sessionErr);
+                }
+            }
+
+            const result = await computerAgentDriver.drive(args.goal, args.maxSteps ?? 15);
+
+            if (sessionRef) {
+                try {
+                    await updateDoc(sessionRef, {
+                        status: result.success ? 'complete' : 'failed',
+                        steps: result.steps,
+                        logs: result.logs,
+                        completedAt: serverTimestamp(),
+                    });
+                } catch (sessionErr: unknown) {
+                    logger.warn('[ComputerTools] Failed to update computer session doc:', sessionErr);
+                }
+            }
+
+            if (result.success) {
+                return toolSuccess({ steps: result.steps, logs: result.logs, sessionId: sessionRef?.id }, `Goal achieved in ${result.steps} step(s).`);
+            }
+            return toolError(`Drive did not complete the goal (${result.steps} step(s) attempted). See logs for detail.`, 'COMPUTER_DRIVE_INCOMPLETE', { logs: result.logs, sessionId: sessionRef?.id });
+        } catch (error: unknown) {
+            logger.error('[ComputerTools] computer_drive error:', error);
+            return toolError(`Failed to invoke computer_drive: ${String(error)}`, 'COMPUTER_INVOKE_ERROR');
         }
     })
 } satisfies Record<string, AnyToolFunction>;
