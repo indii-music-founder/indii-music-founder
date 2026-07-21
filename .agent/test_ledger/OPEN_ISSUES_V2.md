@@ -358,8 +358,13 @@
 ### ISSUE-1119: No v1.64.x GitHub Release exists — updater manifests 404, installed 1.50.0 builds cannot update
 
 - **Re-ticketed from:** ISSUE-768 (2026-07-21 housecleaning; original status was: `🟡 IN PROGRESS`)
-- **Status:** 🟡 IN PROGRESS
-- **Evidence (live probe 2026-07-08):** Pushed `v1.64.5` tag to trigger the release workflow. The initial run failed on macOS build due to Node.js Out Of Memory (OOM). Globally set `NODE_OPTIONS: "--max-old-space-size=6144"` in workflow templates. Re-pushing tag will start the release build again.
+- **Status:** ✅ FIXED (2026-07-21 — v1.64.6 release artifacts built successfully and promoted to Latest)
+- **Evidence (2026-07-21 resolution):** 
+  - v1.64.6 release artifacts were fully uploaded on 2026-07-10 (macOS arm64 DMG/ZIP, Windows x64 NSIS, Linux AppImage, manifests).
+  - Release was initially marked as Pre-release (preventing electron-updater from picking it up); v1.50.0 remained marked as Latest.
+  - Promoted v1.64.6 to Latest release via `gh release edit v1.64.6 --prerelease=false --latest` (2026-07-21).
+  - Verified: `gh release list` now shows v1.64.6 as Latest release; updater manifests now reference v1.64.6.
+  - Installed clients running v1.50.0 will now receive update notifications for v1.64.6.
 
 ---
 
