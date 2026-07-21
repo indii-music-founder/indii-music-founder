@@ -52,6 +52,13 @@ Production creative image generation is routed through the TypeScript Firebase g
 | [component-kit-research.md](./component-kit-research.md) | UI library analysis |
 | [video-editing-deep-dive.md](./video-editing-deep-dive.md) | Remotion, Motion Canvas |
 | [Proprietary Ingestion IP_IMPLEMENTATION_PLAN.md](./Proprietary Ingestion IP_IMPLEMENTATION_PLAN.md) | Proprietary ingestion infrastructure |
+| [product/session-breakdown.md](./product/session-breakdown.md) | Planned Session Breakdown product reference, behavior, review boundaries, and claim inventory |
+
+## 🙋 Artist Help
+
+| Document | Description |
+|----------|-------------|
+| [Session Breakdown](./help/video/session-breakdown.md) | Upcoming guide to turning a long phone recording into reviewed content |
 
 ## 🗄️ Archive
 

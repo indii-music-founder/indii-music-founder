@@ -1,0 +1,26 @@
+{
+  "skill_name": "product-docs",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Create an internal product reference and artist-facing guide for indii Session Breakdown, a planned feature that turns one long iPhone recording into reviewed, synchronized performance and spoken-content selects. The active plan is ISSUE-1175 through ISSUE-1181. Do not present the feature as live.",
+      "expected_output": "A source-linked planned product reference, an artist guide with an availability notice, explicit human review boundaries, limitations, recovery paths, and no invented UI or technical claims.",
+      "files": [
+        "docs/flowcharts/session-breakdown-roadmap.md",
+        ".agent/test_ledger/OPEN_ISSUES_V2.md"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Document a live artist feature that creates a private output but is waiting on an external platform's delivery confirmation. Explain what is complete, what is still pending, and what the artist should do without claiming delivery happened.",
+      "expected_output": "Clear distinction between verified local completion and external confirmation, with a recovery path and no false success language.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "Update a planned help guide after an artist-facing review step ships. Only promote claims supported by acceptance evidence, retain limits that are still unresolved, and list the evidence needed for remaining planned claims.",
+      "expected_output": "A precise planned-to-live documentation update that does not overstate unverified behavior.",
+      "files": []
+    }
+  ]
+}
