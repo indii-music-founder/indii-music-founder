@@ -1,13 +1,14 @@
 import React from 'react';
 import { useStore } from '../store';
 import { useShallow } from 'zustand/react/shallow';
-import { ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Layers, Folder, Bot, Sparkles, MessageSquare, SlidersHorizontal, FileText } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Layers, Folder, Bot, Sparkles, MessageSquare, SlidersHorizontal, FileText, ShieldAlert } from 'lucide-react';
 // Lazy-load subpanels to reduce the eager bundle footprint of RightPanel and the core entry chunk
 const StudioControlsPanel = React.lazy(() => import('./right-panel/StudioControlsPanel'));
 const WorkflowPanel = React.lazy(() => import('./right-panel/WorkflowPanel'));
 const KnowledgePanel = React.lazy(() => import('./right-panel/KnowledgePanel'));
 const AssetsPanel = React.lazy(() => import('./right-panel/AssetsPanel'));
 const ArtifactsPanel = React.lazy(() => import('./right-panel/ArtifactsPanel'));
+const ToolApprovalsPanel = React.lazy(() => import('./right-panel/ToolApprovalsPanel'));
 const MarketingPanel = React.lazy(() => import('./right-panel/MarketingPanel'));
 
 const PanelSuspense = ({ children }: { children: React.ReactNode }) => (
@@ -257,6 +258,15 @@ export default function RightPanel() {
             );
         }
 
+        // TAB: APPROVALS (ISSUE-1116) — pending requiresApproval:true tool calls
+        if (rightPanelTab === 'approvals') {
+            return (
+                <PanelSuspense>
+                    <ToolApprovalsPanel toggleRightPanel={toggleRightPanel} />
+                </PanelSuspense>
+            );
+        }
+
         // TAB 1: CONTEXT
         switch (currentModule) {
             case 'creative':
@@ -326,6 +336,7 @@ export default function RightPanel() {
         { id: 'context', icon: SlidersHorizontal, label: 'Context Controls' },
         { id: 'assets', icon: Folder, label: 'Project Assets' },
         { id: 'artifacts', icon: FileText, label: 'Artifacts' },
+        { id: 'approvals', icon: ShieldAlert, label: 'Approvals' },
         { id: 'agent', icon: Bot, label: 'Omni Agent' }
     ] as const;
 

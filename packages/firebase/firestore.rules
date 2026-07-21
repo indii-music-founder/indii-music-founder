@@ -459,6 +459,7 @@ service cloud.firestore {
       match /press_releases/{prId} { allow read, write: if isOwner(userId); }
       match /publishingCatalog/{compositionId} { allow read, write: if isOwner(userId); }
       match /tasks/{taskId} { allow read, write: if isOwner(userId); }
+      match /tool_approvals/{approvalId} { allow read, write: if isOwner(userId); }
       match /web3Contracts/{contractId} { allow read, write: if isOwner(userId); }
 
       // ── Usage Tracking (MembershipService daily quota / budget) ──────

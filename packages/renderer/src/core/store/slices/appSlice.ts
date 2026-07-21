@@ -88,10 +88,10 @@ export interface AppSlice {
     setApiKeyError: (error: boolean) => void;
     isSidebarOpen: boolean;
     isRightPanelOpen: boolean;
-    rightPanelTab: 'context' | 'assets' | 'agent' | 'artifacts';
+    rightPanelTab: 'context' | 'assets' | 'agent' | 'artifacts' | 'approvals';
     toggleSidebar: () => void;
     toggleRightPanel: () => void;
-    setRightPanelTab: (tab: 'context' | 'assets' | 'agent' | 'artifacts') => void;
+    setRightPanelTab: (tab: 'context' | 'assets' | 'agent' | 'artifacts' | 'approvals') => void;
     isCommandMenuOpen: boolean;
     setCommandMenuOpen: (open: boolean) => void;
     hasUnsavedChanges: boolean;

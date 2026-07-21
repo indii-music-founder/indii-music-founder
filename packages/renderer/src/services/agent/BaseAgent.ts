@@ -40,6 +40,8 @@ import { getFineTunedModel } from './fine-tuned-models';
 import { agentIdentityService, type AgentIdentityCard } from './governance/AgentIdentity';
 import { getDepartmentOf, isHead, sameDepartment } from './departments';
 import { validateAgentCommunication } from './governance/AgentCommunicationPolicy';
+import { TOOL_RISK_REGISTRY } from './ToolRiskRegistry';
+import { toolApprovalService } from './governance/ToolApprovalService';
 import { agentNoteService } from './AgentNoteService';
 
 import { AgentPromptBuilder } from './builders/AgentPromptBuilder';
@@ -1174,6 +1176,43 @@ export class BaseAgent implements SpecializedAgent {
                             // Inject block notice into conversation and continue loop
                             fullPrompt += `\n[Tool Call: ${name}(${JSON.stringify(args)})] Result: Error: Tool '${name}' is not authorized for agent '${this.id}'.\n`;
                             continue;
+                        }
+
+                        // ISSUE-1116 fix: real pre-execution approval gate. ToolRiskRegistry's
+                        // requiresApproval flag was previously pure metadata — nothing checked it
+                        // before dispatch. This halts execution and persists a pending approval
+                        // record (ToolApprovalService); the tool call only actually runs when a
+                        // human approves it via the RightPanel Approvals tab, which executes the
+                        // exact original call directly (not a re-run of this LLM turn).
+                        //
+                        // Deliberately reads TOOL_RISK_REGISTRY directly, NOT getToolRiskMetadata()'s
+                        // fail-closed "unknown tool -> requiresApproval:true" fallback. That default
+                        // was calibrated for A2AClient's narrower consult_specialist call site.
+                        // Applying it here would gate every agent-declared custom `functions` entry
+                        // that isn't in the global registry by name (most of them) -- a massive,
+                        // unintended blast radius. This gate only fires for tools EXPLICITLY marked
+                        // requiresApproval:true.
+                        const riskMeta = TOOL_RISK_REGISTRY[name];
+                        if (riskMeta?.requiresApproval) {
+                            logger.info(`[BaseAgent] Tool '${name}' requires approval (risk tier: ${riskMeta.riskTier}). Halting execution loop.`);
+                            const approvalId = await toolApprovalService.createPendingApproval({
+                                agentId: this.id,
+                                toolName: name,
+                                args,
+                                riskTier: riskMeta.riskTier,
+                                description: riskMeta.description
+                            });
+                            const blockedResult: ToolFunctionResult = {
+                                success: false,
+                                error: `Tool '${name}' requires explicit approval before it can run (risk tier: ${riskMeta.riskTier}).${approvalId ? ` Approval request: ${approvalId}.` : ''}`
+                            };
+                            toolCalls.push({ name, args, result: blockedResult });
+                            await executionContext.rollback();
+                            return {
+                                text: `Execution paused: '${name}' requires your explicit approval (${riskMeta.description}). Check the Approvals panel to approve or deny.`,
+                                toolCalls,
+                                error: 'AWAITING_TOOL_APPROVAL'
+                            };
                         }
 
                         const argsStr = JSON.stringify(args);
