@@ -1,3 +1,23 @@
+## 2026-07-21 App.tsx's `STANDALONE_MODULES` Does NOT Bypass the Login Gate — Any Truly Public Page Needs Its Own Pre-Auth Route
+
+**SEVERITY:** Medium (would have shipped a public collaborator-facing page that 100% of its unauthenticated audience could never reach)
+
+**MISTAKE (caught before shipping, via code reading, not runtime failure):** Building the Tax Form Collection Phase 2 self-serve upload page (`/tax-form-upload?token=...`, meant for a payment collaborator with no indii account), the natural first instinct was to add the new page to `STANDALONE_MODULES` (`core/constants.ts`) — the list that already suppresses sidebar/chrome for pages like `onboarding`, `capture`, `mobile-remote`. That list only controls **chrome visibility for already-authenticated users**. `App.tsx`'s top-level render tree checks `!user` and renders `<LoginForm />` unconditionally for anyone not signed in, **before** `STANDALONE_MODULES`/the module router is ever reached. A collaborator with no account would hit a login wall for an account that structurally cannot exist.
+
+**FIX:** The only existing carve-out that bypasses the login gate entirely is `publicLegalPage` (privacy/terms — checked via `location.pathname` before the `!user` branch in `App.tsx`'s render). Any new truly-public route must add a sibling branch the same way: compute `isXPage` from `location.pathname`, check it *before* `authLoading`/`!user` in the ternary chain, and also add it to `useURLSync({ disabled: ... })` so URL sync doesn't fight the route. `STANDALONE_MODULES` is only ever relevant after that gate is already passed.
+
+**PREVENTION:** Before building any page meant to be reachable by a signed-out visitor (magic links, collaborator invites, public share pages, webhooks-that-render-UI), grep `App.tsx` for how `publicLegalPage`/`isInstagramOAuthCallback` are wired and mirror that pattern — do not assume `STANDALONE_MODULES` membership implies public reachability. The two concerns (auth bypass vs. chrome visibility) are separate switches that happen to both live in `App.tsx`.
+
+## 2026-07-21 Firebase CLI's Standalone `pkg`-Compiled Binary Crashes on Spaces in the Project Path During Function Analysis — Use the Local npm-Installed Binary Instead
+
+**SEVERITY:** Medium (blocks every `firebase deploy --only functions:*` invocation on any machine whose repo path contains a space — this machine's path is `/Volumes/X SSD 2025/...`)
+
+**MISTAKE:** Ran `firebase deploy --only functions:<name>,firestore:rules,storage:main` using the global `firebase` on `PATH` (`/Volumes/.../.local/bin/firebase`, v15.22.4). Both rules files compiled and validated successfully, but the functions-analysis step crashed immediately: `Error: Cannot find module '/Volumes/X'` — a bare Node `MODULE_NOT_FOUND` thrown from inside `pkg/prelude/bootstrap.js`. The stack trace confirms this `firebase` binary is a Vercel `pkg`-compiled standalone executable, not a plain Node script; `pkg`'s internal snapshot/virtual-fs handling truncates a spawned subprocess's argument at the first space in the path (`/Volumes/X` + ` SSD 2025/...` got split), so any repo checked out under a space-containing directory name breaks this specific code path (function source loading/analysis) even though everything else (auth, rules compile) works fine on the same binary.
+
+**FIX:** Use the project's own locally-installed `firebase-tools` instead of the global pkg binary: `./node_modules/.bin/firebase deploy --only ...` (this repo has `firebase-tools@15.22.3` in `node_modules`). That binary runs as plain Node via the shebang, never goes through `pkg`'s bootstrap, and the exact same deploy command that crashed the global binary succeeded immediately (surfacing the *next*, real, unrelated blocker — a function timeout config error — cleanly instead of crashing).
+
+**PREVENTION:** On this machine (or any machine with a space in its working path), always prefer `./node_modules/.bin/firebase` over a global `firebase` install for any deploy/functions command. If `node_modules/.bin/firebase` doesn't exist, `npx firebase-tools@<version-matching-package-lock>` is the fallback — never `npx firebase-tools@latest`, which can drift from the version this repo's CI pipeline validates against. This class of bug is specific to `pkg`-bundled CLIs launching subprocesses; it will not reproduce with plain-Node-installed tools.
+
 ## 2026-07-21 Root `tsc --noEmit` and `npm run typecheck` Both Exclude `packages/firebase` — Neither Catches Real Errors There
 
 **SEVERITY:** High (multiple "typecheck clean" claims this session were false — the check never touched the files in question; caught only when the real deploy pipeline's build step failed)

@@ -1,7 +1,7 @@
-# Tax Form Collection — Phase 1 Architecture
+# Tax Form Collection — Architecture (Phase 1 + Phase 2)
 
 ## Overview
-Real tax form collection via artist-side upload + email request. No Phase 2 (self-serve collaborator link) in this ship.
+Real tax form collection. Phase 1: artist-side upload + email request. Phase 2 (shipped same session): collaborator self-serve single-use token upload link — the collaborator has no indii account, so this link is the entire mechanism by which they submit a form.
 
 ## Data Flow
 
@@ -126,7 +126,58 @@ on_file → [manual mark] → reviewed (artist action only)
 
 ## Not in Phase 1
 
-- Phase 2 collaborator self-serve link (separate ship)
+- ~~Phase 2 collaborator self-serve link~~ — shipped, see below.
 - Desktop (Electron) verification (requires ISSUE-677 App Check resolution)
 - IRS TIN verification (out of scope)
 - Automatic status → "Verified" (manual only)
+
+---
+
+## Phase 2 — Collaborator Self-Serve Token Link
+
+### Architecture
+
+```mermaid
+graph TD
+    Artist["Artist clicks Request"]
+    TaxFS["TaxFormService.requestForm()"]
+    MintFn["requestTaxFormUpload (onCall, authenticated)"]
+    TokenDoc["Firestore: taxFormRequests/{token}\n(artistUid, collaboratorId, expiresAt, consumedAt)"]
+    Email["ResendEmailService — embeds uploadUrl"]
+    Collaborator["Collaborator (no indii account)"]
+    PublicPage["/tax-form-upload?token=... (TaxFormUploadPage)"]
+    SubmitFn["submitTaxForm (onRequest, unauthenticated, IP rate-limited)"]
+    Transaction["Firestore transaction: validate + consume token atomically"]
+    Storage["Storage: tax_docs/{artistUid}/{collaboratorId}/{ts}-{name} (Admin SDK)"]
+    CollabDoc["Firestore: tax_collaborators/{id} → status=on_file"]
+
+    Artist --> TaxFS
+    TaxFS -->|"{collaboratorId}"| MintFn
+    MintFn -->|mints 64-hex token, 7-day expiry| TokenDoc
+    MintFn -->|"{uploadUrl}"| TaxFS
+    TaxFS --> Email
+    Email --> Collaborator
+    Collaborator -->|opens link| PublicPage
+    PublicPage -->|"{token, fileBase64, fileName, contentType}"| SubmitFn
+    SubmitFn --> Transaction
+    Transaction -->|"404: missing/expired · 409: already used"| PublicPage
+    Transaction -->|"200: consumed"| Storage
+    Storage --> CollabDoc
+```
+
+### The real finding: auth bypass required a new route class
+
+`STANDALONE_MODULES` (`core/constants.ts`) only hides chrome for **already-authenticated** users — `App.tsx` routes every unauthenticated visitor to `<LoginForm />` before the module system is ever reached. A collaborator with no indii account would hit a login wall for an account that can't exist.
+
+Fix: added `isTaxFormUploadPage` in `App.tsx`, checked *before* the `!user` gate — the same treatment as the pre-existing `publicLegalPage` branch (privacy/terms), the only other route in the app that bypasses login. This is now the documented pattern for any future public, unauthenticated page.
+
+### Security model
+
+- **Token is the entire auth boundary** for `submitTaxForm` — no Firebase Auth involved, by design (the collaborator has none). 64 hex chars, single-use, 7-day expiry, consumed atomically inside a Firestore transaction to close the race between two simultaneous submissions.
+- **`taxFormRequests/{token}` denies all client access** (`allow read, write: if false`) — only the Admin SDK inside `submitTaxForm` ever touches it.
+- **`requestTaxFormUpload` scopes the mint to the caller's own uid path** (`users/{uid}/tax_collaborators/{collaboratorId}`) — an artist cannot mint a link for another artist's collaborator.
+- Storage rules (`tax_docs/**`) stay unchanged from Phase 1 — the collaborator's bytes reach Storage only via the Admin SDK inside `submitTaxForm`, never a direct client write.
+
+### Verification
+
+Emulator-validated rules, `packages/firebase && npm run build` clean, 44 unit/component tests (12 new for Phase 2: 4 `requestTaxFormUpload`, 8 `submitTaxForm`, 6 `TaxFormUploadPage`, plus 2 rewritten `TaxFormService.requestForm` cases asserting the link is embedded in the email). No live-cloud round-trip in this environment (no Firebase credentials in this sandbox's `.env`) — recommend one live pass after deploy.
