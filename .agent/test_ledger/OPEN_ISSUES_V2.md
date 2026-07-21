@@ -241,12 +241,14 @@
 - **Depends on:** ISSUE-1111 (input body).
 
 ### ISSUE-1113: CE-4 — Remote dispatch of computer tasks (phone/cloud → desktop) via existing relay + lease
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL (2026-07-21 — code + 7 unit tests complete and committed; approval-gate claim retracted, see below)
 - **Severity:** 🟢 LOW (later phase; desktop-local value ships without it)
-- **Module:** packages/renderer (RemoteRelayService command vocabulary, StudioExecutorLeaseService integration), packages/firebase (lease validation)
-- **Evidence:** `RemoteRelayService.ts` (Firestore broker: `users/{uid}/remote-relay-commands` → desktop → `remote-relay-responses`) and `issueStudioExecutorLease` already ship — computer tasks are a new command type on an existing channel.
-- **Expected (acceptance):** New relay command `{type: 'computer_task', goal, constraints}`; desktop executes ONLY while holding a valid executor lease; remote-originated tasks always land in the handshake/memory-inbox approval queue — never auto-approved in v1; response carries session doc reference.
-- **Depends on:** ISSUE-1112 (driver + sessions).
+- **Module:** packages/renderer (`RemoteRelayService.ts` — `AgentDispatchTask.type: 'computer_task'`, `useRemoteCommandListener.ts` — dispatch switch case + `validateComputerTaskDispatch`/`buildComputerTaskInstruction`)
+- **Evidence:** `RemoteRelayService.ts`'s existing `agent_dispatch_queue` mechanism (Firestore: `users/{uid}/agent_dispatch_queue` → atomic claim → desktop executes → status update) and `studioExecutorLeaseService.getLease()` already shipped — computer tasks reuse this exact channel as a new `AgentDispatchTask.type`, not a new collection.
+- **Expected (acceptance):** New dispatch type `{type: 'computer_task', payload: {goal, constraints}}`; desktop executes ONLY while holding a valid executor lease; remote-originated tasks always land in an approval queue — never auto-approved in v1; response carries session doc reference.
+- **Delivered (commit `a21e73ec0e3dff1760c2b3736e67d05cd93e8f39`):** `computer_task` added to `AgentDispatchTask.type` union with `goal`/`constraints` payload fields. `useRemoteCommandListener.ts`'s dispatch switch gained a `computer_task` case with two real, effective guards on top of the atomic claim every dispatch type already shares: (1) desktop must be the Electron Studio app (`window.electronAPI.computer` present), (2) desktop must hold a currently-valid executor lease (`studioExecutorLeaseService.getLease()` — throws and fails the task if not). The goal routes through `agentService.sendMessage()`, matching every sibling dispatch type's pattern exactly (no bespoke execution path). Two pure functions extracted and tested (`validateComputerTaskDispatch`, `buildComputerTaskInstruction`), 7 new unit tests, combined CE-1..4 suite 156/156 passing.
+- **RETRACTED CLAIM:** The commit message and this entry originally stated that a phone-originated task "always lands in the handshake/memory-inbox approval queue — never auto-approved," attributing this to `computer_drive`'s `DigitalHandshake`/`requiresApproval` classification. **That claim is false.** Verified while building this issue: `ToolRiskRegistry.requiresApproval` is not enforced anywhere in the real `agentService.sendMessage()` → `BaseAgent.ts` tool-dispatch path — see **ISSUE-1116 (CRITICAL, logged separately)**. The lease check and desktop-app check delivered here ARE real and effective; the "requires human approval before executing" property is not, until ISSUE-1116 is fixed. This entry stays PARTIAL for that reason, not because the delivered code is incomplete on its own terms.
+- **Depends on:** ISSUE-1112 (driver + sessions) — done. Full acceptance (the approval-queue property) additionally depends on ISSUE-1116.
 
 ### ISSUE-1114: CE-5 — Computer capability hardening (Windows provider, session-scoped grants, redaction)
 - **Status:** 🔴 OPEN
