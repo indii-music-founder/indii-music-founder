@@ -5,6 +5,7 @@ export * from './schemas/env.schema.js';
 export * from './schemas/workflowState.js';
 export * from './schemas/agentLoopState.js';
 export * from './schemas/videoJob.js';
+export * from './schemas/sessionMedia.js';
 export * from './types/ai.dto.js';
 export * from './types/errors.js';
 export * from './types/founderFunnel.js';

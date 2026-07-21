@@ -175,6 +175,47 @@ service firebase.storage {
                       isVideoType();
     }
 
+    // ISSUE-1175: an authenticated owner may upload only the one staging
+    // object authorized by its server-created videoSessions record. The
+    // expected size, MIME type, path, and identity metadata must all agree.
+    // Originals and derivatives are copied by Admin SDK workers and remain
+    // client read-only; all client deletes are denied for auditability.
+    match /session-media/{userId}/{sessionId}/staging/{fileName} {
+      allow read: if isAuthenticated() && request.auth.uid == userId;
+      allow create, update: if isAuthenticated() &&
+        request.auth.uid == userId &&
+        sessionId.matches('^[a-f0-9]{40}$') &&
+        fileName.matches('^original\\.(mp4|mov|webm|m4v)$') &&
+        firestore.exists(/databases/(default)/documents/videoSessions/$(sessionId)) &&
+        firestore.get(/databases/(default)/documents/videoSessions/$(sessionId)).data.ownerUid == request.auth.uid &&
+        firestore.get(/databases/(default)/documents/videoSessions/$(sessionId)).data.sessionId == sessionId &&
+        firestore.get(/databases/(default)/documents/videoSessions/$(sessionId)).data.stagingPath ==
+          'session-media/' + userId + '/' + sessionId + '/staging/' + fileName &&
+        firestore.get(/databases/(default)/documents/videoSessions/$(sessionId)).data.expectedByteSize == request.resource.size &&
+        firestore.get(/databases/(default)/documents/videoSessions/$(sessionId)).data.expectedMimeType == request.resource.contentType &&
+        firestore.get(/databases/(default)/documents/videoSessions/$(sessionId)).data.status == 'uploading' &&
+        request.resource.size > 0 &&
+        request.resource.size <= 20 * 1024 * 1024 * 1024 &&
+        request.resource.contentType in ['video/mp4', 'video/quicktime', 'video/webm', 'video/x-m4v'] &&
+        request.resource.metadata.keys().hasAll([
+          'ownerUid', 'organizationId', 'projectId', 'sessionId', 'uploadSessionId'
+        ]) &&
+        request.resource.metadata.ownerUid == userId &&
+        request.resource.metadata.organizationId ==
+          firestore.get(/databases/(default)/documents/videoSessions/$(sessionId)).data.organizationId &&
+        request.resource.metadata.projectId ==
+          firestore.get(/databases/(default)/documents/videoSessions/$(sessionId)).data.projectId &&
+        request.resource.metadata.sessionId == sessionId &&
+        request.resource.metadata.uploadSessionId ==
+          firestore.get(/databases/(default)/documents/videoSessions/$(sessionId)).data.uploadSessionId;
+      allow delete: if false;
+    }
+
+    match /session-media/{userId}/{sessionId}/{managedPath=**} {
+      allow read: if isAuthenticated() && request.auth.uid == userId;
+      allow write: if false;
+    }
+
     // Video thumbnails (auto-generated poster frames)
     match /video-thumbnails/{userId}/{allPaths=**} {
       allow read: if isAuthenticated() && request.auth.uid == userId;

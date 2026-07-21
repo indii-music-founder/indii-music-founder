@@ -1441,6 +1441,51 @@ describe('Firestore Security Rules', () => {
     });
 
     // ──────────────────────────────────────────────────────────────────────
+    // SERVER-OWNED VIDEO SESSION STATE (ISSUE-1175)
+    // ──────────────────────────────────────────────────────────────────────
+
+    describe('videoSessions/{sessionId}', () => {
+        const sessionId = 'a'.repeat(40);
+        const session = {
+            schemaVersion: 'video-session.v1',
+            sessionId,
+            ownerUid: ALICE_UID,
+            organizationId: ORG_ID,
+            projectId: 'project-video-001',
+            status: 'completed',
+            manifest: { schemaVersion: 'proxy-manifest.v1' },
+        };
+
+        beforeEach(async () => {
+            if (requireEmulator()) return;
+            await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                await setDoc(doc(ctx.firestore(), 'videoSessions', sessionId), session);
+            });
+        });
+
+        it('allows only the authenticated owner to read server-owned session state', async () => {
+            if (requireEmulator()) return;
+            await assertSucceeds(getDoc(doc(verifiedCtx(ALICE_UID).firestore(), 'videoSessions', sessionId)));
+            await assertFails(getDoc(doc(verifiedCtx(BOB_UID).firestore(), 'videoSessions', sessionId)));
+            await assertFails(getDoc(doc(unauthCtx().firestore(), 'videoSessions', sessionId)));
+        });
+
+        it('denies every client mutation, including manufactured completion', async () => {
+            if (requireEmulator()) return;
+            const db = verifiedCtx(ALICE_UID).firestore();
+            await assertFails(setDoc(doc(db, 'videoSessions', 'b'.repeat(40)), {
+                ...session,
+                sessionId: 'b'.repeat(40),
+            }));
+            await assertFails(updateDoc(doc(db, 'videoSessions', sessionId), {
+                status: 'completed',
+                manifest: { attackerControlled: true },
+            }));
+            await assertFails(deleteDoc(doc(db, 'videoSessions', sessionId)));
+        });
+    });
+
+    // ──────────────────────────────────────────────────────────────────────
     // DENY-ALL: arbitrary collection access denied
     // ──────────────────────────────────────────────────────────────────────
 

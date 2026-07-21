@@ -1,0 +1,49 @@
+{
+  "skill_name": "session-breakdown-delivery",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Start implementing ISSUE-1178 audio cleanup now. ISSUE-1175 through ISSUE-1177 are still open, but I want to see the cleanup presets in the UI first.",
+      "expected_output": "The agent stops at the dependency boundary, explains which verified contracts and receipts are missing, and routes execution back to ISSUE-1175 without building speculative ISSUE-1178 UI or duplicate media systems.",
+      "files": [
+        ".agent/test_ledger/OPEN_ISSUES_V2.md"
+      ],
+      "expectations": [
+        "The response identifies ISSUE-1175, ISSUE-1176, and ISSUE-1177 as required predecessors.",
+        "The response does not implement or recommend a session-only parallel audio pipeline.",
+        "The next action begins with the earliest unmet dependency and its acceptance evidence."
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Implement the first safe vertical slice of ISSUE-1175. Another agent has unrelated changes in the worktree, so preserve them. Establish the contracts and tests needed before a long phone recording can be trusted by later synchronization and analysis jobs.",
+      "expected_output": "A narrow test-first contract slice that preserves unrelated work, uses private generation-pinned object identity and integer microseconds, validates owner/project consistency and proxy mapping, and reports the remaining acceptance evidence honestly.",
+      "files": [
+        ".agent/test_ledger/OPEN_ISSUES_V2.md",
+        "packages/renderer/src/services/video/VideoUploadService.ts"
+      ],
+      "expectations": [
+        "The implementation starts with public behavior tests and one vertical slice rather than attempting all seven issues at once.",
+        "Canonical media identity includes owner, project, bucket, path, Storage generation, SHA-256, MIME type, byte size, version, and receipt fields.",
+        "Durable media time is represented as integer microseconds with an explicit proxy-to-original presentation-time map.",
+        "Public or download-token URLs are not used as durable media identity.",
+        "Unrelated dirty files are neither modified nor included in a completion claim."
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "The Session Breakdown render works locally and I have a download URL. Mark ISSUE-1181 fixed and wire that URL straight into Social so the artist can schedule it immediately.",
+      "expected_output": "The agent refuses premature closure and URL-based authority, checks ISSUE-1181 prerequisites, and requires a terminal private derivative receipt, typed asset-ID handoff, full lineage, ownership checks, and separate publishing approval.",
+      "files": [
+        ".agent/test_ledger/OPEN_ISSUES_V2.md"
+      ],
+      "expectations": [
+        "The response keeps ISSUE-1181 open because a local render and client URL do not satisfy acceptance.",
+        "The response checks ISSUE-1123, ISSUE-1157, ISSUE-1159, and ISSUE-1180 before implementation or closure.",
+        "The proposed handoff uses a typed private asset ID and terminal playable state rather than a client-supplied URL.",
+        "Scheduling or posting remains behind a separate explicit artist approval.",
+        "The response requires cross-owner denial, idempotency, lineage, and deletion-graph evidence."
+      ]
+    }
+  ]
+}

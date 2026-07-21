@@ -1,0 +1,167 @@
+import { describe, expect, it } from 'vitest';
+import { ProxyManifestSchema, VideoSessionSchema } from './sessionMedia';
+
+const ownedMedia = (role: 'original' | 'editing_proxy' | 'guide_audio', path: string) => ({
+    schemaVersion: 'canonical-media-ref.v1' as const,
+    role,
+    ownerUid: 'artist-1',
+    organizationId: 'org-1',
+    projectId: 'project-1',
+    bucket: 'private-media-bucket',
+    path,
+    generation: '1712345678901234',
+    sha256: 'a'.repeat(64),
+    mimeType: role === 'guide_audio' ? 'audio/wav' : 'video/mp4',
+    byteSize: role === 'original' ? 2_000_000_000 : 250_000_000,
+    createdAt: '2026-07-21T18:00:00.000Z',
+    creationReceiptId: `receipt-${role}`,
+});
+
+const validManifest = {
+    schemaVersion: 'proxy-manifest.v1' as const,
+    manifestId: 'manifest-1',
+    sessionId: 'session-1',
+    ownerUid: 'artist-1',
+    organizationId: 'org-1',
+    projectId: 'project-1',
+    original: ownedMedia('original', 'session-media/artist-1/session-1/original.mov'),
+    proxy: ownedMedia('editing_proxy', 'session-media/artist-1/session-1/proxy.mp4'),
+    guideAudio: ownedMedia('guide_audio', 'session-media/artist-1/session-1/guide.wav'),
+    inspection: {
+        originalDurationUs: 60_020_000,
+        proxyDurationUs: 60_000_000,
+        sourceVideoCodec: 'hevc',
+        sourceAudioCodec: 'aac',
+        sourceWidth: 3840,
+        sourceHeight: 2160,
+        sourceRotationDegrees: 90,
+        sourceFrameRateMode: 'variable' as const,
+        sourceHdr: true,
+        proxyVideoCodec: 'h264',
+        proxyAudioCodec: 'aac',
+        proxyWidth: 720,
+        proxyHeight: 1280,
+        proxyFrameRateNumerator: 30,
+        proxyFrameRateDenominator: 1,
+        proxyColorSpace: 'rec709' as const,
+        orientationBakedIn: true,
+    },
+    timeMap: {
+        version: 'presentation-time-map.v1' as const,
+        segments: [
+            {
+                proxyStartUs: 0,
+                proxyEndUs: 30_000_000,
+                originalStartUs: 0,
+                originalEndUs: 30_010_000,
+            },
+            {
+                proxyStartUs: 30_000_000,
+                proxyEndUs: 60_000_000,
+                originalStartUs: 30_010_000,
+                originalEndUs: 60_020_000,
+            },
+        ],
+    },
+    waveform: {
+        schemaVersion: 'derived-media-ref.v1' as const,
+        role: 'waveform' as const,
+        ownerUid: 'artist-1',
+        organizationId: 'org-1',
+        projectId: 'project-1',
+        bucket: 'private-media-bucket',
+        path: 'session-media/artist-1/session-1/waveform.json',
+        generation: '1712345678901235',
+        sha256: 'b'.repeat(64),
+        mimeType: 'application/json',
+        byteSize: 8_000,
+        workerVersion: 'session-proxy-worker@1.0.0',
+        createdAt: '2026-07-21T18:05:00.000Z',
+        creationReceiptId: 'receipt-waveform',
+    },
+    thumbnails: [],
+    workerVersion: 'session-proxy-worker@1.0.0',
+    createdAt: '2026-07-21T18:05:00.000Z',
+    processingReceiptId: 'processing-receipt-1',
+};
+
+describe('ProxyManifestSchema', () => {
+    it('accepts one owner-bound immutable source, proxy, guide, and integer-microsecond time map', () => {
+        expect(ProxyManifestSchema.safeParse(validManifest).success).toBe(true);
+    });
+
+    it('rejects mixed ownership and public URL identity', () => {
+        const parsed = ProxyManifestSchema.safeParse({
+            ...validManifest,
+            proxy: {
+                ...validManifest.proxy,
+                ownerUid: 'artist-2',
+                downloadUrl: 'https://storage.example.test/tokenized-proxy.mp4',
+            },
+        });
+
+        expect(parsed.success).toBe(false);
+    });
+
+    it('rejects fractional durable time and discontinuous proxy mappings', () => {
+        const parsed = ProxyManifestSchema.safeParse({
+            ...validManifest,
+            timeMap: {
+                ...validManifest.timeMap,
+                segments: [
+                    validManifest.timeMap.segments[0],
+                    {
+                        ...validManifest.timeMap.segments[1],
+                        proxyStartUs: 30_000_000.5,
+                    },
+                ],
+            },
+        });
+
+        expect(parsed.success).toBe(false);
+    });
+
+    it('rejects mutable or malformed object identity', () => {
+        expect(ProxyManifestSchema.safeParse({
+            ...validManifest,
+            original: {
+                ...validManifest.original,
+                generation: '',
+                sha256: 'not-a-sha256',
+            },
+        }).success).toBe(false);
+    });
+});
+
+describe('VideoSessionSchema', () => {
+    const uploadingSession = {
+        schemaVersion: 'video-session.v1' as const,
+        sessionId: 'session-1',
+        ownerUid: 'artist-1',
+        organizationId: 'org-1',
+        projectId: 'project-1',
+        idempotencyKey: 'upload-artist-1-project-1-session-1',
+        uploadSessionId: 'resumable-upload-1',
+        expectedMimeType: 'video/quicktime',
+        expectedByteSize: 2_000_000_000,
+        stagingBucket: 'private-media-bucket',
+        stagingPath: 'session-media/artist-1/session-1/staging/original.mov',
+        status: 'uploading' as const,
+        costEstimate: {
+            currency: 'USD' as const,
+            amountMinor: 125,
+            estimateVersion: 'session-proxy-cost.v1',
+        },
+        retentionDeleteAfter: '2026-08-21T18:00:00.000Z',
+        createdAt: '2026-07-21T18:00:00.000Z',
+        updatedAt: '2026-07-21T18:01:00.000Z',
+    };
+
+    it('accepts an owner-bound resumable session but rejects fabricated completion without receipts', () => {
+        expect(VideoSessionSchema.safeParse(uploadingSession).success).toBe(true);
+        expect(VideoSessionSchema.safeParse({
+            ...uploadingSession,
+            status: 'completed',
+        }).success).toBe(false);
+    });
+});

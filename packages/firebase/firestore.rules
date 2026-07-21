@@ -788,6 +788,17 @@ service cloud.firestore {
       allow create: if isVerifiedUser() && request.resource.data.userId == request.auth.uid;
     }
 
+    // ISSUE-1175: long-recording upload and processing state is created and
+    // advanced only by trusted callables/workers. Owners may observe progress,
+    // but no client can forge completion, replace immutable media identity, or
+    // delete the audit trail.
+    match /videoSessions/{sessionId} {
+      allow read: if isAuthenticated() &&
+        resource.data.ownerUid is string &&
+        resource.data.ownerUid == request.auth.uid;
+      allow create, update, delete: if false;
+    }
+
     match /earnings_reports/{reportId} {
       allow read: if isVerifiedUser() && resource.data.userId == request.auth.uid;
       allow create, update: if isVerifiedUser() && request.resource.data.userId == request.auth.uid;

@@ -33,6 +33,9 @@ export { getOperationCostHistory, getOperationCostStatus } from "./functions/bil
 export { cancelVideoJob } from "./functions/creative/gateway";
 export { videoJobFirestoreOrchestrator } from "./functions/creative/videoJobOrchestrator";
 export { getMediaDuration } from "./functions/creative/getMediaDuration";
+export { createVideoSession } from "./functions/video/createVideoSession";
+export { cancelVideoSession } from "./functions/video/cancelVideoSession";
+export { finalizeVideoSessionUpload } from "./functions/video/finalizeVideoSessionUpload";
 import { analyzeAudioFn } from "./lib/audio";
 import { FUNCTION_INTELLIGENCE_MODELS } from "./config/models";
 import { clearbitApiKey, apolloApiKey, getClearbitApiKey, getApolloApiKey } from "./config/secrets";
