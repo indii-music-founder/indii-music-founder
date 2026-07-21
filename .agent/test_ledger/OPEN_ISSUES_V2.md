@@ -256,8 +256,16 @@
 - **Expected (acceptance):** Windows input/screenshot provider behind the same `ComputerProvider` interface; session-scoped approval grants (approve once per drive session instead of per-action) as a DigitalHandshake-compatible relaxation; screenshot redaction pass before any frame leaves the machine; `/plat` GO verdict on the full capability.
 - **Depends on:** ISSUE-1112 (mac path proven). Windows work parallelizable with ISSUE-1113.
 
+### ISSUE-1115: Artist Operating Profile (AOP) as a first-class execution input — not yet built
+- **Status:** 🔴 OPEN (deprioritized — does not block or reorder CE-4/CE-5)
+- **Severity:** 🟢 LOW (design/data-model gap, no immediate consumer)
+- **Module:** none yet — no code exists for this. Candidate: new Firestore doc `users/{uid}/aop` (or similar), read by `DigitalHandshake`/`ComputerExecutionService` at decision time.
+- **Evidence:** Founder-shared architecture note (2026-07-20 chat) describes execution decisions as informed by an "Artist Operating Profile" — preferences, business goals, creative boundaries, permissions, installed software, connected services, security policies, automation preferences. Today that information is scattered: static tool config in `ToolRiskRegistry.ts`, per-directive compute allocation in `DigitalHandshake.ts`, no per-user record of e.g. "has this artist opted into autonomous computer control" or "is `cliclick` installed on this machine."
+- **Expected (acceptance):** Not specified yet — this entry exists to record the gap, not to scope the build. A future pass should define the AOP schema, decide where it's read from (Firestore vs local store vs both), and identify the first real consumer (candidate: CE-4's remote-task approval flow, so a phone-originated `computer_task` checks AOP permissions in addition to the executor lease).
+- **Depends on:** Nothing. Does not block ISSUE-1113/1114 and is not scheduled ahead of them — logged for future prioritization only, per explicit founder instruction to work the encoded order without inserting new work ahead of it.
+
 #### Dependencies (encode-build-order rule [[encode-build-order-in-ledger]])
 
-- Build order: **1110 → 1111 → 1112 → {1113, 1114 in parallel}**.
+- Build order: **1110 → 1111 → 1112 → {1113, 1114 in parallel}**. ISSUE-1115 is out-of-band — not part of this build order.
 - 1110 is gated on ONE founder decision: approve the architecture in `docs/COMPUTER_EXECUTION_EXTENSION.md` (brain = Gemini Computer Use via Vertex, body = @jitsi/robotjs local). Rejected alternatives recorded there: LangChain (redesign — forbidden), Anthropic/OpenAI CUA (second vendor, fallback only), Browserbase/Stagehand (browser-only, future cloud target).
 - No entry here blocks or is blocked by the MCP backend plan (ISSUE-1100 P-series) — independent tracks.
