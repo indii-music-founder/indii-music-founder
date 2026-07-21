@@ -12,6 +12,11 @@ import * as toolModules from './tools/index.js';
 const ALL_TOOLS = Object.values(toolModules);
 
 const app = express.default();
+// Cloud Functions/Cloud Run terminates TLS at the load balancer and forwards
+// internally over plain HTTP — without this, req.protocol always reports
+// 'http' even for a real HTTPS caller (X-Forwarded-Proto is set but ignored
+// unless Express is told to trust the proxy).
+app.set('trust proxy', true);
 app.use(cors({ origin: true }));
 
 interface McpSession {
@@ -46,15 +51,22 @@ app.get('/sse', async (req, res) => {
 
     console.log(`[MCP Server] New SSE connection request for uid ${decoded.uid}`);
 
-    // Build a fully-qualified absolute URL rather than a bare relative path.
-    // req.baseUrl's value for a route mounted at the app root is inconsistent
-    // between Cloud Functions generations (observed empty on Gen2, live test
-    // 2026-07-21), and the MCP SDK client resolves a leading-slash relative
-    // path against the origin ROOT — silently dropping any function-name
-    // path prefix and 404ing the POST /message leg. Deriving from
-    // req.originalUrl preserves whatever prefix actually got this request
-    // here, regardless of platform-specific path-rewriting behavior.
-    const messageUrl = `${req.protocol}://${req.get('host')}${req.originalUrl.replace(/\/sse(?:\?.*)?$/, '/message')}`;
+    // Build a fully-qualified absolute HTTPS URL — never a bare relative
+    // path (the MCP SDK client resolves a leading-slash path against the
+    // origin ROOT, silently dropping any prefix) and never derived from
+    // req.protocol (reports 'http': Cloud Functions/Cloud Run terminates TLS
+    // at the load balancer and forwards internally over plain HTTP).
+    //
+    // The cloudfunctions.net routing convention strips the function-name
+    // path segment (/mcpEndpoint) before Express ever sees the request —
+    // live test 2026-07-21 confirmed req.originalUrl is bare '/sse' even
+    // when the client's actual external URL was .../mcpEndpoint/sse. That
+    // segment has to be reconstructed for the client's next request to
+    // route back to this same function; it's absent entirely when accessed
+    // via the function's direct Cloud Run subdomain instead.
+    const host = req.get('host') || '';
+    const functionPathPrefix = host.endsWith('.cloudfunctions.net') ? '/mcpEndpoint' : '';
+    const messageUrl = `https://${host}${functionPathPrefix}/message`;
     const transport = new SSEServerTransport(messageUrl, res);
     const sessionId = transport.sessionId;
 
@@ -138,7 +150,7 @@ export const mcpEndpoint = onRequest(
     {
         region: 'us-central1',
         timeoutSeconds: 3600,
-        memory: '256MiB',
+        memory: '512MiB',
         maxInstances: 1,
     },
     app,
