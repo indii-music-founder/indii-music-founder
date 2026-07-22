@@ -3,7 +3,7 @@
 > This file is written by the /real test agent and consumed by a fixing agent.
 > The test agent NEVER modifies code. The fix agent NEVER runs tests.
 >
-> **Last updated:** 2026-07-22 (**FOUNDER ASSESSMENT block appended at end of file — ISSUE-1175..1181 scope corrected and a binding 6-step repair order recorded; read it before touching Session Breakdown.** ISSUE-1187 fixed for real and its premature ✅ corrected; `/qa` unit-suite verification ISSUE-1191..1192; browser QA sweep ISSUE-1185..1190 — 1185/1186/1187 fixed, 1188..1190 open; earlier: ISSUE-1110..1114 Computer Execution plan, ISSUE-1095..1099 audit + fixes)
+> **Last updated:** 2026-07-22 (**STEP-1 AUDIT of ISSUE-1180 appended — ISSUE-1193..1197; ISSUE-1193 is CRITICAL and is the first thing to fix in the whole repair order.** FOUNDER ASSESSMENT block appended at end of file — ISSUE-1175..1181 scope corrected and a binding 6-step repair order recorded; read it before touching Session Breakdown.** ISSUE-1187 fixed for real and its premature ✅ corrected; `/qa` unit-suite verification ISSUE-1191..1192; browser QA sweep ISSUE-1185..1190 — 1185/1186/1187 fixed, 1188..1190 open; earlier: ISSUE-1110..1114 Computer Execution plan, ISSUE-1095..1099 audit + fixes)
 > **Branch:** `main` (direct commits)
 >
 > **Ledger protocol (V2):** This is the ACTIVE master ledger. It operates exactly like the original:
@@ -1772,5 +1772,214 @@ step before the one above it is genuinely closed (not schema-closed — workflow
   in the running app produces the real artefact end to end. Passing unit tests over a Zod schema
   does **not** close any of these — that is the specific over-claim this block exists to correct.
 - **Not in scope of this block:** ISSUE-1185..1192. Those are unrelated to Session Breakdown.
+
+---
+
+## Session 2026-07-22 — REPAIR ORDER STEP 1 AUDIT: ISSUE-1180 timeline authorization + data-loss risks
+
+> Read-only audit, no code changed. Scope is exactly repair-order step 1 — **authorization and
+> data-loss only**. Compiler/render *correctness* is step 4 and is listed at the end as
+> "noted, not audited" so it is not lost, not because it was assessed.
+>
+> **Files audited:** `videoEditorStore.ts` (incl. `compileApprovalToTimeline`),
+> `useVideoProjectPersistence.ts`, `VideoProjectPersistenceService.ts`,
+> `packages/firebase/firestore.rules` (`videoProjects`), `AppShell.tsx` (module gating),
+> `VideoPopout.tsx` (cross-window sync).
+>
+> **Headline:** the founder's read is confirmed. There is a path where a **transient network or
+> permission error silently destroys a user's saved timeline** — no attacker required, no error
+> shown. Demonstrated with a throwaway test (output quoted in ISSUE-1193), which was then deleted.
+
+### ISSUE-1193: A failed timeline load is indistinguishable from "no timeline yet", and the next edit overwrites the real one with a blank
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🔴 CRITICAL (destroys irreplaceable user work; no attacker needed; no user-visible error at any step)
+- **Module:** `packages/renderer/src/modules/creative/video/services/VideoProjectPersistenceService.ts:22-33`,
+  `packages/renderer/src/modules/creative/video/editor/hooks/useVideoProjectPersistence.ts:54-77`
+- **Evidence — the chain, each link verified in source:**
+  1. `loadVideoProject` wraps `getDoc` in `try/catch` and **returns `null` on every error**
+     (line 29-32). Permission denied, offline, quota, a squatted doc (ISSUE-1197) — all `null`.
+  2. `null` is also the legitimate value for "this project has no timeline doc yet" (line 25).
+     **The caller cannot tell the two apart.**
+  3. The caller treats `null` as new-project and calls `resetProjectForId(currentProjectId)`
+     (`useVideoProjectPersistence.ts:68`) → the store is replaced with a **blank timeline**.
+  4. `lastSyncedProjectRef` is then set to that blank project (line 69), so the dirty check is
+     satisfied and no save fires *yet*.
+  5. The user, seeing an empty editor, makes **one** edit. The debounced autosave fires 5s later
+     and calls `saveVideoProject(project.id, project, …)` — writing the blank-plus-one-edit
+     timeline to the **real** project's document.
+- **Proof (temporary test, run then deleted — reproduce by mocking `loadVideoProject` → `null`):**
+  ```
+  [1] after "failed" load, timeline clips = 0 (blank)
+  [2] autosave target docId   = project-with-real-work
+  [3] autosave clips written  = 1
+  ```
+  The write targets the real project id, and `project.clips` is an array — Firestore's
+  `{merge:true}` merges maps recursively but **replaces arrays wholesale**, so the stored clip
+  list is not merged, it is overwritten.
+- **Impact:** One dropped connection, one expired token, or one rules hiccup at load time is
+  enough. The user opens a project, sees an empty timeline, assumes they are in the wrong place
+  or that it did not save last time, makes one change — and the real timeline is gone. Nothing in
+  the UI reports a failure at any point (see ISSUE-1195). This is the single most destructive
+  behaviour found and is why the founder ranked step 1 above everything else.
+- **Fix:**
+  1. `loadVideoProject` must distinguish outcomes — return a discriminated result
+     (`{status:'found', project}` / `{status:'absent'}` / `{status:'error', error}`), never a bare
+     `null` for both.
+  2. On `'error'`, do **not** call `resetProjectForId`. Keep the editor in an explicit
+     unrecoverable state, block autosave entirely, and surface a retry.
+  3. Autosave must be gated on a positive load outcome. A project that never successfully loaded
+     must never be writable — treat "we do not know what is stored" as read-only.
+  4. Guard the write itself: refuse to persist a timeline whose `clips` is empty when the last
+     known good state had clips, unless the user explicitly cleared it.
+- **Acceptance:** With `loadVideoProject` forced to throw, the editor shows an error state, no
+  autosave call is ever issued, and the stored document is byte-identical afterwards. A regression
+  test asserts `saveVideoProject` is **not** called on the load-error path.
+- **Depends on:** Nothing. **This is the first thing to fix in the entire repair order.**
+
+### ISSUE-1194: Guest users can open the video editor, and every edit they make is silently discarded
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🔴 HIGH (total, silent loss of work for every unauthenticated user; this is the default state for anyone who has not signed up)
+- **Module:** `packages/renderer/src/core/AppShell.tsx:172-174` (`COMMERCIAL_MODULES`),
+  `packages/firebase/firestore.rules` (`isVerifiedUser`), `VideoProjectPersistenceService.ts:42-46`
+- **Evidence:** `COMMERCIAL_MODULES = { 'distribution', 'licensing', 'merch', 'publishing' }` —
+  **`creative` is not a member**, so the guest gate at `AppShell.tsx:204` never fires for the video
+  editor. But the Firestore rule requires `isVerifiedUser()`, defined as
+  `isAuthenticated() && !isAnonymous()`. An anonymous Firebase user *has* a uid, so
+  `saveVideoProject`'s `if (!userId)` guard passes, the write is attempted, and the **rules deny
+  it**. The rejection is caught, logged with `logger.error`, and returned as
+  `{success:false, reason}` — which the caller logs with `logger.warn` and nothing else.
+- **Impact:** A guest can open the editor, build an entire timeline, and lose all of it on reload
+  having never been told anything was wrong. The product actively invites the work and then
+  discards it.
+- **Fix:** Pick one and make it explicit — either add `creative` to `COMMERCIAL_MODULES` so guests
+  hit `GuestGate` up front, or let guests edit but tell them clearly that work is unsaved until
+  they sign up. Do not leave the current silent-discard behaviour. Whichever is chosen, the save
+  layer must fail **loudly** (ISSUE-1195).
+- **Acceptance:** An anonymous session either cannot reach the editor, or sees a persistent
+  unmistakable "not saved — sign up to keep this" state. No path exists where a guest's edit is
+  accepted by the UI and dropped without notice.
+- **Depends on:** Best fixed together with ISSUE-1195.
+
+### ISSUE-1195: Every timeline save and load failure is invisible to the user
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH (turns each of ISSUE-1193/1194/1197 from a recoverable error into silent data loss)
+- **Module:** `useVideoProjectPersistence.ts:49`, `VideoProjectPersistenceService.ts:30,63`,
+  `packages/renderer/src/modules/creative/video/editor/VideoEditor.tsx:69`
+- **Evidence:** The only failure surfaces are `logger.warn` / `logger.error`. `isLoadingProject`
+  drives a spinner and nothing else — there is no error state at all. Grepping the module for a
+  user-facing surface returns only the spinner gate. Toast infrastructure is already imported and
+  used in this very module (`editor/hooks/useVideoEditor.ts:8` uses `useToast`), so this is a gap,
+  not a missing capability.
+- **Impact:** The user's only signal that their video project is not being saved is that it is not
+  being saved — which they discover after losing it.
+- **Fix:** Surface load errors as a blocking editor state with retry, and save failures as a
+  persistent (not auto-dismissing) indicator that stays until a save succeeds. A silent
+  `logger.warn` is not an acceptable terminal handler for a write that carries the user's work.
+- **Acceptance:** Forced save failure and forced load failure each produce a visible, persistent
+  UI state. Asserted in tests, not by inspection.
+- **Depends on:** Nothing. Cheap, and it de-risks ISSUE-1193/1194/1197 immediately.
+
+### ISSUE-1196: `compileApprovalToTimeline` accepts `ownerUid` and `projectId` and checks neither
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH (the authorization half of repair-order step 1; ISSUE-1180 acceptance items 3 and 7)
+- **Module:** `packages/renderer/src/modules/creative/video/store/videoEditorStore.ts:528-585`
+- **Evidence:** The `approval` parameter is typed
+  `{ approvalReceiptId, planId, ownerUid, projectId, decisions }` at line 529. Grepping the file
+  for `ownerUid` returns **exactly one hit — that type declaration**. `projectId` likewise never
+  appears in the function body. The compiler therefore:
+  - never compares `approval.ownerUid` to the current user → **no cross-owner rejection**
+    (ISSUE-1180 acceptance 7 requires cross-owner assets fail closed);
+  - never compares `approval.projectId` to `existingProject.id` → an approval belonging to project
+    A can be compiled straight into project B's timeline (**cross-project bleed**, acceptance 3);
+  - records `sourceGeneration`/`proxyGeneration` from `session` (lines 567-568) but **never
+    validates them**, and both are optional — a session without them yields clips with
+    `undefined` generations, silently losing the lineage the field exists to carry
+    (acceptance 7 requires stale generations fail closed).
+- **Impact:** The two fields that exist specifically to enforce ownership and project scoping are
+  decorative. This is the same shape as the defect recorded in ISSUE-1092 ("handlers declared a
+  `req?` param the registry never supplied") and the one ISSUE-1096 fixed ("the decorative
+  args-derived pattern"). It keeps recurring.
+- **Fix:** Fail closed at the top of the compiler — reject when `ownerUid` does not match the
+  authenticated user, when `projectId !== existingProject.id`, and when a required generation is
+  missing or does not match the session's current generation. Return a typed, repairable error
+  rather than a partially-compiled timeline.
+- **Acceptance:** Unit tests prove each of the four rejections (wrong owner, wrong project, missing
+  generation, stale generation) throws/returns an error and mutates nothing.
+- **Depends on:** Nothing.
+
+### ISSUE-1197: `videoProjects` rules allow ownership to be rewritten on update, and let any user squat any project id
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH (a squatted id permanently and silently locks the real owner out of their own timeline)
+- **Module:** `packages/firebase/firestore.rules:786-789`
+- **Evidence:**
+  ```
+  match /videoProjects/{projectId} {
+    allow read, update, delete: if isVerifiedUser() && resource.data.userId == request.auth.uid;
+    allow create: if isVerifiedUser() && request.resource.data.userId == request.auth.uid;
+  }
+  ```
+  1. **Ownership is mutable.** `update` checks only `resource.data.userId` (the *existing* value).
+     It never pins `request.resource.data.userId`, so an update may rewrite `userId` to any value.
+     This repo already treats ownership immutability as the standard elsewhere — the licenses rules
+     were fixed precisely so that "ownership is immutable and emulator-tested".
+  2. **Any authenticated user may create any id.** `create` only requires the writer stamp their
+     own uid. Document ids come from the app's `currentProjectId`, so any user who learns or guesses
+     another project id can create `videoProjects/{thatId}` first.
+- **Impact of the squat:** the real owner's `getDoc` is denied → `loadVideoProject` returns `null`
+  → blank timeline → their autosave `setDoc` is also denied → warn-only. They are locked out of
+  their own project **and told nothing**, and per ISSUE-1193 they may believe the project is empty.
+  Whether ids are actually guessable is the open question — that determines whether this is
+  reachable by a third party or only a self-inflicted footgun.
+- **Fix:** Pin `request.resource.data.userId == resource.data.userId` on update so ownership cannot
+  be rewritten. Namespace the document id by owner (`videoProjects/{uid}_{projectId}` or a
+  `users/{uid}/videoProjects/{projectId}` subcollection) so one user's id space cannot collide with
+  another's. Add emulator assertions for both.
+- **Follow-up needed:** confirm how `currentProjectId` is generated. If it is a uuid the squat is
+  impractical; if it is sequential or user-supplied it is trivially reachable. **This was not
+  determined during this audit** — do not assume either way.
+- **Depends on:** Nothing, but sequence it with ISSUE-1193 since they share the silent-failure path.
+
+### Lower-severity findings from the same pass (recorded, not separately ticketed)
+
+- **No `.catch()` on the load promise** (`useVideoProjectPersistence.ts:61-72`). A rejection —
+  as opposed to a caught error inside the service — leaves `setIsLoadingProject(false)` unreached,
+  so the editor spins forever. Fold into ISSUE-1193.
+- **No undo anywhere in the editor store.** `removeTrack` (line 415-427) additionally cascades:
+  it deletes every clip whose `trackId` matches, with no confirmation. One misclick on a video
+  editor holding irreplaceable session footage is unrecoverable.
+- **Mobile background-kill loses up to 30s of edits.** The only guard is `beforeunload`
+  (line 99-109), which mobile browsers frequently never fire. There is no `visibilitychange`
+  flush, so the 5s debounce / 30s interval window is simply lost when the OS reclaims the tab.
+- **`window.useVideoEditorStore` is exposed unconditionally in production**
+  (`videoEditorStore.ts:524-526`) — no `import.meta.env.DEV` guard, unlike `DevPortWarning`
+  (`App.tsx:53`). Any injected script can mutate or wipe the timeline. **Systemic, not local:**
+  `packages/renderer/src/core/store/index.ts:169` exposes `window.useStore` the same way. Fix both
+  together or neither; flagged here because it widens every finding above.
+- **Compiler bypasses the membership duration cap.** It sets `durationInFrames` directly
+  (line 583), skipping the `MembershipService.getMaxVideoDurationFrames` clamp that
+  `updateProjectSettings` applies (line 376-391).
+
+### Noted, NOT audited — these are repair-order step 4 (compiler/render correctness)
+
+Listed only so they are not lost. No assessment is implied.
+
+- `sourceInUs` / `sourceOutUs` are written by the compiler and **read by nothing** — a repo-wide
+  grep outside `videoEditorStore.ts` returns zero hits, so the compiled source ranges are inert
+  and both preview and render still start every source at its beginning (ISSUE-1180 acceptance 2).
+- Compiled clips never get a `src`, so there is nothing for the preview to resolve.
+- **The compiler is not idempotent**: `clips: [...existingProject.clips, ...compiledClips]`
+  (line 582) appends on every run, and each clip gets a fresh `uuidv4()`, so re-running for the
+  same approval duplicates the timeline with no stable key to dedupe on. ISSUE-1180 acceptance 4
+  requires idempotency. *(Flagged here rather than ticketed because it is squarely step 4, but it
+  is the item most likely to be mistaken for a data-loss bug when it surfaces.)*
+- `blooper` decisions are compiled into the main timeline alongside `keep` (line 545) with no
+  marker distinguishing them.
+- `originalStartUs` is derived by offset arithmetic (line 555) with no clamping, so an override
+  earlier than the segment start can produce a negative source in-point.
 
 ---
