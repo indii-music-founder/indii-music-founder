@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { useVideoEditorStore } from '../store/videoEditorStore';
+import { useShallow } from 'zustand/react/shallow';
 import { Player } from '@remotion/player';
 import { MyComposition } from '../remotion/MyComposition';
 
@@ -8,7 +9,9 @@ import { MyComposition } from '../remotion/MyComposition';
  * It listens to BroadcastChannel to sync state from the main editor window.
  */
 export default function VideoPopout() {
-    const { project, setProject } = useVideoEditorStore();
+    const { project, setProject } = useVideoEditorStore(
+        useShallow((state) => ({ project: state.project, setProject: state.setProject }))
+    );
     const playerRef = React.useRef<import('@remotion/player').PlayerRef>(null);
 
     useEffect(() => {

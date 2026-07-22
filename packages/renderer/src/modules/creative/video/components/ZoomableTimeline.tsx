@@ -9,6 +9,7 @@
 
 import React, { useRef, useCallback, useEffect, useMemo, useState } from 'react';
 import { useVideoEditorStore } from '../store/videoEditorStore';
+import { useShallow } from 'zustand/react/shallow';
 import { ZoomIn, ZoomOut, Maximize2 } from 'lucide-react';
 
 interface ZoomableTimelineProps {
@@ -18,7 +19,13 @@ interface ZoomableTimelineProps {
 
 export function ZoomableTimeline({ children, className = '' }: ZoomableTimelineProps) {
     const containerRef = useRef<HTMLDivElement>(null);
-    const { timelineZoom, setTimelineZoom, project } = useVideoEditorStore();
+    const { timelineZoom, setTimelineZoom, project } = useVideoEditorStore(
+        useShallow((state) => ({
+            timelineZoom: state.timelineZoom,
+            setTimelineZoom: state.setTimelineZoom,
+            project: state.project,
+        }))
+    );
 
     // Handle wheel zoom with Ctrl/Cmd
     const handleWheel = useCallback((e: WheelEvent) => {

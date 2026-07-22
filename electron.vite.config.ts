@@ -216,8 +216,8 @@ export default defineConfig({
             },
             outDir: resolve(__dirname, 'dist/renderer'),
             sourcemap: true,
-            // WO-14: Warn when any chunk exceeds 2.5 MB (unminified).
-            chunkSizeWarningLimit: 2500,
+            // ISSUE-1202: lowered from 2500 — 1000KB is the realistic threshold
+            chunkSizeWarningLimit: 1000,
             rollupOptions: {
                 external: [
                     'fs',

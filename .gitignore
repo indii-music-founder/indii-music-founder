@@ -1,6 +1,10 @@
 # Claude Code worktrees (local-only, must never be tracked as submodules)
 .claude/worktrees/
 
+# Agent QA artifacts — screenshots, generated reports, and implementation snapshots are CI output, not source (ISSUE-1208)
+# Keep: .agent/skills/, .agent/workflows/, .agent/test_ledger/ (these ARE source of truth)
+.agent/artifacts/
+
 # Logs
 logs
 .tmp/

@@ -1,6 +1,7 @@
 import React, { useState, useCallback, memo } from 'react';
 import { Play, Pause, SkipBack, SkipForward, Plus } from 'lucide-react';
 import { VideoProject, VideoClip, useVideoEditorStore } from '../../store/videoEditorStore';
+import { useShallow } from 'zustand/react/shallow';
 import { TimeRuler } from './TimeRuler';
 import { TrackList } from './TrackList';
 import { Playhead } from './Playhead';
@@ -26,8 +27,14 @@ export const VideoTimeline = memo(({
     handlePlayPause, handleSeek, handleAddTrack, handleAddSampleClip,
     removeTrack, removeClip, handleDragStart, formatTime
 }: VideoTimelineProps) => {
-    const isPlaying = useVideoEditorStore(state => state.isPlaying);
-    const { addKeyframe, removeKeyframe, updateKeyframe } = useVideoEditorStore();
+    const { isPlaying, addKeyframe, removeKeyframe, updateKeyframe } = useVideoEditorStore(
+        useShallow((state) => ({
+            isPlaying: state.isPlaying,
+            addKeyframe: state.addKeyframe,
+            removeKeyframe: state.removeKeyframe,
+            updateKeyframe: state.updateKeyframe,
+        }))
+    );
     const [expandedClipIds, setExpandedClipIds] = useState<Set<string>>(() => new Set());
 
     const toggleExpand = useCallback((clipId: string) => {

@@ -6,8 +6,10 @@ initSentry();
 
 import { useShallow } from 'zustand/react/shallow';
 import { useStore } from './store';
-import LoginForm from './components/auth/LoginForm';
-import { PrivacyPolicy, TermsOfService } from '@/modules/legal/pages/LegalPages';
+// Lazy-load login and legal pages — they're never needed by authenticated users (ISSUE-1203)
+const LoginFormLazy = lazy(() => import('./components/auth/LoginForm'));
+const PrivacyPolicy = lazy(() => import('@/modules/legal/pages/LegalPages').then(m => ({ default: m.PrivacyPolicy })));
+const TermsOfService = lazy(() => import('@/modules/legal/pages/LegalPages').then(m => ({ default: m.TermsOfService })));
 import { STANDALONE_MODULES, type ModuleId } from './constants';
 import { useURLSync } from '@/hooks/useURLSync';
 import { useLocation } from 'react-router-dom';
@@ -72,7 +74,9 @@ function PublicLegalPage({ type }: { type: 'privacy' | 'terms' }) {
                     Sign in
                 </a>
             </div>
-            {type === 'privacy' ? <PrivacyPolicy /> : <TermsOfService />}
+            <Suspense fallback={<LoadingFallback />}>
+                {type === 'privacy' ? <PrivacyPolicy /> : <TermsOfService />}
+            </Suspense>
         </div>
     );
 }
@@ -96,7 +100,11 @@ function UnauthenticatedApp() {
         return <LoadingFallback />;
     }
 
-    return <LoginForm />;
+    return (
+        <Suspense fallback={<LoadingFallback />}>
+            <LoginFormLazy />
+        </Suspense>
+    );
 }
 
 export default function App() {

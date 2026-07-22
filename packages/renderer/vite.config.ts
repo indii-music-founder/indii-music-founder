@@ -184,7 +184,7 @@ export default defineConfig({
         },
         outDir: resolve(repoRoot, 'dist/renderer'),
         sourcemap: true,
-        chunkSizeWarningLimit: 2500,
+        chunkSizeWarningLimit: 1000, // ISSUE-1202: lowered from 2500 — 1000KB is the realistic threshold for a production web app
         // ISSUE-548: Strip console.log/debug/info and debugger statements in production.
         // Agent system prompt strings ("You are a ...") are functional feature code,
         // not accidental leakage — they are intentionally client-side for offline use.

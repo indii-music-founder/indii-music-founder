@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useToast } from '@/core/context/ToastContext';
 import { 
@@ -22,8 +23,15 @@ import { type Campaign } from '@/core/store/slices/crmSlice';
 export default function CRMDashboard() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     
-    // Connect to Zustand store
-    const { crm, subscribeToCampaigns, createCampaign, deleteCampaign } = useStore();
+    // Connect to Zustand store — select only what we use to prevent re-renders on unrelated state changes (ISSUE-1205)
+    const { crm, subscribeToCampaigns, createCampaign, deleteCampaign } = useStore(
+        useShallow((state) => ({
+            crm: state.crm,
+            subscribeToCampaigns: state.subscribeToCampaigns,
+            createCampaign: state.createCampaign,
+            deleteCampaign: state.deleteCampaign,
+        }))
+    );
     const { campaigns, loading, error } = crm;
     const toast = useToast();
 

@@ -2030,27 +2030,25 @@ Listed only so they are not lost. No assessment is implied.
 > Phase-1 audit only — three parallel read-only agents surveyed (1) bundle/lazy-load,
 > (2) Zustand/React re-render patterns, (3) dead code/unused deps. Nothing below has been fixed.
 > **2026-07-22 follow-up verification pass:** ran real `npm ls`/`depcheck` against `packages/renderer`
-> (not just grep) to pressure-test the dependency-related findings before any fix is attempted.
-> Result: ISSUE-1198 was re-scored from bloat to a real install-breaking bug (undeclared/extraneous
-> `motion` package); ISSUE-1200 was retracted as a false positive (`react-redux`/`@reduxjs/toolkit`
-> are `recharts`' transitive deps, not the app's); ISSUE-1209 now lists depcheck's full candidate
-> list with an explicit warning that most of it needs a manual read, not a bulk delete.
+> (not just grep). First attempt was contaminated by an unrelated uncommitted WIP diff sitting in
+> the working tree (now safely `git stash`ed, see ISSUE-1198) which made `motion` look
+> undeclared/extraneous and made `react-redux`/`@reduxjs/toolkit` look un-declared. Re-ran every
+> check against the clean committed `HEAD` tree and corrected both: ISSUE-1198 is bloat (not an
+> install-breaker) and ISSUE-1200 stands as a real, low-value cleanup (declared-but-unused direct
+> deps that are also pulled in transitively by `recharts`, so removing them saves no install size —
+> downgraded from P1 to P2 accordingly). ISSUE-1209 lists depcheck's full candidate list with an
+> explicit warning that most of it needs a manual read, not a bulk delete.
 
-### ISSUE-1198: `motion` package is undeclared/extraneous — 178 files depend on it, a clean install would break them (superseded framing, was: "duplicate animation libraries")
+### ISSUE-1198: Two animation packages declared and used side-by-side (`framer-motion` + `motion`) — CORRECTED TWICE, see below before trusting this entry
 
 - **Status:** 🔴 OPEN
-- **Severity:** 🔴 CRITICAL (was mis-scored P0-as-bloat; re-verified 2026-07-22 as an install-breaking correctness bug, not a size-only concern)
-- **Module:** `packages/renderer/package.json`, `package-lock.json`
-- **Evidence (corrected after deeper verification — original framing was wrong):**
-  - `npm ls motion --workspace=packages/renderer` reports **`motion@12.23.26 extraneous`** — installed in `node_modules` and present in `package-lock.json`'s `packages/renderer` dependency block, but **absent from `packages/renderer/package.json`** (confirmed by direct `json.load` of the file, not grep).
-  - 178 files import from `'motion/react'` (`grep -rl "from 'motion/react'"` under `packages/renderer/src`); 69 files import from `'framer-motion'` (which *is* properly declared, `^12.35.1`).
-  - `motion`'s own package (per lockfile) itself depends on `framer-motion` — it is a thin wrapper/rebrand, not an unrelated second engine. So this was never really "two runtimes bundled" — it's one properly-declared library (`framer-motion`) plus one **undeclared** wrapper (`motion`) that node_modules/lockfile currently paper over.
-  - Root cause is almost certainly a manual `package.json` edit (removing `motion`) that was never followed by `npm install` to sync the lockfile, or a lockfile that was hand-reverted. Either way, package.json and package-lock.json have drifted.
-- **Impact:** Any environment that does a real clean install (`npm ci`, a fresh clone + `npm install` that prunes extraneous packages, or a CI cache miss) can lose `motion` from `node_modules`, breaking all 178 importing files — including ones the original agent-pass grep (`src/core/context/ToastContext.tsx`) confirmed use it directly. This is a live-but-invisible outage risk, worse than the bloat framing originally given.
-- **Fix (not yet applied — pick one, do not do both):**
-  1. Add `"motion": "^12.23.26"` (or current) to `packages/renderer/package.json` dependencies to make the lockfile state truthful, and decide long-term whether to keep both import paths or migrate the 69 `framer-motion` call sites to `motion/react` (the majority usage) — **or**
-  2. Migrate the 178 `motion/react` call sites to the already-properly-declared `framer-motion` and remove the extraneous `motion` entry entirely.
-  Either way: run `npm install` (not `--force`/isolated-cache per CLAUDE.md §9 if other agents may be running) afterward and confirm `npm ls motion` shows a clean, non-extraneous state before calling this fixed.
+- **Severity:** 🟠 P0 (bundle bloat — NOT an install-breaking bug; that framing was a false alarm, see correction history)
+- **Module:** `packages/renderer/package.json`
+- **Correction history (read this before acting):**
+  1. First pass (grep-only): flagged as "two duplicate libraries," P0 bloat.
+  2. Second pass (`npm ls`): found `motion` reporting `extraneous` (undeclared but installed) and re-scored this CRITICAL as an install-breaking bug. **This was wrong** — the `npm ls`/`json.load` check was run against a **dirty working tree** that had someone else's uncommitted, unrelated WIP diff applied to `packages/renderer/package.json` (that diff removed `motion`, `@reduxjs/toolkit`, `react-redux`, `express`, `resend`, `@electron/rebuild` — apparently a prior, unfinished dependency-cleanup attempt, never migrated the 176 `motion/react` call sites, never committed). That WIP has been stashed (`git stash` entry: "concurrent-agent WIP: package.json dep drift fix + AppShell/store/OCR/PDF changes (not mine, preserving) - main") rather than lost — **do not pop that stash and run `npm install` without first migrating the `motion/react` call sites, or it will reproduce exactly the breakage this issue nearly misdiagnosed as already-live.**
+  3. Third pass, against the clean committed `HEAD` tree: `npm ls motion --workspace=packages/renderer` shows `motion@12.23.26` as a normal, non-extraneous, properly declared dependency. **Ground truth: both `motion` (176 source imports) and `framer-motion` (69 source imports, declared `^12.35.1`) are legitimately declared and used on the committed tree today.** No install-breaking risk exists in committed code. The original P0-bloat framing (two animation runtimes shipped, `motion` internally wraps `framer-motion` per its own lockfile entry) is the correct one.
+- **Fix (not yet applied):** Pick the majority usage (`motion`, 176 files) as the target, migrate the 69 `framer-motion` call sites to `motion/react`, remove `framer-motion` from `package.json`. Run `npm install` and confirm `npm ls framer-motion` reports it gone (or transitively-only via `motion`'s own dependency) afterward.
 
 ### ISSUE-1199: Two list-virtualization libraries for the same purpose
 
@@ -2060,18 +2058,24 @@ Listed only so they are not lost. No assessment is implied.
 - **Evidence (re-verified 2026-07-22):** `react-virtuoso` (3 files, not 6 as originally reported) and `@tanstack/react-virtual` (1 file, not 2) both properly declared and both used. Counts corrected but conclusion unchanged.
 - **Fix (not yet applied):** Pick one, migrate the minority call sites, drop the other dependency.
 
-### ISSUE-1200: RETRACTED — `react-redux` + `@reduxjs/toolkit` are NOT app dependencies; original finding was a false positive
+### ISSUE-1200: `react-redux` + `@reduxjs/toolkit` are declared direct dependencies with zero source usages — real but low-value cleanup
 
-- **Status:** ✅ CLOSED (2026-07-22, retracted before any fix was attempted)
-- **Why retracted:** The original grep-based agent pass found these two packages resolve in `packages/renderer`'s dependency tree and concluded they were unused app dependencies to remove. Deeper verification (`npm ls react-redux @reduxjs/toolkit --workspace=packages/renderer`) shows they are **transitive dependencies of `recharts`** (the charting library already used throughout the app), not declared anywhere in `packages/renderer/package.json`, and not importable/removable by this repo at all. There is nothing here to fix — flagging this only so the false lead isn't rediscovered. This is exactly the class of mistake `npm ls`/`depcheck` catches that raw import-grep cannot: grep can't distinguish "0 hits because it's genuinely dead" from "0 hits because it was never the app's dependency to begin with."
+- **Status:** ✅ FIXED (2026-07-22)
+- **Severity:** 🟢 P2 (downgraded from P1 — see correction below; removing saved no install footprint)
+- **Module:** `packages/renderer/package.json`
+- **Correction history:** Briefly retracted as a false positive when `npm ls` was run against a dirty working tree (see ISSUE-1198's correction history for the root cause — an unrelated uncommitted WIP diff had stripped these from `package.json`, making them look un-declared/transitive-only). Re-checked against the clean committed `HEAD` tree.
+- **Evidence (ground truth):** `packages/renderer/package.json` declared `"react-redux": "9.2.0"` and `"@reduxjs/toolkit": "2.11.2"` directly. `grep -rl "from 'react-redux'"` / `"from '@reduxjs/toolkit'"` across `packages/renderer/src` returned 0 hits — genuinely unused by app code. `npm ls react-redux @reduxjs/toolkit --workspace=packages/renderer` confirmed both are *also* pulled in transitively by `recharts` (the charting library, actively used). App state is entirely on `zustand` per CLAUDE.md convention.
+- **Fix applied:** Removed both direct entries from `packages/renderer/package.json`. Ran `npm install --workspace=packages/renderer` then `npm prune` (root) to reconcile the hoisted `node_modules`. Post-fix `npm ls react-redux @reduxjs/toolkit --workspace=packages/renderer` shows both resolving cleanly, transitively-only, via `recharts` — no error, no missing-peer warning.
+- **Verification:** `npm run typecheck --workspace=packages/renderer` → clean (no errors). `npm run test --workspace=packages/renderer -- --run` → **4312 passed, 47 skipped, 0 failed** (711 test files passed, 21 skipped). `npm run build:studio` → succeeded, no missing-module errors.
 
 ### ISSUE-1201: Likely-unused utility deps — `classnames`, `xml2js`
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-22)
 - **Severity:** 🟢 P2
 - **Module:** `packages/renderer/package.json`
-- **Evidence:** `classnames` has 0 usages in `src` while `clsx` (5 usages) covers the same job. `xml2js` has 0 usages while `fast-xml-parser` (2 usages) covers XML parsing.
-- **Fix (not yet applied):** Confirm via proper unused-dep tool, then remove.
+- **Evidence:** `classnames` had 0 usages in `src` while `clsx` (5 usages) covers the same job. `xml2js` had 0 usages while `fast-xml-parser` (2 usages) covers XML parsing.
+- **Fix applied:** Removed both entries from `packages/renderer/package.json`. `npm install` + root `npm prune` removed 3 packages from `node_modules` (their own transitive deps included) and confirmed `classnames`/`xml2js` are no longer present at all (not even transitively) — clean `npm ls classnames xml2js --workspace=packages/renderer` returns empty.
+- **Verification:** Same combined run as ISSUE-1200 — typecheck clean, full unit suite green (4312 passed / 0 failed), production build succeeded. Fixed together with ISSUE-1200 as one dependency-cleanup change since both are simple `package.json` deletions verified by the same test/build pass.
 
 ### ISSUE-1202: `chunkSizeWarningLimit` set unusually high (2.5MB), can mask real bloat
 
@@ -2141,5 +2145,79 @@ Listed only so they are not lost. No assessment is implied.
   - **Manually re-confirmed with direct grep (safe to treat as genuinely dead — see ISSUE-1201):** `classnames` (0 imports), `xml2js` (0 imports).
   - **NOT independently verified, and likely false positives given how depcheck works** (it can't see dynamic `import()`, CSS-only `@import`/Tailwind-plugin usage, worker-thread loading, or type-only augmentation): `essentia.js` (loaded via a Web Worker per CLAUDE.md tech stack table — grep-invisible), `tailwindcss-animate`/`tw-animate-css`/`autoprefixer`/`postcss`/`tailwindcss` (CSS-pipeline plugins, referenced from config files not JS imports), `@radix-ui/react-dialog` (may be pulled in transitively through a UI-kit wrapper component rather than imported by name at call sites), the Storybook addons (referenced from `.storybook/main.ts` config, not source imports), `@googlemaps/react-wrapper`/`ethers`/`crypto-js`/`@types/crypto-js`/`ajv`/`inngest`/`simplex-noise`/`y-protocols`/`@remotion/cloudrun`/`@types/google.maps` (need one grep pass each against config files and dynamic-import strings, not just static `from '...'` imports, before any removal).
 - **Fix (not yet applied):** For each remaining candidate above (i.e. every one except `classnames`/`xml2js`, already confirmed via ISSUE-1201), grep for the package name as a bare string (not just `from '<pkg>'`) across `src/`, `.storybook/`, `*.config.*`, and dynamic `import()` calls before removing. Do not bulk-delete off the depcheck list alone.
+
+---
+
+## Session 2026-07-22 — REPAIR ORDER STEP 2 (ISSUE-1175): durable ingestion — first defect found and fixed
+
+> Found while scoping step 2. This one could not be derived from the codebase — it needed the
+> platform documentation, because the bug is in a **default** the code never states.
+
+### ISSUE-1210: Cloud Functions v2 retries are off by default, so every idempotency guard in the upload finalizer is dead code and a transient fault silently strands the upload
+
+- **Status:** ✅ FIXED (2026-07-22)
+- **Severity:** 🔴 HIGH (silent, unrecoverable loss of a completed multi-GB upload; the exact durability step 2 exists to deliver)
+- **Module:** `packages/firebase/src/functions/video/finalizeVideoSessionUpload.ts`
+- **Evidence:**
+  - `finalizeStagedVideoUpload` is meticulously idempotent — `reused` short-circuits on a matching
+    `stagingGeneration`, `ifDestinationGenerationMatch: 0` on the promotion copy, a deterministic
+    `creationReceiptId`, and a Firestore transaction that refuses a second original.
+  - The trigger options (`VIDEO_SESSION_UPLOAD_TRIGGER_OPTIONS`) set bucket, timeout, memory and
+    region — **and no `retry`**. A repo-wide grep found `retry: true` in **zero** of the 10
+    event-driven triggers in `packages/firebase/src`.
+  - Per Firebase's own documentation, retries are **disabled by default** for v2 event-driven
+    functions, and when one fails without retry enabled "the function always reports that it
+    executed successfully, and `200 OK` response codes might appear in its logs."
+  - The handler's catch block rethrew on **every** error path (permanent and transient alike).
+- **Impact:** Nothing was ever redelivered, so none of the idempotency work could execute. A
+  transient GCS read fault, a Firestore contention retry, or a timeout while stream-hashing a large
+  original meant the staged upload was never promoted, the session stayed at `uploading` forever,
+  and the platform logged success. The user uploads a multi-GB phone session and it silently never
+  arrives — the same failure shape as ISSUE-1193, one layer down in the server path.
+- **Fix:**
+  1. `retry: true` on the trigger, so Eventarc redelivers with exponential backoff (10–600s, 24h window).
+  2. Permanent/transient classification (`isPermanentFinalizationFailure`). Retries alone would have
+     been unsafe: a malformed or cross-owner event would have ground for the full 24 hours. Permanent
+     codes (`invalid-argument`, `permission-denied`, `failed-precondition`, `data-loss`,
+     `unauthenticated`, `already-exists`) are now recorded and swallowed. **`not-found` is
+     deliberately transient** — a Storage event can outrun the session document becoming readable.
+  3. Permanent failures write the terminal `failed` state the shared schema already modelled but
+     nothing populated (`failure {code,message,retryable}`, `failedAt`, `terminalReceiptId`), so the
+     session stops sitting at `uploading` and the owner can be told.
+  4. `markFailed` never overwrites a session that already has an `original` or already reached
+     `failed`/`cancelled`/`completed` — a late permanent failure must not erase a finalized original.
+  5. If recording the terminal state itself fails, the original error is rethrown rather than
+     swallowed — an unrecorded permanent failure is indistinguishable from the silent drop this
+     change exists to remove.
+- **Acceptance:** [MET] 15 tests in `finalizeVideoSessionUpload.test.ts` (was 2), including an
+  assertion that `retry` is `true` so removing it fails loudly, the full permanent/transient
+  classification table, and proof the failure record satisfies the session schema (non-empty message).
+  Typecheck clean; 21 video-session function tests pass.
+- **Not covered — deliberately out of this fix:** whether the 540s ceiling is sufficient to
+  stream-hash a genuinely long 4K phone session. Retry now makes a timeout survivable rather than
+  fatal, but a file that can never hash inside the ceiling would retry for 24h and then fail. That is
+  a sizing question needing a real large fixture, and it belongs with the rest of step 2.
+- **Depends on:** Nothing. This was the first blocker in front of step 2's stated content.
+
+### ISSUE-1211: `packages/firebase` test files are excluded from typecheck, so test doubles can silently drift from the interfaces they claim to implement
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟡 MEDIUM (no runtime impact; it removes the compiler as a check on exactly the fixtures that stand in for production collaborators)
+- **Module:** `packages/firebase/tsconfig.json`
+- **Evidence:** `include: ['src']` with `exclude: ['src/__tests__', 'src/**/*.test.ts']`. Confirmed
+  empirically — `tsc -p packages/firebase/tsconfig.json --listFiles` contains **0** `.test.ts` files.
+  Found when adding `markFailed` to `VideoSessionFinalizationStore` (ISSUE-1210): the two existing
+  test doubles no longer satisfied the interface and **nothing failed**. They were updated by hand;
+  the compiler would have caught it.
+- **Impact:** A test double that has drifted from its interface still passes, and reads to the next
+  person as an accurate model of the real collaborator. This is the same class as the recently-fixed
+  gap where `packages/firebase` was absent from the root typecheck entirely — the package was added
+  back, its tests were not.
+- **Fix:** Give the package a `tsconfig.test.json` that includes the test files and is built by
+  `npm run typecheck`, rather than widening the emit config (tests must not be emitted).
+- **Do not:** Do not simply delete the `exclude` line — these files are compiled for emit, and
+  pulling tests into the build output is worse than the gap.
+- **Depends on:** Nothing. Expect a batch of pre-existing errors on first run; that backlog is the
+  point, not a reason to defer.
 
 ---
