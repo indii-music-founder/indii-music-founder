@@ -1302,9 +1302,9 @@
 
 ---
 
-### ISSUE-1182: [NEEDS RESEARCH BEFORE BUILD] Agent-assisted PRO/SoundExchange/rights-org selection guidance for artists
+### ISSUE-1182: Agent-assisted PRO/SoundExchange/rights-org guidance for artists
 
-- **Status:** 🔵 RESEARCH REQUIRED — do NOT build until research below is complete and reviewed
+- **Status:** 🟢 RESEARCH COMPLETE / FOUNDER DIRECTION RECORDED — implementation remains separately gated
 - **Severity:** — (product opportunity, not a defect)
 - **Module:** Registration Center / Agent orchestration & tool layer
 - **Origin:** Founder note, 2026-07-21 — indii already has an orchestration/tool layer, and some agents now have computer-use capability. This raises a real question: could an agent help an artist figure out which PRO (ASCAP/BMI/SESAC) is the right fit for them, walk them through SoundExchange registration, or similarly navigate other founder-adjacent registrations described in `docs/RELEASE_CHECKLIST.md` § "Music-Identity & Royalty Registration Prerequisites"? This is explicitly the per-artist side (see [[docs/RELEASE_CHECKLIST.md]] resolved decision: artists own their own MLC/SoundExchange/PRO registrations; indii tracks, never administers).
@@ -1314,7 +1314,12 @@
   2. What existing Registration Center code (per the app's own description: "tracks Copyright, ASCAP/BMI/SESAC, SoundExchange, and MLC per track") already covers, and where's the actual gap this would fill?
   3. Is there a simple decision-support heuristic (e.g. based on genre/catalog/existing affiliations) that's accurate enough to recommend a PRO, or does this require an actual legal/financial advisor disclaimer?
   4. What's the MVP scope — one provider (e.g. just SoundExchange, since registration is free and low-stakes) vs. all three PRO options plus MLC plus SoundExchange at once?
-- **Do NOT build any of this until the above is answered and reviewed with the founder.**
+- **Research conclusion (2026-07-21):** This is not a greenfield "MVP" and must not be framed as one. indii already has a substantial Registration Center with provider adapters, catalog autofill, per-track status tracking, approval gates, an AI rail, orchestration, and computer-use scaffolding. The product opportunity is to make that existing system smarter and more coherent, not to add a toy parallel flow or ask the founder to make an artist's provider choice.
+- **Founder direction (2026-07-21):** The artist-user — never the founder — decides whether and where to affiliate with a PRO. indii should use its existing AI/UI capabilities to help the artist understand whether they need a PRO, SoundExchange, and/or The MLC; explain the differences; reuse known catalog data; guide missing-information collection; present review steps and checkboxes; and let the artist mark externally completed steps. The experience may be highly assisted and conversational without requiring the agent to scroll or operate a third-party portal.
+- **Computer-use decision:** Preserve computer use as a legitimate future capability, not a forbidden direction. Do not claim or ship autonomous provider filing until it works end to end and the relevant provider permits the access pattern. Current evidence supports caution: ASCAP expressly restricts automated access; SoundExchange restricts automated ISRC-search collection and does not affirmatively authorize third-party filing automation; The MLC makes the authorized user responsible for authority and truthful copyright/financial data; BMI/SESAC-specific permission would require confirmation. For now, the artist owns authentication, provider terms acceptance, identity/tax/payment data, legal certifications, MFA/CAPTCHA, and final submission.
+- **Required product boundary:** indii remains the artist's guidance, preparation, and tracking layer — not the PRO, publisher, royalty administrator, legal adviser, or account holder. Provider-issued acknowledgement is the source of truth; an indii checkbox is user-reported completion unless independently verified. Guidance must disclose that it is educational, does not determine ownership/splits/eligibility/royalties, and does not replace provider terms or professional legal/tax advice.
+- **Existing-product correction to include when implementation is authorized:** Remove or revise any Registration Center copy that says indii can complete a provider registration entirely from catalog data when the actual path is manual-required. Align the AI rail, adapters, status labels, and handoff experience around the same honest capability boundary.
+- **Founder action required now:** None. Research has been reviewed and the product direction is recorded. Do not implement until the founder separately authorizes build work.
 
 ---
 
