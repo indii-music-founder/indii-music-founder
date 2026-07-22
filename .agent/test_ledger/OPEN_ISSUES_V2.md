@@ -3,7 +3,7 @@
 > This file is written by the /real test agent and consumed by a fixing agent.
 > The test agent NEVER modifies code. The fix agent NEVER runs tests.
 >
-> **Last updated:** 2026-07-22 (`/qa` unit-suite verification ISSUE-1191..1192 appended; browser QA sweep ISSUE-1185..1190 appended — 1185/1186 fixed in-session, 1187..1190 open; earlier: ISSUE-1110..1114 Computer Execution plan, ISSUE-1095..1099 audit + fixes)
+> **Last updated:** 2026-07-22 (**FOUNDER ASSESSMENT block appended at end of file — ISSUE-1175..1181 scope corrected and a binding 6-step repair order recorded; read it before touching Session Breakdown.** ISSUE-1187 fixed for real and its premature ✅ corrected; `/qa` unit-suite verification ISSUE-1191..1192; browser QA sweep ISSUE-1185..1190 — 1185/1186/1187 fixed, 1188..1190 open; earlier: ISSUE-1110..1114 Computer Execution plan, ISSUE-1095..1099 audit + fixes)
 > **Branch:** `main` (direct commits)
 >
 > **Ledger protocol (V2):** This is the ACTIVE master ledger. It operates exactly like the original:
@@ -1193,6 +1193,7 @@
 ### ISSUE-1175: Secure long-recording ingestion must preserve the original and produce an auditable edit-proxy manifest
 
 - **Status:** 🟡 PARTIAL (2026-07-22 — shared Zod schemas `CanonicalMediaRef`, `VideoSession`, `ProxyManifest` & `SessionVideoUploadService` implemented and verified with unit tests)
+- **Founder assessment (2026-07-22 — governs scope over the PARTIAL line above):** **Incomplete and not production-connected.** Repair order step 2 (durable ingestion generation-claiming + worker execution), then step 3 (proxy production + PTS mapping). See the FOUNDER ASSESSMENT session block at the end of this file.
 - **Severity:** 🔴 HIGH (foundation for the entire Session Breakdown workflow; raw unreleased footage and masters are privacy-sensitive)
 - **Module:** New shared session-media contracts; `packages/renderer/src/services/video/VideoUploadService.ts`; Firebase owner-scoped upload/session functions and Storage rules; new long-media worker; Creative Video session UI
 - **Depends on / coordinates with:** ISSUE-1145 typed media boundaries. Do not reuse the existing generated-video upload contract unchanged.
@@ -1209,6 +1210,7 @@
 ### ISSUE-1176: Phone guide audio cannot yet align repeated or partial performances to the immutable canonical master
 
 - **Status:** 🟡 PARTIAL (2026-07-22 — `engine-dsp` Python alignment pipeline dependencies & test suite verified passing 12/12)
+- **Founder assessment (2026-07-22 — governs scope over the PARTIAL line above):** **Essentially unimplemented** — a passing `engine-dsp` test suite is not an implemented alignment workflow. Repair order step 5, and blocked until step 3 supplies verified proxy/guide audio. See the FOUNDER ASSESSMENT session block at the end of this file.
 - **Severity:** 🔴 HIGH (core product differentiator; incorrect matching produces visible lip-sync failure)
 - **Module:** New media/DSP synchronization worker and shared `MasterTimingProfile` / `MasterSyncAlignment` contracts; canonical-master analysis sidecars; session job APIs
 - **Depends on:** ISSUE-1175 for verified proxy/guide audio; ISSUE-1169 and ISSUE-1170 must provide the live verified canonical-master path and receipt before production enablement.
@@ -1226,6 +1228,7 @@
 ### ISSUE-1177: Long sessions lack grounded transcription, take detection, and a validated non-destructive edit-plan contract
 
 - **Status:** 🟡 PARTIAL (2026-07-22 — shared Zod schemas `SessionSegmentSchema`, `SessionEditPlanSchema` & unit tests verified passing)
+- **Founder assessment (2026-07-22 — governs scope over the PARTIAL line above):** Contract scaffolding only, **no customer workflow**. Repair order step 5, in order after ISSUE-1176. See the FOUNDER ASSESSMENT session block at the end of this file.
 - **Severity:** 🔴 HIGH (without this layer the user still has to manually review the entire recording)
 - **Module:** New session-analysis pipeline; shared `SessionSegment` / `SessionEditPlan` schemas; Gemini/Vertex backend; transcript and analysis receipts
 - **Depends on:** ISSUE-1175 deterministic media evidence; ISSUE-1176 sync evidence for performance regions; ISSUE-1168 production model routing/cost controls before paid rollout.
@@ -1242,6 +1245,7 @@
 ### ISSUE-1178: Spoken takes and performance clips need non-destructive cleanup, master replacement, ambience blending, and music ducking
 
 - **Status:** 🟡 PARTIAL (2026-07-22 — shared Zod schema `AudioRecipeSchema` & unit tests verified passing)
+- **Founder assessment (2026-07-22 — governs scope over the PARTIAL line above):** Contract scaffolding only, **no customer workflow**. Repair order step 5, in order after ISSUE-1177. See the FOUNDER ASSESSMENT session block at the end of this file.
 - **Severity:** 🟠 HIGH (finishing gap forces artists into a second audio application after indii finds the right take)
 - **Module:** New server-side audio-recipe/processing worker; shared `AudioRecipe` and derivative receipt contracts; Video session preview and Remotion/FFmpeg mixing
 - **Depends on:** ISSUE-1175 guide/original assets; ISSUE-1176 synchronized performance mapping; ISSUE-1177 classified spoken/performance regions.
@@ -1258,6 +1262,7 @@
 ### ISSUE-1179: Session Breakdown needs a Director's Cut review surface with immutable approvals and low-confidence gates
 
 - **Status:** 🟡 PARTIAL (2026-07-22 — shared Zod schema `ApprovalReceiptSchema` & unit tests verified passing)
+- **Founder assessment (2026-07-22 — governs scope over the PARTIAL line above):** Contract scaffolding only, **no customer workflow**. Repair order step 5, in order after ISSUE-1178. See the FOUNDER ASSESSMENT session block at the end of this file.
 - **Severity:** 🔴 HIGH (human approval is the safety and trust boundary for editorial decisions)
 - **Module:** New `packages/renderer/src/modules/creative/video/session/**`; Director's Cut/selects UI; session state/services; approval receipts
 - **Depends on:** ISSUE-1177 edit-plan versions; ISSUE-1176 synchronization evidence; ISSUE-1178 audio recipes/previews. Timeline compilation remains in ISSUE-1180.
@@ -1274,6 +1279,7 @@
 ### ISSUE-1180: Approved session selects cannot compile into a durable master-relative timeline or render exact source ranges
 
 - **Status:** 🟡 PARTIAL (2026-07-22 — VideoClip timeline extensions, source mapping, and pure `compileApprovalToTimeline` compiler implemented & verified with unit tests)
+- **Founder assessment (2026-07-22 — governs scope over the PARTIAL line above):** Code exists, but **current compiler/persistence/render behaviour is unsafe**. Split across repair order step 1 (authorization + data-loss risks — the highest priority item on the whole list) and step 4 (compiler/render correctness + idempotent compilation). See the FOUNDER ASSESSMENT session block at the end of this file.
 - **Severity:** 🔴 HIGH (first customer-visible MVP completion; without this, approved selects cannot become an editable video)
 
 - **Module:** Shared `TimelineSourceClip` schema; `videoEditorStore.ts`; timeline project persistence/compiler; preview components; `MyComposition.tsx`; render contract
@@ -1291,6 +1297,7 @@
 ### ISSUE-1181: Approved session timelines need private derivative receipts and typed Social/Campaign handoff—not client URLs or premature publishing
 
 - **Status:** 🟡 PARTIAL (2026-07-22 — shared Zod schemas `DerivativeAssetReceiptSchema` & `SocialHandoffDraftSchema` verified passing)
+- **Founder assessment (2026-07-22 — governs scope over the PARTIAL line above):** **Partial schemas only.** Repair order step 6 (terminal rendering + handoff), last. See the FOUNDER ASSESSMENT session block at the end of this file.
 - **Severity:** 🟠 HIGH (completes value delivery while protecting unreleased footage and explicit publishing consent)
 - **Module:** Private render lifecycle; generated asset library; platform-variant jobs; Social/Campaign typed handoff; lineage and deletion
 - **Depends on:** ISSUE-1180 durable compiled timeline; ISSUE-1123 completed export artifact lifecycle; ISSUE-1157 private server-owned rendering; reuse ISSUE-1159's terminal/playable-asset eligibility pattern. Do not duplicate those systems or PLP/Meta Ads work.
@@ -1459,8 +1466,22 @@
 
 ### ISSUE-1187: Cookie banner is positioned over the onboarding screen's primary call-to-action
 
-- **Status:** ✅ FIXED (2026-07-22, gated `bottom-20` for mobile tab bar and `md:bottom-4` for desktop in `CookieConsentBanner.tsx`)
+- **Status:** ✅ FIXED (2026-07-22, commit `938678648` — **two parts, both required**)
+  1. Responsive offset `bottom-20 md:bottom-4` (commit `d5488f6dd`).
+  2. Shared space reservation (commit `938678648`) — the banner publishes `--consent-banner-space`
+     on `<html>`; `AppShell.tsx`'s single shared module wrapper composes it with the existing 88px
+     `MobileTabBar` clearance.
+
+  > **Correction to an earlier status on this entry.** This was briefly marked ✅ FIXED on part 1
+  > alone. Re-measuring disproved that: with only the responsive offset, the banner wrapper occupied
+  > **y=455..704** at 1280×720 while the grid's second row sat at **y=492..617**, so "Touring Band"
+  > and "Label Manager" were still unreachable at their centres. **Position alone cannot fix this** —
+  > a ~250px banner and a full-height centred grid do not both fit in a 720px viewport unless the
+  > content reserves the space. Recorded per the McLear rule: a partial fix must not be rounded up
+  > to a closed one.
 - **Severity:** 🟠 HIGH (first-run flow; obstructs the first decision a new artist is asked to make)
+- **Founder decision (2026-07-22):** Fix shape **(2), bottom bar** — "make the mobile clearance
+  responsive at the shared bar rather than adding an onboarding-specific modal workaround."
 
 - **Module:** `packages/renderer/src/components/shared/CookieConsentBanner.tsx:204` (position),
   `packages/renderer/src/modules/onboarding/pages/OnboardingPage.tsx` (the obstructed screen),
@@ -1495,10 +1516,31 @@
      first arrival at the dashboard.
   Recommendation: **(2)** — it fixes the banner for every screen at once rather than special-casing
   onboarding, and the `bottom-20` offset is simply wrong on desktop where no tab bar exists.
-- **Acceptance:** On a fresh first run at 1280×720 **and** 375×812, `elementFromPoint` at the centre of
-  each of the four career cards resolves to that card (or a descendant of it), with the cookie banner
-  still visible and still fully interactive.
-- **Depends on:** ISSUE-1186 (landed). Founder picks fix shape 1, 2, or 3 before implementation.
+- **What was actually built (shape 2, as chosen):**
+  - `CookieConsentBanner.tsx` publishes `--consent-banner-space` = `offsetHeight + computed bottom`.
+    Both inputs are transform-independent, so the enter/exit spring animation cannot feed a
+    mid-flight value into layout. Re-measured by a `ResizeObserver` (the Customize panel grows the
+    banner) and on `window.resize` (the breakpoint changes the offset). Removed on dismiss and on
+    unmount, so a dismissed banner never leaves phantom padding.
+  - `AppShell.tsx:393` — the one shared wrapper that hosts every module — became
+    `paddingBottom: calc(<88px on phones, else 0px> + var(--consent-banner-space, 0px))`, replacing
+    the bare `pb-[88px]`. Composed in the same place and by the same mechanism the `MobileTabBar`
+    clearance already used, so no module needs to know the banner exists.
+- **Acceptance:** [MET]
+  - **1280×720, real onboarding screen** (forced via `window.useStore.getState().setModule('onboarding')`
+    with consent cleared): `--consent-banner-space` = `266px`; the grid shifts from y=492 to y=359,
+    clear of the banner at y=455; `elementFromPoint` at all **four** card centres resolves to the
+    card itself — DJ / Performer, Sync Producer, Touring Band, Label Manager all `reachable: true`.
+    The banner stays visible and interactive throughout.
+  - **375×812:** composed padding measured as `calc(88px + 412px)` = `500px` with the wrapper
+    scrollable, so all content can be scrolled clear of the banner. Note that at phone width the app
+    routes to `mobile-remote` (the Controller), not to onboarding — the career grid is not reachable
+    at that breakpoint, so the four-card assertion does not apply there.
+  - **Teardown:** after "Reject Non-Essential", the custom property is removed and the wrapper's
+    padding returns to exactly `88px` — identical to pre-change behaviour, no regression.
+  - `npm run typecheck` clean; targeted suite (onboarding + shared + dashboard) **11 files, 36 tests,
+    all passing**; full pre-commit gate passed.
+- **Depends on:** ISSUE-1186 (landed). Founder decision taken 2026-07-22 — shape (2).
 
 ### ISSUE-1188: Boardroom has no way to seat or change agents on a phone, while the on-screen copy instructs the user to do exactly that
 
@@ -1675,5 +1717,60 @@
      mounted.
   4. `npm test -- --run` contains no Daisychain runtime exception while retaining the interaction test.
 - **Depends on:** Nothing.
+
+---
+
+## Session 2026-07-22 — FOUNDER ASSESSMENT: Session Breakdown (ISSUE-1175..1181) status correction + binding repair order
+
+> **Source:** William's own review, 2026-07-22. This is **founder direction, not an agent finding** —
+> it has not been independently re-verified by the agent recording it. Where it contradicts an
+> existing 🟡 PARTIAL status on ISSUE-1175..1181, **the founder's read governs scope**.
+>
+> **Why this block exists:** on 2026-07-22 ISSUE-1175..1181 were each flipped from 🔴 OPEN to
+> 🟡 PARTIAL on the strength of "shared Zod schemas + unit tests passing." Schemas existing and
+> their unit tests passing is real work, but it is **not** the same as a connected customer
+> workflow. Reading those seven PARTIAL lines together gives a materially more finished impression
+> than the code supports. This block restores the honest picture without deleting the earlier
+> claims, which remain accurate about the narrow thing they assert.
+
+### Founder assessment (verbatim scope judgement)
+
+**Strongest completed portion:** the initial contract/upload foundation — owner-bound session
+creation, private staging rules, immutable original identity, and a fixture-tested FFmpeg prototype.
+
+**The implementation then becomes mostly schemas and disconnected helpers:**
+
+| Issue | Ledger status as written | Founder's assessment |
+|---|---|---|
+| ISSUE-1175 | 🟡 PARTIAL (schemas + `SessionVideoUploadService`) | **Incomplete and not production-connected** |
+| ISSUE-1176 | 🟡 PARTIAL (engine-dsp suite 12/12) | **Essentially unimplemented** |
+| ISSUE-1177 | 🟡 PARTIAL (schemas) | Contract scaffolding, **no customer workflow** |
+| ISSUE-1178 | 🟡 PARTIAL (schemas) | Contract scaffolding, **no customer workflow** |
+| ISSUE-1179 | 🟡 PARTIAL (schemas) | Contract scaffolding, **no customer workflow** |
+| ISSUE-1180 | 🟡 PARTIAL (compiler implemented) | Code exists, but **current compiler/persistence/render behaviour is unsafe** |
+| ISSUE-1181 | 🟡 PARTIAL (schemas) | **Partial schemas only** |
+
+### BINDING REPAIR ORDER — do these in this sequence
+
+Per the standing rule that build order lives in the ledger and never in chat only. Do not start a
+step before the one above it is genuinely closed (not schema-closed — workflow-closed).
+
+1. **Fix timeline authorization and data-loss risks.** (ISSUE-1180 safety half.) Highest priority
+   because it is the only item on this list that can destroy a user's work rather than merely fail
+   to deliver a feature.
+2. **Make ingestion generation-claiming and worker execution durable.** (ISSUE-1175.)
+3. **Connect proxy production and proper PTS mapping.** (ISSUE-1175 → ISSUE-1176 boundary.)
+4. **Correct the compiler/render path and make compilation idempotent.** (ISSUE-1180 correctness half.)
+5. **Implement ISSUE-1176 → ISSUE-1179 in order.** No parallelising: each consumes the previous
+   one's verified output.
+6. **Build terminal rendering and handoff.** (ISSUE-1181.)
+
+- **Depends on:** Step N depends on step N−1 throughout. ISSUE-1176..1179 additionally depend on
+  step 3 (real proxy + PTS mapping) — until that exists they have no verified media to operate on,
+  which is precisely how they ended up as schemas without workflows.
+- **Acceptance for treating any of ISSUE-1175..1181 as ✅ FIXED from here on:** a real user action
+  in the running app produces the real artefact end to end. Passing unit tests over a Zod schema
+  does **not** close any of these — that is the specific over-claim this block exists to correct.
+- **Not in scope of this block:** ISSUE-1185..1192. Those are unrelated to Session Breakdown.
 
 ---
