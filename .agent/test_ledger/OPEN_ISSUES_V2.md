@@ -3,7 +3,7 @@
 > This file is written by the /real test agent and consumed by a fixing agent.
 > The test agent NEVER modifies code. The fix agent NEVER runs tests.
 >
-> **Last updated:** 2026-07-22 (browser QA sweep ISSUE-1185..1190 appended — 1185/1186 fixed in-session, 1187..1190 open; earlier: ISSUE-1110..1114 Computer Execution plan, ISSUE-1095..1099 audit + fixes)
+> **Last updated:** 2026-07-22 (`/qa` unit-suite verification ISSUE-1191..1192 appended; browser QA sweep ISSUE-1185..1190 appended — 1185/1186 fixed in-session, 1187..1190 open; earlier: ISSUE-1110..1114 Computer Execution plan, ISSUE-1095..1099 audit + fixes)
 > **Branch:** `main` (direct commits)
 >
 > **Ledger protocol (V2):** This is the ACTIVE master ledger. It operates exactly like the original:
@@ -1598,5 +1598,80 @@
 - **Acceptance:** `<React.Fragment key={x}>` typechecks with no suppression, and both existing
   `@ts-expect-error` comments are removed without reintroducing errors.
 - **Depends on:** Nothing. Worth doing before the next agent hits it a third time.
+
+## Session 2026-07-22 — `/qa` full unit-suite verification
+
+### ISSUE-1191: RouterContext verification is suite-order-sensitive, blocks the full test gate, and reports an uncaught router error while green in isolation
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH (the repository's required full unit-test command exits non-zero)
+- **Module:** `packages/renderer/src/tests/RouterContext.test.tsx`,
+  `packages/renderer/src/core/App.tsx`, and the App boot/Suspense mocks used by the test
+- **Evidence:** `npm test -- --run` completed 851 files / 5,279 tests with exactly one failure:
+  `Router Context Verification > renders App inside BrowserRouter without crashing`. After the test's
+  explicit 5-second allowance for shard CPU pressure, the DOM still contained only the dashboard
+  loading skeleton and never rendered the mocked `Dashboard Loaded` marker at line 121. Final result:
+  **1 failed, 5,176 passed, 52 skipped; exit 1**. A focused rerun of the file then passed 2/2 in 2.23s,
+  demonstrating suite-order/load sensitivity rather than a deterministic application assertion.
+  However, that green focused run printed two uncaught
+  `useLocation() may be used only in the context of a <Router> component` exceptions from the second
+  test. That negative test renders the entire lazy, side-effectful `<App />` without a router inside a
+  `try/catch`; JSDOM/React reports the asynchronous exception outside that catch, yet Vitest still
+  reports the test as passed.
+- **Impact:** The canonical unit gate is flaky and currently red even though the same file passes by
+  itself. The test conflates a small router-provider contract with the complete App initialization,
+  workspace sync, memory engine, lazy dashboard, and Suspense timing. Its negative case also teaches CI
+  that an uncaught React exception is acceptable, so a genuine router regression can be hidden behind a
+  green focused result while unrelated suite pressure can fail the positive case.
+- **Fix:** Replace the whole-App timing probe with a deterministic router-contract harness. Exercise the
+  router-dependent component under `MemoryRouter` (or a minimal `createMemoryRouter`) and assert a stable
+  routed marker without starting App boot services. Isolate the no-router contract in a separate test
+  that explicitly captures the exact thrown/reported error and fails on any unconsumed JSDOM exception;
+  do not use a catch block whose assertion can be skipped. If whole-App coverage is still required, give
+  it a separate integration test with all boot promises mocked and an assertion that the loading skeleton
+  is eventually removed.
+- **Acceptance:**
+  1. `npx vitest run packages/renderer/src/tests/RouterContext.test.tsx` passes with no uncaught
+     `useLocation`/`useNavigate` exception in stdout or stderr.
+  2. The negative test demonstrably fails if `<App />` stops requiring a router and its assertion cannot
+     be bypassed when no exception is observed.
+  3. Three consecutive full `npm test -- --run` executions finish with zero failed tests and no
+     RouterContext timeout, without increasing the timeout beyond five seconds.
+- **Depends on:** Nothing.
+
+### ISSUE-1192: Video Daisychain interaction test stays green after `VideoWorkflow` crashes because its store mock omits `setVideoInputs`
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH (false-green coverage for the five-step Creative video production path)
+- **Module:**
+  `packages/renderer/src/modules/creative/video/components/VideoDaisychain.interaction.test.tsx`,
+  `packages/renderer/src/modules/creative/video/VideoWorkflow.tsx:528`, and the test's `useStore` mock
+- **Evidence:** Both the full suite and the focused command
+  `npx vitest run packages/renderer/src/modules/creative/video/components/VideoDaisychain.interaction.test.tsx`
+  report the sole test — `successfully completes a 5-step video production daisychain` — as passed.
+  During that green run React emits an uncaught `TypeError: setVideoInputs is not a function` at
+  `VideoWorkflow.tsx:528`; `ModuleErrorBoundary` then logs `Error in Studio` and replaces the crashed
+  subtree. Inspection confirms the production component now selects and calls `setVideoInputs`, while
+  the test's mocked store state and `useStore.getState()` expose only the older `setVideoInput` setter.
+  The focused file exits 0 despite the runtime crash. It also uses relative `img1.jpg`-style fixtures,
+  producing invalid-URL/storage-bridge noise that makes real failures harder to distinguish.
+- **Impact:** The named end-to-end interaction does not prove that the five-step workflow remains mounted
+  or completes. Any production store-selector change can crash Creative Studio while CI reports success,
+  leaving a flagship video flow without trustworthy regression protection.
+- **Fix:** Add a functional `setVideoInputs` mock everywhere the mocked store shape is exposed and keep
+  the singular setter only where production still uses it. Make the test fail on unexpected
+  `console.error`, `window` error events, or the `ModuleErrorBoundary` fallback; assert that the Studio
+  workflow remains mounted after generation and that the final step's observable state is reached.
+  Replace relative media strings with valid absolute fixture URLs or mock `safeStorageFetch` at its
+  boundary so URL parsing is not part of this interaction test.
+- **Acceptance:**
+  1. Removing `setVideoInputs` from the test store makes the test fail, not pass through the error
+     boundary.
+  2. The focused test passes with no `setVideoInputs is not a function`, uncaught React error,
+     `ModuleErrorBoundary` fallback, invalid fixture URL, or storage-bridge decode error.
+  3. Assertions prove all five user-visible stages complete and the final Video workflow is still
+     mounted.
+  4. `npm test -- --run` contains no Daisychain runtime exception while retaining the interaction test.
+- **Depends on:** Nothing.
 
 ---
