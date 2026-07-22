@@ -56,6 +56,12 @@ interface UploadSessionRecord {
     original?: FinalizedOriginalRef;
 }
 
+export interface SessionFailureRecord {
+    code: string;
+    message: string;
+    retryable: false;
+}
+
 export interface VideoSessionFinalizationStore {
     get(sessionId: string): Promise<unknown>;
     markUploaded(sessionId: string, update: {
@@ -64,6 +70,18 @@ export interface VideoSessionFinalizationStore {
         status: 'uploaded';
         updatedAt: string;
     }): Promise<{ original: FinalizedOriginalRef; reused: boolean }>;
+    /**
+     * Record a permanent finalization failure as a terminal state (ISSUE-1210).
+     * Only reachable for errors that can never succeed on retry — a transient
+     * fault must be rethrown so Eventarc redelivers instead.
+     */
+    markFailed(sessionId: string, update: {
+        status: 'failed';
+        failure: SessionFailureRecord;
+        failedAt: string;
+        terminalReceiptId: string;
+        updatedAt: string;
+    }): Promise<{ reused: boolean }>;
 }
 
 export interface ImmutableVideoObjectStore {
@@ -112,6 +130,22 @@ export function createFirestoreVideoSessionFinalizationStore(
                 }
                 transaction.update(sessionRef, update);
                 return { original: update.original, reused: false };
+            });
+        },
+        async markFailed(sessionId, update) {
+            const sessionRef = db.collection('videoSessions').doc(sessionId);
+            return db.runTransaction(async (transaction) => {
+                const snapshot = await transaction.get(sessionRef);
+                if (!snapshot.exists) return { reused: true };
+                const current = snapshot.data() as Record<string, unknown>;
+                // Never overwrite a session that already reached a terminal or
+                // successful state — a late permanent failure must not erase a
+                // finalized original or a prior cancellation receipt.
+                if (current.original || ['failed', 'cancelled', 'completed'].includes(String(current.status))) {
+                    return { reused: true };
+                }
+                transaction.update(sessionRef, update);
+                return { reused: false };
             });
         },
     };
@@ -295,11 +329,51 @@ export async function finalizeStagedVideoUpload(
     });
 }
 
+/**
+ * HttpsError codes that can never succeed on redelivery. Everything else —
+ * including `not-found`, because the Storage event can outrun the session
+ * document becoming readable — is treated as transient and rethrown so Eventarc
+ * redelivers it.
+ */
+const PERMANENT_FAILURE_CODES: ReadonlySet<string> = new Set([
+    'invalid-argument',
+    'permission-denied',
+    'failed-precondition',
+    'data-loss',
+    'unauthenticated',
+    'already-exists',
+]);
+
+export function isPermanentFinalizationFailure(error: unknown): boolean {
+    if (!error || typeof error !== 'object' || !('code' in error)) return false;
+    const code = (error as { code?: unknown }).code;
+    return typeof code === 'string' && PERMANENT_FAILURE_CODES.has(code);
+}
+
+export function finalizationFailureRecord(error: unknown): SessionFailureRecord {
+    const code = typeof (error as { code?: unknown })?.code === 'string'
+        ? String((error as { code: string }).code)
+        : 'unknown';
+    const message = error instanceof Error ? error.message : String(error);
+    return { code, message: message.slice(0, 2000) || 'Finalization failed.', retryable: false };
+}
+
 export const VIDEO_SESSION_UPLOAD_TRIGGER_OPTIONS = {
     bucket: 'indii-music-founder.firebasestorage.app',
     timeoutSeconds: 540,
     memory: '1GiB',
     region: 'us-central1',
+    // ISSUE-1210: Cloud Functions v2 event triggers have retries DISABLED by
+    // default. Without this, a thrown error drops the event silently — the
+    // platform even logs 200 OK — so a transient GCS or Firestore fault left the
+    // user's uploaded original unpromoted and the session stuck at `uploading`
+    // forever, with no error anywhere. Every idempotency guard in this file
+    // (generation pinning, ifGenerationMatch: 0, the `reused` short-circuits)
+    // was unreachable because nothing was ever redelivered.
+    // Retries are only safe because permanent failures are now classified and
+    // swallowed into a terminal `failed` state below — otherwise a malformed
+    // event would grind for the full 24h retry window.
+    retry: true,
 } as const;
 
 export const finalizeVideoSessionUpload = onObjectFinalized(
@@ -322,13 +396,58 @@ export const finalizeVideoSessionUpload = onObjectFinalized(
                 objects: createGcsImmutableVideoObjectStore(),
             });
         } catch (error: unknown) {
+            const permanent = isPermanentFinalizationFailure(error);
             logger.error('[finalizeVideoSessionUpload] Failed to finalize staged original', {
                 bucket: event.data.bucket,
                 path,
                 generation: event.data.generation,
+                permanent,
                 error: error instanceof Error ? error.message : String(error),
             });
-            throw error;
+
+            if (!permanent) {
+                // Transient: rethrow so Eventarc redelivers. Safe because this
+                // handler is idempotent — a redelivered event that already
+                // finalized returns the stored receipt without rehashing or
+                // repromoting bytes.
+                throw error;
+            }
+
+            // Permanent: retrying for 24h cannot help. Record an auditable
+            // terminal state so the session stops sitting at `uploading` and the
+            // owner can be told, then swallow the event to stop redelivery.
+            const sessionId = SESSION_UPLOAD_PATH.exec(path)?.[2];
+            if (sessionId) {
+                const failure = finalizationFailureRecord(error);
+                // timeCreated is typed `string | Date` depending on the emitter.
+                const rawFailedAt = event.data.timeCreated ?? event.time;
+                const failedAt = rawFailedAt instanceof Date
+                    ? rawFailedAt.toISOString()
+                    : new Date(rawFailedAt).toISOString();
+                const terminalReceiptId = `failed-${createHash('sha256')
+                    .update(`${event.data.bucket}\0${path}\0${event.data.generation ?? ''}\0${failure.code}`)
+                    .digest('hex')
+                    .slice(0, 48)}`;
+                try {
+                    await createFirestoreVideoSessionFinalizationStore().markFailed(sessionId, {
+                        status: 'failed',
+                        failure,
+                        failedAt,
+                        terminalReceiptId,
+                        updatedAt: failedAt,
+                    });
+                } catch (markError: unknown) {
+                    // Could not record the terminal state. Rethrow so the event is
+                    // redelivered rather than lost — an unrecorded permanent
+                    // failure is indistinguishable from the silent drop this
+                    // whole change exists to remove.
+                    logger.error('[finalizeVideoSessionUpload] Could not record terminal failure', {
+                        sessionId,
+                        error: markError instanceof Error ? markError.message : String(markError),
+                    });
+                    throw error;
+                }
+            }
         }
     },
 );

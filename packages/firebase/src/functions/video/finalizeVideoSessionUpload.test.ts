@@ -8,6 +8,8 @@ vi.mock('firebase-functions/v2/storage', () => ({
 
 import {
     finalizeStagedVideoUpload,
+    isPermanentFinalizationFailure,
+    finalizationFailureRecord,
     VIDEO_SESSION_UPLOAD_TRIGGER_OPTIONS,
 } from './finalizeVideoSessionUpload';
 
@@ -16,6 +18,62 @@ describe('finalizeStagedVideoUpload', () => {
         expect(VIDEO_SESSION_UPLOAD_TRIGGER_OPTIONS).toMatchObject({
             bucket: 'indii-music-founder.firebasestorage.app',
             timeoutSeconds: 540,
+        });
+    });
+
+    /**
+     * Regression: ISSUE-1210. Cloud Functions v2 event triggers have retries
+     * DISABLED by default. Without `retry: true` a thrown error drops the event
+     * silently — the platform logs 200 OK — so every idempotency guard in this
+     * file was unreachable and a transient fault left the user's uploaded
+     * original unpromoted with the session stuck at `uploading` forever.
+     * This assertion exists so removing the option fails loudly.
+     * Found by /qa on 2026-07-22 while scoping repair-order step 2.
+     * Report: .agent/test_ledger/OPEN_ISSUES_V2.md (ISSUE-1210)
+     */
+    it('enables retry, without which no redelivery ever happens and idempotency is dead code', () => {
+        expect(VIDEO_SESSION_UPLOAD_TRIGGER_OPTIONS.retry).toBe(true);
+    });
+
+    describe('failure classification (ISSUE-1210)', () => {
+        it.each([
+            'invalid-argument',
+            'permission-denied',
+            'failed-precondition',
+            'data-loss',
+        ])('treats %s as permanent — retrying for 24h cannot help', (code) => {
+            expect(isPermanentFinalizationFailure({ code })).toBe(true);
+        });
+
+        it('treats not-found as transient — the Storage event can outrun the session document', () => {
+            expect(isPermanentFinalizationFailure({ code: 'not-found' })).toBe(false);
+        });
+
+        it.each([
+            new Error('ECONNRESET'),
+            { code: 'unavailable' },
+            { code: 503 },
+            undefined,
+        ])('treats an unrecognised fault as transient so it is redelivered, not dropped', (error) => {
+            expect(isPermanentFinalizationFailure(error)).toBe(false);
+        });
+
+        it('records a failure the session schema will accept', () => {
+            const record = finalizationFailureRecord(
+                Object.assign(new Error('Uploaded object identity does not match its authorized session.'), {
+                    code: 'permission-denied',
+                }),
+            );
+            expect(record).toEqual({
+                code: 'permission-denied',
+                message: 'Uploaded object identity does not match its authorized session.',
+                retryable: false,
+            });
+        });
+
+        it('never emits an empty message, which the schema rejects', () => {
+            expect(finalizationFailureRecord(new Error('')).message).toBe('Finalization failed.');
+            expect(finalizationFailureRecord(undefined).message.length).toBeGreaterThan(0);
         });
     });
 
@@ -60,6 +118,9 @@ describe('finalizeStagedVideoUpload', () => {
                 async markUploaded(_id, update) {
                     updates.push(update);
                     return { original: update.original, reused: false };
+                },
+                async markFailed() {
+                    throw new Error('a successful finalization must not record a failure');
                 },
             },
             objects: {
@@ -143,6 +204,9 @@ describe('finalizeStagedVideoUpload', () => {
                 },
                 async markUploaded() {
                     throw new Error('stored receipt must be reused');
+                },
+                async markFailed() {
+                    throw new Error('a reused finalization must not record a failure');
                 },
             },
             objects: {
