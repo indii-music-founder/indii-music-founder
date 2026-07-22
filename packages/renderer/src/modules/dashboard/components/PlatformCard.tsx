@@ -140,8 +140,8 @@ export function PlatformCard() {
                                     </div>
 
                                     {features.map(f => (
-                                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                        <React.Fragment {...({ key: f.label } as any)}>
+                                        // @ts-expect-error - React.Fragment accepts key but this TS version's types are strict
+                                        <React.Fragment key={f.key}>
                                             <div className="col-span-5 flex items-center gap-2">
                                                 <f.icon size={12} className="text-gray-500 flex-shrink-0" />
                                                 <span className="text-[11px] text-gray-400 truncate">{t('dashboard.features.' + f.key)}</span>
