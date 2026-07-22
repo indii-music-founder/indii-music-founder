@@ -4,6 +4,7 @@ import { useVideoProjectPersistence } from './useVideoProjectPersistence';
 import { useVideoEditorStore, blankProjectForId, INITIAL_PROJECT } from '@/modules/creative/video/store/videoEditorStore';
 import { useStore } from '@/core/store';
 import * as PersistenceService from '@/modules/creative/video/services/VideoProjectPersistenceService';
+import type { WriteToken } from '@/modules/creative/video/services/VideoProjectPersistenceService';
 
 vi.mock('@/core/store', () => ({
     useStore: vi.fn(),
@@ -20,12 +21,22 @@ vi.mock('@/modules/creative/video/services/VideoProjectPersistenceService', () =
     saveVideoProject: vi.fn(),
 }));
 
+// A token is opaque by design — tests fabricate one via the same cast the
+// service uses internally.
+const token = (projectId: string, revision: number | null = null): WriteToken =>
+    ({ projectId, revision, fromLegacy: false }) as unknown as WriteToken;
+
 describe('useVideoProjectPersistence', () => {
     const mockUser = { uid: 'test-user-123' };
 
     beforeEach(() => {
         vi.useFakeTimers();
-        useVideoEditorStore.setState({ project: INITIAL_PROJECT, isLoadingProject: false });
+        useVideoEditorStore.setState({
+            project: INITIAL_PROJECT,
+            isLoadingProject: false,
+            projectLoadError: null,
+            projectSaveError: null,
+        });
         vi.mocked(useStore).mockReturnValue({
             user: mockUser,
             currentOrganizationId: 'org-1',
@@ -41,18 +52,25 @@ describe('useVideoProjectPersistence', () => {
 
     it('loads an existing per-project doc and applies it to the store (ISSUE-1147)', async () => {
         const existingProject = { ...blankProjectForId('project-a'), name: 'Saved Timeline' };
-        vi.mocked(PersistenceService.loadVideoProject).mockResolvedValue(existingProject);
+        vi.mocked(PersistenceService.loadVideoProject).mockResolvedValue({
+            status: 'found',
+            project: existingProject,
+            token: token('project-a', 3),
+        });
 
         renderHook(() => useVideoProjectPersistence());
 
         await vi.waitFor(() => {
             expect(useVideoEditorStore.getState().project.name).toBe('Saved Timeline');
         });
-        expect(PersistenceService.loadVideoProject).toHaveBeenCalledWith('project-a');
+        expect(PersistenceService.loadVideoProject).toHaveBeenCalledWith('project-a', 'test-user-123');
     });
 
     it('starts a blank project scoped to the ID when no doc exists — isolation fix (ISSUE-1147)', async () => {
-        vi.mocked(PersistenceService.loadVideoProject).mockResolvedValue(null);
+        vi.mocked(PersistenceService.loadVideoProject).mockResolvedValue({
+            status: 'absent',
+            token: token('project-a'),
+        });
 
         renderHook(() => useVideoProjectPersistence());
 
@@ -63,8 +81,14 @@ describe('useVideoProjectPersistence', () => {
     });
 
     it('debounce-saves 5s after a project mutation, not on every keystroke', async () => {
-        vi.mocked(PersistenceService.loadVideoProject).mockResolvedValue(null);
-        vi.mocked(PersistenceService.saveVideoProject).mockResolvedValue({ success: true });
+        vi.mocked(PersistenceService.loadVideoProject).mockResolvedValue({
+            status: 'absent',
+            token: token('project-a'),
+        });
+        vi.mocked(PersistenceService.saveVideoProject).mockResolvedValue({
+            success: true,
+            token: token('project-a', 1),
+        });
 
         renderHook(() => useVideoProjectPersistence());
         await vi.waitFor(() => expect(useVideoEditorStore.getState().project.id).toBe('project-a'));
@@ -77,13 +101,92 @@ describe('useVideoProjectPersistence', () => {
     });
 
     it('does not resave an already-synced project on the interval tick', async () => {
-        vi.mocked(PersistenceService.loadVideoProject).mockResolvedValue(null);
-        vi.mocked(PersistenceService.saveVideoProject).mockResolvedValue({ success: true });
+        vi.mocked(PersistenceService.loadVideoProject).mockResolvedValue({
+            status: 'absent',
+            token: token('project-a'),
+        });
+        vi.mocked(PersistenceService.saveVideoProject).mockResolvedValue({
+            success: true,
+            token: token('project-a', 1),
+        });
 
         renderHook(() => useVideoProjectPersistence());
         await vi.waitFor(() => expect(useVideoEditorStore.getState().project.id).toBe('project-a'));
 
         await vi.advanceTimersByTimeAsync(30000);
         expect(PersistenceService.saveVideoProject).not.toHaveBeenCalled();
+    });
+
+    // Regression: ISSUE-1193 — a failed load used to be reported as `null`, the
+    // same value as "no doc yet". The hook reset the store to a blank timeline
+    // and the next edit autosaved that blank over the real document.
+    // Found by /qa on 2026-07-22.
+    // Report: .agent/test_ledger/OPEN_ISSUES_V2.md (ISSUE-1193)
+    describe('load failure (ISSUE-1193)', () => {
+        beforeEach(() => {
+            vi.mocked(PersistenceService.loadVideoProject).mockResolvedValue({
+                status: 'error',
+                error: new Error('permission-denied'),
+            });
+        });
+
+        it('never issues a save after a failed load, even once the user edits', async () => {
+            renderHook(() => useVideoProjectPersistence());
+            await vi.waitFor(() => {
+                expect(useVideoEditorStore.getState().projectLoadError).toBeTruthy();
+            });
+
+            // The user edits anyway. Without a token there is nothing to save with.
+            useVideoEditorStore.getState().addTrack('audio');
+            await vi.advanceTimersByTimeAsync(60000); // past debounce AND interval
+
+            expect(PersistenceService.saveVideoProject).not.toHaveBeenCalled();
+        });
+
+        it('leaves the loaded timeline untouched instead of blanking it', async () => {
+            const realWork = {
+                ...blankProjectForId('project-a'),
+                clips: [{ id: 'real-clip', type: 'video' as const, startFrame: 0, durationInFrames: 90, trackId: 't', name: 'Real work' }],
+            };
+            useVideoEditorStore.setState({ project: realWork });
+
+            renderHook(() => useVideoProjectPersistence());
+            await vi.waitFor(() => {
+                expect(useVideoEditorStore.getState().projectLoadError).toBeTruthy();
+            });
+
+            // The store must NOT have been reset to a blank project.
+            expect(useVideoEditorStore.getState().project.clips).toHaveLength(1);
+            expect(useVideoEditorStore.getState().project.clips[0]?.id).toBe('real-clip');
+        });
+
+        it('clears the loading spinner so the editor cannot hang', async () => {
+            renderHook(() => useVideoProjectPersistence());
+            await vi.waitFor(() => {
+                expect(useVideoEditorStore.getState().isLoadingProject).toBe(false);
+            });
+        });
+    });
+
+    // Regression: ISSUE-1195 — save failures were a logger.warn and nothing else.
+    it('surfaces a save failure to the UI (ISSUE-1195)', async () => {
+        vi.mocked(PersistenceService.loadVideoProject).mockResolvedValue({
+            status: 'absent',
+            token: token('project-a'),
+        });
+        vi.mocked(PersistenceService.saveVideoProject).mockResolvedValue({
+            success: false,
+            reason: 'Missing or insufficient permissions.',
+        });
+
+        renderHook(() => useVideoProjectPersistence());
+        await vi.waitFor(() => expect(useVideoEditorStore.getState().project.id).toBe('project-a'));
+
+        useVideoEditorStore.getState().addTrack('audio');
+        await vi.advanceTimersByTimeAsync(5000);
+
+        await vi.waitFor(() => {
+            expect(useVideoEditorStore.getState().projectSaveError).toBe('Missing or insufficient permissions.');
+        });
     });
 });

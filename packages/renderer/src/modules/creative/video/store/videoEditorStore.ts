@@ -154,6 +154,14 @@ interface VideoEditorState {
     resetProjectForId: (projectId: string) => void;
     loadProjectFromDoc: (project: VideoProject) => void;
     setIsLoadingProject: (loading: boolean) => void;
+
+    // Persistence failure surfaces (ISSUE-1195). A failed load or save used to be
+    // a `logger.warn` and nothing else, which is how a user discovers their work
+    // is not being saved only after losing it.
+    projectLoadError: string | null;
+    projectSaveError: string | null;
+    setProjectLoadError: (message: string | null) => void;
+    setProjectSaveError: (message: string | null) => void;
 }
 
 export const INITIAL_PROJECT: VideoProject = {
@@ -317,6 +325,12 @@ export const useVideoEditorStore = create<VideoEditorState>((_set, get) => {
         setIsLoadingProject: (loading) => set({ isLoadingProject: loading }),
         resetProjectForId: (projectId) => set({ project: blankProjectForId(projectId), selectedClipId: null }),
         loadProjectFromDoc: (project) => set({ project, selectedClipId: null }),
+
+        // Persistence failure surfaces (ISSUE-1195)
+        projectLoadError: null,
+        projectSaveError: null,
+        setProjectLoadError: (message) => set({ projectLoadError: message }),
+        setProjectSaveError: (message) => set({ projectSaveError: message }),
 
         setJobId: (id) => set({ jobId: id }),
         setStatus: (status) => set({ status }),
@@ -525,16 +539,84 @@ if (typeof window !== 'undefined') {
     (window as any).useVideoEditorStore = useVideoEditorStore;
 }
 
+/** Raised when a compile is refused. Never partially applied — the project is untouched. */
+export class TimelineCompileError extends Error {
+    constructor(
+        public readonly code:
+            | 'cross-owner'
+            | 'cross-project'
+            | 'missing-source-generation'
+            | 'missing-proxy-generation',
+        message: string,
+    ) {
+        super(message);
+        this.name = 'TimelineCompileError';
+    }
+}
+
+/**
+ * Stable identity for a compiled clip (ISSUE-1180 acceptance 4).
+ *
+ * This was `uuidv4()`, which is what made the compiler impossible to make
+ * idempotent: re-running produced a fresh id for every clip, so there was no key
+ * to reconcile against and the results could only be appended. Deriving the id
+ * from (approval, segment) makes recompiling the same approval produce byte-
+ * identical ids, so it can replace rather than duplicate.
+ */
+const compiledClipId = (approvalReceiptId: string, segmentId: string) =>
+    `compiled:${approvalReceiptId}:${segmentId}`;
+
+/**
+ * Compile one approval receipt into a project-scoped timeline.
+ *
+ * ISSUE-1196 (repair-order step 1): `ownerUid` and `projectId` were previously
+ * declared on the parameter type and read by nothing, so there was no
+ * cross-owner rejection and no project-scope check — the two fields that exist
+ * to enforce authorization were decorative. They are now enforced, and the
+ * function fails closed rather than returning a partially-compiled timeline.
+ *
+ * Idempotent: clips carry deterministic ids, and re-running for the same
+ * approval replaces that approval's clips instead of appending a second copy.
+ */
 export function compileApprovalToTimeline(
     approval: { approvalReceiptId: string; planId: string; ownerUid: string; projectId: string; decisions: Array<{ segmentId: string; action: string; overrideProxyStartUs?: number; overrideProxyEndUs?: number; overrideAudioRecipeId?: string }> },
     plan: { segments: Array<{ segmentId: string; classification: string; proxyStartUs: number; proxyEndUs: number; originalStartUs: number; originalEndUs: number; transcriptText: string; syncAlignmentId?: string; audioRecipeId?: string }> },
     session: { original?: { bucket: string; path: string; generation: string }; proxyManifest?: { proxy: { bucket: string; path: string; generation: string } } },
     existingProject: VideoProject,
+    currentUid: string,
 ): VideoProject {
+    // Fail closed before touching anything.
+    if (approval.ownerUid !== currentUid) {
+        throw new TimelineCompileError(
+            'cross-owner',
+            `Approval ${approval.approvalReceiptId} belongs to another user; refusing to compile.`,
+        );
+    }
+    if (approval.projectId !== existingProject.id) {
+        throw new TimelineCompileError(
+            'cross-project',
+            `Approval ${approval.approvalReceiptId} targets project ${approval.projectId}, not ${existingProject.id}.`,
+        );
+    }
+    // Generations are the lineage back to the original and proxy media. Recording
+    // `undefined` would silently sever it, which is what the field exists to prevent.
+    if (!session.original?.generation) {
+        throw new TimelineCompileError(
+            'missing-source-generation',
+            'Session has no original media generation; cannot establish source lineage.',
+        );
+    }
+    if (!session.proxyManifest?.proxy.generation) {
+        throw new TimelineCompileError(
+            'missing-proxy-generation',
+            'Session has no proxy generation; cannot establish proxy lineage.',
+        );
+    }
+
     const fps = existingProject.fps || 30;
     const microsecPerFrame = 1_000_000 / fps;
     const mainTrack = existingProject.tracks.find(t => t.type === 'video') || existingProject.tracks[0] || { id: 'track-video-1', name: 'Video 1', type: 'video' as const };
-    
+
     let currentTimelineFrame = 0;
     const compiledClips: VideoClip[] = [];
 
@@ -552,11 +634,16 @@ export function compileApprovalToTimeline(
         if (durationUs <= 0) continue;
 
         const durationInFrames = Math.max(1, Math.round(durationUs / microsecPerFrame));
-        const originalStartUs = segment.originalStartUs + (proxyStartUs - segment.proxyStartUs);
+        // Clamp: an override earlier than the segment start would otherwise drive the
+        // source in-point negative, which no decoder can seek to.
+        const originalStartUs = Math.max(
+            0,
+            segment.originalStartUs + (proxyStartUs - segment.proxyStartUs),
+        );
         const originalEndUs = originalStartUs + durationUs;
 
         const clip: VideoClip = {
-            id: uuidv4(),
+            id: compiledClipId(approval.approvalReceiptId, segment.segmentId),
             type: 'video',
             name: segment.transcriptText.slice(0, 30) || `Segment ${segment.segmentId}`,
             startFrame: currentTimelineFrame,
@@ -564,8 +651,8 @@ export function compileApprovalToTimeline(
             trackId: mainTrack.id,
             sourceInUs: originalStartUs,
             sourceOutUs: originalEndUs,
-            sourceGeneration: session.original?.generation,
-            proxyGeneration: session.proxyManifest?.proxy.generation,
+            sourceGeneration: session.original.generation,
+            proxyGeneration: session.proxyManifest.proxy.generation,
             syncAlignmentId: segment.syncAlignmentId,
             syncLock: Boolean(segment.syncAlignmentId),
             audioRecipeId: decision.overrideAudioRecipeId || segment.audioRecipeId,
@@ -577,9 +664,15 @@ export function compileApprovalToTimeline(
         currentTimelineFrame += durationInFrames;
     }
 
+    // Idempotency: drop any prior compilation of THIS approval, keep everything
+    // else (hand edits, clips from other approvals) untouched.
+    const retained = existingProject.clips.filter(
+        c => c.approvalReceiptId !== approval.approvalReceiptId,
+    );
+
     return {
         ...existingProject,
-        clips: [...existingProject.clips, ...compiledClips],
+        clips: [...retained, ...compiledClips],
         durationInFrames: Math.max(existingProject.durationInFrames, currentTimelineFrame),
     };
 }

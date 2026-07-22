@@ -783,9 +783,16 @@ service cloud.firestore {
     }
 
     // ISSUE-1147: one persisted video-editor project doc per app project ID.
+    // ISSUE-1197: LEGACY, READ-ONLY. This top-level collection let any signed-in
+    // user create any project id, and a squatted id denied the real owner both
+    // read and write — which routed straight into the ISSUE-1193 blank-timeline
+    // data-loss path. Documents are now namespaced under their owner (see
+    // users/{userId}/videoProjects below). Existing docs stay readable so they
+    // can be migrated on first save; nothing writes here again.
     match /videoProjects/{projectId} {
-      allow read, update, delete: if isVerifiedUser() && resource.data.userId == request.auth.uid;
-      allow create: if isVerifiedUser() && request.resource.data.userId == request.auth.uid;
+      allow read: if isVerifiedUser() && resource.data.userId == request.auth.uid;
+      allow delete: if isVerifiedUser() && resource.data.userId == request.auth.uid;
+      allow create, update: if false;
     }
 
     // ISSUE-1175: long-recording upload and processing state is created and
@@ -1125,6 +1132,24 @@ service cloud.firestore {
     // and metadata only.
     match /users/{userId}/tax_collaborators/{collaboratorId} {
       allow read, write: if isOwner(userId);
+    }
+
+    // ISSUE-1197: video-editor timelines, namespaced under their owner so one
+    // user's project-id space cannot collide with another's. This replaces the
+    // top-level /videoProjects collection, where any signed-in user could create
+    // any project id and thereby lock the real owner out of both read and write.
+    // Namespacing removes the collision entirely, so id entropy stops being
+    // load-bearing.
+    //
+    // Ownership is immutable: `userId` is pinned on update, matching the standard
+    // applied to the licences rules. Without this an update could rewrite the
+    // document's owner.
+    match /users/{userId}/videoProjects/{projectId} {
+      allow read, delete: if isOwner(userId);
+      allow create: if isOwner(userId)
+        && request.resource.data.userId == userId;
+      allow update: if isOwner(userId)
+        && request.resource.data.userId == resource.data.userId;
     }
 
     // Single-use collaborator upload tokens (ISSUE-1118 Phase 2). The

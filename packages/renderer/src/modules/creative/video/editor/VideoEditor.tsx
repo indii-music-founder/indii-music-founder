@@ -48,6 +48,8 @@ export const VideoEditor: React.FC<VideoEditorProps> = ({ initialVideo }) => {
 
     const isPopoutActive = useVideoEditorStore(state => state.isPopoutActive);
     const isLoadingProject = useVideoEditorStore(state => state.isLoadingProject);
+    const projectLoadError = useVideoEditorStore(state => state.projectLoadError);
+    const projectSaveError = useVideoEditorStore(state => state.projectSaveError);
 
     const handleAddTrackVideo = React.useCallback(() => addTrack('video'), [addTrack]);
     const handleFrameUpdate = React.useCallback((frame: number) => setCurrentTime(frame), [setCurrentTime]);
@@ -74,8 +76,41 @@ export const VideoEditor: React.FC<VideoEditorProps> = ({ initialVideo }) => {
         );
     }
 
+    // ISSUE-1193/1195: a load failure must never fall through to an editable
+    // blank timeline. We do not know what is stored, so the only safe posture is
+    // to block editing and say so — the previous behaviour showed an empty
+    // project and let the next autosave overwrite the real one.
+    if (projectLoadError) {
+        return (
+            <div
+                role="alert"
+                className="flex flex-col items-center justify-center gap-4 h-full bg-[--background] text-[--foreground] px-6 text-center"
+            >
+                <h2 className="text-base font-bold text-red-400">Couldn’t load this timeline</h2>
+                <p className="text-sm text-gray-400 max-w-md">{projectLoadError}</p>
+                <button
+                    type="button"
+                    onClick={() => window.location.reload()}
+                    className="bg-gray-800 hover:bg-gray-700 text-gray-200 px-4 py-2 rounded-md text-xs font-bold uppercase transition-colors"
+                >
+                    Retry
+                </button>
+            </div>
+        );
+    }
+
     return (
         <div className="flex flex-col h-full bg-[--background] text-[--foreground]">
+            {/* ISSUE-1195: save failures were previously a logger.warn and nothing
+                else. This banner persists until a save succeeds. */}
+            {projectSaveError && (
+                <div
+                    role="alert"
+                    className="shrink-0 bg-red-950/80 border-b border-red-800 text-red-200 text-xs px-4 py-2"
+                >
+                    <span className="font-bold">Not saved.</span> {projectSaveError}
+                </div>
+            )}
             <StudioToolbar
                 className="bg-gray-900 border-gray-800"
                 left={

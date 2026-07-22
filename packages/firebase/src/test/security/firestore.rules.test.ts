@@ -231,6 +231,108 @@ describe('Firestore Security Rules', () => {
     });
 
     // ──────────────────────────────────────────────────────────────────────
+    // 2b. VIDEO PROJECTS — owner-namespaced (ISSUE-1197)
+    //
+    // Regression: the timeline document used to live at top-level
+    // /videoProjects/{projectId}, where ANY signed-in user could create ANY
+    // project id. A squatted id denied the real owner both read and write,
+    // which routed straight into the ISSUE-1193 blank-timeline data loss.
+    // Namespacing under the owner removes the collision, so id entropy is no
+    // longer load-bearing. Found by /qa on 2026-07-22.
+    // Report: .agent/test_ledger/OPEN_ISSUES_V2.md (ISSUE-1193, ISSUE-1197)
+    // ──────────────────────────────────────────────────────────────────────
+
+    describe('users/{userId}/videoProjects/{projectId} (ISSUE-1197)', () => {
+        const timelineDoc = (uid: string) => ({
+            id: 'proj-1',
+            userId: uid,
+            orgId: null,
+            project: { id: 'proj-1', name: 'Timeline', fps: 30, durationInFrames: 300, width: 1920, height: 1080, tracks: [], clips: [] },
+            revision: 1,
+        });
+
+        beforeEach(async () => {
+            if (requireEmulator()) return;
+            await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                await setDoc(doc(ctx.firestore(), 'users', ALICE_UID, 'videoProjects', 'proj-1'), timelineDoc(ALICE_UID));
+            });
+        });
+
+        it('owner: read allowed', async () => {
+            if (requireEmulator()) return;
+            const db = verifiedCtx(ALICE_UID).firestore();
+            await assertSucceeds(getDoc(doc(db, 'users', ALICE_UID, 'videoProjects', 'proj-1')));
+        });
+
+        it('owner: update allowed', async () => {
+            if (requireEmulator()) return;
+            const db = verifiedCtx(ALICE_UID).firestore();
+            await assertSucceeds(updateDoc(doc(db, 'users', ALICE_UID, 'videoProjects', 'proj-1'), { revision: 2 }));
+        });
+
+        it('owner: cannot rewrite userId — ownership is immutable', async () => {
+            if (requireEmulator()) return;
+            const db = verifiedCtx(ALICE_UID).firestore();
+            await assertFails(updateDoc(doc(db, 'users', ALICE_UID, 'videoProjects', 'proj-1'), { userId: BOB_UID }));
+        });
+
+        it('other user: read denied', async () => {
+            if (requireEmulator()) return;
+            const db = verifiedCtx(BOB_UID).firestore();
+            await assertFails(getDoc(doc(db, 'users', ALICE_UID, 'videoProjects', 'proj-1')));
+        });
+
+        it('other user: cannot squat a project id inside another user’s namespace', async () => {
+            if (requireEmulator()) return;
+            const db = verifiedCtx(BOB_UID).firestore();
+            await assertFails(setDoc(doc(db, 'users', ALICE_UID, 'videoProjects', 'proj-unclaimed'), timelineDoc(BOB_UID)));
+        });
+
+        it('unauthenticated: read denied', async () => {
+            if (requireEmulator()) return;
+            const db = unauthCtx().firestore();
+            await assertFails(getDoc(doc(db, 'users', ALICE_UID, 'videoProjects', 'proj-1')));
+        });
+    });
+
+    describe('videoProjects/{projectId} — legacy, read-only (ISSUE-1197)', () => {
+        beforeEach(async () => {
+            if (requireEmulator()) return;
+            await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                await setDoc(doc(ctx.firestore(), 'videoProjects', 'legacy-1'), {
+                    id: 'legacy-1',
+                    userId: ALICE_UID,
+                    project: { id: 'legacy-1', name: 'Legacy', fps: 30, durationInFrames: 300, width: 1920, height: 1080, tracks: [], clips: [] },
+                });
+            });
+        });
+
+        it('owner: read still allowed so the doc can be migrated', async () => {
+            if (requireEmulator()) return;
+            const db = verifiedCtx(ALICE_UID).firestore();
+            await assertSucceeds(getDoc(doc(db, 'videoProjects', 'legacy-1')));
+        });
+
+        it('owner: writes are now closed', async () => {
+            if (requireEmulator()) return;
+            const db = verifiedCtx(ALICE_UID).firestore();
+            await assertFails(updateDoc(doc(db, 'videoProjects', 'legacy-1'), { revision: 2 }));
+        });
+
+        it('nobody can squat a new legacy id', async () => {
+            if (requireEmulator()) return;
+            const db = verifiedCtx(BOB_UID).firestore();
+            await assertFails(setDoc(doc(db, 'videoProjects', 'squatted'), { id: 'squatted', userId: BOB_UID }));
+        });
+
+        it('other user: read denied', async () => {
+            if (requireEmulator()) return;
+            const db = verifiedCtx(BOB_UID).firestore();
+            await assertFails(getDoc(doc(db, 'videoProjects', 'legacy-1')));
+        });
+    });
+
+    // ──────────────────────────────────────────────────────────────────────
     // 3. ORGANIZATIONS (/organizations/{orgId})
     // ──────────────────────────────────────────────────────────────────────
 
