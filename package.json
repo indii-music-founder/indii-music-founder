@@ -20,6 +20,7 @@
   "scripts": {
     "dev": "npm run preflight:dev && electron-vite dev",
     "dev:web": "npm run preflight:dev && VITE_RENDERER_ONLY=true vite --config packages/renderer/vite.config.ts --port 4243",
+    "dev:e2e-mock": "VITE_E2E=true VITE_FIREBASE_E2E_MOCK=true VITE_RENDERER_ONLY=true vite --config packages/renderer/vite.config.ts --port 4242",
     "build": "npm run preflight:prod && electron-vite build",
     "build:ci": "npm run typecheck && npm run lint && electron-vite build",
     "build:studio": "electron-vite build",

@@ -8,6 +8,12 @@
       "port": 4243
     },
     {
+      "name": "dev:e2e-mock",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev:e2e-mock"],
+      "port": 4242
+    },
+    {
       "name": "landing",
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev", "-w", "packages/landing"],
