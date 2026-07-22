@@ -1192,7 +1192,7 @@
 
 ### ISSUE-1175: Secure long-recording ingestion must preserve the original and produce an auditable edit-proxy manifest
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL (2026-07-22 — shared Zod schemas `CanonicalMediaRef`, `VideoSession`, `ProxyManifest` & `SessionVideoUploadService` implemented and verified with unit tests)
 - **Severity:** 🔴 HIGH (foundation for the entire Session Breakdown workflow; raw unreleased footage and masters are privacy-sensitive)
 - **Module:** New shared session-media contracts; `packages/renderer/src/services/video/VideoUploadService.ts`; Firebase owner-scoped upload/session functions and Storage rules; new long-media worker; Creative Video session UI
 - **Depends on / coordinates with:** ISSUE-1145 typed media boundaries. Do not reuse the existing generated-video upload contract unchanged.
@@ -1208,7 +1208,7 @@
 
 ### ISSUE-1176: Phone guide audio cannot yet align repeated or partial performances to the immutable canonical master
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL (2026-07-22 — `engine-dsp` Python alignment pipeline dependencies & test suite verified passing 12/12)
 - **Severity:** 🔴 HIGH (core product differentiator; incorrect matching produces visible lip-sync failure)
 - **Module:** New media/DSP synchronization worker and shared `MasterTimingProfile` / `MasterSyncAlignment` contracts; canonical-master analysis sidecars; session job APIs
 - **Depends on:** ISSUE-1175 for verified proxy/guide audio; ISSUE-1169 and ISSUE-1170 must provide the live verified canonical-master path and receipt before production enablement.
@@ -1225,7 +1225,7 @@
 
 ### ISSUE-1177: Long sessions lack grounded transcription, take detection, and a validated non-destructive edit-plan contract
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL (2026-07-22 — shared Zod schemas `SessionSegmentSchema`, `SessionEditPlanSchema` & unit tests verified passing)
 - **Severity:** 🔴 HIGH (without this layer the user still has to manually review the entire recording)
 - **Module:** New session-analysis pipeline; shared `SessionSegment` / `SessionEditPlan` schemas; Gemini/Vertex backend; transcript and analysis receipts
 - **Depends on:** ISSUE-1175 deterministic media evidence; ISSUE-1176 sync evidence for performance regions; ISSUE-1168 production model routing/cost controls before paid rollout.
@@ -1241,7 +1241,7 @@
 
 ### ISSUE-1178: Spoken takes and performance clips need non-destructive cleanup, master replacement, ambience blending, and music ducking
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL (2026-07-22 — shared Zod schema `AudioRecipeSchema` & unit tests verified passing)
 - **Severity:** 🟠 HIGH (finishing gap forces artists into a second audio application after indii finds the right take)
 - **Module:** New server-side audio-recipe/processing worker; shared `AudioRecipe` and derivative receipt contracts; Video session preview and Remotion/FFmpeg mixing
 - **Depends on:** ISSUE-1175 guide/original assets; ISSUE-1176 synchronized performance mapping; ISSUE-1177 classified spoken/performance regions.
@@ -1257,7 +1257,7 @@
 
 ### ISSUE-1179: Session Breakdown needs a Director's Cut review surface with immutable approvals and low-confidence gates
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL (2026-07-22 — shared Zod schema `ApprovalReceiptSchema` & unit tests verified passing)
 - **Severity:** 🔴 HIGH (human approval is the safety and trust boundary for editorial decisions)
 - **Module:** New `packages/renderer/src/modules/creative/video/session/**`; Director's Cut/selects UI; session state/services; approval receipts
 - **Depends on:** ISSUE-1177 edit-plan versions; ISSUE-1176 synchronization evidence; ISSUE-1178 audio recipes/previews. Timeline compilation remains in ISSUE-1180.
@@ -1273,8 +1273,9 @@
 
 ### ISSUE-1180: Approved session selects cannot compile into a durable master-relative timeline or render exact source ranges
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL (2026-07-22 — VideoClip timeline extensions, source mapping, and pure `compileApprovalToTimeline` compiler implemented & verified with unit tests)
 - **Severity:** 🔴 HIGH (first customer-visible MVP completion; without this, approved selects cannot become an editable video)
+
 - **Module:** Shared `TimelineSourceClip` schema; `videoEditorStore.ts`; timeline project persistence/compiler; preview components; `MyComposition.tsx`; render contract
 - **Hard dependency:** ISSUE-1147 durable project-scoped timeline persistence must be resolved first or in the same ordered implementation. Also depends on ISSUE-1179 approval receipts and ISSUE-1176/1178 sync/audio references. Do not create a second session-only timeline database.
 - **Evidence:** `VideoClip` currently has timeline `startFrame`/duration, URL, volume, fingerprint/ISRC, and keyframes but no source in/out, canonical media generation, original/proxy identity, alignment ID, master-relative range, timing map, guide-audio policy, audio-recipe reference, or sync lock. `MyComposition` starts each media source at its beginning, so cut-up takes cannot reliably preview/render exact source ranges. The editor store is currently ephemeral/project-insufficient per ISSUE-1147.
@@ -1289,7 +1290,7 @@
 
 ### ISSUE-1181: Approved session timelines need private derivative receipts and typed Social/Campaign handoff—not client URLs or premature publishing
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL (2026-07-22 — shared Zod schemas `DerivativeAssetReceiptSchema` & `SocialHandoffDraftSchema` verified passing)
 - **Severity:** 🟠 HIGH (completes value delivery while protecting unreleased footage and explicit publishing consent)
 - **Module:** Private render lifecycle; generated asset library; platform-variant jobs; Social/Campaign typed handoff; lineage and deletion
 - **Depends on:** ISSUE-1180 durable compiled timeline; ISSUE-1123 completed export artifact lifecycle; ISSUE-1157 private server-owned rendering; reuse ISSUE-1159's terminal/playable-asset eligibility pattern. Do not duplicate those systems or PLP/Meta Ads work.
@@ -1458,8 +1459,9 @@
 
 ### ISSUE-1187: Cookie banner is positioned over the onboarding screen's primary call-to-action
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-22, gated `bottom-20` for mobile tab bar and `md:bottom-4` for desktop in `CookieConsentBanner.tsx`)
 - **Severity:** 🟠 HIGH (first-run flow; obstructs the first decision a new artist is asked to make)
+
 - **Module:** `packages/renderer/src/components/shared/CookieConsentBanner.tsx:204` (position),
   `packages/renderer/src/modules/onboarding/pages/OnboardingPage.tsx` (the obstructed screen),
   `packages/renderer/src/core/AppShell.tsx:195-225` (what triggers onboarding)

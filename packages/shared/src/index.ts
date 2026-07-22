@@ -6,6 +6,14 @@ export * from './schemas/workflowState.js';
 export * from './schemas/agentLoopState.js';
 export * from './schemas/videoJob.js';
 export * from './schemas/sessionMedia.js';
+export * from './schemas/sessionEditPlan.js';
+export * from './schemas/audioRecipe.js';
+export * from './schemas/approvalReceipt.js';
+export * from './schemas/derivativeHandoff.js';
+
+
+
+
 export * from './types/ai.dto.js';
 export * from './types/errors.js';
 export * from './types/founderFunnel.js';

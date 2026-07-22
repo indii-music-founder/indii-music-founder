@@ -647,8 +647,8 @@ vi.mock('@/core/context/ToastContext', () => ({
     ToastProvider: ({ children }: { children: React.ReactNode }) => children
 }));
 
-// Mock video editor store globally
-vi.mock('@/modules/creative/video/store/videoEditorStore', () => {
+vi.mock('@/modules/creative/video/store/videoEditorStore', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@/modules/creative/video/store/videoEditorStore')>();
     const mockState = {
         project: { id: 'test-project', clips: [], tracks: [], duration: 0 },
         currentTime: 0,
@@ -680,9 +680,12 @@ vi.mock('@/modules/creative/video/store/videoEditorStore', () => {
         }
     );
     return {
-        useVideoEditorStore: useVideoEditorStoreMock
+        ...actual,
+        useVideoEditorStore: useVideoEditorStoreMock,
+        compileApprovalToTimeline: actual.compileApprovalToTimeline,
     };
 });
+
 
 // Mock @tanstack/react-virtual — useVirtualizer doesn't render items in JSDOM
 // because ResizeObserver never fires. This mock makes it render all items directly.

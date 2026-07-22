@@ -48,7 +48,18 @@ export interface VideoClip {
             easing?: 'linear' | 'easeIn' | 'easeOut' | 'easeInOut';
         }>;
     };
+    // Session Breakdown & Master Sync fields (ISSUE-1180)
+    sourceInUs?: number;
+    sourceOutUs?: number;
+    sourceGeneration?: string;
+    proxyGeneration?: string;
+    syncAlignmentId?: string;
+    syncLock?: boolean;
+    audioRecipeId?: string;
+    approvalReceiptId?: string;
+    planId?: string;
 }
+
 
 export interface VideoTrack {
     id: string;
@@ -513,3 +524,63 @@ export const useVideoEditorStore = create<VideoEditorState>((_set, get) => {
 if (typeof window !== 'undefined') {
     (window as any).useVideoEditorStore = useVideoEditorStore;
 }
+
+export function compileApprovalToTimeline(
+    approval: { approvalReceiptId: string; planId: string; ownerUid: string; projectId: string; decisions: Array<{ segmentId: string; action: string; overrideProxyStartUs?: number; overrideProxyEndUs?: number; overrideAudioRecipeId?: string }> },
+    plan: { segments: Array<{ segmentId: string; classification: string; proxyStartUs: number; proxyEndUs: number; originalStartUs: number; originalEndUs: number; transcriptText: string; syncAlignmentId?: string; audioRecipeId?: string }> },
+    session: { original?: { bucket: string; path: string; generation: string }; proxyManifest?: { proxy: { bucket: string; path: string; generation: string } } },
+    existingProject: VideoProject,
+): VideoProject {
+    const fps = existingProject.fps || 30;
+    const microsecPerFrame = 1_000_000 / fps;
+    const mainTrack = existingProject.tracks.find(t => t.type === 'video') || existingProject.tracks[0] || { id: 'track-video-1', name: 'Video 1', type: 'video' as const };
+    
+    let currentTimelineFrame = 0;
+    const compiledClips: VideoClip[] = [];
+
+    const decisionMap = new Map(approval.decisions.map(d => [d.segmentId, d]));
+
+    for (const segment of plan.segments) {
+        const decision = decisionMap.get(segment.segmentId);
+        if (!decision || (decision.action !== 'keep' && decision.action !== 'blooper')) {
+            continue;
+        }
+
+        const proxyStartUs = decision.overrideProxyStartUs ?? segment.proxyStartUs;
+        const proxyEndUs = decision.overrideProxyEndUs ?? segment.proxyEndUs;
+        const durationUs = proxyEndUs - proxyStartUs;
+        if (durationUs <= 0) continue;
+
+        const durationInFrames = Math.max(1, Math.round(durationUs / microsecPerFrame));
+        const originalStartUs = segment.originalStartUs + (proxyStartUs - segment.proxyStartUs);
+        const originalEndUs = originalStartUs + durationUs;
+
+        const clip: VideoClip = {
+            id: uuidv4(),
+            type: 'video',
+            name: segment.transcriptText.slice(0, 30) || `Segment ${segment.segmentId}`,
+            startFrame: currentTimelineFrame,
+            durationInFrames,
+            trackId: mainTrack.id,
+            sourceInUs: originalStartUs,
+            sourceOutUs: originalEndUs,
+            sourceGeneration: session.original?.generation,
+            proxyGeneration: session.proxyManifest?.proxy.generation,
+            syncAlignmentId: segment.syncAlignmentId,
+            syncLock: Boolean(segment.syncAlignmentId),
+            audioRecipeId: decision.overrideAudioRecipeId || segment.audioRecipeId,
+            approvalReceiptId: approval.approvalReceiptId,
+            planId: approval.planId,
+        };
+
+        compiledClips.push(clip);
+        currentTimelineFrame += durationInFrames;
+    }
+
+    return {
+        ...existingProject,
+        clips: [...existingProject.clips, ...compiledClips],
+        durationInFrames: Math.max(existingProject.durationInFrames, currentTimelineFrame),
+    };
+}
+
