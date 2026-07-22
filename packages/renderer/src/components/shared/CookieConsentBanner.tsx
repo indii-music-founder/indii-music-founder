@@ -201,9 +201,9 @@ export function CookieConsentBanner() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 100 }}
                 transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                className="fixed bottom-20 left-0 right-0 z-[200] p-4 md:p-6"
+                className="fixed bottom-20 left-0 right-0 z-[200] p-4 md:p-6 pointer-events-none"
             >
-                <div className="max-w-2xl mx-auto bg-gray-900/95 backdrop-blur-xl border border-gray-700 rounded-2xl shadow-2xl overflow-hidden">
+                <div className="max-w-2xl mx-auto bg-gray-900/95 backdrop-blur-xl border border-gray-700 rounded-2xl shadow-2xl overflow-hidden pointer-events-auto">
                     {/* Header */}
                     <div className="p-5 pb-0">
                         <div className="flex items-center gap-3 mb-3">
