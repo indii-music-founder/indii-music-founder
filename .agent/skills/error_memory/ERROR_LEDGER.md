@@ -1,3 +1,34 @@
+## 2026-07-22 Dodging a TypeScript Error by Spreading `key` Into JSX Ships a Real Reconciliation Bug That No Gate Can Catch
+
+**SEVERITY:** Medium (the bug itself is latent; the *pattern* is the danger — the workaround typechecks, lints, and passes tests while being functionally wrong)
+
+**MISTAKE:** `<React.Fragment key={x}>` fails `npm run typecheck` in `packages/renderer` with `TS2322: Type '{ children: any[]; key: string; }' is not assignable to type '{ children?: ReactNode; }'. Property 'key' does not exist`. A previous author silenced it with `<React.Fragment {...({ key: f.label } as any)}>` plus an `eslint-disable` for `no-explicit-any`. Green everywhere — and wrong: React does **not** treat a spread `key` as a reconciliation key. It warns at runtime and drops it, so all seven rows of the dashboard's platform-feature matrix rendered keyless (`packages/renderer/src/modules/dashboard/components/PlatformCard.tsx:143`, ISSUE-1185).
+
+**ROOT CAUSE (of the bug):** `{...({key} as any)}` satisfies the compiler by erasing the type, but at runtime React sees `key` arriving through the props spread rather than as a JSX attribute — the exact case it warns about with `A props object containing a "key" prop is being spread into JSX`. The cast converted a loud type error into a silent runtime defect.
+
+**ROOT CAUSE (of the underlying TS error):** still unresolved, tracked as ISSUE-1190. Investigated and **ruled out**: duplicate `@types/react` (exactly one copy, 18.3.3, against react 18.3.1); the dotted JSX tag `<f.icon />` (hoisting to `const Icon = f.icon` changed nothing); any repo-declared `namespace JSX` override (none exists). Renderer runs `strict: false`, `noImplicitAny: false`, `jsx: react-jsx`; the `children: any[]` in the error text points at the `IsExactlyAny` short-circuit inside `@types/react`'s `LibraryManagedAttributes` chain, unconfirmed.
+
+**FIX:** Pass the key directly and suppress the *type* error only, matching the precedent already in the codebase at `packages/renderer/src/modules/boardroom/components/ParticipantSelector.tsx:92`:
+```tsx
+// @ts-expect-error - React.Fragment accepts key but this TS version's types are strict
+<React.Fragment key={f.key}>
+```
+Use the model's stable id (`f.key`), not a display string (`f.label`) — copy edits must not change identity. Verified: fresh browse-daemon console buffer, reload → **0** occurrences of the spread-key warning (was 1 per dashboard render).
+
+**PREVENTION:** When a type error blocks a *correct* piece of JSX, suppress the type check (`@ts-expect-error`, which self-reports when it becomes unnecessary) — never rewrite the runtime semantics to make the compiler happy. Specifically: **`{...({ key } as any)}` is always wrong.** If you find yourself casting to `any` to place a prop, stop and ask what the runtime does with it. Grep before adding a new one: `grep -rn "key.*as any\|{\.\.\.({ key" packages/renderer/src`.
+
+## 2026-07-22 A Full-Width `fixed` Overlay Wrapper Disables Every Control in Its Band, Including Under Its Own Transparent Padding
+
+**SEVERITY:** High (silently dead UI across every screen; reads to the user as "the app is broken")
+
+**MISTAKE:** `CookieConsentBanner` positioned its `motion.div` as `fixed bottom-20 left-0 right-0 z-[200] p-4 md:p-6` and centred a `max-w-2xl` card inside it. The wrapper is full-bleed, so at 1280×720 its box measured `top=391, bottom=640, height=250, width=1280` — but only 672px of that width is the visible card. The remaining ~600px is transparent padding that still had `pointer-events: auto` and still intercepted every click.
+
+**ROOT CAUSE:** A `fixed` element with `left-0 right-0` occupies the full viewport width regardless of what is painted inside it. Transparent ≠ non-interactive. `document.elementFromPoint(150, 500)` and `(1100, 500)` both returned the wrapper `<div>` instead of the sidebar and chat input underneath.
+
+**FIX:** `pointer-events-none` on the fixed wrapper, `pointer-events-auto` on the inner card (`CookieConsentBanner.tsx:204-206`, ISSUE-1186). Verified with `elementFromPoint` at three coordinates: gutters now resolve to the underlying sidebar/chat input, the card centre still resolves to the banner.
+
+**PREVENTION:** Any `fixed`/`absolute` full-bleed positioning wrapper whose visible content is narrower than its box **must** carry `pointer-events-none`, with `pointer-events-auto` restored on the painted child. Audit rule: `grep -rn "fixed.*left-0 right-0" packages/renderer/src --include=*.tsx` — every hit needs either full-width visible content or the pointer-events pair. Verify with `elementFromPoint` at coordinates inside the band but outside the visible child, not by eyeballing a screenshot; the overlap is invisible.
+
 ## 2026-07-21 Google GFE Intercepts the Literal Path `/healthz` on `*.run.app` URLs — Returns a Generic 404 Before the Request Reaches the Container
 
 **SEVERITY:** High (cost hours of false "the whole Cloud Run service is broken / IAM is wrong / ingress is wrong" diagnosis; every layer looked misconfigured because the symptom was a 404 that never touched the app)
