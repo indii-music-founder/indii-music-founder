@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Cookie, Settings, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -123,10 +123,22 @@ function ConsentToggle({ label, description, checked, onChange, disabled = false
     );
 }
 
+/**
+ * CSS custom property published on <html> while the banner is on screen, holding the
+ * vertical space the banner occupies (its own height plus its offset from the viewport
+ * bottom). The shared module wrapper in AppShell adds this to its bottom padding so that
+ * centred, full-height layouts — onboarding's career-path grid being the one that caught
+ * this — are never rendered underneath the banner. Position alone cannot solve the overlap:
+ * a ~250px banner and a full-height centred grid do not both fit in a 720px viewport
+ * unless the content reserves the space (ISSUE-1187).
+ */
+const BANNER_SPACE_VAR = '--consent-banner-space';
+
 export function CookieConsentBanner() {
     const [visible, setVisible] = useState(false);
     const [showCustomize, setShowCustomize] = useState(false);
     const [preferences, setPreferences] = useState<ConsentPreferences>({ ...DEFAULT_PREFERENCES });
+    const bannerRef = useRef<HTMLDivElement | null>(null);
 
     useEffect(() => {
         let timer: NodeJS.Timeout | null = null;
@@ -155,6 +167,39 @@ export function CookieConsentBanner() {
             if (timer) clearTimeout(timer);
         };
     }, []);
+
+    // Publish the banner's occupied space while it is visible; always clear it on the way out
+    // so a dismissed banner never leaves phantom padding behind.
+    useEffect(() => {
+        const root = document.documentElement;
+
+        if (!visible) {
+            root.style.removeProperty(BANNER_SPACE_VAR);
+            return;
+        }
+
+        const measure = () => {
+            const el = bannerRef.current;
+            if (!el) return;
+            // offsetHeight + computed `bottom` is transform-independent, so the enter/exit
+            // spring animation cannot feed a mid-flight value into the layout.
+            const offset = Number.parseFloat(getComputedStyle(el).bottom) || 0;
+            root.style.setProperty(BANNER_SPACE_VAR, `${el.offsetHeight + offset}px`);
+        };
+
+        measure();
+
+        // Re-measure when the banner grows (Customize panel) or the breakpoint changes the offset.
+        const observer = new ResizeObserver(measure);
+        if (bannerRef.current) observer.observe(bannerRef.current);
+        window.addEventListener('resize', measure);
+
+        return () => {
+            observer.disconnect();
+            window.removeEventListener('resize', measure);
+            root.style.removeProperty(BANNER_SPACE_VAR);
+        };
+    }, [visible, showCustomize]);
 
     const handleAcceptAll = useCallback(() => {
         const allConsent: ConsentPreferences = {
@@ -197,12 +242,12 @@ export function CookieConsentBanner() {
     return (
         <AnimatePresence>
             <motion.div
+                ref={bannerRef}
                 initial={{ opacity: 0, y: 100 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 100 }}
                 transition={{ type: 'spring', damping: 25, stiffness: 200 }}
                 className="fixed bottom-20 md:bottom-4 left-0 right-0 z-[200] p-4 md:p-6 pointer-events-none"
-
             >
                 <div className="max-w-2xl mx-auto bg-gray-900/95 backdrop-blur-xl border border-gray-700 rounded-2xl shadow-2xl overflow-hidden pointer-events-auto">
                     {/* Header */}

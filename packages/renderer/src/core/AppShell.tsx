@@ -390,7 +390,20 @@ function AppContent({ currentModule, showChrome, isDesktop, isAnyPhone, shortcut
                                 <MobileHeader />
                             )}
 
-                            <div className={`flex-1 overflow-y-auto relative z-10 custom-scrollbar ${isAnyPhone ? 'pb-[88px]' : ''}`}>
+                            {/*
+                              * Bottom clearance for anything fixed over the module content:
+                              *   88px  — MobileTabBar, phones only
+                              *   var() — CookieConsentBanner, published while it is on screen
+                              * Composed here rather than per-module so centred full-height
+                              * layouts (onboarding's career grid) are never rendered underneath
+                              * the banner. See ISSUE-1187.
+                              */}
+                            <div
+                                className="flex-1 overflow-y-auto relative z-10 custom-scrollbar"
+                                style={{
+                                    paddingBottom: `calc(${isAnyPhone ? '88px' : '0px'} + var(--consent-banner-space, 0px))`,
+                                }}
+                            >
                                 <ModuleErrorBoundary key={currentModule} moduleName={currentModule}>
                                     <Suspense fallback={<LoadingFallback />}>
                                         <ModuleRenderer 
