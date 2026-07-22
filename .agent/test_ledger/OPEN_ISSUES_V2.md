@@ -3,7 +3,7 @@
 > This file is written by the /real test agent and consumed by a fixing agent.
 > The test agent NEVER modifies code. The fix agent NEVER runs tests.
 >
-> **Last updated:** 2026-07-20 (Computer Execution plan ISSUE-1110..1114 appended; earlier: ISSUE-1095..1099 audit + fixes)
+> **Last updated:** 2026-07-22 (browser QA sweep ISSUE-1185..1190 appended — 1185/1186 fixed in-session, 1187..1190 open; earlier: ISSUE-1110..1114 Computer Execution plan, ISSUE-1095..1099 audit + fixes)
 > **Branch:** `main` (direct commits)
 >
 > **Ledger protocol (V2):** This is the ACTIVE master ledger. It operates exactly like the original:
@@ -1371,5 +1371,232 @@
 - **Acceptance:** All 8 steps above pass against the real deployed environment with a real account; any deviation from coded behavior gets logged here with the exact repro, not silently patched without a ticket.
 - **Depends on:** Nothing further — code and deploy are both already done (ISSUE-1118). This is pure verification.
 - **Not required before:** Founder's own manual use of the feature — this ticket exists so the gap is tracked and visible, not because the feature is expected to fail.
+
+---
+
+## Session 2026-07-22 — Browser QA sweep of the Studio shell (`/qa`, mock-auth on :4242)
+
+> **How this pass was run:** `main` @ `57d235f00`, clean tree. This sandbox has **no `.env`**, so
+> `npm run dev:web` (:4243) boots with a dead Firebase Auth and can only exercise the signed-out
+> login screen. To reach the authenticated shell without touching `.env` (CLAUDE.md §4 forbids it),
+> a `dev:e2e-mock` target was added (commit `6c657dcc`) that reuses the project's **existing**
+> `VITE_E2E=true VITE_FIREBASE_E2E_MOCK=true` path — the same flags `playwright.config.ts` already
+> uses for its webServer. Everything below was observed on that mock-auth session at :4242.
+>
+> **Scope limit, stated honestly:** mock auth exercises rendering, routing, layout, and client logic.
+> It does NOT exercise real Firestore reads/writes, real Storage, or real Functions. Nothing in this
+> session should be read as live verification of a backend path — that gap is already tracked by
+> ISSUE-1184 and is not re-opened here.
+>
+> **Modules swept (12, all rendered without an error boundary):** Boardroom, Brand Manager, Road/tour,
+> Campaign Manager, Creative Director, Finance Department, Distribution Department, Workflow Builder,
+> Audio Analyzer, Notes, Command Center, Settings. Empty states were honest throughout — "No active
+> projects", "No distributors connected", "No notes", "Awaiting discussion…" — no fabricated data
+> observed (consistent with the no-mock-data rule).
+>
+> **Verified-OK (checked, not defects — recorded so the next agent doesn't re-investigate):**
+> - `DevPortWarning` (the red "Web-Only Mode" badge) is correctly gated on `import.meta.env.DEV`
+>   (`packages/renderer/src/core/App.tsx:53`) — it cannot ship to production.
+> - Cookie consent **behaviour** is correct: "Reject Non-Essential" writes
+>   `indii_cookie_consent={essential:true, analytics:false, errorTracking:false, marketing:false, timestamp, version:1}`
+>   and the banner does not reappear after reload.
+> - Login form button typing is correct: "Forgot Password?" is explicitly `type="button"`, so it does
+>   not submit the form. A repo-wide scan of all 15 `.tsx` files containing `<form>` found
+>   **0** untyped `<button>` elements inside a form. This pattern is clean; do not re-audit it.
+> - Empty sign-in submit is handled by native HTML5 validation ("Please fill out this field") — no
+>   crash, no unhandled rejection.
+> - No horizontal overflow at 375×812 (`documentElement.scrollWidth === innerWidth === 375`).
+
+### ISSUE-1185: Dashboard `PlatformCard` spread a `key` prop into `React.Fragment`, so its seven feature rows had no reconciliation key
+
+- **Status:** ✅ FIXED (2026-07-22, commit `d6df7df3c`)
+- **Severity:** 🟡 MEDIUM (console-noise on every dashboard render + a real, if currently latent, reconciliation-correctness bug)
+- **Module:** `packages/renderer/src/modules/dashboard/components/PlatformCard.tsx:142-144`
+- **Evidence:** Every load of the Studio dashboard logged a React error:
+  `Warning: A props object containing a "key" prop is being spread into JSX … at PlatformCard (…/PlatformCard.tsx:53:17)`.
+  Source was `<React.Fragment {...({ key: f.label } as any)}>` inside `features.map(...)`.
+- **Impact:** React does not treat a **spread** `key` as a reconciliation key — it warns and drops it.
+  All seven rows in the Web/Founders feature matrix (Creative Studio, Agent Orchestration, Distribution
+  Pipeline, Audio DNA Analyzer, Local File Processing, SFTP Delivery, Offline Mode) therefore rendered
+  keyless. The list is currently static so no mis-render is user-visible **today**, but the moment the
+  matrix becomes dynamic (per-tier or per-plan feature gating) rows would reconcile by index and could
+  show the wrong tick/LITE/— state against the wrong feature. The `as any` cast was actively hiding this.
+- **Fix:** Pass the key directly — `<React.Fragment key={f.key}>` — and use `f.key` (the stable
+  identifier already on `FeatureRow`) rather than `f.label` (a display string that changes with copy edits).
+  Matches the pre-existing `@ts-expect-error` precedent at
+  `packages/renderer/src/modules/boardroom/components/ParticipantSelector.tsx:92` for the same types quirk
+  (see ISSUE-1190).
+- **Acceptance:** [MET] Fresh browse-daemon buffer, reload of :4242 → **0** occurrences of
+  `key" prop is being spread` (was 1 per render). Zero non-Firebase console errors remain on the
+  dashboard. `npm run typecheck` clean; full pre-commit gate (lint → typecheck → API-security → affected
+  unit tests) passed.
+- **Depends on:** Nothing.
+
+### ISSUE-1186: Cookie consent banner swallowed every click in a full-width 250px band, including its own empty gutters
+
+- **Status:** ✅ FIXED (2026-07-22, commit `3006ca3fa`)
+- **Severity:** 🟠 HIGH (silently disabled unrelated UI on every screen until consent was answered)
+- **Module:** `packages/renderer/src/components/shared/CookieConsentBanner.tsx:204-206`
+- **Evidence:** The banner's outer `motion.div` is `fixed bottom-20 left-0 right-0 z-[200] p-4 md:p-6`
+  with default `pointer-events: auto`. Measured live at 1280×720: the wrapper's box is
+  `top=391, bottom=640, height=250, width=1280` — a full-width strip. The visible card inside is only
+  `max-w-2xl` (672px) and centred, so **~600px of that band is transparent padding that still ate clicks**.
+  `document.elementFromPoint(150, 500)` and `(1100, 500)` both resolved to the wrapper `<div>` rather
+  than the sidebar / chat input underneath it.
+- **Impact:** Until the user answered the cookie banner, a 250px-tall horizontal band across the whole
+  viewport was dead. On the dashboard that band covers the left sidebar's department list and the main
+  chat composer. The user sees fully-rendered, apparently-enabled controls that do nothing when clicked,
+  with no visual indication why — the classic "the app is broken" first impression, on first run,
+  before the user has done anything.
+- **Fix:** `pointer-events-none` on the fixed wrapper, `pointer-events-auto` on the inner card. Standard
+  overlay pattern — the transparent chrome stops intercepting, the actual banner stays fully interactive.
+- **Acceptance:** [MET] Post-fix `elementFromPoint(150,500)` → the sidebar list `div`;
+  `elementFromPoint(1100,500)` → the chat `<input>`; `elementFromPoint(640,500)` → still the banner's own
+  text (banner itself remains clickable). Consent flow re-tested end-to-end after the fix: reject →
+  persisted → no reappearance on reload.
+- **Depends on:** Nothing. **Does not fully resolve** ISSUE-1187 — see below.
+
+### ISSUE-1187: Cookie banner is positioned over the onboarding screen's primary call-to-action
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH (first-run flow; obstructs the first decision a new artist is asked to make)
+- **Module:** `packages/renderer/src/components/shared/CookieConsentBanner.tsx:204` (position),
+  `packages/renderer/src/modules/onboarding/pages/OnboardingPage.tsx` (the obstructed screen),
+  `packages/renderer/src/core/AppShell.tsx:195-225` (what triggers onboarding)
+- **Evidence:** On a genuine first run the app routes to `onboarding` ("Choose Your Career Path" — DJ /
+  Performer, Sync Producer, Touring Band, Label Manager) and renders the cookie banner on top of it.
+  Measured at 1280×720, `elementFromPoint` at each card's centre:
+  - DJ / Performer (centre y≈413) → blocked by `DIV.fixed bottom-20 left-0 right-0 z-[200]`
+  - Sync Producer (centre y≈413) → blocked by the same wrapper
+  - Touring Band (centre y≈554) → blocked by `BUTTON` "Reject Non-Essential"
+  - Label Manager (centre y≈554) → blocked by the banner's inner card
+  Screenshot: `.gstack/qa-reports/screenshots/initial.png` (career cards visibly covered).
+- **Impact:** **All four** career-path options are unclickable at their centres. ISSUE-1186's
+  `pointer-events` fix frees the transparent gutters, but the banner's *visible card* (672px wide,
+  centred, ~250px tall) still sits squarely on top of the centred card grid — cards at x≈452 and x≈828
+  both fall inside the 304–976px span the card occupies. The user's very first screen presents four
+  options they cannot reliably click and cannot fully read. This is also the step that seats the
+  correct specialist agents in their boardroom, so a mis-click here mis-configures the workspace.
+- **Reproduction:** Requires a true first run — `userProfile?.id === 'pending'` is what triggers
+  onboarding (`AppShell.tsx:210,214`). Once a profile is minted, clearing `localStorage` will **not**
+  bring the screen back, so reproduce on a fresh mock-auth session (or a fresh account), not by
+  clearing storage on an existing one.
+- **Fix (needs a founder call — three viable shapes, not yet chosen):**
+  1. **Consent-first gate.** Render the banner as a true modal with a backdrop while onboarding is
+     active, so answering it is unambiguously step 0. Clearest intent; costs one extra click before
+     the career choice.
+  2. **True bottom bar.** Drop `bottom-20` → `bottom-0` (the `bottom-20` offset exists to clear
+     `MobileTabBar`, `packages/renderer/src/core/components/MobileTabBar.tsx:159`, which is phone-only —
+     so gate the offset on the phone breakpoint) and add matching bottom padding to the onboarding
+     layout so nothing is ever underneath it.
+  3. **Defer.** Suppress the banner entirely while `currentModule === 'onboarding'` and show it on
+     first arrival at the dashboard.
+  Recommendation: **(2)** — it fixes the banner for every screen at once rather than special-casing
+  onboarding, and the `bottom-20` offset is simply wrong on desktop where no tab bar exists.
+- **Acceptance:** On a fresh first run at 1280×720 **and** 375×812, `elementFromPoint` at the centre of
+  each of the four career cards resolves to that card (or a descendant of it), with the cookie banner
+  still visible and still fully interactive.
+- **Depends on:** ISSUE-1186 (landed). Founder picks fix shape 1, 2, or 3 before implementation.
+
+### ISSUE-1188: Boardroom has no way to seat or change agents on a phone, while the on-screen copy instructs the user to do exactly that
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH (flagship multi-agent feature is desktop-only, and the mobile UI does not say so)
+- **Module:** `packages/renderer/src/modules/boardroom/BoardroomModule.tsx:157-173`,
+  `packages/renderer/src/modules/boardroom/components/BoardroomConversationPanel.tsx:62-64`,
+  `packages/renderer/src/modules/boardroom/components/ParticipantSelector.tsx`
+- **Evidence:** `BoardroomModule.tsx:158` wraps the entire orbital panel in `{!isAnyPhone && (…)}`, so
+  at phone widths `BoardroomTable` **and** `ParticipantSelector` are not rendered at all. Confirmed at
+  375×812: all eight agent-node labels (SOCIAL MEDIA, PUBLISHING, MARKETING, FINANCE, LEGAL, BRAND,
+  CREATIVE, VIDEO) return `inDom: false`, and the "N Agent Seated" readout is absent from the DOM
+  entirely. The right-hand panel still renders its empty state:
+  *"Awaiting discussion… Select agents and submit a brief to start the boardroom session."*
+  Screenshots: desktop `boardroom-click.png` (orbital roster present, "1 Agent Seated"),
+  mobile `dashboard-mobile-375.png` (roster region is empty black from y≈140 to y≈680).
+- **Impact:** A phone user is told to "select agents" with no control anywhere on screen that does so.
+  They are silently locked to whatever is seated by default (the header shows "1 active"), so the
+  boardroom — the product's headline capability — degrades to a single-agent chat on mobile with no
+  explanation. Roughly 680px of vertical space is spent on an empty black panel to say nothing.
+- **Fix (both parts required):**
+  1. Give phones a real seating affordance — a bottom sheet or drawer listing the same eight
+     departments with the same toggle semantics as `ParticipantSelector`, opened from the existing
+     "N active" chip in the header (it is already the natural target and already renders on mobile).
+  2. Make the empty-state copy responsive. While no seating affordance exists on a given breakpoint,
+     `BoardroomConversationPanel.tsx:64` must not instruct the user to select agents — it should state
+     which agent is seated and how to change it.
+  Part 2 alone is a legitimate ship-blocker fix if part 1 is deferred: never instruct a user to perform
+  an action the current viewport cannot perform.
+- **Acceptance:** At 375×812, either (a) agents can be seated and unseated and the seated count updates,
+  or (b) the copy names the seated agent and does not ask the user to select anything. Desktop
+  behaviour at ≥1024px is unchanged.
+- **Depends on:** Nothing.
+
+### ISSUE-1189: Studio shell has no `<h1>`, duplicate ambiguous `<h2>`s, no current-page indicator, and two sub-24px tap targets
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟡 MEDIUM (WCAG 2.2 AA gaps; the app already ships `axe-core` and an `e2e/a11y.spec.ts`, so this is drift from a standard the project has already adopted)
+- **Module:** `packages/renderer/src/core/AppShell.tsx` (document outline + nav semantics),
+  `packages/renderer/src/modules/dashboard/Dashboard.tsx`,
+  `packages/renderer/src/modules/dashboard/components/PlatformCard.tsx` ("Unlock full Desktop Studio")
+- **Evidence:** Measured live on the dashboard at 1280×720:
+  - `document.querySelectorAll('h1').length === 0` — no `<h1>` anywhere on the page.
+  - Heading outline is non-monotonic and ambiguous: `H2 "Studio Resources"` (14px) → `H3 "Web Preview"`
+    (14px) → `H2 "indii"` (20px) → `H2 "indii"` (30px) → eight `H3`s (12px). **Two different `<h2>`
+    elements both read exactly "indii"**, and a 14px `H2` outranks a 30px `H2`, so visual weight and
+    semantic level disagree.
+  - Every sidebar destination is a `<button>` with no `aria-current`; the `ux-audit` "you are here"
+    probe returns `[]` and the navigation landmark reports `links: 0`.
+  - Two interactive targets fall below the WCAG 2.2 AA 2.5.8 minimum of 24×24 CSS px:
+    "Return to HQ" at **94×16** and "Unlock full Desktop Studio" at **231×17**.
+- **Impact:** A screen-reader user gets no page-level heading to orient from, hears "indii, heading
+  level 2" twice with no way to tell the two apart, and gets no announcement of which of the ~28
+  sidebar destinations is currently active. The two short-height controls are hard to hit for anyone
+  with a motor impairment or on a touch screen — and "Return to HQ" is the primary escape hatch out of
+  every module.
+- **Fix:**
+  1. Add one `<h1>` per screen naming the current module (visually hidden if the design does not want
+     it drawn), and demote/rename the duplicate `"indii"` `<h2>`s so each heading is distinct.
+  2. Re-order the outline so semantic level tracks visual hierarchy — the 30px heading should not sit
+     at the same level as a 14px sidebar label.
+  3. Add `aria-current="page"` to the active sidebar button.
+  4. Raise both offending controls to ≥24px of hit area (padding is sufficient; the visual size need
+     not change).
+- **Acceptance:** `npm run test:e2e -- e2e/a11y.spec.ts` passes with an added assertion that exactly one
+  `<h1>` exists per module, no two headings at the same level share identical text, `aria-current` is
+  present on the active nav item, and no interactive element's bounding box is under 24×24.
+- **Depends on:** Nothing.
+
+### ISSUE-1190: `React.Fragment` + `key` fails typecheck repo-wide, forcing per-site `@ts-expect-error` suppressions
+
+- **Status:** 🔴 OPEN (tech debt — root cause not yet identified)
+- **Severity:** 🔵 LOW (no runtime impact; it is the *suppression* that is dangerous, because the
+  previous workaround for it — ISSUE-1185's spread-`key` cast — was a real bug that typechecked cleanly)
+- **Module:** `packages/renderer/tsconfig.json`, `@types/react@18.3.3`, and every call site that needs a
+  keyed Fragment — currently `modules/boardroom/components/ParticipantSelector.tsx:92` and
+  `modules/dashboard/components/PlatformCard.tsx:143`
+- **Evidence:** `<React.Fragment key={x}>` inside a `.map()` fails `npm run typecheck` with:
+  `TS2322: Type '{ children: any[]; key: string; }' is not assignable to type '{ children?: ReactNode; }'.
+  Property 'key' does not exist on type '{ children?: ReactNode; }'.`
+  `key` should be supplied by `JSX.IntrinsicAttributes`, so it is not reaching the check. Ruled out
+  during investigation: **not** a duplicate `@types/react` (exactly one copy, 18.3.3, against
+  react 18.3.1); **not** caused by the `<f.icon />` dotted JSX tag (hoisting it to `const Icon = f.icon`
+  did not change the error); **no** repo-declared `namespace JSX` override exists. Renderer tsconfig runs
+  `strict: false`, `noImplicitAny: false`, `jsx: react-jsx` — the `children: any[]` in the error text
+  suggests the `IsExactlyAny` short-circuit in `@types/react`'s `LibraryManagedAttributes` chain, but
+  this was not confirmed.
+- **Impact:** Every keyed Fragment needs a `@ts-expect-error`, which suppresses *all* type errors on the
+  following line, not just this one. That is how ISSUE-1185 stayed hidden: the author reached for
+  `{...({ key } as any)}` to dodge the error and shipped a genuine keying bug that no gate could catch.
+  The next person hits the same wall and picks a workaround of unknown safety.
+- **Fix:** Reproduce in isolation, then fix at the root rather than at the call sites. First things to
+  try, in order: (1) turn `strict` on for the renderer (or at least `strictNullChecks`) in a scratch
+  branch and see whether the error clears — that would confirm the `any` short-circuit theory;
+  (2) check whether `React.JSX` vs the legacy global `JSX` namespace is resolving as expected under
+  `jsx: react-jsx`; (3) if neither, pin/upgrade `@types/react` and retest. Once fixed, delete both
+  `@ts-expect-error` comments — they will start erroring as unused, which is the built-in signal that
+  the root fix worked.
+- **Acceptance:** `<React.Fragment key={x}>` typechecks with no suppression, and both existing
+  `@ts-expect-error` comments are removed without reintroducing errors.
+- **Depends on:** Nothing. Worth doing before the next agent hits it a third time.
 
 ---
