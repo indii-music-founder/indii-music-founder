@@ -1,3 +1,22 @@
+## 2026-07-21 Google GFE Intercepts the Literal Path `/healthz` on `*.run.app` URLs — Returns a Generic 404 Before the Request Reaches the Container
+
+**SEVERITY:** High (cost hours of false "the whole Cloud Run service is broken / IAM is wrong / ingress is wrong" diagnosis; every layer looked misconfigured because the symptom was a 404 that never touched the app)
+
+**MISTAKE:** Deployed `engine-dsp` (FastAPI on Cloud Run) with a `/healthz` health route. Authed requests to `https://engine-dsp-...run.app/healthz` returned a **generic Google HTML 404** — not the app's JSON. Chased it as a deployment failure: verified URL, revision, IAM invoker bindings, ingress settings, org policy, Cloud Armor, even a GCP incident, and confirmed the same 404 from the founder's real browser. Deleted and recreated the service twice. All of it was a dead end because the request never reached the container.
+
+**ROOT CAUSE:** Google's frontend (GFE) special-cases the literal path `/healthz` on `*.run.app` domains and answers a 404 itself, **before** routing to the container. Isolated via a probe matrix: a real image returned FastAPI JSON `{"detail":"Not Found"}` on `/`, 200 on `/docs`, and `/profile` returned 403 unauth / 422 authed (pydantic validation) — proving the container was always reachable and correctly served. Only `/healthz` was edge-blocked.
+
+**FIX:** Add a `/health` route alongside `/healthz` (share one handler) and use `/health` for all remote checks. `packages/engine-dsp/main.py`:
+```python
+@app.get("/healthz")   # retained for local tooling
+@app.get("/health")    # remote checks MUST use this — GFE eats /healthz on *.run.app
+def healthcheck() -> dict[str, str]:
+    return {"status": "ok"}
+```
+Regression test: `packages/engine-dsp/test_main.py` asserts both paths resolve to the same handler. Live proof after redeploy (revision `engine-dsp-00002-m5b`): `/health` → 200 `{"status":"ok"}`, `/healthz` → 404, `/docs` → 200.
+
+**PREVENTION:** Never name a Cloud Run health/probe route `/healthz` if anything hits it over the public `*.run.app` edge — use `/health` (or any non-`/healthz` path). When a `*.run.app` URL 404s but IAM/ingress/revision all look correct, **probe a second path** (`/docs`, `/`, any known route) before assuming the service is broken: if the other path works, the container is fine and the edge is eating that specific path. A 404 that returns Google-branded HTML (not your app's error shape) is the tell that the edge answered, not your app.
+
 ## 2026-07-21 Cloud Functions v2 Timeout Limits Depend on Trigger Type — Storage Finalizers Max Out at 540 Seconds
 
 **SEVERITY:** Medium (all local tests, TypeScript builds, unit-test shards, and the application build passed, but production deployment rejected the function configuration)
