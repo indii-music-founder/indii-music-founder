@@ -7,7 +7,7 @@
 ## Completed
 
 - Created `.agent/test_ledger/COST_OF_DOING_BUSINESS.md` as a living external-cost ledger.
-- Updated `.agent/test_ledger/OPEN_ISSUES.md` to point at the new cost ledger and refresh key real-world cost assumptions.
+- Updated `.agent/test_ledger/OPEN_ISSUES_V2.md` to point at the new cost ledger and refresh key real-world cost assumptions.
 - Fixed `package.json` `health:check` after Vitest 4.1.8 rejected the legacy `--grep` flag.
 - Added a prevention note to `.agent/skills/error_memory/ERROR_LEDGER.md`.
 
@@ -25,7 +25,7 @@ Before `/end`, the tree already contained unrelated dirty code files. Do not bli
 Current in-scope files from this session:
 
 - `.agent/test_ledger/COST_OF_DOING_BUSINESS.md`
-- `.agent/test_ledger/OPEN_ISSUES.md`
+- `.agent/test_ledger/OPEN_ISSUES_V2.md`
 - `package.json`
 - `.agent/skills/error_memory/ERROR_LEDGER.md`
 - `.agent/checkpoints/codex-cost-ledger-end-2026-07-09.md`

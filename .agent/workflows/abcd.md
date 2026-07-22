@@ -12,7 +12,7 @@ Use this command when you want one launch point for the whole internal engine sy
 
 | Engine | Slash | Role | Writes Code? | Primary Artifact |
 | --- | --- | --- | --- | --- |
-| Engine A | `/a` | Finder: run real tests and log real issues | No | `.agent/test_ledger/OPEN_ISSUES.md` |
+| Engine A | `/a` | Finder: run real tests and log real issues | No | `.agent/test_ledger/OPEN_ISSUES_V2.md` |
 | Engine B | `/b` | Fixer: claim one issue, fix it, verify locally, commit | Yes | Code + ledger fix evidence |
 | Engine C | `/c` | Shipper: keep the exact pushed main SHA green and deployment-safe | Yes, for CI/release issues | GitHub Actions + deployment evidence |
 | Engine D | `/d` | Verifier: audit FIXED/shipped claims and re-open fakes | No product code | Ledger verification/re-open notes |
@@ -23,7 +23,7 @@ Before launching sub-workflows, every engine must discover current state from di
 
 1. Read `.agent/workflows/a.md`, `.agent/workflows/b.md`, `.agent/workflows/c.md`, and `.agent/workflows/d.md`.
 2. Read `docs/testing/ENGINE_ABCD_COORDINATION.md`.
-3. Read `.agent/test_ledger/OPEN_ISSUES.md`.
+3. Read `.agent/test_ledger/OPEN_ISSUES_V2.md`.
 4. Check `git status` and do not overwrite unrelated dirty files.
 5. Check for active prototype engine folders under `.agents/teamwork_preview_*` and treat them as active work owned by other agents unless the user says otherwise.
 
@@ -42,9 +42,9 @@ If the user explicitly says "launch A then B then D", run A, B, and D first. C c
 
 - **One lane per engine:** A finds only, B fixes only, C ships only, D verifies only.
 - **One issue per fixer loop:** B claims exactly one issue at a time before editing code.
-- **Immediate ledger commits:** any engine that edits `.agent/test_ledger/OPEN_ISSUES.md` must commit that ledger edit immediately after a pull/rebase.
+- **Immediate ledger commits:** any engine that edits `.agent/test_ledger/OPEN_ISSUES_V2.md` must commit that ledger edit immediately after a pull/rebase.
 - **No fake green:** tests may not be skipped, loosened, or replaced with mocks to make a claim pass.
-- **No hidden handoffs:** all handoffs go through `.agent/test_ledger/OPEN_ISSUES.md`, commit messages, GitHub Actions evidence, or explicit files under `.agents/`.
+- **No hidden handoffs:** all handoffs go through `.agent/test_ledger/OPEN_ISSUES_V2.md`, commit messages, GitHub Actions evidence, or explicit files under `.agents/`.
 - **Cross-app safe:** do not rely on memory from one AI app. If Claude, Gemini, and Codex all run, disk artifacts are the source of truth.
 
 ## 4. Completion Standard

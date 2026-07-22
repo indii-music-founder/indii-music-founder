@@ -4,12 +4,12 @@ description: >
   Adaptive real-life testing workflow. Acts as a real user with real assets in real scenarios.
   Can be vague (AI figures out what to test) or specific (user directs the test).
   Always exhausts the system until completion or documented failure.
-  TEST AGENT DOES NOT WRITE CODE. Issues go to .agent/test_ledger/OPEN_ISSUES.md for a separate fixing agent.
+  TEST AGENT DOES NOT WRITE CODE. Issues go to .agent/test_ledger/OPEN_ISSUES_V2.md for a separate fixing agent.
 ---
 
 > [!IMPORTANT]
 > **CRITICAL ISSUE TRACKING RULE:**
-> You MUST ONLY log issues in `.agent/test_ledger/OPEN_ISSUES.md`. Do NOT create new or standalone markdown files (like BROWSER_ISSUES.md or issue-specific files) for issues.
+> You MUST ONLY log issues in `.agent/test_ledger/OPEN_ISSUES_V2.md`. Do NOT create new or standalone markdown files (like BROWSER_ISSUES.md or issue-specific files) for issues.
 
 
 # /real — Real-Life Scenario Testing
@@ -17,7 +17,7 @@ description: >
 > **Purpose:** Simulate authentic user workflows using the live application.  
 > **Mode:** STRICTLY OBSERVATIONAL — no code modifications, no debugger, no console. EVER.  
 > **Acceptance Criteria:** 30/30 UX score. Anything less means there is work to do.  
-> **Output:** All issues → `.agent/test_ledger/OPEN_ISSUES.md` for a separate fixing agent.
+> **Output:** All issues → `.agent/test_ledger/OPEN_ISSUES_V2.md` for a separate fixing agent.
 
 ---
 
@@ -78,9 +78,9 @@ If no ledger exists, create one and start with the **highest-risk user journey**
 4. Audio analysis (upload → DNA extraction)
 5. Financial workflows (royalty splits → payout preview)
 
-### 1.3 Check .agent/test_ledger/OPEN_ISSUES.md
+### 1.3 Check .agent/test_ledger/OPEN_ISSUES_V2.md
 
-Before starting, read `.agent/test_ledger/OPEN_ISSUES.md`. If previously-reported issues have been marked `FIXED`, **retest those first** as regression checks before moving on to new scenarios.
+Before starting, read `.agent/test_ledger/OPEN_ISSUES_V2.md`. If previously-reported issues have been marked `FIXED`, **retest those first** as regression checks before moving on to new scenarios.
 
 ### 1.4 Persona Selection
 
@@ -126,7 +126,7 @@ When something fails:
 2. **DOCUMENT** — what was the action? what was the error? was there a toast?
 3. **RETRY ONCE** — try the exact same action again. Is it reproducible?
 4. **WORKAROUND** — try to achieve the same goal through a different path
-5. **LOG** — add to .agent/test_ledger/OPEN_ISSUES.md with severity rating
+5. **LOG** — add to .agent/test_ledger/OPEN_ISSUES_V2.md with severity rating
 
 **You do NOT try to fix it. You do NOT read source code. You move on.**
 
@@ -135,7 +135,7 @@ When something fails:
 A test scenario is **complete** when:
 - All planned steps are executed (or documented as blocked)
 - Every success and failure is screenshotted
-- All issues are appended to `.agent/test_ledger/OPEN_ISSUES.md`
+- All issues are appended to `.agent/test_ledger/OPEN_ISSUES_V2.md`
 - The test ledger `.agent/test_ledger/REAL_TEST_HISTORY.md` is updated
 - A UX scorecard is produced with a 30/30 target
 
@@ -330,7 +330,7 @@ At the end of each test, rate each of these dimensions **(1-5)**:
 - **2/5** = Significant problems. Users would complain.
 - **1/5** = Broken. This dimension is failing.
 
-**If ANY dimension is below 5, there MUST be at least one issue filed in .agent/test_ledger/OPEN_ISSUES.md explaining why.**
+**If ANY dimension is below 5, there MUST be at least one issue filed in .agent/test_ledger/OPEN_ISSUES_V2.md explaining why.**
 
 The goal is to drive every dimension to 5. The test agent keeps running `/real` until 30/30 is achieved.
 
@@ -378,11 +378,11 @@ After every run, append to `.agent/test_ledger/REAL_TEST_HISTORY.md`:
 
 ---
 
-## 8. THE ISSUES HANDOFF — .agent/test_ledger/OPEN_ISSUES.md
+## 8. THE ISSUES HANDOFF — .agent/test_ledger/OPEN_ISSUES_V2.md
 
 This is the **critical output** of every `/real` run. It lives at:
 ```
-.agent/test_ledger/OPEN_ISSUES.md
+.agent/test_ledger/OPEN_ISSUES_V2.md
 ```
 
 This file is the contract between the **test agent** (you) and the **fix agent** (a separate session).
@@ -441,7 +441,7 @@ Each issue follows this exact template:
 
 When the user says "fix the /real issues" or similar:
 
-1. Read `.agent/test_ledger/OPEN_ISSUES.md`
+1. Read `.agent/test_ledger/OPEN_ISSUES_V2.md`
 2. Sort by severity (🔴 first, then 🟡, then 🟢)
 3. For each OPEN issue:
    a. Reproduce it in the browser
@@ -511,7 +511,7 @@ When invoked as `/real 30`, the agent enters **perfection mode**:
 /real regression         → Retest all previously-fixed issues
 
 Output files:
-  .agent/test_ledger/OPEN_ISSUES.md          ← Issues for fix agent
+  .agent/test_ledger/OPEN_ISSUES_V2.md          ← Issues for fix agent
   .agent/test_ledger/REAL_TEST_HISTORY.md    ← Coverage ledger
   artifacts/<persona>_<date>_results.md      ← Session report
 ```

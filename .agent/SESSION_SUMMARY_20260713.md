@@ -42,7 +42,7 @@ Completed **TIER 1 of the issue-fixing task ledger**: 7 high-severity issues fix
 ## Quality Metrics
 - ✅ All 7 fixes passed pre-commit gates (lint + typecheck + security + tests)
 - ✅ No breaking changes; all changes are additive or repair logic
-- ✅ Each fix documented in `.agent/test_ledger/OPEN_ISSUES.md` with acceptance criteria met
+- ✅ Each fix documented in `.agent/test_ledger/OPEN_ISSUES_V2.md` with acceptance criteria met
 - ✅ Task ledger updated: `.agent/artifacts/task.md` (TIER 1 complete)
 
 ## Architecture Notes
@@ -74,7 +74,7 @@ Next session should:
 - `packages/renderer/src/modules/social/components/CreatePostModal.tsx` (ISSUE-941)
 - `packages/renderer/src/modules/merchandise/MerchDesigner.tsx` (ISSUE-935)
 - `.agent/artifacts/task.md` (ledger update)
-- `.agent/test_ledger/OPEN_ISSUES.md` (issue status updates)
+- `.agent/test_ledger/OPEN_ISSUES_V2.md` (issue status updates)
 
 ## Branch State
 - Branch: `main` (all work committed locally)

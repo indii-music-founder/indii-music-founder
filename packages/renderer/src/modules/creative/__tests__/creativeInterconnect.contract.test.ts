@@ -14,7 +14,7 @@
  *  1. CONTRACT tests — behavior that must keep working (breakage = regression).
  *  2. CHARACTERIZATION tests — pin CURRENTLY-BROKEN seams so they are executable
  *     documentation. Each carries an ISSUE reference from
- *     `.agent/test_ledger/OPEN_ISSUES.md`. When the fix agent repairs a seam, the
+ *     `.agent/test_ledger/OPEN_ISSUES_V2.md`. When the fix agent repairs a seam, the
  *     characterization test FAILS on purpose — flip the assertion and close the issue.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';

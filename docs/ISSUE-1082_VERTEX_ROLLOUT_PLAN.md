@@ -149,7 +149,7 @@ their owner's direction.
 
    - Append the deployment SHA, CI run URL/status, sanitized live job ID,
      provider evidence, Storage/cost verification, and alert-test timestamp to
-     ISSUE-1082 in `.agent/test_ledger/OPEN_ISSUES.md`.
+     ISSUE-1082 in `.agent/test_ledger/OPEN_ISSUES_V2.md`.
    - Mark it `✅ FIXED` only after all of the acceptance evidence exists. If
      cloud IAM, model availability, production access, spend approval, or alert
      delivery blocks the live proof, retain `🟡 PARTIAL` and append the exact
@@ -165,7 +165,7 @@ their owner's direction.
 | `packages/firebase/src/functions/creative/__tests__/mediaProvider.test.ts` | Cover explicit production configuration and fail-safe selection. |
 | `packages/firebase/src/functions/creative/__tests__/…` | Add or extend focused mocked gateway coverage for provider evidence and the prepaid fallback. |
 | `.env.example` | Keep the documented provider policy and emergency override accurate. |
-| `.agent/test_ledger/OPEN_ISSUES.md` | Append truthful fix/evidence details only after live acceptance. |
+| `.agent/test_ledger/OPEN_ISSUES_V2.md` | Append truthful fix/evidence details only after live acceptance. |
 
 ## Verification checklist
 

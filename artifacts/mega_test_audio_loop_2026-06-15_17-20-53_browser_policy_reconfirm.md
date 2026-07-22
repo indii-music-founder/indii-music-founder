@@ -48,7 +48,7 @@
 
 ## Findings
 
-- No new issue appended to `.agent/test_ledger/OPEN_ISSUES.md`.
+- No new issue appended to `.agent/test_ledger/OPEN_ISSUES_V2.md`.
 - Existing blockers reconfirmed:
   - `ISSUE-188`
   - `ISSUE-250`

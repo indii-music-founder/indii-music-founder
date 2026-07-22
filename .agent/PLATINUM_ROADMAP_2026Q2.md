@@ -173,7 +173,7 @@ npm run build          # ✓ Production build
 - All commits must pass: `npm run typecheck && npm run lint && npm test -- --run`
 - All PRs must reference this roadmap
 - Parallel workstreams: coordinate via git (no conflicts expected)
-- Blocking issues: raise in `.agent/test_ledger/OPEN_ISSUES.md`
+- Blocking issues: raise in `.agent/test_ledger/OPEN_ISSUES_V2.md`
 
 ---
 

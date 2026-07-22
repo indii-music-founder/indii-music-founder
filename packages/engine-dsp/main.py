@@ -28,7 +28,11 @@ def get_pipeline() -> AudioAnalysisPipeline:
     return build_pipeline_from_environment()
 
 
+# /healthz is retained for local tooling, but Google's frontend intercepts the
+# literal path "/healthz" on *.run.app URLs and answers 404 before the request
+# reaches the container (verified live 2026-07-21). Remote checks must use /health.
 @app.get("/healthz")
+@app.get("/health")
 def healthcheck() -> dict[str, str]:
     return {"status": "ok"}
 

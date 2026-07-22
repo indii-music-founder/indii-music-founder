@@ -4,7 +4,7 @@ description: Scours the repository for unfinished work, TODOs, and stubs using a
 
 > [!IMPORTANT]
 > **CRITICAL ISSUE TRACKING RULE:**
-> You MUST ONLY log issues in `.agent/test_ledger/OPEN_ISSUES.md`. Do NOT create new or standalone markdown files (like BROWSER_ISSUES.md or issue-specific files) for issues.
+> You MUST ONLY log issues in `.agent/test_ledger/OPEN_ISSUES_V2.md`. Do NOT create new or standalone markdown files (like BROWSER_ISSUES.md or issue-specific files) for issues.
 
 
 // turbo-all
@@ -40,7 +40,7 @@ Spin up `research` subagents using `invoke_subagent` for each major module to fi
 
 ### Step 3 — Consolidate Findings
 Gather all the findings from the surface scan and the subagents.
-Create or update `.agent/test_ledger/UNFINISHED_WORK.md` (or add to `.agent/test_ledger/OPEN_ISSUES.md`).
+Create or update `.agent/test_ledger/UNFINISHED_WORK.md` (or add to `.agent/test_ledger/OPEN_ISSUES_V2.md`).
 
 Format the findings as:
 ```markdown
@@ -56,8 +56,8 @@ Present the aggregated list of findings to the human-in-the-loop directly in the
 
 ---
 
-### Step 5 — Auto-Transfer to .agent/test_ledger/OPEN_ISSUES.md
-Immediately append **all** discovered items to `.agent/test_ledger/OPEN_ISSUES.md`.
+### Step 5 — Auto-Transfer to .agent/test_ledger/OPEN_ISSUES_V2.md
+Immediately append **all** discovered items to `.agent/test_ledger/OPEN_ISSUES_V2.md`.
 
 > **Write entries a fixer can act on correctly — terse stubs cause wrong fixes.** The bare
 > "Missing logic needs to be completed" boilerplate produced 26 mis-fixed issues, incl. ISSUE-184
@@ -82,5 +82,5 @@ Immediately append **all** discovered items to `.agent/test_ledger/OPEN_ISSUES.m
 Since all items are autonomously transferred to the open issues list, clear the `.agent/test_ledger/UNFINISHED_WORK.md` staging document and leave a note that the sweep is complete.
 
 ### Step 7 — Job Done
-Once the items are transferred and the ledger is cleared, this agent's job is done. The Fixer agents (via the `/issue` workflow) will autonomously pick up these new open issues from `.agent/test_ledger/OPEN_ISSUES.md` and fix them.
+Once the items are transferred and the ledger is cleared, this agent's job is done. The Fixer agents (via the `/issue` workflow) will autonomously pick up these new open issues from `.agent/test_ledger/OPEN_ISSUES_V2.md` and fix them.
 > **Mainline delivery gate:** Before any code, git, CI, push, or optional branch action, read and obey [`branch-safety.md`](branch-safety.md). Direct-to-`main` is mandatory unless the user explicitly requests a branch.

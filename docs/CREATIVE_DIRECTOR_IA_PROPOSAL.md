@@ -3,7 +3,7 @@
 > **Status:** PROPOSAL — awaiting William's decision. Do NOT restructure tabs/panels until an option is picked.
 > Covers ledger ISSUE-488 (too many tabs / panels float over wrong views), ISSUE-489 (VERSIONS vs PLP unclear),
 > ISSUE-491 (Keyframes ⇄ Daisy Chain redundancy), ISSUE-496 (history fragmented across 3 surfaces).
-> Grounded in the competitive scan in `.agent/test_ledger/OPEN_ISSUES.md` (Photoshop/Firefly, Krea).
+> Grounded in the competitive scan in `.agent/test_ledger/OPEN_ISSUES_V2.md` (Photoshop/Firefly, Krea).
 > Honors MEMORY: no buzzwords/"Nexus", YAGNI (rename/surface use cases over adding modes).
 
 ## 1. Current state (audit)

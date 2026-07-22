@@ -9,7 +9,7 @@
 > **Do NOT implement the `source:'boardroom'` field or the "phases 2-4" migration below** —
 > that would create the parallel persistence path the ISSUE-760 ledger entry explicitly forbids.
 > This document is retained only as a record of the design that was considered and rejected in
-> favor of namespace-based unification. See `.agent/test_ledger/OPEN_ISSUES.md` (ISSUE-760).
+> favor of namespace-based unification. See `.agent/test_ledger/OPEN_ISSUES_V2.md` (ISSUE-760).
 
 ---
 

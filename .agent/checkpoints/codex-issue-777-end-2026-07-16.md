@@ -14,7 +14,7 @@
 - Added compensation for partial batch Storage failures and a regression test proving prior writes are deleted before the reservation is voided.
 - Updated the legacy Firebase image integration fixture so its two-output request seeds a matching two-image reservation and asserts both returned Storage URIs.
 - Added `docs/flowcharts/image-generation-controls-micro.md`.
-- Updated `.agent/test_ledger/OPEN_ISSUES.md` and `.agent/artifacts/task.md`.
+- Updated `.agent/test_ledger/OPEN_ISSUES_V2.md` and `.agent/artifacts/task.md`.
 
 ## Verification
 

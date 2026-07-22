@@ -35,7 +35,7 @@ This run reconfirmed the existing live-browser infrastructure blocker rather tha
 
 ## Issue Ledger Impact
 
-No new issue was appended to `.agent/test_ledger/OPEN_ISSUES.md`.
+No new issue was appended to `.agent/test_ledger/OPEN_ISSUES_V2.md`.
 
 This run reconfirmed existing `ISSUE-187`:
 

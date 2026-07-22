@@ -1388,7 +1388,7 @@ Before pushing any branch, run `/plat` (see `.claude/commands/plat.md`). It exec
 1. `curl -s -o /dev/null -w "%{http_code}" -X POST https://us-central1-<project>.cloudfunctions.net/<fn> -H "Content-Type: application/json" -d '{"data":{}}'` → **403 = IAM-blocked** (broken); **401/400 = reachable** (healthy — framework rejected auth/payload, which is correct).
 2. Gen1: `gcloud functions get-iam-policy <fn> --region=us-central1` — empty policy confirms it. **Gen2 CAVEAT:** empty function-level policy is NORMAL for Gen2 (invoker lives on the Cloud Run service) — the curl probe is ground truth, NOT `get-iam-policy`. (This false-flagged `generateImageV3`/`enforceOperationCost` before re-probing showed 401.)
 
-**FIX:** `gcloud functions add-invoker-policy-binding <fn> --region=us-central1 --member="allUsers"` — scope to client-called callables + inbound webhooks + healthchecks ONLY (never blanket-grant crons/orchestrators; Scheduler invokes those via OIDC). Full inventory + grant list: `.agent/test_ledger/OPEN_ISSUES.md` ISSUE-672/673.
+**FIX:** `gcloud functions add-invoker-policy-binding <fn> --region=us-central1 --member="allUsers"` — scope to client-called callables + inbound webhooks + healthchecks ONLY (never blanket-grant crons/orchestrators; Scheduler invokes those via OIDC). Full inventory + grant list: `.agent/test_ledger/OPEN_ISSUES_V2.md` ISSUE-672/673.
 
 **PREVENTION:**
 1. Post-deploy CI probe: curl every renderer-called callable, fail the deploy on 403 (grep list: `rg -oU "httpsCallable[^)]*?['\"]([a-zA-Z0-9_]+)['\"]" -r '$1' packages/renderer/src | sort -u`).

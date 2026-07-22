@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const file = path.join(process.cwd(), '.agent/test_ledger/OPEN_ISSUES.md');
+const file = path.join(process.cwd(), '.agent/test_ledger/OPEN_ISSUES_V2.md');
 let content = fs.readFileSync(file, 'utf8');
 
 const replacements = [

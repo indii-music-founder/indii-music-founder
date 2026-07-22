@@ -4,7 +4,7 @@ description: Universal improvement engine — drop anywhere to audit, elevate, a
 
 > [!IMPORTANT]
 > **CRITICAL ISSUE TRACKING RULE:**
-> You MUST ONLY log issues in `.agent/test_ledger/OPEN_ISSUES.md`. Do NOT create new or standalone markdown files (like BROWSER_ISSUES.md or issue-specific files) for issues.
+> You MUST ONLY log issues in `.agent/test_ledger/OPEN_ISSUES_V2.md`. Do NOT create new or standalone markdown files (like BROWSER_ISSUES.md or issue-specific files) for issues.
 
 
 # /better — The Elevation Engine
@@ -286,7 +286,7 @@ When `/better` is standalone, commit the bounded task once on `main`: `git add <
 Output findings to **two targets**:
 
 1. **Consolidated findings doc** (`.agent/test_ledger/AUDIT_FINDINGS_<timestamp>.md`):
-   - Format matches `.agent/test_ledger/OPEN_ISSUES.md` house style
+   - Format matches `.agent/test_ledger/OPEN_ISSUES_V2.md` house style
    - Per finding: Status | Severity | Module | Evidence | Files | Fix Direction | Verified?
    - Include "Corrections" section if you found false leads to warn the fixing agent
 

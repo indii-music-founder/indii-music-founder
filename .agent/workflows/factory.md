@@ -4,7 +4,7 @@ description: The ultimate closed-loop automation workflow. Spins up the Test Orc
 
 > [!IMPORTANT]
 > **CRITICAL ISSUE TRACKING RULE:**
-> You MUST ONLY log issues in `.agent/test_ledger/OPEN_ISSUES.md`. Do NOT create new or standalone markdown files (like BROWSER_ISSUES.md or issue-specific files) for issues.
+> You MUST ONLY log issues in `.agent/test_ledger/OPEN_ISSUES_V2.md`. Do NOT create new or standalone markdown files (like BROWSER_ISSUES.md or issue-specific files) for issues.
 
 
 # /factory — The Automated CI Factory
@@ -20,17 +20,17 @@ When `/factory` is invoked, the primary agent acts as the **Floor Manager** and 
 ### 1. The Test Orchestrator
 - **Role:** To break the app.
 - **Task:** Iterates through the Mega Stress Test plans in `.agent/test_ledger/MEGA_STRESS_TEST_V*.md` (the canonical test protocols — the legacy `live_test_*.md` files are deprecated and deleted). It spawns browser testing agents to execute each plan against `localhost:4242`, following the `/mega` batching rules (5–8 routines per subagent call).
-- **Output:** Logs every failure, crash, or visual bug directly into `.agent/test_ledger/OPEN_ISSUES.md`. 
+- **Output:** Logs every failure, crash, or visual bug directly into `.agent/test_ledger/OPEN_ISSUES_V2.md`.
 
 ### 2. The Fix Agent (`/issue`)
 - **Role:** To patch the app.
-- **Task:** Continuously monitors `.agent/test_ledger/OPEN_ISSUES.md`. The moment the Test Orchestrator logs a failure, the Fix Agent claims it, diagnoses the codebase, applies surgical fixes, verifies the fix locally, and marks the issue as `FIXED`.
+- **Task:** Continuously monitors `.agent/test_ledger/OPEN_ISSUES_V2.md`. The moment the Test Orchestrator logs a failure, the Fix Agent claims it, diagnoses the codebase, applies surgical fixes, verifies the fix locally, and marks the issue as `FIXED`.
 - **Output:** Clean, working code that resolves the orchestrator's findings.
 
 ### 3. The QA & Publisher
 - **Role:** To seal and ship the app, and investigate pipeline failures.
 - **Task:** Waits for the Test Orchestrator to complete its list and the Fix Agent to clear the queue. It then executes the `/ci-validate` workflow (`npm run typecheck`, `npm run lint`, `npm test`). 
-- **Auto-Healing CI:** If CI fails (e.g., GitHub Actions or local test suites), the Publisher immediately parses the failure logs, diagnoses the root cause, documents it in `.agent/skills/error_memory/ERROR_LEDGER.md` to build institutional memory, and routes the specific failures back to `.agent/test_ledger/OPEN_ISSUES.md` so the Fix Agent can patch them. It loops this until green.
+- **Auto-Healing CI:** If CI fails (e.g., GitHub Actions or local test suites), the Publisher immediately parses the failure logs, diagnoses the root cause, documents it in `.agent/skills/error_memory/ERROR_LEDGER.md` to build institutional memory, and routes the specific failures back to `.agent/test_ledger/OPEN_ISSUES_V2.md` so the Fix Agent can patch them. It loops this until green.
 - **Output:** If local validation passes, it verifies that the work is one coherent commit on `main`, pushes with `git push origin HEAD:main`, and monitors the exact resulting CI run until green.
 
 ---

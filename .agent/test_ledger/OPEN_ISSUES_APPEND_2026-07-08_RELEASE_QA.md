@@ -27,7 +27,7 @@
 
 > Written by the Cowork release-QA agent on behalf of William. These entries follow
 > OPEN_ISSUES.md house format and continue numbering after ISSUE-766. A fixing/maintenance
-> agent should merge them into `.agent/test_ledger/OPEN_ISSUES.md`.
+> agent should merge them into `.agent/test_ledger/OPEN_ISSUES_V2.md`.
 
 ---
 

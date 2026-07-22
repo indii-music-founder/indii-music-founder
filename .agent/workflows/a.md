@@ -70,7 +70,7 @@ Your job: **run the tests, find the bugs, and write them to the ledger as clean,
 - After B lands a fix, re-run the relevant spec. If it passes, append a one-line confirmation under that issue (do NOT flip its status — verification is B's). If it fails again, file a NEW `[REGRESSION]` issue referencing the original.
 
 ## 4. Write Findings — the enriched template
-Every failure/bug → append a NEW issue to `.agent/test_ledger/OPEN_ISSUES.md`, numbered after the current max ISSUE number:
+Every failure/bug → append a NEW issue to `.agent/test_ledger/OPEN_ISSUES_V2.md`, numbered after the current max ISSUE number:
 
 ```markdown
 ### ISSUE-NNN: <short title>

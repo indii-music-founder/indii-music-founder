@@ -55,7 +55,7 @@ When responding, format your output professionally using markdown. Do not includ
 }
 
 // Append gap issues to OPEN_ISSUES.md
-const ledgerPath = '/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-music-founder/.agent/test_ledger/OPEN_ISSUES.md';
+const ledgerPath = '/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indii-music-founder/.agent/test_ledger/OPEN_ISSUES_V2.md';
 if (fs.existsSync(ledgerPath)) {
     let ledgerContent = fs.readFileSync(ledgerPath, 'utf8');
     

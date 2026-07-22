@@ -40,7 +40,7 @@ For cross-app operation, do not depend on a single agent's chat memory. Codex, C
 
 - `.agent/workflows/abcd.md` for the full launch sequence.
 - `.agent/workflows/a.md` through `.agent/workflows/d.md` for each engine lane.
-- `.agent/test_ledger/OPEN_ISSUES.md` for work claims, fixes, verification notes, and re-opens.
+- `.agent/test_ledger/OPEN_ISSUES_V2.md` for work claims, fixes, verification notes, and re-opens.
 - Git commits and GitHub Actions runs for CI/CD evidence.
 - `.agents/teamwork_preview_*` folders only as active prototype artifacts owned by whichever agent created them.
 

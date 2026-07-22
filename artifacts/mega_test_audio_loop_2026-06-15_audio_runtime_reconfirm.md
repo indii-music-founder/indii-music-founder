@@ -57,7 +57,7 @@
 
 ## Findings
 
-- No new issue appended to `.agent/test_ledger/OPEN_ISSUES.md`.
+- No new issue appended to `.agent/test_ledger/OPEN_ISSUES_V2.md`.
 - Existing blockers reconfirmed:
   - `ISSUE-188`: live browser validation blocker remains effectively unresolved in this environment despite fixed status in ledger
   - `ISSUE-250`: direct Playwright runtime remains blocked by browser sandbox permissions

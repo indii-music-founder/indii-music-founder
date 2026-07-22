@@ -5,7 +5,7 @@
 
 ## Completed
 
-- Added the Veo 3.x / video.js async video upgrade backlog to `.agent/test_ledger/OPEN_ISSUES.md`.
+- Added the Veo 3.x / video.js async video upgrade backlog to `.agent/test_ledger/OPEN_ISSUES_V2.md`.
 - Captured the platform constraint that indii is Electron/Vite + React 18, not Next.js.
 - Recorded `video.js` as the intended playback/buffer layer for Video Studio.
 - Recorded FFmpeg.wasm extraction as worker-only, with React hooks limited to orchestration.

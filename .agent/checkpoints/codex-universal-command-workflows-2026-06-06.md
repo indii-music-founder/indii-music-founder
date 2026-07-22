@@ -30,7 +30,7 @@
 - Full `npm run typecheck` is blocked by unrelated dirty main-process files:
   - `packages/main/src/handlers/security.ts`: missing `secret_value`.
   - `packages/main/src/services/IndiiRemoteService.ts`: missing `log`.
-- Logged as `ISSUE-213` in `.agent/test_ledger/OPEN_ISSUES.md`.
+- Logged as `ISSUE-213` in `.agent/test_ledger/OPEN_ISSUES_V2.md`.
 - Broad Firestore rules suite has unrelated pre-existing failures, logged as `ISSUE-212`.
 
 ## Next Agent Notes

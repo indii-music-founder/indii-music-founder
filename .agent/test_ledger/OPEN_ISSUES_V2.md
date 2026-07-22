@@ -9,8 +9,9 @@
 > **Ledger protocol (V2):** This is the ACTIVE master ledger. It operates exactly like the original:
 > same entry format (`### ISSUE-NNNN: <title>` with Status/Severity/Module/Evidence/Impact/Fix/Acceptance),
 > same status vocabulary (🔴 OPEN / 🟡 PARTIAL / ✅ FIXED / WONTFIX), same append-only discipline.
-> Issue numbering CONTINUES from the archive — entries ≤ ISSUE-1089 live in `OPEN_ISSUES.md`
-> (sealed archive, 1.7MB+; never renumber, never move entries between files). New entries start
+> Issue numbering CONTINUES from the archive — entries ≤ ISSUE-1089 live in
+> `archive/OPEN_ISSUES_LEGACY_2026-07-21.md` (sealed archive, 1.7MB+; never renumber,
+> never move entries between files). New entries start
 > at ISSUE-1092 and are appended HERE. ISSUE-1090 and ISSUE-1091 already
 > identify unrelated archived issues, so they are intentionally not reused.
 > Cross-references like ISSUE-1083 resolve in the archive.
@@ -1325,9 +1326,18 @@
 
 ### ISSUE-1183: engine-dsp Cloud Run deployment — infrastructure creation gated on explicit founder go-ahead
 
-- **Status:** 🟡 AWAITING FOUNDER GO-AHEAD — code/tests complete (see ISSUE-1170), infra provisioning not yet authorized
+- **Status:** 🟡 PARTIAL — founder authorized (2026-07-21); infra live (steps 1–5 done, service reachable & authed); step 6 live end-to-end WAV→receipt proof still pending
 - **Severity:** 🔴 CRITICAL (blocks ISSUE-1170 completion and ISSUE-1152's browser-receipt-hydration remainder)
 - **Module:** `packages/engine-dsp` / Cloud Run / IAM
+- **Deployment evidence (2026-07-21):**
+  - Service `engine-dsp` live at `https://engine-dsp-omromhtbxq-uc.a.run.app` (revision `engine-dsp-00002-m5b`, 100% traffic), image digest `sha256:c1e75b6197e05a11143215b2153576d1bcb3ddbd77f0ee56127cd6ccca9b7ce5`.
+  - Runtime SA `engine-dsp-runtime@indii-music-founder.iam.gserviceaccount.com` (aiplatform.user, datastore.user, storage.objectViewer on `indii-music-founder.firebasestorage.app`).
+  - Invoker SA `engine-dsp-invoker@indii-music-founder.iam.gserviceaccount.com` (`roles/run.invoker` on the service; Cloud Tasks agent has tokenCreator on it). No public access.
+  - Firebase Functions `processaudioingestion` env vars set: `ENGINE_DSP_URL`, `ENGINE_DSP_SERVICE_ACCOUNT`, `ENGINE_DSP_AUDIENCE` (canonical URL).
+  - Cloud Tasks queue `dsp-processing-queue` present in us-central1.
+  - **Live probe (authed OIDC):** `/health` → 200 `{"status":"ok"}`; `/docs` → 200; `/healthz` → 404.
+- **⚠️ Infra gotcha discovered — Google GFE intercepts `/healthz`:** Google's frontend answers a generic HTML 404 for the literal path `/healthz` on `*.run.app` URLs **before** the request reaches the container. This cost hours of false "service is broken" diagnosis. Root-caused via a probe matrix (real image returned FastAPI JSON on `/` and 200 on `/docs`, and `/profile` returned 403 unauth / 422 authed — proving the container was always reachable; only `/healthz` was edge-blocked). **Fix:** added a `/health` route alongside `/healthz` in `packages/engine-dsp/main.py` (both share one handler; regression test in `packages/engine-dsp/test_main.py`). Remote health checks must use `/health`. Logged in ERROR_LEDGER.
+- **Remaining for FIXED (step 6):** Upload one small synthetic WAV to `masters/{owner_id}/{content_hash}/original.wav`, enqueue a real Cloud Task, confirm a Firestore `audio_analysis_receipts` receipt lands, confirm retry returns the cached receipt without a second Gemini call. Until this passes, ISSUE-1170 stays open and ISSUE-1152 stays blocked.
 - **Why this is its own tracked item, not silently rolled into ISSUE-1170:** Deploying this service means creating real, billable production GCP infrastructure — a new Cloud Run service plus two new service accounts plus new IAM grants (Storage read, Firestore write, Vertex AI use, Cloud Run Invoker). Per this session's safety practice, infrastructure/IAM changes on the live production project get an explicit founder go-ahead before an agent touches them, rather than an agent inferring consent. This ticket exists so that go-ahead is a persistent, visible decision point instead of a one-off chat question that gets lost.
 - **What's ready to deploy (per ISSUE-1170):** Container, Firestore rules, and all code are locally proven (9 Python tests, 140/140 Firestore emulator tests, container builds and passes health/legacy-rejection smoke tests).
 - **What deploying requires (see ISSUE-1170 for full detail):**

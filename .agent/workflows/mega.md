@@ -7,12 +7,12 @@ description: >
   hours, cycling the entire menu on a loop until explicitly stopped.
   The target taxonomy is the live sidebar registry in `.agent/test_ledger/departments_test_config.json`.
   Numbered V1–V12 plans are reusable depth-packs, NOT the unit of work.
-  TEST AGENT DOES NOT WRITE CODE. Issues go to .agent/test_ledger/OPEN_ISSUES.md for a fixing agent.
+  TEST AGENT DOES NOT WRITE CODE. Issues go to .agent/test_ledger/OPEN_ISSUES_V2.md for a fixing agent.
 ---
 
 > [!IMPORTANT]
 > **CRITICAL ISSUE TRACKING RULE:**
-> You MUST ONLY log issues in `.agent/test_ledger/OPEN_ISSUES.md`. Do NOT create new or standalone markdown files (like BROWSER_ISSUES.md or issue-specific files) for issues.
+> You MUST ONLY log issues in `.agent/test_ledger/OPEN_ISSUES_V2.md`. Do NOT create new or standalone markdown files (like BROWSER_ISSUES.md or issue-specific files) for issues.
 
 
 # /mega — Master Menu-Sweep Orchestrator
@@ -23,18 +23,18 @@ description: >
 > depth-packs you attach to individual items, not the loop axis.
 > **Mode:** STRICTLY OBSERVATIONAL — no code modifications. EVER.
 > **Duration:** Designed to run for hours. The agent cycles the whole menu on a loop until the user says stop.
-> **Output:** Per-item verdicts → `.agent/test_ledger/OPEN_ISSUES.md` + session reports.
+> **Output:** Per-item verdicts → `.agent/test_ledger/OPEN_ISSUES_V2.md` + session reports.
 
 ---
 
 ## 0. THE PRIME RULES
 
 1. **You are a relentless QA machine.** You do not stop until the user tells you to, or until every menu item has a verdict.
-2. **You do not write code.** Issues go to `.agent/test_ledger/OPEN_ISSUES.md` for a separate fixing agent.
+2. **You do not write code.** Issues go to `.agent/test_ledger/OPEN_ISSUES_V2.md` for a separate fixing agent.
 3. **You do not read source code.** You are a user. You click, type, and observe.
 4. **You do not skip menu items.** Every registry item must be tested and receive a verdict.
 5. **You delegate per item.** Each item is one `/mega-test <item>` run. Inside an item, batch browser scenarios 5–8 at a time.
-6. **You log continuously.** After every item, append results to the running report and update `.agent/test_ledger/OPEN_ISSUES.md` before starting the next item.
+6. **You log continuously.** After every item, append results to the running report and update `.agent/test_ledger/OPEN_ISSUES_V2.md` before starting the next item.
 
 ---
 
@@ -105,7 +105,7 @@ Group by category, order Managers → Departments → Tools → Projects. Filter
 Step 2 — Read current issue count
 ```
 ```bash
-grep -c "^### ISSUE-" .agent/test_ledger/OPEN_ISSUES.md
+grep -c "^### ISSUE-" .agent/test_ledger/OPEN_ISSUES_V2.md
 ```
 Note the last ISSUE number. All new issues start after that.
 
@@ -113,7 +113,7 @@ Note the last ISSUE number. All new issues start after that.
 Step 3 — Read previously fixed issues (regression candidates)
 ```
 ```bash
-grep "FIXED" .agent/test_ledger/OPEN_ISSUES.md | tail -20
+grep "FIXED" .agent/test_ledger/OPEN_ISSUES_V2.md | tail -20
 ```
 
 ```
@@ -350,7 +350,7 @@ Source of truth:
   .agent/test_ledger/departments_test_config.json  ← the menu (target registry)
 
 Output files:
-  .agent/test_ledger/OPEN_ISSUES.md          ← Append new issues HERE
+  .agent/test_ledger/OPEN_ISSUES_V2.md          ← Append new issues HERE
   .agent/test_ledger/REAL_TEST_HISTORY.md    ← Append session summary
   artifacts/mega_session_<date>.md           ← Full session report
 ```

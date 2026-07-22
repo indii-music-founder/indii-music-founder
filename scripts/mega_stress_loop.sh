@@ -2,10 +2,10 @@
 
 # megastress loop – runs all MEGA_STRESS_TEST_V*.md files repeatedly
 # Each file is expected to correspond to a Playwright test tag.
-# Failures are appended to .agent/test_ledger/OPEN_ISSUES.md and committed.
+# Failures are appended to .agent/test_ledger/OPEN_ISSUES_V2.md and committed.
 
 BASE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-LEDGER="$BASE_DIR/.agent/test_ledger/OPEN_ISSUES.md"
+LEDGER="$BASE_DIR/.agent/test_ledger/OPEN_ISSUES_V2.md"
 SCRIPT_DIR="$BASE_DIR/scripts"
 
 # Ensure script is executable
