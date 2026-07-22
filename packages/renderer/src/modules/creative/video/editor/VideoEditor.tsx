@@ -50,6 +50,7 @@ export const VideoEditor: React.FC<VideoEditorProps> = ({ initialVideo }) => {
     const isLoadingProject = useVideoEditorStore(state => state.isLoadingProject);
     const projectLoadError = useVideoEditorStore(state => state.projectLoadError);
     const projectSaveError = useVideoEditorStore(state => state.projectSaveError);
+    const isEphemeralSession = useVideoEditorStore(state => state.isEphemeralSession);
 
     const handleAddTrackVideo = React.useCallback(() => addTrack('video'), [addTrack]);
     const handleFrameUpdate = React.useCallback((frame: number) => setCurrentTime(frame), [setCurrentTime]);
@@ -101,6 +102,20 @@ export const VideoEditor: React.FC<VideoEditorProps> = ({ initialVideo }) => {
 
     return (
         <div className="flex flex-col h-full bg-[--background] text-[--foreground]">
+            {/* ISSUE-1194: a guest can reach this editor, but Firestore denies every
+                write for anonymous sessions. Say so up front — the previous behaviour
+                accepted the work and discarded it without a word. Amber, not red:
+                this is a limitation of not having an account, not a malfunction. */}
+            {isEphemeralSession && (
+                <div
+                    role="status"
+                    className="shrink-0 bg-amber-950/80 border-b border-amber-800 text-amber-200 text-xs px-4 py-2"
+                >
+                    <span className="font-bold">Not saved.</span>{' '}
+                    You’re signed in as a guest, so this timeline won’t be kept. Create an account to save your work.
+                </div>
+            )}
+
             {/* ISSUE-1195: save failures were previously a logger.warn and nothing
                 else. This banner persists until a save succeeds. */}
             {projectSaveError && (

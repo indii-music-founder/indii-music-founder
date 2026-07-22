@@ -36,6 +36,7 @@ describe('useVideoProjectPersistence', () => {
             isLoadingProject: false,
             projectLoadError: null,
             projectSaveError: null,
+            isEphemeralSession: false,
         });
         vi.mocked(useStore).mockReturnValue({
             user: mockUser,
@@ -165,6 +166,52 @@ describe('useVideoProjectPersistence', () => {
             await vi.waitFor(() => {
                 expect(useVideoEditorStore.getState().isLoadingProject).toBe(false);
             });
+        });
+    });
+
+    // Regression: ISSUE-1194 — a guest could build a whole timeline and lose all of
+    // it on reload, having never been told. Firestore's isAuthenticated() excludes
+    // anonymous sign-ins, so every read and write is denied at the rules layer.
+    // Found by /qa on 2026-07-22.
+    // Report: .agent/test_ledger/OPEN_ISSUES_V2.md (ISSUE-1194)
+    describe('guest session (ISSUE-1194)', () => {
+        beforeEach(() => {
+            vi.mocked(useStore).mockReturnValue({
+                user: { uid: 'anon-uid', isAnonymous: true },
+                currentOrganizationId: 'org-1',
+                organizations: [{ id: 'org-1' }],
+                currentProjectId: 'project-a',
+            });
+        });
+
+        it('declares the session ephemeral instead of silently discarding work', async () => {
+            renderHook(() => useVideoProjectPersistence());
+            await vi.waitFor(() => {
+                expect(useVideoEditorStore.getState().isEphemeralSession).toBe(true);
+            });
+        });
+
+        it('does not spend doomed round-trips on a load or save that rules will deny', async () => {
+            renderHook(() => useVideoProjectPersistence());
+            await vi.waitFor(() => {
+                expect(useVideoEditorStore.getState().isEphemeralSession).toBe(true);
+            });
+
+            useVideoEditorStore.getState().addTrack('audio');
+            await vi.advanceTimersByTimeAsync(60000);
+
+            expect(PersistenceService.loadVideoProject).not.toHaveBeenCalled();
+            expect(PersistenceService.saveVideoProject).not.toHaveBeenCalled();
+        });
+
+        it('presents an ephemeral session as a limitation, not as a load failure', async () => {
+            renderHook(() => useVideoProjectPersistence());
+            await vi.waitFor(() => {
+                expect(useVideoEditorStore.getState().isEphemeralSession).toBe(true);
+            });
+            // The blocking error screen must NOT appear — the editor stays usable.
+            expect(useVideoEditorStore.getState().projectLoadError).toBeNull();
+            expect(useVideoEditorStore.getState().isLoadingProject).toBe(false);
         });
     });
 

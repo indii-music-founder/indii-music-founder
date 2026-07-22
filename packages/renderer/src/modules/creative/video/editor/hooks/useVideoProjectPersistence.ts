@@ -69,10 +69,32 @@ export function useVideoProjectPersistence() {
         }
     }, [user, resolvedOrgId]);
 
+    // ISSUE-1194: a guest session can never persist — Firestore's
+    // `isAuthenticated()` excludes anonymous sign-ins, so every read and write is
+    // denied at the rules layer. Attempting them anyway would spend two doomed
+    // round-trips and surface a red failure banner, which reads as a malfunction
+    // rather than what it is: a known limitation of not having an account. Declare
+    // it up front instead, and never mint a token — so autosave stays off by the
+    // same mechanism that protects a failed load.
+    const isGuestSession = Boolean(user?.isAnonymous);
+
     // Load (or start fresh) whenever the app's active project changes.
     useEffect(() => {
         if (!currentProjectId || !user) return;
         if (loadedProjectIdRef.current === currentProjectId) return;
+
+        if (isGuestSession) {
+            loadedProjectIdRef.current = currentProjectId;
+            tokenRef.current = null;
+            const store = useVideoEditorStore.getState();
+            store.setIsEphemeralSession(true);
+            store.setProjectLoadError(null);
+            store.setProjectSaveError(null);
+            store.resetProjectForId(currentProjectId);
+            store.setIsLoadingProject(false);
+            return;
+        }
+        useVideoEditorStore.getState().setIsEphemeralSession(false);
         loadedProjectIdRef.current = currentProjectId;
 
         // A new project means the previous token no longer authorises anything.
@@ -125,7 +147,7 @@ export function useVideoProjectPersistence() {
         return () => {
             cancelled = true;
         };
-    }, [currentProjectId, user]);
+    }, [currentProjectId, user, isGuestSession]);
 
     // Debounced autosave on every project mutation.
     useEffect(() => {

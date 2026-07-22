@@ -1002,9 +1002,18 @@ service cloud.firestore {
         resource.data.get('userId', null) == request.auth.uid) || (isGuest() && resource.data.get('userId', null) == 'founder-demo-uid');
     }
 
-    // Check if the authenticated user is Anonymous
+    // Check if the caller is signed in anonymously.
+    //
+    // This was `isAuthenticated() && provider == 'anonymous'`, which can never be
+    // true: `isAuthenticated()` already requires `provider != 'anonymous'`, so the
+    // two clauses contradict. It was not exploitable — `isVerifiedUser()` collapsed
+    // to `isAuthenticated()`, which already excludes anonymous, so the posture was
+    // the intended one — but it is a trap. A future rule written `if isAnonymous()`
+    // would silently never grant, and one written `if !isAnonymous()` would silently
+    // always grant. Corrected to test the token directly. Behaviour-preserving:
+    // verified against the full emulator rules suite.
     function isAnonymous() {
-      return isAuthenticated() &&
+      return request.auth != null &&
              request.auth.token.firebase.sign_in_provider == 'anonymous';
     }
 

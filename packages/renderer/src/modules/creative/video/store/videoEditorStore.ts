@@ -162,6 +162,13 @@ interface VideoEditorState {
     projectSaveError: string | null;
     setProjectLoadError: (message: string | null) => void;
     setProjectSaveError: (message: string | null) => void;
+
+    // ISSUE-1194: true when the signed-in session can never persist a timeline
+    // (guest/anonymous). Firestore's `isAuthenticated()` excludes anonymous, so
+    // every write is denied at the rules layer. The editor is still reachable, so
+    // the user must be told up front rather than discovering it on reload.
+    isEphemeralSession: boolean;
+    setIsEphemeralSession: (ephemeral: boolean) => void;
 }
 
 export const INITIAL_PROJECT: VideoProject = {
@@ -331,6 +338,10 @@ export const useVideoEditorStore = create<VideoEditorState>((_set, get) => {
         projectSaveError: null,
         setProjectLoadError: (message) => set({ projectLoadError: message }),
         setProjectSaveError: (message) => set({ projectSaveError: message }),
+
+        // Guest sessions cannot persist (ISSUE-1194)
+        isEphemeralSession: false,
+        setIsEphemeralSession: (ephemeral) => set({ isEphemeralSession: ephemeral }),
 
         setJobId: (id) => set({ jobId: id }),
         setStatus: (status) => set({ status }),
@@ -535,7 +546,7 @@ export const useVideoEditorStore = create<VideoEditorState>((_set, get) => {
     };
 });
 
-if (typeof window !== 'undefined') {
+if (typeof window !== 'undefined' && import.meta.env.DEV) {
     (window as any).useVideoEditorStore = useVideoEditorStore;
 }
 
