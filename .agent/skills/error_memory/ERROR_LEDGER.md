@@ -1,3 +1,62 @@
+## 2026-07-22 `git add <file>` in a Shared Worktree Silently Absorbs Another Agent's Uncommitted Work
+
+**SEVERITY:** Medium (no bad code shipped this time — but the commit record is now wrong, and on main it cannot be corrected without a history rewrite, which branch-safety forbids)
+
+**MISTAKE:** This repo runs several agents in ONE worktree by design (CLAUDE.md: "All these agents can be active and cooperate simultaneously"). While committing an ISSUE-1194 fix, `git add packages/renderer/src/modules/creative/video/store/videoEditorStore.ts` staged the whole file — including a one-line change another agent had made in the working tree but not yet committed:
+```diff
+-if (typeof window !== 'undefined') {
++if (typeof window !== 'undefined' && import.meta.env.DEV) {
+```
+It shipped inside commit `86486670c` under a message that never mentions it, attributed to the wrong author and the wrong ISSUE.
+
+**ROOT CAUSE:** `git add <path>` stages the file's *entire* current content, not the subset you edited. In a single-agent worktree those are the same thing; in a shared one they are not. The pre-commit gate cannot catch this — the sweep was valid, passing code.
+
+**WHY IT WASN'T CAUGHT:** `git diff --cached --stat` was run and reported `videoEditorStore.ts | 13 +++++-`. The intended edits were 12 insertions and 0 deletions. That single unexplained deletion was the entire tell, and `--stat` was read as a checksum instead of the content being read.
+
+**FIX:** None applied. The commit is on `main` and through CI; rewriting main is forbidden (`.agent/workflows/branch-safety.md` rule 4: never force-push, reset, or rewrite). Recorded here instead so the record is honest.
+
+**PREVENTION:** Before every commit in this repo, read `git diff --cached` **content**, not `--stat`. Treat any hunk you cannot account for line-by-line as someone else's work: unstage it (`git restore --staged <path>`), commit your own, and leave theirs alone. Reconcile the insertion/deletion counts against what you actually changed — an unexplained deletion in a file you only added lines to means you have absorbed something. `git add -p` is the safer primitive but is unavailable here (interactive git is blocked), so the diff read is the control.
+
+## 2026-07-22 Returning `null` for Both "Absent" and "Failed" Is How a Cache/Persistence Layer Destroys User Data
+
+**SEVERITY:** Critical (silently overwrote a saved video timeline with a blank one; no attacker, no error shown, one dropped connection was the whole trigger)
+
+**MISTAKE:** `loadVideoProject` wrapped its read in `try/catch` and returned `null` on any error. `null` was *also* the legitimate value for "this project has no timeline document yet". The caller could not distinguish them, so it treated a permission/network failure as a new project, reset the editor to a blank timeline, and the next autosave wrote that blank over the real document (`clips` is an array, and Firestore `{merge:true}` replaces arrays wholesale). ISSUE-1193.
+
+**ROOT CAUSE:** One return value encoding two mutually exclusive meanings, where one meaning ("I don't know what is stored") must forbid writing and the other ("nothing is stored") must permit it. Any caller that cannot tell them apart will eventually pick the wrong one, and the wrong pick is destructive.
+
+**FIX:** Make the unknown state unrepresentable rather than guarding against it. Return a discriminated result where only the *known* branches carry an unforgeable write capability:
+```ts
+export type TimelineLoad =
+  | { status: 'found';  project: VideoProject; token: WriteToken }
+  | { status: 'absent'; token: WriteToken }
+  | { status: 'error';  error: unknown };          // no token, deliberately
+```
+`saveVideoProject(token, …)` requires the token, so "save something we never successfully read" stops being a runtime hazard and becomes a compile error. The token additionally carries the revision observed at load, and the save is a compare-and-swap in a transaction — which closes the multi-tab and stale-async overwrite cases for free.
+
+**PREVENTION:** In any load/read/cache layer, **never let a caught error and an empty result share a return value.** If a failed read can be mistaken for an empty one, and an empty one authorises a write, you have a data-loss bug regardless of how careful the caller is today. Grep for the shape: `catch { return null }`, `catch { return [] }`, `catch { return {} }` — each is a candidate. Also reject the tempting band-aid ("refuse to save when the result looks empty"): it breaks the legitimate case where the user really did clear their data. Fix the ambiguity, not the symptom.
+
+## 2026-07-22 A Firestore Rules Predicate Can Be Structurally Always-False and Still Look Correct
+
+**SEVERITY:** Low as found (it made rules stricter, not looser) — but the same shape inverted is a silent auth bypass
+
+**MISTAKE:** `firestore.rules` defined:
+```
+function isAuthenticated() { return request.auth != null && request.auth.token.firebase.sign_in_provider != 'anonymous'; }
+function isAnonymous()     { return isAuthenticated() && request.auth.token.firebase.sign_in_provider == 'anonymous'; }
+```
+`isAnonymous()` can never be true: `isAuthenticated()` already requires the provider is NOT anonymous, so the two clauses contradict. `isVerifiedUser() = isAuthenticated() && !isAnonymous()` therefore silently collapsed to `isAuthenticated()`, and the `!isAnonymous()` clause was dead.
+
+**ROOT CAUSE:** A helper whose name describes a *user category* was implemented on top of another helper that had already filtered that category out. Rules have no type checker, no dead-code warning, and no test that fails for an always-false predicate — the deny outcomes look identical to correct ones.
+
+**FIX:** Test the token directly instead of composing on top of a filter that excludes the thing you are testing for:
+```
+function isAnonymous() { return request.auth != null && request.auth.token.firebase.sign_in_provider == 'anonymous'; }
+```
+Behaviour-preserving, and proven so: all 157 emulator assertions passed unchanged before and after.
+
+**PREVENTION:** Any rules helper of the form `isX() { return isY() && <condition> }` needs checking that `isY()` does not already exclude `<condition>`. This one was harmless because it only ever tightened access — but the inverted shape, a rule written `if !isAnonymous()`, would have granted **everyone** access forever with no visible symptom. When you touch a rules helper, assert both polarities in the emulator suite: one case that must pass and one that must fail. A predicate with only deny-side coverage cannot be distinguished from `false`.
+
 ## 2026-07-22 Dodging a TypeScript Error by Spreading `key` Into JSX Ships a Real Reconciliation Bug That No Gate Can Catch
 
 **SEVERITY:** Medium (the bug itself is latent; the *pattern* is the danger — the workaround typechecks, lints, and passes tests while being functionally wrong)

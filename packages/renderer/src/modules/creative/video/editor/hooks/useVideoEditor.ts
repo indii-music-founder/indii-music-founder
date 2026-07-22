@@ -10,6 +10,7 @@ import { PIXELS_PER_FRAME } from '../constants';
 import { logger } from '@/utils/logger';
 import { resolveMediaDurationSeconds, durationSecondsToFrames } from '../utils/mediaMetadata';
 import { readCreativeAssetDrag, writeCreativeAssetDrag } from '@/services/creative/CreativeAssetDragService';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 
 export function useVideoEditor(initialVideo?: HistoryItem) {
     const {
@@ -88,6 +89,34 @@ export function useVideoEditor(initialVideo?: HistoryItem) {
         });
         return unsub;
     }, []);
+
+    /**
+     * Deleting a track silently takes every clip on it with no undo — the editor
+     * has no history stack, and the footage a session timeline references is often
+     * irreplaceable. Confirm before the destructive cascade, and only when there is
+     * actually something to lose, so removing an empty track stays a single click.
+     *
+     * The guard lives here rather than in the store so the store stays a pure,
+     * synchronous state container. Uses the project's standard react-call dialog —
+     * window.confirm is banned (CLAUDE.md).
+     */
+    const confirmRemoveTrack = useCallback(async (trackId: string) => {
+        const { project: current } = useVideoEditorStore.getState();
+        const clipCount = current.clips.filter(c => c.trackId === trackId).length;
+
+        if (clipCount > 0) {
+            const trackName = current.tracks.find(t => t.id === trackId)?.name ?? 'this track';
+            const ok = await ConfirmDialog.call({
+                title: 'Delete track?',
+                message: `Deleting ${trackName} will also delete ${clipCount} clip${clipCount === 1 ? '' : 's'} on it. This can’t be undone.`,
+                confirmText: `Delete track and ${clipCount} clip${clipCount === 1 ? '' : 's'}`,
+                variant: 'destructive',
+            });
+            if (!ok) return;
+        }
+
+        removeTrack(trackId);
+    }, [removeTrack]);
 
     const handlePlayPause = useCallback(() => setIsPlaying(!useVideoEditorStore.getState().isPlaying), [setIsPlaying]);
 
@@ -253,7 +282,7 @@ export function useVideoEditor(initialVideo?: HistoryItem) {
         handleDrop,
         updateClip,
         addTrack,
-        removeTrack,
+        removeTrack: confirmRemoveTrack,
         removeClip,
         setProject,
         setCurrentTime // Expose setCurrentTime for frame synchronization

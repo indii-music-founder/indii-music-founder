@@ -3,7 +3,7 @@
 > This file is written by the /real test agent and consumed by a fixing agent.
 > The test agent NEVER modifies code. The fix agent NEVER runs tests.
 >
-> **Last updated:** 2026-07-22 (**STEP-1 AUDIT of ISSUE-1180 appended — ISSUE-1193..1197; ISSUE-1193 is CRITICAL and is the first thing to fix in the whole repair order.** FOUNDER ASSESSMENT block appended at end of file — ISSUE-1175..1181 scope corrected and a binding 6-step repair order recorded; read it before touching Session Breakdown.** ISSUE-1187 fixed for real and its premature ✅ corrected; `/qa` unit-suite verification ISSUE-1191..1192; browser QA sweep ISSUE-1185..1190 — 1185/1186/1187 fixed, 1188..1190 open; earlier: ISSUE-1110..1114 Computer Execution plan, ISSUE-1095..1099 audit + fixes)
+> **Last updated:** 2026-07-22 (**REPAIR-ORDER STEP 1 IS COMPLETE — ISSUE-1193..1197 all ✅ FIXED and on `main` (commits `ef9526c7a`, `86486670c`; CI 29942881908 green 25/25). The critical timeline data-loss path is closed. Step 2 of the founder repair order — durable ingestion generation-claiming and worker execution, ISSUE-1175 — is now the front of the queue.** **Repo-wide perf/bloat audit appended — ISSUE-1198..1209, findings only, nothing fixed yet.** **STEP-1 AUDIT of ISSUE-1180 appended — ISSUE-1193..1197; ISSUE-1193 is CRITICAL and is the first thing to fix in the whole repair order.** FOUNDER ASSESSMENT block appended at end of file — ISSUE-1175..1181 scope corrected and a binding 6-step repair order recorded; read it before touching Session Breakdown.** ISSUE-1187 fixed for real and its premature ✅ corrected; `/qa` unit-suite verification ISSUE-1191..1192; browser QA sweep ISSUE-1185..1190 — 1185/1186/1187 fixed, 1188..1190 open; earlier: ISSUE-1110..1114 Computer Execution plan, ISSUE-1095..1099 audit + fixes)
 > **Branch:** `main` (direct commits)
 >
 > **Ledger protocol (V2):** This is the ACTIVE master ledger. It operates exactly like the original:
@@ -1792,7 +1792,17 @@ step before the one above it is genuinely closed (not schema-closed — workflow
 
 ### ISSUE-1193: A failed timeline load is indistinguishable from "no timeline yet", and the next edit overwrites the real one with a blank
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-22, commit `ef9526c7a`, CI run 29942881908 green 25/25)
+  The ambiguity is gone at the type level rather than guarded at runtime: `loadVideoProject`
+  returns a discriminated `TimelineLoad`, and only the `'found'`/`'absent'` branches carry a
+  `WriteToken`. `saveVideoProject` requires that token, so saving a timeline that was never
+  successfully read no longer typechecks. The token also carries the observed revision and the
+  save is a compare-and-swap inside a transaction, which additionally closes the second-tab and
+  stale-async overwrite cases this entry did not identify.
+  **The fix proposed in this entry was deliberately NOT shipped.** Acceptance item 4 suggested
+  refusing to persist an empty `clips` when the last known state had clips. That is a heuristic
+  band-aid and it breaks the legitimate case of a user clearing their own timeline. Removing the
+  ambiguity is the fix; pattern-matching around it is not.
 - **Severity:** 🔴 CRITICAL (destroys irreplaceable user work; no attacker needed; no user-visible error at any step)
 - **Module:** `packages/renderer/src/modules/creative/video/services/VideoProjectPersistenceService.ts:22-33`,
   `packages/renderer/src/modules/creative/video/editor/hooks/useVideoProjectPersistence.ts:54-77`
@@ -1839,7 +1849,18 @@ step before the one above it is genuinely closed (not schema-closed — workflow
 
 ### ISSUE-1194: Guest users can open the video editor, and every edit they make is silently discarded
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-22, commit `86486670c`) — harm removed; one product decision
+  intentionally left open and no longer blocking.
+  Guest sessions now declare themselves ephemeral: no doomed load/save round-trips (both are
+  denied a priori by the rules layer), no `WriteToken` minted — so autosave stays off through
+  the same mechanism that protects a failed load — and a persistent amber banner states the
+  work will not be kept. Amber rather than red: not having an account is a limitation, not a
+  malfunction, and the editor stays usable.
+  **Framing correction.** This was originally put to the founder as a binary — gate the module
+  or warn the user. That split was wrong. Only gating is a business-model decision; telling the
+  user is correct under *both* answers, and there is no version of this where silently
+  discarding the work is right. Whether `creative` joins `COMMERCIAL_MODULES` remains the
+  founder's call and is now independent of the data loss.
 - **Severity:** 🔴 HIGH (total, silent loss of work for every unauthenticated user; this is the default state for anyone who has not signed up)
 - **Module:** `packages/renderer/src/core/AppShell.tsx:172-174` (`COMMERCIAL_MODULES`),
   `packages/firebase/firestore.rules` (`isVerifiedUser`), `VideoProjectPersistenceService.ts:42-46`
@@ -1864,7 +1885,11 @@ step before the one above it is genuinely closed (not schema-closed — workflow
 
 ### ISSUE-1195: Every timeline save and load failure is invisible to the user
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-22, commit `ef9526c7a`)
+  Load and save failures are now store state, not `logger.warn`. A failed load renders a
+  blocking error screen with a retry and leaves the stored timeline untouched; a failed save
+  renders a persistent banner that stays until a save succeeds. Both asserted in
+  `useVideoProjectPersistence.test.ts`, not verified by inspection.
 - **Severity:** 🟠 HIGH (turns each of ISSUE-1193/1194/1197 from a recoverable error into silent data loss)
 - **Module:** `useVideoProjectPersistence.ts:49`, `VideoProjectPersistenceService.ts:30,63`,
   `packages/renderer/src/modules/creative/video/editor/VideoEditor.tsx:69`
@@ -1884,7 +1909,11 @@ step before the one above it is genuinely closed (not schema-closed — workflow
 
 ### ISSUE-1196: `compileApprovalToTimeline` accepts `ownerUid` and `projectId` and checks neither
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-22, commit `ef9526c7a`)
+  `compileApprovalToTimeline` now enforces `ownerUid` and `projectId`, and additionally requires
+  both source and proxy generations so lineage cannot be silently severed. It fails closed with
+  a typed `TimelineCompileError` before touching the project. Five unit tests cover the four
+  rejections plus a proof that a refused compile mutates nothing.
 - **Severity:** 🟠 HIGH (the authorization half of repair-order step 1; ISSUE-1180 acceptance items 3 and 7)
 - **Module:** `packages/renderer/src/modules/creative/video/store/videoEditorStore.ts:528-585`
 - **Evidence:** The `approval` parameter is typed
@@ -1913,7 +1942,19 @@ step before the one above it is genuinely closed (not schema-closed — workflow
 
 ### ISSUE-1197: `videoProjects` rules allow ownership to be rewritten on update, and let any user squat any project id
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-22, commit `ef9526c7a`)
+  Timelines moved to `users/{uid}/videoProjects/{projectId}`, so one user's project-id space
+  cannot collide with another's and id entropy stops being load-bearing — which also means the
+  open question about how `currentProjectId` is generated no longer gates anything. Ownership is
+  pinned on update. The legacy top-level collection stays readable for migrate-on-first-save and
+  is closed to writes. Ten new emulator assertions prove ownership immutability and
+  cross-namespace squatting denial; the full rules suite is 157 passing.
+  Follow-up found while fixing this: `isAnonymous()` was structurally always-false
+  (`isAuthenticated()` already excludes anonymous, so the two clauses contradict). Not
+  exploitable — `isVerifiedUser()` collapsed to `isAuthenticated()`, which already excluded
+  anonymous — but a future rule written `if !isAnonymous()` would silently always grant.
+  Corrected in commit `86486670c`; all 157 assertions pass unchanged, which is the evidence for
+  the behaviour-preserving claim.
 - **Severity:** 🟠 HIGH (a squatted id permanently and silently locks the real owner out of their own timeline)
 - **Module:** `packages/firebase/firestore.rules:786-789`
 - **Evidence:**
@@ -1981,5 +2022,124 @@ Listed only so they are not lost. No assessment is implied.
   marker distinguishing them.
 - `originalStartUs` is derived by offset arithmetic (line 555) with no clamping, so an override
   earlier than the segment start can produce a negative source in-point.
+
+---
+
+## Session 2026-07-22 — Repo-wide perf/bloat audit (findings only, no fixes applied)
+
+> Phase-1 audit only — three parallel read-only agents surveyed (1) bundle/lazy-load,
+> (2) Zustand/React re-render patterns, (3) dead code/unused deps. Nothing below has been fixed.
+> **2026-07-22 follow-up verification pass:** ran real `npm ls`/`depcheck` against `packages/renderer`
+> (not just grep) to pressure-test the dependency-related findings before any fix is attempted.
+> Result: ISSUE-1198 was re-scored from bloat to a real install-breaking bug (undeclared/extraneous
+> `motion` package); ISSUE-1200 was retracted as a false positive (`react-redux`/`@reduxjs/toolkit`
+> are `recharts`' transitive deps, not the app's); ISSUE-1209 now lists depcheck's full candidate
+> list with an explicit warning that most of it needs a manual read, not a bulk delete.
+
+### ISSUE-1198: `motion` package is undeclared/extraneous — 178 files depend on it, a clean install would break them (superseded framing, was: "duplicate animation libraries")
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🔴 CRITICAL (was mis-scored P0-as-bloat; re-verified 2026-07-22 as an install-breaking correctness bug, not a size-only concern)
+- **Module:** `packages/renderer/package.json`, `package-lock.json`
+- **Evidence (corrected after deeper verification — original framing was wrong):**
+  - `npm ls motion --workspace=packages/renderer` reports **`motion@12.23.26 extraneous`** — installed in `node_modules` and present in `package-lock.json`'s `packages/renderer` dependency block, but **absent from `packages/renderer/package.json`** (confirmed by direct `json.load` of the file, not grep).
+  - 178 files import from `'motion/react'` (`grep -rl "from 'motion/react'"` under `packages/renderer/src`); 69 files import from `'framer-motion'` (which *is* properly declared, `^12.35.1`).
+  - `motion`'s own package (per lockfile) itself depends on `framer-motion` — it is a thin wrapper/rebrand, not an unrelated second engine. So this was never really "two runtimes bundled" — it's one properly-declared library (`framer-motion`) plus one **undeclared** wrapper (`motion`) that node_modules/lockfile currently paper over.
+  - Root cause is almost certainly a manual `package.json` edit (removing `motion`) that was never followed by `npm install` to sync the lockfile, or a lockfile that was hand-reverted. Either way, package.json and package-lock.json have drifted.
+- **Impact:** Any environment that does a real clean install (`npm ci`, a fresh clone + `npm install` that prunes extraneous packages, or a CI cache miss) can lose `motion` from `node_modules`, breaking all 178 importing files — including ones the original agent-pass grep (`src/core/context/ToastContext.tsx`) confirmed use it directly. This is a live-but-invisible outage risk, worse than the bloat framing originally given.
+- **Fix (not yet applied — pick one, do not do both):**
+  1. Add `"motion": "^12.23.26"` (or current) to `packages/renderer/package.json` dependencies to make the lockfile state truthful, and decide long-term whether to keep both import paths or migrate the 69 `framer-motion` call sites to `motion/react` (the majority usage) — **or**
+  2. Migrate the 178 `motion/react` call sites to the already-properly-declared `framer-motion` and remove the extraneous `motion` entry entirely.
+  Either way: run `npm install` (not `--force`/isolated-cache per CLAUDE.md §9 if other agents may be running) afterward and confirm `npm ls motion` shows a clean, non-extraneous state before calling this fixed.
+
+### ISSUE-1199: Two list-virtualization libraries for the same purpose
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟡 P1
+- **Module:** `packages/renderer/package.json`
+- **Evidence (re-verified 2026-07-22):** `react-virtuoso` (3 files, not 6 as originally reported) and `@tanstack/react-virtual` (1 file, not 2) both properly declared and both used. Counts corrected but conclusion unchanged.
+- **Fix (not yet applied):** Pick one, migrate the minority call sites, drop the other dependency.
+
+### ISSUE-1200: RETRACTED — `react-redux` + `@reduxjs/toolkit` are NOT app dependencies; original finding was a false positive
+
+- **Status:** ✅ CLOSED (2026-07-22, retracted before any fix was attempted)
+- **Why retracted:** The original grep-based agent pass found these two packages resolve in `packages/renderer`'s dependency tree and concluded they were unused app dependencies to remove. Deeper verification (`npm ls react-redux @reduxjs/toolkit --workspace=packages/renderer`) shows they are **transitive dependencies of `recharts`** (the charting library already used throughout the app), not declared anywhere in `packages/renderer/package.json`, and not importable/removable by this repo at all. There is nothing here to fix — flagging this only so the false lead isn't rediscovered. This is exactly the class of mistake `npm ls`/`depcheck` catches that raw import-grep cannot: grep can't distinguish "0 hits because it's genuinely dead" from "0 hits because it was never the app's dependency to begin with."
+
+### ISSUE-1201: Likely-unused utility deps — `classnames`, `xml2js`
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟢 P2
+- **Module:** `packages/renderer/package.json`
+- **Evidence:** `classnames` has 0 usages in `src` while `clsx` (5 usages) covers the same job. `xml2js` has 0 usages while `fast-xml-parser` (2 usages) covers XML parsing.
+- **Fix (not yet applied):** Confirm via proper unused-dep tool, then remove.
+
+### ISSUE-1202: `chunkSizeWarningLimit` set unusually high (2.5MB), can mask real bloat
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟢 P2
+- **Module:** `packages/renderer/vite.config.ts:209-251`, `electron.vite.config.ts:251-306`
+- **Evidence:** `chunkSizeWarningLimit: 2500` in both configs — a genuinely oversized chunk would silently pass Vite's build warning.
+- **Fix (not yet applied):** Lower to a realistic threshold (e.g. 800–1000) and address whatever it flags.
+
+### ISSUE-1203: `LoginForm` and `LegalPages` eagerly imported into initial bundle
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟢 P2
+- **Module:** `packages/renderer/src/core/App.tsx:9-10`
+- **Evidence:** Both are eager imports rather than `React.lazy()`, unlike the rest of `App.tsx`/`AppShell.tsx` which correctly lazy-loads ~45 feature modules via `lazyWithRetry`.
+- **Fix (not yet applied):** Lazy-load both to shrink the pre-auth critical path.
+
+### ISSUE-1204: Barrel files with `export *` risk defeating tree-shaking
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟡 P1 (business-harness), 🟢 P2 (web3, observability)
+- **Module:** `packages/renderer/src/services/business-harness/index.ts:14-26` (13 re-exports, side-effectful class instances), `packages/renderer/src/services/web3/index.ts` (10 re-exports), `packages/renderer/src/services/observability/index.ts` (8 re-exports)
+- **Evidence:** `export * from` barrels — any one import from the barrel path risks pulling the whole re-export graph if the bundler doesn't tree-shake perfectly, especially risky where re-exported modules have side-effectful instantiation.
+- **Fix (not yet applied):** Convert to named re-exports, or import directly from source modules instead of the barrel.
+
+### ISSUE-1205: `CRMDashboard.tsx` subscribes to the entire root store with no selector
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 P0 (worst re-render offender found)
+- **Module:** `packages/renderer/src/modules/crm/CRMDashboard.tsx:26`
+- **Evidence:** `const { crm, subscribeToCampaigns, createCampaign, deleteCampaign } = useStore();` — no selector, no `useShallow`. Any state change anywhere in the app (chat, workflow nodes, auth, etc.) re-renders this dashboard. Compounds with `CRMDashboard.tsx:283`'s inline `new Date(...)` per row inside the JSX map.
+- **Fix (not yet applied):** Selector + `useShallow`, matching the convention already used correctly in `App.tsx`/`AppShell.tsx`/`Sidebar.tsx`/`WorkflowEditor.tsx`.
+
+### ISSUE-1206: Video editor store call sites inconsistently use whole-store destructuring without `useShallow`
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟡 P1
+- **Module:** `packages/renderer/src/modules/creative/video/components/ZoomableTimeline.tsx:21`, `packages/renderer/src/modules/creative/video/editor/components/VideoTimeline.tsx:30`, `packages/renderer/src/modules/creative/video/editor/VideoPopout.tsx:11`
+- **Evidence:** All three call `useVideoEditorStore()` with no selector, destructuring multiple fields (including the large nested `project` object in `VideoPopout.tsx`). `VideoTimeline.tsx:29` in the *same file* correctly uses a scalar selector (`useVideoEditorStore(state => state.isPlaying)`), showing the anti-pattern is inconsistent rather than store-wide policy. No file using `useVideoEditorStore`/`useAgentStore` imports `useShallow` at all — worth confirming whether these stores intentionally opt out of the documented convention.
+- **Impact:** Timeline/popout re-renders on every store field change (e.g. playhead ticking during playback) even when the component only needs 1-3 fields.
+- **Fix (not yet applied):** Add selectors + `useShallow` at these three call sites; decide repo-wide whether `useVideoEditorStore`/`useAgentStore` should follow the same convention as the root store.
+
+### ISSUE-1207: Hand-rolled modal state instead of mandated `react-call`
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟡 P1 (violates CLAUDE.md architecture standard — "never fake a modal")
+- **Module:** `packages/renderer/src/modules/distribution/components/DistributorConnectionsPanel.tsx`, `packages/renderer/src/modules/crm/CRMDashboard.tsx`, `packages/renderer/src/modules/dashboard/components/RecentProjects.tsx`
+- **Evidence:** Only 6 files repo-wide reference `react-call`; these 3 hand-roll modal open/close via `useState`/`isModalOpen`, contradicting the documented standard.
+- **Fix (not yet applied):** Migrate to `ConfirmDialog.call()`/`PromptDialog.call()`/`AlertDialog.call()` pattern per CLAUDE.md.
+
+### ISSUE-1208: ~6.5MB of QA screenshots/reports checked into git as tracked source
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟡 P1
+- **Module:** `.agent/artifacts/qa_screenshots/*.png` (dozen+ files, 140–656K each), `.agent/artifacts/task.md` (44K)
+- **Evidence:** These are generated CI/QA output, not source, and are tracked in git history — clone size bloat that grows every QA run. Confirmed additional untracked artifacts from the 2026-07-22 session (`qa_report_latest.json` 1.5M + new screenshots + `run_auto_qa.js`) sitting in the working tree right now, same pattern about to repeat.
+- **Fix (not yet applied):** Add `.agent/artifacts/` to `.gitignore`, purge tracked history if acceptable, move screenshot retention to CI artifact storage instead of the repo. Note: confirm with the QA workflow docs (`.agent/workflows/auto_qa.md`) whether anything currently depends on these files being committed before removing.
+
+### ISSUE-1209: `depcheck` run against `packages/renderer` — candidate unused deps, NOT yet confirmed dead (depcheck has known false positives; each needs a manual read before removal)
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟢 P2 (candidates only — do not delete on this evidence alone)
+- **Module:** `packages/renderer/package.json`
+- **Evidence:** `npx depcheck` run 2026-07-22 inside `packages/renderer` (root-level run was unreliable — it reported only root/Electron-native deps, so the workspace-scoped run is the trustworthy one). Flagged as unused:
+  - **Regular deps:** `@googlemaps/react-wrapper`, `@radix-ui/react-dialog`, `@remotion/cloudrun`, `@types/crypto-js`, `ajv`, `classnames`, `crypto-js`, `essentia.js`, `ethers`, `inngest`, `simplex-noise`, `tailwindcss-animate`, `tw-animate-css`, `xml2js`, `y-protocols`.
+  - **Dev deps:** `@chromatic-com/storybook`, `@storybook/addon-a11y`, `@storybook/addon-docs`, `@storybook/addon-onboarding`, `@storybook/addon-vitest`, `@types/google.maps`, `autoprefixer`, `eslint-plugin-storybook`, `postcss`, `tailwindcss`, `vite-plugin-pwa`.
+  - **Manually re-confirmed with direct grep (safe to treat as genuinely dead — see ISSUE-1201):** `classnames` (0 imports), `xml2js` (0 imports).
+  - **NOT independently verified, and likely false positives given how depcheck works** (it can't see dynamic `import()`, CSS-only `@import`/Tailwind-plugin usage, worker-thread loading, or type-only augmentation): `essentia.js` (loaded via a Web Worker per CLAUDE.md tech stack table — grep-invisible), `tailwindcss-animate`/`tw-animate-css`/`autoprefixer`/`postcss`/`tailwindcss` (CSS-pipeline plugins, referenced from config files not JS imports), `@radix-ui/react-dialog` (may be pulled in transitively through a UI-kit wrapper component rather than imported by name at call sites), the Storybook addons (referenced from `.storybook/main.ts` config, not source imports), `@googlemaps/react-wrapper`/`ethers`/`crypto-js`/`@types/crypto-js`/`ajv`/`inngest`/`simplex-noise`/`y-protocols`/`@remotion/cloudrun`/`@types/google.maps` (need one grep pass each against config files and dynamic-import strings, not just static `from '...'` imports, before any removal).
+- **Fix (not yet applied):** For each remaining candidate above (i.e. every one except `classnames`/`xml2js`, already confirmed via ISSUE-1201), grep for the package name as a bare string (not just `from '<pkg>'`) across `src/`, `.storybook/`, `*.config.*`, and dynamic `import()` calls before removing. Do not bulk-delete off the depcheck list alone.
 
 ---
