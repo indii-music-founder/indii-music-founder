@@ -178,7 +178,7 @@ export default function CRMDashboard() {
                             <Users className="w-4 h-4" />
                         </div>
                     </div>
-                    <span className="text-2xl font-bold">{totalSupply.toLocaleString()}</span>
+                    <span className="text-2xl font-bold">{totalSupply.toLocaleString('en-US')}</span>
                 </div>
 
                 <div className="p-4 bg-background/50 border border-border/80 rounded-2xl flex flex-col gap-2">
@@ -188,7 +188,7 @@ export default function CRMDashboard() {
                             <DollarSign className="w-4 h-4" />
                         </div>
                     </div>
-                    <span className="text-2xl font-bold">${projectedRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                    <span className="text-2xl font-bold">${projectedRevenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                 </div>
             </div>
 
@@ -272,7 +272,7 @@ export default function CRMDashboard() {
                                     <div className="flex flex-col">
                                         <span className="text-[10px] text-text-secondary uppercase tracking-wider font-medium">Total Supply</span>
                                         <span className="text-base font-bold text-text-primary mt-0.5">
-                                            {camp.supply.toLocaleString()}
+                                            {camp.supply.toLocaleString('en-US')}
                                         </span>
                                     </div>
                                     <div className="flex flex-col">
@@ -288,7 +288,7 @@ export default function CRMDashboard() {
                                         <Calendar className="w-3.5 h-3.5" />
                                         <span>
                                             {camp.createdAt ? (
-                                                new Date((camp.createdAt?.seconds || camp.createdAt) * 1000).toLocaleDateString(undefined, {
+                                                new Date((camp.createdAt?.seconds || camp.createdAt) * 1000).toLocaleDateString('en-US', {
                                                     month: 'short',
                                                     day: 'numeric',
                                                     year: 'numeric'
@@ -298,7 +298,7 @@ export default function CRMDashboard() {
                                     </div>
                                     <div className="flex items-center gap-1 text-accent-primary font-medium">
                                         <span>Total:</span>
-                                        <span className="font-bold">${((camp.supply || 0) * (camp.price || 0)).toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+                                        <span className="font-bold">${((camp.supply || 0) * (camp.price || 0)).toLocaleString('en-US', { maximumFractionDigits: 0 })}</span>
                                     </div>
                                 </div>
                             </motion.div>

@@ -108,7 +108,13 @@ const FALLBACK_MODEL = INTELLIGENCE_MODELS.TEXT.FAST;
 export class FirebaseIntelligenceService implements IntelligenceContext {
     public model: ExtendedGenerativeModel | null = null;
     private isInitialized = false;
-    public defaultConfig: GenerationConfig = {};
+    // Cost/runaway-output backstop: ~30 call sites across the agent/service layer
+    // call generateContent(Stream) without their own maxOutputTokens, which left
+    // every one of them with no ceiling at all (the Gemini API's own default is
+    // effectively "as much as the model will produce"). Any caller that passes
+    // its own maxOutputTokens still wins — this only fills the gap for the ones
+    // that don't, via the `{ ...defaultConfig, ...config }` merge below.
+    public defaultConfig: GenerationConfig = { maxOutputTokens: 8192 };
 
     public activeRequests: Map<string, Promise<GenerateContentResult>> = new Map();
 
