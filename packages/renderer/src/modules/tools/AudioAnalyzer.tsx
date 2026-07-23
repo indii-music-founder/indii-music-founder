@@ -168,8 +168,43 @@ const AudioAnalyzer: React.FC = () => {
         try {
             const { audioIntelligence } = await import('@/services/audio/AudioIntelligenceService');
 
-            // This runs the full local audio analysis + remote Autonomous deep analysis
-            const resultProfile = await audioIntelligence.analyze(audioFile);
+            let resultProfile: AudioIntelligenceProfile;
+            if (window.electronAPI) {
+                // Desktop: local technical analysis plus a bounded FFmpeg proxy
+                // upload for semantic/energy-map Gemini calls.
+                resultProfile = await audioIntelligence.analyze(audioFile);
+            } else {
+                // ISSUE-1152: a browser must never base64-encode and upload the
+                // raw master to Gemini. `audioIntelligence.analyze()` correctly
+                // refuses that path, but until now nothing in this UI called the
+                // alternative — persist the immutable canonical master once, then
+                // hydrate from the engine-dsp worker's server-owned analysis
+                // receipt (`analyzeCanonicalMaster`, which polls
+                // `audio_analysis_receipts/{receiptId}` until it reaches a
+                // terminal state). That receipt-hydration pipeline already
+                // existed and was fully tested, but had zero callers.
+                if (typeof audioFile === 'string') {
+                    throw new Error('Browser audio analysis requires a File, not a path.');
+                }
+                const { auth } = await import('@/services/firebase');
+                const userId = auth.currentUser?.uid;
+                if (!userId) {
+                    throw new Error('You must be signed in to analyze a master in the browser.');
+                }
+                const [{ fingerprintService }, { masterAudioService }] = await Promise.all([
+                    import('@/services/audio/FingerprintService'),
+                    import('@/services/audio/MasterAudioService'),
+                ]);
+                const masterFingerprint = await fingerprintService.generateFingerprint(audioFile);
+                toast.updateProgress(extractToastId, 20, 'Uploading canonical master…');
+                const masterAsset = await masterAudioService.persist(audioFile, { userId, masterFingerprint });
+                toast.updateProgress(
+                    extractToastId,
+                    50,
+                    'Waiting for the server analysis receipt — this can take a few minutes…',
+                );
+                resultProfile = await audioIntelligence.analyzeCanonicalMaster(masterAsset, userId);
+            }
 
             // Populate tags from the semantic output
             const newTags: Set<string> = new Set();
@@ -187,7 +222,13 @@ const AudioAnalyzer: React.FC = () => {
         } catch (error: unknown) {
             logger.error("Deep Extraction Failed", error);
             toast.dismiss(extractToastId);
-            toast.error("Deep Extraction failed. Autonomous service limits or connectivity issues detected.");
+            // Surface the real reason (e.g. a receipt still processing, a
+            // rejected legacy/oversized master, offline detection) instead of a
+            // canned "connectivity issues" message that actively misrepresents
+            // an honest pending/rejected state as a transient network failure.
+            toast.error(error instanceof Error
+                ? error.message
+                : "Deep Extraction failed. Autonomous service limits or connectivity issues detected.");
         } finally {
             setIsAnalyzing(false);
         }

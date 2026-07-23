@@ -14,8 +14,9 @@ vi.mock('@/core/context/ToastContext', () => ({
         success: vi.fn(),
         error: vi.fn(),
         info: vi.fn(),
-        loading: vi.fn(),
-        dismiss: vi.fn()
+        loading: vi.fn(() => 'toast-id'),
+        dismiss: vi.fn(),
+        updateProgress: vi.fn(),
     })
 }))
 
@@ -28,19 +29,45 @@ vi.mock('@/services/audio/AudioAnalysisService', () => ({
     }
 }))
 
-// Mock AudioIntelligenceService
+// vi.mock factories are hoisted above regular declarations, so the fixture
+// they close over must be created via vi.hoisted rather than a plain const.
+const { MOCK_PROFILE } = vi.hoisted(() => ({ MOCK_PROFILE: {
+    technical: { duration: 100, bpm: 120, key: 'C', scale: 'major', energy: 0.8 },
+    semantic: {
+        mood: ['Happy'], genre: ['Pop'], instruments: [],
+        marketingHooks: { keywords: ['Viral'], oneLiner: 'Test' },
+        visualImagery: { abstract: 'Test' },
+        targetPrompts: { image: 'Test', veo: 'Test' }
+    }
+} }));
+
+// Mock AudioIntelligenceService. `window.electronAPI` is undefined in this
+// test environment, so the file-input upload below exercises the browser
+// hydration branch (ISSUE-1152) — hence the receipt/persist mocks alongside it.
 vi.mock('@/services/audio/AudioIntelligenceService', () => ({
     audioIntelligence: {
-        analyze: vi.fn().mockResolvedValue({
-            technical: { duration: 100, bpm: 120, key: 'C', scale: 'major', energy: 0.8 },
-            semantic: {
-                mood: ['Happy'], genre: ['Pop'], instruments: [],
-                marketingHooks: { keywords: ['Viral'], oneLiner: 'Test' },
-                visualImagery: { abstract: 'Test' },
-                targetPrompts: { image: 'Test', veo: 'Test' }
-            }
-        })
+        analyze: vi.fn().mockResolvedValue(MOCK_PROFILE),
+        analyzeCanonicalMaster: vi.fn().mockResolvedValue(MOCK_PROFILE),
     }
+}))
+
+vi.mock('@/services/audio/FingerprintService', () => ({
+    fingerprintService: { generateFingerprint: vi.fn().mockResolvedValue('mock-fingerprint') },
+}))
+
+vi.mock('@/services/audio/MasterAudioService', () => ({
+    masterAudioService: {
+        persist: vi.fn().mockResolvedValue({
+            storagePath: 'masters/mock-owner/mock-hash/original.wav',
+            contentHash: 'a'.repeat(64),
+            generation: '1700000000000001',
+            masterFingerprint: 'mock-fingerprint',
+        }),
+    },
+}))
+
+vi.mock('@/services/firebase', () => ({
+    auth: { currentUser: { uid: 'mock-owner' } },
 }))
 
 describe('AudioAnalyzer Accessibility', () => {
