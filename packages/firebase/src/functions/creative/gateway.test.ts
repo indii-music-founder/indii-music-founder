@@ -139,7 +139,36 @@ vi.mock('./getMediaDuration', () => ({
   probeDurationSeconds: mockProbeDurationSeconds,
 }));
 
-import { classifyMediaFinishFailure, generateAudioV3, generateImageV3, generateOmniRemixV3, generateVideoV3 } from './gateway';
+import { classifyMediaFinishFailure, generateAudioV3, generateImageV3, generateOmniRemixV3, generateVideoV3, type VideoGenerationJobRecord } from './gateway';
+
+/**
+ * `VideoGenerationJobRecord` is `VideoJobDocument & {...}`, and `VideoJobDocument`
+ * is `z.infer` of a schema whose `.default()` fields (schemaVersion, progress,
+ * inputUris, tempUris, persistentUris, maskUris, retryCount) are required —
+ * non-optional — on the *output* type Zod infers, even though a real `.parse()`
+ * call would fill them in. Passing a hand-built object straight through as this
+ * type (as these fixtures do, without going through the schema) means every one
+ * of those has to be supplied explicitly. This fills them with values that are
+ * inert for `executeVideoJob`'s logic, so each test only needs to override what
+ * it actually exercises (ISSUE-1212).
+ */
+const buildVideoJob = (overrides: Partial<VideoGenerationJobRecord> & Pick<VideoGenerationJobRecord, 'userId' | 'prompt'>): VideoGenerationJobRecord => ({
+  id: 'job-123',
+  schemaVersion: 1,
+  status: 'queued',
+  type: 'video',
+  mode: 'video',
+  progress: 0,
+  payload: { prompt: overrides.prompt },
+  inputUris: [],
+  tempUris: [],
+  persistentUris: [],
+  maskUris: [],
+  retryCount: 0,
+  createdAt: new Date(0).toISOString(),
+  updatedAt: new Date(0).toISOString(),
+  ...overrides,
+});
 
 const callGenerateImage = generateImageV3 as unknown as (request: {
   auth?: { uid: string };
@@ -382,6 +411,11 @@ describe('creative gateway generateImageV3', () => {
       outputs: [{ type: 'text', text: 'I am not sure what your dog looks like.' }],
     });
 
+    // `callGenerateImage` returns `Promise<unknown>` (it wraps a real handler as
+    // `unknown` above), so `.catch`'s return type is absorbed back into
+    // `unknown` rather than narrowing to the catch handler's return type — the
+    // assertion has to land on the whole awaited expression, not just inside
+    // the handler.
     const rejection = await callGenerateImage({
       auth: { uid: 'user-123' },
       data: {
@@ -390,7 +424,7 @@ describe('creative gateway generateImageV3', () => {
         model: 'fast',
         costReservationId: 'image-op-5',
       },
-    }).catch((error: unknown) => error as { code: string; message: string });
+    }).catch((error: unknown) => error) as { code: string; message: string };
 
     expect(rejection.code).toBe('failed-precondition');
     expect(rejection.message).toContain("INDII couldn't create an image");
@@ -727,10 +761,8 @@ describe('creative gateway generateVideoV3', () => {
     });
 
     const { executeVideoJob } = await import('./gateway');
-    const result = await executeVideoJob('job-123', {
+    const result = await executeVideoJob('job-123', buildVideoJob({
       userId: 'user-123',
-      status: 'queued',
-      type: 'video',
       prompt: 'A cinematic social clip',
       aspectRatio: '9:16',
       model: 'fast',
@@ -743,13 +775,8 @@ describe('creative gateway generateVideoV3', () => {
       negativePrompt: 'no blurry faces',
       seed: '42',
       enhancePrompt: true,
-      progress: 0,
-      mode: 'veo-3.1-fast-generate-preview',
       inputUris: ['gs://test-bucket/frames/start.png'],
-      maskUris: [],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    });
+    }));
 
     expect(mockGenerateVideos).toHaveBeenCalledWith(expect.objectContaining({
       model: 'veo-3.1-fast-generate-001',
@@ -792,22 +819,14 @@ describe('creative gateway generateVideoV3', () => {
 
     const { executeVideoJob } = await import('./gateway');
 
-    await expect(executeVideoJob('job-123', {
-      id: 'job-123',
+    await expect(executeVideoJob('job-123', buildVideoJob({
       userId: 'user-123',
-      status: 'queued',
-      type: 'video',
       prompt: 'blocked clip',
       aspectRatio: '16:9',
       model: 'pro',
       resolution: '720p',
       durationSeconds: 6,
-      progress: 0,
-      inputUris: [],
-      maskUris: [],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    })).rejects.toMatchObject({
+    }))).rejects.toMatchObject({
       code: 'invalid-argument',
       message: expect.stringContaining('Video generation failed'),
     });

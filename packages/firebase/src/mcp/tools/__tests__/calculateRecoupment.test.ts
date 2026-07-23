@@ -18,6 +18,7 @@ vi.mock('firebase-admin', () => ({
 
 import { calculateRecoupment } from '../calculateRecoupment.js';
 import { McpContext } from '../../types.js';
+import { textContent } from './mcpContent';
 
 const context = (uid: string, admin = false): McpContext => ({
     user: { uid, admin } as never,
@@ -50,7 +51,7 @@ describe('calculateRecoupment MCP tool', () => {
         });
 
         const result = await calculateRecoupment.handler({ releaseId: 'rel-1' }, context('user-1'));
-        const payload = JSON.parse(result.content[0].text);
+        const payload = JSON.parse(textContent(result));
 
         expect(result.isError).toBeUndefined();
         expect(collectionMock).toHaveBeenCalledWith('recoupment_balances');
@@ -77,7 +78,7 @@ describe('calculateRecoupment MCP tool', () => {
         const result = await calculateRecoupment.handler({ releaseId: 'rel-1', artistId: 'user-2' }, context('user-1'));
 
         expect(result.isError).toBe(true);
-        expect(result.content[0].text).toContain('Forbidden');
+        expect(textContent(result)).toContain('Forbidden');
         expect(balanceGetMock).not.toHaveBeenCalled();
         expect(earningsGetMock).not.toHaveBeenCalled();
     });

@@ -13,6 +13,9 @@ describe('auditAssetResolutions MCP tool', () => {
             schemaVersion: 'asset-resolution-audit.v1', auditId: 'audit-1', ownerUid: 'owner-1', releaseId: 'release-1',
             status: 'compliant', profile: { profileId: 'dsp-cover-art-baseline.v1', minimumWidth: 3_000, minimumHeight: 3_000, squareRequired: true, allowedFormats: ['jpeg', 'png'], allowedColorSpaces: ['srgb', 'rgb'] },
             sourceDocumentReference: 'releases/release-1', artwork: { storagePath: 'artwork/owner-1/cover.png', generation: '42', sizeBytes: 1, sha256: 'a'.repeat(64), width: 3_000, height: 3_000, format: 'png', colorSpace: 'srgb' },
+            // Required on the receipt: technical conformance does not establish who
+            // created the image, so absent evidence is recorded as such rather than inferred.
+            generationProvenance: { source: 'not_recorded' },
             checks: [], warnings: [], alreadyExists: false,
         });
         const response = await auditAssetResolutions.handler({ releaseId: 'release-1', userId: 'attacker' }, { user: { uid: 'owner-1' } as never });

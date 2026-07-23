@@ -84,7 +84,15 @@ describe('🛡️ Shield: Video Generation Security', () => {
     });
 
     it('should ENFORCE Safety Settings in Veo 3.1 API Request', async () => {
-        const handler = generateVideoFn(mockInngestClient, mockGeminiApiKey);
+        // `mockInngestClient.createFunction` returns its raw 3rd argument (the
+        // handler), not the real `InngestFunction` the real client returns — that
+        // is deliberate, it is how these tests invoke the handler directly without
+        // an Inngest runtime. `generateVideoFn`'s declared return type is still the
+        // real `InngestFunction` (its body is written against the real `Inngest`
+        // type), which is not callable — hence this cast to what the mock actually
+        // hands back (ISSUE-1212).
+        const handler = generateVideoFn(mockInngestClient, mockGeminiApiKey) as unknown as
+            (args: { event: unknown; step: unknown }) => Promise<void>;
 
         const event = {
             data: {

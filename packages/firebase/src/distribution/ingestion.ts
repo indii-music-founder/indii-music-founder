@@ -22,7 +22,7 @@ interface AudioIngestionRuntimeConfig {
     engineDspServiceAccount: string;
 }
 
-interface CloudTasksClientLike {
+export interface CloudTasksClientLike {
     queuePath(project: string, location: string, queue: string): string;
     createTask(request: {
         parent: string;

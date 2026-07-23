@@ -14,6 +14,7 @@ vi.mock('firebase-admin');
 import { stageStripePayouts } from '../stageStripePayouts.js';
 import { McpContext } from '../../types.js';
 import * as admin from 'firebase-admin';
+import { textContent } from './mcpContent';
 
 const earningsGetMock = vi.fn();
 const balancesGetMock = vi.fn();
@@ -44,7 +45,10 @@ firestoreFn.FieldValue = { serverTimestamp: vi.fn(() => 'SERVER_TIMESTAMP') };
 vi.mocked(admin.firestore).mockImplementation(firestoreFn);
 vi.mocked(admin.firestore).FieldValue = firestoreFn.FieldValue;
 
-const context = (uid: string, isAdmin = false): McpContext => ({ user: { uid, admin: isAdmin } } as McpContext);
+// `McpContext.user` is a full `DecodedIdToken`; the tool under test reads only
+// `uid`/`admin`, so the fixture intentionally supplies just those two. Matches
+// the `as never` convention used by the other mcp/tools test doubles.
+const context = (uid: string, isAdmin = false): McpContext => ({ user: { uid, admin: isAdmin } as never });
 
 const verifiedAccount = {
     payouts_enabled: true,
@@ -78,7 +82,7 @@ describe('stageStripePayouts MCP tool', () => {
             { artistId: 'user-1', payoutPeriod: '2026-03' },
             context('user-1'),
         );
-        const payload = JSON.parse(result.content[0].text);
+        const payload = JSON.parse(textContent(result));
 
         expect(result.isError).toBeUndefined();
         expect(payload.status).toBe('succeeded');
@@ -121,7 +125,7 @@ describe('stageStripePayouts MCP tool', () => {
             { artistId: 'user-1', payoutPeriod: '2026-03' },
             context('user-1'),
         );
-        const payload = JSON.parse(result.content[0].text);
+        const payload = JSON.parse(textContent(result));
 
         expect(result.isError).toBeUndefined();
         expect(payload.data.recipients).toEqual([
@@ -142,7 +146,7 @@ describe('stageStripePayouts MCP tool', () => {
             { artistId: 'user-1', payoutPeriod: '2026-03' },
             context('user-1'),
         );
-        const payload = JSON.parse(result.content[0].text);
+        const payload = JSON.parse(textContent(result));
 
         expect(result.isError).toBeUndefined();
         expect(payload.data.status).toBe('blocked_no_verified_recipients');
@@ -163,7 +167,7 @@ describe('stageStripePayouts MCP tool', () => {
             { artistId: 'user-1', payoutPeriod: '2026-03' },
             context('user-1'),
         );
-        const payload = JSON.parse(result.content[0].text);
+        const payload = JSON.parse(textContent(result));
 
         expect(payload.data.recipients[0].accountStatus).toBe('blocked');
         expect(payload.warnings.join(' ')).toContain('not payouts_enabled');
@@ -188,7 +192,7 @@ describe('stageStripePayouts MCP tool', () => {
             { artistId: 'someone-else', payoutPeriod: '2026-03' },
             context('user-1'),
         );
-        const payload = JSON.parse(result.content[0].text);
+        const payload = JSON.parse(textContent(result));
         expect(result.isError).toBe(true);
         expect(payload.error.code).toBe('FORBIDDEN');
         expect(payoutJobsAddMock).not.toHaveBeenCalled();

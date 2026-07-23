@@ -31,7 +31,7 @@
     "deploy:functions": "npm run build -w packages/firebase && firebase deploy --only functions",
     "deploy:landing": "npm run build -w packages/landing && firebase deploy --only hosting:landing",
     "deploy:all": "npm run preflight:prod && npm run build && npm run build:firebase && npm run build:landing && firebase deploy",
-    "typecheck": "tsc -b packages/shared packages/main packages/renderer packages/firebase",
+    "typecheck": "tsc -b packages/shared packages/main packages/renderer packages/firebase && npm run typecheck:firebase-tests",
     "lint": "npm run validate:mainline-workflows && eslint packages/main/src packages/renderer/src packages/shared/src packages/firebase/src packages/landing/src packages/sdk/src",
     "validate:mainline-workflows": "node scripts/validate-mainline-workflows.js",
     "security:frontend-api-boundary": "node scripts/guard-frontend-api-boundary.mjs",

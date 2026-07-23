@@ -2225,7 +2225,7 @@ Listed only so they are not lost. No assessment is implied.
 > file. Content below is unchanged; only the ID moved, per this repo's ledger-integrity protocol
 > (duplicate identifiers must be reconciled before further issue work, per `skill-skill.md` §1).
 
-- **Progress (2026-07-22): 🟡 PARTIAL — the check now exists and is runnable; it is NOT yet a gate.**
+- **Progress (2026-07-22): ✅ FIXED — burned down to 0 and wired into the blocking gate.**
   - Added `packages/firebase/tsconfig.test.json` (`noEmit`, `exclude: []`) and the
     `npm run typecheck:firebase-tests` script. `tsc --listFiles` now covers **131** test files where
     the emit config covered **0**.
@@ -2233,9 +2233,27 @@ Listed only so they are not lost. No assessment is implied.
     under vitest on Node 24 and pull in `packages/shared` (built at ES2022); checking them at es2017
     reported real library methods (`Array.prototype.at`) as missing. Four of the original 66 errors
     were that artefact and are not real.
-  - **Deliberately NOT wired into `npm run typecheck`.** A gate that fails is not a gate — adding it
-    to the blocking chain would turn CI red on a pre-existing backlog. `npm run typecheck` is
-    unchanged and still passes (verified: exit 0, and CI run 29967948819 green 25/25).
+  - The measured 62-error baseline (table below) is now **0**. Fixed per-file, not by loosening —
+    each was either a fixture that had genuinely drifted from the interface it stands in for (given
+    a real type or a documented, scoped cast explaining why the mismatch is intentional), a variadic
+    `doc(db, ...path)` spread losing its tuple shape (`as const` on the path array, or a uniform
+    tuple-typed array when several distinct-literal tuples were iterated together — a mixed array of
+    tuples widens to their union on spread, which is not the same fix), or a genuinely incomplete
+    fixture (`facebookPageName`, a `VideoGenerationJobRecord` missing several `.default()`-but-
+    required-on-output schema fields — given a `buildVideoJob` helper so each test only overrides
+    what it exercises rather than repeating the full shape).
+  - `npm run typecheck` now runs `tsc -b ... packages/firebase && npm run typecheck:firebase-tests` —
+    the second step no longer optional. Verified green end to end (exit 0).
+  - New shared test helper `packages/firebase/src/mcp/tools/__tests__/mcpContent.ts` — MCP responses
+    are a content-block union, so `result.content[0].text` doesn't typecheck; `textContent(result)`
+    validates the block is actually `type: 'text'` and throws with the real kind otherwise, rather
+    than casting past the union. Applied across 5 mcp/tools test files.
+  - `CloudTasksClientLike` exported from `distribution/ingestion.ts` (was file-local) so
+    `audio_ingestion.test.ts`'s fixture can be typed against the real collaborator instead of
+    inferring an empty-tuple mock signature from an unparameterised `vi.fn()`.
+  - **Full verification:** `packages/firebase` suite 449 passed / 5 skipped (both skips are
+    integration tests needing live services, pre-existing); full repo suite 5219 passed / 0 failed;
+    Firestore rules suite re-run against the emulator after the tuple fix — 157/157 unchanged.
 - **Measured baseline — 62 errors, and this number is the point of the entry:**
   | Code | Count | Shape |
   |---|---|---|
@@ -2258,9 +2276,9 @@ Listed only so they are not lost. No assessment is implied.
   which is exactly the failure (`markFailed`, ISSUE-1210) that motivated this entry. Fixing the
   symptom would reinstate the blindness.
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-22)
 - **Severity:** 🟡 MEDIUM (no runtime impact; it removes the compiler as a check on exactly the fixtures that stand in for production collaborators)
-- **Module:** `packages/firebase/tsconfig.json`
+- **Module:** `packages/firebase/tsconfig.json`, `packages/firebase/tsconfig.test.json`, `package.json`
 - **Evidence:** `include: ['src']` with `exclude: ['src/__tests__', 'src/**/*.test.ts']`. Confirmed
   empirically — `tsc -p packages/firebase/tsconfig.json --listFiles` contains **0** `.test.ts` files.
   Found when adding `markFailed` to `VideoSessionFinalizationStore` (ISSUE-1210): the two existing

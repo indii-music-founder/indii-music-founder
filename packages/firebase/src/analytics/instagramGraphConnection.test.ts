@@ -48,8 +48,8 @@ describe('exchangeFacebookInstagramConnection', () => {
         await expect(exchangeFacebookInstagramConnection(input, fetcher)).rejects.toMatchObject({
             code: 'PAGE_SELECTION_REQUIRED',
             pages: [
-                { facebookPageId: 'page-1', instagramBusinessAccountId: 'ig-1', instagramUsername: 'indii_music' },
-                { facebookPageId: 'page-2', instagramBusinessAccountId: 'ig-2', instagramUsername: 'another_music' },
+                { facebookPageId: 'page-1', facebookPageName: 'indii', instagramBusinessAccountId: 'ig-1', instagramUsername: 'indii_music' },
+                { facebookPageId: 'page-2', facebookPageName: 'another', instagramBusinessAccountId: 'ig-2', instagramUsername: 'another_music' },
             ],
         } satisfies Partial<MetaInstagramConnectionError>);
     });

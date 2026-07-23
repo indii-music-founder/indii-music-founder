@@ -14,6 +14,12 @@
     "compilerOptions": {
         "noEmit": true,
         "emitDeclarationOnly": false,
+        // The emit config is `composite` (a project reference). Composite demands
+        // every file be inside rootDir and listed in the project — but tests
+        // legitimately import `packages/shared/src/**` across the package boundary.
+        // This config emits nothing, so neither constraint buys anything here.
+        "composite": false,
+        "rootDir": "../..",
         // The emit config targets es2017 for the deployed Functions runtime. Tests
         // run under vitest on Node 24 and pull in `packages/shared` (which is built
         // at ES2022), so checking them at es2017 reports library methods like

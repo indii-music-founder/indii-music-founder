@@ -149,7 +149,12 @@ describe('BigQueryEventsPipeline', () => {
 
   describe('Error Handling', () => {
     it('should handle missing _bigQuerySynced flag', () => {
-      const doc = { data: { eventType: 'user_action' } };
+      // `_bigQuerySynced` is written by the pipeline (functions/analytics/bigquery-pipeline.ts)
+      // and is therefore absent on a not-yet-synced document — model it as optional
+      // rather than omitting it from the type, which is what the code under test sees.
+      const doc: { data: { eventType: string; _bigQuerySynced?: boolean } } = {
+        data: { eventType: 'user_action' },
+      };
       const synced = doc.data._bigQuerySynced || false;
 
       expect(synced).toBe(false);

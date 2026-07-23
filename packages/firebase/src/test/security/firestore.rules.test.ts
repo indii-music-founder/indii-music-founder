@@ -55,7 +55,9 @@ const EMULATOR_HOST = 'localhost';
 const EMULATOR_PORT = 8080;
 
 // Token that simulates an anonymous Firebase session
-const ANON_TOKEN = { firebase: { sign_in_provider: 'anonymous' } };
+// `as const` matters: without it `sign_in_provider` widens to `string`, which is
+// not assignable to the SDK's `FirebaseSignInProvider` union.
+const ANON_TOKEN = { firebase: { sign_in_provider: 'anonymous' } } as const;
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Emulator availability check
@@ -1348,7 +1350,7 @@ describe('Firestore Security Rules', () => {
     });
 
     describe('users/{uid}/assetAuditReceipts/{auditId}', () => {
-        const auditPath = ['users', ALICE_UID, 'assetAuditReceipts', 'asset_audit_receipt'];
+        const auditPath = ['users', ALICE_UID, 'assetAuditReceipts', 'asset_audit_receipt'] as const;
         const receipt = {
             schemaVersion: 'asset-resolution-audit.v1',
             ownerUid: ALICE_UID,
@@ -1380,9 +1382,17 @@ describe('Firestore Security Rules', () => {
     });
 
     describe('users/{uid}/server-only social OAuth records', () => {
-        const tokenPath = ['users', ALICE_UID, 'analyticsTokens', 'instagram'];
-        const socialTokenPath = ['users', ALICE_UID, 'socialTokens', 'instagram'];
-        const intentPath = ['users', ALICE_UID, 'serverSocialConnectionIntents', 'intent-1'];
+        const tokenPath = ['users', ALICE_UID, 'analyticsTokens', 'instagram'] as const;
+        const socialTokenPath = ['users', ALICE_UID, 'socialTokens', 'instagram'] as const;
+        const intentPath = ['users', ALICE_UID, 'serverSocialConnectionIntents', 'intent-1'] as const;
+
+        // Iterating a mixed array of distinct-literal tuples widens each element to
+        // the UNION of the tuple types when spread (`...targetPath`), which loses
+        // the guaranteed-first-segment shape `doc()` needs and reports the
+        // CollectionReference overloads instead. Casting the array itself to a
+        // uniform tuple shape (the segments' runtime type, ignoring the literal
+        // union) keeps every element spreadable.
+        const targetPaths: ReadonlyArray<readonly [string, string, string, string]> = [tokenPath, socialTokenPath, intentPath];
 
         beforeEach(async () => {
             if (requireEmulator()) return;
@@ -1396,7 +1406,7 @@ describe('Firestore Security Rules', () => {
 
         it('denies owner, cross-owner, and unauthenticated token or intent reads', async () => {
             if (requireEmulator()) return;
-            for (const targetPath of [tokenPath, socialTokenPath, intentPath]) {
+            for (const targetPath of targetPaths) {
                 await assertFails(getDoc(doc(verifiedCtx(ALICE_UID).firestore(), ...targetPath)));
                 await assertFails(getDoc(doc(verifiedCtx(BOB_UID).firestore(), ...targetPath)));
                 await assertFails(getDoc(doc(unauthCtx().firestore(), ...targetPath)));
@@ -1405,7 +1415,7 @@ describe('Firestore Security Rules', () => {
 
         it('denies every client token or intent mutation', async () => {
             if (requireEmulator()) return;
-            for (const targetPath of [tokenPath, socialTokenPath, intentPath]) {
+            for (const targetPath of targetPaths) {
                 const db = verifiedCtx(ALICE_UID).firestore();
                 await assertFails(setDoc(doc(db, ...targetPath), { accessToken: 'forged' }));
                 await assertFails(updateDoc(doc(db, ...targetPath), { accessToken: 'mutated' }));

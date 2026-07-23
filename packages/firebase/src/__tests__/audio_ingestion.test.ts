@@ -22,7 +22,7 @@ vi.mock('@google-cloud/tasks', () => ({
     CloudTasksClient: vi.fn(),
 }));
 
-import { queueVerifiedAudioIngestion } from '../distribution/ingestion';
+import { queueVerifiedAudioIngestion, type CloudTasksClientLike } from '../distribution/ingestion';
 
 const HASH = 'a'.repeat(64);
 const STORAGE_PATH = `masters/owner-1/${HASH}/original.wav`;
@@ -36,7 +36,11 @@ const VALID_ENV = {
 function tasksFixture() {
     return {
         queuePath: vi.fn(() => 'projects/indii-test/locations/us-central1/queues/dsp-processing-queue'),
-        createTask: vi.fn(async () => [{}]),
+        // Declaring the parameter (unused, but typed as the real request shape) is
+        // what makes `.mock.calls[0][0]` resolve to that shape rather than an empty
+        // tuple — `vi.fn` infers `mock.calls`'s element type from the wrapped
+        // function's own parameter list, and this fixture previously took none.
+        createTask: vi.fn(async (_request: Parameters<CloudTasksClientLike['createTask']>[0]) => [{}]),
     };
 }
 

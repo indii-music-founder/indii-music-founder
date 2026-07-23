@@ -10,6 +10,7 @@ vi.mock('../../../lib/inngestClient.js', () => ({
 import { queueRemotionRender } from '../queueRemotionRender.js';
 import { McpContext } from '../../types.js';
 import * as admin from 'firebase-admin';
+import { textContent } from './mcpContent';
 
 const addMock = vi.fn();
 const releaseGetMock = vi.fn();
@@ -69,7 +70,7 @@ describe('queueRemotionRender MCP tool', () => {
             },
         }, context('user-1'));
 
-        const payload = JSON.parse(result.content[0].text);
+        const payload = JSON.parse(textContent(result));
         expect(result.isError).toBeUndefined();
         expect(payload.status).toBe('succeeded');
         expect(payload.resource.type).toBe('render_intent');
@@ -113,7 +114,7 @@ describe('queueRemotionRender MCP tool', () => {
             context('user-1'),
         );
 
-        const payload = JSON.parse(result.content[0].text);
+        const payload = JSON.parse(textContent(result));
         expect(result.isError).toBe(true);
         expect(payload.status).toBe('failed');
         expect(payload.error.code).toBe('FORBIDDEN');
@@ -127,7 +128,7 @@ describe('queueRemotionRender MCP tool', () => {
             context('user-1'),
         );
         expect(bad.isError).toBe(true);
-        expect(JSON.parse(bad.content[0].text).error.code).toBe('INVALID_ARGUMENT');
+        expect(JSON.parse(textContent(bad)).error.code).toBe('INVALID_ARGUMENT');
         expect(addMock).not.toHaveBeenCalled();
 
         releaseGetMock.mockResolvedValueOnce({ exists: true, data: () => ({}) });

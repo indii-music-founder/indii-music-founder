@@ -80,8 +80,16 @@ describe('Video Generation Pipeline (Lens)', () => {
 
         const mockApiKey = { value: () => 'fake-api-key' };
 
-        // Get the handler
-        handler = generateVideoFn(mockInngestClient, mockApiKey);
+        // Get the handler. The mock only implements `createFunction` (and returns
+        // its raw 3rd argument rather than a real `InngestFunction`, so tests can
+        // call the handler directly) — cast past the real `Inngest` type it stands
+        // in for (ISSUE-1212). `generateVideoFn`'s 2nd param (`_geminiApiKey`) is
+        // unused inside the function, so `mockApiKey`'s shape is inert; only its
+        // type needs to satisfy the signature.
+        handler = generateVideoFn(
+            mockInngestClient as unknown as Parameters<typeof generateVideoFn>[0],
+            mockApiKey as unknown as Parameters<typeof generateVideoFn>[1],
+        );
 
         // Mock Step
         mockStep = {

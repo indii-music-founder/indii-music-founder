@@ -29,6 +29,7 @@ vi.mock('../../../lib/inngestClient.js', () => ({
 
 import { scheduleCampaignWaterfall } from '../scheduleCampaignWaterfall.js';
 import { McpContext } from '../../types.js';
+import { textContent } from './mcpContent';
 
 const context = (uid: string): McpContext => ({ user: { uid } as never });
 
@@ -47,7 +48,7 @@ describe('scheduleCampaignWaterfall MCP tool', () => {
             { releaseId: 'rel-1', campaignStartDate: '2026-03-05', budget: 250, userId: 'attacker-uid', extraField: 'nope' },
             context('user-1'),
         );
-        const payload = JSON.parse(result.content[0].text);
+        const payload = JSON.parse(textContent(result));
 
         expect(result.isError).toBeUndefined();
         expect(payload.status).toBe('succeeded');
@@ -90,7 +91,7 @@ describe('scheduleCampaignWaterfall MCP tool', () => {
             { releaseId: 'rel-1', campaignStartDate: '2026-03-05', emailOptIn: true },
             context('user-1'),
         );
-        const payload = JSON.parse(result.content[0].text);
+        const payload = JSON.parse(textContent(result));
         expect(addMock.mock.calls[0][0].emailOptIn).toBe(true);
         expect(payload.warnings[1]).toMatch(/emailOptIn is true/);
     });
@@ -109,7 +110,7 @@ describe('scheduleCampaignWaterfall MCP tool', () => {
                 { releaseId: 'rel-1', campaignStartDate: bad },
                 context('user-1'),
             );
-            const payload = JSON.parse(result.content[0].text);
+            const payload = JSON.parse(textContent(result));
             expect(result.isError).toBe(true);
             expect(payload.error.code).toBe('INVALID_ARGUMENT');
         }
@@ -123,7 +124,7 @@ describe('scheduleCampaignWaterfall MCP tool', () => {
                 context('user-1'),
             );
             expect(result.isError).toBe(true);
-            expect(JSON.parse(result.content[0].text).error.code).toBe('INVALID_ARGUMENT');
+            expect(JSON.parse(textContent(result)).error.code).toBe('INVALID_ARGUMENT');
         }
         expect(addMock).not.toHaveBeenCalled();
     });
@@ -134,7 +135,7 @@ describe('scheduleCampaignWaterfall MCP tool', () => {
             { releaseId: 'rel-other', campaignStartDate: '2026-03-05' },
             context('user-1'),
         );
-        const payload = JSON.parse(result.content[0].text);
+        const payload = JSON.parse(textContent(result));
         expect(result.isError).toBe(true);
         expect(payload.error.code).toBe('PERMISSION_DENIED');
         expect(addMock).not.toHaveBeenCalled();

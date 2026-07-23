@@ -26,8 +26,13 @@ const firestoreMock = Object.assign(
     { FieldValue: { serverTimestamp: vi.fn(() => 'SERVER_TIMESTAMP') } },
 );
 
-vi.mocked(admin.firestore).mockImplementation(firestoreMock);
-vi.mocked(admin.storage).mockImplementation(vi.fn(() => ({ bucket: bucketMock })));
+// These doubles model only the collection/doc/bucket/file surface this tool
+// actually calls, not the full Firestore/Storage SDK shape (ISSUE-1212) — cast
+// documents that the mismatch with the real return type is deliberate.
+vi.mocked(admin.firestore).mockImplementation(firestoreMock as unknown as typeof admin.firestore);
+vi.mocked(admin.storage).mockImplementation(
+    vi.fn(() => ({ bucket: bucketMock })) as unknown as typeof admin.storage,
+);
 
 const context = (uid: string, admin_flag = false): McpContext => ({
     user: { uid, admin: admin_flag } as never,

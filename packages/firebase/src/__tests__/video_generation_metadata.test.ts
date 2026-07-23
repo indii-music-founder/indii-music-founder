@@ -84,7 +84,15 @@ describe('Video Generation Metadata', () => {
     });
 
     it('should persist Veo 3.1 metadata to Firestore on completion', async () => {
-        const handler = generateVideoFn(mockInngestClient, mockGeminiApiKey);
+        // `mockInngestClient.createFunction` returns its raw 3rd argument (the
+        // handler), not the real `InngestFunction` the real client returns — that
+        // is deliberate, it is how these tests invoke the handler directly without
+        // an Inngest runtime. `generateVideoFn`'s declared return type is still the
+        // real `InngestFunction` (its body is written against the real `Inngest`
+        // type), which is not callable — hence this cast to what the mock actually
+        // hands back (ISSUE-1212).
+        const handler = generateVideoFn(mockInngestClient, mockGeminiApiKey) as unknown as
+            (args: { event: unknown; step: unknown }) => Promise<void>;
 
         const event = {
             data: {
@@ -137,7 +145,12 @@ describe('Video Generation Metadata', () => {
         const calls = mocks.firestore.set.mock.calls;
         const completionCall = calls.find(call => call[0].status === 'completed');
 
-        expect(completionCall).toBeDefined();
+        // `expect().toBeDefined()` is a runtime check only — it does not narrow
+        // `completionCall`'s type, so the throw below is what makes the following
+        // access type-safe as well as failing with a clear message if absent.
+        if (!completionCall) {
+            throw new Error('Expected a Firestore set() call with status "completed".');
+        }
         const data = completionCall[0];
 
         expect(data).toHaveProperty('output');

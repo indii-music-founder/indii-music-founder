@@ -11,6 +11,37 @@ import {
     assertApiLatency
 } from '../../../test/integration.setup';
 
+/**
+ * The router's JSON envelope. `node-mocks-http`'s `_getData()` is untyped (`{}`),
+ * so every field read through it was unchecked — stating the contract here is
+ * what makes these assertions type-safe, and documents what the API returns
+ * (ISSUE-1212).
+ */
+interface ApiEnvelope {
+    success?: boolean;
+    error?: string;
+    data?: { id?: string; title?: string } & Record<string, unknown>;
+}
+
+const apiBody = (res: { _getData: () => unknown }): ApiEnvelope => {
+    const raw = res._getData();
+    return (typeof raw === 'string' ? JSON.parse(raw) : raw) as ApiEnvelope;
+};
+
+/**
+ * `data` is optional on the envelope (an error response carries none), so every
+ * read of `.data.*` is a possibly-undefined access. Callers here always read it
+ * immediately after `assertSuccess`, at which point it is guaranteed present —
+ * this makes that guarantee explicit and throws with the real payload if it
+ * is ever violated, rather than silently reading `undefined`.
+ */
+const requireData = (body: ApiEnvelope): NonNullable<ApiEnvelope['data']> => {
+    if (!body.data) {
+        throw new Error(`Expected a successful response to carry \`data\`, got: ${JSON.stringify(body)}`);
+    }
+    return body.data;
+};
+
 // Integration Tests for API Router
 // These tests execute against REAL Firebase services (Firestore).
 // Skipped in CI/test environments without GCP credentials.
@@ -59,7 +90,7 @@ describe.skip('API Router (Integration)', () => {
         const latency = Date.now() - start;
         assertApiLatency(latency, 2000); // Expect Firestore write < 2s
         
-        const data = res._getData();
+        const data = apiBody(res);
         if (res._getStatusCode() === 500 || res._getStatusCode() === 403) {
             console.warn('Skipping test due to potential auth/quota issues in CI:', data?.error);
             return;
@@ -68,10 +99,14 @@ describe.skip('API Router (Integration)', () => {
         assertSuccess(res, 201);
 
         expect(data.success).toBe(true);
-        expect(data.data).toHaveProperty('id');
-        expect(data.data.title).toBe('Integration Test Track');
+        const created = requireData(data);
+        expect(created).toHaveProperty('id');
+        expect(created.title).toBe('Integration Test Track');
 
-        testTrackId = data.data.id;
+        if (typeof created.id !== 'string') {
+            throw new Error(`Expected created track to have a string id, got: ${JSON.stringify(created)}`);
+        }
+        testTrackId = created.id;
 
         // Verify the document actually exists in the real Firestore
         const doc = await db.collection('users').doc(testUserId).collection('tracks').doc(testTrackId).get();
@@ -96,9 +131,9 @@ describe.skip('API Router (Integration)', () => {
         assertApiLatency(latency, 1500); // Expect Firestore read < 1.5s
         assertSuccess(res, 200);
 
-        const data = res._getData();
+        const data = apiBody(res);
         expect(data.success).toBe(true);
-        expect(data.data.id).toBe(testTrackId);
+        expect(requireData(data).id).toBe(testTrackId);
     });
 
     it('should update track in Firestore', async () => {
@@ -118,9 +153,9 @@ describe.skip('API Router (Integration)', () => {
         assertApiLatency(latency, 2000);
         assertSuccess(res, 200);
 
-        const data = res._getData();
+        const data = apiBody(res);
         expect(data.success).toBe(true);
-        expect(data.data.title).toBe('Updated Title');
+        expect(requireData(data).title).toBe('Updated Title');
 
         // Verify the update in real Firestore
         const doc = await db.collection('users').doc(testUserId).collection('tracks').doc(testTrackId).get();

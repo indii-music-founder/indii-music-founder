@@ -9,7 +9,10 @@ import {
 } from './createVideoSession';
 
 function createMemoryStore(): VideoSessionClaimStore {
-    const sessions = new Map<string, Record<string, unknown>>();
+    // Derived from the interface rather than restated, so the double cannot drift
+    // from the collaborator it stands in for.
+    type Proposed = Parameters<VideoSessionClaimStore['claim']>[0];
+    const sessions = new Map<string, Proposed>();
     return {
         async claim(proposed) {
             const existing = sessions.get(proposed.sessionId);
