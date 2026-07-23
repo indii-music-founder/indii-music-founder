@@ -203,6 +203,19 @@ export const ProxyJobClaimSchema = z.object({
     originalSha256: Sha256Schema,
     claimedAt: z.string().datetime(),
     blockedReason: z.string().trim().min(1).max(500).optional(),
+    /**
+     * Worker-managed crash-recovery lease (repair-order step 3, the proxy
+     * worker). Deliberately kept on THIS object rather than a separate
+     * top-level session field — `VideoSessionSchema` is `.strict()`, so any new
+     * top-level field the worker wrote would need its own schema change anyway,
+     * and the lease is conceptually part of "what is happening with this
+     * dispatched job," not a new session-level concern. Both optional: the
+     * dispatcher never sets them, only the worker does once it claims the
+     * session for processing. Mirrors the existing audio pipeline's lease
+     * pattern in `packages/engine-dsp/pipeline.py` (`FirestoreReceiptStore`).
+     */
+    leaseId: IdentifierSchema.optional(),
+    leaseExpiresAt: z.string().datetime().optional(),
 }).strict();
 
 export const VideoSessionSchema = z.object({
