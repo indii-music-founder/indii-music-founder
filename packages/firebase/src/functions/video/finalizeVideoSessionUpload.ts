@@ -6,6 +6,8 @@ import { logger } from 'firebase-functions/v2';
 import { onObjectFinalized } from 'firebase-functions/v2/storage';
 import { z } from 'zod';
 
+import { dispatchSessionProxyJob } from './dispatchSessionProxyJob';
+
 const SESSION_UPLOAD_PATH = /^session-media\/([^/]+)\/([a-f0-9]{40})\/staging\/original\.(mp4|mov|webm|m4v)$/;
 const NUMERIC_GENERATION = /^[1-9][0-9]*$/;
 
@@ -383,7 +385,7 @@ export const finalizeVideoSessionUpload = onObjectFinalized(
         if (!path?.startsWith('session-media/') || !path.includes('/staging/original.')) return;
 
         try {
-            await finalizeStagedVideoUpload({
+            const { original } = await finalizeStagedVideoUpload({
                 bucket: event.data.bucket,
                 path,
                 generation: String(event.data.generation ?? ''),
@@ -395,6 +397,24 @@ export const finalizeVideoSessionUpload = onObjectFinalized(
                 sessions: createFirestoreVideoSessionFinalizationStore(),
                 objects: createGcsImmutableVideoObjectStore(),
             });
+
+            // ISSUE-1175 repair-order step 2: a finalized original is worthless
+            // until something produces its proxy — `videoEditorStore` already
+            // reads `session.proxyManifest`, and nothing was ever writing it, so
+            // every session dead-ended at `uploaded`. Dispatch is idempotent on
+            // the original's generation + SHA-256, which is what makes it safe to
+            // run inside a handler Eventarc deliberately redelivers.
+            const sessionId = SESSION_UPLOAD_PATH.exec(path)?.[2];
+            if (sessionId) {
+                const dispatch = await dispatchSessionProxyJob(sessionId, original);
+                if (dispatch.status === 'blocked') {
+                    logger.warn('[finalizeVideoSessionUpload] Proxy worker not provisioned; session has no proxy', {
+                        sessionId,
+                        jobId: dispatch.jobId,
+                        reason: dispatch.blockedReason,
+                    });
+                }
+            }
         } catch (error: unknown) {
             const permanent = isPermanentFinalizationFailure(error);
             logger.error('[finalizeVideoSessionUpload] Failed to finalize staged original', {
