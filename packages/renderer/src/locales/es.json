@@ -280,6 +280,11 @@
         "label": "Control Remoto",
         "title": "Control Remoto",
         "description": "Vincula tu teléfono o tableta para controlar el estudio y sincronizar tu espacio de trabajo desde cualquier lugar."
+      },
+      "automation": {
+        "label": "Automatización",
+        "title": "Automatización",
+        "description": "Tu Perfil Operativo de Artista — preferencias y límites que los agentes verifican antes de actuar de forma autónoma."
       }
     },
     "hints": {

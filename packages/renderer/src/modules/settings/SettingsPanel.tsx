@@ -25,6 +25,7 @@ import {
     Shield,
     Monitor,
     Smartphone,
+    Bot,
     LucideIcon,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -36,6 +37,7 @@ import AppearanceSection from './settings-panel/AppearanceSection';
 import SecuritySection from './settings-panel/SecuritySection';
 import DesktopSection from './settings-panel/DesktopSection';
 import RemoteSection from './settings-panel/RemoteSection';
+import AutomationSection from './settings-panel/AutomationSection';
 import {
     getRequestedSettingsSection,
     requestSettingsSection,
@@ -53,6 +55,7 @@ const SECTIONS: Array<{ id: SettingsSectionId; label: string; icon: LucideIcon; 
     { id: 'remote', label: 'Mobile Remote', icon: Smartphone, description: 'Pair and sync your phone or tablet' },
     { id: 'notifications', label: 'Notifications', icon: Bell, description: 'Push, email, and sound preferences' },
     { id: 'appearance', label: 'Appearance', icon: Palette, description: 'Theme, layout, and animations' },
+    { id: 'automation', label: 'Automation', icon: Bot, description: 'Artist Operating Profile — autonomy permissions and boundaries' },
     { id: 'desktop', label: 'Desktop & Updates', icon: Monitor, description: 'App version, auto-updates' },
     { id: 'security', label: 'Account & Security', icon: Shield, description: 'Sign out, data export, delete' },
 ];
@@ -86,6 +89,7 @@ const SettingsPanel: React.FC = () => {
             case 'remote': return <RemoteSection />;
             case 'notifications': return <NotificationsSection />;
             case 'appearance': return <AppearanceSection />;
+            case 'automation': return <AutomationSection />;
             case 'desktop': return <DesktopSection />;
             case 'security': return <SecuritySection />;
         }

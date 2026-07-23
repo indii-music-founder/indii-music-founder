@@ -53,6 +53,24 @@ vi.mock('./governance/ToolApprovalService', () => ({
     }
 }));
 
+// ISSUE-1172: ArtistOperatingProfileService is statically imported by BaseAgent.ts for the
+// computer_* autonomous-control gate — must be mocked directly, same reasoning as above.
+// Defaults to opted-IN so pre-existing tests (none of which use computer_* tools) are unaffected;
+// the dedicated describe block below overrides this per-test to prove both gate states.
+const mockGetAopProfile = vi.fn().mockResolvedValue({
+    schemaVersion: 'artist-operating-profile.v1',
+    businessGoals: [],
+    creativeBoundaries: [],
+    installedSoftware: [],
+    connectedServiceIds: [],
+    permissions: { autonomousComputerControl: true, allowDestructiveTools: false, preApprovedToolNames: [] }
+});
+vi.mock('./governance/ArtistOperatingProfileService', () => ({
+    artistOperatingProfileService: {
+        getProfile: () => mockGetAopProfile()
+    }
+}));
+
 describe('BaseAgent Tool Validation', () => {
     let agent: BaseAgent;
     const testToolSchema = z.object({
@@ -204,6 +222,66 @@ describe('BaseAgent Tool Validation', () => {
 
             expect(testToolHandler).toHaveBeenCalled();
             expect(mockCreatePendingApproval).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('ISSUE-1172: Artist Operating Profile autonomous-computer-control gate', () => {
+        const computerClickHandler = vi.fn().mockResolvedValue({ success: true, data: 'clicked' });
+
+        const buildComputerAgent = () => new BaseAgent({
+            id: 'generalist',
+            name: 'Test Agent',
+            description: 'Test',
+            color: '#fff',
+            category: 'specialist',
+            systemPrompt: 'sys prompt',
+            tools: [{
+                functionDeclarations: [createTool('computer_click', 'Clicks the desktop', z.object({ x: z.number(), y: z.number() }))]
+            }],
+            functions: { computer_click: computerClickHandler }
+        });
+
+        it('blocks computer_click before even queuing an approval when AOP has not opted in', async () => {
+            mockGetAopProfile.mockResolvedValueOnce({
+                schemaVersion: 'artist-operating-profile.v1',
+                businessGoals: [], creativeBoundaries: [], installedSoftware: [], connectedServiceIds: [],
+                permissions: { autonomousComputerControl: false, allowDestructiveTools: false, preApprovedToolNames: [] }
+            });
+            const { AutonomousIntelligence } = await importWithRetry(() => import('@/services/intelligence/AutonomousIntelligence'));
+            vi.mocked(AutonomousIntelligence.generateContent).mockResolvedValueOnce({
+                response: {
+                    text: () => 'Clicking...',
+                    functionCalls: () => [{ name: 'computer_click', args: { x: 10, y: 20 } }]
+                }
+            } as unknown as Awaited<ReturnType<typeof AutonomousIntelligence.generateContent>>);
+
+            const response = await buildComputerAgent().execute('Click something');
+
+            expect(computerClickHandler).not.toHaveBeenCalled();
+            expect(mockCreatePendingApproval).not.toHaveBeenCalled();
+            expect(response.error).toBe('AUTONOMOUS_COMPUTER_CONTROL_DISABLED');
+            expect(response.text).toContain('Autonomous Computer Control enabled in Settings > Automation');
+        });
+
+        it('falls through to the ISSUE-1116 approval gate once AOP has opted in', async () => {
+            mockGetAopProfile.mockResolvedValueOnce({
+                schemaVersion: 'artist-operating-profile.v1',
+                businessGoals: [], creativeBoundaries: [], installedSoftware: [], connectedServiceIds: [],
+                permissions: { autonomousComputerControl: true, allowDestructiveTools: false, preApprovedToolNames: [] }
+            });
+            const { AutonomousIntelligence } = await importWithRetry(() => import('@/services/intelligence/AutonomousIntelligence'));
+            vi.mocked(AutonomousIntelligence.generateContent).mockResolvedValueOnce({
+                response: {
+                    text: () => 'Clicking...',
+                    functionCalls: () => [{ name: 'computer_click', args: { x: 10, y: 20 } }]
+                }
+            } as unknown as Awaited<ReturnType<typeof AutonomousIntelligence.generateContent>>);
+
+            const response = await buildComputerAgent().execute('Click something');
+
+            expect(computerClickHandler).not.toHaveBeenCalled();
+            expect(mockCreatePendingApproval).toHaveBeenCalledWith(expect.objectContaining({ toolName: 'computer_click' }));
+            expect(response.error).toBe('AWAITING_TOOL_APPROVAL');
         });
     });
 });

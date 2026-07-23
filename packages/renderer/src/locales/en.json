@@ -286,6 +286,11 @@
         "label": "Mobile Remote",
         "title": "Mobile Remote",
         "description": "Pair your phone or tablet to control the studio and sync your workspace from anywhere."
+      },
+      "automation": {
+        "label": "Automation",
+        "title": "Automation",
+        "description": "Your Artist Operating Profile — preferences and boundaries agents check before acting autonomously."
       }
     },
     "hints": {

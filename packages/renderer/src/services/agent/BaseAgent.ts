@@ -42,6 +42,8 @@ import { getDepartmentOf, isHead, sameDepartment } from './departments';
 import { validateAgentCommunication } from './governance/AgentCommunicationPolicy';
 import { TOOL_RISK_REGISTRY } from './ToolRiskRegistry';
 import { toolApprovalService } from './governance/ToolApprovalService';
+import { artistOperatingProfileService } from './governance/ArtistOperatingProfileService';
+import { hasAutonomousComputerControl } from '@indii/shared';
 import { agentNoteService } from './AgentNoteService';
 
 import { AgentPromptBuilder } from './builders/AgentPromptBuilder';
@@ -1176,6 +1178,32 @@ export class BaseAgent implements SpecializedAgent {
                             // Inject block notice into conversation and continue loop
                             fullPrompt += `\n[Tool Call: ${name}(${JSON.stringify(args)})] Result: Error: Tool '${name}' is not authorized for agent '${this.id}'.\n`;
                             continue;
+                        }
+
+                        // ISSUE-1172 fix (re-ticketed from ISSUE-1115): Artist Operating Profile gate.
+                        // Every `computer_*` tool above 'read' tier (computer_screenshot, computer_open_app,
+                        // computer_click/type/key/scroll/drive) is ALSO gated on the artist having
+                        // explicitly opted into autonomous computer control via Settings > Automation.
+                        // Fail-closed: an artist who has never touched that setting (no AOP doc at all)
+                        // is NOT opted in. This fires before the ISSUE-1116 approval-queue gate below so
+                        // an artist who never opted in doesn't even get a pending-approval entry created —
+                        // there is nothing to approve into until the capability itself is turned on.
+                        if (name.startsWith('computer_') && TOOL_RISK_REGISTRY[name]?.riskTier !== 'read') {
+                            const aop = await artistOperatingProfileService.getProfile();
+                            if (!hasAutonomousComputerControl(aop)) {
+                                logger.warn(`[BaseAgent] Tool '${name}' blocked: artist has not enabled Autonomous Computer Control (Artist Operating Profile).`);
+                                const blockedResult: ToolFunctionResult = {
+                                    success: false,
+                                    error: `Tool '${name}' requires Autonomous Computer Control to be enabled in Settings > Automation before it can be requested.`
+                                };
+                                toolCalls.push({ name, args, result: blockedResult });
+                                await executionContext.rollback();
+                                return {
+                                    text: `Execution paused: '${name}' needs Autonomous Computer Control enabled in Settings > Automation first.`,
+                                    toolCalls,
+                                    error: 'AUTONOMOUS_COMPUTER_CONTROL_DISABLED'
+                                };
+                            }
                         }
 
                         // ISSUE-1116 fix: real pre-execution approval gate. ToolRiskRegistry's
