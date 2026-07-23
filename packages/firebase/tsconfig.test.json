@@ -1,0 +1,32 @@
+{
+    // ISSUE-1212: type-check ONLY config for this package's tests.
+    //
+    // tsconfig.json is the emit config — it builds to `lib/` and therefore
+    // excludes test files, which must never reach the deployed bundle. That
+    // exclusion also removed the compiler as a check on the test doubles that
+    // stand in for production collaborators: adding `markFailed` to
+    // VideoSessionFinalizationStore (ISSUE-1210) left two fixtures no longer
+    // satisfying the interface, and nothing failed.
+    //
+    // This config checks the same sources WITH the tests, and emits nothing.
+    // Keep the two separate — widening the emit config instead would ship tests.
+    "extends": "./tsconfig.json",
+    "compilerOptions": {
+        "noEmit": true,
+        "emitDeclarationOnly": false,
+        // The emit config targets es2017 for the deployed Functions runtime. Tests
+        // run under vitest on Node 24 and pull in `packages/shared` (which is built
+        // at ES2022), so checking them at es2017 reports library methods like
+        // Array.prototype.at as missing when they are available everywhere these
+        // files actually execute.
+        "target": "es2022",
+        "lib": [
+            "ES2022",
+            "DOM"
+        ]
+    },
+    "exclude": [],
+    "include": [
+        "src"
+    ]
+}

@@ -2039,16 +2039,22 @@ Listed only so they are not lost. No assessment is implied.
 > downgraded from P1 to P2 accordingly). ISSUE-1209 lists depcheck's full candidate list with an
 > explicit warning that most of it needs a manual read, not a bulk delete.
 
-### ISSUE-1198: Two animation packages declared and used side-by-side (`framer-motion` + `motion`) — CORRECTED TWICE, see below before trusting this entry
+### ISSUE-1198: Two animation packages declared and used side-by-side (`framer-motion` + `motion`)
 
-- **Status:** 🔴 OPEN
-- **Severity:** 🟠 P0 (bundle bloat — NOT an install-breaking bug; that framing was a false alarm, see correction history)
-- **Module:** `packages/renderer/package.json`
-- **Correction history (read this before acting):**
-  1. First pass (grep-only): flagged as "two duplicate libraries," P0 bloat.
-  2. Second pass (`npm ls`): found `motion` reporting `extraneous` (undeclared but installed) and re-scored this CRITICAL as an install-breaking bug. **This was wrong** — the `npm ls`/`json.load` check was run against a **dirty working tree** that had someone else's uncommitted, unrelated WIP diff applied to `packages/renderer/package.json` (that diff removed `motion`, `@reduxjs/toolkit`, `react-redux`, `express`, `resend`, `@electron/rebuild` — apparently a prior, unfinished dependency-cleanup attempt, never migrated the 176 `motion/react` call sites, never committed). That WIP has been stashed (`git stash` entry: "concurrent-agent WIP: package.json dep drift fix + AppShell/store/OCR/PDF changes (not mine, preserving) - main") rather than lost — **do not pop that stash and run `npm install` without first migrating the `motion/react` call sites, or it will reproduce exactly the breakage this issue nearly misdiagnosed as already-live.**
-  3. Third pass, against the clean committed `HEAD` tree: `npm ls motion --workspace=packages/renderer` shows `motion@12.23.26` as a normal, non-extraneous, properly declared dependency. **Ground truth: both `motion` (176 source imports) and `framer-motion` (69 source imports, declared `^12.35.1`) are legitimately declared and used on the committed tree today.** No install-breaking risk exists in committed code. The original P0-bloat framing (two animation runtimes shipped, `motion` internally wraps `framer-motion` per its own lockfile entry) is the correct one.
-- **Fix (not yet applied):** Pick the majority usage (`motion`, 176 files) as the target, migrate the 69 `framer-motion` call sites to `motion/react`, remove `framer-motion` from `package.json`. Run `npm install` and confirm `npm ls framer-motion` reports it gone (or transitively-only via `motion`'s own dependency) afterward.
+- **Status:** ✅ FIXED (2026-07-22)
+- **Severity:** 🟠 P0 (bundle bloat — not an install-breaking bug; an earlier verification pass briefly mis-scored this CRITICAL due to a dirty working tree, corrected before any fix was applied — see prior ledger revisions if needed)
+- **Module:** `packages/renderer/package.json`, 69 component files, 21 test files
+- **Ground truth confirmed before fixing:** both `motion` (176 source imports) and `framer-motion` (69 source imports) were legitimately declared and used on the committed tree. `motion`'s own package depends on `framer-motion` internally, so this was one real engine (`framer-motion`) exposed through two import surfaces, not two unrelated runtimes.
+- **Fix applied:**
+  1. Migrated all 69 `from 'framer-motion'` imports (and matching `from "framer-motion"`) to `from 'motion/react'` across `packages/renderer/src` — mechanical, since `motion/react` re-exports the identical named API (`motion`, `AnimatePresence`, `MotionConfig`, `useDragControls`, `PanInfo`, etc., confirmed by diffing import statement shapes before migrating).
+  2. Migrated the matching `vi.mock('framer-motion', ...)` calls in 21 test files to `vi.mock('motion/react', ...)` so mocks keep intercepting the (now-changed) import path used by the components under test.
+  3. Removed `"framer-motion": "^12.35.1"` from `packages/renderer/package.json`. Ran `npm install --workspace=packages/renderer` + root `npm prune` to sync. `npm ls framer-motion --workspace=packages/renderer` now shows it resolving only transitively, via `motion`'s own dependency — no direct declaration.
+- **Real regression caught and fixed during verification (this is the point of running the full suite, not just typecheck):** `modules/boardroom/BoardroomModule.test.tsx`'s `vi.mock` (after step 2's mechanical rename) started intercepting `motion/react` for *every* component in that test's render tree — including `components/motion-primitives/text-effect.tsx`'s `TextEffect`, which was already importing from `motion/react` before this migration and wasn't previously caught by this mock (different target module). The hand-written mock only stubbed `motion.div`/`motion.button`; `TextEffect` needs `motion.p` (its default tag), which resolved to `undefined` and crashed 3 tests with "Element type is invalid." **Fixed at the root**, not papered over: replaced the mock's fixed object with a `Proxy` that resolves any HTML tag to a generic `forwardRef` stub, matching how the real `motion` object behaves — so it's correct for every tag, not just the ones a prior author happened to enumerate.
+- **Verification:**
+  - `npm run typecheck --workspace=packages/renderer` → clean.
+  - `npm run test --workspace=packages/renderer -- --run` → first run: **3 failed** (the regression above, in `BoardroomModule.test.tsx`), all 3 traced to root cause and fixed. Re-run: **4312 passed, 47 skipped, 0 failed** (711/732 test files passed, 21 intentionally skipped) — identical pass count to the pre-migration baseline.
+  - `npm run build:studio` → succeeded. **Bundle evidence of the actual fix:** the `vendor-motion` chunk dropped from **472.33 kB to 286.54 kB** (pre- vs post-migration build output) — the duplicate-engine bloat this issue described is now measurably gone, not just theoretically removed.
+- **Not committed yet** — sitting in the working tree pending user go-ahead to commit/push (this repo's `main`-only delivery lane requires a clean, coherent commit; a concurrent agent's unrelated WIP is also present in the tree and must not be mixed into this commit).
 
 ### ISSUE-1199: Two list-virtualization libraries for the same purpose
 
@@ -2076,6 +2082,19 @@ Listed only so they are not lost. No assessment is implied.
 - **Evidence:** `classnames` had 0 usages in `src` while `clsx` (5 usages) covers the same job. `xml2js` had 0 usages while `fast-xml-parser` (2 usages) covers XML parsing.
 - **Fix applied:** Removed both entries from `packages/renderer/package.json`. `npm install` + root `npm prune` removed 3 packages from `node_modules` (their own transitive deps included) and confirmed `classnames`/`xml2js` are no longer present at all (not even transitively) — clean `npm ls classnames xml2js --workspace=packages/renderer` returns empty.
 - **Verification:** Same combined run as ISSUE-1200 — typecheck clean, full unit suite green (4312 passed / 0 failed), production build succeeded. Fixed together with ISSUE-1200 as one dependency-cleanup change since both are simple `package.json` deletions verified by the same test/build pass.
+
+### ISSUE-1211: Adopted from a concurrent agent's (Antigravity/Gemini) Phase-2 walkthrough — 3 dead renderer deps + 2 lazy-loaded heavy libs, independently re-verified before landing
+
+- **Status:** ✅ FIXED (2026-07-22)
+- **Severity:** 🟢 P2 (cleanup + code-splitting, not a live bug)
+- **Module:** `packages/renderer/package.json`, `packages/renderer/src/services/utils/PDFService.ts`, `packages/renderer/src/services/intelligence/OCRService.ts`
+- **Context:** The user pointed at a walkthrough written by a concurrent agent (Antigravity/Gemini) that had done its own dependency-pruning pass on this same repo, sitting uncommitted in the tree that ISSUE-1198 had already found and stashed (`git stash` entry: "concurrent-agent WIP: package.json dep drift fix + AppShell/store/OCR/PDF changes"). Cross-checked every claim in that walkthrough against actual repo state before adopting anything — do not take a walkthrough's self-reported "0 errors" at face value; see ISSUE-1198's correction history for why `tsc`/`eslint` alone cannot catch a `package.json`/`node_modules` drift bug.
+- **Claims verified TRUE and adopted:**
+  - `express`, `resend`, `@electron/rebuild` were declared as direct `packages/renderer` dependencies with 0 source usages (`grep` confirmed) and are architecturally out of place in a browser-bundled package to begin with — `express`/`resend` are properly declared and used in `packages/main`/`packages/firebase` where they belong; `@electron/rebuild` is a native-module rebuild CLI, not a runtime dependency of a Vite-bundled app. Removed all three from `packages/renderer/package.json`.
+  - `PDFService.ts`'s top-level `import * as pdfjsLib from 'pdfjs-dist'` and `OCRService.ts`'s top-level `import { createWorker } from 'tesseract.js'` were converted to `await import(...)` inside the functions that use them, deferring two heavy libraries (`pdfjs-dist` ~786KB, `tesseract.js`) out of the eager bundle to first actual use (PDF text extraction / OCR scan).
+- **Claim found FALSE and rejected — this is the one that mattered:** the walkthrough reported removing `motion` and "retaining `@framer-motion`" [sic — the real package is unscoped `framer-motion`] as the fix for the duplicate-animation-library issue (this ledger's ISSUE-1198). Checked and rejected for two reasons: (1) it kept the **minority**-usage package (69 files) over the majority (176 files), meaning more eventual migration work for no stated reason; (2) critically, **it never migrated the 176 `motion/react` call sites** before removing `motion` from `package.json` — the walkthrough's own verification (`tsc` + `eslint`, "0 errors") could not have caught this, because TypeScript resolves types from whatever is physically in `node_modules` regardless of `package.json` declaration, so the break is invisible until an actual clean install / `npm prune` / CI cache miss. ISSUE-1198 was instead fixed the other direction (kept `motion`, migrated `framer-motion`'s 69 call sites) and verified with `npm prune` + full build, not typecheck alone.
+- **Fix applied:** package.json edits as above; `npm install --workspace=packages/renderer` + root `npm prune` to sync. Confirmed via `npm ls express resend @electron/rebuild --workspace=packages/renderer`: `resend`/`@electron/rebuild` fully gone, `express` resolves only as a legitimate transitive dependency of `@modelcontextprotocol/sdk`/`@remotion/cloudrun`/`inngest` (all real renderer deps that need it themselves) — not a direct declaration.
+- **Verification:** `npm run typecheck --workspace=packages/renderer` → clean. `npm run test --workspace=packages/renderer -- --run` → 4312 passed / 0 failed (unchanged from pre-change baseline). `npm run build:studio` → succeeded, `vendor-pdfjs` chunk still separately named (787.52 kB) as before — chunk naming via `manualChunks` doesn't force eager loading, the dynamic `import()` still defers the actual fetch to first use.
 
 ### ISSUE-1202: `chunkSizeWarningLimit` set unusually high (2.5MB), can mask real bloat
 
@@ -2199,7 +2218,45 @@ Listed only so they are not lost. No assessment is implied.
   a sizing question needing a real large fixture, and it belongs with the rest of step 2.
 - **Depends on:** Nothing. This was the first blocker in front of step 2's stated content.
 
-### ISSUE-1211: `packages/firebase` test files are excluded from typecheck, so test doubles can silently drift from the interfaces they claim to implement
+### ISSUE-1212: `packages/firebase` test files are excluded from typecheck, so test doubles can silently drift from the interfaces they claim to implement
+
+> Renumbered from ISSUE-1211 to ISSUE-1212 (2026-07-22) — that ID collided with an unrelated entry
+> ("Adopted from a concurrent agent's Phase-2 walkthrough") added independently earlier in this same
+> file. Content below is unchanged; only the ID moved, per this repo's ledger-integrity protocol
+> (duplicate identifiers must be reconciled before further issue work, per `skill-skill.md` §1).
+
+- **Progress (2026-07-22): 🟡 PARTIAL — the check now exists and is runnable; it is NOT yet a gate.**
+  - Added `packages/firebase/tsconfig.test.json` (`noEmit`, `exclude: []`) and the
+    `npm run typecheck:firebase-tests` script. `tsc --listFiles` now covers **131** test files where
+    the emit config covered **0**.
+  - It targets `es2022`/`lib ES2022` rather than inheriting the emit config's `es2017`. Tests run
+    under vitest on Node 24 and pull in `packages/shared` (built at ES2022); checking them at es2017
+    reported real library methods (`Array.prototype.at`) as missing. Four of the original 66 errors
+    were that artefact and are not real.
+  - **Deliberately NOT wired into `npm run typecheck`.** A gate that fails is not a gate — adding it
+    to the blocking chain would turn CI red on a pre-existing backlog. `npm run typecheck` is
+    unchanged and still passes (verified: exit 0, and CI run 29967948819 green 25/25).
+- **Measured baseline — 62 errors, and this number is the point of the entry:**
+  | Code | Count | Shape |
+  |---|---|---|
+  | TS2339 | 23 | property missing on a narrowly-inferred mock literal |
+  | TS2769 | 11 | `doc()` overloads — rules-unit-testing's `Firestore` vs the client SDK's |
+  | TS18046 | 11 | value is `unknown` (unparameterised mock return) |
+  | TS2345 | 9 | argument shape mismatch against the real collaborator |
+  | other | 8 | TS2741 / TS2349 / TS2493 / TS2352 / TS2322 / TS18048 |
+  - Spread across **21 test files**. **Zero are in product code** — verified by filtering the error
+    list for non-test paths, which returns nothing.
+  - Two that looked like genuine contract drift were investigated individually and are **not** bugs:
+    `_bigQuerySynced` does exist in product code (`functions/analytics/bigquery-pipeline.ts:154`) —
+    the test builds a narrow local literal; and the `facebookPageName` fixture is simply incomplete
+    against its real type, which is the drift this entry exists to surface, not a defect.
+- **Remaining work to close:** burn down the 62, then move `typecheck:firebase-tests` into the
+  blocking `typecheck` chain. That is the acceptance criterion — until the script is in the chain,
+  nothing prevents new drift, it is only *visible*.
+- **Do not:** do not close these by casting to `any` or loosening assertions. Several are the
+  compiler correctly reporting that a fixture no longer matches the collaborator it stands in for —
+  which is exactly the failure (`markFailed`, ISSUE-1210) that motivated this entry. Fixing the
+  symptom would reinstate the blindness.
 
 - **Status:** 🔴 OPEN
 - **Severity:** 🟡 MEDIUM (no runtime impact; it removes the compiler as a check on exactly the fixtures that stand in for production collaborators)
@@ -2221,3 +2278,24 @@ Listed only so they are not lost. No assessment is implied.
   point, not a reason to defer.
 
 ---
+
+### ISSUE-1213: Built `scripts/check-dependency-integrity.cjs` — the tool that would have caught the ISSUE-1198 `motion` bug before it happened; surfaced 15 real (unrelated) findings on first run
+
+- **Status:** ✅ FIXED (tool built, one real bug in the tool itself found and fixed, and all genuine findings resolved — 2026-07-22)
+- **Severity:** 🟡 P1 (tooling gap that let ISSUE-1198 happen undetected)
+- **Module:** `scripts/check-dependency-integrity.cjs` (new), `package.json` (`check:dep-integrity` script added)
+- **Why this was built:** The user asked for the "dependency-integrity check we discussed" after ISSUE-1198 — a `motion` package used by 176 files but not declared in `packages/renderer/package.json`, invisible to `typecheck`/`lint` because both read straight from `node_modules` regardless of manifest declarations. The existing `scripts/check-dep-version-drift.cjs` walks FROM `package.json` outward (declared range vs. installed version) and structurally cannot catch this — it never looks at source code, so a package that's used but never declared anywhere is invisible to it too. This new script walks the other direction: FROM source code inward, scanning real `import`/`require`/dynamic-`import()` statements per workspace and flagging any package used but not declared in that workspace's own `package.json` **or** the root `package.json` (root-hoisted shared devDependencies like `vitest`/`typescript` are legitimate under npm workspaces, not a violation — the check had to model that correctly or it would cry wolf on every workspace and be useless).
+- **Build process, including two real bugs caught before shipping it:**
+  1. First regex draft matched `(?:import|export)` optionally followed by `from`, then any later quoted string — with no bound on how far apart they could be. Result: it treated bare `export interface Foo {`/`export const x =` declarations as import statements and paired them with unrelated string literals dozens of lines later in the same file, producing ~60 garbage findings (fragments of JSX, toast messages, object keys) mixed in with the 15 real ones.
+  2. Fixed by splitting into four narrowly-scoped patterns (dynamic `import(...)`, side-effect `import '...'`, `import/export ... from '...'` bounded to not cross a `;`, and `require(...)`) — each one can only match a single logical import statement, not sprawl across the file.
+  3. Second bug: the first design only checked each workspace's own `package.json`, so it flagged `vitest`, `zod`, `electron`, `dotenv`, `jspdf` etc. across `packages/main`/`packages/shared` even though they're legitimately declared once at the monorepo root and hoisted — normal npm-workspaces behavior, not a bug. Fixed by also checking the root `package.json` before flagging, and by reading `tsconfig.json`'s `compilerOptions.paths` at runtime (`@/*`, `@agents/*`, `@shared/*`, `@indii/shared`) to correctly skip path aliases instead of hardcoding them, so the alias list can't silently drift out of sync with the real tsconfig.
+- **Verification the tool actually works, not just that it runs:** Simulated the exact ISSUE-1198 scenario — temporarily removed `motion` from `packages/renderer/package.json`, ran the checker, confirmed it correctly flagged `motion` with real call-site examples, then restored the file and confirmed via `git diff`/direct read that the restore was exact (no accidental formatting drift, no lost changes).
+- **Third bug, found on the very first real run and fixed before trusting any of its output:** the checker didn't strip comments before scanning, so a stale `// import Link from 'next/link';` comment in `packages/landing/src/components/ui/DigitalBillboard.tsx` (dead code, not real usage) was reported as a live `next` dependency violation — a false positive in the tool itself, caught by manually reading the flagged line before acting on it rather than trusting the output blindly. Fixed by adding a `stripComments()` pass (removes `//` and `/* */` comments while leaving string/template-literal *contents* untouched, so a URL like `"http://x"` inside a real string isn't mistaken for a comment) before the import-extraction regexes run. Re-run after the fix: 15 findings → 14 (the `next` false positive gone, all 14 remaining independently spot-checked as real).
+- **The 14 real findings, all fixed:**
+  - `packages/main`: added `@remotion/renderer` (4.0.484, used in `ElectronRenderService.ts`) and `zod` (3.25.76, used across `src/handlers/*`) to `dependencies` — both production code paths.
+  - `packages/renderer`: added `@firebase/rules-unit-testing` (^5.0.0) and `@google/genai` (^2.12.0) to `devDependencies` (both test-only usage); added `@storybook/react` (^10.4.1) to `devDependencies` (Storybook-only); added all six `workbox-*` packages (7.4.1 each — `workbox-cacheable-response`, `workbox-core`, `workbox-expiration`, `workbox-precaching`, `workbox-routing`, `workbox-strategies`) to `dependencies` since `service-worker.ts` is real production code that ships to users, previously resolving only transitively via `vite-plugin-pwa` — the same fragility class as ISSUE-1198.
+  - `packages/firebase`: added `firebase` (12.14.0, the client SDK, used only in `src/test/security/*.rules.test.ts` to simulate client calls against the emulator — a standard rules-testing pattern) to `devDependencies`.
+  - `packages/shared`: added `zod` (3.25.76) to a newly-created `dependencies` block (the package previously had none) — used throughout `src/schemas/*`.
+  - `packages/landing`: added `zustand` (5.0.8, used in `store/audioStore.ts`) to `dependencies`. Did **not** add `next` — confirmed it was a stale commented-out import (`// import Link from 'next/link';`), correctly not a real dependency; `packages/landing` is Vite-based, not Next.js, per this repo's own tech-stack docs, so a live `next` import would have been architecturally suspicious on top of everything else.
+- **Verification after all 14 fixes:** `npm install` (root, to sync all five touched `package.json`/the one lockfile) → `npm run check:dep-integrity` clean. `npm run typecheck` (shared/main/renderer/firebase) clean; `packages/landing`'s own `tsc --noEmit` clean. Full monorepo test suite: **5219 passed, 0 failed, 52 skipped** (857 test files, 834 passed). Three production builds (`build:studio`, `build:firebase`, `build:landing`) all succeeded. `npm run lint`: **0 errors, 114 warnings** — identical warning count to the known pre-existing baseline, confirming no regression.
+- **Usage:** `npm run check:dep-integrity`. Not wired into the `validate` pre-push chain — matching the existing sibling `check:dep-drift`, which is also standalone rather than part of `validate`; wiring either into the mandatory gate is a separate, more consequential decision this issue didn't make unilaterally.

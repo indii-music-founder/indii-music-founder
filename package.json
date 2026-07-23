@@ -38,6 +38,7 @@
     "lint:fix": "eslint packages/main/src packages/renderer/src packages/shared/src packages/firebase/src packages/landing/src packages/sdk/src --fix",
     "lint:renderer": "eslint packages/renderer/src",
     "lint:main": "eslint packages/main/src",
+    "typecheck:firebase-tests": "tsc -p packages/firebase/tsconfig.test.json",
     "typecheck:renderer": "tsc -b packages/renderer",
     "typecheck:main": "tsc -b packages/main",
     "test": "vitest",
