@@ -2122,11 +2122,12 @@ Listed only so they are not lost. No assessment is implied.
 
 ### ISSUE-1205: `CRMDashboard.tsx` subscribes to the entire root store with no selector
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (found already resolved during /hunter Phase 2, 2026-07-22 — fixed by a different concurrent agent between the original audit and this check, not by this session)
 - **Severity:** 🟠 P0 (worst re-render offender found)
-- **Module:** `packages/renderer/src/modules/crm/CRMDashboard.tsx:26`
-- **Evidence:** `const { crm, subscribeToCampaigns, createCampaign, deleteCampaign } = useStore();` — no selector, no `useShallow`. Any state change anywhere in the app (chat, workflow nodes, auth, etc.) re-renders this dashboard. Compounds with `CRMDashboard.tsx:283`'s inline `new Date(...)` per row inside the JSX map.
-- **Fix (not yet applied):** Selector + `useShallow`, matching the convention already used correctly in `App.tsx`/`AppShell.tsx`/`Sidebar.tsx`/`WorkflowEditor.tsx`.
+- **Module:** `packages/renderer/src/modules/crm/CRMDashboard.tsx:23-34`
+- **Evidence (original):** `const { crm, subscribeToCampaigns, createCampaign, deleteCampaign } = useStore();` — no selector, no `useShallow`. Any state change anywhere in the app (chat, workflow nodes, auth, etc.) re-renders this dashboard.
+- **Verified fix in place:** `useStore(useShallow((state) => ({ crm: state.crm, subscribeToCampaigns: ..., createCampaign: ..., deleteCampaign: ... })))` — the code comment on line 26 literally references "(ISSUE-1205)", confirming whoever fixed it cross-referenced this exact ledger entry.
+- **Not fully resolved — downgraded, not re-opened:** the compounding `new Date(...)` per row at line 291 (inside the campaigns list JSX map) is still present. On its own this is minor (cheap inline formatting, no longer amplified by the fixed parent re-render issue) — not worth a separate ticket, but noted here since the original entry named it explicitly. It also uses `.toLocaleDateString(undefined, ...)` (no explicit locale) — will be folded into this hunt's locale-sweep finding (Phase 2.5) instead of tracked as its own ticket.
 
 ### ISSUE-1206: Video editor store call sites inconsistently use whole-store destructuring without `useShallow`
 
