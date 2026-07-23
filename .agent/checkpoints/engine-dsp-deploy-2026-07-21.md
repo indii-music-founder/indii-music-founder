@@ -11,7 +11,29 @@ nowhere but that tree. Landed it. Verified before commit: typecheck 0 errors,
 lint 0 errors, dep-drift clean, dependency-integrity clean, 5219/5219 unit tests,
 production build green emitting a single `vendor-motion` chunk (286.54 kB).
 
-### Thread 2 — engine-dsp step 6 ⏸ BLOCKED ON AUTH
+### Thread 2 — engine-dsp ✅ COMPLETE (`99c56f0e0`) — ISSUE-1183 + ISSUE-1170 both FIXED
+Step 6 passed live. WAV: cold `/profile` 200 in 95 s → receipt complete with a
+real Gemini profile and real DSP numbers (`tempoBpm=117.45` on a synthetic 120
+BPM track); identical retry 200 in **1 s** with `completedAt` byte-identical →
+cached receipt, no second Gemini charge. FLAC: enqueued through the **real**
+`dsp-processing-queue` (proves Cloud Tasks OIDC), receipt complete,
+`container/codec=flac`, `tempoBpm=89.10` on a synthetic 90 BPM track — different
+measurements and different Gemini genres per file, which is what proves each is
+genuinely analyzed. Both masters re-read after analysis: generation + size
+unchanged, nothing copied or mutated. Service verified at `2Gi`, least-privilege
+SAs, invoker restricted to the task identity.
+
+**Not over-claimed:** the "owner-readable receipt" clause stays emulator-proven
+(140/140), not production-proven — the synthetic owner `dsp-e2e-verification`
+has no Firebase Auth user to mint a token for.
+
+**ADC gotcha (cost time):** `gcloud auth login` does NOT refresh Application
+Default Credentials, which is what the Python client libraries use. Either run
+`gcloud auth application-default login`, or drive it through `gcloud storage` +
+the Firestore REST API with `gcloud auth print-access-token` (what the passing
+proof does — `dsp_e2e_proof.sh` / `dsp_flac_tasks_proof.sh`).
+
+### Thread 2 (historical) — was blocked on auth
 Infra is live and verified (`/health` 200, rev `engine-dsp-00002-m5b`). The live
 WAV→receipt proof could not run: `gcloud` auth expired mid-session.
 
@@ -43,8 +65,11 @@ finalizer runs under Eventarc `retry: true` and a naive enqueue would
 double-transcode and double-charge.
 
 ## NEXT SESSION — pick up here
-1. `gcloud auth login` → run the engine-dsp step-6 proof → close ISSUE-1183,
-   which unblocks ISSUE-1170 → ISSUE-1152.
+1. **ISSUE-1152 — now the front of the engine-dsp chain, and unblocked.** Wire
+   browser receipt hydration: read `audio_analysis_receipts/{receiptId}` where
+   `receiptId = 'audio_' + sha256('ownerId\0contentHash\0generation').slice(0,48)`.
+   The Firestore rule already lets a client read only its own receipts, so no new
+   endpoint is needed. Two real receipts exist to develop against (ISSUE-1170).
 2. **Repair-order step 3:** build the proxy worker (H.264/AAC 720p CFR Rec.709,
    orientation baked in, PTS mapping, guide audio, waveform, thumbnails) as a
    Cloud Run service + `session-proxy-queue`. The dispatcher already expects:
