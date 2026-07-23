@@ -1,3 +1,15 @@
+## 2026-07-23 Adding `composite: true` to a tsconfig Without an Explicit `rootDir` Silently Moves Emit Output
+
+**SEVERITY:** High (broke the production Cloud Functions deploy; CI's `deploy-production` job failed on `Deploy Cloud Functions`)
+
+**MISTAKE:** A prior commit (`d1eea8cb5`) added `"composite": true` to `packages/firebase/tsconfig.json` (to satisfy the root `tsconfig.json`'s new project reference to `packages/firebase`) without also pinning `rootDir`. `include: ["src"]` alone had been enough for `tsc` to infer `rootDir` as `src/` and emit flat under `outDir: "lib"` (i.e. `lib/index.js`) — that was true before `composite: true`, and stopped being true after. With `composite: true`, the same config now emits nested under `lib/src/index.js` instead. `tsc` still exits 0 — nothing about the compile itself fails — so this was invisible to `npm run typecheck` and to `git push`, and was only caught in CI by the deploy script's own explicit guard: `if [ ! -f packages/firebase/lib/index.js ]; then exit 1; fi`.
+
+**ROOT CAUSE:** `composite` mode changes how strictly TypeScript computes the implied `rootDir` from the `include` glob, and the change is not diagnosed as an error — it silently repaths every emitted file. This is a second, distinct time this exact package's rootDir has broken deploy output: an EARLIER commit (`afca134de`) had set `rootDir: "."`, which was **reverted** (`7f5640242`, 2026-06-27) as "rogue" without anyone establishing the actually-correct value (`rootDir: "src"`) at that time — leaving the config to work only by accident, on inference, until the next compiler-option change (`composite: true`) disturbed that inference again.
+
+**FIX:** Explicitly set `"rootDir": "src"` in `packages/firebase/tsconfig.json`. Reproduced locally first (`rm -rf packages/firebase/lib && npm run build -w packages/firebase` → confirmed `lib/index.js` was genuinely absent, `find lib -name index.js` showed it landing at `lib/src/index.js`), then confirmed the fix restores the flat path and survives a second incremental build (composite mode's `.tsbuildinfo` cache) without regressing.
+
+**PREVENTION:** Any package whose deploy or packaging step depends on a *specific* emit path (not just "did `tsc` exit 0") must pin `rootDir` explicitly rather than rely on `include`-glob inference — inference can and does change silently across otherwise-unrelated compiler-option edits. When a tsconfig in such a package changes `composite`, `references`, `rootDir`, `outDir`, or `include`, reproduce the actual downstream consumer's exact check locally (here: `rm -rf lib && npm run build -w <pkg> && ls lib/index.js`) before pushing — `tsc`'s own exit code is not sufficient proof the output landed where a deploy script expects it.
+
 ## 2026-07-22 `git add <file>` in a Shared Worktree Silently Absorbs Another Agent's Uncommitted Work
 
 **SEVERITY:** Medium (no bad code shipped this time — but the commit record is now wrong, and on main it cannot be corrected without a history rewrite, which branch-safety forbids)
