@@ -839,7 +839,8 @@
 ### ISSUE-1152: Browser Audio QC base64-encodes and sends the full master twice in parallel with no size/duration limit
 
 - **Re-ticketed from:** ISSUE-962 (2026-07-21 housecleaning; original status was: `PARTIAL (2026-07-17) — browser raw-master Gemini uploads are now prohibited; protected server-receipt retrieval remains to be wired into browser UI`)
-- **Status:** PARTIAL (2026-07-17) — browser raw-master Gemini uploads are now prohibited; protected server-receipt retrieval remains to be wired into browser UI
+- **Status:** 🟡 PARTIAL — **NO LONGER BLOCKED (2026-07-23).** Browser raw-master Gemini uploads are prohibited; protected server-receipt retrieval still needs wiring into the browser UI — but the thing it had nothing to hydrate *against* now exists.
+- **Unblocked (2026-07-23):** ISSUE-1183 and ISSUE-1170 are both ✅ FIXED — `engine-dsp` is live and real receipts now persist at `audio_analysis_receipts/{receiptId}`, where `receiptId = 'audio_' + sha256(`ownerId\0contentHash\0generation`).slice(0,48)`. Two real receipts exist to develop against (see ISSUE-1170's evidence). The Firestore rule already permits a client to read only receipts whose `userId` equals their UID, so the browser can read its own receipt directly without a new endpoint. **This is now the front of the engine-dsp chain** — the remaining work is purely the browser-side hydration UI.
 - **Severity:** 🔴 CRITICAL (browser crash / provider-limit failure / excess cost)
 - **Module:** Audio Analyzer / Semantic and emotional analysis
 - **Evidence:** The UI has no file size or duration gate before analysis (`AudioAnalyzer.tsx:120-143`). In browser mode, semantic analysis reads the entire lossless master into a base64 string and sends it inline (`AudioIntelligenceService.ts:229-273`, `:315-329`). At the same time, `energyMapService.mapEmotionalArc(file, ...)` independently reads the same complete file into another base64 string and sends another model request (`AudioIntelligenceService.ts:137-169`; `EnergyMapService.ts:74-80`, `:130-144`, `:158-170`). The comment assumes “typical masters (5–10 MB),” but uncompressed production WAV/AIFF files can be far larger; no request-size/cost budget or cancellation exists.
@@ -1117,9 +1118,22 @@
 
 ### ISSUE-1170: engine-dsp ignored the verified master contract, loaded whole files into memory, and never called Gemini or persisted provenance
 - **Re-ticketed from:** ISSUE-1084 (2026-07-21 housecleaning; original status was: `🟡 PARTIAL (2026-07-17 — code/container/rules proof complete; private Cloud Run deployment and live receipt pending)`)
-- **Status:** 🟡 PARTIAL (2026-07-17 — code/container/rules proof complete; private Cloud Run deployment and live receipt pending)
+- **Status:** ✅ FIXED (2026-07-23) — residual acceptance discharged item-by-item against live production infrastructure; raw evidence below
 - **Severity:** 🔴 CRITICAL
 - **Module:** `packages/engine-dsp` / canonical master intelligence / Vertex Gemini / Firestore provenance
+- **Residual acceptance discharged (2026-07-23) — each clause of the acceptance line below, checked individually rather than declared in bulk:**
+  - *Private Cloud Run, ≥2 GiB* — `engine-dsp` rev `engine-dsp-00002-m5b`, memory `2Gi`, no public access.
+  - *Env vars* — `GOOGLE_CLOUD_PROJECT`, `MASTER_AUDIO_BUCKET=indii-music-founder.firebasestorage.app`, `VERTEX_LOCATION=global` set. `GEMINI_AUDIO_MODEL` is intentionally unset; ISSUE-1183 recorded "default acceptable" and the receipts confirm the code default `gemini-3-flash-preview` is what actually ran.
+  - *Least-privilege runtime SA* — `engine-dsp-runtime@…`: `storage.objectViewer` (scoped to the master bucket), `datastore.user`, `aiplatform.user`.
+  - *Only the task identity may invoke* — `roles/run.invoker` granted solely to `engine-dsp-invoker@…`.
+  - *Real canonical WAV* — 8.00 s stereo/48 kHz/PCM_16. Receipt `audio_fc9d568e…` complete; `technical` matched the uploaded bytes exactly; `tempoBpm=117.4538` on a synthetic 120 BPM track.
+  - *Real canonical FLAC* — 8.00 s stereo/48 kHz/PCM_16 FLAC, `sizeBytes=431016`. Receipt `audio_7812dd5f…` complete, `container=flac`, `codec=flac`, `tempoBpm=89.1029` on a synthetic 90 BPM track. **The two runs produce different measurements and different Gemini classifications (Indie Pop vs Tech House), which is the evidence that each file is genuinely analyzed rather than returning a canned profile.**
+  - *Cloud Tasks OIDC is accepted* — the FLAC run was enqueued through the **real** `dsp-processing-queue` via `gcloud tasks create-http-task` with `--oidc-service-account-email`/`--oidc-token-audience`; the task was delivered and the receipt reached `complete` ~13 s later. (The WAV run called `/profile` directly, which does **not** exercise the queue — hence this second run.)
+  - *DSP and Gemini analyze the same hash/generation* — both profiles are stored on the one receipt keyed by owner+hash+generation.
+  - *Retry returns the same receipt without a second model call* — identical WAV request replayed: HTTP 200 in 1 s (vs 95 s cold) with `completedAt` byte-identical at `2026-07-23T14:04:36.569238Z`.
+  - *No master object is copied or mutated* — post-analysis `generation`/`size` re-read for both objects and unchanged (`1784815374882889`/1536044 and `1784815631509920`/431016).
+- **One clause NOT re-proven live, stated plainly:** "owner-**readable** receipt". The Firestore rule (client may read only where `userId` == their UID; all client writes denied) was proven in the emulator suite at 140/140, but was not re-exercised against production here because the verification owner `dsp-e2e-verification` is a synthetic identifier with no Firebase Auth user to mint a token for. The rule itself is deployed; only the live client-side read path is emulator-proven rather than production-proven.
+- **Observation, not a defect:** Gemini's FLAC summary mentions "processed vocal snippets" for a purely synthetic, vocal-free tone bed — normal model over-description. It does not affect the provenance/idempotency guarantees this ticket is about, but it is a reminder that `geminiProfile` is a descriptive aid, not ground truth.
 - **Evidence:** The worker accepted the obsolete `{filePath, masterAssetId}` request rather than the server-verified bucket/path/fingerprint/hash/generation/owner tuple. It trusted a hard-coded bucket, checked only 12 WAV magic bytes, then downloaded the entire object into memory. It accepted no FLAC, did not re-hash bytes or pin a Storage generation, returned two transient librosa numbers, had no Gemini call, no idempotency, no Firestore receipt, and retained a fake `/render` response. No renderer path called the newly exported profiling callable, so upload-once ingestion still ended after a separate verification call.
 - **Impact:** The secured Firebase entrance and the worker could not communicate. Even if manually adapted, a replaced object could be analyzed under the wrong identity, large masters could exhaust memory, Cloud Tasks retries could repeat paid analysis, Gemini and downstream marketing/video consumers received nothing durable, and the claimed upload-once provenance chain ended at an HTTP response.
 - **Fix:** The upload-once `MasterAudioService` now calls `processAudioIngestion` as its single server boundary instead of streaming the same master through a separate verifier first; it does not report ingestion success unless the queued identity matches the local hash/fingerprint and includes a Storage generation. The task carries the Firebase default Storage bucket in addition to that verified tuple. The Python worker strictly rejects legacy/extra fields and cross-owner paths; allows only the configured canonical bucket and WAV/FLAC objects; uses current-generation preconditions before download and after model analysis; rechecks owner/hash/fingerprint/immutable metadata, size, SHA-256 bytes, container, codec, sample rate, bit depth, stereo layout, frames, and duration. SoundFile processes blocks for peak/RMS/clipping/zero-crossing/transient measurements; librosa runs bounded tempo analysis. The supported `google-genai` SDK sends Vertex AI the authenticated `gs://` reference (no base64 duplicate) with a bounded structured schema that explicitly forbids legal-rights inference. Firestore transactions lease an owner+hash+generation receipt, replay completed work to prevent duplicate Gemini charges, and reject stale workers. The old fake render endpoint is removed. The container runs as UID 10001 with one worker and only the required libsndfile OS dependency.
@@ -1339,7 +1353,16 @@
 
 ### ISSUE-1183: engine-dsp Cloud Run deployment — infrastructure creation gated on explicit founder go-ahead
 
-- **Status:** 🟡 PARTIAL — founder authorized (2026-07-21); infra live (steps 1–5 done, service reachable & authed); step 6 live end-to-end WAV→receipt proof still pending
+- **Status:** ✅ FIXED (2026-07-23) — all six steps complete; live end-to-end proof passed against real production infrastructure (raw output below)
+- **Step 6 live proof (2026-07-23, real GCP, real Gemini call):**
+  - Uploaded a synthetic stereo/48 kHz/PCM_16 8.00 s master (synthesized tones only — no third-party recording) to `gs://indii-music-founder.firebasestorage.app/masters/dsp-e2e-verification/aef3e09b…/original.wav` with the full metadata contract (`ownerId`, `contentHash`, `masterFingerprint`, `immutable=true`), generation `1784815374882889`.
+  - **Cold `/profile`: HTTP 200 in 95 s.** Receipt landed at `audio_analysis_receipts/audio_fc9d568e488e94220808b67332d15cf75a64292150581f89`, `status=complete`, `engineVersion=2026-07-17.1`, `geminiModel=gemini-3-flash-preview`.
+  - `technical` = `{container: wav, codec: pcm_16, sampleRate: 48000, bitDepth: 16, channels: 2, frames: 384000, durationSeconds: 8, sizeBytes: 1536044}` — matches the uploaded bytes exactly.
+  - `openSourceProfile` = real measurements, not stubs: `tempoBpm=117.4538` (librosa beat-tracking a synthetic 120 BPM track), `rmsDbfs=-14.1848`, `peakLinear=0.92593384`.
+  - `geminiProfile` genuinely describes the synthesized audio: instrumentation `[Electronic Drums, Kick Drum, Hi-hats, Synthesizer Bass, Percussion]`, summary "…driving 4/4 beat, sharp percussion, and a rhythmic synth bassline…" — i.e. Gemini actually analyzed the master rather than returning boilerplate.
+  - **Retry of the identical request: HTTP 200 in 1 s, `completedAt` byte-identical (`2026-07-23T14:04:36.569238Z`) across both calls** — the cached receipt was served and no second Gemini call was billed. 95 s → 1 s.
+- **Verification artefacts left in place deliberately** (auditable, and cheap): the test object above and its receipt are under the clearly-labelled synthetic owner `dsp-e2e-verification`, so they never collide with a real artist UID and can be deleted whenever desired.
+- **Gotcha worth keeping:** the Python client libraries use Application Default Credentials, which is a *separate* credential from the `gcloud` CLI login — `gcloud auth login` does not refresh it (`gcloud auth application-default login` does). The proof was therefore driven through `gcloud storage` + the Firestore REST API instead.
 - **Severity:** 🔴 CRITICAL (blocks ISSUE-1170 completion and ISSUE-1152's browser-receipt-hydration remainder)
 - **Module:** `packages/engine-dsp` / Cloud Run / IAM
 - **Deployment evidence (2026-07-21):**
@@ -2103,19 +2126,17 @@ Listed only so they are not lost. No assessment is implied.
 
 ### ISSUE-1202: `chunkSizeWarningLimit` set unusually high (2.5MB), can mask real bloat
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (found already resolved 2026-07-23 while compiling a work list — fixed by a different concurrent agent, commit `d534bb548` "perf(renderer): fix re-render anti-patterns, lazy-load auth/legal, lower chunk warning threshold", not by this session)
 - **Severity:** 🟢 P2
-- **Module:** `packages/renderer/vite.config.ts:209-251`, `electron.vite.config.ts:251-306`
-- **Evidence:** `chunkSizeWarningLimit: 2500` in both configs — a genuinely oversized chunk would silently pass Vite's build warning.
-- **Fix (not yet applied):** Lower to a realistic threshold (e.g. 800–1000) and address whatever it flags.
+- **Module:** `packages/renderer/vite.config.ts:187`, `electron.vite.config.ts:220`
+- **Verified fix in place:** both now set `chunkSizeWarningLimit: 1000`; `vite.config.ts` even carries an inline `// ISSUE-1202:` comment cross-referencing this exact entry.
 
 ### ISSUE-1203: `LoginForm` and `LegalPages` eagerly imported into initial bundle
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (found already resolved 2026-07-23 while compiling a work list — same commit `d534bb548` as ISSUE-1202, not by this session)
 - **Severity:** 🟢 P2
-- **Module:** `packages/renderer/src/core/App.tsx:9-10`
-- **Evidence:** Both are eager imports rather than `React.lazy()`, unlike the rest of `App.tsx`/`AppShell.tsx` which correctly lazy-loads ~45 feature modules via `lazyWithRetry`.
-- **Fix (not yet applied):** Lazy-load both to shrink the pre-auth critical path.
+- **Module:** `packages/renderer/src/core/App.tsx:10-12`
+- **Verified fix in place:** both are now `lazy(() => import(...))` (`LoginFormLazy`, `PrivacyPolicy`, `TermsOfService`), matching the rest of the app's lazy-loading convention.
 
 ### ISSUE-1204: Barrel files with `export *` risk defeating tree-shaking
 
@@ -2136,12 +2157,10 @@ Listed only so they are not lost. No assessment is implied.
 
 ### ISSUE-1206: Video editor store call sites inconsistently use whole-store destructuring without `useShallow`
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (found already resolved 2026-07-23 while compiling a work list — likely the same commit `d534bb548` as ISSUE-1202/1203, not by this session)
 - **Severity:** 🟡 P1
-- **Module:** `packages/renderer/src/modules/creative/video/components/ZoomableTimeline.tsx:21`, `packages/renderer/src/modules/creative/video/editor/components/VideoTimeline.tsx:30`, `packages/renderer/src/modules/creative/video/editor/VideoPopout.tsx:11`
-- **Evidence:** All three call `useVideoEditorStore()` with no selector, destructuring multiple fields (including the large nested `project` object in `VideoPopout.tsx`). `VideoTimeline.tsx:29` in the *same file* correctly uses a scalar selector (`useVideoEditorStore(state => state.isPlaying)`), showing the anti-pattern is inconsistent rather than store-wide policy. No file using `useVideoEditorStore`/`useAgentStore` imports `useShallow` at all — worth confirming whether these stores intentionally opt out of the documented convention.
-- **Impact:** Timeline/popout re-renders on every store field change (e.g. playhead ticking during playback) even when the component only needs 1-3 fields.
-- **Fix (not yet applied):** Add selectors + `useShallow` at these three call sites; decide repo-wide whether `useVideoEditorStore`/`useAgentStore` should follow the same convention as the root store.
+- **Module:** `packages/renderer/src/modules/creative/video/components/ZoomableTimeline.tsx`, `packages/renderer/src/modules/creative/video/editor/components/VideoTimeline.tsx`, `packages/renderer/src/modules/creative/video/editor/VideoPopout.tsx`
+- **Verified fix in place:** all three now wrap their `useVideoEditorStore()` calls in `useShallow((state) => ({...}))`, matching the root-store convention.
 
 ### ISSUE-1207: Hand-rolled modal state instead of mandated `react-call`
 
@@ -2153,11 +2172,11 @@ Listed only so they are not lost. No assessment is implied.
 
 ### ISSUE-1208: ~6.5MB of QA screenshots/reports checked into git as tracked source
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ PARTIALLY FIXED (found already actioned 2026-07-23 while compiling a work list — commit `d534bb548`, not by this session)
 - **Severity:** 🟡 P1
-- **Module:** `.agent/artifacts/qa_screenshots/*.png` (dozen+ files, 140–656K each), `.agent/artifacts/task.md` (44K)
-- **Evidence:** These are generated CI/QA output, not source, and are tracked in git history — clone size bloat that grows every QA run. Confirmed additional untracked artifacts from the 2026-07-22 session (`qa_report_latest.json` 1.5M + new screenshots + `run_auto_qa.js`) sitting in the working tree right now, same pattern about to repeat.
-- **Fix (not yet applied):** Add `.agent/artifacts/` to `.gitignore`, purge tracked history if acceptable, move screenshot retention to CI artifact storage instead of the repo. Note: confirm with the QA workflow docs (`.agent/workflows/auto_qa.md`) whether anything currently depends on these files being committed before removing.
+- **Module:** `.gitignore:4-6`, `.agent/artifacts/`
+- **Verified fix in place:** `.gitignore` now excludes `.agent/artifacts/` with an explicit `(ISSUE-1208)` comment; `git ls-files .agent/artifacts/` returns 0 tracked files. New QA runs no longer add to the tracked-bloat problem.
+- **Remaining, not yet done:** the fix stopped new bloat but did not purge the ~6.5MB already sitting in git *history* (this only affects clone/fetch size going forward if squashed/rewritten, which is a separate, higher-risk operation — not something to do without explicit sign-off given it rewrites history). Untouched, lower priority than the original finding.
 
 ### ISSUE-1209: `depcheck` run against `packages/renderer` — candidate unused deps, NOT yet confirmed dead (depcheck has known false positives; each needs a manual read before removal)
 
@@ -2323,3 +2342,72 @@ Listed only so they are not lost. No assessment is implied.
   - `packages/landing`: added `zustand` (5.0.8, used in `store/audioStore.ts`) to `dependencies`. Did **not** add `next` — confirmed it was a stale commented-out import (`// import Link from 'next/link';`), correctly not a real dependency; `packages/landing` is Vite-based, not Next.js, per this repo's own tech-stack docs, so a live `next` import would have been architecturally suspicious on top of everything else.
 - **Verification after all 14 fixes:** `npm install` (root, to sync all five touched `package.json`/the one lockfile) → `npm run check:dep-integrity` clean. `npm run typecheck` (shared/main/renderer/firebase) clean; `packages/landing`'s own `tsc --noEmit` clean. Full monorepo test suite: **5219 passed, 0 failed, 52 skipped** (857 test files, 834 passed). Three production builds (`build:studio`, `build:firebase`, `build:landing`) all succeeded. `npm run lint`: **0 errors, 114 warnings** — identical warning count to the known pre-existing baseline, confirming no regression.
 - **Usage:** `npm run check:dep-integrity`. Not wired into the `validate` pre-push chain — matching the existing sibling `check:dep-drift`, which is also standalone rather than part of `validate`; wiring either into the mandatory gate is a separate, more consequential decision this issue didn't make unilaterally.
+
+---
+
+## Session 2026-07-23 — `/hunter` HUNT mode (full-spectrum bug hunt: fix, verify — commit left to user per standing rule)
+
+> User explicitly chose HUNT mode after the workflow file's own "if ambiguous, ask" rule triggered (no
+> mode qualifier was given). Ran Phase 1 (Big Game surface scan) across security, memory leaks, loading
+> traps, swallowed errors, HTTP codes, API integrity, vendor chunks, impure render, anti-slop, and ghost
+> project IDs; then full Phase 2 (Small Game) across Zustand slices, race conditions, finance precision,
+> AI token limits, and locale. Full findings/false-lead reasoning also recorded in
+> `.agent/skills/error_memory/ERROR_LEDGER.md` under "2026-07-23 — /hunter HUNT-mode session".
+
+### ISSUE-1214: `AgentService` graph-execution Firestore listener never unsubscribed — confirmed leak, fixed
+
+- **Status:** ✅ FIXED (2026-07-23)
+- **Severity:** 🟠 HIGH (unbounded accumulation of live Firestore listeners across a session)
+- **Module:** `packages/renderer/src/services/agent/AgentService.ts` (`handleGraphExecutionFlow`), `packages/renderer/src/core/store/slices/agent/agentOrchestrationSlice.ts` (`startListeningToGraphExecution`/`stopListeningToGraphExecution`)
+- **Evidence:** `startListeningToGraphExecution(executionId)` attaches an `onSnapshot` listener on `users/{uid}/graphExecutions/{executionId}`. Neither the function's success path nor its `catch` block ever called the matching `stopListeningToGraphExecution()`. `grep -rn "stopListeningToGraphExecution\b"` across the entire renderer source returned zero callers outside the slice's own definition — dead cleanup code. Every multi-step agent graph execution ever triggered left its listener open for the rest of the session.
+- **Related, but NOT fixed — confirmed harmless:** the singular sibling `startListeningToGraph`/`stopListeningToGraph` (per-task-graph, not per-execution) has **zero callers on the start side either** — fully dead/unused code, not a live leak. Left as-is; flagging as dead code is a separate, lower-priority cleanup, not a bug fix.
+- **Fix applied:** Destructured `stopListeningToGraphExecution` alongside the existing store actions in `handleGraphExecutionFlow`, and call it in a `finally` block so cleanup fires on both the success and failure paths.
+- **Verification:** `npm run typecheck` clean; full Vitest run 5,219 passed / 0 failed (unchanged from baseline); `npm run build:studio` succeeded.
+
+### ISSUE-1215: `campaign_waterfall.ts` non-atomic array read-modify-write — confirmed lost-update race, fixed
+
+- **Status:** ✅ FIXED (2026-07-23)
+- **Severity:** 🟠 HIGH (data-integrity — silent lost update, not a crash, so it fails quietly)
+- **Module:** `packages/firebase/src/lib/campaign_waterfall.ts` (P5 campaign waterfall Inngest consumer, ISSUE-1100 lineage)
+- **Evidence:** The `update-status-${evt.key}` step read the campaign doc via a bare `campaignRef.get()`, mapped one `events` array element's `status` to `'scheduled'`, and wrote the **entire array** back via a plain (non-transactional) `campaignRef.update({ events: updatedEvents, ... })`. Any concurrent writer to the same doc racing between this read and write — a second dispatch of the same `mcp/campaign.scheduled` event, a different waterfall step, or a direct user edit to the campaign — has its own change silently overwritten by this function's last-write-wins full-array clobber. This is the exact "non-atomic array update" pattern this hunt's own race-condition scan targets; found by checking `.get()`-then-`.update()` pairs across `packages/firebase/src` and ruling out ~10 other candidates that turned out to write fixed/externally-derived values rather than values computed from the document's own prior array/counter state.
+- **Fix applied:** Wrapped the read-modify-write in `db.runTransaction(async (tx) => {...})`, re-reading the doc via `tx.get(campaignRef)` inside the transaction and writing via `tx.update(...)` rather than the bare `campaignRef.get()`/`.update()` pair.
+- **Verification:** `npm run typecheck` clean (firebase workspace + test-typecheck gate); `npm run build:firebase` succeeded.
+
+### ISSUE-1216: `FirebaseIntelligenceService.defaultConfig` — a "cost backstop" that was declared but never populated, leaving ~30 AI call sites with no output-token ceiling at all
+
+- **Status:** ✅ FIXED (2026-07-23)
+- **Severity:** 🟡 MEDIUM (cost/runaway-output risk, not a correctness crash)
+- **Module:** `packages/renderer/src/services/intelligence/FirebaseIntelligenceService.ts`
+- **Evidence:** `rawGenerateContent`/`rawGenerateContentStream` merge config via `{ ...this.defaultConfig, ...config }` — a real, correctly-designed mechanism for a shared safety default with per-caller override. But `public defaultConfig: GenerationConfig = {};` — an **empty object**, providing no actual default. A `grep` across ~37 files calling `generateContent`/`.models.generate` found ~30 with zero `maxOutputTokens` anywhere in their own call, meaning every one of them inherited no ceiling at all (Gemini's own API default when the field is omitted is effectively "as much as the model will produce"). A misleading in-code comment above one caller (`BaseAgent.ts:814`, "Judgment layer: verbosity/cost backstop applied to every generateContent(Stream) call below") asserted a protection that did not actually exist.
+- **Why a centralized fix instead of 30 individual edits:** hunter.md's own suggested per-call-site limits (chat: 4096, summary: 512, quick tasks: 1024) require understanding each of 30 different use cases individually to avoid truncating legitimate long-form output (e.g. legal contract drafting, structured JSON schemas) — a much higher-risk path than populating the one shared default the architecture already has a slot for.
+- **Fix applied:** `defaultConfig = { maxOutputTokens: 8192 }`. Any of the ~30 callers that already pass their own `maxOutputTokens` are unaffected (caller's value wins in the merge); every caller that didn't now inherits a generous-but-bounded ceiling.
+- **Verification:** `npm run typecheck` clean; full Vitest run 5,219 passed / 0 failed; `npm run build:studio` succeeded.
+- **Not done — flagging, not silently dropping:** did not audit whether 8192 is the *right* number per call site, or whether any of the ~30 sites would benefit from a tighter caller-specific override (e.g. summary-style calls could reasonably use less). This is a floor, not a tuned-per-use-case ceiling.
+
+### ISSUE-1217: 8 raw `console.log`/`console.error` calls converted to `logger.debug`/`logger.error` (routine log-hygiene sweep, /hunter Phase 1.4)
+
+- **Status:** ✅ FIXED (2026-07-23)
+- **Severity:** 🟢 LOW
+- **Module:** `packages/renderer/src/config/env.ts`, `services/video/VideoGenerationService.ts`, `services/intelligence/FirebaseIntelligenceService.ts`, `services/agent/BaseAgent.ts`, `services/agent/harness/McpClientService.ts` (added missing `logger` import to the latter two files, which had none)
+- **Evidence:** All 8 were already dev-gated or effectively low-risk (terser strips `console.*` in production builds per this repo's build pipeline), so this is hygiene/consistency, not a live production risk.
+- **False leads correctly rejected in the same scan (recorded so they aren't re-flagged):** 3 `.catch(() => {})` instances in `CampaignManager.tsx` matched the "empty catch = swallowed error" grep pattern, but an existing code comment explicitly documents these as intentional — `onUpdateCampaign` already surfaces its own error toast, and the empty catch here exists specifically to prevent a duplicate unhandled-rejection warning. Applying the workflow's generic "add logger.error" auto-fix here would have produced duplicate user-facing error toasts for the same failure — a real regression disguised as a fix. Left untouched.
+- **Verification:** Full Vitest run 5,219 passed / 0 failed; `npm run build:studio` succeeded.
+
+### ISSUE-1218: `CRMDashboard.tsx` — 5 number/date formatting calls missing an explicit locale (finance-adjacent revenue/supply figures)
+
+- **Status:** ✅ FIXED (2026-07-23)
+- **Severity:** 🟢 LOW (display-only; the underlying stored values are unaffected, only their on-screen text representation varies by viewer locale)
+- **Module:** `packages/renderer/src/modules/crm/CRMDashboard.tsx`
+- **Evidence:** `totalSupply.toLocaleString()`, `projectedRevenue.toLocaleString(undefined, {...})`, `camp.supply.toLocaleString()`, the campaign-created-at date (`toLocaleDateString(undefined, {...})`), and the campaign total (`toLocaleString(undefined, {...})`) all omitted an explicit locale, unlike the codebase's other business-critical paths (legal, distribution, finance dashboards), which were already found to correctly pass `'en-US'` explicitly everywhere checked. This is also the same "compounding" locale gap named (but not fixed) back when ISSUE-1205 was originally logged.
+- **Scope note:** ~10 other no-explicit-locale hits elsewhere in the codebase (tour dates, chat timestamps, note titles, agent-loop-monitor timestamps) were found and deliberately left alone — cosmetic/non-critical contexts, matching hunter.md's own explicit scoping to "business-critical paths (DDEX, invoices, legal)."
+- **Fix applied:** All 5 now pass `'en-US'` explicitly.
+- **Verification:** Full Vitest run 5,219 passed / 0 failed; `npm run build:studio` succeeded.
+
+### Findings checked and correctly rejected this session (recorded so a future pass doesn't re-flag them as new)
+
+- **`@react-three/fiber` split from `vendor-react` into its own `vendor-three` chunk** — theoretically a known footgun class (custom React reconciler in a separate chunk can cause "Invalid hook call"/scheduler duplication), but zero build warnings and zero runtime failures across 5,219 passing tests. Not touched: the prescribed fix (merge into `vendor-react`) would unconditionally add ~2.2MB to every user's initial bundle to guard a risk with no observed symptom.
+- **~40 finance-service division operations** (`RoyaltyRevenueCompiler.ts`, `LabelDealRecoupmentService.ts`, `PredictiveRoyaltyService.ts`, `FinanceCompiler.ts`, `FinanceService.ts`, `MultiCurrencyService.ts`) — all already guarded (`x > 0 ? ... : fallback`) or protected by an earlier precondition in the same function. No division-by-zero bugs found.
+- **`FinanceCompiler.ts`'s `roundCurrency` applied repeatedly inside a running-total accumulation** — looked like the "never rounds until too late" antipattern at first glance, but rounding to cents *after every addition* is a defensible existing safeguard against float-representation drift, not the bug the pattern usually indicates. Not changed without a demonstrated failure case.
+- **~100 `Date.now()`/`Math.random()` hits** flagged by the workflow's own grep as potential impure-render violations — all traced to event-handler/callback/ID-generator contexts, not render bodies. The only 2 `Math.random()` call sites were individually confirmed (one inside a `setTimeout` callback, one inside an async user-triggered handler).
+- **~40 non-transactional `.get()`-then-`.update()` pairs across `packages/firebase/src`** — all but one (ISSUE-1215) write fixed or externally-derived values (webhook payload data, status constants) rather than values computed from the document's own prior array/counter state, so they carry no lost-update risk.
+- **ISSUE-1205** (`CRMDashboard.tsx` re-render fix) — checked as part of this hunt's Zustand-slice pass and found already fixed by a different concurrent agent before this session reached it; ledger entry updated separately (see its own entry above).
