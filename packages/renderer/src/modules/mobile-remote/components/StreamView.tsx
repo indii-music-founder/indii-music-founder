@@ -7,7 +7,7 @@ import { useEffect, useState, useMemo } from 'react';
 import type { HistoryItem } from '@/core/types/history';
 import { StorageService } from '@/services/StorageService';
 import TransportBar from './TransportBar';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 import { Music, Play, Loader2, Cloud } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { triggerHaptic } from '../MobileRemote';

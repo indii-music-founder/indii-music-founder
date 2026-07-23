@@ -1,6 +1,7 @@
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js';
 import { auth } from '@/services/firebase';
+import { logger } from '@/utils/logger';
 
 const MCP_SERVER_URL = import.meta.env.VITE_MCP_ENDPOINT || 'http://127.0.0.1:5001/indii-music-founder/us-central1/mcpEndpoint';
 
@@ -62,10 +63,10 @@ class McpClientService {
             });
 
             await this.client.connect(this.transport);
-            console.log('[McpClientService] Connected to backend MCP Server.');
+            logger.debug('[McpClientService] Connected to backend MCP Server.');
 
         } catch (error) {
-            console.error('[McpClientService] Failed to connect to MCP Server:', error);
+            logger.error('[McpClientService] Failed to connect to MCP Server:', error);
             this.client = null;
             this.transport = null;
             throw error;
@@ -87,23 +88,23 @@ class McpClientService {
      * Executes a tool on the backend MCP server.
      */
     async executeTool(name: string, args: Record<string, unknown>) {
-        console.log(`[McpClientService] executeTool called for ${name}`);
+        logger.debug(`[McpClientService] executeTool called for ${name}`);
         await this.connect();
         if (!this.client) {
-            console.error('[McpClientService] MCP Client not connected after connect()');
+            logger.error('[McpClientService] MCP Client not connected after connect()');
             throw new Error('MCP Client not connected');
         }
-        
-        console.log(`[McpClientService] Calling remote tool: ${name}`, args);
+
+        logger.debug(`[McpClientService] Calling remote tool: ${name}`, args);
         try {
             const result = await this.client.callTool({
                 name,
                 arguments: args
             });
-            console.log(`[McpClientService] Tool ${name} returned:`, result);
+            logger.debug(`[McpClientService] Tool ${name} returned:`, result);
             return result;
         } catch (err) {
-            console.error(`[McpClientService] Tool ${name} failed:`, err);
+            logger.error(`[McpClientService] Tool ${name} failed:`, err);
             throw err;
         }
     }

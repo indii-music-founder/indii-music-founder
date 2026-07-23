@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Logger } from '@/core/logger/Logger';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { Download, Monitor, Apple, ArrowLeft, Loader2, Key, Mail } from 'lucide-react';

@@ -52,15 +52,22 @@ export const campaignWaterfallFn = (inngestClient: Inngest) => inngestClient.cre
             }
 
             await step.run(`update-status-${evt.key}`, async () => {
-                const snap = await campaignRef.get();
-                const data = snap.data() || {};
-                const currentEvents = Array.isArray(data.events) ? data.events : [];
-                const updatedEvents = currentEvents.map((e: WaterfallEvent) =>
-                    e.key === evt.key ? { ...e, status: 'scheduled' } : e
-                );
-                await campaignRef.update({
-                    events: updatedEvents,
-                    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+                // Read-modify-write on the whole `events` array — wrapped in a
+                // transaction so a concurrent writer to this doc (another
+                // waterfall step, a second dispatch of the same campaign event,
+                // or a user edit) can't have its change silently overwritten by
+                // a last-write-wins array clobber.
+                await db.runTransaction(async (tx) => {
+                    const snap = await tx.get(campaignRef);
+                    const data = snap.data() || {};
+                    const currentEvents = Array.isArray(data.events) ? data.events : [];
+                    const updatedEvents = currentEvents.map((e: WaterfallEvent) =>
+                        e.key === evt.key ? { ...e, status: 'scheduled' } : e
+                    );
+                    tx.update(campaignRef, {
+                        events: updatedEvents,
+                        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+                    });
                 });
             });
 

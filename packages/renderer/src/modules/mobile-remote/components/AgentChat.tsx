@@ -32,7 +32,7 @@ import { auth } from '@/services/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { logger } from '@/utils/logger';
 import { cn } from '@/lib/utils';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 import { useVoice } from '@/core/context/VoiceContext';
 import { resolveEntryCommand } from '@/services/commands/EntryCommandRegistry';
 

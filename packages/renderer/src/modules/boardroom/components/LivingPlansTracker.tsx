@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 import { useStore } from '@/core/store';
 import { livingPlanService, LivingPlan } from '@/services/agent/LivingPlanService';
 import { X, Layers } from 'lucide-react';

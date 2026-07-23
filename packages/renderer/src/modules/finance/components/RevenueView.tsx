@@ -14,7 +14,7 @@ import { revenueService, type RevenueStats } from '@/services/RevenueService';
 import { auth } from '@/services/firebase';
 import { logger } from '@/utils/logger';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 
 const StatCard = ({ 
   title, 

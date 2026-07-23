@@ -1,14 +1,15 @@
-import { createWorker } from 'tesseract.js';
 import { delay } from '@/utils/async';
 
 export const OCRService = {
     /**
-     * Recognize text from an image file using Tesseract.js
+     * Recognize text from an image file using Tesseract.js (dynamically loaded on first use)
      * @param file The image file to process
      * @param onProgress Optional callback for status updates
      * @returns The extracted text
      */
     recognizeText: async (file: File, onProgress?: (status: string) => void): Promise<string> => {
+        const { createWorker } = await import('tesseract.js');
+
         // Tesseract v6: Simplified worker creation with explicit CDN path
         const worker = await createWorker('eng', 1, {
             langPath: 'https://cdn.jsdelivr.net/npm/@tesseract.js-data/eng/4.0.0_best_int',

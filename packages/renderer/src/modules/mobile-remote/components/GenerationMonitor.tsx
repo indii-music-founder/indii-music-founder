@@ -23,7 +23,7 @@ import {
 } from 'lucide-react';
 import { remoteRelayService, type RemoteCommand, type RemoteResponse } from '@/services/agent/RemoteRelayService';
 import type { Unsubscribe } from 'firebase/firestore';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '@/lib/utils';
 import { logger } from '@/utils/logger';
 

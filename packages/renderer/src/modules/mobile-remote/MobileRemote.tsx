@@ -32,7 +32,7 @@ import {
   LayoutDashboard, LayoutGrid, Grip, MessageSquare, Navigation,
   CheckSquare, QrCode, Smartphone, LucideIcon, WifiOff, AlertCircle, RefreshCw
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '@/lib/utils';
 import { getRemoteConnectionPhase } from './RemoteConnectionState';
 

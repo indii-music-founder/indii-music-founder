@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 import type { AgentMessage } from '@/core/store/slices/agent/agentSessionSlice';
 import { agentRegistry } from '@/services/agent/registry';
 import { Bot, MessageSquare } from 'lucide-react';

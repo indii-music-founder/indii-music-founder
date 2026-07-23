@@ -1,5 +1,5 @@
 import React from 'react';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 
 /**
  * BoardroomEmptyState — Displayed when no boardroom messages exist.

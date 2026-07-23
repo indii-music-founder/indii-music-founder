@@ -15,20 +15,21 @@ vi.mock('@/core/components/chat/ChatMessage', () => ({
     ),
 }));
 
-// Mock framer-motion to avoid animation issues in tests
-vi.mock('framer-motion', () => ({
-    motion: {
-        div: React.forwardRef(({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>, ref: React.Ref<HTMLDivElement>) => (
-            <div ref={ref} {...filterDomProps(props)}>{children}</div>
-        )),
-        button: React.forwardRef(({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>, ref: React.Ref<HTMLButtonElement>) => (
-            <button ref={ref} {...filterDomProps(props)}>{children}</button>
-        )),
-    },
+// Mock motion to avoid animation issues in tests
+// Uses a Proxy so any HTML tag (motion.div, motion.p, motion.span, ...) resolves —
+// enumerating a fixed set of tags broke when other components under test (e.g.
+// TextEffect, which defaults to motion.p) also import from 'motion/react'.
+vi.mock('motion/react', () => ({
+    motion: new Proxy({} as Record<string, React.ForwardRefExoticComponent<React.PropsWithChildren<Record<string, unknown>>>>, {
+        get: (_target, tag: string) =>
+            React.forwardRef(({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>, ref: React.Ref<Element>) =>
+                React.createElement(tag, { ref, ...filterDomProps(props) }, children)
+            ),
+    }),
     AnimatePresence: ({ children }: React.PropsWithChildren) => <>{children}</>,
 }));
 
-// Filter out framer-motion-specific props that aren't valid DOM attributes
+// Filter out motion-specific props that aren't valid DOM attributes
 function filterDomProps(props: Record<string, unknown>): Record<string, unknown> {
     const invalidProps = ['initial', 'animate', 'exit', 'transition', 'whileHover', 'whileTap', 'drag', 'dragSnapToOrigin', 'onDragEnd', 'key'];
     const filtered: Record<string, unknown> = {};

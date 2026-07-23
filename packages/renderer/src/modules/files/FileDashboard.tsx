@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 import { Folder, File, Image as ImageIcon, Music, Video, FileText, Search, Grid, List as ListIcon, Star, Clock, Trash2, Download, ExternalLink, X } from 'lucide-react';
 import { FileNode } from '@/services/FileSystemService';
 import { cn } from '@/lib/utils';

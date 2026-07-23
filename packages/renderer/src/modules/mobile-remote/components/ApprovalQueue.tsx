@@ -9,7 +9,7 @@ import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { Check, X, AlertTriangle, Shield, Clock, Fingerprint } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { cn } from '@/lib/utils';
 

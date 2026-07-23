@@ -72,7 +72,7 @@ vi.mock('qrcode.react', () => ({
     QRCodeSVG: () => <div data-testid="qr-code" />,
 }));
 
-vi.mock('framer-motion', () => {
+vi.mock('motion/react', () => {
     const motionProxy = new Proxy({}, {
         get: (_target, prop: string) => {
             return ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) => {

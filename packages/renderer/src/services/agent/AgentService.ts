@@ -667,10 +667,11 @@ export class AgentService {
         responseId: string
     ): Promise<void> {
         const useStore = await this.getStore();
-        const { 
-            updateAgentMessage, 
-            setActiveGraphDefinition, 
-            startListeningToGraphExecution 
+        const {
+            updateAgentMessage,
+            setActiveGraphDefinition,
+            startListeningToGraphExecution,
+            stopListeningToGraphExecution
         } = useStore.getState();
 
         updateAgentMessage(responseId, { 
@@ -706,6 +707,11 @@ export class AgentService {
                 text: `❌ **Orchestration Error:** ${error.message || 'Failed to execute multi-step plan.'}`,
                 isStreaming: false
             });
+        } finally {
+            // The Firestore listener started above is only needed while this
+            // execution is in flight; without this it stays open indefinitely,
+            // one live listener per graph execution ever triggered in the session.
+            stopListeningToGraphExecution();
         }
     }
 

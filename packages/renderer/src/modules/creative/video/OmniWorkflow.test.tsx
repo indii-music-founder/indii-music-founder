@@ -66,7 +66,7 @@ vi.mock('@/core/store', () => ({
     useStore: (selector?: any) => (selector ? selector(mockStoreRef.current) : mockStoreRef.current),
 }));
 
-vi.mock('framer-motion', async () => {
+vi.mock('motion/react', async () => {
     const ReactModule = await import('react');
     const componentCache = new Map<string, React.ComponentType<Record<string, unknown>>>();
     const motion = new Proxy({}, {

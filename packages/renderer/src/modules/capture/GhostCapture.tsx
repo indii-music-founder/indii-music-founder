@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { X, ArrowLeft } from 'lucide-react';
-import { AnimatePresence } from 'framer-motion';
+import { AnimatePresence } from 'motion/react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { StorageService } from '@/services/StorageService';

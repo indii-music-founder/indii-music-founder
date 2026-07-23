@@ -1,6 +1,6 @@
 import React from 'react';
 import { Globe2 } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 
 export const GodModeCanvas: React.FC = () => {
     // God Mode View (Item 199) — displays dynamic ecosystem stats

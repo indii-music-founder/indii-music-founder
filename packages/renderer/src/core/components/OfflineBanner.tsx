@@ -1,7 +1,7 @@
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { WifiOff, AlertCircle } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 
 /**
  * Global banner displayed when the application is offline.

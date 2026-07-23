@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useStore } from '@/core/store';
 import { FolderGit2, Plus, ChevronDown, Pencil, Trash2, Check, X, Archive, ArchiveRestore } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '@/lib/utils';
 import { getAuth } from 'firebase/auth';
 import { useProjectSync } from '@/hooks/useProjectSync';

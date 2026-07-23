@@ -3,7 +3,7 @@ import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { Play, Pause, X, SkipForward, SkipBack, Volume2, VolumeX } from 'lucide-react';
 import { audioContextManager } from '@/services/audio/AudioContextManager';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 import { logger } from '@/utils/logger';
 
 export default function AudioPIPPlayer() {

@@ -18,7 +18,7 @@ function track(id: string, url: string): HistoryItem {
     return { id, url, type: 'music', timestamp: Date.now() } as HistoryItem;
 }
 
-vi.mock('framer-motion', () => {
+vi.mock('motion/react', () => {
     const motion = new Proxy({}, {
         get: (_target, prop: string) => {
             return ({ children, whileTap: _whileTap, initial: _initial, animate: _animate, exit: _exit, transition: _transition, ...props }:

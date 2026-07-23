@@ -1,7 +1,7 @@
 import { Rocket, ArrowLeft } from 'lucide-react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 
 /**
  * GatedModuleFallback — shown when a user navigates to a module that is

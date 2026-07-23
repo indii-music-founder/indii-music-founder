@@ -5,7 +5,7 @@ import { formatSmartDate, cn } from '@/lib/utils';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { MessageSquare, Calendar, Trash2, X, Edit2, Check, Archive, ArchiveRestore, Search, Briefcase, FolderOutput, Target, Scale, DollarSign, Palette, Film, Share2, Library, Zap } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import type { ConversationSession } from '@/core/store/slices/agent';
 

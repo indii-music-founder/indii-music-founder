@@ -29,7 +29,7 @@ import { formatDate } from '@/lib/utils';
 import { logger } from '@/utils/logger';
 import ProductPickerModal from './ProductPickerModal';
 import BrandAssetsDrawer from '../../creative/components/BrandAssetsDrawer';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 
 interface SocialFeedProps {
     userId?: string;

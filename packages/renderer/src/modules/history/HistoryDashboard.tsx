@@ -3,7 +3,7 @@ import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { formatSmartDate } from '@/lib/utils';
 import { MessageSquare, Trash2, Clock, Search, Activity, FileText, Image as ImageIcon, Music, Video as VideoIcon, Bot } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import type { ConversationSession } from '@/core/store/slices/agent';
 import { FilterItem } from './components/FilterItem';

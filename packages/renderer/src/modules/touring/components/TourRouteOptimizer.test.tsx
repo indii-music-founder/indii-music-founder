@@ -64,7 +64,7 @@ vi.mock('firebase/functions', () => ({
     }))),
 }));
 
-vi.mock('framer-motion', () => ({
+vi.mock('motion/react', () => ({
     motion: {
         div: ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) => <div {...filterDomProps(props)}>{children}</div>,
         button: ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) => <button {...filterDomProps(props)}>{children}</button>,

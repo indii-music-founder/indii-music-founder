@@ -1,7 +1,7 @@
 import React, { Suspense, lazy } from 'react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion } from 'motion/react';
 
 // Lazy-load Canvas and WaveMesh to break the vendor-three → vendor-react circular dependency
 // This ensures Three.js is not loaded during app bootstrap

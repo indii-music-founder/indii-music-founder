@@ -13,7 +13,7 @@ function filterDomProps(props: Record<string, unknown>): Record<string, unknown>
     return filtered;
 }
 
-vi.mock('framer-motion', () => ({
+vi.mock('motion/react', () => ({
     motion: {
         div: React.forwardRef(({ children, ...p }: React.PropsWithChildren<Record<string, unknown>>, ref: React.Ref<HTMLDivElement>) => <div ref={ref} {...filterDomProps(p)}>{children}</div>),
     },

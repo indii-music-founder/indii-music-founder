@@ -7,7 +7,7 @@ Element.prototype.scrollTo = vi.fn();
 
 // ── Mocks ──────────────────────────────────────────────────────────────────
 
-vi.mock('framer-motion', () => ({
+vi.mock('motion/react', () => ({
     motion: {
         div: React.forwardRef(({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>, ref: React.Ref<HTMLDivElement>) => {
             const filtered = filterDomProps(props);

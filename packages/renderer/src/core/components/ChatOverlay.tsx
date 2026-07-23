@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react';
-import { motion, AnimatePresence, useDragControls } from 'framer-motion';
+import { motion, AnimatePresence, useDragControls } from 'motion/react';
 import { X, Minimize2, RefreshCw, Bot, Maximize2, Smartphone } from 'lucide-react';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useStore } from '@/core/store';

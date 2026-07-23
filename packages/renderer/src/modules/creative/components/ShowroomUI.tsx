@@ -15,7 +15,7 @@ import {
     Pin,
     Send
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 import { useToast } from '@/core/context/ToastContext';
 import { Logger } from '@/core/logger/Logger';
 import FileUpload from '@/components/kokonutui/file-upload';

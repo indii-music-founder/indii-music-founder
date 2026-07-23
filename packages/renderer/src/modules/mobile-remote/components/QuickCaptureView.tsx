@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Mic, Image as ImageIcon, Video, Send, Loader2, MapPin, FileText, Keyboard, Download } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 import { remoteRelayService, waitForDispatchConfirmation } from '@/services/agent/RemoteRelayService';
 import { StorageService } from '@/services/StorageService';
 import { useToast } from '@/core/context/ToastContext';

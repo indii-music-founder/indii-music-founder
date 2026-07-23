@@ -47,6 +47,9 @@
     },
     {
       "path": "./packages/renderer"
+    },
+    {
+      "path": "./packages/firebase"
     }
   ],
   "include": [],

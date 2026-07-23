@@ -1,5 +1,5 @@
 import React from 'react';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 import type { AgentMessage } from '@/core/store/slices/agent/agentSessionSlice';
 import { Sparkles, Users } from 'lucide-react';
 

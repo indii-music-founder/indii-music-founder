@@ -164,8 +164,8 @@ useStore.subscribe((state, prevState) => {
     });
 });
 
-// Expose store for testing purposes
-if (typeof window !== 'undefined') {
+// Expose store for testing/dev debugging purposes
+if (typeof window !== 'undefined' && import.meta.env.DEV) {
     window.useStore = useStore;
 }
 

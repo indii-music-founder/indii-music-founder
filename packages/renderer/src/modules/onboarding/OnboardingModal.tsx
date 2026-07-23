@@ -12,7 +12,7 @@ import {
     TopicKey
 } from '@/services/onboarding/onboardingService';
 import { X, Send, CheckCircle, Circle, Sparkles, Paperclip, FileText, Image as Trash2, Music, Mic } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 import { TextEffect } from '@/components/motion-primitives/text-effect';
 import { AnimatedNumber } from '@/components/motion-primitives/animated-number';
 import type { ConversationFile } from '../../modules/workflow/types';

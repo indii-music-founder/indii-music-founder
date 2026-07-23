@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 import { Download, CheckCircle, AlertTriangle, RefreshCw, X } from 'lucide-react';
 import { logger } from '@/utils/logger';
 

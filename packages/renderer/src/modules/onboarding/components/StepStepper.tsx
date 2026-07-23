@@ -1,5 +1,5 @@
 import React from 'react';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 import { User, Palette, Radio, CheckCircle } from 'lucide-react';
 
 interface StepStepperProps {

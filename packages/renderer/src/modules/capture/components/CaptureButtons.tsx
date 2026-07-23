@@ -1,6 +1,6 @@
 import React from 'react';
 import { Camera, Upload } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 
 const clayButtonStyles = "relative overflow-hidden bg-card/60 backdrop-blur-md border border-white/5 text-white rounded-3xl p-6 flex flex-col items-center justify-center gap-3 transition-all hover:bg-card/80 active:scale-95 shadow-lg shadow-black/50 hover:shadow-[inset_0_2px_10px_rgba(255,255,255,0.05)]";
 

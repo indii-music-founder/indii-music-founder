@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 import {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     Video, Film, Shield, Sliders, Play,

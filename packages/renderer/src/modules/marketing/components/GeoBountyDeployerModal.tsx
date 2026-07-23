@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 
 export default function GeoBountyDeployerModal({ onClose, onDeploy }: { onClose: () => void, onDeploy: (loc: string, desc: string) => void }) {
     const [location, setLocation] = useState('');

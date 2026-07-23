@@ -58,7 +58,7 @@ vi.mock('@/utils/logger', () => ({
     logger: { info: vi.fn(), error: vi.fn(), warn: vi.fn() },
 }));
 
-vi.mock('framer-motion', () => {
+vi.mock('motion/react', () => {
     const motion = new Proxy({}, {
         get: (_target, prop: string) => {
             return ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) => {

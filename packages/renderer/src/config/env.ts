@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { CommonEnvSchema } from '../shared/schemas/env.schema.ts';
+import { logger } from '@/utils/logger';
 
 const toBoolean = (value: string | boolean | undefined): boolean => {
     if (typeof value === 'boolean') return value;
@@ -137,7 +138,7 @@ const runtimeEnv = parsed.success ? parsed.data : (processEnv as z.infer<typeof 
 
 // Item 326: Log env in dev mode
 if (import.meta.env.DEV) {
-    console.log('[indii.music][Env] Initialized:', {
+    logger.debug('[indii.music][Env] Initialized:', {
         hasMapsKey: !!runtimeEnv.googleMapsApiKey,
         mapsEnabled: runtimeEnv.enableGoogleMaps,
     });

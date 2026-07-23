@@ -75,7 +75,7 @@ vi.mock('../MobileRemote', () => ({
     triggerHaptic: vi.fn(),
 }));
 
-vi.mock('framer-motion', () => ({
+vi.mock('motion/react', () => ({
     motion: {
         div: ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) => <div {...props}>{children}</div>,
         button: ({ children, whileTap, ...props }: React.PropsWithChildren<Record<string, unknown>> & { whileTap?: unknown }) => <button {...props}>{children}</button>,

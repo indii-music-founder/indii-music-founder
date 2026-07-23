@@ -1,14 +1,4 @@
-import * as pdfjsLib from 'pdfjs-dist';
 import { logger } from '@/utils/logger';
-
-// Initialize worker
-// This is the Vite-compatible way to load the worker
-if (typeof window !== 'undefined' && !pdfjsLib.GlobalWorkerOptions.workerSrc) {
-    pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
-        'pdfjs-dist/build/pdf.worker.min.mjs',
-        import.meta.url
-    ).toString();
-}
 
 interface PDFTextItem {
     str: string;
@@ -22,10 +12,18 @@ interface PDFTextItem {
 
 export class PDFService {
     /**
-     * Extracts full text from a PDF file.
+     * Extracts full text from a PDF file (pdfjs-dist dynamically loaded on first use).
      */
     static async extractText(file: File): Promise<string> {
         try {
+            const pdfjsLib = await import('pdfjs-dist');
+            if (typeof window !== 'undefined' && !pdfjsLib.GlobalWorkerOptions.workerSrc) {
+                pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+                    'pdfjs-dist/build/pdf.worker.min.mjs',
+                    import.meta.url
+                ).toString();
+            }
+
             const arrayBuffer = await file.arrayBuffer();
             const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
             const pdfDocument = await loadingTask.promise;

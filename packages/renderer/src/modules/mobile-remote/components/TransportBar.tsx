@@ -9,7 +9,7 @@ import {
     Play, Pause, SkipForward, Volume2, VolumeX,
     Square, Music2, Headphones, Activity
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
  
 import { cn } from '@/lib/utils';
 import { logger } from '@/utils/logger';

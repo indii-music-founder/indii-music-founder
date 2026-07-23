@@ -19,8 +19,8 @@ vi.mock('@/core/store', () => {
     return { useStore: mockUseStore };
 });
 
-// Mock framer-motion to simplify DOM transitions in JSDOM tests
-vi.mock('framer-motion', () => ({
+// Mock motion to simplify DOM transitions in JSDOM tests
+vi.mock('motion/react', () => ({
     motion: {
         div: ({ children, ...props }: any) => {
             const cleanProps = { ...props };

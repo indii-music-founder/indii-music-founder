@@ -13,7 +13,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { doc, onSnapshot, setDoc, serverTimestamp } from 'firebase/firestore';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 import { Moon, Sun, Power, MonitorSmartphone, Check } from 'lucide-react';
 import { auth, db } from '@/services/firebase';
 import {

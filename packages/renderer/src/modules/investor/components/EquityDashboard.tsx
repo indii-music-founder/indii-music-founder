@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- Module component with dynamic data */
 import React from 'react';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 import { TrendingUp, PieChart, DollarSign, Users, Activity, UploadCloud, MessageSquare } from 'lucide-react';
 import { secureRandomInt } from '@/utils/crypto-random';
 

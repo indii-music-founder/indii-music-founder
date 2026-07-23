@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { useStore } from '@/core/store';
 import { getModuleTheme } from '@/core/themes/ModuleTheme';
 import { ModuleId } from '@/core/constants';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion } from 'motion/react';
 import { useShallow } from 'zustand/react/shallow';
 
 export const ModuleAmbientBackground = () => {

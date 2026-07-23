@@ -13,7 +13,7 @@
 
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import DOMPurify from 'dompurify';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 import {
     Mail,
     Inbox,

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { Building2, Check, Plus, ArrowRight, Activity, Users, LogOut, ChevronRight, Zap } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 
 export default function SelectOrg() {
     const { organizations, currentOrganizationId, setOrganization, addOrganization, setModule, logout, userProfile, currentModule } = useStore(

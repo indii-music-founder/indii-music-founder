@@ -22,7 +22,7 @@ import {
   MessageSquare, Package, Wand2, Play, Pause, Navigation
 } from 'lucide-react';
 import type { ModuleId } from '@/core/constants';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 import { cn } from '@/lib/utils';
 import { triggerHaptic } from '../MobileRemote';
 

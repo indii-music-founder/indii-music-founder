@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useMemo } from 'react';
-import { MotionConfig } from 'framer-motion';
+import { MotionConfig } from 'motion/react';
 import { useShallow } from 'zustand/react/shallow';
 import { useStore } from './store';
 import Sidebar from './components/Sidebar';

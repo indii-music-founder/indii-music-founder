@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 import { Mic2, Briefcase } from 'lucide-react';
 
 export const GenerativeUIMorpher: React.FC = () => {

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { Paperclip, X, Trash2, Send, ExternalLink, Minimize2, Maximize2, AlertCircle } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';

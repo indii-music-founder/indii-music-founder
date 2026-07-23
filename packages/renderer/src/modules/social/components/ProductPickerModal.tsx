@@ -8,7 +8,7 @@ import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { logger } from '@/utils/logger';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 
 interface ProductPickerModalProps {
   onClose: () => void;

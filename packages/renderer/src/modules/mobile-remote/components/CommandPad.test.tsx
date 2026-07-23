@@ -38,7 +38,7 @@ vi.mock('@/utils/logger', () => ({
     },
 }));
 
-vi.mock('framer-motion', () => ({
+vi.mock('motion/react', () => ({
     motion: {
         button: ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) => (
             <button {...filterDomProps(props)}>{children}</button>
