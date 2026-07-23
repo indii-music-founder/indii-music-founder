@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ProxyManifestSchema, VideoSessionSchema } from './sessionMedia';
+import { ProxyManifestSchema, ProxyJobClaimSchema, VideoSessionSchema } from './sessionMedia';
 
 const ownedMedia = (role: 'original' | 'editing_proxy' | 'guide_audio', path: string) => ({
     schemaVersion: 'canonical-media-ref.v1' as const,
@@ -163,5 +163,58 @@ describe('VideoSessionSchema', () => {
             ...uploadingSession,
             status: 'completed',
         }).success).toBe(false);
+    });
+
+    // Regression: `dispatchSessionProxyJob.ts` writes `proxyJob` onto the real
+    // `videoSessions/{sessionId}` document, but this schema is `.strict()` and
+    // is used to parse that same document client-side
+    // (`SessionVideoUploadService.ts`). Before this field was declared, any read
+    // of a session that had been dispatched — real production behaviour once a
+    // session finishes uploading — would silently fail `.safeParse()`.
+    // Found while scoping repair-order step 2/3 (proxy worker).
+    // Report: .agent/test_ledger/OPEN_ISSUES_V2.md
+    describe('proxyJob (dispatchSessionProxyJob.ts contract)', () => {
+        const queuedProxyJob = {
+            schemaVersion: 'session-proxy-job.v1' as const,
+            jobId: 'proxy-abc123',
+            status: 'queued' as const,
+            originalGeneration: '1712345678901234',
+            originalSha256: 'a'.repeat(64),
+            claimedAt: '2026-07-23T18:00:00.000Z',
+        };
+
+        const dispatchedSession = {
+            ...uploadingSession,
+            status: 'uploaded' as const,
+            // `ownedMedia`'s original defaults to video/mp4 — override to match
+            // `uploadingSession.expectedMimeType` (video/quicktime), which the
+            // schema's superRefine cross-checks against the original receipt.
+            original: {
+                ...ownedMedia('original', 'session-media/artist-1/session-1/original/' + 'a'.repeat(64) + '.mov'),
+                mimeType: 'video/quicktime',
+            },
+            proxyJob: queuedProxyJob,
+        };
+
+        it('accepts a real dispatched session exactly as dispatchSessionProxyJob.ts writes it', () => {
+            const result = VideoSessionSchema.safeParse(dispatchedSession);
+            expect(result.success).toBe(true);
+        });
+
+        it('accepts a blocked claim (worker not yet provisioned)', () => {
+            expect(ProxyJobClaimSchema.safeParse({
+                ...queuedProxyJob,
+                status: 'blocked' as const,
+                blockedReason: 'proxy-worker-not-configured',
+            }).success).toBe(true);
+        });
+
+        it('rejects a proxy job claim bound to a different original than the session', () => {
+            const result = VideoSessionSchema.safeParse({
+                ...dispatchedSession,
+                proxyJob: { ...queuedProxyJob, originalSha256: 'b'.repeat(64) },
+            });
+            expect(result.success).toBe(false);
+        });
     });
 });
