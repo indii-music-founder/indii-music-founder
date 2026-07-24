@@ -19,7 +19,7 @@ describe('immutable canonical masters', () => {
             storage: {
                 host: '127.0.0.1',
                 port: 9199,
-                rules: readFileSync(resolve(process.cwd(), 'packages/firebase/storage.rules'), 'utf8'),
+                rules: readFileSync(resolve(__dirname, '../../../storage.rules'), 'utf8'),
             },
         });
     });
@@ -100,7 +100,7 @@ describe('immutable canonical cover art', () => {
             storage: {
                 host: '127.0.0.1',
                 port: 9199,
-                rules: readFileSync(resolve(process.cwd(), 'packages/firebase/storage.rules'), 'utf8'),
+                rules: readFileSync(resolve(__dirname, '../../../storage.rules'), 'utf8'),
             },
         });
     });
@@ -189,12 +189,12 @@ describe('owner-bound long-recording staging', () => {
             firestore: {
                 host: '127.0.0.1',
                 port: 8080,
-                rules: readFileSync(resolve(process.cwd(), 'packages/firebase/firestore.rules'), 'utf8'),
+                rules: readFileSync(resolve(__dirname, '../../../firestore.rules'), 'utf8'),
             },
             storage: {
                 host: '127.0.0.1',
                 port: 9199,
-                rules: readFileSync(resolve(process.cwd(), 'packages/firebase/storage.rules'), 'utf8'),
+                rules: readFileSync(resolve(__dirname, '../../../storage.rules'), 'utf8'),
             },
         });
     });
