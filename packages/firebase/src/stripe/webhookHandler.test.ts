@@ -2,7 +2,9 @@
  * stripeWebhook must reject any request whose Stripe signature doesn't
  * verify, before touching Firestore or dispatching to any event handler.
  * A forged/unsigned request must never be able to trigger a subscription
- * change, transfer, or ledger write.
+ * change, transfer, or ledger write. It must also treat a duplicate
+ * delivery of an already-processed event as a no-op, so Stripe's retry
+ * behavior can never re-run a handler's side effects twice.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
@@ -120,7 +122,7 @@ describe('stripeWebhook', () => {
     await (stripeWebhook as unknown as (req: unknown, res: unknown) => Promise<void>)(req, res);
 
     expect(res.json).toHaveBeenCalledWith({ received: true, duplicate: true });
-    expect(res.status).not.toHaveBeenCalledWith(500);
+    expect(res.status).not.toHaveBeenCalled();
     // The duplicate short-circuit must fire before any handler dispatch or
     // delivery-status update — a second webhook write must never happen.
     expect(deliveryDocRef.update).not.toHaveBeenCalled();
