@@ -116,6 +116,15 @@ vi.mock('@/services/video/VideoGenerationService', () => ({
     }
 }));
 
+// Preview resolution belongs to safeStorageFetch's own contract. Keep this interaction
+// test deterministic and off-network while still exercising VideoStage's preview path.
+vi.mock('@/services/storage/safeStorageFetch', () => ({
+    safeStorageFetch: vi.fn().mockResolvedValue({
+        blob: new Blob(['fixture'], { type: 'image/jpeg' }),
+        mimeType: 'image/jpeg',
+    }),
+}));
+
 // Mock lazy-loaded components to speed up test
 vi.mock('../../video/editor/VideoEditor', () => ({
     VideoEditor: () => <div data-testid="video-editor" />

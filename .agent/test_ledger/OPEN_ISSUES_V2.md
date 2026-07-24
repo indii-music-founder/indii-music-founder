@@ -1762,7 +1762,7 @@
 
 ### ISSUE-1192: Video Daisychain interaction test stays green after `VideoWorkflow` crashes because its store mock omits `setVideoInputs`
 
-- **Status:** 🟡 PARTIAL (2026-07-24) — acceptance 1, 2 and 3 proven; **acceptance 4 not run.**
+- **Status:** ✅ FIXED (2026-07-24) — all four acceptance criteria proven.
   - **1 ✅ proven by mutation test, not by inspection.** Commented out `setVideoInputs` from the
     mocked `storeState`, re-ran the focused file: it **fails** with
     `Error: Uncaught [TypeError: setVideoInputs is not a function]` and `Tests 1 failed (1)`.
@@ -1771,9 +1771,10 @@
     and no invalid-URL/storage-bridge noise: `Test Files 1 passed (1) / Tests 1 passed (1)`.
   - **3 ✅** All five stages still asserted, plus a new end-of-test assertion that the workflow is
     still mounted (`video-generate-btn` present) and uncrashed.
-  - **4 ❌ NOT RUN — the full `npm test -- --run` was not executed** (session token budget). Given
-    ISSUE-1191 records this suite as order-sensitive, a focused green does **not** establish suite
-    behaviour. This is the specific reason the status is PARTIAL and not FIXED.
+  - **4 ✅** Final full `npm test -- --run`: `841 passed | 23 skipped` test files and
+    `5267 passed | 52 skipped` tests. The captured full-suite output contains the Daisychain pass
+    and no `setVideoInputs is not a function`, fixture-network/storage-bridge error,
+    `ModuleErrorBoundary` fallback, or `Error in Studio`.
 - **Fix applied:**
   1. Added a *functional* `setVideoInputs(patch)` to the mocked store that merges a partial object,
      matching production's real setter shape (`VideoWorkflow.tsx:246`), plus a `vi.fn()` stub on the
@@ -1784,12 +1785,15 @@
      fallback. Asserted at **mount** as well as at the end — the original crash happened in a
      mount-time effect, so an end-only check could still miss it.
   3. Fixtures moved from relative `img1.jpg` to absolute `https://fixtures.test/img1.jpg`.
+  4. Mocked `safeStorageFetch` at its test boundary with a deterministic image blob, so
+     `VideoStage` still exercises preview resolution without DNS, Firebase bridge, or decode noise.
 - **Deliberately narrow environment allowance:** one regex ignores
   `window__default.default.CSS.supports is not a function` — video.js probing a CSSOM API jsdom does
   not implement. It is a real jsdom gap, not a product failure. Scoped to that single signature
   rather than a blanket console filter, so a genuine crash cannot hide behind it. **This is the one
   place a future regression could slip through if the list is ever widened casually.**
-- **To close:** run the full `npm test -- --run` and confirm zero Daisychain runtime exceptions.
+- **Closure verification:** focused test `1/1` passed; final full suite passed `5267/5267` runnable
+  tests with zero Daisychain runtime exceptions or storage-preview noise.
 - **Severity:** 🟠 HIGH (false-green coverage for the five-step Creative video production path)
 - **Module:**
   `packages/renderer/src/modules/creative/video/components/VideoDaisychain.interaction.test.tsx`,
