@@ -11,6 +11,16 @@ vi.mock('@/components/ui/ConfirmDialog', () => ({
     }
 }));
 
+// ISSUE-1207: campaign creation moved into its own react-call dialog
+// (CreateCampaignDialog). Its own form/submission behavior is covered by
+// CreateCampaignDialog.test.tsx; here we only verify CRMDashboard invokes it.
+const mockCreateCampaignDialogCall = vi.fn().mockResolvedValue(true);
+vi.mock('@/components/ui/CreateCampaignDialog', () => ({
+    CreateCampaignDialog: {
+        call: (...args: any[]) => mockCreateCampaignDialogCall(...args)
+    }
+}));
+
 // Mock store
 vi.mock('@/core/store', () => {
     const mockUseStore = vi.fn();
@@ -164,106 +174,16 @@ describe('CRMDashboard', () => {
         expect(mockUnsubscribe).toHaveBeenCalled();
     });
 
-    it('ISSUE-980: saves as a Draft (not Active) when no deliverable link is provided', async () => {
-        render(<CRMDashboard />);
-
-        // Modal should be closed initially
-        expect(screen.queryByText('Launch a new Digital Vinyl or VIP drop for your superfans.')).not.toBeInTheDocument();
-
-        // Click New Drop button
-        const newDropBtn = screen.getByText('New Drop');
-        fireEvent.click(newDropBtn);
-
-        // Modal should open
-        expect(screen.getByText('Launch a new Digital Vinyl or VIP drop for your superfans.')).toBeInTheDocument();
-
-        // Fill form fields — deliberately no deliverable link
-        const nameInput = screen.getByPlaceholderText('e.g. Genesis Digital Vinyl Drop');
-        const supplyInput = screen.getByPlaceholderText('100');
-        const priceInput = screen.getByPlaceholderText('9.99');
-
-        fireEvent.change(nameInput, { target: { value: 'Synthwave Collector Pack' } });
-        fireEvent.change(supplyInput, { target: { value: '250' } });
-        fireEvent.change(priceInput, { target: { value: '14.99' } });
-
-        // Button honestly reflects that this will save as a draft, not launch.
-        const submitBtn = screen.getByText('Save as Draft');
-        fireEvent.click(submitBtn);
-
-        await waitFor(() => {
-            expect(mockCreateCampaign).toHaveBeenCalledWith({
-                name: 'Synthwave Collector Pack',
-                type: 'Digital Vinyl',
-                supply: 250,
-                price: 14.99,
-                deliverableUrl: undefined,
-                status: 'draft'
-            });
-            expect(screen.queryByText('Launch a new Digital Vinyl or VIP drop for your superfans.')).not.toBeInTheDocument();
-        });
-    });
-
-    it('ISSUE-980: launches as Active only once a real deliverable link is provided', async () => {
+    it('ISSUE-1207: New Drop button invokes CreateCampaignDialog.call() (react-call) instead of hand-rolled modal state', () => {
         render(<CRMDashboard />);
 
         fireEvent.click(screen.getByText('New Drop'));
 
-        fireEvent.change(screen.getByPlaceholderText('e.g. Genesis Digital Vinyl Drop'), { target: { value: 'Synthwave Collector Pack' } });
-        fireEvent.change(screen.getByPlaceholderText('100'), { target: { value: '250' } });
-        fireEvent.change(screen.getByPlaceholderText('9.99'), { target: { value: '14.99' } });
-        fireEvent.change(screen.getByPlaceholderText(/Where fans get this/), { target: { value: 'https://cdn.example.com/vinyl.zip' } });
-
-        const launchBtn = screen.getByText('Launch Drop');
-        fireEvent.click(launchBtn);
-
-        await waitFor(() => {
-            expect(mockCreateCampaign).toHaveBeenCalledWith({
-                name: 'Synthwave Collector Pack',
-                type: 'Digital Vinyl',
-                supply: 250,
-                price: 14.99,
-                deliverableUrl: 'https://cdn.example.com/vinyl.zip',
-                status: 'active'
-            });
-        });
-    });
-
-    it('ISSUE-979: keeps the modal and draft intact when createCampaign returns null (persistence failure)', async () => {
-        mockCreateCampaign.mockResolvedValue(null);
-        render(<CRMDashboard />);
-
-        fireEvent.click(screen.getByText('New Drop'));
-        fireEvent.change(screen.getByPlaceholderText('e.g. Genesis Digital Vinyl Drop'), { target: { value: 'Synthwave Collector Pack' } });
-        fireEvent.change(screen.getByPlaceholderText('100'), { target: { value: '250' } });
-        fireEvent.change(screen.getByPlaceholderText('9.99'), { target: { value: '14.99' } });
-
-        fireEvent.click(screen.getByText('Save as Draft'));
-
-        await waitFor(() => {
-            expect(mockCreateCampaign).toHaveBeenCalled();
-        });
-        // Modal stays open, draft values are preserved — nothing was saved.
-        expect(screen.getByText('Launch a new Digital Vinyl or VIP drop for your superfans.')).toBeInTheDocument();
-        expect(screen.getByPlaceholderText('e.g. Genesis Digital Vinyl Drop')).toHaveValue('Synthwave Collector Pack');
-        expect(screen.getByPlaceholderText('100')).toHaveValue(250);
-        expect(screen.getByPlaceholderText('9.99')).toHaveValue(14.99);
-    });
-
-    it('cancels form modal inputs and closes when Cancel is clicked', () => {
-        render(<CRMDashboard />);
-
-        // Open modal
-        const newDropBtn = screen.getByText('New Drop');
-        fireEvent.click(newDropBtn);
-        expect(screen.getByText('Launch a new Digital Vinyl or VIP drop for your superfans.')).toBeInTheDocument();
-
-        // Click Cancel
-        const cancelBtn = screen.getByText('Cancel');
-        fireEvent.click(cancelBtn);
-
-        // Modal should be closed and createCampaign not called
+        expect(mockCreateCampaignDialogCall).toHaveBeenCalledWith({});
+        // Nothing about this button ever renders the old inline form — that
+        // form/submission logic now lives entirely in CreateCampaignDialog,
+        // covered by CreateCampaignDialog.test.tsx (ISSUE-979/980 assertions).
         expect(screen.queryByText('Launch a new Digital Vinyl or VIP drop for your superfans.')).not.toBeInTheDocument();
-        expect(mockCreateCampaign).not.toHaveBeenCalled();
     });
 
     it('calls deleteCampaign handler when trash button is clicked', async () => {

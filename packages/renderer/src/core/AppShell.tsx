@@ -22,6 +22,9 @@ import { PromptDialog } from '@/components/ui/PromptDialog';
 import { CampaignConfigDialog } from '@/components/ui/CampaignConfigDialog';
 import { WalletConnectDialog } from '@/components/ui/WalletConnectDialog';
 import { AddTaxCollaboratorDialog } from '@/components/ui/AddTaxCollaboratorDialog';
+import ConnectDistributorModal from '@/modules/distribution/components/ConnectDistributorModal';
+import { CreateCampaignDialog } from '@/components/ui/CreateCampaignDialog';
+import NewProjectModal from '@/modules/dashboard/components/NewProjectModal';
 import { BiometricGate } from './components/auth/BiometricGate';
 import { ResponsiveLayoutProvider } from '@/providers/ResponsiveLayoutProvider';
 import { ShareTargetHandler } from '@/core/components/ShareTargetHandler';
@@ -473,6 +476,9 @@ function AppContent({ currentModule, showChrome, isDesktop, isAnyPhone, shortcut
                 <CampaignConfigDialog />
                 <WalletConnectDialog />
                 <AddTaxCollaboratorDialog />
+                <ConnectDistributorModal />
+                <CreateCampaignDialog />
+                <NewProjectModal />
             </GlobalDropZone>
         </div>
     );

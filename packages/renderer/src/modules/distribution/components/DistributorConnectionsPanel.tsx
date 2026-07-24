@@ -4,7 +4,6 @@ import { useShallow } from 'zustand/react/shallow';
 import { DistributorCard } from './DistributorCard';
 import ConnectDistributorModal from './ConnectDistributorModal';
 import { DistributorService } from '@/services/distribution/DistributorService';
-import type { DistributorAdapter } from '@/services/distribution/types/distributor';
 import { logger } from '@/utils/logger';
 
 export const DistributorConnectionsPanel: React.FC = () => {
@@ -16,28 +15,28 @@ export const DistributorConnectionsPanel: React.FC = () => {
     );
     const { connections, loading, error } = distribution;
 
-    const [selectedAdapter, setSelectedAdapter] = useState<DistributorAdapter | null>(null);
-    const [isModalOpen, setIsModalOpen] = useState(false);
+    // ISSUE-1207: connect/cancel is now driven by ConnectDistributorModal.call()
+    // (react-call) rather than isModalOpen/selectedAdapter state. Kept only for
+    // the "is this specific card mid-connect" spinner DistributorCard reads below.
+    const [connectingAdapterId, setConnectingAdapterId] = useState<string | null>(null);
 
     useEffect(() => {
         fetchDistributors();
     }, [fetchDistributors]);
 
-    const handleConnect = (id: string) => {
+    const handleConnect = async (id: string) => {
         const adapter = DistributorService.getAdapter(id as import('@/services/distribution/types/distributor').DistributorId);
-        if (adapter) {
-            setSelectedAdapter(adapter);
-            setIsModalOpen(true);
-        } else {
+        if (!adapter) {
             logger.error(`Adapter not found for ${id}`);
+            return;
         }
-    };
-
-    const handleModalSuccess = () => {
-        setIsModalOpen(false);
-        setSelectedAdapter(null);
-        // Refresh connections to show the new status
-        fetchDistributors();
+        setConnectingAdapterId(id);
+        const connected = await ConnectDistributorModal.call({ adapter });
+        setConnectingAdapterId(null);
+        if (connected) {
+            // Refresh connections to show the new status
+            fetchDistributors();
+        }
     };
 
     if (loading && connections.length === 0) {
@@ -73,7 +72,7 @@ export const DistributorConnectionsPanel: React.FC = () => {
                         key={dist.distributorId}
                         connection={dist}
                         onConnect={handleConnect}
-                        isConnecting={distribution.isConnecting && selectedAdapter?.id === dist.distributorId}
+                        isConnecting={connectingAdapterId === dist.distributorId}
                     />
                 ))}
             </div>
@@ -94,14 +93,6 @@ export const DistributorConnectionsPanel: React.FC = () => {
                 <div className="absolute -left-20 -bottom-20 w-64 h-64 bg-dept-distribution/5 rounded-full blur-[100px] pointer-events-none" />
             </div>
 
-            {selectedAdapter && (
-                <ConnectDistributorModal
-                    isOpen={isModalOpen}
-                    onClose={() => setIsModalOpen(false)}
-                    adapter={selectedAdapter}
-                    onSuccess={handleModalSuccess}
-                />
-            )}
         </div>
     );
 };

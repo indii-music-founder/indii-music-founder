@@ -16,7 +16,6 @@ export default function RecentProjects() {
 
     const [projects, setProjects] = useState<ProjectMetadata[]>([]);
     const [loading, setLoading] = useState(true);
-    const [isModalOpen, setIsModalOpen] = useState(false);
 
     useEffect(() => {
         DashboardService.getProjects()
@@ -30,16 +29,21 @@ export default function RecentProjects() {
         setModule('creative');
     };
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const handleCreate = async (name: string, type: 'creative' | 'music' | 'marketing' | 'legal') => {
-        try {
-            const p = await DashboardService.createProject(name);
-            setProjects((prev) => [p, ...prev].slice(0, 4));
-            setIsModalOpen(false);
-            handleOpen(p.id);
-        } catch (__e: unknown) {
-            // swallow
-        }
+    // ISSUE-1207: NewProjectModal is now a react-call dialog and owns its own
+    // error display (the old version's `error` prop was hardcoded to `null` by
+    // this exact caller and never wired up — a real silent-failure bug, fixed
+    // by moving error state into the modal). This only does the actual create
+    // and returns the new id; NewProjectModal shows the error and stays open
+    // itself if createProject() throws.
+    const handleNewProject = async () => {
+        const id = await NewProjectModal.call({
+            onCreate: async (name: string) => {
+                const p = await DashboardService.createProject(name);
+                setProjects((prev) => [p, ...prev].slice(0, 4));
+                return p.id;
+            },
+        });
+        if (id) handleOpen(id);
     };
 
     if (loading) {
@@ -64,7 +68,7 @@ export default function RecentProjects() {
                     <h3 className="text-sm font-bold text-white">Recent Projects</h3>
                 </div>
                 <button
-                    onClick={() => setIsModalOpen(true)}
+                    onClick={handleNewProject}
                     className="p-1.5 rounded-lg bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-colors"
                     title="New Project"
                 >
@@ -126,7 +130,7 @@ export default function RecentProjects() {
                     <p className="text-sm text-gray-400 mb-1">No projects yet</p>
                     <p className="text-[10px] text-gray-600 mb-4">Create your first to get started</p>
                     <button
-                        onClick={() => setIsModalOpen(true)}
+                        onClick={handleNewProject}
                         className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-lg transition-colors"
                     >
                         Create Project
@@ -144,12 +148,6 @@ export default function RecentProjects() {
                 </button>
             )}
 
-            <NewProjectModal
-                isOpen={isModalOpen}
-                onClose={() => setIsModalOpen(false)}
-                onCreate={handleCreate}
-                error={null}
-            />
         </div>
     );
 }

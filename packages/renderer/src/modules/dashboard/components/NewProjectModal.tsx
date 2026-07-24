@@ -1,58 +1,52 @@
 import React, { useState } from "react";
+import { createCallable } from 'react-call';
 import { motion } from 'motion/react';
 import { Loader2 } from "lucide-react";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { logger } from '@/utils/logger';
 
+export type NewProjectType = "creative" | "music" | "marketing" | "legal";
+
 interface NewProjectModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onCreate: (
-    name: string,
-    type: "creative" | "music" | "marketing" | "legal",
-  ) => Promise<void>;
-  error: string | null;
+  onCreate: (name: string, type: NewProjectType) => Promise<string>;
   initialName?: string;
-  initialType?: "creative" | "music" | "marketing" | "legal";
+  initialType?: NewProjectType;
 }
 
-export default function NewProjectModal({
-  isOpen,
-  onClose,
+// ISSUE-1207: converted from an isOpen/onClose-gated component to react-call
+// (per CLAUDE.md's "Standardized on react-call... never fake a modal").
+// Also fixes a real bug found in the process: the old isOpen/onClose version
+// took an `error` prop that the only caller hardcoded to `null` and never
+// wired up, so a failed onCreate() was silently swallowed with zero user
+// feedback. Error state now lives here, next to the thing that can fail.
+// Returns the created project's id, or null if the user cancelled/closed it.
+const NewProjectModal = createCallable<NewProjectModalProps, string | null>(({
+  call,
   onCreate,
-  error,
   initialName = "",
   initialType = "creative",
-}: NewProjectModalProps) {
+}) => {
   const [name, setName] = useState(initialName);
-  const [type, setType] = useState<
-    "creative" | "music" | "marketing" | "legal"
-  >(initialType);
+  const [type, setType] = useState<NewProjectType>(initialType);
   const [isCreating, setIsCreating] = useState(false);
-
-  React.useEffect(() => {
-    if (isOpen) {
-      setName(initialName);
-      setType(initialType);
-      setIsCreating(false);
-    }
-  }, [isOpen, initialName, initialType]);
+  const [error, setError] = useState<string | null>(null);
+  const onClose = () => call.end(null);
 
   const handleCreate = async () => {
     if (!name.trim()) return;
     setIsCreating(true);
+    setError(null);
     try {
-      await onCreate(name, type);
+      const id = await onCreate(name, type);
+      call.end(id);
     } catch (e: unknown) {
-      // Parent component handles error display via 'error' prop
       logger.error("Operation failed:", e);
+      setError(e instanceof Error ? e.message : "Failed to create project. Please try again.");
     } finally {
       setIsCreating(false);
     }
   };
-
-  if (!isOpen) return null;
 
   return (
     <div
@@ -160,4 +154,6 @@ export default function NewProjectModal({
       </motion.div>
     </div>
   );
-}
+});
+
+export default NewProjectModal;

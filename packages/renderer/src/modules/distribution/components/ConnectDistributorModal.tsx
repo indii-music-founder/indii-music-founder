@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+import { createCallable } from 'react-call';
 import { DistributorAdapter } from '@/services/distribution/types/distributor';
 import { DistributorService } from '@/services/distribution/DistributorService';
 import { X, Lock, Save, Loader2, AlertCircle, Globe, Terminal, ShieldCheck, ChevronRight } from 'lucide-react';
@@ -7,15 +8,18 @@ import { motion, AnimatePresence } from 'motion/react';
 import { logger } from '@/utils/logger';
 
 interface ConnectDistributorModalProps {
-    isOpen: boolean;
-    onClose: () => void;
-    adapter: DistributorAdapter | undefined;
-    onSuccess: () => void;
+    adapter: DistributorAdapter;
 }
 
 type ConfigTab = 'identity' | 'technical';
 
-export default function ConnectDistributorModal({ isOpen, onClose, adapter, onSuccess }: ConnectDistributorModalProps) {
+// ISSUE-1207: converted from an isOpen/onClose-gated component to react-call
+// (per CLAUDE.md's "Standardized on react-call... never fake a modal"). Returns
+// true if the connection was established, false if the user cancelled/closed it.
+const ConnectDistributorModal = createCallable<ConnectDistributorModalProps, boolean>(({ call, adapter }) => {
+    const isOpen = true;
+    const onClose = () => call.end(false);
+    const onSuccess = () => call.end(true);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [activeTab, setActiveTab] = useState<ConfigTab>('identity');
@@ -35,8 +39,6 @@ export default function ConnectDistributorModal({ isOpen, onClose, adapter, onSu
         password: '',
         privateKey: ''
     });
-
-    if (!isOpen || !adapter) return null;
 
     const handleSubmit = async (e: React.FormEvent) => {
         logger.debug('[ConnectDistributorModal] handleSubmit called');
@@ -348,4 +350,6 @@ export default function ConnectDistributorModal({ isOpen, onClose, adapter, onSu
             )}
         </AnimatePresence>
     );
-}
+});
+
+export default ConnectDistributorModal;

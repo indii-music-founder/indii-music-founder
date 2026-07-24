@@ -1,39 +1,33 @@
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import React, { useEffect } from 'react';
+import { motion } from 'motion/react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
-import { useToast } from '@/core/context/ToastContext';
-import { 
-    Plus, 
-    Trash2, 
-    Users, 
-    Layers, 
-    DollarSign, 
-    TrendingUp, 
-    X, 
-    Tag, 
-    Loader2, 
-    AlertCircle, 
+import { CreateCampaignDialog } from '@/components/ui/CreateCampaignDialog';
+import {
+    Plus,
+    Trash2,
+    Users,
+    Layers,
+    DollarSign,
+    TrendingUp,
+    Loader2,
+    AlertCircle,
     CheckCircle,
     Calendar
 } from 'lucide-react';
 import { type Campaign } from '@/core/store/slices/crmSlice';
 
 export default function CRMDashboard() {
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    
     // Connect to Zustand store — select only what we use to prevent re-renders on unrelated state changes (ISSUE-1205)
-    const { crm, subscribeToCampaigns, createCampaign, deleteCampaign } = useStore(
+    const { crm, subscribeToCampaigns, deleteCampaign } = useStore(
         useShallow((state) => ({
             crm: state.crm,
             subscribeToCampaigns: state.subscribeToCampaigns,
-            createCampaign: state.createCampaign,
             deleteCampaign: state.deleteCampaign,
         }))
     );
     const { campaigns, loading, error } = crm;
-    const toast = useToast();
 
     // Subscribe to Firestore campaigns collection on mount
     useEffect(() => {
@@ -43,57 +37,9 @@ export default function CRMDashboard() {
         };
     }, [subscribeToCampaigns]);
 
-    // Form state
-    const [campaignName, setCampaignName] = useState('');
-    const [campaignType, setCampaignType] = useState<Campaign['type']>('Digital Vinyl');
-    const [supply, setSupply] = useState('');
-    const [price, setPrice] = useState('');
-    const [deliverableUrl, setDeliverableUrl] = useState('');
-    const [isSubmitting, setIsSubmitting] = useState(false);
-
-    const handleLaunch = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!campaignName || !supply || !price) return;
-
-        // ISSUE-980: a drop with no real deliverable link cannot go live —
-        // it saves as a draft instead of silently becoming "Active" with
-        // nothing for a fan to discover, purchase, or unlock.
-        const hasDeliverable = !!deliverableUrl.trim();
-
-        // ISSUE-979: double-submit guard — a slow write must not launch twice.
-        if (isSubmitting) return;
-        setIsSubmitting(true);
-        try {
-            const id = await createCampaign({
-                name: campaignName,
-                type: campaignType,
-                supply: parseInt(supply, 10),
-                price: parseFloat(price),
-                deliverableUrl: deliverableUrl.trim() || undefined,
-                status: hasDeliverable ? 'active' : 'draft'
-            });
-            // ISSUE-979: the store action returns null on persistence failure
-            // (offline, signed-out, rules, quota). Only a real document ID may
-            // close the modal and clear the draft.
-            if (!id) {
-                toast.error('Launch failed — your drop was NOT saved. Fix the connection or sign-in and try again; your draft is untouched.');
-                return;
-            }
-            toast.success(hasDeliverable
-                ? 'Drop launched!'
-                : 'Saved as a draft — add a deliverable link to launch it.');
-            setIsModalOpen(false);
-            setCampaignName('');
-            setCampaignType('Digital Vinyl');
-            setSupply('');
-            setPrice('');
-            setDeliverableUrl('');
-        } catch (err) {
-            console.error('Failed to create campaign:', err);
-            toast.error('Launch failed — your drop was NOT saved. Your draft is untouched.');
-        } finally {
-            setIsSubmitting(false);
-        }
+    // ISSUE-1207: campaign creation now lives in CreateCampaignDialog.call() (react-call).
+    const handleNewDrop = () => {
+        CreateCampaignDialog.call({});
     };
 
     // Calculate metrics — draft campaigns never count as active or projected live value.
@@ -133,7 +79,7 @@ export default function CRMDashboard() {
                     <p className="text-text-secondary mt-1 text-sm md:text-base">Manage your SoundLocker campaign ecosystem, sales, and fan drops.</p>
                 </div>
                 <button
-                    onClick={() => setIsModalOpen(true)}
+                    onClick={handleNewDrop}
                     className="flex items-center gap-2 px-4 py-2.5 bg-accent-primary hover:bg-accent-secondary text-white rounded-lg font-medium transition-all duration-200 shadow-md shadow-accent-primary/20 hover:shadow-accent-secondary/30 active:scale-95"
                 >
                     <Plus className="w-5 h-5" />
@@ -209,7 +155,7 @@ export default function CRMDashboard() {
                             <p className="text-sm text-text-secondary max-w-sm mt-1">Create your first Digital Vinyl, audio drop, or VIP bundle to start engaging with superfans.</p>
                         </div>
                         <button
-                            onClick={() => setIsModalOpen(true)}
+                            onClick={handleNewDrop}
                             className="px-4 py-2 bg-background hover:bg-border border border-border text-text-primary rounded-lg font-medium transition-colors text-sm"
                         >
                             Create Drop
@@ -307,134 +253,6 @@ export default function CRMDashboard() {
                 )}
             </div>
 
-            {/* New Drop Modal */}
-            <AnimatePresence>
-                {isModalOpen && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.95 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.95 }}
-                            className="w-full max-w-md bg-surface border border-border rounded-2xl p-6 shadow-2xl flex flex-col gap-4 relative"
-                        >
-                            <button
-                                onClick={() => setIsModalOpen(false)}
-                                className="absolute top-4 right-4 p-1.5 hover:bg-border rounded-lg text-text-secondary transition-colors"
-                            >
-                                <X className="w-5 h-5" />
-                            </button>
-
-                            <div>
-                                <h2 className="text-2xl font-bold flex items-center gap-2">
-                                    <Tag className="w-5 h-5 text-accent-primary" />
-                                    <span>Create Campaign</span>
-                                </h2>
-                                <p className="text-sm text-text-secondary mt-1">Launch a new Digital Vinyl or VIP drop for your superfans.</p>
-                            </div>
-
-                            <form onSubmit={handleLaunch} className="flex flex-col gap-4 mt-2">
-                                <div className="flex flex-col gap-1.5">
-                                    <label className="text-xs font-semibold text-text-secondary uppercase tracking-wider">Campaign Name</label>
-                                    <input
-                                        type="text"
-                                        required
-                                        value={campaignName}
-                                        onChange={e => setCampaignName(e.target.value)}
-                                        placeholder="e.g. Genesis Digital Vinyl Drop"
-                                        className="px-3.5 py-2.5 bg-background border border-border rounded-xl focus:outline-none focus:border-accent-primary text-sm transition-all"
-                                    />
-                                </div>
-
-                                <div className="flex flex-col gap-1.5">
-                                    <label className="text-xs font-semibold text-text-secondary uppercase tracking-wider">Campaign Type</label>
-                                    <select
-                                        value={campaignType}
-                                        onChange={e => setCampaignType(e.target.value as Campaign['type'])}
-                                        className="px-3.5 py-2.5 bg-background border border-border rounded-xl focus:outline-none focus:border-accent-primary text-sm transition-all"
-                                    >
-                                        <option value="Digital Vinyl">Digital Vinyl</option>
-                                        <option value="Exclusive Audio">Exclusive Audio</option>
-                                        <option value="VIP Package">VIP Package</option>
-                                        <option value="Merch Bundle">Merch Bundle</option>
-                                    </select>
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="flex flex-col gap-1.5">
-                                        <label className="text-xs font-semibold text-text-secondary uppercase tracking-wider">Supply</label>
-                                        <input
-                                            type="number"
-                                            required
-                                            min="1"
-                                            placeholder="100"
-                                            value={supply}
-                                            onChange={e => setSupply(e.target.value)}
-                                            className="px-3.5 py-2.5 bg-background border border-border rounded-xl focus:outline-none focus:border-accent-primary text-sm transition-all"
-                                        />
-                                    </div>
-
-                                    <div className="flex flex-col gap-1.5">
-                                        <label className="text-xs font-semibold text-text-secondary uppercase tracking-wider">Price (USD)</label>
-                                        <input
-                                            type="number"
-                                            required
-                                            min="0.01"
-                                            step="0.01"
-                                            placeholder="9.99"
-                                            value={price}
-                                            onChange={e => setPrice(e.target.value)}
-                                            className="px-3.5 py-2.5 bg-background border border-border rounded-xl focus:outline-none focus:border-accent-primary text-sm transition-all"
-                                        />
-                                    </div>
-                                </div>
-
-                                <div className="flex flex-col gap-1.5">
-                                    <label className="text-xs font-semibold text-text-secondary uppercase tracking-wider">
-                                        Deliverable Link <span className="text-text-secondary/60 normal-case font-medium">(optional — required to go live)</span>
-                                    </label>
-                                    <input
-                                        type="url"
-                                        value={deliverableUrl}
-                                        onChange={e => setDeliverableUrl(e.target.value)}
-                                        placeholder="Where fans get this once they buy it (file link, store page, ticket page...)"
-                                        className="px-3.5 py-2.5 bg-background border border-border rounded-xl focus:outline-none focus:border-accent-primary text-sm transition-all"
-                                    />
-                                    <p className="text-[11px] text-text-secondary/70">
-                                        {deliverableUrl.trim()
-                                            ? 'This drop will launch as Active.'
-                                            : 'Without this, the drop saves as a Draft — fans cannot discover, purchase, or unlock anything until it\'s added.'}
-                                    </p>
-                                </div>
-
-                                <div className="flex justify-end gap-3 mt-6">
-                                    <button
-                                        type="button"
-                                        onClick={() => setIsModalOpen(false)}
-                                        className="px-4 py-2 hover:bg-border rounded-xl font-medium transition-colors text-sm"
-                                        disabled={isSubmitting}
-                                    >
-                                        Cancel
-                                    </button>
-                                    <button
-                                        type="submit"
-                                        className="flex items-center justify-center gap-2 px-5 py-2 bg-accent-primary hover:bg-accent-secondary text-white rounded-xl font-semibold transition-all duration-200 text-sm disabled:opacity-50 disabled:pointer-events-none"
-                                        disabled={isSubmitting || !campaignName || !supply || !price}
-                                    >
-                                        {isSubmitting ? (
-                                            <>
-                                                <Loader2 className="w-4 h-4 animate-spin" />
-                                                <span>{deliverableUrl.trim() ? 'Launching...' : 'Saving...'}</span>
-                                            </>
-                                        ) : (
-                                            <span>{deliverableUrl.trim() ? 'Launch Drop' : 'Save as Draft'}</span>
-                                        )}
-                                    </button>
-                                </div>
-                            </form>
-                        </motion.div>
-                    </div>
-                )}
-            </AnimatePresence>
         </div>
     );
 }
