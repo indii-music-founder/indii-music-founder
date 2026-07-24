@@ -2490,6 +2490,18 @@ Listed only so they are not lost. No assessment is implied.
 - **Honest fallback:** If a collection-group index is intentionally deferred, the function should fail closed with a clear, non-generic "index not yet provisioned" log rather than a raw Firestore SDK stack trace, so this is easier to distinguish from a real logic bug on the next audit pass. Do not silently swallow the error — this is the reason it stayed invisible until traced.
 - **Do not:** do not disable or skip this scheduled function to make the error go away; do not create the index by clicking the console link without also committing it to `firestore.indexes.json` (that would fix production silently while leaving every other environment/future deploy without it).
 
+### ISSUE-1221: `storage.rules.test.ts` fails with ENOENT for rules files — `cwd`-relative path resolves to a doubled `packages/firebase/packages/firebase/...`
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟡 MEDIUM (security-rules test coverage silently non-functional when run from the package directory; not caused by this session's change but discovered while verifying it didn't introduce a regression)
+- **Module:** `packages/firebase/src/test/security/storage.rules.test.ts`
+- **Evidence:** Running `npx vitest run` from `packages/firebase/` (the package's own configured test root, `npm run test` invoked from that directory) produces:
+  `Error: ENOENT: no such file or directory, open '/home/user/indii-music-founder/packages/firebase/packages/firebase/storage.rules'` and the equivalent doubled path for `firestore.rules`.
+- **Root cause (not yet fixed):** the test does `readFileSync(resolve(process.cwd(), 'packages/firebase/storage.rules'), ...)` (and the firestore.rules equivalent). That relative path assumes `process.cwd()` is the **monorepo root**, but this package's own `vitest.config.ts` (and `npm run test` run from `packages/firebase/`) executes with `cwd` already inside `packages/firebase/`, doubling the path. `test:rules` (`vitest src/test/security/firestore.rules.test.ts`) may only pass today because it's invoked from a different cwd than plain `vitest run` from the package dir — not confirmed which invocation the CI pipeline actually uses.
+- **Impact:** the Firestore/Storage security rules emulator tests do not run at all under a plain `vitest run` from the firebase package — a false-green risk if CI's actual invocation happens to dodge this path bug by luck of cwd, and a real failure (as observed) if it doesn't.
+- **Fix (not applied — out of scope for the Stripe webhook test PR that surfaced this):** resolve the rules file path relative to the test file itself (e.g. `resolve(__dirname, '../../../storage.rules')` or via `fileURLToPath(import.meta.url)`) instead of `process.cwd()`, so the test passes regardless of which directory it's invoked from.
+- **Acceptance:** `npx vitest run` from `packages/firebase/` passes `storage.rules.test.ts` and `firestore.rules.test.ts` without relying on a specific invocation cwd.
+
 ---
 
 ## Session 2026-07-24 (continuation) — Ledger audit: spot-verify recent FIXED claims
