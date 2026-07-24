@@ -378,6 +378,24 @@ export const VIDEO_SESSION_UPLOAD_TRIGGER_OPTIONS = {
     retry: true,
 } as const;
 
+// GCS lowercases custom metadata keys when sending CloudEvents. Normalize them to camelCase.
+function normalizeGcsMetadata(raw: Record<string, unknown>): Record<string, unknown> {
+    const map: Record<string, string> = {
+        'owneruuid': 'ownerUid',
+        'owneruid': 'ownerUid',
+        'organizationid': 'organizationId',
+        'projectid': 'projectId',
+        'sessionid': 'sessionId',
+        'uploadsessionid': 'uploadSessionId',
+    };
+    const normalized: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(raw)) {
+        const lowerKey = key.toLowerCase();
+        normalized[map[lowerKey] || key] = value;
+    }
+    return normalized;
+}
+
 export const finalizeVideoSessionUpload = onObjectFinalized(
     VIDEO_SESSION_UPLOAD_TRIGGER_OPTIONS,
     async (event) => {
@@ -392,7 +410,7 @@ export const finalizeVideoSessionUpload = onObjectFinalized(
                 size: Number(event.data.size),
                 contentType: event.data.contentType,
                 createdAt: event.data.timeCreated,
-                metadata: event.data.metadata ?? {},
+                metadata: normalizeGcsMetadata(event.data.metadata ?? {}),
             }, {
                 sessions: createFirestoreVideoSessionFinalizationStore(),
                 objects: createGcsImmutableVideoObjectStore(),
