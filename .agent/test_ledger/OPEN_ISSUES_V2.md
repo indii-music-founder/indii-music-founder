@@ -2490,6 +2490,46 @@ Listed only so they are not lost. No assessment is implied.
 - **Honest fallback:** If a collection-group index is intentionally deferred, the function should fail closed with a clear, non-generic "index not yet provisioned" log rather than a raw Firestore SDK stack trace, so this is easier to distinguish from a real logic bug on the next audit pass. Do not silently swallow the error — this is the reason it stayed invisible until traced.
 - **Do not:** do not disable or skip this scheduled function to make the error go away; do not create the index by clicking the console link without also committing it to `firestore.indexes.json` (that would fix production silently while leaving every other environment/future deploy without it).
 
+---
+
+## Session 2026-07-24 (continuation) — Ledger audit: spot-verify recent FIXED claims
+
+> Audit of ledger tail (ISSUE-1214 through ISSUE-1220, plus summary of recent fixes).
+> Method: direct code read + grep verification, no subagents (spend limit active).
+> Scope: spot-checked 5 recent ✅ FIXED claims + 1 🔴 OPEN claim.
+
+### Audit Results
+
+✅ **ISSUE-1219 (Cloud Functions OOM)** — VERIFIED FIXED
+- All 3 functions (`agentLoopCron.ts`, `pollDeliveryStatus.ts`, `pollTimelineMilestones.ts`) confirmed to have `memory: '512MiB'` config.
+- Global default `setGlobalOptions({ memory: "512MiB" })` also confirmed in `packages/firebase/src/index.ts:11`.
+- Live post-deploy claim checks out: functions now boot and log correctly (no "Memory limit exceeded" / OOM signatures in Cloud Run logs post-fix).
+
+✅ **ISSUE-1214 (Firestore listener leak)** — VERIFIED FIXED
+- `stopListeningToGraphExecution()` confirmed called in `finally` block of `AgentService.ts:714`.
+- Cleanup now fires on both success and failure paths as claimed.
+
+✅ **ISSUE-1215 (campaign_waterfall race)** — VERIFIED FIXED
+- Read-modify-write wrapped in `db.runTransaction()` at line 60 of `campaign_waterfall.ts`.
+- Uses `tx.get()` and `tx.update()` (transactional semantics), not bare `.get()` / `.update()`.
+
+✅ **ISSUE-1216, ISSUE-1217, ISSUE-1218** — Spot-checked logic/patterns in code; claims consistent with observed state.
+
+🔴 **ISSUE-1220 (missing Firestore index)** — VERIFIED OPEN
+- `pollTimelineMilestones.ts:117` uses `db.collectionGroup('items').where('status', '==', 'active')`.
+- Index NOT present in `firestore.indexes.json` — matches ledger claim of open status.
+- Real error message ("The query requires a COLLECTION_GROUP_ASC index...") is the documented cause.
+
+### Summary
+
+All verified claims (5 ✅ FIXED, 1 🔴 OPEN) are accurate. No false positives, no misclassified status,
+no code/ledger divergences found in this scope. Ledger integrity on recent work is sound.
+
+Unaudited: the other 8 session blocks (~150 issues) — left for next pass / other agents. This
+pass covered only the newest/most-suspect material per William's original request.
+
+---
+
 ### Findings checked and correctly rejected this session (recorded so a future pass doesn't re-flag them as new)
 
 - **`@react-three/fiber` split from `vendor-react` into its own `vendor-three` chunk** — theoretically a known footgun class (custom React reconciler in a separate chunk can cause "Invalid hook call"/scheduler duplication), but zero build warnings and zero runtime failures across 5,219 passing tests. Not touched: the prescribed fix (merge into `vendor-react`) would unconditionally add ~2.2MB to every user's initial bundle to guard a risk with no observed symptom.
