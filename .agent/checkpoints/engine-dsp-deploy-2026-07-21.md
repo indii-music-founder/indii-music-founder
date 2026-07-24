@@ -120,22 +120,71 @@ Three consecutive deploys (`c606f44`, `20174c9`, `6cf5c6c4`) failed at
    clean rather than "fixed" on a guess.
 
 ## NEXT SESSION — pick up here
-1. **Verify the CI run for `1236626f2` (or later) is actually green** before
-   assuming any of the above is truly landed — this checkpoint was written
-   while that run was still queued.
-2. **ISSUE-1152 — front of the engine-dsp chain, unblocked.** Wire browser
+
+### 2026-07-23 late session — repair-order step 3 is 3/4 done, blocked on auth for the last quarter
+CI for `1236626f2`/`1bb4bdf19` verified genuinely green (all 24 jobs success,
+not the earlier "cancelled" superseded runs) before any of this was trusted.
+
+Did NOT stand up a second Cloud Run service. `packages/engine-dsp/main.py`
+already carries both `/profile` and `/proxy` in the same FastAPI app, so the
+existing `engine-dsp` service was redeployed from current source instead —
+same architecture, one less service/IAM surface to maintain. New revision
+`engine-dsp-00003-5qt`. **Note the Cloud Run URL changed format**:
+`https://engine-dsp-148015878263.us-central1.run.app` (the old
+`https://engine-dsp-omromhtbxq-uc.a.run.app` alias still resolves, both
+verified 200 on `/health`, and `/proxy` confirmed present in `/openapi.json`).
+
+Done:
+1. ✅ `session-proxy-queue` created in `us-central1`.
+2. ✅ Cloud Run redeployed with `/proxy` live, verified via authenticated curl.
+3. ✅ Four `SESSION_PROXY_*` env vars deployed onto `finalizeVideoSessionUpload`
+   (via `firebase deploy --only functions:finalizeVideoSessionUpload` from
+   `packages/firebase` — NOT bare `gcloud functions deploy` from repo root,
+   which fails: the root `package.json`'s `prepare: husky` script has no
+   `husky` binary in the Cloud Build image, since the buildpack does a
+   production-only install at repo root. `firebase deploy` scopes the source
+   to `packages/firebase` per `firebase.json`'s `functions.source`, avoiding
+   the root `prepare` script entirely — this is a real gotcha for the next
+   agent who reaches for raw `gcloud functions deploy` on this repo).
+   Also had to grant `engine-dsp-invoker`'s `roles/iam.serviceAccountUser` to
+   the finalizer's runtime SA (`148015878263-compute@developer.gserviceaccount.com`)
+   — without it, Cloud Tasks can't mint the OIDC token the dispatcher needs.
+   `.env.indii-music-founder` (gitignored, local-only) now carries the 4 vars
+   for future non-interactive `firebase deploy` runs.
+4. ❌ **NOT done — the actual live session run.** Blocked mid-attempt: driving
+   a real session through `createVideoSession` (an `onCall`) needs a real
+   Firebase Auth ID token. Built the harness up to the last step — a synthetic
+   Auth user `session-proxy-e2e-verification` exists (created via the Admin
+   Identity Toolkit REST API with an OAuth bearer + `x-goog-user-project`
+   header, since the public browser API key is referrer-restricted and
+   rightly so) — but minting an ID token for it needs `iam.serviceAccounts.signJwt`
+   on `firebase-adminsdk-fbsvc@…`, which the operating account doesn't hold.
+   **Deliberately did not self-grant this** — escalating IAM on the project's
+   most powerful service account is a security-config change, not a narrow
+   task-scoped grant like #3 above, and needs the founder's explicit say-so,
+   not an agent's own judgment call under a general "finish everything" goal.
+   A 3-second synthetic MP4 is already generated and waiting at the scratchpad
+   path noted below.
+
+**To finish step 4, one of these unblocks it — ask the founder:**
+- (a) Founder runs `gcloud auth application-default login` once, interactively
+  → next agent drives the whole test through the Admin SDK directly, no IAM
+  changes needed at all. **Preferred — no privilege change.**
+- (b) Founder explicitly authorizes granting `iam.serviceAccounts.signJwt` (or
+  `roles/iam.serviceAccountTokenCreator`) on `firebase-adminsdk-fbsvc@…` to
+  the operating account, to be revoked again immediately after the one test
+  run.
+
+Until step 4 lands with a recorded live artefact, ISSUE-1175 stays OPEN/PARTIAL
+per the founder's binding acceptance rule — steps 1-3 above are real
+infrastructure now live in production, not a claim to bank on its own.
+
+5. **ISSUE-1152 — front of the engine-dsp chain, unblocked.** Wire browser
    receipt hydration: read `audio_analysis_receipts/{receiptId}` where
    `receiptId = 'audio_' + sha256('ownerId\0contentHash\0generation').slice(0,48)`.
    The Firestore rule already lets a client read only its own receipts, so no new
    endpoint is needed. Two real receipts exist to develop against (ISSUE-1170).
-3. **Repair-order step 3 — deployment, not code.** Provision the Cloud Run
-   service + `session-proxy-queue` + IAM (mirror engine-dsp's runtime/invoker
-   service-account split), set the four `SESSION_PROXY_*` env vars on
-   `finalizeVideoSessionUpload`'s Functions deployment, run one real session
-   through the full chain (upload → finalize → dispatch → proxy → completed),
-   and record the live proof the same way ISSUE-1183's closure did. THEN close
-   ISSUE-1175.
-4. Then steps 4→6 in the founder's binding order. ISSUE-1175..1181 only close on
+6. Then steps 4→6 in the founder's binding order. ISSUE-1175..1181 only close on
    a real end-to-end artefact — unit tests over Zod schemas close nothing.
 
 ## engine-dsp infra facts (unchanged)
