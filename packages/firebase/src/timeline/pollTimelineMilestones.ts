@@ -94,7 +94,13 @@ export const pollTimelineMilestones = onSchedule(
         schedule: 'every 15 minutes',
         region: 'us-central1',
         timeoutSeconds: 120,
-        memory: '256MiB',
+        // Cold start loads the whole bundled functions/index.js module graph,
+        // which has grown past 256MiB (production logs: 266-279MiB observed) as
+        // more functions/schemas were added elsewhere in the codebase. This
+        // container was OOM-killed before it could bind its startup
+        // health-check port on every scheduled run — see pollDeliveryStatus.ts
+        // for the same fix and the sibling ERROR_LEDGER entry.
+        memory: '512MiB',
         secrets: ['INNGEST_EVENT_KEY'],
     },
     async () => {

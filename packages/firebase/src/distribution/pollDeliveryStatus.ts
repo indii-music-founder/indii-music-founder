@@ -136,7 +136,15 @@ function applyStatusHeuristic(
 export const pollDeliveryStatus = onSchedule({
     schedule: 'every 60 minutes',
     timeoutSeconds: 300,
-    memory: '256MiB',
+    // Cold start loads the whole bundled functions/index.js module graph, not
+    // just this file. That graph has grown past 256MiB (observed 264-266MiB in
+    // production logs) as more functions/schemas were added elsewhere in the
+    // codebase, so this container was OOM-killed before it could bind its
+    // startup health-check port — every hourly run, indefinitely, with no
+    // in-app error since the process never got far enough to log one. 512MiB
+    // gives real headroom over the observed peak; matches the tier already used
+    // by comparable scheduled/background functions in this codebase.
+    memory: '512MiB',
     region: 'us-central1',
 }, async (_event) => {
     const db = getFirestore();
