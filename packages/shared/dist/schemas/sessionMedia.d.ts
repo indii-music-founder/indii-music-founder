@@ -1305,6 +1305,63 @@ export declare const MediaProcessingCostEstimateSchema: z.ZodObject<{
     amountMinor: number;
     estimateVersion: string;
 }>;
+/**
+ * Mirrors the `ProxyJobClaim` TS interface in
+ * `packages/firebase/src/functions/video/dispatchSessionProxyJob.ts` exactly.
+ *
+ * Cross-boundary contract note (ISSUE-1175 step 2): `dispatchSessionProxyJob.ts`
+ * writes a `proxyJob` field onto the `videoSessions/{sessionId}` document, but
+ * this shared schema — which IS `.strict()` and IS used to parse that same
+ * document (`SessionVideoUploadService.ts:68`) — did not declare it. That is
+ * not yet an active break only because the one current call site parses the
+ * document immediately after creation, before any proxy dispatch has run. Any
+ * future read of a session that has since been dispatched would silently fail
+ * `.safeParse()` and be treated as "no valid session" by that guard. Declaring
+ * the field here closes the gap before more code (the proxy worker's own
+ * writes) makes the same document even more likely to be read post-dispatch.
+ */
+export declare const ProxyJobClaimSchema: z.ZodObject<{
+    schemaVersion: z.ZodLiteral<"session-proxy-job.v1">;
+    jobId: z.ZodString;
+    status: z.ZodEnum<["queued", "blocked"]>;
+    originalGeneration: z.ZodString;
+    originalSha256: z.ZodString;
+    claimedAt: z.ZodString;
+    blockedReason: z.ZodOptional<z.ZodString>;
+    /**
+     * Worker-managed crash-recovery lease (repair-order step 3, the proxy
+     * worker). Deliberately kept on THIS object rather than a separate
+     * top-level session field — `VideoSessionSchema` is `.strict()`, so any new
+     * top-level field the worker wrote would need its own schema change anyway,
+     * and the lease is conceptually part of "what is happening with this
+     * dispatched job," not a new session-level concern. Both optional: the
+     * dispatcher never sets them, only the worker does once it claims the
+     * session for processing. Mirrors the existing audio pipeline's lease
+     * pattern in `packages/engine-dsp/pipeline.py` (`FirestoreReceiptStore`).
+     */
+    leaseId: z.ZodOptional<z.ZodString>;
+    leaseExpiresAt: z.ZodOptional<z.ZodString>;
+}, "strict", z.ZodTypeAny, {
+    status: "queued" | "blocked";
+    schemaVersion: "session-proxy-job.v1";
+    jobId: string;
+    originalGeneration: string;
+    originalSha256: string;
+    claimedAt: string;
+    blockedReason?: string | undefined;
+    leaseId?: string | undefined;
+    leaseExpiresAt?: string | undefined;
+}, {
+    status: "queued" | "blocked";
+    schemaVersion: "session-proxy-job.v1";
+    jobId: string;
+    originalGeneration: string;
+    originalSha256: string;
+    claimedAt: string;
+    blockedReason?: string | undefined;
+    leaseId?: string | undefined;
+    leaseExpiresAt?: string | undefined;
+}>;
 export declare const VideoSessionSchema: z.ZodEffects<z.ZodObject<{
     schemaVersion: z.ZodLiteral<"video-session.v1">;
     sessionId: z.ZodString;
@@ -1389,6 +1446,48 @@ export declare const VideoSessionSchema: z.ZodEffects<z.ZodObject<{
         mimeType: string;
         byteSize: number;
         creationReceiptId: string;
+    }>>;
+    proxyJob: z.ZodOptional<z.ZodObject<{
+        schemaVersion: z.ZodLiteral<"session-proxy-job.v1">;
+        jobId: z.ZodString;
+        status: z.ZodEnum<["queued", "blocked"]>;
+        originalGeneration: z.ZodString;
+        originalSha256: z.ZodString;
+        claimedAt: z.ZodString;
+        blockedReason: z.ZodOptional<z.ZodString>;
+        /**
+         * Worker-managed crash-recovery lease (repair-order step 3, the proxy
+         * worker). Deliberately kept on THIS object rather than a separate
+         * top-level session field — `VideoSessionSchema` is `.strict()`, so any new
+         * top-level field the worker wrote would need its own schema change anyway,
+         * and the lease is conceptually part of "what is happening with this
+         * dispatched job," not a new session-level concern. Both optional: the
+         * dispatcher never sets them, only the worker does once it claims the
+         * session for processing. Mirrors the existing audio pipeline's lease
+         * pattern in `packages/engine-dsp/pipeline.py` (`FirestoreReceiptStore`).
+         */
+        leaseId: z.ZodOptional<z.ZodString>;
+        leaseExpiresAt: z.ZodOptional<z.ZodString>;
+    }, "strict", z.ZodTypeAny, {
+        status: "queued" | "blocked";
+        schemaVersion: "session-proxy-job.v1";
+        jobId: string;
+        originalGeneration: string;
+        originalSha256: string;
+        claimedAt: string;
+        blockedReason?: string | undefined;
+        leaseId?: string | undefined;
+        leaseExpiresAt?: string | undefined;
+    }, {
+        status: "queued" | "blocked";
+        schemaVersion: "session-proxy-job.v1";
+        jobId: string;
+        originalGeneration: string;
+        originalSha256: string;
+        claimedAt: string;
+        blockedReason?: string | undefined;
+        leaseId?: string | undefined;
+        leaseExpiresAt?: string | undefined;
     }>>;
     proxyManifest: z.ZodOptional<z.ZodEffects<z.ZodObject<{
         schemaVersion: z.ZodLiteral<"proxy-manifest.v1">;
@@ -2492,6 +2591,17 @@ export declare const VideoSessionSchema: z.ZodEffects<z.ZodObject<{
         byteSize: number;
         creationReceiptId: string;
     } | undefined;
+    proxyJob?: {
+        status: "queued" | "blocked";
+        schemaVersion: "session-proxy-job.v1";
+        jobId: string;
+        originalGeneration: string;
+        originalSha256: string;
+        claimedAt: string;
+        blockedReason?: string | undefined;
+        leaseId?: string | undefined;
+        leaseExpiresAt?: string | undefined;
+    } | undefined;
     proxyManifest?: {
         createdAt: string;
         schemaVersion: "proxy-manifest.v1";
@@ -2672,6 +2782,17 @@ export declare const VideoSessionSchema: z.ZodEffects<z.ZodObject<{
         mimeType: string;
         byteSize: number;
         creationReceiptId: string;
+    } | undefined;
+    proxyJob?: {
+        status: "queued" | "blocked";
+        schemaVersion: "session-proxy-job.v1";
+        jobId: string;
+        originalGeneration: string;
+        originalSha256: string;
+        claimedAt: string;
+        blockedReason?: string | undefined;
+        leaseId?: string | undefined;
+        leaseExpiresAt?: string | undefined;
     } | undefined;
     proxyManifest?: {
         createdAt: string;
@@ -2854,6 +2975,17 @@ export declare const VideoSessionSchema: z.ZodEffects<z.ZodObject<{
         byteSize: number;
         creationReceiptId: string;
     } | undefined;
+    proxyJob?: {
+        status: "queued" | "blocked";
+        schemaVersion: "session-proxy-job.v1";
+        jobId: string;
+        originalGeneration: string;
+        originalSha256: string;
+        claimedAt: string;
+        blockedReason?: string | undefined;
+        leaseId?: string | undefined;
+        leaseExpiresAt?: string | undefined;
+    } | undefined;
     proxyManifest?: {
         createdAt: string;
         schemaVersion: "proxy-manifest.v1";
@@ -3035,6 +3167,17 @@ export declare const VideoSessionSchema: z.ZodEffects<z.ZodObject<{
         byteSize: number;
         creationReceiptId: string;
     } | undefined;
+    proxyJob?: {
+        status: "queued" | "blocked";
+        schemaVersion: "session-proxy-job.v1";
+        jobId: string;
+        originalGeneration: string;
+        originalSha256: string;
+        claimedAt: string;
+        blockedReason?: string | undefined;
+        leaseId?: string | undefined;
+        leaseExpiresAt?: string | undefined;
+    } | undefined;
     proxyManifest?: {
         createdAt: string;
         schemaVersion: "proxy-manifest.v1";
@@ -3185,4 +3328,5 @@ export type MediaInspection = z.infer<typeof MediaInspectionSchema>;
 export type ProxyManifest = z.infer<typeof ProxyManifestSchema>;
 export type MediaProcessingCostEstimate = z.infer<typeof MediaProcessingCostEstimateSchema>;
 export type VideoSession = z.infer<typeof VideoSessionSchema>;
+export type ProxyJobClaim = z.infer<typeof ProxyJobClaimSchema>;
 //# sourceMappingURL=sessionMedia.d.ts.map

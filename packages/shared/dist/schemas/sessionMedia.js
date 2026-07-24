@@ -163,6 +163,43 @@ export const MediaProcessingCostEstimateSchema = z.object({
     amountMinor: z.number().int().nonnegative(),
     estimateVersion: IdentifierSchema,
 }).strict();
+/**
+ * Mirrors the `ProxyJobClaim` TS interface in
+ * `packages/firebase/src/functions/video/dispatchSessionProxyJob.ts` exactly.
+ *
+ * Cross-boundary contract note (ISSUE-1175 step 2): `dispatchSessionProxyJob.ts`
+ * writes a `proxyJob` field onto the `videoSessions/{sessionId}` document, but
+ * this shared schema — which IS `.strict()` and IS used to parse that same
+ * document (`SessionVideoUploadService.ts:68`) — did not declare it. That is
+ * not yet an active break only because the one current call site parses the
+ * document immediately after creation, before any proxy dispatch has run. Any
+ * future read of a session that has since been dispatched would silently fail
+ * `.safeParse()` and be treated as "no valid session" by that guard. Declaring
+ * the field here closes the gap before more code (the proxy worker's own
+ * writes) makes the same document even more likely to be read post-dispatch.
+ */
+export const ProxyJobClaimSchema = z.object({
+    schemaVersion: z.literal('session-proxy-job.v1'),
+    jobId: IdentifierSchema,
+    status: z.enum(['queued', 'blocked']),
+    originalGeneration: StorageGenerationSchema,
+    originalSha256: Sha256Schema,
+    claimedAt: z.string().datetime(),
+    blockedReason: z.string().trim().min(1).max(500).optional(),
+    /**
+     * Worker-managed crash-recovery lease (repair-order step 3, the proxy
+     * worker). Deliberately kept on THIS object rather than a separate
+     * top-level session field — `VideoSessionSchema` is `.strict()`, so any new
+     * top-level field the worker wrote would need its own schema change anyway,
+     * and the lease is conceptually part of "what is happening with this
+     * dispatched job," not a new session-level concern. Both optional: the
+     * dispatcher never sets them, only the worker does once it claims the
+     * session for processing. Mirrors the existing audio pipeline's lease
+     * pattern in `packages/engine-dsp/pipeline.py` (`FirestoreReceiptStore`).
+     */
+    leaseId: IdentifierSchema.optional(),
+    leaseExpiresAt: z.string().datetime().optional(),
+}).strict();
 export const VideoSessionSchema = z.object({
     schemaVersion: z.literal('video-session.v1'),
     sessionId: IdentifierSchema,
@@ -177,6 +214,7 @@ export const VideoSessionSchema = z.object({
     stagingPath: ObjectPathSchema,
     status: z.enum(['uploading', 'uploaded', 'processing', 'completed', 'failed', 'cancelled']),
     original: CanonicalMediaRefSchema.optional(),
+    proxyJob: ProxyJobClaimSchema.optional(),
     proxyManifest: ProxyManifestSchema.optional(),
     costEstimate: MediaProcessingCostEstimateSchema,
     costReservationId: IdentifierSchema.optional(),
@@ -238,6 +276,12 @@ export const VideoSessionSchema = z.object({
                 || session.proxyManifest.original.sha256 !== session.original.sha256)) {
             ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['proxyManifest', 'original'], message: 'Proxy manifest must bind the exact original object generation and hash.' });
         }
+    }
+    if (session.proxyJob
+        && session.original
+        && (session.proxyJob.originalGeneration !== session.original.generation
+            || session.proxyJob.originalSha256 !== session.original.sha256)) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['proxyJob'], message: 'Proxy job claim must bind the exact original object generation and hash.' });
     }
     if (Date.parse(session.retentionDeleteAfter) <= Date.parse(session.createdAt)) {
         ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['retentionDeleteAfter'], message: 'Retention cleanup must occur after session creation.' });
