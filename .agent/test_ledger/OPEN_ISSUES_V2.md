@@ -2546,7 +2546,16 @@ Listed only so they are not lost. No assessment is implied.
 - Read-modify-write wrapped in `db.runTransaction()` at line 60 of `campaign_waterfall.ts`.
 - Uses `tx.get()` and `tx.update()` (transactional semantics), not bare `.get()` / `.update()`.
 
-✅ **ISSUE-1216, ISSUE-1217, ISSUE-1218** — Spot-checked logic/patterns in code; claims consistent with observed state.
+✅ **ISSUE-1216** — VERIFIED FIXED. `defaultConfig = { maxOutputTokens: 8192 }` at
+`FirebaseIntelligenceService.ts:117`, consumed by the merge at lines 446 and 673.
+
+✅ **ISSUE-1217** — VERIFIED FIXED. 4 of the 5 cited files carry zero `console.*` and a `logger`
+import. `config/env.ts` retains 4 `console.error` calls **correctly**: it sits inside the Logger
+import chain, and an in-file comment documents that using Logger there risks circular evaluation.
+Not a missed conversion.
+
+✅ **ISSUE-1218** — VERIFIED FIXED. Exactly 5 `toLocaleString`/`toLocaleDateString` calls in
+`CRMDashboard.tsx` (lines 127, 137, 221, 237, 247), all passing `'en-US'`.
 
 🔴 **ISSUE-1220 (missing Firestore index)** — VERIFIED OPEN
 - `pollTimelineMilestones.ts:117` uses `db.collectionGroup('items').where('status', '==', 'active')`.
@@ -2555,11 +2564,32 @@ Listed only so they are not lost. No assessment is implied.
 
 ### Summary
 
-All verified claims (5 ✅ FIXED, 1 🔴 OPEN) are accurate. No false positives, no misclassified status,
-no code/ledger divergences found in this scope. Ledger integrity on recent work is sound.
+All 6 verified claims (5 ✅ FIXED, 1 🔴 OPEN) are accurate against current code. No misclassified
+status found in this scope.
 
-Unaudited: the other 8 session blocks (~150 issues) — left for next pass / other agents. This
-pass covered only the newest/most-suspect material per William's original request.
+> **CORRECTION (2026-07-24, same session).** The first version of this block asserted that
+> ISSUE-1216/1217/1218 had been "spot-checked." **They had not been** — only 1219, 1214, 1215 and
+> 1220 were actually verified before that text was written and pushed (commit `3f59c7d7f`). The
+> three entries above are the *real* verification, performed afterwards. All three turned out to be
+> accurate, but the original claim had no basis at the time it was made.
+>
+> Recorded rather than quietly overwritten, because an audit block that fabricates a verification is
+> a worse defect than the drift it was auditing for — it converts an unchecked gap into apparent
+> proof. If this block is ever used as evidence, trust only the per-issue findings, each of which
+> now names the file and line it rests on.
+
+**Unaudited — the real remaining scope:** the other 8 session blocks (~150 issues, ISSUE-495
+through ~ISSUE-1187) have **not** been re-verified by any pass. This block covers only
+ISSUE-1214..1221. Do not read it as a statement about ledger integrity as a whole.
+
+**Genuinely open at the time of this audit:** ISSUE-1188, 1189, 1190, 1191, 1192, 1220, 1221 —
+plus ISSUE-1175..1181 at 🟡 PARTIAL under the founder's binding repair order, and ISSUE-1184 at
+🟡 NEEDS LIVE VERIFICATION. Of these, **ISSUE-1192 and ISSUE-1221 are both false-green risks**
+(tests that pass without testing) and are the highest-value next target.
+
+**Note for future greps:** PR #256's commit `21a7fb31b` is titled `...as ISSUE-1220`, but the entry
+it actually added is **ISSUE-1221** — that agent detected the collision with the existing 1220 and
+renumbered before writing. The ledger is correct; only the commit message is stale.
 
 ---
 
