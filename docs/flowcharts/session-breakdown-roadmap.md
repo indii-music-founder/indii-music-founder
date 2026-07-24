@@ -2,11 +2,13 @@
 
 This map captures the required delivery sequence for ISSUE-1175 through ISSUE-1181. It is a planning artifact only: the active ledger remains the source of truth for requirements and closure evidence.
 
-## Current implementation boundary (2026-07-21)
+## Current implementation boundary (updated 2026-07-23)
 
 - ISSUE-1175 has a deployed foundation: versioned media/session/proxy contracts, owner-bound resumable staging, immutable generation/hash finalization, cancellation receipts, private Firestore/Storage rules, renderer upload orchestration, and a fixture-tested FFmpeg proxy pipeline.
-- ISSUE-1175 remains **OPEN/PARTIAL**. Worker queue/persistence, cost settlement, restart recovery, dependency-aware cleanup races, representative rotated VFR HEVC/HDR fixtures, Creative Video session UI, and a real authenticated upload-to-proxy smoke test are not yet proven.
-- ISSUE-1176 through ISSUE-1181 remain **OPEN and unstarted**. The dependency gate below remains authoritative; no later issue may bypass unfinished ISSUE-1175 evidence.
+- **Worker queue/persistence is now durable** (`dispatchSessionProxyJob.ts`, repair-order step 2): the finalizer dispatches exactly one idempotent Cloud Tasks job per finalized original, double-guarded (transactional claim + deterministic task name) against the finalizer's own `retry: true`.
+- **The proxy worker itself is CODE-COMPLETE, NOT DEPLOYED** (repair-order step 3, `packages/engine-dsp/video_session_pipeline.py` + `POST /proxy`): re-verifies the live original, runs the existing FFmpeg pipeline, uploads derived artifacts with never-overwrite-plus-hash-verify, assembles a schema-exact `ProxyManifest`, and recovers from a crashed attempt via a lease shorter than the dispatcher's own retry deadline. 36/36 Python tests, including one real-FFmpeg run whose manifest is checked field-by-field against the shared schema. No Cloud Run service, IAM, or env vars exist yet — this does not count as delivered per the acceptance rule below.
+- ISSUE-1175 remains **OPEN/PARTIAL**. What's left: deploy the worker as a real Cloud Run service, wire the four `SESSION_PROXY_*` env vars, and run one real session through the full chain end to end. Also still open: cost settlement, dependency-aware cleanup races, representative rotated VFR HEVC/HDR fixtures against real (not synthetic) phone footage, and Creative Video session UI.
+- ISSUE-1176 through ISSUE-1181 remain **OPEN and unstarted**. The dependency gate below remains authoritative; no later issue may bypass unfinished ISSUE-1175 evidence — unit tests over Zod schemas do not close any of them; only a real end-to-end artefact does.
 
 ```mermaid
 flowchart TD
