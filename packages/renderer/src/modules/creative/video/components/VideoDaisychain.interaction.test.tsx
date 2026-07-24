@@ -1,5 +1,5 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import React, { useState } from 'react';
 import CreativeStudio from '../../CreativeStudio';
 import { useStore } from '@/core/store';
@@ -58,6 +58,9 @@ vi.mock('@/core/store', () => {
     (mockStore as any).setState = vi.fn();
     (mockStore as any).getState = vi.fn(() => ({
         setVideoInput: vi.fn(),
+        // Production selects the plural partial-object setter (VideoWorkflow.tsx:246).
+        // Omitting it here is what let ISSUE-1192 crash the workflow while the test stayed green.
+        setVideoInputs: vi.fn(),
         setGenerationMode: vi.fn(),
         setViewMode: vi.fn(),
         setSelectedItem: vi.fn(),
@@ -122,11 +125,11 @@ vi.mock('../../components/CreativeGallery', () => ({
     default: () => (
         <div data-testid="creative-gallery">
             <button data-testid="set-first-frame-btn" onClick={() => {
-                mockSetVideoInput('firstFrame', { id: 'img-1', url: 'img1.jpg' });
+                mockSetVideoInput('firstFrame', { id: 'img-1', url: 'https://fixtures.test/img1.jpg' });
                 mockToastSuccess('Set as First Frame');
             }}>First Frame</button>
             <button data-testid="set-last-frame-btn" onClick={() => {
-                mockSetVideoInput('lastFrame', { id: 'img-2', url: 'img2.jpg' });
+                mockSetVideoInput('lastFrame', { id: 'img-2', url: 'https://fixtures.test/img2.jpg' });
                 mockToastSuccess('Set as Last Frame');
             }}>Last Frame</button>
         </div>
@@ -139,11 +142,11 @@ vi.mock('../../components/CreativeNavbar', () => ({
             <button data-testid="director-view-btn" onClick={() => mockSetViewMode('video_production')}>Director</button>
             <button data-testid="daisy-chain-toggle" onClick={() => mockSetVideoInput('isDaisyChain', true)}>Daisy Chain</button>
             <button data-testid="set-first-frame-btn" onClick={() => {
-                mockSetVideoInput('firstFrame', { id: 'img-1', url: 'img1.jpg' });
+                mockSetVideoInput('firstFrame', { id: 'img-1', url: 'https://fixtures.test/img1.jpg' });
                 mockToastSuccess('Set as First Frame');
             }}>First Frame</button>
             <button data-testid="set-last-frame-btn" onClick={() => {
-                mockSetVideoInput('lastFrame', { id: 'img-2', url: 'img2.jpg' });
+                mockSetVideoInput('lastFrame', { id: 'img-2', url: 'https://fixtures.test/img2.jpg' });
                 mockToastSuccess('Set as Last Frame');
             }}>Last Frame</button>
         </div>
@@ -160,12 +163,42 @@ vi.mock('../../creative/components/InfiniteCanvas', () => ({
 
 describe('🖱️ Click: Video Production Daisychain', () => {
     const mockItems = [
-        { id: 'img-1', url: 'img1.jpg', type: 'image', prompt: 'Start Prompt' },
-        { id: 'img-2', url: 'img2.jpg', type: 'image', prompt: 'End Prompt' }
+        { id: 'img-1', url: 'https://fixtures.test/img1.jpg', type: 'image', prompt: 'Start Prompt' },
+        { id: 'img-2', url: 'https://fixtures.test/img2.jpg', type: 'image', prompt: 'End Prompt' }
     ];
+
+    // ISSUE-1192: this test used to pass while VideoWorkflow crashed underneath it —
+    // ModuleErrorBoundary swallowed the TypeError and the remaining assertions still held.
+    // These collect every runtime failure signal so the test cannot stay green through a crash.
+    let runtimeErrors: string[] = [];
+    let consoleErrorSpy: ReturnType<typeof vi.spyOn>;
+
+    // Known jsdom environment gaps — NOT product failures. Deliberately narrow: each entry
+    // names one specific unimplemented browser API so a real crash can never hide behind it.
+    const ENV_NOISE = [
+        /window__default\.default\.CSS\.supports is not a function/, // video.js probing CSS.supports; jsdom has no CSSOM support API
+    ];
+    const isEnvNoise = (msg: string) => ENV_NOISE.some((re) => re.test(msg));
+    const record = (msg: string) => { if (!isEnvNoise(msg)) runtimeErrors.push(msg); };
+
+    const onWindowError = (e: ErrorEvent) => record(`window.onerror: ${e.message}`);
+    const onRejection = (e: PromiseRejectionEvent) => record(`unhandledrejection: ${String(e.reason)}`);
+
+    /** Fails the test if the component tree crashed, however the crash was reported. */
+    const assertNoRuntimeCrash = () => {
+        // ModuleErrorBoundary's fallback heading (core/components/ModuleErrorBoundary.tsx:65).
+        expect(screen.queryByText('Something went wrong')).toBeNull();
+        expect(runtimeErrors).toEqual([]);
+    };
 
     beforeEach(() => {
         vi.clearAllMocks();
+        runtimeErrors = [];
+        consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation((...args: unknown[]) => {
+            record(args.map(String).join(' '));
+        });
+        window.addEventListener('error', onWindowError);
+        window.addEventListener('unhandledrejection', onRejection);
         vi.mocked(useToast).mockReturnValue({
             success: mockToastSuccess,
             info: mockToastInfo,
@@ -177,6 +210,12 @@ describe('🖱️ Click: Video Production Daisychain', () => {
             dismiss: vi.fn(),
             promise: vi.fn()
         } as any);
+    });
+
+    afterEach(() => {
+        window.removeEventListener('error', onWindowError);
+        window.removeEventListener('unhandledrejection', onRejection);
+        consoleErrorSpy.mockRestore();
     });
 
     it('successfully completes a 5-step video production daisychain', async () => {
@@ -209,6 +248,16 @@ describe('🖱️ Click: Video Production Daisychain', () => {
                 }));
             }, []);
 
+            // Production's actual setter: takes a partial object and merges it
+            // (VideoWorkflow.tsx:320/345/413/528/567). Must be functional, not vi.fn(),
+            // or the mount-time effect at :528 silently no-ops instead of clearing anchors.
+            const setVideoInputs = React.useCallback((patch: any) => {
+                setState((prev: any) => ({
+                    ...prev,
+                    videoInputs: { ...prev.videoInputs, ...patch }
+                }));
+            }, []);
+
             const setGenerationMode = React.useCallback((mode: string) => {
                 setState((prev: any) => ({ ...prev, generationMode: mode }));
             }, []);
@@ -235,6 +284,7 @@ describe('🖱️ Click: Video Production Daisychain', () => {
             const storeState = React.useMemo(() => ({
                 ...state,
                 setVideoInput,
+                setVideoInputs,
                 setGenerationMode,
                 setViewMode,
                 setCreativePrompt,
@@ -262,7 +312,7 @@ describe('🖱️ Click: Video Production Daisychain', () => {
                 removeCharacterReference: vi.fn(),
                 updateCharacterReference: vi.fn(),
                 addUploadedImage: vi.fn()
-            }), [state, setVideoInput, setGenerationMode, setViewMode, setCreativePrompt, addToHistory]);
+            }), [state, setVideoInput, setVideoInputs, setGenerationMode, setViewMode, setCreativePrompt, addToHistory]);
 
             // Sync useStore mock to this local state
             (useStore as unknown as import("vitest").Mock).mockImplementation((selector: any) => {
@@ -276,6 +326,9 @@ describe('🖱️ Click: Video Production Daisychain', () => {
         };
 
         render(<DaisychainApp />);
+
+        // Mount must survive the anchor-restore effect (VideoWorkflow.tsx:528) before any interaction.
+        assertNoRuntimeCrash();
 
         // --- STEP 1: Select first and last frames via navbar controls ---
         // (Gallery view is not accessible in video mode; frames are picked via navbar controls)
@@ -320,9 +373,13 @@ describe('🖱️ Click: Video Production Daisychain', () => {
 
         await waitFor(() => {
             expect(VideoGeneration.generateLongFormVideo).toHaveBeenCalledWith(expect.objectContaining({
-                firstFrame: 'img1.jpg',
+                firstFrame: 'https://fixtures.test/img1.jpg',
             }));
             expect(mockToastSuccess).toHaveBeenCalledWith('Scene generated!');
         });
+
+        // --- The point of the test: the workflow is still alive at the end ---
+        assertNoRuntimeCrash();
+        expect(screen.getByTestId('video-generate-btn')).toBeInTheDocument();
     });
 });

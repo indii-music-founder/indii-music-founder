@@ -1762,7 +1762,34 @@
 
 ### ISSUE-1192: Video Daisychain interaction test stays green after `VideoWorkflow` crashes because its store mock omits `setVideoInputs`
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL (2026-07-24) — acceptance 1, 2 and 3 proven; **acceptance 4 not run.**
+  - **1 ✅ proven by mutation test, not by inspection.** Commented out `setVideoInputs` from the
+    mocked `storeState`, re-ran the focused file: it **fails** with
+    `Error: Uncaught [TypeError: setVideoInputs is not a function]` and `Tests 1 failed (1)`.
+    Restored immediately after. The test can no longer pass through the error boundary.
+  - **2 ✅** Focused run is green with no `setVideoInputs is not a function`, no boundary fallback,
+    and no invalid-URL/storage-bridge noise: `Test Files 1 passed (1) / Tests 1 passed (1)`.
+  - **3 ✅** All five stages still asserted, plus a new end-of-test assertion that the workflow is
+    still mounted (`video-generate-btn` present) and uncrashed.
+  - **4 ❌ NOT RUN — the full `npm test -- --run` was not executed** (session token budget). Given
+    ISSUE-1191 records this suite as order-sensitive, a focused green does **not** establish suite
+    behaviour. This is the specific reason the status is PARTIAL and not FIXED.
+- **Fix applied:**
+  1. Added a *functional* `setVideoInputs(patch)` to the mocked store that merges a partial object,
+     matching production's real setter shape (`VideoWorkflow.tsx:246`), plus a `vi.fn()` stub on the
+     module-level `getState` mock. A plain `vi.fn()` in `storeState` would have silenced the crash
+     without exercising the anchor-clearing effect at `VideoWorkflow.tsx:528`.
+  2. Crash detection: `console.error` spy + `window` `error`/`unhandledrejection` listeners, asserted
+     empty at mount and at end of test, plus absence of `ModuleErrorBoundary`'s "Something went wrong"
+     fallback. Asserted at **mount** as well as at the end — the original crash happened in a
+     mount-time effect, so an end-only check could still miss it.
+  3. Fixtures moved from relative `img1.jpg` to absolute `https://fixtures.test/img1.jpg`.
+- **Deliberately narrow environment allowance:** one regex ignores
+  `window__default.default.CSS.supports is not a function` — video.js probing a CSSOM API jsdom does
+  not implement. It is a real jsdom gap, not a product failure. Scoped to that single signature
+  rather than a blanket console filter, so a genuine crash cannot hide behind it. **This is the one
+  place a future regression could slip through if the list is ever widened casually.**
+- **To close:** run the full `npm test -- --run` and confirm zero Daisychain runtime exceptions.
 - **Severity:** 🟠 HIGH (false-green coverage for the five-step Creative video production path)
 - **Module:**
   `packages/renderer/src/modules/creative/video/components/VideoDaisychain.interaction.test.tsx`,
