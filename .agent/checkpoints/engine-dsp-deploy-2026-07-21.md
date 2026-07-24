@@ -1,6 +1,6 @@
-# Checkpoint — engine-dsp deploy + Session Breakdown step 2 (updated 2026-07-23)
+# Checkpoint — engine-dsp deploy + Session Breakdown step 3 (updated 2026-07-23 evening)
 
-**Branch:** main · in sync with origin · working tree clean
+**Branch:** main · CI run in progress for the current push, watch before trusting green
 
 ## Session 2026-07-23 — three threads driven
 
@@ -64,20 +64,78 @@ to generation+SHA-256, plus a deterministic Cloud Tasks task name) because the
 finalizer runs under Eventarc `retry: true` and a naive enqueue would
 double-transcode and double-charge.
 
+### Thread 3 continued — Session Breakdown step 3: proxy worker CODE built, NOT deployed (`20174c914`)
+Built `packages/engine-dsp/video_session_pipeline.py` + `POST /proxy` in `main.py`,
+matching the `engine-dsp` architecture (Cloud Run + Cloud Tasks OIDC + FastAPI +
+lease-based idempotent claim/complete/fail) rather than a first-time Transcoder
+API integration — the dispatcher's own contract (worker URL + service account,
+no polling) was already built for exactly this shape. Reuses the existing,
+already-tested FFmpeg pipeline (`video_pipeline.py`: HDR tonemap, rotation
+bake-in, CFR 720p proxy, guide audio, waveform, thumbnails, contact sheet).
+
+Verified: 36/36 Python tests (22 new), including one real-FFmpeg
+end-to-end run whose output manifest is asserted against `ProxyManifestSchema`'s
+exact field list — not a hand-typed fake.
+
+**Found and fixed en route:** `VideoSessionSchema` (`.strict()`, parsed against
+the real document by `SessionVideoUploadService.ts`) didn't declare the
+`proxyJob` field the dispatcher already writes — a live cross-boundary contract
+gap (`b65cc879c`, `6cf5c6c44`). **Then found a second, worse instance of the
+same class of gap while closing this session:** `packages/shared`'s `main`/
+`types` point at `dist/`, and Vite/Node resolve `@indii/shared` through that
+built artifact, not live `src/` — so the schema fix above had been committed to
+`src/` but the committed `dist/` was never rebuilt, meaning the actual fix had
+not reached anything that imports the package at runtime despite passing
+tests. Rebuilt and committed (`1236626f2`), verified byte-identical against an
+independent from-scratch rebuild before trusting it, and confirmed
+`SessionVideoUploadService.test.ts` (the real runtime consumer) passes against
+it. **Lesson for next session: any `packages/shared` schema edit needs
+`npm run build -w packages/shared` and a check that `git status` shows the
+matching `dist/` diff before that commit is complete — the source-only commit
+is silently incomplete otherwise.**
+
+**Explicitly NOT done — deployment.** No Cloud Run service, no IAM, no
+`SESSION_PROXY_*` env vars set, Dockerfile untouched (its existing ffmpeg/
+ffprobe/GCS/Firestore deps already cover this worker). Code-complete, not
+feature-complete — per the founder's binding acceptance rule this does not
+close ISSUE-1175 until a real session produces a real proxy end to end.
+
+### CI saga while landing all of the above (read before touching `packages/firebase/tsconfig.json` again)
+Three consecutive deploys (`c606f44`, `20174c9`, `6cf5c6c4`) failed at
+"Deploy Cloud Functions." Root-caused and fixed in sequence, not guessed:
+1. `tsc` exited 0 but `packages/firebase/lib/index.js` was never produced — an
+   earlier `composite: true` addition (`d1eea8cb5`) had silently changed rootDir
+   inference so emit nested under `lib/src/index.js` instead. Fixed with an
+   explicit `"rootDir": "src"` (`c606f447a`) — this is the **second** time this
+   exact package's rootDir has broken deploy by accident; ERROR_LEDGER has the
+   full history and the reproduction command to check next time.
+2. Once that cleared, 29/30 functions deployed and `pollDeliveryStatus` alone
+   failed on a Cloud Run health-check timeout. Root-caused by a concurrent
+   agent via the container's OWN Cloud Run logs (not the deploy log, which
+   doesn't say why): an OOM kill during cold start (`256MiB` limit vs
+   `256-266MiB` used) on three scheduled functions, from the shared cold-start
+   bundle growing past their pinned ceiling as this session added schemas
+   elsewhere. Fixed by raising all three to `512MiB` (`79f0d43e4`); logged as
+   ISSUE-1219, including which similarly-shaped function was checked and found
+   clean rather than "fixed" on a guess.
+
 ## NEXT SESSION — pick up here
-1. **ISSUE-1152 — now the front of the engine-dsp chain, and unblocked.** Wire
-   browser receipt hydration: read `audio_analysis_receipts/{receiptId}` where
+1. **Verify the CI run for `1236626f2` (or later) is actually green** before
+   assuming any of the above is truly landed — this checkpoint was written
+   while that run was still queued.
+2. **ISSUE-1152 — front of the engine-dsp chain, unblocked.** Wire browser
+   receipt hydration: read `audio_analysis_receipts/{receiptId}` where
    `receiptId = 'audio_' + sha256('ownerId\0contentHash\0generation').slice(0,48)`.
    The Firestore rule already lets a client read only its own receipts, so no new
    endpoint is needed. Two real receipts exist to develop against (ISSUE-1170).
-2. **Repair-order step 3:** build the proxy worker (H.264/AAC 720p CFR Rec.709,
-   orientation baked in, PTS mapping, guide audio, waveform, thumbnails) as a
-   Cloud Run service + `session-proxy-queue`. The dispatcher already expects:
-   `SESSION_PROXY_WORKER_URL`, `SESSION_PROXY_SERVICE_ACCOUNT`, optional
-   `SESSION_PROXY_AUDIENCE` / `SESSION_PROXY_TASKS_QUEUE` /
-   `SESSION_PROXY_TASKS_LOCATION`. Until set, sessions record an honest
-   `proxyJob.status = 'blocked'`.
-3. Then steps 4→6 in the founder's binding order. ISSUE-1175..1181 only close on
+3. **Repair-order step 3 — deployment, not code.** Provision the Cloud Run
+   service + `session-proxy-queue` + IAM (mirror engine-dsp's runtime/invoker
+   service-account split), set the four `SESSION_PROXY_*` env vars on
+   `finalizeVideoSessionUpload`'s Functions deployment, run one real session
+   through the full chain (upload → finalize → dispatch → proxy → completed),
+   and record the live proof the same way ISSUE-1183's closure did. THEN close
+   ISSUE-1175.
+4. Then steps 4→6 in the founder's binding order. ISSUE-1175..1181 only close on
    a real end-to-end artefact — unit tests over Zod schemas close nothing.
 
 ## engine-dsp infra facts (unchanged)
