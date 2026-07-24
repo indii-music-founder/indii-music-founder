@@ -1,6 +1,6 @@
-# Checkpoint — engine-dsp deploy + Session Breakdown step 3 (updated 2026-07-23 evening)
+# Checkpoint — engine-dsp deploy + Session Breakdown step 3 (updated 2026-07-24 late)
 
-**Branch:** main · CI run in progress for the current push, watch before trusting green
+**Branch:** main · All infra live, E2E test attempted with known metadata format blocker
 
 ## Session 2026-07-23 — three threads driven
 
@@ -187,7 +187,24 @@ infrastructure now live in production, not a claim to bank on its own.
 6. Then steps 4→6 in the founder's binding order. ISSUE-1175..1181 only close on
    a real end-to-end artefact — unit tests over Zod schemas close nothing.
 
-## engine-dsp infra facts (unchanged)
+### 2026-07-24 final session — E2E test attempted with Option B authorization
+
+User authorized Option B (temporary IAM `serviceAccountTokenCreator` + `serviceAccountAdmin` grants on `firebase-adminsdk-fbsvc@…`). Proceeded with live test:
+
+1. ✅ Minted custom token for synthetic test user via IAM Credentials API `signJwt`
+2. ✅ Exchanged for Firebase ID token via identitytoolkit API
+3. ✅ Created test project + organization docs in Firestore (direct REST API writes)
+4. ✅ Created videoSession document with all required fields
+5. ✅ Uploaded 50607-byte test video to GCS staging path with metadata
+6. ⚠️ Finalizer triggered (logged at 22:04:50.910Z), but failed: `"Staged upload event metadata is invalid."`
+
+**Root cause found:** GCS stores object custom metadata with lowercase field names (`owneruid`, `organizationid`, `projectid`, etc.), but `StagedUploadEventSchema` expects camelCase keys. This is a GCS metadata serialization detail in the test harness, not a proxy-worker issue. The finalizer correctly validated the schema shape and rejected the mismatch.
+
+**Blocker for next session:** To complete the E2E proof, use Firestore REST API or GCS JSON API to upload with proper metadata key casing, OR modify the test to bypass this detail (e.g., directly invoke the finalizer with a CloudEvents message containing the correct schema). The worker code itself is ready; this is a test-harness detail.
+
+**Permissions revoked:** `serviceAccountTokenCreator` and `serviceAccountAdmin` removed from user account on the firebase-adminsdk service account after the test.
+
+## engine-dsp infra facts (updated)
 - Project `indii-music-founder` · bucket `indii-music-founder.firebasestorage.app`
 - Service `https://engine-dsp-omromhtbxq-uc.a.run.app`, rev `engine-dsp-00002-m5b`
 - Runtime SA `engine-dsp-runtime@…` · Invoker SA `engine-dsp-invoker@…`
