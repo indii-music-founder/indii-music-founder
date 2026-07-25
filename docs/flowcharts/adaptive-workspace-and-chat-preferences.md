@@ -64,7 +64,7 @@ flowchart LR
 3. The right rail remains visible whether the content panel is open or closed. Selecting a rail tab persists `true`, opens that tab when needed, and switches the content in place when already open. Ordinary module navigation does not write the visibility preference, so it cannot override the user’s choice.
 4. `AppShell` calculates the space shared by the global Sidebar, module workspace, and RightPanel. The RightPanel retains the user’s preferred width but uses an effective width that cannot collapse the module below a readable budget.
 5. `AdaptiveWorkspace` measures its own width, rather than consulting the browser viewport, then selects wide, standard, or focused mode. Secondary rails become drawers before the main workspace is squeezed.
-6. Modules use the selected mode and named container queries to reflow grids, spacing, titles, KPIs, controls, and artifacts. No whole-page CSS transform is used.
+6. Modules—including the customizable Dashboard—use the selected mode and container queries to reflow grids, spacing, titles, KPIs, controls, and artifacts from one to three columns according to their actual workspace width. No whole-page CSS transform is used.
 7. Appearance settings update the existing user-profile preference object. `ProfileSlice` persists it locally and merges it to the user’s Firestore document.
 8. `ChatMessage` uses the stored Cognitive Logic preference only when a thought card mounts, so manual expansion or collapse remains under the user’s immediate control. Boardroom’s custom renderer receives the same behavior when it has thought data.
 

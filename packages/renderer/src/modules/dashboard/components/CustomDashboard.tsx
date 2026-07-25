@@ -111,29 +111,29 @@ export function CustomDashboard() {
     const addedTypes = new Set(widgets.map((w) => w.type));
 
     return (
-        <div className="space-y-8">
+        <div className="@container space-y-5 @3xl:space-y-6 @5xl:space-y-8" data-testid="custom-dashboard">
             {/* Header */}
-            <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
+            <div className="flex flex-col gap-4 @3xl:flex-row @3xl:items-center @3xl:justify-between" data-testid="custom-dashboard-header">
+                <div className="flex min-w-0 items-center gap-3 @lg:gap-4">
                     <div className="relative group">
                         <div className="absolute inset-0 bg-emerald-500/20 blur-xl rounded-2xl group-hover:bg-emerald-500/40 transition-all" />
-                        <div className="relative w-12 h-12 rounded-2xl bg-emerald-500 flex items-center justify-center border border-white/20 shadow-2xl">
-                            <LayoutDashboard size={24} className="text-black" />
+                        <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/20 bg-emerald-500 shadow-2xl @lg:h-12 @lg:w-12 @lg:rounded-2xl">
+                            <LayoutDashboard size={22} className="text-black" />
                         </div>
                     </div>
-                    <div>
-                        <h2 className="text-2xl font-black text-white tracking-tight uppercase">{t('dashboard.custom.title')}</h2>
-                        <div className="flex items-center gap-2 mt-0.5">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                            <p className="text-[10px] text-emerald-400 font-black uppercase tracking-[0.2em]">{t('dashboard.custom.activeWidgets', { count: widgets.length })}</p>
+                    <div className="min-w-0">
+                        <h2 className="text-xl font-black uppercase tracking-tight text-white @lg:text-2xl">{t('dashboard.custom.title')}</h2>
+                        <div className="mt-0.5 flex items-center gap-2">
+                            <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500 animate-pulse" />
+                            <p className="truncate text-[9px] font-black uppercase tracking-[0.14em] text-emerald-400 @lg:text-[10px] @lg:tracking-[0.2em]">{t('dashboard.custom.activeWidgets', { count: widgets.length })}</p>
                         </div>
                     </div>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex w-full flex-wrap items-center gap-2 @3xl:w-auto @3xl:justify-end @lg:gap-3">
                     {canUndo && (
                         <button
                             onClick={handleUndo}
-                            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 text-gray-400 hover:text-white border border-white/10 hover:bg-white/10 text-[10px] font-black uppercase tracking-widest transition-all"
+                            className="flex min-h-10 flex-1 items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-[10px] font-black uppercase tracking-wider text-gray-400 transition-all hover:bg-white/10 hover:text-white @md:flex-none @lg:px-4 @lg:tracking-widest"
                         >
                             <Undo2 size={12} />
                             {t('dashboard.custom.undo')}
@@ -141,7 +141,7 @@ export function CustomDashboard() {
                     )}
                     <button
                         onClick={() => setIsEditMode((v) => !v)}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border shadow-lg ${isEditMode
+                        className={`flex min-h-10 flex-1 items-center justify-center gap-2 rounded-xl border px-3 py-2 text-[10px] font-black uppercase tracking-wider shadow-lg transition-all @md:flex-none @lg:px-4 @lg:tracking-widest ${isEditMode
                             ? 'bg-emerald-500 text-black border-emerald-400'
                             : 'bg-white/5 text-gray-400 hover:text-white border-white/10 hover:bg-white/10'
                             }`}
@@ -151,7 +151,7 @@ export function CustomDashboard() {
                     </button>
                     <button
                         onClick={() => setShowPicker((v) => !v)}
-                        className="group relative flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-500 text-black text-[10px] font-black uppercase tracking-widest transition-all shadow-[0_0_20px_rgba(16,185,129,0.3)] hover:shadow-[0_0_30px_rgba(16,185,129,0.5)] active:scale-95"
+                        className="group relative flex min-h-10 flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-500 px-3 py-2.5 text-[10px] font-black uppercase tracking-wider text-black shadow-[0_0_20px_rgba(16,185,129,0.3)] transition-all hover:shadow-[0_0_30px_rgba(16,185,129,0.5)] active:scale-95 @md:flex-none @lg:px-5 @lg:tracking-widest"
                     >
                         <Plus size={14} className="group-hover:rotate-90 transition-transform" />
                         {t('dashboard.custom.addWidget')}
@@ -166,7 +166,7 @@ export function CustomDashboard() {
                         initial={{ opacity: 0, y: -20 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -20 }}
-                        className="p-6 rounded-3xl glass border border-white/10 shadow-2xl relative overflow-hidden"
+                        className="relative overflow-hidden rounded-2xl border border-white/10 p-4 shadow-2xl glass @lg:rounded-3xl @lg:p-6"
                     >
                         <div className="absolute top-0 left-0 w-full h-1 bg-linear-to-r from-emerald-500 to-transparent" />
                         <div className="flex items-center justify-between mb-6">
@@ -178,7 +178,7 @@ export function CustomDashboard() {
                                 <X size={18} />
                             </button>
                         </div>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                        <div className="grid grid-cols-1 gap-3 @sm:grid-cols-2 @3xl:grid-cols-3 @5xl:grid-cols-4 @lg:gap-4">
                             {(Object.entries(WIDGET_DEFINITIONS) as [WidgetType, (typeof WIDGET_DEFINITIONS)[WidgetType]][]).map(([type, def]) => {
                                 const Icon = def.icon;
                                 const alreadyAdded = addedTypes.has(type);
@@ -187,7 +187,7 @@ export function CustomDashboard() {
                                         key={type}
                                         onClick={() => addWidget(type)}
                                         disabled={alreadyAdded}
-                                        className={`group relative flex flex-col gap-3 p-5 rounded-2xl text-left transition-all ${alreadyAdded
+                                        className={`group relative flex flex-col gap-3 rounded-2xl p-4 text-left transition-all @lg:p-5 ${alreadyAdded
                                             ? 'bg-white/[0.02] opacity-40 cursor-not-allowed'
                                             : 'bg-white/[0.03] hover:bg-white/[0.08] border border-white/5 hover:border-emerald-500/40 cursor-pointer hover:scale-[1.02]'
                                             }`}
@@ -208,7 +208,7 @@ export function CustomDashboard() {
             </AnimatePresence>
 
             {/* Widget Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 gap-4 @xl:grid-cols-2 @3xl:gap-6 @5xl:grid-cols-3" data-testid="custom-dashboard-grid">
                 <AnimatePresence mode="popLayout">
                     {sortedWidgets.map((widget) => {
                         // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -229,7 +229,7 @@ export function CustomDashboard() {
                                 onDragOver={(e) => handleDragOver(e, widget.id)}
                                 onDrop={(e) => handleDrop(e, widget.id)}
                                 onDragEnd={() => { setDragId(null); setDragOverId(null); }}
-                                className={`group relative rounded-3xl p-6 transition-all min-h-[220px] shadow-2xl overflow-hidden border ${isOver
+                                className={`group relative min-h-[200px] overflow-hidden rounded-2xl border p-4 shadow-2xl transition-all @lg:min-h-[220px] @lg:rounded-3xl @lg:p-6 ${isOver
                                     ? 'border-emerald-500/50 bg-emerald-500/10 scale-[1.02]'
                                     : 'border-white/[0.05] bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/10'
                                     } ${isEditMode ? 'cursor-grab active:cursor-grabbing' : ''}`}

@@ -185,7 +185,7 @@ export default function Dashboard() {
                                 transition={{ duration: 0.3 }}
                                 className="h-full overflow-y-auto"
                             >
-                                <div className={`max-w-7xl mx-auto ${isAnyPhone ? 'p-4' : 'p-8'}`}>
+                                <div className="@container mx-auto max-w-7xl p-4 @3xl:p-6 @5xl:p-8">
                                     <CustomDashboard />
                                 </div>
                             </motion.div>
@@ -196,4 +196,3 @@ export default function Dashboard() {
         </ModuleErrorBoundary>
     );
 }
-
