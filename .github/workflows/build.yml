@@ -179,3 +179,86 @@ jobs:
           dist-electron/*.exe
         if-no-files-found: error
         retention-days: 2
+
+  deploy-founder-downloads:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.build_all }}
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+    - uses: actions/checkout@v5
+
+    - name: Download Founder installers
+      uses: actions/download-artifact@v4
+      with:
+        pattern: founder-installer-*-${{ github.sha }}
+        path: founder-installers
+        merge-multiple: true
+
+    - name: Verify installer set and version
+      shell: bash
+      run: |
+        set -euo pipefail
+        EXPECTED_VERSION=$(node -p "require('./package.json').version")
+        MAC_FILE=$(find founder-installers -maxdepth 1 -name "*.dmg" -type f)
+        WIN_FILE=$(find founder-installers -maxdepth 1 -name "*.exe" -type f)
+        test "$(printf '%s\n' "$MAC_FILE" | grep -c .)" -eq 1
+        test "$(printf '%s\n' "$WIN_FILE" | grep -c .)" -eq 1
+        [[ "$(basename "$MAC_FILE")" == *"$EXPECTED_VERSION"* ]]
+        [[ "$(basename "$WIN_FILE")" == *"$EXPECTED_VERSION"* ]]
+        echo "MAC_FILE=$MAC_FILE" >> "$GITHUB_ENV"
+        echo "WIN_FILE=$WIN_FILE" >> "$GITHUB_ENV"
+        echo "Verified Founder installers for version $EXPECTED_VERSION"
+        sha256sum "$MAC_FILE" "$WIN_FILE"
+
+    - name: Set up Google Cloud SDK
+      uses: google-github-actions/setup-gcloud@v3
+
+    - name: Authenticate with Google Cloud
+      shell: bash
+      env:
+        FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+      run: |
+        set -euo pipefail
+        KEY_FILE="$RUNNER_TEMP/gcloud-key.json"
+        if echo "$FIREBASE_SERVICE_ACCOUNT" | base64 -d > "$KEY_FILE" 2>/dev/null; then
+          :
+        else
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$KEY_FILE"
+        fi
+        gcloud auth activate-service-account --key-file="$KEY_FILE"
+        gcloud config set project indii-music-founder
+
+    - name: Replace and clean Founder downloads
+      shell: bash
+      run: |
+        set -euo pipefail
+        BUCKET="gs://indii-music-founder.firebasestorage.app/founders/releases"
+        gcloud storage cp "$MAC_FILE" "$BUCKET/indii-Installer.dmg" \
+          --content-type=application/x-apple-diskimage --cache-control=no-cache
+        gcloud storage cp "$WIN_FILE" "$BUCKET/indii-Setup.exe" \
+          --content-type=application/vnd.microsoft.portable-executable --cache-control=no-cache
+
+        MAC_MD5=$(openssl md5 -binary "$MAC_FILE" | openssl base64 -A)
+        WIN_MD5=$(openssl md5 -binary "$WIN_FILE" | openssl base64 -A)
+        test "$MAC_MD5" = "$(gcloud storage objects describe "$BUCKET/indii-Installer.dmg" --format='value(md5_hash)')"
+        test "$WIN_MD5" = "$(gcloud storage objects describe "$BUCKET/indii-Setup.exe" --format='value(md5_hash)')"
+
+        for STALE_OBJECT in indii-Installer.AppImage latest-mac.yml latest.yml; do
+          if gcloud storage objects describe "$BUCKET/$STALE_OBJECT" >/dev/null 2>&1; then
+            gcloud storage rm "$BUCKET/$STALE_OBJECT"
+          fi
+        done
+
+        OBJECTS=$(gcloud storage ls "$BUCKET/**")
+        printf '%s\n' "$OBJECTS"
+        test "$(printf '%s\n' "$OBJECTS" | grep -c .)" -eq 2
+        printf '%s\n' "$OBJECTS" | grep -Fx "$BUCKET/indii-Installer.dmg"
+        printf '%s\n' "$OBJECTS" | grep -Fx "$BUCKET/indii-Setup.exe"
+
+    - name: Cleanup credentials
+      if: always()
+      shell: bash
+      run: rm -f "$RUNNER_TEMP/gcloud-key.json"
