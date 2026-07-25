@@ -4,6 +4,8 @@ import type { AgentMessage } from '@/core/store/slices/agent/agentSessionSlice';
 import { agentRegistry } from '@/services/agent/registry';
 import { Bot, MessageSquare } from 'lucide-react';
 import { PromptArea } from '@/core/components/command-bar/PromptArea';
+import { ThoughtChain } from '@/core/components/chat/ThoughtChain';
+import { useStore } from '@/core/store';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { TextEffect } from '@/components/motion-primitives/text-effect';
@@ -24,6 +26,9 @@ export function BoardroomConversationPanel({ messages }: BoardroomConversationPa
     const scrollRef = useRef<HTMLDivElement>(null);
     const shouldFollowRef = useRef(true);
     const previousMessageCountRef = useRef(0);
+    const showCognitiveLogicByDefault = useStore(
+        state => state.userProfile?.preferences?.showCognitiveLogicByDefault ?? false,
+    );
     const latestMessage = messages[messages.length - 1];
     const latestMessageSignature = latestMessage
         ? `${latestMessage.id}:${latestMessage.text?.length || 0}:${latestMessage.isStreaming ? 1 : 0}:${latestMessage.thoughts?.length || 0}`
@@ -169,6 +174,15 @@ export function BoardroomConversationPanel({ messages }: BoardroomConversationPa
                                         <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-400/50 mb-1">
                                             You
                                         </p>
+                                    )}
+
+                                    {!isUser && msg.thoughts && (
+                                        <ThoughtChain
+                                            thoughts={msg.thoughts}
+                                            messageId={msg.id}
+                                            compact
+                                            defaultOpen={showCognitiveLogicByDefault}
+                                        />
                                     )}
 
                                     {/* Message Text */}

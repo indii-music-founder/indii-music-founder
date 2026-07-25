@@ -30,6 +30,7 @@ const AppearanceSection: React.FC = () => {
     const prefs = (userProfile?.preferences || {}) as any;
     const compactMode = prefs.compactMode ?? false;
     const animationsEnabled = prefs.animationsEnabled ?? true;
+    const showCognitiveLogicByDefault = prefs.showCognitiveLogicByDefault ?? false;
     const agentAmbition = prefs.agentAmbition ?? 'balanced';
 
     return (
@@ -51,6 +52,13 @@ const AppearanceSection: React.FC = () => {
                     <Toggle
                         enabled={animationsEnabled}
                         onChange={(v) => updatePreferences({ animationsEnabled: v })}
+                    />
+                </SettingRow>
+
+                <SettingRow icon={Sparkles} label="Expand Cognitive Logic" description="Open agent reasoning automatically when a new response arrives.">
+                    <Toggle
+                        enabled={showCognitiveLogicByDefault}
+                        onChange={(v) => updatePreferences({ showCognitiveLogicByDefault: v })}
                     />
                 </SettingRow>
 

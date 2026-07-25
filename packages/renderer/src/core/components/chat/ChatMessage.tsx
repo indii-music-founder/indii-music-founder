@@ -163,6 +163,9 @@ const MessageRating = memo(({ messageId, currentRating }: { messageId: string, c
 });
 
 export const MessageItem = memo(({ msg, avatarUrl, variant = 'default', agentIdentity }: MessageItemProps) => {
+    const showCognitiveLogicByDefault = useStore(
+        state => state.userProfile?.preferences?.showCognitiveLogicByDefault ?? false,
+    );
     // Custom Markdown Components
     const { cleanText, extractedTools, planIdFallback } = useMemo(() => {
         const text = msg.text || '';
@@ -306,7 +309,14 @@ export const MessageItem = memo(({ msg, avatarUrl, variant = 'default', agentIde
                         : 'bg-linear-to-br from-[rgba(16,16,22,0.6)] to-[rgba(10,10,14,0.9)] text-gray-200 border border-white/5 rounded-tl-sm shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)]'
                     }`}>
 
-                {msg.role === 'model' && msg.thoughts && <ThoughtChain thoughts={msg.thoughts} messageId={msg.id} compact={variant === 'compact'} />}
+                {msg.role === 'model' && msg.thoughts && (
+                    <ThoughtChain
+                        thoughts={msg.thoughts}
+                        messageId={msg.id}
+                        compact={variant === 'compact'}
+                        defaultOpen={showCognitiveLogicByDefault}
+                    />
+                )}
 
                 <div className={`prose prose-invert ${variant === 'compact' ? 'prose-xs' : 'prose-sm'} max-w-full overflow-hidden wrap-break-word leading-normal font-medium tracking-tight`}>
                     <ReactMarkdown

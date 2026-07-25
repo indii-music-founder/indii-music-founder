@@ -31,6 +31,7 @@ import { BatchingStatus } from './agent/BatchingStatus';
 import { cn } from '@/lib/utils';
 import { TextEffect } from '@/components/motion-primitives/text-effect';
 import { AgentSwitcherStrip } from './AgentSwitcherStrip';
+import { getRightPanelLayout, MIN_RIGHT_PANEL_WIDTH } from '../layout/workspaceWidthBudget';
 export default function RightPanel() {
 
     const {
@@ -47,7 +48,8 @@ export default function RightPanel() {
         setRightPanelView: setView,
         generatedHistory,
         rightPanelWidth,
-        setRightPanelWidth
+        setRightPanelWidth,
+        isSidebarOpen,
     } = useStore(
         useShallow(state => ({
             currentModule: state.currentModule,
@@ -63,7 +65,8 @@ export default function RightPanel() {
             setRightPanelView: state.setRightPanelView,
             generatedHistory: state.generatedHistory,
             rightPanelWidth: state.rightPanelWidth,
-            setRightPanelWidth: state.setRightPanelWidth
+            setRightPanelWidth: state.setRightPanelWidth,
+            isSidebarOpen: state.isSidebarOpen,
         }))
     );
 
@@ -72,6 +75,22 @@ export default function RightPanel() {
     const previousMessageCountRef = React.useRef(0);
     const [isCreationsCollapsed, setIsCreationsCollapsed] = React.useState(true);
     const [shouldPulseCreations, setShouldPulseCreations] = React.useState(false);
+    const [viewportWidth, setViewportWidth] = React.useState(() =>
+        typeof window === 'undefined' ? 1440 : window.innerWidth,
+    );
+
+    React.useEffect(() => {
+        const onResize = () => setViewportWidth(window.innerWidth);
+        window.addEventListener('resize', onResize);
+        return () => window.removeEventListener('resize', onResize);
+    }, []);
+
+    const { maxPanelWidth, canOpenPanel, isPanelOpen, effectivePanelWidth } = getRightPanelLayout({
+        viewportWidth,
+        isSidebarOpen: Boolean(isSidebarOpen),
+        isRightPanelOpen,
+        preferredPanelWidth: rightPanelWidth,
+    });
     const latestMessage = agentHistory[agentHistory.length - 1];
     const latestMessageSignature = latestMessage
         ? `${latestMessage.id}:${latestMessage.text?.length || 0}:${latestMessage.isStreaming ? 1 : 0}:${latestMessage.thoughts?.length || 0}`
@@ -91,7 +110,7 @@ export default function RightPanel() {
     }, [userProfile?.id]);
 
     React.useLayoutEffect(() => {
-        if (!isRightPanelOpen || rightPanelTab !== 'agent' || view !== 'messages') {
+        if (!isPanelOpen || rightPanelTab !== 'agent' || view !== 'messages') {
             shouldFollowChatRef.current = true;
             previousMessageCountRef.current = agentHistory.length;
             return;
@@ -111,7 +130,7 @@ export default function RightPanel() {
         }
     }, [
         agentHistory.length,
-        isRightPanelOpen,
+        isPanelOpen,
         latestMessageSignature,
         rightPanelTab,
         view,
@@ -128,10 +147,10 @@ export default function RightPanel() {
 
     React.useEffect(() => {
         const MODULES_WITH_CONTEXT = ['creative', 'video', 'workflow', 'knowledge', 'marketing'];
-        if (isRightPanelOpen && rightPanelTab === 'context' && !MODULES_WITH_CONTEXT.includes(currentModule)) {
+        if (isPanelOpen && rightPanelTab === 'context' && !MODULES_WITH_CONTEXT.includes(currentModule)) {
             setRightPanelTab('agent');
         }
-    }, [isRightPanelOpen, rightPanelTab, currentModule, setRightPanelTab]);
+    }, [isPanelOpen, rightPanelTab, currentModule, setRightPanelTab]);
 
     // Render content based on the active Omni-Panel tab
     const renderContent = () => {
@@ -384,20 +403,20 @@ export default function RightPanel() {
         <motion.aside
             aria-label="Context panel"
             initial={false}
-            animate={{ width: isRightPanelOpen ? rightPanelWidth : 48 }}
+            animate={{ width: effectivePanelWidth }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
             className="h-full border-l border-border bg-card/80 backdrop-blur-xl shrink-0 hidden lg:flex flex-col overflow-hidden z-20 shadow-2xl relative"
         >
-            {isRightPanelOpen && (
+            {isPanelOpen && (
                 <div 
                     className="absolute left-0 top-0 bottom-0 w-1.5 cursor-col-resize hover:bg-white/10 active:bg-white/20 transition-colors z-50"
                     onPointerDown={(e) => {
                         const startX = e.clientX;
-                        const startWidth = rightPanelWidth;
+                        const startWidth = effectivePanelWidth;
                         
                         const onPointerMove = (moveEvent: PointerEvent) => {
                             const delta = startX - moveEvent.clientX;
-                            const newWidth = Math.max(320, Math.min(800, startWidth + delta));
+                            const newWidth = Math.max(MIN_RIGHT_PANEL_WIDTH, Math.min(maxPanelWidth, startWidth + delta));
                             setRightPanelWidth(newWidth);
                         };
                         
@@ -414,7 +433,7 @@ export default function RightPanel() {
                 />
             )}
             <AnimatePresence mode="wait">
-                {!isRightPanelOpen ? (
+                {!isPanelOpen ? (
                     <motion.div
                         key="collapsed"
                         initial={{ opacity: 0 }}
@@ -426,8 +445,9 @@ export default function RightPanel() {
                         <button
                             onClick={toggleRightPanel}
                             className="p-2 hover:bg-white/10 rounded-xl text-gray-400 hover:text-white transition-colors mb-4"
-                            title="Expand Panel"
-                            aria-label="Expand Panel"
+                            title={canOpenPanel ? 'Expand Panel' : 'Widen the window or collapse the sidebar to open the panel'}
+                            aria-label={canOpenPanel ? 'Expand Panel' : 'Right panel unavailable at this width'}
+                            disabled={!canOpenPanel}
                         >
                             <ChevronLeft size={16} />
                         </button>

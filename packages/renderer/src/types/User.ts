@@ -121,6 +121,8 @@ export interface UserPreferences {
     // Appearance preferences (Settings → Appearance)
     compactMode?: boolean;
     animationsEnabled?: boolean;
+    /** Whether new Cognitive Logic cards start expanded. Defaults to false. */
+    showCognitiveLogicByDefault?: boolean;
 
     // App Updates (Settings -> Security)
     updateChannel?: 'stable' | 'beta';

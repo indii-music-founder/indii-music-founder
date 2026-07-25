@@ -10,11 +10,14 @@ import {
 } from 'lucide-react';
 
 import { useMerchandise, MerchStats } from './hooks/useMerchandise';
+import type { MerchProduct } from './types';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { TopSellingProductItem } from './components/TopSellingProductItem';
 import { formatCurrency } from '@/lib/utils';
 import { PODIntegrationPanel } from './components/PODIntegrationPanel';
+import { AdaptiveWorkspace } from '@/components/layout/AdaptiveWorkspace';
+import { useAdaptiveWorkspace } from '@/components/layout/AdaptiveWorkspaceContext';
 
 import { InventoryTracker } from './components/InventoryTracker';
 import { PricingEngine } from './components/PricingEngine';
@@ -84,243 +87,226 @@ export default function MerchDashboard() {
     }
 
     return (
-        <div className="absolute inset-0 flex bg-[#050505] text-white font-sans">
-            {/* ── LEFT PANEL — Merch Sidebar + Stats ────── */}
-            <aside className="hidden lg:flex w-64 flex-col border-r border-white/5 bg-black/50 backdrop-blur-xl flex-shrink-0 z-20">
-                {/* Brand */}
-                <div className="p-6 flex items-center gap-3">
-                    <div className="w-8 h-8 bg-[#FFE135] rounded-lg flex items-center justify-center shadow-[0_0_15px_rgba(255,225,53,0.3)]">
-                        <span className="text-black font-black text-lg">M</span>
-                    </div>
-                    <div>
-                        <h1 className="font-bold text-lg tracking-tight leading-none">Merch<span className="text-[#FFE135]">Pro</span></h1>
-                        <span className="text-[10px] text-neutral-500 uppercase tracking-widest font-mono">Merch OS</span>
-                    </div>
+        <>
+            <AdaptiveWorkspace
+                className="bg-[#050505] text-white font-sans"
+                leftRail={<MerchLeftRail stats={stats} topSellingProducts={topSellingProducts} products={products} onDesignClick={handleDesignClick} onExit={() => navigate('/dashboard')} />}
+                rightRail={<MerchRightRail stats={stats} products={products} />}
+                leftRailLabel="Merchandise navigation"
+                rightRailLabel="Merchandise analytics"
+            >
+                <MerchWorkspaceCenter
+                    centerTab={centerTab}
+                    setCenterTab={setCenterTab}
+                    web3SubTab={web3SubTab}
+                    setWeb3SubTab={setWeb3SubTab}
+                    stats={stats}
+                    products={products}
+                    topSellingProducts={topSellingProducts}
+                    displayName={userProfile?.displayName}
+                    onDesignClick={handleDesignClick}
+                    onCreateDrop={() => setDropWizardOpen(true)}
+                />
+            </AdaptiveWorkspace>
+
+            <DropCampaignWizard isOpen={dropWizardOpen} onClose={() => setDropWizardOpen(false)} products={products} />
+        </>
+    );
+}
+
+type TopSellingProduct = MerchProduct & { revenue: number; units: number };
+
+function MerchLeftRail({
+    stats,
+    topSellingProducts,
+    products,
+    onDesignClick,
+    onExit,
+}: {
+    stats: MerchStats;
+    topSellingProducts: TopSellingProduct[];
+    products: MerchProduct[];
+    onDesignClick: () => void;
+    onExit: () => void;
+}) {
+    return (
+        <div className="flex h-full min-h-0 flex-col bg-black/50 backdrop-blur-xl">
+            <div className="flex items-center gap-3 p-5">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#FFE135] shadow-[0_0_15px_rgba(255,225,53,0.3)]">
+                    <span className="text-lg font-black text-black">M</span>
                 </div>
-
-                {/* Nav */}
-                <nav className="px-4 py-2 space-y-1">
-                    <MerchNavItem to="/merch" icon={<LayoutGrid size={18} />} exact>Dashboard</MerchNavItem>
-                    <MerchNavItem to="/merch/design" icon={<PenTool size={18} />}>Designer</MerchNavItem>
-                    <MerchNavItem to="/merch/catalog" icon={<Package size={18} />}>Catalog</MerchNavItem>
-                    <div className="pt-4 pb-2">
-                        <div className="h-px bg-white/5 mx-2" />
-                    </div>
-                    <MerchNavItem to="/merch/settings" icon={<Settings size={18} />}>Settings</MerchNavItem>
-                </nav>
-
-                {/* Store Stats Widget */}
-                <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
-                    <StoreStatsWidget stats={stats} />
-                    <TrendingProductsWidget topSellingProducts={topSellingProducts} />
-                    <NewDesignsWidget products={products} onDesignClick={handleDesignClick} />
-                </div>
-
-                <div className="p-4 border-t border-white/5">
-                    <button
-                        onClick={() => navigate('/dashboard')}
-                        className="flex items-center gap-3 text-neutral-500 hover:text-white transition-colors w-full px-4 py-2 text-sm font-medium rounded-lg hover:bg-white/5 group"
-                    >
-                        <LogOut size={18} className="group-hover:text-red-400 transition-colors" />
-                        <span>Exit Studio</span>
-                    </button>
-                </div>
-            </aside>
-
-            {/* ── CENTER — Dashboard Workspace ────────────────────── */}
-            <div className="flex-1 flex flex-col min-w-0 relative overflow-hidden">
-                {/* Background Blobs */}
-                <div className="absolute top-[-20%] left-[-10%] w-[500px] h-[500px] bg-[#FFE135]/5 rounded-full blur-[120px] pointer-events-none" />
-                <div className="absolute bottom-[-20%] right-[-10%] w-[500px] h-[500px] bg-lime-400/5 rounded-full blur-[120px] pointer-events-none" />
-
-                {/* Center Tab Bar */}
-                <div className="flex items-center gap-1 px-6 pt-4 pb-0 relative z-10 border-b border-white/5">
-                    {([
-                        { id: 'dashboard', label: 'Dashboard', icon: LayoutGrid },
-                        { id: 'inventory', label: 'Inventory', icon: Package },
-                        { id: 'pricing', label: 'Pricing', icon: TrendingUp },
-                        { id: 'pod', label: 'POD Partners', icon: Truck },
-                        { id: 'web3', label: 'Web3', icon: Shield },
-                    ] as { id: CenterTab; label: string; icon: LucideIcon }[]).map(tab => (
-                        <button
-                            key={tab.id}
-                            onClick={() => setCenterTab(tab.id)}
-                            className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold transition-all border-b-2 -mb-px ${centerTab === tab.id
-                                ? 'border-[#FFE135] text-[#FFE135]'
-                                : 'border-transparent text-neutral-500 hover:text-neutral-300 hover:border-white/20'
-                                }`}
-                        >
-                            <tab.icon size={13} />
-                            {tab.label}
-                        </button>
-                    ))}
-                    <div className="ml-auto flex items-center gap-2 pb-1">
-
-                        <button
-                            onClick={() => setDropWizardOpen(true)}
-                            className="flex items-center gap-1.5 px-3 py-1.5 bg-[#FFE135]/10 border border-[#FFE135]/20 rounded-lg text-[11px] font-bold text-[#FFE135] hover:bg-[#FFE135]/20 transition-all"
-                        >
-                            <Flame size={11} /> Create Drop
-                        </button>
-                    </div>
-                </div>
-
-                <div className="flex-1 overflow-y-auto relative z-10" data-testid="merch-dashboard-content">
-                    {/* ─── Dashboard Tab ─── */}
-                    {centerTab === 'dashboard' && (
-                        <div className="p-8">
-                            <div className="flex items-center justify-between mb-8">
-                                <div>
-                                    <h2 className="text-3xl font-bold text-white mb-1">Morning, {userProfile?.displayName?.split(' ')[0] || 'Chief'}</h2>
-                                    <p className="text-neutral-400">Your merchandise empire is thriving.</p>
-                                </div>
-                                <MerchButton
-                                    onClick={handleDesignClick}
-                                    glow size="lg"
-                                    className="rounded-full"
-                                    data-testid="new-design-btn"
-                                >
-                                    <Plus size={18} />
-                                    New Design
-                                </MerchButton>
-                            </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                                <StatsCard
-                                    title="Total Revenue"
-                                    value={formatCurrency(stats.totalRevenue)}
-                                    change={`${stats.revenueChange > 0 ? '+' : ''}${stats.revenueChange.toFixed(1)}%`}
-                                    icon={<DollarSign className="text-[#FFE135]" />}
-                                />
-                                <StatsCard
-                                    title="Units Sold"
-                                    value={stats.unitsSold.toString()}
-                                    change={`${stats.unitsChange > 0 ? '+' : ''}${stats.unitsChange.toFixed(1)}%`}
-                                    icon={<ShoppingBag className="text-[#FFE135]" />}
-                                />
-                                <StatsCard
-                                    title="Conversion Rate"
-                                    value={`${stats.conversionRate ?? 0}%`}
-                                    change={stats.conversionRate != null ? `${(stats.conversionRate as number) > 0 ? '+' : ''}${stats.conversionRate}%` : '--'}
-                                    icon={<TrendingUp className="text-[#FFE135]" />}
-                                />
-                            </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                                <MerchCard className="p-6 relative overflow-hidden">
-                                    <div className="absolute top-0 right-0 p-4 opacity-10"><span className="text-6xl">📈</span></div>
-                                    <div className="relative z-10">
-                                        <h3 className="text-lg font-bold text-white mb-2" data-testid="trend-score-title">Trend Score</h3>
-                                        <div className="flex items-end gap-2 mb-2">
-                                            <span className="text-4xl font-black text-[#FFE135]">{stats.trendScore}</span>
-                                            <span className="text-sm text-neutral-400 mb-1">/ 100</span>
-                                        </div>
-                                        <div className="w-full bg-white/10 rounded-full h-2 mb-2">
-                                            <div className="bg-[#FFE135] h-2 rounded-full transition-all duration-500" style={{ width: `${stats.trendScore}%` }} />
-                                        </div>
-                                        <p className="text-xs text-neutral-500">
-                                            {stats.trendScore > 80 ? "Trending fresh. 2 new viral signals detected." : stats.trendScore > 0 ? "Design engagement is steady." : "No trend data available yet."}
-                                        </p>
-                                    </div>
-                                </MerchCard>
-
-                                <MerchCard className="p-6 relative overflow-hidden">
-                                    <div className="absolute top-0 right-0 p-4 opacity-10"><span className="text-6xl">⚡️</span></div>
-                                    <div className="relative z-10">
-                                        <h3 className="text-lg font-bold text-white mb-2" data-testid="production-performance-title">Production Velocity</h3>
-                                        <div className="flex items-end gap-2 mb-2">
-                                            <span className={`text-4xl font-black ${stats.productionVelocity >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                                                {stats.productionVelocity > 0 ? `+${stats.productionVelocity}%` : `${stats.productionVelocity}%`}
-                                            </span>
-                                            <span className="text-sm text-neutral-400 mb-1">vs last week</span>
-                                        </div>
-                                        <div className="flex gap-1 h-2 mb-2">
-                                            <div className="flex-1 bg-white/10 rounded-full overflow-hidden">
-                                                <div className={`h-full ${stats.productionVelocity >= 0 ? 'bg-green-500' : 'bg-red-500'} transition-all duration-500`} style={{ width: `${Math.min(Math.abs(stats.productionVelocity), 100)}%` }} />
-                                            </div>
-                                        </div>
-                                        <p className="text-xs text-neutral-500">
-                                            {stats.productionVelocity > 0 ? "Efficiency up. Global logistics optimal." : stats.productionVelocity < 0 ? "Throughput decreased this week." : "Production pace is stable."}
-                                        </p>
-                                    </div>
-                                </MerchCard>
-                            </div>
-
-                            <div className="mb-8">
-                                <div className="mb-4">
-                                    <h3 className="text-xl font-bold text-white">Top Performing Products</h3>
-                                </div>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-                                    {topSellingProducts.length > 0 ? (
-                                        topSellingProducts.map((product) => (
-                                            <TopSellingProductItem key={product.id} product={product} />
-                                        ))
-                                    ) : (
-                                        <div className="col-span-full p-8 text-center border border-dashed border-white/10 rounded-lg">
-                                            <p className="text-neutral-500 mb-4">No sales yet. Time to market!</p>
-                                            <MerchButton size="sm" variant="outline" onClick={handleDesignClick}>
-                                                Start Selling
-                                            </MerchButton>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* ─── Inventory Tab ─── */}
-                    {centerTab === 'inventory' && <InventoryTracker />}
-
-                    {/* ─── Pricing Tab ─── */}
-                    {centerTab === 'pricing' && <PricingEngine products={products} />}
-
-                    {/* ─── POD Partners Tab ─── */}
-                    {centerTab === 'pod' && <PODIntegrationPanel />}
-
-                    {/* ─── Web3 Tab ─── */}
-                    {centerTab === 'web3' && (
-                        <div className="p-6">
-                            {/* Web3 Sub-tabs */}
-                            <div className="flex items-center gap-1 bg-white/5 p-1 rounded-xl mb-6">
-                                {([
-                                    { id: 'wallet', label: 'Wallet', icon: Wallet },
-                                    { id: 'contracts', label: 'Smart Contracts', icon: Shield },
-                                    { id: 'ledger', label: 'Ledger', icon: Globe },
-                                    { id: 'gated', label: 'Gated Previews', icon: Lock },
-                                ] as { id: Web3SubTab; label: string; icon: LucideIcon }[]).map(t => (
-                                    <button
-                                        key={t.id}
-                                        onClick={() => setWeb3SubTab(t.id)}
-                                        className={`flex-1 flex items-center justify-center gap-2 py-2 text-xs font-bold rounded-lg transition-all ${web3SubTab === t.id ? 'bg-[#FFE135] text-black' : 'text-neutral-400 hover:text-white'}`}
-                                    >
-                                        <t.icon size={12} /> {t.label}
-                                    </button>
-                                ))}
-                            </div>
-                            {web3SubTab === 'wallet' && <WalletConnectPanel />}
-                            {web3SubTab === 'contracts' && <SmartContractGenerator />}
-                            {web3SubTab === 'ledger' && <BlockchainLedger />}
-                            {web3SubTab === 'gated' && <TokenGatedPreview />}
-                        </div>
-                    )}
+                <div>
+                    <h1 className="text-lg font-bold leading-none tracking-tight">Merch<span className="text-[#FFE135]">Pro</span></h1>
+                    <span className="font-mono text-[10px] uppercase tracking-widest text-neutral-500">Merch OS</span>
                 </div>
             </div>
 
-            {/* Modals */}
+            <nav className="space-y-1 px-1 py-2">
+                <MerchNavItem to="/merch" icon={<LayoutGrid size={18} />} exact>Dashboard</MerchNavItem>
+                <MerchNavItem to="/merch/design" icon={<PenTool size={18} />}>Designer</MerchNavItem>
+                <MerchNavItem to="/merch/catalog" icon={<Package size={18} />}>Catalog</MerchNavItem>
+                <div className="px-2 py-3"><div className="h-px bg-white/5" /></div>
+                <MerchNavItem to="/merch/settings" icon={<Settings size={18} />}>Settings</MerchNavItem>
+            </nav>
 
-            <DropCampaignWizard
-                isOpen={dropWizardOpen}
-                onClose={() => setDropWizardOpen(false)}
-                products={products}
-            />
+            <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-1 py-3">
+                <StoreStatsWidget stats={stats} />
+                <TrendingProductsWidget topSellingProducts={topSellingProducts} />
+                <NewDesignsWidget products={products} onDesignClick={onDesignClick} />
+            </div>
 
-            {/* ── RIGHT PANEL — Templates & Analytics ─────────────── */}
-            <aside className="hidden lg:flex w-72 2xl:w-80 flex-col border-l border-white/5 overflow-y-auto p-3 gap-3 flex-shrink-0">
-                <DesignTemplatesPanel />
-                <PODPartnerStatusPanel />
-                <ConversionFunnelPanel stats={stats} />
-                <CampaignReadyPanel products={products} />
-            </aside>
+            <div className="border-t border-white/5 p-1 pt-3">
+                <button onClick={onExit} className="group flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-neutral-500 transition-colors hover:bg-white/5 hover:text-white">
+                    <LogOut size={18} className="transition-colors group-hover:text-red-400" />
+                    <span>Exit Studio</span>
+                </button>
+            </div>
+        </div>
+    );
+}
+
+function MerchRightRail({ stats, products }: { stats: MerchStats; products: MerchProduct[] }) {
+    return (
+        <div className="space-y-3">
+            <DesignTemplatesPanel />
+            <PODPartnerStatusPanel />
+            <ConversionFunnelPanel stats={stats} />
+            <CampaignReadyPanel products={products} />
+        </div>
+    );
+}
+
+function MerchWorkspaceCenter({
+    centerTab,
+    setCenterTab,
+    web3SubTab,
+    setWeb3SubTab,
+    stats,
+    products,
+    topSellingProducts,
+    displayName,
+    onDesignClick,
+    onCreateDrop,
+}: {
+    centerTab: CenterTab;
+    setCenterTab: React.Dispatch<React.SetStateAction<CenterTab>>;
+    web3SubTab: Web3SubTab;
+    setWeb3SubTab: React.Dispatch<React.SetStateAction<Web3SubTab>>;
+    stats: MerchStats;
+    products: MerchProduct[];
+    topSellingProducts: TopSellingProduct[];
+    displayName?: string;
+    onDesignClick: () => void;
+    onCreateDrop: () => void;
+}) {
+    const { mode } = useAdaptiveWorkspace();
+    const isFocused = mode === 'focused';
+    const isWide = mode === 'wide';
+    const contentPadding = isFocused ? 'p-4 pt-16' : mode === 'standard' ? 'p-6' : 'p-8';
+    const statGrid = isWide ? 'grid-cols-3' : mode === 'standard' ? 'grid-cols-2' : 'grid-cols-1';
+    const productGrid = isWide ? 'grid-cols-3' : mode === 'standard' ? 'grid-cols-2' : 'grid-cols-1';
+
+    return (
+        <div className="relative flex min-w-0 flex-1 flex-col overflow-hidden">
+            <div className="pointer-events-none absolute left-[-10%] top-[-20%] h-[500px] w-[500px] rounded-full bg-[#FFE135]/5 blur-[120px]" />
+            <div className="pointer-events-none absolute bottom-[-20%] right-[-10%] h-[500px] w-[500px] rounded-full bg-lime-400/5 blur-[120px]" />
+
+            <div className="relative z-10 flex min-w-0 items-center gap-1 overflow-x-auto border-b border-white/5 px-4 pb-0 pt-4 scrollbar-hide">
+                {([
+                    { id: 'dashboard', label: 'Dashboard', icon: LayoutGrid },
+                    { id: 'inventory', label: 'Inventory', icon: Package },
+                    { id: 'pricing', label: 'Pricing', icon: TrendingUp },
+                    { id: 'pod', label: 'POD Partners', icon: Truck },
+                    { id: 'web3', label: 'Web3', icon: Shield },
+                ] as { id: CenterTab; label: string; icon: LucideIcon }[]).map(tab => (
+                    <button
+                        key={tab.id}
+                        onClick={() => setCenterTab(tab.id)}
+                        className={`flex shrink-0 items-center gap-2 border-b-2 px-3 py-2.5 text-xs font-bold transition-all ${centerTab === tab.id
+                            ? 'border-[#FFE135] text-[#FFE135]'
+                            : 'border-transparent text-neutral-500 hover:border-white/20 hover:text-neutral-300'
+                            }`}
+                    >
+                        <tab.icon size={13} /> {tab.label}
+                    </button>
+                ))}
+                <button onClick={onCreateDrop} className="ml-auto flex shrink-0 items-center gap-1.5 rounded-lg border border-[#FFE135]/20 bg-[#FFE135]/10 px-3 py-1.5 text-[11px] font-bold text-[#FFE135] transition-all hover:bg-[#FFE135]/20">
+                    <Flame size={11} /> Create Drop
+                </button>
+            </div>
+
+            <div className="relative z-10 flex-1 overflow-y-auto" data-testid="merch-dashboard-content">
+                {centerTab === 'dashboard' && (
+                    <div className={contentPadding}>
+                        <div className={`mb-6 flex gap-4 ${isFocused ? 'flex-col items-start' : 'items-center justify-between'}`}>
+                            <div>
+                                <h2 className={`${isFocused ? 'text-2xl' : 'text-3xl'} mb-1 font-bold text-white`}>Morning, {displayName?.split(' ')[0] || 'Chief'}</h2>
+                                <p className="text-neutral-400">Your merchandise empire is thriving.</p>
+                            </div>
+                            <MerchButton onClick={onDesignClick} glow size="lg" className="rounded-full" data-testid="new-design-btn">
+                                <Plus size={18} /> New Design
+                            </MerchButton>
+                        </div>
+
+                        <div className={`mb-6 grid gap-4 ${statGrid}`}>
+                            <StatsCard compact={isFocused} title="Total Revenue" value={formatCurrency(stats.totalRevenue)} change={`${stats.revenueChange > 0 ? '+' : ''}${stats.revenueChange.toFixed(1)}%`} icon={<DollarSign className="text-[#FFE135]" />} />
+                            <StatsCard compact={isFocused} title="Units Sold" value={stats.unitsSold.toString()} change={`${stats.unitsChange > 0 ? '+' : ''}${stats.unitsChange.toFixed(1)}%`} icon={<ShoppingBag className="text-[#FFE135]" />} />
+                            <StatsCard compact={isFocused} title="Conversion Rate" value={`${stats.conversionRate ?? 0}%`} change={stats.conversionRate != null ? `${stats.conversionRate > 0 ? '+' : ''}${stats.conversionRate}%` : '--'} icon={<TrendingUp className="text-[#FFE135]" />} />
+                        </div>
+
+                        <div className={`mb-6 grid gap-4 ${isFocused ? 'grid-cols-1' : 'grid-cols-2'}`}>
+                            <MerchCard className={`${isFocused ? 'p-4' : 'p-6'} relative overflow-hidden`}>
+                                <div className="absolute right-0 top-0 p-4 opacity-10"><span className="text-6xl">📈</span></div>
+                                <div className="relative z-10">
+                                    <h3 className="mb-2 text-lg font-bold text-white" data-testid="trend-score-title">Trend Score</h3>
+                                    <div className="mb-2 flex items-end gap-2"><span className={`${isFocused ? 'text-3xl' : 'text-4xl'} font-black text-[#FFE135]`}>{stats.trendScore}</span><span className="mb-1 text-sm text-neutral-400">/ 100</span></div>
+                                    <div className="mb-2 h-2 w-full rounded-full bg-white/10"><div className="h-2 rounded-full bg-[#FFE135] transition-all duration-500" style={{ width: `${stats.trendScore}%` }} /></div>
+                                    <p className="text-xs text-neutral-500">{stats.trendScore > 80 ? 'Trending fresh. 2 new viral signals detected.' : stats.trendScore > 0 ? 'Design engagement is steady.' : 'No trend data available yet.'}</p>
+                                </div>
+                            </MerchCard>
+                            <MerchCard className={`${isFocused ? 'p-4' : 'p-6'} relative overflow-hidden`}>
+                                <div className="absolute right-0 top-0 p-4 opacity-10"><span className="text-6xl">⚡️</span></div>
+                                <div className="relative z-10">
+                                    <h3 className="mb-2 text-lg font-bold text-white" data-testid="production-performance-title">Production Velocity</h3>
+                                    <div className="mb-2 flex items-end gap-2"><span className={`${isFocused ? 'text-3xl' : 'text-4xl'} font-black ${stats.productionVelocity >= 0 ? 'text-green-400' : 'text-red-400'}`}>{stats.productionVelocity > 0 ? `+${stats.productionVelocity}%` : `${stats.productionVelocity}%`}</span><span className="mb-1 text-sm text-neutral-400">vs last week</span></div>
+                                    <div className="mb-2 flex h-2 gap-1"><div className="flex-1 overflow-hidden rounded-full bg-white/10"><div className={`h-full ${stats.productionVelocity >= 0 ? 'bg-green-500' : 'bg-red-500'} transition-all duration-500`} style={{ width: `${Math.min(Math.abs(stats.productionVelocity), 100)}%` }} /></div></div>
+                                    <p className="text-xs text-neutral-500">{stats.productionVelocity > 0 ? 'Efficiency up. Global logistics optimal.' : stats.productionVelocity < 0 ? 'Throughput decreased this week.' : 'Production pace is stable.'}</p>
+                                </div>
+                            </MerchCard>
+                        </div>
+
+                        <div className="mb-8">
+                            <h3 className="mb-4 text-xl font-bold text-white">Top Performing Products</h3>
+                            <div className={`grid gap-4 ${productGrid}`}>
+                                {topSellingProducts.length > 0 ? topSellingProducts.map(product => <TopSellingProductItem key={product.id} product={product} />) : (
+                                    <div className="col-span-full rounded-lg border border-dashed border-white/10 p-8 text-center"><p className="mb-4 text-neutral-500">No sales yet. Time to market!</p><MerchButton size="sm" variant="outline" onClick={onDesignClick}>Start Selling</MerchButton></div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                )}
+                {centerTab === 'inventory' && <InventoryTracker />}
+                {centerTab === 'pricing' && <PricingEngine products={products} />}
+                {centerTab === 'pod' && <PODIntegrationPanel />}
+                {centerTab === 'web3' && (
+                    <div className={isFocused ? 'p-4 pt-16' : 'p-6'}>
+                        <div className="mb-6 flex min-w-max items-center gap-1 overflow-x-auto rounded-xl bg-white/5 p-1">
+                            {([
+                                { id: 'wallet', label: 'Wallet', icon: Wallet },
+                                { id: 'contracts', label: 'Smart Contracts', icon: Shield },
+                                { id: 'ledger', label: 'Ledger', icon: Globe },
+                                { id: 'gated', label: 'Gated Previews', icon: Lock },
+                            ] as { id: Web3SubTab; label: string; icon: LucideIcon }[]).map(tab => (
+                                <button key={tab.id} onClick={() => setWeb3SubTab(tab.id)} className={`flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-xs font-bold transition-all ${web3SubTab === tab.id ? 'bg-[#FFE135] text-black' : 'text-neutral-400 hover:text-white'}`}><tab.icon size={12} /> {tab.label}</button>
+                            ))}
+                        </div>
+                        {web3SubTab === 'wallet' && <WalletConnectPanel />}
+                        {web3SubTab === 'contracts' && <SmartContractGenerator />}
+                        {web3SubTab === 'ledger' && <BlockchainLedger />}
+                        {web3SubTab === 'gated' && <TokenGatedPreview />}
+                    </div>
+                )}
+            </div>
         </div>
     );
 }
@@ -329,10 +315,10 @@ export default function MerchDashboard() {
 /*  Stats Card                                                          */
 /* ================================================================== */
 
-function StatsCard({ title, value, change, icon }: { title: string; value: string; change: string; icon: React.ReactNode }) {
+function StatsCard({ title, value, change, icon, compact = false }: { title: string; value: string; change: string; icon: React.ReactNode; compact?: boolean }) {
     return (
-        <MerchCard className="p-6">
-            <div className="flex items-start justify-between mb-4">
+        <MerchCard className={compact ? 'p-4' : 'p-6'}>
+            <div className={compact ? 'mb-3 flex items-start justify-between' : 'mb-4 flex items-start justify-between'}>
                 <div className="w-10 h-10 rounded-full bg-[#FFE135]/10 flex items-center justify-center border border-[#FFE135]/20">
                     {icon}
                 </div>
@@ -340,7 +326,7 @@ function StatsCard({ title, value, change, icon }: { title: string; value: strin
             </div>
             <div className="space-y-1">
                 <p className="text-sm text-neutral-500 uppercase tracking-widest">{title}</p>
-                <h3 className="text-3xl font-black text-white">{value}</h3>
+                <h3 className={`${compact ? 'text-2xl' : 'text-3xl'} font-black text-white`}>{value}</h3>
             </div>
         </MerchCard>
     );

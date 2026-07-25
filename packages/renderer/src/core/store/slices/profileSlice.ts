@@ -69,6 +69,7 @@ const DEFAULT_USER_PROFILE: UserProfile = {
         theme: 'system',
         notifications: true,
         observabilityEnabled: false,
+        showCognitiveLogicByDefault: false,
         agentAmbition: 'balanced',
         ideaAcceptanceCount: 0,
         lastAmbitionPromptTime: 0

@@ -9,10 +9,13 @@ interface ThoughtChainProps {
     thoughts: AgentThought[];
     messageId: string;
     compact?: boolean;
+    defaultOpen?: boolean;
 }
 
-export const ThoughtChain = memo(({ thoughts, messageId, compact }: ThoughtChainProps) => {
-    const [isOpen, setIsOpen] = useState(false);
+export const ThoughtChain = memo(({ thoughts, messageId, compact, defaultOpen = false }: ThoughtChainProps) => {
+    // This intentionally initializes once: a user’s manual choice for an
+    // already-mounted response must not be overwritten by a settings change.
+    const [isOpen, setIsOpen] = useState(defaultOpen);
     const contentId = `thought-chain-${messageId}`;
     const buttonId = `thought-chain-btn-${messageId}`;
 

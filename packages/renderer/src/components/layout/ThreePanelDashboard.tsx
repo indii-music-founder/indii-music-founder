@@ -1,5 +1,6 @@
 import React from 'react';
 import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
+import { AdaptiveWorkspace } from './AdaptiveWorkspace';
 
 export interface ThreePanelDashboardProps {
     /** The name of the module for the error boundary (e.g. "Finance") */
@@ -54,13 +55,13 @@ export function ThreePanelDashboard({
 }: ThreePanelDashboardProps) {
     return (
         <ModuleErrorBoundary moduleName={moduleName}>
-            <div className="absolute inset-0 flex bg-bg-dark text-white overflow-hidden">
-                {/* ── LEFT PANEL ──────────── */}
-                <aside className="hidden lg:flex w-64 xl:w-72 2xl:w-80 flex-col border-r border-white/5 overflow-y-auto p-3 gap-3 flex-shrink-0">
-                    {leftPanel}
-                </aside>
-
-                {/* ── CENTER ──────────────────────── */}
+            <AdaptiveWorkspace
+                className="bg-bg-dark text-white"
+                leftRail={leftPanel}
+                rightRail={rightPanel}
+                leftRailLabel={`${moduleName} navigation`}
+                rightRailLabel={`${moduleName} details`}
+            >
                 <div className="flex-1 flex flex-col min-w-0">
                     {/* Header */}
                     <div className="px-4 md:px-6 py-4 border-b border-white/5 flex-shrink-0 relative overflow-hidden">
@@ -81,14 +82,7 @@ export function ThreePanelDashboard({
                         {children}
                     </div>
                 </div>
-
-                {/* ── RIGHT PANEL ────────────── */}
-                {rightPanel && (
-                    <aside className="hidden lg:flex w-72 2xl:w-80 flex-col border-l border-white/5 overflow-y-auto p-3 gap-3 flex-shrink-0">
-                        {rightPanel}
-                    </aside>
-                )}
-            </div>
+            </AdaptiveWorkspace>
         </ModuleErrorBoundary>
     );
 }

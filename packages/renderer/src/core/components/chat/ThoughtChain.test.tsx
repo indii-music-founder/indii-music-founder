@@ -36,4 +36,11 @@ describe('ThoughtChain', () => {
         expect(toggle).toHaveAttribute('aria-expanded', 'true');
         expect(screen.getByText('Analyzing the request')).toBeInTheDocument();
     });
+
+    it('honors an expanded-by-default preference for a new message card', () => {
+        render(<ThoughtChain thoughts={thoughts} messageId="message-2" defaultOpen />);
+
+        expect(screen.getByRole('button', { name: /cognitive logic/i })).toHaveAttribute('aria-expanded', 'true');
+        expect(screen.getByText('Analyzing the request')).toBeInTheDocument();
+    });
 });
