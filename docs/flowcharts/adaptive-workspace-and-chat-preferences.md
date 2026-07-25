@@ -59,7 +59,7 @@ flowchart LR
 
 ## Step-by-Step Transition Breakdown
 
-1. The Sidebar mounts Projects, Manager's Office, Departments, and Tools with their disclosure state closed. Each heading remains available and exposes its current state through `aria-expanded`; opening one affects only that mounted sidebar session.
+1. The Sidebar mounts Projects, Manager's Office, Departments, and Tools with their disclosure state closed. Each heading remains available and exposes its current state through `aria-expanded`; opening one affects only that mounted sidebar session. Command Center remains a persistent top-level operational action above these disclosures in both expanded and compact sidebar layouts.
 2. The right-panel toggle updates `AppSlice.isRightPanelOpen` and writes the same boolean to `indii_rightPanelOpen`. On the next app launch, `createAppSlice` restores that value, so the user’s last open or closed choice remains stable.
 3. The right rail remains visible whether the content panel is open or closed. Selecting a rail tab persists `true`, opens that tab when needed, and switches the content in place when already open. Ordinary module navigation does not write the visibility preference, so it cannot override the user’s choice.
 4. `AppShell` calculates the space shared by the global Sidebar, module workspace, and RightPanel. The RightPanel retains the user’s preferred width but uses an effective width that cannot collapse the module below a readable budget.

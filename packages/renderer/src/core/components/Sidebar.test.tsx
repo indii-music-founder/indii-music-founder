@@ -73,6 +73,25 @@ describe('Sidebar', () => {
         expect(setModule).toHaveBeenCalledWith('brand');
     });
 
+    it('keeps Command Center available when disclosure sections are closed', () => {
+        const setModule = vi.fn();
+        (useStore as any).mockReturnValue({
+            currentModule: 'dashboard',
+            setModule,
+            isSidebarOpen: true,
+            toggleSidebar: vi.fn(),
+        });
+
+        render(<Sidebar />);
+
+        expect(screen.getByRole('button', { name: 'Command Center' })).toBeVisible();
+        expect(screen.getByText('Live system overview')).toBeVisible();
+        expect(screen.queryByText('Workflow Builder')).not.toBeInTheDocument();
+
+        fireEvent.click(screen.getByRole('button', { name: 'Command Center' }));
+        expect(setModule).toHaveBeenCalledWith('observability');
+    });
+
     it('provides accessible labels when sidebar is collapsed', () => {
         (useStore as any).mockReturnValue({
             currentModule: 'dashboard',
@@ -89,6 +108,7 @@ describe('Sidebar', () => {
         // Check for navigation item aria-label
         const brandManagerBtn = screen.getByTestId('nav-item-brand');
         expect(brandManagerBtn).toHaveAttribute('aria-label', 'Brand Manager');
+        expect(screen.getByTestId('command-center-btn')).toHaveAttribute('aria-label', 'Command Center');
 
         // Check sidebar toggle is accessible in collapsed state
         expect(screen.getByTestId('sidebar-toggle')).toBeInTheDocument();
