@@ -45,6 +45,8 @@ flowchart LR
     class Storage data
 ```
 
+## Step-by-Step Transition Breakdown
+
 1. `AppShell` calculates the space shared by the global Sidebar, module workspace, and RightPanel. The RightPanel retains the user’s preferred width but uses an effective width that cannot collapse the module below a readable budget.
 2. `AdaptiveWorkspace` measures its own width, rather than consulting the browser viewport, then selects wide, standard, or focused mode. Secondary rails become drawers before the main workspace is squeezed.
 3. Modules use the selected mode and named container queries to reflow grids, spacing, titles, KPIs, controls, and artifacts. No whole-page CSS transform is used.
