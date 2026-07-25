@@ -14,6 +14,7 @@ import { readCreativeAssetDrag } from '@/services/creative/CreativeAssetDragServ
 
 export default function InfiniteCanvas() {
     const canvasRef = useRef<HTMLCanvasElement>(null);
+    const imageUploadRef = useRef<HTMLInputElement>(null);
     const {
         canvasImages,
         addCanvasImage,
@@ -25,7 +26,8 @@ export default function InfiniteCanvas() {
         addToHistory,
         saveDesignVersion,
         failedVariationBatch,
-        setFailedVariationBatch
+        setFailedVariationBatch,
+        setRightPanelTab
     } = useStore(useShallow(state => ({
         canvasImages: state.canvasImages,
         addCanvasImage: state.addCanvasImage,
@@ -37,7 +39,8 @@ export default function InfiniteCanvas() {
         addToHistory: state.addToHistory,
         saveDesignVersion: state.saveDesignVersion,
         failedVariationBatch: state.failedVariationBatch,
-        setFailedVariationBatch: state.setFailedVariationBatch
+        setFailedVariationBatch: state.setFailedVariationBatch,
+        setRightPanelTab: state.setRightPanelTab
     })));
     const toast = useToast();
 
@@ -65,18 +68,37 @@ export default function InfiniteCanvas() {
     const imageCache = useRef<Map<string, HTMLImageElement>>(new Map());
     const rafId = useRef<number | null>(null);
 
-    // Initialize / Resize
+    // Keep the drawing surface aligned to the actual Studio workspace. Window
+    // dimensions are larger than this panel whenever navigation or context rails
+    // are visible, which otherwise leaves clipped, incorrectly targeted canvas space.
     useEffect(() => {
+        const canvas = canvasRef.current;
+        const container = canvas?.parentElement;
+        if (!canvas || !container) return;
+
         const resize = () => {
-            if (canvasRef.current) {
-                canvasRef.current.width = window.innerWidth;
-                canvasRef.current.height = window.innerHeight;
+            const rect = container.getBoundingClientRect();
+            const width = Math.max(1, Math.floor(rect.width || window.innerWidth));
+            const height = Math.max(1, Math.floor(rect.height || window.innerHeight));
+            if (canvas.width !== width || canvas.height !== height) {
+                canvas.width = width;
+                canvas.height = height;
                 requestDraw();
             }
         };
+
+        const observer = typeof ResizeObserver !== 'undefined'
+            ? new ResizeObserver(resize)
+            : null;
+
         window.addEventListener('resize', resize);
         resize();
-        return () => window.removeEventListener('resize', resize);
+        observer?.observe(container);
+
+        return () => {
+            window.removeEventListener('resize', resize);
+            observer?.disconnect();
+        };
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
@@ -667,11 +689,15 @@ export default function InfiniteCanvas() {
             const prompt = selectedImg.prompt || "A visually stunning variation of this image, keeping the exact same structure and composition but enhancing the details.";
 
             // Run 4 parallel requests to bypass "Multiple candidates is not enabled for this model" error
-            const generatePromises = Array.from({ length: 4 }).map(() =>
+            const requestNonce = `${Date.now()}-${crypto.randomUUID()}`;
+            const generatePromises = Array.from({ length: 4 }).map((_, requestIndex) =>
                 ImageGeneration.generateImages({
                     prompt: prompt,
                     count: 1,
-                    sourceImages: [{ mimeType, data: base64Data }]
+                    sourceImages: [{ mimeType, data: base64Data }],
+                    // ImageGenerationService coalesces identical concurrent calls.
+                    // A unique seed makes each requested variation a distinct job.
+                    seed: `${requestNonce}-${requestIndex}`,
                 })
             );
 
@@ -758,8 +784,10 @@ export default function InfiniteCanvas() {
         }
         setIsGenerating(true);
         try {
-            const settled = await Promise.allSettled(batch.slots.map(() => ImageGeneration.generateImages({
+            const retryNonce = `${Date.now()}-${crypto.randomUUID()}`;
+            const settled = await Promise.allSettled(batch.slots.map((slot) => ImageGeneration.generateImages({
                 prompt: batch.prompt, count: 1, sourceImages: [{ mimeType: batch.mimeType, data: batch.base64Data }],
+                seed: `${retryNonce}-${slot}`,
             })));
             const stillFailed: number[] = [];
             const padding = 40;
@@ -1001,6 +1029,104 @@ export default function InfiniteCanvas() {
         }
     };
 
+    const addLocalImageFile = (
+        file: File,
+        placement?: { x: number; y: number; attachToParent?: boolean },
+    ) => {
+        if (!file.type.startsWith('image/')) {
+            toast.error("Only image files are supported in Image Studio.");
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onerror = () => toast.error(`Could not read ${file.name}.`);
+        reader.onload = (event) => {
+            const dataUrl = event.target?.result;
+            const canvas = canvasRef.current;
+            if (typeof dataUrl !== 'string' || !canvas) return;
+
+            const image = new window.Image();
+            image.onload = () => {
+                const naturalWidth = image.naturalWidth || image.width;
+                const naturalHeight = image.naturalHeight || image.height;
+                if (!naturalWidth || !naturalHeight) {
+                    toast.error(`Could not determine the dimensions of ${file.name}.`);
+                    return;
+                }
+
+                const rect = canvas.getBoundingClientRect();
+                const scale = scaleRef.current;
+                const offset = offsetRef.current;
+                const screenX = placement?.x ?? rect.width / 2;
+                const screenY = placement?.y ?? rect.height / 2;
+                const worldCenterX = (screenX - offset.x) / scale;
+                const worldCenterY = (screenY - offset.y) / scale;
+                const aspect = naturalWidth / naturalHeight;
+                const maxDisplayDimension = Math.max(
+                    160,
+                    Math.min(512, (Math.min(rect.width, rect.height) * 0.65) / scale),
+                );
+                const fitScale = Math.min(1, maxDisplayDimension / Math.max(naturalWidth, naturalHeight));
+                const width = Math.max(1, naturalWidth * fitScale);
+                const height = Math.max(1, naturalHeight * fitScale);
+                const x = worldCenterX - width / 2;
+                const y = worldCenterY - height / 2;
+                const newId = crypto.randomUUID();
+
+                let parentId: string | undefined;
+                let parentOffsetX: number | undefined;
+                let parentOffsetY: number | undefined;
+                if (placement?.attachToParent) {
+                    for (let i = canvasImages.length - 1; i >= 0; i--) {
+                        const candidate = canvasImages[i]!;
+                        if (
+                            worldCenterX >= candidate.x
+                            && worldCenterX <= candidate.x + candidate.width
+                            && worldCenterY >= candidate.y
+                            && worldCenterY <= candidate.y + candidate.height
+                        ) {
+                            parentId = candidate.id;
+                            parentOffsetX = x - candidate.x;
+                            parentOffsetY = y - candidate.y;
+                            break;
+                        }
+                    }
+                }
+
+                addCanvasImage({
+                    id: newId,
+                    base64: dataUrl,
+                    x,
+                    y,
+                    width,
+                    height,
+                    aspect,
+                    projectId: currentProjectId,
+                    parentId,
+                    originalX: x,
+                    originalY: y,
+                    originalWidth: width,
+                    originalHeight: height,
+                    parentOffsetX,
+                    parentOffsetY,
+                    prompt: file.name,
+                });
+                selectCanvasImage(newId);
+                setTool('select');
+                toast.success(`${file.name} added to Image Studio.`);
+            };
+            image.onerror = () => toast.error(`Could not decode ${file.name}.`);
+            image.src = dataUrl;
+        };
+        reader.readAsDataURL(file);
+    };
+
+    const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (file) addLocalImageFile(file);
+        event.target.value = '';
+    };
+
     const handleDrop = async (e: React.DragEvent) => {
         e.preventDefault();
         const state = useStore.getState();
@@ -1008,68 +1134,14 @@ export default function InfiniteCanvas() {
         // Handle file drop from OS
         if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
             const file = e.dataTransfer.files[0];
-            if (!file?.type.startsWith('image/')) {
-                toast.error("Only image files are supported for dropping on the canvas");
-                return;
-            }
-
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                const dataUrl = event.target?.result as string;
-                if (!dataUrl) return;
-                
-                const rect = canvasRef.current!.getBoundingClientRect();
-                const mx = e.clientX - rect.left;
-                const my = e.clientY - rect.top;
-
-                const scale = scaleRef.current;
-                const offset = offsetRef.current;
-
-                const wx = (mx - offset.x) / scale;
-                const wy = (my - offset.y) / scale;
-
-                const img = new window.Image();
-                img.removeAttribute('crossOrigin');
-                img.onload = () => {
-                    const aspect = img.width / img.height;
-                    const newId = crypto.randomUUID();
-                    
-                    let parentId: string | undefined = undefined;
-                    let parentOffsetX: number | undefined = undefined;
-                    let parentOffsetY: number | undefined = undefined;
-                    
-                    for (let i = canvasImages.length - 1; i >= 0; i--) {
-                        const cImg = canvasImages[i]!;
-                        const w = cImg.width ?? 0;
-                        const h = cImg.height ?? 0;
-                        if (wx >= cImg.x && wx <= cImg.x + w && wy >= cImg.y && wy <= cImg.y + h) {
-                            parentId = cImg.id;
-                            parentOffsetX = (wx - 150) - cImg.x;
-                            parentOffsetY = (wy - (150 / aspect)) - cImg.y;
-                            break;
-                        }
-                    }
-                    
-                    addCanvasImage({
-                        id: newId,
-                        base64: dataUrl,
-                        x: wx - 150, y: wy - (150 / aspect),
-                        width: 300, height: 300 / aspect,
-                        aspect,
-                        projectId: currentProjectId,
-                        parentId,
-                        originalX: wx - 150,
-                        originalY: wy - (150 / aspect),
-                        originalWidth: 300,
-                        originalHeight: 300 / aspect,
-                        parentOffsetX,
-                        parentOffsetY,
-                        prompt: file.name
-                    });
-                };
-                img.src = dataUrl;
-            };
-            reader.readAsDataURL(file);
+            if (!file) return;
+            const rect = canvasRef.current?.getBoundingClientRect();
+            if (!rect) return;
+            addLocalImageFile(file, {
+                x: e.clientX - rect.left,
+                y: e.clientY - rect.top,
+                attachToParent: true,
+            });
             return;
         }
 
@@ -1264,6 +1336,15 @@ export default function InfiniteCanvas() {
 
     return (
         <div className="relative w-full h-full overflow-hidden bg-[#151515]">
+            <input
+                ref={imageUploadRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                tabIndex={-1}
+                data-testid="canvas-image-upload-input"
+                onChange={handleImageUpload}
+            />
             <canvas
                 ref={canvasRef}
                 onMouseDown={handleMouseDown}
@@ -1274,7 +1355,8 @@ export default function InfiniteCanvas() {
                 onWheel={handleWheel}
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={handleDrop}
-                className="block cursor-crosshair touch-none"
+                className="block w-full h-full cursor-crosshair touch-none"
+                data-testid="infinite-canvas-surface"
             />
 
             {/* HUD */}
@@ -1292,6 +1374,10 @@ export default function InfiniteCanvas() {
                 onZoomIn={handleZoomIn}
                 onZoomOut={handleZoomOut}
                 onDetectObjects={handleDetectObjects}
+                onUploadImage={() => imageUploadRef.current?.click()}
+                onBrowseAssets={() => setRightPanelTab('assets')}
+                canFlatten={canvasImages.length > 1}
+                canDetectObjects={canvasImages.length > 0}
             />
 
             {promptOverlay && (

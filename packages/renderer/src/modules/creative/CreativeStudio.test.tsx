@@ -158,6 +158,25 @@ describe('CreativeStudio', () => {
         render(<CreativeStudio />);
         expect(screen.getByTestId('creative-navbar')).toBeInTheDocument();
         expect(screen.getByTestId('direct-generation-tab')).toBeInTheDocument();
+        expect(screen.getByTestId('creative-mode-overlay')).toBeInTheDocument();
+    });
+
+    it('does not mount a pointer-enabled mode overlay above Image Studio', () => {
+        const currentStore = (useStore as any).getState();
+        const canvasStore = {
+            ...currentStore,
+            viewMode: 'canvas',
+            canvasImages: [],
+        };
+        (useStore as unknown as import('vitest').Mock).mockImplementation((selector: any) =>
+            selector ? selector(canvasStore) : canvasStore
+        );
+        (useStore as any).getState.mockReturnValue(canvasStore);
+
+        render(<CreativeStudio />);
+
+        expect(screen.getByTestId('infinite-canvas')).toBeInTheDocument();
+        expect(screen.queryByTestId('creative-mode-overlay')).not.toBeInTheDocument();
     });
 
     it('triggers image generation when pendingPrompt is set', async () => {

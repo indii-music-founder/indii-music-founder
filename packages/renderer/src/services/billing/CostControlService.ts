@@ -60,6 +60,10 @@ export interface CostOperationHistoryResponse {
   hasMore: boolean;
 }
 
+const finiteNumberOrZero = (value: unknown): number => (
+  typeof value === 'number' && Number.isFinite(value) ? value : 0
+);
+
 type ServerCostCheckResponse = Partial<CostCheckResponse> & {
   allowed: boolean;
 };
@@ -253,7 +257,18 @@ export class CostControlService {
         tier: UserTier; pendingHoldCost: number; pendingHoldCount: number; settledCost: number; voidedCost: number;
       }>(functions, 'getOperationCostStatus');
       const result = await getOperationCostStatus();
-      return result.data;
+      const data = result.data as Partial<typeof result.data>;
+      return {
+        dailyUsed: finiteNumberOrZero(data.dailyUsed),
+        monthlyUsed: finiteNumberOrZero(data.monthlyUsed),
+        dailyRemaining: finiteNumberOrZero(data.dailyRemaining),
+        monthlyRemaining: finiteNumberOrZero(data.monthlyRemaining),
+        tier: data.tier === 'pro' || data.tier === 'enterprise' ? data.tier : 'free',
+        pendingHoldCost: finiteNumberOrZero(data.pendingHoldCost),
+        pendingHoldCount: finiteNumberOrZero(data.pendingHoldCount),
+        settledCost: finiteNumberOrZero(data.settledCost),
+        voidedCost: finiteNumberOrZero(data.voidedCost),
+      };
     } catch (err) {
       logger.error('[CostControl] Status fetch failed', err);
       return {
@@ -284,7 +299,12 @@ export class CostControlService {
         CostOperationHistoryResponse
       >(functions, 'getOperationCostHistory');
       const result = await getOperationCostHistory({ cursor, limit });
-      return result.data;
+      const data = result.data as Partial<CostOperationHistoryResponse>;
+      return {
+        operations: Array.isArray(data.operations) ? data.operations : [],
+        nextCursor: data.nextCursor ?? null,
+        hasMore: data.hasMore === true,
+      };
     } catch (err) {
       logger.error('[CostControl] History fetch failed', err);
       return { operations: [], nextCursor: null, hasMore: false };

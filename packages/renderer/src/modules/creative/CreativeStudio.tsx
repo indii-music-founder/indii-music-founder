@@ -172,6 +172,11 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
     const plpRetryInFlightRef = React.useRef(new Set<number>());
     const acceptedPlpSlotsRef = React.useRef(new Set<string>());
     const plpLaunchInFlightRef = React.useRef(false);
+    const hasModeOverlay = viewMode === 'direct'
+        || viewMode === 'video_production'
+        || viewMode === 'omni'
+        || viewMode === 'showroom'
+        || viewMode === 'lab';
 
     const mutatePlpBatch = React.useCallback((mutate: (batch: PlpBatch) => PlpBatch) => {
         const current = plpBatchRef.current;
@@ -636,16 +641,23 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
                         {/* Floating Mode Picker */}
                         <CanvasModePicker />
 
-                        {/* Mode Overlays (rendered on top of canvas) */}
-                        <div className="absolute inset-0 z-10 pointer-events-none">
-                            <div className="w-full h-full pointer-events-auto">
-                                {viewMode === 'direct' && <DirectGenerationTab />}
-                                {viewMode === 'video_production' && <VideoWorkflow />}
-                                {viewMode === 'omni' && <OmniWorkflow />}
-                                {viewMode === 'showroom' && <ShowroomUI />}
-                                {viewMode === "lab" && <AutonomousLab />}
+                        {/* Mode overlays only exist while a visible overlay mode is active.
+                            Leaving an empty pointer-enabled layer mounted here blocks the
+                            canvas and every control inside its z-0 stacking context. */}
+                        {hasModeOverlay && (
+                            <div
+                                className="absolute inset-0 z-10 pointer-events-none"
+                                data-testid="creative-mode-overlay"
+                            >
+                                <div className="w-full h-full pointer-events-auto">
+                                    {viewMode === 'direct' && <DirectGenerationTab />}
+                                    {viewMode === 'video_production' && <VideoWorkflow />}
+                                    {viewMode === 'omni' && <OmniWorkflow />}
+                                    {viewMode === 'showroom' && <ShowroomUI />}
+                                    {viewMode === "lab" && <AutonomousLab />}
+                                </div>
                             </div>
-                        </div>
+                        )}
 
                         {/* Legacy Editor Modal Overlay */}
                             <CreativeCanvas

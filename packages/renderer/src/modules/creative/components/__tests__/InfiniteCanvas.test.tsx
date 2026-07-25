@@ -39,6 +39,7 @@ describe('InfiniteCanvas Culling', () => {
 
     beforeEach(() => {
         mockDetectObjects.mockReset();
+        vi.mocked(ImageGeneration.generateImages).mockReset();
         mockToast.error.mockReset();
         mockToast.success.mockReset();
         mockToast.info.mockReset();
@@ -208,6 +209,101 @@ describe('InfiniteCanvas Culling', () => {
 
         // Offscreen should NOT be drawn (this expectation will fail before optimization)
         expect(offScreenCalls.length).toBe(0);
+    });
+
+    it('adds and selects a local image through the Image Studio upload control', async () => {
+        const addCanvasImage = vi.fn();
+        const selectCanvasImage = vi.fn();
+        mockUseStore.mockImplementation((selector: any) => {
+            const state = {
+                canvasImages: [],
+                addCanvasImage,
+                updateCanvasImage: vi.fn(),
+                removeCanvasImage: vi.fn(),
+                selectedCanvasImageId: null,
+                selectCanvasImage,
+                currentProjectId: 'p1',
+                generatedHistory: [],
+                uploadedImages: [],
+                failedVariationBatch: null,
+                setFailedVariationBatch: vi.fn(),
+                addToHistory: vi.fn(),
+                saveDesignVersion: vi.fn(),
+                setRightPanelTab: vi.fn(),
+            };
+            return selector ? selector(state) : state;
+        });
+
+        render(<InfiniteCanvas />);
+        const file = new File(['image-bytes'], 'cover.png', { type: 'image/png' });
+        fireEvent.change(screen.getByTestId('canvas-image-upload-input'), {
+            target: { files: [file] },
+        });
+
+        await waitFor(() => {
+            expect(addCanvasImage).toHaveBeenCalledWith(expect.objectContaining({
+                base64: expect.stringMatching(/^data:image\/png;base64,/),
+                prompt: 'cover.png',
+                projectId: 'p1',
+            }));
+            expect(selectCanvasImage).toHaveBeenCalledWith(expect.any(String));
+            expect(mockToast.success).toHaveBeenCalledWith('cover.png added to Image Studio.');
+        });
+    });
+
+    it('launches four distinct variation jobs instead of coalescing identical calls', async () => {
+        const source = {
+            id: 'img1',
+            base64: 'data:image/png;base64,c291cmNl',
+            x: 0,
+            y: 0,
+            width: 100,
+            height: 100,
+            aspect: 1,
+            projectId: 'p1',
+            prompt: 'album cover',
+        };
+        const addCanvasImage = vi.fn();
+        const addToHistory = vi.fn();
+        mockUseStore.mockImplementation((selector: any) => {
+            const state = {
+                canvasImages: [source],
+                addCanvasImage,
+                updateCanvasImage: vi.fn(),
+                removeCanvasImage: vi.fn(),
+                selectedCanvasImageId: source.id,
+                selectCanvasImage: vi.fn(),
+                currentProjectId: 'p1',
+                generatedHistory: [],
+                uploadedImages: [],
+                failedVariationBatch: null,
+                setFailedVariationBatch: vi.fn(),
+                addToHistory,
+                saveDesignVersion: vi.fn(),
+                setRightPanelTab: vi.fn(),
+            };
+            return selector ? selector(state) : state;
+        });
+        (ImageGeneration.generateImages as any).mockImplementation(async (options: { seed: string }) => [{
+            id: `generated-${options.seed}`,
+            url: 'data:image/png;base64,dmFyaWF0aW9u',
+            prompt: 'album cover',
+        }]);
+
+        render(<InfiniteCanvas />);
+        fireEvent.click(screen.getByRole('button', { name: 'Generate Variations' }));
+
+        await waitFor(() => expect(ImageGeneration.generateImages).toHaveBeenCalledTimes(4));
+        const seeds = (ImageGeneration.generateImages as any).mock.calls.map(
+            ([options]: [{ seed: string }]) => options.seed,
+        );
+        expect(new Set(seeds).size).toBe(4);
+
+        await waitFor(() => {
+            expect(addCanvasImage).toHaveBeenCalledTimes(4);
+            expect(addToHistory).toHaveBeenCalledTimes(4);
+            expect(mockToast.success).toHaveBeenCalledWith('Generated 4 variations!');
+        });
     });
 
     it('runs real object detection and renders bounding boxes', async () => {

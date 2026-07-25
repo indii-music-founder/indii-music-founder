@@ -1,7 +1,6 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { waitFor } from '@testing-library/react';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { buildCreativeHistoryState, CanvasImage, CreativeHistorySlice } from '../creativeHistorySlice';
 import type { StoreState } from '@/core/store';
 
@@ -188,6 +187,57 @@ describe('creativeHistorySlice — openImageInStudio', () => {
         expect(slice.canvasImages.length).toBe(2);
         expect(slice.canvasImages[0]).toEqual(firstImage);
         expect(slice.canvasImages[1]?.id).toMatch(/^layer_image-2_\d+$/);
+    });
+
+    it('clears selection and failed variation state when their source layer is removed', () => {
+        const source: CanvasImage = {
+            id: 'source-layer',
+            base64: 'data:image/png;base64,source',
+            x: 0,
+            y: 0,
+            width: 100,
+            height: 100,
+            aspect: 1,
+            projectId: 'test-project',
+        };
+        slice.addCanvasImage(source);
+        slice.selectCanvasImage(source.id);
+        slice.setFailedVariationBatch({
+            source,
+            prompt: 'variation prompt',
+            mimeType: 'image/png',
+            base64Data: 'source',
+            projectId: 'test-project',
+            slots: [0],
+        });
+
+        slice.removeCanvasImage(source.id);
+
+        expect(slice.canvasImages).toHaveLength(0);
+        expect(slice.selectedCanvasImageId).toBeNull();
+        expect(slice.failedVariationBatch).toBeNull();
+    });
+
+    it('preserves selection when a different layer is removed', () => {
+        const selected: CanvasImage = {
+            id: 'selected-layer',
+            base64: 'data:image/png;base64,selected',
+            x: 0,
+            y: 0,
+            width: 100,
+            height: 100,
+            aspect: 1,
+            projectId: 'test-project',
+        };
+        const other = { ...selected, id: 'other-layer' };
+        slice.addCanvasImage(selected);
+        slice.addCanvasImage(other);
+        slice.selectCanvasImage(selected.id);
+
+        slice.removeCanvasImage(other.id);
+
+        expect(slice.selectedCanvasImageId).toBe(selected.id);
+        expect(slice.canvasImages.map(image => image.id)).toEqual([selected.id]);
     });
 
     it('syncs file nodes with storage URIs when generated history items already have them', async () => {

@@ -19,6 +19,11 @@ function renderHUD(overrides: Partial<{
     selectedCanvasImageId: string | null;
     onFlatten?: () => void;
     onGenerateVariations?: () => void;
+    onUploadImage?: () => void;
+    onBrowseAssets?: () => void;
+    onDetectObjects?: () => void;
+    canFlatten?: boolean;
+    canDetectObjects?: boolean;
 }> = {}) {
     const mockSetTool = vi.fn();
     const mockRemoveCanvasImage = vi.fn();
@@ -55,6 +60,18 @@ describe('InfiniteCanvasHUD — Canvas Toolbar', () => {
     it('renders the Delete Selected button', () => {
         renderHUD();
         expect(screen.getByRole('button', { name: /Delete Selected/i })).toBeInTheDocument();
+    });
+
+    it('exposes working Add Image and Project Assets entry points', () => {
+        const onUploadImage = vi.fn();
+        const onBrowseAssets = vi.fn();
+        renderHUD({ onUploadImage, onBrowseAssets });
+
+        fireEvent.click(screen.getByRole('button', { name: 'Add Image' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Project Assets' }));
+
+        expect(onUploadImage).toHaveBeenCalledOnce();
+        expect(onBrowseAssets).toHaveBeenCalledOnce();
     });
 
     it('does not render a legacy layers toggle on the InfiniteCanvas HUD', () => {
@@ -162,6 +179,16 @@ describe('InfiniteCanvasHUD — Canvas Toolbar', () => {
         renderHUD({ onFlatten });
         fireEvent.click(screen.getByRole('button', { name: /Flatten Canvas/i }));
         expect(onFlatten).toHaveBeenCalledOnce();
+    });
+
+    it('disables Flatten until at least two layers are available', () => {
+        renderHUD({ onFlatten: vi.fn(), canFlatten: false });
+        expect(screen.getByRole('button', { name: /Flatten Canvas/i })).toBeDisabled();
+    });
+
+    it('disables object detection until an image is available', () => {
+        renderHUD({ onDetectObjects: vi.fn(), canDetectObjects: false });
+        expect(screen.getByRole('button', { name: /Detect Objects/i })).toBeDisabled();
     });
 
     // --- Generate Variations (optional) ---

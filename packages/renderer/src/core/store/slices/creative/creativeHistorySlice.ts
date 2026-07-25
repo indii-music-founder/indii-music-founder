@@ -317,7 +317,11 @@ export function buildCreativeHistoryState(
         updateCanvasImage: (id: string, updates: Partial<CanvasImage>) => set((state) => ({
             canvasImages: state.canvasImages.map(img => img.id === id ? { ...img, ...updates } : img)
         })),
-        removeCanvasImage: (id: string) => set((state) => ({ canvasImages: state.canvasImages.filter(i => i.id !== id) })),
+        removeCanvasImage: (id: string) => set((state) => ({
+            canvasImages: state.canvasImages.filter(i => i.id !== id),
+            selectedCanvasImageId: state.selectedCanvasImageId === id ? null : state.selectedCanvasImageId,
+            failedVariationBatch: state.failedVariationBatch?.source.id === id ? null : state.failedVariationBatch,
+        })),
         selectCanvasImage: (id: string | null) => set({ selectedCanvasImageId: id }),
 
         chatImportContext: null,

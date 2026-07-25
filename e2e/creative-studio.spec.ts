@@ -1,3 +1,4 @@
+import path from 'node:path';
 import { test, expect } from './fixtures/auth';
 
 /**
@@ -62,6 +63,96 @@ test.describe('Creative Studio', () => {
         }
     });
 
+    test('Image Studio toolbar stays interactive through upload and delete', async ({ authedPage: page }) => {
+        await page.getByTestId('canvas-mode-canvas').click();
+
+        await expect(page.getByTestId('creative-mode-overlay')).toHaveCount(0);
+        const selectTool = page.getByRole('button', { name: 'Select/Move Tool' });
+        await selectTool.click();
+        await expect(selectTool).toHaveAttribute('aria-pressed', 'true');
+
+        const fileChooserPromise = page.waitForEvent('filechooser');
+        await page.getByRole('button', { name: 'Add Image' }).click();
+        const fileChooser = await fileChooserPromise;
+        await fileChooser.setFiles(path.resolve('packages/renderer/public/icon-192.png'));
+
+        await expect.poll(() => page.evaluate(() => {
+            const state = (window as any).useStore?.getState();
+            return {
+                imageCount: state?.canvasImages?.length ?? 0,
+                hasSelection: Boolean(state?.selectedCanvasImageId),
+            };
+        })).toEqual({ imageCount: 1, hasSelection: true });
+
+        await expect(page.getByRole('button', { name: 'Detect Objects' })).toBeEnabled();
+        const deleteButton = page.getByRole('button', { name: 'Delete Selected' });
+        await expect(deleteButton).toBeEnabled();
+        await deleteButton.click();
+
+        await expect.poll(() => page.evaluate(() => {
+            const state = (window as any).useStore?.getState();
+            return {
+                imageCount: state?.canvasImages?.length ?? 0,
+                selectedId: state?.selectedCanvasImageId ?? null,
+            };
+        })).toEqual({ imageCount: 0, selectedId: null });
+        await expect(deleteButton).toBeDisabled();
+    });
+
+    test('Image Studio local editing tools expose their working controls', async ({ authedPage: page }) => {
+        await page.getByTestId('canvas-mode-canvas').click();
+        // Exercise the local-canvas path without asking the Firebase-free E2E
+        // session to persist a project recovery snapshot.
+        await page.evaluate(() => {
+            (window as any).useStore?.setState({ currentProjectId: null });
+        });
+        const canvas = page.getByTestId('infinite-canvas-surface');
+        const canvasBox = await canvas.boundingBox();
+        expect(canvasBox).not.toBeNull();
+        if (!canvasBox) return;
+
+        await page.getByRole('button', { name: 'Generate/Outpaint Tool' }).click();
+        await page.mouse.move(canvasBox.x + 80, canvasBox.y + 90);
+        await page.mouse.down();
+        await page.mouse.move(canvasBox.x + 240, canvasBox.y + 220, { steps: 5 });
+        await page.mouse.up();
+        await expect(page.getByPlaceholder('Describe what you want to see...')).toBeVisible();
+        await page.getByRole('button', { name: 'Cancel' }).click();
+
+        await page.getByRole('button', { name: 'Adaptive Crop & Fill' }).click();
+        await page.mouse.move(canvasBox.x + 100, canvasBox.y + 100);
+        await page.mouse.down();
+        await page.mouse.move(canvasBox.x + 280, canvasBox.y + 260, { steps: 5 });
+        await page.mouse.up();
+        await expect(page.getByRole('button', { name: 'Crop & Fill' })).toBeVisible();
+        await page.getByRole('button', { name: 'Cancel' }).click();
+
+        for (let expectedCount = 1; expectedCount <= 2; expectedCount += 1) {
+            const fileChooserPromise = page.waitForEvent('filechooser');
+            await page.getByRole('button', { name: 'Add Image' }).click();
+            const fileChooser = await fileChooserPromise;
+            await fileChooser.setFiles(path.resolve('packages/renderer/public/icon-192.png'));
+            await expect.poll(() => page.evaluate(() =>
+                (window as any).useStore?.getState().canvasImages.length
+            )).toBe(expectedCount);
+        }
+
+        const flattenButton = page.getByRole('button', { name: 'Flatten Canvas' });
+        await expect(flattenButton).toBeEnabled();
+        await flattenButton.click();
+        await expect.poll(() => page.evaluate(() =>
+            (window as any).useStore?.getState().canvasImages.length
+        )).toBe(1);
+
+        const undoButton = page.getByRole('button', { name: 'Undo Flatten' });
+        await expect(undoButton).toBeEnabled();
+        await undoButton.click();
+        await expect.poll(() => page.evaluate(() =>
+            (window as any).useStore?.getState().canvasImages.length
+        )).toBe(2);
+        await expect(undoButton).toBeDisabled();
+    });
+
     test.skip('outpainting flow: upload image -> extend -> save', async ({ authedPage: page }) => {
         // Find outpaint tool
         const outpaintToolBtn = page.locator('[data-testid="tool-outpaint"]').or(page.locator('button:has-text("Outpaint")')).first();
@@ -80,7 +171,7 @@ test.describe('Creative Studio', () => {
         }
     });
 
-    test.skip('asset management: create -> rename -> delete', async ({ authedPage: page }) => {
+    test.skip('asset management: create -> rename -> delete', async () => {
         // Obsolete test: Assets drawer was replaced by CreativeClipboard
         // Skipping until e2e tests are updated for CreativeClipboard functionality.
         console.log('✓ Asset management checked (skipped - obsolete UI)');

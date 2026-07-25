@@ -185,6 +185,22 @@ describe('CostControlService', () => {
     expect(mocks.callable).toHaveBeenCalledWith();
   });
 
+  it('normalizes an incomplete status receipt instead of exposing undefined UI values', async () => {
+    mocks.callable.mockResolvedValueOnce({ data: {} });
+
+    await expect(CostControlService.getStatus('auth-user-1')).resolves.toEqual({
+      dailyUsed: 0,
+      monthlyUsed: 0,
+      dailyRemaining: 0,
+      monthlyRemaining: 0,
+      tier: 'free',
+      pendingHoldCost: 0,
+      pendingHoldCount: 0,
+      settledCost: 0,
+      voidedCost: 0,
+    });
+  });
+
   it('gets an owner-scoped cursor-paginated operation history', async () => {
     const nextCursor = { timestampMs: 1_784_240_000_000, operationId: 'op-older' };
     mocks.callable.mockResolvedValueOnce({
@@ -217,5 +233,15 @@ describe('CostControlService', () => {
       'getOperationCostHistory',
     );
     expect(mocks.callable).toHaveBeenCalledWith({ cursor: null, limit: 5 });
+  });
+
+  it('normalizes an incomplete operation-history receipt', async () => {
+    mocks.callable.mockResolvedValueOnce({ data: {} });
+
+    await expect(CostControlService.getHistory('auth-user-1')).resolves.toEqual({
+      operations: [],
+      nextCursor: null,
+      hasMore: false,
+    });
   });
 });

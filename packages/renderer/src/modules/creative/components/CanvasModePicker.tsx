@@ -13,7 +13,7 @@ export default function CanvasModePicker() {
     const setGenerationMode = useStore(state => state.setGenerationMode);
 
     const handleSelectMode = (mode: typeof MODES[number]) => {
-        setViewMode(mode.id as any);
+        setViewMode(mode.id);
         setGenerationMode(mode.gen);
     };
 
@@ -25,7 +25,10 @@ export default function CanvasModePicker() {
                 return (
                     <button
                         key={mode.id}
+                        type="button"
                         onClick={() => handleSelectMode(mode)}
+                        aria-pressed={isActive}
+                        data-testid={`canvas-mode-${mode.id}`}
                         className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all ${
                             isActive 
                                 ? 'bg-white/20 text-white shadow-sm' 

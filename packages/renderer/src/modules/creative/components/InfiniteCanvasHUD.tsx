@@ -1,5 +1,5 @@
 import React, { memo } from 'react';
-import { Move, MousePointer2, ImagePlus, Eraser, Layers, Crop, ZoomIn, ZoomOut, ScanSearch, Undo2 } from 'lucide-react';
+import { Move, MousePointer2, ImagePlus, Eraser, Layers, Crop, ZoomIn, ZoomOut, ScanSearch, Undo2, Upload, FolderOpen } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface InfiniteCanvasHUDProps {
@@ -16,6 +16,10 @@ interface InfiniteCanvasHUDProps {
     onZoomIn?: () => void;
     onZoomOut?: () => void;
     onDetectObjects?: () => void;
+    onUploadImage?: () => void;
+    onBrowseAssets?: () => void;
+    canFlatten?: boolean;
+    canDetectObjects?: boolean;
 }
 
 // Optimized with React.memo to prevent re-renders when parent's local state (e.g., offset/drag) changes
@@ -33,14 +37,62 @@ export const InfiniteCanvasHUD: React.FC<InfiniteCanvasHUDProps> = memo(({
     failedVariationCount,
     onZoomIn,
     onZoomOut,
-    onDetectObjects
+    onDetectObjects,
+    onUploadImage,
+    onBrowseAssets,
+    canFlatten = true,
+    canDetectObjects = true
 }) => {
     return (
         <TooltipProvider delayDuration={200}>
-            <div className="absolute bottom-8 left-1/2 -translate-x-1/2 bg-background/60 backdrop-blur-xl border border-white/10 rounded-full px-4 py-2 flex items-center gap-2 shadow-2xl z-50">
+            <div
+                role="toolbar"
+                aria-label="Image Studio tools"
+                data-testid="image-studio-toolbar"
+                className="absolute bottom-8 left-1/2 -translate-x-1/2 bg-background/60 backdrop-blur-xl border border-white/10 rounded-full px-4 py-2 flex items-center gap-2 shadow-2xl z-50 pointer-events-auto"
+            >
+                {onUploadImage && (
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <button
+                                type="button"
+                                title="Add Image"
+                                onClick={onUploadImage}
+                                className="p-2 rounded-full text-gray-400 hover:text-white hover:bg-white/10 transition-colors focus-visible:ring-2 focus-visible:ring-white/40 focus-visible:outline-none"
+                                aria-label="Add Image"
+                                data-testid="canvas-add-image"
+                            >
+                                <Upload size={18} />
+                            </button>
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="bg-[#1a1a1a] text-white border-white/10 z-50">Add an image from this device</TooltipContent>
+                    </Tooltip>
+                )}
+
+                {onBrowseAssets && (
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <button
+                                type="button"
+                                title="Project Assets"
+                                onClick={onBrowseAssets}
+                                className="p-2 rounded-full text-gray-400 hover:text-white hover:bg-white/10 transition-colors focus-visible:ring-2 focus-visible:ring-white/40 focus-visible:outline-none"
+                                aria-label="Project Assets"
+                                data-testid="canvas-browse-assets"
+                            >
+                                <FolderOpen size={18} />
+                            </button>
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="bg-[#1a1a1a] text-white border-white/10 z-50">Browse Project Assets</TooltipContent>
+                    </Tooltip>
+                )}
+
+                {(onUploadImage || onBrowseAssets) && <div className="w-px h-6 bg-white/10 mx-1" />}
+
                 <Tooltip>
                     <TooltipTrigger asChild>
                         <button
+                            type="button"
                             title="Pan Tool"
                             onClick={() => setTool('pan')}
                             className={`p-2 rounded-full transition-colors focus-visible:ring-2 focus-visible:ring-dept-distribution/40 focus-visible:outline-none ${tool === 'pan' ? 'bg-dept-distribution text-white' : 'text-gray-400 hover:text-white'}`}
@@ -56,6 +108,7 @@ export const InfiniteCanvasHUD: React.FC<InfiniteCanvasHUDProps> = memo(({
                 <Tooltip>
                     <TooltipTrigger asChild>
                         <button
+                            type="button"
                             title="Select/Move Tool"
                             onClick={() => setTool('select')}
                             className={`p-2 rounded-full transition-colors focus-visible:ring-2 focus-visible:ring-dept-distribution/40 focus-visible:outline-none ${tool === 'select' ? 'bg-dept-distribution text-white' : 'text-gray-400 hover:text-white'}`}
@@ -71,6 +124,7 @@ export const InfiniteCanvasHUD: React.FC<InfiniteCanvasHUDProps> = memo(({
                 <Tooltip>
                     <TooltipTrigger asChild>
                         <button
+                            type="button"
                             title="Generate/Outpaint Tool"
                             onClick={() => setTool('generate')}
                             className={`p-2 rounded-full transition-colors focus-visible:ring-2 focus-visible:ring-dept-creative/40 focus-visible:outline-none ${tool === 'generate' ? 'bg-dept-creative text-white' : 'text-gray-400 hover:text-white'}`}
@@ -86,6 +140,7 @@ export const InfiniteCanvasHUD: React.FC<InfiniteCanvasHUDProps> = memo(({
                 <Tooltip>
                     <TooltipTrigger asChild>
                         <button
+                            type="button"
                             title="Adaptive Crop & Fill"
                             onClick={() => setTool('crop')}
                             className={`p-2 rounded-full transition-colors focus-visible:ring-2 focus-visible:ring-orange-500/40 focus-visible:outline-none ${tool === 'crop' ? 'bg-orange-500 text-white' : 'text-gray-400 hover:text-white'}`}
@@ -104,9 +159,11 @@ export const InfiniteCanvasHUD: React.FC<InfiniteCanvasHUDProps> = memo(({
                     <Tooltip>
                         <TooltipTrigger asChild>
                             <button
+                                type="button"
                                 title="Detect Objects (ID)"
                                 onClick={onDetectObjects}
-                                className="p-2 rounded-full text-indigo-400 hover:text-white hover:bg-indigo-900/30 transition-colors focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:outline-none"
+                                disabled={!canDetectObjects}
+                                className="p-2 rounded-full text-indigo-400 hover:text-white hover:bg-indigo-900/30 disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:outline-none"
                                 aria-label="Detect Objects"
                             >
                                 <ScanSearch size={18} />
@@ -120,6 +177,7 @@ export const InfiniteCanvasHUD: React.FC<InfiniteCanvasHUDProps> = memo(({
                     <Tooltip>
                         <TooltipTrigger asChild>
                             <button
+                                type="button"
                                 title="Zoom Out"
                                 onClick={onZoomOut}
                                 className="p-2 rounded-full text-gray-400 hover:text-white hover:bg-white/10 transition-colors focus-visible:ring-2 focus-visible:ring-white/40 focus-visible:outline-none"
@@ -136,6 +194,7 @@ export const InfiniteCanvasHUD: React.FC<InfiniteCanvasHUDProps> = memo(({
                     <Tooltip>
                         <TooltipTrigger asChild>
                             <button
+                                type="button"
                                 title="Zoom In"
                                 onClick={onZoomIn}
                                 className="p-2 rounded-full text-gray-400 hover:text-white hover:bg-white/10 transition-colors focus-visible:ring-2 focus-visible:ring-white/40 focus-visible:outline-none"
@@ -154,9 +213,11 @@ export const InfiniteCanvasHUD: React.FC<InfiniteCanvasHUDProps> = memo(({
                     <Tooltip>
                         <TooltipTrigger asChild>
                             <button
+                                type="button"
                                 title="Flatten Canvas"
                                 onClick={onFlatten}
-                                className="p-2 rounded-full text-gray-400 hover:text-white hover:bg-white/10 transition-colors focus-visible:ring-2 focus-visible:ring-white/40 focus-visible:outline-none"
+                                disabled={!canFlatten}
+                                className="p-2 rounded-full text-gray-400 hover:text-white hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus-visible:ring-2 focus-visible:ring-white/40 focus-visible:outline-none"
                                 aria-label="Flatten Canvas"
                             >
                                 <Layers size={18} />
@@ -170,6 +231,7 @@ export const InfiniteCanvasHUD: React.FC<InfiniteCanvasHUDProps> = memo(({
                     <Tooltip>
                         <TooltipTrigger asChild>
                             <button
+                                type="button"
                                 title="Undo Flatten"
                                 onClick={onUndoFlatten}
                                 disabled={!canUndoFlatten}
@@ -186,6 +248,7 @@ export const InfiniteCanvasHUD: React.FC<InfiniteCanvasHUDProps> = memo(({
                 <Tooltip>
                     <TooltipTrigger asChild>
                         <button
+                            type="button"
                             title="Delete Selected"
                             onClick={() => selectedCanvasImageId && removeCanvasImage(selectedCanvasImageId)}
                             disabled={!selectedCanvasImageId}
@@ -202,6 +265,7 @@ export const InfiniteCanvasHUD: React.FC<InfiniteCanvasHUDProps> = memo(({
                     <Tooltip>
                         <TooltipTrigger asChild>
                             <button
+                                type="button"
                                 title="Generate Variations"
                                 onClick={onGenerateVariations}
                                 disabled={!selectedCanvasImageId}
@@ -217,6 +281,7 @@ export const InfiniteCanvasHUD: React.FC<InfiniteCanvasHUDProps> = memo(({
 
                 {onRetryFailedVariations && failedVariationCount && failedVariationCount > 0 ? (
                     <button
+                        type="button"
                         title="Retry Failed Variations"
                         onClick={onRetryFailedVariations}
                         className="px-3 py-1.5 rounded-full text-sm font-medium border border-amber-400/50 text-amber-200 hover:bg-amber-400/10 transition-colors"
