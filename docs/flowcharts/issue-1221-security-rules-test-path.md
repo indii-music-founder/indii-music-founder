@@ -21,6 +21,8 @@ flowchart TD
     style Assertions fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px
 ```
 
+## Step-by-Step Transition Breakdown
+
 1. Vitest runs with `packages/firebase` as its working directory.
 2. The test resolves both rules files from its own stable directory, `packages/firebase/src/test/security`, rather than the caller-controlled working directory.
 3. `../../../storage.rules` and `../../../firestore.rules` reach the package-level rules files without duplicating `packages/firebase`.
