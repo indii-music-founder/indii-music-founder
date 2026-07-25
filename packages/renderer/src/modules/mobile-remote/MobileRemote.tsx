@@ -131,6 +131,7 @@ export default function MobileRemote() {
   const [activeTab, setActiveTab] = useState<TabId>('home');
   const [showPairingModal, setShowPairingModal] = useState(false);
   const [desktopState, setDesktopState] = useState<DesktopState | null>(null);
+  const [handoffError, setHandoffError] = useState<string | null>(null);
 
   // Reconnection state machine
   const [isReconnecting, setIsReconnecting] = useState(false);
@@ -171,10 +172,14 @@ export default function MobileRemote() {
     // Validate 64-hex format for security (ISSUE-376)
     if (!/^[a-fA-F0-9]{64}$/.test(code)) {
       logger.warn('[MobileRemote] Invalid handoff code format');
+      setHandoffError('This pairing link is invalid. Generate a new link from Desktop Studio → Settings → Mobile Remote.');
+      setConnectionStatus('error');
       return;
     }
 
     logger.info('[MobileRemote] Found handoff code in URL, redeeming...');
+    setConnectionStatus('pairing');
+    setHandoffError(null);
 
     const redeem = async () => {
       try {
@@ -195,6 +200,7 @@ export default function MobileRemote() {
           logger.info('[MobileRemote] Redeem success, signing in with custom token...');
           await signInWithCustomToken(auth, data.customToken);
           logger.info('[MobileRemote] Signed in successfully!');
+          setHandoffError(null);
         } else {
           throw new Error('No customToken returned');
         }
@@ -204,6 +210,8 @@ export default function MobileRemote() {
         window.history.replaceState({}, document.title, cleanUrl);
       } catch (err) {
         logger.error('[MobileRemote] Failed to redeem handoff code:', err);
+        setHandoffError('This pairing link expired or could not be redeemed. Generate a new link from Desktop Studio → Settings → Mobile Remote.');
+        setConnectionStatus('error');
       }
     };
 
@@ -750,7 +758,7 @@ export default function MobileRemote() {
             )}
           </AnimatePresence>
 
-          {!isPaired && connectionStatus === 'idle' && !isReconnecting ? (
+          {!isPaired && (connectionStatus === 'idle' || connectionStatus === 'error') && !isReconnecting ? (
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -766,9 +774,11 @@ export default function MobileRemote() {
                 </div>
               </div>
               
-              <h2 className="text-2xl font-bold text-white mb-4 tracking-tight">Studio Disconnected</h2>
+              <h2 className="text-2xl font-bold text-white mb-4 tracking-tight">
+                {handoffError ? 'Pairing Link Needed' : 'Studio Disconnected'}
+              </h2>
               <p className="text-base text-[#a1a1a6] mb-10 leading-relaxed px-6 font-medium">
-                Your indii studio is currently offline. Launch the desktop application to restore control, or click below to manually retry.
+                {handoffError ?? 'Your indii studio is currently offline. Launch the desktop application to restore control, or click below to manually retry.'}
               </p>
               
               <div className="flex flex-col gap-4 w-full px-6">

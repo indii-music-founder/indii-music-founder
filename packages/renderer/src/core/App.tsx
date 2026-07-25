@@ -14,7 +14,7 @@ import { STANDALONE_MODULES, type ModuleId } from './constants';
 import { useURLSync } from '@/hooks/useURLSync';
 import { useLocation } from 'react-router-dom';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
-import { useMobile, type MobileState } from '@/hooks/useMobile';
+import { useMobile } from '@/hooks/useMobile';
 import { useGlobalShortcutsModal } from '@/components/shared/GlobalKeyboardShortcuts';
 import { useRemoteCommandListener } from '@/hooks/useRemoteCommandListener';
 import { useConnectivityMonitor } from '@/hooks/useConnectivityMonitor';
@@ -24,6 +24,14 @@ import { useBugReportShortcut } from '@/modules/debug/useBugReportShortcut';
 import { LoadingFallback } from '@/core/components/LoadingFallbacks';
 import { cleanupLocalStorage } from '@/lib/storageHealth';
 import { flushFounderFunnelQueue } from '@/services/founders/founderFunnel';
+import {
+    buildMobileRemoteUrl,
+    isRemoteSurfaceDevice,
+    isStudioExecutorSurface,
+    isMobileRemoteHost,
+    isMobileRemotePath,
+    shouldUseMobileRemoteSurface,
+} from '@/modules/mobile-remote/routing';
 import '@/core/i18n'; // Initialize i18next — must run before any component renders
 import { AppInitializationProvider } from '@/providers/AppInitializationProvider';
 
@@ -31,24 +39,7 @@ const AppShell = lazy(() => import('./AppShell'));
 const BugReportDialog = lazy(() => import('@/modules/debug/BugReportDialog').then(m => ({ default: m.BugReportDialog })));
 const InstagramOAuthCallback = lazy(() => import('@/modules/analytics/components/InstagramOAuthCallback').then(m => ({ default: m.InstagramOAuthCallback })));
 const TaxFormUploadPage = lazy(() => import('@/modules/finance/pages/TaxFormUploadPage').then(m => ({ default: m.TaxFormUploadPage })));
-
-export function isRemoteSurfaceDevice(
-    mobile: Pick<MobileState, 'isAnyPhone' | 'isTablet' | 'isTouchDevice'>
-): boolean {
-    return mobile.isAnyPhone || (mobile.isTablet && mobile.isTouchDevice);
-}
-
-/**
- * The Controller is a command producer, never a Studio executor. This check
- * deliberately excludes a desktop-sized `/mobile-remote` page too; viewport
- * detection alone allowed that page to publish a fake Studio heartbeat.
- */
-export function isStudioExecutorSurface(
-    currentModule: string,
-    shouldUseRemoteSurface: boolean
-): boolean {
-    return !shouldUseRemoteSurface && currentModule !== 'mobile-remote';
-}
+const MobileRemote = lazy(() => import('@/modules/mobile-remote/MobileRemote'));
 
 function DevPortWarning() {
     const port = window.location.port;
@@ -137,15 +128,22 @@ export default function App() {
 
     // Session metadata and the active session's append-only message stream must
     // be live on every signed-in surface, not only after opening the archive.
+    const userId = user?.uid;
     useEffect(() => {
-        if (!user) return;
+        if (!userId) return;
         useStore.getState().loadSessions().catch(error => {
             console.error('[App] Failed to start live agent-session sync:', error);
         });
-    }, [user?.uid]);
+    }, [userId]);
 
     const mobile = useMobile();
-    const shouldUseRemoteSurface = isRemoteSurfaceDevice(mobile);
+    const isElectron = typeof window !== 'undefined' && !!window.electronAPI;
+    const shouldUseRemoteSurface = shouldUseMobileRemoteSurface({
+        hostname: typeof window === 'undefined' ? '' : window.location.hostname,
+        pathname: location.pathname,
+        isElectron,
+        isRemoteDevice: isRemoteSurfaceDevice(mobile),
+    });
     const { isAnyPhone } = mobile;
     const isStudioExecutor = isStudioExecutorSurface(currentModule, shouldUseRemoteSurface);
 
@@ -171,8 +169,14 @@ export default function App() {
         [location.pathname],
     );
 
-    // URL sync must not rewrite public legal routes back to a persisted module.
-    useURLSync({ disabled: !!publicLegalPage || isInstagramOAuthCallback || isTaxFormUploadPage });
+    // URL sync must not rewrite public or controller routes back to a persisted module.
+    useURLSync({
+        disabled:
+            shouldUseRemoteSurface ||
+            !!publicLegalPage ||
+            isInstagramOAuthCallback ||
+            isTaxFormUploadPage,
+    });
 
     // Determine if current module should show chrome (sidebar, command bar, etc.)
     const showChrome = useMemo(
@@ -182,6 +186,25 @@ export default function App() {
 
     // SSR-safe media query for desktop detection
     const isDesktop = useMediaQuery('(min-width: 768px)');
+
+    // The public app subdomain is the canonical Controller surface. Preserve
+    // the one-time handoff query while moving legacy/mobile Studio URLs there.
+    useEffect(() => {
+        if (!shouldUseRemoteSurface || isElectron || typeof window === 'undefined') return;
+
+        const hostname = window.location.hostname;
+        const isLocal =
+            hostname === 'localhost' ||
+            hostname === '127.0.0.1' ||
+            hostname.endsWith('.local');
+        if (isLocal) return;
+
+        if (!isMobileRemoteHost(hostname) || !isMobileRemotePath(window.location.pathname)) {
+            window.location.replace(
+                buildMobileRemoteUrl(window.location.search, window.location.hash)
+            );
+        }
+    }, [shouldUseRemoteSurface, isElectron, location.pathname]);
 
     // Remote auto-route: phones and touch-capable tablets use the remote shell instead of studio chrome.
     useEffect(() => {
@@ -195,7 +218,9 @@ export default function App() {
 
     return (
         <AppInitializationProvider>
-            {publicLegalPage ? (
+            {shouldUseRemoteSurface ? (
+                <Suspense fallback={<LoadingFallback />}><MobileRemote /></Suspense>
+            ) : publicLegalPage ? (
                 <PublicLegalPage type={publicLegalPage} />
             ) : isTaxFormUploadPage ? (
                 <Suspense fallback={<LoadingFallback />}><TaxFormUploadPage /></Suspense>

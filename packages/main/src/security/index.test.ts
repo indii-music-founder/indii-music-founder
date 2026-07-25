@@ -223,8 +223,8 @@ describe('security/index.ts', () => {
             });
         });
 
-        describe('onBeforeSendHeaders (Referer & Client Type Injection)', () => {
-            it('should inject referer and client type for all googleapis, firebaseapp, cloudfunctions, and run.app', () => {
+        describe('onBeforeSendHeaders (Studio identity headers)', () => {
+            it('uses the Studio origin, never the Founder marketing origin, for Firebase and Google requests', () => {
                 configureSecurity(mockSession as unknown as Session);
                 const handler = mockSession.webRequest.onBeforeSendHeaders.mock.calls[0][1];
 
@@ -249,10 +249,11 @@ describe('security/index.ts', () => {
                     expect(callback).toHaveBeenCalledWith({
                         requestHeaders: {
                             'User-Agent': 'test',
-                            'Referer': 'https://founder.indii.music/',
+                            'Referer': 'https://indii.music/',
                             'X-App-Client-Type': 'electron-desktop-app'
                         }
                     });
+                    expect(details.requestHeaders.Referer).not.toBe('https://founder.indii.music/');
                 }
             });
         });

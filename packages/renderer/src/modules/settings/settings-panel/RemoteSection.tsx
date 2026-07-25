@@ -18,6 +18,7 @@ import { auth } from '@/services/firebase';
 import { isPrivateIP } from '@/services/agent/RemoteRelayService';
 import { logger } from '@/utils/logger';
 import { desktopFileIndexService, type ApprovedAssetFolder } from '@/services/agent/DesktopFileIndexService';
+import { buildMobileRemotePairingUrl } from '@/modules/mobile-remote/routing';
 
 const CODE_TTL_MS = 5 * 60 * 1000; // matches auth_handoffs expiry in functions/auth/handoff.ts
 
@@ -107,10 +108,11 @@ const RemoteSection: React.FC = () => {
             }
 
             // Same URL scheme the Mobile Remote pairing modal generates
-            const isDev = window.location.hostname === 'localhost' || isPrivateIP(window.location.hostname);
-            const base = isDev ? window.location.origin + '/mobile-remote' : 'https://indii.music/mobile-remote';
+            const isDev =
+                window.location.hostname === 'localhost' || isPrivateIP(window.location.hostname);
+            const origin = isDev ? window.location.origin : undefined;
             setCode(data.code);
-            setQrUrl(`${base}?code=${data.code}`);
+            setQrUrl(buildMobileRemotePairingUrl(data.code, origin));
 
             // Countdown to expiry so the UI never shows a dead code as live
             clearExpiryTimer();

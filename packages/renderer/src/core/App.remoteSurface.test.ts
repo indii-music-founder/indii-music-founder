@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { isRemoteSurfaceDevice, isStudioExecutorSurface } from './App';
+import {
+    isRemoteSurfaceDevice,
+    isStudioExecutorSurface,
+    shouldUseMobileRemoteSurface,
+} from '@/modules/mobile-remote/routing';
 
 describe('isRemoteSurfaceDevice', () => {
     it('routes phones to the remote surface', () => {
@@ -54,5 +58,34 @@ describe('isStudioExecutorSurface (ISSUE-1025)', () => {
 
     it('allows the actual desktop Studio surface to own the relay', () => {
         expect(isStudioExecutorSurface('dashboard', false)).toBe(true);
+    });
+});
+
+describe('shouldUseMobileRemoteSurface', () => {
+    it('reserves app.indii.music for the Controller at every viewport size', () => {
+        expect(shouldUseMobileRemoteSurface({
+            hostname: 'app.indii.music',
+            pathname: '/legal',
+            isElectron: false,
+            isRemoteDevice: false,
+        })).toBe(true);
+    });
+
+    it('keeps the native Electron application on the Studio surface', () => {
+        expect(shouldUseMobileRemoteSurface({
+            hostname: '',
+            pathname: '/',
+            isElectron: true,
+            isRemoteDevice: true,
+        })).toBe(false);
+    });
+
+    it('routes legacy mobile-remote links through the Controller bootstrap', () => {
+        expect(shouldUseMobileRemoteSurface({
+            hostname: 'indii.music',
+            pathname: '/mobile-remote',
+            isElectron: false,
+            isRemoteDevice: false,
+        })).toBe(true);
     });
 });

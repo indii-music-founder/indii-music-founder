@@ -1,0 +1,83 @@
+import { describe, expect, it } from 'vitest';
+import {
+    buildMobileRemotePairingUrl,
+    buildMobileRemoteUrl,
+    isMobileRemoteHost,
+    isMobileRemotePath,
+    isRemoteSurfaceDevice,
+    isStudioExecutorSurface,
+    shouldUseMobileRemoteSurface,
+} from './routing';
+
+describe('mobile remote routing contract', () => {
+    it('uses app.indii.music as the canonical Controller origin', () => {
+        expect(buildMobileRemoteUrl()).toBe('https://app.indii.music/mobile-remote');
+        expect(buildMobileRemoteUrl('?code=abc', '#pair')).toBe(
+            'https://app.indii.music/mobile-remote?code=abc#pair'
+        );
+    });
+
+    it('builds an encoded one-click pairing link on the Controller origin', () => {
+        const code = 'a'.repeat(64);
+        expect(buildMobileRemotePairingUrl(code)).toBe(
+            `https://app.indii.music/mobile-remote?code=${code}`
+        );
+        expect(buildMobileRemotePairingUrl('code with spaces', 'http://localhost:5173')).toBe(
+            'http://localhost:5173/mobile-remote?code=code+with+spaces'
+        );
+    });
+
+    it('recognizes only the dedicated Controller host', () => {
+        expect(isMobileRemoteHost('app.indii.music')).toBe(true);
+        expect(isMobileRemoteHost('indii.music')).toBe(false);
+        expect(isMobileRemoteHost('founder.indii.music')).toBe(false);
+    });
+
+    it('recognizes the remote route with or without a trailing slash', () => {
+        expect(isMobileRemotePath('/mobile-remote')).toBe(true);
+        expect(isMobileRemotePath('/mobile-remote/')).toBe(true);
+        expect(isMobileRemotePath('/legal')).toBe(false);
+    });
+});
+
+describe('remote surface device and executor boundaries', () => {
+    it('routes phones and touch tablets to the Controller', () => {
+        expect(isRemoteSurfaceDevice({
+            isAnyPhone: true,
+            isTablet: false,
+            isTouchDevice: true,
+        })).toBe(true);
+        expect(isRemoteSurfaceDevice({
+            isAnyPhone: false,
+            isTablet: true,
+            isTouchDevice: true,
+        })).toBe(true);
+    });
+
+    it('never lets a Controller surface become a Studio executor', () => {
+        expect(isStudioExecutorSurface('mobile-remote', false)).toBe(false);
+        expect(isStudioExecutorSurface('dashboard', true)).toBe(false);
+        expect(isStudioExecutorSurface('dashboard', false)).toBe(true);
+    });
+
+    it('reserves the app host and legacy remote path for the Controller', () => {
+        expect(shouldUseMobileRemoteSurface({
+            hostname: 'app.indii.music',
+            pathname: '/legal',
+            isElectron: false,
+            isRemoteDevice: false,
+        })).toBe(true);
+        expect(shouldUseMobileRemoteSurface({
+            hostname: 'indii.music',
+            pathname: '/mobile-remote',
+            isElectron: false,
+            isRemoteDevice: false,
+        })).toBe(true);
+        expect(shouldUseMobileRemoteSurface({
+            hostname: '',
+            pathname: '/',
+            isElectron: true,
+            isRemoteDevice: true,
+        })).toBe(false);
+    });
+});

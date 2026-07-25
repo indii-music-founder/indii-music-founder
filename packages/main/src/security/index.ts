@@ -1,6 +1,8 @@
 import { app, Session, session as electronSession } from 'electron';
 import log from 'electron-log';
 
+const FIREBASE_DESKTOP_REFERRER = 'https://indii.music/';
+
 // Item 375: Audit session cookies on startup for security flags
 export async function auditSessionCookies(): Promise<void> {
     try {
@@ -117,7 +119,7 @@ export function configureSecurity(session: Session) {
         return callback(verificationResult === 'net::OK' ? 0 : -2);
     });
 
-    // 5. Inject Referer & Client Type for Firebase/Google APIs & Cloud Functions (Fixes App Check / Referer blocks)
+    // 5. Identify the Electron Studio to Firebase/Google APIs and Cloud Functions.
     session.webRequest.onBeforeSendHeaders(
         { urls: [
             '*://*.googleapis.com/*',
@@ -128,10 +130,11 @@ export function configureSecurity(session: Session) {
             'http://localhost:*/*'
         ] },
         (details, callback) => {
-            // Inject a valid production referer for all Firebase/Google APIs.
-            // This satisfies GCP API Key restrictions which block <empty> referers,
-            // fixing the 'auth/requests-from-referer-<empty>-are-blocked' error.
-            details.requestHeaders['Referer'] = 'https://founder.indii.music/';
+            // Firebase's web API key rejects Electron's empty file:// referrer.
+            // Identify the native Studio with its canonical product origin; the
+            // Founder marketing origin is a separate site and must never be used
+            // as the desktop application's Firebase identity.
+            details.requestHeaders['Referer'] = FIREBASE_DESKTOP_REFERRER;
             
             // Inject client type to bypass App Check for desktop in production
             details.requestHeaders['X-App-Client-Type'] = 'electron-desktop-app';

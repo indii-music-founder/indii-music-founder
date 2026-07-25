@@ -12,6 +12,7 @@ const relayMocks = vi.hoisted(() => ({
     emitFreshStateOnSubscribe: true,
     isFreshStudioState: vi.fn(() => true),
     studioStateFreshnessRemainingMs: vi.fn(() => 60_000),
+    signInWithCustomToken: vi.fn(),
 }));
 
 function filterDomProps(props: Record<string, unknown>): Record<string, unknown> {
@@ -25,12 +26,18 @@ function filterDomProps(props: Record<string, unknown>): Record<string, unknown>
 
 vi.mock('firebase/auth', () => ({
     onAuthStateChanged: (...args: unknown[]) => mockOnAuthStateChanged(...args),
-    signInWithCustomToken: vi.fn(),
+    signInWithCustomToken: relayMocks.signInWithCustomToken,
 }));
 
 vi.mock('@/services/firebase', () => ({
     auth: {
         currentUser: null,
+    },
+}));
+
+vi.mock('@/core/config/EndpointService', () => ({
+    endpointService: {
+        getFunctionUrl: vi.fn(() => 'https://example.test/redeemHandoffCode'),
     },
 }));
 
@@ -127,6 +134,7 @@ describe('MobileRemote', () => {
         relayMocks.emitFreshStateOnSubscribe = true;
         relayMocks.isFreshStudioState.mockReturnValue(true);
         relayMocks.studioStateFreshnessRemainingMs.mockReturnValue(60_000);
+        vi.mocked(remoteRelayService.isAuthenticated).mockReturnValue(true);
         mockOnAuthStateChanged.mockImplementation((_auth: unknown, callback: (user: unknown | null) => void) => {
             callback({ uid: 'user-1' });
             return vi.fn();
@@ -135,6 +143,8 @@ describe('MobileRemote', () => {
 
     afterEach(() => {
         vi.useRealTimers();
+        vi.unstubAllGlobals();
+        window.history.replaceState({}, '', '/');
     });
 
     it('surfaces Road Mode in the mobile shell', async () => {
@@ -203,5 +213,43 @@ describe('MobileRemote', () => {
         await waitFor(() => {
             expect(document.querySelector('[data-connection-phase="error"]')).toBeInTheDocument();
         });
+    });
+
+    it('shows an actionable error instead of a disabled shell for an invalid pairing link', async () => {
+        vi.mocked(remoteRelayService.isAuthenticated).mockReturnValue(false);
+        mockOnAuthStateChanged.mockImplementation((_auth: unknown, callback: (user: unknown | null) => void) => {
+            callback(null);
+            return vi.fn();
+        });
+        window.history.replaceState({}, '', '/mobile-remote?code=not-a-valid-code');
+
+        render(<MobileRemote />);
+
+        expect(await screen.findByText('Pairing Link Needed')).toBeInTheDocument();
+        expect(screen.getByText(/Generate a new link from Desktop Studio/i)).toBeInTheDocument();
+    });
+
+    it('redeems a valid one-click handoff before the phone is already authenticated', async () => {
+        vi.mocked(remoteRelayService.isAuthenticated).mockReturnValue(false);
+        mockOnAuthStateChanged.mockImplementation((_auth: unknown, callback: (user: unknown | null) => void) => {
+            callback(null);
+            return vi.fn();
+        });
+        vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+            ok: true,
+            json: async () => ({ customToken: 'phone-custom-token' }),
+        }));
+        window.history.replaceState({}, '', `/mobile-remote?code=${'a'.repeat(64)}`);
+
+        render(<MobileRemote />);
+
+        await waitFor(() => {
+            expect(relayMocks.signInWithCustomToken).toHaveBeenCalledWith(
+                expect.anything(),
+                'phone-custom-token'
+            );
+        });
+        expect(window.location.pathname).toBe('/mobile-remote');
+        expect(window.location.search).toBe('');
     });
 });

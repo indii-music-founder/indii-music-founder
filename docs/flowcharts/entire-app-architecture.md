@@ -13,7 +13,7 @@ graph TD
         end
         
         subgraph TabletDevice ["📱 IPAD / TABLET VIEWPORT"]
-            SA["Studio Web App (packages/renderer)<br/>[ADAPTIVE PATH: Full feature set matching profile subscription]"]
+            TR["indiiREMOTE (mobile-remote module)<br/>[STRICT CONTROLLER PATH: Remote sync / no Studio executor]"]
         end
         
         subgraph DesktopDevice ["💻 DESKTOP / LAPTOP VIEWPORT"]
@@ -79,7 +79,8 @@ graph TD
     %% ===== Transitions =====
     LP -->|"auth bridge handoff"| SA
     ED --> SA
-    MR -->|"WebSocket control"| SA
+    MR -->|"Firestore Cloud Relay"| SA
+    TR -->|"Firestore Cloud Relay"| SA
     SA --> ZS
     ZS --> COND
     COND --> AGS
