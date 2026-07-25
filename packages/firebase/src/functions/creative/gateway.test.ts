@@ -230,7 +230,7 @@ describe('creative gateway generateImageV3', () => {
     });
 
     expect(mockInteractionsCreate).toHaveBeenCalledWith(expect.objectContaining({
-      model: 'gemini-3.1-flash-image',
+      model: 'gemini-3.1-flash-image-preview',
       input: [{ type: 'text', text: 'Dogs having fun' }],
       response_modalities: ['image'],
       generation_config: expect.objectContaining({
@@ -355,7 +355,7 @@ describe('creative gateway generateImageV3', () => {
     });
 
     expect(mockInteractionsCreate).toHaveBeenCalledWith(expect.objectContaining({
-      model: 'gemini-3-pro-image',
+      model: 'gemini-3-pro-image-preview',
       input: [
         { type: 'text', text: 'Dogs having fun' },
         { type: 'image', mime_type: 'image/png', data: Buffer.from('reference-bytes').toString('base64') },

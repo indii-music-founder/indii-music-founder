@@ -113,7 +113,7 @@ export class GeminiImageService {
     /**
      * Resolves a NanoBananaTier to its corresponding model ID string.
      * @param tier - The tier to resolve.
-     * @returns The model ID string (e.g., 'gemini-3.1-flash-image').
+     * @returns The model ID string (e.g., 'gemini-3.1-flash-image-preview').
      */
     private resolveModelId(tier: NanoBananaTier | undefined | null): string {
         switch (tier) {

@@ -38,7 +38,7 @@ const ImageSizeEnum = z.string()
 /**
  * Nano Banana model tier selector.
  * - "legacy": gemini-2.5-flash-image (OG, high-volume)
- * - "fast": gemini-3.1-flash-image (Nano Banana 2, balanced)
+ * - "fast": gemini-3.1-flash-image-preview (Nano Banana 2, balanced)
  * - "pro": gemini-3-pro-image-preview (Nano Banana Pro, highest fidelity)
  */
 const ModelTierEnum = z.enum(["legacy", "fast", "pro"]);

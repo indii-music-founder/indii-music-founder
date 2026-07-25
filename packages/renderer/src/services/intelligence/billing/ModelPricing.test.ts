@@ -53,7 +53,7 @@ describe('ModelPricing', () => {
         });
 
         it('charges only per-image when no prompt tokens given', () => {
-            const cost = estimateCostUsd('gemini-3.1-flash-image', { images: 3 });
+            const cost = estimateCostUsd('gemini-3.1-flash-image-preview', { images: 3 });
             expect(cost).toBeCloseTo(3 * 0.039, 6);
         });
     });

@@ -13,11 +13,11 @@ export const APPROVED_MODELS = {
     TEXT_AGENT: 'gemini-3.1-pro-preview',        // Complex reasoning — per MODEL_POLICY.md
     TEXT_FAST: 'gemini-3-flash-preview',          // Fast tasks — per MODEL_POLICY.md
     TEXT_LITE: 'gemini-3.1-flash-lite',           // Budget tier — per MODEL_POLICY.md
-    IMAGE_GEN: 'gemini-3-pro-image',              // Native image gen via responseModalities
-    IMAGE_FAST: 'gemini-3.1-flash-image',         // Nano Banana 2 — fast image gen
+    IMAGE_GEN: 'gemini-3-pro-image-preview',      // Native image gen via responseModalities
+    IMAGE_FAST: 'gemini-3.1-flash-image-preview', // Nano Banana 2 — fast image gen
     // Direct mode — bleeding-edge preview models for client-side SDK calls
-    DIRECT_PRO: 'gemini-3-pro-image',             // Nano Banana Pro — highest quality, 4K, 14 ref images
-    DIRECT_FAST: 'gemini-3.1-flash-image',        // Nano Banana 2 — fast + Pro quality
+    DIRECT_PRO: 'gemini-3-pro-image-preview',     // Nano Banana Pro — highest quality, 4K, 14 ref images
+    DIRECT_FAST: 'gemini-3.1-flash-image-preview', // Nano Banana 2 — fast + Pro quality
     // Imagen 4 specifically for backwards compatibility and fallback options
     IMAGEN_ULTRA: 'imagen-4.0-ultra-generate-001',
     IMAGEN_PRO: 'imagen-4.0-generate-001',
@@ -150,9 +150,8 @@ export const MODEL_PRICING = {
     },
     'gemini-3.1-flash-tts-preview': { input: 1.00, output: 20.00 },
     // Direct mode image models (token-based pricing, same tier as text)
-    'gemini-3-pro-image': { input: 1.25, output: 10.00 },
     'gemini-3-pro-image-preview': { input: 1.25, output: 10.00 },
-    'gemini-3.1-flash-image': { input: 0.15, output: 0.60 },
+    'gemini-3.1-flash-image-preview': { input: 0.15, output: 0.60 },
     // New Imagen 4 models pricing (matches equivalent quality tiers)
     'imagen-4.0-ultra-generate-001': { input: 1.25, output: 10.00 },
     'imagen-4.0-generate-001': { input: 0.15, output: 0.60 },
@@ -177,7 +176,7 @@ const FORBIDDEN_PATTERNS: RegExp[] = [
     /gemini-2\.0/i,           // Block 2.0 models — allow 2.5.x (TTS only)
     /imagen(?!-4)/i,          // Block all older Imagen models (replaced by Nano Banana, permit only imagen-4.0-*)
     /gemini-2\.5-flash-image/i, // Block Nano Banana OG (legacy)
-    // NOTE: gemini-3-pro-image, gemini-3-pro-image-preview and gemini-3.1-flash-image are ALLOWED
+    // NOTE: gemini-3-pro-image-preview and gemini-3.1-flash-image-preview are ALLOWED
 ];
 
 function validateModels(): void {

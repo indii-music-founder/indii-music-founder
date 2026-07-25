@@ -52,8 +52,8 @@ interface GeminiContentResponse {
 }
 
 const IMAGE_MODEL_IDS = {
-  fast: 'gemini-3.1-flash-image',
-  pro: 'gemini-3-pro-image',
+  fast: FUNCTION_INTELLIGENCE_MODELS.IMAGE.FAST,
+  pro: FUNCTION_INTELLIGENCE_MODELS.IMAGE.GENERATION,
   legacy: 'gemini-2.5-flash-image',
 } as const;
 

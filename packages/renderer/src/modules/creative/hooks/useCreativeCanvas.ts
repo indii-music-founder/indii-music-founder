@@ -173,7 +173,7 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
         return userId ? buildAssetStorageUri(assetId, userId) : undefined;
     };
     const candidatePersistenceUri = (candidate?: Candidate | null) => candidate?.storageUri || candidate?.url || null;
-    const reserveImageBudget = async (modelId: 'gemini-3-pro-image' | 'gemini-3.1-flash-image') => {
+    const reserveImageBudget = async (modelId: 'gemini-3-pro-image-preview' | 'gemini-3.1-flash-image-preview') => {
         const userId = auth.currentUser?.uid;
         if (!userId) {
             throw new Error('Auth required for creative image generation.');
@@ -623,7 +623,7 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
                     let referenceImagesForEdit: { mimeType: string; data: string }[] = [];
 
                     if (isMultiMask) {
-                        await reserveImageBudget('gemini-3-pro-image');
+                        await reserveImageBudget('gemini-3-pro-image-preview');
                         maskData = canvasOps.extractSemanticMask();
                         useSemanticMap = true;
                         const maxReferenceImages = INTELLIGENCE_CONFIG.IMAGE.DEFAULT.maxReferenceImages;
@@ -685,7 +685,7 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
                         }
                     }
                 } else if (prepared.masks.length === 1) {
-                    await reserveImageBudget('gemini-3.1-flash-image');
+                    await reserveImageBudget('gemini-3.1-flash-image-preview');
                         const result = await Editing.editImage({
                             image: prepared.baseImage,
                             mask: prepared.masks[0],
@@ -717,7 +717,7 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
                     }
                 } else {
                     setProcessingStatus(isHighFidelity ? "Chaining Edits (Pro)..." : "Chaining Edits (Flash)...");
-                    await reserveImageBudget(isHighFidelity ? 'gemini-3-pro-image' : 'gemini-3.1-flash-image');
+                    await reserveImageBudget(isHighFidelity ? 'gemini-3-pro-image-preview' : 'gemini-3.1-flash-image-preview');
                     const results = await Editing.multiMaskEdit({
                         image: prepared.baseImage,
                         masks: prepared.masks,
