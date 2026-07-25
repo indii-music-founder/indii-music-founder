@@ -1,29 +1,54 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Volume2, VolumeX, X, Play, Pause, Info } from 'lucide-react';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { motion, AnimatePresence, useAnimationFrame, useMotionValue } from 'framer-motion';
+import { Volume2, VolumeX, X, Play, Pause, Info, ArrowRight, RotateCcw } from 'lucide-react';
+import { getStudioUrl } from '../lib/auth';
 
 interface ThesisCrawlProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
+const INTRO_TEXT_MS = 6000;
+const LOGO_REVEAL_MS = 3800;
+const CRAWL_START_MS = INTRO_TEXT_MS + LOGO_REVEAL_MS;
+const CRAWL_PIXELS_PER_SECOND = 36;
+const THESIS_SOUNDTRACK_SOURCES = [
+  '/audio/indii-thesis-theme.mp3',
+  '/audio/indii-thesis-theme.m4a',
+  '/audio/indii-thesis-theme.wav',
+];
+
 export default function ThesisCrawl({ isOpen, onClose }: ThesisCrawlProps) {
   const [isPlaying, setIsPlaying] = useState(true);
   const [speed, setSpeed] = useState(1); // 1 = normal, 2 = fast, 4 = warp
   const [audioEnabled, setAudioEnabled] = useState(false);
   const [introStep, setIntroStep] = useState(0); // 0: blue text, 1: logo, 2: crawl
+  const [isComplete, setIsComplete] = useState(false);
+  const [sequenceVersion, setSequenceVersion] = useState(0);
   const audioContextRef = useRef<AudioContext | null>(null);
-  const synthNodesRef = useRef<any[]>([]);
+  const synthNodesRef = useRef<OscillatorNode[]>([]);
+  const soundtrackRef = useRef<HTMLAudioElement | null>(null);
+  const soundtrackObjectUrlRef = useRef<string | null>(null);
+  const audioStartingRef = useRef(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [crawlBounds, setCrawlBounds] = useState(() => ({
+    start: typeof window === 'undefined' ? 700 : window.innerHeight * 0.78,
+    end: -30000,
+  }));
+  const crawlY = useMotionValue(crawlBounds.start);
 
-  // Audio Synth logic for Star Wars style retro dramatic music (Detroit Synth vibe)
-  const startAudio = () => {
+  // Temporary synth fallback. A real soundtrack placed in /public/audio takes priority.
+  const startSynthFallback = () => {
     try {
       if (audioContextRef.current) return;
       
-      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+      const AudioContextClass =
+        window.AudioContext ??
+        (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+      if (!AudioContextClass) return;
+
       const ctx = new AudioContextClass();
       audioContextRef.current = ctx;
       setAudioEnabled(true);
@@ -93,7 +118,58 @@ export default function ThesisCrawl({ isOpen, onClose }: ThesisCrawlProps) {
     }
   };
 
+  const startAudio = async () => {
+    if (soundtrackRef.current || audioContextRef.current || audioStartingRef.current) return;
+    audioStartingRef.current = true;
+
+    for (const source of THESIS_SOUNDTRACK_SOURCES) {
+      try {
+        const response = await fetch(source, { cache: 'no-store' });
+        const contentType = response.headers.get('content-type') ?? '';
+
+        // Vite may return the app shell for an unknown asset, so verify that
+        // the response is actually audio before trying to play it.
+        if (!response.ok || !contentType.startsWith('audio/')) continue;
+
+        const soundtrackBlob = await response.blob();
+        const objectUrl = URL.createObjectURL(soundtrackBlob);
+        const soundtrack = new Audio(objectUrl);
+        soundtrack.loop = true;
+        soundtrack.preload = 'auto';
+        soundtrack.volume = 0.72;
+
+        try {
+          await soundtrack.play();
+          soundtrackRef.current = soundtrack;
+          soundtrackObjectUrlRef.current = objectUrl;
+          setAudioEnabled(true);
+          audioStartingRef.current = false;
+          return;
+        } catch {
+          soundtrack.removeAttribute('src');
+          soundtrack.load();
+          URL.revokeObjectURL(objectUrl);
+        }
+      } catch (error) {
+        console.warn(`Thesis soundtrack source could not be loaded: ${source}`, error);
+      }
+    }
+
+    startSynthFallback();
+    audioStartingRef.current = false;
+  };
+
   const stopAudio = () => {
+    if (soundtrackRef.current) {
+      soundtrackRef.current.pause();
+      soundtrackRef.current.removeAttribute('src');
+      soundtrackRef.current.load();
+      soundtrackRef.current = null;
+    }
+    if (soundtrackObjectUrlRef.current) {
+      URL.revokeObjectURL(soundtrackObjectUrlRef.current);
+      soundtrackObjectUrlRef.current = null;
+    }
     synthNodesRef.current.forEach(osc => {
       try {
         osc.stop();
@@ -103,9 +179,10 @@ export default function ThesisCrawl({ isOpen, onClose }: ThesisCrawlProps) {
     });
     synthNodesRef.current = [];
     if (audioContextRef.current) {
-      audioContextRef.current.close();
+      void audioContextRef.current.close();
       audioContextRef.current = null;
     }
+    audioStartingRef.current = false;
     setAudioEnabled(false);
   };
 
@@ -117,6 +194,24 @@ export default function ThesisCrawl({ isOpen, onClose }: ThesisCrawlProps) {
     }
   };
 
+  useEffect(() => {
+    if (!audioEnabled) return;
+
+    if (isPlaying) {
+      if (soundtrackRef.current) {
+        void soundtrackRef.current.play();
+      }
+      if (audioContextRef.current?.state === 'suspended') {
+        void audioContextRef.current.resume();
+      }
+    } else {
+      soundtrackRef.current?.pause();
+      if (audioContextRef.current?.state === 'running') {
+        void audioContextRef.current.suspend();
+      }
+    }
+  }, [audioEnabled, isPlaying]);
+
   // Adjust state during render based on props to avoid useEffect setState warning
   const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
   if (isOpen !== prevIsOpen) {
@@ -125,6 +220,7 @@ export default function ThesisCrawl({ isOpen, onClose }: ThesisCrawlProps) {
       setIntroStep(0);
       setIsPlaying(true);
       setSpeed(1);
+      setIsComplete(false);
     }
   }
 
@@ -134,8 +230,8 @@ export default function ThesisCrawl({ isOpen, onClose }: ThesisCrawlProps) {
       document.body.style.overflow = 'hidden';
       
       // Auto-advance intro steps
-      const introTimer1 = setTimeout(() => setIntroStep(1), 8800);
-      const introTimer2 = setTimeout(() => setIntroStep(2), 15300);
+      const introTimer1 = setTimeout(() => setIntroStep(1), INTRO_TEXT_MS);
+      const introTimer2 = setTimeout(() => setIntroStep(2), CRAWL_START_MS);
       
       return () => {
         clearTimeout(introTimer1);
@@ -145,16 +241,68 @@ export default function ThesisCrawl({ isOpen, onClose }: ThesisCrawlProps) {
       document.body.style.overflow = 'unset';
       setTimeout(stopAudio, 0);
     }
-  }, [isOpen]);
+  }, [isOpen, sequenceVersion]);
+
+  useLayoutEffect(() => {
+    if (introStep !== 2 || !scrollContainerRef.current) return;
+
+    const crawl = scrollContainerRef.current;
+    const measureCrawl = () => {
+      setCrawlBounds({
+        start: window.innerHeight * 0.78,
+        end: -(crawl.scrollHeight + window.innerHeight * 0.35),
+      });
+    };
+
+    measureCrawl();
+    const resizeObserver = new ResizeObserver(measureCrawl);
+    resizeObserver.observe(crawl);
+    window.addEventListener('resize', measureCrawl);
+
+    return () => {
+      resizeObserver.disconnect();
+      window.removeEventListener('resize', measureCrawl);
+    };
+  }, [introStep]);
+
+  useEffect(() => {
+    if (introStep === 2) {
+      crawlY.set(crawlBounds.start);
+    }
+  }, [crawlBounds.end, crawlBounds.start, crawlY, introStep]);
+
+  useAnimationFrame((_time, delta) => {
+    if (!isOpen || introStep !== 2 || !isPlaying || isComplete) return;
+
+    const nextY = crawlY.get() - (CRAWL_PIXELS_PER_SECOND * speed * delta) / 1000;
+    if (nextY <= crawlBounds.end) {
+      crawlY.set(crawlBounds.end);
+      setIsComplete(true);
+      return;
+    }
+    crawlY.set(nextY);
+  });
+
+  const replayThesis = () => {
+    setIsComplete(false);
+    setIntroStep(0);
+    setIsPlaying(true);
+    setSpeed(1);
+    crawlY.set(crawlBounds.start);
+    setSequenceVersion((version) => version + 1);
+  };
 
   // Generate star field via state lazy initializer to avoid useEffect call during render
-  const [stars] = useState<Array<{ x: number; y: number; size: number; opacity: number; duration: number }>>(() => {
-    return Array.from({ length: 100 }).map(() => ({
+  const [stars] = useState<Array<{ x: number; y: number; size: number; opacity: number; duration: number; blur: number; color: string }>>(() => {
+    const starColors = ['#ffffff', '#dbeafe', '#fff7ed', '#fef3c7'];
+    return Array.from({ length: 180 }).map(() => ({
       x: Math.random() * 100,
       y: Math.random() * 100,
-      size: Math.random() * 2 + 0.5,
-      opacity: Math.random() * 0.8 + 0.2,
-      duration: Math.random() * 3 + 2,
+      size: Math.random() * 2.2 + 0.35,
+      opacity: Math.random() * 0.72 + 0.18,
+      duration: Math.random() * 5 + 3,
+      blur: Math.random() > 0.82 ? Math.random() * 1.2 + 0.3 : 0,
+      color: starColors[Math.floor(Math.random() * starColors.length)],
     }));
   });
 
@@ -168,18 +316,23 @@ export default function ThesisCrawl({ isOpen, onClose }: ThesisCrawlProps) {
           className="fixed inset-0 z-[100] bg-black overflow-hidden flex flex-col items-center justify-center font-serif select-none"
         >
           {/* Star Field Background */}
-          <div className="absolute inset-0 z-0 pointer-events-none">
+          <div className="absolute inset-0 z-0 pointer-events-none bg-[radial-gradient(ellipse_at_50%_40%,rgba(30,41,59,0.32),transparent_48%),radial-gradient(ellipse_at_18%_72%,rgba(88,28,135,0.14),transparent_38%),radial-gradient(ellipse_at_82%_20%,rgba(14,116,144,0.1),transparent_34%)]">
+            <div className="absolute left-[-15%] top-[34%] h-[22%] w-[130%] -rotate-12 bg-[linear-gradient(90deg,transparent,rgba(148,163,184,0.04),rgba(255,255,255,0.09),rgba(148,163,184,0.035),transparent)] blur-[70px]" />
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_35%,rgba(0,0,0,0.82)_100%)]" />
             {stars.map((star, i) => (
               <div
                 key={i}
-                className="absolute rounded-full bg-white animate-pulse"
+                className="absolute rounded-full animate-pulse"
                 style={{
                   left: `${star.x}%`,
                   top: `${star.y}%`,
                   width: `${star.size}px`,
                   height: `${star.size}px`,
+                  backgroundColor: star.color,
                   opacity: star.opacity,
-                  animationDuration: `${star.duration}s`
+                  filter: `blur(${star.blur}px)`,
+                  boxShadow: star.size > 1.8 ? `0 0 ${star.size * 4}px ${star.color}` : 'none',
+                  animationDuration: `${star.duration}s`,
                 }}
               />
             ))}
@@ -221,13 +374,14 @@ export default function ThesisCrawl({ isOpen, onClose }: ThesisCrawlProps) {
             <div className="flex items-center gap-3">
               <button
                 onClick={toggleAudio}
+                aria-label={audioEnabled ? 'Mute thesis soundtrack' : 'Enable thesis soundtrack'}
                 className="w-10 h-10 rounded-full border border-white/10 hover:border-amber-500/40 bg-black/40 hover:bg-black/80 flex items-center justify-center text-gray-400 hover:text-amber-400 transition-all backdrop-blur-md"
-                title="Toggle Audio Synth"
+                title="Toggle thesis soundtrack"
               >
                 {audioEnabled ? <Volume2 size={16} className="text-amber-400 animate-pulse" /> : <VolumeX size={16} />}
               </button>
               
-              {introStep === 2 && (
+              {introStep === 2 && !isComplete && (
                 <div className="flex items-center gap-2 bg-black/40 border border-white/10 rounded-full p-1 backdrop-blur-md">
                   <button
                     onClick={() => setIsPlaying(!isPlaying)}
@@ -251,6 +405,7 @@ export default function ThesisCrawl({ isOpen, onClose }: ThesisCrawlProps) {
 
             <button
               onClick={onClose}
+              aria-label="Close thesis"
               className="group w-10 h-10 rounded-full border border-white/10 hover:border-amber-500/40 bg-black/40 hover:bg-black/80 flex items-center justify-center text-gray-400 hover:text-amber-400 transition-all backdrop-blur-md"
             >
               <X size={16} className="group-hover:rotate-90 transition-transform duration-300" />
@@ -262,7 +417,7 @@ export default function ThesisCrawl({ isOpen, onClose }: ThesisCrawlProps) {
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: [0, 1, 1, 0] }}
-              transition={{ duration: 8.5, times: [0, 0.15, 0.85, 1] }}
+              transition={{ duration: INTRO_TEXT_MS / 1000 - 0.2, times: [0, 0.12, 0.84, 1] }}
               className="text-[#4bd5ee] text-2xl md:text-4xl lg:text-5xl text-left max-w-5xl px-12 leading-relaxed font-sans font-light tracking-wide z-10 space-y-8"
             >
               <p>In the not too distant future, independent music artists will become independent business owners.</p>
@@ -276,7 +431,7 @@ export default function ThesisCrawl({ isOpen, onClose }: ThesisCrawlProps) {
             <motion.div
               initial={{ scale: 3.5, opacity: 0 }}
               animate={{ scale: 0.15, opacity: [0, 1, 1, 0] }}
-              transition={{ duration: 6.5, times: [0, 0.18, 0.8, 1], ease: [0.85, 0, 0.15, 1] }}
+              transition={{ duration: LOGO_REVEAL_MS / 1000, times: [0, 0.15, 0.78, 1], ease: [0.85, 0, 0.15, 1] }}
               className="font-black text-7xl md:text-9xl lg:text-[12rem] text-amber-400 tracking-widest text-center select-none font-sans filter drop-shadow-[0_0_40px_rgba(245,158,11,0.6)] z-10"
             >
               indii.music
@@ -299,31 +454,33 @@ export default function ThesisCrawl({ isOpen, onClose }: ThesisCrawlProps) {
 
               {/* 3D Perspective Area */}
               <div
-                className="relative w-full max-w-[3200px] h-[90%] overflow-hidden flex flex-col justify-end items-center"
+                className="relative w-full max-w-[2400px] h-[92%] overflow-hidden"
                 style={{
-                  perspective: '950px',
-                  perspectiveOrigin: '50% 20%',
+                  perspective: '1200px',
+                  perspectiveOrigin: '50% 18%',
                 }}
               >
-                {/* Scrolling content */}
-                <motion.div
-                  ref={scrollContainerRef}
-                  initial={{ y: '125%' }}
-                  animate={isPlaying ? { y: '-220%' } : {}}
-                  transition={{
-                    duration: 600 / speed,
-                    ease: 'linear',
-                    repeat: Infinity
-                  }}
-                  className="w-[92%] lg:w-[88%] text-center text-amber-400 font-bold text-4xl md:text-6xl lg:text-[4.25rem] leading-[1.6] space-y-64 select-text pb-64"
+                {/* Fixed projection plane keeps the crawl readable regardless of document length. */}
+                <div
+                  className="absolute inset-x-0 -bottom-[8%] h-[120%] flex flex-col items-center"
                   style={{
+                    transform: 'rotateX(17deg)',
                     transformOrigin: '50% 100%',
-                    rotateX: '15deg',
+                    transformStyle: 'preserve-3d',
                   }}
                 >
+                  {/* Scrolling content */}
+                  <motion.div
+                    ref={scrollContainerRef}
+                    className="w-[88%] md:w-[76%] lg:w-[68%] max-w-6xl text-center text-amber-400 font-bold text-3xl md:text-5xl lg:text-6xl leading-[1.5] space-y-56 select-text pb-64"
+                    style={{
+                      y: crawlY,
+                      textShadow: '0 2px 16px rgba(0,0,0,0.95), 0 0 20px rgba(245,158,11,0.16)',
+                    }}
+                  >
                   {/* Thesis Title */}
                   <div className="space-y-10">
-                    <h1 className="text-7xl md:text-9xl lg:text-[11rem] font-black font-sans uppercase tracking-[0.1em] text-transparent bg-clip-text bg-gradient-to-b from-amber-300 via-amber-400 to-amber-600 drop-shadow-[0_0_40px_rgba(245,158,11,0.5)]">
+                    <h1 className="text-7xl md:text-9xl lg:text-[10rem] font-black font-sans uppercase tracking-[0.08em] text-transparent bg-clip-text bg-gradient-to-b from-amber-200 via-amber-400 to-amber-600 drop-shadow-[0_0_32px_rgba(245,158,11,0.42)]">
                       The indii Thesis
                     </h1>
                     <p className="text-amber-500/80 font-mono text-3xl md:text-4xl lg:text-5xl tracking-widest uppercase">
@@ -349,7 +506,7 @@ export default function ThesisCrawl({ isOpen, onClose }: ThesisCrawlProps) {
                       Major labels have entire departments for each of these functions. And in exchange, artists give up their masters, their publishing, and their freedom.
                     </p>
                     <p className="text-center text-white font-black text-3xl md:text-5xl lg:text-6xl my-12 tracking-wide leading-snug">
-                      indii is the machine without the middleman.
+                      indii is the infrastructure without the surrender.
                     </p>
                   </div>
 
@@ -359,32 +516,32 @@ export default function ThesisCrawl({ isOpen, onClose }: ThesisCrawlProps) {
                       EPISODE II: WHAT INDII IS
                     </h3>
                     <p>
-                      indii is an AI-native business platform for independent music artists. Not a DAW. Not a streaming service. It's the operating system for an entire music career.
+                      indii is an operating workspace for independent music artists. Not a recording program. Not a streaming service. It is where the work around a music career can live together.
                     </p>
                     <p>
-                      Every department a major label has, indii has — staffed not by humans on payroll, but by specialized AI agents that work 24/7, cost nothing per interaction, and get smarter with every session.
+                      Distribution, audio, creative direction, rights, finance, publishing, licensing, campaigns, social preparation, publicity, touring, merchandise, security, and the project record all work from the same artist-controlled context.
                     </p>
                     <p>
-                      Thirteen departments. One single app. Zero employees. Available to any independent artist, anywhere, for a fraction of what a single intern costs at a major label.
+                      Fifteen connected areas. One workspace. The artist remains the owner, the decision-maker, and the source of truth.
                     </p>
                   </div>
 
                   {/* Chapter III */}
                   <div className="space-y-12 text-justify">
                     <h3 className="text-white font-sans font-black tracking-widest text-center text-5xl md:text-6xl lg:text-7xl mt-24 mb-16">
-                      EPISODE III: THE ARCHITECTURAL ADVANTAGE
+                      EPISODE III: THE OPERATING ADVANTAGE
                     </h3>
                     <p>
-                      Most "AI music tools" bolt a chatbot onto a single feature. That's a toy. indii is architecturally different.
+                      Most music-business tools solve one isolated task. The artist is left carrying information from one system to the next and repairing the gaps by hand.
                     </p>
                     <p>
-                      First, agent specialization with shared memory. When the Legal agent reviews a venue contract, the Road Manager already knows the load-in time. There are no silos.
+                      indii starts with shared project context. When rights information changes, the release record can reflect it. When the route changes, the working budget and show record can move with it.
                     </p>
                     <p>
-                      Second, the three-layer architecture. Complexity is pushed down into deterministic code, not left to AI probabilistic reasoning. The AI orchestrates; the code executes.
+                      The Conductor turns an artist goal into visible work, routes it to the relevant areas, and keeps proposed high-impact actions available for review.
                     </p>
                     <p>
-                      Third, the mobile sensor array. Drop a pin, snap a receipt, record a voice memo — every input from the real world flows through Firebase into the desktop studio where 274+ tools process it automatically.
+                      Files, notes, voice memos, receipts, locations, assets, and approvals become part of the same working record. The next move begins with context instead of another blank form.
                     </p>
                   </div>
 
@@ -394,13 +551,13 @@ export default function ThesisCrawl({ isOpen, onClose }: ThesisCrawlProps) {
                       EPISODE IV: THE YAGNI PHILOSOPHY
                     </h3>
                     <p>
-                      You Aren't Gonna Need It — until you do. indii doesn't build features speculatively. It builds infrastructure — tools, agents, state management, persistence, relay systems — and recombines them as artists need them.
+                      You Aren't Gonna Need It — until you do. indii is built around reusable operating capabilities: projects, files, records, approvals, plans, and the connections between them.
                     </p>
                     <p>
-                      With 274+ registered tools and 41 feature modules built, the combinatorial surface area is staggering. Most new features require zero new code — just a new prompt that teaches the agent how to chain existing tools together.
+                      A release does not need a special version of your ownership data. A tour does not need a separate version of your artist identity. The same reliable source should serve every part of the work.
                     </p>
                     <p>
-                      This means indii's feature velocity is non-linear. Each new piece of infrastructure multiplies the number of features that become possible through recombination.
+                      That is how the product can grow without asking the artist to rebuild their career inside every new feature.
                     </p>
                   </div>
 
@@ -410,44 +567,97 @@ export default function ThesisCrawl({ isOpen, onClose }: ThesisCrawlProps) {
                       EPISODE V: THE COMPETITIVE MOAT
                     </h3>
                     <p>
-                      Every competitor does one thing. DistroKid does distribution; Splice does creative; Chartmetric does analytics. None of them talk. The artist is the integration layer.
+                      The music industry is full of useful single-purpose tools. The problem begins when none of them understand what happened in the tool beside them. The artist becomes the integration layer.
                     </p>
                     <p>
-                      indii is the only platform where your album art informs your socials, your route informs your merch, your contract informs your royalties, and your setlist auto-queues for PRO submission.
+                      indii is designed so the approved visual direction can inform the campaign, the route can inform the working budget, and the rights record can stay attached to the release it governs.
                     </p>
                     <p className="italic text-center text-white font-bold my-16 leading-snug">
-                      "The moat isn't any single feature. The moat is that everything knows about everything else."
+                      "The advantage is not one more feature. It is the end of starting over."
                     </p>
                   </div>
 
                   {/* Chapter VI */}
                   <div className="space-y-12 text-justify pb-96">
                     <h3 className="text-white font-sans font-black tracking-widest text-center text-5xl md:text-6xl lg:text-7xl mt-24 mb-16">
-                      EPISODE VI: THE NEW SUPERSTAR
+                      EPISODE VI: THE ARTIST KEEPS THE LEVERAGE
                     </h3>
                     <p>
-                      This makes a superstar out of the artist who has talent and nothing else. The bedroom producer in Detroit who makes incredible music but has never filed for an ISRC, planned a tour route, or calculated royalty splits.
+                      A system cannot write the song, guarantee an audience, or manufacture a career. It can remove the administrative drag that keeps talent from getting a fair chance to move.
                     </p>
                     <p>
-                      They don't need to learn any of that. They just need to talk to indii.
+                      The bedroom producer in Detroit should not need a label-sized staff before they can organize a release, understand the business, and protect the work.
                     </p>
                     <p className="text-white italic mt-32 text-center text-5xl md:text-7xl lg:text-8xl font-light leading-snug">
-                      "Think of it this way: this app is going to make somebody a superstar."
+                      "Give the artist the infrastructure. Keep the ownership with the artist."
                     </p>
                     <p className="text-amber-500/60 text-center font-sans font-bold text-3xl tracking-widest uppercase mt-12 mb-32">
-                      — Founder, indii
+                      wiil, Founder
                     </p>
                   </div>
-                </motion.div>
+                  </motion.div>
+                </div>
               </div>
 
               {/* Sound prompt instruction banner for better UX */}
               {!audioEnabled && (
-                <div className="absolute bottom-10 left-6 z-30 bg-amber-500/10 border border-amber-500/30 rounded-full px-6 py-2 backdrop-blur-md flex items-center gap-2 cursor-pointer hover:bg-amber-500/20 transition-all shadow-[0_0_20px_rgba(245,158,11,0.15)]" onClick={startAudio}>
+                <div className="absolute bottom-10 left-6 z-30 bg-amber-500/10 border border-amber-500/30 rounded-full px-6 py-2 backdrop-blur-md flex items-center gap-2 cursor-pointer hover:bg-amber-500/20 transition-all shadow-[0_0_20px_rgba(245,158,11,0.15)]" onClick={() => void startAudio()}>
                   <Info size={14} className="text-amber-400" />
-                  <span className="text-amber-400 font-mono text-[10px] font-bold tracking-widest uppercase">Click to enable cosmic theme sound</span>
+                  <span className="text-amber-400 font-mono text-[10px] font-bold tracking-widest uppercase">Enable thesis soundtrack</span>
                 </div>
               )}
+
+              <AnimatePresence>
+                {isComplete && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 2.2, delay: 2.4 }}
+                    className="absolute inset-0 z-40 flex items-center justify-center bg-[radial-gradient(circle_at_center,rgba(245,158,11,0.09),rgba(0,0,0,0.78)_48%,#000_82%)] px-6"
+                  >
+                    <motion.div
+                      initial={{ opacity: 0, y: 28 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 1.1, delay: 3.2, ease: [0.16, 1, 0.3, 1] }}
+                      className="w-full max-w-5xl text-center"
+                    >
+                      <div className="font-mono text-[10px] uppercase tracking-[0.38em] text-amber-400/75">
+                        Message received
+                      </div>
+                      <h2 className="mt-8 text-5xl font-black leading-[0.88] tracking-[-0.055em] text-white md:text-8xl lg:text-[8rem]">
+                        Build your career
+                        <span className="block text-amber-400">without giving it away.</span>
+                      </h2>
+                      <div className="mx-auto mt-9 flex w-fit items-center gap-3 text-sm font-semibold text-white/65">
+                        <span className="h-px w-9 bg-amber-400" />
+                        wiil, Founder
+                      </div>
+
+                      <div className="mt-12 flex flex-col items-center justify-center gap-3 sm:flex-row">
+                        <a
+                          href={getStudioUrl()}
+                          className="group inline-flex w-full items-center justify-center gap-3 rounded-full bg-amber-400 px-8 py-4 text-sm font-black text-black shadow-[0_0_38px_rgba(245,158,11,0.32)] transition-transform hover:scale-[1.03] sm:w-auto"
+                        >
+                          Secure Founder Access — $2,500
+                          <ArrowRight size={15} className="transition-transform group-hover:translate-x-1" />
+                        </a>
+                        <button
+                          type="button"
+                          onClick={replayThesis}
+                          className="inline-flex w-full items-center justify-center gap-3 rounded-full border border-white/15 px-8 py-4 text-sm font-bold text-white/70 transition-colors hover:border-amber-400/45 hover:text-white sm:w-auto"
+                        >
+                          <RotateCcw size={14} />
+                          Replay the thesis
+                        </button>
+                      </div>
+                      <p className="mx-auto mt-5 max-w-md font-mono text-[9px] uppercase leading-relaxed tracking-[0.16em] text-white/25">
+                        Founder Access is a software purchase, not an investment or promise of financial return.
+                      </p>
+                    </motion.div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           )}
         </motion.div>

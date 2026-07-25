@@ -2,87 +2,72 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
+import {
+  ArrowDown,
+  ArrowRight,
+  Check,
+  Film,
+  MapPin,
+  Play,
+} from 'lucide-react';
 import { useAuth } from './components/auth/AuthProvider';
 import { getStudioPreviewUrl, getStudioUrl } from './lib/auth';
 import { flushFounderFunnelQueue, trackFounderFunnelEvent } from './lib/founderFunnel';
-import {
-  ShieldCheck, Zap, ArrowRight, Cpu, BrainCircuit,
-  Music, Users, Globe2, Disc3, Film,
-} from 'lucide-react';
+import { isFounderPreviewEnabled } from './lib/previewAccess';
 import AgentGrid from './components/AgentGrid';
 import ConductorSection from './components/ConductorSection';
 import ThesisCrawl from './components/ThesisCrawl';
 
-/* ------------------------------------------------------------------ */
-/*  SpotlightCard                                                      */
-/* ------------------------------------------------------------------ */
+const heroWords = ['Run', 'your', 'music', 'career', 'without', 'giving', 'it', 'away.'];
 
-function SpotlightCard({ children, className = '' }: { children: React.ReactNode; className?: string }) {
-  const divRef = useRef<HTMLDivElement>(null);
-  const [position, setPosition] = useState({ x: 0, y: 0 });
-  const [opacity, setOpacity] = useState(0);
+const ambientStars = Array.from({ length: 72 }, (_, index) => ({
+  left: `${(index * 37.31) % 100}%`,
+  top: `${(index * 61.73) % 100}%`,
+  size: `${index % 9 === 0 ? 2 : index % 4 === 0 ? 1.5 : 1}px`,
+  opacity: 0.12 + ((index * 17) % 48) / 100,
+}));
 
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!divRef.current) return;
-    const rect = divRef.current.getBoundingClientRect();
-    setPosition({ x: e.clientX - rect.left, y: e.clientY - rect.top });
-  };
+const operatingPrinciples = [
+  {
+    number: '01',
+    label: 'Bring the project',
+    title: 'Start with the work you already have.',
+    text: 'Audio, notes, files, release information, and business records belong to the same project—not a scavenger hunt across disconnected apps.',
+  },
+  {
+    number: '02',
+    label: 'Name the outcome',
+    title: 'Ask for the result in plain language.',
+    text: 'You should not need to understand the product architecture before you can move your release, catalog, campaign, or tour forward.',
+  },
+  {
+    number: '03',
+    label: 'Review the plan',
+    title: 'See what will happen before it happens.',
+    text: 'The work is divided into visible steps. Proposed high-impact actions and important project decisions remain available for review.',
+  },
+  {
+    number: '04',
+    label: 'Keep the record',
+    title: 'Let the next move begin with context.',
+    text: 'Approved assets and decisions return to the project so every department can work from the same facts without making you repeat yourself.',
+  },
+];
 
-  return (
-    <div
-      ref={divRef}
-      onMouseMove={handleMouseMove}
-      onMouseEnter={() => setOpacity(1)}
-      onMouseLeave={() => setOpacity(0)}
-      className={`relative overflow-hidden rounded-[2.5rem] border border-white/6 bg-[#0a0a0a] shadow-2xl transition-transform duration-500 hover:-translate-y-1 ${className}`}
-    >
-      <div
-        className="pointer-events-none absolute -inset-px transition-opacity duration-500 z-0"
-        style={{ opacity, background: `radial-gradient(800px circle at ${position.x}px ${position.y}px, rgba(245,158,11,0.12), transparent 40%)` }}
-      />
-      <div
-        className="pointer-events-none absolute -inset-px transition-opacity duration-500 z-0"
-        style={{ opacity, background: `radial-gradient(400px circle at ${position.x}px 0px, rgba(255,255,255,0.15), transparent 50%)` }}
-      />
-      <div className="relative z-10 h-full">{children}</div>
-    </div>
-  );
-}
-
-/* ------------------------------------------------------------------ */
-/*  Animated Stats Counter                                             */
-/* ------------------------------------------------------------------ */
-
-function AnimatedStat({ value, suffix, label }: { value: string; suffix?: string; label: string }) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ duration: 0.6 }}
-      className="text-center px-8"
-    >
-      <div className="text-4xl md:text-5xl font-black text-white tracking-tight mb-2">
-        {value}<span className="text-amber-400">{suffix}</span>
-      </div>
-      <div className="text-xs font-mono font-bold tracking-[0.2em] uppercase text-gray-500">{label}</div>
-    </motion.div>
-  );
-}
-
-/* ------------------------------------------------------------------ */
-/*  Hero Words                                                         */
-/* ------------------------------------------------------------------ */
-
-const words = "the operating system for your musical independence".split(' ');
-
-/* ------------------------------------------------------------------ */
-/*  Page                                                               */
-/* ------------------------------------------------------------------ */
+const founderIncludes = [
+  'Lifetime access to the Founder edition',
+  'Boardroom and Conductor access',
+  'Guided Project White Glove onboarding',
+  'Founder-level product updates',
+  'Permanent founder recognition',
+  'No recurring platform subscription',
+];
 
 export default function Home({ founder = true }: { founder?: boolean }) {
   const { user, loading } = useAuth();
   const { scrollYProgress } = useScroll();
+  const previewEnabled = isFounderPreviewEnabled();
+  const previewHref = previewEnabled ? getStudioPreviewUrl() : '#preview-status';
   const hasTrackedFounderView = useRef(false);
   const [isThesisOpen, setIsThesisOpen] = useState(() => {
     if (typeof window === 'undefined') return false;
@@ -90,39 +75,28 @@ export default function Home({ founder = true }: { founder?: boolean }) {
     return hostname.includes('founders') || search.includes('thesis=true') || hash.includes('#thesis');
   });
 
-  const heroScale = useTransform(scrollYProgress, [0, 0.15], [1, 0.9]);
-  const heroOpacity = useTransform(scrollYProgress, [0, 0.12], [1, 0]);
-  const heroTranslateY = useTransform(scrollYProgress, [0, 0.15], [0, 80]);
-  const productRotateX = useTransform(scrollYProgress, [0.05, 0.25], [30, 0]);
-  const productScale = useTransform(scrollYProgress, [0.05, 0.25], [0.8, 1]);
-  const productOpacity = useTransform(scrollYProgress, [0.05, 0.25], [0, 1]);
+  const heroOpacity = useTransform(scrollYProgress, [0, 0.13], [1, 0.14]);
+  const heroScale = useTransform(scrollYProgress, [0, 0.16], [1, 0.93]);
+  const heroY = useTransform(scrollYProgress, [0, 0.16], [0, 90]);
 
   useEffect(() => {
     flushFounderFunnelQueue();
     if (founder && !hasTrackedFounderView.current) {
       hasTrackedFounderView.current = true;
-      void trackFounderFunnelEvent('founder_site_view', {
-        surface: 'landing_home',
-        variant: user ? 'returning' : 'new',
-      }, {
-        userId: user?.uid ?? null,
-        email: user?.email ?? null,
-      });
+      void trackFounderFunnelEvent(
+        'founder_site_view',
+        {
+          surface: 'landing_home',
+          variant: user ? 'returning' : 'new',
+        },
+        {
+          userId: user?.uid ?? null,
+          email: user?.email ?? null,
+        },
+      );
     }
   }, [founder, user]);
 
-  const handleFounderPreviewClick = (location: string) => {
-    void trackFounderFunnelEvent('founder_preview_cta_clicked', {
-      location,
-      target: 'studio',
-      label: 'Launch Founder Preview',
-    }, {
-      userId: user?.uid ?? null,
-      email: user?.email ?? null,
-    });
-  };
-
-  // Inject schema.org JSON-LD for SEO + accessibility
   useEffect(() => {
     const schemaScript = document.createElement('script');
     schemaScript.type = 'application/ld+json';
@@ -132,465 +106,625 @@ export default function Home({ founder = true }: { founder?: boolean }) {
         {
           '@type': 'Organization',
           '@id': 'https://indii.music/#organization',
-          'name': 'indii',
-          'url': 'https://indii.music',
-          'logo': 'https://indii.music/logo.png',
-          'description': 'The operating system for your musical independence. A platform for independent music artists.',
+          name: 'indii.music',
+          url: 'https://indii.music',
+          description:
+            'An artist-controlled workspace for the work around an independent music career.',
         },
         {
           '@type': 'WebSite',
           '@id': 'https://founder.indii.music/#website',
-          'url': 'https://founder.indii.music',
-          'name': 'indii Founder Access',
-          'description': 'Lifetime full-platform access including Boardroom, all founder-level features, and permanent recognition.',
-          'publisher': { '@id': 'https://indii.music/#organization' }
+          url: 'https://founder.indii.music',
+          name: 'indii.music Founder Access',
+          publisher: { '@id': 'https://indii.music/#organization' },
         },
         {
           '@type': 'Product',
           '@id': 'https://founder.indii.music/#product',
-          'name': 'Founder Access',
-          'description': 'Lifetime full-platform access to indii including Boardroom collaboration, all founder-level modules, beta features, and permanent founder recognition.',
-          'price': '2500',
-          'priceCurrency': 'USD',
-          'offers': {
+          name: 'indii.music Founder Access',
+          description:
+            'A one-time software purchase for lifetime access to the indii.music Founder edition, guided onboarding, Boardroom, Conductor, and founder-level updates.',
+          offers: {
             '@type': 'Offer',
-            'url': 'https://founder.indii.music',
-            'price': '2500',
-            'priceCurrency': 'USD',
-            'availability': 'https://schema.org/InStock',
-            'seller': { '@id': 'https://indii.music/#organization' }
-          }
-        }
-      ]
+            url: 'https://founder.indii.music',
+            price: '2500',
+            priceCurrency: 'USD',
+            availability: 'https://schema.org/InStock',
+            seller: { '@id': 'https://indii.music/#organization' },
+          },
+        },
+      ],
     });
     document.head.appendChild(schemaScript);
     return () => schemaScript.remove();
   }, []);
 
+  const trackPreview = (location: string) => {
+    void trackFounderFunnelEvent(
+      'founder_preview_cta_clicked',
+      {
+        location,
+        target: previewEnabled ? 'studio' : 'coming_soon',
+        label: previewEnabled ? 'Enter Founder Preview' : 'Preview coming soon',
+      },
+      {
+        userId: user?.uid ?? null,
+        email: user?.email ?? null,
+      },
+    );
+  };
+
   const handleFounderInterestClick = async (location: string) => {
-    await trackFounderFunnelEvent('founder_interest_clicked', {
-      location,
-      label: 'Founder Access',
-    }, {
-      userId: user?.uid ?? null,
-      email: user?.email ?? null,
-    });
+    await trackFounderFunnelEvent(
+      'founder_interest_clicked',
+      {
+        location,
+        label: 'Founder Access',
+      },
+      {
+        userId: user?.uid ?? null,
+        email: user?.email ?? null,
+      },
+    );
   };
 
   return (
-    <main className="relative flex flex-col items-center justify-start min-h-screen overflow-x-hidden bg-[#030303] text-gray-200 selection:bg-amber-500/30 selection:text-amber-100 font-sans">
-
-      {/* ═══════════════ 1. AMBIENT BACKGROUND ═══════════════ */}
-      <div className="fixed inset-0 z-0 pointer-events-none">
-        <div className="absolute top-[-20%] left-[50%] -translate-x-1/2 w-[1000px] h-[800px] bg-amber-900/15 blur-[120px] rounded-full mix-blend-screen" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[800px] h-[600px] bg-purple-900/10 blur-[120px] rounded-full mix-blend-screen" />
-        <div className="absolute top-[40%] left-[-5%] w-[600px] h-[400px] bg-cyan-900/8 blur-[100px] rounded-full mix-blend-screen" />
-        <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-[0.03] mix-blend-overlay" />
+    <main className="relative min-h-screen overflow-x-hidden bg-[#020202] font-sans text-white selection:bg-amber-400/30">
+      <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
+        <div className="absolute inset-0 opacity-70">
+          {ambientStars.map((star, index) => (
+            <span
+              key={index}
+              className="absolute rounded-full bg-white"
+              style={{
+                left: star.left,
+                top: star.top,
+                width: star.size,
+                height: star.size,
+                opacity: star.opacity,
+              }}
+            />
+          ))}
+        </div>
+        <div className="absolute left-1/2 top-[-32rem] h-[68rem] w-[68rem] -translate-x-1/2 rounded-full bg-amber-500/[0.08] blur-[160px]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_15%,#020202_82%)]" />
+        <div className="absolute inset-0 opacity-[0.025] [background-image:linear-gradient(rgba(255,255,255,0.8)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.8)_1px,transparent_1px)] [background-size:80px_80px]" />
       </div>
 
-      {/* ═══════════════ 2. NAVIGATION ═══════════════ */}
-      <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 md:px-8 py-4 md:py-5 bg-[#030303]/60 backdrop-blur-3xl border-b border-white/4" role="navigation" aria-label="Main navigation">
-        <a href="#home" className="flex items-center gap-3 group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 rounded-lg" aria-label="indii.music home">
-          <div className="w-8 h-8 rounded-lg bg-linear-to-br from-gray-800 to-black border border-white/10 flex items-center justify-center shadow-[0_0_15px_rgba(245,158,11,0.1)] group-hover:shadow-[0_0_20px_rgba(245,158,11,0.3)] transition-shadow duration-500" aria-hidden="true">
-            <span className="text-amber-500 font-black text-[10px] tracking-tighter">indii</span>
-          </div>
-          <span className="font-bold tracking-tight text-white/90 group-hover:text-amber-400 transition-colors duration-500">indii.music</span>
-        </a>
-
-        <div className="flex items-center gap-8">
-          <div className="hidden md:flex items-center gap-8 bg-white/2 border border-white/5 rounded-full px-6 py-2 backdrop-blur-md shadow-xl">
-            <a href="#capabilities" className="text-sm font-medium text-gray-400 hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 rounded px-2 py-1" aria-label="View agents and capabilities">Agents</a>
-            <a href="#conductor" className="text-sm font-medium text-gray-400 hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 rounded px-2 py-1" aria-label="Learn about the Conductor">Conductor</a>
-            {founder && <button onClick={() => setIsThesisOpen(true)} className="text-sm font-medium text-gray-400 hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 rounded px-2 py-1" aria-label="Open the thesis modal">The Thesis</button>}
-            {founder && <a href="#invest" className="text-sm font-bold text-amber-500 hover:text-amber-400 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 rounded px-2 py-1" aria-label="Founder Access - $2,500 lifetime platform access">Founder Access</a>}
-          </div>
+      <nav
+        className="fixed inset-x-0 top-0 z-50 border-b border-white/10 bg-black/65 backdrop-blur-2xl"
+        aria-label="Main navigation"
+      >
+        <div className="mx-auto flex h-[72px] max-w-[1600px] items-center justify-between px-5 md:px-10">
           <a
-            href={getStudioPreviewUrl()}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={() => handleFounderPreviewClick('nav')}
-            className="group relative inline-flex items-center justify-center gap-2 px-4 md:px-6 py-2.5 text-xs md:text-sm font-bold text-black bg-white rounded-full overflow-hidden transition-all hover:scale-105 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
-            aria-label={loading ? 'Verifying access...' : user ? 'Resume your session' : (founder ? 'Launch Founder Preview - explore the platform' : 'Launch Studio')}
+            href="#home"
+            className="text-[15px] font-bold tracking-[-0.025em] text-white transition-colors hover:text-amber-400"
+            aria-label="indii.music home"
           >
-            <div className="absolute inset-0 bg-linear-to-r from-amber-400 to-amber-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-            <span className="relative z-10 transition-colors group-hover:text-white">
-              {loading ? 'Verifying...' : user ? 'Resume Session' : (founder ? 'Launch Founder Preview' : 'Launch Studio')}
+            indii.music
+          </a>
+
+          <div className="hidden items-center gap-7 font-mono text-[9px] uppercase tracking-[0.2em] text-white/45 md:flex">
+            <a href="#capabilities" className="transition-colors hover:text-white">
+              The system
+            </a>
+            <a href="#conductor" className="transition-colors hover:text-white">
+              Conductor
+            </a>
+            {founder && (
+              <button type="button" onClick={() => setIsThesisOpen(true)} className="transition-colors hover:text-white">
+                Thesis
+              </button>
+            )}
+            {founder && (
+              <a href="#founder-access" className="text-amber-400 transition-colors hover:text-amber-300">
+                Founder access
+              </a>
+            )}
+          </div>
+
+          <a
+            href={previewHref}
+            target={previewEnabled ? '_blank' : undefined}
+            rel={previewEnabled ? 'noopener noreferrer' : undefined}
+            onClick={() => trackPreview('nav')}
+            className="group inline-flex items-center gap-2 rounded-full bg-white px-4 py-2.5 text-xs font-bold text-black transition-transform hover:scale-[1.03] md:px-5"
+          >
+            <span>
+              {previewEnabled
+                ? loading
+                  ? 'Verifying…'
+                  : user
+                    ? 'Resume session'
+                    : 'Enter preview'
+                : 'Preview coming soon'}
             </span>
-            <ArrowRight size={14} className="relative z-10 transition-transform group-hover:translate-x-1 group-hover:text-white" aria-hidden="true" />
+            <ArrowRight size={13} className="transition-transform group-hover:translate-x-1" />
           </a>
         </div>
       </nav>
 
-      {/* ═══════════════ 3. HERO ═══════════════ */}
       <motion.section
-        style={{ scale: heroScale, opacity: heroOpacity, y: heroTranslateY }}
-        className="relative z-10 flex flex-col items-center justify-center w-full max-w-5xl px-4 min-h-screen pt-20 pb-0 text-center"
-        role="banner"
-        aria-label="Hero section - The operating system for your musical independence"
+        id="home"
+        style={{ opacity: heroOpacity, scale: heroScale, y: heroY }}
+        className="relative z-10 mx-auto flex min-h-screen w-full max-w-[1600px] flex-col justify-between px-5 pb-8 pt-28 md:px-10 md:pb-10 md:pt-32"
+        aria-label="indii.music founder introduction"
       >
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-          className="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[9px] md:text-[11px] font-bold tracking-[0.2em] shadow-[0_0_20px_rgba(245,158,11,0.15)] uppercase mb-8 backdrop-blur-md text-center"
-          aria-label="Key value propositions: A team of 21 specialists providing musical independence and complete ownership"
-        >
-          <span className="relative flex h-2 w-2" aria-hidden="true">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500" />
-          </span>
-          A Team of 21 Specialists • Musical Independence • Complete Ownership
-        </motion.div>
+        <div className="flex items-center justify-between border-t border-white/12 pt-4 font-mono text-[9px] uppercase tracking-[0.23em] text-white/30">
+          <span>Independent music / operating workspace</span>
+          <span className="hidden sm:inline">Detroit, Michigan / Private founder preview</span>
+        </div>
 
-        <h1 className="text-5xl md:text-7xl lg:text-[5.5rem] font-black tracking-tighter text-white leading-[1.05] md:leading-[0.9] drop-shadow-2xl flex flex-wrap justify-center max-w-6xl" id="home">
-          {words.map((word, i) => (
-            <motion.span
-              initial={{ opacity: 0, y: 20, filter: 'blur(10px)' }}
-              animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-              transition={{ duration: 0.8, delay: i * 0.05, ease: [0.16, 1, 0.3, 1] }}
-              key={i}
-              className={`mr-4 last:mr-0 ${word === 'musical' || word === 'independence' ? 'text-transparent bg-clip-text bg-linear-to-br from-amber-200 via-amber-400 to-amber-600 drop-shadow-[0_0_30px_rgba(245,158,11,0.3)]' : ''}`}
-            >
-              {word}
-            </motion.span>
-          ))}
-        </h1>
+        <div className="relative my-auto py-16 md:py-12">
+          <div className="absolute left-[58%] top-1/2 h-[38vw] max-h-[620px] min-h-[300px] w-[38vw] min-w-[300px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-amber-400/15">
+            <div className="absolute inset-[9%] rounded-full border border-white/[0.05]" />
+            <div className="absolute inset-[22%] rounded-full bg-amber-400/[0.07] blur-3xl" />
+            <motion.div
+              className="absolute inset-[35%] rounded-full bg-amber-300/80 shadow-[0_0_80px_rgba(245,158,11,0.48)]"
+              animate={{ opacity: [0.4, 0.9, 0.4], scale: [0.9, 1.04, 0.9] }}
+              transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
+            />
+          </div>
 
-        <motion.p
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.6, ease: [0.16, 1, 0.3, 1] }}
-          className="mt-8 text-lg md:text-xl text-gray-400 max-w-3xl leading-relaxed font-light"
-        >
-          <strong className="text-white font-medium block mb-4 text-2xl">
-            Independence doesn&apos;t mean being alone.
-          </strong>
-          indii.music is your personal support network. A dedicated team of 21 specialists designed to handle the labor, remove the roadblocks, and let you focus entirely on your music. 
-          <span className="block mt-4 text-amber-500 font-bold tracking-tight text-2xl italic">&ldquo;It&apos;s the operating system for your musical independence.&rdquo;</span>
-        </motion.p>
+          <h1 className="relative max-w-[1450px] text-[15.4vw] font-black leading-[0.73] tracking-[-0.075em] text-white sm:text-[12.3vw] lg:text-[10.6rem]">
+            {heroWords.map((word, index) => (
+              <motion.span
+                key={`${word}-${index}`}
+                initial={{ opacity: 0, y: 50, filter: 'blur(12px)' }}
+                animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+                transition={{
+                  duration: 0.95,
+                  delay: index * 0.055,
+                  ease: [0.16, 1, 0.3, 1],
+                }}
+                className={`mr-[0.18em] inline-block last:mr-0 ${
+                  word === 'music' || word === 'away.' ? 'text-amber-400' : ''
+                }`}
+              >
+                {word}
+              </motion.span>
+            ))}
+          </h1>
 
-        {/* Dual CTA */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.8 }}
-          className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-10"
-        >
-          <a
-            href={getStudioPreviewUrl()}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={() => handleFounderPreviewClick('hero')}
-            className="group relative inline-flex items-center justify-center gap-3 px-8 py-4 text-base font-bold text-black bg-linear-to-r from-amber-400 to-amber-600 rounded-full overflow-hidden transition-all hover:scale-105 active:scale-95 shadow-[0_0_30px_rgba(245,158,11,0.4)]"
-          >
-            <span className="relative z-10">{founder ? 'Launch Founder Preview' : 'Launch Studio'}</span>
-            <ArrowRight size={18} className="relative z-10 transition-transform group-hover:translate-x-1" />
-          </a>
-          {founder && (
-            <button
-              onClick={() => setIsThesisOpen(true)}
-              className="group inline-flex w-full sm:w-auto justify-center items-center gap-2 px-8 py-4 text-base font-medium text-amber-500 border border-amber-500/20 hover:border-amber-500/40 rounded-full bg-amber-500/5 hover:bg-amber-500/10 transition-all shadow-[0_0_20px_rgba(245,158,11,0.1)]"
-            >
-              <Film size={16} className="text-amber-400 animate-pulse" />
-              <span>Read Thesis</span>
-            </button>
-          )}
-          <a
-            href="#capabilities"
-            className="inline-flex w-full sm:w-auto justify-center items-center gap-2 px-8 py-4 text-base font-medium text-gray-400 border border-white/10 rounded-full hover:text-white hover:border-white/20 transition-all"
-          >
-            Meet Your Team
-          </a>
-        </motion.div>
-
-        {founder && (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 1.0 }}
-            className="mt-4 text-xs font-mono text-gray-500 uppercase tracking-widest flex items-center justify-center gap-2"
+            initial={{ opacity: 0, y: 25 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.72, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+            className="relative mt-12 grid gap-9 border-t border-white/12 pt-7 md:grid-cols-[1fr_1fr]"
           >
-            <span className="h-1.5 w-1.5 rounded-full bg-amber-400 animate-ping" />
-            No paywall to explore • Interactive guided walkthrough & Boardroom preview immediately open
+            <div className="font-mono text-[10px] uppercase leading-relaxed tracking-[0.22em] text-white/30">
+              The operating system
+              <br />
+              for musical independence
+            </div>
+            <div>
+              <p className="max-w-2xl text-lg leading-relaxed text-white/60 md:text-xl">
+                indii.music brings the work around a release—files, rights, money, campaigns, distribution, and the road—into one artist-controlled workspace.
+              </p>
+              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+                <a
+                  href={previewHref}
+                  target={previewEnabled ? '_blank' : undefined}
+                  rel={previewEnabled ? 'noopener noreferrer' : undefined}
+                  onClick={() => trackPreview('hero')}
+                  className="group inline-flex items-center justify-center gap-3 rounded-full bg-amber-400 px-7 py-4 text-sm font-black text-black shadow-[0_0_34px_rgba(245,158,11,0.28)] transition-transform hover:scale-[1.025]"
+                >
+                  {previewEnabled
+                    ? founder
+                      ? 'Enter Founder Preview'
+                      : 'Enter indii.music'
+                    : 'Preview coming soon'}
+                  <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" />
+                </a>
+                {founder && (
+                  <button
+                    type="button"
+                    onClick={() => setIsThesisOpen(true)}
+                    className="group inline-flex items-center justify-center gap-3 rounded-full border border-white/15 px-7 py-4 text-sm font-bold text-white transition-colors hover:border-amber-400/50 hover:text-amber-300"
+                  >
+                    <Play size={14} fill="currentColor" />
+                    Watch the thesis
+                  </button>
+                )}
+              </div>
+              {founder && (
+                <p className="mt-4 font-mono text-[9px] uppercase tracking-[0.16em] text-white/25">
+                  {previewEnabled
+                    ? 'Explore before you buy / no payment required for the preview'
+                    : 'Explore the system here / product entry remains private for now'}
+                </p>
+              )}
+            </div>
           </motion.div>
-        )}
+        </div>
+
+        <a
+          href="#detroit"
+          className="flex items-center justify-between border-t border-white/12 pt-4 font-mono text-[9px] uppercase tracking-[0.23em] text-white/30 transition-colors hover:text-white"
+        >
+          <span>Continue</span>
+          <ArrowDown size={14} />
+        </a>
       </motion.section>
 
-      {founder && (
-        <>
-          {/* ═══════════════ 8.6 OUR STORY (PERSONAL & LOCAL) ═══════════════ */}
-          <section className="w-full max-w-5xl px-4 py-12 z-20 relative">
-            <div className="relative overflow-hidden rounded-[3rem] border border-white/5 bg-linear-to-b from-[#090909] to-[#030303] p-8 md:p-16 shadow-2xl">
-              <div className="max-w-3xl">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 font-mono text-[10px] tracking-widest uppercase mb-8">
-                  <Users size={12} className="text-amber-500" />
-                  The Detroit Covenant
-                </div>
-                
-                <h2 className="text-3xl md:text-5xl font-black tracking-tight text-white mb-6">
-                  Built in Detroit. Backed by Local Believers.
-                </h2>
-
-                <div className="space-y-6 text-gray-400 text-lg leading-relaxed font-light">
-                  <p>
-                    indii.music started in Detroit because that&apos;s where the problem was loudest. I kept hearing the same thing from people I know here: too much time lost to admin, too much energy spent fighting broken systems, and not enough left for the music itself.
-                  </p>
-                  <p>
-                    This platform was built with local studios, local artists, and local independent founders in mind. It is designed to protect the work, keep the artist in control, and make the day-to-day load lighter without turning the experience into something corporate or distant.
-                  </p>
-                  <p>
-                    Every line of code has been written locally. The first believers are studio owners, musicians, and independent founders from this city who want a music system that serves the people making the culture. When you secure founder access, you are backing the local build of indii from the ground up.
-                  </p>
-                  <p className="text-white font-medium mt-8 flex items-center gap-3">
-                    <span className="h-px w-8 bg-amber-500" />
-                    William Roberts, Founder
-                  </p>
-                </div>
-              </div>
+      {!previewEnabled && (
+        <section
+          id="preview-status"
+          className="relative z-20 scroll-mt-[72px] border-y border-amber-400/20 bg-[#080602]"
+          aria-labelledby="preview-status-title"
+        >
+          <div className="mx-auto grid max-w-[1500px] gap-8 px-5 py-12 md:grid-cols-[0.48fr_1fr_0.36fr] md:items-center md:px-10 md:py-14">
+            <div className="flex items-center gap-3 font-mono text-[9px] uppercase tracking-[0.23em] text-amber-400">
+              <span className="h-2 w-2 rounded-full bg-amber-400 shadow-[0_0_18px_rgba(245,158,11,0.8)]" />
+              Preview status / private
             </div>
-          </section>
-
-          {/* ═══════════════ 8.7 THE INDII THESIS ═══════════════ */}
-          <section className="w-full max-w-5xl px-4 py-12 z-20 relative">
-            <div className="relative overflow-hidden rounded-[3rem] border border-amber-500/20 bg-linear-to-r from-amber-950/20 via-black to-[#0a0a0a] p-8 md:p-16 shadow-2xl flex flex-col md:flex-row items-center justify-between gap-8">
-              <div className="flex-1 space-y-4 text-left">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 font-mono text-[10px] tracking-widest uppercase">
-                  <Film size={12} className="text-amber-500 animate-pulse" />
-                  Manifesto Protocol
-                </div>
-                <h2 className="text-3xl md:text-4xl font-black tracking-tight text-white">
-                  The indii Thesis
-                </h2>
-                <p className="text-gray-400 text-base max-w-xl leading-relaxed font-light">
-                  Everything to Everybody in the Independent Music Industry. A challenge to conventional wisdom and a blueprint for musical independence.
-                </p>
-              </div>
-              <button
-                onClick={() => setIsThesisOpen(true)}
-                className="group relative flex items-center justify-center gap-3 px-8 py-4 bg-linear-to-r from-amber-400 to-amber-600 hover:from-amber-300 hover:to-amber-500 text-black font-black text-base rounded-2xl transition-all hover:scale-[1.03] active:scale-[0.97] shadow-[0_0_40px_rgba(245,158,11,0.2)]"
+            <div>
+              <h2
+                id="preview-status-title"
+                className="text-3xl font-black tracking-[-0.045em] text-white md:text-4xl"
               >
-                <span>Launch Cinematic Thesis</span>
-                <Film size={16} className="transition-transform group-hover:scale-110" />
-              </button>
+                The preview stays private for now.
+              </h2>
+              <p className="mt-3 max-w-2xl text-sm leading-relaxed text-white/45 md:text-base">
+                We are preparing the Founder preview before opening product access. You can explore the thesis and the working system here; the application itself is not open to the public yet.
+              </p>
             </div>
-          </section>
-        </>
+            <div className="font-mono text-[10px] uppercase tracking-[0.24em] text-white/30 md:text-right">
+              Opening soon
+            </div>
+          </div>
+        </section>
       )}
 
-      {/* ═══════════════ 4. PRODUCT TEASER ═══════════════ */}
-      <section className="relative z-20 w-full max-w-6xl px-4 mt-12 md:mt-20 mb-20 perspective-[2000px]">
-        <motion.div
-          style={{ rotateX: productRotateX, scale: productScale, opacity: productOpacity, transformStyle: 'preserve-3d' }}
-          className="w-full aspect-video rounded-t-[2.5rem] border border-white/10 bg-[#0A0A0A] shadow-[0_40px_100px_rgba(0,0,0,0.9),0_0_80px_rgba(245,158,11,0.08)] overflow-hidden flex flex-col relative"
-        >
-          <div className="absolute inset-0 bg-linear-to-b from-white/4 via-transparent to-transparent pointer-events-none" />
-          <div className="h-12 border-b border-white/5 flex items-center px-6 gap-3 bg-white/2">
-            <div className="flex gap-2">
-              <div className="w-3 h-3 rounded-full bg-[#FF5F56] border border-[#E0443E]" />
-              <div className="w-3 h-3 rounded-full bg-[#FFBD2E] border border-[#DEA123]" />
-              <div className="w-3 h-3 rounded-full bg-[#27C93F] border border-[#1AAB29]" />
-            </div>
-            <div className="mx-auto flex items-center gap-2 bg-[#1A1A1A] border border-white/5 rounded-md px-32 py-1.5 shadow-inner">
-              <ShieldCheck size={12} className="text-green-500" />
-              <span className="text-[10px] font-mono text-gray-400 tracking-widest uppercase">indii.music/your-team</span>
-            </div>
-          </div>
-          <div className="flex-1 flex bg-[#030303] relative overflow-hidden border-t border-white/5">
-            <img
-              src="/studio-hero.png"
-              alt="indii Dashboard Interface"
-              className="w-full h-[150%] object-cover object-top opacity-90 transition-opacity duration-1000 hover:opacity-100"
-              style={{ filter: 'contrast(1.05) brightness(0.95)' }}
-            />
-            <div className="absolute inset-0 shadow-[inset_0_0_100px_rgba(3,3,3,1),inset_0_0_30px_rgba(3,3,3,1)] pointer-events-none" />
-          </div>
-        </motion.div>
-      </section>
-
-      {/* ═══════════════ 5. STATS BAR ═══════════════ */}
-      <section className="w-full max-w-5xl px-4 mb-24 z-20 relative">
-        <div className="flex flex-wrap justify-center gap-8 md:gap-16 py-12 border-y border-amber-500/20 bg-linear-to-r from-amber-500/5 via-transparent to-amber-500/5">
-          <AnimatedStat value="21" label="Specialists" />
-          <AnimatedStat value="100" suffix="%" label="Ownership" />
-          <AnimatedStat value="0" suffix="%" label="Royalties Taken" />
-          <AnimatedStat value="∞" label="Creative Capacity" />
-        </div>
-      </section>
-
-      {/* ═══════════════ 6. AGENT GRID ═══════════════ */}
-      <AgentGrid />
-
-      {/* ═══════════════ 7. CONDUCTOR SECTION ═══════════════ */}
-      <div id="conductor">
-        <ConductorSection />
-      </div>
-
-      {/* ═══════════════ 8. HOW IT WORKS ═══════════════ */}
-      <section className="w-full max-w-5xl px-4 py-24 z-20 relative">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="text-center mb-16"
-        >
-          <h2 className="text-4xl md:text-5xl font-black tracking-tighter text-white mb-4">
-            Your Dedicated{' '}
-            <span className="text-transparent bg-clip-text bg-linear-to-r from-amber-300 to-amber-600">Team</span>
-          </h2>
-          <p className="text-gray-400 max-w-xl mx-auto font-light">Direct-to-platform release pipelines. High-fidelity creative synthesis. Total ownership of your masters and your career.</p>
-        </motion.div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {[
-            { step: '01', icon: Music, title: 'Sonic Identity', desc: 'Understand your sound profile. Analyze the core elements of your tracks—tempo, key, and mood—to build out your visual identity.' },
-            { step: '02', icon: BrainCircuit, title: 'Your Team', desc: 'Deploy your dedicated team. From visual design to legal protection, your team builds your vision in parallel.' },
-            { step: '03', icon: Globe2, title: 'Global Impact', desc: 'Release your tracks directly to global platforms. No gatekeepers, no noise, just total independence and 100% of the bag.' },
-          ].map((s, i) => (
+      {founder && (
+        <section id="detroit" className="relative z-20 w-full border-t border-white/10 bg-[#050505]">
+          <div className="mx-auto grid max-w-[1500px] gap-16 px-5 py-28 md:px-10 md:py-40 lg:grid-cols-[0.55fr_1.45fr]">
             <motion.div
-              key={s.step}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: '-100px' }}
+              className="flex flex-col justify-between"
+            >
+              <div>
+                <div className="mb-5 flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.25em] text-amber-400">
+                  <MapPin size={12} />
+                  Detroit / 42.3314° N
+                </div>
+                <p className="max-w-xs text-sm leading-relaxed text-white/40">
+                  Built locally around the reality of independent work: too much administration, too many disconnected systems, and not enough time left for the music.
+                </p>
+              </div>
+              <div className="mt-14 hidden font-mono text-[9px] uppercase tracking-[0.22em] text-white/20 lg:block">
+                New Detroit Music LLC
+                <br />
+                Founder build / 2026
+              </div>
+            </motion.div>
+
+            <motion.div
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6, delay: i * 0.15 }}
+              viewport={{ once: true, margin: '-100px' }}
+              transition={{ duration: 0.8 }}
             >
-              <SpotlightCard className="h-full">
-                <div className="p-8 md:p-10 flex flex-col h-full">
-                  <div className="flex items-center justify-between mb-8">
-                    <span className="text-6xl font-black text-white/4 tracking-tighter">{s.step}</span>
-                    <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center shadow-[0_0_15px_rgba(245,158,11,0.15)]">
-                      <s.icon className="text-amber-400" size={24} />
-                    </div>
-                  </div>
-                  <h3 className="text-2xl font-bold text-white mb-3 tracking-tight">{s.title}</h3>
-                  <p className="text-gray-400 text-sm leading-relaxed font-light">{s.desc}</p>
+              <h2 className="max-w-5xl text-5xl font-black leading-[0.94] tracking-[-0.055em] text-white md:text-7xl lg:text-[7rem]">
+                Built in Detroit for the work
+                <span className="block text-amber-400">behind the music.</span>
+              </h2>
+              <div className="mt-12 grid gap-8 border-t border-white/10 pt-8 md:grid-cols-2">
+                <p className="text-lg leading-relaxed text-white/55">
+                  indii started with a practical question: what would independent artists need if the departments around a career were tools they controlled?
+                </p>
+                <div>
+                  <p className="text-lg leading-relaxed text-white/55">
+                    The answer is not another dashboard full of promises. It is a working place for the files, decisions, business records, creative work, and approvals already surrounding the artist.
+                  </p>
+                  <p className="mt-9 flex items-center gap-3 text-sm font-semibold text-white">
+                    <span className="h-px w-9 bg-amber-400" />
+                    wiil, Founder
+                  </p>
                 </div>
-              </SpotlightCard>
+              </div>
             </motion.div>
+          </div>
+        </section>
+      )}
+
+      {founder && (
+        <section className="relative z-20 min-h-[92vh] w-full overflow-hidden border-t border-amber-400/20 bg-black">
+          <div className="absolute inset-0">
+            {ambientStars.slice(0, 50).map((star, index) => (
+              <span
+                key={index}
+                className="absolute rounded-full bg-white"
+                style={{
+                  left: star.left,
+                  top: star.top,
+                  width: star.size,
+                  height: star.size,
+                  opacity: star.opacity,
+                }}
+              />
+            ))}
+            <div className="absolute inset-x-[-15%] bottom-[-45%] h-[80%] rounded-[50%] border-t border-amber-400/40 bg-amber-500/[0.05] shadow-[0_-40px_120px_rgba(245,158,11,0.13)]" />
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_100%,rgba(245,158,11,0.13),transparent_45%)]" />
+          </div>
+
+          <div className="relative mx-auto flex min-h-[92vh] max-w-[1500px] flex-col justify-between px-5 py-12 md:px-10 md:py-16">
+            <div className="flex justify-between border-t border-white/10 pt-4 font-mono text-[9px] uppercase tracking-[0.23em] text-white/30">
+              <span>The indii thesis</span>
+              <span>Episode I / Everything to Everybody</span>
+            </div>
+
+            <motion.div
+              initial={{ opacity: 0, scale: 0.96 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true, margin: '-120px' }}
+              transition={{ duration: 1.1, ease: [0.16, 1, 0.3, 1] }}
+              className="mx-auto max-w-6xl py-20 text-center"
+            >
+              <Film size={24} className="mx-auto mb-8 text-amber-400" />
+              <h2 className="text-6xl font-black uppercase leading-[0.82] tracking-[-0.065em] text-white sm:text-7xl md:text-9xl lg:text-[10.5rem]">
+                Read the
+                <span className="block text-amber-400">argument.</span>
+              </h2>
+              <p className="mx-auto mt-9 max-w-2xl text-lg leading-relaxed text-white/50 md:text-xl">
+                Why an independent artist does not need one more isolated tool. They need the work around the music to understand the work beside it.
+              </p>
+              <button
+                type="button"
+                onClick={() => setIsThesisOpen(true)}
+                className="group mt-10 inline-flex items-center gap-3 rounded-full bg-amber-400 px-8 py-4 text-sm font-black text-black shadow-[0_0_40px_rgba(245,158,11,0.3)] transition-transform hover:scale-[1.035]"
+              >
+                Launch cinematic thesis
+                <Play size={14} fill="currentColor" />
+              </button>
+            </motion.div>
+
+            <div className="grid gap-2 border-y border-white/10 py-5 font-mono text-[9px] uppercase tracking-[0.18em] text-white/30 sm:grid-cols-3">
+              <span>Six chapters</span>
+              <span className="sm:text-center">Artist ownership at the center</span>
+              <span className="sm:text-right">Soundtrack optional</span>
+            </div>
+          </div>
+        </section>
+      )}
+
+      <section className="relative z-20 w-full border-y border-white/10 bg-amber-400 text-black">
+        <div className="mx-auto grid max-w-[1500px] gap-px bg-black/15 sm:grid-cols-2 lg:grid-cols-4">
+          {[
+            ['One workspace', 'Projects and career operations'],
+            ['15 connected areas', 'The public operating model'],
+            ['Artist review', 'High-impact actions stay visible'],
+            ['0% royalty share', 'indii is software, not your label'],
+          ].map(([value, label]) => (
+            <div key={value} className="bg-amber-400 px-6 py-8 md:px-10 md:py-10">
+              <div className="text-2xl font-black tracking-[-0.04em] md:text-3xl">{value}</div>
+              <div className="mt-2 font-mono text-[9px] uppercase tracking-[0.18em] text-black/55">{label}</div>
+            </div>
           ))}
         </div>
       </section>
 
-      {founder && (<>
-      {/* ═══════════════ 8.5 PROJECT WHITE GLOVE ═══════════════ */}
-      <section className="w-full max-w-5xl px-4 py-12 z-20 relative">
-        <div className="relative overflow-hidden rounded-[3rem] border border-white/10 bg-[#0a0a0a] shadow-2xl p-8 md:p-16">
-          <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none">
-            <Globe2 size={250} className="text-amber-500" strokeWidth={0.5} />
-          </div>
-          
-          <div className="relative z-10">
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-gray-300 text-xs tracking-widest uppercase mb-8">
-              <ShieldCheck size={14} className="text-amber-500" />
-              Onboarding Protocol
+      <AgentGrid />
+      <ConductorSection />
+
+      <section className="relative z-20 w-full border-t border-white/10">
+        <div className="mx-auto max-w-[1500px] px-5 py-28 md:px-10 md:py-40">
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: '-100px' }}
+            className="grid gap-12 border-b border-white/10 pb-16 lg:grid-cols-[0.65fr_1.35fr]"
+          >
+            <div>
+              <div className="mb-5 font-mono text-[11px] uppercase tracking-[0.3em] text-amber-400">
+                How the work moves
+              </div>
             </div>
-            
-            <h2 className="text-3xl md:text-5xl font-black tracking-tight text-white mb-6">
-              Project White Glove
+            <h2 className="max-w-5xl text-5xl font-black leading-[0.92] tracking-[-0.055em] text-white sm:text-6xl md:text-8xl lg:text-[7.5rem]">
+              You stay the artist.
+              <span className="block text-amber-400">You also stay in control.</span>
             </h2>
-            
-            <div className="space-y-6 text-gray-400 text-lg leading-relaxed font-light max-w-3xl">
-              <p>
-                When you join indii as a Founder, your journey begins with <strong className="text-white">Project White Glove</strong>. It is our specialized onboarding protocol designed to rescue artists from their scattered digital pasts.
-              </p>
-              <p>
-                A lifetime of making music leaves a fragmented trail: unorganized Dropbox links, undocumented split sheets, missing PRO registrations, and legacy Pro Tools sessions sitting on dying external hard drives. Project White Glove is how we fix it. 
-              </p>
-              <p>
-                You activate the protocol directly from your Conductor dashboard. Once engaged, the system systematically guides you through consolidating your entire catalog. We track down your stems, recover your masters, organize your metadata, and secure your digital footprint—from Spotify artist profiles to sync licenses—straight into the indii vault.
-              </p>
-              <p className="text-amber-400 font-medium italic mt-8 text-xl">
-                "We secure your legacy, so you can build your future."
-              </p>
-            </div>
+          </motion.div>
+
+          <div className="mt-6 border-t border-white/10">
+            {operatingPrinciples.map((principle, index) => (
+              <motion.article
+                key={principle.number}
+                initial={{ opacity: 0, y: 24 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: '-70px' }}
+                transition={{ duration: 0.65, delay: index * 0.05 }}
+                className="grid gap-6 border-b border-white/10 py-10 md:grid-cols-[0.18fr_0.42fr_1fr] md:gap-10 md:py-14"
+              >
+                <div className="font-mono text-[10px] tracking-[0.22em] text-amber-400">{principle.number}</div>
+                <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-white/30">{principle.label}</div>
+                <div className="grid gap-4 lg:grid-cols-[0.85fr_1.15fr]">
+                  <h3 className="text-2xl font-bold leading-tight tracking-[-0.03em] text-white md:text-3xl">
+                    {principle.title}
+                  </h3>
+                  <p className="max-w-xl leading-relaxed text-white/45">{principle.text}</p>
+                </div>
+              </motion.article>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* ═══════════════ 9. FOUNDERS COVENANT ═══════════════ */}
-      <section id="invest" className="w-full max-w-5xl px-4 py-24 mb-24 z-20 relative">
-        <div className="relative overflow-hidden rounded-[3rem] border border-amber-500/30 bg-linear-to-b from-amber-900/20 to-[#0a0a0a] p-12 md:p-20 shadow-[0_0_100px_rgba(245,158,11,0.1)]">
-          <div className="absolute top-0 right-0 p-12 opacity-10 pointer-events-none">
-            <ShieldCheck size={300} className="text-amber-500" strokeWidth={0.5} />
-          </div>
-
-          <div className="relative z-10 flex flex-col items-center text-center">
-            <div className="inline-flex items-center justify-center px-4 py-1.5 rounded-full bg-amber-500/20 border border-amber-500/50 text-amber-400 font-bold text-[10px] md:text-xs tracking-widest uppercase mb-8 shadow-[0_0_20px_rgba(245,158,11,0.3)]">
-              Private Launch Access • Lifetime Full-Platform Access
-            </div>
-            <h2 className="text-4xl md:text-6xl font-black tracking-tight text-white mb-6">
-              Secure Founder Access
-            </h2>
-            <p className="text-gray-300 text-lg md:text-xl max-w-2xl mb-12 font-light leading-relaxed">
-              Private launch access includes <strong className="text-white">lifetime full-platform access</strong>, beta participation, guided onboarding, Boardroom/Conductor access, and permanent founder recognition. All 21 specialists, every future founder-level update — with no recurring fees. Future pricing will increase as indii moves toward wider release.
-            </p>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-3xl mb-12 text-left">
-              <div className="bg-[#030303]/50 border border-white/5 rounded-2xl p-6 backdrop-blur-md">
-                <h4 className="text-amber-400 font-bold mb-2 flex items-center gap-2"><Cpu size={16} /> Your Keys, Your Sound</h4>
-                <p className="text-sm text-gray-400">Bring your own API keys. You pay exactly what the models cost. No markup. True creative independence for the artist.</p>
-              </div>
-              <div className="bg-[#030303]/50 border border-white/5 rounded-2xl p-6 backdrop-blur-md">
-                <h4 className="text-amber-400 font-bold mb-2 flex items-center gap-2"><ShieldCheck size={16} /> Permanent Record</h4>
-                <p className="text-sm text-gray-400">Your signature and a record of your agreement are committed directly into the indii infrastructure forever. You are part of the system.</p>
-              </div>
-              <div className="bg-[#030303]/50 border border-white/5 rounded-2xl p-6 backdrop-blur-md">
-                <h4 className="text-amber-400 font-bold mb-2 flex items-center gap-2"><Users size={16} /> Your 21-Piece Team</h4>
-                <p className="text-sm text-gray-400">Distribution, Creative, Music, Legal, Finance, Marketing, Publishing, Analytics, Brand, Video, Social, Licensing, Merch, Publicist, Road. The collective is yours.</p>
-              </div>
-              <div className="bg-[#030303]/50 border border-white/5 rounded-2xl p-6 backdrop-blur-md">
-                <h4 className="text-amber-400 font-bold mb-2 flex items-center gap-2"><Disc3 size={16} /> Constantly Evolving</h4>
-                <p className="text-sm text-gray-400">Every new specialist, every feature upgrade, every tool we ship — automatically included in your seat. No rent-seeking. Just music.</p>
-              </div>
-            </div>
-
-            <a
-              href={getStudioUrl()}
-              onClick={() => handleFounderPreviewClick('invest')}
-              className="group relative inline-flex items-center justify-center gap-3 px-10 py-5 text-lg font-black text-black bg-linear-to-r from-amber-400 to-amber-600 rounded-full overflow-hidden transition-all hover:scale-105 active:scale-95 shadow-[0_0_30px_rgba(245,158,11,0.4)]"
+      {founder && (
+        <section className="relative z-20 w-full border-t border-white/10 bg-[#050505]">
+          <div className="mx-auto grid max-w-[1500px] gap-16 px-5 py-28 md:px-10 md:py-40 lg:grid-cols-[1.05fr_0.95fr] lg:gap-24">
+            <motion.div
+              initial={{ opacity: 0, y: 25 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: '-100px' }}
             >
-              <span className="relative z-10">Secure Founder Access — $2,500</span>
-              <ArrowRight size={20} className="relative z-10 transition-transform group-hover:translate-x-2" />
-            </a>
-            <p className="mt-4 text-xs text-gray-500 max-w-sm text-center leading-relaxed">
-              If you use indii for your music business, founder access may qualify as a deductible software expense. Please confirm with your tax professional. Future investment or strategic participation, if any, is handled separately by written agreement and is not part of founder software access.
-            </p>
-            <div className="mt-3 text-sm font-mono text-gray-600 uppercase tracking-widest">Subject to Availability</div>
-          </div>
-        </div>
-      </section>
-      </>)}
+              <div className="mb-6 font-mono text-[10px] uppercase tracking-[0.25em] text-amber-400">
+                Founder onboarding / Project White Glove
+              </div>
+              <h2 className="max-w-4xl text-5xl font-black leading-[0.93] tracking-[-0.055em] text-white md:text-7xl lg:text-[6.4rem]">
+                Start with your real catalog,
+                <span className="block text-amber-400">not an empty dashboard.</span>
+              </h2>
+              <p className="mt-10 max-w-2xl text-lg leading-relaxed text-white/55">
+                Founder onboarding begins by mapping what you already have: masters, stems, split information, registrations, release records, artist accounts, and the files holding it all together.
+              </p>
+              <p className="mt-6 max-w-2xl text-lg leading-relaxed text-white/55">
+                We help organize the starting record, identify gaps, and set up the workspace around your actual operation. We do not pretend missing files or registrations can be recovered by magic.
+              </p>
+            </motion.div>
 
-      {/* ═══════════════ 10. FOOTER ═══════════════ */}
-      <footer className="w-full border-t border-white/4 py-12 md:py-16 px-6 md:px-12 flex flex-col md:flex-row items-center justify-between gap-8 text-sm text-gray-500 bg-[#030303] z-20 relative">
-        <div className="flex flex-col md:flex-row items-center gap-4 text-center md:text-left">
-          <div className="w-6 h-6 rounded-lg bg-amber-500/10 border border-amber-500/30 flex justify-center items-center shadow-[0_0_10px_rgba(245,158,11,0.2)]">
-            <Zap size={12} className="text-amber-500" />
-          </div>
-          <span className="font-medium tracking-wide">© 2026 New Detroit Music LLC. indii.music — the operating system for your musical independence.</span>
-        </div>
-        <div className="flex flex-wrap justify-center gap-6 md:gap-8">
-          <a href="/privacy" className="hover:text-white transition-colors font-medium">Privacy Policy</a>
-          <a href="/terms" className="hover:text-white transition-colors font-medium">Terms of Service</a>
-          {founder && (
-            <a
-              href="mailto:wiil@indii.music"
-              onClick={(e) => {
-                e.preventDefault();
-                void handleFounderInterestClick('footer').then(() => {
-                  window.location.href = 'mailto:wiil@indii.music';
-                });
-              }}
-              className="text-amber-500 hover:text-amber-400 transition-colors font-bold uppercase tracking-widest"
+            <motion.div
+              initial={{ opacity: 0, x: 25 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true, margin: '-80px' }}
+              className="border border-white/10 bg-black"
             >
-              Founder Access
-            </a>
-          )}
+              <div className="flex items-center justify-between border-b border-white/10 px-6 py-5 font-mono text-[9px] uppercase tracking-[0.2em] text-white/30">
+                <span>Catalog intake / founder</span>
+                <span className="text-amber-400">Guided</span>
+              </div>
+              {[
+                'Masters and stems',
+                'Songwriter and split information',
+                'Release metadata',
+                'Registrations and rights records',
+                'Artist profiles and working accounts',
+                'Current projects and open decisions',
+              ].map((item, index) => (
+                <div key={item} className="flex items-center gap-5 border-b border-white/8 px-6 py-5">
+                  <span className="font-mono text-[9px] text-white/20">0{index + 1}</span>
+                  <span className="flex-1 text-sm font-medium text-white/65">{item}</span>
+                  <Check size={13} className="text-amber-400/70" />
+                </div>
+              ))}
+              <div className="px-6 py-7 text-sm leading-relaxed text-white/35">
+                The goal is a reliable starting point—not a promise that every historical gap can be solved automatically.
+              </div>
+            </motion.div>
+          </div>
+        </section>
+      )}
+
+      {founder && (
+        <section id="founder-access" className="relative z-20 w-full overflow-hidden border-t border-amber-400/25 bg-black">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_72%_45%,rgba(245,158,11,0.18),transparent_34%)]" />
+          <div className="absolute right-[-12rem] top-1/2 h-[42rem] w-[42rem] -translate-y-1/2 rounded-full border border-amber-400/20">
+            <div className="absolute inset-[16%] rounded-full border border-white/[0.06]" />
+            <div className="absolute inset-[34%] rounded-full bg-amber-400/10 blur-3xl" />
+          </div>
+
+          <div className="relative mx-auto max-w-[1500px] px-5 py-28 md:px-10 md:py-40">
+            <div className="grid gap-14 lg:grid-cols-[1.15fr_0.85fr] lg:gap-24">
+              <motion.div
+                initial={{ opacity: 0, y: 25 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: '-100px' }}
+              >
+                <div className="mb-6 font-mono text-[10px] uppercase tracking-[0.25em] text-amber-400">
+                  Private founder release / software access
+                </div>
+                <h2 className="text-6xl font-black leading-[0.85] tracking-[-0.065em] text-white sm:text-7xl md:text-9xl lg:text-[10rem]">
+                  Own the
+                  <span className="block text-amber-400">first seat.</span>
+                </h2>
+                <p className="mt-10 max-w-2xl text-lg leading-relaxed text-white/55 md:text-xl">
+                  Founder Access is a one-time purchase of enterprise software access. It is not an investment, security, ownership interest, or promise of financial return.
+                </p>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, x: 25 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true, margin: '-80px' }}
+                className="border-t border-white/15 pt-7"
+              >
+                <div className="flex items-end justify-between border-b border-white/10 pb-7">
+                  <div>
+                    <div className="font-mono text-[9px] uppercase tracking-[0.2em] text-white/30">One-time purchase</div>
+                    <div className="mt-2 text-5xl font-black tracking-[-0.055em] text-white">$2,500</div>
+                  </div>
+                  <div className="pb-1 font-mono text-[9px] uppercase tracking-[0.18em] text-amber-400">Founder edition</div>
+                </div>
+
+                <div className="py-5">
+                  {founderIncludes.map((item) => (
+                    <div key={item} className="flex items-center gap-4 border-b border-white/8 py-4 text-sm text-white/65">
+                      <Check size={14} className="text-amber-400" />
+                      {item}
+                    </div>
+                  ))}
+                </div>
+
+                <a
+                  href={getStudioUrl()}
+                  onClick={() => trackPreview('founder_access')}
+                  className="group mt-4 inline-flex w-full items-center justify-center gap-3 rounded-full bg-amber-400 px-8 py-5 text-base font-black text-black shadow-[0_0_40px_rgba(245,158,11,0.25)] transition-transform hover:scale-[1.02]"
+                >
+                  Secure Founder Access
+                  <ArrowRight size={17} className="transition-transform group-hover:translate-x-1" />
+                </a>
+                <p className="mt-5 text-xs leading-relaxed text-white/35">
+                  If you use indii for your music business, the purchase may qualify as a business software expense. Tax treatment depends on your circumstances; confirm it with your tax professional.
+                </p>
+              </motion.div>
+            </div>
+
+            <div className="mt-20 grid gap-6 border-y border-amber-400/20 py-8 text-sm leading-relaxed text-white/45 md:grid-cols-3">
+              <p>
+                <span className="mb-2 block font-mono text-[9px] uppercase tracking-[0.2em] text-amber-400">What you are buying</span>
+                Software access, guided onboarding, and the founder release benefits listed above.
+              </p>
+              <p>
+                <span className="mb-2 block font-mono text-[9px] uppercase tracking-[0.2em] text-amber-400">What you are not buying</span>
+                Equity, profit participation, a security, or any right to a financial return.
+              </p>
+              <p>
+                <span className="mb-2 block font-mono text-[9px] uppercase tracking-[0.2em] text-amber-400">Separate conversations</span>
+                Any future investment or strategic participation would require its own written agreement.
+              </p>
+            </div>
+          </div>
+        </section>
+      )}
+
+      <footer className="relative z-20 w-full border-t border-white/10 bg-[#030303]">
+        <div className="mx-auto flex max-w-[1500px] flex-col gap-10 px-5 py-12 md:flex-row md:items-end md:justify-between md:px-10 md:py-16">
+          <div>
+            <div className="text-2xl font-black tracking-[-0.04em] text-white">indii.music</div>
+            <p className="mt-3 max-w-md text-sm leading-relaxed text-white/35">
+              The operating system for musical independence. Built in Detroit.
+            </p>
+            <p className="mt-6 font-mono text-[9px] uppercase tracking-[0.18em] text-white/20">© 2026 New Detroit Music LLC</p>
+          </div>
+          <div className="flex flex-wrap gap-6 font-mono text-[9px] uppercase tracking-[0.18em] text-white/35">
+            <a href="/privacy" className="transition-colors hover:text-white">Privacy</a>
+            <a href="/terms" className="transition-colors hover:text-white">Terms</a>
+            {founder && (
+              <a
+                href="mailto:wiil@indii.music"
+                onClick={(event) => {
+                  event.preventDefault();
+                  void handleFounderInterestClick('footer').then(() => {
+                    window.location.href = 'mailto:wiil@indii.music';
+                  });
+                }}
+                className="text-amber-400 transition-colors hover:text-amber-300"
+              >
+                Contact wiil
+              </a>
+            )}
+          </div>
         </div>
       </footer>
 
-      {/* Cinematic Thesis Crawl */}
-      {founder && <ThesisCrawl isOpen={isThesisOpen} onClose={() => setIsThesisOpen(false)} />}
-
+      {founder && (
+        <ThesisCrawl
+          isOpen={isThesisOpen}
+          onClose={() => setIsThesisOpen(false)}
+        />
+      )}
     </main>
   );
 }

@@ -8,6 +8,7 @@ export default defineConfig({
   envPrefix: [
     'VITE_FIREBASE_',
     'VITE_FOUNDER_MODE',
+    'VITE_FOUNDER_PREVIEW_ENABLED',
     'VITE_AUTH_HANDOFF_URL',
     'NEXT_PUBLIC_AUTH_HANDOFF_URL',
     'VITE_STUDIO_URL',
