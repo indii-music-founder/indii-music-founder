@@ -405,7 +405,7 @@ export default function RightPanel() {
             initial={false}
             animate={{ width: effectivePanelWidth }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            className="h-full border-l border-border bg-card/80 backdrop-blur-xl shrink-0 hidden lg:flex flex-col overflow-hidden z-20 shadow-2xl relative"
+            className="h-full border-l border-border bg-card/80 backdrop-blur-xl shrink-0 hidden lg:flex flex-row overflow-hidden z-20 shadow-2xl relative"
         >
             {isPanelOpen && (
                 <div 
@@ -433,92 +433,86 @@ export default function RightPanel() {
                 />
             )}
             <AnimatePresence mode="wait">
-                {!isPanelOpen ? (
-                    <motion.div
-                        key="collapsed"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 0.2 }}
-                        className="flex-1 flex flex-col items-center py-4 gap-4"
-                    >
-                        <button
-                            onClick={toggleRightPanel}
-                            className="p-2 hover:bg-white/10 rounded-xl text-gray-400 hover:text-white transition-colors mb-4"
-                            title={canOpenPanel ? 'Expand Panel' : 'Widen the window or collapse the sidebar to open the panel'}
-                            aria-label={canOpenPanel ? 'Expand Panel' : 'Right panel unavailable at this width'}
-                            disabled={!canOpenPanel}
-                        >
-                            <ChevronLeft size={16} />
-                        </button>
-
-                        <div className="flex flex-col gap-4 w-full px-2 overflow-y-auto custom-scrollbar flex-1 pb-4">
-                            {tabs.map(({ id, icon: Icon, label }) => {
-                                const isActive = rightPanelTab === id;
-
-                                return (
-                                    <button
-                                        key={id}
-                                        onClick={() => setRightPanelTab(id)}
-                                        className={cn(
-                                            "p-2 rounded-xl transition-all flex items-center justify-center relative group shrink-0",
-                                            isActive
-                                                ? "bg-white/10 text-white shadow-[0_0_15px_rgba(255,255,255,0.1)]"
-                                                : "text-gray-400 hover:text-white hover:bg-white/5"
-                                        )}
-                                        title={label}
-                                        aria-label={label}
-                                    >
-                                        <Icon size={20} />
-                                        {isActive && (
-                                            <div className="absolute inset-0 rounded-xl bg-white/5 blur-sm" />
-                                        )}
-                                    </button>
-                                );
-                            })}
-                            
-                            {/* Creations Affordance */}
-                            {generatedHistory.length > 0 && (
-                                <button
-                                    onClick={() => {
-                                        acknowledgeCreationsAffordance();
-                                        setRightPanelTab('assets');
-                                        toggleRightPanel();
-                                    }}
-                                    className="relative mt-auto pt-4 group flex justify-center w-full"
-                                    title="View Recent Creations"
-                                    aria-label="View Recent Creations"
-                                >
-                                    <div className={`absolute inset-0 top-4 bg-green-500/20 blur-xl rounded-full opacity-50 group-hover:opacity-100 transition-opacity ${shouldPulseCreations ? 'animate-pulse' : ''}`} />
-                                    <div className="relative w-8 h-8 rounded-lg overflow-hidden border-2 border-white/10 group-hover:border-green-400/50 transition-colors shadow-[0_0_15px_rgba(34,197,94,0.2)]">
-                                        {generatedHistory[0].type === 'image' && generatedHistory[0].url ? (
-                                            <img src={generatedHistory[0].url} alt="Recent creation" className="w-full h-full object-cover" />
-                                        ) : (
-                                            <div className="w-full h-full bg-white/5 flex items-center justify-center">
-                                                <Sparkles size={14} className="text-green-400" />
-                                            </div>
-                                        )}
-                                    </div>
-                                    <div className="absolute top-2.5 right-0 min-w-4 h-4 rounded-full bg-green-500 flex items-center justify-center text-[9px] font-bold text-white border-2 border-[#0d1117] px-1 shadow-sm">
-                                        {generatedHistory.length > 99 ? '99+' : generatedHistory.length}
-                                    </div>
-                                </button>
-                            )}
-                        </div>
-                    </motion.div>
-                ) : (
+                {isPanelOpen && (
                     <motion.div
                         key="expanded"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         transition={{ duration: 0.2 }}
-                        className="flex-1 overflow-hidden relative"
+                        className="min-w-0 flex-1 overflow-hidden relative"
                     >
                         {renderContent()}
                     </motion.div>
                 )}
             </AnimatePresence>
+
+            <div
+                className="w-12 shrink-0 flex flex-col items-center py-4 gap-4 border-l border-border/70 bg-card"
+                data-testid="right-panel-rail"
+            >
+                <button
+                    onClick={toggleRightPanel}
+                    className="p-2 hover:bg-white/10 rounded-xl text-gray-400 hover:text-white transition-colors mb-4"
+                    title={isPanelOpen ? 'Collapse Panel' : (canOpenPanel ? 'Expand Panel' : 'Widen the window or collapse the sidebar to open the panel')}
+                    aria-label={isPanelOpen ? 'Collapse Panel' : (canOpenPanel ? 'Expand Panel' : 'Right panel unavailable at this width')}
+                    disabled={!isPanelOpen && !canOpenPanel}
+                >
+                    {isPanelOpen ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+                </button>
+
+                <div className="flex flex-col gap-4 w-full px-2 overflow-y-auto custom-scrollbar flex-1 pb-4">
+                    {tabs.map(({ id, icon: Icon, label }) => {
+                        const isActive = rightPanelTab === id;
+
+                        return (
+                            <button
+                                key={id}
+                                onClick={() => setRightPanelTab(id)}
+                                className={cn(
+                                    "p-2 rounded-xl transition-all flex items-center justify-center relative group shrink-0",
+                                    isActive
+                                        ? "bg-white/10 text-white shadow-[0_0_15px_rgba(255,255,255,0.1)]"
+                                        : "text-gray-400 hover:text-white hover:bg-white/5"
+                                )}
+                                title={label}
+                                aria-label={label}
+                            >
+                                <Icon size={20} />
+                                {isActive && (
+                                    <div className="absolute inset-0 rounded-xl bg-white/5 blur-sm" />
+                                )}
+                            </button>
+                        );
+                    })}
+
+                    {generatedHistory.length > 0 && (
+                        <button
+                            onClick={() => {
+                                acknowledgeCreationsAffordance();
+                                setRightPanelTab('assets');
+                            }}
+                            className="relative mt-auto pt-4 group flex justify-center w-full"
+                            title="View Recent Creations"
+                            aria-label="View Recent Creations"
+                        >
+                            <div className={`absolute inset-0 top-4 bg-green-500/20 blur-xl rounded-full opacity-50 group-hover:opacity-100 transition-opacity ${shouldPulseCreations ? 'animate-pulse' : ''}`} />
+                            <div className="relative w-8 h-8 rounded-lg overflow-hidden border-2 border-white/10 group-hover:border-green-400/50 transition-colors shadow-[0_0_15px_rgba(34,197,94,0.2)]">
+                                {generatedHistory[0].type === 'image' && generatedHistory[0].url ? (
+                                    <img src={generatedHistory[0].url} alt="Recent creation" className="w-full h-full object-cover" />
+                                ) : (
+                                    <div className="w-full h-full bg-white/5 flex items-center justify-center">
+                                        <Sparkles size={14} className="text-green-400" />
+                                    </div>
+                                )}
+                            </div>
+                            <div className="absolute top-2.5 right-0 min-w-4 h-4 rounded-full bg-green-500 flex items-center justify-center text-[9px] font-bold text-white border-2 border-[#0d1117] px-1 shadow-sm">
+                                {generatedHistory.length > 99 ? '99+' : generatedHistory.length}
+                            </div>
+                        </button>
+                    )}
+                </div>
+            </div>
         </motion.aside>
     );
 }

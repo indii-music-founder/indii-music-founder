@@ -145,6 +145,7 @@ describe('RightPanel', () => {
     it('renders collapsed state with tab buttons', () => {
         render(<RightPanel />);
 
+        expect(screen.getByTestId('right-panel-rail')).toBeInTheDocument();
         expect(screen.getByTitle('Expand Panel')).toBeInTheDocument();
         expect(screen.getByTitle('Context Controls')).toBeInTheDocument();
         expect(screen.getByTitle('Project Assets')).toBeInTheDocument();
@@ -241,8 +242,25 @@ describe('RightPanel', () => {
             isRightPanelOpen: true,
         });
         render(<RightPanel />);
+        expect(screen.getByTestId('right-panel-rail')).toBeInTheDocument();
+        expect(screen.getByTitle('Collapse Panel')).toBeInTheDocument();
         expect(screen.getByText('Messages')).toBeInTheDocument();
         expect(screen.getByTestId('batching-status')).toBeInTheDocument();
+    });
+
+    it('switches tabs from the rail without closing an open panel', async () => {
+        (useStore as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
+            ...defaultState,
+            rightPanelTab: 'assets',
+            isRightPanelOpen: true,
+        });
+        render(<RightPanel />);
+        expect(await screen.findByTestId('assets-panel')).toBeInTheDocument();
+
+        fireEvent.click(screen.getByTitle('Omni Agent'));
+
+        expect(mockSetRightPanelTab).toHaveBeenCalledWith('agent');
+        expect(mockToggleRightPanel).not.toHaveBeenCalled();
     });
 
     it('calls toggleRightPanel when close button is clicked in Agent tab', () => {
