@@ -33,7 +33,7 @@ fs.mkdirSync(OUTPUT_DIR, { recursive: true });
 
 // Approved models per user rules
 const IMAGE_MODEL = 'gemini-3-pro-image-preview';
-const VIDEO_MODEL = 'veo-3.1-generate-preview';
+const VIDEO_MODEL = 'veo-3.1-generate-001';
 
 function log(emoji: string, msg: string) {
     const ts = new Date().toISOString().split('T')[1]?.split('.')[0];

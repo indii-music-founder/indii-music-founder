@@ -60,14 +60,14 @@ describe('ModelPricing', () => {
 
     describe('estimateCostUsd — video models', () => {
         it('charges per second of generated footage', () => {
-            const cost = estimateCostUsd('veo-3.1-generate-preview', { seconds: 8 });
+            const cost = estimateCostUsd('veo-3.1-generate-001', { seconds: 8 });
             expect(cost).toBeCloseTo(8 * 0.40, 6);
         });
 
         it('fast/lite tiers cost less than pro', () => {
-            const pro = estimateCostUsd('veo-3.1-generate-preview', { seconds: 8 });
-            const fast = estimateCostUsd('veo-3.1-fast-generate-preview', { seconds: 8 });
-            const lite = estimateCostUsd('veo-3.1-lite-generate-preview', { seconds: 8 });
+            const pro = estimateCostUsd('veo-3.1-generate-001', { seconds: 8 });
+            const fast = estimateCostUsd('veo-3.1-fast-generate-001', { seconds: 8 });
+            const lite = estimateCostUsd('veo-3.1-lite-generate-001', { seconds: 8 });
             expect(fast).toBeLessThan(pro);
             expect(lite).toBeLessThan(fast);
         });

@@ -37,11 +37,9 @@ vi.mock('@/services/video/VideoGenerationService', () => ({
     }
 }));
 
-const mockBatchEditVideo = vi.fn();
-vi.mock('@/services/image/EditingService', () => ({
-    Editing: {
-        batchEditVideo: (...args: any[]) => mockBatchEditVideo(...args)
-    }
+const mockRemixVideo = vi.fn();
+vi.mock('@/services/video/VideoRemixService', () => ({
+    remixVideo: (...args: any[]) => mockRemixVideo(...args)
 }));
 
 const mockGenerateMotionBrush = vi.fn();
@@ -240,7 +238,7 @@ describe('VideoTools', () => {
     describe('batch_edit_videos', () => {
         it('should batch edit videos with valid indices', async () => {
             const mockResults = [{ id: 'res-1', url: 'http://res.url', prompt: 'edit' }];
-            mockBatchEditVideo.mockResolvedValue(mockResults);
+            mockRemixVideo.mockResolvedValue(mockResults[0]);
 
             const args = {
                 prompt: 'Add sparkles',
@@ -249,7 +247,7 @@ describe('VideoTools', () => {
 
             const result = await VideoTools.batch_edit_videos(args);
 
-            expect(mockBatchEditVideo).toHaveBeenCalled();
+            expect(mockRemixVideo).toHaveBeenCalledWith('data:video/mp4;base64,vid1', 'Add sparkles');
             expect(result.success).toBe(true);
             expect(result.data.processedCount).toBe(1);
         });

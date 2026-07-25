@@ -55,7 +55,7 @@ try {
         jobId: `first-last-video-${Date.now()}`, // Added jobId
         orgId: "nana-banana-test", // Added orgId
         prompt: "Smooth cinematic transition between frames, natural fluid motion, professional quality",
-        model: "veo-3.1-fast-generate-preview",
+        model: "veo-3.1-fast-generate-001",
         image: {
             mimeType: 'image/png',
             imageBytes: firstFrame.split(',')[1]

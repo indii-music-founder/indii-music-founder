@@ -88,6 +88,17 @@ describe('parseRemoteCommand — structured commands (allowlist)', () => {
     expect(parseRemoteCommand('[GENERATE_IMAGE]   ').kind).toBe('rejected');
   });
 
+  it('parses video generation with a prompt', () => {
+    expect(parseRemoteCommand('[GENERATE_VIDEO] a cinematic performance clip')).toEqual({
+      kind: 'generate_video',
+      prompt: 'a cinematic performance clip',
+    });
+  });
+
+  it('rejects video generation with no prompt', () => {
+    expect(parseRemoteCommand('[GENERATE_VIDEO]   ').kind).toBe('rejected');
+  });
+
   it('parses an agent action with a payload', () => {
     expect(parseRemoteCommand('[AGENT_ACTION] run-release-checklist')).toEqual({
       kind: 'agent_action',

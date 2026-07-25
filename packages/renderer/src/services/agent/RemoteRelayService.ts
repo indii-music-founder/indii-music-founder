@@ -75,6 +75,7 @@ export interface RemoteResponse {
     text: string;
     agentId?: string;
     imageUrls?: string[];
+    videoUrls?: string[];
     isFinal?: boolean;
     timestamp: Timestamp | ReturnType<typeof serverTimestamp>;
     isStreaming: boolean;
@@ -89,6 +90,7 @@ export function serializeRemoteResponse(input: {
     agentId?: string;
     isStreaming?: boolean;
     imageUrls?: string[];
+    videoUrls?: string[];
     boardroomMessageId?: string;
 }): Omit<RemoteResponse, 'timestamp'> {
     const isStreaming = input.isStreaming === true;
@@ -99,6 +101,7 @@ export function serializeRemoteResponse(input: {
         isFinal: !isStreaming,
         ...(input.agentId ? { agentId: input.agentId } : {}),
         ...(input.imageUrls?.length ? { imageUrls: input.imageUrls } : {}),
+        ...(input.videoUrls?.length ? { videoUrls: input.videoUrls } : {}),
         ...(input.boardroomMessageId ? { boardroomMessageId: input.boardroomMessageId } : {}),
     };
 }
@@ -962,9 +965,10 @@ class RemoteRelayService {
         agentId?: string,
         isStreaming = false,
         imageUrls?: string[],
-        boardroomMessageId?: string
+        boardroomMessageId?: string,
+        videoUrls?: string[]
     ): Promise<void> {
-        const response = serializeRemoteResponse({ commandId, text, agentId, isStreaming, imageUrls, boardroomMessageId });
+        const response = serializeRemoteResponse({ commandId, text, agentId, isStreaming, imageUrls, videoUrls, boardroomMessageId });
 
         // P2P Local WebSocket broadcast fallback
         const api = window.electronAPI;
@@ -985,7 +989,7 @@ class RemoteRelayService {
         // unconditionally like boardroomMessageId previously was.
         const { studioExecutorLeaseService } = await import('./StudioExecutorLeaseService');
         await studioExecutorLeaseService.publishResponse(response);
-        logger.info(`[RemoteRelay] 🖥️ Response sent for command ${commandId} (${text.length} chars, ${imageUrls?.length || 0} images)`);
+        logger.info(`[RemoteRelay] 🖥️ Response sent for command ${commandId} (${text.length} chars, ${imageUrls?.length || 0} images, ${videoUrls?.length || 0} videos)`);
     }
 
     /**

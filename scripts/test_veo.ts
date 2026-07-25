@@ -15,7 +15,7 @@ async function run() {
   
   try {
     let operation = await ai.models.generateVideos({
-      model: 'veo-3.1-generate-preview',
+      model: 'veo-3.1-generate-001',
       prompt: 'A neon cyberpunk city with flying cars.',
       config: {
         aspectRatio: '16:9'

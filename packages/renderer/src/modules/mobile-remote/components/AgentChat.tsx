@@ -42,6 +42,7 @@ interface ChatMessage {
     role: 'user' | 'model';
     text: string;
     imageUrls?: string[];
+    videoUrls?: string[];
     timestamp: number;
     agentId?: string;
     isStreaming?: boolean;
@@ -264,6 +265,7 @@ export default function AgentChat({ onSendCommand: _onSendCommand, isPaired }: A
                 role: 'model',
                 text: res.text,
                 imageUrls: res.imageUrls,
+                videoUrls: res.videoUrls,
                 timestamp: ts,
                 agentId: res.agentId,
                 isStreaming: res.isStreaming,
@@ -469,6 +471,16 @@ export default function AgentChat({ onSendCommand: _onSendCommand, isPaired }: A
                                             ))}
                                         </div>
                                     )}
+                                    {msg.videoUrls?.map((url, videoIdx) => (
+                                        <video
+                                            key={`${msg.id}-video-${videoIdx}`}
+                                            src={url}
+                                            controls
+                                            playsInline
+                                            preload="metadata"
+                                            className="mt-3 w-full rounded-2xl border border-white/10 bg-black"
+                                        />
+                                    ))}
                                     {msg.isStreaming && (
                                         <span className="inline-block w-1.5 h-3 bg-blue-400/60 animate-pulse ml-1 align-middle" />
                                     )}

@@ -44,7 +44,7 @@ async function processJob(jobId: string, data: any) {
         const accessToken = await client.getAccessToken();
 
         console.log(`[Worker] Using Project ID: ${projectId}`);
-        const modelId = "veo-3.1-fast-generate-preview";
+        const modelId = "veo-3.1-fast-generate-001";
         const location = process.env.VERTEX_VIDEO_LOCATION || process.env.VERTEX_LOCATION || "us-central1";
         const endpoint = `${getVertexAIBaseUrl(location)}/v1/projects/${projectId}/locations/${location}/publishers/google/models/${modelId}:predictLongRunning`;
 

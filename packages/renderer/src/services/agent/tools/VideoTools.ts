@@ -1,5 +1,4 @@
 
-import { Editing } from '@/services/image/EditingService';
 import { VideoGeneration } from '@/services/video/VideoGenerationService';
 import { VideoGenerationOptions } from '@/modules/creative/video/schemas';
 import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
@@ -213,30 +212,18 @@ export const VideoTools = {
             return toolError("No valid videos found for the provided indices.", 'INVALID_INDEX');
         }
 
-        const videoDataList = targetVideos.map(vid => {
-            const match = vid!.url.match(/^data:(.+);base64,(.+)$/);
-            if (match) {
-                return { mimeType: match[1]!, data: match[2]! };
-            }
-            return null;
-        }).filter(vid => vid !== null) as { mimeType: string; data: string }[];
-
-        if (videoDataList.length === 0) {
-            return toolError("Could not process video data from uploads. Ensure they are valid data URIs.", 'PROCESSING_FAILED');
+        const { remixVideo } = await importWithRetry(() => import('@/services/video/VideoRemixService'));
+        const results = [];
+        for (let index = 0; index < targetVideos.length; index += 1) {
+            useStore.getState().addAgentMessage({
+                id: crypto.randomUUID(),
+                role: 'system',
+                text: `Processing video ${index + 1} of ${targetVideos.length}...`,
+                timestamp: Date.now()
+            });
+            const video = targetVideos[index]!;
+            results.push(await remixVideo(video.storageUri || video.url, args.prompt));
         }
-
-        const results = await Editing.batchEditVideo({
-            videos: videoDataList,
-            prompt: args.prompt,
-            onProgress: (current, total) => {
-                useStore.getState().addAgentMessage({
-                    id: crypto.randomUUID(),
-                    role: 'system',
-                    text: `Processing video ${current} of ${total}...`,
-                    timestamp: Date.now()
-                });
-            }
-        });
 
         if (results.length > 0) {
             results.forEach(res => {

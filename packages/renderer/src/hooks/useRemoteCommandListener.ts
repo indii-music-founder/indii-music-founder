@@ -660,6 +660,48 @@ function useFirestoreRelay(enabled: boolean) {
                 return;
             }
 
+            if (parsed.kind === 'generate_video') {
+                const videoPrompt = parsed.prompt;
+                const aspectRatio = command.metadata?.aspectRatio === '9:16' ? '9:16' : '16:9';
+                const requestedDuration = Number(command.metadata?.durationSeconds ?? 8);
+                const duration = [4, 6, 8].includes(requestedDuration) ? requestedDuration : 8;
+
+                logger.info(`[RemoteRelay/Firestore] 🎬 Video generation: "${videoPrompt}" (${aspectRatio}, ${duration}s)`);
+                writeDiagnostic('video_generation_started', { prompt: videoPrompt.substring(0, 50), aspectRatio, duration });
+                await remoteRelayService.sendResponse(command.id, '🎬 Generating video on desktop…', undefined, true);
+
+                const { VideoGeneration } = await import('@/services/video/VideoGenerationService');
+                const results = await VideoGeneration.generateVideo({
+                    prompt: videoPrompt,
+                    aspectRatio,
+                    duration,
+                    model: 'fast',
+                });
+
+                if (results.length > 0) {
+                    const completed = results[0]!.url
+                        ? { videoUrl: results[0]!.url }
+                        : await VideoGeneration.waitForJob(results[0]!.id);
+                    const videoUrl = completed.videoUrl || '';
+                    if (!videoUrl) throw new Error('Video generation completed without an output URL.');
+                    await remoteRelayService.sendResponse(
+                        command.id,
+                        '✅ Generated video.',
+                        'creative',
+                        false,
+                        undefined,
+                        undefined,
+                        [videoUrl],
+                    );
+                    writeDiagnostic('video_generation_done', { jobId: results[0]!.id });
+                } else {
+                    await remoteRelayService.sendResponse(command.id, 'ERROR: Video generation returned no result.', undefined, false);
+                }
+
+                await remoteRelayService.markCommandCompleted(command.id);
+                return;
+            }
+
             // ─── Show Me Route (on-demand visual return channel) ──────────────────────────────
             // ISSUE-REMOTE-SHOW-20260622 Phase 1: surface the most recent visual artifact on the
             // phone by reusing the same imageUrls channel that [GENERATE_IMAGE] already uses.

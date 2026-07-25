@@ -1012,9 +1012,9 @@ function CostEstimatorWidget() {
     const [count, setCount] = useState<number>(4);
 
     const videoCost = (() => {
-        if (tier === 'pro') return duration * MODEL_PRICING['veo-3.1-generate-preview'].perSecond;
-        if (tier === 'fast') return duration * MODEL_PRICING['veo-3.1-fast-generate-preview'].perSecond;
-        return duration * MODEL_PRICING['veo-3.1-lite-generate-preview'].perSecond;
+        if (tier === 'pro') return duration * MODEL_PRICING['veo-3.1-generate-001'].perSecond;
+        if (tier === 'fast') return duration * MODEL_PRICING['veo-3.1-fast-generate-001'].perSecond;
+        return duration * MODEL_PRICING['veo-3.1-lite-generate-001'].perSecond;
     })();
 
     const imageCost = (() => {

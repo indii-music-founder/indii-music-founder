@@ -18,6 +18,7 @@ import { isValidModule, type ModuleId } from '@/core/constants';
 /** Structured command prefixes the desktop is willing to act on. */
 export const ALLOWED_COMMAND_PREFIXES = [
   '[GENERATE_IMAGE]',
+  '[GENERATE_VIDEO]',
   '[NAVIGATE]',
   '[AGENT_ACTION]',
   '[DAW_CONTROL]',
@@ -32,6 +33,7 @@ export type ParsedRemoteCommand =
   | { kind: 'chat'; text: string }
   | { kind: 'navigate'; module: ModuleId }
   | { kind: 'generate_image'; prompt: string }
+  | { kind: 'generate_video'; prompt: string }
   | { kind: 'agent_action'; action: string }
   | { kind: 'daw_control'; action: string }
   | { kind: 'media_playback'; action: string }
@@ -80,6 +82,10 @@ export function parseRemoteCommand(rawText: string | undefined | null): ParsedRe
     case '[GENERATE_IMAGE]': {
       if (!payload) return { kind: 'rejected', reason: 'image prompt is empty' };
       return { kind: 'generate_image', prompt: payload };
+    }
+    case '[GENERATE_VIDEO]': {
+      if (!payload) return { kind: 'rejected', reason: 'video prompt is empty' };
+      return { kind: 'generate_video', prompt: payload };
     }
     case '[AGENT_ACTION]': {
       if (!payload) return { kind: 'rejected', reason: 'agent action is empty' };

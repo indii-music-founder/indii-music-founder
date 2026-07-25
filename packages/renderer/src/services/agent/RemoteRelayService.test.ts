@@ -54,9 +54,9 @@ describe('serializeRemoteResponse (ISSUE-981)', () => {
     });
 
     it('preserves optional response metadata and marks streaming responses non-final', () => {
-        expect(serializeRemoteResponse({ commandId: 'c2', text: 'working', isStreaming: true, agentId: 'brand', imageUrls: ['https://x/image.png'], boardroomMessageId: 'm1' })).toEqual({
+        expect(serializeRemoteResponse({ commandId: 'c2', text: 'working', isStreaming: true, agentId: 'brand', imageUrls: ['https://x/image.png'], videoUrls: ['https://x/video.mp4'], boardroomMessageId: 'm1' })).toEqual({
             commandId: 'c2', text: 'working', isStreaming: true, isFinal: false,
-            agentId: 'brand', imageUrls: ['https://x/image.png'], boardroomMessageId: 'm1',
+            agentId: 'brand', imageUrls: ['https://x/image.png'], videoUrls: ['https://x/video.mp4'], boardroomMessageId: 'm1',
         });
     });
 });
