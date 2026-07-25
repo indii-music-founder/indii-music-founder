@@ -5,14 +5,14 @@
 ```mermaid
 flowchart TD
     subgraph Ingestion["ISSUE-1175: Ingestion & Edit Proxy"]
-        A[Raw iPhone Video / Audio] --> B[Resumable Private Upload]
+        A["Raw iPhone Video / Audio"] --> B["Resumable Private Upload"]
         B --> C[720p H.264/AAC CFR Proxy + Microsecond Time Map]
         C --> D[Guide Audio + Waveform + Metadata]
     end
 
     subgraph Sync["ISSUE-1176: Master Audio Alignment"]
         D --> E[Multi-Window DSP Alignment Worker]
-        Master[Immutable Canonical Master WAV/FLAC] --> E
+        Master["Immutable Canonical Master WAV/FLAC"] --> E
         E --> F[MasterSyncAlignment Receipt: Confidence, Drift, Anchors]
     end
 
@@ -45,7 +45,7 @@ flowchart TD
     end
 ```
 
-## Execution Sequence & Contract Guards
+## Step-by-Step Transition Breakdown
 
 1. **ISSUE-1175 (Ingestion & Proxy)**: Establishes `CanonicalMediaRef`, `VideoSession`, and `ProxyManifest`.
 2. **ISSUE-1176 (Master Alignment)**: Establishes `MasterSyncAlignment` anchored to `MasterTimingProfile`.
