@@ -323,7 +323,7 @@ export const createAppSlice: StateCreator<AppSlice> = (set, get) => ({
     apiKeyError: false,
     setApiKeyError: (error) => set({ apiKeyError: error }),
     isSidebarOpen: typeof window !== 'undefined' ? localStorage.getItem('indii_sidebarOpen') !== 'false' : true,
-    isRightPanelOpen: false,
+    isRightPanelOpen: typeof window !== 'undefined' ? localStorage.getItem('indii_rightPanelOpen') === 'true' : false,
     rightPanelTab: 'context',
     toggleSidebar: () => {
         const now = Date.now();
@@ -346,9 +346,18 @@ export const createAppSlice: StateCreator<AppSlice> = (set, get) => ({
         if (state._lastRightPanelToggle && now - state._lastRightPanelToggle < 100) {
             return; // Ignore rapid-fire toggles
         }
-        set({ isRightPanelOpen: !state.isRightPanelOpen, _lastRightPanelToggle: now });
+        const newState = !state.isRightPanelOpen;
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('indii_rightPanelOpen', String(newState));
+        }
+        set({ isRightPanelOpen: newState, _lastRightPanelToggle: now });
     },
-    setRightPanelTab: (tab) => set({ rightPanelTab: tab, isRightPanelOpen: true }),
+    setRightPanelTab: (tab) => {
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('indii_rightPanelOpen', 'true');
+        }
+        set({ rightPanelTab: tab, isRightPanelOpen: true });
+    },
     isCommandMenuOpen: false,
     setCommandMenuOpen: (open) => set({ isCommandMenuOpen: open }),
 });

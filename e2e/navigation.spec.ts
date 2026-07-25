@@ -43,6 +43,10 @@ test.describe('Sidebar Navigation', () => {
             return;
         }
 
+        // Navigation groups intentionally start collapsed. Open one so an item
+        // can verify that collapsing and expanding the whole sidebar preserves it.
+        await page.getByRole('button', { name: "Manager's Office" }).click();
+
         // Record initial sidebar width or presence
         const sidebar = page.locator('[data-testid^="nav-item-"]').first();
         await expect(sidebar).toBeVisible();

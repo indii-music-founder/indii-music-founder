@@ -7,6 +7,7 @@ describe('appSlice', () => {
 
     beforeEach(() => {
         vi.useFakeTimers();
+        localStorage.clear();
         useStore = create<AppSlice>((...args) => ({
             ...createAppSlice(...args),
         }));
@@ -60,7 +61,26 @@ describe('appSlice', () => {
             useStore.getState().toggleRightPanel();
 
             expect(useStore.getState().isRightPanelOpen).toBe(true);
+            expect(localStorage.getItem('indii_rightPanelOpen')).toBe('true');
             expect(useStore.getState()._lastRightPanelToggle).toBeDefined();
+        });
+
+        it('should restore the saved right panel state', () => {
+            localStorage.setItem('indii_rightPanelOpen', 'true');
+
+            const restoredStore = create<AppSlice>((...args) => ({
+                ...createAppSlice(...args),
+            }));
+
+            expect(restoredStore.getState().isRightPanelOpen).toBe(true);
+        });
+
+        it('should persist opening the panel from a tab shortcut', () => {
+            useStore.getState().setRightPanelTab('assets');
+
+            expect(useStore.getState().isRightPanelOpen).toBe(true);
+            expect(useStore.getState().rightPanelTab).toBe('assets');
+            expect(localStorage.getItem('indii_rightPanelOpen')).toBe('true');
         });
 
         it('should debounce rapid toggles', () => {
