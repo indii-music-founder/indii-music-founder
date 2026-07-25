@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import re
 import uuid
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
@@ -73,11 +74,16 @@ class VideoProxyRequest(BaseModel):
     job_id: str = Field(alias="jobId", min_length=1, max_length=500)
 
     @model_validator(mode="after")
-    def validate_bucket(self) -> "VideoProxyRequest":
-        import re
-
+    def validate_storage_identity(self) -> "VideoProxyRequest":
         if not re.fullmatch(BUCKET_PATTERN, self.bucket):
             raise ValueError("bucket is invalid")
+        expected_path = re.escape(
+            f"session-media/{self.owner_uid}/{self.session_id}/original/{self.sha256}"
+        )
+        if not re.fullmatch(rf"{expected_path}\.(?:mp4|mov|webm|m4v)", self.path):
+            raise ValueError(
+                "path must identify this owner's immutable original for this session and SHA-256"
+            )
         return self
 
 
@@ -88,12 +94,24 @@ class ProxyClaim:
     lease_id: str | None
     cached_manifest: dict[str, Any] | None
     cached_failure: dict[str, Any] | None
+    original_ref: dict[str, Any] | None = None
 
 
 def _iso(moment: datetime) -> str:
     """UTC, `Z`-suffixed — the shared Zod schemas' `z.string().datetime()`
     defaults to requiring the literal `Z`, not a `+00:00` offset."""
     return moment.astimezone(UTC).isoformat(timespec="milliseconds").replace("+00:00", "Z")
+
+
+def _as_datetime(value: Any) -> datetime | None:
+    if isinstance(value, datetime):
+        return value
+    if isinstance(value, str):
+        try:
+            return datetime.fromisoformat(value.replace("Z", "+00:00"))
+        except ValueError:
+            return None
+    return None
 
 
 def _deterministic_id(prefix: str, *parts: str) -> str:
@@ -139,24 +157,65 @@ class FirestoreVideoSessionProxyStore:
                 raise SessionNotFound(f"Video session {request.session_id} does not exist")
             session = snapshot.to_dict() or {}
             proxy_job = session.get("proxyJob") or {}
+            original = session.get("original") or {}
 
             if proxy_job.get("jobId") != request.job_id:
                 raise ProxyJobConflict(
                     "This request's jobId does not match the session's dispatched proxy job"
                 )
 
+            expected_session_identity = {
+                "ownerUid": request.owner_uid,
+                "organizationId": request.organization_id,
+                "projectId": request.project_id,
+            }
+            for field, expected in expected_session_identity.items():
+                if session.get(field) != expected:
+                    raise ProxyJobConflict(
+                        f"This request's {field} does not match the persisted video session"
+                    )
+
+            expected_original_identity = {
+                "ownerUid": request.owner_uid,
+                "organizationId": request.organization_id,
+                "projectId": request.project_id,
+                "bucket": request.bucket,
+                "path": request.path,
+                "generation": request.generation,
+                "sha256": request.sha256,
+                "mimeType": request.mime_type,
+                "byteSize": request.byte_size,
+            }
+            for field, expected in expected_original_identity.items():
+                if original.get(field) != expected:
+                    raise ProxyJobConflict(
+                        f"This request's original {field} does not match the immutable receipt"
+                    )
+            if (
+                proxy_job.get("originalGeneration") != request.generation
+                or proxy_job.get("originalSha256") != request.sha256
+            ):
+                raise ProxyJobConflict(
+                    "This request does not match the original identity bound to the proxy job"
+                )
+
             status = session.get("status")
 
             if status == "completed":
                 manifest = session.get("proxyManifest")
-                original = manifest.get("original") if manifest else None
+                manifested_original = manifest.get("original") if manifest else None
                 if (
                     manifest
-                    and original
-                    and original.get("generation") == request.generation
-                    and original.get("sha256") == request.sha256
+                    and manifested_original
+                    and manifested_original.get("generation") == request.generation
+                    and manifested_original.get("sha256") == request.sha256
                 ):
-                    return ProxyClaim(lease_id=None, cached_manifest=manifest, cached_failure=None)
+                    return ProxyClaim(
+                        lease_id=None,
+                        cached_manifest=manifest,
+                        cached_failure=None,
+                        original_ref=original,
+                    )
                 # Completed for a DIFFERENT original than this request claims —
                 # a foreign/stale delivery slipping past the jobId check above
                 # would be a real identity confusion; fail closed rather than
@@ -169,13 +228,25 @@ class FirestoreVideoSessionProxyStore:
                 # Permanently done. Returning the cached failure (rather than
                 # reprocessing) is what stops Cloud Tasks from retrying a job
                 # that can never succeed.
-                return ProxyClaim(lease_id=None, cached_manifest=None, cached_failure=session.get("failure"))
+                return ProxyClaim(
+                    lease_id=None,
+                    cached_manifest=None,
+                    cached_failure=session.get("failure"),
+                    original_ref=original,
+                )
 
-            lease_expires_raw = proxy_job.get("leaseExpiresAt")
+            if status == "cancelled":
+                raise ProxyJobConflict("A cancelled video session cannot be claimed for processing")
+            if status not in ("uploaded", "processing"):
+                raise ProxyJobConflict(f"Video session status {status!r} cannot be claimed for processing")
+            if proxy_job.get("status") not in ("dispatching", "queued"):
+                raise ProxyJobConflict("The persisted proxy job is not dispatchable")
+
+            lease_expires = _as_datetime(proxy_job.get("leaseExpiresAt"))
             lease_active = (
                 status == "processing"
-                and isinstance(lease_expires_raw, datetime)
-                and lease_expires_raw > now
+                and lease_expires is not None
+                and lease_expires > now
             )
             if lease_active:
                 raise ProxyJobInProgress("A proxy job attempt is already in progress for this session")
@@ -183,10 +254,15 @@ class FirestoreVideoSessionProxyStore:
             active_transaction.update(reference, {
                 "status": "processing",
                 "proxyJob.leaseId": lease_id,
-                "proxyJob.leaseExpiresAt": now + LEASE_DURATION,
+                "proxyJob.leaseExpiresAt": _iso(now + LEASE_DURATION),
                 "updatedAt": _iso(now),
             })
-            return ProxyClaim(lease_id=lease_id, cached_manifest=None, cached_failure=None)
+            return ProxyClaim(
+                lease_id=lease_id,
+                cached_manifest=None,
+                cached_failure=None,
+                original_ref=original,
+            )
 
         return claim_in_transaction(transaction)
 
@@ -201,12 +277,12 @@ class FirestoreVideoSessionProxyStore:
             snapshot = reference.get(transaction=active_transaction)
             session = snapshot.to_dict() or {} if snapshot.exists else {}
             proxy_job = session.get("proxyJob") or {}
-            if proxy_job.get("leaseId") != lease_id:
+            if session.get("status") != "processing" or proxy_job.get("leaseId") != lease_id:
                 # A newer attempt already took over (our lease expired and was
                 # reclaimed) or the session moved on some other way. Writing
                 # this manifest now would race a newer attempt's own write —
                 # discard silently rather than clobber it.
-                return {"discarded": True}
+                return {"discarded": True, "terminalStatus": session.get("status")}
 
             active_transaction.update(reference, {
                 "status": "completed",
@@ -232,7 +308,7 @@ class FirestoreVideoSessionProxyStore:
             snapshot = reference.get(transaction=active_transaction)
             session = snapshot.to_dict() or {} if snapshot.exists else {}
             proxy_job = session.get("proxyJob") or {}
-            if proxy_job.get("leaseId") != lease_id:
+            if session.get("status") != "processing" or proxy_job.get("leaseId") != lease_id:
                 return
 
             active_transaction.update(reference, {
@@ -361,6 +437,30 @@ class DerivedMediaStore:
             ref["atUs"] = at_us
         return ref
 
+    def delete(
+        self,
+        ref: dict[str, Any],
+        *,
+        owner_uid: str,
+        session_id: str,
+        job_id: str,
+    ) -> None:
+        expected_prefix = f"session-media/{owner_uid}/{session_id}/proxy/{job_id}/"
+        if (
+            ref.get("bucket") != self._bucket
+            or not isinstance(ref.get("path"), str)
+            or not ref["path"].startswith(expected_prefix)
+            or not re.fullmatch(GENERATION_PATTERN, str(ref.get("generation", "")))
+        ):
+            raise OriginalVerificationFailed("Refusing to delete a malformed derived object identity")
+        try:
+            self._client.bucket(self._bucket).blob(ref["path"]).delete(
+                if_generation_match=int(ref["generation"]),
+            )
+        except Exception as error:
+            if int(getattr(error, "code", 0) or 0) != 404:
+                raise
+
 
 def _canonical_ref(base: dict[str, Any], role: str, organization_id: str, project_id: str) -> dict[str, Any]:
     return {
@@ -406,6 +506,9 @@ class VideoSessionProxyPipeline:
 
         lease_id = claim.lease_id
         assert lease_id is not None  # claim() always returns exactly one of these three
+        original_ref = claim.original_ref
+        if original_ref is None:
+            raise ProxyJobConflict("The proxy claim did not return the persisted original receipt")
 
         try:
             original_path = self._originals.download_verified(request, work_directory)
@@ -459,24 +562,13 @@ class VideoSessionProxyPipeline:
                 )
                 for thumbnail in result["thumbnails"]
             ]
-
-            original_ref = {
-                "schemaVersion": "canonical-media-ref.v1",
-                "role": "original",
-                "ownerUid": request.owner_uid,
-                "organizationId": organization_id,
-                "projectId": project_id,
-                "bucket": request.bucket,
-                "path": request.path,
-                "generation": request.generation,
-                "sha256": request.sha256,
-                "mimeType": request.mime_type,
-                "byteSize": request.byte_size,
-                "createdAt": _iso(datetime.now(UTC)),
-                "creationReceiptId": _deterministic_id(
-                    "original", request.bucket, request.path, request.generation, request.sha256,
-                ),
-            }
+            uploaded_refs = [
+                proxy_ref,
+                guide_ref,
+                waveform_ref,
+                contact_sheet_ref,
+                *thumbnail_refs,
+            ]
 
             manifest = {
                 "schemaVersion": "proxy-manifest.v1",
@@ -511,11 +603,22 @@ class VideoSessionProxyPipeline:
 
         outcome = self._sessions.complete(request, lease_id, manifest)
         if outcome.get("discarded"):
-            # A newer attempt already completed this job while we were working
-            # (our lease expired and was reclaimed) — its manifest is
-            # authoritative, not ours. Report our own result honestly; the
-            # session document itself already reflects the other attempt.
-            return {"status": "completed", "reused": True, "manifest": manifest, "superseded": True}
+            if outcome.get("terminalStatus") == "cancelled":
+                for ref in uploaded_refs:
+                    self._derived.delete(
+                        ref,
+                        owner_uid=request.owner_uid,
+                        session_id=request.session_id,
+                        job_id=request.job_id,
+                    )
+            # Cancellation or a newer lease won while we were working. The
+            # session document is authoritative; never report our uncommitted
+            # manifest as completed.
+            return {
+                "status": "discarded",
+                "reused": True,
+                "terminalStatus": outcome.get("terminalStatus"),
+            }
         return {"status": "completed", "reused": False, "manifest": manifest}
 
 

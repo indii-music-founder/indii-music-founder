@@ -1,0 +1,8 @@
+.gcloudignore
+.git
+.gitignore
+.pytest_cache/
+__pycache__/
+*.py[cod]
+test_*.py
+venv/

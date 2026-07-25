@@ -69,6 +69,80 @@ class TranscodeFixtureTests(unittest.TestCase):
             waveform = json.loads(Path(result["artifacts"]["waveform"]["path"]).read_text())
             self.assertTrue(waveform["peaks"])
 
+    def test_real_rotated_vfr_hevc_hdr_fixture_becomes_oriented_sdr_cfr_with_three_point_pts_evidence(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            base = root / "base-hevc-hdr-vfr.mp4"
+            source = root / "rotated-hevc-hdr-vfr.mp4"
+            output = root / "output"
+            subprocess.run([
+                shutil.which("ffmpeg"), "-y", "-v", "error",
+                "-f", "lavfi", "-i", "testsrc2=size=320x180:rate=15:duration=1",
+                "-f", "lavfi", "-i", "testsrc2=size=320x180:rate=24:duration=1",
+                "-f", "lavfi", "-i", "sine=frequency=660:sample_rate=48000:duration=2",
+                "-filter_complex",
+                "[0:v]settb=AVTB[v0];[1:v]settb=AVTB[v1];[v0][v1]concat=n=2:v=1:a=0[v]",
+                "-map", "[v]", "-map", "2:a", "-fps_mode", "vfr",
+                "-c:v", "libx265",
+                "-x265-params",
+                "log-level=error:colorprim=bt2020:transfer=smpte2084:colormatrix=bt2020nc",
+                "-pix_fmt", "yuv420p10le",
+                "-color_primaries", "bt2020",
+                "-color_trc", "smpte2084",
+                "-colorspace", "bt2020nc",
+                "-c:a", "aac", "-shortest", str(base),
+            ], check=True)
+            # A display matrix is how phone containers commonly carry
+            # orientation; remux without touching the encoded HEVC bytes.
+            subprocess.run([
+                shutil.which("ffmpeg"), "-y", "-v", "error",
+                "-display_rotation", "90", "-i", str(base),
+                "-c", "copy", str(source),
+            ], check=True)
+
+            result = transcode_session_media(
+                source, output, shutil.which("ffmpeg"), shutil.which("ffprobe"),
+            )
+            inspection = result["inspection"]
+            self.assertEqual(inspection["sourceVideoCodec"], "hevc")
+            self.assertEqual(inspection["sourceRotationDegrees"], 90)
+            self.assertEqual(inspection["sourceFrameRateMode"], "variable")
+            self.assertTrue(inspection["sourceHdr"])
+            self.assertEqual(inspection["proxyVideoCodec"], "h264")
+            self.assertEqual(inspection["proxyColorSpace"], "rec709")
+            self.assertEqual(
+                (inspection["proxyFrameRateNumerator"], inspection["proxyFrameRateDenominator"]),
+                (30, 1),
+            )
+            self.assertGreater(inspection["proxyHeight"], inspection["proxyWidth"])
+            self.assertTrue(inspection["orientationBakedIn"])
+
+            segments = result["timeMap"]["segments"]
+            self.assertGreaterEqual(len(segments), 3)
+
+            def mapped_original(proxy_us: int) -> int:
+                segment = next(
+                    item for item in segments
+                    if item["proxyStartUs"] <= proxy_us <= item["proxyEndUs"]
+                )
+                proxy_span = segment["proxyEndUs"] - segment["proxyStartUs"]
+                original_span = segment["originalEndUs"] - segment["originalStartUs"]
+                return round(
+                    segment["originalStartUs"]
+                    + ((proxy_us - segment["proxyStartUs"]) / proxy_span) * original_span
+                )
+
+            proxy_duration = inspection["proxyDurationUs"]
+            original_duration = inspection["originalDurationUs"]
+            for fraction in (0.0, 0.5, 1.0):
+                proxy_us = round(proxy_duration * fraction)
+                expected_original_us = round(original_duration * fraction)
+                self.assertLessEqual(
+                    abs(mapped_original(proxy_us) - expected_original_us),
+                    33_334,
+                    f"presentation mapping drifted at {fraction:.0%}",
+                )
+
 
 if __name__ == "__main__":
     unittest.main()

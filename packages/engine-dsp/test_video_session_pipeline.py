@@ -49,6 +49,42 @@ def make_request(**overrides) -> VideoProxyRequest:
     return VideoProxyRequest.model_validate({**REQUEST_DATA, **overrides})
 
 
+def original_receipt(**overrides) -> dict:
+    return {
+        "schemaVersion": "canonical-media-ref.v1",
+        "role": "original",
+        "ownerUid": REQUEST_DATA["ownerUid"],
+        "organizationId": REQUEST_DATA["organizationId"],
+        "projectId": REQUEST_DATA["projectId"],
+        "bucket": REQUEST_DATA["bucket"],
+        "path": REQUEST_DATA["path"],
+        "generation": REQUEST_DATA["generation"],
+        "sha256": REQUEST_DATA["sha256"],
+        "mimeType": REQUEST_DATA["mimeType"],
+        "byteSize": REQUEST_DATA["byteSize"],
+        "createdAt": "2026-07-23T00:00:00.000Z",
+        "creationReceiptId": "original-receipt-1",
+        **overrides,
+    }
+
+
+def persisted_session(**overrides) -> dict:
+    return {
+        "status": "uploaded",
+        "ownerUid": REQUEST_DATA["ownerUid"],
+        "organizationId": REQUEST_DATA["organizationId"],
+        "projectId": REQUEST_DATA["projectId"],
+        "original": original_receipt(),
+        "proxyJob": {
+            "jobId": JOB_ID,
+            "status": "queued",
+            "originalGeneration": REQUEST_DATA["generation"],
+            "originalSha256": REQUEST_DATA["sha256"],
+        },
+        **overrides,
+    }
+
+
 class RequestContractTests(unittest.TestCase):
     def test_rejects_extra_fields(self):
         with self.assertRaises(Exception):
@@ -57,6 +93,12 @@ class RequestContractTests(unittest.TestCase):
     def test_rejects_malformed_bucket(self):
         with self.assertRaises(Exception):
             make_request(bucket="!!not-a-bucket")
+
+    def test_rejects_an_original_path_outside_the_declared_owner_session_and_hash(self):
+        with self.assertRaises(Exception):
+            make_request(
+                path=f"session-media/artist-2/{SESSION_ID}/original/{HASH}.mp4",
+            )
 
 
 class FakeSnapshot:
@@ -144,25 +186,46 @@ class FirestoreVideoSessionProxyStoreTests(unittest.TestCase):
             store.claim(make_request())
 
     def test_rejects_a_request_whose_jobid_does_not_match_the_dispatched_claim(self):
-        client = FakeFirestoreClient({
-            "status": "uploaded",
-            "proxyJob": {"jobId": "some-other-job"},
-        })
+        client = FakeFirestoreClient(persisted_session(proxyJob={
+            **persisted_session()["proxyJob"],
+            "jobId": "some-other-job",
+        }))
+        store = FirestoreVideoSessionProxyStore(client)
+        with self.assertRaises(ProxyJobConflict):
+            store.claim(make_request())
+
+    def test_rejects_matching_jobid_when_the_session_owner_does_not_match(self):
+        client = FakeFirestoreClient(persisted_session(ownerUid="artist-2"))
+        store = FirestoreVideoSessionProxyStore(client)
+        with self.assertRaises(ProxyJobConflict):
+            store.claim(make_request())
+
+    def test_rejects_matching_jobid_when_the_original_receipt_does_not_match(self):
+        client = FakeFirestoreClient(persisted_session(original=original_receipt(
+            generation="999",
+        )))
+        store = FirestoreVideoSessionProxyStore(client)
+        with self.assertRaises(ProxyJobConflict):
+            store.claim(make_request())
+
+    def test_rejects_matching_jobid_when_the_job_is_bound_to_another_original(self):
+        client = FakeFirestoreClient(persisted_session(proxyJob={
+            **persisted_session()["proxyJob"],
+            "originalSha256": "b" * 64,
+        }))
         store = FirestoreVideoSessionProxyStore(client)
         with self.assertRaises(ProxyJobConflict):
             store.claim(make_request())
 
     def test_claims_an_uploaded_session_and_sets_a_lease(self):
-        client = FakeFirestoreClient({
-            "status": "uploaded",
-            "proxyJob": {"jobId": JOB_ID},
-        })
+        client = FakeFirestoreClient(persisted_session())
         store = FirestoreVideoSessionProxyStore(client)
         claim = store.claim(make_request())
 
         self.assertIsNotNone(claim.lease_id)
         self.assertIsNone(claim.cached_manifest)
         self.assertIsNone(claim.cached_failure)
+        self.assertEqual(claim.original_ref, original_receipt())
         updated = client._doc.snapshot.to_dict()
         self.assertEqual(updated["status"], "processing")
         self.assertEqual(updated["proxyJob"]["leaseId"], claim.lease_id)
@@ -170,11 +233,10 @@ class FirestoreVideoSessionProxyStoreTests(unittest.TestCase):
 
     def test_replays_a_completed_session_bound_to_the_same_original_without_reprocessing(self):
         manifest = {"original": {"generation": REQUEST_DATA["generation"], "sha256": HASH}}
-        client = FakeFirestoreClient({
-            "status": "completed",
-            "proxyJob": {"jobId": JOB_ID},
-            "proxyManifest": manifest,
-        })
+        client = FakeFirestoreClient(persisted_session(
+            status="completed",
+            proxyManifest=manifest,
+        ))
         store = FirestoreVideoSessionProxyStore(client)
         claim = store.claim(make_request())
 
@@ -183,22 +245,20 @@ class FirestoreVideoSessionProxyStoreTests(unittest.TestCase):
 
     def test_rejects_replay_when_completed_manifest_binds_a_different_original(self):
         manifest = {"original": {"generation": "999", "sha256": "b" * 64}}
-        client = FakeFirestoreClient({
-            "status": "completed",
-            "proxyJob": {"jobId": JOB_ID},
-            "proxyManifest": manifest,
-        })
+        client = FakeFirestoreClient(persisted_session(
+            status="completed",
+            proxyManifest=manifest,
+        ))
         store = FirestoreVideoSessionProxyStore(client)
         with self.assertRaises(ProxyJobConflict):
             store.claim(make_request())
 
     def test_returns_the_cached_failure_for_a_permanently_failed_session_without_reprocessing(self):
         failure = {"code": "original-verification-failed", "message": "boom", "retryable": False}
-        client = FakeFirestoreClient({
-            "status": "failed",
-            "proxyJob": {"jobId": JOB_ID},
-            "failure": failure,
-        })
+        client = FakeFirestoreClient(persisted_session(
+            status="failed",
+            failure=failure,
+        ))
         store = FirestoreVideoSessionProxyStore(client)
         claim = store.claim(make_request())
 
@@ -206,27 +266,27 @@ class FirestoreVideoSessionProxyStoreTests(unittest.TestCase):
         self.assertEqual(claim.cached_failure, failure)
 
     def test_refuses_a_second_claim_while_a_lease_is_still_active(self):
-        client = FakeFirestoreClient({
-            "status": "processing",
-            "proxyJob": {
-                "jobId": JOB_ID,
+        client = FakeFirestoreClient(persisted_session(
+            status="processing",
+            proxyJob={
+                **persisted_session()["proxyJob"],
                 "leaseId": "lease-still-alive",
                 "leaseExpiresAt": datetime.now(UTC) + timedelta(minutes=10),
             },
-        })
+        ))
         store = FirestoreVideoSessionProxyStore(client)
         with self.assertRaises(ProxyJobInProgress):
             store.claim(make_request())
 
     def test_allows_a_new_claim_once_the_previous_lease_has_expired(self):
-        client = FakeFirestoreClient({
-            "status": "processing",
-            "proxyJob": {
-                "jobId": JOB_ID,
+        client = FakeFirestoreClient(persisted_session(
+            status="processing",
+            proxyJob={
+                **persisted_session()["proxyJob"],
                 "leaseId": "lease-crashed",
                 "leaseExpiresAt": datetime.now(UTC) - timedelta(minutes=1),
             },
-        })
+        ))
         store = FirestoreVideoSessionProxyStore(client)
         claim = store.claim(make_request())
 
@@ -234,10 +294,14 @@ class FirestoreVideoSessionProxyStoreTests(unittest.TestCase):
         self.assertNotEqual(claim.lease_id, "lease-crashed")
 
     def test_complete_writes_the_manifest_and_clears_the_lease(self):
-        client = FakeFirestoreClient({
-            "status": "processing",
-            "proxyJob": {"jobId": JOB_ID, "leaseId": "lease-1", "leaseExpiresAt": datetime.now(UTC)},
-        })
+        client = FakeFirestoreClient(persisted_session(
+            status="processing",
+            proxyJob={
+                **persisted_session()["proxyJob"],
+                "leaseId": "lease-1",
+                "leaseExpiresAt": datetime.now(UTC),
+            },
+        ))
         store = FirestoreVideoSessionProxyStore(client)
         manifest = {"schemaVersion": "proxy-manifest.v1"}
         outcome = store.complete(make_request(), "lease-1", manifest)
@@ -251,10 +315,14 @@ class FirestoreVideoSessionProxyStoreTests(unittest.TestCase):
         self.assertNotIn("leaseExpiresAt", updated["proxyJob"])
 
     def test_complete_discards_silently_when_a_newer_attempt_already_holds_the_lease(self):
-        client = FakeFirestoreClient({
-            "status": "processing",
-            "proxyJob": {"jobId": JOB_ID, "leaseId": "lease-2-newer", "leaseExpiresAt": datetime.now(UTC)},
-        })
+        client = FakeFirestoreClient(persisted_session(
+            status="processing",
+            proxyJob={
+                **persisted_session()["proxyJob"],
+                "leaseId": "lease-2-newer",
+                "leaseExpiresAt": datetime.now(UTC),
+            },
+        ))
         store = FirestoreVideoSessionProxyStore(client)
         outcome = store.complete(make_request(), "lease-1-stale", {"schemaVersion": "proxy-manifest.v1"})
 
@@ -262,11 +330,31 @@ class FirestoreVideoSessionProxyStoreTests(unittest.TestCase):
         # The newer attempt's claim must survive untouched.
         self.assertEqual(client._doc.snapshot.to_dict()["status"], "processing")
 
+    def test_complete_cannot_overwrite_a_cancellation_even_with_the_old_lease(self):
+        client = FakeFirestoreClient(persisted_session(
+            status="cancelled",
+            proxyJob={
+                **persisted_session()["proxyJob"],
+                "leaseId": "lease-1",
+                "leaseExpiresAt": datetime.now(UTC),
+            },
+        ))
+        store = FirestoreVideoSessionProxyStore(client)
+        outcome = store.complete(make_request(), "lease-1", {"schemaVersion": "proxy-manifest.v1"})
+
+        self.assertTrue(outcome["discarded"])
+        self.assertEqual(outcome["terminalStatus"], "cancelled")
+        self.assertEqual(client._doc.snapshot.to_dict()["status"], "cancelled")
+
     def test_fail_records_a_permanent_terminal_failure_and_clears_the_lease(self):
-        client = FakeFirestoreClient({
-            "status": "processing",
-            "proxyJob": {"jobId": JOB_ID, "leaseId": "lease-1", "leaseExpiresAt": datetime.now(UTC)},
-        })
+        client = FakeFirestoreClient(persisted_session(
+            status="processing",
+            proxyJob={
+                **persisted_session()["proxyJob"],
+                "leaseId": "lease-1",
+                "leaseExpiresAt": datetime.now(UTC),
+            },
+        ))
         store = FirestoreVideoSessionProxyStore(client)
         store.fail(make_request(), "lease-1", "original-verification-failed", "bytes changed")
 
@@ -275,6 +363,20 @@ class FirestoreVideoSessionProxyStoreTests(unittest.TestCase):
         self.assertEqual(updated["failure"]["code"], "original-verification-failed")
         self.assertFalse(updated["failure"]["retryable"])
         self.assertNotIn("leaseId", updated["proxyJob"])
+
+    def test_fail_cannot_overwrite_a_cancellation_even_with_the_old_lease(self):
+        client = FakeFirestoreClient(persisted_session(
+            status="cancelled",
+            proxyJob={
+                **persisted_session()["proxyJob"],
+                "leaseId": "lease-1",
+                "leaseExpiresAt": datetime.now(UTC),
+            },
+        ))
+        store = FirestoreVideoSessionProxyStore(client)
+        store.fail(make_request(), "lease-1", "original-verification-failed", "bytes changed")
+
+        self.assertEqual(client._doc.snapshot.to_dict()["status"], "cancelled")
 
 
 class OriginalMediaStoreTests(unittest.TestCase):
@@ -356,12 +458,46 @@ class DerivedMediaStoreTests(unittest.TestCase):
                     role="editing_proxy", local_path=local_path, mime_type="video/mp4",
                 )
 
+    def test_generation_deletes_only_a_job_scoped_derivative_and_refuses_the_original(self):
+        blob = Mock()
+        bucket = Mock()
+        bucket.blob.return_value = blob
+        client = Mock()
+        client.bucket.return_value = bucket
+        store = DerivedMediaStore(client, "private-media-bucket")
+        derivative = {
+            "bucket": "private-media-bucket",
+            "path": f"session-media/artist-1/{SESSION_ID}/proxy/{JOB_ID}/proxy.mp4",
+            "generation": "1700000000000000",
+        }
+
+        store.delete(
+            derivative,
+            owner_uid="artist-1",
+            session_id=SESSION_ID,
+            job_id=JOB_ID,
+        )
+        blob.delete.assert_called_once_with(if_generation_match=1700000000000000)
+
+        with self.assertRaises(OriginalVerificationFailed):
+            store.delete(
+                {
+                    **derivative,
+                    "path": REQUEST_DATA["path"],
+                    "generation": REQUEST_DATA["generation"],
+                },
+                owner_uid="artist-1",
+                session_id=SESSION_ID,
+                job_id=JOB_ID,
+            )
+
 
 class FakeSessionStore:
     """Drives `VideoSessionProxyPipeline.run()` without a real Firestore."""
 
-    def __init__(self, claim: ProxyClaim):
+    def __init__(self, claim: ProxyClaim, complete_outcome: dict | None = None):
         self._claim = claim
+        self._complete_outcome = complete_outcome or {"discarded": False, "terminalReceiptId": "term-1"}
         self.completed: dict | None = None
         self.failed: dict | None = None
 
@@ -370,7 +506,7 @@ class FakeSessionStore:
 
     def complete(self, request, lease_id, manifest):
         self.completed = {"request": request, "leaseId": lease_id, "manifest": manifest}
-        return {"discarded": False, "terminalReceiptId": "term-1"}
+        return self._complete_outcome
 
     def fail(self, request, lease_id, code, message):
         self.failed = {"request": request, "leaseId": lease_id, "code": code, "message": message}
@@ -387,6 +523,7 @@ class FakeOriginalMediaStore:
 class FakeDerivedMediaStore:
     def __init__(self):
         self.uploads: list[dict] = []
+        self.deletes: list[dict] = []
 
     def upload(self, **kwargs):
         self.uploads.append(kwargs)
@@ -401,6 +538,9 @@ class FakeDerivedMediaStore:
             "createdAt": "2026-07-23T00:00:00.000Z",
             "creationReceiptId": f"derived-{kwargs['role']}",
         }
+
+    def delete(self, ref, **identity):
+        self.deletes.append({"ref": ref, **identity})
 
 
 @unittest.skipUnless(shutil.which("ffmpeg") and shutil.which("ffprobe"), "FFmpeg fixture tools unavailable")
@@ -424,7 +564,12 @@ class PipelineEndToEndFixtureTests(unittest.TestCase):
                 "-c:v", "libx264", "-pix_fmt", "yuv420p", "-c:a", "aac", "-shortest", str(source),
             ], check=True)
 
-            session_store = FakeSessionStore(ProxyClaim(lease_id="lease-1", cached_manifest=None, cached_failure=None))
+            session_store = FakeSessionStore(ProxyClaim(
+                lease_id="lease-1",
+                cached_manifest=None,
+                cached_failure=None,
+                original_ref=original_receipt(),
+            ))
             derived_store = FakeDerivedMediaStore()
             pipeline = VideoSessionProxyPipeline(
                 sessions=session_store,
@@ -514,7 +659,12 @@ class PipelineReplayTests(unittest.TestCase):
         self.assertEqual(result, {"status": "failed", "reused": True, "failure": cached_failure})
 
     def test_a_permanent_original_verification_failure_is_recorded_and_reraised(self):
-        session_store = FakeSessionStore(ProxyClaim(lease_id="lease-1", cached_manifest=None, cached_failure=None))
+        session_store = FakeSessionStore(ProxyClaim(
+            lease_id="lease-1",
+            cached_manifest=None,
+            cached_failure=None,
+            original_ref=original_receipt(),
+        ))
         originals = Mock()
         originals.download_verified.side_effect = OriginalVerificationFailed("bytes changed")
         pipeline = VideoSessionProxyPipeline(
@@ -529,7 +679,12 @@ class PipelineReplayTests(unittest.TestCase):
         self.assertIsNone(session_store.completed)
 
     def test_an_unclassified_processing_failure_is_transient_and_never_recorded_as_terminal(self):
-        session_store = FakeSessionStore(ProxyClaim(lease_id="lease-1", cached_manifest=None, cached_failure=None))
+        session_store = FakeSessionStore(ProxyClaim(
+            lease_id="lease-1",
+            cached_manifest=None,
+            cached_failure=None,
+            original_ref=original_receipt(),
+        ))
         originals = Mock()
         originals.download_verified.side_effect = RuntimeError("GCS hiccup")
         pipeline = VideoSessionProxyPipeline(
@@ -544,6 +699,57 @@ class PipelineReplayTests(unittest.TestCase):
         # a later retry (after lease expiry) gets to try again.
         self.assertIsNone(session_store.failed)
         self.assertIsNone(session_store.completed)
+
+
+@unittest.skipUnless(shutil.which("ffmpeg") and shutil.which("ffprobe"), "FFmpeg fixture tools unavailable")
+class PipelineCancellationCleanupTests(unittest.TestCase):
+    def test_cancellation_wins_manifest_commit_and_deletes_only_this_jobs_derived_generations(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / "original.mp4"
+            subprocess.run([
+                shutil.which("ffmpeg"), "-y", "-v", "error",
+                "-f", "lavfi", "-i", "testsrc2=size=320x180:rate=24:duration=1",
+                "-f", "lavfi", "-i", "sine=frequency=440:sample_rate=48000:duration=1",
+                "-c:v", "libx264", "-pix_fmt", "yuv420p", "-c:a", "aac",
+                "-shortest", str(source),
+            ], check=True)
+            session_store = FakeSessionStore(
+                ProxyClaim(
+                    lease_id="lease-1",
+                    cached_manifest=None,
+                    cached_failure=None,
+                    original_ref=original_receipt(),
+                ),
+                complete_outcome={"discarded": True, "terminalStatus": "cancelled"},
+            )
+            derived_store = FakeDerivedMediaStore()
+            pipeline = VideoSessionProxyPipeline(
+                sessions=session_store,
+                originals=FakeOriginalMediaStore(source),
+                derived=derived_store,
+                ffmpeg=shutil.which("ffmpeg"),
+                ffprobe=shutil.which("ffprobe"),
+            )
+
+            result = pipeline.run(make_request(), root)
+
+            self.assertEqual(result, {
+                "status": "discarded",
+                "reused": True,
+                "terminalStatus": "cancelled",
+            })
+            self.assertEqual(len(derived_store.deletes), 7)
+            self.assertTrue(all(
+                deletion["ref"]["path"].startswith(
+                    f"session-media/artist-1/{SESSION_ID}/proxy/{JOB_ID}/"
+                )
+                for deletion in derived_store.deletes
+            ))
+            self.assertTrue(all(
+                deletion["ref"]["path"] != REQUEST_DATA["path"]
+                for deletion in derived_store.deletes
+            ))
 
 
 if __name__ == "__main__":

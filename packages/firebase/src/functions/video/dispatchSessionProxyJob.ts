@@ -44,7 +44,7 @@ const SERVICE_ACCOUNT = /^[^@\s]+@[^@\s]+\.iam\.gserviceaccount\.com$/;
 /** Cloud Tasks task-name segment: letters, numbers, hyphens, underscores. */
 const TASK_ID = /^[A-Za-z0-9_-]{1,500}$/;
 
-export type ProxyJobStatus = 'queued' | 'blocked';
+export type ProxyJobStatus = 'dispatching' | 'queued' | 'blocked';
 
 export interface ProxyJobClaim {
     schemaVersion: 'session-proxy-job.v1';
@@ -54,6 +54,8 @@ export interface ProxyJobClaim {
     originalGeneration: string;
     originalSha256: string;
     claimedAt: string;
+    /** Present after Cloud Tasks accepted this deterministic task name. */
+    queuedAt?: string;
     /** Present only when `status` is `blocked`. */
     blockedReason?: string;
 }
@@ -68,6 +70,11 @@ export interface ProxyJobClaimStore {
      * than be overwritten — that would strand the first job's output.
      */
     claim(sessionId: string, claim: ProxyJobClaim): Promise<{ claim: ProxyJobClaim; reused: boolean }>;
+    markQueued(
+        sessionId: string,
+        jobId: string,
+        queuedAt: string,
+    ): Promise<{ claim: ProxyJobClaim; reused: boolean }>;
 }
 
 export interface ProxyTasksClientLike {
@@ -150,6 +157,10 @@ export function createFirestoreProxyJobClaimStore(
                     const sameOriginal = existing.originalGeneration === claim.originalGeneration
                         && existing.originalSha256 === claim.originalSha256;
                     if (sameOriginal) {
+                        if (existing.status === 'blocked' && claim.status === 'dispatching') {
+                            transaction.update(sessionRef, { proxyJob: claim, updatedAt: claim.claimedAt });
+                            return { claim, reused: false };
+                        }
                         // Already dispatched for these exact bytes. Re-running is
                         // a no-op, which is precisely what redelivery needs.
                         return { claim: existing, reused: true };
@@ -164,6 +175,29 @@ export function createFirestoreProxyJobClaimStore(
 
                 transaction.update(sessionRef, { proxyJob: claim, updatedAt: claim.claimedAt });
                 return { claim, reused: false };
+            });
+        },
+        async markQueued(sessionId, jobId, queuedAt) {
+            const sessionRef = db.collection('videoSessions').doc(sessionId);
+            return db.runTransaction(async (transaction) => {
+                const snapshot = await transaction.get(sessionRef);
+                if (!snapshot.exists) {
+                    throw new HttpsError('not-found', 'The video session no longer exists.');
+                }
+                const current = snapshot.data() as Record<string, unknown>;
+                const existing = current.proxyJob as ProxyJobClaim | undefined;
+                if (!existing || existing.jobId !== jobId) {
+                    throw new HttpsError('failed-precondition', 'The proxy dispatch claim changed before enqueue completed.');
+                }
+                if (existing.status === 'queued') {
+                    return { claim: existing, reused: true };
+                }
+                if (existing.status !== 'dispatching') {
+                    throw new HttpsError('failed-precondition', `A ${existing.status} proxy claim cannot become queued.`);
+                }
+                const queued: ProxyJobClaim = { ...existing, status: 'queued', queuedAt };
+                transaction.update(sessionRef, { proxyJob: queued, updatedAt: queuedAt });
+                return { claim: queued, reused: false };
             });
         },
     };
@@ -265,7 +299,7 @@ export async function dispatchSessionProxyJob(
     const claimed = await claims.claim(sessionId, {
         schemaVersion: 'session-proxy-job.v1',
         jobId,
-        status: 'queued',
+        status: 'dispatching',
         originalGeneration: original.generation,
         originalSha256: original.sha256,
         claimedAt,
@@ -293,6 +327,7 @@ export async function dispatchSessionProxyJob(
         jobId,
     };
 
+    let alreadyExisted = false;
     try {
         await tasksClient.createTask({
             parent,
@@ -316,15 +351,21 @@ export async function dispatchSessionProxyJob(
         // ALREADY_EXISTS (gRPC 6) means a previous attempt already enqueued this
         // exact job — the desired end state, not a failure.
         if (isAlreadyExists(error)) {
-            return { jobId, status: 'queued', reused: true };
+            alreadyExisted = true;
+        } else {
+            throw new HttpsError(
+                'internal',
+                `Failed to dispatch session proxy job: ${error instanceof Error ? error.message : String(error)}`,
+            );
         }
-        throw new HttpsError(
-            'internal',
-            `Failed to dispatch session proxy job: ${error instanceof Error ? error.message : String(error)}`,
-        );
     }
 
-    return { jobId, status: 'queued', reused: false };
+    const queued = await claims.markQueued(sessionId, jobId, new Date().toISOString());
+    return {
+        jobId,
+        status: 'queued',
+        reused: claimed.reused || alreadyExisted || queued.reused,
+    };
 }
 
 async function defaultTasksClient(): Promise<ProxyTasksClientLike> {

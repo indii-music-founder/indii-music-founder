@@ -1617,3 +1617,83 @@ Before pushing any branch, run `/plat` (see `.claude/commands/plat.md`). It exec
 - FALSE LEADS REJECTED (see /hunter's own audit reasoning — recorded so they aren't re-flagged as findings on a future pass): a documented-intentional empty `.catch(() => {})` in `CampaignManager.tsx` (comment explicitly explains it prevents a duplicate unhandled-rejection, not a silent-failure bug); ~100 `Date.now()`/`Math.random()` hits inside event handlers and ID-generator helpers, not render bodies (workflow's own grep pattern can't distinguish the two); a `@react-three/fiber` vendor-chunk split from `vendor-react` that is a known theoretical footgun class but shows zero build warnings and zero runtime failures across 5,219 passing tests — not touched without concrete evidence, since "fixing" it would unconditionally add ~2.2MB to every user's initial bundle; ~40 finance-service division operations, all already guarded or precondition-protected; ISSUE-1205 (`CRMDashboard.tsx` re-render fix) turned out to already be fixed by a different concurrent agent by the time this hunt reached it.
 - PREVENTION: a "backstop" default that's declared but left empty (`{}`) provides no actual protection — when adding a shared-default mechanism, either populate it immediately or don't claim the safety net exists in comments/docs. For subscription lifecycles, grep for the stop/cleanup method's callers, not just its existence, before trusting that a start/stop pair is wired correctly.
 - VERIFICATION: `npm run typecheck` (all 4 workspaces + the firebase test-typecheck gate) clean; `npm run check:dep-integrity` clean; full repo-wide Vitest run passed 5,219 tests (52 skipped) — identical pass count before and after, including a mid-run regression this same session caught and fixed (see ISSUE-1198's entry in `OPEN_ISSUES_V2.md`); `npm run build:studio` and `npm run build:firebase` both succeeded; `npm run lint` — 0 errors, 114 warnings, matching the established baseline exactly.
+## 2026-07-25 — Intermediate fail-closed state is not end-to-end closure
+
+**SEVERITY:** High (a foundation issue was marked fixed while its required artifact did not exist)
+
+**MISTAKE:** A production session reached `status: "uploaded"` and an auditable
+`proxyJob.status: "blocked"`, then was recorded as full ISSUE-1175 closure even
+though the worker never ran and no `ProxyManifest` or playable proxy existed.
+
+**FIX:** Corrected both the issue ledger and the durable deployment checkpoint
+to PARTIAL. Closure still requires one authenticated production upload to
+execute the worker, persist the terminal manifest, and open the private proxy.
+
+**PREVENTION:** Acceptance evidence must prove the terminal user-visible
+artifact. A correct fail-closed intermediate state proves failure handling, not
+successful completion.
+
+## 2026-07-25 — Resumable media retries need a new attempt identity after terminal failure
+
+**SEVERITY:** Medium (retrying the same file could deterministically reopen the
+same cancelled or failed session)
+
+**MISTAKE:** The upload idempotency key was derived only from stable file and
+project identity. That is correct during interruption/resume, but wrong after a
+terminal cancellation or failure because a deliberate retry needs a new
+operation identity.
+
+**FIX:** Preserve the stable key for in-flight resume, and append a fresh
+cryptographic attempt UUID only when restarting from a terminal state. Reset
+session UI state when owner/project context changes.
+
+**PREVENTION:** Separate transport retry from operation retry. Transport retry
+reuses identity; a new attempt after terminal state must not.
+
+## 2026-07-25 — Private media workers need write/delete IAM, not viewer-only IAM
+
+**SEVERITY:** High (the worker could read originals but could not persist or
+clean up derivatives)
+
+**MISTAKE:** The runtime service account had `roles/storage.objectViewer` while
+the proxy pipeline creates generation-pinned derivatives and retention cleanup
+deletes eligible objects.
+
+**FIX:** Codified bucket-scoped `roles/storage.objectUser` in deployment,
+alongside explicit private Cloud Run, queue, OIDC, CPU, memory, concurrency, and
+timeout configuration.
+
+**PREVENTION:** Derive IAM from every side effect in the worker contract, not
+from its first read. Deployment code must be the source of truth for those
+permissions.
+
+## 2026-07-25 — Unbounded legacy dependency scans make retention unsafe
+
+**SEVERITY:** High (cleanup could become unbounded or delete while dependency
+verification was incomplete)
+
+**MISTAKE:** Retention fallback scanned legacy project documents without a
+limit to discover media references.
+
+**FIX:** Added a strict query limit and fail-closed behavior: if the bounded
+scan cannot prove absence of a dependency, cleanup defers deletion.
+
+**PREVENTION:** Destructive retention checks must be bounded and conservative.
+“Unable to finish checking” must mean “do not delete.”
+
+## 2026-07-25 — Path-limited stash restoration can still import unrelated work
+
+**SEVERITY:** Medium (unrelated release and local-app backup changes nearly
+entered a media-ingestion commit)
+
+**MISTAKE:** A stash created with untracked files contained both the intended
+session work and hundreds of unrelated backup paths. Restoring broadly would
+have mixed ownership and scope.
+
+**FIX:** Restored only enumerated task paths, kept the backup payload in the
+stash, and isolated the unrelated release-workflow edit in a separate named
+stash.
+
+**PREVENTION:** Inspect all stash parents and path lists before restoration.
+Restore an explicit allowlist and read the staged diff line by line before
+committing.

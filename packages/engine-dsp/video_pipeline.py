@@ -90,6 +90,79 @@ def inspect_video(path: Path, ffprobe: str = "ffprobe", runner: Runner = subproc
         raise VideoProcessingError("FFprobe output is malformed") from error
 
 
+def _video_frame_pts_us(
+    path: Path,
+    ffprobe: str = "ffprobe",
+    runner: Runner = subprocess.run,
+) -> list[int]:
+    result = _run([
+        ffprobe,
+        "-v", "error",
+        "-select_streams", "v:0",
+        "-show_frames",
+        "-show_entries", "frame=best_effort_timestamp_time",
+        "-of", "json",
+        str(path),
+    ], runner)
+    try:
+        payload = json.loads(result.stdout)
+        frames = payload.get("frames", [])
+        timestamps = sorted({
+            round(float(frame["best_effort_timestamp_time"]) * 1_000_000)
+            for frame in frames
+            if isinstance(frame, dict) and frame.get("best_effort_timestamp_time") is not None
+        })
+    except (TypeError, ValueError, json.JSONDecodeError, KeyError) as error:
+        raise VideoProcessingError("FFprobe frame timestamps are malformed") from error
+    if not timestamps:
+        raise VideoProcessingError("FFprobe returned no video presentation timestamps")
+    first = timestamps[0]
+    return [max(0, timestamp - first) for timestamp in timestamps]
+
+
+def _nearest_timestamp(timestamps: list[int], target: int) -> int:
+    return min(timestamps, key=lambda value: abs(value - target))
+
+
+def presentation_time_map(
+    original_pts_us: list[int],
+    proxy_pts_us: list[int],
+    original_duration_us: int,
+    proxy_duration_us: int,
+) -> dict[str, Any]:
+    """Build a piecewise mapping from observed frame presentation timestamps.
+
+    FFmpeg's CFR filter selects/duplicates frames on the source presentation
+    clock. Sampling both streams at one-third boundaries records that clock
+    relationship explicitly instead of inferring it only from container
+    durations (which hides VFR cadence and start-time normalization).
+    """
+    anchors: list[tuple[int, int]] = [(0, 0)]
+    for fraction in (1 / 3, 2 / 3):
+        proxy_target = round(proxy_duration_us * fraction)
+        proxy_anchor = _nearest_timestamp(proxy_pts_us, proxy_target)
+        original_anchor = _nearest_timestamp(original_pts_us, proxy_anchor)
+        previous_proxy, previous_original = anchors[-1]
+        if proxy_anchor > previous_proxy and original_anchor > previous_original:
+            anchors.append((proxy_anchor, original_anchor))
+    if proxy_duration_us <= anchors[-1][0] or original_duration_us <= anchors[-1][1]:
+        raise VideoProcessingError("Frame timestamps cannot form a positive presentation-time map")
+    anchors.append((proxy_duration_us, original_duration_us))
+    return {
+        "version": "presentation-time-map.v1",
+        "segments": [
+            {
+                "proxyStartUs": proxy_start,
+                "proxyEndUs": proxy_end,
+                "originalStartUs": original_start,
+                "originalEndUs": original_end,
+            }
+            for (proxy_start, original_start), (proxy_end, original_end)
+            in zip(anchors, anchors[1:])
+        ],
+    }
+
+
 def _rotation_filter(rotation: int) -> list[str]:
     return {
         0: [],
@@ -99,15 +172,26 @@ def _rotation_filter(rotation: int) -> list[str]:
     }[rotation]
 
 
-def proxy_filter(inspection: VideoInspection) -> str:
+def proxy_filter(inspection: VideoInspection, use_zscale: bool = True) -> str:
     filters: list[str] = []
     if inspection.source_hdr:
-        filters.extend([
-            "zscale=t=linear:npl=100",
-            "format=gbrpf32le",
-            "tonemap=hable:desat=0",
-            "zscale=p=bt709:t=bt709:m=bt709:r=tv",
-        ])
+        if use_zscale:
+            filters.extend([
+                "zscale=t=linear:npl=100",
+                "format=gbrpf32le",
+                "tonemap=hable:desat=0",
+                "zscale=p=bt709:t=bt709:m=bt709:r=tv",
+            ])
+        else:
+            # Some local/desktop FFmpeg builds omit libzimg. Decode to float,
+            # approximate the PQ-to-linear transfer before Hable tonemapping,
+            # and still stamp/encode a real Rec.709 SDR derivative. Production
+            # images use the higher-fidelity zscale path above.
+            filters.extend([
+                "format=gbrpf32le",
+                "lutrgb=r='pow(val,2.4)':g='pow(val,2.4)':b='pow(val,2.4)'",
+                "tonemap=hable:desat=0:peak=10",
+            ])
     filters.extend(_rotation_filter(inspection.source_rotation_degrees))
     filters.extend([
         "scale=w=1280:h=720:force_original_aspect_ratio=decrease:force_divisible_by=2",
@@ -158,13 +242,21 @@ def transcode_session_media(
     guide = output_directory / "guide-audio.wav"
     contact_sheet = output_directory / "contact-sheet.jpg"
     waveform = output_directory / "waveform.json"
-    _run([
-        ffmpeg, "-y", "-v", "error", "-noautorotate", "-i", str(source),
-        "-map", "0:v:0", "-map", "0:a:0?", "-vf", proxy_filter(inspection),
-        "-c:v", "libx264", "-preset", "medium", "-crf", "20", "-fps_mode", "cfr",
-        "-c:a", "aac", "-b:a", "128k", "-ar", "48000", "-movflags", "+faststart",
-        "-metadata:s:v:0", "rotate=0", str(proxy),
-    ], runner)
+    def transcode_proxy(filter_graph: str) -> None:
+        _run([
+            ffmpeg, "-y", "-v", "error", "-noautorotate", "-i", str(source),
+            "-map", "0:v:0", "-map", "0:a:0?", "-vf", filter_graph,
+            "-c:v", "libx264", "-preset", "medium", "-crf", "20", "-fps_mode", "cfr",
+            "-c:a", "aac", "-b:a", "128k", "-ar", "48000", "-movflags", "+faststart",
+            "-metadata:s:v:0", "rotate=0", str(proxy),
+        ], runner)
+
+    try:
+        transcode_proxy(proxy_filter(inspection))
+    except VideoProcessingError as error:
+        if not inspection.source_hdr or "No such filter: 'zscale'" not in str(error):
+            raise
+        transcode_proxy(proxy_filter(inspection, use_zscale=False))
     _run([
         ffmpeg, "-y", "-v", "error", "-i", str(source), "-map", "0:a:0?",
         "-vn", "-ac", "1", "-ar", "48000", "-c:a", "pcm_s16le", str(guide),
@@ -189,6 +281,12 @@ def transcode_session_media(
         "peaks": _waveform(guide),
     }, separators=(",", ":")), encoding="utf-8")
     proxy_inspection = inspect_video(proxy, ffprobe, runner)
+    time_map = presentation_time_map(
+        _video_frame_pts_us(source, ffprobe, runner),
+        _video_frame_pts_us(proxy, ffprobe, runner),
+        inspection.duration_us,
+        proxy_inspection.duration_us,
+    )
     return {
         "inspection": {
             "originalDurationUs": inspection.duration_us,
@@ -209,15 +307,7 @@ def transcode_session_media(
             "proxyColorSpace": "rec709",
             "orientationBakedIn": True,
         },
-        "timeMap": {
-            "version": "presentation-time-map.v1",
-            "segments": [{
-                "proxyStartUs": 0,
-                "proxyEndUs": proxy_inspection.duration_us,
-                "originalStartUs": 0,
-                "originalEndUs": inspection.duration_us,
-            }],
-        },
+        "timeMap": time_map,
         "artifacts": {
             name: {"path": str(path), "sha256": _sha256(path), "byteSize": path.stat().st_size}
             for name, path in {

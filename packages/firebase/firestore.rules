@@ -909,6 +909,20 @@ service cloud.firestore {
       allow create, update, delete: if false;
     }
 
+    // Resumable GCS session URIs are bearer capabilities. They are returned
+    // only by the authenticated callable and must never be readable through
+    // Firestore, even by the session owner.
+    match /videoSessionUploadGrants/{sessionId} {
+      allow read, write: if false;
+    }
+
+    // Server-owned dependency receipts gate retention/deletion. Allowing a
+    // client to add or remove one would permit either indefinite storage abuse
+    // or deletion of media still referenced by an edit/alignment operation.
+    match /videoSessionDependencies/{sessionId}/{document=**} {
+      allow read, write: if false;
+    }
+
     match /earnings_reports/{reportId} {
       allow read: if isVerifiedUser() && resource.data.userId == request.auth.uid;
       allow create: if isVerifiedUser() && ownerCreateIsValid('userId');

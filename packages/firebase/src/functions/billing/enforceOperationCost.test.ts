@@ -36,6 +36,7 @@ vi.mock('firebase-admin/firestore', () => ({
 }));
 
 import {
+  checkOperationBudget,
   expireStaleOperationReservations,
   finalizeOperationReservation,
   getOperationCostHistoryPage,
@@ -175,6 +176,106 @@ describe('ISSUE-1006 operation cost receipts and expiry', () => {
       operationId: 'audio-op-1',
       outcome: 'SETTLED',
     });
+  });
+
+  it('keeps a stale video hold while its durable session is active, then settles completion', async () => {
+    const query = createQuery([
+      {
+        id: 'video-session-session-1',
+        data: () => ({ userId: 'user-1', metadata: { videoSessionId: 'session-1' } }),
+      },
+    ]);
+    let sessionStatus = 'processing';
+    const db = {
+      collection: vi.fn(() => query),
+      doc: vi.fn(() => ({
+        get: vi.fn(async () => ({
+          exists: true,
+          data: () => ({ status: sessionStatus }),
+        })),
+      })),
+    };
+    mocks.firestore.mockReturnValue(db);
+    const finalize = vi.fn().mockResolvedValue(undefined);
+
+    await expect(expireStaleOperationReservations(
+      new Date('2026-07-16T20:30:00.000Z'),
+      finalize,
+    )).resolves.toBe(0);
+    expect(finalize).not.toHaveBeenCalled();
+
+    sessionStatus = 'completed';
+    await expect(expireStaleOperationReservations(
+      new Date('2026-07-16T20:31:00.000Z'),
+      finalize,
+    )).resolves.toBe(1);
+    expect(finalize).toHaveBeenCalledWith({
+      userId: 'user-1',
+      operationId: 'video-session-session-1',
+      outcome: 'SETTLED',
+    });
+  });
+
+  it('reuses a deterministic video reservation without incrementing aggregate cost twice', async () => {
+    const documents = new Map<string, Record<string, unknown>>();
+    documents.set('users/user-1', { tier: 'free' });
+    const set = vi.fn((
+      reference: { path: string },
+      values: Record<string, unknown>,
+      _options?: { merge?: boolean },
+    ) => {
+      const current = { ...(documents.get(reference.path) || {}) };
+      for (const [key, value] of Object.entries(values)) {
+        if (value && typeof value === 'object' && '__increment' in value) {
+          current[key] = Number(current[key] || 0) + Number((value as { __increment: number }).__increment);
+        } else {
+          current[key] = value;
+        }
+      }
+      documents.set(reference.path, current);
+    });
+    const transaction = {
+      get: vi.fn(async (reference: { path: string }) => {
+        const data = documents.get(reference.path);
+        return { exists: Boolean(data), data: () => data };
+      }),
+      set,
+    };
+    const db = {
+      doc: vi.fn((path: string) => ({ path })),
+      collection: vi.fn((name: string) => ({
+        doc: vi.fn((id: string) => ({ path: `${name}/${id}` })),
+      })),
+      runTransaction: vi.fn(async (
+        handler: (tx: typeof transaction) => Promise<unknown>,
+      ) => handler(transaction)),
+    };
+    mocks.firestore.mockReturnValue(db);
+    const request = {
+      userId: 'user-1',
+      estimatedCost: 0.25,
+      operationType: 'video' as const,
+      operationId: 'video-session-session-1',
+      metadata: { videoSessionId: 'session-1' },
+    };
+
+    const first = await checkOperationBudget(request);
+    const retry = await checkOperationBudget(request);
+
+    expect(first).toEqual(expect.objectContaining({
+      allowed: true,
+      operationId: 'video-session-session-1',
+    }));
+    expect(retry).toEqual(expect.objectContaining({
+      allowed: true,
+      operationId: 'video-session-session-1',
+    }));
+    expect(set.mock.calls.filter(([reference]) =>
+      (reference as { path: string }).path === 'costLedger/video-session-session-1',
+    )).toHaveLength(1);
+    const daily = [...documents.entries()].find(([path]) => path.includes('/daily-'))?.[1];
+    expect(daily?.totalCost).toBe(0.25);
+    expect(daily?.operationCount).toBe(1);
   });
 
   it('voids and refunds every aggregate exactly once', async () => {

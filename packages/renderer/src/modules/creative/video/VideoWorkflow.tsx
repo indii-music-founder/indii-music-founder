@@ -15,6 +15,7 @@ import { creativeAssetPayloadToHistoryItem, readCreativeAssetDrag, writeCreative
 import { Layout, Settings, Shuffle, ChevronDown, ChevronUp, Hash, Music, Trash2, Layers, Film, Send } from 'lucide-react';
 import { ErrorBoundary } from '@/core/components/ErrorBoundary';
 import { StoryboardTimeline } from './components/StoryboardTimeline';
+import { SessionIngestionPanel } from './components/SessionIngestionPanel';
 
 import { IntelligencePromptInput } from '../components/veo/IntelligencePromptInput';
 import { DailiesStrip } from './components/DailiesStrip';
@@ -887,6 +888,30 @@ export default function VideoWorkflow() {
 
     const estimatedCost = VideoGeneration.estimateVideoCost(studioControls.duration || 6, studioControls.model);
 
+    const openSessionProxy = useCallback(async (session: import('@indii/shared').VideoSession) => {
+        const proxy = session.proxyManifest?.proxy;
+        if (!proxy) {
+            toast.error('This session does not have a completed proxy manifest.');
+            return;
+        }
+        const storageUri = `gs://${proxy.bucket}/${proxy.path}`;
+        const url = await resolveStorageUrl(storageUri);
+        const item: HistoryItem = {
+            id: session.sessionId,
+            url,
+            storageUri,
+            localPath: '',
+            prompt: 'Long recording edit proxy',
+            type: 'video',
+            timestamp: Date.now(),
+            projectId: session.projectId,
+            orgId: session.organizationId,
+        };
+        addToHistory(item);
+        setActiveVideo(item);
+        setViewMode('editor');
+    }, [addToHistory, setActiveVideo, setViewMode, toast]);
+
     return (
         <div className={`flex-1 flex overflow-hidden h-full bg-background relative`}>
             {/* Main Stage (Director View) */}
@@ -956,6 +981,11 @@ export default function VideoWorkflow() {
 
                 {/* Mode Switcher Shortcut buttons (Overlay) */}
                 <div className="absolute top-24 left-4 z-40 flex flex-col gap-2">
+                    <SessionIngestionPanel
+                        organizationId={currentOrganizationId}
+                        projectId={currentProjectId}
+                        onOpenProxy={openSessionProxy}
+                    />
                     <button
                         onClick={() => setViewMode('visualizer')}
                         className="w-10 h-10 bg-black/40 border border-white/10 rounded-lg flex items-center justify-center text-gray-400 hover:text-blue-400 hover:bg-blue-500/10 transition-all shadow-xl backdrop-blur-md"

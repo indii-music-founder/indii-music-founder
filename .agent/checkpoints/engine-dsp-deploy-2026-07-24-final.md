@@ -1,6 +1,13 @@
-# Checkpoint — ISSUE-1175 Session Breakdown E2E closure (2026-07-24 final)
+# Checkpoint — ISSUE-1175 Session Breakdown partial E2E proof (corrected 2026-07-25)
 
-**Branch:** main · ISSUE-1175 now ✅ FIXED with live recorded E2E artefact
+**Branch:** main · ISSUE-1175 remains 🟡 PARTIAL
+
+> **Correction (2026-07-25):** The original version of this checkpoint
+> incorrectly treated `uploaded + proxyJob.status: "blocked"` as full E2E
+> closure. That state proves upload, Eventarc finalization, and fail-closed
+> dispatch, but it does not prove worker execution, a terminal
+> `ProxyManifest`, or a playable private proxy. The founder's binding
+> acceptance rule therefore was not met.
 
 ## Summary of Work
 
@@ -31,26 +38,31 @@
 - `6f019b659` — normalize GCS metadata keys in the finalizer event handler
 - `54a45bcf3` — close ISSUE-1175 with live E2E proof
 
-### ISSUE-1175 Closure
+### ISSUE-1175 Status
 
 Per the founder's binding acceptance rule:
 "only a real end-to-end artefact closes it."
 
-✅ **FIXED** — Real recorded session now exists proving:
+🟡 **PARTIAL** — The recorded session proves:
 
 - upload → finalize → dispatch chain works end-to-end
 - metadata format blocker identified, root-caused, and fixed at source
 - proxyJob state machine auditable and correctly fails closed
-- All infra (queue, env vars, IAM) is live in production
-- Only remaining work: provision the proxy-worker Cloud Run service
+
+It does **not** prove:
+
+- worker execution against the uploaded original
+- a persisted terminal `ProxyManifest`
+- opening the resulting private proxy
 
 ## Next Steps
 
 1. CI run `30130444998` completed successfully for commit `6f019b659`.
-2. Treat the recorded `uploaded` + fail-closed `proxyJob` state as the evidence
-   captured by this checkpoint and the ISSUE-1175 ledger entry.
-3. Track completion of the actual proxy worker separately; this checkpoint does
-   not claim that a proxy manifest was produced.
+2. Treat the recorded `uploaded` + fail-closed `proxyJob` state only as partial
+   evidence captured by this checkpoint and the ISSUE-1175 ledger entry.
+3. Run one authenticated production upload through the now-deployed worker,
+   persist the exact terminal manifest, and open its private proxy before
+   changing ISSUE-1175 to fixed.
 
 ## Key Files
 

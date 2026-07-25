@@ -36,6 +36,8 @@ export { getMediaDuration } from "./functions/creative/getMediaDuration";
 export { createVideoSession } from "./functions/video/createVideoSession";
 export { cancelVideoSession } from "./functions/video/cancelVideoSession";
 export { finalizeVideoSessionUpload } from "./functions/video/finalizeVideoSessionUpload";
+export { settleVideoSessionCost } from "./functions/video/settleVideoSessionCost";
+export { cleanupExpiredVideoSessions } from "./functions/video/cleanupVideoSessions";
 import { analyzeAudioFn } from "./lib/audio";
 import { FUNCTION_INTELLIGENCE_MODELS } from "./config/models";
 import { clearbitApiKey, apolloApiKey, getClearbitApiKey, getApolloApiKey } from "./config/secrets";

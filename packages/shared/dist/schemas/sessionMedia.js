@@ -181,10 +181,11 @@ export const MediaProcessingCostEstimateSchema = z.object({
 export const ProxyJobClaimSchema = z.object({
     schemaVersion: z.literal('session-proxy-job.v1'),
     jobId: IdentifierSchema,
-    status: z.enum(['queued', 'blocked']),
+    status: z.enum(['dispatching', 'queued', 'blocked']),
     originalGeneration: StorageGenerationSchema,
     originalSha256: Sha256Schema,
     claimedAt: z.string().datetime(),
+    queuedAt: z.string().datetime().optional(),
     blockedReason: z.string().trim().min(1).max(500).optional(),
     /**
      * Worker-managed crash-recovery lease (repair-order step 3, the proxy
@@ -219,6 +220,7 @@ export const VideoSessionSchema = z.object({
     costEstimate: MediaProcessingCostEstimateSchema,
     costReservationId: IdentifierSchema.optional(),
     retentionDeleteAfter: z.string().datetime(),
+    retentionSatisfiedAt: z.string().datetime().optional(),
     createdAt: z.string().datetime(),
     updatedAt: z.string().datetime(),
     completedAt: z.string().datetime().optional(),
@@ -229,6 +231,21 @@ export const VideoSessionSchema = z.object({
         code: IdentifierSchema,
         message: z.string().trim().min(1).max(2000),
         retryable: z.boolean(),
+    }).strict().optional(),
+    retentionCleanup: z.object({
+        schemaVersion: z.literal('video-session-retention.v1'),
+        status: z.enum(['running', 'deferred', 'completed']),
+        receiptId: IdentifierSchema,
+        startedAt: z.string().datetime(),
+        completedAt: z.string().datetime().optional(),
+        deletedPaths: z.array(z.string().trim().min(1).max(2048)).optional(),
+        derivativesDeferred: z.boolean().optional(),
+        preservedOriginal: z.object({
+            bucket: BucketSchema,
+            path: ObjectPathSchema,
+            generation: StorageGenerationSchema,
+            sha256: Sha256Schema,
+        }).strict().optional(),
     }).strict().optional(),
 }).strict().superRefine((session, ctx) => {
     const requiresOriginal = ['uploaded', 'processing', 'completed'].includes(session.status);

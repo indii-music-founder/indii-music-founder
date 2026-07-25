@@ -90,18 +90,25 @@ def produce_session_proxy(request: VideoProxyRequest) -> dict:
     try:
         with tempfile.TemporaryDirectory() as directory:
             result = get_video_pipeline().run(request, Path(directory))
-    except SessionNotFound as error:
-        raise HTTPException(status_code=404, detail=str(error)) from error
-    except (ProxyJobConflict, ProxyJobInProgress) as error:
-        # ProxyJobConflict is permanent (a foreign/stale delivery) and
-        # ProxyJobInProgress is transient (another attempt's lease is still
-        # live) — both are correctly signalled to Cloud Tasks as 409 either
-        # way: a conflict must not be retried against THIS session's current
-        # state, and an in-progress lease resolves on its own without this
-        # attempt doing anything.
+    except SessionNotFound:
+        # The task is bound to a session created before enqueue. If it no longer
+        # exists, repeating this exact task cannot recreate it.
+        logger.warning("Discarding proxy task for a missing video session")
+        return {"status": "rejected", "reason": "session-not-found"}
+    except ProxyJobConflict:
+        # Foreign/stale/cancelled state is permanent for this deterministic
+        # task identity. Cloud Tasks retries every non-2xx response, including
+        # 409, so acknowledge it instead of creating a retry storm.
+        logger.warning("Discarding proxy task whose persisted claim no longer matches")
+        return {"status": "rejected", "reason": "proxy-job-conflict"}
+    except ProxyJobInProgress as error:
+        # A live lease is transient. A later Cloud Tasks retry can recover
+        # after the lease expires.
         raise HTTPException(status_code=409, detail=str(error)) from error
-    except OriginalVerificationFailed as error:
-        raise HTTPException(status_code=412, detail=str(error)) from error
+    except OriginalVerificationFailed:
+        # The pipeline records this as an auditable terminal failed session
+        # before raising. Retrying cannot change the immutable original bytes.
+        return {"status": "failed", "reason": "original-verification-failed"}
     except ProxyPipelineConfigurationError as error:
         # Covers both "the worker itself is unconfigured" and "processing threw
         # an unclassified/transient error" — see the docstring on that
@@ -119,6 +126,17 @@ def produce_session_proxy(request: VideoProxyRequest) -> dict:
         # DONE — acknowledging with 2xx is what stops Cloud Tasks from
         # retrying something that can never succeed.
         return {"status": "failed", "reused": result.get("reused", False), "failure": result["failure"]}
+
+    if result["status"] == "discarded":
+        # Cancellation or a newer lease won after this worker uploaded its
+        # job-scoped derivatives. The pipeline already removed cancellation
+        # output and intentionally returned no manifest. Acknowledge the
+        # terminal/discarded attempt with 2xx so Cloud Tasks does not retry it.
+        return {
+            "status": "discarded",
+            "reused": result.get("reused", False),
+            "terminalStatus": result.get("terminalStatus"),
+        }
 
     manifest = result["manifest"]
     return {

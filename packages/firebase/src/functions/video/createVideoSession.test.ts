@@ -5,7 +5,9 @@ import {
     createOwnedVideoSession,
     estimateSessionProxyCost,
     projectAllowsVideoSession,
+    type PersistedVideoSessionUploadGrant,
     type VideoSessionClaimStore,
+    type VideoSessionUploadGrantStore,
 } from './createVideoSession';
 
 function createMemoryStore(): VideoSessionClaimStore {
@@ -23,6 +25,23 @@ function createMemoryStore(): VideoSessionClaimStore {
     };
 }
 
+function createMemoryGrantStore(): VideoSessionUploadGrantStore & { writes: number } {
+    const grants = new Map<string, PersistedVideoSessionUploadGrant>();
+    return {
+        writes: 0,
+        async get(sessionId) {
+            return grants.get(sessionId);
+        },
+        async claim(proposed) {
+            const existing = grants.get(proposed.sessionId);
+            if (existing) return { grant: existing, created: false };
+            grants.set(proposed.sessionId, proposed);
+            this.writes += 1;
+            return { grant: proposed, created: true };
+        },
+    };
+}
+
 const request = {
     organizationId: 'org-1',
     projectId: 'project-1',
@@ -34,15 +53,29 @@ const request = {
 describe('createOwnedVideoSession', () => {
     it('returns one owner-scoped resumable destination for repeated requests without a public URL', async () => {
         const store = createMemoryStore();
+        const grants = createMemoryGrantStore();
+        let resumableSessionsCreated = 0;
+        const costReservationIds = new Set<string>();
         const dependencies = {
             store,
+            grants,
             bucketName: 'private-media-bucket',
             now: () => new Date('2026-07-21T18:00:00.000Z'),
+            allowedOrigin: 'https://app.indii.music',
+            createResumableUpload: async () => {
+                resumableSessionsCreated += 1;
+                return 'https://storage.googleapis.test/upload/resumable-owner-1';
+            },
             estimateCost: () => ({
                 currency: 'USD' as const,
                 amountMinor: 125,
                 estimateVersion: 'session-proxy-cost.v1',
             }),
+            reserveCost: async ({ sessionId }: { sessionId: string }) => {
+                const reservationId = `video-session-${sessionId}`;
+                costReservationIds.add(reservationId);
+                return reservationId;
+            },
             authorizeProject: async () => undefined,
         };
 
@@ -52,10 +85,21 @@ describe('createOwnedVideoSession', () => {
         expect(first.created).toBe(true);
         expect(retry.created).toBe(false);
         expect(retry.session).toEqual(first.session);
+        expect(retry.upload.resumableSessionUri).toBe(first.upload.resumableSessionUri);
+        expect(resumableSessionsCreated).toBe(1);
+        expect(grants.writes).toBe(1);
+        expect(costReservationIds.size).toBe(1);
+        expect(first.session.costReservationId).toBe(`video-session-${first.session.sessionId}`);
         expect(VideoSessionSchema.safeParse(first.session).success).toBe(true);
         expect(first.upload.storageUri).toBe(
             `gs://private-media-bucket/session-media/artist-1/${first.session.sessionId}/staging/original.mov`,
         );
+        expect(first.upload).toMatchObject({
+            protocol: 'gcs-resumable.v1',
+            resumableSessionUri: 'https://storage.googleapis.test/upload/resumable-owner-1',
+            chunkSizeBytes: 8 * 1024 * 1024,
+            expiresAt: '2026-07-27T18:00:00.000Z',
+        });
         expect(first.upload).not.toHaveProperty('url');
         expect(first.upload.requiredMetadata).toMatchObject({
             ownerUid: 'artist-1',
@@ -64,9 +108,16 @@ describe('createOwnedVideoSession', () => {
             sessionId: first.session.sessionId,
         });
 
-        const otherOwner = await createOwnedVideoSession('artist-2', request, dependencies);
+        const otherOwner = await createOwnedVideoSession('artist-2', request, {
+            ...dependencies,
+            createResumableUpload: async () => {
+                resumableSessionsCreated += 1;
+                return 'https://storage.googleapis.test/upload/resumable-owner-2';
+            },
+        });
         expect(otherOwner.session.sessionId).not.toBe(first.session.sessionId);
         expect(otherOwner.upload.storageUri).toContain('/artist-2/');
+        expect(otherOwner.upload.resumableSessionUri).not.toBe(first.upload.resumableSessionUri);
     });
 
     it('rejects an unauthorized project before claiming an upload destination', async () => {
@@ -76,13 +127,21 @@ describe('createOwnedVideoSession', () => {
                     throw new Error('claim must not run before authorization');
                 },
             },
+            grants: createMemoryGrantStore(),
             bucketName: 'private-media-bucket',
             now: () => new Date('2026-07-21T18:00:00.000Z'),
+            allowedOrigin: 'https://app.indii.music',
+            createResumableUpload: async () => {
+                throw new Error('upload grant must not be created before authorization');
+            },
             estimateCost: () => ({
                 currency: 'USD',
                 amountMinor: 125,
                 estimateVersion: 'session-proxy-cost.v1',
             }),
+            reserveCost: async () => {
+                throw new Error('cost reservation must not run before authorization');
+            },
             authorizeProject: async () => {
                 throw new HttpsError('permission-denied', 'Project is not available to this owner.');
             },

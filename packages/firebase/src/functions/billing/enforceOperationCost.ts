@@ -64,6 +64,8 @@ export interface CheckOperationBudgetParams {
   operationType: OperationType;
   metadata?: Record<string, unknown>;
   forceBypass?: boolean;
+  /** Server-derived identity for exactly-once background reservations. */
+  operationId?: string;
 }
 
 const RUNAWAY_LIMIT = 500; // Global kill-switch: no account can exceed $500/month
@@ -220,14 +222,28 @@ export async function checkOperationBudget(
     const hourlyRef = db.doc(userLedgerDocument(userId, `hourly-${hour}`));
     const userRef = db.doc(`users/${userId}`);
     const testLedgerRef = db.doc(userLedgerDocument(userId, `test-${today}`));
+    const requestedOperationId = params.operationId?.trim();
+    if (params.operationId !== undefined && !requestedOperationId) {
+      return {
+        allowed: false,
+        reason: 'Invalid operation id.',
+        remainingBudget: 0,
+        dailyUsed: 0,
+        monthlyUsed: 0,
+      };
+    }
+    const operationId = requestedOperationId
+      || `op-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+    const operationRef = db.doc(`costLedger/${operationId}`);
 
     return await db.runTransaction(async (tx) => {
-      const [dailySnap, monthlySnap, hourlySnap, userSnap, testSnap] = await Promise.all([
+      const [dailySnap, monthlySnap, hourlySnap, userSnap, testSnap, operationSnap] = await Promise.all([
         tx.get(dailyRef),
         tx.get(monthlyRef),
         tx.get(hourlyRef),
         tx.get(userRef),
         isTestMode ? tx.get(testLedgerRef) : Promise.resolve(undefined),
+        tx.get(operationRef),
       ]);
 
       const dailyUsed = dailySnap.exists ? (dailySnap.data()?.totalCost || 0) : 0;
@@ -236,6 +252,38 @@ export async function checkOperationBudget(
       const testDailyUsed = testSnap?.exists ? (testSnap.data()?.totalCost || 0) : 0;
       const userTier = userSnap.exists ? (userSnap.data()?.tier || 'free') : 'free';
       const limits = BUDGET_LIMITS[userTier] || BUDGET_LIMITS.free;
+
+      if (operationSnap.exists) {
+        const existing = operationSnap.data() || {};
+        const sameReservation = existing.userId === userId
+          && existing.type === operationType
+          && Number(existing.estimatedCost) === estimatedCost;
+        if (!sameReservation) {
+          return {
+            allowed: false,
+            reason: 'The operation id is already bound to a different cost reservation.',
+            remainingBudget: Math.max(0, limits.daily - dailyUsed),
+            dailyUsed,
+            monthlyUsed,
+          };
+        }
+        if (existing.status === 'APPROVED' || existing.status === 'SETTLED') {
+          return {
+            allowed: true,
+            remainingBudget: Math.max(0, limits.daily - dailyUsed),
+            dailyUsed,
+            monthlyUsed,
+            operationId,
+          };
+        }
+        return {
+          allowed: false,
+          reason: `The cost reservation is already ${String(existing.status || 'invalid')}.`,
+          remainingBudget: Math.max(0, limits.daily - dailyUsed),
+          dailyUsed,
+          monthlyUsed,
+        };
+      }
 
       if (isTestMode && testDailyUsed + estimatedCost > TEST_MODE_DAILY_LIMIT && !forceBypass) {
         console.warn('[CostControl] TEST_MODE budget exceeded', {
@@ -353,7 +401,6 @@ export async function checkOperationBudget(
         };
       }
 
-      const operationId = `op-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
       const increment = FieldValue.increment;
       const now = FieldValue.serverTimestamp();
 
@@ -394,7 +441,7 @@ export async function checkOperationBudget(
         }, { merge: true });
       }
 
-      tx.set(db.doc(`costLedger/${operationId}`), {
+      tx.set(operationRef, {
         operationId,
         type: operationType,
         userId,
@@ -522,8 +569,22 @@ export async function expireStaleOperationReservations(
         ? data.metadata as Record<string, unknown>
         : undefined;
       const jobId = typeof metadata?.jobId === 'string' ? metadata.jobId : undefined;
+      const videoSessionId = typeof metadata?.videoSessionId === 'string'
+        ? metadata.videoSessionId
+        : undefined;
       let outcome: 'SETTLED' | 'VOIDED' = 'VOIDED';
-      if (jobId) {
+      if (videoSessionId) {
+        const sessionSnapshot = await db.doc(`videoSessions/${videoSessionId}`).get();
+        const status = sessionSnapshot.exists ? sessionSnapshot.data()?.status : undefined;
+        if (status === 'completed') {
+          outcome = 'SETTLED';
+        } else if (status !== 'failed' && status !== 'cancelled' && sessionSnapshot.exists) {
+          // Long uploads and proxy work can legitimately outlive the generic
+          // 15-minute hold TTL. Their durable session plus retention cleanup
+          // is the authoritative lifecycle, so do not refund active work.
+          continue;
+        }
+      } else if (jobId) {
         const jobSnapshot = await db.doc(`creative_jobs/${jobId}`).get();
         if (jobSnapshot.exists && jobSnapshot.data()?.status === 'completed') {
           outcome = 'SETTLED';

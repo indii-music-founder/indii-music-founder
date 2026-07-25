@@ -54,6 +54,16 @@ function memoryClaimStore(seed?: ProxyJobClaim): ProxyJobClaimStore & { stored?:
             state.writes += 1;
             return { claim, reused: false };
         },
+        async markQueued(_sessionId: string, jobId: string, queuedAt: string) {
+            if (!state.stored || state.stored.jobId !== jobId) {
+                throw new Error('claim changed before enqueue completed');
+            }
+            if (state.stored.status === 'queued') {
+                return { claim: state.stored, reused: true };
+            }
+            state.stored = { ...state.stored, status: 'queued', queuedAt };
+            return { claim: state.stored, reused: false };
+        },
     };
     return state;
 }
@@ -141,6 +151,24 @@ describe('dispatchSessionProxyJob', () => {
         expect(second).toMatchObject({ jobId: first.jobId, status: 'queued', reused: true });
         expect(createTask).toHaveBeenCalledTimes(1);
         expect(claims.writes).toBe(1);
+    });
+
+    it('retries deterministic enqueue after a claim committed but task creation failed', async () => {
+        const claims = memoryClaimStore();
+        const createTask = vi.fn<ProxyTasksClientLike['createTask']>()
+            .mockRejectedValueOnce(Object.assign(new Error('Cloud Tasks unavailable'), { code: 14 }))
+            .mockResolvedValueOnce({});
+        const { client } = tasksClient({ createTask });
+        const deps = { env: workerEnv, claims, tasksClient: client };
+
+        await expect(dispatchSessionProxyJob('session-1', original, deps)).rejects.toThrow(
+            /Cloud Tasks unavailable/,
+        );
+        const retry = await dispatchSessionProxyJob('session-1', original, deps);
+
+        expect(retry).toMatchObject({ status: 'queued', reused: true });
+        expect(createTask).toHaveBeenCalledTimes(2);
+        expect(createTask.mock.calls[1]?.[0].task.name).toBe(createTask.mock.calls[0]?.[0].task.name);
     });
 
     /**

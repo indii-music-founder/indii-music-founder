@@ -1811,6 +1811,46 @@ describe('Firestore Security Rules', () => {
             }));
             await assertFails(deleteDoc(doc(db, 'videoSessions', sessionId)));
         });
+
+        it('never exposes resumable bearer grants or dependency cleanup receipts to clients', async () => {
+            if (requireEmulator()) return;
+            await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                await setDoc(doc(ctx.firestore(), 'videoSessionUploadGrants', sessionId), {
+                    ownerUid: ALICE_UID,
+                    resumableSessionUri: 'https://storage.googleapis.test/private-capability',
+                });
+                await setDoc(doc(
+                    ctx.firestore(),
+                    'videoSessionDependencies',
+                    sessionId,
+                    'references',
+                    'alignment-1',
+                ), {
+                    ownerUid: ALICE_UID,
+                    type: 'master-sync-alignment',
+                });
+            });
+            const db = verifiedCtx(ALICE_UID).firestore();
+            await assertFails(getDoc(doc(db, 'videoSessionUploadGrants', sessionId)));
+            await assertFails(setDoc(doc(db, 'videoSessionUploadGrants', sessionId), {
+                ownerUid: ALICE_UID,
+                resumableSessionUri: 'https://attacker.invalid',
+            }));
+            await assertFails(getDoc(doc(
+                db,
+                'videoSessionDependencies',
+                sessionId,
+                'references',
+                'alignment-1',
+            )));
+            await assertFails(deleteDoc(doc(
+                db,
+                'videoSessionDependencies',
+                sessionId,
+                'references',
+                'alignment-1',
+            )));
+        });
     });
 
     // ──────────────────────────────────────────────────────────────────────

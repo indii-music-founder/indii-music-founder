@@ -10,15 +10,25 @@
     <link rel="manifest" href="/manifest.json" />
 
     <!-- Mobile Viewport - Optimized for touch -->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover, interactive-widget=resizes-content" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover, interactive-widget=resizes-content"
+    />
 
     <!-- Theme Colors -->
     <meta name="theme-color" content="#0f0f0f" />
-    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0f0f0f" />
+    <meta
+      name="theme-color"
+      media="(prefers-color-scheme: dark)"
+      content="#0f0f0f"
+    />
 
     <!-- Apple Mobile Web App -->
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
     <meta name="apple-mobile-web-app-title" content="indii" />
     <!-- Item 396: iOS splash screen — prevents white flash on PWA launch -->
     <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
@@ -33,18 +43,37 @@
     <meta name="format-detection" content="telephone=no" />
 
     <!-- Performance Hints - Google Fonts preconnect -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin="anonymous" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
+    <link
+      rel="preconnect"
+      href="https://fonts.googleapis.com"
+      crossorigin="anonymous"
+    />
+    <link
+      rel="preconnect"
+      href="https://fonts.gstatic.com"
+      crossorigin="anonymous"
+    />
 
     <!-- Item 363: Preconnect to Firebase for LCP improvement — reduces DNS + TLS handshake time -->
-    <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin="anonymous" />
-    <link rel="preconnect" href="https://firebasestorage.googleapis.com" crossorigin="anonymous" />
+    <link
+      rel="preconnect"
+      href="https://firestore.googleapis.com"
+      crossorigin="anonymous"
+    />
+    <link
+      rel="preconnect"
+      href="https://firebasestorage.googleapis.com"
+      crossorigin="anonymous"
+    />
     <link rel="dns-prefetch" href="https://identitytoolkit.googleapis.com" />
 
     <title>indii.music — Your Creative Studio</title>
 
     <!-- SEO -->
-    <meta name="description" content="indii.music is your personal music business team. Distribution, creative, legal, finance, and 21 specialist agents — all in one studio." />
+    <meta
+      name="description"
+      content="indii.music is your personal music business team. Distribution, creative, legal, finance, and 21 specialist agents — all in one studio."
+    />
     <link rel="canonical" href="https://indii.music/" />
     <meta name="robots" content="noindex, nofollow" />
 
@@ -52,7 +81,10 @@
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://indii.music/" />
     <meta property="og:title" content="indii.music — Your Creative Studio" />
-    <meta property="og:description" content="Your personal team of 21 specialists for independent music. Private launch — sign in to preview." />
+    <meta
+      property="og:description"
+      content="Your personal team of 21 specialists for independent music. Private launch — sign in to preview."
+    />
     <meta property="og:image" content="https://indii.music/og-image.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
@@ -62,13 +94,17 @@
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:site" content="@indiidotmusic" />
     <meta name="twitter:title" content="indii.music — Your Creative Studio" />
-    <meta name="twitter:description" content="Your personal team of 21 specialists for independent music." />
+    <meta
+      name="twitter:description"
+      content="Your personal team of 21 specialists for independent music."
+    />
     <meta name="twitter:image" content="https://indii.music/og-image.png" />
 
     <!-- Critical Mobile Styles -->
     <style>
       /* Prevent white flash on load - set dark background immediately */
-      html, body {
+      html,
+      body {
         margin: 0;
         padding: 0;
         background-color: #0f0f0f;
@@ -104,7 +140,7 @@
 
       /* Initial loading state - prevents flash of unstyled content */
       #root:empty::before {
-        content: '';
+        content: "";
         position: fixed;
         top: 50%;
         left: 50%;
@@ -118,27 +154,14 @@
       }
 
       @keyframes spin {
-        to { transform: translate(-50%, -50%) rotate(360deg); }
-      }
-    </style>
-
-  </head>
-  <body>
-    <script>
-      // Allow enabling E2E mock via query parameters (e.g. ?e2e=true or ?mock=true)
-      const params = new URLSearchParams(window.location.search);
-      if (params.get('e2e') === 'true' || params.get('mock') === 'true') {
-        try {
-          window.FIREBASE_E2E_MOCK = true;
-          localStorage.setItem('FIREBASE_E2E_MOCK', 'true');
-        } catch (error) {
-          console.warn('Unable to set local Firebase mock flag', error);
+        to {
+          transform: translate(-50%, -50%) rotate(360deg);
         }
       }
-      if (window.location.hostname.endsWith('web.app') || window.location.hostname.endsWith('firebaseapp.com')) {
-        window.location.replace('https://indii.music' + window.location.pathname + window.location.search + window.location.hash);
-      }
-    </script>
+    </style>
+  </head>
+  <body>
+    <script src="./bootstrap.js"></script>
     <div id="root"></div>
     <script type="module" src="/src/startupWatchdog.ts"></script>
     <script type="module" src="/src/main.tsx"></script>
