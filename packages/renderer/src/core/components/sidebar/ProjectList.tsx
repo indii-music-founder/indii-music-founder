@@ -23,7 +23,7 @@ export function ProjectList({ isSidebarOpen }: ProjectListProps) {
 
   const { syncProject } = useProjectSync();
 
-  const [isOpen, setIsOpen] = React.useState(true);
+  const [isOpen, setIsOpen] = React.useState(false);
   const [isArchivesOpen, setIsArchivesOpen] = React.useState(false);
   const [isLoading, setLoading] = useState(false);
   const [pendingRename, setPendingRename] = useState<{ id: string; name: string } | null>(null);
@@ -240,6 +240,7 @@ export function ProjectList({ isSidebarOpen }: ProjectListProps) {
       {isSidebarOpen && (
         <button
           onClick={() => setIsOpen(!isOpen)}
+          aria-expanded={isOpen}
           className="w-full flex items-center justify-between px-4 py-1 text-xs font-semibold text-gray-400 hover:text-gray-200 uppercase tracking-wider mb-1 transition-colors group"
         >
           <span className="whitespace-nowrap flex items-center gap-2">

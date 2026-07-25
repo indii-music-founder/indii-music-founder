@@ -133,9 +133,9 @@ export default function Sidebar() {
 
     // UI state for collapsible sections
     const [sectionsOpen, setSectionsOpen] = useState({
-        managers: true,
-        departments: true,
-        tools: true,
+        managers: false,
+        departments: false,
+        tools: false,
     });
 
     // Select specific state slices with shallow comparison to prevent unnecessary re-renders on unrelated store updates
@@ -381,6 +381,7 @@ export default function Sidebar() {
                     {isSidebarOpen && (
                         <button
                             onClick={() => setSectionsOpen(s => ({ ...s, managers: !s.managers }))}
+                            aria-expanded={sectionsOpen.managers}
                             className="w-full flex items-center justify-between px-4 py-1 text-xs font-semibold text-gray-400 hover:text-gray-200 uppercase tracking-wider mb-1 transition-colors"
                         >
                             <span className="whitespace-nowrap">Manager's Office</span>
@@ -408,6 +409,7 @@ export default function Sidebar() {
                     {isSidebarOpen && (
                         <button
                             onClick={() => setSectionsOpen(s => ({ ...s, departments: !s.departments }))}
+                            aria-expanded={sectionsOpen.departments}
                             className="w-full flex items-center justify-between px-4 py-1 text-xs font-semibold text-gray-400 hover:text-gray-200 uppercase tracking-wider mb-1 transition-colors"
                         >
                             <span className="whitespace-nowrap">Departments</span>
@@ -435,6 +437,7 @@ export default function Sidebar() {
                     {isSidebarOpen && (
                         <button
                             onClick={() => setSectionsOpen(s => ({ ...s, tools: !s.tools }))}
+                            aria-expanded={sectionsOpen.tools}
                             className="w-full flex items-center justify-between px-4 py-1 text-xs font-semibold text-gray-400 hover:text-gray-200 uppercase tracking-wider mb-1 transition-colors"
                         >
                             <span className="whitespace-nowrap">Tools</span>
@@ -460,8 +463,8 @@ export default function Sidebar() {
             {/* Footer */}
             <div className={`p-4 border-t border-white/5 mt-auto flex flex-col gap-2 ${!isSidebarOpen ? 'items-center' : ''}`}>
                 {isSidebarOpen && (
-                    <p className="text-[10px] text-gray-600 text-center italic">
-                        made by Detroit, for the world.
+                    <p className="text-[10px] text-green-400 text-center italic">
+                        made in Detroit for independence music artists
                     </p>
                 )}
             </div>

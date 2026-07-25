@@ -35,16 +35,19 @@ describe('Sidebar', () => {
         });
     });
 
-    it('renders Brand Manager in the Manager section', () => {
+    it('starts navigation sections closed and opens them on request', () => {
         render(<Sidebar />);
 
         const managerSection = screen.getByTestId('manager-section');
+        const managerToggle = screen.getByRole('button', { name: "Manager's Office" });
+
+        expect(managerToggle).toHaveAttribute('aria-expanded', 'false');
+        expect(screen.queryByText('Brand Manager')).not.toBeInTheDocument();
+
+        fireEvent.click(managerToggle);
         const brandManagerBtn = screen.getByText('Brand Manager');
 
-        // Check if Brand Manager button exists
-        expect(brandManagerBtn).toBeTruthy();
-
-        // Verify it is inside the manager section
+        expect(managerToggle).toHaveAttribute('aria-expanded', 'true');
         expect(managerSection.contains(brandManagerBtn)).toBe(true);
     });
 
@@ -61,6 +64,7 @@ describe('Sidebar', () => {
         });
 
         render(<Sidebar />);
+        fireEvent.click(screen.getByRole('button', { name: "Manager's Office" }));
         const brandManagerBtn = screen.getByText('Brand Manager');
 
         // Click the button (parent button element)

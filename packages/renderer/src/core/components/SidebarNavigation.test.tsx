@@ -150,12 +150,20 @@ describe('Sidebar Navigation Integration', () => {
         mockedUseStore.getState = vi.fn().mockReturnValue(storeState);
     });
 
-    it('renders all sidebar items', () => {
+    it('starts sidebar sections closed and reveals their items when opened', () => {
         render(
             <MemoryRouter>
                 <Sidebar />
             </MemoryRouter>
         );
+
+        expect(screen.queryByText('Brand Manager')).not.toBeInTheDocument();
+        expect(screen.queryByText('Marketing Department')).not.toBeInTheDocument();
+        expect(screen.queryByText('Notes')).not.toBeInTheDocument();
+
+        fireEvent.click(screen.getByRole('button', { name: "Manager's Office" }));
+        fireEvent.click(screen.getByRole('button', { name: 'Departments' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Tools' }));
 
         expect(screen.getByText('Brand Manager')).toBeInTheDocument();
         expect(screen.getByText('Road/tour')).toBeInTheDocument();
@@ -177,6 +185,10 @@ describe('Sidebar Navigation Integration', () => {
                 <Sidebar />
             </MemoryRouter>
         );
+
+        fireEvent.click(screen.getByRole('button', { name: "Manager's Office" }));
+        fireEvent.click(screen.getByRole('button', { name: 'Departments' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Tools' }));
 
         fireEvent.click(screen.getByText('Brand Manager'));
         expect(mockSetModule).toHaveBeenCalledWith('brand');
@@ -364,6 +376,7 @@ describe('Sidebar Navigation Integration', () => {
             </MemoryRouter>
         );
 
+        fireEvent.click(screen.getByRole('button', { name: 'Departments' }));
         fireEvent.click(screen.getByText('Social Media Department'));
         expect(mockSetModule).toHaveBeenCalledWith('social');
     });
@@ -390,6 +403,7 @@ describe('Sidebar Navigation Integration', () => {
             </MemoryRouter>
         );
 
+        fireEvent.click(screen.getByRole('button', { name: "Manager's Office" }));
         // Manager section items are rendered
         expect(screen.getByTestId('nav-item-brand')).toBeInTheDocument();
         // Sidebar toggle is accessible
