@@ -127,7 +127,7 @@ export async function cancelOwnedVideoSession(
 }
 
 export const cancelVideoSession = onCall(
-    { timeoutSeconds: 30, memory: '256MiB', enforceAppCheck: false },
+    { timeoutSeconds: 30, memory: '512MiB', enforceAppCheck: false },
     async (request) => {
         validateAppCheckV2(request);
         if (!request.auth) {

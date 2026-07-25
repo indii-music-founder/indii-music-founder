@@ -166,3 +166,14 @@ export function getStudioUrl() {
 
   return isFounderDomain ? `${STUDIO_URL}?source=founder` : STUDIO_URL;
 }
+
+/**
+ * Public Founder-preview destination.
+ * Opens the canonical Studio without carrying Founder routing state into the new tab.
+ */
+export function getStudioPreviewUrl() {
+  if (isLocalLandingDevHost()) {
+    return 'http://localhost:4242';
+  }
+  return STUDIO_URL;
+}
