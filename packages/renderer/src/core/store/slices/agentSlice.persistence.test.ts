@@ -139,4 +139,39 @@ describe('AgentSlice Persistence (The Amnesia Check)', () => {
         expect(session.messages.map(message => message.id)).toEqual(['desktop-1', 'phone-1']);
         expect(useStore.getState().agentHistory.map(message => message.id)).toEqual(['desktop-1', 'phone-1']);
     });
+
+    it('keeps optimistic first messages until the synchronized stream confirms them', async () => {
+        useStore = createStore<AgentSlice>((...a) => createAgentSlice(...a));
+
+        useStore.getState().addAgentMessage({
+            id: 'workflow-user',
+            role: 'user',
+            text: '/analyze-brand',
+            timestamp: 10,
+        });
+        useStore.getState().addAgentMessage({
+            id: 'workflow-intake',
+            role: 'model',
+            text: 'What artist, project, or release should I audit?',
+            timestamp: 11,
+        });
+
+        await vi.waitFor(() => expect(messageSubscribers.length).toBeGreaterThan(0));
+        const receive = messageSubscribers.at(-1)!;
+
+        receive([]);
+        expect(useStore.getState().agentHistory.map(message => message.id)).toEqual([
+            'workflow-user',
+            'workflow-intake',
+        ]);
+
+        receive([
+            { id: 'workflow-user', role: 'user', text: '/analyze-brand', timestamp: 10 },
+            { id: 'workflow-intake', role: 'model', text: 'What artist, project, or release should I audit?', timestamp: 11 },
+        ]);
+        expect(useStore.getState().agentHistory.map(message => message.id)).toEqual([
+            'workflow-user',
+            'workflow-intake',
+        ]);
+    });
 });

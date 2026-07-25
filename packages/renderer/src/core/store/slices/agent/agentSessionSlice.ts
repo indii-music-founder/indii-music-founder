@@ -4,6 +4,38 @@ import type { SessionPageCursor } from '@/services/agent/SessionService';
 
 let agentSessionsUnsubscribe: (() => void) | null = null;
 let agentMessagesUnsubscribe: (() => void) | null = null;
+const pendingMessageIds = new Map<string, Set<string>>();
+
+function markMessagePending(sessionId: string, messageId: string): void {
+    const pending = pendingMessageIds.get(sessionId) ?? new Set<string>();
+    pending.add(messageId);
+    pendingMessageIds.set(sessionId, pending);
+}
+
+function mergePendingMessages(
+    sessionId: string,
+    localMessages: AgentMessage[],
+    synchronizedMessages: AgentMessage[]
+): AgentMessage[] {
+    const pending = pendingMessageIds.get(sessionId);
+    if (!pending?.size) return synchronizedMessages;
+
+    const synchronizedIds = new Set(synchronizedMessages.map(message => message.id));
+    for (const messageId of synchronizedIds) {
+        pending.delete(messageId);
+    }
+
+    const optimisticMessages = localMessages.filter(
+        message => pending.has(message.id) && !synchronizedIds.has(message.id)
+    );
+
+    if (pending.size === 0) {
+        pendingMessageIds.delete(sessionId);
+    }
+
+    return [...synchronizedMessages, ...optimisticMessages]
+        .sort((a, b) => a.timestamp - b.timestamp);
+}
 
 export type MessageSource = 'desktop' | 'mobile-remote' | 'background' | 'api' | 'boardroom';
 
@@ -107,7 +139,14 @@ export function buildAgentSessionState(
                     // Keep legacy documents readable until their messages have
                     // been migrated, but child documents are authoritative once
                     // one exists.
-                    const nextMessages = session.messageStorage === 'subcollection' ? messages : (messages.length > 0 ? messages : session.messages);
+                    const synchronizedMessages = session.messageStorage === 'subcollection'
+                        ? messages
+                        : (messages.length > 0 ? messages : session.messages);
+                    const nextMessages = mergePendingMessages(
+                        sessionId,
+                        session.messages,
+                        synchronizedMessages
+                    );
                     return {
                         sessions: { ...state.sessions, [sessionId]: { ...session, messages: nextMessages } },
                         ...(state.activeSessionId === sessionId ? { agentHistory: nextMessages } : {}),
@@ -184,6 +223,7 @@ export function buildAgentSessionState(
         deleteSession: (sessionId) => set(state => {
             const newSessions = { ...state.sessions };
             delete newSessions[sessionId];
+            pendingMessageIds.delete(sessionId);
 
             // Persist the deletion
             import('@/services/agent/SessionService').then(({ sessionService }) => {
@@ -298,6 +338,7 @@ export function buildAgentSessionState(
                 messages: [...currentSession.messages, msg],
                 updatedAt: Date.now()
             };
+            markMessagePending(currentSessionId, msg.id);
 
             // Persist the updated session messages with retry logic
             const persistSession = async (attempt = 1) => {
@@ -374,6 +415,7 @@ export function buildAgentSessionState(
                 messages: [...session.messages, msg],
                 updatedAt: Date.now()
             };
+            markMessagePending(sessionId, msg.id);
 
             // Persist with retry logic
             const persistMessage = async (attempt = 1) => {
@@ -405,6 +447,7 @@ export function buildAgentSessionState(
         clearAgentHistory: (sessionId) => set(state => {
             const targetSessionId = sessionId || state.activeSessionId;
             if (!targetSessionId || !state.sessions[targetSessionId]) return {};
+            pendingMessageIds.delete(targetSessionId);
 
             // Persist the cleared history with retry logic
             const persistClear = async (attempt = 1) => {
