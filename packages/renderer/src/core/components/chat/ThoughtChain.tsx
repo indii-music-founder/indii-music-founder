@@ -12,7 +12,7 @@ interface ThoughtChainProps {
 }
 
 export const ThoughtChain = memo(({ thoughts, messageId, compact }: ThoughtChainProps) => {
-    const [isOpen, setIsOpen] = useState(true);
+    const [isOpen, setIsOpen] = useState(false);
     const contentId = `thought-chain-${messageId}`;
     const buttonId = `thought-chain-btn-${messageId}`;
 

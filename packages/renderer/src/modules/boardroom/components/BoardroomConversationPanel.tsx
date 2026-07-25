@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useLayoutEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import type { AgentMessage } from '@/core/store/slices/agent/agentSessionSlice';
 import { agentRegistry } from '@/services/agent/registry';
@@ -22,16 +22,39 @@ interface BoardroomConversationPanelProps {
  */
 export function BoardroomConversationPanel({ messages }: BoardroomConversationPanelProps) {
     const scrollRef = useRef<HTMLDivElement>(null);
+    const shouldFollowRef = useRef(true);
+    const previousMessageCountRef = useRef(0);
+    const latestMessage = messages[messages.length - 1];
+    const latestMessageSignature = latestMessage
+        ? `${latestMessage.id}:${latestMessage.text?.length || 0}:${latestMessage.isStreaming ? 1 : 0}:${latestMessage.thoughts?.length || 0}`
+        : 'empty';
 
-    // Auto-scroll to bottom when new messages arrive
-    useEffect(() => {
-        if (scrollRef.current) {
-            scrollRef.current.scrollTo({
-                top: scrollRef.current.scrollHeight,
-                behavior: 'smooth',
+    // Start at the newest message and follow streaming updates while the user
+    // remains near the bottom. Instant positioning avoids smooth-scroll jitter
+    // as message cards grow token-by-token.
+    useLayoutEffect(() => {
+        if (messages.length > previousMessageCountRef.current) {
+            shouldFollowRef.current = true;
+        }
+        previousMessageCountRef.current = messages.length;
+
+        const scrollContainer = scrollRef.current;
+        if (scrollContainer && shouldFollowRef.current) {
+            scrollContainer.scrollTo({
+                top: scrollContainer.scrollHeight,
+                behavior: 'auto',
             });
         }
-    }, [messages.length]);
+    }, [latestMessageSignature, messages.length]);
+
+    const handleScroll = useCallback(() => {
+        const scrollContainer = scrollRef.current;
+        if (!scrollContainer) return;
+
+        const distanceFromBottom =
+            scrollContainer.scrollHeight - scrollContainer.scrollTop - scrollContainer.clientHeight;
+        shouldFollowRef.current = distanceFromBottom <= 80;
+    }, []);
 
     // Auto-cleanup stale streaming states if execution hangs or connection is lost (Issue-022)
     useEffect(() => {
@@ -89,6 +112,7 @@ export function BoardroomConversationPanel({ messages }: BoardroomConversationPa
             {/* Scrollable Message List */}
             <div
                 ref={scrollRef}
+                onScroll={handleScroll}
                 className="flex-1 overflow-y-auto custom-scrollbar px-4 py-4 space-y-1"
             >
                 <AnimatePresence initial={false}>

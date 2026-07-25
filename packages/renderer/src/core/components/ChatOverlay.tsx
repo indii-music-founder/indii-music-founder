@@ -142,6 +142,15 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, onToggleMinimize }) 
         return chatChannel === 'indii' ? 'purple' : 'blue';
     }, [activeAgent, chatChannel]);
 
+    const filteredMessages = useMemo(() => (
+        sourceFilter === 'all'
+            ? messages
+            : messages.filter(message => sourceFilter === 'desktop'
+                ? (!message.source || message.source === 'desktop')
+                : message.source === sourceFilter
+            )
+    ), [messages, sourceFilter]);
+
     // Virtuoso message renderer
     const itemContent = useCallback((_index: number, msg: AgentMessage) => (
         <div className="px-4 py-2">
@@ -303,12 +312,9 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, onToggleMinimize }) 
                                         <Virtuoso
                                             ref={virtuosoRef}
                                             style={{ height: '100%' }}
-                                            data={sourceFilter === 'all'
-                                                ? messages
-                                                : messages.filter(m => sourceFilter === 'desktop'
-                                                    ? (!m.source || m.source === 'desktop')
-                                                    : m.source === sourceFilter
-                                                )}
+                                            data={filteredMessages}
+                                            initialTopMostItemIndex={Math.max(filteredMessages.length - 1, 0)}
+                                            followOutput={(isAtBottom) => isAtBottom ? 'auto' : false}
                                             atBottomStateChange={setIsAutoScrolling}
                                             itemContent={itemContent}
                                             components={{

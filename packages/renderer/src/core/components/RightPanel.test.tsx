@@ -4,6 +4,8 @@ import React from 'react';
 import RightPanel from './RightPanel';
 import { useStore } from '../store';
 
+Element.prototype.scrollTo = vi.fn();
+
 vi.mock('../store', () => {
     const mockUseStore = vi.fn();
     (mockUseStore as any).setState = vi.fn();
@@ -256,5 +258,40 @@ describe('RightPanel', () => {
         fireEvent.click(closeButton);
         
         expect(mockToggleRightPanel).toHaveBeenCalled();
+    });
+
+    it('keeps the newest streaming response in view as its text grows', () => {
+        const initialMessage = {
+            id: 'response-1',
+            role: 'model' as const,
+            text: 'Starting',
+            timestamp: Date.now(),
+            isStreaming: true,
+        };
+        const openAgentState = {
+            ...defaultState,
+            rightPanelTab: 'agent',
+            isRightPanelOpen: true,
+            agentHistory: [initialMessage],
+        };
+        (useStore as unknown as ReturnType<typeof vi.fn>).mockReturnValue(openAgentState);
+
+        const { rerender } = render(<RightPanel />);
+        const callsAfterInitialAnchor = vi.mocked(Element.prototype.scrollTo).mock.calls.length;
+
+        (useStore as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
+            ...openAgentState,
+            agentHistory: [{
+                ...initialMessage,
+                text: 'Starting and continuing the streamed response',
+            }],
+        });
+        rerender(<RightPanel />);
+
+        expect(Element.prototype.scrollTo).toHaveBeenCalledWith({
+            top: expect.any(Number),
+            behavior: 'auto',
+        });
+        expect(vi.mocked(Element.prototype.scrollTo).mock.calls.length).toBeGreaterThan(callsAfterInitialAnchor);
     });
 });

@@ -67,9 +67,15 @@ export default function RightPanel() {
         }))
     );
 
-    const chatEndRef = React.useRef<HTMLDivElement>(null);
+    const chatScrollRef = React.useRef<HTMLDivElement>(null);
+    const shouldFollowChatRef = React.useRef(true);
+    const previousMessageCountRef = React.useRef(0);
     const [isCreationsCollapsed, setIsCreationsCollapsed] = React.useState(true);
     const [shouldPulseCreations, setShouldPulseCreations] = React.useState(false);
+    const latestMessage = agentHistory[agentHistory.length - 1];
+    const latestMessageSignature = latestMessage
+        ? `${latestMessage.id}:${latestMessage.text?.length || 0}:${latestMessage.isStreaming ? 1 : 0}:${latestMessage.thoughts?.length || 0}`
+        : 'empty';
 
     React.useEffect(() => {
         if (generatedHistory.length === 0 || typeof window === 'undefined') return;
@@ -84,11 +90,41 @@ export default function RightPanel() {
         setShouldPulseCreations(false);
     }, [userProfile?.id]);
 
-    React.useEffect(() => {
-        if (view === 'messages') {
-            chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    React.useLayoutEffect(() => {
+        if (!isRightPanelOpen || rightPanelTab !== 'agent' || view !== 'messages') {
+            shouldFollowChatRef.current = true;
+            previousMessageCountRef.current = agentHistory.length;
+            return;
         }
-    }, [agentHistory.length, view]);
+
+        if (agentHistory.length > previousMessageCountRef.current) {
+            shouldFollowChatRef.current = true;
+        }
+        previousMessageCountRef.current = agentHistory.length;
+
+        const scrollContainer = chatScrollRef.current;
+        if (scrollContainer && shouldFollowChatRef.current) {
+            scrollContainer.scrollTo({
+                top: scrollContainer.scrollHeight,
+                behavior: 'auto',
+            });
+        }
+    }, [
+        agentHistory.length,
+        isRightPanelOpen,
+        latestMessageSignature,
+        rightPanelTab,
+        view,
+    ]);
+
+    const handleChatScroll = React.useCallback(() => {
+        const scrollContainer = chatScrollRef.current;
+        if (!scrollContainer) return;
+
+        const distanceFromBottom =
+            scrollContainer.scrollHeight - scrollContainer.scrollTop - scrollContainer.clientHeight;
+        shouldFollowChatRef.current = distanceFromBottom <= 80;
+    }, []);
 
     React.useEffect(() => {
         const MODULES_WITH_CONTEXT = ['creative', 'video', 'workflow', 'knowledge', 'marketing'];
@@ -156,7 +192,12 @@ export default function RightPanel() {
                         ) : (
                             <div className="flex-1 flex flex-col min-h-0">
                                 {/* Messages List */}
-                                <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
+                                <div
+                                    ref={chatScrollRef}
+                                    onScroll={handleChatScroll}
+                                    data-testid="right-panel-message-scroll"
+                                    className="flex-1 overflow-y-auto p-4 custom-scrollbar"
+                                >
                                     {agentHistory.length === 0 ? (
                                         <div className="h-full flex flex-col items-center justify-center text-center p-8 opacity-40">
                                             <MessageSquare size={32} className="mb-4 text-green-400" />
@@ -179,7 +220,6 @@ export default function RightPanel() {
                                                     indii is thinking…
                                                 </div>
                                             )}
-                                            <div ref={chatEndRef} />
                                         </div>
                                     )}
                                 </div>

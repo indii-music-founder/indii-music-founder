@@ -249,4 +249,34 @@ describe('BoardroomConversationPanel', () => {
 
         expect(Element.prototype.scrollTo).toHaveBeenCalled();
     });
+
+    it('keeps following a streamed response when the message count does not change', () => {
+        const messages = [
+            {
+                id: 'msg-stream',
+                role: 'model' as const,
+                text: 'Beginning',
+                timestamp: Date.now(),
+                agentId: 'creative',
+                isStreaming: true,
+            },
+        ];
+        const { rerender } = render(<BoardroomConversationPanel messages={messages} />);
+        const callsAfterInitialAnchor = vi.mocked(Element.prototype.scrollTo).mock.calls.length;
+
+        rerender(
+            <BoardroomConversationPanel
+                messages={[{
+                    ...messages[0]!,
+                    text: 'Beginning and continuing the streamed response',
+                }]}
+            />
+        );
+
+        expect(Element.prototype.scrollTo).toHaveBeenCalledWith({
+            top: expect.any(Number),
+            behavior: 'auto',
+        });
+        expect(vi.mocked(Element.prototype.scrollTo).mock.calls.length).toBeGreaterThan(callsAfterInitialAnchor);
+    });
 });
