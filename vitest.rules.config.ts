@@ -26,11 +26,9 @@ export default defineConfig({
         // Rules tests are slow (emulator round-trips) — allow generous timeout
         testTimeout: 30000,
         hookTimeout: 30000,
-        // Sequential: rules tests share a single TestEnvironment
+        // Sequential: rules tests share emulator state and clear it between cases.
         pool: 'forks',
-        poolOptions: {
-            forks: { singleFork: true },
-        },
+        fileParallelism: false,
+        maxWorkers: 1,
     },
 });
-

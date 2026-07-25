@@ -6,8 +6,8 @@
  *
  * Run via: npm run test:rules
  *
- * When the emulator is NOT running, all tests are gracefully skipped
- * with a console warning instead of failing with ECONNREFUSED.
+ * The suite fails closed when the emulator is unavailable. CI must start it
+ * with firebase emulators:exec so a missing emulator can never look green.
  *
  * Coverage:
  *  - Unauthenticated access denial
@@ -85,7 +85,7 @@ function checkEmulatorAvailable(): Promise<boolean> {
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
-// Main test suite — wrapped so we can skip the entire block
+// Main test suite
 // ──────────────────────────────────────────────────────────────────────────────
 
 describe('Firestore Security Rules', () => {
@@ -107,11 +107,10 @@ describe('Firestore Security Rules', () => {
     beforeAll(async () => {
         emulatorAvailable = await checkEmulatorAvailable();
         if (!emulatorAvailable) {
-            console.warn(
-                '\n⚠️  Firestore Emulator not running on localhost:8080. All rules tests will be skipped.\n' +
-                '   Start with: firebase emulators:start --only firestore\n'
+            throw new Error(
+                'Firestore Emulator is required on localhost:8080. ' +
+                'Run: firebase emulators:exec --only firestore,storage "npm run test:rules"'
             );
-            return;
         }
 
         const rules = readFileSync(resolve(__dirname, '../../../firestore.rules'), 'utf8');
@@ -178,6 +177,26 @@ describe('Firestore Security Rules', () => {
             if (requireEmulator()) return;
             const db = verifiedCtx(ALICE_UID).firestore();
             await assertSucceeds(setDoc(doc(db, 'users', ALICE_UID), aliceUserDoc));
+        });
+
+        it('owner: cannot manufacture privileged profile fields', async () => {
+            if (requireEmulator()) return;
+            const db = verifiedCtx(ALICE_UID).firestore();
+            await assertFails(setDoc(doc(db, 'users', ALICE_UID), {
+                ...aliceUserDoc,
+                roles: ['admin'],
+            }));
+            await assertFails(setDoc(doc(db, 'users', ALICE_UID), {
+                ...aliceUserDoc,
+                permissions: ['*'],
+            }));
+            await assertFails(setDoc(doc(db, 'users', ALICE_UID), {
+                ...aliceUserDoc,
+                role: 'admin',
+            }));
+            await assertFails(updateDoc(doc(db, 'users', ALICE_UID), {
+                isAdmin: true,
+            }));
         });
 
         it('other user: read denied', async () => {
@@ -1548,6 +1567,203 @@ describe('Firestore Security Rules', () => {
             await assertFails(setDoc(doc(db, 'instrument_usage_rate_limits', `${ALICE_UID}_generate_image`), {
                 userId: ALICE_UID,
                 count: 0,
+            }));
+        });
+    });
+
+    // ──────────────────────────────────────────────────────────────────────
+    // ROOT OWNER-FIELD INTEGRITY
+    // ──────────────────────────────────────────────────────────────────────
+
+    describe('root owner-scoped collections pin every authority field', () => {
+        const ownerScopedCollections = [
+            ['composition_drafts', 'userId'],
+            ['designs', 'userId'],
+            ['earnings_reports', 'userId'],
+            ['epk_portals', 'userId'],
+            ['influencerBounties', 'userId'],
+            ['iswc_works', 'userId'],
+            ['ledger', 'userId'],
+            ['merchandise', 'userId'],
+            ['merchandise_inventory', 'userId'],
+            ['mockup_generations', 'userId'],
+            ['print_jobs', 'userId'],
+            ['promoter_pitches', 'userId'],
+            ['scheduledPosts', 'userId'],
+            ['smart_contracts', 'userId'],
+            ['vinyl_campaigns', 'userId'],
+            ['history', 'userId'],
+            ['design_versions', 'userId'],
+            ['creative_sessions', 'userId'],
+            ['knowledge', 'userId'],
+            ['publishing_registrations', 'userId'],
+            ['notification_tokens', 'userId'],
+            ['label_deals', 'userId'],
+            ['ddexReleases', 'userId'],
+            ['proprietaryIngestionReleases', 'userId'],
+            ['projects', 'userId'],
+            ['proactive_tasks', 'userId'],
+            ['videoJobs', 'userId'],
+            ['distribution_tasks', 'userId'],
+            ['campaigns', 'userId'],
+            ['publicist_campaigns', 'userId'],
+            ['publicist_contacts', 'userId'],
+            ['workflows', 'userId'],
+            ['bountyLinks', 'userId'],
+            ['expenses', 'userId'],
+            ['revenue', 'userId'],
+            ['manufacture_requests', 'userId'],
+            ['agent_traces', 'userId'],
+            ['sessions', 'userId'],
+            ['boardroom_messages', 'userId'],
+            ['agent_notes', 'userId'],
+            ['tour_vehicles', 'userId'],
+            ['tour_itineraries', 'userId'],
+            ['tour_rider_items', 'userId'],
+            ['tour_emergency_contacts', 'userId'],
+            ['career_memory_archive', 'userId'],
+            ['video_releases', 'userId'],
+            ['clearance_docs', 'userId'],
+            ['licenses', 'userId'],
+            ['file_nodes', 'userId'],
+            ['deployments', 'userId'],
+            ['tax_profiles', 'userId'],
+            ['tracks', 'userId'],
+            ['products', 'sellerId'],
+            ['scheduled_posts', 'authorId'],
+            ['posts', 'authorId'],
+            ['marketplace_drops', 'ownerId'],
+        ] as const;
+
+        const authorityFields = [
+            'userId',
+            'ownerId',
+            'ownerUid',
+            'orgId',
+            'authorId',
+            'initiatorUid',
+            'requestedBy',
+            'labelId',
+            'createdBy',
+            'members',
+            'parties',
+        ] as const;
+
+        function baseDocument(collectionName: string, ownerField: string) {
+            return {
+                [ownerField]: ALICE_UID,
+                value: 'before',
+                ...(collectionName === 'products'
+                    ? {
+                        type: 'song',
+                        isActive: true,
+                        price: 100,
+                        title: 'Owned product',
+                    }
+                    : {}),
+                ...(collectionName === 'clearance_docs'
+                    ? { status: 'pending_upload' }
+                    : {}),
+            };
+        }
+
+        it('allows ordinary owner updates but rejects ownership rewrites for every migrated collection', async () => {
+            if (requireEmulator()) return;
+            await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                for (const [collectionName, ownerField] of ownerScopedCollections) {
+                    await setDoc(
+                        doc(ctx.firestore(), collectionName, `owner-integrity-${collectionName}`),
+                        baseDocument(collectionName, ownerField),
+                    );
+                }
+            });
+
+            const db = verifiedCtx(ALICE_UID).firestore();
+            for (const [collectionName, ownerField] of ownerScopedCollections) {
+                const reference = doc(db, collectionName, `owner-integrity-${collectionName}`);
+                await assertSucceeds(updateDoc(reference, { value: 'after' }));
+                await assertFails(updateDoc(reference, { [ownerField]: BOB_UID }));
+            }
+        });
+
+        it('rejects every common authority-field rewrite on an otherwise valid owner document', async () => {
+            if (requireEmulator()) return;
+            await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                await setDoc(doc(ctx.firestore(), 'designs', 'authority-fields'), {
+                    userId: ALICE_UID,
+                    value: 'before',
+                });
+            });
+            const reference = doc(verifiedCtx(ALICE_UID).firestore(), 'designs', 'authority-fields');
+            for (const authorityField of authorityFields) {
+                const maliciousValue = authorityField === 'members' || authorityField === 'parties'
+                    ? [BOB_UID]
+                    : BOB_UID;
+                await assertFails(updateDoc(reference, { [authorityField]: maliciousValue }));
+            }
+        });
+
+        it('rejects mixed-identity creates instead of poisoning another query namespace', async () => {
+            if (requireEmulator()) return;
+            const db = verifiedCtx(ALICE_UID).firestore();
+            for (const [collectionName, ownerField] of ownerScopedCollections) {
+                const data = {
+                    ...baseDocument(collectionName, ownerField),
+                    ownerUid: BOB_UID,
+                };
+                await assertFails(setDoc(
+                    doc(db, collectionName, `create-integrity-${collectionName}`),
+                    data,
+                ));
+            }
+        });
+
+        it('pins organization scope on member-writable invitation updates', async () => {
+            if (requireEmulator()) return;
+            await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                await setDoc(doc(ctx.firestore(), 'organizations', ORG_ID), orgDoc(ALICE_UID));
+                await setDoc(doc(ctx.firestore(), 'organization_invites', 'invite-1'), {
+                    orgId: ORG_ID,
+                    email: 'invitee@example.com',
+                    status: 'pending',
+                });
+            });
+            const db = verifiedCtx(ALICE_UID).firestore();
+            const reference = doc(db, 'organization_invites', 'invite-1');
+            await assertSucceeds(updateDoc(reference, { status: 'accepted' }));
+            await assertFails(updateDoc(reference, { orgId: 'attacker-org' }));
+            await assertFails(updateDoc(reference, { ownerId: BOB_UID }));
+        });
+    });
+
+    describe('split_escrows are server-controlled', () => {
+        beforeEach(async () => {
+            if (requireEmulator()) return;
+            await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                await setDoc(doc(ctx.firestore(), 'split_escrows', 'escrow-1'), {
+                    initiatorUid: ALICE_UID,
+                    parties: [ALICE_UID, BOB_UID],
+                    holdAmountCents: 10_000,
+                    status: 'PENDING_SIGNATURES',
+                    signoffs: { [ALICE_UID]: false, [BOB_UID]: false },
+                });
+            });
+        });
+
+        it('lets a listed party read but denies every direct mutation', async () => {
+            if (requireEmulator()) return;
+            const db = verifiedCtx(BOB_UID).firestore();
+            const reference = doc(db, 'split_escrows', 'escrow-1');
+            await assertSucceeds(getDoc(reference));
+            await assertFails(updateDoc(reference, { status: 'RELEASED' }));
+            await assertFails(updateDoc(reference, { holdAmountCents: 1 }));
+            await assertFails(updateDoc(reference, { parties: [BOB_UID] }));
+            await assertFails(deleteDoc(reference));
+            await assertFails(setDoc(doc(db, 'split_escrows', 'forged'), {
+                initiatorUid: BOB_UID,
+                parties: [BOB_UID],
+                holdAmountCents: 1,
+                status: 'RELEASED',
             }));
         });
     });
