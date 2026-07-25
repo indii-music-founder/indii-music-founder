@@ -434,7 +434,7 @@ export default function ThesisCrawl({ isOpen, onClose }: ThesisCrawlProps) {
               transition={{ duration: LOGO_REVEAL_MS / 1000, times: [0, 0.15, 0.78, 1], ease: [0.85, 0, 0.15, 1] }}
               className="font-black text-7xl md:text-9xl lg:text-[12rem] text-amber-400 tracking-widest text-center select-none font-sans filter drop-shadow-[0_0_40px_rgba(245,158,11,0.6)] z-10"
             >
-              indii.music
+              <span className="indii-name">indii.music</span>
             </motion.div>
           )}
 
@@ -481,13 +481,13 @@ export default function ThesisCrawl({ isOpen, onClose }: ThesisCrawlProps) {
                   {/* Thesis Title */}
                   <div className="space-y-10">
                     <h1 className="text-7xl md:text-9xl lg:text-[10rem] font-black font-sans uppercase tracking-[0.08em] text-transparent bg-clip-text bg-gradient-to-b from-amber-200 via-amber-400 to-amber-600 drop-shadow-[0_0_32px_rgba(245,158,11,0.42)]">
-                      The indii Thesis
+                      The <span className="indii-name">indii</span> Thesis
                     </h1>
                     <p className="text-amber-500/80 font-mono text-3xl md:text-4xl lg:text-5xl tracking-widest uppercase">
                       Episode I: Everything to Everybody
                     </p>
                     <p className="text-amber-500/50 font-mono text-xl md:text-3xl tracking-[0.25em] uppercase mt-8">
-                      New Detroit Music LLC — June 2026
+                      <span className="wiil-name">wiil</span>, Founder — June 2026
                     </p>
                   </div>
 
@@ -524,6 +524,12 @@ export default function ThesisCrawl({ isOpen, onClose }: ThesisCrawlProps) {
                     <p>
                       Fifteen connected areas. One workspace. The artist remains the owner, the decision-maker, and the source of truth.
                     </p>
+                    <p className="text-center text-white font-black text-3xl md:text-5xl lg:text-6xl my-12 tracking-wide leading-snug">
+                      indii is the conductor and the orchestra.
+                    </p>
+                    <p>
+                      It is where the artist gives the direction and the connected system that carries the work. The Conductor is not a separate product sitting on top of indii. It is indii in motion.
+                    </p>
                   </div>
 
                   {/* Chapter III */}
@@ -538,7 +544,7 @@ export default function ThesisCrawl({ isOpen, onClose }: ThesisCrawlProps) {
                       indii starts with shared project context. When rights information changes, the release record can reflect it. When the route changes, the working budget and show record can move with it.
                     </p>
                     <p>
-                      The Conductor turns an artist goal into visible work, routes it to the relevant areas, and keeps proposed high-impact actions available for review.
+                      indii conducts an artist goal into visible work, brings in the relevant areas, and keeps proposed high-impact actions available for review.
                     </p>
                     <p>
                       Files, notes, voice memos, receipts, locations, assets, and approvals become part of the same working record. The next move begins with context instead of another blank form.
@@ -592,7 +598,7 @@ export default function ThesisCrawl({ isOpen, onClose }: ThesisCrawlProps) {
                       "Give the artist the infrastructure. Keep the ownership with the artist."
                     </p>
                     <p className="text-amber-500/60 text-center font-sans font-bold text-3xl tracking-widest uppercase mt-12 mb-32">
-                      wiil, Founder
+                      <span className="wiil-name">wiil</span>, Founder
                     </p>
                   </div>
                   </motion.div>
@@ -631,7 +637,7 @@ export default function ThesisCrawl({ isOpen, onClose }: ThesisCrawlProps) {
                       </h2>
                       <div className="mx-auto mt-9 flex w-fit items-center gap-3 text-sm font-semibold text-white/65">
                         <span className="h-px w-9 bg-amber-400" />
-                        wiil, Founder
+                        <span className="wiil-name">wiil</span>, Founder
                       </div>
 
                       <div className="mt-12 flex flex-col items-center justify-center gap-3 sm:flex-row">

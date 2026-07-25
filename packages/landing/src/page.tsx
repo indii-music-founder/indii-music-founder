@@ -421,7 +421,7 @@ export default function Home({ founder = true }: { founder?: boolean }) {
                   </p>
                   <p className="mt-9 flex items-center gap-3 text-sm font-semibold text-white">
                     <span className="h-px w-9 bg-amber-400" />
-                    wiil, Founder
+                    <span className="wiil-name">wiil</span>, Founder
                   </p>
                 </div>
               </div>
@@ -452,7 +452,7 @@ export default function Home({ founder = true }: { founder?: boolean }) {
 
           <div className="relative mx-auto flex min-h-[92vh] max-w-[1500px] flex-col justify-between px-5 py-12 md:px-10 md:py-16">
             <div className="flex justify-between border-t border-white/10 pt-4 font-mono text-[9px] uppercase tracking-[0.23em] text-white/30">
-              <span>The indii thesis</span>
+              <span>The <span className="indii-name">indii</span> thesis</span>
               <span>Episode I / Everything to Everybody</span>
             </div>
 
@@ -500,7 +500,7 @@ export default function Home({ founder = true }: { founder?: boolean }) {
           ].map(([value, label]) => (
             <div key={value} className="bg-amber-400 px-6 py-8 md:px-10 md:py-10">
               <div className="text-2xl font-black tracking-[-0.04em] md:text-3xl">{value}</div>
-              <div className="mt-2 font-mono text-[9px] uppercase tracking-[0.18em] text-black/55">{label}</div>
+              <div className={`mt-2 text-[9px] tracking-[0.18em] text-black/55 ${label.includes('indii') ? 'font-sans normal-case' : 'font-mono uppercase'}`}>{label}</div>
             </div>
           ))}
         </div>
@@ -712,7 +712,7 @@ export default function Home({ founder = true }: { founder?: boolean }) {
                 }}
                 className="text-amber-400 transition-colors hover:text-amber-300"
               >
-                Contact wiil
+                Contact <span className="wiil-name">wiil</span>
               </a>
             )}
           </div>

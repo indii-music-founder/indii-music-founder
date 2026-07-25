@@ -142,7 +142,7 @@ export default function SettingsView({ desktopState, isPaired }: SettingsViewPro
         <div className="space-y-6 pb-8 pt-4">
             <div className="px-2">
                 <h2 className="text-2xl font-bold text-[#F0F0F0] tracking-tight mb-1">Settings</h2>
-                <p className="text-sm text-[#a1a1a6] font-medium">Control how INDII sleeps and wakes.</p>
+                <p className="text-sm text-[#a1a1a6] font-medium">Control how <span className="indii-name">indii</span> sleeps and wakes.</p>
             </div>
 
             {/* ─── Desktop Status + Wake ─────────────────────────────── */}

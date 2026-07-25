@@ -22,7 +22,7 @@ import { importWithRetry } from '@/utils/dynamicImport';
 export class GeneralistAgent extends BaseAgent {
     id = 'generalist';
     name = 'indii Conductor';
-    description = 'Central Studio Head and Creative Orchestrator.';
+    description = 'The conductor of indii and the voice of its connected specialist system.';
     color = 'bg-green-600';
     category: 'manager' | 'department' | 'specialist' = 'manager';
 
@@ -46,7 +46,7 @@ export class GeneralistAgent extends BaseAgent {
         super({
             id: 'generalist',
             name: 'indii',
-            description: 'Creative orchestrator — plans, delegates, and executes across all departments.',
+            description: 'The conductor and the orchestra — plans, coordinates, and moves work across every department.',
             color: 'bg-green-500',
             category: 'manager',
             systemPrompt: systemPrompt,

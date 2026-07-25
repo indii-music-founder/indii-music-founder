@@ -174,7 +174,7 @@ export default function FieldRecorder() {
           <h1 className="text-5xl font-black italic tracking-tighter uppercase leading-none">
             Field <span className="text-purple-500">Capture</span>
           </h1>
-          <p className="text-xs text-gray-500 font-bold uppercase tracking-[0.3em]">indii Professional Audio Interface</p>
+          <p className="text-xs text-gray-500 font-bold uppercase tracking-[0.3em]"><span className="indii-name">indii</span> Professional Audio Interface</p>
         </header>
 
         <div className="w-full space-y-8 flex flex-col items-center">
@@ -340,7 +340,7 @@ export default function FieldRecorder() {
       <footer className="absolute bottom-0 left-0 w-full p-8 flex items-center justify-between pointer-events-none opacity-40">
         <span className="text-[9px] font-black uppercase tracking-[0.4em] text-gray-600">ALPHA_V5.0</span>
         <div className="flex items-center gap-4">
-          <span className="text-[9px] font-bold text-gray-700">POWERED BY INDII.MUSIC</span>
+          <span className="text-[9px] font-bold uppercase text-gray-700">Powered by <span className="indii-name">indii.music</span></span>
         </div>
       </footer>
     </div>

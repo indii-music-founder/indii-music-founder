@@ -10,6 +10,11 @@ indii.music is an operating system and a virtual team for independent musicians.
 
 Our copy must sound like a human explaining a tool to a friend at a bar. It must be direct, grounded, and stripped of all neon cyberpunk buzzwords.
 
+## Core Identity Distinctions
+
+- **indii is the conductor and the orchestra.** The Conductor is not a separate assistant sitting on top of the product. It is indii receiving the artist's direction, coordinating the connected system, and carrying the work.
+- **indii, indii.music, and wiil are lowercase marks.** Always spell them exactly as `indii`, `indii.music`, and `wiil`. Render each mark with a typeface that has true lowercase forms, and override any inherited all-caps treatment. Never display them as `INDII`, `INDII.MUSIC`, `WIIL`, title case, or in a capitals-only face.
+
 ## The Absolute Rules
 
 1. **NO "AI" MENTIONS:** The word "AI" (Artificial Intelligence) is strictly banned from all user-facing copy. It triggers anxiety about job replacement in the music industry. Use words like "Automated," "Virtual Team," or "Advanced Reasoning Engine" instead.

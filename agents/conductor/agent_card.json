@@ -2,7 +2,7 @@
   "schemaVersion": "1.0.0",
   "agentId": "generalist",
   "displayName": "indii Conductor",
-  "description": "indii Conductor — central orchestration hub and creative orchestrator.",
+  "description": "indii is the conductor and the orchestra — one hub coordinating a connected specialist system.",
   "capabilities": [
     {
       "name": "delegate_task",

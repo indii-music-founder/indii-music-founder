@@ -156,6 +156,13 @@
   background-size: 17px 17px, 29px 29px;
 }
 
+/* Protected lowercase marks, including when nested inside all-caps UI labels. */
+.indii-name,
+.wiil-name {
+  font-family: var(--font-main);
+  text-transform: lowercase;
+}
+
 .dark {
   --background: 240 10% 2%;
   --foreground: 0 0% 98%;

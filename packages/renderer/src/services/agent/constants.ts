@@ -16,7 +16,7 @@ export const AGENT_SYSTEM_BRANDING = Object.freeze({
   hubName: 'indii',
 
   /** Short description for user-facing components */
-  description: 'Your Intelligence-powered assistant for independent artists',
+  description: 'The conductor and the orchestra for independent artists',
 
   /** Version (should match package.json or be semantic versioned) */
   version: '1.0.0'
@@ -26,7 +26,7 @@ export const AGENT_SYSTEM_BRANDING = Object.freeze({
  * User-facing messages that reference the indii brand
  */
 export const INDII_MESSAGES = Object.freeze({
-  welcome: 'Welcome to indii, your Autonomous assistant for musical independence.',
+  welcome: 'Welcome to indii—the conductor and the orchestra for your music career.',
   orchestrating: 'indii is coordinating specialists to help you...',
   error: 'indii encountered an issue:',
   hubSpokeViolation: (source: string, target: string) =>

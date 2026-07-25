@@ -598,7 +598,7 @@ export default function MerchDesigner() {
                                 </button>
                             )}
                         </div>
-                        <span className="text-sm font-bold text-neutral-500">INDII_STREETWEAR_V1</span>
+                        <span className="text-sm font-bold text-neutral-500"><span className="indii-name">indii</span>_STREETWEAR_V1</span>
 
                         {/* Actions */}
                         <div className="flex items-center gap-3">

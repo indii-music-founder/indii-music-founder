@@ -23,7 +23,7 @@ export default function FounderPreviewContext({ variant }: { variant: 'login' | 
             </div>
             <p className="mt-4 text-sm leading-6 text-gray-200">
                 {variant === 'login'
-                    ? 'Guided walkthrough entry. Sign in to meet the Conductor and move into the private preview.'
+                    ? 'Guided walkthrough entry. Sign in to meet indii—the conductor and the orchestra working as one system.'
                     : 'Private launch access. Create the preview account to enter the guided walkthrough and start testing the full platform.'}
             </p>
             <div className="mt-4 flex flex-wrap gap-2">

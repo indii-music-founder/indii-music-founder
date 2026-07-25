@@ -36,6 +36,13 @@ body {
   letter-spacing: -0.01em;
 }
 
+/* Brand marks: always preserve lowercase letterforms, even inside caps UI. */
+.indii-name,
+.wiil-name {
+  font-family: var(--font-geist-sans);
+  text-transform: lowercase;
+}
+
 /* Grainy Texture Layer */
 body::after {
   content: "";

@@ -20,9 +20,10 @@ describe('indii Branding Constants', () => {
             expect(AGENT_SYSTEM_BRANDING.hubName).toBe('indii');
         });
 
-        it('includes descriptive tagline for independent artists', () => {
+        it('defines indii as both conductor and orchestra for independent artists', () => {
             expect(AGENT_SYSTEM_BRANDING.description).toContain('independent artists');
-            expect(AGENT_SYSTEM_BRANDING.description).toContain('Intelligence');
+            expect(AGENT_SYSTEM_BRANDING.description).toContain('conductor');
+            expect(AGENT_SYSTEM_BRANDING.description).toContain('orchestra');
         });
 
         it('has version number', () => {
@@ -219,8 +220,9 @@ describe('indii Branding Constants', () => {
             expect(AGENT_SYSTEM_BRANDING.description).toContain('independent artists');
         });
 
-        it('emphasizes Intelligence-powered nature', () => {
-            expect(AGENT_SYSTEM_BRANDING.description).toContain('Intelligence');
+        it('states the conductor-and-orchestra distinction', () => {
+            expect(AGENT_SYSTEM_BRANDING.description).toContain('conductor');
+            expect(AGENT_SYSTEM_BRANDING.description).toContain('orchestra');
         });
     });
 

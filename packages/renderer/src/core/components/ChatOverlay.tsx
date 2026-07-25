@@ -405,7 +405,7 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, onToggleMinimize }) 
                     whileTap={{ scale: 0.95 }}
                 >
                     <Bot size={16} />
-                    <span className="text-xs font-bold uppercase tracking-wider">{activeAgent?.name || 'indii'}</span>
+                    <span className="text-xs font-bold tracking-wider">{activeAgent?.name || 'indii'}</span>
                     {messages.length > 0 && (
                         <span className="text-[10px] bg-white/20 px-1.5 py-0.5 rounded-full">{messages.length}</span>
                     )}

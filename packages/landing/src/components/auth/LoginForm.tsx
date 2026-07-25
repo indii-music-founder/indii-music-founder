@@ -68,7 +68,7 @@ export default function LoginForm() {
                 </h2>
                 <p className="mt-2 text-sm text-gray-400">
                     {isFounderSource
-                        ? 'Sign in to preview the indii studio and meet the Conductor.'
+                        ? 'Sign in to preview indii—the conductor and the orchestra working as one system.'
                         : 'Sign in to your account'
                     }
                 </p>

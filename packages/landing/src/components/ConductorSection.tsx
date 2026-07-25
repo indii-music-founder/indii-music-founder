@@ -21,7 +21,7 @@ const workingSteps = [
   {
     number: '02',
     label: 'See the plan',
-    text: 'The Conductor turns the request into visible work and routes the relevant parts to the right areas of the product.',
+    text: 'indii conducts the request, turns it into visible work, and brings in the right parts of the system.',
   },
   {
     number: '03',
@@ -50,19 +50,19 @@ export default function ConductorSection() {
         >
           <div>
             <div className="mb-5 font-mono text-[11px] uppercase tracking-[0.3em] text-amber-400">
-              The Conductor
+              <span className="indii-name">indii</span>, in motion
             </div>
             <p className="max-w-xs text-sm leading-relaxed text-white/40">
-              The coordination layer between what an artist asks for and the work the platform can carry.
+              indii is the conductor and the orchestra: one working system that hears the direction, coordinates the departments, and carries the work.
             </p>
           </div>
           <div>
             <h2 className="max-w-5xl text-5xl font-black leading-[0.92] tracking-[-0.055em] text-white sm:text-6xl md:text-8xl lg:text-[7.8rem]">
               One direction.
-              <span className="block text-amber-400">The right work moves.</span>
+              <span className="block text-amber-400">The whole system moves.</span>
             </h2>
             <p className="mt-10 max-w-2xl text-lg leading-relaxed text-white/55 md:text-xl">
-              You should not have to become the integration layer for your own career. Tell indii what you are trying to accomplish, then see how the work is divided, reviewed, and returned to the project.
+              You should not have to become the integration layer for your own career. Give indii the direction. The same system can shape the plan, coordinate the specialists, and return the work to one artist-controlled project.
             </p>
           </div>
         </motion.div>

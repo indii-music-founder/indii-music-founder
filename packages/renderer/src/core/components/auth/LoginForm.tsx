@@ -252,7 +252,7 @@ export default function LoginForm() {
                             Founder Preview
                         </div>
                         <p className="mt-4 text-sm leading-6 text-gray-200">
-                            Guided walkthrough entry. Sign in to meet the Conductor and move into the private preview.
+                            Guided walkthrough entry. Sign in to meet indii—the conductor and the orchestra working as one system.
                         </p>
                         <div className="mt-4 flex flex-wrap gap-2">
                             {FOUNDER_MODULES.map((moduleName) => (
