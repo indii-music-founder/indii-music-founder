@@ -13,6 +13,25 @@ vi.mock('./rateLimit', () => ({
     RATE_LIMITS: { generation: 10 }
 }));
 
+const { mockLegacyAdmission, mockCheckOperationBudget } = vi.hoisted(() => ({
+    mockLegacyAdmission: vi.fn(async (context: { auth?: { uid?: string } }) => {
+        if (!context.auth?.uid) throw new Error('User must be authenticated.');
+        return { userId: context.auth.uid, entitlement: { tier: 'free' } };
+    }),
+    mockCheckOperationBudget: vi.fn().mockResolvedValue({ allowed: true, operationId: 'legacy-image-op-1' }),
+}));
+
+vi.mock('../functions/creative/legacyAdmission', () => ({
+    requireVerifiedCreativeAdmissionV1: mockLegacyAdmission,
+}));
+vi.mock('../functions/billing/enforceOperationCost', () => ({
+    checkOperationBudget: mockCheckOperationBudget,
+    finalizeOperationReservation: vi.fn().mockResolvedValue(undefined),
+}));
+vi.mock('../functions/auth/entitlements', () => ({
+    entitlementTierToBudgetTier: vi.fn(() => 'free'),
+}));
+
 vi.mock('google-auth-library', () => ({
     GoogleAuth: class {
         getClient() {
@@ -66,6 +85,8 @@ describe('generateImageV3Fn', () => {
         const func = generateImageV3Fn();
         wrapped = testEnv.wrap(func);
         mockGenerateContent.mockClear();
+        mockLegacyAdmission.mockClear();
+        mockCheckOperationBudget.mockClear();
     });
 
     afterAll(() => {

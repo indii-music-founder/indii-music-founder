@@ -15,9 +15,8 @@
 
 import { Inngest } from "inngest";
 import * as admin from 'firebase-admin';
-import { GoogleGenAI } from '@google/genai';
 import { FUNCTION_INTELLIGENCE_MODELS } from '../config/models';
-import { getGeminiApiKey } from '../config/secrets';
+import { getVertexAIClient } from '../lib/vertexClient';
 
 const getDb = () => admin.firestore();
 
@@ -174,14 +173,11 @@ export const executeMilestoneFn = (inngestClient: Inngest) =>
                 });
 
                 // --------------------------------------------------------
-                // Step 2: Build prompt and call Gemini
+                // Step 2: Build prompt and call Vertex AI with ADC. No API key
+                // is ever accepted from a browser or mounted in this worker.
                 // --------------------------------------------------------
                 const agentResult = await step.run('call-gemini-agent', async () => {
-                    const apiKey = getGeminiApiKey();
-                    if (!apiKey) {
-                        throw new Error('Gemini API key is not configured.');
-                    }
-                    const client = new GoogleGenAI({ apiKey, httpOptions: { timeout: 120000 } });
+                    const client = getVertexAIClient();
 
                     const systemPrompt = getSystemPromptForAgent(agentId);
 

@@ -6,6 +6,8 @@ export const BaseMediaRequestSchema = z.object({
     referenceUris: z.array(z.string().startsWith('gs://')).max(14).optional(),
 });
 export const GenerateImageSchema = BaseMediaRequestSchema.extend({
+    /** Server-issued, owner-bound cost hold. Browser estimates are never authority. */
+    costReservationId: z.string().trim().min(1).max(256),
     sessionId: z.string().optional(),
     aspectRatio: z.enum(['1:1', '16:9', '9:16', '3:4', '4:3']).default('1:1'),
     model: z.enum(['lite', 'fast', 'pro', 'legacy']).default('fast'),
@@ -20,7 +22,6 @@ export const GenerateImageSchema = BaseMediaRequestSchema.extend({
 });
 export const GenerateVideoSchema = BaseMediaRequestSchema.extend({
     mode: z.enum(['video_remix', 'temporal_inpaint']).optional(),
-    skipCostCheck: z.boolean().optional(),
     sourceVideoUri: z.string().startsWith('gs://').optional(),
     firstFrameUri: z.string().startsWith('gs://').optional(),
     lastFrameUri: z.string().startsWith('gs://').optional(),

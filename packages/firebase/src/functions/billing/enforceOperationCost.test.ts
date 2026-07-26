@@ -5,13 +5,18 @@ const mocks = vi.hoisted(() => ({
   fromMillis: vi.fn((millis: number) => ({ toMillis: () => millis })),
   onCall: vi.fn((_options, handler) => handler),
   onSchedule: vi.fn((_options, handler) => handler),
+  validateAppCheck: vi.fn(),
+  requireEntitlement: vi.fn(),
+  entitlementTierToBudgetTier: vi.fn(),
+  arcjetProtect: vi.fn(),
+  arcjetPolicyForEntitlement: vi.fn(),
 }));
 
 vi.mock('firebase-functions/v2', () => ({
   https: {
     onCall: mocks.onCall,
     HttpsError: class HttpsError extends Error {
-      constructor(public code: string, message: string) {
+      constructor(public code: string, message: string, public details?: unknown) {
         super(message);
       }
     },
@@ -35,13 +40,38 @@ vi.mock('firebase-admin/firestore', () => ({
   },
 }));
 
+vi.mock('../../middleware/appCheck', () => ({
+  validateAppCheckV2: mocks.validateAppCheck,
+}));
+
+vi.mock('../auth/entitlements', () => ({
+  requireVerifiedServerEntitlement: mocks.requireEntitlement,
+  entitlementTierToBudgetTier: mocks.entitlementTierToBudgetTier,
+}));
+
+vi.mock('../security/arcjet', () => ({
+  protectAuthenticatedApiRequest: mocks.arcjetProtect,
+  policyClassForServerEntitlement: mocks.arcjetPolicyForEntitlement,
+}));
+
+vi.mock('../../config/secrets', () => ({
+  arcjetKey: { name: 'ARCJET_KEY' },
+}));
+
 import {
   checkOperationBudget,
+  enforceOperationCost,
   expireStaleOperationReservations,
   finalizeOperationReservation,
   getOperationCostHistoryPage,
   serializeCostOperationHistoryItem,
 } from './enforceOperationCost';
+
+const callEnforceOperationCost = enforceOperationCost as unknown as (request: {
+  auth?: { uid: string; token?: Record<string, unknown> };
+  data: Record<string, unknown>;
+  rawRequest?: Record<string, unknown>;
+}) => Promise<unknown>;
 
 function timestamp(millis: number) {
   return { toMillis: () => millis };
@@ -253,6 +283,7 @@ describe('ISSUE-1006 operation cost receipts and expiry', () => {
     mocks.firestore.mockReturnValue(db);
     const request = {
       userId: 'user-1',
+      entitlementTier: 'free' as const,
       estimatedCost: 0.25,
       operationType: 'video' as const,
       operationId: 'video-session-session-1',
@@ -313,5 +344,48 @@ describe('ISSUE-1006 operation cost receipts and expiry', () => {
         operationCount: { __increment: -1 },
       }));
     }
+  });
+});
+
+describe('creative cost admission', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.requireEntitlement.mockResolvedValue({ tier: 'free' });
+    mocks.entitlementTierToBudgetTier.mockReturnValue('free');
+    mocks.arcjetPolicyForEntitlement.mockReturnValue('verified-free');
+    mocks.arcjetProtect.mockResolvedValue({ allowed: true });
+  });
+
+  it('rejects an authenticated but unverified email before reading or reserving budget', async () => {
+    await expect(callEnforceOperationCost({
+      auth: { uid: 'user-1', token: { email_verified: false } },
+      data: { operationType: 'image', estimatedCost: 0.04, forceBypass: true },
+    })).rejects.toMatchObject({
+      code: 'failed-precondition',
+      message: 'Verify your email before using creative generation.',
+    });
+    expect(mocks.firestore).not.toHaveBeenCalled();
+  });
+
+  it('fails closed on an Arcjet denial before any cost ledger read or reservation', async () => {
+    mocks.arcjetProtect.mockResolvedValue({
+      allowed: false,
+      status: 429,
+      code: 'RATE_LIMITED',
+      message: 'Too many requests. Please slow down.',
+      retryAfterSeconds: 30,
+    });
+
+    await expect(callEnforceOperationCost({
+      auth: { uid: 'user-1', token: { email_verified: true } },
+      rawRequest: { method: 'POST', headers: {} },
+      data: { operationType: 'image', estimatedCost: 0.04 },
+    })).rejects.toMatchObject({
+      code: 'resource-exhausted',
+      details: { code: 'RATE_LIMITED', retryAfterSeconds: 30 },
+    });
+
+    expect(mocks.validateAppCheck).toHaveBeenCalledOnce();
+    expect(mocks.firestore).not.toHaveBeenCalled();
   });
 });

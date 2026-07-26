@@ -22,6 +22,10 @@ const mockBatchUpdate = vi.fn();
 const mockBatchCommit = vi.fn();
 const mockFinalizeReservation = vi.hoisted(() => vi.fn());
 const mockCheckOperationBudget = vi.hoisted(() => vi.fn());
+const mockRequireVerifiedServerEntitlement = vi.hoisted(() => vi.fn());
+const mockEntitlementTierToBudgetTier = vi.hoisted(() => vi.fn());
+const mockArcjetProtect = vi.hoisted(() => vi.fn());
+const mockArcjetPolicyForEntitlement = vi.hoisted(() => vi.fn());
 const mockProbeDurationSeconds = vi.hoisted(() => vi.fn());
 const mockCollectionNames: string[] = [];
 const mockOnCallOptions = vi.hoisted(() => [] as unknown[]);
@@ -126,13 +130,33 @@ vi.mock('firebase-admin', () => ({
 }));
 
 vi.mock('../../config/secrets', () => ({
-  geminiApiKey: {},
-  getGeminiApiKey: vi.fn(() => 'test-gemini-key'),
+  arcjetKey: { name: 'ARCJET_KEY' },
+}));
+
+vi.mock('../security/arcjet', () => ({
+  protectAuthenticatedApiRequest: mockArcjetProtect,
+  policyClassForServerEntitlement: mockArcjetPolicyForEntitlement,
 }));
 
 vi.mock('../billing/enforceOperationCost', () => ({
   finalizeOperationReservation: mockFinalizeReservation,
   checkOperationBudget: mockCheckOperationBudget,
+  requireVerifiedCreativeUser: vi.fn((auth: { uid?: string; token?: Record<string, unknown> } | undefined) => {
+    if (!auth?.uid) {
+      const error = Object.assign(new Error('User must be authenticated.'), { code: 'unauthenticated' });
+      throw error;
+    }
+    if (auth.token?.email_verified !== true) {
+      const error = Object.assign(new Error('Verify your email before using creative generation.'), { code: 'failed-precondition' });
+      throw error;
+    }
+    return auth.uid;
+  }),
+}));
+
+vi.mock('../auth/entitlements', () => ({
+  requireVerifiedServerEntitlement: mockRequireVerifiedServerEntitlement,
+  entitlementTierToBudgetTier: mockEntitlementTierToBudgetTier,
 }));
 
 vi.mock('./getMediaDuration', () => ({
@@ -170,25 +194,43 @@ const buildVideoJob = (overrides: Partial<VideoGenerationJobRecord> & Pick<Video
   ...overrides,
 });
 
-const callGenerateImage = generateImageV3 as unknown as (request: {
-  auth?: { uid: string };
+type GatewayRequest = {
+  auth?: { uid: string; token?: Record<string, unknown> };
   data: Record<string, unknown>;
-}) => Promise<unknown>;
+  rawRequest?: Record<string, unknown>;
+};
 
-const callGenerateVideo = generateVideoV3 as unknown as (request: {
-  auth?: { uid: string };
-  data: Record<string, unknown>;
-}) => Promise<unknown>;
+function withVerifiedEmail(request: GatewayRequest): GatewayRequest {
+  return {
+    ...request,
+    ...(request.auth ? {
+      auth: {
+        ...request.auth,
+        token: { ...request.auth.token, email_verified: true },
+      },
+    } : {}),
+    rawRequest: request.rawRequest ?? { method: 'POST', headers: {} },
+  };
+}
 
-const callGenerateOmniRemix = generateOmniRemixV3 as unknown as (request: {
-  auth?: { uid: string };
-  data: Record<string, unknown>;
-}) => Promise<unknown>;
+const callGenerateImage = (request: GatewayRequest): Promise<unknown> =>
+  (generateImageV3 as unknown as (input: GatewayRequest) => Promise<unknown>)(withVerifiedEmail(request));
 
-const callGenerateAudio = generateAudioV3 as unknown as (request: {
-  auth?: { uid: string };
-  data: Record<string, unknown>;
-}) => Promise<unknown>;
+const callGenerateVideo = (request: GatewayRequest): Promise<unknown> =>
+  (generateVideoV3 as unknown as (input: GatewayRequest) => Promise<unknown>)(withVerifiedEmail(request));
+
+const callGenerateOmniRemix = (request: GatewayRequest): Promise<unknown> =>
+  (generateOmniRemixV3 as unknown as (input: GatewayRequest) => Promise<unknown>)(withVerifiedEmail(request));
+
+const callGenerateAudio = (request: GatewayRequest): Promise<unknown> =>
+  (generateAudioV3 as unknown as (input: GatewayRequest) => Promise<unknown>)(withVerifiedEmail(request));
+
+beforeEach(() => {
+  mockRequireVerifiedServerEntitlement.mockResolvedValue({ tier: 'free' });
+  mockEntitlementTierToBudgetTier.mockReturnValue('free');
+  mockArcjetPolicyForEntitlement.mockReturnValue('verified-free');
+  mockArcjetProtect.mockResolvedValue({ allowed: true });
+});
 
 describe('creative gateway generateImageV3', () => {
   beforeEach(() => {
@@ -206,6 +248,49 @@ describe('creative gateway generateImageV3', () => {
         enforceAppCheck: expect.any(Boolean),
       }),
     );
+    expect(mockOnCallOptions).toEqual(expect.arrayContaining([
+      expect.objectContaining({ secrets: [{ name: 'ARCJET_KEY' }] }),
+    ]));
+  });
+
+  it('fails closed before Vertex work when the server-owned admission policy blocks a request', async () => {
+    mockArcjetProtect.mockResolvedValueOnce({
+      allowed: false,
+      status: 429,
+      code: 'RATE_LIMITED',
+      message: 'Too many requests. Please slow down.',
+      retryAfterSeconds: 20,
+    });
+
+    await expect(callGenerateImage({
+      auth: { uid: 'user-123' },
+      data: {
+        prompt: 'A protected image request',
+        costReservationId: 'image-op-rate-limited',
+      },
+    })).rejects.toMatchObject({
+      code: 'resource-exhausted',
+      details: { code: 'RATE_LIMITED', retryAfterSeconds: 20 },
+    });
+    expect(mockInteractionsCreate).not.toHaveBeenCalled();
+    expect(mockSet).not.toHaveBeenCalled();
+  });
+
+  it('rejects an unverified account before creating a job or calling Vertex', async () => {
+    await expect((generateImageV3 as unknown as (input: GatewayRequest) => Promise<unknown>)({
+      auth: { uid: 'user-123', token: { email_verified: false } },
+      data: {
+        prompt: 'A protected image request',
+        aspectRatio: '1:1',
+        model: 'fast',
+        costReservationId: 'image-op-unverified',
+      },
+    })).rejects.toMatchObject({
+      code: 'failed-precondition',
+      message: 'Verify your email before using creative generation.',
+    });
+    expect(mockInteractionsCreate).not.toHaveBeenCalled();
+    expect(mockSet).not.toHaveBeenCalled();
   });
 
   it('honors fast model settings and extracts image data after text parts', async () => {
@@ -374,6 +459,19 @@ describe('creative gateway generateImageV3', () => {
     })).rejects.toMatchObject({
       code: 'permission-denied',
     });
+
+    await expect(callGenerateImage({
+      auth: { uid: 'user-123' },
+      data: {
+        prompt: 'Dogs having fun',
+        aspectRatio: '1:1',
+        model: 'pro',
+        referenceUri: 'data:image/png;base64,Zm9yZ2Vk',
+        costReservationId: 'image-op-4',
+      },
+    })).rejects.toMatchObject({
+      code: 'invalid-argument',
+    });
   });
 
   it('maps Google model availability failures to actionable callable errors', async () => {
@@ -396,7 +494,8 @@ describe('creative gateway generateImageV3', () => {
     });
     expect(mockUpdate).toHaveBeenCalledWith(expect.objectContaining({
       status: 'failed',
-      error: expect.stringContaining('model is not available'),
+      error: expect.stringContaining('requested generation capability is not available'),
+      errorCode: 'failed-precondition',
     }));
     expect(mockFinalizeReservation).toHaveBeenCalledWith({
       userId: 'user-123',
@@ -430,10 +529,12 @@ describe('creative gateway generateImageV3', () => {
     expect(rejection.message).toContain("INDII couldn't create an image");
     // The original defect: NO_IMAGE was wrapped as a settings rejection.
     expect(rejection.message).not.toContain('Google rejected the image generation settings');
-    // The detailed finish reason is still recorded for diagnostics.
+    // Provider output may contain artist or prompt content, so the durable job
+    // record keeps the safe product explanation rather than raw finish data.
     expect(mockUpdate).toHaveBeenCalledWith(expect.objectContaining({
       status: 'failed',
-      error: expect.stringContaining('NO_IMAGE'),
+      error: expect.stringContaining("INDII couldn't create an image"),
+      errorCode: 'failed-precondition',
     }));
   });
 });
@@ -485,6 +586,8 @@ describe('creative gateway generateAudioV3', () => {
     mockCreate.mockResolvedValue(undefined);
     mockBatchCommit.mockResolvedValue(undefined);
     mockDelete.mockResolvedValue(undefined);
+    mockRequireVerifiedServerEntitlement.mockResolvedValue({ tier: 'free' });
+    mockEntitlementTierToBudgetTier.mockReturnValue('free');
     mockCheckOperationBudget.mockResolvedValue({
       allowed: true,
       operationId: 'audio-reservation-1',
@@ -533,6 +636,11 @@ describe('creative gateway generateAudioV3', () => {
       mimeType: 'audio/wav',
       resultUri: expect.stringContaining('gs://test-bucket/creative/user-123/audio/outputs/'),
     }));
+    expect(mockRequireVerifiedServerEntitlement).toHaveBeenCalledWith('user-123');
+    expect(mockCheckOperationBudget).toHaveBeenCalledWith(expect.objectContaining({
+      userId: 'user-123',
+      entitlementTier: 'free',
+    }));
 
     expect(mockBatchSet).toHaveBeenCalledWith(
       expect.objectContaining({ collectionName: 'audio_assets' }),
@@ -572,7 +680,10 @@ describe('creative gateway generateAudioV3', () => {
         voice: 'Kore',
         requestId: 'd372061b-a954-4930-ac33-f82975a18335',
       },
-    })).rejects.toMatchObject({ message: expect.stringContaining('Firestore unavailable') });
+    })).rejects.toMatchObject({
+      code: 'internal',
+      message: expect.stringContaining('could not complete this request'),
+    });
 
     expect(mockDelete).toHaveBeenCalledOnce();
     expect(mockFinalizeReservation).toHaveBeenCalledWith({
@@ -649,6 +760,24 @@ describe('creative gateway generateVideoV3', () => {
     expect(mockGetVideosOperation).not.toHaveBeenCalled();
     expect(mockCollectionNames).toEqual(expect.arrayContaining(['creative_jobs', 'videoJobs']));
     expect(mockSet).toHaveBeenCalledTimes(2);
+  });
+
+  it('rejects a browser-supplied cost-check bypass before creating a job', async () => {
+    await expect(callGenerateVideo({
+      auth: { uid: 'user-123' },
+      data: {
+        prompt: 'A cinematic social clip',
+        aspectRatio: '16:9',
+        model: 'fast',
+        resolution: '720p',
+        durationSeconds: 6,
+        skipCostCheck: true,
+      },
+    })).rejects.toMatchObject({
+      code: 'failed-precondition',
+      message: expect.stringContaining('Missing cost reservation'),
+    });
+    expect(mockSet).not.toHaveBeenCalled();
   });
 
   it('ISSUE-1003: persists the exact role-labelled input manifest to both video job documents', async () => {
@@ -832,7 +961,8 @@ describe('creative gateway generateVideoV3', () => {
     });
     expect(mockUpdate).toHaveBeenCalledWith(expect.objectContaining({
       status: 'failed',
-      error: expect.stringContaining('safety filters'),
+      error: expect.stringContaining('generation request was rejected'),
+      errorCode: 'invalid-argument',
     }));
   });
 });
@@ -1199,7 +1329,10 @@ describe('creative gateway generateOmniRemixV3', () => {
         costEstimate: 0.8,
         costReservationId: 'cost-op-1',
       },
-    })).rejects.toMatchObject({ message: expect.stringContaining('Firestore unavailable') });
+    })).rejects.toMatchObject({
+      code: 'internal',
+      message: expect.stringContaining('could not complete this request'),
+    });
     expect(mockInteractionsCreate).not.toHaveBeenCalled();
     expect(mockFinalizeReservation).toHaveBeenCalledWith({
       userId: 'user-123',

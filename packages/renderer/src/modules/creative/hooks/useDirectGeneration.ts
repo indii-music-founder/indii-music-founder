@@ -25,8 +25,8 @@ type CallableGenerationError = {
     details?: unknown;
 };
 
-const GOOGLE_PREPAYMENT_EXHAUSTED_MESSAGE =
-    'Google AI Studio API quota exhausted. Please add credits to your account.';
+const VERTEX_QUOTA_EXHAUSTED_MESSAGE =
+    'Generation capacity is temporarily exhausted. Please try again shortly.';
 
 function normalizeCallableCode(code: unknown): string | undefined {
     if (typeof code !== 'string') return undefined;
@@ -90,7 +90,7 @@ function generationErrorMessage(error: unknown): { code?: string; message: strin
     ].filter(Boolean).join(' ');
 
     if (isGooglePrepaymentExhausted(combinedErrorText)) {
-        return { code: 'resource-exhausted', message: GOOGLE_PREPAYMENT_EXHAUSTED_MESSAGE };
+        return { code: 'resource-exhausted', message: VERTEX_QUOTA_EXHAUSTED_MESSAGE };
     }
 
     if (isGenerationBackendUnavailable(combinedErrorText)) {

@@ -150,7 +150,7 @@ export const NODE_REGISTRY: Record<string, NodeDefinition> = {
                 defaultPrompt: 'Analyze this audio file',
                 inputs: [
                     { id: 'trigger', label: 'Start', type: 'TRIGGER' },
-                    { id: 'audio_input', label: 'Song', type: 'AUDIO', required: true }
+                    { id: 'audio_input', label: 'Verified Master', type: 'AUDIO', required: true }
                 ],
                 outputs: [
                     { id: 'trigger_out', label: 'Done', type: 'TRIGGER' },
@@ -180,7 +180,7 @@ export const NODE_REGISTRY: Record<string, NodeDefinition> = {
                 defaultPrompt: 'Assemble performance video',
                 inputs: [
                     { id: 'trigger', label: 'Start', type: 'TRIGGER' },
-                    { id: 'audio_input', label: 'Song URL', type: 'AUDIO', required: true },
+                    { id: 'audio_input', label: 'Verified Master', type: 'AUDIO', required: true },
                     { id: 'image_input', label: 'Artist Image URL', type: 'IMAGE', required: true },
                     { id: 'text_input', label: 'Performance Style', type: 'TEXT' }
                 ],

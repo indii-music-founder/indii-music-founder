@@ -10,29 +10,10 @@ export const ENFORCE_APP_CHECK =
     process.env.ENFORCE_APP_CHECK !== 'false';
 
 /**
- * Check if the request is originating from the Electron desktop app.
- * We identify it via:
- * 1. The custom 'x-app-client-type' header (injected by Electron's main process)
- * 2. The User-Agent containing 'Electron'
- */
-function isElectronClient(headers: Record<string, string | string[] | undefined>): boolean {
-    const clientType = headers['x-app-client-type'];
-    const userAgent = headers['user-agent'];
-    const hasElectronHeader = clientType === 'electron-desktop-app';
-    const hasElectronUserAgent = typeof userAgent === 'string' && userAgent.includes('Electron');
-    return hasElectronHeader || hasElectronUserAgent;
-}
-
-/**
  * Validate App Check for Gen 1 Callable functions.
  */
 export function validateAppCheckV1(context: functionsV1.https.CallableContext): void {
     if (!ENFORCE_APP_CHECK) return;
-
-    const headers = (context.rawRequest?.headers || {}) as Record<string, string | string[] | undefined>;
-    if (isElectronClient(headers)) {
-        return; // Bypass App Check for Electron clients
-    }
 
     if (!context.app) {
         throw new functionsV1.https.HttpsError(
@@ -43,15 +24,29 @@ export function validateAppCheckV1(context: functionsV1.https.CallableContext): 
 }
 
 /**
+ * Returns the authenticated UID only after Firebase's signed email-verification
+ * claim has been checked. Profile fields and client-provided flags are never
+ * accepted as substitutes for this claim.
+ */
+export function requireVerifiedEmailV1(context: functionsV1.https.CallableContext): string {
+    const auth = context.auth;
+    if (!auth?.uid) {
+        throw new functionsV1.https.HttpsError('unauthenticated', 'User must be authenticated.');
+    }
+    if (auth.token.email_verified !== true) {
+        throw new functionsV1.https.HttpsError(
+            'failed-precondition',
+            'Verify your email before using creative generation.'
+        );
+    }
+    return auth.uid;
+}
+
+/**
  * Validate App Check for Gen 2 Callable functions.
  */
 export function validateAppCheckV2(request: CallableRequest): void {
     if (!ENFORCE_APP_CHECK) return;
-
-    const headers = (request.rawRequest?.headers || {}) as Record<string, string | string[] | undefined>;
-    if (isElectronClient(headers)) {
-        return; // Bypass App Check for Electron clients
-    }
 
     if (!request.app) {
         throw new HttpsError(
@@ -68,11 +63,6 @@ export function validateAppCheckV2(request: CallableRequest): void {
  */
 export async function validateAppCheckHttp(req: express.Request, res: express.Response): Promise<boolean> {
     if (!ENFORCE_APP_CHECK) return true;
-
-    const headers = req.headers as Record<string, string | string[] | undefined>;
-    if (isElectronClient(headers)) {
-        return true; // Bypass App Check for Electron clients
-    }
 
     const appCheckToken = typeof req.header === 'function'
         ? req.header('x-firebase-appcheck')

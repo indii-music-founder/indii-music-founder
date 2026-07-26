@@ -2,45 +2,21 @@ import * as functions from "firebase-functions/v1";
 
 import { z } from "zod";
 import { Client } from "@googlemaps/google-maps-services-js";
-import { geminiApiKey, googleMapsApiKey, getGeminiApiKey } from "../config/secrets";
+import { googleMapsApiKey } from "../config/secrets";
+import { getVertexAIClient } from "./vertexClient";
 
 /**
- * Helper for Gemini Calls (similar to generateImageV3 pattern)
+ * Helper for Vertex AI calls. Credentials come from the function runtime's
+ * Application Default Credentials, never a Gemini Developer API key.
  */
 async function generateWithGemini(prompt: string, schema = false): Promise<Record<string, unknown> | string> {
     const modelId = "gemini-2.5-pro";
-    // We access the secret value inside the function execution
-    const key = getGeminiApiKey();
-    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${key}`;
-
-    const body: Record<string, unknown> = {
+    const response = await getVertexAIClient().models.generateContent({
+        model: modelId,
         contents: [{ role: "user", parts: [{ text: prompt }] }],
-        generationConfig: {
-            responseModalities: ["TEXT"],
-        }
-    };
-
-    const generationConfig = body.generationConfig as Record<string, unknown>;
-
-    if (schema) {
-        generationConfig.responseMimeType = "application/json";
-        // Gemini 3.1 Pro supports responseSchema for structured JSON output.
-        // For simpler "json_mode", we often just ask for JSON in prompt.
-    }
-
-    const response = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
+        config: schema ? { responseMimeType: "application/json" } : undefined,
     });
-
-    if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Gemini API Error: ${errorText}`);
-    }
-
-    const result = (await response.json()) as { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> };
-    const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
+    const text = response.text;
     if (!text) throw new Error("No content returned from Gemini");
 
     try {
@@ -97,7 +73,7 @@ const FindPlacesSchema = z.object({
 // ----------------------------------------------------------------------------
 
 export const generateItinerary = functions
-    .runWith({ enforceAppCheck: true,  secrets: [geminiApiKey]  })
+    .runWith({ enforceAppCheck: true })
     .https.onCall(async (data, context) => {
         if (!context.auth) throw new functions.https.HttpsError("unauthenticated", "Auth required");
 
@@ -143,7 +119,7 @@ export const generateItinerary = functions
     });
 
 export const checkLogistics = functions
-    .runWith({ enforceAppCheck: true,  secrets: [geminiApiKey]  })
+    .runWith({ enforceAppCheck: true })
     .https.onCall(async (data, context) => {
         if (!context.auth) throw new functions.https.HttpsError("unauthenticated", "Auth required");
 

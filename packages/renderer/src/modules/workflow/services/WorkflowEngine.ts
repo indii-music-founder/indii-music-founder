@@ -4,7 +4,10 @@ import { ImageGeneration } from '@/services/image/ImageGenerationService';
 import { VideoGeneration } from '@/services/video/VideoGenerationService';
 import { SocialService } from '@/services/social/SocialService';
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
-import { performanceVideoService } from '@/services/video/PerformanceVideoService';
+import { performanceVideoService, sonicProfileFromAnalysisReceipt } from '@/services/video/PerformanceVideoService';
+import { audioAnalysisReceiptService } from '@/services/audio/AudioAnalysisReceiptService';
+import { auth } from '@/services/firebase';
+import type { MasterAudioReference } from '@/services/metadata/types';
 import { logger } from '@/utils/logger';
 
 interface ExecutionTask {
@@ -12,6 +15,28 @@ interface ExecutionTask {
     inputs: Record<string, unknown>;
     /** For Router nodes: which outgoing handle triggered this task */
     sourceHandle?: string;
+}
+
+/**
+ * Video workflow nodes may use a local preview URL, but they must hand the
+ * render service an immutable master identity. Keeping this guard pure makes
+ * the boundary testable without invoking a renderer or Firebase.
+ */
+export function workflowCanonicalMaster(inputs: Record<string, unknown>): MasterAudioReference {
+    const candidate = inputs.audio_input ?? inputs.data;
+    if (!candidate || typeof candidate !== 'object' || Array.isArray(candidate)) {
+        throw new Error('This video workflow requires a verified canonical master reference, not an audio URL.');
+    }
+    const master = candidate as Partial<MasterAudioReference>;
+    if (
+        typeof master.storagePath !== 'string' ||
+        typeof master.contentHash !== 'string' ||
+        typeof master.downloadUrl !== 'string' ||
+        typeof master.generation !== 'string'
+    ) {
+        throw new Error('This video workflow requires a generation-bound canonical master reference.');
+    }
+    return master as MasterAudioReference;
 }
 
 export class WorkflowEngine {
@@ -220,25 +245,22 @@ export class WorkflowEngine {
             // ── Video Department ────────────────────────────────────────────
             case 'Video Department': {
                 if (jobId === 'video-analyze-song') {
-                    // Analyze audio: extract BPM, mood, structure
-                    const songUrl = (inputs.audio_input as string) || '';
-                    if (!songUrl) throw new Error('Song URL required for audio analysis');
-                    const analyzeAudio = (await import('firebase/functions')).httpsCallable(
-                        (await import('@/services/firebase')).functions,
-                        'analyzeAudio'
+                    const userId = auth.currentUser?.uid;
+                    if (!userId) throw new Error('Sign in to use canonical master analysis.');
+                    const receipt = await audioAnalysisReceiptService.waitForTerminalReceipt(
+                        workflowCanonicalMaster(inputs),
+                        userId,
                     );
-                    const response = await analyzeAudio({ audioUrl: songUrl, mimeType: 'audio/mpeg' });
-                    return response.data;
+                    return sonicProfileFromAnalysisReceipt(receipt);
                 }
                 if (jobId === 'video-beat-sync-assemble') {
-                    // Beat-sync assemble: create performance video from song + artist image
-                    const songUrl = (inputs.audio_input as string) || '';
+                    // Beat-sync assembly is bound to the same verified master used for analysis.
+                    const masterAsset = workflowCanonicalMaster(inputs);
                     const artistImageUrl = (inputs.image_input as string) || '';
-                    if (!songUrl) throw new Error('Song URL required');
                     if (!artistImageUrl) throw new Error('Artist image URL required');
                     const aspectRatio = (inputs.aspect_ratio as '16:9' | '9:16' | '1:1') || '16:9';
                     const result = await performanceVideoService.generate({
-                        songUrl,
+                        masterAsset,
                         artistImageUrl,
                         style: prompt,
                         aspectRatio,

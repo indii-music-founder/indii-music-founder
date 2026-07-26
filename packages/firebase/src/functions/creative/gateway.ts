@@ -1,14 +1,16 @@
-import { onCall, HttpsError } from 'firebase-functions/v2/https';
+import { onCall, HttpsError, type CallableRequest } from 'firebase-functions/v2/https';
 import * as admin from 'firebase-admin';
 import { z } from 'zod';
-import { getGeminiApiKey, geminiApiKey } from '../../config/secrets';
 import { validateAppCheckV2 } from '../../middleware/appCheck';
 import { FUNCTION_INTELLIGENCE_MODELS } from '../../config/models';
 import { getVertexAIClient } from '../../lib/vertexClient';
 import { parseStorageUri } from '../../lib/storageUri';
 import { GenerateAudioSchema, GenerateImageSchema, GenerateVideoSchema, GenerateOmniRemixSchema } from '../../shared/creative';
 import { VideoJobDocumentSchema, type VideoJobDocument } from '../../shared/videoJob';
-import { checkOperationBudget, finalizeOperationReservation } from '../billing/enforceOperationCost';
+import { checkOperationBudget, finalizeOperationReservation, requireVerifiedCreativeUser } from '../billing/enforceOperationCost';
+import { entitlementTierToBudgetTier, requireVerifiedServerEntitlement } from '../auth/entitlements';
+import { arcjetKey } from '../../config/secrets';
+import { policyClassForServerEntitlement, protectAuthenticatedApiRequest } from '../security/arcjet';
 import { probeDurationSeconds } from './getMediaDuration';
 import { createHash } from 'node:crypto';
 import { readFile, rm } from 'node:fs/promises';
@@ -99,130 +101,31 @@ function getMediaVertexLocation(kind: MediaKind): string {
 }
 
 /**
- * Media provider policy.
- * - 'vertex': Vertex AI on the postpaid GCP project via ADC. Production default —
- *   invoiced billing, no prepaid-credit cliff (see OPEN_ISSUES "credits depleted" blocker).
- * - 'apikey': Google AI Studio API key with automatic Vertex fallback. Default for
- *   dev/QA/emulators, so local testing burns the AI Studio key, never prod quota.
- * Override with MEDIA_PROVIDER env var.
+ * Media provider policy. Creative generation is backend-only and always uses
+ * Vertex AI with Application Default Credentials. The API-key path is not a
+ * permitted fallback: it would create a second billing and security boundary.
  */
-type MediaProvider = 'vertex' | 'apikey';
+type MediaProvider = 'vertex';
 
 export function getMediaProvider(): MediaProvider {
-  const configured = (process.env.MEDIA_PROVIDER || '').toLowerCase();
-  if (configured === 'vertex' || configured === 'apikey') return configured;
-  return process.env.NODE_ENV === 'production' ? 'vertex' : 'apikey';
+  return 'vertex';
 }
 
-// Helper to resolve the GenAI client using Google AI Studio (API Key) or Vertex AI (ADC).
-// This fully adheres to the secure proxy architecture, with backend-only media routing.
-function getRawAiClient(kind: MediaKind, forceVertex = false): GoogleGenAI {
-  let apiKey: string | null = null;
-  try {
-    apiKey = getGeminiApiKey();
-  } catch (error) {
-    if (!forceVertex) {
-      console.warn('[creativeGateway] Gemini API key unavailable; falling back to Vertex AI ADC.', error);
-    }
-  }
-
-  if (apiKey && !apiKey.includes("PLACEHOLDER") && !forceVertex) {
-    return new GoogleGenAI({ apiKey });
-  }
-
-  const project = process.env.GCLOUD_PROJECT || process.env.GOOGLE_CLOUD_PROJECT || process.env.VITE_FIREBASE_PROJECT_ID || '';
-  if (!project) {
-    throw new HttpsError('failed-precondition', 'Google AI credentials are not configured for media generation.');
-  }
-
-  return getVertexAIClient(project, getMediaVertexLocation(kind));
+function getAiClient(kind: MediaKind): GoogleGenAI {
+  // getVertexAIClient resolves the Cloud Functions project from ADC-safe
+  // server environment variables (and a server default for local tests). Do
+  // not read VITE_* values here: they are frontend build configuration, not
+  // backend credentials or authority.
+  return getVertexAIClient(undefined, getMediaVertexLocation(kind));
 }
 
 /**
- * Proxy wrapper that retries on API key failures by falling back to Vertex AI.
- * Handles nested object/method chains so .models.generateContent(...) works.
- * Type is preserved via generic T; only the function invoke layer is polymorphic.
- */
-function wrapWithFallback<T extends object>(
-  obj: T,
-  forceVertex: boolean,
-  fallbackFactory: () => T,
-): T {
-  return new Proxy(obj, {
-    get(target: T, prop: string | symbol, receiver: unknown): unknown {
-      const val = Reflect.get(target, prop, receiver);
-      if (typeof val === 'function') {
-        // Async wrapper that retries on API key errors
-        return async function wrappedMethod(...args: unknown[]): Promise<unknown> {
-          try {
-            return await (val as (...args: unknown[]) => Promise<unknown>).apply(target, args);
-          } catch (error: unknown) {
-            const errorMsg = error instanceof Error ? error.message : String(error);
-            const isApiKeyError = errorMsg.includes('API key expired') ||
-                                  errorMsg.includes('API_KEY_INVALID') ||
-                                  errorMsg.includes('API key not valid') ||
-                                  errorMsg.includes('API keys are not supported') ||
-                                  (errorMsg.includes('INVALID_ARGUMENT') && errorMsg.includes('API key'));
-            // AI Studio prepaid-billing exhaustion is a key-scoped outage, not a
-            // model outage — Vertex ADC on the postpaid project can still serve it.
-            const lowerMsg = errorMsg.toLowerCase();
-            const isBillingExhausted = lowerMsg.includes('prepayment credits') ||
-                                       lowerMsg.includes('billing#prepay') ||
-                                       (lowerMsg.includes('resource_exhausted') && (lowerMsg.includes('prepay') || lowerMsg.includes('billing')));
-
-            if ((isApiKeyError || isBillingExhausted) && !forceVertex) {
-              console.warn('[creativeGateway] API key unusable (invalid or prepaid credits exhausted). Retrying automatically with Vertex AI ADC...', errorMsg);
-              const fallbackObj = fallbackFactory();
-              const fallbackFn = Reflect.get(fallbackObj, prop, fallbackObj) as (...args: unknown[]) => Promise<unknown>;
-              return await fallbackFn.apply(fallbackObj, args);
-            }
-            throw error;
-          }
-        };
-      } else if (val && typeof val === 'object') {
-        // Recursively wrap nested objects to handle .models.generateContent(...) chains
-        return wrapWithFallback(val as object, forceVertex, () => {
-          const nextFallback = fallbackFactory();
-          return Reflect.get(nextFallback, prop, nextFallback) as object;
-        });
-      }
-      return val;
-    }
-  }) as T;
-}
-
-function getAiClient(kind: MediaKind, forceVertex = false): GoogleGenAI {
-  // Production policy: Vertex AI (postpaid, ADC) is the primary media provider.
-  // The API-key path stays available for dev/QA via MEDIA_PROVIDER=apikey.
-  const effectiveForceVertex = forceVertex || getMediaProvider() === 'vertex';
-  const client = getRawAiClient(kind, effectiveForceVertex);
-  if (effectiveForceVertex) return client;
-  return wrapWithFallback(client, false, () => getRawAiClient(kind, true));
-}
-
-/**
- * Omni Flash is currently a paid-tier Gemini Developer API preview and is not
- * exposed by this gateway's Vertex media client. Fail closed when the backend
- * secret is missing instead of silently routing to an incompatible provider.
+ * Omni Remix is allowed to use only the same ADC-authenticated Vertex client
+ * as every other creative capability. There is intentionally no Gemini
+ * Developer API client, API-key fallback, or browser-owned provider route.
  */
 function getOmniAiClient(): GoogleGenAI {
-  let apiKey: string | null;
-  try {
-    apiKey = getGeminiApiKey();
-  } catch (error) {
-    throw new HttpsError(
-      'failed-precondition',
-      'Gemini Omni Flash requires a server-side Gemini API key on a paid-tier project.',
-      error,
-    );
-  }
-  if (!apiKey || apiKey.includes('PLACEHOLDER')) {
-    throw new HttpsError(
-      'failed-precondition',
-      'Gemini Omni Flash requires a server-side Gemini API key on a paid-tier project.',
-    );
-  }
-  return new GoogleGenAI({ apiKey });
+  return getVertexAIClient(undefined, getMediaVertexLocation('video'));
 }
 
 // Defer firestore and storage initialization until first use (for test compatibility)
@@ -233,6 +136,47 @@ function getDb() {
 function getStorage() {
   return admin.storage();
 }
+
+/**
+ * Establishes the server-owned admission chain for every spend-bearing
+ * creative callable. Auth and verified-email state are signed by Firebase;
+ * entitlement is loaded by the backend; Arcjet then sees only that resolved
+ * policy and the raw request. No client tier, rate-limit class, or provider
+ * credential is accepted as input.
+ */
+async function requireCreativeGatewayAdmission(
+  request: CallableRequest<unknown>,
+  operation: string,
+): Promise<{ userId: string; entitlement: Awaited<ReturnType<typeof requireVerifiedServerEntitlement>> }> {
+  validateAppCheckV2(request);
+  const userId = requireVerifiedCreativeUser(request.auth);
+  const entitlement = await requireVerifiedServerEntitlement(userId);
+  const protection = await protectAuthenticatedApiRequest(request.rawRequest, {
+    userId,
+    policy: policyClassForServerEntitlement({
+      tier: entitlement.tier,
+      isAdmin: request.auth?.token.admin === true,
+    }),
+    operationId: `${operation}:${crypto.randomUUID()}`,
+  });
+  if (!protection.allowed) {
+    const code = protection.status === 429
+      ? 'resource-exhausted'
+      : protection.status === 403
+        ? 'permission-denied'
+        : 'unavailable';
+    throw new HttpsError(code, protection.message, {
+      code: protection.code,
+      ...(protection.retryAfterSeconds ? { retryAfterSeconds: protection.retryAfterSeconds } : {}),
+    });
+  }
+  return { userId, entitlement };
+}
+
+const creativeGatewayCallableOptions = {
+  secrets: [arcjetKey],
+  enforceAppCheck: false,
+};
 
 /**
  * Helper: Upload a raw buffer to Cloud Storage and return the gs:// URI
@@ -281,8 +225,10 @@ async function safeDbSet(
 ) {
   try {
     await getDb().collection(collection).doc(jobId).set(data);
-  } catch (e) {
-    console.warn(`[creativeGateway] Firestore set failed for ${collection} (non-blocking):`, e);
+  } catch {
+    // Firestore errors can include document fragments or provider diagnostics.
+    // The job id is enough to correlate safely in controlled server tooling.
+    console.warn('[creativeGateway] Firestore set failed (non-blocking)', { collection, jobId });
   }
 }
 
@@ -293,8 +239,8 @@ async function safeDbUpdate(
 ) {
   try {
     await getDb().collection(collection).doc(jobId).update(data);
-  } catch (e) {
-    console.warn(`[creativeGateway] Firestore update failed for ${collection} (non-blocking):`, e);
+  } catch {
+    console.warn('[creativeGateway] Firestore update failed (non-blocking)', { collection, jobId });
   }
 }
 
@@ -755,7 +701,8 @@ export class MediaGenerationError extends Error {
 
   constructor(kind: MediaKind, finishReason: string, textPreview?: string) {
     const { category, code, publicMessage } = classifyMediaFinishFailure(kind, finishReason);
-    // The detailed message is what lands in logs and the job document.
+    // Provider detail stays in this in-memory error only. Persistence and the
+    // callable response use the classified public message below.
     const detail = `No ${kind} returned from Gemini (finish reason: ${finishReason || 'unknown'})${textPreview ? `. Model text: ${textPreview}` : ''}`;
     super(detail);
     this.name = 'MediaGenerationError';
@@ -805,7 +752,6 @@ function toGatewayError(error: unknown, context: string): HttpsError {
     return new HttpsError(error.code, `${context}: ${error.publicMessage}`, {
       finishReason: error.finishReason,
       category: error.category,
-      cause: error.message,
     });
   }
 
@@ -825,7 +771,7 @@ function toGatewayError(error: unknown, context: string): HttpsError {
   const lower = combined.toLowerCase();
 
   let code: GatewayErrorCode = 'internal';
-  let publicMessage = message;
+  let publicMessage = 'The generation service could not complete this request. Please try again.';
 
   if (
     lower.includes('prepayment credits are depleted') ||
@@ -833,25 +779,49 @@ function toGatewayError(error: unknown, context: string): HttpsError {
     (lower.includes('ai studio') && lower.includes('billing'))
   ) {
     code = 'resource-exhausted';
-    publicMessage = 'Google AI Studio prepayment credits are depleted for this Gemini API project. Add credits or switch the app to a funded project before trying image generation again.';
+    publicMessage = 'The Vertex AI billing quota for this project is unavailable. Please try again later.';
   } else if (status === 400 || lower.includes('invalid') || lower.includes('bad request') || lower.includes('safety') || lower.includes('policy') || lower.includes('blocked') || lower.includes('unsupported') || lower.includes('not supported')) {
     code = 'invalid-argument';
-    publicMessage = `Google rejected the generation request: ${message}`;
+    publicMessage = 'The generation request was rejected. Review the inputs and try again.';
   }
-  else if (status === 401 || status === 403 || lower.includes('api key') || lower.includes('permission') || lower.includes('auth')) code = 'permission-denied';
-  else if (status === 404 || lower.includes('not found') || lower.includes('not available')) code = 'failed-precondition';
-  else if (status === 429 || lower.includes('quota') || lower.includes('rate limit')) code = 'resource-exhausted';
-  else if (status === 503 || status === 504 || lower.includes('timeout') || lower.includes('deadline') || lower.includes('overloaded')) code = 'deadline-exceeded';
+  else if (status === 401 || status === 403 || lower.includes('api key') || lower.includes('permission') || lower.includes('auth')) {
+    code = 'permission-denied';
+    publicMessage = 'The generation service is not currently authorized for this request.';
+  }
+  else if (status === 404 || lower.includes('not found') || lower.includes('not available')) {
+    code = 'failed-precondition';
+    publicMessage = 'The requested generation capability is not available for this project.';
+  }
+  else if (status === 429 || lower.includes('quota') || lower.includes('rate limit')) {
+    code = 'resource-exhausted';
+    publicMessage = 'The generation service is temporarily at capacity. Please retry shortly.';
+  }
+  else if (status === 503 || status === 504 || lower.includes('timeout') || lower.includes('deadline') || lower.includes('overloaded')) {
+    code = 'deadline-exceeded';
+    publicMessage = 'The generation service timed out. Please retry shortly.';
+  }
   else if (status === 500 || lower.includes('internal error') || lower.includes('internal server error')) {
     code = 'unavailable';
-    publicMessage = 'Google Gemini returned a temporary internal generation error. Try again; if it repeats, check the selected model and Google AI Studio status for this project.';
+    publicMessage = 'The generation service is temporarily unavailable. Please retry shortly.';
   }
 
   if (lower.includes('is not configured') || lower.includes('api key unavailable') || lower.includes('model not found') || lower.includes('model is not available')) {
       code = 'failed-precondition';
   }
 
-  return new HttpsError(code, `${context}: ${publicMessage}`, { status, cause: message, providerCode: errorCode, providerStatus: errorStatus });
+  // Do not return raw provider codes/statuses. They are not actionable for an
+  // artist and can disclose provider-internal state or rollout details.
+  return new HttpsError(code, `${context}: ${publicMessage}`);
+}
+
+function recordGatewayFailure(operation: string, jobId: string, error: unknown): HttpsError {
+  const gatewayError = toGatewayError(error, `${operation} failed`);
+  console.error('[creativeGateway] Generation failed', {
+    operation,
+    jobId,
+    code: gatewayError.code,
+  });
+  return gatewayError;
 }
 
 async function pollVideoOperation(ai: GoogleGenAI, operation: GenerateVideosOperation, jobId: string): Promise<GenerateVideosOperation> {
@@ -904,24 +874,6 @@ function extractGeneratedVideo(operation: GenerateVideosOperation): Video {
   return video;
 }
 
-async function fetchVideoUri(uri: string): Promise<Buffer> {
-  let apiKey: string | null = null;
-  try {
-    apiKey = getGeminiApiKey();
-  } catch {
-    apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_GENAI_API_KEY || null;
-  }
-
-  const fetchUri = apiKey && !uri.includes('key=')
-    ? `${uri}${uri.includes('?') ? '&' : '?'}key=${apiKey}`
-    : uri;
-  const response = await fetch(fetchUri);
-  if (!response.ok) {
-    throw new Error(`Failed to download generated video URI: ${response.status} ${response.statusText}`);
-  }
-  return Buffer.from(await response.arrayBuffer());
-}
-
 async function downloadGeneratedVideo(ai: GoogleGenAI, video: Video, jobId: string): Promise<{ buffer: Buffer; mimeType: string }> {
   if (video.videoBytes) {
     return { buffer: Buffer.from(video.videoBytes, 'base64'), mimeType: video.mimeType || 'video/mp4' };
@@ -932,10 +884,7 @@ async function downloadGeneratedVideo(ai: GoogleGenAI, video: Video, jobId: stri
     await ai.files.download({ file: video, downloadPath });
     return { buffer: await readFile(downloadPath), mimeType: video.mimeType || 'video/mp4' };
   } catch (downloadError) {
-    if (video.uri) {
-      return { buffer: await fetchVideoUri(video.uri), mimeType: video.mimeType || 'video/mp4' };
-    }
-    throw downloadError;
+    throw new Error(`Vertex video download failed: ${downloadError instanceof Error ? downloadError.message : String(downloadError)}`);
   } finally {
     await rm(downloadPath, { force: true }).catch(() => undefined);
   }
@@ -1116,26 +1065,26 @@ export async function executeVideoJob(jobId: string, job: VideoGenerationJobReco
 
     return { jobId, resultUri: outputUri };
   } catch (error: unknown) {
-    const errorText = errorMessage(error);
+    const gatewayError = recordGatewayFailure('Video generation', jobId, error);
     const isCancelled = error instanceof HttpsError
       ? error.code === 'cancelled'
-      : errorText.toLowerCase().includes('cancelled');
+      : false;
     await syncVideoJobUpdate(jobId, {
       status: isCancelled ? 'cancelled' : 'failed',
-      error: errorText,
+      error: gatewayError.message,
+      errorCode: gatewayError.code,
       ...(isCancelled ? { cancelledAt: new Date().toISOString() } : {}),
       updatedAt: new Date().toISOString(),
     });
-    throw toGatewayError(error, 'Video generation failed');
+    throw gatewayError;
   }
 }
 
 /**
  * generateImageV3 - Routes to Gemini 3 image models via Interactions API.
  */
-export const generateImageV3 = onCall({ timeoutSeconds: 120, memory: '1GiB', secrets: [geminiApiKey], enforceAppCheck: false }, async (request) => {
-  validateAppCheckV2(request);
-  if (!request.auth) throw new HttpsError('unauthenticated', 'User must be authenticated.');
+export const generateImageV3 = onCall({ ...creativeGatewayCallableOptions, timeoutSeconds: 120, memory: '1GiB' }, async (request) => {
+  const { userId } = await requireCreativeGatewayAdmission(request, 'generate-image');
   
   const parsed = GenerateImageSchema.safeParse(request.data);
   if (!parsed.success) {
@@ -1157,7 +1106,6 @@ export const generateImageV3 = onCall({ timeoutSeconds: 120, memory: '1GiB', sec
     useImageSearch,
     costReservationId,
   } = parsed.data;
-  const userId = request.auth.uid;
   const jobId = getDb().collection('creative_jobs').doc().id;
   const reservation = await loadCostReservation(userId, costReservationId, 'image');
   const minimumReservedCost = count * 0.04;
@@ -1187,7 +1135,7 @@ export const generateImageV3 = onCall({ timeoutSeconds: 120, memory: '1GiB', sec
       costReservationId,
       createdAt: new Date().toISOString()
     });
-    const ai = getAiClient('image', mediaProvider === 'vertex');
+    const ai = getAiClient('image');
     const imageAi = ai as unknown as {
       interactions?: { create: (data: Record<string, unknown>) => Promise<unknown> };
       models: { generateContent: (data: Record<string, unknown>) => Promise<unknown> };
@@ -1324,8 +1272,8 @@ export const generateImageV3 = onCall({ timeoutSeconds: 120, memory: '1GiB', sec
     });
     try {
       await finalizeOperationReservation({ userId, operationId: costReservationId, outcome: 'SETTLED' });
-    } catch (settlementError) {
-      console.error('[generateImageV3] Output completed but reservation settlement needs reconciliation:', settlementError);
+    } catch {
+      console.error('[generateImageV3] Output completed but reservation settlement needs reconciliation', { jobId });
     }
 
     return {
@@ -1336,44 +1284,32 @@ export const generateImageV3 = onCall({ timeoutSeconds: 120, memory: '1GiB', sec
       ...(thoughtSummaries.length > 0 ? { thoughtSummary: thoughtSummaries.join('\n\n') } : {}),
     };
   } catch (error: unknown) {
-    // COMPREHENSIVE DEBUG LOGGING
-    console.error(`[generateImageV3] CRITICAL FAILURE: Unhandled exception caught.`);
-    console.error(`[generateImageV3] RAW ERROR:`, error);
-    if (error && typeof error === 'object') {
-      console.error(`[generateImageV3] ERROR KEYS:`, Object.keys(error));
-      console.error(`[generateImageV3] ERROR MESSAGE:`, (error as Error).message);
-      console.error(`[generateImageV3] ERROR STACK:`, (error as Error).stack);
-      try {
-        console.error(`[generateImageV3] STRINGIFIED:`, JSON.stringify(error, null, 2));
-      } catch {
-        console.error(`[generateImageV3] STRINGIFIED: (failed to stringify)`);
-      }
-    }
+    const gatewayError = recordGatewayFailure('Image generation', jobId, error);
 
     if (!outputCompleted && outputUris.length > 0) {
       await deleteStorageOutputs(outputUris);
     }
     await safeDbUpdate(jobId, {
       status: 'failed',
-      error: errorMessage(error)
+      error: gatewayError.message,
+      errorCode: gatewayError.code,
     });
     if (!outputCompleted) {
       try {
         await finalizeOperationReservation({ userId, operationId: costReservationId, outcome: 'VOIDED' });
-      } catch (releaseError) {
-        console.error('[generateImageV3] Failed to release cost reservation:', releaseError);
+      } catch {
+        console.error('[generateImageV3] Failed to release cost reservation', { jobId });
       }
     }
-    throw toGatewayError(error, 'Image generation failed');
+    throw gatewayError;
   }
 });
 
 /**
  * generateVideoV3 - Routes to Veo 3.1 via the long-running generateVideos API.
  */
-export const generateVideoV3 = onCall({ timeoutSeconds: 540, secrets: [geminiApiKey] , enforceAppCheck: false}, async (request) => {
-  validateAppCheckV2(request);
-  if (!request.auth) throw new HttpsError('unauthenticated', 'User must be authenticated.');
+export const generateVideoV3 = onCall({ ...creativeGatewayCallableOptions, timeoutSeconds: 540 }, async (request) => {
+  const { userId } = await requireCreativeGatewayAdmission(request, 'generate-video');
   
   const parsed = GenerateVideoSchema.safeParse(request.data);
   if (!parsed.success) throw new HttpsError('invalid-argument', 'Invalid video payload. Base64 forbidden; use gs:// URIs for reference media.');
@@ -1397,7 +1333,6 @@ export const generateVideoV3 = onCall({ timeoutSeconds: 540, secrets: [geminiApi
     negativePrompt,
     seed,
     enhancePrompt,
-    skipCostCheck,
     costEstimate: _costEstimate,
     costReservationId,
     directorSettings: requestedDirectorSettings,
@@ -1416,7 +1351,6 @@ export const generateVideoV3 = onCall({ timeoutSeconds: 540, secrets: [geminiApi
     );
   }
 
-  const userId = request.auth.uid;
   const jobId = getDb().collection('creative_jobs').doc().id;
   const normalizedResolution = normalizeVideoResolution(resolution, model);
   const hasFrameInput = !!firstFrameUri || !!referenceUri || !!lastFrameUri;
@@ -1441,13 +1375,11 @@ export const generateVideoV3 = onCall({ timeoutSeconds: 540, secrets: [geminiApi
   }
 
   const serverEstimatedCost = estimateVideoCost(normalizedDuration, modelId, effectiveMode);
-  const reservation = !skipCostCheck && costReservationId
-    ? await loadCostReservation(userId, costReservationId)
-    : null;
-  if (!skipCostCheck && !costReservationId) {
+  if (!costReservationId) {
     throw new HttpsError('failed-precondition', 'Missing cost reservation. Reserve cost before submitting the job.');
   }
-  if (!skipCostCheck && Math.abs((reservation?.estimatedCost ?? serverEstimatedCost) - serverEstimatedCost) > 0.01) {
+  const reservation = await loadCostReservation(userId, costReservationId);
+  if (Math.abs(reservation.estimatedCost - serverEstimatedCost) > 0.01) {
     throw new HttpsError('failed-precondition', 'Cost reservation estimate does not match the current job estimate.');
   }
 
@@ -1500,10 +1432,10 @@ export const generateVideoV3 = onCall({ timeoutSeconds: 540, secrets: [geminiApi
       cameraPhysics: undefined,
     },
     directorSettings,
-    provider: 'google-genai',
+    provider: getMediaProvider(),
     model: modelId,
     costEstimate: reservation?.estimatedCost ?? serverEstimatedCost,
-    costReservationId: skipCostCheck ? undefined : costReservationId,
+    costReservationId,
     retryCount: 0,
     inputUris,
     tempUris: [],
@@ -1543,9 +1475,8 @@ export const generateVideoV3 = onCall({ timeoutSeconds: 540, secrets: [geminiApi
   return { jobId };
 });
 
-export const cancelVideoJob = onCall({ timeoutSeconds: 30, enforceAppCheck: false }, async (request) => {
-  validateAppCheckV2(request);
-  if (!request.auth) throw new HttpsError('unauthenticated', 'User must be authenticated.');
+export const cancelVideoJob = onCall({ ...creativeGatewayCallableOptions, timeoutSeconds: 30 }, async (request) => {
+  const { userId } = await requireCreativeGatewayAdmission(request, 'cancel-video');
 
   const schema = z.object({ jobId: z.string().min(1) });
   const parsed = schema.safeParse(request.data);
@@ -1556,7 +1487,7 @@ export const cancelVideoJob = onCall({ timeoutSeconds: 30, enforceAppCheck: fals
   if (!existing) {
     throw new HttpsError('not-found', 'Video job not found.');
   }
-  if (existing.userId !== request.auth.uid) {
+  if (existing.userId !== userId) {
     throw new HttpsError('permission-denied', 'You do not own this video job.');
   }
 
@@ -1778,9 +1709,8 @@ async function fetchInteractionVideo(
 /**
  * generateOmniRemixV3 - Gemini Omni Flash generation and conversational editing.
  */
-export const generateOmniRemixV3 = onCall({ timeoutSeconds: 540, memory: '2GiB', secrets: [geminiApiKey], enforceAppCheck: false }, async (request) => {
-  validateAppCheckV2(request);
-  if (!request.auth) throw new HttpsError('unauthenticated', 'User must be authenticated.');
+export const generateOmniRemixV3 = onCall({ ...creativeGatewayCallableOptions, timeoutSeconds: 540, memory: '2GiB' }, async (request) => {
+  const { userId } = await requireCreativeGatewayAdmission(request, 'generate-omni-remix');
 
   const parsed = GenerateOmniRemixSchema.safeParse(request.data);
   if (!parsed.success) {
@@ -1788,7 +1718,6 @@ export const generateOmniRemixV3 = onCall({ timeoutSeconds: 540, memory: '2GiB',
   }
 
   const data = parsed.data;
-  const userId = request.auth.uid;
   const jobId = getDb().collection('creative_jobs').doc().id;
   const modelId = resolveOmniFlashModel();
   const task = resolveOmniTask(data);
@@ -1928,8 +1857,8 @@ export const generateOmniRemixV3 = onCall({ timeoutSeconds: 540, memory: '2GiB',
         operationId: data.costReservationId,
         outcome: 'SETTLED',
       });
-    } catch (settlementError) {
-      console.error('[generateOmniRemixV3] Output completed; reservation settlement needs reconciliation:', settlementError);
+    } catch {
+      console.error('[generateOmniRemixV3] Output completed; reservation settlement needs reconciliation', { jobId });
     }
 
     return {
@@ -1940,10 +1869,12 @@ export const generateOmniRemixV3 = onCall({ timeoutSeconds: 540, memory: '2GiB',
       synthIdApplied: true,
     };
   } catch (error: unknown) {
+    const gatewayError = recordGatewayFailure('Omni remix', jobId, error);
     if (!outputCompleted && outputUri) await deleteStorageOutputs([outputUri]);
     await safeDbUpdate(jobId, {
       status: 'failed',
-      error: errorMessage(error),
+      error: gatewayError.message,
+      errorCode: gatewayError.code,
       failedAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     });
@@ -1954,11 +1885,11 @@ export const generateOmniRemixV3 = onCall({ timeoutSeconds: 540, memory: '2GiB',
           operationId: data.costReservationId,
           outcome: 'VOIDED',
         });
-      } catch (releaseError) {
-        console.error('[generateOmniRemixV3] Failed to release cost reservation:', releaseError);
+      } catch {
+        console.error('[generateOmniRemixV3] Failed to release cost reservation', { jobId });
       }
     }
-    throw toGatewayError(error, 'Omni remix failed');
+    throw gatewayError;
   }
 });
 
@@ -2061,9 +1992,8 @@ async function replayCompletedAudioJob(
  * Durable, idempotent single-speaker TTS gateway. The server owns cost
  * reservation, generation, Storage persistence, and audio-library metadata.
  */
-export const generateAudioV3 = onCall({ timeoutSeconds: 300, memory: '1GiB', secrets: [geminiApiKey], enforceAppCheck: false }, async (request) => {
-  validateAppCheckV2(request);
-  if (!request.auth) throw new HttpsError('unauthenticated', 'User must be authenticated.');
+export const generateAudioV3 = onCall({ ...creativeGatewayCallableOptions, timeoutSeconds: 300, memory: '1GiB' }, async (request) => {
+  const { userId, entitlement } = await requireCreativeGatewayAdmission(request, 'generate-audio');
 
   const parsed = GenerateAudioSchema.safeParse(request.data);
   if (!parsed.success) {
@@ -2071,7 +2001,6 @@ export const generateAudioV3 = onCall({ timeoutSeconds: 300, memory: '1GiB', sec
   }
 
   const { prompt, voice, requestId } = parsed.data;
-  const userId = request.auth.uid;
   const jobId = buildAudioJobId(userId, requestId);
   const db = getDb();
   const jobRef = db.collection('creative_jobs').doc(jobId);
@@ -2102,6 +2031,7 @@ export const generateAudioV3 = onCall({ timeoutSeconds: 300, memory: '1GiB', sec
     const estimatedCost = estimateTtsCost(prompt);
     const reservation = await checkOperationBudget({
       userId,
+      entitlementTier: entitlementTierToBudgetTier(entitlement.tier),
       estimatedCost,
       operationType: 'audio',
       metadata: {
@@ -2160,8 +2090,8 @@ export const generateAudioV3 = onCall({ timeoutSeconds: 300, memory: '1GiB', sec
 
     try {
       await finalizeOperationReservation({ userId, operationId, outcome: 'SETTLED' });
-    } catch (settlementError) {
-      console.error('[generateAudioV3] Audio completed; reservation settlement queued for reconciliation:', settlementError);
+    } catch {
+      console.error('[generateAudioV3] Audio completed; reservation settlement queued for reconciliation', { jobId });
     }
 
     return {
@@ -2171,22 +2101,24 @@ export const generateAudioV3 = onCall({ timeoutSeconds: 300, memory: '1GiB', sec
       mimeType: 'audio/wav',
     };
   } catch (error: unknown) {
+    const gatewayError = recordGatewayFailure('Audio generation', jobId, error);
     if (outputUri) await deleteStorageOutputs([outputUri]);
     await jobRef.set({
       status: 'failed',
-      error: errorMessage(error),
+      error: gatewayError.message,
+      errorCode: gatewayError.code,
       failedAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     }, { merge: true }).catch(jobError => {
-      console.error('[generateAudioV3] Failed to record audio job failure:', jobError);
+      console.error('[generateAudioV3] Failed to record audio job failure', { jobId });
     });
     if (operationId) {
       try {
         await finalizeOperationReservation({ userId, operationId, outcome: 'VOIDED' });
-      } catch (releaseError) {
-        console.error('[generateAudioV3] Failed to release audio reservation:', releaseError);
+      } catch {
+        console.error('[generateAudioV3] Failed to release audio reservation', { jobId });
       }
     }
-    throw toGatewayError(error, 'Audio generation failed');
+    throw gatewayError;
   }
 });

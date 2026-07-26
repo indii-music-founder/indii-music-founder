@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { WorkflowEngine } from './WorkflowEngine';
+import { WorkflowEngine, workflowCanonicalMaster } from './WorkflowEngine';
 import { CustomNode, CustomEdge, Status } from '../types';
 
 // ── Shared mocks ──────────────────────────────────────────────────────────────
@@ -91,6 +91,11 @@ describe('WorkflowEngine', () => {
                 value: method === 'play' ? vi.fn().mockResolvedValue(undefined) : vi.fn()
             });
         }
+    });
+
+    it('rejects a raw audio URL at the beat-synced render boundary', () => {
+        expect(() => workflowCanonicalMaster({ audio_input: 'https://attacker.example/master.wav' }))
+            .toThrow('verified canonical master reference');
     });
 
     // ── Knowledge Base (existing baseline) ───────────────────────────────────

@@ -16,39 +16,38 @@
 
 ---
 
-## What's New (2026-06-30)
+## Current Contract Test Surfaces (2026-07-26)
 
-### Five New Integration Test Suites (1,127 lines)
+The original browser suites overclaimed what they proved: they simulated
+payloads, retries, and errors without executing the production contracts. The
+current `test:api` lane is intentionally narrower and truthful:
 
-**1. API Contracts** (`e2e/api-contracts.integration.test.ts` — 5 tests)
-- Validates Firebase Functions are initialized and callable
-- **Catches:** "Cannot read properties of undefined (reading 'create')"
-- **Status:** ✅ Would have caught the recent Firebase functions export order bug
+**1. Client callable construction** (`e2e/api-contracts.integration.test.ts`)
+- Uses isolated Firebase app instances and proves the browser can construct
+  callable references without a duplicate default-app failure.
+- It does **not** invoke a live Function or treat placeholder credentials as
+  backend validation.
 
-**2. Creative Generation** (`e2e/creative-generation.integration.test.ts` — 6 tests)
-- Validates image/video generation payload schemas
-- Tests URI formats (gs:// vs Base64)
-- **Catches:** "Invalid video payload. Base64 forbidden"
-- **Status:** ✅ Would have caught the recent Whisk media bug
+**2. Protected creative client boundary** (`e2e/creative-generation.integration.test.ts`)
+- Confirms the browser initializes Auth, Functions, Firestore, and Storage,
+  and constructs only backend callables for image/video generation.
 
-**3. Service Initialization** (`e2e/service-initialization.integration.test.ts` — 6 tests)
-- Validates all 46 httpsCallable uses have functions initialized
-- Tests multiple app instances
-- **Catches:** Uninitialized service errors across the codebase
-- **Coverage:** Firebase functions, messaging, custom services
+**3. Firebase service initialization** (`e2e/service-initialization.integration.test.ts`)
+- Checks named-app isolation, callable construction, and conditional messaging
+  support without leaking app state across tests.
 
-**4. Payload Validation** (`e2e/payload-validation.integration.test.ts` — 11 tests)
-- Documents payload contracts for 12+ API endpoints
-- Tests enum values, URI formats, required fields
-- Tests type safety (numbers vs strings, arrays vs null)
-- **Catches:** Schema mismatches, invalid enums, missing fields
+**4. Shared creative request schemas** (`packages/firebase/src/shared/creative.integration.test.ts`)
+- Executes the exact Zod schemas used by Firebase image, video, Omni, and TTS
+  handlers; rejects data URLs, unbounded models/durations, and malformed
+  identities.
 
-**5. Async Error Handling** (`e2e/async-error-handling.integration.test.ts` — 8 tests)
-- Validates try-catch patterns for all await statements
-- Tests timeout protection for long-running operations
-- Tests error state recovery
-- Tests concurrent operation safety
-- **Catches:** Unhandled promise rejections, silent failures
+**5. Real retry policy** (`packages/renderer/src/utils/async.test.ts`)
+- Executes `fetchWithRetry` itself: Retry-After aware 429 behavior, bounded
+  network retry, and no retry for non-transient 4xx responses.
+
+An authenticated Auth/App Check/Functions/Firestore/Storage emulator lane is
+still required before claiming end-to-end request admission. It is tracked in
+ISSUE-1230; local construction or schema tests are not a substitute.
 
 ### Proactive Pattern Detector
 
@@ -102,7 +101,7 @@ npm run detect:bugs
 bash scripts/detect-hidden-bugs.sh
 
 # Add test cases for any new high-risk patterns
-# Update .agent/test_ledger/GENERATION_FAILURES.md
+# Update .agent/test_ledger/OPEN_ISSUES_V2.md
 ```
 
 ### In CI Pipeline
@@ -133,14 +132,14 @@ This runs BEFORE build, so pattern failures block deployment.
 - E2E tests mock the API call, so `functions` is never accessed
 - Bug only appears at runtime when real code tries to use `functions`
 
-**How integration tests catch it:**
+**How the client-boundary test catches it:**
 ```typescript
 const functions = getFunctions(app);
 expect(functions).not.toBeNull();  // ← Fails before fix
 const callable = httpsCallable(functions, 'generateImageV3');
 ```
 
-**Prevention:** The test runs in CI. If `functions` is undefined, the test fails before merge.
+**Prevention:** The test runs in CI. If `functions` is undefined, the test fails before merge. It does not prove a remote callable accepts a request; that needs the authenticated emulator lane.
 
 ---
 
@@ -153,21 +152,16 @@ const callable = httpsCallable(functions, 'generateImageV3');
 - E2E tests mock the API, so backend validation never runs
 - Bug only appears when real backend rejects the Base64 payload
 
-**How integration tests catch it:**
+**How the current contract tests catch it:**
 ```typescript
-const validFormats = [
-    { image: { uri: 'gs://bucket/path.jpg' } },   // Valid
-    { image: { uri: 'https://example.com/path.jpg' } }, // Valid
-];
-
-const invalidFormats = [
-    { image: { imageBytes: 'data:...' } },   // Invalid
-];
-
-// Test validates these contracts
+const result = GenerateVideoSchema.safeParse({
+    prompt: 'A performance clip',
+    firstFrameUri: 'data:image/png;base64,forged',
+});
+expect(result.success).toBe(false);
 ```
 
-**Prevention:** Test documents the backend contract. Code review catches any attempt to send imageBytes.
+**Prevention:** Execute the shared Firebase schema and the gateway regression directly. An authenticated Functions-emulator test is still required to prove the deployed callable boundary.
 
 ---
 
@@ -175,9 +169,9 @@ const invalidFormats = [
 
 ```
                   🔺
-            Integration Tests
-         (Real Firebase, real payloads)
-        5 suites, 36 tests, catches API breaks
+        Contract / Boundary Tests
+    (real shared schemas and client initialization)
+       catches local API-contract regressions
               /                    \
              /                      \
             /  E2E Tests (Mocked)    \
@@ -191,7 +185,7 @@ const invalidFormats = [
 _________________________________
 ```
 
-**Key difference:** Integration tests call REAL Firebase, not mocks. This validates the actual backend contract.
+**Key difference:** Local tests prove only the contract they actually execute. They must never be described as live backend validation. Authenticated emulator and production checks validate the deployed boundary separately.
 
 ---
 
@@ -209,19 +203,19 @@ test('image generation', async ({ authedPage: page }) => {
 ```
 
 ```typescript
-// ✅ GOOD: Integration test calls real backend
-test('image generation payload validation', async () => {
-    const functions = getFunctions(app);
-    const generateImageV3 = httpsCallable(functions, 'generateImageV3');
-    
-    // This fails if backend contract changed
-    try {
-        await generateImageV3({ prompt: 'test', model: 'invalid-model' });
-    } catch (error) {
-        expect(error.code).toBe('invalid-argument'); // Real backend error
-    }
+// ✅ GOOD: Execute the exact shared Firebase request schema
+test('image generation payload validation', () => {
+    const result = GenerateImageSchema.safeParse({
+        prompt: 'test',
+        costReservationId: 'reservation-1',
+        referenceUri: 'data:image/png;base64,forged',
+    });
+    expect(result.success).toBe(false);
 });
 ```
+
+For Auth/App Check/cost admission, run a dedicated authenticated emulator test;
+never call production with placeholder credentials merely to make a test green.
 
 ### Anti-Pattern 2: Export Before Init
 ```typescript

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { signInWithEmail, getStudioUrl } from '@/lib/auth';
+import { signInWithEmail, getStudioUrl, refreshEmailVerification, resendEmailVerification } from '@/lib/auth';
 import { flushFounderFunnelQueue, trackFounderFunnelEvent } from '@/lib/founderFunnel';
 import { Loader2 } from 'lucide-react';
 import FounderPreviewContext from './FounderPreviewContext';
@@ -13,6 +13,8 @@ export default function LoginForm() {
     const [password, setPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [verificationEmail, setVerificationEmail] = useState<string | null>(null);
+    const [verificationNotice, setVerificationNotice] = useState<string | null>(null);
 
     // Detect founder traffic via ?source=founder query param
     const isFounderSource = typeof window !== 'undefined' &&
@@ -49,12 +51,47 @@ export default function LoginForm() {
                     email: user.email,
                 });
             }
-            // Redirect to studio app
+            const isVerified = await refreshEmailVerification(user);
+            if (!isVerified) {
+                setVerificationEmail(user.email || email);
+                setVerificationNotice('Verify your email before opening Studio.');
+                return;
+            }
             window.location.href = getStudioUrl();
         } catch (err: unknown) {
             console.error(err);
             const errorMessage = err instanceof Error ? err.message : 'Failed to sign in. Please check your credentials.';
             setError(errorMessage);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleVerificationCheck = async () => {
+        setIsLoading(true);
+        setError(null);
+        try {
+            const isVerified = await refreshEmailVerification();
+            if (!isVerified) {
+                setError('Your email is not verified yet. Open the verification link, then try again.');
+                return;
+            }
+            window.location.href = getStudioUrl();
+        } catch (err: unknown) {
+            setError(err instanceof Error ? err.message : 'Unable to refresh your verification status.');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleResendVerification = async () => {
+        setIsLoading(true);
+        setError(null);
+        try {
+            await resendEmailVerification();
+            setVerificationNotice('A fresh verification link has been sent.');
+        } catch (err: unknown) {
+            setError(err instanceof Error ? err.message : 'Unable to resend the verification email.');
         } finally {
             setIsLoading(false);
         }
@@ -75,6 +112,32 @@ export default function LoginForm() {
             </div>
 
             <FounderPreviewContext variant="login" />
+
+            {verificationEmail ? (
+                <div className="space-y-4 text-center">
+                    <p className="text-sm text-gray-300">
+                        Verify <span className="font-medium text-white">{verificationEmail}</span> before opening Studio.
+                    </p>
+                    {verificationNotice && <p className="text-sm text-emerald-300">{verificationNotice}</p>}
+                    {error && <p className="text-sm text-red-300">{error}</p>}
+                    <button
+                        type="button"
+                        onClick={handleVerificationCheck}
+                        disabled={isLoading}
+                        className="flex w-full justify-center rounded-lg bg-white px-4 py-2.5 text-sm font-bold text-black hover:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                        {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : 'I verified my email'}
+                    </button>
+                    <button
+                        type="button"
+                        onClick={handleResendVerification}
+                        disabled={isLoading}
+                        className="w-full text-sm font-medium text-purple-300 hover:text-purple-200 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                        Send a new verification link
+                    </button>
+                </div>
+            ) : (
 
             <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
                 <div className="space-y-4">
@@ -171,6 +234,7 @@ export default function LoginForm() {
                     </div>
                 </div>
             </form>
+            )}
         </div>
     );
 }

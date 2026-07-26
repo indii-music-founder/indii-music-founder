@@ -6,6 +6,19 @@ This repository works directly on `main`. Do not create, switch to, push, or con
 
 Deliver one coherent locally validated commit to `origin/main` with the explicit refspec `git push origin HEAD:main`, then inspect the CI run for that exact SHA. Fix only logged root causes on `main` until green. Never create checkpoint commits, force-push or rewrite `main`, guess at CI failures, or bundle unrelated work.
 
+## Real-User Authenticity Standard
+
+Before any agent performs live-user, browser, end-to-end, release-acceptance,
+demo-readiness, production, or free-tier validation, read and obey
+`.agent/REAL_USER_AUTHENTICITY.md`.
+
+No agent may use mocks, seeded product data, bypassed or injected
+authentication, impersonated sessions, fabricated service responses, or
+artificial plan/tier/entitlement state for those claims. If genuine credentials
+or verification are unavailable, stop and request the official authorization
+flow. Never substitute simulated state. Legacy mock-backed tests are
+structural-only and are not proof that a customer path works.
+
 ## Slash Workflows
 
 This repo keeps its slash-command workflow docs in the hidden folder

@@ -2,65 +2,202 @@ import arcjet, { shield, slidingWindow, type ArcjetDecision } from "@arcjet/node
 import * as logger from "firebase-functions/logger";
 import type { Request } from "firebase-functions/v2/https";
 
+import { SubscriptionTier } from "../../shared/subscription/types";
+
+export type ArcjetPolicyClass =
+    | "anonymous-signup"
+    | "verified-free"
+    | "paid"
+    | "founder"
+    | "admin"
+    | "byo-api";
+
+type AuthenticatedArcjetPolicyClass = Exclude<ArcjetPolicyClass, "anonymous-signup">;
+export type ArcjetFailureMode = "fail-closed" | "allow-low-risk-read";
+
+export interface ServerOwnedArcjetPolicyInput {
+    tier: SubscriptionTier;
+    isAdmin: boolean;
+    bringYourOwnApiEnabled?: boolean;
+}
+
+export interface AuthenticatedArcjetRequestContext {
+    userId: string;
+    policy: AuthenticatedArcjetPolicyClass;
+    operationId: string;
+}
+
 export type ArcjetProtectionResult =
-    | { allowed: true }
+    | { allowed: true; degraded?: true }
     | {
         allowed: false;
         status: number;
         code: string;
         message: string;
+        retryAfterSeconds?: number;
     };
 
-const arcjetKey = process.env.ARCJET_KEY;
-const arcjetConfigured = typeof arcjetKey === "string" && arcjetKey.startsWith("ajkey_");
-const productionRuntime = process.env.NODE_ENV === "production" || Boolean(process.env.K_SERVICE);
+const configuredArcjetKey = (() => {
+    const key = process.env.ARCJET_KEY;
+    return typeof key === "string" && key.startsWith("ajkey_") ? key : undefined;
+})();
 
-const baseArcjet = arcjet({
-    key: arcjetKey || "ajkey_missing_arcjet_key",
-    rules: [
-        shield({ mode: "LIVE" }),
-    ],
-});
+// No fake fallback key: an unavailable security control must remain visible as
+// an unavailable security control. Functions receive this secret only through
+// Firebase's `secrets` deployment option.
+const baseArcjet = configuredArcjetKey
+    ? arcjet({ key: configuredArcjetKey, rules: [shield({ mode: "LIVE" })] })
+    : undefined;
 
-const authenticatedApiArcjet = baseArcjet.withRule(
+const anonymousSignupArcjet = baseArcjet?.withRule(
+    slidingWindow({
+        mode: "LIVE",
+        interval: "1m",
+        max: 10,
+    }),
+);
+
+const verifiedFreeArcjet = baseArcjet?.withRule(
     slidingWindow({
         mode: "LIVE",
         characteristics: ["userId"],
         interval: "1m",
-        max: 240,
+        max: 20,
     }),
 );
 
-const publicApiArcjet = baseArcjet.withRule(
+const paidArcjet = baseArcjet?.withRule(
     slidingWindow({
         mode: "LIVE",
+        characteristics: ["userId"],
+        interval: "1m",
+        max: 60,
+    }),
+);
+
+const founderArcjet = baseArcjet?.withRule(
+    slidingWindow({
+        mode: "LIVE",
+        characteristics: ["userId"],
         interval: "1m",
         max: 120,
     }),
 );
 
-function mapDecision(decision: ArcjetDecision): ArcjetProtectionResult {
+const adminArcjet = baseArcjet?.withRule(
+    slidingWindow({
+        mode: "LIVE",
+        characteristics: ["userId"],
+        interval: "1m",
+        max: 30,
+    }),
+);
+
+const byoApiArcjet = baseArcjet?.withRule(
+    slidingWindow({
+        mode: "LIVE",
+        characteristics: ["userId"],
+        interval: "1m",
+        max: 45,
+    }),
+);
+
+function authenticatedClient(policy: AuthenticatedArcjetPolicyClass) {
+    switch (policy) {
+        case "verified-free":
+            return verifiedFreeArcjet;
+        case "paid":
+            return paidArcjet;
+        case "founder":
+            return founderArcjet;
+        case "admin":
+            return adminArcjet;
+        case "byo-api":
+            return byoApiArcjet;
+    }
+}
+
+/** Maps only backend-authenticated entitlement and administrative state to a policy. */
+export function policyClassForServerEntitlement(input: ServerOwnedArcjetPolicyInput): AuthenticatedArcjetPolicyClass {
+    if (input.isAdmin) return "admin";
+    if (input.bringYourOwnApiEnabled === true) return "byo-api";
+    if (input.tier === SubscriptionTier.FOUNDER) return "founder";
+    if (input.tier === SubscriptionTier.PRO_MONTHLY || input.tier === SubscriptionTier.PRO_YEARLY || input.tier === SubscriptionTier.STUDIO) {
+        return "paid";
+    }
+    return "verified-free";
+}
+
+function securityUnavailableResult(
+    policy: ArcjetPolicyClass,
+    operationId: string,
+    failureMode: ArcjetFailureMode,
+    reason: "missing_configuration" | "decision_error",
+): ArcjetProtectionResult {
+    const log = reason === "missing_configuration" ? logger.error : logger.warn;
+    log("[Arcjet] Request protection unavailable", {
+        policy,
+        operationId,
+        reason,
+    });
+    if (failureMode === "allow-low-risk-read") return { allowed: true, degraded: true };
+    return {
+        allowed: false,
+        status: 503,
+        code: "SECURITY_UNAVAILABLE",
+        message: "Request protection is temporarily unavailable.",
+        retryAfterSeconds: 60,
+    };
+}
+
+function mapDecision(
+    decision: ArcjetDecision,
+    policy: ArcjetPolicyClass,
+    operationId: string,
+    failureMode: ArcjetFailureMode,
+): ArcjetProtectionResult {
     if (decision.isErrored()) {
-        logger.warn("[Arcjet] Decision errored; allowing request", {
+        logger.warn("[Arcjet] Decision failed", {
             decisionId: decision.id,
-            reason: decision.reason.message,
+            policy,
+            operationId,
+        });
+        return securityUnavailableResult(policy, operationId, failureMode, "decision_error");
+    }
+
+    if (!decision.isDenied()) {
+        logger.debug("[Arcjet] Request allowed", {
+            decisionId: decision.id,
+            policy,
+            operationId,
         });
         return { allowed: true };
     }
 
-    if (!decision.isDenied()) {
-        return { allowed: true };
-    }
-
     if (decision.reason.isRateLimit()) {
+        const retryAfterSeconds = Number.isFinite(decision.reason.reset) && decision.reason.reset > 0
+            ? Math.ceil(decision.reason.reset)
+            : 60;
+        logger.warn("[Arcjet] Request rate limited", {
+            decisionId: decision.id,
+            policy,
+            operationId,
+            retryAfterSeconds,
+        });
         return {
             allowed: false,
             status: 429,
             code: "RATE_LIMITED",
             message: "Too many requests. Please slow down.",
+            retryAfterSeconds,
         };
     }
 
+    logger.warn("[Arcjet] Request blocked", {
+        decisionId: decision.id,
+        policy,
+        operationId,
+    });
     return {
         allowed: false,
         status: 403,
@@ -69,54 +206,42 @@ function mapDecision(decision: ArcjetDecision): ArcjetProtectionResult {
     };
 }
 
-function missingArcjetKeyResult(): ArcjetProtectionResult {
-    logger.error("[Arcjet] ARCJET_KEY is missing or invalid", {
-        productionRuntime,
-    });
-
-    if (productionRuntime) {
-        return {
-            allowed: false,
-            status: 503,
-            code: "SECURITY_CONFIG_MISSING",
-            message: "Request protection is not configured.",
-        };
-    }
-
-    return { allowed: true };
-}
-
 export async function protectAuthenticatedApiRequest(
     req: Request,
-    userId: string,
+    context: AuthenticatedArcjetRequestContext,
 ): Promise<ArcjetProtectionResult> {
-    if (!arcjetConfigured) {
-        return missingArcjetKeyResult();
+    const client = authenticatedClient(context.policy);
+    if (!client) {
+        return securityUnavailableResult(context.policy, context.operationId, "fail-closed", "missing_configuration");
     }
-    // Ensure Arcjet client is initialized lazily
-    const arcjetClient = authenticatedApiArcjet;
     try {
-        const decision = await arcjetClient.protect(req, { userId });
-        return mapDecision(decision);
-    } catch (error) {
-        logger.error("[Arcjet] Authenticated API protection failed open", { error });
-        return { allowed: true };
+        const decision = await client.protect(req, {
+            userId: context.userId,
+            correlationId: context.operationId,
+        });
+        return mapDecision(decision, context.policy, context.operationId, "fail-closed");
+    } catch (_error) {
+        return securityUnavailableResult(context.policy, context.operationId, "fail-closed", "decision_error");
     }
 }
 
-export async function protectPublicApiRequest(req: Request): Promise<ArcjetProtectionResult> {
-    if (!arcjetConfigured) {
-        return missingArcjetKeyResult();
+/**
+ * Anonymous endpoints are limited by Arcjet's request characteristics (IP by
+ * default). The only permitted degradation is an explicitly low-risk read,
+ * such as the unauthenticated liveness endpoint.
+ */
+export async function protectAnonymousSignupRequest(
+    req: Request,
+    operationId: string,
+    failureMode: ArcjetFailureMode = "fail-closed",
+): Promise<ArcjetProtectionResult> {
+    if (!anonymousSignupArcjet) {
+        return securityUnavailableResult("anonymous-signup", operationId, failureMode, "missing_configuration");
     }
-    // Ensure Arcjet client is initialized lazily
-    const arcjetClient = publicApiArcjet;
     try {
-        const decision = await arcjetClient.protect(req);
-        return mapDecision(decision);
-    } catch (error) {
-        logger.error("[Arcjet] Public API protection failed open", { error });
-        return { allowed: true };
+        const decision = await anonymousSignupArcjet.protect(req, { correlationId: operationId });
+        return mapDecision(decision, "anonymous-signup", operationId, failureMode);
+    } catch (_error) {
+        return securityUnavailableResult("anonymous-signup", operationId, failureMode, "decision_error");
     }
 }
-
-// Arcjet clients initialized at module load (no lazy initialization needed)

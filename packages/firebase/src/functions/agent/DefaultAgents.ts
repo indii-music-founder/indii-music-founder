@@ -1,16 +1,13 @@
 import { GoogleGenAI } from '@google/genai';
 import * as logger from 'firebase-functions/logger';
 import { AgentContext, PlannerAgent, GeneratorAgent, EvaluatorAgent, EvaluationResult } from './AgentTriad';
-import { getGeminiApiKey } from '../../config/secrets';
 import { FUNCTION_INTELLIGENCE_MODELS } from '../../config/models';
+import { getVertexAIClient } from '../../lib/vertexClient';
 
-// Helper to resolve the GenAI client using Google AI Studio (API Key)
+// All server-side agent work uses Vertex AI Application Default Credentials.
+// Never accept or resolve a browser/API-key provider in this worker.
 function getAiClient(): GoogleGenAI {
-    const apiKey = getGeminiApiKey();
-    if (apiKey) {
-        return new GoogleGenAI({ apiKey });
-    }
-    return new GoogleGenAI({});
+    return getVertexAIClient();
 }
 
 export class DefaultPlanner implements PlannerAgent {

@@ -1,31 +1,44 @@
 import { describe, it, expect } from 'vitest';
-import { AnalyzeAudioRequestSchema } from './audio';
+import { AnalyzeAudioRequestSchema, resolveOwnedCanonicalMasterPath } from './audio';
 
 describe('Audio Analysis Logic', () => {
-    it('should validate valid audio URLs', () => {
+    it('accepts only a canonical master storage path, never a public URL or caller-selected bucket', () => {
+        const hash = 'a'.repeat(64);
         const valid = AnalyzeAudioRequestSchema.safeParse({
-            audioUrl: "https://example.com/song.mp3",
-            mimeType: "audio/mpeg"
+            storagePath: `masters/owner-1/${hash}/original.flac`,
         });
         expect(valid.success).toBe(true);
 
-        const gcsValid = AnalyzeAudioRequestSchema.safeParse({
-            audioUrl: "gs://my-bucket/audio.wav"
+        const publicUrl = AnalyzeAudioRequestSchema.safeParse({
+            audioUrl: 'https://attacker.example/audio.mp3',
         });
-        expect(gcsValid.success).toBe(true);
+        expect(publicUrl.success).toBe(false);
+
+        const bucketUri = AnalyzeAudioRequestSchema.safeParse({
+            storagePath: `gs://another-project-bucket/masters/owner-1/${hash}/original.wav`,
+        });
+        expect(bucketUri.success).toBe(false);
     });
 
-    it('should fail on invalid URLs', () => {
-        const invalid = AnalyzeAudioRequestSchema.safeParse({
-            audioUrl: "not-a-url"
-        });
-        expect(invalid.success).toBe(false);
+    it('binds the canonical master path to the authenticated owner and content hash', () => {
+        const hash = 'b'.repeat(64);
+        expect(resolveOwnedCanonicalMasterPath('owner-1', `masters/owner-1/${hash}/original.wav`))
+            .toEqual({
+                storagePath: `masters/owner-1/${hash}/original.wav`,
+                contentHash: hash,
+                mimeType: 'audio/wav',
+            });
+
+        expect(() => resolveOwnedCanonicalMasterPath('owner-1', `masters/owner-2/${hash}/original.wav`))
+            .toThrow(/does not belong to the authenticated owner/);
+        expect(() => resolveOwnedCanonicalMasterPath('owner-1', `masters/owner-1/${hash}/original.mp3`))
+            .toThrow(/canonical WAV or FLAC/);
     });
 
-    it('should enforce default mimeType', () => {
-        const data = AnalyzeAudioRequestSchema.parse({
-            audioUrl: "https://example.com/song.mp3"
+    it('rejects malformed or ambiguous paths before any Vertex request is possible', () => {
+        const malformed = AnalyzeAudioRequestSchema.safeParse({
+            storagePath: 'masters/owner-1/not-a-digest/original.wav',
         });
-        expect(data.mimeType).toBe("audio/mpeg");
+        expect(malformed.success).toBe(false);
     });
 });

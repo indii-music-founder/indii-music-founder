@@ -2,15 +2,15 @@
  * Direct Image Generator — Secure backend-proxy calls to Gemini 3 Image models.
  * 
  * This module eliminates all client-side GoogleGenAI SDK usage and key exposures.
- * It routes generation requests to the secure generateImageV3 Cloud Function,
- * returning standard data URIs for perfect backwards compatibility.
+ * It delegates to the canonical image service rather than speaking the
+ * callable protocol. That service owns authenticated cost reservations,
+ * owner-scoped reference uploads, and canonical Storage result handling.
  */
 
-import { functions } from '@/services/firebase';
-import { httpsCallable } from 'firebase/functions';
 import { APPROVED_MODELS } from '@/core/config/intelligence-models';
 import { AppErrorCode, AppException } from '@/shared/types/errors';
 import { logger } from '@/utils/logger';
+import { ImageGeneration } from '@/services/image/ImageGenerationService';
 
 export interface DirectImageOptions {
     prompt: string;
@@ -28,65 +28,24 @@ const PERSON_GEN_API_MAP: Record<string, string> = {
     'allow_all': 'ALLOW_ALL',
 };
 
-const GOOGLE_PREPAYMENT_EXHAUSTED_MESSAGE =
-    'Google AI Studio prepayment credits are depleted for this Gemini API project. Add credits or switch the app to a funded project before trying image generation again.';
-
-function compactPayload<T extends Record<string, unknown>>(payload: T): T {
-    return Object.fromEntries(
-        Object.entries(payload).filter(([, value]) => value !== undefined && value !== null)
-    ) as T;
-}
-
-function isGooglePrepaymentExhausted(message: string): boolean {
-    const lower = message.toLowerCase();
-    return lower.includes('prepayment credits are depleted')
-        || lower.includes('billing#prepay')
-        || (lower.includes('ai studio') && lower.includes('billing'))
-        || (lower.includes('resource_exhausted') && lower.includes('prepay'));
-}
-
 export async function generateImageDirectly(options: DirectImageOptions): Promise<string[]> {
-    logger.info('[DirectImageGenerator] Calling generateImageV3 Cloud Function securely for:', options.prompt);
+    logger.info('[DirectImageGenerator] Delegating through the canonical image service.');
     
     try {
-        const generateImageV3 = httpsCallable(functions, 'generateImageV3');
-        
-        const payload = compactPayload({
+        const results = await ImageGeneration.generateImages({
             prompt: options.prompt,
             aspectRatio: options.aspectRatio || '1:1',
             count: options.numberOfImages || 1,
             model: options.model?.includes('pro') ? 'pro' : 'fast',
             personGeneration: options.personGeneration ? PERSON_GEN_API_MAP[options.personGeneration] : undefined,
-            negativePrompt: options.negativePrompt
+            negativePrompt: options.negativePrompt,
         });
-
-        const result = await generateImageV3(payload);
-        
-        interface GenerateImageResponse {
-            images: Array<{
-                bytesBase64Encoded?: string;
-                mimeType?: string;
-            }>;
-        }
-
-        const data = result.data as GenerateImageResponse;
-        const generatedImages: string[] = [];
-        
-        if (data.images && data.images.length > 0) {
-            for (const img of data.images) {
-                if (img.bytesBase64Encoded) {
-                    const mimeType = img.mimeType || 'image/jpeg';
-                    const dataUri = `data:${mimeType};base64,${img.bytesBase64Encoded}`;
-                    generatedImages.push(dataUri);
-                }
-            }
-        }
-        
+        const generatedImages = results.map(result => result.url);
         if (generatedImages.length === 0) {
-            throw new Error('No images returned from backend generateImageV3 call.');
+            throw new Error('No canonical image result was returned.');
         }
 
-        logger.info(`[DirectImageGenerator] ✅ Successfully generated ${generatedImages.length} image(s) via backend proxy.`);
+        logger.info(`[DirectImageGenerator] Generated ${generatedImages.length} canonical image result(s).`);
         return generatedImages;
     } catch (error: unknown) {
         const msg = error instanceof Error ? error.message : String(error);
@@ -99,19 +58,11 @@ export async function generateImageDirectly(options: DirectImageOptions): Promis
             );
         }
         
-        if (isGooglePrepaymentExhausted(msg)) {
-            throw new AppException(
-                AppErrorCode.QUOTA_EXCEEDED,
-                GOOGLE_PREPAYMENT_EXHAUSTED_MESSAGE,
-                { retryable: false }
-            );
-        }
-
         const lowerMsg = msg.toLowerCase();
         if (lowerMsg.includes('resource-exhausted') || lowerMsg.includes('resource_exhausted') || lowerMsg.includes('rate limit') || lowerMsg.includes('quota')) {
             throw new AppException(
                 AppErrorCode.RATE_LIMITED,
-                'Image generation quota exceeded or rate limited. Please wait or upgrade your plan.',
+                'Image generation capacity is temporarily limited. Please wait and try again.',
                 { retryable: true }
             );
         }

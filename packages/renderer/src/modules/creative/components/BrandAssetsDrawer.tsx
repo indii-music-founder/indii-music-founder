@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { auth, functionsWest1 } from '@/services/firebase';
+import { auth } from '@/services/firebase';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { X, Image as ImageIcon, Plus, Camera, ArrowRightLeft, Trash2, Tag } from 'lucide-react';
@@ -11,6 +11,7 @@ import type { BrandAsset } from '@/types/User';
 import { INTELLIGENCE_CONFIG } from '@/core/config/intelligence-models';
 import type { StoreState } from '@/core/store';
 import { getRealAuthenticatedUserId } from '@/utils/authGuards';
+import { ImageGeneration } from '@/services/image/ImageGenerationService';
 
 interface BrandAssetsDrawerProps {
     onClose: () => void;
@@ -247,7 +248,6 @@ export default function BrandAssetsDrawer({ onClose, onSelect }: BrandAssetsDraw
         if (!prompt.trim()) return;
         setIsGenerating(true);
         try {
-            let downloadUrl = '';
             const assetId = crypto.randomUUID();
             const userId = getRealAuthenticatedUserId(auth.currentUser);
 
@@ -255,32 +255,20 @@ export default function BrandAssetsDrawer({ onClose, onSelect }: BrandAssetsDraw
                 throw new Error('User must be authenticated to generate brand assets.');
             }
 
-            const { httpsCallable } = await import('firebase/functions');
-            const generateImage = httpsCallable(functionsWest1, 'generateImageV3');
-
-            const response = await generateImage({
+            const [generated] = await ImageGeneration.generateImages({
                 prompt: prompt + " -- style: high quality, professional brand asset",
                 count: 1,
-                aspectRatio: '1:1'
+                aspectRatio: '1:1',
+                model: 'pro',
             });
 
-            const data = response.data as { candidates?: Array<{ content?: { parts?: Array<{ inlineData?: { mimeType: string; data: string } }> } }> };
-            const candidate = data.candidates?.[0];
-            const part = candidate?.content?.parts?.find(p => p.inlineData);
-
-            if (part?.inlineData) {
-                const base64Url = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
-                const res = await fetch(base64Url);
-                const blob = await res.blob();
-                const path = `users/${userId}/brand_assets/${assetId}`;
-                downloadUrl = await StorageService.uploadFile(blob, path);
-            } else {
-                throw new Error("No image data in Autonomous response");
-            }
+            if (!generated?.storageUri) throw new Error('No canonical brand-asset result was returned.');
+            const downloadUrl = generated.url;
 
             if (downloadUrl) {
                 const newAsset: BrandAsset = {
                     url: downloadUrl,
+                    storageUri: generated.storageUri,
                     description: prompt,
                     category: targetCategory === 'logo' ? 'logo' : 'other'
                 };
@@ -314,6 +302,7 @@ export default function BrandAssetsDrawer({ onClose, onSelect }: BrandAssetsDraw
                         id: assetId,
                         type: 'image',
                         url: downloadUrl,
+                        storageUri: generated.storageUri,
                         prompt: prompt,
                         timestamp: Date.now(),
                         projectId: currentProjectId || 'personal',

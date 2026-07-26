@@ -1,10 +1,9 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
 /**
- * Media provider policy (production billing resilience):
- * - production defaults to Vertex AI (postpaid ADC) — no prepaid-credit cliff
- * - dev/QA defaults to the AI Studio API key so testing never drains prod quota
- * - MEDIA_PROVIDER env var overrides both
+ * Media provider policy: every server-side creative operation uses Vertex AI
+ * through application credentials. Client/Developer API-key routing is not a
+ * valid runtime mode, including in tests and local development.
  */
 describe('getMediaProvider', () => {
     const ORIGINAL_ENV = { ...process.env };
@@ -29,18 +28,18 @@ describe('getMediaProvider', () => {
         expect(getMediaProvider()).toBe('vertex');
     });
 
-    it('defaults to apikey outside production (dev/QA isolation)', async () => {
+    it('uses Vertex outside production too', async () => {
         process.env.NODE_ENV = 'test';
         delete process.env.MEDIA_PROVIDER;
         const getMediaProvider = await loadGetMediaProvider();
-        expect(getMediaProvider()).toBe('apikey');
+        expect(getMediaProvider()).toBe('vertex');
     });
 
-    it('honors MEDIA_PROVIDER=apikey override in production', async () => {
+    it('ignores an API-key override in production', async () => {
         process.env.NODE_ENV = 'production';
         process.env.MEDIA_PROVIDER = 'apikey';
         const getMediaProvider = await loadGetMediaProvider();
-        expect(getMediaProvider()).toBe('apikey');
+        expect(getMediaProvider()).toBe('vertex');
     });
 
     it('honors MEDIA_PROVIDER=vertex override outside production', async () => {

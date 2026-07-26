@@ -4,7 +4,8 @@ import { getStorage } from 'firebase-admin/storage';
 import { HttpsError, onCall } from 'firebase-functions/v2/https';
 import { z } from 'zod';
 import { validateAppCheckV2 } from '../../middleware/appCheck';
-import { checkOperationBudget } from '../billing/enforceOperationCost';
+import { checkOperationBudget, requireVerifiedCreativeUser } from '../billing/enforceOperationCost';
+import { entitlementTierToBudgetTier, requireVerifiedServerEntitlement } from '../auth/entitlements';
 
 const MAX_SESSION_BYTES = 20 * 1024 * 1024 * 1024;
 const RETENTION_DAYS = 30;
@@ -556,11 +557,10 @@ export const createVideoSession = onCall(
     { timeoutSeconds: 30, memory: '256MiB', enforceAppCheck: false },
     async (request): Promise<CreateVideoSessionResult> => {
         validateAppCheckV2(request);
-        if (!request.auth) {
-            throw new HttpsError('unauthenticated', 'Authentication is required to create a video session.');
-        }
+        const userId = requireVerifiedCreativeUser(request.auth);
+        const entitlement = await requireVerifiedServerEntitlement(userId);
 
-        return createOwnedVideoSession(request.auth.uid, request.data, {
+        return createOwnedVideoSession(userId, request.data, {
             store: createFirestoreVideoSessionClaimStore(),
             grants: createFirestoreVideoSessionUploadGrantStore(),
             bucketName: getStorage().bucket().name,
@@ -571,6 +571,7 @@ export const createVideoSession = onCall(
             reserveCost: async ({ ownerUid, sessionId, organizationId, projectId, estimate }) => {
                 const reservation = await checkOperationBudget({
                     userId: ownerUid,
+                    entitlementTier: entitlementTierToBudgetTier(entitlement.tier),
                     operationType: 'video',
                     estimatedCost: estimate.amountMinor / 100,
                     operationId: `video-session-${sessionId}`,

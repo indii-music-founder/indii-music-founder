@@ -31,7 +31,7 @@ describe('App Check Middleware', () => {
   });
 
   describe('validateAppCheckV1', () => {
-    it('should bypass App Check if request header indicates electron-desktop-app', () => {
+    it('rejects a forgeable Electron client-type header when App Check is missing', () => {
       const mockContext = {
         rawRequest: {
           headers: {
@@ -40,10 +40,10 @@ describe('App Check Middleware', () => {
         },
       } as any;
 
-      expect(() => appCheckModule.validateAppCheckV1(mockContext)).not.toThrow();
+      expect(() => appCheckModule.validateAppCheckV1(mockContext)).toThrow('Unauthorized: Missing App Check token.');
     });
 
-    it('should bypass App Check if user agent indicates Electron', () => {
+    it('rejects a forgeable Electron user agent when App Check is missing', () => {
       const mockContext = {
         rawRequest: {
           headers: {
@@ -52,7 +52,7 @@ describe('App Check Middleware', () => {
         },
       } as any;
 
-      expect(() => appCheckModule.validateAppCheckV1(mockContext)).not.toThrow();
+      expect(() => appCheckModule.validateAppCheckV1(mockContext)).toThrow('Unauthorized: Missing App Check token.');
     });
 
     it('should throw error if App Check is enforced and token is missing', () => {
@@ -66,8 +66,23 @@ describe('App Check Middleware', () => {
     });
   });
 
+  describe('requireVerifiedEmailV1', () => {
+    it('rejects unauthenticated and unverified callers before a spend-bearing callable can run', () => {
+      expect(() => appCheckModule.requireVerifiedEmailV1({})).toThrow('User must be authenticated.');
+      expect(() => appCheckModule.requireVerifiedEmailV1({
+        auth: { uid: 'user-1', token: { email_verified: false } },
+      })).toThrow('Verify your email before using creative generation.');
+    });
+
+    it('returns only the signed-in UID when the Firebase verification claim is true', () => {
+      expect(appCheckModule.requireVerifiedEmailV1({
+        auth: { uid: 'verified-user', token: { email_verified: true } },
+      })).toBe('verified-user');
+    });
+  });
+
   describe('validateAppCheckV2', () => {
-    it('should bypass App Check if request header indicates electron-desktop-app', () => {
+    it('rejects a forgeable Electron client-type header when App Check is missing', () => {
       const mockRequest = {
         rawRequest: {
           headers: {
@@ -76,10 +91,10 @@ describe('App Check Middleware', () => {
         },
       } as any;
 
-      expect(() => appCheckModule.validateAppCheckV2(mockRequest)).not.toThrow();
+      expect(() => appCheckModule.validateAppCheckV2(mockRequest)).toThrow('Unauthorized: Missing App Check token.');
     });
 
-    it('should bypass App Check if user agent indicates Electron', () => {
+    it('rejects a forgeable Electron user agent when App Check is missing', () => {
       const mockRequest = {
         rawRequest: {
           headers: {
@@ -88,7 +103,7 @@ describe('App Check Middleware', () => {
         },
       } as any;
 
-      expect(() => appCheckModule.validateAppCheckV2(mockRequest)).not.toThrow();
+      expect(() => appCheckModule.validateAppCheckV2(mockRequest)).toThrow('Unauthorized: Missing App Check token.');
     });
 
     it('should throw error if App Check is enforced and token is missing', () => {
@@ -103,7 +118,7 @@ describe('App Check Middleware', () => {
   });
 
   describe('validateAppCheckHttp', () => {
-    it('should bypass App Check if request header indicates electron-desktop-app', async () => {
+    it('rejects a forgeable Electron client-type header when App Check is missing', async () => {
       const mockReq = {
         headers: {
           'x-app-client-type': 'electron-desktop-app',
@@ -115,7 +130,8 @@ describe('App Check Middleware', () => {
       } as any;
 
       const result = await appCheckModule.validateAppCheckHttp(mockReq, mockRes);
-      expect(result).toBe(true);
+      expect(result).toBe(false);
+      expect(mockRes.status).toHaveBeenCalledWith(401);
     });
 
     it('should send 401 if App Check token is missing', async () => {

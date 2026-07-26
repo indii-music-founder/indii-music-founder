@@ -27,7 +27,7 @@ interface VideoGenerateEventData {
     };
 }
 
-export const generateVideoFn = (inngestClient: Inngest, _geminiApiKey: string | undefined) => inngestClient.createFunction(
+export const generateVideoFn = (inngestClient: Inngest, _legacyUnusedProviderCredential?: string) => inngestClient.createFunction(
     { id: "generate-video-logic" },
     { event: "video/generate.requested" },
     async ({ event, step }) => {

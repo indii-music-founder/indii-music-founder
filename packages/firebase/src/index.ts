@@ -12,12 +12,18 @@ setGlobalOptions({ memory: "512MiB" });
 
 // Phase 2a: Agent Streaming (v2 - SSE support for Phase 2 orchestration)
 export { agentStreamResponse, agentStreamHealth } from './streaming/agentStream';
-import { Inngest } from "inngest";
 import { serve } from "inngest/express";
 import corsLib from "cors";
 import { VideoJobSchema } from "./lib/video";
 
 import { GenerateSpeechRequestSchema } from "./lib/audio";
+import { verifyMasterAudioObject } from './functions/storage/verifyMasterAudio';
+import {
+    CanonicalRenderMasterError,
+    parseProjectCanonicalMaster,
+    parseProjectCanonicalVideoSegments,
+    resolveVerifiedRenderMaster,
+} from './functions/video/renderMasterContract';
 
 
 import { executeWorkflowStepFn } from "./functions/agent/executeWorkflowStep";
@@ -40,11 +46,17 @@ export { settleVideoSessionCost } from "./functions/video/settleVideoSessionCost
 export { cleanupExpiredVideoSessions } from "./functions/video/cleanupVideoSessions";
 import { analyzeAudioFn } from "./lib/audio";
 import { FUNCTION_INTELLIGENCE_MODELS } from "./config/models";
-import { clearbitApiKey, apolloApiKey, getClearbitApiKey, getApolloApiKey } from "./config/secrets";
+import { isApprovedFineTunedTextEndpoint, isApprovedTextStreamModel } from './config/textStreamModels';
+import { arcjetKey, clearbitApiKey, apolloApiKey, getClearbitApiKey, getApolloApiKey } from "./config/secrets";
 
-import { estimateVideoCost } from "./config/pricing";
+import { estimateTranscoderRenderCost, estimateVideoCost } from "./config/pricing";
 import { enforceRateLimit, RATE_LIMITS } from "./lib/rateLimit";
-import { validateAppCheckHttp, validateAppCheckV1 } from "./middleware/appCheck";
+import { requireVerifiedEmailV1, validateAppCheckHttp, validateAppCheckV1 } from "./middleware/appCheck";
+import { entitlementTierToBudgetTier, requireVerifiedServerEntitlement } from './functions/auth/entitlements';
+import { checkOperationBudget, finalizeOperationReservation } from './functions/billing/enforceOperationCost';
+import { policyClassForServerEntitlement, protectAuthenticatedApiRequest } from './functions/security/arcjet';
+import { requireVerifiedCreativeAdmissionV1 } from './functions/creative/legacyAdmission';
+import { clampTextStreamOutputTokens } from './functions/creative/textStreamAdmission';
 
 
 // Vertex AI SDK
@@ -63,6 +75,7 @@ export { setGodMode } from './functions/admin/setGodMode';
 
 // Auth Handoff Functions (Item 518: Cross-device secure auth)
 export { createHandoffCode, redeemHandoffCode } from './functions/auth/handoff';
+export { provisionVerifiedFreeEntitlement } from './functions/auth/entitlements';
 
 // Agent Functions (Bug Reporting)
 export { reportBugFn } from './functions/agent/reportBugFn';
@@ -178,7 +191,7 @@ export { processRelayCommand } from './relay/relayCommandProcessor';
 export { issueStudioExecutorLease, publishStudioPresence, releaseStudioPresence, claimStudioCommand, publishStudioResponse, completeStudioCommand } from './functions/remote/issueStudioExecutorLease';
 
 // Billing / Cost Control
-export { enforceOperationCost, finalizeOperationCost, expireStaleOperationCostReservations } from './functions/billing/enforceOperationCost';
+export { enforceOperationCost, expireStaleOperationCostReservations } from './functions/billing/enforceOperationCost';
 
 // Telegram Bot Adapter — Phase 2 Multi-Channel (bridges Telegram → Firestore relay)
 export { telegramWebhook } from './relay/telegramWebhook';
@@ -237,7 +250,7 @@ const validateOrgAccess = async (userId: string, orgId?: string | null) => {
 };
 
 // Import Shared Secrets
-import { geminiApiKey, inngestEventKey, inngestSigningKey, getGeminiApiKey } from "./config/secrets";
+import { inngestEventKey, inngestSigningKey } from "./config/secrets";
 
 // Lazy Initialize Inngest Client — factory lives in lib/inngestClient.ts so
 // non-index.ts callers (MCP tools, Inngest step functions) can use it without
@@ -376,25 +389,14 @@ const TIER_LIMITS: Record<MembershipTier, TierLimits> = {
 export const triggerVideoJob = functions
     .region("us-central1")
     .runWith({
+        secrets: [arcjetKey],
         timeoutSeconds: 60,
         memory: "2GB",
         enforceAppCheck: false
     })
     // Item 352: Explicit return type annotation
-    .https.onCall(async (data: unknown, context: functions.https.CallableContext): Promise<{ success: boolean; message: string }> => {
-        validateAppCheckV1(context);
-        
-        if (!context.auth) {
-            throw new functions.https.HttpsError(
-                "unauthenticated",
-                "User must be authenticated to trigger video generation."
-            );
-        }
-
-        const userId = context.auth.uid;
-
-        // Rate limit: 10 video generation requests per minute
-        await enforceRateLimit(userId, "triggerVideoJob", RATE_LIMITS.generation);
+    .https.onCall(async (data: unknown, context: functions.https.CallableContext): Promise<{ success: boolean; jobId: string; message: string }> => {
+        const { userId, entitlement } = await requireVerifiedCreativeAdmissionV1(context, 'trigger-video-job');
 
         // Construct input matching the schema
         const safeData = (typeof data === 'object' && data !== null) ? data : {};
@@ -409,28 +411,48 @@ export const triggerVideoJob = functions
             );
         }
 
-        const { prompt, jobId, orgId, ...options } = validation.data;
+        const { prompt, jobId: _clientCorrelationId, orgId, ...options } = validation.data;
 
         // SECURITY: Verify Org Access
         await validateOrgAccess(userId, orgId);
 
-        try {
-            // Calculate estimated cost
-            const estimatedCost = estimateVideoCost({
-                model: (options.model as string) ?? undefined,
-                durationSeconds: (options.durationSeconds || options.duration) ? Number(options.durationSeconds || options.duration) : undefined,
-                resolution: (options.resolution as string) ?? undefined,
-                generateAudio: (options.generateAudio as boolean) ?? undefined
-            });
+        // The Firestore-generated ID prevents a browser from selecting or
+        // colliding with another artist's worker-triggering record.
+        const jobRef = admin.firestore().collection("videoJobs").doc();
+        const jobId = jobRef.id;
+        const estimatedCost = estimateVideoCost({
+            model: (options.model as string) ?? undefined,
+            durationSeconds: (options.durationSeconds || options.duration) ? Number(options.durationSeconds || options.duration) : undefined,
+            resolution: (options.resolution as string) ?? undefined,
+            generateAudio: (options.generateAudio as boolean) ?? undefined
+        });
+        const budget = await checkOperationBudget({
+            userId,
+            entitlementTier: entitlementTierToBudgetTier(entitlement.tier),
+            estimatedCost,
+            operationType: 'video',
+            operationId: `legacy-vertex-video-${jobId}`,
+            metadata: { jobId, orgId: orgId || 'personal', source: 'triggerVideoJob' },
+        });
+        if (!budget.allowed || !budget.operationId) {
+            throw new functions.https.HttpsError(
+                'resource-exhausted',
+                budget.reason || 'Video generation is unavailable within the current server-side budget.',
+            );
+        }
 
-            // 1. Create Initial Job Record in Firestore (Atomic Create to prevent overwrites)
-            await admin.firestore().collection("videoJobs").doc(jobId).create({
+        try {
+            // This Admin SDK write is the only path that can start the
+            // Firestore worker. The reservation is created first and is
+            // reconciled by the worker based on provider submission state.
+            await jobRef.create({
                 id: jobId,
                 userId: userId,
                 orgId: orgId || "personal",
                 prompt: prompt,
                 status: "queued",
                 estimatedCost: estimatedCost,
+                costReservationId: budget.operationId,
                 options: options,
                 createdAt: admin.firestore.FieldValue.serverTimestamp(),
                 updatedAt: admin.firestore.FieldValue.serverTimestamp()
@@ -441,14 +463,26 @@ export const triggerVideoJob = functions
 
             functions.logger.log(`[VideoJob] Triggered for JobID: ${jobId}, User: ${userId}`);
 
-            return { success: true, message: "Video generation job started." };
+            return { success: true, jobId, message: "Video generation job started." };
 
         } catch (err: unknown) {
-            const error = err instanceof Error ? err : new Error(String(err));
-            functions.logger.error("[VideoJob] Error triggering video generation:", error);
+            await finalizeOperationReservation({
+                userId,
+                operationId: budget.operationId,
+                outcome: 'VOIDED',
+            }).catch((finalizeError: unknown) => {
+                functions.logger.error('[VideoJob] Failed to void an unqueued reservation.', {
+                    jobId,
+                    message: finalizeError instanceof Error ? finalizeError.message : 'unknown',
+                });
+            });
+            functions.logger.error("[VideoJob] Failed before the worker could start.", {
+                jobId,
+                message: err instanceof Error ? err.message : 'unknown',
+            });
             throw new functions.https.HttpsError(
                 "internal",
-                `Failed to queue video job: ${error.message}`
+                'Failed to queue the video job. No provider work was started.'
             );
         }
     });
@@ -484,6 +518,9 @@ export const executeVideoJob = functions
         const prompt = data.prompt;
         const orgId = data.orgId || "personal";
         const options = data.options || {};
+        const costReservationId = typeof data.costReservationId === 'string'
+            ? data.costReservationId
+            : undefined;
 
         if (!userId || !prompt) {
             functions.logger.error(`[executeVideoJob] Missing required fields for job ${jobId}: userId=${userId}, prompt=${prompt}`);
@@ -504,7 +541,8 @@ export const executeVideoJob = functions
                 userId,
                 orgId,
                 prompt,
-                options
+                options,
+                costReservationId,
             });
         } catch (err: unknown) {
             const error = err instanceof Error ? err : new Error(String(err));
@@ -521,7 +559,7 @@ export const executeVideoJob = functions
 export const triggerLongFormVideoJob = functions
     .region("us-central1")
     .runWith({
-        secrets: [inngestEventKey],
+        secrets: [inngestEventKey, arcjetKey],
         timeoutSeconds: 60,
         memory: "2GB",
         enforceAppCheck: false
@@ -690,7 +728,11 @@ export const triggerLongFormVideoJob = functions
 export const renderVideo = functions
     .region("us-central1")
     .runWith({
-        secrets: [inngestEventKey],
+        // renderVideo performs a manual Arcjet check after App Check/Auth, so
+        // both secrets must be declared on the deployed V1 function. Without
+        // ARCJET_KEY this spend-bearing endpoint would correctly fail closed
+        // in production, but no authenticated render could ever be admitted.
+        secrets: [inngestEventKey, arcjetKey],
         timeoutSeconds: 60,
         memory: "2GB",
         enforceAppCheck: false
@@ -699,66 +741,97 @@ export const renderVideo = functions
     .https.onCall(async (data: unknown, context: functions.https.CallableContext): Promise<{ success: boolean; renderId: string; message: string }> => {
         validateAppCheckV1(context);
 
-        if (!context.auth) {
-            throw new functions.https.HttpsError(
-                "unauthenticated",
-                "User must be authenticated to render video."
-            );
+        const userId = requireVerifiedEmailV1(context);
+        const entitlement = await requireVerifiedServerEntitlement(userId);
+        if (!context.rawRequest) {
+            throw new functions.https.HttpsError('unavailable', 'Request protection is temporarily unavailable.');
         }
-
-        const userId = context.auth.uid;
+        const protection = await protectAuthenticatedApiRequest(context.rawRequest as never, {
+            userId,
+            policy: policyClassForServerEntitlement({
+                tier: entitlement.tier,
+                isAdmin: context.auth?.token.admin === true,
+            }),
+            operationId: `render-video:${Date.now()}`,
+        });
+        if (!protection.allowed) {
+            const code = protection.status === 429
+                ? 'resource-exhausted'
+                : protection.status === 403
+                    ? 'permission-denied'
+                    : 'unavailable';
+            throw new functions.https.HttpsError(code, protection.message, {
+                code: protection.code,
+                ...(protection.retryAfterSeconds ? { retryAfterSeconds: protection.retryAfterSeconds } : {}),
+            });
+        }
         const safeData = (typeof data === 'object' && data !== null) ? data as Record<string, unknown> : {};
-        const { compositionId, inputProps } = safeData as { compositionId?: string; inputProps?: Record<string, unknown> };
+        const { inputProps } = safeData as { inputProps?: Record<string, unknown> };
         interface ProjectData {
             width: number;
             height: number;
+            fps: number;
+            durationInFrames: number;
             tracks: unknown[];
             clips: unknown[];
         }
         const project = inputProps?.project as ProjectData | undefined;
 
-        if (!project || !project.tracks || !project.clips) {
+        if (!project || !Array.isArray(project.tracks) || !Array.isArray(project.clips)
+            || !Number.isInteger(project.width) || !Number.isInteger(project.height)
+            || !Number.isInteger(project.fps) || !Number.isInteger(project.durationInFrames)
+            || project.width < 64 || project.width > 4096 || project.height < 64 || project.height > 2160
+            || project.fps < 1 || project.fps > 60 || project.durationInFrames < 1) {
             throw new functions.https.HttpsError(
                 "invalid-argument",
-                "Invalid project data. Missing tracks or clips."
+                "Invalid project data. Canonical dimensions, frame rate, tracks, and clips are required."
             );
         }
 
-        const jobId = compositionId || `render_${Date.now()}`;
+        const jobId = admin.firestore().collection('videoJobs').doc().id;
+        const timelineDurationSeconds = project.durationInFrames / project.fps;
+        let costReservationId: string | undefined;
+        let jobCreated = false;
 
         try {
-            // 1. Flatten Tracks to Segment List
-            // Map clips to explicit Transcoder API inputs using precise frame boundaries.
-            const videoClips = (project.clips as Record<string, unknown>[])
-                .filter((c: Record<string, unknown>) => c && typeof c === "object" && c.type === 'video')
-                .sort((a: Record<string, unknown>, b: Record<string, unknown>) => Number(a.startFrame) - Number(b.startFrame));
+            // Preview URLs are not Transcoder authority. Resolve only canonical
+            // project-bucket media owned by this authenticated caller.
+            const bucketName = admin.storage().bucket().name;
+            const segmentUrls = parseProjectCanonicalVideoSegments(userId, bucketName, project.clips);
 
-            if (videoClips.length === 0) {
+            const canonicalMaster = parseProjectCanonicalMaster(userId, project.clips);
+            const verifiedMaster = canonicalMaster
+                ? await resolveVerifiedRenderMaster(userId, canonicalMaster, {
+                    bucketName,
+                    verifyMaster: verifyMasterAudioObject,
+                })
+                : undefined;
+            const reservation = await checkOperationBudget({
+                userId,
+                entitlementTier: entitlementTierToBudgetTier(entitlement.tier),
+                operationType: 'video',
+                estimatedCost: estimateTranscoderRenderCost({
+                    width: project.width,
+                    height: project.height,
+                    durationSeconds: timelineDurationSeconds,
+                    passes: verifiedMaster ? 2 : 1,
+                }),
+                operationId: `render-stitch-${jobId}`,
+                metadata: {
+                    renderPasses: verifiedMaster ? 2 : 1,
+                    durationSeconds: timelineDurationSeconds,
+                    width: project.width,
+                    height: project.height,
+                    hasCanonicalMaster: !!verifiedMaster,
+                },
+            });
+            if (!reservation.allowed || !reservation.operationId) {
                 throw new functions.https.HttpsError(
-                    "failed-precondition",
-                    "No video clips found in project to render."
+                    'resource-exhausted',
+                    'Cloud render is unavailable because the account budget or safety limit has been reached.',
                 );
             }
-
-            const segmentUrls = videoClips.map((c: Record<string, unknown>) => c.src as string);
-            const audioClips = (project.clips as Record<string, unknown>[])
-                .filter((clip: Record<string, unknown>) => (
-                    clip &&
-                    typeof clip === "object" &&
-                    clip.type === "audio" &&
-                    typeof clip.src === "string" &&
-                    clip.src.length > 0
-                ))
-                .map((clip: Record<string, unknown>) => ({
-                    ...(typeof clip.id === "string" ? { id: clip.id } : {}),
-                    url: clip.src as string,
-                    ...(typeof clip.masterFingerprint === "string" ? { masterFingerprint: clip.masterFingerprint } : {}),
-                    ...(typeof clip.isrc === "string" ? { isrc: clip.isrc } : {}),
-                    ...(typeof clip.trackId === "string" ? { trackId: clip.trackId } : {}),
-                    startFrame: Number.isFinite(Number(clip.startFrame)) ? Math.max(0, Number(clip.startFrame)) : 0,
-                    durationInFrames: Number.isFinite(Number(clip.durationInFrames)) ? Math.max(0, Number(clip.durationInFrames)) : 0,
-                    volume: Number.isFinite(Number(clip.volume)) ? Math.min(1, Math.max(0, Number(clip.volume))) : 1
-                }));
+            costReservationId = reservation.operationId;
 
             // 2. Create Job Record (Atomic Create)
             await admin.firestore().collection("videoJobs").doc(jobId).create({
@@ -767,10 +840,13 @@ export const renderVideo = functions
                 orgId: "personal",
                 status: "queued",
                 type: "render_stitch",
-                clipCount: videoClips.length,
+                clipCount: segmentUrls.length,
+                costReservationId,
+                timelineDurationSeconds,
                 createdAt: admin.firestore.FieldValue.serverTimestamp(),
                 updatedAt: admin.firestore.FieldValue.serverTimestamp()
             });
+            jobCreated = true;
 
             // 3. Trigger Stitching via Inngest
             const inngest = getInngestClient();
@@ -781,13 +857,14 @@ export const renderVideo = functions
                     jobId: jobId,
                     userId: userId,
                     segmentUrls: segmentUrls,
-                    audioClips,
-                    audioMix: {
-                        mode: "master_over_native",
-                        preserveNativeAudio: true
-                    },
+                    costReservationId,
+                    ...(verifiedMaster ? { masterAudio: verifiedMaster } : {}),
+                    audioMix: verifiedMaster
+                        ? { mode: 'master_replaces_native', preserveNativeAudio: false }
+                        : { mode: 'no_master_audio', preserveNativeAudio: false },
                     options: {
                         resolution: `${project.width}x${project.height}`,
+                        timelineDurationSeconds,
                         aspectRatio: project.width > project.height ? "16:9" : "9:16" // Rough approximation
                     }
                 },
@@ -798,10 +875,24 @@ export const renderVideo = functions
 
         } catch (err: unknown) {
             const error = err instanceof Error ? err : new Error(String(err));
-            functions.logger.error("[RenderVideo] Error:", error);
+            if (costReservationId && !jobCreated) {
+                try {
+                    await finalizeOperationReservation({ userId, operationId: costReservationId, outcome: 'VOIDED' });
+                } catch {
+                    functions.logger.warn('[RenderVideo] Reservation reconciliation deferred', { jobId });
+                }
+            }
+            functions.logger.error('[RenderVideo] Failed to queue render', {
+                jobId,
+                code: error instanceof functions.https.HttpsError ? error.code : 'internal',
+            });
+            if (error instanceof functions.https.HttpsError) throw error;
+            if (error instanceof CanonicalRenderMasterError) {
+                throw new functions.https.HttpsError(error.code, error.message);
+            }
             throw new functions.https.HttpsError(
                 "internal",
-                `Failed to queue render job: ${error.message}`
+                'Failed to queue the render job. Please retry.'
             );
         }
     });
@@ -815,7 +906,7 @@ export const renderVideo = functions
 export const inngestApi = functions
     .runWith({
         enforceAppCheck: false,
-        secrets: [inngestSigningKey, inngestEventKey, geminiApiKey],
+        secrets: [inngestSigningKey, inngestEventKey],
         timeoutSeconds: 540, // 9 minutes
         memory: "2GB" // ffmpeg canvas rendering (canvasRenderFn) needs headroom beyond the 256MB v1 default
     })
@@ -824,10 +915,10 @@ export const inngestApi = functions
         const inngestClient = getInngestClient();
 
         // 1. Single Video Generation Logic using Veo
-        const generateVideo = generateVideoFn(inngestClient, geminiApiKey.value());
+        const generateVideo = generateVideoFn(inngestClient);
 
         // 2. Long Form Video Generation Logic (Daisychaining)
-        const generateLongFormVideo = generateLongFormVideoFn(inngestClient, geminiApiKey.value());
+        const generateLongFormVideo = generateLongFormVideoFn(inngestClient);
 
         // 3. Stitching Function (Server-Side using Google Transcoder)
         const stitchVideo = stitchVideoFn(inngestClient);
@@ -863,17 +954,10 @@ export const editImage = editImageFn();
 export const analyzeAudio = analyzeAudioFn();
 
 export const generateSpeech = functions
-    .runWith({ enforceAppCheck: false, timeoutSeconds: 60, memory: "512MB" })
+    .runWith({ secrets: [arcjetKey], enforceAppCheck: false, timeoutSeconds: 60, memory: "512MB" })
     // Item 352: Explicit return type annotation
     .https.onCall(async (data: unknown, context): Promise<{ audioContent: string }> => {
-        validateAppCheckV1(context);
-
-        if (!context.auth) {
-            throw new functions.https.HttpsError("unauthenticated", "User must be authenticated.");
-        }
-
-        // Rate limit: 10 speech generation requests per minute
-        await enforceRateLimit(context.auth.uid, "generateSpeech", RATE_LIMITS.generation);
+        await requireVerifiedCreativeAdmissionV1(context, 'generate-speech');
 
         const validation = GenerateSpeechRequestSchema.safeParse(data);
         if (!validation.success) {
@@ -922,6 +1006,7 @@ export const generateSpeech = functions
 
 export const generateContentStream = functions
     .runWith({
+        secrets: [arcjetKey],
         enforceAppCheck: false, // CORS preflight must pass; App Check is verified manually below.
         timeoutSeconds: 300
     })
@@ -943,10 +1028,24 @@ export const generateContentStream = functions
                 res.status(401).send('Unauthorized: Missing token');
                 return;
             }
+            let decodedToken: admin.auth.DecodedIdToken;
             try {
-                await admin.auth().verifyIdToken(idToken);
+                decodedToken = await admin.auth().verifyIdToken(idToken);
             } catch (_error) {
                 res.status(403).send('Forbidden: Invalid Token');
+                return;
+            }
+
+            // Streaming text is a paid Vertex operation too. Keep the same
+            // verified-email boundary as the media gateway so a disposable,
+            // unverified account cannot consume the shared project quota.
+            if (decodedToken.email_verified !== true) {
+                res.status(403).send('Forbidden: Verify your email before using AI generation.');
+                return;
+            }
+
+            if (!decodedToken.uid) {
+                res.status(403).send('Forbidden: Invalid authenticated user.');
                 return;
             }
 
@@ -955,27 +1054,68 @@ export const generateContentStream = functions
                 return;
             }
 
+            let entitlement: Awaited<ReturnType<typeof requireVerifiedServerEntitlement>>;
             try {
-                const { model, contents, config } = req.body;
+                entitlement = await requireVerifiedServerEntitlement(decodedToken.uid);
+                const protection = await protectAuthenticatedApiRequest(req as never, {
+                    userId: decodedToken.uid,
+                    policy: policyClassForServerEntitlement({
+                        tier: entitlement.tier,
+                        isAdmin: decodedToken.admin === true,
+                    }),
+                    operationId: `generate-content-stream:${crypto.randomUUID()}`,
+                });
+                if (!protection.allowed) {
+                    res.status(protection.status).send(protection.message);
+                    return;
+                }
+            } catch (error) {
+                functions.logger.warn('[generateContentStream] Server admission failed', {
+                    code: error instanceof functions.https.HttpsError ? error.code : 'internal',
+                });
+                res.status(503).send('AI generation admission is temporarily unavailable.');
+                return;
+            }
+
+            try {
+                await enforceRateLimit(decodedToken.uid, 'generateContentStream', RATE_LIMITS.generation);
+            } catch (error) {
+                const code = error instanceof functions.https.HttpsError ? error.code : undefined;
+                if (code === 'resource-exhausted') {
+                    res.status(429).send('Too many AI generation requests. Please retry shortly.');
+                    return;
+                }
+                functions.logger.error('[generateContentStream] Rate-limit check failed:', error);
+                res.status(503).send('AI generation admission is temporarily unavailable.');
+                return;
+            }
+
+            try {
+                const { model, contents, config: rawConfig } = req.body ?? {};
+                if (!Array.isArray(contents) || contents.length === 0 || contents.length > 32) {
+                    res.status(400).send('Invalid content payload.');
+                    return;
+                }
+                if (JSON.stringify(contents).length > 200_000) {
+                    res.status(413).send('Content payload is too large.');
+                    return;
+                }
+                if (rawConfig !== undefined && (typeof rawConfig !== 'object' || rawConfig === null || Array.isArray(rawConfig))) {
+                    res.status(400).send('Invalid generation configuration.');
+                    return;
+                }
+                const config = { ...(rawConfig ?? {}) } as Record<string, unknown>;
+                config.maxOutputTokens = clampTextStreamOutputTokens(config.maxOutputTokens, entitlement.tier);
+                if (model !== undefined && (typeof model !== 'string' || !model.trim() || model.length > 256)) {
+                    res.status(400).send('Invalid or unauthorized model ID.');
+                    return;
+                }
                 const modelId = model || "gemini-3.1-pro-preview";
 
-                // SECURITY: Strict Model Allowlist (Anti-SSRF / Cost Control)
-                // Only allow approved models for streaming text generation.
-                // - Gemini 3 models: current approved generation (see packages/renderer/src/core/config/ai-models.ts)
-                // - Gemini 2.5 models: retained for Vertex AI fine-tuned model endpoints
-                const ALLOWED_MODELS = [
-                    // Gemini 3 — current policy (APPROVED_MODELS)
-                    "gemini-3.1-pro-preview",
-                    "gemini-3-flash-preview",
-                    "gemini-3.1-flash-lite",
-                    // Gemini 2.5 — Vertex AI fine-tuned model support
-                    "gemini-2.5-pro",
-                    "gemini-2.5-flash",
-                    "gemini-2.5-pro-preview",
-                ];
-
-                const isApprovedEndpoint = /^projects\/[^/]+\/locations\/[^/]+\/endpoints\/[^/]+$/.test(modelId);
-                if (!ALLOWED_MODELS.includes(modelId) && !isApprovedEndpoint) {
+                // SECURITY: strict server-owned allowlist. A resource-path
+                // regex is not authorization: an altered browser could point
+                // at an unrelated Vertex endpoint and spend project capacity.
+                if (!isApprovedTextStreamModel(modelId)) {
                     functions.logger.warn(`[Security] Blocked unauthorized model access: ${modelId}`);
                     res.status(400).send('Invalid or unauthorized model ID.');
                     return;
@@ -997,7 +1137,7 @@ export const generateContentStream = functions
                 // model is served from the 'global' location (where the gemini-3.1 models
                 // live, via aiplatform.googleapis.com). See ERROR_LEDGER 2026-06-20/21.
                 const FINE_TUNED_FALLBACK_MODEL = 'gemini-3.1-flash-lite';
-                const isFineTunedEndpoint = /^projects\/[^/]+\/locations\/[^/]+\/endpoints\/[^/]+$/.test(modelId);
+                const isFineTunedEndpoint = isApprovedFineTunedTextEndpoint(modelId);
                 if (process.env.DISABLE_FINE_TUNED === 'true' && isFineTunedEndpoint) {
                     functions.logger.warn(`[generateContentStream] DISABLE_FINE_TUNED kill switch active; routing ${modelId} -> ${FINE_TUNED_FALLBACK_MODEL} (global)`);
                     finalModelId = FINE_TUNED_FALLBACK_MODEL;
@@ -1102,10 +1242,7 @@ export const generateContentStream = functions
 export const ragProxy = functions
     .runWith({
         enforceAppCheck: false, // Fix CORS preflight: moved to manual check after corsHandler
-        timeoutSeconds: 60
-        // NOTE: ragProxy uses the Generative AI Files API which requires GEMINI_API_KEY at runtime.
-        // This is the single remaining path that depends on the Developer API key.
-        // Future: migrate to Vertex AI file handling (Cloud Storage + Vertex Datasets).
+        timeoutSeconds: 60,
     })
     .https.onRequest((req, res) => {
         corsHandler(req, res, async () => {
@@ -1132,66 +1269,14 @@ export const ragProxy = functions
                 return;
             }
 
-            try {
-                // SECURITY: Block Method Override Headers to prevent bypassing method checks
-                // Express might handle X-HTTP-Method-Override automatically, so strict method checking is key.
-
-                // 1. BLOCK DELETE (Data Integrity / Anti-Griefing)
-                // Prevents users from deleting files that might belong to others in the shared project.
-                if (req.method === 'DELETE') {
-                    res.status(403).send('Forbidden: Method not allowed');
-                    return;
-                }
-
-                const baseUrl = 'https://generativelanguage.googleapis.com';
-                const targetPath = req.path;
-                const allowedPrefixes = [
-                    '/v1beta/files',
-                    '/v1beta/models',
-                    '/upload/v1beta/files',
-                    '/v1beta/fileSearchStores', // RAG: File Search Store management (create, list, importFile)
-                    '/v1beta/operations'         // RAG: Async operation polling for importFile completions
-                ];
-
-                // 2. BLOCK LIST ALL FILES (Privacy / Anti-IDOR)
-                // Prevents users from listing all files uploaded to the shared project.
-                // Exception: Getting metadata for a SPECIFIC file is allowed (path has extra segments).
-                // Path must NOT be exactly '/v1beta/files' if method is GET.
-                if (req.method === 'GET' && req.path === '/v1beta/files') {
-                    res.status(403).send('Forbidden: Listing files is disabled for security');
-                    return;
-                }
-
-                const isAllowed = allowedPrefixes.some(prefix =>
-                    req.path === prefix || req.path.startsWith(prefix + '/')
-                );
-
-                if (!isAllowed) {
-                    res.status(403).send('Forbidden: Path not allowed');
-                    return;
-                }
-
-                const queryString = req.url.split('?')[1] || '';
-                const targetUrl = `${baseUrl}${targetPath}?key=${getGeminiApiKey()}${queryString ? `&${queryString}` : ''}`;
-
-                const fetchOptions: RequestInit = {
-                    method: req.method,
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: (req.method !== 'GET' && req.method !== 'HEAD') ?
-                        (typeof req.body === 'object' ? JSON.stringify(req.body) : req.body)
-                        : undefined
-                };
-
-                const response = await fetch(targetUrl, fetchOptions);
-                const data = await response.text();
-                res.status(response.status);
-                try { res.send(JSON.parse(data)); } catch { res.send(data); }
-            } catch (err: unknown) {
-                const error = err instanceof Error ? err : new Error(String(err));
-                res.status(500).send({ error: error.message });
-            }
+            // The old implementation proxied arbitrary File API routes using a
+            // Developer API key. That created an unauditable second billing and
+            // authorization boundary. It is deliberately disabled until the
+            // equivalent owner-scoped Cloud Storage + Vertex RAG service ships.
+            res.status(503).send({
+                code: 'VERTEX_RAG_MIGRATION_REQUIRED',
+                error: 'Document retrieval is temporarily unavailable while it is migrated to the secure Vertex AI pipeline.',
+            });
         });
     });
 

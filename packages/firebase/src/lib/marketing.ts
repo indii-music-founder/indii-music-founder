@@ -2,7 +2,6 @@ import * as functions from "firebase-functions/v1";
 import * as admin from "firebase-admin";
 import { defineString } from "firebase-functions/params";
 import { z } from "zod";
-import { geminiApiKey } from "../config/secrets";
 import crypto from "crypto";
 
 // Default empty — runtime code below already fails closed with a clean
@@ -79,7 +78,7 @@ export function normalizeDispatchPlatform(platform: unknown): 'twitter' | 'insta
  * Queues supported posts for the scheduled social delivery worker.
  */
 export const executeCampaign = functions
-    .runWith({ enforceAppCheck: true,  secrets: [geminiApiKey], timeoutSeconds: 60  })
+    .runWith({ enforceAppCheck: true, timeoutSeconds: 60 })
     .https.onCall(async (data, context) => {
         if (!context.auth) {
             throw new functions.https.HttpsError("unauthenticated", "Auth required");

@@ -11,12 +11,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
  * existed on the callable's response.
  */
 
-const mockAnalyzeAudio = vi.fn();
 const mockRenderVideo = vi.fn();
 
 vi.mock('firebase/functions', () => ({
     httpsCallable: (_functions: unknown, name: string) => {
-        if (name === 'analyzeAudio') return mockAnalyzeAudio;
         if (name === 'renderVideo') return mockRenderVideo;
         throw new Error(`Unexpected callable requested in test: ${name}`);
     },
@@ -29,6 +27,7 @@ vi.mock('@/services/firebase', () => ({
 
 const mockGenerateVideo = vi.fn();
 const mockWaitForJob = vi.fn();
+const mockWaitForTerminalReceipt = vi.fn();
 
 vi.mock('./VideoGenerationService', () => ({
     VideoGeneration: {
@@ -43,25 +42,53 @@ vi.mock('@/services/image/ImageGenerationService', () => ({
     },
 }));
 
-import { performanceVideoService } from './PerformanceVideoService';
+vi.mock('@/services/audio/AudioAnalysisReceiptService', () => ({
+    audioAnalysisReceiptService: {
+        waitForTerminalReceipt: (...args: unknown[]) => mockWaitForTerminalReceipt(...args),
+    },
+}));
+
+import { performanceVideoService, sonicProfileFromAnalysisReceipt } from './PerformanceVideoService';
 
 const SONIC_PROFILE = {
     bpm: 120,
-    key: 'C major',
     mood: 'energetic',
-    texture: 'layered',
-    instrumentation: ['drums', 'synth'],
-    vocalPresence: true,
-    intensity: 0.8,
-    genre: 'pop',
+};
+
+const SCENE_JOB = {
+    id: 'clip-1',
+    status: 'completed',
+    resultUri: 'gs://indii-music-founder.firebasestorage.app/creative/user-1/scene0.mp4',
+};
+
+function resolvedSceneThenRender(renderJob: Record<string, unknown>) {
+    mockWaitForJob.mockImplementation(async (jobId: string) => jobId === 'clip-1' ? SCENE_JOB : renderJob);
+}
+
+const CANONICAL_RECEIPT = {
+    receiptId: 'audio-receipt-1',
+    userId: 'user-1',
+    contentHash: 'a'.repeat(64),
+    generation: '987654321',
+    masterFingerprint: 'SONIC-canonical-master',
+    status: 'complete' as const,
+    openSourceProfile: { tempoBpm: 120 },
+    geminiProfile: {
+        genres: ['pop'],
+        moods: ['energetic'],
+        instrumentation: ['drums', 'synth'],
+        sonic_texture: 'layered',
+        vocal_description: 'lead vocal',
+        marketing_moments: [{ start: '00:00', description: 'opening beat' }],
+    },
 };
 
 function baseOptions() {
     return {
-        songUrl: 'https://cdn.example/song.mp3',
         masterAsset: {
             contentHash: 'a'.repeat(64),
             downloadUrl: 'https://storage.example/canonical-master.wav',
+            generation: '987654321',
             masterFingerprint: 'SONIC-canonical-master',
             mimeType: 'audio/wav',
             originalFileName: 'master.wav',
@@ -79,13 +106,13 @@ function baseOptions() {
 describe('PerformanceVideoService.generate (ISSUE-994)', () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        mockAnalyzeAudio.mockResolvedValue({ data: SONIC_PROFILE });
-        mockGenerateVideo.mockResolvedValue([{ id: 'clip-1', url: 'https://cdn.example/scene0.mp4' }]);
+        mockWaitForTerminalReceipt.mockResolvedValue(CANONICAL_RECEIPT);
+        mockGenerateVideo.mockResolvedValue([{ id: 'clip-1', url: '' }]);
     });
 
     it('sends the request in the shape the callable actually requires', async () => {
         mockRenderVideo.mockResolvedValue({ data: { success: true, renderId: 'job-1', message: 'Render job queued.' } });
-        mockWaitForJob.mockResolvedValue({ id: 'job-1', status: 'completed', videoUrl: 'https://cdn.example/final.mp4' });
+        resolvedSceneThenRender({ id: 'job-1', status: 'completed', videoUrl: 'https://cdn.example/final.mp4' });
 
         await performanceVideoService.generate(baseOptions());
 
@@ -100,9 +127,9 @@ describe('PerformanceVideoService.generate (ISSUE-994)', () => {
         expect(request).not.toHaveProperty('project');
     });
 
-    it('carries the canonical master identity into the audio timeline clip', async () => {
+    it('carries canonical identity separately from the local-preview URL into the audio timeline clip', async () => {
         mockRenderVideo.mockResolvedValue({ data: { success: true, renderId: 'job-1', message: 'Render job queued.' } });
-        mockWaitForJob.mockResolvedValue({ id: 'job-1', status: 'completed', videoUrl: 'https://cdn.example/final.mp4' });
+        resolvedSceneThenRender({ id: 'job-1', status: 'completed', videoUrl: 'https://cdn.example/final.mp4' });
 
         await performanceVideoService.generate(baseOptions());
 
@@ -110,18 +137,26 @@ describe('PerformanceVideoService.generate (ISSUE-994)', () => {
         const audioClip = request.inputProps.project.clips.find((clip: { type: string }) => clip.type === 'audio');
         expect(audioClip).toEqual(expect.objectContaining({
             src: 'https://storage.example/canonical-master.wav',
-            masterFingerprint: 'SONIC-canonical-master',
-            isrc: 'USABC2600001',
+            canonicalMaster: {
+                storagePath: `masters/user-1/${'a'.repeat(64)}/original.wav`,
+                contentHash: 'a'.repeat(64),
+                generation: '987654321',
+                masterFingerprint: 'SONIC-canonical-master',
+                volume: 1,
+            },
         }));
-        expect(mockAnalyzeAudio).toHaveBeenCalledWith({
-            audioUrl: 'https://storage.example/canonical-master.wav',
-            mimeType: 'audio/wav',
-        });
+        expect(mockWaitForTerminalReceipt).toHaveBeenCalledWith(
+            expect.objectContaining({
+                storagePath: `masters/user-1/${'a'.repeat(64)}/original.wav`,
+                generation: '987654321',
+            }),
+            'user-1',
+        );
     });
 
     it('polls waitForJob for the real video URL instead of reading a field the callable never returns', async () => {
         mockRenderVideo.mockResolvedValue({ data: { success: true, renderId: 'job-1', message: 'Render job queued.' } });
-        mockWaitForJob.mockResolvedValue({ id: 'job-1', status: 'completed', videoUrl: 'https://cdn.example/final.mp4' });
+        resolvedSceneThenRender({ id: 'job-1', status: 'completed', videoUrl: 'https://cdn.example/final.mp4' });
 
         const result = await performanceVideoService.generate(baseOptions());
 
@@ -131,7 +166,7 @@ describe('PerformanceVideoService.generate (ISSUE-994)', () => {
 
     it('reads the URL from output.url when videoUrl/url are absent', async () => {
         mockRenderVideo.mockResolvedValue({ data: { success: true, renderId: 'job-1', message: 'Render job queued.' } });
-        mockWaitForJob.mockResolvedValue({ id: 'job-1', status: 'completed', output: { url: 'https://cdn.example/output-final.mp4' } });
+        resolvedSceneThenRender({ id: 'job-1', status: 'completed', output: { url: 'https://cdn.example/output-final.mp4' } });
 
         const result = await performanceVideoService.generate(baseOptions());
 
@@ -142,12 +177,12 @@ describe('PerformanceVideoService.generate (ISSUE-994)', () => {
         mockRenderVideo.mockResolvedValue({ data: { success: false, renderId: '', message: 'Invalid project data. Missing tracks or clips.' } });
 
         await expect(performanceVideoService.generate(baseOptions())).rejects.toThrow('Invalid project data');
-        expect(mockWaitForJob).not.toHaveBeenCalled();
+        expect(mockWaitForJob).toHaveBeenCalledWith('clip-1');
     });
 
     it('throws instead of resolving when the completed job has no video URL at all', async () => {
         mockRenderVideo.mockResolvedValue({ data: { success: true, renderId: 'job-1', message: 'Render job queued.' } });
-        mockWaitForJob.mockResolvedValue({ id: 'job-1', status: 'completed' });
+        resolvedSceneThenRender({ id: 'job-1', status: 'completed' });
 
         await expect(performanceVideoService.generate(baseOptions())).rejects.toThrow('without a video URL');
     });
@@ -157,5 +192,18 @@ describe('PerformanceVideoService.generate (ISSUE-994)', () => {
         mockWaitForJob.mockRejectedValue(new Error('Stitch failed: codec error'));
 
         await expect(performanceVideoService.generate(baseOptions())).rejects.toThrow('Stitch failed: codec error');
+    });
+
+    it('rejects a raw URL because performance video requires the protected canonical master', async () => {
+        const options = baseOptions();
+        await expect(performanceVideoService.generate({
+            ...options,
+            masterAsset: undefined,
+        })).rejects.toThrow(/verified canonical master/i);
+        expect(mockWaitForTerminalReceipt).not.toHaveBeenCalled();
+    });
+
+    it('maps only measured and receipt-backed audio fields into beat planning', () => {
+        expect(sonicProfileFromAnalysisReceipt(CANONICAL_RECEIPT)).toEqual(SONIC_PROFILE);
     });
 });

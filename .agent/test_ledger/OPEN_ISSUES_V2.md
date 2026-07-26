@@ -2562,6 +2562,150 @@ Listed only so they are not lost. No assessment is implied.
 
 ---
 
+### ISSUE-1222: Client could self-assign Founder tier, billing entitlements, and credit authority through `/users/{uid}`
+
+- **Status:** 🟡 PARTIAL (source and emulator proof complete 2026-07-26; production rules deployment/live verification still required)
+- **Severity:** 🔴 CRITICAL
+- **Module:** `packages/firebase/firestore.rules`; landing account bootstrap; creative budget lookup
+- **Evidence:** The client-created profile included `tier: 'free'`, while budget enforcement reads profile tier. The profile rule froze role/admin fields but did not freeze or reject `tier`, `subscriptionTier`, `plan`, `isFounder`, entitlement, credit, billing, or Stripe-customer fields. An authenticated client could therefore write a privileged tier or credit state directly.
+- **Fix applied locally:** Client bootstrap no longer writes tier. Rules reject authority fields on create and freeze them on update. Emulator attacks for tier, subscription tier, and Founder flag now fail.
+- **Acceptance:** [PASS local] `firebase emulators:exec --only firestore,storage "npm run test:rules"` passed 189/189. [OPEN] Deploy rules; prove a real verified Free user cannot alter any authority field and that the backend provisioning path can grant Founder/paid entitlements.
+- **Do not:** Never derive tier, credits, Founder status, Stripe customer state, or entitlements from a browser write.
+
+---
+
+### ISSUE-1223: Electron App Check bypass was forgeable with a request header or User-Agent
+
+- **Status:** 🟡 PARTIAL (forged bypass removed 2026-07-26; legitimate desktop attestation is not implemented)
+- **Severity:** 🔴 CRITICAL
+- **Module:** `packages/firebase/src/middleware/appCheck.ts`; Electron Firebase initialization
+- **Evidence:** Any caller could send `x-app-client-type: electron-desktop-app` or an Electron-looking User-Agent and bypass App Check for privileged callables.
+- **Fix applied locally:** Header/User-Agent bypasses are removed; invalid or missing App Check now rejects. Focused middleware tests pass.
+- **Acceptance:** [PASS local] Browser-header spoof attacks fail. [OPEN] Implement a cryptographic Electron attestation/device-registration design that a modified renderer cannot forge; prove a legitimate enrolled desktop succeeds and a copied header/token fails. Protected desktop callables remain deliberately fail-closed until then.
+- **Do not:** Do not restore convenience headers, User-Agent checks, a renderer secret, or an App Check disable flag as a desktop workaround.
+
+---
+
+### ISSUE-1224: Backend AI paths mixed Vertex ADC with Gemini Developer API keys and an arbitrary Files proxy
+
+- **Status:** 🟡 PARTIAL (local migration complete; production deploy and live inventory verification required)
+- **Severity:** 🔴 CRITICAL
+- **Module:** Creative gateway, relay, timeline execution, Default Agents, touring, video download, Inngest, RAG proxy, secret configuration
+- **Evidence:** Multiple server workers constructed `GoogleGenAI({ apiKey })`, sent requests to `generativelanguage.googleapis.com`, or appended a Developer API key while downloading output. The RAG proxy exposed a general-purpose Files API boundary under a shared project key.
+- **Fix applied locally:** The identified workers now use `getVertexAIClient()` with ADC. Provider-key secrets are no longer mounted by these functions. The URI API-key download fallback is removed. The RAG proxy returns a structured `VERTEX_RAG_MIGRATION_REQUIRED` 503 until its owner-scoped Cloud Storage + Vertex replacement exists.
+- **Acceptance:** [PASS local] Focused gateway tests and TypeScript build pass; source inventory has no production Developer API constructor, URL, or key use. [OPEN] Deploy only the changed functions; inspect live revision environment/IAM and run one authenticated Vertex request per migrated capability. Build the real Vertex RAG replacement before re-enabling document retrieval.
+- **Do not:** Do not reintroduce a Gemini Developer key, a browser fallback, a raw provider URL, or a key-appended download path to restore a feature quickly.
+
+---
+
+### ISSUE-1225: Creative video admission accepted a browser-controlled `skipCostCheck`; generic cost admission still trusts client estimates
+
+- **Status:** 🟡 PARTIAL (immediate bypass removed 2026-07-26; full server pricing catalog remains open)
+- **Severity:** 🔴 CRITICAL
+- **Module:** `GenerateVideoSchema`, creative gateway, `VideoGenerationService`, `CostControlService`, cost ledger
+- **Evidence:** A caller could set `skipCostCheck: true` and queue a video without loading an approved reservation. `forceBypass` was also present in the browser cost interface. More broadly, `enforceOperationCost` accepts a client estimate before a specific gateway validates actual provider parameters.
+- **Fix applied locally:** `skipCostCheck` and `forceBypass` are removed from client contracts. Video jobs require a reservation that exactly matches server-normalized duration/model/mode cost. Long-form video now reserves each independently settled segment instead of reusing an aggregate client hold. Claimed `userId` is omitted from the browser callable payload.
+- **Acceptance:** [PASS local] Gateway regression proves a browser bypass cannot create a job; focused billing/video tests pass. [OPEN] Introduce a versioned server pricing catalog that derives every image, video, audio, and agent-stream price from validated parameters before reservation; live-prove mismatch rejection and idempotent settlement.
+- **Do not:** Do not let UI estimates, “confirmation” retries, or test-mode flags alter the server cost, user identity, or reservation state.
+
+---
+
+### ISSUE-1226: Verified-email onboarding is UI-gated, but abuse-resistant account lifecycle and entitlement provisioning are incomplete
+
+- **Status:** 🟡 PARTIAL (local server-owned entitlement admission complete 2026-07-26; production deployment and anti-abuse controls remain open)
+- **Severity:** 🟠 HIGH
+- **Module:** landing signup/login, Firebase Auth, entitlement provisioning, founder administration
+- **Evidence:** Signup and login now hold an unverified account at a verification screen, and creative callables require `email_verified`. The previous implementation also trusted hard-coded Founder email checks in three renderer paths and could read a browser/profile tier in cost-adjacent code.
+- **Fix applied locally:** `requireVerifiedServerEntitlement` refreshes the Firebase Admin Auth user before Free/Founder policy resolution; a verified account receives a server-only `users/{uid}/entitlements/current` record plus immutable audit evidence. The existing `founders/{uid}` registry migrates through the same backend path, and Founder activation writes its grant in the existing privileged transaction. Image/audio/video/relay cost gates now pass only a server-resolved budget tier. Renderer profile, membership, and local usage UI no longer promote `wiil@indii.music` or any email to Founder.
+- **Acceptance:** [PASS local] 63 focused entitlement/cost/gateway/video/membership tests pass; 191/191 Firestore and Storage emulator tests prove clients cannot create, update, or cross-read entitlement evidence. [OPEN] Deploy the callable/rules changes and prove verified-Free, unverified, Founder, and paid Stripe transitions live. Resend/verification attempts still need server-enforced rate limits, observability, and disposable-domain/fraud policy; paid Stripe grants still need to call the shared entitlement writer.
+- **Do not:** Do not let a frontend route redirect, localStorage flag, profile field, or email string substitute for Firebase's verified claim and a server-owned entitlement record.
+
+---
+
+### ISSUE-1227: Hidden-bug baseline remains high — remediation must be a measured program, not a one-time scan
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH
+- **Module:** repository-wide detector, endpoint inventory, tests, issue workflow
+- **Evidence:** `npm run detect:bugs` reported risk score 171 before this session and **169** after the canonical image/entitlement admission work on 2026-07-26. Its categories include base64 transport, callable boundaries, unprotected awaits, direct Firebase imports, missing promise catches, and string enums. Some hits are legitimate patterns, so deleting syntax to lower the score would be a false fix.
+- **Acceptance:** Each detector category is triaged into: fixed root cause with regression test, documented intentional pattern with narrow allowlist and rationale, or a numbered open issue with owner/acceptance. Re-run the detector after each delivery; never claim a lower score without showing the changed findings.
+- **Do not:** Do not suppress, rename, or exclude detections solely to lower the number.
+
+---
+
+### ISSUE-1228: Arcjet request protection is locally hardened, but production binding, non-HTTP Guard coverage, signup protection, and live abuse proof remain open
+
+- **Status:** 🟡 PARTIAL (the REST request layer is locally fail-closed and server-policy-aware; deployed revision binding, signup/callable coverage, non-HTTP Guard coverage, and live abuse proof remain open)
+- **Severity:** 🟠 HIGH
+- **Module:** `packages/firebase/src/functions/security/arcjet.ts`; Firebase HTTP/callable entry points; landing signup/verification; MCP tools; Cloud Tasks/workers; creative AI admission; entitlement and cost controls
+- **Evidence:** `@arcjet/node` is installed and the official `indii-music-founder` key exists as enabled Google Secret Manager `ARCJET_KEY` version 1 without ever being printed or written locally. Local work on 2026-07-26 adds `arcjetKey = defineSecret("ARCJET_KEY")`, binds it in source to all eleven REST `onRequest` revisions, removes the fabricated fallback key, and changes missing-key/decision/network failures from fail-open to structured fail-closed `503` responses. Authenticated REST routes now derive one of verified-Free, paid, Founder, admin, or BYO-API policy classes from Firebase Admin verification plus the server-owned entitlement; Founder retains a 120/min anti-automation ceiling. The sole documented degradation is the unauthenticated `GET /health` liveness read, which may remain available while Arcjet is unavailable and accesses no user data. All REST mutations are protected before Firestore writes. Focused proof: `vitest --run src/functions/security/arcjet.test.ts src/functions/api/__tests__/router.arcjet.test.ts` passed **14/14**; Firebase `tsc`, scoped zero-warning ESLint, and `git diff --check` passed. `@arcjet/guard` is intentionally not installed: its installed-version runtime floor is Node 22.21.0 while the Functions manifest says only Node 22, so deployed patch-level compatibility must be proven first.
+- **Remaining deployment work:** Deploy the exact protected REST revisions with least-privilege Secret Manager binding and retain revision evidence; exercise real allowed, Shield-denied, and rate-limited requests and confirm redacted decision/operation correlation in Arcjet history; protect signup/resend verification with bot and email-abuse controls. **Platform decision:** the current landing flow creates accounts and sends verification links directly through the Firebase browser SDK, so backend Arcjet cannot observe it. Firebase's supported before-create/before-email blocking functions require upgrading the project to Firebase Authentication with Identity Platform; do not silently make that potentially billable upgrade or replace password signup with a custom-token system. Extend request protection to the exact spend, finance, distribution, privileged-write, and callable boundaries; confirm the deployed Node patch supports `@arcjet/guard`, then add fixed-label per-owner Guard controls to MCP tools and non-HTTP workers; prove prompt-injection/sensitive-input behavior; and verify Free, Founder, paid, admin, BYO-API, replay, and concurrent-request limits at the application boundary.
+- **Plan:** (1) inventory every public HTTP route, callable, MCP tool, scheduled/queue worker, auth action, and cost-bearing AI operation; (2) attach every detector finding to this issue or a numbered child issue with OPEN/PARTIAL status and acceptance evidence; (3) bind the existing managed `ARCJET_KEY` only to the exact server revisions that need it—never source, browser environment, logs, or Firestore—and verify least-privilege secret access; (4) keep request-based protection inside each HTTP/callable handler and use Arcjet Guard with fixed labels for MCP tools and non-HTTP workers; (5) add bot/email-abuse controls to signup and resend flows while keeping Firebase `email_verified` and backend entitlement provisioning authoritative; (6) key limits to authenticated UID plus server-owned entitlement, with separate anonymous, verified-Free, paid, Founder, administrative, and BYO-API policies; Founder “unlimited” removes product-credit ceilings but not anti-automation, concurrency, provider-quota, or emergency safety ceilings; (7) layer prompt-injection/sensitive-data protections on AI/tool inputs without treating them as authorization; (8) define route-specific failure policy—missing key or protection errors fail closed for signup, spend, finance, distribution, MCP mutations, and privileged writes; only explicitly documented low-risk reads may degrade; (9) return structured 403/429/503 responses with retry metadata and correlate Arcjet decision IDs to server operation IDs without storing secrets or raw sensitive prompts.
+- **Acceptance:** [PASS provisioning] A real `ARCJET_KEY` exists as enabled Google Secret Manager version 1 and its value was not exposed to source, browser configuration, Firestore, chat, or terminal output. [PASS local REST] Each REST `onRequest` source declaration receives the managed secret; missing key and decision failure deny authenticated operations with `503`; authenticated rate limiting returns `429` plus `Retry-After`; all REST mutations deny before data writes; verified-email entitlement denial remains a `412`; and only `GET /health` has a tested low-risk degradation exception. [OPEN] Deploy the protected revisions and prove least-privilege access; repository and deployed-environment scans prove it is server-only; an endpoint matrix shows one intentional Arcjet policy or documented exemption for every applicable boundary; emulator/unit tests cover bot, email abuse, prompt injection, sensitive input, Free/Founder/paid/admin/BYO limits, replay, and concurrent requests; real production probes produce observable Arcjet decisions and deterministic 403/429/503 behavior; Free users cannot evade quotas by recreating accounts or changing client claims; Founder access remains product-unlimited but bounded against compromise/runaway automation; existing Auth, App Check, ownership, entitlement, idempotency, provider-quota, and cost-ledger gates still run independently; all detector findings discovered during delivery remain numbered OPEN/PARTIAL until their own acceptance evidence passes.
+- **Do not:** Do not add a fake/test key, weaken production startup to make a missing key invisible, expose the key through `VITE_*`, use one global IP bucket for authenticated users, put Guard in a generic dynamic MCP dispatcher, count one operation multiple times, let Arcjet grant identity/ownership/tier/credits, or mark this FIXED merely because the SDK compiles or the dashboard receives one request.
+
+---
+
+### ISSUE-1229: Vertex text streaming admitted unverified accounts and accepted unbounded browser output configuration
+
+- **Status:** 🟡 PARTIAL (local admission hardening complete 2026-07-26; production deployment and live abuse proof required)
+- **Severity:** 🔴 CRITICAL
+- **Module:** `packages/firebase/src/index.ts` (`generateContentStream`); `packages/renderer/src/services/intelligence/FirebaseIntelligenceService.ts`
+- **Evidence:** The HTTP stream verified Firebase Auth and App Check, but did not require `email_verified`, rate-limit the authenticated UID, or cap the browser-controlled `maxOutputTokens`. This exposed paid Vertex text capacity to every signed-in account and left a direct configuration amplification path.
+- **Fix applied locally:** The stream now rejects unverified accounts before App Check/Vertex work, applies the existing server-side generation rate limit by authenticated UID, bounds content count/size, validates the configuration object, caps output at 8,192 tokens, and accepts only the server-owned base-model and reviewed fine-tuned endpoint registry. Client UI now converts upstream quota wording into product-neutral capacity language instead of telling artists to use a Developer API billing surface.
+- **Acceptance:** [PASS local] A regression rejects an unverified account before opening a Vertex stream. [OPEN] Deploy the changed function; prove verified Free, Founder, and malformed/excessive payload cases produce the intended 2xx/403/429/4xx responses with no Vertex call on denial. Replace the generic rate limiter with the versioned entitlement-aware pricing/usage policy from ISSUE-1225/1226/1228.
+- **Do not:** Do not let raw browser output limits, arbitrary project endpoint paths, an unverified email, a header, or a generic Auth token authorize paid Vertex streaming.
+
+---
+
+### ISSUE-1230: `test:api` called itself a backend schema check while recreating Firebase's default app and could reach production with placeholder credentials
+
+- **Status:** 🟡 PARTIAL (false assertions, duplicate-app failure, and simulated payload/async suites corrected locally 2026-07-26; authenticated emulator contract lane still required)
+- **Severity:** 🟠 HIGH
+- **Module:** `e2e/api-contracts.integration.test.ts`; API test harness
+- **Evidence:** The second API-contract test initialized Firebase's `[DEFAULT]` app a second time, so `npm run test:api` failed before testing its claim. If that were fixed alone, the test could issue a request outside an explicitly configured emulator with placeholder credentials, then infer payload correctness from any non-schema error. Its base64 “validation” case only asserted properties of literals and never reached server validation.
+- **Fix applied locally:** Each initialization test now owns a uniquely named Firebase app and deletes it afterwards. The misleading remote schema invocation is replaced with the actual client-initialization assertion it can prove, so no API-contract test sends placeholder credentials to production. The literal-only payload suite was replaced by direct execution of the shared Firebase Zod schemas, and the syntactically broken/random async simulation was replaced by the real renderer retry utility's deterministic 429, retry-after, network-backoff, and non-retryable-4xx contracts. Server schema and admission behavior remain covered by focused Firebase gateway tests.
+- **Acceptance:** [PASS local] `test:api` gets past Firebase initialization without `app/duplicate-app`; targeted gateway tests prove the relevant server validation. [OPEN] Add a dedicated authenticated Firebase Functions-emulator contract lane that starts Auth/App Check/Functions/Firestore/Storage and proves valid, invalid, unverified, rate-limited, and cost-mismatch requests against deployed request schemas.
+- **Do not:** Do not call a live function with a fake API key, accept an arbitrary auth failure as schema proof, or retain a test that only asserts its own fixture literals.
+
+---
+
+### ISSUE-1231: Video render accepted a browser audio URL and did not prove the master track reached the final MP4
+
+- **Status:** 🟡 PARTIAL (local canonical-master contract and Transcoder mapping are complete 2026-07-26; deployed media proof remains open)
+- **Severity:** 🔴 CRITICAL
+- **Module:** `packages/renderer/src/services/video/PerformanceVideoService.ts`; video workflow/agent tools; `packages/firebase/src/index.ts`; `packages/firebase/src/lib/long_form_video.ts`; Transcoder job configuration
+- **Evidence:** The renderer timeline kept a local audio `src`, the callable previously forwarded that URL as `audioClips`, and the stitch worker ignored it. The job could report a completed video even though no verified master was mapped into its output audio stream. This bypassed upload-once provenance and could have caused the app to claim a master-audio mix it never produced.
+- **Fix applied locally:** Renderer performance-video, workflow, and agent-tool paths require a generation-bound canonical master identity. `renderVideo` requires verified email/App Check, rejects raw audio URLs and multiple audio masters, streams and verifies owner/hash/fingerprint/generation before queuing, and sends a derived project-bucket `gs://` identity to the worker. The worker verifies it again and builds two Transcoder jobs: video concatenation followed by an explicit stereo AAC mapping of the canonical master. The policy is accurately named `master_replaces_native`; no fictional native-audio mix is claimed. Scene generation now waits for the gateway's completed `resultUri` rather than treating a queued job as a finished clip.
+- **Acceptance:** [PASS local] `npx vitest run packages/renderer/src/modules/workflow/services/WorkflowEngine.test.ts packages/renderer/src/services/agent/tools/__tests__/VideoTools.test.ts packages/renderer/src/services/video/PerformanceVideoService.test.ts packages/firebase/src/functions/video/renderMasterContract.test.ts packages/firebase/src/functions/video/stitchMasterAudio.test.ts packages/firebase/src/__tests__/video.test.ts` passed 64/64; Firebase and renderer TypeScript builds pass. The regressions reject raw URLs, owner mismatch, generation drift, multiple masters, and verify the exact two-pass Transcoder stereo mapping. [OPEN live] Deploy the callable and stitch worker, submit an authenticated verified WAV and FLAC project, and inspect the resulting MP4 with a media probe to prove the final audio stream came from the expected master hash/generation. Also prove unverified email and stale-generation requests are denied before queueing.
+- **Do not:** Do not make a browser URL, claimed ISRC, MIME type, local preview, or model output the render authority. Do not call a video `completed` until the final Transcoder job succeeds and an output artifact exists.
+
+---
+
+### ISSUE-1232: Video render still trusted browser `clip.src` values for visual segments
+
+- **Status:** 🟡 PARTIAL (local canonical visual-source contract complete 2026-07-26; deployed rejection proof remains open)
+- **Severity:** 🔴 CRITICAL
+- **Module:** video editor timeline, `renderVideo`, `stitchVideoFn`, Transcoder configuration
+- **Evidence:** The render callable checked only that every video `clip.src` was a non-empty string, then handed those browser-controlled values to the asynchronous stitch worker. A `gs://` URI from another bucket or user could therefore reach Transcoder configuration; HTTPS/local preview URLs could also be treated as render inputs despite not being durable server-owned media.
+- **Fix applied locally:** Timeline `src` is now preview-only, while each renderable video carries a separate `canonicalSourceUri`. Editor preflight blocks preview-only exports. The callable and stitch worker share one exact bucket, extension, traversal, and authenticated-owner-prefix validator; generated scene clips preserve the server-owned gateway `resultUri`. The callable uses the validated segment count instead of the old raw clip variable.
+- **Acceptance:** [PASS local] `npx vitest run packages/firebase/src/functions/video/renderMasterContract.test.ts packages/firebase/src/functions/video/stitchMasterAudio.test.ts packages/firebase/src/__tests__/video.test.ts packages/renderer/src/modules/creative/video/editor/utils/renderEligibility.test.ts packages/renderer/src/services/video/PerformanceVideoService.test.ts packages/renderer/src/modules/creative/video/editor/hooks/useVideoEditor.removeTrack.test.ts` passed 32/32; Firebase build and renderer TypeScript check pass. Raw URL, cross-bucket, cross-owner, invalid input shape, and preview-only editor exports are rejected before queueing. [OPEN live] Deploy and prove a generated project renders, while a crafted source URI creates no Transcoder job.
+- **Do not:** Do not infer a render source from a browser download URL, a filename, a claimed MIME type, or a model response. Do not widen owner prefixes merely to accommodate a legacy local-preview path.
+
+---
+
+### ISSUE-1233: Legacy image callers bypassed the canonical generation admission and result contract
+
+- **Status:** 🟡 PARTIAL (local caller/schema convergence complete 2026-07-26; deployed proof remains open)
+- **Severity:** 🔴 CRITICAL
+- **Module:** `GenerateImageSchema`; Direct Image Generator; Brand Assets generator; batch remix
+- **Evidence:** `generateImageV3` requires a server-issued cost reservation and returns canonical `gs://` result URIs. Its shared schema accidentally omitted `costReservationId`, so parsing stripped the client receipt before the gateway read it. Three legacy renderer callers also invoked the callable directly: they omitted the receipt, sent raw reference bytes under an unsupported `images` field, or expected the retired inline-base64 response. Those payloads deterministically lead to 400 failures or a false “no images returned” state.
+- **Fix applied locally:** Shared and Firebase gateway schemas now require the same trimmed bounded reservation ID. Direct Image Generator, generated Brand Assets, and batch remix delegate to `ImageGenerationService`; that service reserves cost, uploads transient reference bytes to owner-scoped Storage, sends only `gs://` reference identities, and returns display URLs alongside canonical output URIs. Direct-generator capacity messaging is now product-neutral and no longer points at a Developer API billing surface.
+- **Acceptance:** [PASS local] `npx vitest run packages/shared/src/schemas/creative.image.test.ts packages/firebase/src/shared/creative.test.ts packages/renderer/src/services/intelligence/generators/DirectImageGenerator.test.ts packages/renderer/src/services/image/__tests__/ImageGenerationService.test.ts packages/renderer/src/modules/creative/components/__tests__/DirectGenerationTab.test.tsx packages/renderer/src/modules/creative/components/BrandAssetsDrawer.a11y.test.tsx` passed 41/41; full TypeScript build passes. The new regressions prove a missing/blank reservation is rejected, Direct Image uses the canonical service, batch remix uploads references and sends no raw `images` field, and canonical output URI remains available. [OPEN live] Deploy the gateway and submit direct image, generated-brand-asset, and batch-remix requests under a verified account; inspect server receipts, canonical objects, and 400/429 user-facing behavior.
+- **Do not:** Do not restore inline-base64 results, accept an arbitrary cost ID, put provider credentials in the renderer, or bypass the cost/entitlement/App Check/verified-email gates for a legacy UI flow.
+
+---
+
 ## Session 2026-07-24 (continuation) — Ledger audit: spot-verify recent FIXED claims
 
 > Audit of ledger tail (ISSUE-1214 through ISSUE-1220, plus summary of recent fixes).
@@ -2627,6 +2771,30 @@ plus ISSUE-1175..1181 at 🟡 PARTIAL under the founder's binding repair order, 
 **Note for future greps:** PR #256's commit `21a7fb31b` is titled `...as ISSUE-1220`, but the entry
 it actually added is **ISSUE-1221** — that agent detected the collision with the existing 1220 and
 renumbered before writing. The ledger is correct; only the commit message is stale.
+
+---
+
+### ISSUE-1234: Public profile rule exposed private `/users/{uid}` fields
+
+- **Status:** 🟡 PARTIAL (local rules correction and emulator proof complete 2026-07-26; production deployment proof remains open)
+- **Severity:** 🔴 HIGH
+- **Module:** Firestore `/users/{uid}` rules; landing Auth profile persistence
+- **Evidence:** The root `users/{uid}` document stores `email`, while its read rule allowed any signed-in account to read the whole document whenever `isPublic == true`. Client-side field redaction would not help because Firestore had already returned the email.
+- **Fix applied locally:** Root user profiles are now owner-only, even if a legacy `isPublic` flag exists. A new emulator regression seeds `email` plus `isPublic: true` and proves another signed-in user is denied. No current application code queries `isPublic`, so this removes exposure without breaking an active public directory.
+- **Acceptance:** [PASS local] `firebase emulators:exec --only firestore,storage "npm run test:rules"` passed 191/191, including the public-flag/email denial test. [OPEN live] Deploy Firestore rules and confirm a non-owner cannot read a legacy `isPublic` profile. Before public artist discovery ships, create a separately shaped public-profile projection that excludes email, entitlement, billing, and private account fields.
+- **Do not:** Do not restore public reads to `/users/{uid}`, rely on a renderer to omit email, or use public-profile state as access authority.
+
+---
+
+### ISSUE-1235: Client-created `videoJobs` could trigger legacy Vertex generation without server admission
+
+- **Status:** 🟡 PARTIAL (local rule, callable, and worker hardening completed 2026-07-26; deployment and live rejection proof remain open)
+- **Severity:** 🔴 CRITICAL
+- **Module:** `packages/firebase/firestore.rules`; `triggerVideoJob`; `executeVideoJob`; `video_generation_direct.ts`
+- **Evidence:** The legacy `videoJobs` rule permitted verified clients to create/update/delete a record as long as an ownership field matched. A client-created `{ status: "queued" }` document activates the Firestore worker directly, bypassing the callable's App Check, signed-email, server entitlement, Arcjet, and cost-reservation admission. The worker also previously accepted a client-selected job ID and fetched arbitrary HTTP image URLs.
+- **Fix applied locally:** `videoJobs` is now owner/org-readable but completely server-write-only. The callable ignores the legacy browser correlation ID, creates a Firestore server ID, performs server-owned cost admission before creating the job, and stores the reservation with the job. The worker persists provider-submission intent before calling Vertex and settles/voids the reservation conservatively. Direct-video seed media is now either bounded inline JPEG/PNG/WebP bytes or an exact-bucket, owner-scoped `gs://` object; backend HTTP fetching is removed.
+- **Acceptance:** [PASS local] `npm test -- --run packages/firebase/src/lib/video_generation_direct.test.ts packages/firebase/src/__tests__/video.test.ts packages/firebase/src/functions/video/renderCostLifecycle.test.ts` passed 13/13; Firebase build, test typecheck, lint, frontend boundary guard, and Vertex-only backend guard passed. `npx -y firebase-tools@latest emulators:exec --only firestore,storage "npm run test:rules"` passed 194/194, including authenticated forged-create, status-update, delete, and cross-owner-read attacks. [OPEN live] Deploy the function revision and Firestore rules; confirm a verified client cannot create a raw `videoJobs` document, a normal callable request returns a server job ID and reservation, and a rejected Arcjet/entitlement/budget request creates neither a job nor Vertex provider work.
+- **Do not:** Do not restore client writes to `videoJobs`, accept a client-issued job ID as the authoritative worker identity, fetch arbitrary HTTP image URLs inside a Cloud Function, or mark a reservation void after a provider submission might have been accepted.
 
 ---
 

@@ -10,9 +10,12 @@ import * as admin from 'firebase-admin';
 import type * as express from 'express';
 import {
   protectAuthenticatedApiRequest,
-  protectPublicApiRequest,
+  protectAnonymousSignupRequest,
+  policyClassForServerEntitlement,
   type ArcjetProtectionResult,
 } from '../security/arcjet';
+import { arcjetKey } from '../../config/secrets';
+import { requireVerifiedServerEntitlement } from '../auth/entitlements';
 
 // Defer firestore initialization until first use (for test compatibility)
 function getDb() {
@@ -25,26 +28,44 @@ type CreateDistribution = Record<string, unknown>;
 interface ApiResponse<T = unknown> {
   success: boolean;
   data?: T;
-  error?: { code: string; message: string };
+  error?: { code: string; message: string; retryAfterSeconds?: number };
   meta: { timestamp: number; requestId: string; version: string };
 }
+
+interface AuthenticatedApiPrincipal {
+  uid: string;
+  arcjetPolicy: ReturnType<typeof policyClassForServerEntitlement>;
+}
+
+const arcjetProtectedRequestOptions = { secrets: [arcjetKey] };
 
 
 
 // Middleware: Verify Firebase auth token
-async function verifyAuth(req: Request): Promise<string> {
+async function verifyAuth(req: Request): Promise<AuthenticatedApiPrincipal> {
   const authHeader = req.headers.authorization;
   if (!authHeader?.startsWith('Bearer ')) {
     throw new HttpsError('unauthenticated', 'Missing or invalid auth token');
   }
 
   const token = authHeader.slice(7);
+  let decodedToken: { uid: string; admin?: boolean };
   try {
-    const decodedToken = await admin.auth().verifyIdToken(token);
-    return decodedToken.uid;
+    decodedToken = await admin.auth().verifyIdToken(token);
   } catch (_err) {
     throw new HttpsError('unauthenticated', 'Invalid token');
   }
+
+  // Keep verified-email/entitlement failures distinct from token failures so
+  // clients cannot mistake a denied account for an invalid authentication flow.
+  const entitlement = await requireVerifiedServerEntitlement(decodedToken.uid);
+  return {
+    uid: decodedToken.uid,
+    arcjetPolicy: policyClassForServerEntitlement({
+      tier: entitlement.tier,
+      isAdmin: decodedToken.admin === true,
+    }),
+  };
 }
 
 // Response helpers
@@ -60,10 +81,10 @@ function respond<T>(data: T, requestId: string): ApiResponse<T> {
   };
 }
 
-function errorResponse(code: string, message: string, requestId: string): ApiResponse {
+function errorResponse(code: string, message: string, requestId: string, retryAfterSeconds?: number): ApiResponse {
   return {
     success: false,
-    error: { code, message },
+    error: { code, message, ...(retryAfterSeconds ? { retryAfterSeconds } : {}) },
     meta: { timestamp: Date.now(), requestId, version: '1.0.0' },
   };
 }
@@ -76,8 +97,20 @@ async function rejectIfArcjetDenied(
   const result = await resultPromise;
   if (result.allowed) return false;
 
-  res.status(result.status).json(errorResponse(result.code, result.message, requestId));
+  if (result.retryAfterSeconds) {
+    res.set('Retry-After', String(result.retryAfterSeconds));
+  }
+  res.status(result.status).json(errorResponse(result.code, result.message, requestId, result.retryAfterSeconds));
   return true;
+}
+
+/** Adapts a server-verified principal to the Arcjet request contract. */
+function protectAuthenticatedRequest(req: Request, principal: AuthenticatedApiPrincipal, operationId: string) {
+  return protectAuthenticatedApiRequest(req, {
+    userId: principal.uid,
+    policy: principal.arcjetPolicy,
+    operationId,
+  });
 }
 
 // Extract last resource ID segment from path, ignoring trailing slashes
@@ -149,7 +182,7 @@ function sendHttpErrorResponse(err: unknown, res: express.Response, requestId: s
 }
 
 // GET /api/tracks/:id - Get track details
-export const getTrack = onRequest(async (req: Request, res: express.Response) => {
+export const getTrack = onRequest(arcjetProtectedRequestOptions, async (req: Request, res: express.Response) => {
   const requestId = generateRequestId();
   try {
     if (req.method !== 'GET') {
@@ -157,7 +190,9 @@ export const getTrack = onRequest(async (req: Request, res: express.Response) =>
       return;
     }
 
-    const userId = await verifyAuth(req);
+    const principal = await verifyAuth(req);
+    if (await rejectIfArcjetDenied(protectAuthenticatedRequest(req, principal, requestId), res, requestId)) return;
+    const userId = principal.uid;
     const trackId = extractResourceId(req.path);
 
     if (!trackId) {
@@ -178,7 +213,7 @@ export const getTrack = onRequest(async (req: Request, res: express.Response) =>
 });
 
 // POST /api/tracks - Create new track
-export const createTrack = onRequest(async (req: Request, res: express.Response) => {
+export const createTrack = onRequest(arcjetProtectedRequestOptions, async (req: Request, res: express.Response) => {
   const requestId = generateRequestId();
   try {
     if (req.method !== 'POST') {
@@ -186,8 +221,9 @@ export const createTrack = onRequest(async (req: Request, res: express.Response)
       return;
     }
 
-    const userId = await verifyAuth(req);
-    if (await rejectIfArcjetDenied(protectAuthenticatedApiRequest(req, userId), res, requestId)) return;
+    const principal = await verifyAuth(req);
+    if (await rejectIfArcjetDenied(protectAuthenticatedRequest(req, principal, requestId), res, requestId)) return;
+    const userId = principal.uid;
     const trackData = req.body as CreateTrack;
 
     const trackId = getDb().collection('_').doc().id;
@@ -207,7 +243,7 @@ export const createTrack = onRequest(async (req: Request, res: express.Response)
 });
 
 // GET /api/analytics/events - Query analytics events
-export const queryAnalytics = onRequest(async (req: Request, res: express.Response) => {
+export const queryAnalytics = onRequest(arcjetProtectedRequestOptions, async (req: Request, res: express.Response) => {
   const requestId = generateRequestId();
   try {
     if (req.method !== 'GET') {
@@ -215,8 +251,9 @@ export const queryAnalytics = onRequest(async (req: Request, res: express.Respon
       return;
     }
 
-    const userId = await verifyAuth(req);
-    if (await rejectIfArcjetDenied(protectAuthenticatedApiRequest(req, userId), res, requestId)) return;
+    const principal = await verifyAuth(req);
+    if (await rejectIfArcjetDenied(protectAuthenticatedRequest(req, principal, requestId), res, requestId)) return;
+    const userId = principal.uid;
     const query = req.query as Record<string, unknown>;
 
     const limit = Math.min(Number(query.limit) || 100, 1000);
@@ -238,7 +275,7 @@ export const queryAnalytics = onRequest(async (req: Request, res: express.Respon
 });
 
 // PUT /api/tracks/:id - Update track
-export const updateTrack = onRequest(async (req: Request, res: express.Response) => {
+export const updateTrack = onRequest(arcjetProtectedRequestOptions, async (req: Request, res: express.Response) => {
   const requestId = generateRequestId();
   try {
     if (req.method !== 'PUT') {
@@ -246,7 +283,9 @@ export const updateTrack = onRequest(async (req: Request, res: express.Response)
       return;
     }
 
-    const userId = await verifyAuth(req);
+    const principal = await verifyAuth(req);
+    if (await rejectIfArcjetDenied(protectAuthenticatedRequest(req, principal, requestId), res, requestId)) return;
+    const userId = principal.uid;
     const trackId = extractResourceId(req.path);
     if (!trackId) {
       res.status(400).json(errorResponse('INVALID_REQUEST', 'Missing track ID', requestId));
@@ -275,7 +314,7 @@ export const updateTrack = onRequest(async (req: Request, res: express.Response)
 });
 
 // DELETE /api/tracks/:id - Delete track
-export const deleteTrack = onRequest(async (req: Request, res: express.Response) => {
+export const deleteTrack = onRequest(arcjetProtectedRequestOptions, async (req: Request, res: express.Response) => {
   const requestId = generateRequestId();
   try {
     if (req.method !== 'DELETE') {
@@ -283,7 +322,9 @@ export const deleteTrack = onRequest(async (req: Request, res: express.Response)
       return;
     }
 
-    const userId = await verifyAuth(req);
+    const principal = await verifyAuth(req);
+    if (await rejectIfArcjetDenied(protectAuthenticatedRequest(req, principal, requestId), res, requestId)) return;
+    const userId = principal.uid;
     const trackId = extractResourceId(req.path);
     if (!trackId) {
       res.status(400).json(errorResponse('INVALID_REQUEST', 'Missing track ID', requestId));
@@ -298,7 +339,7 @@ export const deleteTrack = onRequest(async (req: Request, res: express.Response)
 });
 
 // GET /api/tracks - List tracks with pagination
-export const listTracks = onRequest(async (req: Request, res: express.Response) => {
+export const listTracks = onRequest(arcjetProtectedRequestOptions, async (req: Request, res: express.Response) => {
   const requestId = generateRequestId();
   try {
     if (req.method !== 'GET') {
@@ -306,8 +347,9 @@ export const listTracks = onRequest(async (req: Request, res: express.Response) 
       return;
     }
 
-    const userId = await verifyAuth(req);
-    if (await rejectIfArcjetDenied(protectAuthenticatedApiRequest(req, userId), res, requestId)) return;
+    const principal = await verifyAuth(req);
+    if (await rejectIfArcjetDenied(protectAuthenticatedRequest(req, principal, requestId), res, requestId)) return;
+    const userId = principal.uid;
     const query = req.query as Record<string, unknown>;
     const limit = Math.min(Number(query.limit) || 50, 1000);
     const offset = Number(query.offset) || 0;
@@ -326,7 +368,7 @@ export const listTracks = onRequest(async (req: Request, res: express.Response) 
 });
 
 // POST /api/distributions - Create distribution
-export const createDistribution = onRequest(async (req: Request, res: express.Response) => {
+export const createDistribution = onRequest(arcjetProtectedRequestOptions, async (req: Request, res: express.Response) => {
   const requestId = generateRequestId();
   try {
     if (req.method !== 'POST') {
@@ -334,8 +376,9 @@ export const createDistribution = onRequest(async (req: Request, res: express.Re
       return;
     }
 
-    const userId = await verifyAuth(req);
-    if (await rejectIfArcjetDenied(protectAuthenticatedApiRequest(req, userId), res, requestId)) return;
+    const principal = await verifyAuth(req);
+    if (await rejectIfArcjetDenied(protectAuthenticatedRequest(req, principal, requestId), res, requestId)) return;
+    const userId = principal.uid;
     const distData = req.body as CreateDistribution;
 
     const distId = getDb().collection('_').doc().id;
@@ -364,7 +407,7 @@ export const createDistribution = onRequest(async (req: Request, res: express.Re
 });
 
 // GET /api/distributions/:id - Get distribution details
-export const getDistribution = onRequest(async (req: Request, res: express.Response) => {
+export const getDistribution = onRequest(arcjetProtectedRequestOptions, async (req: Request, res: express.Response) => {
   const requestId = generateRequestId();
   try {
     if (req.method !== 'GET') {
@@ -372,7 +415,9 @@ export const getDistribution = onRequest(async (req: Request, res: express.Respo
       return;
     }
 
-    const userId = await verifyAuth(req);
+    const principal = await verifyAuth(req);
+    if (await rejectIfArcjetDenied(protectAuthenticatedRequest(req, principal, requestId), res, requestId)) return;
+    const userId = principal.uid;
     const distId = extractResourceId(req.path);
     if (!distId) {
       res.status(400).json(errorResponse('INVALID_REQUEST', 'Missing distribution ID', requestId));
@@ -392,7 +437,7 @@ export const getDistribution = onRequest(async (req: Request, res: express.Respo
 });
 
 // POST /api/distributions/:id/submit - Submit distribution
-export const submitDistribution = onRequest(async (req: Request, res: express.Response) => {
+export const submitDistribution = onRequest(arcjetProtectedRequestOptions, async (req: Request, res: express.Response) => {
   const requestId = generateRequestId();
   try {
     if (req.method !== 'POST') {
@@ -400,7 +445,9 @@ export const submitDistribution = onRequest(async (req: Request, res: express.Re
       return;
     }
 
-    const userId = await verifyAuth(req);
+    const principal = await verifyAuth(req);
+    if (await rejectIfArcjetDenied(protectAuthenticatedRequest(req, principal, requestId), res, requestId)) return;
+    const userId = principal.uid;
     const distId = extractParentResourceId(req.path, 'submit');
     if (!distId) {
       res.status(400).json(errorResponse('INVALID_REQUEST', 'Missing distribution ID', requestId));
@@ -424,7 +471,7 @@ export const submitDistribution = onRequest(async (req: Request, res: express.Re
 });
 
 // GET /api/profile - Get user profile
-export const getProfile = onRequest(async (req: Request, res: express.Response) => {
+export const getProfile = onRequest(arcjetProtectedRequestOptions, async (req: Request, res: express.Response) => {
   const requestId = generateRequestId();
   try {
     if (req.method !== 'GET') {
@@ -432,8 +479,9 @@ export const getProfile = onRequest(async (req: Request, res: express.Response) 
       return;
     }
 
-    const userId = await verifyAuth(req);
-    if (await rejectIfArcjetDenied(protectAuthenticatedApiRequest(req, userId), res, requestId)) return;
+    const principal = await verifyAuth(req);
+    if (await rejectIfArcjetDenied(protectAuthenticatedRequest(req, principal, requestId), res, requestId)) return;
+    const userId = principal.uid;
     const userRecord = await admin.auth().getUser(userId);
 
     const profile = {
@@ -450,9 +498,13 @@ export const getProfile = onRequest(async (req: Request, res: express.Response) 
 });
 
 // Health check endpoint (no auth required)
-export const health = onRequest(async (req: Request, res: express.Response) => {
+export const health = onRequest(arcjetProtectedRequestOptions, async (req: Request, res: express.Response) => {
   const requestId = generateRequestId();
-  if (await rejectIfArcjetDenied(protectPublicApiRequest(req), res, requestId)) return;
+  if (req.method !== 'GET') {
+    res.status(405).json(errorResponse('METHOD_NOT_ALLOWED', 'Method not allowed', requestId));
+    return;
+  }
+  if (await rejectIfArcjetDenied(protectAnonymousSignupRequest(req, requestId, 'allow-low-risk-read'), res, requestId)) return;
 
   res.status(200).json({
     status: 'ok',

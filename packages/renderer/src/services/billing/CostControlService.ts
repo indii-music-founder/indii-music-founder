@@ -25,7 +25,6 @@ export interface CostCheckRequest {
   estimatedCost: number;
   userId: string;
   metadata?: Record<string, unknown>;
-  forceBypass?: boolean;
 }
 
 export interface CostCheckResponse {
@@ -67,6 +66,8 @@ const finiteNumberOrZero = (value: unknown): number => (
 type ServerCostCheckResponse = Partial<CostCheckResponse> & {
   allowed: boolean;
 };
+
+type CostCheckPayload = Omit<CostCheckRequest, 'userId'>;
 
 export class CostControlService {
   private static get isE2EMode(): boolean {
@@ -131,13 +132,16 @@ export class CostControlService {
       if (!functions) {
         throw new Error('Firebase Functions us-central1 client is unavailable.');
       }
-      const enforceOperationCost = httpsCallable<CostCheckRequest, ServerCostCheckResponse>(
+      const enforceOperationCost = httpsCallable<CostCheckPayload, ServerCostCheckResponse>(
         functions,
         'enforceOperationCost',
       );
+      // Ownership is derived exclusively from Firebase Auth by the callable.
+      // Keep userId for local UX/logging, but never send a claimed identity
+      // across the trust boundary.
+      const { userId: _clientUserId, ...requestWithoutClaimedUser } = req;
       const result = await enforceOperationCost({
-        ...req,
-        userId: user?.uid || req.userId,
+        ...requestWithoutClaimedUser,
         metadata: {
           ...(req.metadata || {}),
           isTest: req.metadata?.isTest === true || import.meta.env.VITE_TEST_MODE === 'true',
@@ -223,16 +227,6 @@ export class CostControlService {
         monthlyUsed: 0,
       };
     }
-  }
-
-  static async finalize(operationId: string, outcome: 'SETTLED' | 'VOIDED'): Promise<void> {
-    if (this.isE2EMode) return;
-    if (!functions) throw new Error('Firebase Functions us-central1 client is unavailable.');
-    const finalizeOperationCost = httpsCallable<
-      { operationId: string; outcome: 'SETTLED' | 'VOIDED' },
-      { success: boolean }
-    >(functions, 'finalizeOperationCost');
-    await finalizeOperationCost({ operationId, outcome });
   }
 
   /**

@@ -1,28 +1,17 @@
 import { defineSecret } from "firebase-functions/params";
-import { createHash } from "node:crypto";
-
-const DENIED_GEMINI_KEY_HASHES = new Set([
-    // Legacy credential that was once committed here as a plaintext denylist.
-    "8af3605ee47b616b97a84b82f76d47445f835dc95edfe46ce6ee5fa5f8ac1de9",
-]);
-
-function usableGeminiApiKey(value: string | undefined): string | null {
-    const candidate = value?.trim();
-    if (!candidate || /^(?:your[_-]|placeholder)/i.test(candidate)) return null;
-    const digest = createHash("sha256").update(candidate).digest("hex");
-    return DENIED_GEMINI_KEY_HASHES.has(digest) ? null : candidate;
-}
 
 /**
  * Centralized Secret Definitions
  */
-export const geminiApiKey = defineSecret("GEMINI_API_KEY");
 export const googleMapsApiKey = defineSecret("GOOGLE_MAPS_API_KEY");
 export const inngestEventKey = defineSecret("INNGEST_EVENT_KEY");
 export const inngestSigningKey = defineSecret("INNGEST_SIGNING_KEY");
 export const stripeSecretKey = defineSecret("STRIPE_SECRET_KEY");
 export const stripeWebhookSecret = defineSecret("STRIPE_WEBHOOK_SECRET");
 export const pandaDocApiKey = defineSecret("PANDADOC_API_KEY");
+// Request/operation abuse protection. This value is injected only into the
+// Cloud Functions that declare it in their runtime options.
+export const arcjetKey = defineSecret("ARCJET_KEY");
 export const telegramBotToken = defineSecret("TELEGRAM_BOT_TOKEN");
 export const telegramWebhookSecret = defineSecret("TELEGRAM_WEBHOOK_SECRET");
 export const pandadocWebhookSecret = defineSecret("PANDADOC_WEBHOOK_SECRET");
@@ -79,30 +68,6 @@ export function getGithubToken(): string | null {
     }
 
     return null; // Graceful — caller decides whether to skip
-}
-
-/**
- * Helper to safely retrieve the Gemini API Key.
- * Handles both production (secrets) and local development (environment variables).
- */
-export function getGeminiApiKey(): string | null {
-    // 1. Try Environment Variable (Local/Dev/Emulator)
-    const envKey = usableGeminiApiKey(process.env.GEMINI_API_KEY || process.env.GOOGLE_GENAI_API_KEY);
-    if (envKey) return envKey;
-
-    // 2. Try Firebase Secret (Production)
-    // For V1 functions, secrets are mounted as environment variables.
-    // However, defineSecret().value() is the modern way to access them if initialized.
-    try {
-        const secret = usableGeminiApiKey(geminiApiKey.value());
-        if (secret) return secret;
-    } catch (_e) {
-        // Fallback to direct process.env check in case .value() fails in specific contexts
-        const directEnv = usableGeminiApiKey(process.env.GEMINI_API_KEY || process.env.GOOGLE_GENAI_API_KEY);
-        if (directEnv) return directEnv;
-    }
-
-    return null;
 }
 
 /**

@@ -1,26 +1,19 @@
 import { httpsCallable } from 'firebase/functions';
 import { functions, auth } from '@/services/firebase';
+import { audioAnalysisReceiptService, type AudioAnalysisReceipt } from '@/services/audio/AudioAnalysisReceiptService';
 import { VideoGeneration } from './VideoGenerationService';
 import { ImageGeneration } from '@/services/image/ImageGenerationService';
 import { logger } from '@/utils/logger';
-import type { VideoProject, VideoClip, VideoTrack } from '@/modules/creative/video/store/videoEditorStore';
+import type { CanonicalMasterRenderReference, VideoProject, VideoClip, VideoTrack } from '@/modules/creative/video/store/videoEditorStore';
 import type { VideoGenerationOptions } from '@/modules/creative/video/schemas';
 import type { MasterAudioReference } from '@/services/metadata/types';
 
-interface SonicProfile {
+export interface SonicProfile {
   bpm: number;
-  key: string;
   mood: string;
-  texture: string;
-  instrumentation: string[];
-  vocalPresence: boolean;
-  intensity: number;
-  genre: string;
-  timestamp_markers?: Array<{ time: string; event: string }>;
 }
 
 export interface PerformanceVideoOptions {
-  songUrl: string;
   masterAsset?: MasterAudioReference;
   isrc?: string;
   artistImageUrl?: string;
@@ -33,6 +26,50 @@ export interface PerformanceVideoOptions {
 interface PerformanceVideoResult {
   videoUrl: string;
   projectId?: string;
+}
+
+function record(value: unknown): Record<string, unknown> | undefined {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : undefined;
+}
+
+function firstText(value: unknown): string | undefined {
+  if (!Array.isArray(value)) return undefined;
+  const candidate = value.find(item => typeof item === 'string' && item.trim());
+  return typeof candidate === 'string' ? candidate.trim() : undefined;
+}
+
+/** Convert the one durable server receipt into the minimum beat-planning input. */
+export function sonicProfileFromAnalysisReceipt(receipt: AudioAnalysisReceipt): SonicProfile {
+  if (receipt.status !== 'complete') {
+    throw new Error('Canonical-master analysis is not complete.');
+  }
+  const openSource = record(receipt.openSourceProfile);
+  const gemini = record(receipt.geminiProfile);
+  const bpm = Number(openSource?.tempoBpm);
+  if (!Number.isFinite(bpm) || bpm <= 0) {
+    throw new Error('Canonical-master receipt does not contain a measured BPM.');
+  }
+  return {
+    bpm,
+    mood: firstText(gemini?.moods) ?? 'undetermined',
+  };
+}
+
+function requireCanonicalMaster(
+  master: MasterAudioReference | undefined,
+  ownerUid: string,
+): MasterAudioReference & { generation: string } {
+  if (!master) {
+    throw new Error('A verified canonical master is required to generate a performance video.');
+  }
+  const pattern = new RegExp(`^masters/${ownerUid.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}/([a-f0-9]{64})/original\\.(wav|flac)$`);
+  const match = master.storagePath.match(pattern);
+  if (!match || match[1] !== master.contentHash || !master.generation || !master.downloadUrl) {
+    throw new Error('A generation-bound canonical master is required to generate a performance video.');
+  }
+  return master as MasterAudioReference & { generation: string };
 }
 
 /**
@@ -60,12 +97,14 @@ export class PerformanceVideoService {
     }
 
     try {
-      logger.info('[PerformanceVideo] Starting generation with options:', opts);
-      const masterAudioUrl = opts.masterAsset?.downloadUrl || opts.songUrl;
-      const masterMimeType = opts.masterAsset?.mimeType || 'audio/mpeg';
-
-      // Step 1: Analyze the song
-      const sonicProfile = await this.analyzeSong(masterAudioUrl, masterMimeType);
+      const masterAsset = requireCanonicalMaster(opts.masterAsset, auth.currentUser.uid);
+      logger.info('[PerformanceVideo] Starting generation from canonical master:', {
+        contentHash: masterAsset.contentHash,
+        generation: masterAsset.generation,
+        storagePath: masterAsset.storagePath,
+      });
+      // Step 1: Reuse the protected server analysis; do not submit this master again.
+      const sonicProfile = await this.analyzeSong(masterAsset, auth.currentUser.uid);
       logger.info('[PerformanceVideo] Song analysis:', {
         bpm: sonicProfile.bpm,
         mood: sonicProfile.mood,
@@ -99,10 +138,10 @@ export class PerformanceVideoService {
       // Step 4: Build Remotion project
       const project = this.buildRemotionProject(
         sceneUrls,
-        masterAudioUrl,
+        masterAsset,
         scenes,
         opts.aspectRatio || '16:9',
-        opts.masterAsset?.masterFingerprint,
+        masterAsset.masterFingerprint,
         opts.isrc
       );
       logger.info('[PerformanceVideo] Built Remotion project:', {
@@ -122,17 +161,11 @@ export class PerformanceVideoService {
     }
   }
 
-  /**
-   * Call analyzeAudio Cloud Fn to extract BPM, mood, structure, etc.
-   */
-  private async analyzeSong(songUrl: string, mimeType: string): Promise<SonicProfile> {
-    const analyzeAudio = httpsCallable<
-      { audioUrl: string; mimeType?: string },
-      SonicProfile
-    >(functions, 'analyzeAudio');
-
-    const response = await analyzeAudio({ audioUrl: songUrl, mimeType });
-    return response.data;
+  /** Reuses the generation-bound receipt created by the canonical DSP worker. */
+  private async analyzeSong(masterAsset: MasterAudioReference, ownerUid: string): Promise<SonicProfile> {
+    return sonicProfileFromAnalysisReceipt(
+      await audioAnalysisReceiptService.waitForTerminalReceipt(masterAsset, ownerUid)
+    );
   }
 
   /**
@@ -175,7 +208,7 @@ export class PerformanceVideoService {
 
     const scenes: Array<{ prompt: string; durationSec: number }> = [];
     for (let i = 0; i < numScenes; i++) {
-      const moodPhrase = profile.mood || 'energetic';
+      const moodPhrase = profile.mood === 'undetermined' ? 'musically aligned' : profile.mood;
       const stylePhrase = style || 'cinematic';
       const prompt = `Performance video scene ${i + 1}/${numScenes}. ${moodPhrase} ${stylePhrase} camera movement. Artist performing, dynamic lighting. No lyrics or talking.`;
 
@@ -214,12 +247,17 @@ export class PerformanceVideoService {
       };
 
       const results = await this.videoGenService.generateVideo(options);
-
-      if (!results || results.length === 0) {
-        throw new Error('Failed to generate clip for scene.');
+      const jobId = results[0]?.id;
+      if (!jobId) {
+        throw new Error('Failed to queue a generated scene.');
       }
 
-      clips.push(results[0].url);
+      const completedScene = await this.videoGenService.waitForJob(jobId);
+      const resultUri = completedScene.resultUri;
+      if (typeof resultUri !== 'string' || !resultUri.startsWith('gs://')) {
+        throw new Error('Generated scene did not provide a server-owned Cloud Storage URI.');
+      }
+      clips.push(resultUri);
     }
 
     return clips;
@@ -230,7 +268,7 @@ export class PerformanceVideoService {
    */
   private buildRemotionProject(
     sceneUrls: string[],
-    songUrl: string,
+    masterAsset: MasterAudioReference,
     scenes: Array<{ prompt: string; durationSec: number }>,
     aspectRatio: '9:16' | '16:9' | '1:1',
     masterFingerprint?: string,
@@ -257,6 +295,7 @@ export class PerformanceVideoService {
         id: `scene-${i}`,
         type: 'video',
         src: sceneUrls[i],
+        canonicalSourceUri: sceneUrls[i],
         startFrame,
         durationInFrames: durationFrames,
         trackId: 'video-1',
@@ -272,12 +311,21 @@ export class PerformanceVideoService {
     clips.push({
       id: 'audio-original-song',
       type: 'audio',
-      src: songUrl,
+      // Preview uses this signed URL locally. Firebase ignores it when it queues
+      // the render and resolves canonicalMaster from Storage itself.
+      src: masterAsset.downloadUrl,
       startFrame: 0,
       durationInFrames: totalFrames,
       trackId: 'audio-1',
       name: 'Original Song',
       volume: 1,
+      canonicalMaster: {
+        storagePath: masterAsset.storagePath,
+        contentHash: masterAsset.contentHash,
+        generation: masterAsset.generation,
+        masterFingerprint: masterAsset.masterFingerprint,
+        volume: 1,
+      } satisfies CanonicalMasterRenderReference,
       ...(masterFingerprint ? { masterFingerprint } : {}),
       ...(isrc ? { isrc } : {}),
     });

@@ -4,6 +4,7 @@ import { ImageGeneration } from "../ImageGenerationService";
 import { httpsCallable } from "firebase/functions";
 import { CostControlService } from '@/services/billing/CostControlService';
 import { subscriptionService } from '@/services/subscription/SubscriptionService';
+import { CreativeStorageService } from '@/services/creative/CreativeStorageService';
 
 // Mock Firebase functions
 vi.mock("@/services/firebase", () => ({
@@ -32,6 +33,12 @@ vi.mock("firebase/storage", () => ({
     uploadString: vi.fn().mockResolvedValue({ ref: { name: 'mock-file' } }),
     uploadBytes: vi.fn().mockResolvedValue({ ref: { name: 'mock-file' } }),
     getDownloadURL: vi.fn().mockResolvedValue('https://storage.mock/mock-file.png')
+}));
+
+vi.mock('@/services/creative/CreativeStorageService', () => ({
+  CreativeStorageService: {
+    uploadReferenceMedia: vi.fn(),
+  },
 }));
 
 vi.mock("@/services/intelligence/AutonomousIntelligence", () => ({
@@ -90,9 +97,14 @@ vi.mock("@/services/CloudStorageService", () => ({
 
 describe("ImageGenerationService", () => {
   const mockGenerateImage = vi.fn() as unknown as any;
+  let referenceSequence = 0;
 
   beforeEach(() => {
     vi.clearAllMocks();
+    referenceSequence = 0;
+    vi.mocked(CreativeStorageService.uploadReferenceMedia).mockImplementation(async (userId) => (
+      `gs://mock-bucket/users/${userId}/vault/objects/reference-${++referenceSequence}.png`
+    ));
     vi.mocked(subscriptionService.canPerformAction).mockResolvedValue({ allowed: true });
     vi.mocked(CostControlService.checkAndReserve).mockResolvedValue({
       allowed: true,
@@ -292,7 +304,7 @@ describe("ImageGenerationService", () => {
       }));
     });
 
-    it("should return fallback or empty on generation failure", async () => {
+    it("leaves a failed reservation for server-side reconciliation on generation failure", async () => {
       mockGenerateImage.mockRejectedValue(new Error("Generation failed"));
 
       try {
@@ -302,7 +314,6 @@ describe("ImageGenerationService", () => {
       } catch (e: unknown) {
         expect(e).toBeDefined();
       }
-      expect(CostControlService.finalize).toHaveBeenCalledWith('test-cost-reservation', 'VOIDED');
     });
 
     it('checks subscription quota before reserving cost', async () => {
@@ -351,6 +362,38 @@ describe("ImageGenerationService", () => {
           aspectRatio: "1:1",
         }),
       );
+    });
+  });
+
+  describe('batchRemix', () => {
+    it('routes transient reference bytes through canonical Storage and never sends the retired raw images field', async () => {
+      mockGenerateImage.mockResolvedValue({
+        data: {
+          jobId: 'remix-job',
+          resultUri: 'gs://mock-bucket/creative/test-user/image/outputs/remix.png',
+        },
+      });
+
+      const results = await ImageGeneration.batchRemix({
+        styleImage: { mimeType: 'image/png', data: 'style-bytes' },
+        targetImages: [{ mimeType: 'image/png', data: 'target-bytes' }],
+        prompt: 'Restyle',
+      });
+
+      expect(results).toEqual([expect.objectContaining({
+        id: 'remix-job',
+        storageUri: 'gs://mock-bucket/creative/test-user/image/outputs/remix.png',
+        prompt: 'Batch Style: Restyle',
+      })]);
+      const payload = vi.mocked(mockGenerateImage).mock.calls[0]?.[0] as Record<string, unknown>;
+      expect(payload).toMatchObject({
+        costReservationId: 'test-cost-reservation',
+        referenceUris: expect.arrayContaining([
+          'gs://mock-bucket/users/test-user/vault/objects/reference-1.png',
+          'gs://mock-bucket/users/test-user/vault/objects/reference-2.png',
+        ]),
+      });
+      expect(payload).not.toHaveProperty('images');
     });
   });
 

@@ -164,7 +164,6 @@ describe('VideoGenerationService - Forge Hardening (Schema & Input)', () => {
             await service.generateVideo({
                 prompt: 'A stage performance',
                 model: 'veo-3.1-generate-001',
-                skipCostCheck: true,
             });
             expect(mocks.httpsCallableFn).toHaveBeenCalledWith(expect.objectContaining({ model: 'pro' }));
         });

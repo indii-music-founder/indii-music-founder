@@ -22,11 +22,12 @@
 import * as functions from "firebase-functions/v1";
 import * as admin from "firebase-admin";
 import { getAgentPrompt, VALID_AGENT_IDS } from "./agentPrompts";
-import { getGeminiApiKey } from "../config/secrets";
-import { geminiApiKey, telegramBotToken } from "../config/secrets";
+import { telegramBotToken } from "../config/secrets";
 import { enforceRateLimit, RATE_LIMITS } from "../lib/rateLimit";
 import { FUNCTION_INTELLIGENCE_MODELS } from "../config/models";
 import { checkOperationBudget } from "../functions/billing/enforceOperationCost";
+import { entitlementTierToBudgetTier, requireVerifiedServerEntitlement } from "../functions/auth/entitlements";
+import { getVertexAIClient } from "../lib/vertexClient";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -68,7 +69,7 @@ const BUDGET_LIMIT_USER_MESSAGE =
 // ---------------------------------------------------------------------------
 export const processRelayCommand = functions
     .runWith({ enforceAppCheck: true, 
-        secrets: [geminiApiKey, telegramBotToken],
+        secrets: [telegramBotToken],
         timeoutSeconds: 540,
         memory: "2GB",
      })
@@ -172,12 +173,21 @@ export const processRelayCommand = functions
         // and the $500/month runaway kill-switch). Fail-secure: a blocked or
         // failed check prevents the (paid) Gemini call entirely.
         // ---------------------------------------------------------------
-        const budget = await checkOperationBudget({
-            userId,
-            estimatedCost: RELAY_COMMAND_COST_ESTIMATE_USD,
-            operationType: "agent_stream",
-            metadata: { commandId },
-        });
+        let budget;
+        try {
+            const entitlement = await requireVerifiedServerEntitlement(userId);
+            budget = await checkOperationBudget({
+                userId,
+                entitlementTier: entitlementTierToBudgetTier(entitlement.tier),
+                estimatedCost: RELAY_COMMAND_COST_ESTIMATE_USD,
+                operationType: "agent_stream",
+                metadata: { commandId },
+            });
+        } catch (entitlementError: unknown) {
+            console.warn(`[Relay] Entitlement verification blocked command ${commandId} for user ${userId}:`, entitlementError);
+            await markFailed(userId, commandId, BUDGET_LIMIT_USER_MESSAGE);
+            return;
+        }
         if (!budget.allowed) {
             console.warn(`[Relay] Budget check blocked command ${commandId} for user ${userId}: ${budget.reason ?? "no reason provided"}`);
             await markFailed(userId, commandId, BUDGET_LIMIT_USER_MESSAGE);
@@ -202,19 +212,13 @@ export const processRelayCommand = functions
         }
 
         // ---------------------------------------------------------------
-        // 5. Call Gemini with the appropriate agent prompt
+        // 5. Call Vertex AI with the appropriate agent prompt
         // ---------------------------------------------------------------
         try {
             const { resolvedAgentId, prompt } = getAgentPrompt(targetAgentId);
             console.log(`[Relay] Using agent: ${resolvedAgentId} for command ${commandId}`);
 
-            // Lazy import to reduce cold start
-            const { GoogleGenAI } = await import("@google/genai");
-            const apiKey = getGeminiApiKey();
-            if (!apiKey) {
-                throw new Error('Gemini API key is not configured.');
-            }
-            const client = new GoogleGenAI({ apiKey });
+            const client = getVertexAIClient();
 
             const modelId = FUNCTION_INTELLIGENCE_MODELS.TEXT.PRO;
 

@@ -160,6 +160,33 @@ vi.mock('../stripe/config', () => ({
     stripe: {}
 }));
 
+vi.mock('../functions/auth/entitlements', () => ({
+    requireVerifiedServerEntitlement: vi.fn().mockResolvedValue({ tier: 'free' }),
+    entitlementTierToBudgetTier: vi.fn(() => 'free'),
+}));
+vi.mock('../functions/security/arcjet', () => ({
+    protectAuthenticatedApiRequest: vi.fn().mockResolvedValue({ allowed: true }),
+    policyClassForServerEntitlement: vi.fn(() => 'verified-free'),
+}));
+vi.mock('../functions/creative/legacyAdmission', () => ({
+    requireVerifiedCreativeAdmissionV1: vi.fn(async (context: { auth?: { uid?: string } }) => {
+        if (!context.auth?.uid) throw new Error('User must be authenticated.');
+        return { userId: context.auth.uid, entitlement: { tier: 'free' } };
+    }),
+}));
+vi.mock('../functions/billing/enforceOperationCost', () => ({
+    checkOperationBudget: vi.fn().mockResolvedValue({ allowed: true, operationId: 'legacy-image-op-1' }),
+    finalizeOperationReservation: vi.fn().mockResolvedValue(undefined),
+    requireVerifiedCreativeUser: vi.fn((auth: { uid?: string; token?: Record<string, unknown> } | undefined) => {
+        if (!auth?.uid) throw new Error('User must be authenticated.');
+        if (auth.token?.email_verified !== true) throw new Error('Verify your email before using creative generation.');
+        return auth.uid;
+    }),
+    getOperationCostHistory: vi.fn(),
+    getOperationCostStatus: vi.fn(),
+    expireStaleOperationCostReservations: vi.fn(),
+}));
+
 vi.mock('../email/sendEmail', () => ({ sendEmail: vi.fn() }));
 vi.mock('../mcp', () => ({ mcpHttpHandler: vi.fn() }));
 vi.mock('../orchestration', () => ({ orchestrationListener: vi.fn() }));
@@ -182,8 +209,8 @@ describe('Image and Content Generation Functions', () => {
             vi.mocked(admin.firestore).mockReturnValue(defaultFirestoreInstance);
         });
 
-        it('should call @google/genai SDK with correct parameters', async () => {
-            const context: any = { auth: { uid: 'user123' } };
+        it('sends validated parameters through the backend Vertex client', async () => {
+            const context: any = { auth: { uid: 'user123', token: { email_verified: true } } };
             const data = {
                 prompt: 'a beautiful cat',
                 aspectRatio: '1:1',
@@ -304,7 +331,8 @@ describe('Image and Content Generation Functions', () => {
                 },
                 body: {
                     model: 'gemini-3.1-pro-preview',
-                    contents: [{ role: 'user', parts: [{ text: 'say hello' }] }]
+                    contents: [{ role: 'user', parts: [{ text: 'say hello' }] }],
+                    config: { maxOutputTokens: 100_000 },
                 }
             };
             const headers: Record<string, string> = {};
@@ -322,7 +350,7 @@ describe('Image and Content Generation Functions', () => {
 
             // Mock admin.auth().verifyIdToken
             vi.mocked(admin.auth).mockReturnValue({
-                verifyIdToken: vi.fn().mockResolvedValue({ uid: 'user123' })
+                verifyIdToken: vi.fn().mockResolvedValue({ uid: 'user123', email_verified: true })
             } as any);
 
             // Mock AsyncGenerator
@@ -355,7 +383,68 @@ describe('Image and Content Generation Functions', () => {
             expect(res.write).toHaveBeenCalledWith(JSON.stringify({ text: 'Hello' }) + '\n');
             expect(res.write).toHaveBeenCalledWith(JSON.stringify({ text: ' world' }) + '\n');
             expect(res.end).toHaveBeenCalled();
+            expect(mocks.generateContentStream).toHaveBeenCalledWith(expect.objectContaining({
+                config: expect.objectContaining({ maxOutputTokens: 1_024 }),
+            }));
 
+        });
+
+        it('rejects unverified accounts before opening a Vertex stream', async () => {
+            const req: any = {
+                method: 'POST',
+                headers: {
+                    authorization: 'Bearer token',
+                    origin: 'http://localhost:4242',
+                    'x-firebase-appcheck': 'app-check-token',
+                },
+                body: {
+                    model: 'gemini-3.1-pro-preview',
+                    contents: [{ role: 'user', parts: [{ text: 'say hello' }] }],
+                },
+            };
+            const res: any = {
+                status: vi.fn().mockReturnThis(),
+                send: vi.fn(),
+                end: vi.fn(),
+            };
+            vi.mocked(admin.auth).mockReturnValue({
+                verifyIdToken: vi.fn().mockResolvedValue({ uid: 'user123', email_verified: false }),
+            } as any);
+
+            generateContentStream(req, res);
+            await vi.waitFor(() => expect(res.status).toHaveBeenCalledWith(403));
+
+            expect(res.send).toHaveBeenCalledWith('Forbidden: Verify your email before using AI generation.');
+            expect(mocks.generateContentStream).not.toHaveBeenCalled();
+        });
+
+        it('rejects an arbitrary Vertex endpoint before opening a stream', async () => {
+            const req: any = {
+                method: 'POST',
+                headers: {
+                    authorization: 'Bearer token',
+                    origin: 'http://localhost:4242',
+                    'x-firebase-appcheck': 'app-check-token',
+                },
+                body: {
+                    model: 'projects/attacker-project/locations/us/endpoints/9999999999999999999',
+                    contents: [{ role: 'user', parts: [{ text: 'spend someone else\'s endpoint' }] }],
+                },
+            };
+            const res: any = {
+                status: vi.fn().mockReturnThis(),
+                send: vi.fn(),
+                end: vi.fn(),
+            };
+            vi.mocked(admin.auth).mockReturnValue({
+                verifyIdToken: vi.fn().mockResolvedValue({ uid: 'user123', email_verified: true }),
+            } as any);
+
+            generateContentStream(req, res);
+            await vi.waitFor(() => expect(res.status).toHaveBeenCalledWith(400));
+
+            expect(res.send).toHaveBeenCalledWith('Invalid or unauthorized model ID.');
+            expect(mocks.generateContentStream).not.toHaveBeenCalled();
         });
     });
 

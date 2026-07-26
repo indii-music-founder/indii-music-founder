@@ -111,7 +111,16 @@ describe('VideoEditor Integration', () => {
         fps: 30,
         durationInFrames: 300,
         tracks: [{ id: 't1', name: 'Track 1' }],
-        clips: []
+        clips: [{
+            id: 'server-video-1',
+            type: 'video',
+            src: 'https://preview.example/clip.mp4',
+            canonicalSourceUri: 'gs://indii-music-founder.firebasestorage.app/creative/test-user/outputs/clip.mp4',
+            startFrame: 0,
+            durationInFrames: 300,
+            trackId: 't1',
+            name: 'Canonical video',
+        }]
     };
 
     beforeEach(() => {

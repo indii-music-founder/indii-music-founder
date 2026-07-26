@@ -22,8 +22,9 @@ Before taking any action, analyze the current workspace:
 ## 2. Pattern Health Baseline (via `/health`)
 Before touching any code, establish the current codebase health:
 - Run pattern detector to establish baseline risk score
-- Document any existing patterns (will compare at session end)
-- If risk score > 70, ask user: "Do you want to tackle hidden bug patterns first, or proceed with the requested task?"
+- Document each detector category and baseline count in `.agent/test_ledger/OPEN_ISSUES_V2.md`, reusing the existing numbered issue only when its subject and acceptance criteria match exactly.
+- If risk score > 70, ask the user whether to prioritize remediation **unless** the active objective explicitly says to fix everything found. In that case, select the highest-exploitable root cause first, fix it with a regression test, and leave every remaining category OPEN/PARTIAL with evidence.
+- Re-run the detector before delivery. A nonzero score is not a pass: explain every remaining category as a fixed root cause, a narrowly documented intentional pattern, or a numbered OPEN/PARTIAL issue. Never hide findings by suppressing a scan or renaming a pattern.
 - **Preventative approach:** Know what patterns exist BEFORE you add more
 - Link baseline metrics to task completion (did we improve or regress?)
 

@@ -74,6 +74,23 @@ describe('MembershipService - God Mode Bypass', () => {
     expect(tier).toBe('free');
   });
 
+  it('does not treat an email address as a Founder authorization source', async () => {
+    const mockUser = {
+      uid: 'founder-email-only',
+      email: 'wiil@indii.music',
+      getIdTokenResult: vi.fn().mockResolvedValue({ claims: {} }),
+    };
+    (auth as any).currentUser = mockUser;
+    (useStore.getState as any).mockReturnValue({
+      user: mockUser,
+      userProfile: { id: mockUser.uid, email: mockUser.email },
+      organizations: [{ id: 'org-1', plan: 'free' as const }],
+      currentOrganizationId: 'org-1',
+    } as any);
+
+    await expect(service.getCurrentTier()).resolves.toBe('free');
+  });
+
   it('should allow unlimited quota when god_mode claim is true', async () => {
     const mockIdTokenResult = {
       claims: {

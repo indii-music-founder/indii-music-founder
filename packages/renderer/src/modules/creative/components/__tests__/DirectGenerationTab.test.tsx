@@ -497,7 +497,7 @@ describe('DirectGenerationTab', () => {
         });
     });
 
-    it('surfaces depleted Google AI Studio prepayment credits as a billing blocker', async () => {
+    it('normalizes upstream quota errors without exposing a Developer API control path', async () => {
         mockGenerateImages.mockRejectedValueOnce({
             code: 'functions/resource-exhausted',
             message: 'Image generation failed: {"error":{"code":429,"message":"Your prepayment credits are depleted. Please go to AI Studio at https://ai.studio/projects to manage your project and billing. Learn more at https://ai.google.dev/gemini-api/docs/billing#prepay. ","status":"RESOURCE_EXHAUSTED"}}',
@@ -517,7 +517,7 @@ describe('DirectGenerationTab', () => {
 
         await waitFor(() => {
             expect(mockToast.error).toHaveBeenCalledWith(
-                'Google AI Studio API quota exhausted. Please add credits to your account.'
+                'Generation capacity is temporarily exhausted. Please try again shortly.'
             );
         });
     });

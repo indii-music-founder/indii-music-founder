@@ -2,15 +2,17 @@ import * as functions from 'firebase-functions/v2';
 import * as admin from 'firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
 import { onSchedule } from 'firebase-functions/v2/scheduler';
+import { entitlementTierToBudgetTier, requireVerifiedServerEntitlement, type BudgetTier } from '../auth/entitlements';
+import { validateAppCheckV2 } from '../../middleware/appCheck';
+import { arcjetKey } from '../../config/secrets';
+import { policyClassForServerEntitlement, protectAuthenticatedApiRequest } from '../security/arcjet';
 
 type OperationType = 'video' | 'image' | 'audio' | 'agent_stream';
 
 interface CostEnforcementRequest {
   operationType: OperationType;
-  userId: string;
   estimatedCost: number;
   metadata?: Record<string, unknown>;
-  forceBypass?: boolean;
 }
 
 interface CostEnforcementResponse {
@@ -22,6 +24,100 @@ interface CostEnforcementResponse {
   monthlyUsed?: number;
   operationId?: string;
 }
+
+type CallableAuth = {
+  uid?: unknown;
+  token?: Record<string, unknown>;
+} | null | undefined;
+
+/**
+ * Creative work consumes a paid backend resource. Authentication alone is not
+ * enough: disposable inboxes otherwise become a way to obtain allowances.
+ * Firebase's email-verification claim is authoritative; profile data and
+ * client-provided flags are never accepted as a substitute.
+ */
+export function requireVerifiedCreativeUser(auth: CallableAuth): string {
+  if (!auth || typeof auth.uid !== 'string' || !auth.uid) {
+    throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated.');
+  }
+  if (auth.token?.email_verified !== true) {
+    throw new functions.https.HttpsError(
+      'failed-precondition',
+      'Verify your email before using creative generation.',
+    );
+  }
+  return auth.uid;
+}
+
+function parseCostEnforcementRequest(value: unknown): CostEnforcementRequest {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    throw new functions.https.HttpsError('invalid-argument', 'A cost reservation payload is required.');
+  }
+  const data = value as Record<string, unknown>;
+  const operationType = data.operationType;
+  if (!['video', 'image', 'audio', 'agent_stream'].includes(String(operationType))) {
+    throw new functions.https.HttpsError('invalid-argument', 'operationType is invalid.');
+  }
+  const estimatedCost = data.estimatedCost;
+  if (typeof estimatedCost !== 'number' || !Number.isFinite(estimatedCost) || estimatedCost <= 0 || estimatedCost > RUNAWAY_LIMIT) {
+    throw new functions.https.HttpsError('invalid-argument', 'estimatedCost is invalid.');
+  }
+  const metadataValue = data.metadata;
+  if (metadataValue === undefined) {
+    return { operationType: operationType as OperationType, estimatedCost };
+  }
+  if (!metadataValue || typeof metadataValue !== 'object' || Array.isArray(metadataValue)) {
+    throw new functions.https.HttpsError('invalid-argument', 'metadata must be a flat object.');
+  }
+  const metadataEntries = Object.entries(metadataValue as Record<string, unknown>);
+  if (metadataEntries.length > 20 || metadataEntries.some(([key, item]) => (
+    !/^[A-Za-z][A-Za-z0-9_]{0,63}$/.test(key)
+    || (typeof item === 'string' && item.length > 512)
+    || (typeof item !== 'string' && typeof item !== 'number' && typeof item !== 'boolean' && item !== null)
+    || (typeof item === 'number' && !Number.isFinite(item))
+  ))) {
+    throw new functions.https.HttpsError('invalid-argument', 'metadata contains an unsupported value.');
+  }
+  return {
+    operationType: operationType as OperationType,
+    estimatedCost,
+    metadata: Object.fromEntries(metadataEntries),
+  };
+}
+
+async function requireCostCallableAdmission(
+  request: functions.https.CallableRequest<unknown>,
+  operation: string,
+): Promise<{ userId: string; entitlement: Awaited<ReturnType<typeof requireVerifiedServerEntitlement>> }> {
+  validateAppCheckV2(request);
+  const userId = requireVerifiedCreativeUser(request.auth);
+  const entitlement = await requireVerifiedServerEntitlement(userId);
+  const protection = await protectAuthenticatedApiRequest(request.rawRequest, {
+    userId,
+    policy: policyClassForServerEntitlement({
+      tier: entitlement.tier,
+      isAdmin: request.auth?.token.admin === true,
+    }),
+    operationId: `${operation}:${crypto.randomUUID()}`,
+  });
+  if (!protection.allowed) {
+    const code = protection.status === 429
+      ? 'resource-exhausted'
+      : protection.status === 403
+        ? 'permission-denied'
+        : 'unavailable';
+    throw new functions.https.HttpsError(code, protection.message, {
+      code: protection.code,
+      ...(protection.retryAfterSeconds ? { retryAfterSeconds: protection.retryAfterSeconds } : {}),
+    });
+  }
+  return { userId, entitlement };
+}
+
+const costCallableSecurityOptions = {
+  secrets: [arcjetKey],
+  enforceAppCheck: false,
+};
 
 export interface CostStatusResponse {
   dailyUsed: number;
@@ -60,10 +156,11 @@ export interface CostOperationHistoryResponse {
 /** Parameters for the reusable budget-check helper. */
 export interface CheckOperationBudgetParams {
   userId: string;
+  /** Server-resolved entitlement. Browser and profile values are never accepted. */
+  entitlementTier: BudgetTier;
   estimatedCost: number;
   operationType: OperationType;
   metadata?: Record<string, unknown>;
-  forceBypass?: boolean;
   /** Server-derived identity for exactly-once background reservations. */
   operationId?: string;
 }
@@ -197,7 +294,7 @@ function userLedgerDocument(userId: string, id: string): string {
 export async function checkOperationBudget(
   params: CheckOperationBudgetParams,
 ): Promise<CostEnforcementResponse> {
-  const { userId, estimatedCost, operationType, metadata, forceBypass } = params;
+  const { userId, entitlementTier, estimatedCost, operationType, metadata } = params;
   if (!Number.isFinite(estimatedCost) || estimatedCost < 0) {
     return {
       allowed: false,
@@ -220,7 +317,6 @@ export async function checkOperationBudget(
     const dailyRef = db.doc(userLedgerDocument(userId, `daily-${today}`));
     const monthlyRef = db.doc(userLedgerDocument(userId, `monthly-${month}`));
     const hourlyRef = db.doc(userLedgerDocument(userId, `hourly-${hour}`));
-    const userRef = db.doc(`users/${userId}`);
     const testLedgerRef = db.doc(userLedgerDocument(userId, `test-${today}`));
     const requestedOperationId = params.operationId?.trim();
     if (params.operationId !== undefined && !requestedOperationId) {
@@ -237,11 +333,10 @@ export async function checkOperationBudget(
     const operationRef = db.doc(`costLedger/${operationId}`);
 
     return await db.runTransaction(async (tx) => {
-      const [dailySnap, monthlySnap, hourlySnap, userSnap, testSnap, operationSnap] = await Promise.all([
+      const [dailySnap, monthlySnap, hourlySnap, testSnap, operationSnap] = await Promise.all([
         tx.get(dailyRef),
         tx.get(monthlyRef),
         tx.get(hourlyRef),
-        tx.get(userRef),
         isTestMode ? tx.get(testLedgerRef) : Promise.resolve(undefined),
         tx.get(operationRef),
       ]);
@@ -250,8 +345,8 @@ export async function checkOperationBudget(
       const monthlyUsed = monthlySnap.exists ? (monthlySnap.data()?.totalCost || 0) : 0;
       const hourlyOps = hourlySnap.exists ? (hourlySnap.data()?.operationCount || 0) : 0;
       const testDailyUsed = testSnap?.exists ? (testSnap.data()?.totalCost || 0) : 0;
-      const userTier = userSnap.exists ? (userSnap.data()?.tier || 'free') : 'free';
-      const limits = BUDGET_LIMITS[userTier] || BUDGET_LIMITS.free;
+      const userTier = entitlementTier;
+      const limits = BUDGET_LIMITS[userTier];
 
       if (operationSnap.exists) {
         const existing = operationSnap.data() || {};
@@ -285,7 +380,7 @@ export async function checkOperationBudget(
         };
       }
 
-      if (isTestMode && testDailyUsed + estimatedCost > TEST_MODE_DAILY_LIMIT && !forceBypass) {
+      if (isTestMode && testDailyUsed + estimatedCost > TEST_MODE_DAILY_LIMIT) {
         console.warn('[CostControl] TEST_MODE budget exceeded', {
           userId,
           operationType,
@@ -389,7 +484,7 @@ export async function checkOperationBudget(
       }
 
       const threshold = isTestMode ? TEST_CONFIRMATION_THRESHOLD : USER_CONFIRMATION_THRESHOLD;
-      if (estimatedCost >= threshold && !forceBypass) {
+      if (estimatedCost >= threshold) {
         console.warn(`[CostControl] High cost operation detected ($${estimatedCost}), requesting confirmation`);
         return {
           allowed: false,
@@ -621,46 +716,20 @@ export const expireStaleOperationCostReservations = onSchedule(
  * with background triggers; this wrapper only handles auth + transport.
  */
 export const enforceOperationCost = functions.https.onCall(
-  { region: 'us-central1', maxInstances: 10, timeoutSeconds: 30 },
+  { ...costCallableSecurityOptions, region: 'us-central1', maxInstances: 10, timeoutSeconds: 30 },
   async (
     request: functions.https.CallableRequest<unknown>,
   ): Promise<CostEnforcementResponse> => {
-    if (!request.auth) {
-      throw new functions.https.HttpsError(
-        'unauthenticated',
-        'Must be signed in',
-      );
-    }
-
-    const req = request.data as CostEnforcementRequest;
-    const userId = request.auth.uid;
+    const { userId, entitlement } = await requireCostCallableAdmission(request, 'reserve-cost');
+    const req = parseCostEnforcementRequest(request.data);
 
     return checkOperationBudget({
       userId,
+      entitlementTier: entitlementTierToBudgetTier(entitlement.tier),
       estimatedCost: req.estimatedCost,
       operationType: req.operationType,
       metadata: req.metadata,
-      forceBypass: req.forceBypass,
     });
-  },
-);
-
-export const finalizeOperationCost = functions.https.onCall(
-  { region: 'us-central1', maxInstances: 20, timeoutSeconds: 30 },
-  async (request: functions.https.CallableRequest<unknown>): Promise<{ success: true }> => {
-    if (!request.auth) {
-      throw new functions.https.HttpsError('unauthenticated', 'Must be signed in');
-    }
-    const data = request.data as { operationId?: unknown; outcome?: unknown };
-    if (typeof data.operationId !== 'string' || !['SETTLED', 'VOIDED'].includes(String(data.outcome))) {
-      throw new functions.https.HttpsError('invalid-argument', 'A valid operationId and outcome are required');
-    }
-    await finalizeOperationReservation({
-      userId: request.auth.uid,
-      operationId: data.operationId,
-      outcome: data.outcome as 'SETTLED' | 'VOIDED',
-    });
-    return { success: true };
   },
 );
 
@@ -670,20 +739,16 @@ export const finalizeOperationCost = functions.https.onCall(
  * a renderer guess from mutable client state.
  */
 export const getOperationCostStatus = functions.https.onCall(
-  { region: 'us-central1', maxInstances: 20, timeoutSeconds: 30 },
+  { ...costCallableSecurityOptions, region: 'us-central1', maxInstances: 20, timeoutSeconds: 30 },
   async (request: functions.https.CallableRequest<unknown>): Promise<CostStatusResponse> => {
-    if (!request.auth) {
-      throw new functions.https.HttpsError('unauthenticated', 'Must be signed in');
-    }
-    const userId = request.auth.uid;
+    const { userId, entitlement } = await requireCostCallableAdmission(request, 'read-cost-status');
     const timestamp = new Date();
     const today = timestamp.toISOString().slice(0, 10);
     const month = today.slice(0, 7);
     const db = admin.firestore();
-    const [dailySnap, monthlySnap, userSnap, pendingSnap, settledSnap, voidedSnap] = await Promise.all([
+    const [dailySnap, monthlySnap, pendingSnap, settledSnap, voidedSnap] = await Promise.all([
       db.doc(userLedgerDocument(userId, `daily-${today}`)).get(),
       db.doc(userLedgerDocument(userId, `monthly-${month}`)).get(),
-      db.doc(`users/${userId}`).get(),
       db.collection('costLedger')
         .where('userId', '==', userId)
         .where('status', '==', 'APPROVED')
@@ -692,8 +757,8 @@ export const getOperationCostStatus = functions.https.onCall(
       db.collection('costLedger').where('userId', '==', userId).where('status', '==', 'SETTLED').limit(100).get(),
       db.collection('costLedger').where('userId', '==', userId).where('status', '==', 'VOIDED').limit(100).get(),
     ]);
-    const tier = String(userSnap.data()?.tier || 'free');
-    const limits = BUDGET_LIMITS[tier] || BUDGET_LIMITS.free;
+    const tier = entitlementTierToBudgetTier(entitlement.tier);
+    const limits = BUDGET_LIMITS[tier];
     const dailyUsed = Number(dailySnap.data()?.totalCost || 0);
     const monthlyUsed = Number(monthlySnap.data()?.totalCost || 0);
     const pendingHoldCost = pendingSnap.docs.reduce((sum, operation) => {
@@ -724,11 +789,9 @@ export const getOperationCostStatus = functions.https.onCall(
  * entries expose finalization state without leaking prompts or metadata.
  */
 export const getOperationCostHistory = functions.https.onCall(
-  { region: 'us-central1', maxInstances: 20, timeoutSeconds: 30 },
+  { ...costCallableSecurityOptions, region: 'us-central1', maxInstances: 20, timeoutSeconds: 30 },
   async (request: functions.https.CallableRequest<unknown>): Promise<CostOperationHistoryResponse> => {
-    if (!request.auth) {
-      throw new functions.https.HttpsError('unauthenticated', 'Must be signed in');
-    }
+    const { userId } = await requireCostCallableAdmission(request, 'read-cost-history');
     const data = (request.data || {}) as {
       limit?: unknown;
       cursor?: { timestampMs?: unknown; operationId?: unknown } | null;
@@ -739,6 +802,6 @@ export const getOperationCostHistory = functions.https.onCall(
       && typeof data.cursor.operationId === 'string'
       ? { timestampMs: data.cursor.timestampMs, operationId: data.cursor.operationId }
       : null;
-    return getOperationCostHistoryPage(request.auth.uid, { limit, cursor });
+    return getOperationCostHistoryPage(userId, { limit, cursor });
   },
 );

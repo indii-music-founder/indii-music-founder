@@ -11,6 +11,7 @@ import { logger } from '@/utils/logger';
 import { resolveMediaDurationSeconds, durationSecondsToFrames } from '../utils/mediaMetadata';
 import { readCreativeAssetDrag, writeCreativeAssetDrag } from '@/services/creative/CreativeAssetDragService';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { cloudRenderEligibilityError } from '../utils/renderEligibility';
 
 export function useVideoEditor(initialVideo?: HistoryItem) {
     const {
@@ -154,6 +155,11 @@ export function useVideoEditor(initialVideo?: HistoryItem) {
     }, [addClip]);
 
     const handleExport = async () => {
+        const eligibilityError = cloudRenderEligibilityError(project);
+        if (eligibilityError) {
+            toast.error(eligibilityError);
+            return;
+        }
         setIsExporting(true);
         toast.info('Starting cloud export... This may take a while.');
         try {
@@ -252,6 +258,9 @@ export function useVideoEditor(initialVideo?: HistoryItem) {
             addClip({
                 type: mediaType,
                 src: payload.asset.url,
+                ...(mediaType === 'video' && payload.asset.storageUri?.startsWith('gs://')
+                    ? { canonicalSourceUri: payload.asset.storageUri }
+                    : {}),
                 startFrame: dropFrame,
                 durationInFrames,
                 trackId,

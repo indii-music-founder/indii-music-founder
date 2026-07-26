@@ -198,23 +198,9 @@ export const createProfileSlice: StateCreator<ProfileSlice> = (set, get) => ({
 
             if (profile) {
                 logger.info('[Profile] Loaded profile for:', uid);
-
-                // FOUNDER AUTO-GRANT: If the profile email matches the platform owner,
-                // ensure membership tier is always set to 'founder' regardless of Firestore state.
-                const FOUNDER_EMAILS = ['wiil@indii.music'];
-                const isFounderEmail = profile.email && FOUNDER_EMAILS.includes(profile.email.toLowerCase());
-                const resolvedProfile = isFounderEmail
-                    ? {
-                        ...profile,
-                        membership: { ...profile.membership, tier: 'founder' as const },
-                    }
-                    : profile;
-
-                if (isFounderEmail) {
-                    logger.info('[Profile] Founder email detected — auto-granting founder tier.');
-                }
-
-                set({ userProfile: resolvedProfile });
+                // A profile is presentation state only. Founder and paid access
+                // are resolved by server-owned entitlements before any spend.
+                set({ userProfile: profile });
             } else {
                 logger.info('[Profile] No profile found, creating default for:', uid);
                 // Create a new profile for this user

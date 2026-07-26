@@ -5,6 +5,7 @@ import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
 import type { AnyToolFunction } from '../types';
 import { performanceVideoService } from '@/services/video/PerformanceVideoService';
 import { importWithRetry } from '@/utils/dynamicImport';
+import type { MasterAudioReference } from '@/services/metadata/types';
 
 // ============================================================================
 // FIX #10: Input Validation Constants
@@ -451,15 +452,18 @@ export const VideoTools = {
     }),
 
     create_performance_video: wrapTool('create_performance_video', async (args: {
-        songUrl: string;
+        masterAsset?: MasterAudioReference;
         artistImageUrl?: string;
         artistDescription?: string;
         style?: string;
         aspectRatio?: '9:16' | '16:9' | '1:1';
         sceneCount?: number;
     }) => {
-        if (!args.songUrl || args.songUrl.trim().length === 0) {
-            return toolError('Song URL is required.', 'INVALID_INPUT');
+        if (!args.masterAsset) {
+            return toolError(
+                'A verified canonical master must be selected before a performance video can be created.',
+                'CANONICAL_MASTER_REQUIRED'
+            );
         }
 
         if (!args.artistImageUrl && !args.artistDescription) {
@@ -467,7 +471,14 @@ export const VideoTools = {
         }
 
         try {
-            const result = await performanceVideoService.generate(args);
+            const result = await performanceVideoService.generate({
+                masterAsset: args.masterAsset,
+                artistImageUrl: args.artistImageUrl,
+                artistDescription: args.artistDescription,
+                style: args.style,
+                aspectRatio: args.aspectRatio,
+                sceneCount: args.sceneCount,
+            });
             if (!result.videoUrl) {
                 return toolError('Performance video completed without an output URL.', 'GENERATION_OUTPUT_MISSING');
             }

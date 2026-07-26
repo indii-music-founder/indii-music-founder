@@ -4,6 +4,17 @@ import { useVideoEditor } from './useVideoEditor';
 import { useVideoEditorStore, blankProjectForId } from '@/modules/creative/video/store/videoEditorStore';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 
+const editorMocks = vi.hoisted(() => ({
+    httpsCallable: vi.fn(),
+    toast: {
+        error: vi.fn(),
+        info: vi.fn(),
+        success: vi.fn(),
+        showToast: vi.fn(),
+        addToast: vi.fn(),
+    },
+}));
+
 // This suite needs the REAL store — the global setup swaps in a fully-stubbed
 // mock whose removeTrack is a no-op vi.fn(), which cannot prove a cascade.
 vi.mock('@/modules/creative/video/store/videoEditorStore', async (importOriginal) => importOriginal());
@@ -13,10 +24,11 @@ vi.mock('@/components/ui/ConfirmDialog', () => ({
 }));
 
 vi.mock('@/core/context/ToastContext', () => ({
-    useToast: () => ({ showToast: vi.fn(), addToast: vi.fn() }),
+    useToast: () => editorMocks.toast,
 }));
 
 vi.mock('@/services/firebase', () => ({ functionsWest1: {} }));
+vi.mock('firebase/functions', () => ({ httpsCallable: editorMocks.httpsCallable }));
 
 const TRACK_WITH_CLIPS = 'track-1';
 const EMPTY_TRACK = 'track-2';
@@ -91,5 +103,16 @@ describe('useVideoEditor — destructive track removal', () => {
         expect(useVideoEditorStore.getState().project.tracks.some(t => t.id === EMPTY_TRACK)).toBe(false);
         // The other track's clips are untouched.
         expect(useVideoEditorStore.getState().project.clips).toHaveLength(2);
+    });
+
+    it('stops a preview-only clip before it can invoke the cloud render callable', async () => {
+        const { result } = renderHook(() => useVideoEditor());
+
+        await act(async () => {
+            await result.current.handleExport();
+        });
+
+        expect(editorMocks.httpsCallable).not.toHaveBeenCalled();
+        expect(editorMocks.toast.error).toHaveBeenCalledWith(expect.stringContaining('secure media library'));
     });
 });

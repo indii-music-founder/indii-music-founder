@@ -32,6 +32,8 @@ export interface VideoJob {
     progress: number;
     error?: string;
     output?: VideoJobOutput;
+    /** Server-owned immutable Cloud Storage URI; used for downstream rendering, never a browser URL. */
+    resultUri?: string;
     // Legacy/Alias support for existing UI and services
     videoUrl?: string;
     url?: string;

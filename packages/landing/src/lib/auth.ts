@@ -97,6 +97,29 @@ export async function signUpWithEmail(email: string, password: string, displayNa
 }
 
 /**
+ * Reload the authenticated account from Firebase Auth before treating an email
+ * as verified. The local User object can retain an old verification claim after
+ * the user clicks the verification link in another tab or device.
+ */
+export async function refreshEmailVerification(user?: User): Promise<boolean> {
+  const currentUser = user || auth?.currentUser;
+  if (!currentUser) throw new Error('No authenticated user is available to verify.');
+  await currentUser.reload();
+  await currentUser.getIdToken(true);
+  return currentUser.emailVerified;
+}
+
+/** Send a new verification link only for the currently authenticated account. */
+export async function resendEmailVerification(): Promise<void> {
+  const currentUser = auth?.currentUser;
+  if (!currentUser) throw new Error('No authenticated user is available to verify.');
+  await currentUser.reload();
+  if (!currentUser.emailVerified) {
+    await sendEmailVerification(currentUser);
+  }
+}
+
+/**
  * Sign out current user
  */
 export async function logOut() {
@@ -132,7 +155,6 @@ async function createUserDocument(user: User, displayName?: string) {
     photoURL: user.photoURL || null,
     createdAt: serverTimestamp(),
     lastLoginAt: serverTimestamp(),
-    tier: 'free'
   });
 }
 

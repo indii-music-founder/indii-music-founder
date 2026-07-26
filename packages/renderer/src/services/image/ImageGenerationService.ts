@@ -104,6 +104,8 @@ export interface ImageGenerationOptions {
 export interface ImageGenerationResult {
     id: string;
     url: string;
+    /** Immutable backend-produced object identity; `url` is display-only. */
+    storageUri?: string;
     prompt: string;
     textNarration?: string;
     thoughtSignature?: string;
@@ -330,7 +332,7 @@ export class ImageGenerationService {
         // Cost Control: Enforce budget limits before expensive API call
         const estimatedCost = count * 0.04; // $0.04 per image
         const uid = userId || auth.currentUser.uid;
-        let costCheck = await CostControlService.checkAndReserve({
+        const costCheck = await CostControlService.checkAndReserve({
             operationType: 'image',
             estimatedCost,
             userId: uid,
@@ -367,22 +369,9 @@ export class ImageGenerationService {
                     throw new Error('Image generation cancelled by user (cost too high)');
                 }
 
-                // Retry with forceBypass
-                costCheck = await CostControlService.checkAndReserve({
-                    operationType: 'image',
-                    estimatedCost,
-                    userId: uid,
-                    forceBypass: true,
-                    metadata: {
-                        imageCount: count,
-                        prompt: options.prompt.substring(0, 100),
-                        style: options.style,
-                    },
-                });
-
-                if (!costCheck.allowed) {
-                     throw new Error(`Image generation blocked: ${costCheck.reason}`);
-                }
+                throw new Error(
+                    'Image generation requires a server-side approval for this cost. Reduce the request or wait for an approved budget flow.'
+                );
             } else {
                 throw new Error(`Image generation blocked: ${costCheck.reason}`);
             }
@@ -525,6 +514,7 @@ export class ImageGenerationService {
                 const storedResults = await Promise.all(generatedUris.map(async (generatedUri, index) => ({
                     id: index === 0 && data.jobId ? data.jobId : `${data.jobId || crypto.randomUUID()}_${index + 1}`,
                     url: await this.resolveGeneratedAssetUrl(generatedUri),
+                    storageUri: generatedUri,
                     prompt: options.prompt,
                     textNarration: data.textNarration,
                     thoughtSignature: data.thoughtSignature || data.thoughtSummary,
@@ -603,11 +593,9 @@ export class ImageGenerationService {
                 );
             }
         } catch (err: unknown) {
-            try {
-                await CostControlService.finalize(costCheck.operationId, 'VOIDED');
-            } catch (releaseError: unknown) {
-                logger.warn('[ImageGeneration] Cost reservation release requires reconciliation:', releaseError);
-            }
+            // The request may have reached the gateway even when this client
+            // observes a network failure. Only the backend knows whether
+            // generation started, so it alone may settle or void a hold.
             const errObj = err as { code?: string; details?: unknown };
             const errorMsg = err instanceof Error ? err.message : String(err);
             logger.error('Image Generation Error', {
@@ -758,7 +746,6 @@ export class ImageGenerationService {
         prompt?: string;
     }): Promise<ImageGenerationResult[]> {
         const results: ImageGenerationResult[] = [];
-        const generateImage = httpsCallable(functions, 'generateImageV3');
 
         try {
             // Parallelize requests
@@ -771,30 +758,20 @@ export class ImageGenerationService {
                         else if (target.height > target.width * 1.2) aspectRatio = '9:16';
                     }
 
-                    const result = await generateImage({
+                    const [result] = await this.generateImages({
                         prompt: `Render this content image in the artistic style of the reference image. Maintain the composition and subject from content, apply colors, textures, and mood from style. ${options.prompt || 'Restyle'}`,
-                        // Pass both images as reference images for the model to compose
-                        images: [
+                        count: 1,
+                        aspectRatio,
+                        // The canonical service uploads these transient bytes to
+                        // owner-scoped Storage before the backend accepts them.
+                        sourceImages: [
                             { mimeType: target.mimeType, data: target.data },
                             { mimeType: options.styleImage.mimeType, data: options.styleImage.data },
                         ],
-                        aspectRatio,
                     });
-
-                    interface GenerateImageResponse {
-                        images: Array<{ bytesBase64Encoded?: string; mimeType?: string }>;
-                    }
-                    const data = result.data as GenerateImageResponse;
-
-                    if (data.images?.[0]?.bytesBase64Encoded) {
-                        const mimeType = data.images[0].mimeType || 'image/png';
-                        return {
-                            id: crypto.randomUUID(),
-                            url: `data:${mimeType};base64,${data.images[0].bytesBase64Encoded}`,
-                            prompt: `Batch Style: ${options.prompt || "Restyle"}`,
-                        } as ImageGenerationResult;
-                    }
-                    return null;
+                    return result
+                        ? { ...result, prompt: `Batch Style: ${options.prompt || 'Restyle'}` }
+                        : null;
                 } catch (error: unknown) {
                     logger.error('Individual Batch Remix Error:', error);
                     return null;

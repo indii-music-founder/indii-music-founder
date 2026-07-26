@@ -95,7 +95,6 @@ export const VideoGenerationOptionsSchema = z.object({
     userProfile: z.custom<UserProfile>().optional(), // Typed UserProfile for service compatibility
     jobId: z.string().optional(),
     useGrounding: z.boolean().optional(),
-    skipCostCheck: z.boolean().optional(),
     costReservationId: z.string().optional(),
     parentId: z.string().optional(),
     inputManifest: z.array(z.object({

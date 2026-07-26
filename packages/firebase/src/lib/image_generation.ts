@@ -1,7 +1,6 @@
 import * as functions from "firebase-functions/v1";
 import * as admin from "firebase-admin";
 import { GoogleGenAI } from "@google/genai";
-import { validateAppCheckV1 } from "../middleware/appCheck";
 import { FUNCTION_INTELLIGENCE_MODELS, NANO_BANANA_CAPABILITIES, type NanoBananaTier } from "../config/models";
 import {
     GenerateImageRequestSchema,
@@ -11,7 +10,11 @@ import {
 } from "./image";
 
 import { getVertexAIClient } from "./vertexClient";
-import { enforceRateLimit, RATE_LIMITS } from "./rateLimit";
+import { parseStorageUri, assertUserOwnsStoragePath } from './storageUri';
+import { arcjetKey } from '../config/secrets';
+import { requireVerifiedCreativeAdmissionV1 } from '../functions/creative/legacyAdmission';
+import { checkOperationBudget, finalizeOperationReservation } from '../functions/billing/enforceOperationCost';
+import { entitlementTierToBudgetTier } from '../functions/auth/entitlements';
 
 // ============================================================================
 // TYPES
@@ -806,6 +809,44 @@ export class GeminiImageService {
 /** Singleton instance of GeminiImageService used by Cloud Functions */
 const service = new GeminiImageService();
 
+const MAX_LEGACY_EDIT_REQUEST_BYTES = 14 * 1024 * 1024;
+
+/**
+ * Legacy edit payloads may carry an inline image for compatibility, but every
+ * durable source URI must be an object in this project bucket and under the
+ * authenticated owner's namespace. This blocks cross-user object reads and
+ * turns arbitrary `gs://` input into a fail-closed validation error.
+ */
+export function assertOwnedLegacyEditInputs(userId: string, data: EditImageRequest): void {
+    const serializedSize = Buffer.byteLength(JSON.stringify(data), 'utf8');
+    if (serializedSize > MAX_LEGACY_EDIT_REQUEST_BYTES) {
+        throw new functions.https.HttpsError(
+            'invalid-argument',
+            `Image edit input exceeds the ${MAX_LEGACY_EDIT_REQUEST_BYTES} byte safety limit.`,
+        );
+    }
+    const uris = [
+        data.imageUri,
+        data.maskUri,
+        data.referenceImageUri,
+        ...(data.referenceImageUris ?? []),
+    ].filter((uri): uri is string => typeof uri === 'string');
+    const expectedBucket = uris.length > 0 ? admin.storage().bucket().name : undefined;
+    for (const uri of uris) {
+        const { bucket, path } = parseStorageUri(uri);
+        if (bucket !== expectedBucket) {
+            throw new functions.https.HttpsError('permission-denied', 'Image edit assets must be stored in the configured project bucket.');
+        }
+        assertUserOwnsStoragePath(path, userId);
+    }
+}
+
+function estimateLegacyImageEditCost(data: EditImageRequest): number {
+    const highResolution = data.imageSize === '4k' || data.imageSize === '2k';
+    const proModel = data.model === 'pro' || data.model === FUNCTION_INTELLIGENCE_MODELS.IMAGE.GENERATION;
+    return highResolution || proModel ? 0.12 : 0.04;
+}
+
 /**
  * Cloud Function: Text-to-Image Generation (V3)
  * 
@@ -815,20 +856,14 @@ const service = new GeminiImageService();
 export const generateImageV3Fn = () => functions
     .region("us-central1")
     .runWith({
+        secrets: [arcjetKey],
         enforceAppCheck: false,
         timeoutSeconds: 120,
         // Bumped to 1GB: Pro 4K generation + long-context history needs parity with editImageFn
         memory: "1GB"
     })
     .https.onCall(async (data: unknown, context) => {
-        validateAppCheckV1(context);
-        // 1. Authenticate
-        if (!context.auth) {
-            throw new functions.https.HttpsError("unauthenticated", "User must be authenticated.");
-        }
-
-        // 1b. Rate limit — image generation is the highest-cost endpoint
-        await enforceRateLimit(context.auth.uid, "generateImageV3", RATE_LIMITS.generation);
+        await requireVerifiedCreativeAdmissionV1(context, 'legacy-generate-image');
 
         // 2. Validate Input
         const validation = GenerateImageRequestSchema.safeParse(data);
@@ -852,19 +887,13 @@ export const generateImageV3Fn = () => functions
 export const editImageFn = () => functions
     .region("us-central1")
     .runWith({
+        secrets: [arcjetKey],
         enforceAppCheck: false,
         timeoutSeconds: 120,
         memory: "1GB" // Bumped from 512MB — editing with references + 4K can exceed 512MB
     })
     .https.onCall(async (data: unknown, context) => {
-        validateAppCheckV1(context);
-        // 1. Authenticate
-        if (!context.auth) {
-            throw new functions.https.HttpsError("unauthenticated", "User must be authenticated.");
-        }
-
-        // 1b. Rate limit — image editing is a high-cost operation
-        await enforceRateLimit(context.auth.uid, "editImage", RATE_LIMITS.generation);
+        const { userId, entitlement } = await requireVerifiedCreativeAdmissionV1(context, 'legacy-edit-image');
 
         // 2. Validate Input
         const validation = EditImageRequestSchema.safeParse(data);
@@ -874,19 +903,43 @@ export const editImageFn = () => functions
                 `Validation failed: ${validation.error.issues.map(i => i.message).join(", ")}`
             );
         }
+        assertOwnedLegacyEditInputs(userId, validation.data);
+        const reservation = await checkOperationBudget({
+            userId,
+            entitlementTier: entitlementTierToBudgetTier(entitlement.tier),
+            operationType: 'image',
+            estimatedCost: estimateLegacyImageEditCost(validation.data),
+            operationId: `legacy-image-edit-${crypto.randomUUID()}`,
+            metadata: {
+                legacyCompatibility: true,
+                hasInlineInput: Boolean(validation.data.image || validation.data.mask || validation.data.referenceImage),
+                referenceCount: validation.data.referenceImageUris?.length ?? validation.data.referenceImages?.length ?? 0,
+                imageSize: validation.data.imageSize ?? '1k',
+            },
+        });
+        if (!reservation.allowed || !reservation.operationId) {
+            throw new functions.https.HttpsError('resource-exhausted', 'Image edit is unavailable because the account budget or safety limit has been reached.');
+        }
 
         // 3. Delegate to Service
         let result: EditResponse;
+        let providerAttempted = false;
         try {
+            providerAttempted = true;
             result = await service.edit(validation.data);
         } catch (error: unknown) {
+            await finalizeOperationReservation({
+                userId,
+                operationId: reservation.operationId,
+                outcome: providerAttempted ? 'SETTLED' : 'VOIDED',
+            });
             if (error instanceof functions.https.HttpsError) {
                 throw error;
             }
             const message = error instanceof Error ? error.message : String(error);
             functions.logger.error("[editImage] Image edit service failed", {
                 message,
-                userId: context.auth.uid,
+                userId,
                 hasMask: Boolean(validation.data.maskUri),
                 hasReference: Boolean(validation.data.referenceImageUri),
                 model: validation.data.model,
@@ -898,6 +951,7 @@ export const editImageFn = () => functions
                     : "Creative image edit failed inside the image service."
             );
         }
+        await finalizeOperationReservation({ userId, operationId: reservation.operationId, outcome: 'SETTLED' });
 
         // Map to candidates format for frontend compatibility
         const candidates = [

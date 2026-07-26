@@ -2,10 +2,17 @@ import { create } from 'zustand';
 import { v4 as uuidv4 } from 'uuid';
 import { MembershipService, MembershipTier } from '@/services/MembershipService';
 import type { ExtendedVideoProject, SceneSegment } from '@/services/video/SceneExtensionService';
+import type { MasterAudioReference } from '@/services/metadata/types';
 import { logger } from '@/utils/logger';
 import type { StoryboardProject, StoryboardSlot } from '../schemas/storyboard';
 
 export type ClipType = 'video' | 'image' | 'text' | 'audio';
+
+/** Immutable audio identity sent to the render backend; preview URLs are not authority. */
+export type CanonicalMasterRenderReference = Pick<
+    MasterAudioReference,
+    'contentHash' | 'generation' | 'masterFingerprint' | 'storagePath'
+> & { volume: number };
 
 export interface VideoClip {
     id: string;
@@ -30,6 +37,9 @@ export interface VideoClip {
     volume?: number; // 0 to 1
     masterFingerprint?: string;
     isrc?: string;
+    canonicalMaster?: CanonicalMasterRenderReference;
+    /** Server-owned GCS identity for cloud renders; `src` remains preview-only. */
+    canonicalSourceUri?: string;
     // Text specific properties
     textColor?: string;
     fontSize?: number;
@@ -687,4 +697,3 @@ export function compileApprovalToTimeline(
         durationInFrames: Math.max(existingProject.durationInFrames, currentTimelineFrame),
     };
 }
-

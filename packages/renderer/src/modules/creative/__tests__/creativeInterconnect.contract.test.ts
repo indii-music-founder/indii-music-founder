@@ -265,6 +265,9 @@ describe('shared creative gateway schemas', () => {
     it('accepts a minimal valid image payload with gs:// references', () => {
         const parsed = GenerateImageSchema.safeParse({
             prompt: 'cover art',
+            // Image generation always requires a server-issued, owner-bound
+            // reservation before a provider request can be made.
+            costReservationId: 'image-reservation-contract-1',
             referenceUri: 'gs://bucket/reference-a.png',
             referenceUris: ['gs://bucket/reference-b.png'],
             sessionId: 'creative-session-1',

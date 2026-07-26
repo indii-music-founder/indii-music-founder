@@ -91,9 +91,9 @@ describe('CostControlService', () => {
     expect(mocks.callable).toHaveBeenCalledWith(expect.objectContaining({
       operationType: 'agent_stream',
       estimatedCost: 0.001,
-      userId: 'auth-user-1',
       metadata: expect.objectContaining({ commandId: 'cmd-1' }),
     }));
+    expect(mocks.callable.mock.calls[0]?.[0]).not.toHaveProperty('userId');
     expect(result).toEqual({
       allowed: true,
       requiresConfirmation: undefined,

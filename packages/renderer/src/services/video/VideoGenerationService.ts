@@ -351,7 +351,7 @@ export class VideoGenerationService {
         const videoDuration = options.durationSeconds || options.duration || 8;
         const estimatedCost = this.estimateVideoCost(videoDuration, modelTier);
         let costReservationId: string | undefined;
-        if (!options.skipCostCheck && !options.costReservationId) {
+        if (!options.costReservationId) {
             const costCheck = await CostControlService.checkAndReserve({
                 operationType: 'video',
                 estimatedCost,
@@ -481,7 +481,6 @@ export class VideoGenerationService {
                 maskFrameUri: options.maskFrameUri,
                 maskTrackUri: options.maskTrackUri,
                 frameRange: options.frameRange,
-                skipCostCheck: options.skipCostCheck,
                 referenceUris: referenceUris && referenceUris.length > 0 ? referenceUris : undefined,
                 aspectRatio: options.aspectRatio,
                 model: modelTier,
@@ -704,24 +703,10 @@ export class VideoGenerationService {
             );
         }
 
+        // Each segment creates its own server-verified reservation through
+        // generateVideo(). A client-created aggregate reservation cannot be
+        // safely consumed by multiple independently settled provider jobs.
         const estimatedCost = this.estimateVideoCost(options.totalDuration, modelTier);
-        const costCheck = await CostControlService.checkAndReserve({
-            operationType: 'video',
-            estimatedCost,
-            userId: auth.currentUser?.uid || 'unknown',
-            metadata: {
-                durationSeconds: options.totalDuration,
-                model: modelTier,
-                resolution: options.resolution,
-                aspectRatio: options.aspectRatio,
-                mode: 'long_form',
-            },
-        });
-
-        if (!costCheck.allowed) {
-            throw new Error(`Video generation blocked: ${costCheck.reason}`);
-        }
-        const longFormReservationId = costCheck.operationId;
 
         const jobId = `long_${uuidv4()}`;
         const { useStore } = await import('@/core/store');
@@ -757,7 +742,7 @@ export class VideoGenerationService {
             completedSegments: 0,
             segmentUrls: [],
             costEstimate: estimatedCost,
-            costReservationId: longFormReservationId,
+            costReservationStrategy: 'per_segment_server_verified',
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp(),
         });
@@ -793,7 +778,6 @@ export class VideoGenerationService {
                         const results = await this.generateVideo({
                             prompt: segmentPrompt,
                             model: modelTier,
-                            skipCostCheck: true,
                             image: previousLastFrame
                                 ? { imageBytes: previousLastFrame, mimeType: 'image/jpeg' }
                                 : undefined,

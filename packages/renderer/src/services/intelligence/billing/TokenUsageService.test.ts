@@ -1,6 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { TokenUsageService } from './TokenUsageService';
 import * as firestore from 'firebase/firestore';
+import { auth } from '@/services/firebase';
+import { subscriptionService } from '@/services/subscription/SubscriptionService';
 // Mock Firestore
 vi.mock('firebase/firestore', () => ({
     doc: vi.fn(),
@@ -23,6 +25,10 @@ vi.mock('@/services/firebase', () => ({
     app: { options: {} },
     appCheck: { getToken: vi.fn(() => Promise.resolve({ token: 'mock-token' })) },
     messaging: { getToken: vi.fn() }
+}));
+
+vi.mock('@/services/subscription/SubscriptionService', () => ({
+    subscriptionService: { getSubscription: vi.fn().mockResolvedValue({ tier: 'free' }) },
 }));
 
 describe('TokenUsageService', () => {
@@ -83,6 +89,18 @@ describe('TokenUsageService', () => {
     });
 
     describe('checkQuota', () => {
+        it('does not bypass a quota because a browser reports the Founder email address', async () => {
+            (auth.currentUser as { email?: string } | null)!.email = 'wiil@indii.music';
+            vi.mocked(firestore.getDoc).mockResolvedValueOnce({
+                exists: () => true,
+                data: () => ({ tokensUsed: 100_001 })
+            } as unknown as Awaited<ReturnType<typeof firestore.getDoc>>);
+
+            await expect(TokenUsageService.checkQuota(mockUserId))
+                .rejects.toThrow('Daily Intelligence token limit exceeded');
+            expect(subscriptionService.getSubscription).toHaveBeenCalledWith(mockUserId);
+        });
+
         it('should allow if no usage doc exists', async () => {
             vi.mocked(firestore.getDoc).mockResolvedValueOnce({
                 exists: () => false,

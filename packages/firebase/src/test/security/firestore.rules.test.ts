@@ -146,7 +146,7 @@ describe('Firestore Security Rules', () => {
     // ──────────────────────────────────────────────────────────────────────
 
     describe('users/{userId}', () => {
-        const aliceUserDoc = { id: ALICE_UID, email: 'alice@test.com', role: 'artist', onboarded: true };
+        const aliceUserDoc = { id: ALICE_UID, email: 'alice@test.com', role: 'artist', onboarded: true, isPublic: true };
 
         beforeEach(async () => {
             if (requireEmulator()) return;
@@ -199,7 +199,21 @@ describe('Firestore Security Rules', () => {
             }));
         });
 
-        it('other user: read denied', async () => {
+        it('owner: cannot self-assign a billing tier, founder flag, or entitlement', async () => {
+            if (requireEmulator()) return;
+            const db = verifiedCtx(ALICE_UID).firestore();
+            await assertFails(updateDoc(doc(db, 'users', ALICE_UID), {
+                tier: 'founder',
+            }));
+            await assertFails(updateDoc(doc(db, 'users', ALICE_UID), {
+                subscriptionTier: 'founder',
+            }));
+            await assertFails(updateDoc(doc(db, 'users', ALICE_UID), {
+                isFounder: true,
+            }));
+        });
+
+        it('other user: read denied even when a profile is marked public, so email stays private', async () => {
             if (requireEmulator()) return;
             const db = verifiedCtx(BOB_UID).firestore();
             await assertFails(getDoc(doc(db, 'users', ALICE_UID)));
@@ -209,6 +223,56 @@ describe('Firestore Security Rules', () => {
             if (requireEmulator()) return;
             const db = verifiedCtx(BOB_UID).firestore();
             await assertFails(setDoc(doc(db, 'users', ALICE_UID), aliceUserDoc));
+        });
+    });
+
+    describe('users/{userId}/entitlements and entitlementAudit', () => {
+        const entitlement = {
+            schemaVersion: 'account-entitlement.v1',
+            uid: ALICE_UID,
+            tier: 'free',
+            status: 'active',
+            source: 'verified_email',
+            grantId: 'entitlement-grant-1',
+        };
+
+        beforeEach(async () => {
+            if (requireEmulator()) return;
+            await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                const db = ctx.firestore();
+                await setDoc(doc(db, 'users', ALICE_UID, 'entitlements', 'current'), entitlement);
+                await setDoc(doc(db, 'users', ALICE_UID, 'entitlementAudit', entitlement.grantId), entitlement);
+            });
+        });
+
+        it('owner: may read server-issued access evidence but cannot write it', async () => {
+            if (requireEmulator()) return;
+            const db = verifiedCtx(ALICE_UID).firestore();
+            await assertSucceeds(getDoc(doc(db, 'users', ALICE_UID, 'entitlements', 'current')));
+            await assertSucceeds(getDoc(doc(db, 'users', ALICE_UID, 'entitlementAudit', entitlement.grantId)));
+            await assertFails(setDoc(doc(db, 'users', ALICE_UID, 'entitlements', 'current'), {
+                ...entitlement,
+                tier: 'founder',
+            }));
+            await assertFails(updateDoc(doc(db, 'users', ALICE_UID, 'entitlementAudit', entitlement.grantId), {
+                tier: 'founder',
+            }));
+            await assertFails(deleteDoc(doc(db, 'users', ALICE_UID, 'entitlements', 'current')));
+            await assertFails(deleteDoc(doc(db, 'users', ALICE_UID, 'entitlementAudit', entitlement.grantId)));
+        });
+
+        it('anonymous accounts cannot inspect server-issued access evidence', async () => {
+            if (requireEmulator()) return;
+            const db = anonCtx().firestore();
+            await assertFails(getDoc(doc(db, 'users', ALICE_UID, 'entitlements', 'current')));
+            await assertFails(getDoc(doc(db, 'users', ALICE_UID, 'entitlementAudit', entitlement.grantId)));
+        });
+
+        it('other users cannot read or forge another owner entitlement', async () => {
+            if (requireEmulator()) return;
+            const db = verifiedCtx(BOB_UID).firestore();
+            await assertFails(getDoc(doc(db, 'users', ALICE_UID, 'entitlements', 'current')));
+            await assertFails(setDoc(doc(db, 'users', ALICE_UID, 'entitlementAudit', 'forged'), entitlement));
         });
     });
 
@@ -1603,7 +1667,6 @@ describe('Firestore Security Rules', () => {
             ['proprietaryIngestionReleases', 'userId'],
             ['projects', 'userId'],
             ['proactive_tasks', 'userId'],
-            ['videoJobs', 'userId'],
             ['distribution_tasks', 'userId'],
             ['campaigns', 'userId'],
             ['publicist_campaigns', 'userId'],
@@ -1733,6 +1796,49 @@ describe('Firestore Security Rules', () => {
             await assertSucceeds(updateDoc(reference, { status: 'accepted' }));
             await assertFails(updateDoc(reference, { orgId: 'attacker-org' }));
             await assertFails(updateDoc(reference, { ownerId: BOB_UID }));
+        });
+    });
+
+    describe('videoJobs are server-controlled generation records', () => {
+        const jobId = 'server-owned-video-job';
+
+        beforeEach(async () => {
+            if (requireEmulator()) return;
+            await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                await setDoc(doc(ctx.firestore(), 'videoJobs', jobId), {
+                    userId: ALICE_UID,
+                    orgId: 'personal',
+                    status: 'queued',
+                    prompt: 'A server-created video job',
+                });
+            });
+        });
+
+        it('lets the owner read the job but denies every client mutation', async () => {
+            if (requireEmulator()) return;
+            const db = verifiedCtx(ALICE_UID).firestore();
+            const jobRef = doc(db, 'videoJobs', jobId);
+
+            await assertSucceeds(getDoc(jobRef));
+            await assertFails(setDoc(doc(db, 'videoJobs', 'forged-queued-job'), {
+                userId: ALICE_UID,
+                orgId: 'personal',
+                status: 'queued',
+                prompt: 'Bypass the callable and spend Vertex quota',
+            }));
+            await assertFails(updateDoc(jobRef, { status: 'completed' }));
+            await assertFails(deleteDoc(jobRef));
+        });
+
+        it('denies cross-owner reads as well as forged job creation', async () => {
+            if (requireEmulator()) return;
+            const db = verifiedCtx(BOB_UID).firestore();
+            await assertFails(getDoc(doc(db, 'videoJobs', jobId)));
+            await assertFails(setDoc(doc(db, 'videoJobs', 'cross-owner-forgery'), {
+                userId: ALICE_UID,
+                status: 'queued',
+                prompt: 'Impersonate another artist',
+            }));
         });
     });
 

@@ -514,4 +514,16 @@ describe('VideoTools', () => {
             expect(result.success).toBe(true);
         });
     });
+
+    describe('create_performance_video', () => {
+        it('rejects a raw song URL instead of treating it as a renderable master', async () => {
+            const result = await VideoTools.create_performance_video({
+                artistDescription: 'An artist on a neon stage',
+                songUrl: 'https://attacker.example/master.wav',
+            } as never);
+
+            expect(result.success).toBe(false);
+            expect(result.metadata?.errorCode).toBe('CANONICAL_MASTER_REQUIRED');
+        });
+    });
 });

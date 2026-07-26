@@ -12,6 +12,8 @@
 import * as admin from "firebase-admin";
 import { GoogleGenAI } from "@google/genai";
 import { FUNCTION_INTELLIGENCE_MODELS } from "../config/models";
+import { finalizeOperationReservation } from "../functions/billing/enforceOperationCost";
+import { renderFailureReservationOutcome } from "../functions/video/renderCostLifecycle";
 import { getVertexAIBaseUrl } from "./vertexClient";
 
 /**
@@ -19,27 +21,94 @@ import { getVertexAIBaseUrl } from "./vertexClient";
  */
 const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
+const MAX_INLINE_VIDEO_SEED_BYTES = 8 * 1024 * 1024;
+const SUPPORTED_VIDEO_SEED_MIME_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
+
+export interface VideoSeedImage {
+    imageBytes: string;
+    mimeType: 'image/jpeg' | 'image/png' | 'image/webp';
+}
+
+function requireSupportedSeedMimeType(value: unknown): VideoSeedImage['mimeType'] {
+    if (typeof value !== 'string' || !SUPPORTED_VIDEO_SEED_MIME_TYPES.has(value)) {
+        throw new Error('Video seed images must be JPEG, PNG, or WebP.');
+    }
+    return value as VideoSeedImage['mimeType'];
+}
+
 /**
- * Fetch an image input (URL, data URI, or raw base64) and return pure base64 bytes.
+ * Decodes only bounded inline image bytes. The backend never fetches an
+ * arbitrary HTTP(S) URL for a generation request, which would turn the
+ * callable into an SSRF primitive.
  */
-const fetchImageAsBase64 = async (input: string | undefined): Promise<string | undefined> => {
-    if (!input) return undefined;
-    if (input.startsWith('data:image')) {
-        return input.replace(/^data:image\/\w+;base64,/, '');
+export function decodeInlineVideoSeedImage(
+    rawInput: string,
+    declaredMimeType?: unknown,
+): VideoSeedImage {
+    let mimeType = declaredMimeType;
+    let base64 = rawInput.trim();
+    const dataUrl = /^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/]+={0,2})$/.exec(base64);
+    if (dataUrl) {
+        mimeType = dataUrl[1];
+        base64 = dataUrl[2];
+    } else if (/^(?:https?:|gs:)/i.test(base64)) {
+        throw new Error('Video seed images must be inline bytes or an owner-scoped Cloud Storage URI.');
     }
-    if (input.startsWith('http')) {
-        try {
-            const res = await fetch(input);
-            if (!res.ok) throw new Error(`Failed to fetch image: ${res.statusText}`);
-            const buffer = await res.arrayBuffer();
-            return Buffer.from(buffer).toString('base64');
-        } catch (err) {
-            console.error(`[VideoGenDirect] Failed to fetch frame from URL: ${input}`, err);
-            return undefined;
-        }
+    if (!/^[A-Za-z0-9+/]+={0,2}$/.test(base64) || base64.length % 4 !== 0) {
+        throw new Error('Video seed image is not valid base64.');
     }
-    return input; // Assume raw base64
-};
+    const bytes = Buffer.from(base64, 'base64');
+    if (bytes.length === 0 || bytes.length > MAX_INLINE_VIDEO_SEED_BYTES) {
+        throw new Error(`Video seed image must be between 1 byte and ${MAX_INLINE_VIDEO_SEED_BYTES} bytes.`);
+    }
+    return { imageBytes: base64, mimeType: requireSupportedSeedMimeType(mimeType ?? 'image/png') };
+}
+
+/** Parse a storage reference without allowing another bucket or artist namespace. */
+export function parseOwnedVideoSeedUri(userId: string, uri: string, expectedBucket: string): string {
+    const match = /^gs:\/\/([^/]+)\/(.+)$/.exec(uri);
+    if (!match || match[1] !== expectedBucket) {
+        throw new Error('Video seed image must use the configured project bucket.');
+    }
+    const objectPath = match[2];
+    const allowedPrefixes = [`creative/${userId}/`, `users/${userId}/vault/`, `covers/${userId}/`];
+    if (!allowedPrefixes.some(prefix => objectPath.startsWith(prefix))) {
+        throw new Error('Video seed image is not scoped to the authenticated owner.');
+    }
+    return objectPath;
+}
+
+async function loadOwnedVideoSeedImage(userId: string, uri: string): Promise<VideoSeedImage> {
+    const bucket = admin.storage().bucket();
+    const objectPath = parseOwnedVideoSeedUri(userId, uri, bucket.name);
+    const file = bucket.file(objectPath);
+    const [metadata] = await file.getMetadata();
+    const generation = typeof metadata.generation === 'string' ? metadata.generation : '';
+    const byteSize = Number(metadata.size);
+    if (!generation || !Number.isSafeInteger(byteSize) || byteSize <= 0 || byteSize > MAX_INLINE_VIDEO_SEED_BYTES) {
+        throw new Error(`Video seed image must be between 1 byte and ${MAX_INLINE_VIDEO_SEED_BYTES} bytes.`);
+    }
+    const mimeType = requireSupportedSeedMimeType(metadata.contentType);
+    const [bytes] = await bucket.file(objectPath, { generation }).download();
+    if (bytes.length !== byteSize) {
+        throw new Error('Video seed image changed while it was being read.');
+    }
+    return { imageBytes: bytes.toString('base64'), mimeType };
+}
+
+async function resolveVideoSeedImage(userId: string, options: Record<string, unknown>): Promise<VideoSeedImage | undefined> {
+    const image = options.image && typeof options.image === 'object' && !Array.isArray(options.image)
+        ? options.image as Record<string, unknown>
+        : undefined;
+    if (typeof image?.imageBytes === 'string') {
+        return decodeInlineVideoSeedImage(image.imageBytes, image.mimeType);
+    }
+    if (typeof options.firstFrame !== 'string' || !options.firstFrame.trim()) return undefined;
+    if (options.firstFrame.startsWith('gs://')) {
+        return loadOwnedVideoSeedImage(userId, options.firstFrame);
+    }
+    return decodeInlineVideoSeedImage(options.firstFrame);
+}
 
 export interface DirectVideoGenerationParams {
     jobId: string;
@@ -47,6 +116,8 @@ export interface DirectVideoGenerationParams {
     orgId: string;
     prompt: string;
     options: Record<string, unknown>;
+    /** Server-created reservation; legacy records without one are read only. */
+    costReservationId?: string;
 }
 
 /**
@@ -59,7 +130,7 @@ export interface DirectVideoGenerationParams {
  *   4. Extract video URI and update Firestore
  */
 export async function generateVideoDirect(params: DirectVideoGenerationParams): Promise<void> {
-    const { jobId, userId, prompt, options: rawOptions } = params;
+    const { jobId, userId, prompt, options: rawOptions, costReservationId } = params;
     const options = rawOptions as Record<string, unknown>;
     const isThinking = options?.thinking === true;
     let finalPrompt = isThinking
@@ -72,6 +143,7 @@ export async function generateVideoDirect(params: DirectVideoGenerationParams): 
 
     console.log(`[VideoGenDirect] Starting for Job: ${jobId} (Thinking: ${isThinking})`);
 
+    let providerSubmissionAttempted = false;
     try {
         // ── Step 1: Update status to "processing" ──────────────────────────
         await admin.firestore().collection("videoJobs").doc(jobId).set({
@@ -134,24 +206,19 @@ export async function generateVideoDirect(params: DirectVideoGenerationParams): 
         }
 
         // ── Step 4: Build image input if provided ──────────────────────────
-        let imageInput: { imageBytes: string; mimeType: string } | undefined;
-
-        let startImageBytes: string | undefined;
-        const optImage = (options.image as Record<string, unknown>) || {};
-        if (optImage.imageBytes) {
-            startImageBytes = optImage.imageBytes as string;
-        } else {
-            startImageBytes = await fetchImageAsBase64(options.firstFrame as string);
-        }
-        if (startImageBytes) {
-            imageInput = {
-                imageBytes: startImageBytes,
-                mimeType: "image/png",
-            };
-        }
+        const imageInput = await resolveVideoSeedImage(userId, options);
 
         // ── Step 5: Call SDK — exact pattern from official docs ─────────────
         console.log(`[VideoGenDirect] Calling ai.models.generateVideos() with model: ${modelId}`);
+
+        // Persist the attempt before making the external billable call. A
+        // crash after this point is conservatively settled, never refunded as
+        // unused while Vertex may still be processing the video.
+        await admin.firestore().collection("videoJobs").doc(jobId).set({
+            providerSubmissionAttemptedAt: admin.firestore.FieldValue.serverTimestamp(),
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        }, { merge: true });
+        providerSubmissionAttempted = true;
 
         let operation;
         if (imageInput) {
@@ -298,31 +365,9 @@ export async function generateVideoDirect(params: DirectVideoGenerationParams): 
             }
         }
 
-        // Fallback: If it gave us a URI, try fetching it directly with the API key or ADC
-        if (!videoUrl && videoObj.uri) {
-            const vUri = videoObj.uri as string;
-            console.log(`[VideoGenDirect] Attempting fetch fallback from URI: ${vUri}`);
-            try {
-                const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_GENAI_API_KEY;
-                const fetchUrl = apiKey && !vUri.includes('key=') ? `${vUri}&key=${apiKey}` : vUri;
-                const res = await fetch(fetchUrl);
-                if (!res.ok) throw new Error(`HTTP ${res.status} - ${res.statusText}`);
-                const arrayBuf = await res.arrayBuffer();
-                const buffer = Buffer.from(arrayBuf);
-
-                const bucket = admin.storage().bucket();
-                const filePath = `videos/${userId}/${jobId}.mp4`;
-                const file = bucket.file(filePath);
-                await file.save(buffer, {
-                    metadata: { contentType: 'video/mp4' },
-                    public: true
-                });
-                videoUrl = file.publicUrl();
-                console.log(`[VideoGenDirect] Fetched directly from URI and uploaded: ${videoUrl}`);
-            } catch (err: unknown) {
-                console.error(`[VideoGenDirect] URI fetch fallback failed:`, err);
-            }
-        }
+        // Do not fetch a provider URI with an appended Developer API key.
+        // Vertex SDK download failures must fail closed instead of creating a
+        // second, unauditable authentication and billing boundary.
 
         if (!videoUrl) {
             // Strip out massive buffers to prevent Firestore 1MB document limit crashes
@@ -347,15 +392,36 @@ export async function generateVideoDirect(params: DirectVideoGenerationParams): 
             }
         }, { merge: true });
 
+        if (costReservationId) {
+            await finalizeOperationReservation({ userId, operationId: costReservationId, outcome: 'SETTLED' });
+        }
+
         console.log(`[VideoGenDirect] ✅ Job ${jobId} completed. Video: ${videoUrl}`);
 
     } catch (error: unknown) {
         const err = error as Error;
-        console.error(`[VideoGenDirect] ❌ Error in Video Generation (${jobId}):`, err);
-        await admin.firestore().collection("videoJobs").doc(jobId).set({
-            status: "failed",
-            error: err.message || "Unknown error during video generation",
-            updatedAt: admin.firestore.FieldValue.serverTimestamp()
-        }, { merge: true });
+        console.error(`[VideoGenDirect] ❌ Error in Video Generation (${jobId}):`, {
+            message: err.message || 'unknown',
+            providerSubmissionAttempted,
+        });
+        try {
+            await admin.firestore().collection("videoJobs").doc(jobId).set({
+                status: "failed",
+                error: err.message || "Unknown error during video generation",
+                updatedAt: admin.firestore.FieldValue.serverTimestamp()
+            }, { merge: true });
+        } finally {
+            if (costReservationId) {
+                await finalizeOperationReservation({
+                    userId,
+                    operationId: costReservationId,
+                    outcome: renderFailureReservationOutcome({ transcoderSubmissionAttempted: providerSubmissionAttempted }),
+                }).catch((finalizeError: unknown) => {
+                    console.error(`[VideoGenDirect] Cost reconciliation failed for ${jobId}:`, {
+                        message: finalizeError instanceof Error ? finalizeError.message : 'unknown',
+                    });
+                });
+            }
+        }
     }
 }

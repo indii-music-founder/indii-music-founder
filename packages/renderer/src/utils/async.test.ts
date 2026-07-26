@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { delay, retry } from './async';
+import { delay, fetchWithRetry, retry } from './async';
 
 describe('async utilities', () => {
   beforeEach(() => {
@@ -7,6 +7,8 @@ describe('async utilities', () => {
   });
 
   afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
     vi.useRealTimers();
   });
 
@@ -111,6 +113,54 @@ describe('async utilities', () => {
       
       const result = await promise;
       expect(result).toBe('success');
+    });
+  });
+
+  describe('fetchWithRetry', () => {
+    it('honors Retry-After for a 429 before retrying the real fetch boundary', async () => {
+      const fetchMock = vi.fn()
+        .mockResolvedValueOnce(new Response('busy', { status: 429, headers: { 'Retry-After': '1' } }))
+        .mockResolvedValueOnce(new Response('ready', { status: 200 }));
+      vi.stubGlobal('fetch', fetchMock);
+
+      const responsePromise = fetchWithRetry('https://example.invalid/generation', undefined, 1, 10);
+      await vi.advanceTimersByTimeAsync(0);
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+
+      await vi.advanceTimersByTimeAsync(999);
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      await vi.advanceTimersByTimeAsync(1);
+
+      const response = await responsePromise;
+      expect(response.status).toBe(200);
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
+
+    it('does not retry non-transient client errors', async () => {
+      const fetchMock = vi.fn().mockResolvedValue(new Response('invalid request', { status: 400 }));
+      vi.stubGlobal('fetch', fetchMock);
+
+      const response = await fetchWithRetry('https://example.invalid/generation', undefined, 3, 10);
+      expect(response.status).toBe(400);
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('retries a transient network failure with bounded exponential backoff', async () => {
+      const fetchMock = vi.fn()
+        .mockRejectedValueOnce(new TypeError('network unavailable'))
+        .mockResolvedValueOnce(new Response('ready', { status: 200 }));
+      vi.stubGlobal('fetch', fetchMock);
+
+      const responsePromise = fetchWithRetry('https://example.invalid/generation', undefined, 1, 25);
+      await vi.advanceTimersByTimeAsync(0);
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      await vi.advanceTimersByTimeAsync(24);
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      await vi.advanceTimersByTimeAsync(1);
+
+      const response = await responsePromise;
+      expect(response.status).toBe(200);
+      expect(fetchMock).toHaveBeenCalledTimes(2);
     });
   });
 });

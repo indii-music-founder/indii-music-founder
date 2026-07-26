@@ -123,15 +123,6 @@ const TIER_LIMITS: Record<MembershipTier, TierLimits> = {
     },
 };
 
-/**
- * Emails that receive automatic Founder-tier access and full budget bypass.
- * These are platform owners who should never be gated by tier limits.
- */
-const FOUNDER_EMAILS: readonly string[] = [
-    'wiil@indii.music',
-];
-
-
 class MembershipServiceImpl {
     private sessionSpend: number = 0;
     private readonly MAX_SESSION_SPEND = 10.00; // $10 hard cap per request/swarm session
@@ -153,11 +144,6 @@ class MembershipServiceImpl {
         try {
             const firebaseModule = await import('@/services/firebase');
             const currentUser = firebaseModule.auth.currentUser;
-
-            // FOUNDER EMAIL BYPASS: Platform owner emails always bypass all limits.
-            if (currentUser?.email && FOUNDER_EMAILS.includes(currentUser.email.toLowerCase())) {
-                return true;
-            }
 
             // Check for god_mode custom claim on Firebase Auth
             if (currentUser && typeof currentUser.getIdTokenResult === 'function') {
@@ -284,23 +270,6 @@ class MembershipServiceImpl {
         try {
             const { useStore } = await import('@/core/store');
             const state = useStore.getState();
-
-            // FOUNDER EMAIL: Platform owner always gets founder tier.
-            try {
-                const firebaseModule = await import('@/services/firebase');
-                const currentUser = firebaseModule.auth.currentUser;
-                if (currentUser?.email && FOUNDER_EMAILS.includes(currentUser.email.toLowerCase())) {
-                    return 'founder';
-                }
-            } catch {
-                // Firebase auth not available — fall through to store check
-            }
-
-            // Also check the store profile email (covers offline/cached scenarios)
-            const profileEmail = state.userProfile?.email;
-            if (profileEmail && FOUNDER_EMAILS.includes(profileEmail.toLowerCase())) {
-                return 'founder';
-            }
 
             // GOD MODE: Bypass via custom claim or Dev environment
             if (await this.isBuilderAccount()) {

@@ -33,6 +33,7 @@ Watch for these CI-breaking patterns from ERROR_LEDGER:
 - Agent routing typos in prompts
 - Type errors from incomplete refactors
 - **Self-Fulfilling Tests:** Ensure unit tests assert the *global system contract*, not just the local function's broken output. Do not change a test just to make it pass without verifying the architectural contract.
+- **Detector-to-Remediation Rule:** When a detector reports a new or worsened high-risk category, add or update the matching numbered item in `.agent/test_ledger/OPEN_ISSUES_V2.md` before moving on. Fix the highest-exploitable root cause in the current task when it is in scope; otherwise record precise evidence, acceptance criteria, and why it remains OPEN/PARTIAL. Never treat a baseline detector score as a passing result.
 
 ## 2. Stuck Agent Detection
 

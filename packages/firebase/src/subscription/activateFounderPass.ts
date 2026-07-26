@@ -26,6 +26,7 @@ import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { createHash } from 'crypto';
 import { githubTokenFounders } from '../config/secrets';
 import { SubscriptionTier } from '../shared/subscription/types';
+import { writeFounderEntitlementGrant } from '../functions/auth/entitlements';
 
 const GITHUB_REPO_OWNER = 'indii-music-founder';
 const GITHUB_REPO_NAME = 'indii-music-founder';
@@ -282,6 +283,11 @@ export const activateFounderPass = onCall({
                 subscriptionTier: SubscriptionTier.FOUNDER,
                 tier: SubscriptionTier.FOUNDER,
             }, { merge: true });
+
+            // Server-owned tier receipt for cost and feature enforcement. The
+            // client-readable profile fields above remain presentation data,
+            // never the authority for paid access.
+            writeFounderEntitlementGrant(tx, db, targetUid, existingRef.path);
 
             let currentMetaCount = 0;
             let currentMetaFounders: Array<{ seat: number; name: string; joinedAt: string }> = [];

@@ -1,7 +1,9 @@
 import { z } from "zod";
 
 export const VideoJobSchema = z.object({
-    jobId: z.string().min(1),
+    // Legacy callers may still send a client correlation ID, but the backend
+    // deliberately ignores it and creates the authoritative job ID itself.
+    jobId: z.string().min(1).max(128).optional(),
     userId: z.string().optional().nullable(),
     orgId: z.string().optional().nullable(),
     prompt: z.string().min(1),

@@ -12,13 +12,13 @@
  */
 
 import { test, expect } from '@playwright/test';
-import { initializeApp } from 'firebase/app';
+import { deleteApp, getApps, initializeApp } from 'firebase/app';
 import {
     getFunctions,
-    getMessaging,
     connectFunctionsEmulator,
 } from 'firebase/functions';
 import { httpsCallable } from 'firebase/functions';
+import { getMessaging, isSupported as isMessagingSupported } from 'firebase/messaging';
 
 const firebaseConfig = {
     apiKey: process.env.VITE_FIREBASE_API_KEY || 'test-key',
@@ -28,12 +28,26 @@ const firebaseConfig = {
     messagingSenderId: process.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '000000000000',
 };
 
+const TEST_APP_PREFIX = 'service-init-';
+
+function createServiceTestApp(label: string) {
+    return initializeApp(firebaseConfig, {
+        name: `${TEST_APP_PREFIX}${label}-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    });
+}
+
 test.describe('Service Initialization — Export Order Validation', () => {
+    test.afterEach(async () => {
+        await Promise.all(getApps()
+            .filter(app => app.name.startsWith(TEST_APP_PREFIX))
+            .map(app => deleteApp(app)));
+    });
+
     test('Firebase Functions must be initialized before httpsCallable', async () => {
         // Regression test for: "Cannot read properties of undefined"
         // Ensures getFunctions() is called before any httpsCallable(functions, ...)
 
-        const app = initializeApp(firebaseConfig, { name: 'test-init-' + Date.now() });
+        const app = createServiceTestApp('functions');
 
         // This is the bug pattern: trying to use functions before initialization
         // If getFunctions() wasn't called, this would fail
@@ -49,28 +63,21 @@ test.describe('Service Initialization — Export Order Validation', () => {
         // Test that messaging can be initialized conditionally without breaking
         // Messaging is often optional (notifications may be disabled)
 
-        const app = initializeApp(firebaseConfig, { name: 'test-msg-' + Date.now() });
+        const app = createServiceTestApp('messaging');
 
-        let messaging = null;
-        try {
-            messaging = getMessaging(app);
-            expect(messaging).toBeDefined();
-        } catch (e) {
-            // Messaging init can fail (e.g., missing config), that's OK
-            expect(e).toBeDefined();
+        if (!(await isMessagingSupported())) {
+            expect(await isMessagingSupported()).toBe(false);
+            return;
         }
 
-        // But if it IS initialized, it should be usable
-        if (messaging) {
-            expect(typeof messaging).toBe('object');
-        }
+        expect(getMessaging(app)).toBeDefined();
     });
 
     test('All 46 httpsCallable calls must have initialized functions service', async () => {
         // High-level contract: every httpsCallable(functions, ...) in the codebase
         // assumes functions is defined and initialized
 
-        const app = initializeApp(firebaseConfig, { name: 'test-46-' + Date.now() });
+        const app = createServiceTestApp('callables');
         const functions = getFunctions(app);
 
         // These are the actual functions called from the codebase
@@ -101,8 +108,8 @@ test.describe('Service Initialization — Export Order Validation', () => {
     test('Multiple apps can initialize independently', async () => {
         // Test that creating multiple Firebase app instances doesn't break service init
 
-        const app1 = initializeApp(firebaseConfig, { name: 'test-multi-1-' + Date.now() });
-        const app2 = initializeApp(firebaseConfig, { name: 'test-multi-2-' + Date.now() });
+        const app1 = createServiceTestApp('multi-1');
+        const app2 = createServiceTestApp('multi-2');
 
         const functions1 = getFunctions(app1);
         const functions2 = getFunctions(app2);
@@ -115,7 +122,7 @@ test.describe('Service Initialization — Export Order Validation', () => {
     test('Functions service remains defined after emulator connection', async () => {
         // Test that connecting to the emulator doesn't invalidate the functions service
 
-        const app = initializeApp(firebaseConfig, { name: 'test-emul-' + Date.now() });
+        const app = createServiceTestApp('emulator');
         const functions = getFunctions(app);
 
         expect(functions).toBeDefined();

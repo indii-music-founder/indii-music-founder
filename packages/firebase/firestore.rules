@@ -121,13 +121,17 @@ service cloud.firestore {
           'role',
           'roles',
           'isAdmin',
-          'permissions'
+          'permissions',
+          'tier',
+          'subscriptionTier',
+          'plan',
+          'isFounder',
+          'entitlements',
+          'credits',
+          'creditBalance',
+          'billing',
+          'stripeCustomerId'
         ]);
-    }
-
-    // Check if a user profile is set to public
-    function isPublicProfile() {
-      return resource.data.isPublic == true;
     }
 
     // Check if user is member of organization
@@ -319,8 +323,11 @@ service cloud.firestore {
     // User Profiles
     // =========================================================================
     match /users/{userId} {
-      // Users can read their own profile
-      allow read: if isOwner(userId) || isPublicProfile() || (isGuest() && userId == 'founder-demo-uid');
+      // This document contains private identity and billing-adjacent fields,
+      // including email. Public artist discovery must use a separately shaped
+      // public projection; client-side redaction cannot protect fields already
+      // returned by Firestore to an arbitrary reader.
+      allow read: if isOwner(userId) || (isGuest() && userId == 'founder-demo-uid');
 
       // Users can create their own profile
       allow create: if isOwner(userId) &&
@@ -331,6 +338,15 @@ service cloud.firestore {
         (!('isAdmin' in request.resource.data) || request.resource.data.isAdmin == false) &&
         !('roles' in request.resource.data) &&
         !('permissions' in request.resource.data) &&
+        !('tier' in request.resource.data) &&
+        !('subscriptionTier' in request.resource.data) &&
+        !('plan' in request.resource.data) &&
+        !('isFounder' in request.resource.data) &&
+        !('entitlements' in request.resource.data) &&
+        !('credits' in request.resource.data) &&
+        !('creditBalance' in request.resource.data) &&
+        !('billing' in request.resource.data) &&
+        !('stripeCustomerId' in request.resource.data) &&
         (!('role' in request.resource.data) || request.resource.data.role in ['artist', 'user']);
 
       // Users can update their own profile with validation
@@ -354,6 +370,20 @@ service cloud.firestore {
       match /costLedger/{ledgerId} {
         allow read: if isOwner(userId) || (isGuest() && userId == 'founder-demo-uid');
         allow write: if false;
+      }
+
+      // Server-issued account access. The browser can inspect its current
+      // entitlement and immutable grant evidence, but cannot create, modify,
+      // downgrade, or self-upgrade either document. Firebase Functions use the
+      // Admin SDK after verifying Firebase Auth email state or payment evidence.
+      match /entitlements/{entitlementId} {
+        allow read: if isOwner(userId) && entitlementId == 'current';
+        allow create, update, delete: if false;
+      }
+
+      match /entitlementAudit/{grantId} {
+        allow read: if isOwner(userId);
+        allow create, update, delete: if false;
       }
 
       // OAuth credentials and transient OAuth selection intents are backend-only.
@@ -1411,9 +1441,10 @@ service cloud.firestore {
     }
     match /videoJobs/{jobId} {
       allow read: if (isAuthenticated() && (resource.data.get('userId', null) == request.auth.uid || (('orgId' in resource.data) && resource.data.orgId != null && isOrgMember(resource.data.orgId)))) || (isGuest() && resource.data.get('userId', null) == 'founder-demo-uid');
-      allow create: if isVerifiedUser() && ownerOrOrgCreateIsValid();
-      allow update: if isVerifiedUser() && ownerOrOrgUpdateIsValid();
-      allow delete: if (isVerifiedUser() && (resource.data.get('userId', null) == request.auth.uid || (('orgId' in resource.data) && resource.data.orgId != null && isOrgMember(resource.data.orgId)))) || (isGuest() && resource.data.get('userId', null) == 'founder-demo-uid');
+      // Every generation job is created and advanced by trusted backend code.
+      // A client-created `queued` document would invoke the Firestore worker
+      // without App Check, entitlement, Arcjet, or cost-reservation admission.
+      allow create, update, delete: if false;
     }
     match /distribution_audit/{releaseId}/{allPaths=**} {
       allow read: if canReadDistributionRelease(releaseId);

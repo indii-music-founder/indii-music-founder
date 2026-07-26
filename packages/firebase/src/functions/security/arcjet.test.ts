@@ -2,13 +2,18 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
     arcjet: vi.fn(),
-    authProtect: vi.fn(),
-    publicProtect: vi.fn(),
+    anonymousProtect: vi.fn(),
+    freeProtect: vi.fn(),
+    paidProtect: vi.fn(),
+    founderProtect: vi.fn(),
+    adminProtect: vi.fn(),
+    byoProtect: vi.fn(),
     shield: vi.fn(),
     slidingWindow: vi.fn(),
     withRule: vi.fn(),
     loggerError: vi.fn(),
     loggerWarn: vi.fn(),
+    loggerDebug: vi.fn(),
 }));
 
 vi.mock("@arcjet/node", () => ({
@@ -20,12 +25,14 @@ vi.mock("@arcjet/node", () => ({
 vi.mock("firebase-functions/logger", () => ({
     error: mocks.loggerError,
     warn: mocks.loggerWarn,
+    debug: mocks.loggerDebug,
 }));
 
 type DecisionOptions = {
     denied?: boolean;
     errored?: boolean;
     rateLimit?: boolean;
+    reset?: number;
 };
 
 const request = {
@@ -46,7 +53,7 @@ function mockDecision(options: DecisionOptions = {}) {
         isErrored: () => Boolean(options.errored),
         reason: options.errored
             ? { message: "Arcjet service error" }
-            : { isRateLimit: () => Boolean(options.rateLimit) },
+            : { isRateLimit: () => Boolean(options.rateLimit), reset: options.reset ?? 17 },
     };
 }
 
@@ -69,17 +76,22 @@ describe("Arcjet request protection", () => {
             options,
         }));
 
+        const protectors = [
+            mocks.anonymousProtect,
+            mocks.freeProtect,
+            mocks.paidProtect,
+            mocks.founderProtect,
+            mocks.adminProtect,
+            mocks.byoProtect,
+        ];
         let clientIndex = 0;
         mocks.withRule.mockImplementation(() => {
-            clientIndex += 1;
-            return clientIndex === 1
-                ? { protect: mocks.authProtect }
-                : { protect: mocks.publicProtect };
+            const protect = protectors[clientIndex++]!;
+            return { protect };
         });
 
         mocks.arcjet.mockReturnValue({ withRule: mocks.withRule });
-        mocks.authProtect.mockResolvedValue(mockDecision());
-        mocks.publicProtect.mockResolvedValue(mockDecision());
+        protectors.forEach(protect => protect.mockResolvedValue(mockDecision()));
     });
 
     it("creates a shared Arcjet client with shield and route-specific sliding windows", async () => {
@@ -92,64 +104,103 @@ describe("Arcjet request protection", () => {
         expect(mocks.shield).toHaveBeenCalledWith({ mode: "LIVE" });
         expect(mocks.slidingWindow).toHaveBeenNthCalledWith(1, {
             mode: "LIVE",
-            characteristics: ["userId"],
             interval: "1m",
-            max: 240,
+            max: 10,
         });
         expect(mocks.slidingWindow).toHaveBeenNthCalledWith(2, {
             mode: "LIVE",
+            characteristics: ["userId"],
             interval: "1m",
-            max: 120,
+            max: 20,
         });
+        expect(mocks.slidingWindow).toHaveBeenNthCalledWith(3, expect.objectContaining({ max: 60 }));
+        expect(mocks.slidingWindow).toHaveBeenNthCalledWith(4, expect.objectContaining({ max: 120 }));
+        expect(mocks.slidingWindow).toHaveBeenNthCalledWith(5, expect.objectContaining({ max: 30 }));
+        expect(mocks.slidingWindow).toHaveBeenNthCalledWith(6, expect.objectContaining({ max: 45 }));
     });
 
-    it("allows a public request when Arcjet allows it", async () => {
-        const { protectPublicApiRequest } = await loadArcjetModule();
+    it("allows a low-risk anonymous read when Arcjet allows it", async () => {
+        const { protectAnonymousSignupRequest } = await loadArcjetModule();
 
-        await expect(protectPublicApiRequest(request as never)).resolves.toEqual({ allowed: true });
-        expect(mocks.publicProtect).toHaveBeenCalledWith(request);
+        expect(mocks.arcjet).toHaveBeenCalledTimes(1);
+        const result = await protectAnonymousSignupRequest(request as never, "operation-1", "allow-low-risk-read");
+        expect(mocks.anonymousProtect).toHaveBeenCalledWith(request, { correlationId: "operation-1" });
+        expect(result).toEqual({ allowed: true });
     });
 
     it("returns 429 when the authenticated per-user rate limit denies the request", async () => {
-        mocks.authProtect.mockResolvedValue(mockDecision({ denied: true, rateLimit: true }));
+        mocks.freeProtect.mockResolvedValue(mockDecision({ denied: true, rateLimit: true, reset: 22 }));
         const { protectAuthenticatedApiRequest } = await loadArcjetModule();
 
-        await expect(protectAuthenticatedApiRequest(request as never, "user_123")).resolves.toEqual({
+        await expect(protectAuthenticatedApiRequest(request as never, {
+            userId: "user_123",
+            policy: "verified-free",
+            operationId: "operation-1",
+        })).resolves.toEqual({
             allowed: false,
             status: 429,
             code: "RATE_LIMITED",
             message: "Too many requests. Please slow down.",
+            retryAfterSeconds: 22,
         });
-        expect(mocks.authProtect).toHaveBeenCalledWith(request, { userId: "user_123" });
+        expect(mocks.freeProtect).toHaveBeenCalledWith(request, { userId: "user_123", correlationId: "operation-1" });
     });
 
-    it("fails open on transient Arcjet service errors after logging the failure", async () => {
-        mocks.publicProtect.mockRejectedValue(new Error("network unavailable"));
-        const { protectPublicApiRequest } = await loadArcjetModule();
+    it("fails closed on a transient Arcjet service error for an authenticated operation", async () => {
+        mocks.freeProtect.mockRejectedValue(new Error("network unavailable"));
+        const { protectAuthenticatedApiRequest } = await loadArcjetModule();
 
-        await expect(protectPublicApiRequest(request as never)).resolves.toEqual({ allowed: true });
-        expect(mocks.loggerError).toHaveBeenCalledWith(
-            "[Arcjet] Public API protection failed open",
-            expect.objectContaining({ error: expect.any(Error) }),
-        );
+        await expect(protectAuthenticatedApiRequest(request as never, {
+            userId: "user_123",
+            policy: "verified-free",
+            operationId: "operation-1",
+        })).resolves.toMatchObject({ allowed: false, status: 503, code: "SECURITY_UNAVAILABLE", retryAfterSeconds: 60 });
+        expect(mocks.loggerWarn).toHaveBeenCalledWith("[Arcjet] Request protection unavailable", expect.objectContaining({
+            policy: "verified-free",
+            operationId: "operation-1",
+            reason: "decision_error",
+        }));
     });
 
-    it("fails closed in production when ARCJET_KEY is missing", async () => {
+    it("fails closed when ARCJET_KEY is missing, regardless of runtime mode", async () => {
         delete process.env.ARCJET_KEY;
-        process.env.NODE_ENV = "production";
 
-        const { protectPublicApiRequest } = await loadArcjetModule();
+        const { protectAuthenticatedApiRequest } = await loadArcjetModule();
 
-        await expect(protectPublicApiRequest(request as never)).resolves.toEqual({
+        await expect(protectAuthenticatedApiRequest(request as never, {
+            userId: "user_123",
+            policy: "verified-free",
+            operationId: "operation-1",
+        })).resolves.toEqual({
             allowed: false,
             status: 503,
-            code: "SECURITY_CONFIG_MISSING",
-            message: "Request protection is not configured.",
+            code: "SECURITY_UNAVAILABLE",
+            message: "Request protection is temporarily unavailable.",
+            retryAfterSeconds: 60,
         });
-        expect(mocks.publicProtect).not.toHaveBeenCalled();
+        expect(mocks.freeProtect).not.toHaveBeenCalled();
         expect(mocks.loggerError).toHaveBeenCalledWith(
-            "[Arcjet] ARCJET_KEY is missing or invalid",
-            { productionRuntime: true },
+            "[Arcjet] Request protection unavailable",
+            expect.objectContaining({ policy: "verified-free", reason: "missing_configuration" }),
         );
+    });
+
+    it("allows only the documented low-risk read to degrade when the secret is missing", async () => {
+        delete process.env.ARCJET_KEY;
+        const { protectAnonymousSignupRequest } = await loadArcjetModule();
+
+        await expect(protectAnonymousSignupRequest(request as never, "health-1", "allow-low-risk-read"))
+            .resolves.toEqual({ allowed: true, degraded: true });
+    });
+
+    it("derives policy classes only from backend entitlement and administrative state", async () => {
+        const { policyClassForServerEntitlement } = await loadArcjetModule();
+        const { SubscriptionTier } = await import("../../shared/subscription/types");
+
+        expect(policyClassForServerEntitlement({ tier: SubscriptionTier.FREE, isAdmin: false })).toBe("verified-free");
+        expect(policyClassForServerEntitlement({ tier: SubscriptionTier.PRO_MONTHLY, isAdmin: false })).toBe("paid");
+        expect(policyClassForServerEntitlement({ tier: SubscriptionTier.FOUNDER, isAdmin: false })).toBe("founder");
+        expect(policyClassForServerEntitlement({ tier: SubscriptionTier.FREE, isAdmin: true })).toBe("admin");
+        expect(policyClassForServerEntitlement({ tier: SubscriptionTier.FREE, isAdmin: false, bringYourOwnApiEnabled: true })).toBe("byo-api");
     });
 });

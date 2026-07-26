@@ -5,6 +5,13 @@ import { TranscoderServiceClient } from "@google-cloud/video-transcoder";
 import { Inngest } from "inngest";
 import { FUNCTION_INTELLIGENCE_MODELS } from "../config/models";
 import { getVertexAIBaseUrl } from "./vertexClient";
+import { verifyMasterAudioObject } from '../functions/storage/verifyMasterAudio';
+import {
+    buildMasterAudioStitchPlan,
+    type VerifiedMasterAudioForStitch,
+} from '../functions/video/stitchMasterAudio';
+import { finalizeOperationReservation } from '../functions/billing/enforceOperationCost';
+import { renderFailureReservationOutcome } from '../functions/video/renderCostLifecycle';
 
 /**
  * Robustly converts a Google Storage URL to a gs:// URI.
@@ -117,6 +124,18 @@ const DEFAULT_FRAME_EXTRACTION_OFFSET_SECONDS = 4.5;
 const FRAME_EXTRACTION_POLL_INTERVAL_MS = 2000;
 const FRAME_EXTRACTION_MAX_POLL_ATTEMPTS = 20;
 
+function renderResolution(raw: unknown): { width: number; height: number } {
+    if (typeof raw !== 'string') return { width: 1280, height: 720 };
+    const match = raw.match(/^(\d{2,4})x(\d{2,4})$/);
+    if (!match) return { width: 1280, height: 720 };
+    const width = Number(match[1]);
+    const height = Number(match[2]);
+    if (width < 64 || height < 64 || width > 3840 || height > 3840) {
+        throw new Error('Requested render resolution is outside the allowed range.');
+    }
+    return { width, height };
+}
+
 // ----------------------------------------------------------------------------
 // Inngest Functions
 // ----------------------------------------------------------------------------
@@ -127,7 +146,7 @@ const FRAME_EXTRACTION_MAX_POLL_ATTEMPTS = 20;
  * Uses Veo to generate each segment. If a startImage is provided (or extracted
  * from previous segment), it uses it for continuity.
  */
-export const generateLongFormVideoFn = (inngestClient: Inngest, _geminiApiKey: string | undefined) => inngestClient.createFunction(
+export const generateLongFormVideoFn = (inngestClient: Inngest, _legacyUnusedProviderCredential?: string) => inngestClient.createFunction(
     { id: "generate-long-form-video" },
     { event: "video/long_form.requested" },
     async ({ event, step }) => {
@@ -469,7 +488,16 @@ export const stitchVideoFn = (inngestClient: Inngest) => inngestClient.createFun
     { id: "stitch-video-segments" },
     { event: "video/stitch.requested" },
     async ({ event, step }) => {
-        const { jobId, userId, segmentUrls, includeAudio } = event.data;
+        const eventData = event.data as Record<string, unknown>;
+        const jobId = typeof eventData.jobId === 'string' ? eventData.jobId : '';
+        const userId = typeof eventData.userId === 'string' ? eventData.userId : '';
+        const segmentUrls = Array.isArray(eventData.segmentUrls)
+            ? eventData.segmentUrls.filter((url): url is string => typeof url === 'string' && url.trim().length > 0)
+            : [];
+        const includeAudio = eventData.includeAudio === true;
+        const costReservationId = typeof eventData.costReservationId === 'string'
+            ? eventData.costReservationId
+            : undefined;
         const transcoder = new TranscoderServiceClient();
         try {
             const projectId = admin.app().options.projectId;
@@ -477,6 +505,151 @@ export const stitchVideoFn = (inngestClient: Inngest) => inngestClient.createFun
             const bucket = admin.storage().bucket();
             const outputDir = `gs://${bucket.name}/videos/${userId}/${jobId}_output/`;
 
+            if (!jobId || !userId || segmentUrls.length === 0) {
+                throw new Error('Stitch request is missing its job, owner, or video segment contract.');
+            }
+
+            const rawMaster = eventData.masterAudio;
+            const masterRecord = rawMaster && typeof rawMaster === 'object' && !Array.isArray(rawMaster)
+                ? rawMaster as Record<string, unknown>
+                : undefined;
+            let masterAudio: VerifiedMasterAudioForStitch | undefined;
+            if (masterRecord) {
+                const verification = await step.run('reverify-canonical-master', async () => {
+                    return verifyMasterAudioObject(userId, {
+                        storagePath: masterRecord.storagePath as string,
+                        expectedSha256: masterRecord.contentHash as string,
+                        masterFingerprint: masterRecord.masterFingerprint as string,
+                    });
+                });
+                if (verification.generation !== masterRecord.generation) {
+                    throw new Error('Canonical master generation changed before the stitch worker started.');
+                }
+                masterAudio = {
+                    storagePath: verification.storagePath,
+                    contentHash: verification.contentHash,
+                    generation: verification.generation,
+                    masterFingerprint: masterRecord.masterFingerprint as string,
+                    volume: masterRecord.volume as number,
+                    uri: `gs://${bucket.name}/${verification.storagePath}`,
+                };
+            }
+
+            const waitForTranscoderJob = async (jobName: string, stepPrefix: string): Promise<void> => {
+                let jobStatus = 'PENDING';
+                let retries = 0;
+                while (jobStatus !== 'SUCCEEDED' && jobStatus !== 'FAILED' && retries < STITCH_MAX_POLL_ATTEMPTS) {
+                    await step.sleep(`${stepPrefix}-wait-${retries}`, `${STITCH_POLL_INTERVAL_SECONDS}s`);
+                    jobStatus = await step.run(`${stepPrefix}-status-${retries}`, async () => {
+                        const result = await transcoder.getJob({ name: jobName });
+                        const job = result[0];
+                        if (job.state === 'FAILED') {
+                            throw new Error(`Transcoder job failed: ${job.error?.message}`);
+                        }
+                        return job.state as string;
+                    });
+                    retries++;
+                }
+                if (jobStatus !== 'SUCCEEDED') {
+                    throw new Error(`Transcoder job timed out after ${STITCH_MAX_POLL_ATTEMPTS * STITCH_POLL_INTERVAL_SECONDS}s.`);
+                }
+            };
+
+            // Transcoder has no caller-provided idempotency key. Record an
+            // intent immediately before every external submission so a worker
+            // retry cannot incorrectly refund a provider job that may have
+            // been accepted between the request and our next Firestore write.
+            const markTranscoderSubmissionAttempted = async (stage: string): Promise<void> => {
+                await step.run(`mark-${stage}-transcoder-submission-attempted`, async () => {
+                    await admin.firestore().collection('videoJobs').doc(jobId).set({
+                        status: 'stitching',
+                        renderStage: stage,
+                        transcoderSubmission: {
+                            attemptedAt: admin.firestore.FieldValue.serverTimestamp(),
+                            stage,
+                        },
+                        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+                    }, { merge: true });
+                });
+            };
+
+            if (masterAudio) {
+                const options = eventData.options && typeof eventData.options === 'object'
+                    ? eventData.options as Record<string, unknown>
+                    : {};
+                const plan = buildMasterAudioStitchPlan({
+                    bucketName: bucket.name,
+                    jobId,
+                    userId,
+                    resolution: renderResolution(options.resolution),
+                    timelineDurationSeconds: Number(options.timelineDurationSeconds),
+                    segmentUris: segmentUrls,
+                    masterAudio,
+                });
+
+                await markTranscoderSubmissionAttempted('submitting_video_concatenation');
+                const concatJobName = await step.run('concatenate-video-without-native-audio', async () => {
+                    const [job] = await transcoder.createJob({
+                        parent: transcoder.locationPath(projectId!, location),
+                        job: { outputUri: plan.intermediateOutputUri, config: plan.concatenateConfig },
+                    });
+                    return job.name as string;
+                });
+                await step.run('mark-master-render-concatenating', async () => {
+                    await admin.firestore().collection('videoJobs').doc(jobId).set({
+                        status: 'stitching',
+                        transcoderJobName: concatJobName,
+                        renderStage: 'concatenating_video',
+                        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+                    }, { merge: true });
+                });
+                await waitForTranscoderJob(concatJobName, 'concat-video');
+
+                await markTranscoderSubmissionAttempted('submitting_canonical_master_mix');
+                const masterJobName = await step.run('map-canonical-master-audio', async () => {
+                    const [job] = await transcoder.createJob({
+                        parent: transcoder.locationPath(projectId!, location),
+                        job: { outputUri: plan.finalOutputUri, config: plan.masterMixConfig },
+                    });
+                    return job.name as string;
+                });
+                await step.run('mark-master-render-mixing', async () => {
+                    await admin.firestore().collection('videoJobs').doc(jobId).set({
+                        status: 'stitching',
+                        transcoderJobName: masterJobName,
+                        renderStage: 'mapping_canonical_master',
+                        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+                    }, { merge: true });
+                });
+                await waitForTranscoderJob(masterJobName, 'map-master-audio');
+
+                await step.run('mark-master-render-completed', async () => {
+                    await admin.firestore().collection('videoJobs').doc(jobId).set({
+                        status: 'completed',
+                        videoUrl: `https://storage.googleapis.com/${bucket.name}/videos/${userId}/${jobId}_output/master-pass/final_output.mp4`,
+                        output: {
+                            url: `https://storage.googleapis.com/${bucket.name}/videos/${userId}/${jobId}_output/master-pass/final_output.mp4`,
+                            metadata: {
+                                duration_seconds: segmentUrls.length * 5,
+                                fps: 30,
+                                mime_type: 'video/mp4',
+                                audioMix: 'master_replaces_native',
+                                masterContentHash: masterAudio.contentHash,
+                                masterGeneration: masterAudio.generation,
+                            },
+                        },
+                        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+                    }, { merge: true });
+                });
+                if (costReservationId) {
+                    await step.run('settle-master-render-cost', async () => {
+                        await finalizeOperationReservation({ userId, operationId: costReservationId, outcome: 'SETTLED' });
+                    });
+                }
+                return;
+            }
+
+            await markTranscoderSubmissionAttempted('submitting_standard_stitch');
             const jobName = await step.run("create-transcoder-job", async () => {
                 // FIX #5: Build elementary streams dynamically based on audio availability
                 const elementaryStreams: Record<string, unknown>[] = [
@@ -549,28 +722,7 @@ export const stitchVideoFn = (inngestClient: Inngest) => inngestClient.createFun
                 }, { merge: true });
             });
 
-            // Poll with step.sleep to avoid timeout (using constants)
-            let jobStatus = "PENDING";
-            let retries = 0;
-
-            while (jobStatus !== "SUCCEEDED" && jobStatus !== "FAILED" && retries < STITCH_MAX_POLL_ATTEMPTS) {
-                await step.sleep(`wait-for-transcoder-${retries}`, `${STITCH_POLL_INTERVAL_SECONDS}s`);
-
-                jobStatus = await step.run(`check-status-${retries}`, async () => {
-                    const result = await transcoder.getJob({ name: jobName });
-                    const job = result[0];
-                    if (job.state === "FAILED") {
-                        throw new Error(`Transcoder job failed: ${job.error?.message}`);
-                    }
-                    return job.state as string;
-                });
-
-                retries++;
-            }
-
-            if (jobStatus !== "SUCCEEDED") {
-                throw new Error(`Transcoder job timed out after ${STITCH_MAX_POLL_ATTEMPTS * STITCH_POLL_INTERVAL_SECONDS}s.`);
-            }
+            await waitForTranscoderJob(jobName, 'stitch-video');
 
             // Construct public URL
             const finalVideoUrl = await step.run("get-final-url", async () => {
@@ -596,16 +748,47 @@ export const stitchVideoFn = (inngestClient: Inngest) => inngestClient.createFun
                     updatedAt: admin.firestore.FieldValue.serverTimestamp()
                 }, { merge: true });
             });
+            if (costReservationId) {
+                await step.run('settle-render-cost', async () => {
+                    await finalizeOperationReservation({ userId, operationId: costReservationId, outcome: 'SETTLED' });
+                });
+            }
 
         } catch (error: unknown) {
-            console.error("Stitching failed:", error);
-            await step.run("mark-failed", async () => {
-                await admin.firestore().collection("videoJobs").doc(jobId).set({
-                    status: "failed",
-                    stitchError: (error as Error).message,
-                    updatedAt: admin.firestore.FieldValue.serverTimestamp()
-                }, { merge: true });
-            });
+            console.error('Stitching failed', { jobId });
+            try {
+                await step.run("mark-failed", async () => {
+                    await admin.firestore().collection("videoJobs").doc(jobId).set({
+                        status: "failed",
+                        stitchError: 'The cloud renderer could not complete this job.',
+                        updatedAt: admin.firestore.FieldValue.serverTimestamp()
+                    }, { merge: true });
+                });
+            } catch {
+                // Continue into financial reconciliation. A status-write outage
+                // must not turn a possibly submitted provider job into a refund.
+                console.error('Unable to record render failure status', { jobId });
+            }
+            if (costReservationId) {
+                const transcoderSubmissionAttempted = jobId
+                    ? await step.run('inspect-transcoder-submission-for-cost', async () => {
+                        try {
+                            const job = await admin.firestore().collection('videoJobs').doc(jobId).get();
+                            const submission = job.data()?.transcoderSubmission as Record<string, unknown> | undefined;
+                            return submission?.attemptedAt !== undefined;
+                        } catch {
+                            // Fail closed financially: if the worker cannot
+                            // inspect durable evidence, do not assert that no
+                            // provider submission occurred.
+                            return true;
+                        }
+                    })
+                    : false;
+                const outcome = renderFailureReservationOutcome({ transcoderSubmissionAttempted });
+                await step.run('reconcile-failed-render-cost', async () => {
+                    await finalizeOperationReservation({ userId, operationId: costReservationId, outcome });
+                });
+            }
         } finally {
             await transcoder.close();
         }

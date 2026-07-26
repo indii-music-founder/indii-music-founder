@@ -35,6 +35,8 @@ export interface ReleaseDetails {
 export interface BrandAsset {
     id?: string;
     url: string;
+    /** Canonical Storage identity when the asset came from a protected generation pipeline. */
+    storageUri?: string;
     description: string;
     category?: 'headshot' | 'bodyshot' | 'clothing' | 'environment' | 'logo' | 'other';
     tags?: string[];

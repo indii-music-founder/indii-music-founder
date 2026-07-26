@@ -96,6 +96,20 @@ describe('ProfileSlice Persistence', () => {
         expect(useStore.getState().userProfile).toEqual(mockProfile);
     });
 
+    it('does not promote a profile to Founder based on its email address', async () => {
+        const founderEmailOnlyProfile = {
+            ...mockProfile,
+            email: 'wiil@indii.music',
+            membership: { tier: 'free' as const, expiresAt: null },
+        };
+        vi.mocked(getProfileFromStorage).mockResolvedValue(founderEmailOnlyProfile);
+
+        await useStore.getState().loadUserProfile('test-uid');
+        await new Promise(resolve => setTimeout(resolve, 0));
+
+        expect(useStore.getState().userProfile.membership.tier).toBe('free');
+    });
+
     it('loadUserProfile should use default profile if storage is empty', async () => {
         vi.mocked(getProfileFromStorage).mockResolvedValue(undefined);
         const { loadUserProfile, userProfile: initialDefault } = useStore.getState();

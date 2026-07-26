@@ -324,6 +324,19 @@ All frontend env vars use the `VITE_` prefix. Copy `.env.example` to `.env` for 
 
 ## Testing Conventions
 
+### Real-User Authenticity (Mandatory)
+
+Before any live-user, browser, end-to-end, release-acceptance, demo-readiness,
+production, or free-tier validation, read and obey
+`.agent/REAL_USER_AUTHENTICITY.md`.
+
+Never use mocks, seeded product data, bypassed or injected authentication,
+impersonated sessions, fabricated service responses, or artificial
+plan/tier/entitlement state for those claims. If genuine credentials are
+missing, stop and request the official authorization flow. Existing
+mock-backed suites are structural checks only and must never be cited as proof
+that the real customer path works.
+
 ### Unit Tests (Vitest)
 
 - Test setup: `packages/renderer/src/test/setup.ts` - provides centralized Firebase mocks, ResizeObserver/Canvas/matchMedia mocks

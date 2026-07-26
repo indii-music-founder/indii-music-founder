@@ -6,7 +6,7 @@
  *
  * Requires: gcloud CLI authenticated (gcloud auth login)
  * Fetches: tuningJobs from Vertex (location: VERTEX_TUNING_LOCATION or us-central1, picks latest per agent by endTime)
- * Writes: packages/renderer/src/services/agent/fine-tuned-endpoints.generated.ts
+ * Writes: renderer agent routing plus Firebase's server admission allowlist.
  */
 
 import { spawn } from 'child_process';
@@ -18,6 +18,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PROJECT_ID = process.env.VERTEX_PROJECT_ID || process.env.GOOGLE_CLOUD_PROJECT || process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT || 'indii-music-founder';
 const LOCATION = process.env.VERTEX_TUNING_LOCATION || 'us-central1';
 const OUTPUT_FILE = path.join(__dirname, '../packages/renderer/src/services/agent/fine-tuned-endpoints.generated.ts');
+const FIREBASE_POLICY_OUTPUT_FILE = path.join(__dirname, '../packages/firebase/src/config/textStreamModels.ts');
 
 function getVertexAIBaseUrl(location) {
   return location === 'global' || location === 'us' || location === 'eu'
@@ -92,6 +93,48 @@ ${entries}
 `;
 }
 
+function generateFirebasePolicyFile(registry) {
+  const endpointEntries = [...new Set(Object.values(registry))]
+    .sort()
+    .map((endpoint) => `  '${endpoint}',`)
+    .join('\n');
+
+  return `/**
+ * GENERATED FILE — DO NOT EDIT BY HAND
+ *
+ * Regen command: node scripts/sync-fine-tuned-endpoints.mjs
+ * Source: Vertex AI tuningJobs REST API (latest succeeded endpoint per agent).
+ *
+ * Browser requests may name a capability, but only these Vertex base models
+ * and reviewed endpoints may consume shared project quota. Endpoint resource
+ * names are identifiers, not credentials; accepting any valid-shaped resource
+ * would let a modified browser select unreviewed capacity.
+ */
+
+export const APPROVED_TEXT_STREAM_BASE_MODELS = new Set([
+  'gemini-3.1-pro-preview',
+  'gemini-3-flash-preview',
+  'gemini-3.1-flash-lite',
+  'gemini-2.5-pro',
+  'gemini-2.5-flash',
+  'gemini-2.5-pro-preview',
+]);
+
+export const APPROVED_TEXT_STREAM_FINE_TUNED_ENDPOINTS = new Set([
+${endpointEntries}
+]);
+
+export function isApprovedFineTunedTextEndpoint(model: unknown): model is string {
+  return typeof model === 'string' && APPROVED_TEXT_STREAM_FINE_TUNED_ENDPOINTS.has(model);
+}
+
+export function isApprovedTextStreamModel(model: unknown): model is string {
+  return typeof model === 'string'
+    && (APPROVED_TEXT_STREAM_BASE_MODELS.has(model) || isApprovedFineTunedTextEndpoint(model));
+}
+`;
+}
+
 async function main() {
   try {
     console.log('Syncing fine-tuned endpoints...');
@@ -107,6 +150,9 @@ async function main() {
     const content = generateFile(registry);
     fs.writeFileSync(OUTPUT_FILE, content, 'utf8');
     console.log(`✓ Wrote ${OUTPUT_FILE}`);
+    const firebasePolicy = generateFirebasePolicyFile(registry);
+    fs.writeFileSync(FIREBASE_POLICY_OUTPUT_FILE, firebasePolicy, 'utf8');
+    console.log(`✓ Wrote ${FIREBASE_POLICY_OUTPUT_FILE}`);
 
     console.log('\nRegistry snapshot:');
     Object.entries(registry).sort().forEach(([k, v]) => {
