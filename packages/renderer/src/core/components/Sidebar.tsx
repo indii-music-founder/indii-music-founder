@@ -1,4 +1,5 @@
 import React, { useRef, useCallback, useState } from 'react';
+import { useGodMode } from '@/hooks/useGodMode';
 import { useTranslation } from 'react-i18next';
 import { usePowerState } from '@/core/hooks/usePowerState';
 import { useShallow } from 'zustand/react/shallow';
@@ -130,6 +131,7 @@ export default function Sidebar() {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { t } = useTranslation();
     const { isThrottled } = usePowerState();
+    const { isGodMode } = useGodMode();
 
     // UI state for collapsible sections
     const [sectionsOpen, setSectionsOpen] = useState({
@@ -277,7 +279,8 @@ export default function Sidebar() {
                 </div>
             )}
 
-            {/* Command Center — persistent operational overview */}
+            {/* Command Center — god_mode only, persistent operational overview */}
+            {isGodMode && (
             <div className={`px-4 pb-2 ${isSidebarOpen ? 'pt-2' : 'pt-4 border-b border-white/5 border-dashed'}`}>
                 <button
                     onClick={() => throttledSetModule('observability')}
@@ -322,6 +325,7 @@ export default function Sidebar() {
                     <div className="absolute inset-0 bg-linear-to-r from-transparent via-emerald-300/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 pointer-events-none" />
                 </button>
             </div>
+            )}
 
             {/* Boardroom Zen Mode Toggle */}
             <div className={`px-4 pb-2 ${isSidebarOpen ? 'pt-2' : 'pt-4 border-b border-white/5 border-dashed'}`}>

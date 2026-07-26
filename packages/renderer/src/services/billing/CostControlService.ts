@@ -105,6 +105,34 @@ export class CostControlService {
       };
     }
 
+    // GOD MODE BYPASS: Founder / platform owner is never gated by cost controls.
+    // The server-side budget for 'founder' tier already has $1000/day and ∞/hour.
+    // This prevents infrastructure failures (Arcjet, App Check, callable cold-start)
+    // from blocking the one person who should never be blocked.
+    try {
+      const currentUser = auth.currentUser;
+      if (currentUser && typeof currentUser.getIdTokenResult === 'function') {
+        const tokenResult = await currentUser.getIdTokenResult();
+        if (tokenResult?.claims?.god_mode === true) {
+          logger.info('[CostControl] god_mode bypass: operation auto-allowed for platform owner.', {
+            userId: req.userId,
+            operationType: req.operationType,
+          });
+          return {
+            allowed: true,
+            reason: 'Platform owner: cost controls bypassed.',
+            remainingBudget: 999999,
+            dailyUsed: 0,
+            monthlyUsed: 0,
+            operationId: `god-${Date.now()}`,
+          };
+        }
+      }
+    } catch (claimErr) {
+      // If we can't read claims, fall through to normal flow — don't block on claim read failure
+      logger.warn('[CostControl] Could not read god_mode claim, proceeding with normal flow.', claimErr);
+    }
+
     if (import.meta.env.VITE_INTELLIGENCE_MOCK_MODE === 'true') {
       return {
         allowed: false,

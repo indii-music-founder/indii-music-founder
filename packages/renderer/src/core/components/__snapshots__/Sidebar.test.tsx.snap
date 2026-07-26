@@ -52,36 +52,6 @@ exports[`Sidebar > matches snapshot in collapsed state 1`] = `
     class="px-4 pb-2 pt-4 border-b border-white/5 border-dashed"
   >
     <button
-      aria-label="Command Center"
-      class="w-full flex items-center p-2.5 rounded-xl transition-all group relative overflow-hidden bg-linear-to-r from-emerald-500/15 via-cyan-500/10 to-transparent border border-emerald-400/30 hover:border-emerald-300/60 hover:shadow-[0_0_20px_rgba(16,185,129,0.2)] justify-center"
-      data-testid="command-center-btn"
-      title="Command Center"
-    >
-      <span
-        class="flex items-center relative z-10"
-      >
-        <span
-          class="relative"
-        >
-          <svg
-            class="transition-all text-emerald-400 group-hover:text-emerald-200 group-hover:scale-110"
-            data-testid="icon-Activity"
-            size="17"
-          />
-          <span
-            class="absolute -right-1 -top-1 h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_7px_rgba(52,211,153,1)]"
-          />
-        </span>
-      </span>
-      <div
-        class="absolute inset-0 bg-linear-to-r from-transparent via-emerald-300/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 pointer-events-none"
-      />
-    </button>
-  </div>
-  <div
-    class="px-4 pb-2 pt-4 border-b border-white/5 border-dashed"
-  >
-    <button
       aria-label="Enter Boardroom"
       class="w-full flex items-center justify-center p-2.5 rounded-xl transition-all group relative overflow-hidden bg-linear-to-r from-indigo-500/10 to-indigo-600/5 border border-indigo-500/20 hover:border-indigo-500/40 hover:shadow-[0_0_15px_rgba(99,102,241,0.15)]"
       title="Enter Boardroom"
@@ -638,54 +608,6 @@ exports[`Sidebar > matches snapshot in expanded state 1`] = `
           K
         </kbd>
       </div>
-    </button>
-  </div>
-  <div
-    class="px-4 pb-2 pt-2"
-  >
-    <button
-      aria-label="Command Center"
-      class="w-full flex items-center p-2.5 rounded-xl transition-all group relative overflow-hidden bg-linear-to-r from-emerald-500/15 via-cyan-500/10 to-transparent border border-emerald-400/30 hover:border-emerald-300/60 hover:shadow-[0_0_20px_rgba(16,185,129,0.2)] justify-between gap-3"
-      data-testid="command-center-btn"
-    >
-      <span
-        class="flex items-center relative z-10 gap-3"
-      >
-        <span
-          class="relative"
-        >
-          <svg
-            class="transition-all text-emerald-400 group-hover:text-emerald-200 group-hover:scale-110"
-            data-testid="icon-Activity"
-            size="17"
-          />
-          <span
-            class="absolute -right-1 -top-1 h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_7px_rgba(52,211,153,1)]"
-          />
-        </span>
-        <span
-          class="flex flex-col items-start leading-none"
-        >
-          <span
-            class="text-sm font-bold tracking-wide text-emerald-100"
-          >
-            Command Center
-          </span>
-          <span
-            class="mt-1 text-[9px] font-semibold uppercase tracking-[0.16em] text-emerald-400/70"
-          >
-            Live system overview
-          </span>
-        </span>
-      </span>
-      <span
-        class="relative z-10 rounded-full border border-emerald-400/25 bg-emerald-400/10 px-2 py-1 text-[8px] font-black uppercase tracking-widest text-emerald-300"
-      >
-        Open
-      </span>
-      <div
-        class="absolute inset-0 bg-linear-to-r from-transparent via-emerald-300/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 pointer-events-none"
-      />
     </button>
   </div>
   <div

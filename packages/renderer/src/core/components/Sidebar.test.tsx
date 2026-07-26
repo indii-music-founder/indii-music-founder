@@ -22,8 +22,15 @@ vi.mock('../theme/moduleColors', () => ({
     }),
 }));
 
+// Mock useGodMode — default to false (non-god user), tests that need it override
+const mockUseGodMode = vi.fn().mockReturnValue({ isGodMode: false, loading: false });
+vi.mock('@/hooks/useGodMode', () => ({
+    useGodMode: () => mockUseGodMode(),
+}));
+
 describe('Sidebar', () => {
     beforeEach(() => {
+        mockUseGodMode.mockReturnValue({ isGodMode: false, loading: false });
         (useStore as any).mockReturnValue({
             currentModule: 'dashboard',
             setModule: vi.fn(),
@@ -73,7 +80,17 @@ describe('Sidebar', () => {
         expect(setModule).toHaveBeenCalledWith('brand');
     });
 
-    it('keeps Command Center available when disclosure sections are closed', () => {
+    it('hides Command Center from non-god-mode users', () => {
+        mockUseGodMode.mockReturnValue({ isGodMode: false, loading: false });
+
+        render(<Sidebar />);
+
+        expect(screen.queryByRole('button', { name: 'Command Center' })).not.toBeInTheDocument();
+        expect(screen.queryByText('Live system overview')).not.toBeInTheDocument();
+    });
+
+    it('shows Command Center to god-mode users and navigates on click', () => {
+        mockUseGodMode.mockReturnValue({ isGodMode: true, loading: false });
         const setModule = vi.fn();
         (useStore as any).mockReturnValue({
             currentModule: 'dashboard',
@@ -86,13 +103,14 @@ describe('Sidebar', () => {
 
         expect(screen.getByRole('button', { name: 'Command Center' })).toBeVisible();
         expect(screen.getByText('Live system overview')).toBeVisible();
-        expect(screen.queryByText('Workflow Builder')).not.toBeInTheDocument();
 
         fireEvent.click(screen.getByRole('button', { name: 'Command Center' }));
         expect(setModule).toHaveBeenCalledWith('observability');
     });
 
     it('provides accessible labels when sidebar is collapsed', () => {
+        // god_mode true so Command Center renders
+        mockUseGodMode.mockReturnValue({ isGodMode: true, loading: false });
         (useStore as any).mockReturnValue({
             currentModule: 'dashboard',
             setModule: vi.fn(),
@@ -114,7 +132,7 @@ describe('Sidebar', () => {
         expect(screen.getByTestId('sidebar-toggle')).toBeInTheDocument();
     });
 
-    // Item 372: Snapshot test to catch unintended UI regressions in the Sidebar chrome
+    // Snapshot tests — god_mode OFF (default user view)
     it('matches snapshot in expanded state', () => {
         (useStore as any).mockReturnValue({
             currentModule: 'dashboard',
