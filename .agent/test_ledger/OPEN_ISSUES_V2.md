@@ -2922,3 +2922,54 @@ The live run was offered and explicitly deferred by the founder this session in 
 - **First test coverage for this module.** `packages/firebase/src/timeline/` had **zero** test files. Extracted the error classification into an exported pure `isMissingIndexError()` (mirroring the `validateComputerTaskDispatch` extraction pattern from ISSUE-1113, since the `onSchedule`-wrapped handler is not directly invocable) and added `pollTimelineMilestones.test.ts` — 5 tests, including the verbatim production error string from the 2026-07-24 log, an unrelated `FAILED_PRECONDITION` that must NOT be misdiagnosed as a provisioning problem, non-`Error` throwables, and a whole-word `\bindex\b` guard so "reindexed"/"indexing" cannot trigger a false provisioning message.
 - **Verification:** `packages/firebase && npm run build` (`tsc`) clean; `firestore.indexes.json` parses; 5/5 new tests pass. `firebase deploy --only firestore:indexes --dry-run` could NOT be run locally — the Firebase CLI's own credentials are expired in this environment (separate from `gcloud`, which is authenticated). CI's `Deploy Firestore indexes` step uses its own service account and is the real gate.
 - **Not closed — what remains:** the index must finish **building** in production (large collection groups can take a while), and then one real scheduled run of `pollTimelineMilestones` must complete without the `FAILED_PRECONDITION` and actually dispatch a due milestone. Per the MCLEAR rule this stays 🟡 PARTIAL until that live run is observed in Cloud Run logs — declaring it fixed on a config commit is exactly the over-claim the founder assessment block exists to prevent.
+
+### ISSUE-1190 update (2026-07-27): ROOT CAUSE IDENTIFIED with a reproduction — ambient `react/jsx-runtime` stubs in `vite-env.d.ts` erase `IntrinsicAttributes`
+
+- **Status:** 🔴 OPEN (root cause now proven; the fix is scoped below and is larger than the two call sites, so it was deliberately not applied in the same pass that diagnosed it)
+- **Root cause:** `packages/renderer/src/vite-env.d.ts:100-118` declares
+  `declare module 'react/jsx-runtime' { namespace JSX { interface IntrinsicElements { [elemName: string]: any } } }`
+  and the identical block for `'react/jsx-dev-runtime'`. Under `jsx: "react-jsx"` TypeScript resolves the
+  JSX namespace **from `react/jsx-runtime`**, not from the global `JSX` namespace. `@types/react@18.3.3`'s
+  real `jsx-runtime.d.ts` exports a full `JSX` namespace (`IntrinsicAttributes`, `ElementType`,
+  `LibraryManagedAttributes`, …). These local declarations supply a `JSX` namespace containing **only**
+  `IntrinsicElements`, so the `IntrinsicAttributes` interface — which is the *sole* source of the `key`
+  prop for every non-intrinsic element — is not in the namespace TS consults. Hence
+  `Property 'key' does not exist on type '{ children?: ReactNode; }'`: the target type genuinely has no
+  `IntrinsicAttributes` merged into it.
+- **The previous entry's stated hypothesis was wrong, and its "ruled out" list contained an error.** The
+  `IsExactlyAny` / `strict: false` short-circuit theory is **disproved**: a minimal repro
+  (`<React.Fragment key={x}>` in a `.map()`) compiled against the same `@types/react@18.3.3` with the
+  renderer's exact flags (`strict:false`, `strictNullChecks:false`, `noImplicitAny:false`,
+  `jsx:react-jsx`, `noUncheckedIndexedAccess:true`) **passes with exit 0**. The entry also stated "no
+  repo-declared `namespace JSX` override exists" — there are **three** in `vite-env.d.ts` (the two above
+  plus a `declare global` one). Recording this plainly because the wrong "ruled out" line is what would
+  send the next reader down the same dead end.
+- **Proof the diagnosis is correct (experiment, not inference):** deleting only the two ambient
+  `react/jsx-runtime`/`react/jsx-dev-runtime` blocks and re-running `tsc -b packages/renderer --force`
+  makes the Fragment error disappear **and** turns both existing suppressions into
+  `TS2578: Unused '@ts-expect-error' directive` — exactly the confirmation signal this entry's own Fix
+  section predicted ("they will start erroring as unused, which is the built-in signal that the root fix
+  worked"). Restored afterwards; the tree is unchanged.
+- **Why the fix was not applied in this pass — real scope, not reluctance:** the blanket
+  `[elemName: string]: any` was masking genuine type errors repo-wide. Removing it surfaces ~7 immediately,
+  and at least two are real defects rather than noise:
+  - `modules/publicist/PublicistDashboard.tsx:335` — `Type '{ contacts: Contact[]; }' is not assignable to
+    'IntrinsicAttributes'. Property 'contacts' does not exist` — a component being handed a prop it does
+    not declare. A real bug the stub was hiding.
+  - `components/shared/WaveMesh.tsx:187` — `waveShaderMaterial` is a legitimate React-Three-Fiber custom
+    shader element that genuinely needs an `IntrinsicElements` declaration, just a correctly-scoped one.
+  - 3 mobile-remote test files — `Property 'map' is missing in type '{ children: ReactNode; }'` against a
+    drei material type.
+  - `modules/knowledge/components/KnowledgeChat.test.tsx:192` — a third stale `@ts-expect-error`.
+- **Scoped fix for whoever picks this up:**
+  1. Delete the two `declare module 'react/jsx-runtime'` / `'react/jsx-dev-runtime'` blocks. **Keep** the
+     `declare global { namespace JSX { interface IntrinsicElements … } }` block — with `@types/react@18`
+     the global namespace is the correct, merging extension point, and it is what R3F custom elements need.
+  2. Replace the blanket `[elemName: string]: any` with explicit declarations for the custom elements that
+     actually exist (`waveShaderMaterial`, and whatever else surfaces). The blanket index signature is what
+     made this a repo-wide type hole rather than a targeted escape hatch.
+  3. Fix the ~7 surfaced errors — `PublicistDashboard.tsx:335` is a real defect, treat it as one.
+  4. Delete the two `@ts-expect-error` comments at `ParticipantSelector.tsx:92` and `PlatformCard.tsx:143`
+     plus the stale one in `KnowledgeChat.test.tsx:192`. `TS2578` will confirm each.
+- **Do not:** do not re-add a blanket `[elemName: string]: any` to silence step 3. That index signature is
+  the defect, not the workaround — it is what let ISSUE-1185's real keying bug typecheck cleanly.
