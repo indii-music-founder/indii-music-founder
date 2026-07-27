@@ -2806,3 +2806,56 @@ renumbered before writing. The ledger is correct; only the commit message is sta
 - **~100 `Date.now()`/`Math.random()` hits** flagged by the workflow's own grep as potential impure-render violations — all traced to event-handler/callback/ID-generator contexts, not render bodies. The only 2 `Math.random()` call sites were individually confirmed (one inside a `setTimeout` callback, one inside an async user-triggered handler).
 - **~40 non-transactional `.get()`-then-`.update()` pairs across `packages/firebase/src`** — all but one (ISSUE-1215) write fixed or externally-derived values (webhook payload data, status constants) rather than values computed from the document's own prior array/counter state, so they carry no lost-update risk.
 - **ISSUE-1205** (`CRMDashboard.tsx` re-render fix) — checked as part of this hunt's Zustand-slice pass and found already fixed by a different concurrent agent before this session reached it; ledger entry updated separately (see its own entry above).
+
+---
+
+## Session 2026-07-27 — ISSUE-1175 infra verification + stranded-session recovery gap
+
+### ISSUE-1236: Sessions that reach `proxyJob.status: 'blocked'` are permanently stranded — the `blocked → dispatching` recovery transition exists but has no caller
+
+- **Status:** ✅ FIXED (2026-07-27 — `retrySessionProxyJob` callable added, exported, and unit-tested; live invocation not yet performed, see Verification)
+- **Severity:** 🔴 HIGH (permanent, silent loss of access to finalized, hash-verified, already-paid-for user footage; no user-visible error at any step)
+- **Module:** `packages/firebase/src/functions/video/retrySessionProxyJob.ts` (new), `packages/firebase/src/index.ts`
+- **Evidence:** `dispatchSessionProxyJob` is imported by exactly one file — `finalizeVideoSessionUpload.ts:9` — and called from exactly one place, inside its `onObjectFinalized` handler (`:427`), which returns early unless the triggering path matches `session-media/**/staging/original.*` (`:403`). `createFirestoreProxyJobClaimStore` contains an explicit `blocked → dispatching` re-dispatch branch (`dispatchSessionProxyJob.ts:160`), which is only reachable by calling `dispatchSessionProxyJob` a second time. Nothing could. Once finalization completes, the staging object is gone and the trigger cannot re-fire, so the branch was unreachable code documenting an intent the system could not honour.
+- **Impact:** Any session uploaded while the proxy worker was unconfigured or unreachable ends at `status: 'uploaded'` with `proxyJob.status: 'blocked'` and stays there forever. The original bytes are finalized, generation-pinned, SHA-256 verified, and billed; the user has no proxy, no error state, and no route to one. Confirmed live: `videoSessions/0e723e4b57d35239c0446d284d6c3c22a69d52f7` has been in exactly this state since 2026-07-24. Of the 4 sessions in production, **zero** have ever produced a `proxyManifest`.
+- **Fix:** New owner-scoped `retrySessionProxyJob` callable. It rebuilds the exact `FinalizedOriginalRef` the trigger would have passed — read from the immutable `original` the finalizer already persisted — and hands it to the **same** `dispatchSessionProxyJob`, so both idempotency layers (transactional generation+SHA claim, deterministic Cloud Tasks task name) still apply unchanged. No parallel dispatch architecture was introduced.
+- **Fail-closed posture (deliberate):** refuses when a `proxyManifest` already exists (retrying could re-charge for delivered work), when `status !== 'uploaded'` (no finalized original to retry), when the persisted `original` is missing or its identity fields are malformed, when the caller is not `ownerUid`, and when a `dispatching`/`queued` job is already in flight. A dispatch that comes back still-`blocked` is returned **verbatim** rather than reported as a successful retry — the retry ran and did not help, and saying otherwise would be fabricated success (MCLEAR).
+- **Verification:** 7 unit tests (`retrySessionProxyJob.test.ts`) covering re-dispatch, verbatim still-blocked passthrough, already-queued no-op, malformed session id, empty owner, unknown request fields rejected by `.strict()`, and store-rejection-without-dispatch. `packages/firebase && npm run build` (`tsc`) clean — the real gate per ERROR_LEDGER 2026-07-21, since the root typecheck does not cover this package the same way. **Not yet invoked live** — deploying and calling it against the stranded session is a production mutation and was explicitly deferred by the founder this session.
+- **Depends on:** Nothing. Does not reorder the binding repair order; it removes a trap the repair order's own step-2 fail-closed design created.
+
+### ISSUE-1237: ISSUE-1175 infra preflight — all five previously-missing pieces verified live; `proxy-worker-not-configured` is genuinely resolved
+
+- **Status:** ✅ FIXED (2026-07-27 — verified live, and the verification is now a committed, re-runnable script rather than a hand-derived one-off)
+- **Severity:** 🟡 MEDIUM (verification infrastructure; the underlying infra was already correct, but nothing could prove it without re-deriving every probe by hand)
+- **Module:** `scripts/verify-session-proxy.sh` (new)
+- **Evidence:** Every prior ISSUE-1175 attempt re-derived the same probes by hand and burned a live run discovering an infra gap (2026-07-24 reached `blocked` purely because `SESSION_PROXY_WORKER_URL` was unset). There was no way to answer "is the chain actually wired up?" without starting a run.
+- **Live preflight result (2026-07-27, project `indii-music-founder`, region `us-central1`) — all PASS:**
+  1. `engine-dsp` deployed; `/health` returns 200 for an authenticated caller; `/proxy` present in the deployed `openapi.json`; `SESSION_MEDIA_BUCKET` set on the service (without it `build_pipeline_from_environment` raises a 503 mid-run, not at deploy time).
+  2. `session-proxy-queue` exists and is `RUNNING`.
+  3. All five `SESSION_PROXY_*` vars set on `finalizeVideoSessionUpload` — the exact condition whose absence produced the 2026-07-24 `blocked` result.
+  4. `engine-dsp-invoker@…` bound on `engine-dsp`, so Cloud Tasks OIDC will not 403.
+- **Also confirmed durable:** the five `SESSION_PROXY_*` vars and `SESSION_MEDIA_BUCKET` are set in `.github/workflows/deploy.yml` (`:656`, `:668-672`), not only via manual `gcloud`/`firebase deploy`. A CI redeploy cannot silently revert the chain to `proxy-worker-not-configured`.
+- **Cross-boundary contract re-audited (this is the class of bug that broke the last two runs):** the finalizer writes `session-media/${ownerUid}/${sessionId}/original/${sha256}.${extension}` (`finalizeVideoSessionUpload.ts:283`); the worker's `VideoProxyRequest.validate_storage_identity` requires exactly `session-media/{owner_uid}/{session_id}/original/{sha256}.(mp4|mov|webm|m4v)` (`video_session_pipeline.py:80-86`). They match. `VideoSessionSchema` (`.strict()`) declares `proxyJob`, `proxyManifest`, and the lease fields, so the worker's own writes parse.
+- **Baseline at time of audit:** 40 Python (`test_video_session_pipeline.py`, `test_video_pipeline.py`, `test_main.py`) and 24 TS (`dispatchSessionProxyJob.test.ts`, `finalizeVideoSessionUpload.test.ts`) passing.
+- **Acceptance:** `scripts/verify-session-proxy.sh preflight` exits non-zero and names the specific missing piece whenever any dependency of the chain is absent; `watch <sessionId>` follows a real session to a terminal state and prints manifest presence plus worker logs without asserting success on the session's behalf.
+
+### ISSUE-1175 status note (2026-07-27)
+
+**Remains 🟡 PARTIAL — unchanged.** This session removed two things that stood between the code and a
+closure attempt (the unreachable recovery path, ISSUE-1236; and the unverifiable infra, ISSUE-1237),
+and confirmed the chain is now genuinely wired end to end. It did **not** produce a terminal
+`ProxyManifest`, and therefore does not close ISSUE-1175 under the founder's binding acceptance rule.
+The live run was offered and explicitly deferred by the founder this session in favour of other work.
+
+**Confirmed still true:** zero of the 4 production `videoSessions` have ever produced a
+`proxyManifest`. The worker half of this chain has never executed against real bytes.
+
+**Shortest path to closure when it is picked back up, in order:**
+1. Push to `main` so CI deploys `retrySessionProxyJob` (its env contract is already in `deploy.yml`).
+2. Run `scripts/verify-session-proxy.sh preflight` — expect all PASS, as of 2026-07-27.
+3. Either call `retrySessionProxyJob({sessionId: '0e723e4b57d35239c0446d284d6c3c22a69d52f7'})` as
+   that session's owner to recover the already-uploaded real bytes, **or** upload a fresh video
+   through Creative Video's session intake in the running app — the latter is the stronger evidence
+   because it exercises the app-intake half too, which the 2026-07-24 scripted run did not.
+4. `scripts/verify-session-proxy.sh watch <sessionId>` until terminal, then record the manifest,
+   the private proxy object, and the worker logs here.
