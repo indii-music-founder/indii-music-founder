@@ -356,6 +356,7 @@ export declare const SessionEditPlanSchema: z.ZodEffects<z.ZodObject<{
         audioRecipeId?: string | undefined;
         userNotes?: string | undefined;
     }[];
+    receiptId: string;
     planId: string;
     sourceGeneration: string;
     modelProvenance: {
@@ -365,7 +366,6 @@ export declare const SessionEditPlanSchema: z.ZodEffects<z.ZodObject<{
         completionTokens?: number | undefined;
         thoughtSignature?: string | undefined;
     };
-    receiptId: string;
 }, {
     createdAt: string;
     schemaVersion: "session-edit-plan.v1";
@@ -395,6 +395,7 @@ export declare const SessionEditPlanSchema: z.ZodEffects<z.ZodObject<{
         audioRecipeId?: string | undefined;
         userNotes?: string | undefined;
     }[];
+    receiptId: string;
     planId: string;
     sourceGeneration: string;
     modelProvenance: {
@@ -404,7 +405,6 @@ export declare const SessionEditPlanSchema: z.ZodEffects<z.ZodObject<{
         completionTokens?: number | undefined;
         thoughtSignature?: string | undefined;
     };
-    receiptId: string;
 }>, {
     createdAt: string;
     schemaVersion: "session-edit-plan.v1";
@@ -434,6 +434,7 @@ export declare const SessionEditPlanSchema: z.ZodEffects<z.ZodObject<{
         audioRecipeId?: string | undefined;
         userNotes?: string | undefined;
     }[];
+    receiptId: string;
     planId: string;
     sourceGeneration: string;
     modelProvenance: {
@@ -443,7 +444,6 @@ export declare const SessionEditPlanSchema: z.ZodEffects<z.ZodObject<{
         completionTokens?: number | undefined;
         thoughtSignature?: string | undefined;
     };
-    receiptId: string;
 }, {
     createdAt: string;
     schemaVersion: "session-edit-plan.v1";
@@ -473,6 +473,7 @@ export declare const SessionEditPlanSchema: z.ZodEffects<z.ZodObject<{
         audioRecipeId?: string | undefined;
         userNotes?: string | undefined;
     }[];
+    receiptId: string;
     planId: string;
     sourceGeneration: string;
     modelProvenance: {
@@ -482,7 +483,6 @@ export declare const SessionEditPlanSchema: z.ZodEffects<z.ZodObject<{
         completionTokens?: number | undefined;
         thoughtSignature?: string | undefined;
     };
-    receiptId: string;
 }>;
 export type SessionSegmentClassification = z.infer<typeof SessionSegmentClassificationSchema>;
 export type SegmentQualityFlag = z.infer<typeof SegmentQualityFlagSchema>;
