@@ -23,7 +23,11 @@ vi.mock('motion/react', () => {
         get: (_target, prop: string) => {
             return ({ children, whileTap: _whileTap, initial: _initial, animate: _animate, exit: _exit, transition: _transition, ...props }:
                 React.PropsWithChildren<Record<string, unknown>>) => {
-                const Tag = prop as keyof JSX.IntrinsicElements;
+                // ISSUE-1190: `keyof JSX.IntrinsicElements` used to widen to `string` under the
+                // old blanket index signature. With real element types it is a union of every
+                // tag, so props must satisfy ALL of them (three/drei elements demand `map`).
+                // These mocks render a plain DOM tag, so `ElementType` is the accurate cast.
+                const Tag = prop as unknown as React.ElementType;
                 return <Tag {...props}>{children}</Tag>;
             };
         },

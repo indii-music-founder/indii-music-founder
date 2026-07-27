@@ -89,7 +89,6 @@ export default function ParticipantSelector() {
                     const top = 50 + radiusY * Math.sin(angle);
 
                     return (
-                        // @ts-expect-error - React.Fragment accepts key but this TS version's types are strict
                         <React.Fragment key={agent.id}>
                             <Tooltip>
                                 <TooltipTrigger asChild>

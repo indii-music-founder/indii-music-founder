@@ -332,7 +332,14 @@ export default function PublicistDashboard() {
                                     transition={{ duration: 0.2 }}
                                     className="h-full -m-8"
                                 >
-                                    <SuperfanCRM contacts={contacts} />
+                                    {/* ISSUE-1190: `contacts` was being passed here and silently
+                                        discarded — SuperfanCRM takes no props and loads its own
+                                        data via useSuperfans(). The blanket JSX index signature
+                                        made the bogus prop typecheck. Removed rather than wired
+                                        up: the component is self-sufficient by design, and
+                                        feeding it the dashboard's `contacts` would change which
+                                        dataset it renders. */}
+                                    <SuperfanCRM />
                                 </motion.div>
                             ) : null}
                         </AnimatePresence>

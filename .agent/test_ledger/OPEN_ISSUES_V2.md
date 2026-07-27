@@ -1695,7 +1695,16 @@
 
 ### ISSUE-1190: `React.Fragment` + `key` fails typecheck repo-wide, forcing per-site `@ts-expect-error` suppressions
 
-- **Status:** 🔴 OPEN (tech debt — root cause not yet identified)
+- **Status:** ✅ FIXED (2026-07-27 — root cause removed, all 7 masked errors fixed, all 3 suppressions deleted, renderer typecheck clean)
+- **Fix applied (2026-07-27):**
+  1. Deleted the ambient `declare module 'react/jsx-runtime'` / `'react/jsx-dev-runtime'` stubs from `vite-env.d.ts`. Under `jsx: "react-jsx"` TS resolves the JSX namespace from `react/jsx-runtime`; those stubs supplied a namespace containing only `IntrinsicElements`, so `IntrinsicAttributes` — the only source of `key` — was absent.
+  2. Removed the blanket `[elemName: string]: any` index signature. It was the actual hole: it made every unknown tag and every wrong prop legal repo-wide.
+  3. Moved the one genuine custom-element declaration (`waveShaderMaterial`, R3F `extend()`ed in `WaveMesh.tsx`) into a new `packages/renderer/src/types/three-elements.d.ts`, typed via R3F's `MaterialNode`. It lives there because `declare global` requires a **module**, and `vite-env.d.ts` is a script (no top-level import/export) — that mismatch is why the first attempt to declare it in place did not merge.
+  4. Fixed the 7 errors the blanket signature had been masking (see below) and deleted all 3 `@ts-expect-error` comments, each of which TS then reported as `TS2578: Unused directive` — the built-in confirmation this entry predicted.
+- **Real defect found underneath, exactly as predicted:** `PublicistDashboard.tsx:335` passed `contacts={contacts}` to `<SuperfanCRM />`, which **takes no props** and loads its own data via `useSuperfans()`. The prop was silently discarded. Removed rather than wired up — the component is self-sufficient by design and feeding it the dashboard's `contacts` would change which dataset it renders, which is a product decision, not a type fix.
+- **Second real finding — 4 test mocks were relying on the hole:** `SettingsPanel.test.tsx`, `MobileRemote.test.tsx`, `TransportBar.test.tsx`, `AgentChat.test.tsx` each cast `prop as keyof JSX.IntrinsicElements`. Under the blanket signature that widened to `string`; against real element types it is a union of every tag, so props had to satisfy *all* of them (three/drei elements require `map`). Recast to `React.ElementType`, which is what those mocks actually render.
+- **Verification:** `tsc -b packages/renderer --force` → **0 errors** (was 7). Targeted suite across every changed file → **83/83 passing, 14 files**. `grep` for the Fragment/Attributes suppressions → **0 remaining**.
+- **Superseded status line:** ~~🔴 OPEN (tech debt — root cause not yet identified)~~
 - **Severity:** 🔵 LOW (no runtime impact; it is the *suppression* that is dangerous, because the
   previous workaround for it — ISSUE-1185's spread-`key` cast — was a real bug that typechecked cleanly)
 - **Module:** `packages/renderer/tsconfig.json`, `@types/react@18.3.3`, and every call site that needs a

@@ -99,29 +99,23 @@ declare module '*?raw' {
     export default content;
 }
 
-declare module 'react/jsx-runtime' {
-    namespace JSX {
-        interface IntrinsicElements {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            [elemName: string]: any;
-        }
-    }
-}
-
-declare module 'react/jsx-dev-runtime' {
-    namespace JSX {
-        interface IntrinsicElements {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            [elemName: string]: any;
-        }
-    }
-}
-
-declare global {
-    namespace JSX {
-        interface IntrinsicElements {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            [elemName: string]: any;
-        }
-    }
-}
+// ISSUE-1190: this file previously declared THREE `JSX` namespaces — two
+// ambient `declare module 'react/jsx-runtime'` / `'react/jsx-dev-runtime'`
+// stubs plus a global one — each containing only a blanket
+// `IntrinsicElements { [elemName: string]: any }`.
+//
+// Under `jsx: "react-jsx"` TypeScript resolves the JSX namespace from
+// `react/jsx-runtime`, NOT from the global one. `@types/react@18`'s real
+// `jsx-runtime.d.ts` exports a complete namespace (`IntrinsicAttributes`,
+// `ElementType`, `LibraryManagedAttributes`, …). Supplying a partial one here
+// meant `IntrinsicAttributes` — the only source of the `key` prop for any
+// non-intrinsic element — was absent from the namespace TS actually consults.
+// Symptom: `<React.Fragment key={x}>` failed with "Property 'key' does not
+// exist", worked around with `@ts-expect-error` at each call site. Those
+// suppressions silence EVERY error on the following line, which is how
+// ISSUE-1185's real keying bug shipped while typechecking clean.
+//
+// Custom JSX elements now live in `types/three-elements.d.ts`, declared
+// explicitly. `declare global` requires a module; this file is a script (no
+// top-level import/export), so the declaration cannot correctly live here.
+// Do not reintroduce a blanket index signature — it was the hole, not the fix.
