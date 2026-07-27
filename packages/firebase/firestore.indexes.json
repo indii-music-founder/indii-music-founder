@@ -1,20 +1,19 @@
 {
-  "fieldOverrides": [
+  "fieldOverrides": [],
+  "indexes": [
     {
       "collectionGroup": "ragChunks",
-      "fieldPath": "embedding",
-      "indexes": [
+      "queryScope": "COLLECTION",
+      "fields": [
         {
-          "queryScope": "COLLECTION",
+          "fieldPath": "embedding",
           "vectorConfig": {
             "dimension": 768,
             "flat": {}
           }
         }
       ]
-    }
-  ],
-  "indexes": [
+    },
     {
       "collectionGroup": "ragDocuments",
       "fields": [

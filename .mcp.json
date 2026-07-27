@@ -1,5 +1,15 @@
 {
   "mcpServers": {
+    "indii-local": {
+      "command": "node",
+      "args": ["packages/mcp-server-local/dist/index.js"],
+      "description": "Local indii MCP server providing secure direct file operations and media tools"
+    },
+    "indii-harness": {
+      "command": "node",
+      "args": ["packages/mcp-server-harness/dist/index.js"],
+      "description": "Indii agentic harness MCP server for orchestration and workflows"
+    },
     "firebase": {
       "command": "npx",
       "args": ["-y", "@anthropics/firebase-mcp@latest"],
@@ -15,15 +25,20 @@
       "args": ["-y", "@anthropics/cloud-run-mcp@latest"],
       "description": "Google Cloud Run service management and deployment"
     },
+    "gemini-api-docs": {
+      "command": "npx",
+      "args": ["-y", "@google/gemini-api-docs-mcp@latest"],
+      "description": "Live Gemini API documentation, SDK references, and model info. Prevents stale API code generation"
+    },
     "gcp-observability": {
       "command": "npx",
       "args": ["-y", "@anthropics/gcp-observability-mcp@latest"],
       "description": "GCP monitoring, logging, and observability tools (Cloud Logging, Cloud Monitoring)"
     },
-    "gemini-api-docs": {
+    "sentry": {
       "command": "npx",
-      "args": ["-y", "@google/gemini-api-docs-mcp@latest"],
-      "description": "Live Gemini API documentation, SDK references, and model info. Prevents stale API code generation. See: ai.google.dev/gemini-api/docs/coding-agents"
+      "args": ["-y", "@anthropics/sentry-mcp@latest"],
+      "description": "Sentry error tracking and monitoring integration"
     },
     "google-drive": {
       "command": "npx",
@@ -34,11 +49,6 @@
       "command": "npx",
       "args": ["-y", "@anthropics/google-maps-mcp@latest"],
       "description": "Google Maps API integration for directions, geocoding, and place search"
-    },
-    "sentry": {
-      "command": "npx",
-      "args": ["-y", "@anthropics/sentry-mcp@latest"],
-      "description": "Sentry error tracking and monitoring integration"
     },
     "pencil": {
       "command": "npx",
