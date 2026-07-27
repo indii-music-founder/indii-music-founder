@@ -1,5 +1,37 @@
 {
-  "fieldOverrides": [],
+  "fieldOverrides": [
+    {
+      "collectionGroup": "items",
+      "fieldPath": "status",
+      "ttl": false,
+      "indexes": [
+        {
+          "order": "ASCENDING",
+          "queryScope": "COLLECTION"
+        },
+        {
+          "order": "DESCENDING",
+          "queryScope": "COLLECTION"
+        },
+        {
+          "arrayConfig": "CONTAINS",
+          "queryScope": "COLLECTION"
+        },
+        {
+          "order": "ASCENDING",
+          "queryScope": "COLLECTION_GROUP"
+        },
+        {
+          "order": "DESCENDING",
+          "queryScope": "COLLECTION_GROUP"
+        },
+        {
+          "arrayConfig": "CONTAINS",
+          "queryScope": "COLLECTION_GROUP"
+        }
+      ]
+    }
+  ],
   "indexes": [
     {
       "collectionGroup": "ragChunks",
@@ -17,43 +49,82 @@
     {
       "collectionGroup": "ragDocuments",
       "fields": [
-        { "fieldPath": "uid", "order": "ASCENDING" },
-        { "fieldPath": "state", "order": "ASCENDING" },
-        { "fieldPath": "createdAt", "order": "DESCENDING" }
+        {
+          "fieldPath": "uid",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "state",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        }
       ],
       "queryScope": "COLLECTION"
     },
     {
       "collectionGroup": "ragChunks",
       "fields": [
-        { "fieldPath": "uid", "order": "ASCENDING" },
-        { "fieldPath": "documentId", "order": "ASCENDING" },
-        { "fieldPath": "ordinal", "order": "ASCENDING" }
+        {
+          "fieldPath": "uid",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "documentId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "ordinal",
+          "order": "ASCENDING"
+        }
       ],
       "queryScope": "COLLECTION"
     },
     {
       "collectionGroup": "costLedger",
       "fields": [
-        { "fieldPath": "status", "order": "ASCENDING" },
-        { "fieldPath": "timestamp", "order": "ASCENDING" }
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "timestamp",
+          "order": "ASCENDING"
+        }
       ],
       "queryScope": "COLLECTION"
     },
     {
       "collectionGroup": "costLedger",
       "fields": [
-        { "fieldPath": "userId", "order": "ASCENDING" },
-        { "fieldPath": "status", "order": "ASCENDING" }
+        {
+          "fieldPath": "userId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        }
       ],
       "queryScope": "COLLECTION"
     },
     {
       "collectionGroup": "costLedger",
       "fields": [
-        { "fieldPath": "userId", "order": "ASCENDING" },
-        { "fieldPath": "timestamp", "order": "DESCENDING" },
-        { "fieldPath": "operationId", "order": "DESCENDING" }
+        {
+          "fieldPath": "userId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "timestamp",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "operationId",
+          "order": "DESCENDING"
+        }
       ],
       "queryScope": "COLLECTION"
     },
@@ -756,10 +827,22 @@
     {
       "collectionGroup": "agent_notes",
       "fields": [
-        { "fieldPath": "userId", "order": "ASCENDING" },
-        { "fieldPath": "toAgentId", "order": "ASCENDING" },
-        { "fieldPath": "projectId", "order": "ASCENDING" },
-        { "fieldPath": "createdAt", "order": "DESCENDING" }
+        {
+          "fieldPath": "userId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "toAgentId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "projectId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        }
       ],
       "queryScope": "COLLECTION"
     },

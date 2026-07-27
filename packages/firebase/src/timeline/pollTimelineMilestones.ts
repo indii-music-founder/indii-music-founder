@@ -23,6 +23,24 @@ const inngestEventKey = defineSecret('INNGEST_EVENT_KEY');
 
 const db = admin.firestore();
 
+/**
+ * ISSUE-1220: distinguish "Firestore index not provisioned" from a genuine
+ * logic failure.
+ *
+ * Exported and pure so it can actually be tested — the handler itself is
+ * wrapped in `onSchedule` and is not directly invocable from a unit test, which
+ * is why this module had no coverage at all when the bug was found.
+ *
+ * A missing index surfaces as gRPC status 9 FAILED_PRECONDITION whose message
+ * names an index; other FAILED_PRECONDITION errors (and every other error) must
+ * NOT be reported as a provisioning problem, or the next real bug gets the
+ * wrong diagnosis.
+ */
+export function isMissingIndexError(error: unknown): boolean {
+    const message = error instanceof Error ? error.message : String(error);
+    return /FAILED_PRECONDITION/i.test(message) && /\bindex\b/i.test(message);
+}
+
 // ============================================================================
 // Types (duplicated from client to avoid cross-project imports)
 // ============================================================================
@@ -235,7 +253,36 @@ export const pollTimelineMilestones = onSchedule(
                 `[pollTimelineMilestones] Done. Found ${totalDue} due milestones, dispatched ${totalProcessed} to Inngest.`
             );
         } catch (error) {
-            console.error('[pollTimelineMilestones] Fatal error:', error);
+            // ISSUE-1220: this handler used to log the raw Firestore stack trace
+            // and then return normally, which reported SUCCESS to Cloud Scheduler
+            // on a run that dispatched nothing. A missing index therefore looked
+            // identical to "no milestones were due" — which is how this stayed
+            // invisible from 2026-07-24 until it was traced by hand.
+            //
+            // A missing COLLECTION_GROUP index is a provisioning problem with a
+            // specific, actionable fix, so name it instead of leaving the next
+            // reader to decode a raw SDK error.
+            const message = error instanceof Error ? error.message : String(error);
+
+            if (isMissingIndexError(error)) {
+                console.error(
+                    '[pollTimelineMilestones] Firestore index not provisioned: the'
+                    + " collectionGroup('items') query on `status` requires a"
+                    + ' COLLECTION_GROUP-scoped index. It is declared in'
+                    + ' packages/firebase/firestore.indexes.json (fieldOverrides ->'
+                    + " items.status); if this still fires, the index exists in config"
+                    + ' but has not finished building or was never deployed. No'
+                    + ' milestones were dispatched on this run.',
+                    message,
+                );
+            } else {
+                console.error('[pollTimelineMilestones] Fatal error:', error);
+            }
+
+            // Fail the invocation. Swallowing this made a totally failed run
+            // indistinguishable from a healthy no-op in Cloud Scheduler's own
+            // status, which is the specific thing that hid this bug.
+            throw error;
         }
     }
 );
