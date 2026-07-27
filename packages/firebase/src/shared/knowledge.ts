@@ -68,3 +68,23 @@ export interface KnowledgeIndexReceipt {
   failureReason?: string;
   indexedAt: string;
 }
+
+export interface KnowledgeCitation {
+  chunkId: string;
+  documentId: string;
+  text: string;
+  score: number;
+  pageNumber?: number;
+  ordinal: number;
+}
+
+export interface KnowledgeQueryReceipt {
+  receiptId: string;
+  uid: string;
+  query: string;
+  topK: number;
+  resultsCount: number;
+  citationChunkIds: string[];
+  latencyMs: number;
+  queriedAt: string;
+}
