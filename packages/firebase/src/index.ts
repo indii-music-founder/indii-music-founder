@@ -1877,7 +1877,7 @@ export {
 } from './pod/printful';
 
 // Knowledge Base RAG System (ISSUE-1224)
-export { createKnowledgeUpload, finalizeKnowledgeUpload } from './functions/knowledge/upload';
+export { createKnowledgeUpload, finalizeKnowledgeUpload, deleteKnowledgeDocument } from './functions/knowledge/upload';
 export { indexKnowledgeDocumentWorker } from './functions/knowledge/indexWorker';
 export { queryKnowledgeBase } from './functions/knowledge/query';
 

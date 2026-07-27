@@ -92,19 +92,26 @@ vi.mock('../functions/knowledge/indexWorker', () => ({
   executeDocumentIndexing: vi.fn().mockResolvedValue(undefined),
 }));
 
-vi.mock('../lib/vertexClient', () => {
+const vertexClientMock = vi.hoisted(() => {
+    const mockEmbedContent = vi.fn().mockResolvedValue({
+        embeddings: [{ values: new Array(768).fill(0.1) }]
+    });
+    const mockGenerateContent = vi.fn().mockResolvedValue({
+        text: "Generated secure answer."
+    });
+    const mockModels = {
+        embedContent: mockEmbedContent,
+        generateContent: mockGenerateContent
+    };
     return {
         getVertexAIClient: vi.fn().mockReturnValue({
-            models: {
-                embedContent: vi.fn().mockResolvedValue({
-                    embeddings: [{ values: new Array(768).fill(0.1) }]
-                }),
-                generateContent: vi.fn().mockResolvedValue({
-                    text: "Generated secure answer."
-                })
-            }
+            models: mockModels
         })
     };
+});
+
+vi.mock('../lib/vertexClient', () => {
+    return vertexClientMock;
 });
 
 // Mock textExtractor exclusively for the failing test

@@ -1,12 +1,12 @@
 import { describe, it, expect, vi } from 'vitest';
 import { RAGAgent } from '../RAGAgent';
-import { GeminiRetrieval } from '@/services/rag/GeminiRetrievalService';
+import { knowledgeRetrievalService } from '@/modules/knowledge/services/KnowledgeRetrievalService';
 import { AgentConfig } from '../types';
 
-// Mock the Gemini Retrieval service
-vi.mock('@/services/rag/GeminiRetrievalService', () => ({
-    GeminiRetrieval: {
-        query: vi.fn(),
+// Mock the Knowledge Retrieval service
+vi.mock('@/modules/knowledge/services/KnowledgeRetrievalService', () => ({
+    knowledgeRetrievalService: {
+        chat: vi.fn(),
     },
 }));
 
@@ -59,7 +59,7 @@ describe('ISSUE-481: KB offline message', () => {
         const onProgress = vi.fn();
         
         // Mock RAG to throw an error (simulating KB offline)
-        vi.mocked(GeminiRetrieval.query).mockRejectedValueOnce(new Error('KB offline'));
+        vi.mocked(knowledgeRetrievalService.chat).mockRejectedValueOnce(new Error('KB offline'));
 
         // Act
         await agent.testExecuteInternal('Test task', undefined, onProgress);
@@ -78,9 +78,7 @@ describe('ISSUE-481: KB offline message', () => {
         const onProgress = vi.fn();
         
         // Mock RAG to return empty/NONE
-        vi.mocked(GeminiRetrieval.query).mockResolvedValueOnce({
-            candidates: [{ content: { parts: [{ text: 'NONE' }] } }]
-        } as any);
+        vi.mocked(knowledgeRetrievalService.chat).mockResolvedValueOnce('NONE');
 
         // Act
         await agent.testExecuteInternal('Test task', undefined, onProgress);

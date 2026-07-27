@@ -22,6 +22,10 @@ export interface GeminiFile {
     state: "STATE_UNSPECIFIED" | "PROCESSING" | "ACTIVE" | "FAILED";
 }
 
+/**
+ * @deprecated Use KnowledgeRetrievalService instead. The Gemini Files API proxy is deprecated
+ * in favor of the new Firestore Vector Search backend.
+ */
 export class GeminiRetrievalService {
     private apiKey: string;
     private baseUrl: string;

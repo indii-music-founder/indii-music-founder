@@ -1,5 +1,6 @@
 import { GeminiRetrieval, GeminiFile } from '@/services/rag/GeminiRetrievalService';
 import { processForKnowledgeBase } from '@/services/rag/ragService';
+import { knowledgeRetrievalService, FrontendKnowledgeDoc } from './KnowledgeRetrievalService';
 import { logger } from '@/utils/logger';
 import { WikiStorageAdapter } from '@/services/agent/memory/WikiStorageAdapter';
 import { auth } from '@/services/firebase';
@@ -10,7 +11,7 @@ export interface KnowledgeDoc {
     type: string;
     size: string;
     date: string;
-    status: 'indexed' | 'processing' | 'error';
+    status: 'indexed' | 'processing' | 'error' | 'needs_reupload';
     rawName: string; // The full files/URI
     mimeType: string;
     content?: string; // Optional: raw content if it's a Wiki
@@ -29,17 +30,30 @@ class KnowledgeBaseService {
 
     async getDocuments(projectId?: string): Promise<KnowledgeDoc[]> {
         try {
-            let docs: KnowledgeDoc[] = [];
+            const docs: KnowledgeDoc[] = [];
 
-            // 1. Fetch RAG Files (Safe wrapped, as it might fail on CORS/Network)
+            // 1. Fetch new RAG Documents from KnowledgeRetrievalService
             try {
-                const { files } = await GeminiRetrieval.listFiles();
-                docs = (files || []).map(f => this.mapGeminiFileToDoc(f));
-            } catch (ragError) {
-                logger.warn("KnowledgeBaseService: Failed to load RAG files from proxy, continuing with Wiki only...", ragError);
+                const newDocs = await knowledgeRetrievalService.getDocuments(projectId);
+                docs.push(...newDocs);
+            } catch (err) {
+                logger.error("KnowledgeBaseService: Failed to load new RAG documents", err);
             }
 
-            // 2. Fetch Wiki Documents
+            // 2. Fetch Legacy RAG Files (mark as needs_reupload)
+            try {
+                const { files } = await GeminiRetrieval.listFiles();
+                const legacyDocs = (files || []).map(f => {
+                    const doc = this.mapGeminiFileToDoc(f);
+                    doc.status = 'needs_reupload'; // Force re-upload requirement
+                    return doc;
+                });
+                docs.push(...legacyDocs);
+            } catch (ragError) {
+                logger.warn("KnowledgeBaseService: Failed to load legacy RAG files from proxy", ragError);
+            }
+
+            // 3. Fetch Wiki Documents
             if (auth.currentUser) {
                 const wikiDocs = await this.wikiStorage.listWikiDocs(auth.currentUser.uid);
                 const mappedWikiDocs = wikiDocs.map(w => ({
@@ -68,59 +82,23 @@ class KnowledgeBaseService {
     }
 
     async uploadFiles(files: FileList, projectId?: string, onProgress?: (fileName: string) => void): Promise<number> {
-        let successCount = 0;
-        const uploadPromises: Promise<void>[] = [];
-
-        for (let i = 0; i < files.length; i++) {
-            const file = files[i];
-            if (!file) continue;
-            uploadPromises.push((async () => {
-                try {
-                    if (onProgress) onProgress(file.name);
-                    const result = await processForKnowledgeBase(file, file.name, {
-                        size: `${(file.size / 1024).toFixed(1)} KB`,
-                        type: file.type,
-                        originalDate: new Date(file.lastModified).toISOString(),
-                        projectId: projectId // Pass projectId to ingestion
-                    });
-
-                    if (result.embeddingId) {
-                        successCount++;
-                    } else {
-                        throw new Error("Ingestion failed");
-                    }
-                } catch (err: unknown) {
-                    logger.error(`Upload Fail for ${file.name}:`, err);
-                }
-            })());
-        }
-
-        await Promise.all(uploadPromises);
-        return successCount;
+        return knowledgeRetrievalService.uploadFiles(files, projectId, onProgress);
     }
 
     async deleteDocument(rawName: string): Promise<void> {
-        await GeminiRetrieval.deleteFile(rawName);
+        if (rawName.startsWith('files/')) {
+            await GeminiRetrieval.deleteFile(rawName);
+        } else {
+            await knowledgeRetrievalService.deleteDocument(rawName);
+        }
     }
 
     async chat(query: string, fileUri: string | null = null, projectId?: string): Promise<string> {
-        // Pass projectId to lower layer for store selection
-        const response = await GeminiRetrieval.query(fileUri, query, undefined, undefined, projectId);
-
-        // Extract text from Gemini response structure
-        // Assuming response.candidates[0].content.parts[0].text
-        if (response.candidates && response.candidates.length > 0) {
-            const candidate = response.candidates[0];
-            if (candidate.content && candidate.content.parts && candidate.content.parts.length > 0) {
-                return candidate.content.parts[0].text;
-            }
-        }
-
-        return "I couldn't generate a response. Please try again.";
+        return knowledgeRetrievalService.chat(query, fileUri, projectId);
     }
 
     async *chatStream(query: string, fileUri: string | null = null, projectId?: string): AsyncGenerator<string> {
-        for await (const chunk of GeminiRetrieval.streamQuery(fileUri, query, undefined, undefined, projectId)) {
+        for await (const chunk of knowledgeRetrievalService.chatStream(query, fileUri, projectId)) {
             yield chunk;
         }
     }

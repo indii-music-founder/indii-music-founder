@@ -1,8 +1,7 @@
 import { AutonomousIntelligence as AI } from '../intelligence/AutonomousIntelligence';
-import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
-import { GeminiRetrieval } from './GeminiRetrievalService';
+
+import { knowledgeRetrievalService, FrontendKnowledgeDoc } from '../../modules/knowledge/services/KnowledgeRetrievalService';
 import type { KnowledgeAsset, KnowledgeDocumentIndexingStatus, UserProfile, AudioAnalysisJob } from '../../modules/workflow/types';
-import { GeminiFile } from './GeminiRetrievalService';
 import { logger } from '@/utils/logger';
 
 interface Attribution {
@@ -19,7 +18,7 @@ export async function runAgenticWorkflow(
     activeTrack: AudioAnalysisJob | null,
     onUpdate: (update: string) => void,
     _updateDocStatus: (docId: string, status: KnowledgeDocumentIndexingStatus) => void,
-    fileContent?: string
+    _fileContent?: string
 ): Promise<{ asset: KnowledgeAsset; updatedProfile: UserProfile | null }> {
 
     onUpdate("Initializing Gemini Knowledge Base...");
@@ -27,12 +26,11 @@ export async function runAgenticWorkflow(
     let responseText = "No answer found.";
     const sources: Attribution[] = [];
     const reasoning = ["Query started"];
-    let files: GeminiFile[] = [];
+    let files: FrontendKnowledgeDoc[] = [];
 
     // 1. Retrieval Phase (Safe Failover)
     try {
-        const fileList = await GeminiRetrieval.listFiles();
-        files = fileList.files || [];
+        files = await knowledgeRetrievalService.getDocuments();
     } catch (err: unknown) {
         logger.warn("RAG Retrieval Failed (proceeding with Pure LLM):", err);
         reasoning.push(`Retrieval Error: ${err}`);
@@ -45,16 +43,12 @@ export async function runAgenticWorkflow(
             onUpdate(`Searching across ${files.length} document(s)...`);
 
             // Pass null for fileUri to trigger Store-wide search across all indexed files
-            const result = await GeminiRetrieval.query(
-                null,
+            const resultText = await knowledgeRetrievalService.chat(
                 query,
-                fileContent,
-                INTELLIGENCE_MODELS.TEXT.AGENT
+                null
             );
-            const data = result;
 
-            const candidate = data.candidates?.[0];
-            responseText = candidate?.content?.parts?.[0]?.text || "No relevant info found in documents.";
+            responseText = resultText || "No relevant info found in documents.";
 
             if (responseText) {
                 reasoning.push(`Multi-file search performed across ${files.length} documents.`);
@@ -130,18 +124,26 @@ export async function processForKnowledgeBase(
         }
     }
 
-    // 2. Ingest into Gemini Files (Native Support)
+    // 2. Ingest into Knowledge Base (New System)
     try {
-        // Direct upload to Files API - handles PDF/MD/TXT natively now
-        const file = await GeminiRetrieval.uploadFile(displayTitle, content);
-        logger.info(`[RAG] Ingested native file: ${file.name} (${file.mimeType})`);
+        let fileObj: File;
+        if (content instanceof File) {
+            fileObj = content;
+        } else if (content instanceof Blob) {
+            fileObj = new File([content], displayTitle, { type: content.type });
+        } else {
+            fileObj = new File([content], displayTitle + '.txt', { type: 'text/plain' });
+        }
+        
+        await knowledgeRetrievalService.uploadFiles([fileObj] as unknown as FileList);
+        logger.info(`[RAG] Ingested native file: ${fileObj.name} (${fileObj.type})`);
 
         return {
             title: displayTitle,
-            content: typeof content === 'string' ? content : `Native ${file.mimeType} file stored in Gemini.`,
+            content: typeof content === 'string' ? content : `Native ${fileObj.type} file stored in Knowledge Base.`,
             entities: [],
-            tags: ['gemini-file', file.mimeType?.split('/').pop() || 'raw'],
-            embeddingId: file.name
+            tags: ['knowledge-base', fileObj.type?.split('/').pop() || 'raw'],
+            embeddingId: fileObj.name // We don't have the generated doc ID here, but this preserves the old schema loosely
         };
     } catch (e: unknown) {
         logger.error("[RAG] Ingestion failed:", e);

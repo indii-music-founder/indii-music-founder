@@ -7,6 +7,7 @@ interface DocumentCardProps {
     onDelete: (doc: KnowledgeDoc) => void;
     onChat: (doc: KnowledgeDoc) => void;
     onView?: (doc: KnowledgeDoc) => void;
+    onReupload?: (doc: KnowledgeDoc) => void;
     key?: React.Key;
 }
 
@@ -37,9 +38,13 @@ export const DocumentCard: React.FC<DocumentCardProps> = ({ doc, onDelete, onCha
                             </button>
                         )}
                         <button
-                            onClick={(e) => { e.stopPropagation(); onChat(doc); }}
-                            className="p-2 bg-gray-800 hover:bg-[#FFE135] text-gray-400 hover:text-black rounded-lg transition-colors"
-                            title="Chat with Document"
+                            onClick={(e) => { 
+                                e.stopPropagation(); 
+                                if (doc.status !== 'needs_reupload') onChat(doc); 
+                            }}
+                            className={`p-2 bg-gray-800 rounded-lg transition-colors ${doc.status === 'needs_reupload' ? 'text-gray-600 cursor-not-allowed' : 'text-gray-400 hover:bg-[#FFE135] hover:text-black'}`}
+                            title={doc.status === 'needs_reupload' ? "Must be re-uploaded to chat" : "Chat with Document"}
+                            disabled={doc.status === 'needs_reupload'}
                         >
                             <MessageSquare size={16} />
                         </button>
@@ -72,6 +77,12 @@ export const DocumentCard: React.FC<DocumentCardProps> = ({ doc, onDelete, onCha
                 {/* Active Indicator */}
                 {doc.status === 'indexed' && (
                     <div className="absolute bottom-6 right-6 w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]"></div>
+                )}
+                {doc.status === 'needs_reupload' && (
+                    <div className="absolute bottom-6 right-6 flex items-center gap-1.5 text-yellow-500 bg-yellow-500/10 px-2 py-0.5 rounded-md text-[10px] uppercase font-bold border border-yellow-500/20">
+                        <div className="w-1.5 h-1.5 rounded-full bg-yellow-500 animate-pulse"></div>
+                        Needs Re-upload
+                    </div>
                 )}
             </div>
         </div>

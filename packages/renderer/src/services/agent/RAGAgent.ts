@@ -1,6 +1,6 @@
 import { BaseAgent } from './BaseAgent';
 import { AgentConfig, AgentContext, AgentProgressCallback, AgentResponse } from './types';
-import { GeminiRetrieval } from '@/services/rag/GeminiRetrievalService';
+import { knowledgeRetrievalService } from '@/modules/knowledge/services/KnowledgeRetrievalService';
 import { logger } from '@/utils/logger';
 
 /**
@@ -34,25 +34,9 @@ export class RAGAgent extends BaseAgent {
             const probeQuery = `Extract any strictly relevant protocols, guidelines, rules, or insights from the knowledge base that correspond to the following task: "${task}". If there is no relevant information, output "NONE".`;
 
             const targetCorpus = context?.ragCorpus || context?.projectId;
-            const queryResponse = await GeminiRetrieval.query(null, probeQuery, undefined, undefined, targetCorpus);
+            const queryResponseText = await knowledgeRetrievalService.chat(probeQuery, undefined, targetCorpus);
 
-            // Extract the generated text
-            const ragTextRaw = queryResponse?.candidates?.[0]?.content?.parts?.[0]?.text;
-            const groundingMetadata = queryResponse?.candidates?.[0]?.groundingMetadata || queryResponse?.candidates?.[0]?.grounding_metadata;
-            let ragText = ragTextRaw;
-            if (ragTextRaw && groundingMetadata?.groundingChunks) {
-                const chunks = groundingMetadata.groundingChunks;
-                const citations = chunks.map((chunk: { retrievedContext?: { title?: string; uri?: string; pageNumber?: number; } }) => {
-                    const ctx = chunk.retrievedContext;
-                    if (ctx) {
-                        return `[Source: ${ctx.title || ctx.uri || 'Unknown'}${ctx.pageNumber ? ` - Page ${ctx.pageNumber}` : ''}]`;
-                    }
-                    return '';
-                }).filter(Boolean).join(', ');
-                if (citations) {
-                    ragText += `\n\nCitations: ${citations}`;
-                }
-            }
+            const ragText = queryResponseText;
 
             if (ragText && !ragText.includes("NONE") && !signal?.aborted) {
                 // Ensure context exists

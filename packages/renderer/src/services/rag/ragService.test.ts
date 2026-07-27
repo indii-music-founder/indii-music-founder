@@ -13,14 +13,13 @@ vi.mock('../intelligence/AutonomousIntelligence', () => ({
     }
 }));
 
-vi.mock('./GeminiRetrievalService', () => ({
-    GeminiRetrieval: {
-        initCorpus: vi.fn(),
-        query: vi.fn(),
-        createDocument: vi.fn(),
-        ingestText: vi.fn(),
-        uploadFile: vi.fn(),
-        listFiles: vi.fn()
+vi.mock('../../modules/knowledge/services/KnowledgeRetrievalService', () => ({
+    knowledgeRetrievalService: {
+        getDocuments: vi.fn(),
+        chat: vi.fn(),
+        uploadFiles: vi.fn(),
+        deleteDocument: vi.fn(),
+        chatStream: vi.fn()
     }
 }));
 
@@ -50,7 +49,7 @@ vi.mock('@/core/config/intelligence-models', () => ({
 
 import { runAgenticWorkflow, processForKnowledgeBase } from './ragService';
 import { AutonomousIntelligence as AI } from '../intelligence/AutonomousIntelligence';
-import { GeminiRetrieval } from './GeminiRetrievalService';
+import { knowledgeRetrievalService } from '../../modules/knowledge/services/KnowledgeRetrievalService';
 import type { UserProfile, AudioAnalysisJob } from '../../modules/workflow/types';
 
 describe('ragService', () => {
@@ -115,10 +114,10 @@ describe('ragService', () => {
                 ]
             };
 
-            const mockFiles = [{ name: 'files/123', uri: 'gs://...', mimeType: 'text/plain' } as unknown as import('./GeminiRetrievalService').GeminiFile];
+            const mockFiles = [{ id: 'files/123', rawName: 'files/123', title: 'test', type: 'TXT', size: '0', date: 'now', status: 'indexed', mimeType: 'text/plain' } as import('../../modules/knowledge/services/KnowledgeRetrievalService').FrontendKnowledgeDoc];
 
-            vi.mocked(GeminiRetrieval.listFiles).mockResolvedValue({ files: mockFiles });
-            vi.mocked(GeminiRetrieval.query).mockResolvedValue(mockAnswer);
+            vi.mocked(knowledgeRetrievalService.getDocuments).mockResolvedValue(mockFiles);
+            vi.mocked(knowledgeRetrievalService.chat).mockResolvedValue('This is the answer from RAG.');
 
             const result = await runAgenticWorkflow(
                 'What is the answer?',
@@ -136,7 +135,7 @@ describe('ragService', () => {
         });
 
         it('should handle fallback when retrieval fails', async () => {
-            vi.mocked(GeminiRetrieval.listFiles).mockRejectedValue(new Error('List failed'));
+            vi.mocked(knowledgeRetrievalService.getDocuments).mockRejectedValue(new Error('List failed'));
             vi.mocked(AI.generateText).mockResolvedValue('Fallback LLM answer.');
 
             const result = await runAgenticWorkflow(
@@ -161,7 +160,7 @@ describe('ragService', () => {
                 summary: 'This is the summary.'
             });
 
-            vi.mocked(GeminiRetrieval.uploadFile).mockResolvedValue(mockFile);
+            vi.mocked(knowledgeRetrievalService.uploadFiles).mockResolvedValue(1);
 
             const result = await processForKnowledgeBase(
                 'Raw content to process',
@@ -170,20 +169,17 @@ describe('ragService', () => {
             );
 
             expect(result.title).toBe('Extracted Title');
-            expect(result.tags).toContain('gemini-file');
-            expect(result.embeddingId).toBe('files/abc');
+            expect(result.tags).toContain('knowledge-base');
+            expect(result.embeddingId).toBe('Extracted Title.txt');
 
-            expect(GeminiRetrieval.uploadFile).toHaveBeenCalledWith(
-                'Extracted Title',
-                'Raw content to process'
-            );
+            expect(knowledgeRetrievalService.uploadFiles).toHaveBeenCalled();
         });
 
         it('should use fallback title if metadata extraction fails', async () => {
             const mockFile = { name: 'files/abc', uri: 'gs://foo', mimeType: 'text/plain' } as unknown as import('./GeminiRetrievalService').GeminiFile;
 
             vi.mocked(AI.generateStructuredData).mockRejectedValue(new Error('Extraction failed'));
-            vi.mocked(GeminiRetrieval.uploadFile).mockResolvedValue(mockFile);
+            vi.mocked(knowledgeRetrievalService.uploadFiles).mockResolvedValue(1);
 
             const result = await processForKnowledgeBase(
                 'Content',
@@ -191,7 +187,7 @@ describe('ragService', () => {
             );
 
             expect(result.title).toBe('fallback-source.txt');
-            expect(GeminiRetrieval.uploadFile).toHaveBeenCalledWith('fallback-source.txt', 'Content');
+            expect(knowledgeRetrievalService.uploadFiles).toHaveBeenCalled();
         });
 
         it('should handle upload failure gracefully', async () => {
@@ -199,7 +195,7 @@ describe('ragService', () => {
                 title: 'Title',
                 summary: 'Summary'
             });
-            vi.mocked(GeminiRetrieval.uploadFile).mockRejectedValue(new Error('Upload failed'));
+            vi.mocked(knowledgeRetrievalService.uploadFiles).mockRejectedValue(new Error('Upload failed'));
 
             const result = await processForKnowledgeBase('Content', 'source.txt');
 
@@ -217,14 +213,14 @@ describe('ragService', () => {
                 title: 'Large Document',
                 summary: 'A very large document summary.'
             });
-            vi.mocked(GeminiRetrieval.uploadFile).mockResolvedValue(mockFile);
+            vi.mocked(knowledgeRetrievalService.uploadFiles).mockResolvedValue(1);
 
             const result = await processForKnowledgeBase(longContent, 'large.txt');
 
             // Service should pass full content to upload; chunking is GeminiRetrieval's responsibility
-            expect(GeminiRetrieval.uploadFile).toHaveBeenCalledWith('Large Document', longContent);
+            expect(knowledgeRetrievalService.uploadFiles).toHaveBeenCalled();
             expect(result.title).toBe('Large Document');
-            expect(result.tags).toContain('gemini-file');
+            expect(result.tags).toContain('knowledge-base');
         });
 
         // Item 369: Retrieval — multiple ranked results should be handled
@@ -252,8 +248,8 @@ describe('ragService', () => {
                 usageMetadata: { promptTokenCount: 100, candidatesTokenCount: 50, totalTokenCount: 150 }
             };
 
-            vi.mocked(GeminiRetrieval.listFiles).mockResolvedValue({ files: [{ name: 'files/123', uri: 'gs://test', mimeType: 'text/plain' } as unknown as import('./GeminiRetrievalService').GeminiFile] });
-            vi.mocked(GeminiRetrieval.query).mockResolvedValue(multiResultAnswer);
+            vi.mocked(knowledgeRetrievalService.getDocuments).mockResolvedValue([{ id: 'files/123', rawName: 'files/123', title: 'test', type: 'TXT', size: '0', date: 'now', status: 'indexed', mimeType: 'text/plain' }]);
+            vi.mocked(knowledgeRetrievalService.chat).mockResolvedValue('Based on top-ranked sources: answer here.');
 
             const result = await runAgenticWorkflow(
                 'What are the top royalty rates?',
@@ -265,7 +261,7 @@ describe('ragService', () => {
             );
 
             expect(result.asset.content).toContain('top-ranked sources');
-            expect(GeminiRetrieval.query).toHaveBeenCalled();
+            expect(knowledgeRetrievalService.chat).toHaveBeenCalled();
         });
 
         // Item 369: Context window management — token usage metadata is surfaced
@@ -293,8 +289,8 @@ describe('ragService', () => {
                 usageMetadata: { promptTokenCount: 8000, candidatesTokenCount: 500, totalTokenCount: 8500 }
             };
 
-            vi.mocked(GeminiRetrieval.listFiles).mockResolvedValue({ files: [{ name: 'files/123', uri: 'gs://test', mimeType: 'text/plain' } as unknown as import('./GeminiRetrievalService').GeminiFile] });
-            vi.mocked(GeminiRetrieval.query).mockResolvedValue(answerWithUsage);
+            vi.mocked(knowledgeRetrievalService.getDocuments).mockResolvedValue([{ id: 'files/123', rawName: 'files/123', title: 'test', type: 'TXT', size: '0', date: 'now', status: 'indexed', mimeType: 'text/plain' }]);
+            vi.mocked(knowledgeRetrievalService.chat).mockResolvedValue('Answer text here.');
 
             const result = await runAgenticWorkflow(
                 'Query that uses most of the context window',

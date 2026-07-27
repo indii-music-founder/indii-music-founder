@@ -85,6 +85,27 @@ export default function KnowledgeBase() {
         }
     };
 
+    const handleReupload = async (doc: KnowledgeDoc) => {
+        const ok = await ConfirmDialog.call({
+            title: "Re-upload Required",
+            message: `The document "${doc.title}" uses our legacy storage system. To chat with it, we need to migrate it to the new vector knowledge base.\n\nPlease delete this file, and then upload it again using the "Ingest Document" button.`,
+            confirmText: "Delete & Re-upload",
+            variant: "default"
+        });
+
+        if (ok) {
+            try {
+                await knowledgeBaseService.deleteDocument(doc.rawName);
+                toast.success('Document deleted. Please upload the new file.');
+                await loadDocuments();
+                // Trigger file input after deletion
+                fileInputRef.current?.click();
+            } catch {
+                toast.error('Failed to delete document');
+            }
+        }
+    };
+
     const handleChat = (doc: KnowledgeDoc) => {
         setActiveChatDoc(doc);
         setIsChatOpen(true);
@@ -203,6 +224,7 @@ export default function KnowledgeBase() {
                                     onDelete={handleDelete}
                                     onChat={handleChat}
                                     onView={setViewingDoc}
+                                    onReupload={handleReupload}
                                 />
                             ))}
                         </div>

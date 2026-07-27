@@ -84,6 +84,45 @@ export const queryKnowledgeBase = onCall({ enforceAppCheck: true }, async (reque
 
   const now = new Date().toISOString();
   const receiptRef = admin.firestore().collection('users').doc(uid).collection('ragQueryReceipts').doc();
+  
+  // 3. Generate answer using Gemini 3 Flash Preview grounded in citations
+  let answer = "";
+  try {
+    const vertex = getVertexAIClient();
+    const contextText = citations.map(c => `[Document ${c.documentId}]:\n${c.text}`).join('\n\n');
+    
+    const prompt = `You are an AI assistant answering questions based strictly on the provided context documents.
+    
+Context Documents:
+${contextText}
+
+Question:
+${query}
+
+Instructions:
+1. Answer the question using ONLY the provided Context Documents.
+2. If the answer is not contained in the Context Documents, say "I cannot answer this question based on the provided documents."
+3. Do not use outside knowledge.
+4. Keep the answer clear and concise.`;
+
+    const response = await vertex.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      contents: [prompt],
+      config: {
+        temperature: 0.0,
+      }
+    });
+
+    if (response.text) {
+        answer = response.text;
+    } else {
+        answer = "I couldn't generate an answer from the provided documents.";
+    }
+  } catch (genErr: any) {
+    console.error("Gemini generation failed:", genErr);
+    answer = "An error occurred while generating the answer from the documents.";
+  }
+
   const receipt: KnowledgeQueryReceipt = {
     receiptId: receiptRef.id,
     uid,
@@ -100,6 +139,7 @@ export const queryKnowledgeBase = onCall({ enforceAppCheck: true }, async (reque
   return {
     query: query.trim(),
     citations,
+    answer,
     receiptId: receiptRef.id,
     queriedAt: now,
   };
