@@ -43,7 +43,15 @@ function response(byteSize: number) {
             protocol: 'gcs-resumable.v1',
             resumableSessionUri: 'https://storage.googleapis.com/upload/resumable-session-1',
             chunkSizeBytes: 8 * 1024 * 1024,
-            expiresAt: '2026-07-27T18:00:00.000Z',
+            // ISSUE-1241: this was hardcoded to '2026-07-27T18:00:00.000Z'. The
+            // service rejects an authorization whose `expiresAt` is in the past
+            // (`Date.parse(expiresAt) <= Date.now()`), and that guard runs BEFORE
+            // the identity check these tests target. So at 18:00Z on 2026-07-27
+            // the fixture silently expired and four tests began failing on every
+            // run forever — the last green CI run was 17:31Z, 29 minutes earlier.
+            // A fixture that encodes an absolute wall-clock instant is a time
+            // bomb; it must always be relative to now.
+            expiresAt: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
             requiredMetadata: {
                 ownerUid: 'artist-1',
                 organizationId: 'org-1',

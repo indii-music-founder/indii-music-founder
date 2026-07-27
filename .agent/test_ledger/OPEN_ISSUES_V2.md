@@ -3058,3 +3058,15 @@ real evidence for "the fix is deployed and denies attackers," and it is *not* ev
 users can still do their work." A regression that broke the allowed path would not have been caught here.
 The single unblock for that whole class is a real signed-in session — either the `signBlob` grant or, better,
 ordinary use of the running app.
+
+### ISSUE-1241: Time-bomb test fixture broke CI permanently at 18:00Z — hardcoded `expiresAt` silently expired mid-day
+
+- **Status:** ✅ FIXED (2026-07-27)
+- **Severity:** 🔴 HIGH (blocks every deploy from the moment it triggers, for everyone, forever — and blames whoever pushed next)
+- **Module:** `packages/renderer/src/services/video/SessionVideoUploadService.test.ts`
+- **Evidence:** the fixture hardcoded `expiresAt: '2026-07-27T18:00:00.000Z'`. `SessionVideoUploadService.ts:104` rejects an authorization whose expiry has passed (`Date.parse(authorization.expiresAt) <= Date.now()`), and that guard runs **before** the identity check the tests target — so after 18:00Z the wrong error is thrown and 4 tests fail: `expected [Function] to throw error including 'identity' but got 'The upload authorization does not match the selected file.'`
+- **How it was distinguished from a regression (this is the part worth keeping):** the same 4 tests were confirmed **passing in CI run 30289490710 at 17:31:54Z** — 29 minutes before the fixture's own expiry — and failing at the *identical* SHA `c08a3330a` when re-run locally hours later. Source and test files are byte-identical between those two runs (`git show c08a3330a:<file>` verified for both). Same commit, same code, different result, therefore the variable is wall-clock time, not any commit. Without that check the natural conclusion would have been "the last person to push broke it," and the actual cause would have survived the investigation.
+- **Fix:** `expiresAt: new Date(Date.now() + 60 * 60 * 1000).toISOString()` — always valid, relative to run time.
+- **Checked, and NOT a bomb:** `packages/firebase/src/functions/video/createVideoSession.test.ts:101` carries the identical `'2026-07-27T18:00:00.000Z'` string, but it is an assertion that a mock's supplied value is echoed back, never an input to a `Date.now()` comparison. Verified by running it: 4/4 passing. Left alone rather than "fixed" on pattern-match.
+- **Verification:** the affected suite goes 1 failed/4 failed-tests → **5/5 passing**.
+- **Do not:** do not encode an absolute wall-clock instant in a fixture that feeds an expiry/freshness comparison. It will pass in review, pass in CI, and then break everything at a time nobody is watching.
