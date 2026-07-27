@@ -100,19 +100,6 @@ describe('ragService', () => {
         const mockUpdateDocStatus = vi.fn();
 
         it('should initialize corpus and query successfully', async () => {
-            const mockAnswer = {
-                candidates: [
-                    {
-                        content: { parts: [{ text: 'This is the answer from RAG.' }] },
-                        groundingAttributions: [
-                            {
-                                sourceId: 'corpora/test-corpus/documents/doc1',
-                                content: { parts: [{ text: 'Source passage' }] }
-                            }
-                        ]
-                    }
-                ]
-            };
 
             const mockFiles = [{ id: 'files/123', rawName: 'files/123', title: 'test', type: 'TXT', size: '0', date: 'now', status: 'indexed', mimeType: 'text/plain' } as import('../../modules/knowledge/services/KnowledgeRetrievalService').FrontendKnowledgeDoc];
 
@@ -153,7 +140,6 @@ describe('ragService', () => {
 
     describe('processForKnowledgeBase', () => {
         it('should extract metadata and upload file', async () => {
-            const mockFile = { name: 'files/abc', uri: 'gs://foo', mimeType: 'text/plain' } as unknown as import('./GeminiRetrievalService').GeminiFile;
 
             vi.mocked(AI.generateStructuredData).mockResolvedValue({
                 title: 'Extracted Title',
@@ -176,7 +162,6 @@ describe('ragService', () => {
         });
 
         it('should use fallback title if metadata extraction fails', async () => {
-            const mockFile = { name: 'files/abc', uri: 'gs://foo', mimeType: 'text/plain' } as unknown as import('./GeminiRetrievalService').GeminiFile;
 
             vi.mocked(AI.generateStructuredData).mockRejectedValue(new Error('Extraction failed'));
             vi.mocked(knowledgeRetrievalService.uploadFiles).mockResolvedValue(1);
@@ -207,7 +192,6 @@ describe('ragService', () => {
         // Item 369: Chunk splitting — long content should still be processed end-to-end
         it('should process large content without truncation at the service boundary', async () => {
             const longContent = 'A'.repeat(50000); // 50KB of text
-            const mockFile = { name: 'files/large-doc', uri: 'gs://foo/large', mimeType: 'text/plain' } as unknown as import('./GeminiRetrievalService').GeminiFile;
 
             vi.mocked(AI.generateStructuredData).mockResolvedValue({
                 title: 'Large Document',
@@ -238,15 +222,6 @@ describe('ragService', () => {
             } as unknown as import('@/types/User').UserProfile;
             const mockOnUpdate = vi.fn();
             const mockUpdateDocStatus = vi.fn();
-            const multiResultAnswer = {
-                candidates: [{
-                    content: {
-                        parts: [{ text: 'Based on top-ranked sources: answer here.' }],
-                        role: 'model'
-                    }
-                }],
-                usageMetadata: { promptTokenCount: 100, candidatesTokenCount: 50, totalTokenCount: 150 }
-            };
 
             vi.mocked(knowledgeRetrievalService.getDocuments).mockResolvedValue([{ id: 'files/123', rawName: 'files/123', title: 'test', type: 'TXT', size: '0', date: 'now', status: 'indexed', mimeType: 'text/plain' }]);
             vi.mocked(knowledgeRetrievalService.chat).mockResolvedValue('Based on top-ranked sources: answer here.');
@@ -279,15 +254,6 @@ describe('ragService', () => {
             } as unknown as import('@/types/User').UserProfile;
             const mockOnUpdate = vi.fn();
             const mockUpdateDocStatus = vi.fn();
-            const answerWithUsage = {
-                candidates: [{
-                    content: {
-                        parts: [{ text: 'Answer text here.' }],
-                        role: 'model'
-                    }
-                }],
-                usageMetadata: { promptTokenCount: 8000, candidatesTokenCount: 500, totalTokenCount: 8500 }
-            };
 
             vi.mocked(knowledgeRetrievalService.getDocuments).mockResolvedValue([{ id: 'files/123', rawName: 'files/123', title: 'test', type: 'TXT', size: '0', date: 'now', status: 'indexed', mimeType: 'text/plain' }]);
             vi.mocked(knowledgeRetrievalService.chat).mockResolvedValue('Answer text here.');
