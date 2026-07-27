@@ -281,7 +281,7 @@ const verifiedEntitlementCallableOptions = {
     enforceAppCheck: false,
     region: 'us-central1',
     timeoutSeconds: 30,
-    memory: '256MiB' as const,
+    memory: '512MiB' as const,
 };
 
 /** Authenticated clients can request only their own verified Free entitlement. */

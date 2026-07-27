@@ -56,7 +56,7 @@ export async function processRequestTaxFormUpload(
 }
 
 export const requestTaxFormUpload = onCall<RequestTaxFormUploadInput>(
-    { enforceAppCheck: false, timeoutSeconds: 30, memory: '256MiB' },
+    { enforceAppCheck: false, timeoutSeconds: 30, memory: '512MiB' },
     async (request): Promise<RequestTaxFormUploadResult> => {
         validateAppCheckV2(request);
         if (!request.auth) {

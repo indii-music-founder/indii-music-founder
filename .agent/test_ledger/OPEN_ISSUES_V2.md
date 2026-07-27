@@ -3,7 +3,7 @@
 > This file is written by the /real test agent and consumed by a fixing agent.
 > The test agent NEVER modifies code. The fix agent NEVER runs tests.
 >
-> **Last updated:** 2026-07-25 (**ISSUE-1175 production implementation is deployed and locally validated, but remains 🟡 PARTIAL under its binding acceptance rule.** Owner-bound resumable grants, immutable generation/hash finalization, durable dispatch/leases, private proxy production, cost settlement, retention, cancellation, renderer intake, and representative synthetic FFmpeg media proofs exist. A real authenticated recording has not yet produced and opened a terminal production `ProxyManifest`; the earlier upload → blocked-job evidence was not sufficient closure. ISSUE-1176 remains gated. **Earlier: REPAIR-ORDER STEP 1 IS COMPLETE — ISSUE-1193..1197 all ✅ FIXED and on `main` (commits `ef9526c7a`, `86486670c`; CI 29942881908 green 25/25). The critical timeline data-loss path is closed. Step 2 of the founder repair order — durable ingestion generation-claiming and worker execution, ISSUE-1175 — is now the front of the queue.** **Repo-wide perf/bloat audit appended — ISSUE-1198..1209, findings only, nothing fixed yet.** **STEP-1 AUDIT of ISSUE-1180 appended — ISSUE-1193..1197; ISSUE-1193 is CRITICAL and is the first thing to fix in the whole repair order.** FOUNDER ASSESSMENT block appended at end of file — ISSUE-1175..1181 scope corrected and a binding 6-step repair order recorded; read it before touching Session Breakdown.** ISSUE-1187 fixed for real and its premature ✅ corrected; `/qa` unit-suite verification ISSUE-1191..1192; browser QA sweep ISSUE-1185..1190 — 1185/1186/1187 fixed, 1188..1190 open; earlier: ISSUE-1110..1114 Computer Execution plan, ISSUE-1095..1099 audit + fixes)
+> **Last updated:** 2026-07-25 (**ISSUE-1175 production implementation is deployed and locally validated, but remains 🟡 PARTIAL under its binding acceptance rule.** Owner-bound resumable grants, immutable generation/hash finalization, durable dispatch/leases, private proxy production, cost settlement, retention, cancellation, renderer intake, and representative synthetic FFmpeg media proofs exist. A real authenticated recording has not yet produced and opened a terminal production `ProxyManifest`; the earlier upload → blocked-job evidence was not sufficient closure. ISSUE-1176 remains gated. **Earlier: REPAIR-ORDER STEP 1 IS COMPLETE — ISSUE-1193..1197 all ✅ FIXED and on `main` (commits `ef9526c7a`, `86486670c`; CI 29942881908 green 25/25). The critical timeline data-loss path is closed. Step 2 of the founder repair order — durable ingestion generation-claiming and worker execution, ISSUE-1175 — is now the front of the queue.** **Repo-wide perf/bloat audit ISSUE-1198..1209 is COMPLETE as of 2026-07-27 — 11 ✅ FIXED, 2 🟢 WONTFIX, every closure independently re-verified against the committed tree; the old "findings only, nothing fixed yet" wording was stale and is corrected at the section header.** **STEP-1 AUDIT of ISSUE-1180 appended — ISSUE-1193..1197; ISSUE-1193 is CRITICAL and is the first thing to fix in the whole repair order.** FOUNDER ASSESSMENT block appended at end of file — ISSUE-1175..1181 scope corrected and a binding 6-step repair order recorded; read it before touching Session Breakdown.** ISSUE-1187 fixed for real and its premature ✅ corrected; `/qa` unit-suite verification ISSUE-1191..1192; browser QA sweep ISSUE-1185..1190 — 1185/1186/1187 fixed, 1188..1190 open; earlier: ISSUE-1110..1114 Computer Execution plan, ISSUE-1095..1099 audit + fixes)
 > **Branch:** `main` (direct commits)
 >
 > **Ledger protocol (V2):** This is the ACTIVE master ledger. It operates exactly like the original:
@@ -2139,10 +2139,30 @@ Listed only so they are not lost. No assessment is implied.
 
 ---
 
-## Session 2026-07-22 — Repo-wide perf/bloat audit (findings only, no fixes applied)
+## Session 2026-07-22 — Repo-wide perf/bloat audit (COMPLETE — see 2026-07-27 verification note below)
 
+> **STATUS CORRECTION (2026-07-27):** this section's original header said "findings only, no fixes
+> applied," and that is no longer true — it was accurate on 2026-07-22 and became stale as the
+> entries were worked. **All 13 entries are now closed: 11 ✅ FIXED, 2 🟢 WONTFIX** (ISSUE-1199 and
+> ISSUE-1204, both closed after a real investigation rather than a re-analysis). Every closure was
+> independently re-verified against the current committed tree on 2026-07-27 — not taken from the
+> ledger's own claims:
+> - ISSUE-1198: `framer-motion` absent from `packages/renderer/package.json`; **0** `from 'framer-motion'`
+>   imports remain in `src`. (The entry's "Not committed yet" line was itself stale — the migration landed.)
+> - ISSUE-1200/1201: `react-redux`, `@reduxjs/toolkit`, `classnames`, `xml2js` all absent from `package.json`.
+> - ISSUE-1202: `chunkSizeWarningLimit: 1000` in both `packages/renderer/vite.config.ts:187` and
+>   `electron.vite.config.ts:220`.
+> - ISSUE-1203: `LoginFormLazy`/`PrivacyPolicy`/`TermsOfService` all `lazy(() => import(...))` in `App.tsx:10-12`.
+> - ISSUE-1209: `ethers`, `crypto-js`, `simplex-noise`, `autoprefixer`, `vite-plugin-pwa` all absent.
+>
+> **One loose end deliberately NOT actioned:** ISSUE-1204 incidentally found that
+> `packages/renderer/src/services/web3/index.ts` is an unimported barrel (0 importers, confirmed again
+> 2026-07-27). It is being left in place, not pruned — web3/wallet is intentionally deferred
+> infrastructure per standing founder direction, and CLAUDE.md's asset-deletion fail-safe forbids
+> removing an asset merely because nothing imports it yet. Do not "clean this up" in a future pass.
+>
 > Phase-1 audit only — three parallel read-only agents surveyed (1) bundle/lazy-load,
-> (2) Zustand/React re-render patterns, (3) dead code/unused deps. Nothing below has been fixed.
+> (2) Zustand/React re-render patterns, (3) dead code/unused deps.
 > **2026-07-22 follow-up verification pass:** ran real `npm ls`/`depcheck` against `packages/renderer`
 > (not just grep). First attempt was contaminated by an unrelated uncommitted WIP diff sitting in
 > the working tree (now safely `git stash`ed, see ISSUE-1198) which made `motion` look
@@ -2168,7 +2188,7 @@ Listed only so they are not lost. No assessment is implied.
   - `npm run typecheck --workspace=packages/renderer` → clean.
   - `npm run test --workspace=packages/renderer -- --run` → first run: **3 failed** (the regression above, in `BoardroomModule.test.tsx`), all 3 traced to root cause and fixed. Re-run: **4312 passed, 47 skipped, 0 failed** (711/732 test files passed, 21 intentionally skipped) — identical pass count to the pre-migration baseline.
   - `npm run build:studio` → succeeded. **Bundle evidence of the actual fix:** the `vendor-motion` chunk dropped from **472.33 kB to 286.54 kB** (pre- vs post-migration build output) — the duplicate-engine bloat this issue described is now measurably gone, not just theoretically removed.
-- **Not committed yet** — sitting in the working tree pending user go-ahead to commit/push (this repo's `main`-only delivery lane requires a clean, coherent commit; a concurrent agent's unrelated WIP is also present in the tree and must not be mixed into this commit).
+- ~~**Not committed yet**~~ — **superseded 2026-07-27:** this line was written while the change sat in the working tree, and became stale once it landed. Re-verified against the committed tree on 2026-07-27: `framer-motion` is absent from `packages/renderer/package.json` and **0** `from 'framer-motion'` imports remain anywhere in `packages/renderer/src`. The migration is committed and complete.
 
 ### ISSUE-1199: Two list-virtualization libraries — migration attempted and reverted after a real regression; not safe to consolidate as currently architected
 
@@ -2859,3 +2879,34 @@ The live run was offered and explicitly deferred by the founder this session in 
    because it exercises the app-intake half too, which the 2026-07-24 scripted run did not.
 4. `scripts/verify-session-proxy.sh watch <sessionId>` until terminal, then record the manifest,
    the private proxy object, and the worker logs here.
+
+---
+
+## Session 2026-07-27 — CI deploy pipeline red since 2026-07-25; root cause found and fixed
+
+### ISSUE-1238: `getCustomerPortal` OOMs at cold start and fails the ENTIRE production functions deploy — blocking 14 already-merged security fixes from reaching production
+
+- **Status:** ✅ FIXED (2026-07-27 — all 18 latent overrides swept, regression guard added and proven; awaiting the next CI run to confirm green)
+- **Severity:** 🔴 CRITICAL (a single 3-MiB overage held the entire production deploy lane hostage, including merged privilege-escalation and data-exposure fixes)
+- **Module:** `packages/firebase/src/subscription/getCustomerPortal.ts` + 17 sibling files, `scripts/check-function-memory.cjs` (new), `.github/workflows/deploy.yml`, root `package.json`
+- **How found:** Auditing why ISSUE-1222..1235 (14 issues, all logged 2026-07-26) every one said "production deployment remains open." They were all merged to `main` — so the question was whether CI had deployed them. `gh run list` showed the last three `main` deploys (`30272299875`, `30267067639`, `30248393378`) all **failed**. `gh run view --log-failed` narrowed it to one job (`deploy-production`), one step (`Deploy Cloud Functions`), and one function: `Could not create or update Cloud Run service getcustomerportal, Container Healthcheck failed... failed to start and listen on the port... within the allocated timeout.`
+- **Root cause (from the container's own Cloud Run logs, which the deploy log does not surface):** `Memory limit of 256 MiB exceeded with 259 MiB used`, immediately followed by `Default STARTUP TCP probe failed... The instance was not started.` `getCustomerPortal` declared `memory: '256MiB'`. Gen2 cold start loads the whole bundled `functions/index.js` module graph, so every function pays the same shared import cost — now ~259MiB. The container was OOM-killed **3 MiB over**, before it could bind port 8080.
+- **Why the global default did not save it:** `packages/firebase/src/index.ts:11` already calls `setGlobalOptions({ memory: '512MiB' })`. A per-function `memory:` option **overrides that global downward**. The safe default was never the problem; the explicit overrides were.
+- **Direct recurrence of ISSUE-1219, which predicted it:** that entry (2026-07-24) fixed three scheduled functions with the identical signature and stated verbatim that the cause "will keep pushing more `256MiB`-pinned functions past their limit over time" and that it "does not audit every other `256MiB` function in the codebase (there are dozens)." No detector was left behind. Three days later `getCustomerPortal` crossed the line and CI went red.
+- **Blast radius — the part that matters:** because `firebase deploy` fails the whole functions step when any single function fails, **every merged change since 2026-07-25 was blocked from production by this one function.** Verified from the same run log which parts still got through: Firestore/Storage **rules deployed successfully** (`rules file packages/firebase/firestore.rules compiled successfully`, `Deploy complete!`), and ~40 individual functions reported `Successful update operation`. So the rules-layer fixes (ISSUE-1222 privilege escalation, ISSUE-1234 private-field exposure) **are** live; the function-layer fixes in the same pushes are the ones that were held back.
+- **Fix:**
+  1. Swept all 18 remaining `memory: '256MiB'` overrides in `packages/firebase/src` to `'512MiB'` (2x headroom over the observed 259MiB, matching ISSUE-1219's tier choice): `iswcMapper`, `getStemDownloadUrl`, `createMarketplaceCheckout`, `processDDEXAck`, `createCheckoutSession`, `activateFounderPass`, `getCustomerPortal`, `generateInvoice`, `createOneTimeCheckout`, `createMicroTransaction`, `cancelSubscription`, `resumeSubscription`, `createVideoSession`, `manageSemanticMemory`, `entitlements`, `requestTaxFormUpload`, `setRecoupmentBalance`, `dispatcher`. This includes `processWebhookQueue` in `dispatcher.ts`, which ISSUE-1219 explicitly flagged as same-shape-but-not-yet-broken and deliberately left for a future pass.
+  2. Added `scripts/check-function-memory.cjs` (`npm run check:fn-memory`), wired into `.github/workflows/deploy.yml` immediately after typecheck. It fails the build in seconds, naming the exact file/line/tier, rather than 18 minutes into a deploy. `factory.ts` is skipped by path because its small tiers are a legitimate **type union**, not a value.
+- **Verification:** `packages/firebase && npm run build` (`tsc`) clean, `lib/index.js` produced (105,726 bytes). Guard proven to actually work rather than assumed: deliberately reintroduced `memory: '256MiB'` in `cancelSubscription.ts`, confirmed exit 1 naming that exact file and line, then reverted and confirmed exit 0. **Not yet confirmed green in CI** — that requires the next push to run, and per the MCLEAR rule this is not claimed as verified until that run reports success.
+- **Follow-up that remains genuinely open (inherited from ISSUE-1219, not closed here):** the underlying growth problem is untouched. One shared cold-start bundle keeps growing as the monorepo adds functions; this raises every function's ceiling to 512MiB but does not stop the bundle from eventually crossing *that* line too. The real fix is splitting the bundle into per-domain entry points so cold start stops paying for the whole codebase. That is an architecture change, deliberately out of scope here. The new guard at least guarantees the next crossing is caught at lint time rather than in production.
+- **Depends on:** Nothing. Unblocks: ISSUE-1222..1235's deployment halves, and any future push to `main`.
+
+### ISSUE-1239: 14 security/hardening issues were recorded as "deployment pending" without anyone checking whether the deploy lane was even functional
+
+- **Status:** ✅ FIXED (2026-07-27 — deploy state established from evidence; the blocking defect is ISSUE-1238)
+- **Severity:** 🟠 MEDIUM (process/observability gap — it turned a one-function bug into a silent two-day production-delivery outage)
+- **Module:** ledger process; `.agent/test_ledger/OPEN_ISSUES_V2.md` entries ISSUE-1222..1235
+- **Evidence:** ISSUE-1222, 1223, 1224, 1225, 1226, 1228, 1229, 1230, 1231, 1232, 1233, 1234, 1235 (13 entries, all dated 2026-07-26) each closed their local half and recorded a remaining half worded as "production deployment/live verification required." Each was written as if deployment were merely *not yet attempted*. In fact deployment **had** been attempted repeatedly and had been **failing** since 2026-07-25 for a reason unrelated to any of them (ISSUE-1238). No entry recorded a CI run id, a deploy conclusion, or a "is the lane green?" check.
+- **Impact:** A reader of the ledger — human or agent — would reasonably conclude the work was queued and healthy, and would wait. The actual state was a hard-blocked pipeline. The 3-MiB defect was trivially fixable and sat undiagnosed for two days because nothing connected "PARTIAL pending deploy" to "the deploy is failing."
+- **Fix (process, applied):** when an entry's remaining half is a deployment, it must record the evidence of the deploy lane's state at time of writing — the CI run id and its conclusion — not just the intention to deploy. "Pending deploy" and "deploy is broken" are different states and the ledger must distinguish them.
+- **Acceptance:** any future 🟡 PARTIAL whose remainder is "production deployment" cites a specific CI run id and conclusion. A PARTIAL that cannot cite one has not established that its remaining work is actually queued rather than blocked.

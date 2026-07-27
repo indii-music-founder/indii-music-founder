@@ -66,7 +66,7 @@ export const processISWCMapping = onDocumentCreated(
         document: "iswc_mapper_queue/{jobId}",
         region: REGION,
         timeoutSeconds: 60,
-        memory: "256MiB",
+        memory: "512MiB",
     },
     async (event) => {
         const snapshot = event.data;

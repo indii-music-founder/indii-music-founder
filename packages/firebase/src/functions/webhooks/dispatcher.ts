@@ -264,7 +264,7 @@ export const processWebhookQueue = onSchedule(
   {
     schedule: 'every 30 seconds',
     timeoutSeconds: 300,
-    memory: '256MiB',
+    memory: '512MiB',
   },
   async () => {
     try {

@@ -62,6 +62,7 @@
     "detect:bugs": "bash scripts/detect-hidden-bugs.sh",
     "check:dep-drift": "node scripts/check-dep-version-drift.cjs",
     "check:dep-integrity": "node scripts/check-dependency-integrity.cjs",
+    "check:fn-memory": "node scripts/check-function-memory.cjs",
     "test:rules": "FIRESTORE_EMULATOR_HOST=localhost:8080 vitest run --config vitest.rules.config.ts",
     "emulator:functions": "firebase emulators:start --only functions",
     "health:check": "sh -c 'files=$(find packages/renderer/src/services -name \"*.integration.test.ts\" -print); if [ -z \"$files\" ]; then echo \"No integration tests found\"; exit 0; fi; vitest run $files'",

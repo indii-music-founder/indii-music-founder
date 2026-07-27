@@ -30,7 +30,7 @@ export interface OneTimeCheckoutParams {
 export const createOneTimeCheckout = onCall({
     secrets: [stripeSecretKey],
     timeoutSeconds: 60,
-    memory: '256MiB',
+    memory: '512MiB',
     enforceAppCheck: true,
 }, async (request) => {
     const { userId, items, successUrl, cancelUrl, customerEmail, metadata, applySurcharge } =

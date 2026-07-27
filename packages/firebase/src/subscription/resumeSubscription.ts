@@ -13,7 +13,7 @@ import { stripeSecretKey } from '../config/secrets';
 export const resumeSubscription = onCall({
   secrets: [stripeSecretKey],
   timeoutSeconds: 30,
-  memory: '256MiB',
+  memory: '512MiB',
   enforceAppCheck: true,
 }, async (request) => {
   const { userId } = request.data;

@@ -1697,3 +1697,17 @@ stash.
 **PREVENTION:** Inspect all stash parents and path lists before restoration.
 Restore an explicit allowlist and read the staged diff line by line before
 committing.
+
+## 2026-07-27 Per-Function `memory` Override Beats the Safe Global Default → OOM → Whole Deploy Fails
+
+**SEVERITY:** Critical (one function blocks the entire production deploy pipeline, including unrelated security fixes)
+
+- FILES: `packages/firebase/src/subscription/getCustomerPortal.ts` (the function that actually broke) plus 17 other files that carried the same latent override.
+- ERROR (Cloud Run logs, not the deploy log): `Memory limit of 256 MiB exceeded with 259 MiB used` → `Default STARTUP TCP probe failed 1 time consecutively for container "worker" on port 8080. The instance was not started.` The deploy log only says `Could not create or update Cloud Run service getcustomerportal, Container Healthcheck failed` — which does not name the cause. **Always pull the container's own logs.**
+- CAUSE: Gen2 cold start loads the entire bundled `functions/index.js` graph, so every function pays the same shared import cost (~259MiB and growing). `packages/firebase/src/index.ts:11` already sets a safe `setGlobalOptions({ memory: '512MiB' })`, but a per-function `memory: '256MiB'` option **overrides the global downward**. The container is OOM-killed before it can bind port 8080, so its health check fails and `firebase deploy` fails the whole functions step — taking every unrelated change in that push with it.
+- WHY IT RECURRED: ISSUE-1219 (2026-07-24) fixed exactly this for three scheduled functions, explicitly predicted more would cross the line as the bundle grew, and explicitly did NOT audit the rest — leaving no detector. `getCustomerPortal` crossed three days later, and CI had been red since.
+- FIX: Swept all 18 remaining `memory: '256MiB'` overrides in `packages/firebase/src` to `'512MiB'`. Added `scripts/check-function-memory.cjs` + `npm run check:fn-memory`, wired into `.github/workflows/deploy.yml` right after typecheck so the next occurrence fails in seconds rather than 18 minutes into a deploy. Guard was verified by deliberately reintroducing one `256MiB` override and confirming a non-zero exit naming the exact file/line, then reverting.
+- PREVENTION:
+  1. Do NOT set a per-function `memory` below `512MiB` in `packages/firebase`. Omit the option entirely to inherit the safe global default.
+  2. A "Container Healthcheck failed" deploy error is a symptom, never a diagnosis — `gcloud logging read 'resource.labels.service_name="<lowercased-fn-name>"'` for the real reason. Cloud Run service names are lowercase (`getcustomerportal`, not `getCustomerPortal`).
+  3. When a fix ships with a documented "this will recur" caveat, ship a detector with it. A prediction with no guard is how this returned.

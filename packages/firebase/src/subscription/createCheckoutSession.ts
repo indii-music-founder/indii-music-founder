@@ -16,7 +16,7 @@ import { stripeSecretKey } from '../config/secrets';
 export const createCheckoutSession = onCall({
   secrets: [stripeSecretKey],
   timeoutSeconds: 60,
-  memory: '256MiB',
+  memory: '512MiB',
   enforceAppCheck: true,
 }, async (request) => {
   const { userId, tier, successUrl, cancelUrl, customerEmail, trialDays } = request.data as CheckoutSessionParams;

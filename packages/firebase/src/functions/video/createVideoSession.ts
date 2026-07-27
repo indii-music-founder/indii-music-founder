@@ -554,7 +554,7 @@ export async function createOwnedVideoSession(
 }
 
 export const createVideoSession = onCall(
-    { timeoutSeconds: 30, memory: '256MiB', enforceAppCheck: false },
+    { timeoutSeconds: 30, memory: '512MiB', enforceAppCheck: false },
     async (request): Promise<CreateVideoSessionResult> => {
         validateAppCheckV2(request);
         const userId = requireVerifiedCreativeUser(request.auth);

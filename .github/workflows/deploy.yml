@@ -208,6 +208,13 @@ jobs:
       - name: TypeScript type check (Item 343)
         run: npm run typecheck
 
+      # ISSUE-1238: a function pinned below the shared cold-start footprint OOMs
+      # before it can bind port 8080, fails its deploy health check, and fails
+      # the ENTIRE functions deploy step — blocking every unrelated fix in the
+      # same push. Catch it here, in seconds, instead of 18 minutes into a deploy.
+      - name: Check Cloud Function memory floor (ISSUE-1238)
+        run: npm run check:fn-memory
+
       - name: Build landing page
         run: |
           cd packages/landing

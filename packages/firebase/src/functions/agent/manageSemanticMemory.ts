@@ -116,7 +116,7 @@ function normalizeSemanticAction(value: unknown): 'add' | 'search' {
  */
 export const manageSemanticMemory = onCall({ 
     timeoutSeconds: 60, 
-    memory: '256MiB', 
+    memory: '512MiB', 
     enforceAppCheck: false 
 }, async (request) => {
     validateAppCheckV2(request);

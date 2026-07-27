@@ -203,7 +203,7 @@ async function commitFounderToGitHub(
 export const activateFounderPass = onCall({
     secrets: [githubTokenFounders],
     timeoutSeconds: 120,
-    memory: '256MiB',
+    memory: '512MiB',
     enforceAppCheck: true,
 }, async (request): Promise<ActivateFounderPassResult> => {
     const { targetUid, displayName } = request.data as ActivateFounderPassParams;

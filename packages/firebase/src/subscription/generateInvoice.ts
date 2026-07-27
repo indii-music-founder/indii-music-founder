@@ -40,7 +40,7 @@ export interface InvoiceData {
 export const generateInvoice = onCall({
     secrets: [stripeSecretKey],
     timeoutSeconds: 30,
-    memory: '256MiB',
+    memory: '512MiB',
     enforceAppCheck: true,
 }, async (request) => {
     const { invoiceId } = request.data as { invoiceId?: string };

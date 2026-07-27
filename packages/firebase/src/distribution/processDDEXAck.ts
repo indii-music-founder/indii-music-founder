@@ -86,7 +86,7 @@ function parseDDEXAckXML(xml: string, fileName: string): ParsedDDEXAck | null {
 export const processDDEXAck = onObjectFinalized({
     bucket: "indii-music-founder.firebasestorage.app",
     timeoutSeconds: 60,
-    memory: '256MiB',
+    memory: '512MiB',
     region: 'us-central1',
 }, async (event) => {
     const filePath = event.data.name;

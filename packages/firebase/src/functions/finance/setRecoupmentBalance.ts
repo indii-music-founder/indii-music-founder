@@ -121,7 +121,7 @@ export async function processSetRecoupmentBalance(
 }
 
 export const setRecoupmentBalance = onCall(
-    { enforceAppCheck: false, timeoutSeconds: 30, memory: '256MiB' },
+    { enforceAppCheck: false, timeoutSeconds: 30, memory: '512MiB' },
     async request => {
         validateAppCheckV2(request);
         if (!request.auth) throw new HttpsError('unauthenticated', 'Sign in to configure recoupment.');

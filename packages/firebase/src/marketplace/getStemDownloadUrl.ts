@@ -23,7 +23,7 @@ export interface GetStemDownloadUrlParams {
 
 export const getStemDownloadUrl = onCall({
   timeoutSeconds: 30,
-  memory: '256MiB',
+  memory: '512MiB',
   enforceAppCheck: true,
 }, async (request) => {
   const buyerId = request.auth?.uid;

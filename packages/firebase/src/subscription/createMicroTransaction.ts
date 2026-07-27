@@ -7,7 +7,7 @@ import { stripeSecretKey } from '../config/secrets';
 export const createMicroTransaction = onCall({
   secrets: [stripeSecretKey],
   timeoutSeconds: 60,
-  memory: '256MiB',
+  memory: '512MiB',
   enforceAppCheck: true, // App Check globally active
 }, async (request) => {
   const { userId, credits, successUrl, cancelUrl } = request.data as { userId: string, credits: number, successUrl: string, cancelUrl: string };
