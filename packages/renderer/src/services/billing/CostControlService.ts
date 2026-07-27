@@ -106,13 +106,13 @@ export class CostControlService {
     }
 
     // GOD MODE BYPASS: Founder / platform owner is never gated by cost controls.
-    // The server-side budget for 'founder' tier already has $1000/day and ∞/hour.
-    // This prevents infrastructure failures (Arcjet, App Check, callable cold-start)
-    // from blocking the one person who should never be blocked.
+    // Force-refresh the token so we always have the latest custom claims even after
+    // claim changes (e.g. first sign-in after god_mode was granted server-side).
     try {
       const currentUser = auth.currentUser;
       if (currentUser && typeof currentUser.getIdTokenResult === 'function') {
-        const tokenResult = await currentUser.getIdTokenResult();
+        // forceRefresh=true ensures we pick up server-side claim changes immediately.
+        const tokenResult = await currentUser.getIdTokenResult(/* forceRefresh */ true);
         if (tokenResult?.claims?.god_mode === true) {
           logger.info('[CostControl] god_mode bypass: operation auto-allowed for platform owner.', {
             userId: req.userId,
@@ -196,6 +196,32 @@ export class CostControlService {
       };
     } catch (err) {
       logger.error('[CostControl] Check failed', err);
+
+      // SAFETY NET: Before blocking anyone, re-check god_mode with a fresh token.
+      // This handles the case where the callable fails (App Check, cold-start, network)
+      // but the user IS the platform owner — they must never be blocked.
+      try {
+        const currentUser = auth.currentUser;
+        if (currentUser && typeof currentUser.getIdTokenResult === 'function') {
+          const tokenResult = await currentUser.getIdTokenResult(/* forceRefresh */ true);
+          if (tokenResult?.claims?.god_mode === true) {
+            logger.warn('[CostControl] Callable failed but god_mode confirmed — auto-allowing platform owner.', {
+              userId: req.userId,
+              operationType: req.operationType,
+            });
+            return {
+              allowed: true,
+              reason: 'Platform owner: cost controls bypassed (fail-safe catch).',
+              remainingBudget: 999999,
+              dailyUsed: 0,
+              monthlyUsed: 0,
+              operationId: `god-catch-${Date.now()}`,
+            };
+          }
+        }
+      } catch (claimErr) {
+        logger.warn('[CostControl] god_mode re-check in catch also failed.', claimErr);
+      }
 
       // Permission/auth failures block the operation so spend is never untracked.
       const errMsg = err instanceof Error ? err.message : String(err);
