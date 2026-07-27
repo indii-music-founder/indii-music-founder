@@ -95,6 +95,31 @@ service firebase.storage {
       allow update, delete: if false;
     }
 
+    // Canonical content-addressed RAG document sources: owner can create once,
+    // clients cannot replace or delete. Server indexing & deletion control lifecycle.
+    match /rag-sources/{userId}/{contentHash}/{fileName} {
+      allow read: if isAuthenticated() && request.auth.uid == userId;
+      allow create: if isAuthenticated() &&
+                      request.auth.uid == userId &&
+                      resource == null &&
+                      contentHash.matches('^[a-f0-9]{64}$') &&
+                      fileName.matches('^original\\.(txt|md|pdf)$') &&
+                      isUnderSizeLimit(25) &&
+                      (request.resource.contentType == 'text/plain' ||
+                       request.resource.contentType == 'text/markdown' ||
+                       request.resource.contentType == 'application/pdf') &&
+                      request.resource.metadata.keys().hasAll([
+                        'contentHash', 'ownerId', 'immutable', 'originalFileName'
+                      ]) &&
+                      request.resource.metadata.contentHash == contentHash &&
+                      request.resource.metadata.ownerId == request.auth.uid &&
+                      request.resource.metadata.immutable == 'true' &&
+                      request.resource.metadata.originalFileName is string &&
+                      request.resource.metadata.originalFileName.size() > 0 &&
+                      request.resource.metadata.originalFileName.size() <= 512;
+      allow update, delete: if false;
+    }
+
     // Content-addressed release cover art: like masters, the owner may create
     // the exact identified bytes once. Desktop packaging re-measures the
     // downloaded bytes before DDEX delivery; clients cannot replace or remove

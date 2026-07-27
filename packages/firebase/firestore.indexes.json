@@ -1,6 +1,42 @@
 {
-  "fieldOverrides": [],
+  "fieldOverrides": [
+    {
+      "collectionGroup": "ragChunks",
+      "fieldPath": "embedding",
+      "indexes": [
+        {
+          "order": "ASCENDING",
+          "queryScope": "COLLECTION"
+        },
+        {
+          "vectorConfig": {
+            "dimension": 768,
+            "flat": {}
+          },
+          "queryScope": "COLLECTION"
+        }
+      ]
+    }
+  ],
   "indexes": [
+    {
+      "collectionGroup": "ragDocuments",
+      "fields": [
+        { "fieldPath": "uid", "order": "ASCENDING" },
+        { "fieldPath": "state", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ],
+      "queryScope": "COLLECTION"
+    },
+    {
+      "collectionGroup": "ragChunks",
+      "fields": [
+        { "fieldPath": "uid", "order": "ASCENDING" },
+        { "fieldPath": "documentId", "order": "ASCENDING" },
+        { "fieldPath": "ordinal", "order": "ASCENDING" }
+      ],
+      "queryScope": "COLLECTION"
+    },
     {
       "collectionGroup": "costLedger",
       "fields": [
