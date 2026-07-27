@@ -2650,6 +2650,18 @@ Listed only so they are not lost. No assessment is implied.
 - **Evidence:** `npm run detect:bugs` reported risk score 171 before this session and **169** after the canonical image/entitlement admission work on 2026-07-26. Its categories include base64 transport, callable boundaries, unprotected awaits, direct Firebase imports, missing promise catches, and string enums. Some hits are legitimate patterns, so deleting syntax to lower the score would be a false fix.
 - **Acceptance:** Each detector category is triaged into: fixed root cause with regression test, documented intentional pattern with narrow allowlist and rationale, or a numbered open issue with owner/acceptance. Re-run the detector after each delivery; never claim a lower score without showing the changed findings.
 - **Do not:** Do not suppress, rename, or exclude detections solely to lower the number.
+- **Baseline re-measured 2026-07-27 (`/start` step 2), risk score 172** — +3 against this entry's own 169 (2026-07-26). Per-category counts, recorded so the next pass compares like with like rather than re-deriving them:
+  | # | Category | Count |
+  |---|---|---|
+  | 1 | Services exported as null | **0** |
+  | 2 | Base64 / `imageBytes` usage | 62 |
+  | 3 | `httpsCallable` uses | 51 (top: creative 5, touring 4, knowledge 4, founders 1) |
+  | 4 | Awaits without try/catch | ~535 |
+  | 5 | Modules importing Firebase functions directly | 30 (creative 7, touring 2, founders 2, publishing 1, marketplace 1) |
+  | 6 | `.then()` without `.catch()` | 63 |
+  | 7 | String-comparison enums | 9 |
+  - **The +3 is most likely this session's own work, not external drift** — ISSUE-1236's `retrySessionProxyJob.ts` and the ISSUE-1220 `pollTimelineMilestones.ts` changes both add `await`s inside `try` blocks that this detector's grep-level heuristic does not recognize as protected. Stated as a likelihood, not a measured attribution: the detector reports totals, not a diff, so nothing here proves which lines moved the number. A category-level diff tool is what would make this answerable, and does not exist.
+  - **Category 1 is genuinely at 0**, which is worth preserving — that was the original module-initialization failure class this detector was built for.
 
 ---
 
@@ -2796,7 +2808,7 @@ renumbered before writing. The ledger is correct; only the commit message is sta
 
 ### ISSUE-1234: Public profile rule exposed private `/users/{uid}` fields
 
-- **Status:** 🟡 PARTIAL (local rules correction and emulator proof complete 2026-07-26; production deployment proof remains open)
+- **Status:** ✅ FIXED (2026-07-27 — production deployment proof obtained; see the LIVE VERIFICATION SWEEP block at the end of this file. Live ruleset `a7d32d12-27f7-496c-845e-b25c5113aeb3` deployed 17:42:43Z is byte-identical to the repo and its `users/{userId}` read rule is `isOwner(userId) || (isGuest() && userId == 'founder-demo-uid')` — the `isPublic` clause is gone, so a non-owner read is structurally impossible, and an unauthenticated production read returns PERMISSION_DENIED. The remaining acceptance clause — a separately shaped public-profile projection — is explicitly gated on public artist discovery shipping, which it has not; that is a forward requirement, not an unverified claim.)
 - **Severity:** 🔴 HIGH
 - **Module:** Firestore `/users/{uid}` rules; landing Auth profile persistence
 - **Evidence:** The root `users/{uid}` document stores `email`, while its read rule allowed any signed-in account to read the whole document whenever `isPublic == true`. Client-side field redaction would not help because Firestore had already returned the email.
@@ -2980,3 +2992,60 @@ The live run was offered and explicitly deferred by the founder this session in 
      plus the stale one in `KnowledgeChat.test.tsx:192`. `TS2578` will confirm each.
 - **Do not:** do not re-add a blanket `[elemName: string]: any` to silence step 3. That index signature is
   the defect, not the workaround — it is what let ISSUE-1185's real keying bug typecheck cleanly.
+
+---
+
+## Session 2026-07-27 — LIVE VERIFICATION SWEEP of ISSUE-1222..1235 (post-deploy true-state audit)
+
+> **Why:** all 14 entries carried a remainder worded "production deployment / live verification
+> required," written as though deploy were merely un-attempted. It had in fact been **failing since
+> 2026-07-25** (ISSUE-1238). CI went green on run
+> [30289490710](https://github.com/indii-music-founder/indii-music-founder/actions/runs/30289490710),
+> so their code is now in production and the real question — does it *behave* correctly there — had
+> never been asked. Method and evidence standard: `docs/flowcharts/security-verification-sweep-macro.md`.
+>
+> **Evidence discipline (per `/start` Strict Issue Validation):** each criterion below is marked
+> individually. An issue closes only when *every* criterion has evidence. Partial proof narrows the
+> remainder; it never closes the issue.
+>
+> **Standing constraint:** minting a Firebase ID token for an arbitrary uid needs
+> `iam.serviceAccounts.signBlob`, which is not granted. That blocks *authenticated positive-path*
+> probes ("a legitimate user can still do the allowed thing"). It does not block the security-relevant
+> direction — proving the deployed artifact is the hardened one, and that it denies what it must deny.
+> Where a criterion genuinely needs an authenticated session, it is recorded as still-open rather than
+> worked around; substituting an impersonated session is forbidden by `.agent/REAL_USER_AUTHENTICITY.md`.
+
+### ISSUE-1240: Live-verification results — deployed Firestore ruleset is byte-identical to the repo and contains all three rules fixes
+
+- **Status:** ✅ FIXED (2026-07-27 — this entry records the verification itself; the individual issues' statuses are updated below)
+- **Severity:** 🟡 MEDIUM (verification evidence)
+- **Method:** fetched the **live** ruleset from the `firebaserules` API rather than trusting repo contents —
+  release `cloud.firestore` → ruleset `a7d32d12-27f7-496c-845e-b25c5113aeb3`, `updateTime`
+  `2026-07-27T17:42:43.756Z`, which matches run 30289490710's `Deploy Firestore rules` step to the second.
+- **Headline result:** the live ruleset source (92,989 bytes) is **byte-identical** to
+  `packages/firebase/firestore.rules` on `main`. Whatever is in the repo is genuinely what production enforces.
+- **Per-fix confirmation, read out of the live file (not the repo):**
+  - **ISSUE-1234** — `match /users/{userId}` line 330 reads `allow read: if isOwner(userId) || (isGuest() && userId == 'founder-demo-uid');`. The `isPublic == true` clause is **gone entirely**. There is no rule path by which a non-owner authenticated account can read the document — this is a structural property of the rule text, not a runtime question, so it does not require an authenticated probe to establish.
+  - **ISSUE-1222** — `allow create` rejects `tier`, `subscriptionTier`, `plan`, `isFounder`, `entitlements`, `credits`, `creditBalance`, `billing`, `stripeCustomerId`, `roles`, `permissions`; pins `isAdmin` to `false` and `role` to `['artist','user']`. `allow update` gates on `profileAuthorityFieldsUnchanged()`, which was read and is **not decorative** — it blocks `affectedKeys().hasAny([...])` over that same authority list. `allow delete: if false`.
+  - **ISSUE-1235** — `match /videoJobs/{jobId}` line 1470 reads `allow create, update, delete: if false;`. Fully server-write-only.
+- **Live denial probes against production Firestore REST (unauthenticated):**
+  - `GET /users/founder-demo-uid` → `PERMISSION_DENIED`
+  - `POST /videoJobs` with `{userId:"attacker", status:"queued"}` → `PERMISSION_DENIED` (this is the exact forged-create that ISSUE-1235 describes as activating the worker)
+
+### Per-issue status changes from this sweep
+
+- **ISSUE-1234 → ✅ FIXED (live half).** Both live criteria met: rules deployed, and a non-owner read is structurally impossible in the deployed rule. Its second acceptance clause — "before public artist discovery ships, create a separately shaped public-profile projection" — is explicitly future-conditional work gated on a feature that does not exist yet, not an unverified claim about current behaviour. Tracked as a forward requirement, not an open defect.
+- **ISSUE-1224 → deployment/inventory criterion MET; remains 🟡 PARTIAL.** Deployed AI functions (`generateContentStream`, `generateImageV3`, `generateVideoV3`) all carry `MEDIA_PROVIDER=vertex` and bind **only `ARCJET_KEY`** as a secret — **no `GEMINI_API_KEY`** on any of them. That is direct live evidence the deployed AI path runs on Vertex ADC rather than developer API keys. Remaining: the Files-proxy removal half was not separately probed.
+- **ISSUE-1228 → "deployed revision binding" criterion MET; coverage criterion now QUANTIFIED.** `ARCJET_KEY` is bound on the serving revisions of `generateContentStream`, `generateImageV3`, `generateVideoV3`, `renderVideo`. Coverage measured across all deployed gen2 functions: **13 of 60 have `ARCJET_KEY` bound.** The entry's vague "non-HTTP Guard coverage / signup protection remain open" is now a number — 47 functions have no Arcjet binding at all. Live abuse proof still not run.
+- **ISSUE-1222, 1235 → remain 🟡 PARTIAL with narrowed remainders.** Their rules halves are verified live (above). What is still unproven is only the *authenticated* direction: for 1222, that a real verified Free user cannot alter an authority field and that backend provisioning can still grant Founder/paid entitlements; for 1235, that a normal callable returns a server job ID + reservation and that a rejected request creates neither a job nor Vertex work. Both need a real signed-in session.
+- **ISSUE-1229, 1231, 1232, 1233 → serving-revision criterion MET; behavioural criteria still open.** All relevant functions were confirmed ACTIVE with `updateTime` inside run 30289490710's window (`generateContentStream` 18:02:47Z, `renderVideo` 18:02:46Z, `generateImageV3` 17:57:07Z rev `generateimagev3-00231-siw`, `generateVideoV3` 17:52:35Z rev `generatevideov3-00227-nes`, `triggerVideoJob` 18:02:41Z) — so the hardened builds are what is serving, not stale revisions. Fail-closed confirmed at the boundary: `generateContentStream` returns **401** and `renderVideo` **400** to an unauthenticated malformed call. The specific guards (canonical-master enforcement, `clip.src` rejection, `skipCostCheck`) need an authenticated probe and are unproven.
+- **ISSUE-1223, 1230 → unchanged, and correctly so.** Their remainders are *unbuilt work*, not unverified work: legitimate desktop attestation (1223) and an authenticated emulator contract lane (1230). No amount of verification closes these.
+
+### What this sweep did NOT establish
+
+Stated plainly so the next reader does not over-read it: **no authenticated positive-path behaviour was
+tested.** Every probe above is either a config/ruleset inspection or an unauthenticated denial. That is
+real evidence for "the fix is deployed and denies attackers," and it is *not* evidence for "legitimate
+users can still do their work." A regression that broke the allowed path would not have been caught here.
+The single unblock for that whole class is a real signed-in session — either the `signBlob` grant or, better,
+ordinary use of the running app.
