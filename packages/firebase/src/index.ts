@@ -69,6 +69,7 @@ import { clampTextStreamOutputTokens } from './functions/creative/textStreamAdmi
 if (!process.env.GCLOUD_PROJECT) {
     process.env.GCLOUD_PROJECT = process.env.GOOGLE_CLOUD_PROJECT || "indii-music-founder";
 }
+import * as crypto from "crypto";
 
 
 // Admin Functions
@@ -1071,8 +1072,10 @@ export const generateContentStream = functions
                     return;
                 }
             } catch (error) {
-                functions.logger.warn('[generateContentStream] Server admission failed', {
+                console.error('[generateContentStream] Server admission failed:', error, {
                     code: error instanceof functions.https.HttpsError ? error.code : 'internal',
+                    err_msg: error instanceof Error ? error.message : String(error),
+                    err_stack: error instanceof Error ? error.stack : undefined,
                 });
                 res.status(503).send('AI generation admission is temporarily unavailable.');
                 return;
