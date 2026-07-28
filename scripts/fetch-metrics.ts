@@ -28,27 +28,14 @@ export async function getGitHubCIStatus() {
 
 export async function getSentryMetrics() {
   const token = process.env.SENTRY_TOKEN;
-  
+
   if (!token) {
-    console.warn('[Metrics] SENTRY_TOKEN is not set. Returning placeholder Sentry metrics.');
+    console.warn('[Metrics] SENTRY_TOKEN is not set. Sentry metrics are unavailable.');
     return { errorRate: 'N/A', apiLatencyP50: 'N/A', apiLatencyP99: 'N/A', uptimePercent: 'N/A' };
   }
 
-  try {
-    // Ideally, we would fetch from Sentry's REST API here:
-    // GET https://sentry.io/api/0/projects/{organization_slug}/{project_slug}/stats/
-    // Since we don't have the exact queries required, we simulate fetching based on the token presence.
-    // This allows the dashboard to generate and will be replaced with actual Axios calls later.
-    return { 
-      errorRate: '0.2%', 
-      apiLatencyP50: '230ms', 
-      apiLatencyP99: '480ms', 
-      uptimePercent: '99.98%' 
-    };
-  } catch (error) {
-    console.error('[Metrics] Failed to fetch Sentry metrics', error);
-    return { errorRate: 'Error', apiLatencyP50: 'Error', apiLatencyP99: 'Error', uptimePercent: 'Error' };
-  }
+  console.warn('[Metrics] Sentry metrics collection is not implemented. Metrics are unavailable.');
+  return { errorRate: 'N/A', apiLatencyP50: 'N/A', apiLatencyP99: 'N/A', uptimePercent: 'N/A' };
 }
 
 export async function getIntegrationTestResults() {
@@ -62,9 +49,9 @@ export async function getIntegrationTestResults() {
     if (!snapshot.empty) {
       const data = snapshot.docs[0].data();
       return {
-        passRate: data.testPassRate || '100%',
+        passRate: data.testPassRate ?? 'Unavailable',
         totalTests: data.testCount || 0,
-        latencies: data.latencies || { p50: 0, p99: 0 },
+        latencies: data.latencies || { p50: 'N/A', p99: 'N/A' },
         timestamp: data.timestamp?.toDate() || new Date(),
       };
     }
@@ -72,16 +59,15 @@ export async function getIntegrationTestResults() {
     return { 
       passRate: 'No data', 
       totalTests: 0, 
-      latencies: { p50: 0, p99: 0 },
+      latencies: { p50: 'N/A', p99: 'N/A' },
       timestamp: new Date()
     };
   } catch (error) {
     console.warn('[Metrics] Failed to fetch integration test results from Firestore.', error instanceof Error ? error.message : String(error));
-    // Provide sensible defaults if Firestore is not accessible (e.g. running locally without emulator/credentials)
-    return { 
-      passRate: '100% (Simulated)', 
-      totalTests: 15, 
-      latencies: { p50: 250, p99: 1200 },
+    return {
+      passRate: 'Unavailable',
+      totalTests: 0,
+      latencies: { p50: 'N/A', p99: 'N/A' },
       timestamp: new Date()
     };
   }

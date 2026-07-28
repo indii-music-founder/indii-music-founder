@@ -1737,3 +1737,21 @@ committing.
   2. Do not "fix" a green-locally/red-in-CI split by editing code until the annotation is read.
   3. A scheduled workflow failing the same way at the same moment is strong evidence the cause is
      account-wide rather than repo- or commit-specific.
+
+## 2026-07-28 Health Dashboards Must Fail Closed When Metrics Are Unavailable
+
+**SEVERITY:** High (fabricated operational health can authorize a release without evidence)
+
+- FILES: `scripts/fetch-metrics.ts`, `scripts/generate-health-dashboard.ts`,
+  `packages/renderer/public/health.html`
+- BUG: When Firestore health data was unavailable, the dashboard generator
+  substituted `100% (Simulated)`, 15 tests, and invented latency values, then
+  classified the result as healthy. Merely setting `SENTRY_TOKEN` also caused
+  invented error-rate, latency, and uptime metrics to be returned without any
+  Sentry API request.
+- FIX: Missing or unimplemented metric sources now return `Unavailable`/`N/A`
+  with zero observed tests. The dashboard formats unavailable latency without a
+  fake `0ms` value and renders the affected cards as warnings.
+- PREVENTION: Monitoring and release evidence must fail closed. An unavailable
+  source may be labeled unavailable, but it must never be replaced with
+  representative, simulated, placeholder, or default-success numbers.

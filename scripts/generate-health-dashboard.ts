@@ -23,7 +23,7 @@ const generateDashboard = async () => {
 
   const isHealthy = (status: string) => {
     if (['success', '100%'].includes(status) || parseFloat(status) >= 95) return 'healthy';
-    if (status === 'Pending' || status === 'N/A' || status.includes('unknown')) return 'warning';
+    if (['Pending', 'N/A', 'Unavailable', 'No data'].includes(status) || status.includes('unknown')) return 'warning';
     return 'critical';
   };
   
@@ -33,6 +33,7 @@ const generateDashboard = async () => {
   // Simple check for error rate being low
   const sentryErrorRate = parseFloat(sentryMetrics.errorRate);
   const sentryClass = isNaN(sentryErrorRate) ? 'warning' : (sentryErrorRate < 1 ? 'healthy' : 'critical');
+  const formatLatency = (value: number | string) => typeof value === 'number' ? `${value}ms` : value;
 
   const html = `<!DOCTYPE html>
 <html>
@@ -67,7 +68,7 @@ const generateDashboard = async () => {
       <h3>Integration Test Health</h3>
       <div class="metric"><span>Pass Rate:</span> <span class="metric-value">${testResults.passRate}</span></div>
       <div class="metric"><span>Total Tests:</span> <span class="metric-value">${testResults.totalTests}</span></div>
-      <div class="metric"><span>Avg Latency (p50):</span> <span class="metric-value">${testResults.latencies.p50}ms</span></div>
+      <div class="metric"><span>Avg Latency (p50):</span> <span class="metric-value">${formatLatency(testResults.latencies.p50)}</span></div>
       <div class="metric"><span>Last Checked:</span> <span class="metric-value">${new Date(testResults.timestamp).toLocaleString()}</span></div>
     </div>
 
