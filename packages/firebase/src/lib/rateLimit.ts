@@ -1,5 +1,5 @@
 import * as admin from "firebase-admin";
-import * as functions from "firebase-functions/v1";
+import { HttpsError } from "firebase-functions/v2/https";
 
 interface RateLimitConfig {
     maxRequests: number;    // Max requests in window
@@ -17,7 +17,7 @@ const DEFAULT_CONFIG: RateLimitConfig = {
  * Rate limiter for Firebase callable functions.
  * Uses Firestore to track per-user request counts with sliding windows.
  *
- * Throws functions.https.HttpsError("resource-exhausted") when limit exceeded.
+ * Throws HttpsError("resource-exhausted") when limit exceeded.
  */
 export async function enforceRateLimit(
     userId: string,
@@ -53,7 +53,7 @@ export async function enforceRateLimit(
 
         if (recentRequests.length >= maxRequests) {
             const retryAfterMs = recentRequests[0] + windowMs - now;
-            throw new functions.https.HttpsError(
+            throw new HttpsError(
                 "resource-exhausted",
                 `Rate limit exceeded for ${endpoint}. Try again in ${Math.ceil(retryAfterMs / 1000)}s.`
             );
