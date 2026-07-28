@@ -157,10 +157,19 @@ function mapDecision(
     failureMode: ArcjetFailureMode,
 ): ArcjetProtectionResult {
     if (decision.isErrored()) {
-        logger.warn("[Arcjet] Decision failed", {
+        // ISSUE-1242: this logged only the decision id, discarding the reason —
+        // so an errored decision said "something went wrong" and nothing more.
+        // Arcjet carries the actual cause on `decision.reason` for an errored
+        // decision (bad key, unreachable API, malformed request), and without it
+        // a total outage is undiagnosable from logs. Escalated to `error`
+        // severity too: every authenticated request is being denied, which is
+        // not a warning-level event.
+        const reason = decision.reason as unknown as { message?: unknown };
+        logger.error("[Arcjet] Decision failed", {
             decisionId: decision.id,
             policy,
             operationId,
+            err_msg: typeof reason?.message === "string" ? reason.message : String(decision.reason),
         });
         return securityUnavailableResult(policy, operationId, failureMode, "decision_error");
     }
@@ -220,7 +229,21 @@ export async function protectAuthenticatedApiRequest(
             correlationId: context.operationId,
         });
         return mapDecision(decision, context.policy, context.operationId, "fail-closed");
-    } catch (_error) {
+    } catch (error) {
+        // ISSUE-1242: this catch previously discarded the error entirely
+        // (`catch (_error)`), so a persistent `decision_error` was
+        // indistinguishable from a transient one and gave no cause. That
+        // blindness is what made a total production outage undiagnosable from
+        // logs — the only signal was "Request protection is temporarily
+        // unavailable" with nothing behind it. Log the cause; never the key.
+        logger.error("[Arcjet] Protect call threw", {
+            policy: context.policy,
+            operationId: context.operationId,
+            err_name: error instanceof Error ? error.name : typeof error,
+            err_msg: error instanceof Error ? error.message : String(error),
+            err_cause: (error as { cause?: unknown })?.cause !== undefined ? String((error as { cause?: unknown }).cause) : undefined,
+            err_stack: error instanceof Error ? error.stack?.split("\n").slice(0, 4).join(" | ") : undefined,
+        });
         return securityUnavailableResult(context.policy, context.operationId, "fail-closed", "decision_error");
     }
 }
@@ -241,7 +264,14 @@ export async function protectAnonymousSignupRequest(
     try {
         const decision = await anonymousSignupArcjet.protect(req, { correlationId: operationId });
         return mapDecision(decision, "anonymous-signup", operationId, failureMode);
-    } catch (_error) {
+    } catch (error) {
+        // ISSUE-1242: same discarded-error problem as the authenticated path.
+        logger.error("[Arcjet] Signup protect call threw", {
+            operationId,
+            err_name: error instanceof Error ? error.name : typeof error,
+            err_msg: error instanceof Error ? error.message : String(error),
+            err_cause: (error as { cause?: unknown })?.cause !== undefined ? String((error as { cause?: unknown }).cause) : undefined,
+        });
         return securityUnavailableResult("anonymous-signup", operationId, failureMode, "decision_error");
     }
 }

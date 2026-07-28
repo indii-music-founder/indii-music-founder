@@ -3070,3 +3070,23 @@ ordinary use of the running app.
 - **Checked, and NOT a bomb:** `packages/firebase/src/functions/video/createVideoSession.test.ts:101` carries the identical `'2026-07-27T18:00:00.000Z'` string, but it is an assertion that a mock's supplied value is echoed back, never an input to a `Date.now()` comparison. Verified by running it: 4/4 passing. Left alone rather than "fixed" on pattern-match.
 - **Verification:** the affected suite goes 1 failed/4 failed-tests → **5/5 passing**.
 - **Do not:** do not encode an absolute wall-clock instant in a fixture that feeds an expiry/freshness comparison. It will pass in review, pass in CI, and then break everything at a time nobody is watching.
+
+### ISSUE-1242: Arcjet denies every authenticated AI request in production (`decision_error`), and all three error paths discarded the cause
+
+- **Status:** 🔴 OPEN (diagnostics shipped; the underlying `decision_error` is NOT yet fixed — cause still unknown until the instrumented revision runs)
+- **Severity:** 🔴 CRITICAL (100% denial of authenticated AI generation in production; user-visible as "Error: Request protection is temporarily unavailable.")
+- **Module:** `packages/firebase/src/functions/security/arcjet.ts`, `packages/firebase/src/index.ts`
+- **Symptom:** founder-reported, with screenshot — every chat turn returns `Error: Request protection is temporarily unavailable.` This is `securityUnavailableResult`'s message. Production logs confirm `[Arcjet] Decision failed` + `[Arcjet] Request protection unavailable` with `reason: decision_error`, `policy: admin`, on every request.
+- **Ruled out with evidence, not assumption:**
+  - `ARCJET_KEY` secret exists, version 1 `enabled`, and is bound to the deployed revision.
+  - The runtime SA (`indii-music-founder@appspot…`) **does** hold `roles/secretmanager.secretAccessor` on that secret, so the key is readable.
+  - The key value is well-formed: 32 chars, `ajkey_` prefix (checked without printing the value). `configuredArcjetKey` requires exactly that prefix, so `baseArcjet` is constructed — consistent with `decision_error` rather than `missing_configuration`.
+  - Not a throw: `decision_error` here arrives via `mapDecision`'s `decision.isErrored()` branch, i.e. Arcjet returned an errored decision rather than raising. (The `catch` path was instrumented too, but it is not the one firing.)
+- **Root cause: still unknown — and that is itself the primary defect.** All three failure paths discarded their error: two `catch (_error)` blocks threw the error away entirely, and the `isErrored()` branch logged only `decision.id`. A total production outage therefore produced logs saying "something is unavailable" with no cause, in a system where the same blindness had already sent one investigation down the wrong subsystem earlier the same day.
+- **Shipped in this pass (diagnostics only, no gate weakened):**
+  1. `mapDecision`'s `isErrored()` branch now logs `decision.reason.message` — where Arcjet actually carries the cause (bad key, unreachable API, malformed request) — and is escalated `warn` → `error`, since denying every authenticated request is not a warning-level event.
+  2. Both `catch (_error)` blocks now log `err_name` / `err_msg` / `err_cause` / trimmed stack. Never the key.
+  3. `index.ts`'s admission catch tested `error instanceof functions.https.HttpsError` — the **v1** class — while the admission path throws **v2** `HttpsError` (`entitlements.ts` imports from `firebase-functions/v2/https`). Every well-formed entitlement rejection was therefore relabelled `code: 'internal'`, hiding actionable causes such as "Verify your email…" behind a generic 503. Now reads `code` off the error itself, which both versions carry.
+- **Deliberately NOT done:** no bypass, allowlist, or downgrade of the failure mode. ISSUE-1228's policy is explicit that spend-bearing operations fail closed, and text generation is spend-bearing. Making the outage invisible is not a fix.
+- **Next step:** deploy, trigger one authenticated request, read `err_msg` on `[Arcjet] Decision failed`, then fix the actual cause.
+- **Related:** the founder-facing symptom chain today was: ISSUE-1238 (deploy blocked) → IAM roles stripped from the runtime SA (entitlement 503) → this. Each masked the next.

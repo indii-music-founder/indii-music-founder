@@ -1072,8 +1072,17 @@ export const generateContentStream = functions
                     return;
                 }
             } catch (error) {
+                // ISSUE-1242: `error instanceof functions.https.HttpsError` tests
+                // the **v1** class, but the admission path throws v2 HttpsError
+                // (`entitlements.ts` imports from 'firebase-functions/v2/https').
+                // A v2 error is not an instance of the v1 class, so every real,
+                // well-formed entitlement rejection was being reported as
+                // `code: 'internal'` — hiding actionable causes like
+                // "Verify your email…" behind a generic 503. Read the code off
+                // the error itself, which both versions carry.
+                const errCode = (error as { code?: unknown })?.code;
                 console.error('[generateContentStream] Server admission failed:', error, {
-                    code: error instanceof functions.https.HttpsError ? error.code : 'internal',
+                    code: typeof errCode === 'string' ? errCode : 'internal',
                     err_msg: error instanceof Error ? error.message : String(error),
                     err_stack: error instanceof Error ? error.stack : undefined,
                 });
