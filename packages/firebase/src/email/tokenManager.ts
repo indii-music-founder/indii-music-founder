@@ -19,7 +19,7 @@ interface TokenResult {
 }
 
 
-import * as functions from "firebase-functions/v1";
+import { onCall, HttpsError } from "firebase-functions/v2/https";
 import * as admin from "firebase-admin";
 import { defineSecret } from "firebase-functions/params";
 import { enforceRateLimit } from "../lib/rateLimit";
@@ -50,23 +50,25 @@ function getRedirectUri(provider: string): string {
 // emailExchangeToken
 // ---------------------------------------------------------------------------
 
-export const emailExchangeToken = functions
-    .runWith({ enforceAppCheck: true, 
+export const emailExchangeToken = onCall(
+    {
+        enforceAppCheck: true,
         secrets: [googleOAuthClientId, googleOAuthClientSecret, microsoftClientId, microsoftClientSecret],
         timeoutSeconds: 30,
-     })
-    .https.onCall(async (data: { code?: string; refreshToken?: string; provider?: string }, context: functions.https.CallableContext) => {
+        memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1,
+    },
+    async (request) => {
         // 1. Authentication required
-        if (!context.auth) {
-            throw new functions.https.HttpsError("unauthenticated", "User must be authenticated.");
+        if (!request.auth) {
+            throw new HttpsError("unauthenticated", "User must be authenticated.");
         }
 
-        const { code, provider } = data;
+        const { code, provider } = (request.data ?? {}) as { code?: string; refreshToken?: string; provider?: string };
         if (!code || !provider) {
-            throw new functions.https.HttpsError("invalid-argument", "Missing code or provider.");
+            throw new HttpsError("invalid-argument", "Missing code or provider.");
         }
 
-        const userId = context.auth.uid;
+        const userId = request.auth.uid;
 
         // Item 328: Rate limit token exchange to 20 req/min per UID
         await enforceRateLimit(userId, "emailExchangeToken", TOKEN_RATE_LIMIT);
@@ -79,7 +81,7 @@ export const emailExchangeToken = functions
             } else if (provider === 'outlook') {
                 tokens = await exchangeOutlookCode(code);
             } else {
-                throw new functions.https.HttpsError("invalid-argument", `Unknown provider: ${provider}`);
+                throw new HttpsError("invalid-argument", `Unknown provider: ${provider}`);
             }
 
             // Store refresh token securely in Firestore (never sent to client)
@@ -110,9 +112,13 @@ export const emailExchangeToken = functions
             };
 
         } catch (error: unknown) {
+            // An HttpsError raised inside the try - the unknown-provider throw
+            // above is in scope - is already the correct, actionable error.
+            // Re-throw it rather than relabelling it 'internal' (ISSUE-1243).
+            if (error instanceof HttpsError) throw error;
             const err = error as Error;
             console.error(`[EmailToken] Exchange failed for ${provider}:`, err);
-            throw new functions.https.HttpsError("internal", `Token exchange failed: ${err.message}`);
+            throw new HttpsError("internal", `Token exchange failed: ${err.message}`);
         }
     });
 
@@ -120,22 +126,24 @@ export const emailExchangeToken = functions
 // emailRefreshToken
 // ---------------------------------------------------------------------------
 
-export const emailRefreshToken = functions
-    .runWith({ enforceAppCheck: true, 
+export const emailRefreshToken = onCall(
+    {
+        enforceAppCheck: true,
         secrets: [googleOAuthClientId, googleOAuthClientSecret, microsoftClientId, microsoftClientSecret],
         timeoutSeconds: 15,
-     })
-    .https.onCall(async (data: { code?: string; refreshToken?: string; provider?: string }, context: functions.https.CallableContext) => {
-        if (!context.auth) {
-            throw new functions.https.HttpsError("unauthenticated", "User must be authenticated.");
+        memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1,
+    },
+    async (request) => {
+        if (!request.auth) {
+            throw new HttpsError("unauthenticated", "User must be authenticated.");
         }
 
-        const { refreshToken, provider } = data;
+        const { refreshToken, provider } = (request.data ?? {}) as { code?: string; refreshToken?: string; provider?: string };
         if (!provider) {
-            throw new functions.https.HttpsError("invalid-argument", "Missing provider.");
+            throw new HttpsError("invalid-argument", "Missing provider.");
         }
 
-        const userId = context.auth.uid;
+        const userId = request.auth.uid;
 
         // Item 328: Rate limit token refresh to 20 req/min per UID
         await enforceRateLimit(userId, "emailRefreshToken", TOKEN_RATE_LIMIT);
@@ -158,7 +166,7 @@ export const emailRefreshToken = functions
             }
 
             if (!actualRefreshToken) {
-                throw new functions.https.HttpsError("not-found", "Refresh token was not found for this provider.");
+                throw new HttpsError("not-found", "Refresh token was not found for this provider.");
             }
 
             let tokens: TokenResult;
@@ -168,7 +176,7 @@ export const emailRefreshToken = functions
             } else if (provider === 'outlook') {
                 tokens = await refreshOutlookToken(actualRefreshToken);
             } else {
-                throw new functions.https.HttpsError("invalid-argument", `Unknown provider: ${provider}`);
+                throw new HttpsError("invalid-argument", `Unknown provider: ${provider}`);
             }
 
             // Update stored refresh token if a new one was issued
@@ -193,9 +201,13 @@ export const emailRefreshToken = functions
             };
 
         } catch (error: unknown) {
+            // An HttpsError raised inside the try - the unknown-provider throw
+            // above is in scope - is already the correct, actionable error.
+            // Re-throw it rather than relabelling it 'internal' (ISSUE-1243).
+            if (error instanceof HttpsError) throw error;
             const err = error as Error;
             console.error(`[EmailToken] Refresh failed for ${provider}:`, err);
-            throw new functions.https.HttpsError("internal", `Token refresh failed: ${err.message}`);
+            throw new HttpsError("internal", `Token refresh failed: ${err.message}`);
         }
     });
 
@@ -203,21 +215,23 @@ export const emailRefreshToken = functions
 // emailRevokeToken
 // ---------------------------------------------------------------------------
 
-export const emailRevokeToken = functions
-    .runWith({ enforceAppCheck: true, 
+export const emailRevokeToken = onCall(
+    {
+        enforceAppCheck: true,
         secrets: [googleOAuthClientId, googleOAuthClientSecret],
         timeoutSeconds: 15,
-     })
-    .https.onCall(async (data: { code?: string; refreshToken?: string; provider?: string }, context: functions.https.CallableContext) => {
-        if (!context.auth) {
-            throw new functions.https.HttpsError("unauthenticated", "User must be authenticated.");
+        memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1,
+    },
+    async (request) => {
+        if (!request.auth) {
+            throw new HttpsError("unauthenticated", "User must be authenticated.");
         }
 
-        const { provider } = data;
+        const { provider } = (request.data ?? {}) as { code?: string; refreshToken?: string; provider?: string };
         if (!provider) {
-            throw new functions.https.HttpsError("invalid-argument", "Missing provider.");
+            throw new HttpsError("invalid-argument", "Missing provider.");
         }
-        const userId = context.auth.uid;
+        const userId = request.auth.uid;
 
         try {
             // Get stored token
@@ -259,7 +273,7 @@ export const emailRevokeToken = functions
         } catch (error: unknown) {
             const err = error as Error;
             console.error(`[EmailToken] Revoke failed for ${provider}:`, err);
-            throw new functions.https.HttpsError("internal", `Token revocation failed: ${err.message}`);
+            throw new HttpsError("internal", `Token revocation failed: ${err.message}`);
         }
     });
 

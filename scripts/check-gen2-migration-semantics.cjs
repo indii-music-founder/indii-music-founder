@@ -95,6 +95,10 @@ const MIGRATED = [
     'reportBugFn',
     'analyticsExchangeToken', 'analyticsFinalizeInstagramConnection',
     'analyticsGetConnectionStatus', 'analyticsRefreshToken', 'analyticsRevokeToken',
+    // email OAuth token manager / PandaDoc proxy
+    'emailExchangeToken', 'emailRefreshToken', 'emailRevokeToken',
+    'pandadocListTemplates', 'pandadocCreateDocument', 'pandadocSendDocument',
+    'pandadocGetDocumentStatus', 'pandadocGetSigningLink',
 ];
 const MIGRATED_SET = new Set(MIGRATED);
 

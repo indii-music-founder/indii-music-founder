@@ -7,10 +7,10 @@
  * The client-side PandaDocService calls these instead of hitting
  * the PandaDoc API directly with a VITE_-prefixed key.
  */
-import * as functions from "firebase-functions/v1";
+import { onCall, HttpsError } from "firebase-functions/v2/https";
 import * as admin from "firebase-admin";
 import { getPandaDocApiKey, pandaDocApiKey } from "../config/secrets";
-import { validateAppCheckV1 } from "../middleware/appCheck";
+import { validateAppCheckV2 } from "../middleware/appCheck";
 
 const PANDADOC_API = "https://api.pandadoc.com/public/v1";
 
@@ -35,7 +35,7 @@ async function assertPandaDocOwnership(documentId: string, uid: string): Promise
     // Fail closed: unknown documents (including pre-registry ones) are denied.
     // Same error for "missing" and "not yours" so existence doesn't leak.
     if (!snap.exists || snap.data()?.ownerUid !== uid) {
-        throw new functions.https.HttpsError(
+        throw new HttpsError(
             "permission-denied",
             "Document was not found for this user.",
         );
@@ -57,18 +57,20 @@ async function recordPandaDocOwnership(
 /**
  * List available PandaDoc document templates.
  */
-export const pandadocListTemplates = functions
-    .region(REGION)
-    .runWith({
+export const pandadocListTemplates = onCall(
+    {
+        region: REGION,
         timeoutSeconds: 30,
-        memory: "512MB",
+        memory: "512MiB",
         enforceAppCheck: false,
         secrets: [pandaDocApiKey],
-    })
-    .https.onCall(async (_data: unknown, context: functions.https.CallableContext) => {
-        validateAppCheckV1(context);
-        if (!context.auth) {
-            throw new functions.https.HttpsError("unauthenticated", "Authentication required.");
+        cpu: 'gcf_gen1',
+        concurrency: 1,
+    },
+    async (request) => {
+        validateAppCheckV2(request);
+        if (!request.auth) {
+            throw new HttpsError("unauthenticated", "Authentication required.");
         }
 
         const apiKey = getPandaDocApiKey();
@@ -77,7 +79,7 @@ export const pandadocListTemplates = functions
         });
 
         if (!response.ok) {
-            throw new functions.https.HttpsError("internal", `PandaDoc templates error: ${response.status}`);
+            throw new HttpsError("internal", `PandaDoc templates error: ${response.status}`);
         }
 
         const data = await response.json();
@@ -92,21 +94,23 @@ export const pandadocListTemplates = functions
 /**
  * Create a new document from a PandaDoc template.
  */
-export const pandadocCreateDocument = functions
-    .region(REGION)
-    .runWith({
+export const pandadocCreateDocument = onCall(
+    {
+        region: REGION,
         timeoutSeconds: 60,
-        memory: "512MB",
+        memory: "512MiB",
         enforceAppCheck: false,
         secrets: [pandaDocApiKey],
-    })
-    .https.onCall(async (data: unknown, context: functions.https.CallableContext) => {
-        validateAppCheckV1(context);
-        if (!context.auth) {
-            throw new functions.https.HttpsError("unauthenticated", "Authentication required.");
+        cpu: 'gcf_gen1',
+        concurrency: 1,
+    },
+    async (request) => {
+        validateAppCheckV2(request);
+        if (!request.auth) {
+            throw new HttpsError("unauthenticated", "Authentication required.");
         }
 
-        const input = data as {
+        const input = (request.data ?? {}) as {
             name: string;
             templateId?: string;
             recipients: Array<{
@@ -122,7 +126,7 @@ export const pandadocCreateDocument = functions
         };
 
         if (!input.name || !input.recipients?.length) {
-            throw new functions.https.HttpsError("invalid-argument", "name and recipients are required.");
+            throw new HttpsError("invalid-argument", "name and recipients are required.");
         }
 
         const apiKey = getPandaDocApiKey();
@@ -151,13 +155,13 @@ export const pandadocCreateDocument = functions
 
         if (!response.ok) {
             const error = await response.text();
-            throw new functions.https.HttpsError("internal", `PandaDoc create error: ${response.status} — ${error}`);
+            throw new HttpsError("internal", `PandaDoc create error: ${response.status} — ${error}`);
         }
 
         const doc = await response.json();
 
         // Record ownership so send/status/session calls can be gated (ISSUE-889)
-        await recordPandaDocOwnership(doc.id, context.auth.uid, {
+        await recordPandaDocOwnership(doc.id, request.auth.uid, {
             name: doc.name,
             templateId: input.templateId || null,
         });
@@ -175,25 +179,27 @@ export const pandadocCreateDocument = functions
 /**
  * Send a document for e-signature.
  */
-export const pandadocSendDocument = functions
-    .region(REGION)
-    .runWith({
+export const pandadocSendDocument = onCall(
+    {
+        region: REGION,
         timeoutSeconds: 30,
-        memory: "512MB",
+        memory: "512MiB",
         enforceAppCheck: false,
         secrets: [pandaDocApiKey],
-    })
-    .https.onCall(async (data: unknown, context: functions.https.CallableContext) => {
-        validateAppCheckV1(context);
-        if (!context.auth) {
-            throw new functions.https.HttpsError("unauthenticated", "Authentication required.");
+        cpu: 'gcf_gen1',
+        concurrency: 1,
+    },
+    async (request) => {
+        validateAppCheckV2(request);
+        if (!request.auth) {
+            throw new HttpsError("unauthenticated", "Authentication required.");
         }
 
-        const input = data as { documentId: string; message?: string; subject?: string };
+        const input = (request.data ?? {}) as { documentId: string; message?: string; subject?: string };
         if (!input.documentId) {
-            throw new functions.https.HttpsError("invalid-argument", "documentId is required.");
+            throw new HttpsError("invalid-argument", "documentId is required.");
         }
-        await assertPandaDocOwnership(input.documentId, context.auth.uid);
+        await assertPandaDocOwnership(input.documentId, request.auth.uid);
 
         const apiKey = getPandaDocApiKey();
         const response = await fetch(`${PANDADOC_API}/documents/${input.documentId}/send`, {
@@ -207,7 +213,7 @@ export const pandadocSendDocument = functions
         });
 
         if (!response.ok) {
-            throw new functions.https.HttpsError("internal", `PandaDoc send error: ${response.status}`);
+            throw new HttpsError("internal", `PandaDoc send error: ${response.status}`);
         }
 
         return { success: true };
@@ -216,25 +222,27 @@ export const pandadocSendDocument = functions
 /**
  * Get the current status of a document.
  */
-export const pandadocGetDocumentStatus = functions
-    .region(REGION)
-    .runWith({
+export const pandadocGetDocumentStatus = onCall(
+    {
+        region: REGION,
         timeoutSeconds: 30,
-        memory: "512MB",
+        memory: "512MiB",
         enforceAppCheck: false,
         secrets: [pandaDocApiKey],
-    })
-    .https.onCall(async (data: unknown, context: functions.https.CallableContext) => {
-        validateAppCheckV1(context);
-        if (!context.auth) {
-            throw new functions.https.HttpsError("unauthenticated", "Authentication required.");
+        cpu: 'gcf_gen1',
+        concurrency: 1,
+    },
+    async (request) => {
+        validateAppCheckV2(request);
+        if (!request.auth) {
+            throw new HttpsError("unauthenticated", "Authentication required.");
         }
 
-        const input = data as { documentId: string };
+        const input = (request.data ?? {}) as { documentId: string };
         if (!input.documentId) {
-            throw new functions.https.HttpsError("invalid-argument", "documentId is required.");
+            throw new HttpsError("invalid-argument", "documentId is required.");
         }
-        await assertPandaDocOwnership(input.documentId, context.auth.uid);
+        await assertPandaDocOwnership(input.documentId, request.auth.uid);
 
         const apiKey = getPandaDocApiKey();
         const response = await fetch(`${PANDADOC_API}/documents/${input.documentId}`, {
@@ -242,7 +250,7 @@ export const pandadocGetDocumentStatus = functions
         });
 
         if (!response.ok) {
-            throw new functions.https.HttpsError("internal", `PandaDoc status error: ${response.status}`);
+            throw new HttpsError("internal", `PandaDoc status error: ${response.status}`);
         }
 
         const doc = await response.json();
@@ -265,25 +273,27 @@ export const pandadocGetDocumentStatus = functions
 /**
  * Generate a shareable signing link for a recipient.
  */
-export const pandadocGetSigningLink = functions
-    .region(REGION)
-    .runWith({
+export const pandadocGetSigningLink = onCall(
+    {
+        region: REGION,
         timeoutSeconds: 30,
-        memory: "512MB",
+        memory: "512MiB",
         enforceAppCheck: false,
         secrets: [pandaDocApiKey],
-    })
-    .https.onCall(async (data: unknown, context: functions.https.CallableContext) => {
-        validateAppCheckV1(context);
-        if (!context.auth) {
-            throw new functions.https.HttpsError("unauthenticated", "Authentication required.");
+        cpu: 'gcf_gen1',
+        concurrency: 1,
+    },
+    async (request) => {
+        validateAppCheckV2(request);
+        if (!request.auth) {
+            throw new HttpsError("unauthenticated", "Authentication required.");
         }
 
-        const input = data as { documentId: string; recipientId: string };
+        const input = (request.data ?? {}) as { documentId: string; recipientId: string };
         if (!input.documentId || !input.recipientId) {
-            throw new functions.https.HttpsError("invalid-argument", "documentId and recipientId are required.");
+            throw new HttpsError("invalid-argument", "documentId and recipientId are required.");
         }
-        await assertPandaDocOwnership(input.documentId, context.auth.uid);
+        await assertPandaDocOwnership(input.documentId, request.auth.uid);
 
         const apiKey = getPandaDocApiKey();
         const response = await fetch(
@@ -296,7 +306,7 @@ export const pandadocGetSigningLink = functions
         );
 
         if (!response.ok) {
-            throw new functions.https.HttpsError("internal", `PandaDoc session error: ${response.status}`);
+            throw new HttpsError("internal", `PandaDoc session error: ${response.status}`);
         }
 
         const result = await response.json();
