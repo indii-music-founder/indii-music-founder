@@ -3185,3 +3185,202 @@ ordinary use of the running app.
   - ISSUE-1190, ISSUE-1191, ISSUE-1189, ISSUE-1244 (commits `1563e6f53`, `e241f91f2`) are on `main` and undeployed.
 - **Local verification standing in for CI while blocked (2026-07-28):** `npm test -- --run` → 876 files / 5,450 tests / **0 failed** / exit 0; `npm run typecheck` → 0 errors; `npm run lint` → 0 errors (127 warnings); `npm run build:studio` → succeeds; `packages/firebase` `tsc` → clean; `npm run check:fn-memory` → pass. These are not a substitute for CI acceptance and are recorded only so the next reader knows the red is not the code.
 - **Do not:** do not bisect commits, revert, or edit code to chase this. Do not re-run — the refusal is deterministic and each attempt is wasted. Read the check-run annotation first on any zero-step failure.
+
+---
+
+## `/finish` deep sweep — 2026-07-28
+
+The explicit TODO/FIXME/HACK scan found no actionable first-party implementation
+markers. The deep architectural sweep did find the following unfinished behavior.
+Previously tracked findings were not duplicated: ISSUE-1125 (credential
+storage), ISSUE-1127 (pre-save publishing), ISSUE-1129 (limited drops),
+ISSUE-1228/1244 (Arcjet coverage), ISSUE-1231/1232 (render inputs), and
+ISSUE-1235 (server-only video jobs) remain open or partial under their existing
+acceptance criteria.
+
+### ISSUE-1246: Two video workers can submit the same paid job, while V3 reservations are reusable and never settled
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🔴 CRITICAL
+- **Module:** `packages/firebase/src/index.ts`; `functions/creative/videoJobOrchestrator.ts`; `functions/creative/gateway.ts`
+- **Evidence:** `generateVideoV3` writes a queued `videoJobs` record that matches both the legacy `executeVideoJob` `onCreate` trigger and the V2 `videoJobFirestoreOrchestrator` `onDocumentWritten` trigger. Both can reach a paid Vertex submission. The V3 path only reads an `APPROVED` reservation; it does not atomically claim it for one job, and its terminal worker paths do not finalize or void it. The gateway also suppresses Firestore dispatch-write failures through `safeDbSet` and can return a queued job ID with no durable worker record.
+- **Expected behavior:** Exactly one versioned worker transactionally claims each job and reservation before provider submission. One reservation maps immutably to one job/provider request. Authoritative job creation is atomic or outbox-backed, and every terminal path conservatively settles, voids, or records reconciliation-required state.
+- **Honest fallback:** Disable the ambiguous worker/version and reject missing, reused, or unclaimable reservations. Return `unavailable` and retain a durable reconciliation record when dispatch cannot be proven.
+- **Acceptance:** A concurrency test proves two trigger deliveries produce one provider submission; replay cannot reuse a reservation; a failed authoritative write never returns queued success; stale claims are recoverable without double charging.
+- **DO NOT:** Do not rely on a later status write to prevent the initial race, call duplicate submissions “retries,” settle blindly after an ambiguous provider call, or treat a read-only `APPROVED` check as a claim.
+
+### ISSUE-1247: V3 video trusts caller-supplied Cloud Storage URIs as backend-readable Vertex inputs
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🔴 CRITICAL
+- **Module:** `packages/firebase/src/functions/creative/gateway.ts`
+- **Evidence:** First-frame, last-frame, reference, source, and mask `gs://` URIs are converted directly into Vertex `gcsUri` inputs. They do not pass through the owner/bucket/generation/byte validation used by the image path. Backend ADC may read an object that client Storage Rules would deny if its path is known.
+- **Expected behavior:** Resolve every media input against the configured bucket and authenticated owner namespace; verify exact generation, existence, size, MIME/magic bytes, and canonical hash where applicable; persist the verified generation in the job evidence.
+- **Honest fallback:** Reject unverifiable media with `permission-denied` or `failed-precondition` before reservation/provider work.
+- **Acceptance:** Cross-owner, wrong-bucket, stale-generation, oversized, spoofed-MIME, and missing-object tests all fail before Vertex; valid owner media reaches the provider with immutable evidence.
+- **DO NOT:** Do not treat a `gs://` prefix, a Firestore owner field, or backend read permission as proof of user authority.
+
+### ISSUE-1248: Knowledge/RAG Phase 0 contracts are duplicated and incompatible
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH
+- **Module:** `packages/firebase/src/shared/knowledge.ts`; `packages/shared/src/schemas/knowledge.ts`; renderer Knowledge services
+- **Evidence:** Firebase uses unchecked interfaces whose citation and receipt shapes differ from the versioned shared Zod schemas. Required request/error types are absent, persisted fields differ, and legacy records can be cast through the mismatch. Renderer and backend therefore do not share one runtime source of truth.
+- **Expected behavior:** One imported, versioned runtime schema governs persistence, callables, receipts, renderer hydration, MCP output, and tests. Migration/version handling must be explicit.
+- **Honest fallback:** Return `contract_mismatch` or `needs_reupload` for incompatible records.
+- **Acceptance:** Contract fixtures round-trip through shared, Firebase, renderer, and Firestore parsing; drift fails CI.
+- **DO NOT:** Do not copy interfaces again, suppress incompatibility with casts, or silently reinterpret old records.
+
+### ISSUE-1249: Knowledge upload/finalization does not form a durable, canonical ingestion job
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🔴 CRITICAL
+- **Module:** `functions/knowledge/upload.ts`; `functions/knowledge/indexWorker.ts`; `storage.rules`
+- **Evidence:** The create callable advertises 50 MB while Storage Rules enforce 25 MB and require metadata the returned upload contract does not supply. Finalization writes `queued`, starts `executeDocumentIndexing(...).catch(...)` as a dangling in-process promise, and returns. The exported index worker is a user-callable endpoint that trusts caller-supplied document ID, path, generation, and hash and can merge-create a canonical record.
+- **Expected behavior:** A single versioned upload contract matches deployed Rules exactly. Finalization transactionally/outbox-enqueues an authenticated private Cloud Task. The private worker loads the canonical owner record and verifies path, generation, hash, state, entitlement, and task identity before work.
+- **Honest fallback:** Reject at creation with the true limit/metadata requirements; leave a durable queued/failed record with retry metadata when dispatch is unavailable.
+- **Acceptance:** A genuine TXT/MD/PDF upload passes deployed Rules; function termination after finalize cannot lose the job; direct client worker calls and payload substitutions fail.
+- **DO NOT:** Do not weaken immutable Storage Rules, claim a floating Promise was dispatched, or fix caller-controlled authority with App Check alone.
+
+### ISSUE-1250: Knowledge indexing can double-spend, read a newer object, and expose partial failed indexes
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🔴 CRITICAL
+- **Module:** `functions/knowledge/indexWorker.ts`; `functions/knowledge/query.ts`
+- **Evidence:** The receipt check is non-transactional and written last, allowing concurrent retries to purchase duplicate embeddings. Metadata is checked before `file.download()` reads the latest object without a generation precondition. Chunk batches become queryable before completion; a failed document can retain partial chunks. Cleanup uses one Firestore batch and exceeds the 500-write limit on larger documents.
+- **Expected behavior:** Acquire a transactional owner/hash/generation/schema lease; download the exact generation; stage bounded chunk writes and promote atomically or via a durable manifest; query only active matching-generation chunks; use BulkWriter/paginated cleanup with a durable cursor.
+- **Honest fallback:** Return `processing`/`conflict`; failed or deleting documents remain non-retrievable and retryable.
+- **Acceptance:** Concurrent deliveries buy one embedding run; object replacement during indexing is rejected; injected mid-batch failure exposes zero chunks; >500-chunk cleanup resumes to completion.
+- **DO NOT:** Do not call deterministic chunk IDs sufficient idempotency, read “latest,” or truncate deletion to fit one batch.
+
+### ISSUE-1251: Knowledge retrieval fabricates grounding quality and converts provider failure into success
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH
+- **Module:** `functions/knowledge/query.ts`; renderer Knowledge services
+- **Evidence:** `minSimilarity` is ignored, document filters/state/generation are not enforced, citation scores are hardcoded `1.0`, receipt latency is `0`, and provider errors become a normal-looking answer string. Empty retrieval still calls Gemini. The browser `chatStream` method yields a completed non-stream response, and legacy `GeminiRetrievalService` remains reachable through `KnowledgeBaseService`; its project filter is commented out.
+- **Expected behavior:** Enforce bounded owner/project/document filters and active-generation state; return measured distance-derived relevance, real offsets/title/page and elapsed latency; distinguish empty/failed/complete receipts; treat retrieved text as delimited untrusted evidence; make the canonical backend path exclusive.
+- **Honest fallback:** Return deterministic `no_evidence`, `unavailable`, or `needs_reupload` without a general Gemini call.
+- **Acceptance:** Low-relevance and failed/deleting documents are excluded; provider failure is typed failure; prompt-injection fixtures cannot override system instructions; legacy browser/provider paths are inert.
+- **DO NOT:** Do not invent scores, latency, titles, citations, streaming, or grounded success.
+
+### ISSUE-1252: Knowledge deletion and receipt persistence are not resumable, generation-safe, or aligned with Firestore Rules
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH
+- **Module:** `functions/knowledge/upload.ts`; `functions/knowledge/query.ts`; `firestore.rules`
+- **Evidence:** Deletion removes chunks in one batch, deletes the latest Storage object without a generation precondition, deletes the document as its only history, and cannot resume cleanly. Query writes `ragQueryReceipts`, while Rules expose different `ragQueries`/`ragReceipts` paths.
+- **Expected behavior:** Persist a deletion tombstone/receipt and cursor; exclude deleting content immediately; delete the exact canonical generation in bounded retry-safe steps; use one owner-readable, backend-write-only query receipt collection.
+- **Honest fallback:** Remain explicitly `deleting` or `failed` with progress and retryability; return receipts only through an authenticated callable until Rules migrate.
+- **Acceptance:** Partial deletion resumes, exact-generation conflicts fail safely, terminal tombstone proves completion, owner read/cross-owner denial tests cover the canonical receipt path.
+- **DO NOT:** Do not delete “latest,” erase the only evidence, return success early, or add a broad owner-subcollection wildcard.
+
+### ISSUE-1253: Knowledge spend, PDF extraction, and embedding configuration are not production-grade
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH
+- **Module:** Knowledge upload/index/query; `textExtractor.ts`
+- **Evidence:** Knowledge operations lack verified-email, entitlement/cost admission, Arcjet, concurrency/daily/provider ceilings, and deterministic 429 behavior. “PDF extraction” regexes raw PDF bytes and does not decode compressed streams, font maps, escapes, encryption, or page structure. `text-embedding-004` and a 768-dimension assumption are hardcoded inconsistently between indexing and query despite current Vertex model changes.
+- **Expected behavior:** Add server-owned verified-email/entitlement/Arcjet/cost gates with Founder product-unlimited but safety-bounded policy. Use a maintained PDF parser with page provenance and encrypted/textless detection. Pin one supported Vertex embedding model, dimension, task types, and migration version identically for index and query.
+- **Honest fallback:** Fail closed `503` when policy/model is unavailable; accept TXT/MD only until PDF parsing is real; mark old vectors `reindex_required`.
+- **Acceptance:** Free/Founder/paid abuse tests, compressed/Unicode/multipage PDF fixtures, provider quota tests, and a production model/index compatibility proof all pass.
+- **DO NOT:** Do not trust client tier/BYO claims, make Founder literally unbounded, market regex extraction as PDF support, or silently switch an existing vector index.
+
+### ISSUE-1254: Electron authentication and file IPC trust renderer-controlled authority
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🔴 CRITICAL
+- **Module:** `packages/shared/src/services/AuthService.ts`; `packages/main/src/handlers/auth.ts`; `handlers/agent.ts`; `handlers/audio.ts`; `MasteringService.ts`
+- **Evidence:** Desktop auth decodes a token without proving redemption/signature and auto-enables a legacy callback when configuration is absent. Agent file handlers use substring/prefix checks vulnerable to sibling, absolute-path, and symlink escape. Audio transcode/master IPC accepts arbitrary input/output paths without an authorized media-root contract.
+- **Expected behavior:** Require cryptographic token verification or single-use backend redemption, with legacy auth disabled by default. Canonicalize paths against explicit roots using `path.relative`, realpath/symlink defenses, bounded schemas, and authorized unique output locations.
+- **Honest fallback:** Reject login or file work when verifier/root/configuration is unavailable.
+- **Acceptance:** Forged/replayed login, sibling-prefix, absolute path, `..`, symlink, arbitrary overwrite, and cross-project media tests all fail.
+- **DO NOT:** Do not trust decoded claims, renderer paths, `startsWith`, substring `agents/`, or a missing endpoint as permission to use legacy auth.
+
+### ISSUE-1255: Desktop orchestration accepts ambiguous child results and reports work complete without durable acknowledgement
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH
+- **Module:** `SchedulerService.ts`; `AgentSupervisor.ts`; `FoundationalSkillService.ts`; `handlers/brand.ts`
+- **Evidence:** Scheduler event emission is counted as successful completion without a durable consumer receipt. AgentSupervisor accepts any JSON lacking a truthy top-level `error` as success. Brand IPC wraps arbitrary supervisor output as success. FoundationalSkillService lacks child-process error handling, timeout/kill, bounded output, and strict result validation.
+- **Expected behavior:** Use one versioned operation envelope and schema-specific terminal receipts. Queueing and completion are distinct. Child processes have error/exit/timeout/kill/output bounds and parsed results.
+- **Honest fallback:** Return `queued`, `unknown`, `failed`, or `unavailable`; never completed.
+- **Acceptance:** Missing consumer, malformed JSON, child spawn error, timeout, oversized output, and domain-error fixtures all fail honestly.
+- **DO NOT:** Do not infer success from event emission, parseable JSON, or absence of a top-level `error`.
+
+### ISSUE-1256: Desktop distribution and credential-rotation IPC expose caller authority and secrets
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🔴 CRITICAL
+- **Module:** `packages/main/src/handlers/distribution.ts`; `handlers/security.ts`; preload/shared Electron API types
+- **Evidence:** Distribution IPC accepts renderer-supplied user identity, can report success without required delivery evidence, and stringifies loose DDEX output. Credential rotation APIs return secret material to the renderer and expose raw secret operations instead of opaque credential IDs.
+- **Expected behavior:** Derive identity from the authenticated desktop session, validate strict versioned distribution receipts, and perform credential creation/rotation/use entirely in main/backend secure storage through opaque identifiers.
+- **Honest fallback:** Return draft/manual-required or unavailable when delivery/credential proof is missing.
+- **Acceptance:** Forged identity, malformed compiler output, absent XSD/DPID/transport evidence, and renderer secret-read tests all fail.
+- **DO NOT:** Do not trust `userId` from IPC, stringify arbitrary compiler output, or return stored/rotated secrets to renderer code.
+
+### ISSUE-1257: Shared AI/video contracts still permit client provider authority and fabricated render metadata
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH
+- **Module:** `packages/shared/src/schemas/env.schema.ts`; `types/ai.dto.ts`; `schemas/videoJob.ts`; `ElectronRenderService.ts`; `handlers/video.ts`
+- **Evidence:** Public schemas still contain client API-key/provider/model authority and default `useVertex` false. Duplicate permissive video-job schemas drift across packages. Electron rendering uses hardcoded composition metadata and an ineffective output-path scope check. Video download is unbounded, un-sniffed, overwrite-prone, and can leave partial files.
+- **Expected behavior:** Provider/model/key selection is backend-only and Vertex ADC is mandatory for platform AI. One strict versioned video contract governs all packages. Resolve actual Remotion composition metadata, validate output roots, and download with size/MIME/magic bounds to a unique temporary file followed by atomic rename.
+- **Honest fallback:** Provider/configuration unavailable; composition unknown; download failed with partial artifact removed.
+- **Acceptance:** Browser/provider override attempts are stripped/rejected; schema drift fails CI; real composition fixtures drive render metadata; oversized/spoofed/interrupted downloads leave no claimed artifact.
+- **DO NOT:** Do not expose API keys through shared DTOs, silently select non-Vertex providers, use hardcoded render facts, or accept `.passthrough()` server authority.
+
+### ISSUE-1258: Renderer-side provider credentials and paid-operation limits remain client-controlled or fail open
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🔴 CRITICAL
+- **Module:** YouTube, Spotify, TuneCore, POD, upload quota, and instrument-generation renderer services
+- **Evidence:** Provider tokens/keys are stored or used from sessionStorage/client Firestore/renderer code, including a Firebase API-key fallback. Upload quota errors allow the operation to continue, and InstrumentRegistry hardcodes the tier check to true.
+- **Expected behavior:** All provider credentials and paid API calls execute through authenticated backend services with secret storage, server entitlement, reservation, idempotency, rate/concurrency/provider ceilings, and redacted receipts.
+- **Honest fallback:** Provider or entitlement `unavailable`; unknown quota blocks paid work.
+- **Acceptance:** Browser bundles/storage contain no reusable provider secret; simulated quota-policy outage and forged tier both deny before spend; Founder remains product-unlimited but safety-bounded.
+- **DO NOT:** Do not browser-encrypt secrets, return them to clients, fall back to public/Firebase keys, or interpret policy failure as permission.
+
+### ISSUE-1259: Renderer workflows still claim legal, commercial, or processing success without durable evidence
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH
+- **Module:** Receipt OCR, licensing catalog, likeness QC, Autonomous Lab, valuation, pre-save, and limited-drop UI
+- **Evidence:** ReceiptOCR always throws instead of using the existing OCR service and persists no reviewed result. LicensingDashboard supplies no catalog to CatalogSearchTab. Malformed/unavailable likeness QC becomes acceptable. AutonomousLab converts an error into complete. Licensing valuation multiplies active licenses by a hardcoded `$12,500`. Pre-save and limited-drop false-success behavior remains tracked in ISSUE-1127 and ISSUE-1129.
+- **Expected behavior:** Connect each UI to its canonical backend, persist reviewed evidence and explicit terminal states, load the owner catalog, distinguish `unavailable` from acceptable, and calculate valuation only from evidence-backed terms/cash flows with assumptions.
+- **Honest fallback:** Disabled/setup-required, `unknown`, `failed`, empty catalog, or scenario-only valuation.
+- **Acceptance:** Failure-path UI tests never render success; OCR review reloads durably; owner catalog loads; unavailable QC blocks; valuation output cites inputs and labels scenarios.
+- **DO NOT:** Do not use timers, empty props, malformed QC, fixed multipliers, or local component state as proof of completion/value.
+
+### ISSUE-1260: Renderer E2E envelopes provide confidentiality without sender authenticity
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH
+- **Module:** `packages/renderer/src/services/security/E2EEncryptionService.ts`
+- **Evidence:** Encrypted envelopes carry an empty signature and the receive path never verifies one, so a recipient cannot prove who authored a message or reject authenticated replay.
+- **Expected behavior:** Use a persistent protected signing identity, canonical signed envelope, recipient/context binding, key versioning, nonce/timestamp replay protection, and verified sender-key resolution.
+- **Honest fallback:** Disable cross-party encrypted transport when signing/verifier state is unavailable.
+- **Acceptance:** Forged sender ID, modified ciphertext/metadata, wrong recipient, reused nonce, stale timestamp, and unknown key all fail.
+- **DO NOT:** Do not ship a dummy signature, trust `senderId`, or describe encryption alone as authenticated messaging.
+
+### ISSUE-1261: Renderer smart-contract actions use hand-built calldata and client-written success state
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🔴 CRITICAL
+- **Module:** `packages/renderer/src/services/web3/SmartContractService.ts`
+- **Evidence:** The renderer uses raw bytecode/environment values and hand-built calldata, does not correctly encode constructor/ABI behavior, and can write a success-looking Firestore state from the client.
+- **Expected behavior:** Use verified versioned artifacts and ABI encoding, chain/account allowlists, server-side simulation and policy, explicit wallet approval, transaction receipt/finality/reorg tracking, and backend-owned audit records.
+- **Honest fallback:** Draft/manual transaction data marked unverified; no deployment or success claim.
+- **Acceptance:** Invalid artifact, wrong chain, malformed constructor, reverted simulation, rejected wallet action, failed receipt, and reorg all remain non-success.
+- **DO NOT:** Do not concatenate calldata, trust renderer environment bytecode, or mark success before verified finality.
+
+### ISSUE-1262: Licensing valuation and catalog surfaces can invent monetary or inventory authority
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH
+- **Module:** `LicensingService.ts`; `LicensingDashboard.tsx`; `CatalogSearchTab.tsx`
+- **Evidence:** Catalog search receives no canonical track collection and silently renders empty, while valuation uses active-license count multiplied by a fixed `$12,500` as though it were evidence.
+- **Expected behavior:** Load owner-scoped canonical catalog records and derive valuation from signed license terms, actual cash flows, duration/territory/exclusivity, probability model, and explicit assumptions.
+- **Honest fallback:** Honest empty catalog and `valuation_unavailable` or clearly labeled scenario.
+- **Acceptance:** Reloaded owner inventory matches canonical records; missing financial evidence cannot produce a dollar valuation.
+- **DO NOT:** Do not substitute empty props for a catalog or fixed multipliers for valuation evidence.
