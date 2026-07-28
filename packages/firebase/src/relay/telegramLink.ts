@@ -5,26 +5,26 @@
  * Generates a random 8-character code, stores it in Firestore with a 10-minute TTL,
  * and returns the code to the user who then sends it to the Telegram bot via /link.
  *
- * Architecture: Gen 1 HTTPS Callable (requires Firebase Auth)
+ * Architecture: Gen 2 HTTPS Callable (requires Firebase Auth)
  */
-import * as functions from "firebase-functions/v1";
+import { onCall, HttpsError } from "firebase-functions/v2/https";
 import * as admin from "firebase-admin";
 import * as crypto from "crypto";
 
 const LINK_CODE_TTL_MS = 10 * 60 * 1000; // 10 minutes
 
-export const generateTelegramLinkCode = functions
-    .runWith({ enforceAppCheck: true,  timeoutSeconds: 30, memory: "512MB"  })
-    .https.onCall(async (_data, context) => {
+export const generateTelegramLinkCode = onCall(
+    { enforceAppCheck: true, timeoutSeconds: 30 },
+    async (request) => {
         // Require authentication
-        if (!context.auth) {
-            throw new functions.https.HttpsError(
+        if (!request.auth) {
+            throw new HttpsError(
                 "unauthenticated",
                 "You must be signed in to generate a Telegram link code."
             );
         }
 
-        const userId = context.auth.uid;
+        const userId = request.auth.uid;
         const db = admin.firestore();
 
         // Generate a random 8-character alphanumeric code
@@ -45,24 +45,25 @@ export const generateTelegramLinkCode = functions
             expiresInMinutes: 10,
             instructions: "Send /link " + code + " to the indii bot on Telegram",
         };
-    });
+    },
+);
 
 /**
  * getTelegramLinkStatus — Check if the current user has a linked Telegram account
  *
  * Called from the frontend to show the linking status in Settings.
  */
-export const getTelegramLinkStatus = functions
-    .runWith({ enforceAppCheck: true,  timeoutSeconds: 15, memory: "512MB"  })
-    .https.onCall(async (_data, context) => {
-        if (!context.auth) {
-            throw new functions.https.HttpsError(
+export const getTelegramLinkStatus = onCall(
+    { enforceAppCheck: true, timeoutSeconds: 15 },
+    async (request) => {
+        if (!request.auth) {
+            throw new HttpsError(
                 "unauthenticated",
                 "You must be signed in."
             );
         }
 
-        const userId = context.auth.uid;
+        const userId = request.auth.uid;
         const db = admin.firestore();
 
         // Find any link pointing to this user
