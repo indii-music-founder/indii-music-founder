@@ -19,7 +19,7 @@
  * Memory: 2GB
  * Region: us-central1 (default — Firestore triggers don't support multi-region)
  */
-import * as functions from "firebase-functions/v1";
+import { onDocumentCreated } from "firebase-functions/v2/firestore";
 import * as admin from "firebase-admin";
 import { getAgentPrompt, VALID_AGENT_IDS } from "./agentPrompts";
 import { telegramBotToken } from "../config/secrets";
@@ -67,16 +67,21 @@ const BUDGET_LIMIT_USER_MESSAGE =
 // ---------------------------------------------------------------------------
 // Cloud Function: Firestore onCreate Trigger
 // ---------------------------------------------------------------------------
-export const processRelayCommand = functions
-    .runWith({ enforceAppCheck: true, 
+export const processRelayCommand = onDocumentCreated(
+    {
+        document: "users/{userId}/remote-relay-commands/{commandId}",
         secrets: [telegramBotToken],
         timeoutSeconds: 540,
-        memory: "2GB",
-     })
-    .firestore.document("users/{userId}/remote-relay-commands/{commandId}")
-    .onCreate(async (snapshot, context) => {
-        const { userId, commandId } = context.params;
-        const data = snapshot.data();
+        memory: "2GiB",
+        cpu: 'gcf_gen1',
+        concurrency: 1,
+    },
+    async (event) => {
+        const { userId, commandId } = event.params;
+        // Gen1 onCreate always received a snapshot; Gen2 types event.data as
+        // optional. Fail closed rather than dereferencing undefined.
+        if (!event.data) return;
+        const data = event.data.data();
 
         const text = data.text;
         const targetAgentId: string | undefined = data.targetAgentId;

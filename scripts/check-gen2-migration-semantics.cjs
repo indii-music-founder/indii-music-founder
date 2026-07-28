@@ -99,6 +99,10 @@ const MIGRATED = [
     'emailExchangeToken', 'emailRefreshToken', 'emailRevokeToken',
     'pandadocListTemplates', 'pandadocCreateDocument', 'pandadocSendDocument',
     'pandadocGetDocumentStatus', 'pandadocGetSigningLink',
+    // scheduled storage maintenance / relay command trigger
+    'cleanupOrphanedVideos', 'trackStorageQuotas',
+    'cleanupExpiredVideoTemps', 'flagVideosForArchival',
+    'processRelayCommand',
 ];
 const MIGRATED_SET = new Set(MIGRATED);
 

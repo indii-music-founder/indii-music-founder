@@ -8,7 +8,7 @@
  * These run on a schedule (daily/weekly) and help control storage costs.
  */
 
-import * as functions from "firebase-functions/v1";
+import { onSchedule } from "firebase-functions/v2/scheduler";
 import * as admin from "firebase-admin";
 
 // ============================================================================
@@ -89,15 +89,17 @@ function isCreativeVideoTempPath(path: string): boolean {
  *
  * Schedule: Every Sunday at 3:00 AM UTC
  */
-export const cleanupOrphanedVideos = functions
-    .region("us-central1")
-    .runWith({ enforceAppCheck: true, 
+export const cleanupOrphanedVideos = onSchedule(
+    {
+        region: "us-central1",
+        schedule: "every sunday 03:00",
+        timeZone: "UTC",
         timeoutSeconds: 540,
-        memory: "1GB",
-     })
-    .pubsub.schedule("every sunday 03:00")
-    .timeZone("UTC")
-    .onRun(async () => {
+        memory: "1GiB",
+        cpu: 'gcf_gen1',
+        concurrency: 1,
+    },
+    async () => {
         const startTime = Date.now();
         console.log("[StorageMaintenance] Starting orphan cleanup scan...");
 
@@ -230,15 +232,17 @@ export const cleanupOrphanedVideos = functions
  *
  * Schedule: Every day at 2:00 AM UTC
  */
-export const trackStorageQuotas = functions
-    .region("us-central1")
-    .runWith({ enforceAppCheck: true, 
+export const trackStorageQuotas = onSchedule(
+    {
+        region: "us-central1",
+        schedule: "every day 02:00",
+        timeZone: "UTC",
         timeoutSeconds: 540,
-        memory: "1GB",
-     })
-    .pubsub.schedule("every day 02:00")
-    .timeZone("UTC")
-    .onRun(async () => {
+        memory: "1GiB",
+        cpu: 'gcf_gen1',
+        concurrency: 1,
+    },
+    async () => {
         const startTime = Date.now();
         console.log("[StorageQuota] Starting daily quota scan...");
 
@@ -328,16 +332,17 @@ export const trackStorageQuotas = functions
  *
  * Schedule: Every day at 1:30 AM UTC
  */
-export const cleanupExpiredVideoTemps = functions
-    .region("us-central1")
-    .runWith({
-        enforceAppCheck: true,
+export const cleanupExpiredVideoTemps = onSchedule(
+    {
+        region: "us-central1",
+        schedule: "every day 01:30",
+        timeZone: "UTC",
         timeoutSeconds: 540,
-        memory: "512MB",
-    })
-    .pubsub.schedule("every day 01:30")
-    .timeZone("UTC")
-    .onRun(async () => {
+        memory: "512MiB",
+        cpu: 'gcf_gen1',
+        concurrency: 1,
+    },
+    async () => {
         const startTime = Date.now();
         const cutoffDate = new Date();
         cutoffDate.setDate(cutoffDate.getDate() - TEMP_VIDEO_TTL_DAYS);
@@ -389,15 +394,17 @@ export const cleanupExpiredVideoTemps = functions
  *
  * Schedule: First of each month at 4:00 AM UTC
  */
-export const flagVideosForArchival = functions
-    .region("us-central1")
-    .runWith({ enforceAppCheck: true, 
+export const flagVideosForArchival = onSchedule(
+    {
+        region: "us-central1",
+        schedule: "1 of month 04:00",
+        timeZone: "UTC",
         timeoutSeconds: 540,
-        memory: "512MB",
-     })
-    .pubsub.schedule("1 of month 04:00")
-    .timeZone("UTC")
-    .onRun(async () => {
+        memory: "512MiB",
+        cpu: 'gcf_gen1',
+        concurrency: 1,
+    },
+    async () => {
         const startTime = Date.now();
         const cutoffDate = new Date();
         cutoffDate.setDate(cutoffDate.getDate() - ARCHIVE_THRESHOLD_DAYS);
