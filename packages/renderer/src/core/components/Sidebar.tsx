@@ -225,7 +225,7 @@ export default function Sidebar() {
                         <h2 className="text-sm font-semibold text-gray-200 whitespace-nowrap">Studio Resources</h2>
                         <button
                             onClick={() => throttledSetModule('dashboard')}
-                            className="flex items-center gap-2 text-xs text-gray-400 mt-1 hover:text-white transition-colors"
+                            className="flex items-center gap-2 text-xs text-gray-400 mt-1 py-1 -my-1 hover:text-white transition-colors"
                             data-testid="return-hq-btn"
                             aria-label="Return to HQ"
                         >

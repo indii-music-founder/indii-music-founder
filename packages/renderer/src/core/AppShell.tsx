@@ -30,7 +30,7 @@ import { ResponsiveLayoutProvider } from '@/providers/ResponsiveLayoutProvider';
 import { ShareTargetHandler } from '@/core/components/ShareTargetHandler';
 import { ApprovalManager } from '@/components/instruments/InstrumentApprovalModal';
 import { PWAInstallPrompt } from '@/components/PWAInstallPrompt';
-import { STANDALONE_MODULES, type ModuleId } from './constants';
+import { MODULE_DISPLAY_NAMES, STANDALONE_MODULES, type ModuleId } from './constants';
 import { getGatedModuleIds } from '@/config/featureFlags';
 import { GatedModuleFallback } from '@/core/components/GatedModuleFallback';
 import { env } from '@/config/env';
@@ -383,6 +383,18 @@ function AppContent({ currentModule, showChrome, isDesktop, isAnyPhone, shortcut
                         )}
 
                         <main id="main-content" className="flex-1 flex flex-col min-w-0 bg-background relative z-0">
+                            {/*
+                              ISSUE-1189: the studio shell shipped with zero `<h1>` on the page, so a
+                              screen-reader user had no page-level heading to orient from and no
+                              announcement of which of the ~28 destinations they were in. Rendered
+                              visually hidden because the design intentionally carries the module
+                              identity through the sidebar and ambient theming rather than a drawn
+                              title — the heading is required for the document outline, not the layout.
+                            */}
+                            <h1 className="sr-only">
+                                {MODULE_DISPLAY_NAMES[currentModule as ModuleId] || currentModule}
+                            </h1>
+
                             <ModuleAmbientBackground />
 
                             <Suspense fallback={null}>

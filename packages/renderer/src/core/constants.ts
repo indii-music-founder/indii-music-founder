@@ -61,6 +61,45 @@ export function isValidModule(module: string): module is ModuleId {
 }
 
 // ============================================================================
+// Module Display Names
+// ============================================================================
+
+/**
+ * Human-readable module names. ISSUE-1189: previously private to
+ * `MobileHeader.tsx`, which meant the desktop shell had no source for a
+ * page-level heading and shipped with no `<h1>` at all. Lives here so both the
+ * mobile header and the desktop shell's `<h1>` name a module identically.
+ */
+export const MODULE_DISPLAY_NAMES: Partial<Record<ModuleId, string>> = {
+    'dashboard': 'Home',
+    'creative': 'Creative Director',
+    'legal': 'Legal',
+    'marketing': 'Marketing',
+    'workflow': 'Workflow Lab',
+    'knowledge': 'Knowledge Base',
+    'road': 'Road/tour',
+    'social': 'Social Media',
+    'brand': 'Brand Manager',
+    'campaign': 'Campaign Manager',
+    'publicist': 'Publicist',
+    'publishing': 'Publishing',
+    'finance': 'Finance',
+    'licensing': 'Licensing',
+    'agent': 'Booking Agent',
+    'distribution': 'Distribution',
+    'files': 'Files',
+    'merch': 'Merchandise',
+    'marketplace': 'Marketplace',
+    'audio-analyzer': 'Audio Analyzer',
+    'observability': 'Observability',
+    'history': 'History',
+    'debug': 'Debug',
+    'investor': 'Investor',
+    'capture': 'Capture',
+    'memory': 'Memory',
+};
+
+// ============================================================================
 // Module to Agent Alignment
 // ============================================================================
 

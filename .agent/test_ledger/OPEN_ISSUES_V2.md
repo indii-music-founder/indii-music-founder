@@ -1660,7 +1660,16 @@
 
 ### ISSUE-1189: Studio shell has no `<h1>`, duplicate ambiguous `<h2>`s, no current-page indicator, and two sub-24px tap targets
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL (2026-07-27 — 3 of 4 items fixed and verified in source; the fourth was already resolved before this pass. Remaining: the e2e assertion the acceptance line requires, which needs a live browser run)
+- **Re-audit before fixing (2026-07-27) — two items had already been fixed by someone since the original measurement, and were NOT re-fixed on pattern-match:**
+  - **`aria-current` (item 3): already done.** `Sidebar.tsx:69` carries `aria-current={isActive ? 'page' : undefined}`.
+  - **Duplicate `"indii"` `<h2>`s (item 2): now only one exists** (`dashboard/components/AgentHeader.tsx:24`). The second was removed independently; a repo-wide grep for headings reading exactly `indii` returns a single hit.
+- **Fixed in this pass:**
+  1. **The missing `<h1>` (item 1).** `AppShell.tsx`'s `<main>` now renders one `sr-only` `<h1>` naming the current module. Visually hidden on purpose: the design carries module identity through the sidebar and ambient theming rather than a drawn title, so the heading is required for the document outline, not the layout.
+  2. **`MODULE_DISPLAY_NAMES` moved to `core/constants.ts`** (alongside `MODULE_AGENT_MAP`). It had been private to `MobileHeader.tsx`, which is *why* the desktop shell had no name source for a heading. Both surfaces now name a module identically instead of the desktop shell duplicating the map or importing from a component.
+  3. **"Return to HQ" tap target (item 4).** Measured 94×16, under the WCAG 2.2 AA 2.5.8 24×24 minimum, and it is the primary escape hatch out of every module. `py-1 -my-1` adds 8px of hit area top and bottom (16 → 24) while the negative margin keeps the drawn layout byte-identical — the visual design is unchanged.
+- **Not done:** the second sub-24px control, "Unlock full Desktop Studio" (231×17), could not be located in source — a repo-wide grep for that string returns no hits, so it is either dynamically composed or has since been removed. Not "fixed" blind. Item 2's ordering half (semantic level tracking visual weight) is also untouched: with only one `indii` heading left, the remaining outline work needs a fresh live measurement rather than the stale one in this entry.
+- **Verification:** `tsc -b packages/renderer` clean; `Sidebar` + `MobileHeader` suites **19/19** (one snapshot updated — its diff is exactly and only the intended `className` change, inspected before accepting). The acceptance line's `e2e/a11y.spec.ts` assertions have **not** been added or run; that requires a live browser pass and is what keeps this PARTIAL.
 - **Severity:** 🟡 MEDIUM (WCAG 2.2 AA gaps; the app already ships `axe-core` and an `e2e/a11y.spec.ts`, so this is drift from a standard the project has already adopted)
 - **Module:** `packages/renderer/src/core/AppShell.tsx` (document outline + nav semantics),
   `packages/renderer/src/modules/dashboard/Dashboard.tsx`,
@@ -1739,7 +1748,12 @@
 
 ### ISSUE-1191: RouterContext verification is suite-order-sensitive, blocks the full test gate, and reports an uncaught router error while green in isolation
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-27 — confirmed against the canonical gate: `npm test -- --run` now reports **876 files / 5,450 tests passed, 0 failed, exit 0**, up from the entry's recorded "1 failed, 5,176 passed, exit 1")
+- **Fix applied (2026-07-27):** the file asserted that the lazy Dashboard had rendered ("Dashboard Loaded") inside a 5s allowance. That conflated a narrow router-provider contract with the entire App boot — lazy chunks, Suspense, workspace sync, memory engine — so under full-suite CPU pressure the Dashboard had simply not resolved and the gate exited 1 while the file passed alone. Raising the timeout would only move the threshold, not remove the race. Split into the two things actually being verified:
+  1. a deterministic case asserting App mounts inside a Router with no `useLocation() may be used only in the context of a <Router>` error — observable at mount, independent of any lazy boundary resolving;
+  2. a separate, generously-timed case for the lazy dashboard, so a slow Suspense boundary is reported as exactly that instead of masquerading as a router-context failure.
+- **The uncaught-exception half is resolved by deletion, deliberately:** the former negative case rendered `<App />` with no Router inside a `try/catch`. React surfaces that failure asynchronously, outside the catch, so the test passed while printing two uncaught exceptions — training CI that an uncaught React error is acceptable. It was not reinstated in a "fixed" form, because any version of it has that property.
+- **Verification:** focused run 2/2; **full canonical gate green (0 failures)**, which is the specific condition this entry defined as broken.
 - **Severity:** 🟠 HIGH (the repository's required full unit-test command exits non-zero)
 - **Module:** `packages/renderer/src/tests/RouterContext.test.tsx`,
   `packages/renderer/src/core/App.tsx`, and the App boot/Suspense mocks used by the test

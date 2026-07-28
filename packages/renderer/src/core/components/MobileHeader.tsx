@@ -4,7 +4,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { getColorForModule } from '@/core/theme/moduleColors';
 import { ChevronLeft } from 'lucide-react';
 import { haptic } from '@/lib/mobile';
-import { type ModuleId } from '@/core/constants';
+import { MODULE_DISPLAY_NAMES, type ModuleId } from '@/core/constants';
 import { useMobile } from '@/hooks/useMobile';
 
 /**
@@ -20,34 +20,6 @@ import { useMobile } from '@/hooks/useMobile';
  */
 
 // Module display names for the header
-const MODULE_DISPLAY_NAMES: Partial<Record<ModuleId, string>> = {
-    'dashboard': 'Home',
-    'creative': 'Creative Director',
-    'legal': 'Legal',
-    'marketing': 'Marketing',
-    'workflow': 'Workflow Lab',
-    'knowledge': 'Knowledge Base',
-    'road': 'Road/tour',
-    'social': 'Social Media',
-    'brand': 'Brand Manager',
-    'campaign': 'Campaign Manager',
-    'publicist': 'Publicist',
-    'publishing': 'Publishing',
-    'finance': 'Finance',
-    'licensing': 'Licensing',
-    'agent': 'Booking Agent',
-    'distribution': 'Distribution',
-    'files': 'Files',
-    'merch': 'Merchandise',
-    'marketplace': 'Marketplace',
-    'audio-analyzer': 'Audio Analyzer',
-    'observability': 'Observability',
-    'history': 'History',
-    'debug': 'Debug',
-    'investor': 'Investor',
-    'capture': 'Capture',
-    'memory': 'Memory',
-};
 
 export interface MobileHeaderProps {
     rightAction?: React.ReactNode;

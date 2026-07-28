@@ -536,7 +536,7 @@ exports[`Sidebar > matches snapshot in expanded state 1`] = `
       </h2>
       <button
         aria-label="Return to HQ"
-        class="flex items-center gap-2 text-xs text-gray-400 mt-1 hover:text-white transition-colors"
+        class="flex items-center gap-2 text-xs text-gray-400 mt-1 py-1 -my-1 hover:text-white transition-colors"
         data-testid="return-hq-btn"
       >
         <svg
