@@ -7,6 +7,9 @@ export const generateReleaseDownloadUrl = onCall(
         region: "us-central1",
         enforceAppCheck: false,
         timeoutSeconds: 30,
+        memory: "512MiB",
+        cpu: "gcf_gen1",
+        concurrency: 1,
     },
     async (request): Promise<{ success: boolean; url?: string; message?: string }> => {
         validateAppCheckV2(request);

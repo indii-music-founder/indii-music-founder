@@ -20,6 +20,7 @@ const VALID_SEVERITIES = new Set<AuditSeverity>(["low", "medium", "high", "criti
  * or source while preserving the existing SecurityTools workflow.
  */
 export const logAuditEvent = onCall(
+    { memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1 },
     async (request) => {
         if (!request.auth) {
             throw new HttpsError(

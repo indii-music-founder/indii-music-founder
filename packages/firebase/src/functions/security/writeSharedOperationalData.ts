@@ -62,6 +62,7 @@ export function validateContextCacheRegistration(data: RegisterAiContextCacheReq
  * one another's Vertex resource reference.
  */
 export const registerAiContextCache = onCall(
+    { memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1 },
     async (request) => {
         const userId = requireAuthenticatedUid(request);
         const validated = validateContextCacheRegistration(
@@ -106,6 +107,7 @@ export function validateInstrumentUsage(data: RecordInstrumentUsageRequest): Rec
  * cannot replace aggregate counters or inject arbitrary instrument IDs.
  */
 export const recordInstrumentUsage = onCall(
+    { memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1 },
     async (request) => {
         const userId = requireAuthenticatedUid(request);
         const { instrumentId, outcome, executionId } = validateInstrumentUsage(

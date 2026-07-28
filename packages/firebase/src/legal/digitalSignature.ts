@@ -9,6 +9,9 @@ export const sendForDigitalSignature = onCall(
         region: "us-central1",
         timeoutSeconds: 60,
         secrets: [pandaDocApiKey],
+        memory: "512MiB",
+        cpu: "gcf_gen1",
+        concurrency: 1,
     },
     async (request) => {
         if (!request.auth) {

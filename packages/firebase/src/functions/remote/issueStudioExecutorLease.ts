@@ -28,7 +28,7 @@ async function assertLease(uid: string, deviceId: unknown, leaseToken: unknown) 
  * Controllers do not have the IPC bridge required to retrieve it.
  */
 export const issueStudioExecutorLease = onCall(
-  { region: 'us-central1', enforceAppCheck: false },
+  { region: 'us-central1', enforceAppCheck: false, memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1 },
   async (request) => {
     if (!request.auth) throw new HttpsError('unauthenticated', 'Sign in is required.');
     const input = (request.data ?? {}) as { deviceId?: unknown; enrollmentSecret?: unknown };
@@ -60,7 +60,7 @@ export const issueStudioExecutorLease = onCall(
     return { deviceId: input.deviceId, leaseToken, expiresAt: expiresAt.toMillis() };
   });
 
-export const publishStudioPresence = onCall({ region: 'us-central1', enforceAppCheck: false }, async (request) => {
+export const publishStudioPresence = onCall({ region: 'us-central1', enforceAppCheck: false, memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1 }, async (request) => {
   if (!request.auth) throw new HttpsError('unauthenticated', 'Sign in is required.');
   const input = (request.data ?? {}) as { deviceId?: unknown; leaseToken?: unknown; protocolVersion?: unknown; state?: Record<string, unknown> };
   await assertLease(request.auth.uid, input.deviceId, input.leaseToken);
@@ -86,7 +86,7 @@ export const publishStudioPresence = onCall({ region: 'us-central1', enforceAppC
   return { ok: true };
 });
 
-export const releaseStudioPresence = onCall({ region: 'us-central1', enforceAppCheck: false }, async (request) => {
+export const releaseStudioPresence = onCall({ region: 'us-central1', enforceAppCheck: false, memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1 }, async (request) => {
   if (!request.auth) throw new HttpsError('unauthenticated', 'Sign in is required.');
   const input = (request.data ?? {}) as { deviceId?: unknown; leaseToken?: unknown; studioInstanceId?: unknown };
   await assertLease(request.auth.uid, input.deviceId, input.leaseToken);
@@ -101,7 +101,7 @@ export const releaseStudioPresence = onCall({ region: 'us-central1', enforceAppC
   return { ok: true };
 });
 
-export const claimStudioCommand = onCall({ region: 'us-central1', enforceAppCheck: false }, async (request) => {
+export const claimStudioCommand = onCall({ region: 'us-central1', enforceAppCheck: false, memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1 }, async (request) => {
   if (!request.auth) throw new HttpsError('unauthenticated', 'Sign in is required.');
   const input = (request.data ?? {}) as { deviceId?: unknown; leaseToken?: unknown; commandId?: unknown; studioInstanceId?: unknown };
   await assertLease(request.auth.uid, input.deviceId, input.leaseToken);
@@ -123,7 +123,7 @@ export const claimStudioCommand = onCall({ region: 'us-central1', enforceAppChec
   return { claimed };
 });
 
-export const publishStudioResponse = onCall({ region: 'us-central1', enforceAppCheck: false }, async (request) => {
+export const publishStudioResponse = onCall({ region: 'us-central1', enforceAppCheck: false, memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1 }, async (request) => {
   if (!request.auth) throw new HttpsError('unauthenticated', 'Sign in is required.');
   const input = (request.data ?? {}) as { deviceId?: unknown; leaseToken?: unknown; commandId?: unknown; text?: unknown; agentId?: unknown; imageUrls?: unknown; isStreaming?: unknown; boardroomMessageId?: unknown };
   const { deviceId } = await assertLease(request.auth.uid, input.deviceId, input.leaseToken);
@@ -148,7 +148,7 @@ export const publishStudioResponse = onCall({ region: 'us-central1', enforceAppC
   return { ok: true };
 });
 
-export const completeStudioCommand = onCall({ region: 'us-central1', enforceAppCheck: false }, async (request) => {
+export const completeStudioCommand = onCall({ region: 'us-central1', enforceAppCheck: false, memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1 }, async (request) => {
   if (!request.auth) throw new HttpsError('unauthenticated', 'Sign in is required.');
   const input = (request.data ?? {}) as { deviceId?: unknown; leaseToken?: unknown; commandId?: unknown };
   const { deviceId } = await assertLease(request.auth.uid, input.deviceId, input.leaseToken);

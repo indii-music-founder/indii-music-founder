@@ -28,7 +28,7 @@ export async function auditReleaseArtworkForOwner(
  * happen on the backend.
  */
 export const auditReleaseArtworkForDelivery = onCall(
-    { region: 'us-central1', enforceAppCheck: false, timeoutSeconds: 60 },
+    { region: 'us-central1', enforceAppCheck: false, timeoutSeconds: 60, memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1 },
     async (request): Promise<AssetResolutionAudit> => {
         if (!request.auth) {
             throw new HttpsError('unauthenticated', 'An authenticated owner is required to audit release artwork.');

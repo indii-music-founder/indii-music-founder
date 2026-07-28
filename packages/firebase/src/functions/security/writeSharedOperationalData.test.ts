@@ -29,7 +29,11 @@ vi.mock("firebase-functions/v2/https", () => {
     }
     return {
         HttpsError,
-        onCall: vi.fn((handler: unknown) => handler),
+        // Gen2 onCall accepts (handler) or (options, handler). These exports
+        // declare generation-preserving options, so unwrap whichever argument
+        // is the handler.
+        onCall: vi.fn((optsOrHandler: unknown, maybeHandler?: unknown) =>
+            typeof optsOrHandler === 'function' ? optsOrHandler : maybeHandler),
     };
 });
 

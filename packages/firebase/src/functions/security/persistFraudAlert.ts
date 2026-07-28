@@ -17,6 +17,7 @@ interface FraudAlert {
  * - Enforces schema validation
  */
 export const persistFraudAlert = onCall(
+    { memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1 },
     async (request) => {
         // Require App Check
         if (request.app == undefined) {

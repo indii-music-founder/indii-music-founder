@@ -227,6 +227,7 @@ async function assignIdentifier(
 }
 
 export const assignDistributionIdentifier = onCall(
+    { memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1 },
     async (request) => {
         const uid = requireAuth(request);
         const data = (request.data ?? {}) as AssignIdentifierRequest;
@@ -257,6 +258,7 @@ export const assignDistributionIdentifier = onCall(
 );
 
 export const recordDistributionIdentifier = onCall(
+    { memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1 },
     async (request) => {
         const uid = requireAuth(request);
         const data = (request.data ?? {}) as RecordIdentifierRequest;
@@ -304,6 +306,7 @@ export const recordDistributionIdentifier = onCall(
 );
 
 export const recordDistributionAuditEvent = onCall(
+    { memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1 },
     async (request) => {
         const uid = requireAuth(request);
         const data = (request.data ?? {}) as RecordDistributionAuditRequest;
@@ -349,6 +352,7 @@ export const recordDistributionAuditEvent = onCall(
 );
 
 export const requestDistributionTakedown = onCall(
+    { memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1 },
     async (request) => {
         const uid = requireAuth(request);
         const data = (request.data ?? {}) as RequestDistributionTakedownRequest;
@@ -405,6 +409,7 @@ export const requestDistributionTakedown = onCall(
 );
 
 export const createSftpIngestionRecord = onCall(
+    { memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1 },
     async (request) => {
         const uid = requireAuth(request);
         const data = (request.data ?? {}) as CreateSftpIngestionRequest;
@@ -426,6 +431,7 @@ export const createSftpIngestionRecord = onCall(
 );
 
 export const updateSftpIngestionRecord = onCall(
+    { memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1 },
     async (request) => {
         const uid = requireAuth(request);
         const data = (request.data ?? {}) as UpdateSftpIngestionRequest;

@@ -61,7 +61,7 @@ async function fetchTokenResponse(
 }
 
 export const refreshSocialToken = onCall(
-    { enforceAppCheck: false, secrets: ['SPOTIFY_CLIENT_ID', 'SPOTIFY_CLIENT_SECRET', 'TIKTOK_CLIENT_KEY', 'TIKTOK_CLIENT_SECRET', 'META_APP_ID', 'META_APP_SECRET', 'TWITTER_CLIENT_ID', 'TWITTER_CLIENT_SECRET', 'GOOGLE_OAUTH_CLIENT_ID', 'GOOGLE_OAUTH_CLIENT_SECRET'] },
+    { enforceAppCheck: false, secrets: ['SPOTIFY_CLIENT_ID', 'SPOTIFY_CLIENT_SECRET', 'TIKTOK_CLIENT_KEY', 'TIKTOK_CLIENT_SECRET', 'META_APP_ID', 'META_APP_SECRET', 'TWITTER_CLIENT_ID', 'TWITTER_CLIENT_SECRET', 'GOOGLE_OAUTH_CLIENT_ID', 'GOOGLE_OAUTH_CLIENT_SECRET'], memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1 },
     async (request): Promise<RefreshTokenResponse> => {
         validateAppCheckV2(request);
         if (!request.auth) {

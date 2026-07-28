@@ -27,7 +27,7 @@ export interface MechanicalLicenseResponse {
  * a VERIFIED status may only be returned from that API's actual response.
  */
 export const verifyMechanicalLicense = onCall(
-    { region: 'us-central1', timeoutSeconds: 60 },
+    { region: 'us-central1', timeoutSeconds: 60, memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1 },
     async (request): Promise<MechanicalLicenseResponse> => {
         if (!request.auth) {
             throw new HttpsError(

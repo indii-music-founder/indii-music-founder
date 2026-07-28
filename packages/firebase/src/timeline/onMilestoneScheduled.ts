@@ -8,7 +8,12 @@ import * as admin from "firebase-admin";
  * Informs the UI that a task is queued and waiting for its execution slot.
  */
 export const onMilestoneScheduled = onDocumentWritten(
-    "projects/{projectId}/milestones/{milestoneId}",
+    {
+        document: "projects/{projectId}/milestones/{milestoneId}",
+        memory: "512MiB",
+        cpu: "gcf_gen1",
+        concurrency: 1,
+    },
     async (event) => {
         const { projectId, milestoneId } = event.params;
         // Gen2 delivers the before/after pair under `event.data`, which is
