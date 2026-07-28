@@ -3200,7 +3200,7 @@ acceptance criteria.
 
 ### ISSUE-1246: Two video workers can submit the same paid job, while V3 reservations are reusable and never settled
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL — local implementation and security verification complete; production deployment/probe required
 - **Severity:** 🔴 CRITICAL
 - **Module:** `packages/firebase/src/index.ts`; `functions/creative/videoJobOrchestrator.ts`; `functions/creative/gateway.ts`
 - **Evidence:** `generateVideoV3` writes a queued `videoJobs` record that matches both the legacy `executeVideoJob` `onCreate` trigger and the V2 `videoJobFirestoreOrchestrator` `onDocumentWritten` trigger. Both can reach a paid Vertex submission. The V3 path only reads an `APPROVED` reservation; it does not atomically claim it for one job, and its terminal worker paths do not finalize or void it. The gateway also suppresses Firestore dispatch-write failures through `safeDbSet` and can return a queued job ID with no durable worker record.
@@ -3208,10 +3208,12 @@ acceptance criteria.
 - **Honest fallback:** Disable the ambiguous worker/version and reject missing, reused, or unclaimable reservations. Return `unavailable` and retain a durable reconciliation record when dispatch cannot be proven.
 - **Acceptance:** A concurrency test proves two trigger deliveries produce one provider submission; replay cannot reuse a reservation; a failed authoritative write never returns queued success; stale claims are recoverable without double charging.
 - **DO NOT:** Do not rely on a later status write to prevent the initial race, call duplicate submissions “retries,” settle blindly after an ambiguous provider call, or treat a read-only `APPROVED` check as a claim.
+- **2026-07-28 local implementation:** V3 job creation now transactionally claims one `APPROVED` video reservation and creates the authoritative `videoJobs` record in the same Firestore transaction. `gateway-video-v3` jobs are excluded from the legacy Gen1 worker, while the Gen2 orchestrator transactionally changes `queued` to `processing` before calling Vertex. Provider success records durable output evidence before settlement; pre-provider failures void; ambiguous provider failures remain `CLAIMED` with reconciliation required. The scheduled reconciler settles only a matching completed/durable-output job and refunds only an explicit `not_submitted` terminal failure. A two-delivery concurrency test proves one provider execution; replayed reservation and mismatched-job finalization tests fail closed. Failed multi-input staging now generation-pins and removes earlier staged copies so rejected requests do not leave orphaned protected objects. Focused gate: 63/63 tests, Firebase TypeScript build, scoped ESLint, and `git diff --check` pass. Firestore/Storage emulator security gate: 194/194.
+- **Remaining closure gate:** Deploy the function/index changes and run the release-blocking production validation against a genuine verified user: one authorized paid video request, duplicate-trigger observation, reservation/job lifecycle inspection, and intentional direct/cross-owner client-write denials with request/log evidence. No paid provider request was fabricated for local closure.
 
 ### ISSUE-1247: V3 video trusts caller-supplied Cloud Storage URIs as backend-readable Vertex inputs
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL — local implementation and security verification complete; production deployment/probe required
 - **Severity:** 🔴 CRITICAL
 - **Module:** `packages/firebase/src/functions/creative/gateway.ts`
 - **Evidence:** First-frame, last-frame, reference, source, and mask `gs://` URIs are converted directly into Vertex `gcsUri` inputs. They do not pass through the owner/bucket/generation/byte validation used by the image path. Backend ADC may read an object that client Storage Rules would deny if its path is known.
@@ -3219,6 +3221,8 @@ acceptance criteria.
 - **Honest fallback:** Reject unverifiable media with `permission-denied` or `failed-precondition` before reservation/provider work.
 - **Acceptance:** Cross-owner, wrong-bucket, stale-generation, oversized, spoofed-MIME, and missing-object tests all fail before Vertex; valid owner media reaches the provider with immutable evidence.
 - **DO NOT:** Do not treat a `gs://` prefix, a Firestore owner field, or backend read permission as proof of user authority.
+- **2026-07-28 local implementation:** Every V3 source video, first/last frame, reference, mask, role-labelled manifest entry, and director frame is resolved against the configured bucket and authenticated owner namespace. The backend reads the exact source generation, enforces size, MIME, and magic-byte signatures, then copies that exact generation with create-only preconditions into a server-controlled per-job staging path. Vertex and the durable job record receive only staged URIs plus original/staged generation evidence and available content hash. Transaction failure deletes the staged objects. Focused tests cover valid staging, cross-owner paths, wrong buckets, MIME/signature spoofing, immutable evidence, and rewritten manifest/director references.
+- **Remaining closure gate:** Deploy and prove with genuine owner media that production rejects wrong-owner, wrong-bucket, missing/stale-generation, oversized, and spoofed-MIME inputs before Vertex while a valid owner object reaches the versioned worker. Capture Cloud Logging/request evidence without exposing object URLs or tokens.
 
 ### ISSUE-1248: Knowledge/RAG Phase 0 contracts are duplicated and incompatible
 

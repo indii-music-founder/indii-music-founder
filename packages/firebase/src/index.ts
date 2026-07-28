@@ -501,6 +501,13 @@ export const executeVideoJob = functions
             functions.logger.log(`[executeVideoJob] Skipping job ${jobId} — status is "${data.status}", not "queued".`);
             return;
         }
+        // Versioned gateway jobs are owned exclusively by the Gen2
+        // videoJobFirestoreOrchestrator. The legacy worker handles only
+        // unversioned triggerVideoJob records.
+        if (data.workerVersion === 'gateway-video-v3' || data.type === 'video') {
+            functions.logger.log(`[executeVideoJob] Skipping versioned gateway job ${jobId}.`);
+            return;
+        }
 
         const userId = data.userId;
         const prompt = data.prompt;

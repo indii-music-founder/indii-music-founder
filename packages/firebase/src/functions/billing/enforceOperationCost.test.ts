@@ -64,6 +64,7 @@ import {
   expireStaleOperationReservations,
   finalizeOperationReservation,
   getOperationCostHistoryPage,
+  reconcileStaleClaimedVideoReservations,
   serializeCostOperationHistoryItem,
 } from './enforceOperationCost';
 
@@ -246,6 +247,94 @@ describe('ISSUE-1006 operation cost receipts and expiry', () => {
     });
   });
 
+  it('settles a stale claimed video reservation only from matching durable output evidence', async () => {
+    const query = createQuery([
+      {
+        id: 'video-op-1',
+        data: () => ({ userId: 'user-1', type: 'video', claimedJobId: 'video-job-1' }),
+      },
+    ]);
+    const db = {
+      collection: vi.fn(() => query),
+      doc: vi.fn(() => ({
+        get: vi.fn(async () => ({
+          exists: true,
+          data: () => ({
+            userId: 'user-1',
+            costReservationId: 'video-op-1',
+            workerVersion: 'gateway-video-v3',
+            status: 'processing',
+            providerSubmissionState: 'succeeded_pending_settlement',
+            resultUri: 'gs://project.appspot.com/generated/user-1/video.mp4',
+          }),
+        })),
+      })),
+    };
+    mocks.firestore.mockReturnValue(db);
+    const finalize = vi.fn().mockResolvedValue(undefined);
+
+    await expect(reconcileStaleClaimedVideoReservations(
+      new Date('2026-07-16T20:30:00.000Z'),
+      finalize,
+    )).resolves.toBe(1);
+    expect(finalize).toHaveBeenCalledWith({
+      userId: 'user-1',
+      operationId: 'video-op-1',
+      outcome: 'SETTLED',
+      jobId: 'video-job-1',
+    });
+  });
+
+  it('voids only explicit pre-provider failures and holds ambiguous claimed video work', async () => {
+    const query = createQuery([
+      {
+        id: 'video-op-safe-void',
+        data: () => ({ userId: 'user-1', type: 'video', claimedJobId: 'video-job-safe-void' }),
+      },
+      {
+        id: 'video-op-ambiguous',
+        data: () => ({ userId: 'user-1', type: 'video', claimedJobId: 'video-job-ambiguous' }),
+      },
+    ]);
+    const db = {
+      collection: vi.fn(() => query),
+      doc: vi.fn((path: string) => ({
+        get: vi.fn(async () => ({
+          exists: true,
+          data: () => path.endsWith('video-job-safe-void')
+            ? {
+                userId: 'user-1',
+                costReservationId: 'video-op-safe-void',
+                workerVersion: 'gateway-video-v3',
+                status: 'failed',
+                providerSubmissionState: 'not_submitted',
+              }
+            : {
+                userId: 'user-1',
+                costReservationId: 'video-op-ambiguous',
+                workerVersion: 'gateway-video-v3',
+                status: 'failed',
+                providerSubmissionState: 'ambiguous_or_failed',
+              },
+        })),
+      })),
+    };
+    mocks.firestore.mockReturnValue(db);
+    const finalize = vi.fn().mockResolvedValue(undefined);
+
+    await expect(reconcileStaleClaimedVideoReservations(
+      new Date('2026-07-16T20:30:00.000Z'),
+      finalize,
+    )).resolves.toBe(1);
+    expect(finalize).toHaveBeenCalledTimes(1);
+    expect(finalize).toHaveBeenCalledWith({
+      userId: 'user-1',
+      operationId: 'video-op-safe-void',
+      outcome: 'VOIDED',
+      jobId: 'video-job-safe-void',
+    });
+  });
+
   it('reuses a deterministic video reservation without incrementing aggregate cost twice', async () => {
     const documents = new Map<string, Record<string, unknown>>();
     documents.set('users/user-1', { tier: 'free' });
@@ -344,6 +433,42 @@ describe('ISSUE-1006 operation cost receipts and expiry', () => {
         operationCount: { __increment: -1 },
       }));
     }
+  });
+
+  it('requires the matching authoritative job to finalize a claimed reservation', async () => {
+    const state: Record<string, unknown> = {
+      userId: 'user-1',
+      status: 'CLAIMED',
+      claimedJobId: 'video-job-1',
+      estimatedCost: 0.5,
+      ledgerDocumentPaths: {
+        daily: 'users/user-1/costLedger/daily-2026-07-16',
+      },
+    };
+    const transaction = {
+      get: vi.fn(async () => ({ exists: true, data: () => ({ ...state }) })),
+      update: vi.fn((_ref, values: Record<string, unknown>) => Object.assign(state, values)),
+      set: vi.fn(),
+    };
+    const db = {
+      doc: vi.fn((path: string) => ({ path })),
+      runTransaction: vi.fn(async (handler: (tx: typeof transaction) => Promise<void>) => handler(transaction)),
+    };
+    mocks.firestore.mockReturnValue(db);
+
+    await expect(finalizeOperationReservation({
+      userId: 'user-1',
+      operationId: 'op-1',
+      outcome: 'SETTLED',
+      jobId: 'wrong-job',
+    })).rejects.toThrow('claim does not match');
+    await expect(finalizeOperationReservation({
+      userId: 'user-1',
+      operationId: 'op-1',
+      outcome: 'SETTLED',
+      jobId: 'video-job-1',
+    })).resolves.toBeUndefined();
+    expect(transaction.update).toHaveBeenCalledTimes(1);
   });
 });
 

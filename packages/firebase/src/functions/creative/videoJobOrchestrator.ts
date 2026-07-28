@@ -1,6 +1,7 @@
 import { onDocumentWritten } from 'firebase-functions/v2/firestore';
 import * as logger from 'firebase-functions/logger';
 import { executeVideoJob, type VideoGenerationJobRecord } from './gateway';
+import { claimQueuedGatewayVideoJob } from './videoJobAuthority';
 
 export const videoJobFirestoreOrchestrator = onDocumentWritten(
   {
@@ -25,10 +26,14 @@ export const videoJobFirestoreOrchestrator = onDocumentWritten(
       return;
     }
 
-    logger.info(`[videoJobFirestoreOrchestrator] Starting queued video job ${event.params.jobId}`);
-
     try {
-      await executeVideoJob(event.params.jobId, after);
+      const claimed = await claimQueuedGatewayVideoJob(
+        snapshot.after.ref.firestore,
+        event.params.jobId,
+      );
+      if (!claimed) return;
+      logger.info(`[videoJobFirestoreOrchestrator] Claimed queued video job ${event.params.jobId}`);
+      await executeVideoJob(event.params.jobId, claimed as VideoGenerationJobRecord);
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : String(error);
       logger.error(`[videoJobFirestoreOrchestrator] Failed to process queued job ${event.params.jobId}: ${message}`);

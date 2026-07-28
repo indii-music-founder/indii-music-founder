@@ -139,12 +139,12 @@ export interface CostOperationHistoryCursor {
 export interface CostOperationHistoryItem {
   operationId: string;
   operationType: OperationType | 'unknown';
-  status: 'APPROVED' | 'SETTLED' | 'VOIDED' | 'UNKNOWN';
+  status: 'APPROVED' | 'CLAIMED' | 'SETTLED' | 'VOIDED' | 'UNKNOWN';
   estimatedCost: number;
   createdAt: string | null;
   finalizedAt: string | null;
   autoReleaseAt: string | null;
-  resolution: 'pending_auto_release' | 'settled' | 'refunded' | 'unknown';
+  resolution: 'pending_auto_release' | 'claimed' | 'settled' | 'refunded' | 'unknown';
 }
 
 export interface CostOperationHistoryResponse {
@@ -204,8 +204,8 @@ export function serializeCostOperationHistoryItem(
   const operationType = ['video', 'image', 'audio', 'agent_stream'].includes(String(data.type))
     ? data.type as OperationType
     : 'unknown';
-  const status = ['APPROVED', 'SETTLED', 'VOIDED'].includes(String(data.status))
-    ? data.status as 'APPROVED' | 'SETTLED' | 'VOIDED'
+  const status = ['APPROVED', 'CLAIMED', 'SETTLED', 'VOIDED'].includes(String(data.status))
+    ? data.status as 'APPROVED' | 'CLAIMED' | 'SETTLED' | 'VOIDED'
     : 'UNKNOWN';
   const estimatedCostValue = Number(data.estimatedCost);
   const estimatedCost = Number.isFinite(estimatedCostValue) && estimatedCostValue >= 0
@@ -225,6 +225,8 @@ export function serializeCostOperationHistoryItem(
       : null,
     resolution: status === 'APPROVED'
       ? 'pending_auto_release'
+      : status === 'CLAIMED'
+        ? 'claimed'
       : status === 'SETTLED'
         ? 'settled'
         : status === 'VOIDED'
@@ -597,6 +599,7 @@ export async function finalizeOperationReservation(params: {
   userId: string;
   operationId: string;
   outcome: 'SETTLED' | 'VOIDED';
+  jobId?: string;
 }): Promise<void> {
   const db = admin.firestore();
   const operationRef = db.doc(`costLedger/${params.operationId}`);
@@ -606,11 +609,19 @@ export async function finalizeOperationReservation(params: {
     const data = snapshot.data() || {};
     if (data.userId !== params.userId) throw new Error('Cost reservation owner mismatch');
     if (data.status === params.outcome) return;
-    if (data.status !== 'APPROVED') throw new Error(`Cost reservation is already ${data.status}`);
+    if (data.status !== 'APPROVED' && data.status !== 'CLAIMED') {
+      throw new Error(`Cost reservation is already ${data.status}`);
+    }
+    if (data.status === 'CLAIMED') {
+      if (typeof data.claimedJobId !== 'string' || !params.jobId || data.claimedJobId !== params.jobId) {
+        throw new Error('Cost reservation claim does not match the finalizing job');
+      }
+    }
 
     tx.update(operationRef, {
       status: params.outcome,
       finalizedAt: FieldValue.serverTimestamp(),
+      ...(params.jobId ? { finalizedJobId: params.jobId } : {}),
     });
     if (params.outcome !== 'VOIDED') return;
 
@@ -696,11 +707,86 @@ export async function expireStaleOperationReservations(
   return expired;
 }
 
+/**
+ * Reconciles stale video reservations that have already been atomically claimed
+ * by an authoritative job. Claimed work is never refunded merely because it is
+ * old: only durable evidence that the provider was not called permits a void.
+ */
+export async function reconcileStaleClaimedVideoReservations(
+  now = new Date(),
+  finalize: typeof finalizeOperationReservation = finalizeOperationReservation,
+): Promise<number> {
+  const db = admin.firestore();
+  const cutoff = admin.firestore.Timestamp.fromMillis(now.getTime() - RESERVATION_TTL_MS);
+  const stale = await db.collection('costLedger')
+    .where('status', '==', 'CLAIMED')
+    .where('timestamp', '<=', cutoff)
+    .orderBy('timestamp', 'asc')
+    .limit(100)
+    .get();
+
+  let reconciled = 0;
+  for (const operation of stale.docs) {
+    const data = operation.data();
+    const userId = typeof data.userId === 'string' ? data.userId : null;
+    const jobId = typeof data.claimedJobId === 'string' ? data.claimedJobId : null;
+    if (!userId || !jobId || data.type !== 'video') {
+      console.error('[CostControl] Cannot reconcile malformed claimed video reservation', operation.id);
+      continue;
+    }
+
+    try {
+      const jobSnapshot = await db.doc(`videoJobs/${jobId}`).get();
+      if (!jobSnapshot.exists) {
+        // A claim without its transactionally-created job is inconsistent and
+        // requires operator review. Never turn absence of evidence into a refund.
+        console.error('[CostControl] Claimed video reservation has no authoritative job', operation.id, jobId);
+        continue;
+      }
+      const job = jobSnapshot.data() || {};
+      if (
+        job.userId !== userId
+        || job.costReservationId !== operation.id
+        || job.workerVersion !== 'gateway-video-v3'
+      ) {
+        console.error('[CostControl] Claimed video reservation does not match its authoritative job', operation.id, jobId);
+        continue;
+      }
+
+      const hasDurableResult = typeof job.resultUri === 'string' && job.resultUri.startsWith('gs://');
+      if (
+        job.status === 'completed'
+        || (job.providerSubmissionState === 'succeeded_pending_settlement' && hasDurableResult)
+      ) {
+        await finalize({ userId, operationId: operation.id, outcome: 'SETTLED', jobId });
+        reconciled += 1;
+        continue;
+      }
+
+      if (
+        (job.status === 'failed' || job.status === 'cancelled')
+        && job.providerSubmissionState === 'not_submitted'
+      ) {
+        await finalize({ userId, operationId: operation.id, outcome: 'VOIDED', jobId });
+        reconciled += 1;
+      }
+      // queued, processing, or ambiguous provider outcomes remain CLAIMED.
+      // A later scheduler pass can settle them when durable evidence appears.
+    } catch (error) {
+      console.warn('[CostControl] Claimed video reservation reconciliation skipped', operation.id, error);
+    }
+  }
+  return reconciled;
+}
+
 export const expireStaleOperationCostReservations = onSchedule(
   { schedule: 'every 5 minutes', timeZone: 'Etc/UTC', region: 'us-central1' },
   async () => {
-    const expired = await expireStaleOperationReservations();
-    console.info('[CostControl] Expired stale reservations', { expired });
+    const [expired, reconciledClaims] = await Promise.all([
+      expireStaleOperationReservations(),
+      reconcileStaleClaimedVideoReservations(),
+    ]);
+    console.info('[CostControl] Reconciled stale reservations', { expired, reconciledClaims });
   },
 );
 

@@ -17,6 +17,7 @@ const mockUpdate = vi.fn();
 const mockJobGet = vi.fn();
 const mockSave = vi.fn();
 const mockDelete = vi.fn();
+const mockCopy = vi.fn();
 const mockBatchSet = vi.fn();
 const mockBatchUpdate = vi.fn();
 const mockBatchCommit = vi.fn();
@@ -81,6 +82,25 @@ vi.mock('firebase-functions/v2/https', () => ({
 
 vi.mock('firebase-admin', () => ({
   firestore: vi.fn(() => ({
+    runTransaction: vi.fn(async (handler: (transaction: {
+      get: (reference: { collectionName?: string; id?: string }) => Promise<unknown>;
+      update: typeof mockUpdate;
+      create: typeof mockCreate;
+    }) => Promise<unknown>) => handler({
+      get: vi.fn(async (reference: { collectionName?: string; id?: string }) => reference.collectionName === 'costLedger'
+        ? {
+            exists: true,
+            data: () => ({
+              userId: 'user-123',
+              type: 'video',
+              status: 'APPROVED',
+              estimatedCost: 0.8,
+            }),
+          }
+        : { exists: false, data: () => undefined }),
+      update: mockUpdate,
+      create: mockCreate,
+    })),
     batch: vi.fn(() => ({
       set: mockBatchSet,
       update: mockBatchUpdate,
@@ -124,6 +144,7 @@ vi.mock('firebase-admin', () => ({
         delete: mockDelete,
         download: mockDownload,
         getMetadata: mockGetMetadata,
+        copy: mockCopy,
       })),
     })),
   })),
@@ -732,6 +753,17 @@ describe('creative gateway generateVideoV3', () => {
     vi.clearAllMocks();
     mockInteractionsCreate.mockReset();
     mockCollectionNames.length = 0;
+    mockGetMetadata.mockResolvedValue([{
+      contentType: 'image/png',
+      size: '1024',
+      generation: '42',
+      metadata: { contentHash: 'a'.repeat(64) },
+    }]);
+    mockDownload.mockResolvedValue([Buffer.from([137, 80, 78, 71, 13, 10, 26, 10, 0, 0, 0, 0, 0, 0, 0, 0])]);
+    mockCopy.mockResolvedValue(undefined);
+    mockCreate.mockResolvedValue(undefined);
+    mockUpdate.mockResolvedValue(undefined);
+    mockSet.mockResolvedValue(undefined);
   });
 
   it('queues a video job and returns quickly from the callable', async () => {
@@ -743,9 +775,9 @@ describe('creative gateway generateVideoV3', () => {
         model: 'fast',
         resolution: '1080p',
         durationSeconds: 6,
-        firstFrameUri: 'gs://test-bucket/frames/start.png',
-        lastFrameUri: 'gs://test-bucket/frames/end.png',
-        referenceUris: ['gs://test-bucket/refs/artist.png'],
+        firstFrameUri: 'gs://test-bucket/creative/user-123/frames/start.png',
+        lastFrameUri: 'gs://test-bucket/creative/user-123/frames/end.png',
+        referenceUris: ['gs://test-bucket/creative/user-123/refs/artist.png'],
         personGeneration: 'allow_adult',
         negativePrompt: 'no blurry faces',
         seed: '42',
@@ -759,7 +791,16 @@ describe('creative gateway generateVideoV3', () => {
     expect(mockGenerateVideos).not.toHaveBeenCalled();
     expect(mockGetVideosOperation).not.toHaveBeenCalled();
     expect(mockCollectionNames).toEqual(expect.arrayContaining(['creative_jobs', 'videoJobs']));
-    expect(mockSet).toHaveBeenCalledTimes(2);
+    expect(mockCreate.mock.calls[0]?.[1]).toEqual(expect.objectContaining({
+      workerVersion: 'gateway-video-v3',
+      verifiedInputs: expect.arrayContaining([
+        expect.objectContaining({
+          originalUri: 'gs://test-bucket/creative/user-123/frames/start.png',
+          sourceGeneration: '42',
+        }),
+      ]),
+    }));
+    expect(mockSet).toHaveBeenCalledTimes(1);
   });
 
   it('rejects a browser-supplied cost-check bypass before creating a job', async () => {
@@ -782,10 +823,10 @@ describe('creative gateway generateVideoV3', () => {
 
   it('ISSUE-1003: persists the exact role-labelled input manifest to both video job documents', async () => {
     const inputManifest = [
-      { role: 'first_frame', uri: 'gs://test-bucket/frames/a.png' },
-      { role: 'last_frame', uri: 'gs://test-bucket/frames/d.png' },
-      { role: 'ingredient', uri: 'gs://test-bucket/refs/b.png' },
-      { role: 'character_reference', uri: 'gs://test-bucket/refs/c.png' },
+      { role: 'first_frame', uri: 'gs://test-bucket/creative/user-123/frames/a.png' },
+      { role: 'last_frame', uri: 'gs://test-bucket/creative/user-123/frames/d.png' },
+      { role: 'ingredient', uri: 'gs://test-bucket/creative/user-123/refs/b.png' },
+      { role: 'character_reference', uri: 'gs://test-bucket/creative/user-123/refs/c.png' },
     ];
 
     await callGenerateVideo({
@@ -800,22 +841,36 @@ describe('creative gateway generateVideoV3', () => {
         lastFrameUri: inputManifest[1].uri,
         referenceUris: [inputManifest[2].uri, inputManifest[3].uri],
         inputManifest,
+        directorSettings: {
+          fps: 30,
+          firstFrameUri: inputManifest[0].uri,
+          lastFrameUri: inputManifest[1].uri,
+          cameraMovement: 'slow push',
+        },
         costReservationId: 'op-123',
       },
     });
 
-    expect(mockSet).toHaveBeenCalledTimes(2);
-    for (const [jobRecord] of mockSet.mock.calls) {
-      expect(jobRecord).toEqual(expect.objectContaining({
-        firstFrameUri: 'gs://test-bucket/frames/a.png',
-        lastFrameUri: 'gs://test-bucket/frames/d.png',
-        referenceUris: [
-          'gs://test-bucket/refs/b.png',
-          'gs://test-bucket/refs/c.png',
-        ],
-        payload: expect.objectContaining({ inputManifest }),
-      }));
-    }
+    expect(mockCreate.mock.calls[0]?.[1]).toEqual(expect.objectContaining({
+      firstFrameUri: expect.stringContaining('gs://test-bucket/generated/user-123/video-inputs/job-123/'),
+      lastFrameUri: expect.stringContaining('gs://test-bucket/generated/user-123/video-inputs/job-123/'),
+      referenceUris: [
+        expect.stringContaining('gs://test-bucket/generated/user-123/video-inputs/job-123/'),
+        expect.stringContaining('gs://test-bucket/generated/user-123/video-inputs/job-123/'),
+      ],
+      payload: expect.objectContaining({
+        inputManifest: inputManifest.map(input => ({
+          ...input,
+          uri: expect.stringContaining('gs://test-bucket/generated/user-123/video-inputs/job-123/'),
+        })),
+      }),
+      directorSettings: expect.objectContaining({
+        fps: 30,
+        firstFrameUri: expect.stringContaining('gs://test-bucket/generated/user-123/video-inputs/job-123/'),
+        lastFrameUri: expect.stringContaining('gs://test-bucket/generated/user-123/video-inputs/job-123/'),
+        cameraMovement: 'slow push',
+      }),
+    }));
   });
 
   /**
