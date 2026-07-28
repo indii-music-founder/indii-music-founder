@@ -76,6 +76,26 @@ vi.mock('firebase-functions/v1', () => {
     return builder;
 });
 
+// generateReleaseDownloadUrl is now Gen2 (ISSUE-1243). The v1 mock above stays
+// because `../index` still declares un-migrated Gen1 functions. Gen2 `onCall`
+// accepts either (handler) or (options, handler); unwrap whichever is the
+// handler so the test can invoke it directly.
+vi.mock('firebase-functions/v2/https', () => {
+    const unwrap = vi.fn((optsOrHandler: unknown, maybeHandler?: unknown) =>
+        typeof optsOrHandler === 'function' ? optsOrHandler : maybeHandler);
+    return {
+        onCall: unwrap,
+        onRequest: unwrap,
+        HttpsError: class extends Error {
+            code: string;
+            constructor(code: string, message: string) {
+                super(message);
+                this.code = code;
+            }
+        },
+    };
+});
+
 
 import { generateReleaseDownloadUrl } from '../index';
 
@@ -84,17 +104,16 @@ describe('generateReleaseDownloadUrl Cloud Function', () => {
         vi.clearAllMocks();
     });
 
-    it('should throw unauthenticated HttpsError if context.auth is missing', async () => {
+    it('should throw unauthenticated HttpsError if request.auth is missing', async () => {
         const callable = generateReleaseDownloadUrl as any;
-        await expect(callable({ platform: 'mac' }, {} as any)).rejects.toThrowError(
+        await expect(callable({ data: { platform: 'mac' } } as any)).rejects.toThrowError(
             expect.objectContaining({ code: 'unauthenticated' })
         );
     });
 
     it('should throw invalid-argument HttpsError if platform is invalid', async () => {
         const callable = generateReleaseDownloadUrl as any;
-        const context = { auth: { uid: 'user123' } };
-        await expect(callable({ platform: 'linux' }, context as any)).rejects.toThrowError(
+        await expect(callable({ data: { platform: 'linux' }, auth: { uid: 'user123' } } as any)).rejects.toThrowError(
             expect.objectContaining({ code: 'invalid-argument' })
         );
     });
@@ -106,8 +125,7 @@ describe('generateReleaseDownloadUrl Cloud Function', () => {
         });
 
         const callable = generateReleaseDownloadUrl as any;
-        const context = { auth: { uid: 'user123' } };
-        await expect(callable({ platform: 'mac' }, context as any)).rejects.toThrowError(
+        await expect(callable({ data: { platform: 'mac' }, auth: { uid: 'user123' } } as any)).rejects.toThrowError(
             expect.objectContaining({ code: 'not-found', message: 'User profile not found.' })
         );
     });
@@ -119,8 +137,7 @@ describe('generateReleaseDownloadUrl Cloud Function', () => {
         });
 
         const callable = generateReleaseDownloadUrl as any;
-        const context = { auth: { uid: 'user123' } };
-        await expect(callable({ platform: 'mac' }, context as any)).rejects.toThrowError(
+        await expect(callable({ data: { platform: 'mac' }, auth: { uid: 'user123' } } as any)).rejects.toThrowError(
             expect.objectContaining({
                 code: 'permission-denied',
                 message: 'You must be a verified Founder to download the application releases.'
@@ -136,8 +153,7 @@ describe('generateReleaseDownloadUrl Cloud Function', () => {
         mocks.exists.mockResolvedValue([false]);
 
         const callable = generateReleaseDownloadUrl as any;
-        const context = { auth: { uid: 'user123' } };
-        await expect(callable({ platform: 'mac' }, context as any)).rejects.toThrowError(
+        await expect(callable({ data: { platform: 'mac' }, auth: { uid: 'user123' } } as any)).rejects.toThrowError(
             expect.objectContaining({
                 code: 'not-found',
                 message: 'The requested release file is currently unavailable.'
@@ -154,10 +170,9 @@ describe('generateReleaseDownloadUrl Cloud Function', () => {
         mocks.getSignedUrl.mockResolvedValue(['https://signed-url.com/indii-Installer.dmg']);
 
         const callable = generateReleaseDownloadUrl as any;
-        const context = { auth: { uid: 'user123' } };
-        
-        const result = await callable({ platform: 'mac' }, context as any);
-        
+
+        const result = await callable({ data: { platform: 'mac' }, auth: { uid: 'user123' } } as any);
+
         expect(result).toEqual({
             success: true,
             url: 'https://signed-url.com/indii-Installer.dmg',

@@ -1,4 +1,4 @@
-import * as functions from 'firebase-functions/v1';
+import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { getFirestore } from 'firebase-admin/firestore';
 
 export interface Payee {
@@ -7,21 +7,20 @@ export interface Payee {
     isUsPerson: boolean;
 }
 
-export const requestTaxForms = functions
-    .region('us-central1')
-    .runWith({ memory: '512MB', timeoutSeconds: 60 })
-    .https.onCall(async (data: { payees?: Payee[] }, context: functions.https.CallableContext): Promise<{ requests: Array<{ name: string; email: string; formTypeRequested: string; status: string; }> }> => {
-        if (!context.auth) {
-            throw new functions.https.HttpsError(
+export const requestTaxForms = onCall(
+    { region: 'us-central1', timeoutSeconds: 60 },
+    async (request): Promise<{ requests: Array<{ name: string; email: string; formTypeRequested: string; status: string; }> }> => {
+        if (!request.auth) {
+            throw new HttpsError(
                 'unauthenticated',
                 'User must be authenticated to request tax forms.'
             );
         }
 
-        const { payees } = data;
+        const { payees } = (request.data ?? {}) as { payees?: Payee[] };
 
         if (!payees || !Array.isArray(payees)) {
-            throw new functions.https.HttpsError(
+            throw new HttpsError(
                 'invalid-argument',
                 "Missing 'payees' array."
             );
@@ -29,13 +28,13 @@ export const requestTaxForms = functions
 
         const requests = payees.map((payee, index) => {
             if (!payee || typeof payee !== 'object') {
-                throw new functions.https.HttpsError('invalid-argument', `Payee at index ${index} must be an object.`);
+                throw new HttpsError('invalid-argument', `Payee at index ${index} must be an object.`);
             }
             if (!payee.email || typeof payee.email !== 'string' || payee.email.trim().length === 0) {
-                throw new functions.https.HttpsError('invalid-argument', `Payee at index ${index} must have a valid non-empty 'email' string.`);
+                throw new HttpsError('invalid-argument', `Payee at index ${index} must have a valid non-empty 'email' string.`);
             }
             if (!payee.name || typeof payee.name !== 'string' || payee.name.trim().length === 0) {
-                throw new functions.https.HttpsError('invalid-argument', `Payee at index ${index} must have a valid non-empty 'name' string.`);
+                throw new HttpsError('invalid-argument', `Payee at index ${index} must have a valid non-empty 'name' string.`);
             }
             const formTypeRequested = payee.isUsPerson === true ? "W-9" : "W-8BEN";
             return {

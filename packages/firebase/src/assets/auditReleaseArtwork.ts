@@ -1,14 +1,14 @@
-import * as functions from 'firebase-functions/v1';
+import { onCall, HttpsError } from 'firebase-functions/v2/https';
 
 import { auditReleaseArtwork, type AssetResolutionAudit } from './AssetResolutionAuditService.js';
 
 function releaseIdFrom(value: unknown): string {
     if (!value || typeof value !== 'object' || Array.isArray(value)) {
-        throw new functions.https.HttpsError('invalid-argument', 'releaseId is required.');
+        throw new HttpsError('invalid-argument', 'releaseId is required.');
     }
     const releaseId = (value as Record<string, unknown>).releaseId;
     if (typeof releaseId !== 'string' || !releaseId.trim() || releaseId.includes('/') || releaseId.length > 200) {
-        throw new functions.https.HttpsError('invalid-argument', 'releaseId is invalid.');
+        throw new HttpsError('invalid-argument', 'releaseId is invalid.');
     }
     return releaseId.trim();
 }
@@ -27,20 +27,24 @@ export async function auditReleaseArtworkForOwner(
  * object inspection, immutable receipt persistence, and release attachment all
  * happen on the backend.
  */
-export const auditReleaseArtworkForDelivery = functions
-    .region('us-central1')
-    .runWith({ enforceAppCheck: false, memory: '512MB', timeoutSeconds: 60 })
-    .https.onCall(async (data: unknown, context): Promise<AssetResolutionAudit> => {
-        if (!context.auth) {
-            throw new functions.https.HttpsError('unauthenticated', 'An authenticated owner is required to audit release artwork.');
+export const auditReleaseArtworkForDelivery = onCall(
+    { region: 'us-central1', enforceAppCheck: false, timeoutSeconds: 60 },
+    async (request): Promise<AssetResolutionAudit> => {
+        if (!request.auth) {
+            throw new HttpsError('unauthenticated', 'An authenticated owner is required to audit release artwork.');
         }
         try {
-            return await auditReleaseArtworkForOwner(context.auth.uid, data);
+            return await auditReleaseArtworkForOwner(request.auth.uid, request.data);
         } catch (error) {
-            if (error instanceof functions.https.HttpsError) throw error;
-            throw new functions.https.HttpsError(
+            // Trap 2 of 7 (see ISSUE-1243). `releaseIdFrom` raises the
+            // invalid-argument errors this is meant to pass through; both are
+            // v2 now, so they survive instead of being flattened to
+            // failed-precondition.
+            if (error instanceof HttpsError) throw error;
+            throw new HttpsError(
                 'failed-precondition',
                 error instanceof Error ? error.message : 'Release artwork audit failed.',
             );
         }
-    });
+    },
+);

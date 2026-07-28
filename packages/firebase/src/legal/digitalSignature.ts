@@ -1,32 +1,31 @@
-import * as functions from "firebase-functions/v1";
+import { onCall, HttpsError } from "firebase-functions/v2/https";
 import * as admin from "firebase-admin";
 import { getPandaDocApiKey, pandaDocApiKey } from "../config/secrets";
 
 const PANDADOC_API = "https://api.pandadoc.com/public/v1";
 
-export const sendForDigitalSignature = functions
-    .region("us-central1")
-    .runWith({
+export const sendForDigitalSignature = onCall(
+    {
+        region: "us-central1",
         timeoutSeconds: 60,
-        memory: "512MB",
         secrets: [pandaDocApiKey],
-    })
-    .https.onCall(async (data: Record<string, unknown>, context) => {
-        if (!context.auth) {
-            throw new functions.https.HttpsError(
+    },
+    async (request) => {
+        if (!request.auth) {
+            throw new HttpsError(
                 "unauthenticated",
                 "User must be authenticated to request digital signatures."
             );
         }
 
-        const { contractId, signers, provider } = data as { 
+        const { contractId, signers, provider } = (request.data ?? {}) as {
             contractId: string; 
             signers: Array<{ name: string; email: string; percentage: number }>; 
             provider?: string; 
         };
 
         if (!contractId || !Array.isArray(signers) || signers.length === 0) {
-            throw new functions.https.HttpsError(
+            throw new HttpsError(
                 "invalid-argument",
                 "Missing 'contractId' or 'signers' array."
             );
@@ -34,7 +33,7 @@ export const sendForDigitalSignature = functions
 
         const providerName = provider || "PandaDoc";
         if (providerName.toLowerCase() !== "pandadoc") {
-            throw new functions.https.HttpsError(
+            throw new HttpsError(
                 "failed-precondition",
                 `Digital signature provider "${providerName}" is not configured.`
             );
@@ -46,10 +45,10 @@ export const sendForDigitalSignature = functions
         // exist BEFORE any external PandaDoc call — the platform API key can
         // reach any document in the account, so contractId alone is not proof.
         const db = admin.firestore();
-        const contractRef = db.doc(`users/${context.auth.uid}/contracts/${contractId}`);
+        const contractRef = db.doc(`users/${request.auth.uid}/contracts/${contractId}`);
         const existingSnap = await contractRef.get();
         if (!existingSnap.exists) {
-            throw new functions.https.HttpsError(
+            throw new HttpsError(
                 "permission-denied",
                 "Contract was not found for this user.",
             );
@@ -79,7 +78,7 @@ export const sendForDigitalSignature = functions
 
         if (!response.ok) {
             const error = await response.text();
-            throw new functions.https.HttpsError(
+            throw new HttpsError(
                 "internal",
                 `PandaDoc signature request failed: ${response.status} ${error}`
             );

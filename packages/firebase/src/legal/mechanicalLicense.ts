@@ -1,4 +1,4 @@
-import * as functions from 'firebase-functions/v1';
+import { onCall, HttpsError } from 'firebase-functions/v2/https';
 
 export interface MechanicalLicenseRequest {
     trackTitle: string;
@@ -26,22 +26,21 @@ export interface MechanicalLicenseResponse {
  * is legal exposure for the artist. When a real licensing API is integrated,
  * a VERIFIED status may only be returned from that API's actual response.
  */
-export const verifyMechanicalLicense = functions
-    .region('us-central1')
-    .runWith({ memory: '512MB', timeoutSeconds: 60 })
-    .https.onCall(async (data: MechanicalLicenseRequest, context: functions.https.CallableContext): Promise<MechanicalLicenseResponse> => {
-        if (!context.auth) {
-            throw new functions.https.HttpsError(
+export const verifyMechanicalLicense = onCall(
+    { region: 'us-central1', timeoutSeconds: 60 },
+    async (request): Promise<MechanicalLicenseResponse> => {
+        if (!request.auth) {
+            throw new HttpsError(
                 'unauthenticated',
                 'User must be authenticated to run verification.'
             );
         }
 
-        const { trackTitle, originalArtist } = data;
+        const { trackTitle, originalArtist } = (request.data ?? {}) as MechanicalLicenseRequest;
 
         if (!trackTitle || typeof trackTitle !== 'string' || trackTitle.trim().length === 0 ||
             !originalArtist || typeof originalArtist !== 'string' || originalArtist.trim().length === 0) {
-            throw new functions.https.HttpsError(
+            throw new HttpsError(
                 'invalid-argument',
                 "Missing or invalid 'trackTitle' or 'originalArtist'."
             );
@@ -49,8 +48,9 @@ export const verifyMechanicalLicense = functions
 
         console.log(`[verifyMechanicalLicense] Mechanical license check requested for "${trackTitle}" by ${originalArtist} — no licensing API integrated.`);
 
-        throw new functions.https.HttpsError(
+        throw new HttpsError(
             'unimplemented',
             'Mechanical licensing API not integrated. Please use HFA SongFile or The MLC to obtain mechanical licenses.'
         );
-    });
+    },
+);
