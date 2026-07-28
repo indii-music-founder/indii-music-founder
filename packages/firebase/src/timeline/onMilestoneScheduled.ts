@@ -1,18 +1,20 @@
-import * as functions from "firebase-functions/v1";
+import { onDocumentWritten } from "firebase-functions/v2/firestore";
 import * as admin from "firebase-admin";
 
 /**
  * onMilestoneScheduled: Real-time UI notification for scheduled tasks.
- * 
+ *
  * Triggered when a milestone is created or updated with a 'scheduledAt' timestamp.
  * Informs the UI that a task is queued and waiting for its execution slot.
  */
-export const onMilestoneScheduled = functions
-    .firestore.document("projects/{projectId}/milestones/{milestoneId}")
-    .onWrite(async (change, context) => {
-        const { projectId, milestoneId } = context.params;
-        const before = change.before.data();
-        const after = change.after.data();
+export const onMilestoneScheduled = onDocumentWritten(
+    "projects/{projectId}/milestones/{milestoneId}",
+    async (event) => {
+        const { projectId, milestoneId } = event.params;
+        // Gen2 delivers the before/after pair under `event.data`, which is
+        // absent if the event carries no document snapshot at all.
+        const before = event.data?.before.data();
+        const after = event.data?.after.data();
 
         // If deleted, ignore
         if (!after) return;
@@ -35,4 +37,5 @@ export const onMilestoneScheduled = functions
                 }
             });
         }
-    });
+    },
+);

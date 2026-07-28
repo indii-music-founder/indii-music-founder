@@ -9,9 +9,9 @@
  * Response: { accessToken: string, expiresIn: number, newRefreshToken?: string }
  */
 
-import * as functions from 'firebase-functions/v1';
+import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { spotifyClientId, spotifyClientSecret, tiktokClientKey, tiktokClientSecret, metaAppId, metaAppSecret, twitterClientId, twitterClientSecret, googleOAuthClientId, googleOAuthClientSecret } from '../config/secrets';
-import { validateAppCheckV1 } from '../middleware/appCheck';
+import { validateAppCheckV2 } from '../middleware/appCheck';
 
 type SocialPlatform = 'twitter' | 'instagram' | 'tiktok' | 'youtube' | 'spotify';
 
@@ -60,17 +60,17 @@ async function fetchTokenResponse(
     };
 }
 
-export const refreshSocialToken = functions
-    .runWith({ enforceAppCheck: false, secrets: ['SPOTIFY_CLIENT_ID', 'SPOTIFY_CLIENT_SECRET', 'TIKTOK_CLIENT_KEY', 'TIKTOK_CLIENT_SECRET', 'META_APP_ID', 'META_APP_SECRET', 'TWITTER_CLIENT_ID', 'TWITTER_CLIENT_SECRET', 'GOOGLE_OAUTH_CLIENT_ID', 'GOOGLE_OAUTH_CLIENT_SECRET'] })
-    .https.onCall(async (data: unknown, context): Promise<RefreshTokenResponse> => {
-        validateAppCheckV1(context);
-        if (!context.auth) {
-            throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated');
+export const refreshSocialToken = onCall(
+    { enforceAppCheck: false, secrets: ['SPOTIFY_CLIENT_ID', 'SPOTIFY_CLIENT_SECRET', 'TIKTOK_CLIENT_KEY', 'TIKTOK_CLIENT_SECRET', 'META_APP_ID', 'META_APP_SECRET', 'TWITTER_CLIENT_ID', 'TWITTER_CLIENT_SECRET', 'GOOGLE_OAUTH_CLIENT_ID', 'GOOGLE_OAUTH_CLIENT_SECRET'] },
+    async (request): Promise<RefreshTokenResponse> => {
+        validateAppCheckV2(request);
+        if (!request.auth) {
+            throw new HttpsError('unauthenticated', 'User must be authenticated');
         }
 
-        const req = data as RefreshTokenRequest;
+        const req = (request.data ?? {}) as RefreshTokenRequest;
         if (!req.platform || !req.refreshToken) {
-            throw new functions.https.HttpsError('invalid-argument', 'platform and refreshToken are required');
+            throw new HttpsError('invalid-argument', 'platform and refreshToken are required');
         }
 
         try {
@@ -116,13 +116,20 @@ export const refreshSocialToken = functions
                     );
 
                 default:
-                    throw new functions.https.HttpsError('invalid-argument', `Unsupported platform: ${req.platform}`);
+                    throw new HttpsError('invalid-argument', `Unsupported platform: ${req.platform}`);
             }
         } catch (err: unknown) {
+            // An HttpsError raised inside the try — the unsupported-platform
+            // `default` above is thrown in scope — is already the correct,
+            // actionable error. Re-throw it unchanged instead of relabelling it
+            // 'internal', which is the same swallowing that hid ISSUE-1242's
+            // real cause and sent that investigation to the wrong subsystem.
+            if (err instanceof HttpsError) throw err;
             const message = err instanceof Error ? err.message : 'Unknown error';
             if (message.includes('Token refresh failed')) {
-                throw new functions.https.HttpsError('permission-denied', `Failed to refresh ${req.platform} token: ${message}`);
+                throw new HttpsError('permission-denied', `Failed to refresh ${req.platform} token: ${message}`);
             }
-            throw new functions.https.HttpsError('internal', `Error refreshing token: ${message}`);
+            throw new HttpsError('internal', `Error refreshing token: ${message}`);
         }
-    });
+    },
+);

@@ -1,5 +1,5 @@
 import * as admin from 'firebase-admin';
-import * as functions from 'firebase-functions/v1';
+import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { createHash, randomBytes } from 'crypto';
 
 const LEASE_MS = 10 * 60 * 1000;
@@ -11,13 +11,13 @@ const digest = (value: string) => createHash('sha256').update(value).digest('hex
 
 async function assertLease(uid: string, deviceId: unknown, leaseToken: unknown) {
   if (typeof deviceId !== 'string' || !DEVICE_ID.test(deviceId) || typeof leaseToken !== 'string') {
-    throw new functions.https.HttpsError('invalid-argument', 'Invalid Studio executor lease.');
+    throw new HttpsError('invalid-argument', 'Invalid Studio executor lease.');
   }
   const ref = admin.firestore().doc(`users/${uid}/studioExecutors/${deviceId}`);
   const snapshot = await ref.get();
   const expiresAt = snapshot.get('leaseExpiresAt') as admin.firestore.Timestamp | undefined;
   if (!snapshot.exists || snapshot.get('activeLeaseToken') !== leaseToken || !expiresAt || expiresAt.toMillis() <= Date.now()) {
-    throw new functions.https.HttpsError('permission-denied', 'Studio executor lease is missing or expired.');
+    throw new HttpsError('permission-denied', 'Studio executor lease is missing or expired.');
   }
   return { deviceId, ref };
 }
@@ -27,18 +27,17 @@ async function assertLease(uid: string, deviceId: unknown, leaseToken: unknown) 
  * renderer may request a lease only by presenting that secret; browsers and
  * Controllers do not have the IPC bridge required to retrieve it.
  */
-export const issueStudioExecutorLease = functions
-  .region('us-central1')
-  .runWith({ enforceAppCheck: false })
-  .https.onCall(async (data: unknown, context) => {
-    if (!context.auth) throw new functions.https.HttpsError('unauthenticated', 'Sign in is required.');
-    const input = data as { deviceId?: unknown; enrollmentSecret?: unknown };
+export const issueStudioExecutorLease = onCall(
+  { region: 'us-central1', enforceAppCheck: false },
+  async (request) => {
+    if (!request.auth) throw new HttpsError('unauthenticated', 'Sign in is required.');
+    const input = (request.data ?? {}) as { deviceId?: unknown; enrollmentSecret?: unknown };
     if (typeof input.deviceId !== 'string' || !DEVICE_ID.test(input.deviceId) ||
         typeof input.enrollmentSecret !== 'string' || !ENROLLMENT_SECRET.test(input.enrollmentSecret)) {
-      throw new functions.https.HttpsError('invalid-argument', 'Invalid Studio executor enrollment credential.');
+      throw new HttpsError('invalid-argument', 'Invalid Studio executor enrollment credential.');
     }
 
-    const deviceRef = admin.firestore().doc(`users/${context.auth.uid}/studioExecutors/${input.deviceId}`);
+    const deviceRef = admin.firestore().doc(`users/${request.auth.uid}/studioExecutors/${input.deviceId}`);
     const secretHash = digest(input.enrollmentSecret);
     const leaseToken = randomBytes(32).toString('base64url');
     const expiresAt = admin.firestore.Timestamp.fromMillis(Date.now() + LEASE_MS);
@@ -46,7 +45,7 @@ export const issueStudioExecutorLease = functions
     await admin.firestore().runTransaction(async tx => {
       const existing = await tx.get(deviceRef);
       if (existing.exists && existing.get('secretHash') !== secretHash) {
-        throw new functions.https.HttpsError('permission-denied', 'This Studio executor is enrolled to a different keychain credential.');
+        throw new HttpsError('permission-denied', 'This Studio executor is enrolled to a different keychain credential.');
       }
       tx.set(deviceRef, {
         deviceId: input.deviceId,
@@ -61,17 +60,17 @@ export const issueStudioExecutorLease = functions
     return { deviceId: input.deviceId, leaseToken, expiresAt: expiresAt.toMillis() };
   });
 
-export const publishStudioPresence = functions.region('us-central1').runWith({ enforceAppCheck: false }).https.onCall(async (data: unknown, context) => {
-  if (!context.auth) throw new functions.https.HttpsError('unauthenticated', 'Sign in is required.');
-  const input = data as { deviceId?: unknown; leaseToken?: unknown; protocolVersion?: unknown; state?: Record<string, unknown> };
-  await assertLease(context.auth.uid, input.deviceId, input.leaseToken);
+export const publishStudioPresence = onCall({ region: 'us-central1', enforceAppCheck: false }, async (request) => {
+  if (!request.auth) throw new HttpsError('unauthenticated', 'Sign in is required.');
+  const input = (request.data ?? {}) as { deviceId?: unknown; leaseToken?: unknown; protocolVersion?: unknown; state?: Record<string, unknown> };
+  await assertLease(request.auth.uid, input.deviceId, input.leaseToken);
   if (input.protocolVersion !== undefined && input.protocolVersion !== REMOTE_RELAY_PROTOCOL_VERSION) {
-    throw new functions.https.HttpsError('failed-precondition', 'This Studio uses an unsupported remote protocol version. Update indii Studio and try again.');
+    throw new HttpsError('failed-precondition', 'This Studio uses an unsupported remote protocol version. Update indii Studio and try again.');
   }
   const state = input.state || {};
   const studioInstanceId = typeof state.studioInstanceId === 'string' ? state.studioInstanceId : '';
-  if (!DEVICE_ID.test(studioInstanceId)) throw new functions.https.HttpsError('invalid-argument', 'Invalid Studio instance.');
-  await admin.firestore().doc(`users/${context.auth.uid}/remote-relay/state`).set({
+  if (!DEVICE_ID.test(studioInstanceId)) throw new HttpsError('invalid-argument', 'Invalid Studio instance.');
+  await admin.firestore().doc(`users/${request.auth.uid}/remote-relay/state`).set({
     currentModule: typeof state.currentModule === 'string' ? state.currentModule.slice(0, 80) : 'dashboard',
     isAgentProcessing: state.isAgentProcessing === true,
     activeSessionId: typeof state.activeSessionId === 'string' ? state.activeSessionId.slice(0, 128) : '',
@@ -87,12 +86,12 @@ export const publishStudioPresence = functions.region('us-central1').runWith({ e
   return { ok: true };
 });
 
-export const releaseStudioPresence = functions.region('us-central1').runWith({ enforceAppCheck: false }).https.onCall(async (data: unknown, context) => {
-  if (!context.auth) throw new functions.https.HttpsError('unauthenticated', 'Sign in is required.');
-  const input = data as { deviceId?: unknown; leaseToken?: unknown; studioInstanceId?: unknown };
-  await assertLease(context.auth.uid, input.deviceId, input.leaseToken);
-  if (typeof input.studioInstanceId !== 'string') throw new functions.https.HttpsError('invalid-argument', 'Invalid Studio instance.');
-  const stateRef = admin.firestore().doc(`users/${context.auth.uid}/remote-relay/state`);
+export const releaseStudioPresence = onCall({ region: 'us-central1', enforceAppCheck: false }, async (request) => {
+  if (!request.auth) throw new HttpsError('unauthenticated', 'Sign in is required.');
+  const input = (request.data ?? {}) as { deviceId?: unknown; leaseToken?: unknown; studioInstanceId?: unknown };
+  await assertLease(request.auth.uid, input.deviceId, input.leaseToken);
+  if (typeof input.studioInstanceId !== 'string') throw new HttpsError('invalid-argument', 'Invalid Studio instance.');
+  const stateRef = admin.firestore().doc(`users/${request.auth.uid}/remote-relay/state`);
   await admin.firestore().runTransaction(async tx => {
     const state = await tx.get(stateRef);
     if (state.exists && state.get('studioInstanceId') === input.studioInstanceId && state.get('executorDeviceId') === input.deviceId) {
@@ -102,14 +101,14 @@ export const releaseStudioPresence = functions.region('us-central1').runWith({ e
   return { ok: true };
 });
 
-export const claimStudioCommand = functions.region('us-central1').runWith({ enforceAppCheck: false }).https.onCall(async (data: unknown, context) => {
-  if (!context.auth) throw new functions.https.HttpsError('unauthenticated', 'Sign in is required.');
-  const input = data as { deviceId?: unknown; leaseToken?: unknown; commandId?: unknown; studioInstanceId?: unknown };
-  await assertLease(context.auth.uid, input.deviceId, input.leaseToken);
+export const claimStudioCommand = onCall({ region: 'us-central1', enforceAppCheck: false }, async (request) => {
+  if (!request.auth) throw new HttpsError('unauthenticated', 'Sign in is required.');
+  const input = (request.data ?? {}) as { deviceId?: unknown; leaseToken?: unknown; commandId?: unknown; studioInstanceId?: unknown };
+  await assertLease(request.auth.uid, input.deviceId, input.leaseToken);
   if (typeof input.commandId !== 'string' || typeof input.studioInstanceId !== 'string') {
-    throw new functions.https.HttpsError('invalid-argument', 'Invalid Studio command claim.');
+    throw new HttpsError('invalid-argument', 'Invalid Studio command claim.');
   }
-  const commandRef = admin.firestore().doc(`users/${context.auth.uid}/remote-relay-commands/${input.commandId}`);
+  const commandRef = admin.firestore().doc(`users/${request.auth.uid}/remote-relay-commands/${input.commandId}`);
   const claimed = await admin.firestore().runTransaction(async tx => {
     const command = await tx.get(commandRef);
     if (!command.exists || command.get('status') !== 'pending' || command.get('executionTarget') !== 'studio') return false;
@@ -124,19 +123,19 @@ export const claimStudioCommand = functions.region('us-central1').runWith({ enfo
   return { claimed };
 });
 
-export const publishStudioResponse = functions.region('us-central1').runWith({ enforceAppCheck: false }).https.onCall(async (data: unknown, context) => {
-  if (!context.auth) throw new functions.https.HttpsError('unauthenticated', 'Sign in is required.');
-  const input = data as { deviceId?: unknown; leaseToken?: unknown; commandId?: unknown; text?: unknown; agentId?: unknown; imageUrls?: unknown; isStreaming?: unknown; boardroomMessageId?: unknown };
-  const { deviceId } = await assertLease(context.auth.uid, input.deviceId, input.leaseToken);
+export const publishStudioResponse = onCall({ region: 'us-central1', enforceAppCheck: false }, async (request) => {
+  if (!request.auth) throw new HttpsError('unauthenticated', 'Sign in is required.');
+  const input = (request.data ?? {}) as { deviceId?: unknown; leaseToken?: unknown; commandId?: unknown; text?: unknown; agentId?: unknown; imageUrls?: unknown; isStreaming?: unknown; boardroomMessageId?: unknown };
+  const { deviceId } = await assertLease(request.auth.uid, input.deviceId, input.leaseToken);
   if (typeof input.commandId !== 'string' || typeof input.text !== 'string' || input.text.length > 20_000) {
-    throw new functions.https.HttpsError('invalid-argument', 'Invalid Studio response.');
+    throw new HttpsError('invalid-argument', 'Invalid Studio response.');
   }
-  const commandRef = admin.firestore().doc(`users/${context.auth.uid}/remote-relay-commands/${input.commandId}`);
+  const commandRef = admin.firestore().doc(`users/${request.auth.uid}/remote-relay-commands/${input.commandId}`);
   const command = await commandRef.get();
   if (!command.exists || command.get('executionTarget') !== 'studio' || command.get('executorDeviceId') !== deviceId) {
-    throw new functions.https.HttpsError('permission-denied', 'This Studio does not own the command response.');
+    throw new HttpsError('permission-denied', 'This Studio does not own the command response.');
   }
-  await admin.firestore().collection(`users/${context.auth.uid}/remote-relay-responses`).add({
+  await admin.firestore().collection(`users/${request.auth.uid}/remote-relay-responses`).add({
     commandId: input.commandId,
     text: input.text,
     ...(typeof input.agentId === 'string' ? { agentId: input.agentId.slice(0, 100) } : {}),
@@ -149,16 +148,16 @@ export const publishStudioResponse = functions.region('us-central1').runWith({ e
   return { ok: true };
 });
 
-export const completeStudioCommand = functions.region('us-central1').runWith({ enforceAppCheck: false }).https.onCall(async (data: unknown, context) => {
-  if (!context.auth) throw new functions.https.HttpsError('unauthenticated', 'Sign in is required.');
-  const input = data as { deviceId?: unknown; leaseToken?: unknown; commandId?: unknown };
-  const { deviceId } = await assertLease(context.auth.uid, input.deviceId, input.leaseToken);
-  if (typeof input.commandId !== 'string') throw new functions.https.HttpsError('invalid-argument', 'Invalid Studio completion.');
-  const commandRef = admin.firestore().doc(`users/${context.auth.uid}/remote-relay-commands/${input.commandId}`);
+export const completeStudioCommand = onCall({ region: 'us-central1', enforceAppCheck: false }, async (request) => {
+  if (!request.auth) throw new HttpsError('unauthenticated', 'Sign in is required.');
+  const input = (request.data ?? {}) as { deviceId?: unknown; leaseToken?: unknown; commandId?: unknown };
+  const { deviceId } = await assertLease(request.auth.uid, input.deviceId, input.leaseToken);
+  if (typeof input.commandId !== 'string') throw new HttpsError('invalid-argument', 'Invalid Studio completion.');
+  const commandRef = admin.firestore().doc(`users/${request.auth.uid}/remote-relay-commands/${input.commandId}`);
   await admin.firestore().runTransaction(async tx => {
     const command = await tx.get(commandRef);
     if (!command.exists || command.get('executionTarget') !== 'studio' || command.get('executorDeviceId') !== deviceId) {
-      throw new functions.https.HttpsError('permission-denied', 'This Studio does not own the command completion.');
+      throw new HttpsError('permission-denied', 'This Studio does not own the command completion.');
     }
     if (command.get('status') === 'processing') {
       tx.update(commandRef, { status: 'completed', completedAt: admin.firestore.FieldValue.serverTimestamp() });
