@@ -108,16 +108,76 @@ vi.mock('../services/StorageService', () => ({
         initialize: vi.fn()
     }
 }));
+vi.mock('@/modules/finance/hooks/useSubscription', () => ({
+    useSubscription: vi.fn().mockReturnValue({
+        subscription: null,
+        loading: false,
+        usage: null,
+        error: null,
+        refresh: vi.fn(),
+        createCheckoutSession: vi.fn(),
+        getPortalUrl: vi.fn(),
+    })
+}));
 
 
+/**
+ * ISSUE-1191: this file previously asserted that the lazy Dashboard finished
+ * rendering ("Dashboard Loaded") within a 5s allowance. That conflated a small
+ * router-provider contract with the entire App boot — lazy chunks, Suspense,
+ * workspace sync, and the memory engine — so under full-suite CPU pressure the
+ * Dashboard simply had not resolved in time and the canonical
+ * `npm test -- --run` gate exited 1 while the same file passed alone. A longer
+ * timeout would only move the threshold, not remove the race.
+ *
+ * What this file is actually for is narrow and deterministic: App must be able
+ * to mount inside a Router without React throwing
+ * "useLocation() may be used only in the context of a <Router> component".
+ * That is observable at mount time and does not depend on any lazy boundary
+ * resolving, so it is asserted directly below.
+ *
+ * The former negative case (rendering App with no Router inside a try/catch) is
+ * intentionally NOT reinstated. React surfaces that failure asynchronously,
+ * outside the catch, so the test passed while printing two uncaught exceptions —
+ * which trains CI to treat an uncaught React error as acceptable and would let a
+ * real router regression hide behind a green run.
+ */
 describe('Router Context Verification', () => {
-    it('renders App inside BrowserRouter without crashing', async () => {
+    it('mounts App inside a Router without raising a router-context error', async () => {
+        const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+        try {
+            const { container } = render(
+                <BrowserRouter>
+                    <App />
+                </BrowserRouter>
+            );
+
+            // The app mounted and produced DOM. Whether the lazy Dashboard has
+            // resolved yet is a Suspense-timing detail, not this contract.
+            expect(container).not.toBeEmptyDOMElement();
+
+            // The actual contract: no router-context violation at mount.
+            const routerErrors = consoleError.mock.calls
+                .map(args => args.map(String).join(' '))
+                .filter(text => /may be used only in the context of a <Router>/.test(text));
+            expect(routerErrors).toEqual([]);
+        } finally {
+            consoleError.mockRestore();
+        }
+    });
+
+    it('eventually resolves the lazy dashboard boundary', async () => {
         render(
             <BrowserRouter>
                 <App />
             </BrowserRouter>
         );
-        // Use findByText to wait for Suspense to resolve — 5s timeout to handle shard CPU pressure
-        expect(await screen.findByText('Dashboard Loaded', {}, { timeout: 5000 })).toBeInTheDocument();
-    });
+        // Kept as a separate case so a slow lazy boundary is reported as exactly
+        // that, rather than being misread as a router-context failure. Generous
+        // timeout because this one legitimately depends on Suspense resolution.
+        expect(
+            await screen.findByText('Dashboard Loaded', {}, { timeout: 15000 }),
+        ).toBeInTheDocument();
+    }, 20000);
 });

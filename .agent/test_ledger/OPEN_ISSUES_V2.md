@@ -3120,3 +3120,27 @@ ordinary use of the running app.
   4. The long tail, in batches, each with its delete→deploy window scheduled deliberately.
 - **Interim mitigation already in place:** `scripts/check-function-memory.cjs` now matches both spellings, so the memory class of this problem is at least *visible* on both generations. It does not address the `HttpsError`, `setGlobalOptions`, or streaming-ceiling divergences.
 - **Do not:** do not migrate in bulk without per-function delete windows, and do not treat the widened memory guard as having solved this — it covers one of four divergences.
+
+### ISSUE-1244: Arcjet endpoint matrix (ISSUE-1228 acceptance item 1) — 5 of 90 trigger-declaring files are protected; 65 client-reachable surfaces are not
+
+- **Status:** 🔴 OPEN (the matrix itself is now delivered; the coverage work it describes is not started)
+- **Severity:** 🟠 HIGH (money, auth, and admin surfaces are in the unprotected set)
+- **Module:** repository-wide inventory of `packages/firebase/src/**`
+- **Why this exists:** ISSUE-1228's acceptance requires "an endpoint matrix [showing] one intentional Arcjet policy or documented exemption for every applicable boundary," and its plan step (1) is that inventory. It had never been produced, so "coverage remains open" carried no number and no worklist. An earlier note in this ledger described the remaining work as "mechanical"; that was wrong, and this matrix is what makes the real shape visible.
+- **Method:** static inventory of every file in `packages/firebase/src` declaring a Cloud Functions trigger (`onCall`, `onRequest`, `onSchedule`, Firestore/Storage/Task triggers, plus the Gen1 `.https.*` / `.pubsub.schedule` / `.firestore.document` forms), cross-referenced against use of `protectAuthenticatedApiRequest` / `protectAnonymousSignupRequest` / `protectCallableRequest`. Source-based rather than per-function `gcloud describe`, which was attempted first and timed out at ~167 deployed functions.
+- **Result: 90 trigger-declaring files. 5 protected, 85 not.**
+
+| Class | Count | Posture |
+|---|---|---|
+| **Protected today** | **5** | `functions/api/router.ts`, `functions/auth/entitlements.ts`, `functions/billing/enforceOperationCost.ts`, `functions/creative/gateway.ts`, `index.ts` |
+| **Client-reachable, UNPROTECTED** (`onCall` / `onRequest`) | **65** | Real gap — externally invocable with no request protection |
+| **Internal-trigger only** (`onSchedule` / Firestore / Storage) | **20** | Exemption candidates: no external caller. ISSUE-1228 wants Guard with fixed labels here, not request protection |
+
+- **Highest-risk members of the unprotected 65, by what they touch** (full list captured in this pass; these are the ones that should not wait):
+  - **Money:** `stripe/connect.ts`, `stripe/escrow.ts`, `stripe/splitEscrow.ts`, `stripe/paymentLinks.ts`, `stripe/webhookHandler.ts`, `stripe/taxForms.ts`, `marketplace/createMarketplaceCheckout.ts`, `subscription/*` (11 files incl. `createCheckoutSession`, `createOneTimeCheckout`, `createMicroTransaction`, `activateFounderPass`, `getCustomerPortal`)
+  - **Privilege:** `functions/admin/setGodMode.ts`, `functions/remote/issueStudioExecutorLease.ts`, `functions/auth/handoff.ts`
+  - **Spend-bearing AI:** `lib/image_generation.ts`, `lib/audio.ts`, `streaming/agentStream.ts`, `mcp/index.ts`, `functions/knowledge/query.ts`
+  - **External webhooks:** `legal/pandadocWebhook.ts`, `relay/telegramWebhook.ts`, `functions/webhooks/dispatcher.ts`
+- **Note on the 20 internal-trigger files:** they are exemption *candidates*, not confirmed exemptions. Each still needs an explicit documented exemption per ISSUE-1228's acceptance — "nothing calls it from outside" must be written down and verified, not assumed. `test/setup.ts` in that list is a test harness and should simply be excluded from the matrix.
+- **Acceptance for this entry:** every one of the 90 files carries either an intentional Arcjet policy or a written exemption with rationale; the matrix is regenerated and re-checked as part of the ISSUE-1228 close.
+- **Do not:** do not bulk-bind `ARCJET_KEY` to all 85. ISSUE-1228 explicitly forbids putting Guard in a generic dispatcher and requires request-based protection only on HTTP/callable boundaries — the 20 internal triggers need a different mechanism, and binding a secret to a function that never calls Arcjet is pure noise.
