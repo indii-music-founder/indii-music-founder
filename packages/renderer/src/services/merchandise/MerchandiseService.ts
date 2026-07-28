@@ -7,8 +7,8 @@ import { AppException, AppErrorCode } from '@/shared/types/errors';
 import { ImageGeneration } from '@/services/image/ImageGenerationService';
 import { WhiskService } from '@/services/WhiskService';
 import { httpsCallable } from 'firebase/functions';
-import { v4 as uuidv4 } from 'uuid';
 import { logger } from '@/utils/logger';
+import { CreativeStorageService } from '@/services/creative/CreativeStorageService';
 
 const COLLECTION_NAME = 'merchandise';
 const CATALOG_COLLECTION = 'merchandise_catalog';
@@ -254,28 +254,21 @@ export const MerchandiseService = {
 
         const prompt = `Cinematic product video of the provided mockup. ${motion}. High quality, 4k, professional lighting.`;
 
-        // Use the Cloud Function directly via VideoGenerationService logic pattern
-        // We use triggerVideoJob cloud function which queues it.
-        const jobId = uuidv4();
-
         const triggerVideoJob = httpsCallable(functions, 'triggerVideoJob');
 
         try {
-            await triggerVideoJob({
-                jobId,
+            const firstFrame = await CreativeStorageService.uploadReferenceMedia(userId, mockupUrl, 'image');
+            const response = await triggerVideoJob({
                 prompt,
-                // We pass the mockupUrl as 'startImage' or just part of context if Veo supports input image.
-                // VideoGenerationService uses 'firstFrame' for start image.
-                firstFrame: mockupUrl,
+                // The backend accepts only owner-scoped gs:// references or
+                // bounded inline bytes; it never fetches arbitrary URLs.
+                firstFrame,
                 duration: 5, // Default short clip
                 orgId: orgId || "personal"
             });
-
-            // We also want to track this in our own collection if needed,
-            // but 'triggerVideoJob' already creates a document in 'videoJobs'.
-            // We can return the jobId and let the UI subscribe to 'videoJobs'.
-
-            return jobId;
+            const data = response.data as { jobId?: string };
+            if (!data.jobId) throw new Error('Video generation did not return a server job identifier.');
+            return data.jobId;
 
         } catch (error: unknown) {
             logger.error("Video Generation Error:", error);

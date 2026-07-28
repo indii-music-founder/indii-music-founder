@@ -288,6 +288,11 @@ vi.mock('@/services/firebase', () => ({
     functions: {},
     auth: { currentUser: { uid: 'u1' } },
 }));
+vi.mock('@/services/creative/CreativeStorageService', () => ({
+    CreativeStorageService: {
+        uploadReferenceMedia: vi.fn(async (uid: string) => `gs://indii-music-founder.firebasestorage.app/creative/${uid}/reference.png`),
+    },
+}));
 vi.mock('firebase/functions', () => ({
     httpsCallable: vi.fn(() => async (payload: unknown) => {
         capturedPayloads.push(payload);
@@ -299,7 +304,7 @@ vi.mock('@/services/intelligence/AutonomousIntelligence', () => ({
 }));
 vi.mock('@/core/store', () => ({
     useStore: {
-        getState: vi.fn(() => ({ addToHistory: mockAddToHistory, currentProjectId: 'p1' })),
+        getState: vi.fn(() => ({ addToHistory: mockAddToHistory, currentProjectId: 'p1', userProfile: { id: 'u1' } })),
         subscribe: vi.fn(),
     },
 }));
@@ -314,22 +319,22 @@ describe('VideoDirector.triggerAnimation — image → video payload contract', 
         }
     });
 
-    it('data-URI images are decomposed into imageBytes + mimeType', async () => {
+    it('data-URI images are canonicalized before the generation callable', async () => {
         const { VideoDirector } = await import('../services/VideoDirector');
         await VideoDirector.triggerAnimation({
             ...magicEditItem,
             url: 'data:image/webp;base64,QUJD',
         } as HistoryItem);
         const payload = capturedPayloads[0] as any;
-        expect(payload.image).toEqual({ imageBytes: 'QUJD', mimeType: 'image/webp' });
-        expect(payload.referenceImageUri).toBeUndefined();
+        expect(payload.firstFrame).toBe('gs://indii-music-founder.firebasestorage.app/creative/u1/reference.png');
+        expect(payload.image).toBeUndefined();
     });
 
-    it('remote URLs are passed as referenceImageUri', async () => {
+    it('remote URLs are canonicalized instead of being sent to a backend fetcher', async () => {
         const { VideoDirector } = await import('../services/VideoDirector');
         await VideoDirector.triggerAnimation(videoDirectorItem);
         const payload = capturedPayloads[0] as any;
-        expect(payload.referenceImageUri).toBe(videoDirectorItem.url);
+        expect(payload.firstFrame).toBe('gs://indii-music-founder.firebasestorage.app/creative/u1/reference.png');
     });
 
     it('persists storageUri when a generated video is saved to history', async () => {

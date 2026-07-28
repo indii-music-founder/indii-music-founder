@@ -602,13 +602,14 @@
 ### ISSUE-1134: Video duration is normalized after client cost reservation
 
 - **Re-ticketed from:** ISSUE-875 (2026-07-21 housecleaning; original status was: `⏳ BACKLOG — consolidated`)
-- **Status:** ⏳ BACKLOG — consolidated
+- **Status:** 🟡 PARTIAL (legacy callable/Firestore worker contract fixed locally 2026-07-28; canonical gateway UI combinations remain open)
 - **Severity:** 🟠 HIGH
 - **Module:** Creative Suite / Veo / Cost reservation
 - **Evidence:** The UI exposes duration choices independently of resolution (`DirectGenerationTab.tsx:244-264`, `VeoSettingsPanel.tsx:72-90`, `StudioControlsPanel.tsx:912-927`) and resolution choices include `720p`, `1080p`, and `4k` (`StudioSettingsPanel.tsx:100-104`, `:214-220`). The client reserves cost from the raw requested duration (`VideoGenerationService.ts:330-347`). The backend then normalizes all non-720p jobs or any frame-input job to 8 seconds (`gateway.ts:303-308`) before recalculating server cost (`gateway.ts:1186-1193`) and rejecting mismatched reservations (`:1197-1201`).
 - **Impact:** Valid-looking requests such as 4s/6s at 1080p, 4s/6s with first/last frames, or 5s from Veo settings can fail after reservation with “Cost reservation estimate does not match,” or be silently treated as a longer job.
 - **Fix:** Compute the exact backend-normalized duration before client reservation and show the normalized duration in UI. Remove unsupported duration choices for the current resolution/input mode.
 - **Acceptance:** Every UI duration/resolution/frame combination either reserves the same duration the backend will use or is blocked before reservation with a clear message.
+- **2026-07-28 update:** `triggerVideoJob` now normalizes model tier and duration before server cost admission, persists those exact normalized values for `executeVideoJob`, and rejects arbitrary models or durations over eight seconds. A five-second Lite request is reserved and executed as six seconds at the Lite rate. The obsolete `video/generate.requested` Inngest worker was removed. Focused server/video tests pass 58/58. This does **not** close the issue: the canonical `generateVideoV3` UI still needs the full duration/resolution/frame combination acceptance matrix and visible normalized-duration behavior described above.
 
 ---
 
@@ -628,13 +629,14 @@
 ### ISSUE-1136: Long-form video reserves requested duration but generates full 8-second blocks
 
 - **Re-ticketed from:** ISSUE-877 (2026-07-21 housecleaning; original status was: `⏳ BACKLOG — consolidated`)
-- **Status:** ⏳ BACKLOG — consolidated
+- **Status:** 🟡 PARTIAL (server reservation and generated segment duration aligned locally 2026-07-28; exact requested/displayed final duration remains open)
 - **Severity:** 🟠 HIGH
 - **Module:** Creative Suite / Long-form Veo / Billing + quota
 - **Evidence:** Direct generation can select a 10-second duration (`DirectGenerationTab.tsx:94`, `:244-264`) and `VideoWorkflow` sends long-form when duration is over 8 seconds (`VideoWorkflow.tsx:614-634`). `generateLongFormVideo()` checks quota and reserves cost against `options.totalDuration` (`VideoGenerationService.ts:647-672`), but then computes `numBlocks = Math.ceil(totalDuration / 8)` and generates every segment with `durationSeconds: 8` while skipping per-segment cost checks (`:692-755`).
 - **Impact:** A 10-second long-form request reserves/quota-checks 10 seconds but actually generates 16 seconds. Non-multiples of 8 are under-reserved and under-quotaed.
 - **Fix:** Normalize billable/generated duration to `ceil(totalDuration / 8) * 8` before quota and cost reservation, or trim/stitch the final output to the requested duration.
 - **Acceptance:** Long-form cost, quota, displayed duration, generated segment count, and final output length agree for 10s, 15s, and exact 16s fixtures.
+- **2026-07-28 update:** The browser no longer creates `videoJobs` or reserves aggregate cost. It plans fixed five-second prompts and uploads an owner-scoped seed; `triggerLongFormVideoJob` derives cost from the server prompt count at five seconds each, creates the authoritative job/reservation, and sends the same prompt count and duration to the worker. The worker uses the same allowlisted Lite/Fast/Pro model resolver and stores segments/final output privately under `generated/{uid}/long-form/{jobId}`. Focused video tests pass 58/58. This remains **PARTIAL** because a requested duration not divisible by five (the 16-second fixture) is rounded to 20 seconds; the UI must show that normalized duration or the final render must be trimmed before the issue can close.
 
 ---
 
@@ -2685,6 +2687,7 @@ Listed only so they are not lost. No assessment is implied.
   | 7 | String-comparison enums | 9 |
   - **The +3 is most likely this session's own work, not external drift** — ISSUE-1236's `retrySessionProxyJob.ts` and the ISSUE-1220 `pollTimelineMilestones.ts` changes both add `await`s inside `try` blocks that this detector's grep-level heuristic does not recognize as protected. Stated as a likelihood, not a measured attribution: the detector reports totals, not a diff, so nothing here proves which lines moved the number. A category-level diff tool is what would make this answerable, and does not exist.
   - **Category 1 is genuinely at 0**, which is worth preserving — that was the original module-initialization failure class this detector was built for.
+  - **Baseline re-measured 2026-07-28 during the server-only video `/start` and after scoped elevation: risk score 172, delta 0 within the session.** Categories: exported-null services 0; Base64/`imageBytes` 61; `httpsCallable` 52; awaits without recognized try/catch ~533; direct Firebase-function imports 30; `.then()` without `.catch()` 63; string-enum comparisons 9. The active video patch did not worsen the detector. ISSUE-1235/1134/1136 contain the bounded fixes and evidence; the remaining repository-wide categories stay governed by this issue.
 
 ---
 
@@ -2843,12 +2846,18 @@ renumbered before writing. The ledger is correct; only the commit message is sta
 
 ### ISSUE-1235: Client-created `videoJobs` could trigger legacy Vertex generation without server admission
 
-- **Status:** 🟡 PARTIAL (local rule, callable, and worker hardening completed 2026-07-26; deployment and live rejection proof remain open)
+- **Status:** 🟡 PARTIAL — **P0 RELEASE BLOCKER** (local rule, callable, billing, worker, and private-artifact hardening completed 2026-07-28; deployment and genuine production rejection/functional proof remain open)
 - **Severity:** 🔴 CRITICAL
-- **Module:** `packages/firebase/firestore.rules`; `triggerVideoJob`; `executeVideoJob`; `video_generation_direct.ts`
+- **Module:** `packages/firebase/firestore.rules`; `triggerVideoJob`; `triggerLongFormVideoJob`; `executeVideoJob`; `video_generation_direct.ts`; `long_form_video.ts`
 - **Evidence:** The legacy `videoJobs` rule permitted verified clients to create/update/delete a record as long as an ownership field matched. A client-created `{ status: "queued" }` document activates the Firestore worker directly, bypassing the callable's App Check, signed-email, server entitlement, Arcjet, and cost-reservation admission. The worker also previously accepted a client-selected job ID and fetched arbitrary HTTP image URLs.
-- **Fix applied locally:** `videoJobs` is now owner/org-readable but completely server-write-only. The callable ignores the legacy browser correlation ID, creates a Firestore server ID, performs server-owned cost admission before creating the job, and stores the reservation with the job. The worker persists provider-submission intent before calling Vertex and settles/voids the reservation conservatively. Direct-video seed media is now either bounded inline JPEG/PNG/WebP bytes or an exact-bucket, owner-scoped `gs://` object; backend HTTP fetching is removed.
-- **Acceptance:** [PASS local] `npm test -- --run packages/firebase/src/lib/video_generation_direct.test.ts packages/firebase/src/__tests__/video.test.ts packages/firebase/src/functions/video/renderCostLifecycle.test.ts` passed 13/13; Firebase build, test typecheck, lint, frontend boundary guard, and Vertex-only backend guard passed. `npx -y firebase-tools@latest emulators:exec --only firestore,storage "npm run test:rules"` passed 194/194, including authenticated forged-create, status-update, delete, and cross-owner-read attacks. [OPEN live] Deploy the function revision and Firestore rules; confirm a verified client cannot create a raw `videoJobs` document, a normal callable request returns a server job ID and reservation, and a rejected Arcjet/entitlement/budget request creates neither a job nor Vertex provider work.
+- **Fix applied locally:** `videoJobs` is now owner/org-readable but completely server-write-only. Both callables ignore browser identity/job authority and create server IDs, entitlements, reservations, and worker payloads. Model tier and supported duration are normalized before cost admission and the identical normalized values reach Vertex, preventing Lite→Pro and five-second→six-second billing drift. Workers persist provider-submission intent before billable calls and reconcile reservations conservatively. Seed media is bounded inline JPEG/PNG/WebP or exact-bucket owner-scoped `gs://`; arbitrary HTTP fetching is removed. Short-form, long-form segment, and stitched outputs remain private `gs://` objects under `generated/{uid}`. The unadmitted single-video Inngest event and its legacy worker were removed from source and registration.
+- **Acceptance:** [PASS local] Seven focused suites passed **58/58**, including server IDs, admission reservations, model/duration normalization, bounded seed input, private-output guards, long-form request bounds, and provider-failure cost outcomes; Firebase build, renderer typecheck, strict scoped lint, and `git diff --check` pass. Prior emulator evidence remains **194/194**, including authenticated forged-create, status-update, delete, and cross-owner-read attacks. [OPEN live] Complete every production gate below with a genuine verified user session and retain evidence.
+- **Production release-blocker definition of done:**
+  1. Deploy the exact Firestore Rules and Cloud Function revisions; verify required secrets/configuration, App Check, Arcjet admission, and backend-only Vertex ADC.
+  2. Prove the owner can read only their own `videoJobs`; direct client create/update/delete, cross-owner access, forged identity/job ID, and rejected admission must fail without Vertex work.
+  3. Generate short-form and long-form video through the official UI/callable; prove the server job, reservation lifecycle, provider state, private final artifact, and owner-authorized playback/download.
+  4. Review Cloud Logging for unexpected 400/403/429 responses, orphaned reservations, failed/retrying workers, duplicate processing, and public artifact exposure.
+  5. Attach production request/job IDs, relevant log references, and a pass/fail checklist. Emulator or mocked client success alone cannot close this issue.
 - **Do not:** Do not restore client writes to `videoJobs`, accept a client-issued job ID as the authoritative worker identity, fetch arbitrary HTTP image URLs inside a Cloud Function, or mark a reservation void after a provider submission might have been accepted.
 
 ---

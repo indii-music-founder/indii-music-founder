@@ -1,6 +1,4 @@
-import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import { INTELLIGENCE_CONFIG, INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
-import { v4 as uuidv4 } from 'uuid';
 import { db, auth } from '@/services/firebase';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { subscriptionService } from '@/services/subscription/SubscriptionService';
@@ -53,202 +51,6 @@ export function normalizeVideoModelTier(model?: string): 'lite' | 'fast' | 'pro'
  * Daisychaining video generation via Cloud Functions.
  */
 export class VideoGenerationService {
-    // Circuit Breaker State
-    private static circuitFailures = 0;
-    private static circuitOpenUntil = 0;
-    private static readonly MAX_FAILURES = 5;
-    private static readonly COOLDOWN_MS = 60000; // 1 minute
-
-
-    /**
-     * Retry helper with exponential backoff for transient Veo API failures.
-     *
-     * Retries on:
-     *   - HTTP 429 (Rate Limit) — respects Retry-After header if present
-     *   - HTTP 503 (Service Unavailable)
-     *   - Network/timeout errors (TypeError, AbortError)
-     *
-     * Fails immediately on:
-     *   - HTTP 400 (Bad Request — malformed input, not transient)
-     *   - HTTP 401/403 (Auth failure — not transient)
-     *   - HTTP 404 (Not Found — not transient)
-     *   - Any error after max retries exhausted
-     *
-     * @param fn        The async operation to retry
-     * @param label     Human-readable label for logging context
-     * @param maxRetries Maximum number of retry attempts (default: 3)
-     * @param baseDelayMs Initial backoff delay in milliseconds (default: 1000)
-     * @returns The result of the successful operation
-     */
-    private async withRetry<T>(
-        fn: () => Promise<T>,
-        label: string,
-        maxRetries: number = 3,
-        baseDelayMs: number = 1000
-    ): Promise<T> {
-        let lastError: unknown;
-
-        for (let attempt = 0; attempt <= maxRetries; attempt++) {
-            if (Date.now() < VideoGenerationService.circuitOpenUntil) {
-                const waitSecs = Math.ceil((VideoGenerationService.circuitOpenUntil - Date.now()) / 1000);
-                throw new Error(`Service temporarily unavailable. Circuit breaker open. Please try again in ${waitSecs} seconds.`);
-            }
-
-            try {
-                const result = await fn();
-                // Reset circuit on success
-                VideoGenerationService.circuitFailures = 0;
-                return result;
-            } catch (error: unknown) {
-                lastError = error;
-
-                // Determine if the error is retryable
-                const isRetryable = this.isRetryableError(error);
-
-                if (isRetryable) {
-                    VideoGenerationService.circuitFailures++;
-                    if (VideoGenerationService.circuitFailures >= VideoGenerationService.MAX_FAILURES) {
-                        logger.error(`[VideoGeneration] 🔴 Circuit breaker tripped after ${VideoGenerationService.circuitFailures} consecutive failures!`);
-                        VideoGenerationService.circuitOpenUntil = Date.now() + VideoGenerationService.COOLDOWN_MS;
-                    }
-                }
-
-                if (!isRetryable || attempt === maxRetries) {
-                    // Non-retryable or final attempt — throw immediately
-                    if (attempt > 0) {
-                        logger.error(
-                            `[VideoGeneration] ${label}: Failed after ${attempt + 1} attempts. ` +
-                            `Final error: ${error instanceof Error ? error.message : String(error)}`
-                        );
-                    }
-                    throw error;
-                }
-
-                // Calculate backoff delay with jitter
-                const retryAfterMs = this.extractRetryAfter(error);
-                const exponentialDelay = baseDelayMs * Math.pow(2, attempt);
-                // Add ±25% jitter to prevent thundering herd
-                const jitter = exponentialDelay * (0.75 + Math.random() * 0.5);
-                const delayMs = retryAfterMs || Math.round(jitter);
-
-                logger.warn(
-                    `[VideoGeneration] ${label}: Attempt ${attempt + 1}/${maxRetries + 1} failed ` +
-                    `(${error instanceof Error ? error.message : 'Unknown error'}). ` +
-                    `Retrying in ${(delayMs / 1000).toFixed(1)}s...`
-                );
-
-                await new Promise(resolve => setTimeout(resolve, delayMs));
-            }
-        }
-
-        // Should never reach here, but TypeScript doesn't know that
-        throw lastError;
-    }
-
-    /**
-     * Determines if an error is transient and worth retrying.
-     */
-    private isRetryableError(error: unknown): boolean {
-        // Check typed AppException codes first (most precise classification)
-        if (error instanceof Error && 'code' in error && error.name === 'AppException') {
-            const appError = error as { code: string };
-            const nonRetryableCodes = [
-                'UNAUTHORIZED',
-                'INVALID_INPUT',
-                'CONTENT_FILTERED',
-                'NOT_FOUND',
-                'CANCELLED',
-                'SAFETY_VIOLATION',
-                'INVALID_ARGUMENT',
-            ];
-            if (nonRetryableCodes.includes(appError.code)) {
-                return false;
-            }
-            const retryableCodes = ['RATE_LIMITED', 'TIMEOUT', 'NETWORK_ERROR'];
-            if (retryableCodes.includes(appError.code)) {
-                return true;
-            }
-        }
-
-        if (error instanceof Error) {
-            const message = error.message.toLowerCase();
-
-            // Network/connectivity errors — always retry
-            if (
-                error.name === 'TypeError' ||
-                error.name === 'AbortError' ||
-                message.includes('network') ||
-                message.includes('fetch') ||
-                message.includes('econnreset') ||
-                message.includes('etimedout') ||
-                message.includes('socket hang up')
-            ) {
-                return true;
-            }
-
-            // HTTP status-based errors
-            if (message.includes('429') || message.includes('rate limit')) return true;
-            if (message.includes('503') || message.includes('service unavailable')) return true;
-            if (message.includes('502') || message.includes('bad gateway')) return true;
-            if (message.includes('500') && !message.includes('internal server error: invalid')) return true;
-
-            // Non-retryable — fail fast
-            if (message.includes('400') || message.includes('bad request')) return false;
-            if (message.includes('401') || message.includes('unauthorized')) return false;
-            if (message.includes('403') || message.includes('forbidden')) return false;
-            if (message.includes('404') || message.includes('not found')) return false;
-            if (message.includes('quota exceeded')) return false;
-            if (message.includes('safety violation')) return false;
-        }
-
-        // QuotaExceededError — never retry
-        if (error instanceof QuotaExceededError) return false;
-
-        // Default: retry unknown errors once (could be transient)
-        return true;
-    }
-
-    /**
-     * Extracts Retry-After header value from an error if available.
-     * Returns delay in milliseconds, or undefined if not present.
-     */
-    private extractRetryAfter(error: unknown): number | undefined {
-        if (error instanceof Error) {
-            // Some API clients embed retry-after in the error
-            const retryMatch = error.message.match(/retry.?after[:\s]+(\d+)/i);
-            if (retryMatch?.[1]) {
-                const seconds = parseInt(retryMatch[1], 10);
-                if (!isNaN(seconds) && seconds > 0 && seconds < 120) {
-                    return seconds * 1000;
-                }
-            }
-        }
-        return undefined;
-    }
-
-
-    private async analyzeTemporalContext(image: string, offset: number, basePrompt: string): Promise<string> {
-        try {
-            const direction = offset > 0 ? 'future' : 'past';
-            const duration = Math.abs(offset);
-
-            const analysisPrompt = `You are a master cinematographer and physics engine.
-            Analyze this image frame which represents the ${offset > 0 ? 'START' : 'END'} of a video sequence.
-            Context: "${basePrompt}"
-
-            Task: Predict exactly what happens ${duration} seconds into the ${direction}.
-            Describe the motion, physics, lighting changes, and character actions that bridge this gap.
-            Focus on continuity and logical progression.
-
-            Return a concise but descriptive paragraph (max 50 words) describing the video sequence.`;
-
-            return await AutonomousIntelligence.analyzeImage(analysisPrompt, image);
-        } catch (__e: unknown) {
-            // Temporal analysis failure should not block generation
-            return "";
-        }
-    }
-
     private async checkVideoQuota(count: number = 1): Promise<{ canGenerate: boolean, reason?: string }> {
         try {
             const quotaCheck = await subscriptionService.canPerformAction('generateVideo', count);
@@ -657,8 +459,9 @@ export class VideoGenerationService {
 
     /**
      * Triggers a long-form (Daisychaining) video generation job.
-     * Splices a long request into segments, enriches them, and generates each segment
-     * sequentially via the direct SDK, then writes results to Firestore.
+     * Uploads any visual reference and delegates all job creation, billing,
+     * queueing, and provider execution to the protected backend. The browser
+     * never writes a worker-triggering videoJobs document.
      * 
      * @param options - Configuration for long-form generation including totalDuration.
      * @returns A promise resolving to the main jobId token.
@@ -690,25 +493,6 @@ export class VideoGenerationService {
         // every generated segment.
         const modelTier = normalizeVideoModelTier(options.model);
 
-        // Pre-flight duration quota check
-        const quotaCheck = await subscriptionService.canPerformAction('generateVideo', options.totalDuration);
-        if (!quotaCheck.allowed) {
-            const tier = await subscriptionService.getCurrentSubscription().then(s => s.tier);
-            throw new QuotaExceededError(
-                'video_duration',
-                await tier,
-                quotaCheck.reason || `Video duration ${options.totalDuration}s exceeds tier limit`,
-                options.totalDuration,
-                quotaCheck.currentUsage?.limit || options.totalDuration
-            );
-        }
-
-        // Each segment creates its own server-verified reservation through
-        // generateVideo(). A client-created aggregate reservation cannot be
-        // safely consumed by multiple independently settled provider jobs.
-        const estimatedCost = this.estimateVideoCost(options.totalDuration, modelTier);
-
-        const jobId = `long_${uuidv4()}`;
         const { useStore } = await import('@/core/store');
         const orgId = useStore.getState().currentOrganizationId;
 
@@ -722,176 +506,44 @@ export class VideoGenerationService {
         const normalizedLongFormAspectRatio = validatedTargetAspectRatio.success ? validatedTargetAspectRatio.data : '16:9';
 
         // Construct segment-wise prompts for sequential generation
-        const BLOCK_DURATION = 8;
+        // The server worker generates fixed five-second Veo segments; keep
+        // browser planning identical to server billing and output duration.
+        const BLOCK_DURATION = 5;
         const numBlocks = Math.ceil(options.totalDuration / BLOCK_DURATION);
         const prompts = Array.from({ length: numBlocks }, (_, i) =>
             `${enrichedPrompt} (Part ${i + 1}/${numBlocks})`
         );
 
-        // Write initial long-form job to Firestore
-        const { setDoc, serverTimestamp } = await import('firebase/firestore');
-        const jobRef = doc(db, COLLECTIONS.VIDEO.JOBS, jobId);
-        await setDoc(jobRef, {
-            id: jobId,
-            userId: auth.currentUser?.uid,
+        const currentUser = auth.currentUser;
+        if (!currentUser) throw new Error('You must be signed in to generate video. Please log in.');
+
+        const firstReference = options.referenceImages?.[0]?.image;
+        const referenceSeed = firstReference?.uri
+            ?? (firstReference?.imageBytes
+                ? `data:${firstReference.mimeType || 'image/jpeg'};base64,${firstReference.imageBytes}`
+                : undefined);
+        const visualSeed = options.firstFrame ?? referenceSeed;
+        const startImage = visualSeed
+            ? await CreativeStorageService.uploadReferenceMedia(currentUser.uid, visualSeed, 'image')
+            : undefined;
+        const triggerLongFormVideoJob = httpsCallable(functions, 'triggerLongFormVideoJob');
+        const response = await triggerLongFormVideoJob({
+            prompts,
+            totalDuration: numBlocks * 5,
+            startImage,
             orgId: orgId || 'personal',
-            prompt: enrichedPrompt,
-            status: 'processing',
-            type: 'long_form',
-            totalSegments: numBlocks,
-            completedSegments: 0,
-            segmentUrls: [],
-            costEstimate: estimatedCost,
-            costReservationStrategy: 'per_segment_server_verified',
-            createdAt: serverTimestamp(),
-            updatedAt: serverTimestamp(),
+            options: {
+                aspectRatio: normalizedLongFormAspectRatio,
+                resolution: options.resolution,
+                seed: options.seed,
+                negativePrompt: options.negativePrompt,
+                thinking: options.thinkingLevel !== 'none',
+                model: modelTier,
+            },
         });
-
-        // =====================================================================
-        // DAISY CHAIN ENGINE: Sequential generation with visual continuity
-        //
-        // Pipeline per segment:
-        //   1. Generate video (with firstFrame from previous segment's last frame)
-        //   2. Extract last frame from completed video
-        //   3. Analyze frame with Gemini to generate continuation prompt
-        //   4. Use analysis + base prompt for next segment
-        //   5. Repeat until all segments are generated
-        // =====================================================================
-        const segmentUrls: string[] = [];
-        let previousLastFrame: string | undefined = options.firstFrame; // Start with user-provided first frame
-        let chainContext = ''; // Accumulates narrative context across segments
-
-        try {
-            for (let i = 0; i < prompts.length; i++) {
-                options.onProgress?.(i, numBlocks);
-
-                // Build segment prompt with chain context
-                let segmentPrompt = prompts[i]!;
-                if (chainContext && i > 0) {
-                    segmentPrompt = `${segmentPrompt}\n\nVisual Continuity Context (from previous segment): ${chainContext}`;
-                }
-
-                // Generate segment — with firstFrame from previous segment's last frame
-                // Uses withRetry for production-grade error recovery
-                const videoUrl = await this.withRetry(
-                    async () => {
-                        const results = await this.generateVideo({
-                            prompt: segmentPrompt,
-                            model: modelTier,
-                            image: previousLastFrame
-                                ? { imageBytes: previousLastFrame, mimeType: 'image/jpeg' }
-                                : undefined,
-                            aspectRatio: normalizedLongFormAspectRatio,
-                            resolution: options.resolution as "720p" | "1080p" | "4k",
-                            durationSeconds: BLOCK_DURATION,
-                            negativePrompt: options.negativePrompt,
-                            seed: options.seed,
-                            referenceImages: options.referenceImages,
-                        });
-                        
-                        const jobId = results[0]?.id;
-                        if (!jobId) throw new Error('Failed to get jobId from generateVideo');
-                        
-                        // Wait for the video job to complete via backend webhook/status update
-                        const completedJob = await this.waitForJob(jobId, 600000); // 10 min timeout per segment
-                        const jobResultUrl = completedJob?.output?.url || completedJob?.videoUrl || completedJob?.url;
-                        logger.debug('[VideoGenerationService] Long-form segment job resolved:', { jobId, completedJob, jobResultUrl });
-                        if (!completedJob || !jobResultUrl) {
-                            throw new Error('Video generation failed or timed out without returning a result URL.');
-                        }
-                        return jobResultUrl;
-                    },
-                    `Segment ${i + 1}/${numBlocks}`,
-                    3,   // maxRetries
-                    2000 // baseDelayMs
-                );
-
-                segmentUrls.push(videoUrl);
-
-                // Update progress in Firestore
-                const { updateDoc } = await import('firebase/firestore');
-                await updateDoc(jobRef, {
-                    completedSegments: i + 1,
-                    segmentUrls,
-                    updatedAt: serverTimestamp(),
-                });
-
-                // ─── DAISY CHAIN: Extract last frame & analyze for next segment ───
-                if (i < prompts.length - 1) {
-                    try {
-                        // Step 1: Extract the last frame from the completed segment
-                        const { extractLastFrameForAPI } = await import('@/utils/video');
-                        const lastFrameResult = await extractLastFrameForAPI(videoUrl);
-                        previousLastFrame = lastFrameResult.imageBytes;
-
-                        logger.info(`[DaisyChain] Segment ${i + 1}/${numBlocks}: Last frame extracted (${lastFrameResult.mimeType})`);
-
-                        // Step 2: Analyze the frame with Gemini to understand scene state
-                        const analysisResult = await this.analyzeTemporalContext(
-                            lastFrameResult.dataUrl,
-                            BLOCK_DURATION, // Looking forward by one block
-                            options.prompt
-                        );
-
-                        if (analysisResult) {
-                            chainContext = analysisResult;
-                            logger.info(`[DaisyChain] Segment ${i + 1}/${numBlocks}: Scene analysis complete — "${analysisResult.substring(0, 80)}..."`);
-                        }
-
-                        // Update Firestore with chain state for resume capability
-                        await updateDoc(jobRef, {
-                            'chainState.lastFrameSegment': i,
-                            'chainState.lastAnalysis': chainContext.substring(0, 500),
-                            updatedAt: serverTimestamp(),
-                        });
-                    } catch (chainError: unknown) {
-                        // Daisy chain enhancement is best-effort — don't block generation
-                        logger.warn(
-                            `[DaisyChain] Frame extraction/analysis failed for segment ${i + 1}. Continuing without visual continuity.`,
-                            chainError
-                        );
-                        // Reset chain state so next segment generates fresh
-                        previousLastFrame = undefined;
-                        chainContext = '';
-                    }
-                }
-            }
-
-            options.onProgress?.(numBlocks, numBlocks);
-
-            // Mark as stitching (all segments ready for assembly)
-            // videoUrl and output.url remain undefined until stitching is complete
-            const { updateDoc } = await import('firebase/firestore');
-            await updateDoc(jobRef, {
-                status: 'stitching',
-                segmentUrls,
-                'output.metadata.quality': 'pro',
-                'output.metadata.mime_type': 'video/mp4',
-                'chainState.complete': true,
-                'chainState.totalSegments': numBlocks,
-                updatedAt: serverTimestamp(),
-            });
-
-            return [{
-                id: jobId,
-                url: segmentUrls[0] || '',
-                prompt: options.prompt
-            }];
-        } catch (error: unknown) {
-            const { updateDoc } = await import('firebase/firestore');
-            const errorMsg = error instanceof Error ? error.message : String(error);
-            const isCancelled = errorMsg.toLowerCase().includes('cancelled');
-
-            await updateDoc(jobRef, {
-                status: isCancelled ? 'cancelled' : 'failed',
-                error: errorMsg,
-                segmentUrls,
-                ...(isCancelled ? { cancelledAt: serverTimestamp() } : { 'chainState.failedAtSegment': segmentUrls.length }),
-                updatedAt: serverTimestamp(),
-            }).catch(e => logger.warn('[VideoGeneration] Failed to update long-form job status:', e));
-
-            throw error;
-        }
+        const data = response.data as { jobId?: string };
+        if (!data.jobId) throw new Error('Long-form generation did not return a server job identifier.');
+        return [{ id: data.jobId, url: '', prompt: options.prompt }];
     }
 
     /**

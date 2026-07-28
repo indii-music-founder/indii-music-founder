@@ -8,5 +8,12 @@
 export function renderFailureReservationOutcome(input: {
     transcoderSubmissionAttempted: boolean;
 }): 'SETTLED' | 'VOIDED' {
-    return input.transcoderSubmissionAttempted ? 'SETTLED' : 'VOIDED';
+    return providerFailureReservationOutcome({ providerSubmissionAttempted: input.transcoderSubmissionAttempted });
+}
+
+/** Generic counterpart for Vertex, Transcoder, and future billable providers. */
+export function providerFailureReservationOutcome(input: {
+    providerSubmissionAttempted: boolean;
+}): 'SETTLED' | 'VOIDED' {
+    return input.providerSubmissionAttempted ? 'SETTLED' : 'VOIDED';
 }

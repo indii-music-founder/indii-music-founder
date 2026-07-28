@@ -7,6 +7,7 @@ import { httpsCallable } from 'firebase/functions';
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { resolveStorageUri } from '@/services/storage/storageUri';
 import { normalizeVideoAspectRatio } from '@/services/video/videoAspectRatio';
+import { CreativeStorageService } from '@/services/creative/CreativeStorageService';
 
 export class VideoDirector {
     static async processGeneratedVideo(uri: string, prompt: string, enableDirectorsCut = false, isRetry = false): Promise<string | null> {
@@ -120,36 +121,29 @@ export class VideoDirector {
     static async triggerAnimation(
         item: HistoryItem,
         options?: { aspectRatio?: string }
-    ): Promise<{ success: boolean; error?: string; video_url?: string }> {
-        const jobId = crypto.randomUUID();
+    ): Promise<{ success: boolean; jobId?: string; error?: string; video_url?: string }> {
         const prompt = item.prompt || 'Animate this scene';
         const { aspectRatio } = normalizeVideoAspectRatio(options?.aspectRatio);
+        const userId = useStore.getState().userProfile?.id;
+        if (!userId) {
+            return { success: false, error: 'Sign in before generating a video.' };
+        }
 
-        // --- Electron Path: Delegate to local Python API (Intelligence sidecar) ---
-        // --- Cloud Function (triggerVideoJob) ---
-        // Build a payload that satisfies VideoJobSchema
+        // Store the image as an owner-scoped canonical reference before the
+        // callable runs. The backend then verifies the bucket and owner rather
+        // than fetching a client-supplied URL.
+        const firstFrame = await CreativeStorageService.uploadReferenceMedia(userId, item.url, 'image');
         const cloudPayload: Record<string, unknown> = {
-            jobId,
             prompt,
             model: INTELLIGENCE_MODELS.VIDEO.GENERATION,
+            firstFrame,
             options: { aspectRatio },
         };
-
-        if (item.url.startsWith('data:')) {
-            const parts = item.url.split(',');
-            const header = parts[0] ?? '';
-            cloudPayload.image = {
-                imageBytes: parts[1] ?? '',
-                mimeType: header.split(':')[1]?.split(';')[0] ?? 'image/png',
-            };
-        } else {
-            cloudPayload.referenceImageUri = item.url;
-        }
 
         try {
             const triggerVideoJob = httpsCallable(functions, 'triggerVideoJob');
             const response = await triggerVideoJob(cloudPayload);
-            return response.data as { success: boolean; error?: string };
+            return response.data as { success: boolean; jobId?: string; error?: string };
         } catch (err: unknown) {
             logger.error('[VideoDirector] Cloud Function Error:', err);
             return { success: false, error: err instanceof Error ? err.message : 'Video generation failed' };

@@ -40,6 +40,21 @@ flowchart TD
     class Denied deny
 ```
 
+## Transition Breakdown
+
+1. The backend resolves the current Firebase Auth account and verified-email
+   claim; browser profile fields cannot grant access.
+2. A verified account receives or migrates its server-owned entitlement through
+   a transaction that also writes an immutable grant receipt.
+3. App Check and request policy must pass before the entitlement can authorize
+   an idempotent cost reservation.
+4. Only the backend reservation path may invoke Vertex AI with server
+   credentials, and every outcome settles into an owner-scoped receipt.
+5. Founder policy can remove product-credit limits but cannot bypass
+   attestation, provider quota, idempotency, or emergency safety controls.
+6. Queued and relayed work resolves Admin Auth and entitlement again before
+   reserving cost, rather than trusting the original client request.
+
 ## Contract checks
 
 1. The backend refreshes the Firebase Auth account before it resolves spend

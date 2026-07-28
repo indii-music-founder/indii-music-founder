@@ -271,7 +271,7 @@ vi.mock('../analytics/platformTokenExchange', () => ({ analyticsExchangeToken: v
 vi.mock('../devops/storageMaintenance', () => ({ cleanupExpiredVideoTemps: vi.fn(), cleanupOrphanedVideos: vi.fn(), trackStorageQuotas: vi.fn(), flagVideosForArchival: vi.fn() }));
 
 // Import functions AFTER mocks
-import { triggerVideoJob, renderVideo, cancelVideoJob } from '../index';
+import { triggerLongFormVideoJob, triggerVideoJob, renderVideo, cancelVideoJob } from '../index';
 
 describe('Video Functions', () => {
     beforeEach(() => {
@@ -339,6 +339,34 @@ describe('Video Functions', () => {
                 id: 'render-server-123',
                 costReservationId: 'render-op-123',
                 status: 'queued',
+                options: expect.objectContaining({
+                    model: 'pro',
+                    duration: 6,
+                    durationSeconds: 6,
+                }),
+            }));
+        });
+
+        it('uses one normalized model and duration for both reservation and worker execution', async () => {
+            const context: any = { auth: { uid: 'user123' } };
+
+            await (triggerVideoJob as any)({
+                prompt: 'test prompt',
+                orgId: 'personal',
+                model: 'lite',
+                duration: 5,
+            }, context);
+
+            expect(mocks.checkBudget).toHaveBeenCalledWith(expect.objectContaining({
+                estimatedCost: 0.3,
+            }));
+            expect(mocks.firestore.set).toHaveBeenCalledWith(expect.objectContaining({
+                estimatedCost: 0.3,
+                options: expect.objectContaining({
+                    model: 'lite',
+                    duration: 6,
+                    durationSeconds: 6,
+                }),
             }));
         });
 
@@ -373,6 +401,57 @@ describe('Video Functions', () => {
                 .rejects.toMatchObject({ code: 'resource-exhausted' });
 
             expect(mocks.firestore.set).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('triggerLongFormVideoJob', () => {
+        it('creates a server-owned long-form job and reservation instead of trusting browser identity or duration', async () => {
+            const context: any = { auth: { uid: 'user123' } };
+            const result = await (triggerLongFormVideoJob as any)({
+                jobId: 'browser-long-form-id',
+                userId: 'attacker',
+                totalDuration: 1,
+                prompts: ['first scene', 'second scene'],
+                options: { model: 'fast', resolution: '720p' },
+            }, context);
+
+            expect(result).toEqual({
+                success: true,
+                jobId: 'render-server-123',
+                message: 'Long form video generation started.',
+            });
+            expect(mocks.checkBudget).toHaveBeenCalledWith(expect.objectContaining({
+                userId: 'user123',
+                operationType: 'video',
+                operationId: 'long-form-vertex-video-render-server-123',
+                estimatedCost: 1,
+                metadata: expect.objectContaining({ segmentCount: 2, secondsPerSegment: 5 }),
+            }));
+            expect(mocks.firestore.set).toHaveBeenCalledWith(expect.objectContaining({
+                id: 'render-server-123',
+                userId: 'user123',
+                costReservationId: 'render-op-123',
+                isLongForm: true,
+            }));
+            expect(mocks.inngest.send).toHaveBeenCalledWith(expect.objectContaining({
+                data: expect.objectContaining({
+                    jobId: 'render-server-123',
+                    userId: 'user123',
+                    totalDuration: 10,
+                    costReservationId: 'render-op-123',
+                }),
+            }));
+        });
+
+        it('does not create a long-form worker record when server budget denies the request', async () => {
+            mocks.checkBudget.mockResolvedValueOnce({ allowed: false, reason: 'Hourly budget exceeded.' });
+            const context: any = { auth: { uid: 'user123' } };
+
+            await expect((triggerLongFormVideoJob as any)({ prompts: ['scene'] }, context))
+                .rejects.toMatchObject({ code: 'resource-exhausted' });
+
+            expect(mocks.firestore.set).not.toHaveBeenCalled();
+            expect(mocks.inngest.send).not.toHaveBeenCalled();
         });
     });
 

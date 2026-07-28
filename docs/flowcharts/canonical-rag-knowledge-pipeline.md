@@ -75,6 +75,25 @@ flowchart TD
     DKD -->|State: deleted| DOCS
 ```
 
+## Transition Breakdown
+
+1. The authenticated owner requests an upload reservation and receives a
+   server-selected document ID and owner-scoped Storage path.
+2. The client uploads the source bytes with their SHA-256 metadata, then asks
+   the backend to finalize the exact object generation.
+3. Finalization revalidates ownership, generation, and content identity before
+   creating a queued indexing record and Cloud Task.
+4. The indexing worker downloads the pinned generation, recomputes the hash,
+   parses the source, creates document embeddings in Vertex AI, and writes
+   owner-rooted chunks plus an immutable receipt.
+5. A query is admitted through Auth, App Check, and entitlement checks before
+   its embedding is compared only with that owner's indexed chunks.
+6. Gemini synthesizes an answer from bounded, untrusted reference text and
+   returns citations while the backend records a query receipt.
+7. Deletion transitions the document through `deleting`, removes its chunks
+   and pinned source object, and only then records the terminal `deleted`
+   state.
+
 ## Architectural Guarantee & Compliance Rules
 
 1. **Owner Isolation**: All Firestore subcollections (`ragDocuments`, `ragChunks`, `ragQueries`, `ragReceipts`) are strictly rooted under `users/{uid}/`. Storage objects are strictly rooted under `rag-sources/{uid}/{sha256}/original.{ext}`.

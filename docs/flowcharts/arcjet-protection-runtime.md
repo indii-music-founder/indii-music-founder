@@ -32,6 +32,22 @@ flowchart TD
     class Decision audit
 ```
 
+## Transition Breakdown
+
+1. The caller reaches a specific backend handler; no browser code imports
+   Arcjet or provider credentials.
+2. Firebase Auth, App Check, verified-email policy, and server-owned
+   entitlements establish identity and admission before Arcjet evaluates
+   abuse risk.
+3. The backend derives a fixed Arcjet policy class. Client input cannot select
+   a more permissive tier or bypass provider and cost controls.
+4. Arcjet either returns a structured denial/retry decision or permits the
+   protected operation to continue.
+5. The protected operation invokes Vertex AI or another backend-only provider
+   and records a redacted server-owned operation receipt.
+6. MCP tools and background workers enter through a fixed-label Arcjet Guard;
+   they do not reuse browser request state or trust model-supplied identity.
+
 ## Runtime invariants
 
 1. Firebase Functions mounts `ARCJET_KEY` only through the `secrets` option on

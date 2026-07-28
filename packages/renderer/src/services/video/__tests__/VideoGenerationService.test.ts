@@ -165,23 +165,23 @@ describe('VideoGenerationService', () => {
             expect(CreativeStorageService.uploadReferenceMedia).toHaveBeenCalled();
         });
 
-    it('should handle long-form video generation', async () => {
-        const spyGenerate = vi.spyOn(VideoGeneration, 'generateVideo').mockResolvedValue([{ id: 'long_1', url: '', prompt: 'long video' }]);
-        const spyWait = vi.spyOn(VideoGeneration, 'waitForJob').mockResolvedValue({ id: 'long_1', url: 'https://test.mp4', status: 'completed' } as any);
+    it('delegates long-form generation to the server-owned callable', async () => {
+        mockHttpsCallable.mockResolvedValueOnce({ data: { jobId: 'server-long-job-1' } });
 
-            const result = await VideoGeneration.generateLongFormVideo({
-                prompt: 'long video',
-                totalDuration: 60
-            });
-
-            expect(result).toHaveLength(1);
-            expect(result[0]!.id).toMatch(/^long_/);
-            // Long-form should also call generateVideo for each segment
-            expect(spyGenerate).toHaveBeenCalled();
-
-            spyGenerate.mockRestore();
-            spyWait.mockRestore();
+        const result = await VideoGeneration.generateLongFormVideo({
+            prompt: 'long video',
+            totalDuration: 60,
         });
+
+        expect(result).toEqual([{ id: 'server-long-job-1', url: '', prompt: 'long video' }]);
+        expect(mockHttpsCallable).toHaveBeenCalledWith(expect.objectContaining({
+            prompts: expect.arrayContaining(['long video (Part 1/12)']),
+            totalDuration: 60,
+            options: expect.objectContaining({ model: 'fast' }),
+        }));
+
+        expect(vi.spyOn(VideoGeneration, 'generateVideo')).not.toHaveBeenCalled();
+    });
     });
 
     describe('waitForJob (Async Veo Pipeline)', () => {
@@ -377,9 +377,9 @@ describe('VideoGenerationService', () => {
             );
         });
 
-        it('should forward reference images in generateLongFormVideo', async () => {
-            const spyGenerateVideo = vi.spyOn(VideoGeneration, 'generateVideo').mockResolvedValue([{ id: 'mock-job-id', url: '', prompt: 'mock' }]);
-            const spyWaitForJob = vi.spyOn(VideoGeneration, 'waitForJob').mockResolvedValue({ id: 'mock-job-id', url: 'https://storage.googleapis.com/segment-video.mp4', status: 'completed' } as any);
+        it('uploads the first reference image as the server-owned long-form seed', async () => {
+            const { CreativeStorageService } = await import('@/services/creative/CreativeStorageService');
+            mockHttpsCallable.mockResolvedValueOnce({ data: { jobId: 'server-long-job-2' } });
 
             await VideoGeneration.generateLongFormVideo({
                 prompt: 'long video with refs',
@@ -390,14 +390,14 @@ describe('VideoGenerationService', () => {
                 personGeneration: 'allow_adult'
             });
 
-            expect(spyGenerateVideo).toHaveBeenCalledWith(expect.objectContaining({
-                referenceImages: [
-                    { image: { uri: 'gs://bucket/ref1.png' }, referenceType: 'asset' }
-                ]
+            expect(CreativeStorageService.uploadReferenceMedia).toHaveBeenCalledWith(
+                'test-user',
+                'gs://bucket/ref1.png',
+                'image',
+            );
+            expect(mockHttpsCallable).toHaveBeenCalledWith(expect.objectContaining({
+                startImage: 'gs://mock-bucket/mock-uri',
             }));
-
-            spyGenerateVideo.mockRestore();
-            spyWaitForJob.mockRestore();
         });
     });
 });

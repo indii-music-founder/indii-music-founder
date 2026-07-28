@@ -11,9 +11,9 @@
 
 import * as admin from "firebase-admin";
 import { GoogleGenAI } from "@google/genai";
-import { FUNCTION_INTELLIGENCE_MODELS } from "../config/models";
 import { finalizeOperationReservation } from "../functions/billing/enforceOperationCost";
 import { renderFailureReservationOutcome } from "../functions/video/renderCostLifecycle";
+import { normalizeVeoDuration, resolveVeoModel } from "./video";
 import { getVertexAIBaseUrl } from "./vertexClient";
 
 /**
@@ -78,7 +78,7 @@ export function parseOwnedVideoSeedUri(userId: string, uri: string, expectedBuck
     return objectPath;
 }
 
-async function loadOwnedVideoSeedImage(userId: string, uri: string): Promise<VideoSeedImage> {
+export async function loadOwnedVideoSeedImage(userId: string, uri: string): Promise<VideoSeedImage> {
     const bucket = admin.storage().bucket();
     const objectPath = parseOwnedVideoSeedUri(userId, uri, bucket.name);
     const file = bucket.file(objectPath);
@@ -154,9 +154,7 @@ export async function generateVideoDirect(params: DirectVideoGenerationParams): 
 
         // ── Step 2: Initialize SDK ─────────────────────────────────────────
         const { model: requestedModel } = options || {};
-        const modelId = requestedModel === 'fast'
-            ? FUNCTION_INTELLIGENCE_MODELS.VIDEO.FAST
-            : FUNCTION_INTELLIGENCE_MODELS.VIDEO.PRO;
+        const { modelId } = resolveVeoModel(requestedModel);
 
         // Vertex AI for production — ADC handles auth automatically in Cloud Functions
         const projectId = process.env.VERTEX_PROJECT_ID || process.env.GOOGLE_CLOUD_PROJECT || process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT || 'indii-music-founder';
@@ -185,15 +183,8 @@ export async function generateVideoDirect(params: DirectVideoGenerationParams): 
             config.aspectRatio = "16:9"; // Default
         }
 
-        // Duration — must be 4, 5, 6, or 8
-        const rawDuration = options.durationSeconds || options.duration;
-        if (rawDuration) {
-            let dur = typeof rawDuration === 'string' ? parseInt(rawDuration) : (rawDuration as number);
-            if (dur <= 4) dur = 4;
-            else if (dur <= 6) dur = 6; // strictly 4, 6, or 8 for Veo 3.1
-            else dur = 8;
-            config.durationSeconds = dur;
-        }
+        // Use the same supported duration that the admission path reserved.
+        config.durationSeconds = normalizeVeoDuration(options.durationSeconds ?? options.duration);
 
         // Person generation — Veo 3.1 supports allow_adult, allow_all
         if (options.personGeneration) {
@@ -307,16 +298,18 @@ export async function generateVideoDirect(params: DirectVideoGenerationParams): 
         // ALWAYS download the video and upload to Firebase Storage, 
         // as raw Google API URIs require authentication to play in the browser.
 
-        const targetBucketName = process.env.VITE_FIREBASE_STORAGE_BUCKET || 'indii-music-founder.firebasestorage.app';
+        // The Admin SDK's configured bucket is the authority. A VITE_ value is
+        // a browser build setting and must never choose the destination for a
+        // backend-generated, owner-protected artifact.
+        const targetBucket = admin.storage().bucket();
 
         // Check for bytesBase64Encoded or videoBytes inline first
         const videoObj = video as Record<string, unknown>;
         const base64Data = videoObj.bytesBase64Encoded || videoObj.videoBytes;
         if (base64Data) {
-            console.log(`[VideoGenDirect] Got inline base64 video, uploading to Storage ${targetBucketName}...`);
-            const bucket = admin.storage().bucket(targetBucketName);
-            const filePath = `videos/${userId}/${jobId}.mp4`;
-            const file = bucket.file(filePath);
+            console.log(`[VideoGenDirect] Got inline base64 video, storing the protected canonical artifact...`);
+            const filePath = `generated/${userId}/${jobId}.mp4`;
+            const file = targetBucket.file(filePath);
 
             // Depending on SDK version, videoBytes might be a string (base64) or Uint8Array. 
             // Buffer.from works well with string ('base64' encoding) or raw byte arrays.
@@ -328,11 +321,13 @@ export async function generateVideoDirect(params: DirectVideoGenerationParams): 
             }
 
             await file.save(buffer, {
-                metadata: { contentType: 'video/mp4' },
-                public: true
+                metadata: {
+                    contentType: 'video/mp4',
+                    metadata: { ownerUid: userId, source: 'vertex_direct_video' },
+                },
             });
-            videoUrl = file.publicUrl();
-            console.log(`[VideoGenDirect] Uploaded to Firebase Storage from inline bytes: ${videoUrl}`);
+            videoUrl = `gs://${targetBucket.name}/${filePath}`;
+            console.log(`[VideoGenDirect] Stored protected video from inline bytes.`);
         }
 
         // Otherwise, download via SDK file API
@@ -346,15 +341,16 @@ export async function generateVideoDirect(params: DirectVideoGenerationParams): 
                 // Read from tmp and upload to Storage
                 const fs = await import("fs");
                 const videoBuffer = fs.readFileSync(tmpPath);
-                const bucket = admin.storage().bucket(targetBucketName);
-                const filePath = `videos/${userId}/${jobId}.mp4`;
-                const storageFile = bucket.file(filePath);
+                const filePath = `generated/${userId}/${jobId}.mp4`;
+                const storageFile = targetBucket.file(filePath);
                 await storageFile.save(videoBuffer, {
-                    metadata: { contentType: 'video/mp4' },
-                    public: true
+                    metadata: {
+                        contentType: 'video/mp4',
+                        metadata: { ownerUid: userId, source: 'vertex_direct_video' },
+                    },
                 });
-                videoUrl = storageFile.publicUrl();
-                console.log(`[VideoGenDirect] Downloaded via SDK and uploaded: ${videoUrl}`);
+                videoUrl = `gs://${targetBucket.name}/${filePath}`;
+                console.log(`[VideoGenDirect] Downloaded via SDK and stored protected video.`);
 
                 // Clean up tmp
                 if (fs.existsSync(tmpPath)) {

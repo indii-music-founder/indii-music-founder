@@ -20,7 +20,7 @@ Every issue below either gets live evidence or keeps its 🟡 PARTIAL.
 
 ```mermaid
 flowchart TD
-    START([14 issues at PARTIAL<br/>'deployment required']) --> GREEN{CI run 30289490710<br/>green?}
+    START["14 issues at PARTIAL<br/>'deployment required'"] --> GREEN["CI run 30289490710<br/>green?"]
     GREEN -->|yes, verified| CLASSIFY[Classify by what<br/>evidence would close it]
 
     CLASSIFY --> A[Class A — Rules layer<br/>1222, 1234, 1235]
@@ -59,6 +59,24 @@ flowchart TD
     style CLOSE fill:#14532d,color:#fff
     style DOPEN fill:#78350f,color:#fff
 ```
+
+## Transition Breakdown
+
+1. Confirm the exact CI run and deployed revision before using production
+   behavior as evidence for any issue.
+2. Classify each partial issue by the layer that can prove it: live Rules,
+   deployed function behavior, deployed configuration, or unfinished product
+   work.
+3. Fetch live Rules and compare them with the repository before running denial
+   probes against the deployed project.
+4. Inspect each serving function revision and submit only the previously
+   accepted malformed input needed to prove the hardened rejection.
+5. Read deployed environment, secret bindings, IAM, and revision configuration
+   directly for inventory claims.
+6. Close only issues whose required live evidence passes; reopen failed
+   deployments and retain genuinely unbuilt work as open.
+7. Record immutable run, revision, ruleset, and probe references in the active
+   ledger without substituting mocks or impersonated sessions.
 
 ## Evidence standard per class
 

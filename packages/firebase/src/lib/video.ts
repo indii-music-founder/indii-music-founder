@@ -1,4 +1,54 @@
 import { z } from "zod";
+import { FUNCTION_INTELLIGENCE_MODELS } from "../config/models";
+
+export type VeoModelTier = "lite" | "fast" | "pro";
+export type VeoDurationSeconds = 4 | 6 | 8;
+
+/**
+ * Resolve only the supported server-owned Veo model allowlist. Clients may
+ * send a tier keyword or its exact public model ID, but cannot select an
+ * arbitrary Vertex publisher model.
+ */
+export function resolveVeoModel(rawModel: unknown): {
+    tier: VeoModelTier;
+    modelId: typeof FUNCTION_INTELLIGENCE_MODELS.VIDEO.LITE
+        | typeof FUNCTION_INTELLIGENCE_MODELS.VIDEO.FAST
+        | typeof FUNCTION_INTELLIGENCE_MODELS.VIDEO.PRO;
+} {
+    if (rawModel === "lite" || rawModel === FUNCTION_INTELLIGENCE_MODELS.VIDEO.LITE) {
+        return { tier: "lite", modelId: FUNCTION_INTELLIGENCE_MODELS.VIDEO.LITE };
+    }
+    if (rawModel === "fast" || rawModel === FUNCTION_INTELLIGENCE_MODELS.VIDEO.FAST) {
+        return { tier: "fast", modelId: FUNCTION_INTELLIGENCE_MODELS.VIDEO.FAST };
+    }
+    if (
+        rawModel === undefined
+        || rawModel === null
+        || rawModel === ""
+        || rawModel === "pro"
+        || rawModel === FUNCTION_INTELLIGENCE_MODELS.VIDEO.PRO
+        || rawModel === FUNCTION_INTELLIGENCE_MODELS.VIDEO.GENERATION
+    ) {
+        return { tier: "pro", modelId: FUNCTION_INTELLIGENCE_MODELS.VIDEO.PRO };
+    }
+    throw new TypeError("Unsupported video model tier.");
+}
+
+/**
+ * Normalize the requested clip duration to the exact Veo durations the
+ * provider can execute. This value must be used for both billing and the
+ * provider request so a five-second UI request is reserved as six seconds.
+ */
+export function normalizeVeoDuration(rawDuration: unknown): VeoDurationSeconds {
+    if (rawDuration === undefined || rawDuration === null || rawDuration === "") return 6;
+    const duration = typeof rawDuration === "string" ? Number(rawDuration) : rawDuration;
+    if (typeof duration !== "number" || !Number.isFinite(duration) || duration <= 0 || duration > 8) {
+        throw new TypeError("Video duration must be greater than 0 and no more than 8 seconds.");
+    }
+    if (duration <= 4) return 4;
+    if (duration <= 6) return 6;
+    return 8;
+}
 
 export const VideoJobSchema = z.object({
     // Legacy callers may still send a client correlation ID, but the backend

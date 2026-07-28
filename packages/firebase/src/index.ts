@@ -14,7 +14,7 @@ setGlobalOptions({ memory: "512MiB" });
 export { agentStreamResponse, agentStreamHealth } from './streaming/agentStream';
 import { serve } from "inngest/express";
 import corsLib from "cors";
-import { VideoJobSchema } from "./lib/video";
+import { normalizeVeoDuration, resolveVeoModel, VideoJobSchema } from "./lib/video";
 
 import { GenerateSpeechRequestSchema } from "./lib/audio";
 import { verifyMasterAudioObject } from './functions/storage/verifyMasterAudio';
@@ -30,7 +30,6 @@ import { executeWorkflowStepFn } from "./functions/agent/executeWorkflowStep";
 import { campaignWaterfallFn } from "./lib/campaign_waterfall";
 import { canvasRenderFn } from "./lib/canvas_render";
 import { LongFormVideoJobSchema, generateLongFormVideoFn, stitchVideoFn } from "./lib/long_form_video";
-import { generateVideoFn } from "./lib/video_generation";
 import { generateVideoDirect } from "./lib/video_generation_direct";
 import { executeMilestoneFn } from "./timeline/milestone_execution";
 import { editImageFn } from "./lib/image_generation";
@@ -344,36 +343,6 @@ const corsHandler = corsLib({
     credentials: true
 });
 
-// ----------------------------------------------------------------------------
-// Tier Limits (Duplicated from MembershipService for Server-Side Enforcement)
-// Updated to match SubscriptionTier enum — includes 'founder' (unlimited, for initial investors)
-// ----------------------------------------------------------------------------
-type MembershipTier = 'free' | 'pro' | 'enterprise' | 'founder';
-
-interface TierLimits {
-    maxVideoDuration: number;          // Max seconds per job
-    maxVideoGenerationsPerDay: number; // Max jobs per day
-}
-
-const TIER_LIMITS: Record<MembershipTier, TierLimits> = {
-    free: {
-        maxVideoDuration: 8 * 60,          // 8 minutes
-        maxVideoGenerationsPerDay: 5,
-    },
-    pro: {
-        maxVideoDuration: 60 * 60,         // 60 minutes
-        maxVideoGenerationsPerDay: 50,
-    },
-    enterprise: {
-        maxVideoDuration: 4 * 60 * 60,     // 4 hours
-        maxVideoGenerationsPerDay: 500,
-    },
-    founder: {
-        maxVideoDuration: 24 * 60 * 60,    // 24 hours (unlimited in practice)
-        maxVideoGenerationsPerDay: 1000,   // 1000/day (unlimited in practice)
-    },
-};
-
 // Polling Constants
 // const VIDEO_POLL_INTERVAL_SEC = 5;
 // const VIDEO_MAX_POLL_ATTEMPTS = 60;
@@ -422,9 +391,26 @@ export const triggerVideoJob = functions
         // colliding with another artist's worker-triggering record.
         const jobRef = admin.firestore().collection("videoJobs").doc();
         const jobId = jobRef.id;
+        let normalizedDuration: ReturnType<typeof normalizeVeoDuration>;
+        let normalizedModel: ReturnType<typeof resolveVeoModel>;
+        try {
+            normalizedDuration = normalizeVeoDuration(options.durationSeconds ?? options.duration);
+            normalizedModel = resolveVeoModel(options.model);
+        } catch (error) {
+            throw new functions.https.HttpsError(
+                "invalid-argument",
+                error instanceof Error ? error.message : "Unsupported video generation options.",
+            );
+        }
+        const normalizedOptions = {
+            ...options,
+            model: normalizedModel.tier,
+            durationSeconds: normalizedDuration,
+            duration: normalizedDuration,
+        };
         const estimatedCost = estimateVideoCost({
-            model: (options.model as string) ?? undefined,
-            durationSeconds: (options.durationSeconds || options.duration) ? Number(options.durationSeconds || options.duration) : undefined,
+            model: normalizedModel.tier,
+            durationSeconds: normalizedDuration,
             resolution: (options.resolution as string) ?? undefined,
             generateAudio: (options.generateAudio as boolean) ?? undefined
         });
@@ -455,7 +441,7 @@ export const triggerVideoJob = functions
                 status: "queued",
                 estimatedCost: estimatedCost,
                 costReservationId: budget.operationId,
-                options: options,
+                options: normalizedOptions,
                 createdAt: admin.firestore.FieldValue.serverTimestamp(),
                 updatedAt: admin.firestore.FieldValue.serverTimestamp()
             });
@@ -567,23 +553,14 @@ export const triggerLongFormVideoJob = functions
         enforceAppCheck: false
     })
     // Item 352: Explicit return type annotation
-    .https.onCall(async (data: unknown, context: functions.https.CallableContext): Promise<{ success: boolean; message: string }> => {
-        validateAppCheckV1(context);
-
-        if (!context.auth) {
-            throw new functions.https.HttpsError(
-                "unauthenticated",
-                "User must be authenticated for long form generation."
-            );
-        }
-        const userId = context.auth.uid;
-
-        // Rate limit: 10 long-form video requests per minute
-        await enforceRateLimit(userId, "triggerLongFormVideoJob", RATE_LIMITS.generation);
+    .https.onCall(async (data: unknown, context: functions.https.CallableContext): Promise<{ success: boolean; jobId: string; message: string }> => {
+        const { userId, entitlement } = await requireVerifiedCreativeAdmissionV1(context, 'trigger-long-form-video-job');
 
         // Zod Validation
         const safeData = (typeof data === 'object' && data !== null) ? data : {};
-        const inputData = { ...safeData, userId };
+        const jobRef = admin.firestore().collection('videoJobs').doc();
+        const jobId = jobRef.id;
+        const inputData = { ...safeData, userId, jobId };
         const validation = LongFormVideoJobSchema.safeParse(inputData);
 
         if (!validation.success) {
@@ -594,7 +571,7 @@ export const triggerLongFormVideoJob = functions
         }
 
         // Destructure validated data
-        const { prompts, jobId, orgId, totalDuration, startImage, options } = validation.data;
+        const { prompts, orgId, startImage, options } = validation.data;
 
         // SECURITY: Verify Org Access
         await validateOrgAccess(userId, orgId);
@@ -607,63 +584,12 @@ export const triggerLongFormVideoJob = functions
             );
         }
 
+        let costReservationId: string | undefined;
+        let jobCreated = false;
+        let eventDispatchAttempted = false;
         try {
-            // ------------------------------------------------------------------
-            // Quota Enforcement (Server-Side)
-            // ------------------------------------------------------------------
-            let userTier: MembershipTier = 'free';
-            if (orgId && orgId !== 'personal') {
-                const orgDoc = await admin.firestore().collection('organizations').doc(orgId).get();
-                if (orgDoc.exists) {
-                    const orgData = orgDoc.data();
-                    userTier = (orgData?.plan as MembershipTier) || 'free';
-                }
-            }
-
-            const limits = TIER_LIMITS[userTier];
-            const durationNum = parseFloat((totalDuration || 0).toString());
-
-            // FIX #4: GOD MODE via admin claim or environment config (no hardcoded email)
-            const godModeEmails = (process.env.GOD_MODE_EMAILS || '').split(',').map(e => e.trim()).filter(Boolean);
-            const isGodMode = context.auth?.token?.admin === true ||
-                godModeEmails.includes(context.auth?.token?.email || '');
-
-            // 2. Validate Duration Limit
-            if (!isGodMode && durationNum > limits.maxVideoDuration) {
-                throw new functions.https.HttpsError(
-                    "resource-exhausted",
-                    `Video duration ${durationNum}s exceeds ${userTier} tier limit of ${limits.maxVideoDuration}s.`
-                );
-            }
-
-            // Daily Usage Check
-            const today = new Date().toISOString().split('T')[0];
-            const usageRef = admin.firestore().collection('users').doc(userId).collection('usage').doc(today);
-
-            await admin.firestore().runTransaction(async (transaction) => {
-                const usageDoc = await transaction.get(usageRef);
-                const currentUsage = usageDoc.exists ? (usageDoc.data()?.videosGenerated || 0) : 0;
-
-                if (!isGodMode && currentUsage >= limits.maxVideoGenerationsPerDay) {
-                    throw new functions.https.HttpsError(
-                        "resource-exhausted",
-                        `Daily video generation limit reached for ${userTier} tier (${limits.maxVideoGenerationsPerDay}/day).`
-                    );
-                }
-
-                // Increment Usage Optimistically
-                if (!usageDoc.exists) {
-                    transaction.set(usageRef, { videosGenerated: 1, date: today, updatedAt: admin.firestore.FieldValue.serverTimestamp() });
-                } else {
-                    transaction.update(usageRef, { videosGenerated: admin.firestore.FieldValue.increment(1), updatedAt: admin.firestore.FieldValue.serverTimestamp() });
-                }
-            });
-
-            // ------------------------------------------------------------------
-
-            // 4. Create Parent Job Record
-            // Calculate estimated cost for long-form (sum of segments)
-            // SENTRY FIX (PR #1200): Use DEFAULT_SEGMENT_DURATION_SECONDS (5s) instead of hardcoded 8s to prevent cost inflation.
+            // The server derives duration from the prompt count. A client
+            // cannot understate a long-form request with `totalDuration`.
             const estimatedCostPerSegment = estimateVideoCost({
                 model: options.model,
                 durationSeconds: 5, // Aligned with DEFAULT_SEGMENT_DURATION_SECONDS in long_form_video.ts
@@ -671,10 +597,29 @@ export const triggerLongFormVideoJob = functions
                 generateAudio: options.generateAudio
             });
             const totalEstimatedCost = parseFloat((estimatedCostPerSegment * prompts.length).toFixed(4));
+            const budget = await checkOperationBudget({
+                userId,
+                entitlementTier: entitlementTierToBudgetTier(entitlement.tier),
+                operationType: 'video',
+                estimatedCost: totalEstimatedCost,
+                operationId: `long-form-vertex-video-${jobId}`,
+                metadata: {
+                    jobId,
+                    orgId: orgId || 'personal',
+                    source: 'triggerLongFormVideoJob',
+                    segmentCount: prompts.length,
+                    secondsPerSegment: 5,
+                },
+            });
+            if (!budget.allowed || !budget.operationId) {
+                throw new functions.https.HttpsError(
+                    'resource-exhausted',
+                    budget.reason || 'Long-form video generation is unavailable within the current server-side budget.',
+                );
+            }
+            costReservationId = budget.operationId;
 
-
-            // 1. Create Parent Job Record (Atomic Create)
-            await admin.firestore().collection("videoJobs").doc(jobId).create({
+            await jobRef.create({
                 id: jobId,
                 userId: userId,
                 orgId: orgId || "personal",
@@ -684,12 +629,17 @@ export const triggerLongFormVideoJob = functions
                 totalSegments: prompts.length,
                 completedSegments: 0,
                 estimatedCost: totalEstimatedCost,
+                costReservationId,
                 options: options,
                 createdAt: admin.firestore.FieldValue.serverTimestamp(),
                 updatedAt: admin.firestore.FieldValue.serverTimestamp()
             });
+            jobCreated = true;
 
-            // 5. Publish Event to Inngest for Long Form
+            // An interrupted queue acknowledgement may still mean the event
+            // was accepted. Record that uncertainty so it is never refunded
+            // as if no downstream work could exist.
+            eventDispatchAttempted = true;
             const inngest = getInngestClient();
             await inngest.send({
                 name: "video/long_form.requested",
@@ -698,18 +648,33 @@ export const triggerLongFormVideoJob = functions
                     userId,
                     orgId: orgId || "personal",
                     prompts,
-                    totalDuration,
+                    totalDuration: prompts.length * 5,
                     startImage,
                     options,
+                    costReservationId,
                     timestamp: Date.now(),
                 },
                 user: { id: userId }
             });
 
-            return { success: true, message: "Long form video generation started." };
+            return { success: true, jobId, message: "Long form video generation started." };
 
         } catch (err: unknown) {
             const error = err instanceof Error ? err : new Error(String(err));
+            if (jobCreated) {
+                await jobRef.set({
+                    status: 'failed',
+                    error: 'The long-form job could not be queued for processing.',
+                    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+                }, { merge: true }).catch(() => undefined);
+            }
+            if (costReservationId) {
+                await finalizeOperationReservation({
+                    userId,
+                    operationId: costReservationId,
+                    outcome: eventDispatchAttempted ? 'SETTLED' : 'VOIDED',
+                }).catch(() => undefined);
+            }
             functions.logger.error("[LongFormVideoJob] Error:", error);
             if (error instanceof functions.https.HttpsError) {
                 throw error;
@@ -916,13 +881,10 @@ export const inngestApi = functions
     .https.onRequest(async (req, res) => {
         const inngestClient = getInngestClient();
 
-        // 1. Single Video Generation Logic using Veo
-        const generateVideo = generateVideoFn(inngestClient);
-
-        // 2. Long Form Video Generation Logic (Daisychaining)
+        // 1. Long Form Video Generation Logic (Daisychaining)
         const generateLongFormVideo = generateLongFormVideoFn(inngestClient);
 
-        // 3. Stitching Function (Server-Side using Google Transcoder)
+        // 2. Stitching Function (Server-Side using Google Transcoder)
         const stitchVideo = stitchVideoFn(inngestClient);
 
         // Timeline Orchestrator: Autonomous milestone execution
@@ -939,7 +901,7 @@ export const inngestApi = functions
 
         const handler = serve({
             client: inngestClient,
-            functions: [generateVideo, generateLongFormVideo, stitchVideo, executeMilestone, executeWorkflowStep, campaignWaterfall, canvasRender],
+            functions: [generateLongFormVideo, stitchVideo, executeMilestone, executeWorkflowStep, campaignWaterfall, canvasRender],
             signingKey: inngestSigningKey.value(),
         });
 
@@ -1904,4 +1866,3 @@ export {
 export { createKnowledgeUpload, finalizeKnowledgeUpload, deleteKnowledgeDocument } from './functions/knowledge/upload';
 export { indexKnowledgeDocumentWorker } from './functions/knowledge/indexWorker';
 export { queryKnowledgeBase } from './functions/knowledge/query';
-

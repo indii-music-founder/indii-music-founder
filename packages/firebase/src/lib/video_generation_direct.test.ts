@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
+import { FUNCTION_INTELLIGENCE_MODELS } from '../config/models';
+import { normalizeVeoDuration, resolveVeoModel } from './video';
 import { decodeInlineVideoSeedImage, parseOwnedVideoSeedUri } from './video_generation_direct';
 
 describe('legacy direct-video seed admission', () => {
@@ -30,5 +32,31 @@ describe('legacy direct-video seed admission', () => {
             'gs://indii-music-founder.firebasestorage.app/creative/artist-2/reference.png',
             'indii-music-founder.firebasestorage.app',
         )).toThrow('authenticated owner');
+    });
+});
+
+describe('server-owned Veo execution normalization', () => {
+    it('maps every supported tier to the matching allowlisted Vertex model', () => {
+        expect(resolveVeoModel('lite')).toEqual({
+            tier: 'lite',
+            modelId: FUNCTION_INTELLIGENCE_MODELS.VIDEO.LITE,
+        });
+        expect(resolveVeoModel('fast')).toEqual({
+            tier: 'fast',
+            modelId: FUNCTION_INTELLIGENCE_MODELS.VIDEO.FAST,
+        });
+        expect(resolveVeoModel('pro')).toEqual({
+            tier: 'pro',
+            modelId: FUNCTION_INTELLIGENCE_MODELS.VIDEO.PRO,
+        });
+        expect(() => resolveVeoModel('attacker-selected-model')).toThrow('Unsupported video model tier');
+    });
+
+    it('normalizes billing and provider duration to the same supported value', () => {
+        expect(normalizeVeoDuration(4)).toBe(4);
+        expect(normalizeVeoDuration(5)).toBe(6);
+        expect(normalizeVeoDuration('6')).toBe(6);
+        expect(normalizeVeoDuration(7)).toBe(8);
+        expect(() => normalizeVeoDuration(9)).toThrow('no more than 8 seconds');
     });
 });

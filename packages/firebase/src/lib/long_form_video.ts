@@ -3,7 +3,6 @@ import { GoogleAuth } from "google-auth-library";
 import { z } from "zod";
 import { TranscoderServiceClient } from "@google-cloud/video-transcoder";
 import { Inngest } from "inngest";
-import { FUNCTION_INTELLIGENCE_MODELS } from "../config/models";
 import { getVertexAIBaseUrl } from "./vertexClient";
 import { verifyMasterAudioObject } from '../functions/storage/verifyMasterAudio';
 import {
@@ -11,7 +10,9 @@ import {
     type VerifiedMasterAudioForStitch,
 } from '../functions/video/stitchMasterAudio';
 import { finalizeOperationReservation } from '../functions/billing/enforceOperationCost';
-import { renderFailureReservationOutcome } from '../functions/video/renderCostLifecycle';
+import { providerFailureReservationOutcome, renderFailureReservationOutcome } from '../functions/video/renderCostLifecycle';
+import { resolveVeoModel } from './video';
+import { loadOwnedVideoSeedImage } from './video_generation_direct';
 
 /**
  * Robustly converts a Google Storage URL to a gs:// URI.
@@ -45,27 +46,34 @@ export function toGcsUri(url: string): string {
 // ----------------------------------------------------------------------------
 
 export const LongFormVideoJobSchema = z.object({
-    jobId: z.string().uuid().or(z.string().min(1)),
-    userId: z.string(),
+    // Browser-provided job and owner IDs are legacy correlation fields only.
+    // Admission replaces both with server-owned values before queueing work.
+    jobId: z.string().min(1).max(128).optional(),
+    userId: z.string().min(1).max(128).optional(),
     orgId: z.string().optional().default("personal"),
-    prompts: z.array(z.string()).min(1), // Validation fixed: must have at least 1 prompt
+    prompts: z.array(z.string().trim().min(1).max(500)).min(1).max(96),
     totalDuration: z.preprocess(
         (val) => (val === '' || val === null || val === undefined ? undefined : val),
         z.coerce.number().optional(),
     ),
     startImage: z.string().optional(),
+    /** Server-created reservation; browser input is overwritten at admission. */
+    costReservationId: z.string().min(1).max(256).optional(),
     options: z.object({
         aspectRatio: z.enum(["16:9", "9:16", "1:1"]).optional().default("16:9"),
-        resolution: z.string().optional(),
+        resolution: z.enum(["720p", "1080p", "4k"]).optional(),
         seed: z.number().optional(),
         negativePrompt: z.string().optional(),
         generateAudio: z.boolean().optional(),
         thinking: z.boolean().optional(),
-        model: z.string().optional(),
+        model: z.enum(["lite", "fast", "pro"]).optional(),
     }).optional().default({})
 });
 
 export type LongFormVideoJobInput = z.infer<typeof LongFormVideoJobSchema>;
+
+const MAX_START_IMAGE_BYTES = 8 * 1024 * 1024;
+const SUPPORTED_START_IMAGE_MIME_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
 
 /**
  * Validates and extracts Base64 string from a startImage input.
@@ -74,8 +82,8 @@ export type LongFormVideoJobInput = z.infer<typeof LongFormVideoJobSchema>;
  */
 export function validateStartImage(input: string): string {
     const trimmed = input.trim();
-    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
-        throw new Error("Invalid startImage: Remote URLs are not supported. Please provide a Base64 string or Data URL.");
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://') || trimmed.startsWith('gs://')) {
+        throw new Error("Invalid startImage: Remote URLs are not supported here. Use bounded Base64 or a server-resolved owner asset.");
     }
 
     let base64 = trimmed;
@@ -83,6 +91,11 @@ export function validateStartImage(input: string): string {
         const commaIndex = trimmed.indexOf(',');
         if (commaIndex === -1) {
             throw new Error("Invalid startImage: Malformed Data URL (missing comma).");
+        }
+        const metadata = trimmed.slice(5, commaIndex).toLowerCase();
+        const mimeType = metadata.split(';')[0];
+        if (!metadata.endsWith(';base64') || !SUPPORTED_START_IMAGE_MIME_TYPES.has(mimeType)) {
+            throw new Error('Invalid startImage: only JPEG, PNG, and WebP Base64 data URLs are supported.');
         }
         base64 = trimmed.slice(commaIndex + 1);
     } else if (trimmed.includes(',')) {
@@ -103,7 +116,22 @@ export function validateStartImage(input: string): string {
         throw new Error("Invalid startImage: String contains invalid Base64 characters.");
     }
 
+    const byteLength = Buffer.byteLength(cleanBase64, 'base64');
+    if (byteLength <= 0 || byteLength > MAX_START_IMAGE_BYTES) {
+        throw new Error(`Invalid startImage: image must be between 1 byte and ${MAX_START_IMAGE_BYTES} bytes.`);
+    }
+
     return cleanBase64;
+}
+
+/** Resolve only canonical owner-scoped references before Vertex sees image bytes. */
+async function resolveLongFormStartImage(userId: string, startImage?: string): Promise<string | undefined> {
+    if (!startImage) return undefined;
+    if (startImage.startsWith('gs://')) {
+        const image = await loadOwnedVideoSeedImage(userId, startImage);
+        return image.imageBytes;
+    }
+    return validateStartImage(startImage);
 }
 
 // ----------------------------------------------------------------------------
@@ -151,16 +179,23 @@ export const generateLongFormVideoFn = (inngestClient: Inngest, _legacyUnusedPro
     { event: "video/long_form.requested" },
     async ({ event, step }) => {
         const data = event.data as LongFormVideoJobInput;
-        const { jobId, prompts, userId, startImage, options, orgId } = data;
+        const { jobId, prompts, userId, startImage, options, orgId, costReservationId } = data;
+        if (!jobId || !userId) {
+            throw new Error('Long-form generation event is missing the server-owned job or owner identity.');
+        }
         const segmentUrls: string[] = [];
 
-        // Initialize currentStartImage
-        let currentStartImage = startImage;
+        // Resolve the canonical reference inside the reconciliation boundary:
+        // an invalid/deleted owner asset occurs before Vertex submission and
+        // must void its reservation instead of leaving a hold to expire.
+        let currentStartImage: string | undefined;
         const isThinking = options?.thinking === true;
+        let providerSubmissionAttempted = false;
 
         console.log(`[Inngest] Starting long-form generation for Job: ${jobId} (Thinking: ${isThinking})`);
 
         try {
+            currentStartImage = await resolveLongFormStartImage(userId, startImage);
             // Update main job status
             await step.run("update-parent-processing", async () => {
                 await admin.firestore().collection("videoJobs").doc(jobId).set({
@@ -182,10 +217,7 @@ export const generateLongFormVideoFn = (inngestClient: Inngest, _legacyUnusedPro
 
                 // 1. Trigger Video Generation (Vertex AI)
                 const operationName = await step.run(`trigger-segment-${i}`, async () => {
-                    const { model: requestedModel } = options || {};
-                    const modelId = requestedModel === 'fast'
-                        ? FUNCTION_INTELLIGENCE_MODELS.VIDEO.FAST
-                        : FUNCTION_INTELLIGENCE_MODELS.VIDEO.PRO;
+                    const { modelId } = resolveVeoModel(options?.model);
 
                     const auth = new GoogleAuth({
                         scopes: ['https://www.googleapis.com/auth/cloud-platform']
@@ -219,6 +251,18 @@ export const generateLongFormVideoFn = (inngestClient: Inngest, _legacyUnusedPro
                             generateAudio: !!options?.generateAudio
                         }
                     };
+
+                    // Persist intent before the billable provider request. If
+                    // an Inngest retry observes an uncertain response, the
+                    // reservation must never be released as unused.
+                    await admin.firestore().collection('videoJobs').doc(jobId).set({
+                        vertexSubmission: {
+                            attemptedAt: admin.firestore.FieldValue.serverTimestamp(),
+                            segmentIndex: i,
+                        },
+                        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+                    }, { merge: true });
+                    providerSubmissionAttempted = true;
 
                     const triggerResponse = await fetch(triggerEndpoint, {
                         method: 'POST',
@@ -293,19 +337,21 @@ export const generateLongFormVideoFn = (inngestClient: Inngest, _legacyUnusedPro
                     const outputs = response?.outputs as Record<string, unknown>[];
                     const prediction = outputs?.[0];
                     const bucket = admin.storage().bucket();
-                    const file = bucket.file(`videos/${userId}/${segmentId}.mp4`);
+                    const file = bucket.file(`generated/${userId}/long-form/${jobId}/segments/${segmentId}.mp4`);
 
                     const video = prediction?.video as Record<string, unknown>;
                     if (video?.bytesBase64Encoded) {
                         await file.save(Buffer.from(video.bytesBase64Encoded as string, 'base64'), {
-                            metadata: { contentType: 'video/mp4' },
-                            public: true
+                            metadata: {
+                                contentType: 'video/mp4',
+                                metadata: { ownerUid: userId, source: 'vertex_long_form_segment' },
+                            },
                         });
                     } else {
                         throw new Error(`Unknown Veo response format for segment ${i}: ` + JSON.stringify(prediction));
                     }
 
-                    return `https://storage.googleapis.com/${bucket.name}/videos/${userId}/${segmentId}.mp4`;
+                    return `gs://${bucket.name}/generated/${userId}/long-form/${jobId}/segments/${segmentId}.mp4`;
                 });
 
                 segmentUrls.push(segmentUrl);
@@ -462,7 +508,8 @@ export const generateLongFormVideoFn = (inngestClient: Inngest, _legacyUnusedPro
                     segmentUrls,
                     orgId,
                     metadata: derivedMetadata,
-                    includeAudio: !!options?.generateAudio
+                    includeAudio: !!options?.generateAudio,
+                    ...(costReservationId ? { costReservationId } : {}),
                 }
             });
 
@@ -475,6 +522,26 @@ export const generateLongFormVideoFn = (inngestClient: Inngest, _legacyUnusedPro
                     updatedAt: admin.firestore.FieldValue.serverTimestamp()
                 }, { merge: true });
             });
+            if (costReservationId) {
+                const durableSubmissionAttempted = await step.run('inspect-vertex-submission-for-cost', async () => {
+                    try {
+                        const job = await admin.firestore().collection('videoJobs').doc(jobId).get();
+                        const submission = job.data()?.vertexSubmission as Record<string, unknown> | undefined;
+                        return providerSubmissionAttempted || submission?.attemptedAt !== undefined;
+                    } catch {
+                        // Fail closed financially: inability to inspect durable
+                        // evidence cannot become a claim that nothing ran.
+                        return true;
+                    }
+                });
+                await step.run('reconcile-failed-long-form-cost', async () => {
+                    await finalizeOperationReservation({
+                        userId,
+                        operationId: costReservationId,
+                        outcome: providerFailureReservationOutcome({ providerSubmissionAttempted: durableSubmissionAttempted }),
+                    });
+                });
+            }
         }
     }
 );
@@ -503,7 +570,7 @@ export const stitchVideoFn = (inngestClient: Inngest) => inngestClient.createFun
             const projectId = admin.app().options.projectId;
             const location = process.env.VERTEX_VIDEO_LOCATION || process.env.VERTEX_LOCATION || 'us-central1';
             const bucket = admin.storage().bucket();
-            const outputDir = `gs://${bucket.name}/videos/${userId}/${jobId}_output/`;
+            const outputDir = `gs://${bucket.name}/generated/${userId}/long-form/${jobId}/output/`;
 
             if (!jobId || !userId || segmentUrls.length === 0) {
                 throw new Error('Stitch request is missing its job, owner, or video segment contract.');
@@ -626,9 +693,9 @@ export const stitchVideoFn = (inngestClient: Inngest) => inngestClient.createFun
                 await step.run('mark-master-render-completed', async () => {
                     await admin.firestore().collection('videoJobs').doc(jobId).set({
                         status: 'completed',
-                        videoUrl: `https://storage.googleapis.com/${bucket.name}/videos/${userId}/${jobId}_output/master-pass/final_output.mp4`,
+                        videoUrl: `gs://${bucket.name}/generated/${userId}/long-form/${jobId}/output/master-pass/final_output.mp4`,
                         output: {
-                            url: `https://storage.googleapis.com/${bucket.name}/videos/${userId}/${jobId}_output/master-pass/final_output.mp4`,
+                            url: `gs://${bucket.name}/generated/${userId}/long-form/${jobId}/output/master-pass/final_output.mp4`,
                             metadata: {
                                 duration_seconds: segmentUrls.length * 5,
                                 fps: 30,
@@ -724,9 +791,10 @@ export const stitchVideoFn = (inngestClient: Inngest) => inngestClient.createFun
 
             await waitForTranscoderJob(jobName, 'stitch-video');
 
-            // Construct public URL
+            // Keep the output owner-controlled. The renderer resolves this
+            // canonical identity through authenticated Storage when needed.
             const finalVideoUrl = await step.run("get-final-url", async () => {
-                return `https://storage.googleapis.com/${bucket.name}/videos/${userId}/${jobId}_output/final_output.mp4`;
+                return `gs://${bucket.name}/generated/${userId}/long-form/${jobId}/output/final_output.mp4`;
             });
 
             // Update status to completed
@@ -755,7 +823,10 @@ export const stitchVideoFn = (inngestClient: Inngest) => inngestClient.createFun
             }
 
         } catch (error: unknown) {
-            console.error('Stitching failed', { jobId });
+            console.error('Stitching failed', {
+                jobId,
+                message: error instanceof Error ? error.message : 'unknown',
+            });
             try {
                 await step.run("mark-failed", async () => {
                     await admin.firestore().collection("videoJobs").doc(jobId).set({

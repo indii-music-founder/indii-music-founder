@@ -21,6 +21,22 @@ flowchart LR
     Legacy["Developer API keys, raw provider URLs,\nand browser SDK generation"] -. "forbidden" .-> Gateway
 ```
 
+## Transition Breakdown
+
+1. Firebase Auth and cryptographic App Check independently establish the
+   caller and client integrity before media generation is admitted.
+2. The backend derives ownership, verified-email status, entitlement, final
+   media parameters, and the operation cost; browser estimates are advisory.
+3. The Creative gateway submits only an allowlisted operation to Vertex AI
+   through Application Default Credentials.
+4. Vertex output is written to an owner-scoped, generation-pinned Cloud
+   Storage object rather than returned as a public provider URL.
+5. Firestore records an owner-readable, client-write-denied receipt that
+   resolves the operation and its private artifact.
+6. Developer API keys, browser SDK provider calls, raw provider URLs, and
+   unsupported RAG fallbacks fail closed instead of creating a second billing
+   or authorization path.
+
 ## Non-negotiable security properties
 
 1. **Vertex-only provider boundary:** backend services use the shared
