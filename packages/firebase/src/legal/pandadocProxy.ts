@@ -61,7 +61,7 @@ export const pandadocListTemplates = functions
     .region(REGION)
     .runWith({
         timeoutSeconds: 30,
-        memory: "256MB",
+        memory: "512MB",
         enforceAppCheck: false,
         secrets: [pandaDocApiKey],
     })
@@ -96,7 +96,7 @@ export const pandadocCreateDocument = functions
     .region(REGION)
     .runWith({
         timeoutSeconds: 60,
-        memory: "256MB",
+        memory: "512MB",
         enforceAppCheck: false,
         secrets: [pandaDocApiKey],
     })
@@ -179,7 +179,7 @@ export const pandadocSendDocument = functions
     .region(REGION)
     .runWith({
         timeoutSeconds: 30,
-        memory: "256MB",
+        memory: "512MB",
         enforceAppCheck: false,
         secrets: [pandaDocApiKey],
     })
@@ -220,7 +220,7 @@ export const pandadocGetDocumentStatus = functions
     .region(REGION)
     .runWith({
         timeoutSeconds: 30,
-        memory: "256MB",
+        memory: "512MB",
         enforceAppCheck: false,
         secrets: [pandaDocApiKey],
     })
@@ -269,7 +269,7 @@ export const pandadocGetSigningLink = functions
     .region(REGION)
     .runWith({
         timeoutSeconds: 30,
-        memory: "256MB",
+        memory: "512MB",
         enforceAppCheck: false,
         secrets: [pandaDocApiKey],
     })

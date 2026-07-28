@@ -28,7 +28,7 @@ export interface MechanicalLicenseResponse {
  */
 export const verifyMechanicalLicense = functions
     .region('us-central1')
-    .runWith({ memory: '256MB', timeoutSeconds: 60 })
+    .runWith({ memory: '512MB', timeoutSeconds: 60 })
     .https.onCall(async (data: MechanicalLicenseRequest, context: functions.https.CallableContext): Promise<MechanicalLicenseResponse> => {
         if (!context.auth) {
             throw new functions.https.HttpsError(

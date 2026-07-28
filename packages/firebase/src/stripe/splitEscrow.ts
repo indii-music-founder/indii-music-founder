@@ -36,7 +36,7 @@ interface SplitEscrowResponse {
  * and records the pending signatures in Firestore.
  */
 export const initiateSplitEscrow = functions
-    .runWith({ enforceAppCheck: true,  timeoutSeconds: 60, memory: '256MB'  })
+    .runWith({ enforceAppCheck: true,  timeoutSeconds: 60, memory: '512MB'  })
     .https.onCall(async (data: SplitEscrowRequest, context) => {
         if (!context.auth) {
             throw new functions.https.HttpsError(
@@ -180,7 +180,7 @@ export const initiateSplitEscrow = functions
  * escrow honestly reports that no money has moved yet.
  */
 export const signEscrow = functions
-    .runWith({ enforceAppCheck: true,  timeoutSeconds: 60, memory: '256MB'  })
+    .runWith({ enforceAppCheck: true,  timeoutSeconds: 60, memory: '512MB'  })
     .https.onCall(async (data: { escrowDocId: string }, context) => {
         if (!context.auth) {
             throw new functions.https.HttpsError('unauthenticated', 'User must be signed in.');
@@ -239,7 +239,7 @@ export const signEscrow = functions
  * and creates Stripe transfers for each party based on their split percentage.
  */
 export const releaseEscrow = functions
-    .runWith({ enforceAppCheck: true, timeoutSeconds: 120, memory: '256MB' })
+    .runWith({ enforceAppCheck: true, timeoutSeconds: 120, memory: '512MB' })
     .https.onCall(async (data: { escrowDocId: string }, context) => {
         if (!context.auth) {
             throw new functions.https.HttpsError('unauthenticated', 'User must be signed in.');

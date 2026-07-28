@@ -27,11 +27,19 @@ const path = require('path');
 
 const ROOT = path.resolve(__dirname, '..', 'packages', 'firebase', 'src');
 
-/** Tiers that sit at or below the observed cold-start footprint. */
-const UNSAFE = new Set(['128MiB', '256MiB']);
+/**
+ * Tiers at or below the observed cold-start footprint.
+ *
+ * ISSUE-1242: this set originally held only the v2 spellings (`MiB`). Gen1
+ * `functions.runWith({ memory: '256MB' })` uses `MB`, so the original guard was
+ * blind to every Gen1 declaration — which is exactly how `generateContentStream`
+ * survived the ISSUE-1238 sweep and went on to deny 100% of authenticated AI
+ * requests in production. Both spellings are checked now.
+ */
+const UNSAFE = new Set(['128MiB', '256MiB', '128MB', '256MB']);
 
-/** `memory: '256MiB'` / `memory: "256MiB"`, with or without `as const`. */
-const MEMORY_OPTION = /memory\s*:\s*['"]([0-9]+(?:MiB|GiB))['"]/g;
+/** `memory: '256MiB'` (v2) or `memory: "256MB"` (Gen1 runWith), either quote style. */
+const MEMORY_OPTION = /memory\s*:\s*['"]([0-9]+(?:MiB|GiB|MB|GB))['"]/g;
 
 function walk(dir, out = []) {
     for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {

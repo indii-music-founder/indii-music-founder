@@ -49,7 +49,7 @@ export const pandadocWebhook = functions
     .runWith({
         secrets: [pandadocWebhookSecret],
         timeoutSeconds: 60,
-        memory: "256MB",
+        memory: "512MB",
      })
     .https.onRequest(async (req, res) => {
         // Only accept POST

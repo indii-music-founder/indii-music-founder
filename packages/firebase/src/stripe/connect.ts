@@ -6,7 +6,7 @@ import { stripe } from './config';
  */
 export const createStripeAccount = functions
     .region('us-central1')
-    .runWith({ memory: '256MB', timeoutSeconds: 60 })
+    .runWith({ memory: '512MB', timeoutSeconds: 60 })
     .https.onCall(async (data: { artistId: string }, context: functions.https.CallableContext): Promise<{ accountId: string; onboardingUrl: string }> => {
         // 1. Basic auth check
         if (!context.auth) {
@@ -56,7 +56,7 @@ export const createStripeAccount = functions
  */
 export const createStripeConnectAccount = functions
     .region('us-central1')
-    .runWith({ memory: '256MB', timeoutSeconds: 60 })
+    .runWith({ memory: '512MB', timeoutSeconds: 60 })
     .https.onCall(async (data: { email: string; businessType?: string }, context: functions.https.CallableContext): Promise<{ accountId: string; onboardingUrl: string }> => {
         if (!context.auth) {
             throw new functions.https.HttpsError(
@@ -121,7 +121,7 @@ export const createStripeConnectAccount = functions
  */
 export const createTransfer = functions
     .region('us-central1')
-    .runWith({ memory: '256MB', timeoutSeconds: 60 })
+    .runWith({ memory: '512MB', timeoutSeconds: 60 })
     .https.onCall(async (data: { amount: number; destinationId: string; currency?: string }, context: functions.https.CallableContext): Promise<{ transferId: string }> => {
         if (!context.auth) {
             throw new functions.https.HttpsError('unauthenticated', 'User must be signed in.');

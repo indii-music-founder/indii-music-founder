@@ -61,7 +61,7 @@ export const telegramWebhook = functions
     .runWith({
         secrets: [telegramBotToken, telegramWebhookSecret],
         timeoutSeconds: 120,
-        memory: "256MB",
+        memory: "512MB",
      })
     .https.onRequest(async (req, res) => {
         // Only accept POST

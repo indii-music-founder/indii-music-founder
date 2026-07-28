@@ -8,7 +8,7 @@ export const sendForDigitalSignature = functions
     .region("us-central1")
     .runWith({
         timeoutSeconds: 60,
-        memory: "256MB",
+        memory: "512MB",
         secrets: [pandaDocApiKey],
     })
     .https.onCall(async (data: Record<string, unknown>, context) => {

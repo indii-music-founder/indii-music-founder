@@ -7,7 +7,7 @@ export const generateReleaseDownloadUrl = functions
     .runWith({
         enforceAppCheck: false,
         timeoutSeconds: 30,
-        memory: "256MB"
+        memory: "512MB"
     })
     .https.onCall(async (data: unknown, context: functions.https.CallableContext): Promise<{ success: boolean; url?: string; message?: string }> => {
         validateAppCheckV1(context);

@@ -1010,7 +1010,18 @@ export const generateContentStream = functions
     .runWith({
         secrets: [arcjetKey],
         enforceAppCheck: false, // CORS preflight must pass; App Check is verified manually below.
-        timeoutSeconds: 300
+        timeoutSeconds: 300,
+        // ISSUE-1242: this was the only Arcjet-using function in this file with
+        // no explicit `memory`, so it inherited the Gen1 default of 256MB —
+        // below the ~259MB shared cold-start bundle. Its outbound HTTPS call to
+        // Arcjet then failed under memory pressure, Arcjet returned an errored
+        // decision, and the fail-closed gate denied 100% of authenticated AI
+        // requests in production. Every sibling here already sets this: the two
+        // Inngest+Arcjet functions use "2GB" and `generateSpeech` — same
+        // secrets, same shape — uses "512MB". This was an omission, not a
+        // deliberate tier. Note `setGlobalOptions({memory:'512MiB'})` in this
+        // file does NOT cover Gen1 `functions.runWith(...)` declarations.
+        memory: "512MB"
     })
     .https.onRequest((req, res) => {
         corsHandler(req, res, async () => {
@@ -1309,7 +1320,7 @@ import * as marketingService from './lib/marketing';
  * List GKE Clusters
  */
 export const listGKEClusters = functions
-    .runWith({ enforceAppCheck: false, timeoutSeconds: 30, memory: '256MB' })
+    .runWith({ enforceAppCheck: false, timeoutSeconds: 30, memory: '512MB' })
     .https.onCall(async (_data, context) => {
         validateAppCheckV1(context);
         requireAdmin(context);
@@ -1344,7 +1355,7 @@ export const createInfluencerBounty = marketingService.createInfluencerBounty;
  * Get GKE Cluster Status
  */
 export const getGKEClusterStatus = functions
-    .runWith({ enforceAppCheck: false, timeoutSeconds: 30, memory: '256MB' })
+    .runWith({ enforceAppCheck: false, timeoutSeconds: 30, memory: '512MB' })
     .https.onCall(async (data: { location: string; clusterName: string }, context) => {
         validateAppCheckV1(context);
         requireAdmin(context);
@@ -1366,7 +1377,7 @@ export const getGKEClusterStatus = functions
  * Scale GKE Node Pool
  */
 export const scaleGKENodePool = functions
-    .runWith({ enforceAppCheck: false, timeoutSeconds: 60, memory: '256MB' })
+    .runWith({ enforceAppCheck: false, timeoutSeconds: 60, memory: '512MB' })
     .https.onCall(async (data: { location: string; clusterName: string; nodePoolName: string; nodeCount: number }, context) => {
         validateAppCheckV1(context);
         requireAdmin(context);
@@ -1388,7 +1399,7 @@ export const scaleGKENodePool = functions
  * List GCE Instances
  */
 export const listGCEInstances = functions
-    .runWith({ enforceAppCheck: false, timeoutSeconds: 30, memory: '256MB' })
+    .runWith({ enforceAppCheck: false, timeoutSeconds: 30, memory: '512MB' })
     .https.onCall(async (_data, context) => {
         validateAppCheckV1(context);
         requireAdmin(context);
@@ -1410,7 +1421,7 @@ export const listGCEInstances = functions
  * Restart GCE Instance
  */
 export const restartGCEInstance = functions
-    .runWith({ enforceAppCheck: false, timeoutSeconds: 60, memory: '256MB' })
+    .runWith({ enforceAppCheck: false, timeoutSeconds: 60, memory: '512MB' })
     .https.onCall(async (data: { zone: string; instanceName: string }, context) => {
         validateAppCheckV1(context);
         requireAdmin(context);
@@ -1466,7 +1477,7 @@ export const executeBigQueryQuery = functions
  * Get BigQuery Table Schema
  */
 export const getBigQueryTableSchema = functions
-    .runWith({ enforceAppCheck: false, timeoutSeconds: 30, memory: '256MB' })
+    .runWith({ enforceAppCheck: false, timeoutSeconds: 30, memory: '512MB' })
     .https.onCall(async (data: { datasetId: string; tableId: string }, context) => {
         validateAppCheckV1(context);
         requireAdmin(context);
@@ -1488,7 +1499,7 @@ export const getBigQueryTableSchema = functions
  * List BigQuery Datasets
  */
 export const listBigQueryDatasets = functions
-    .runWith({ enforceAppCheck: false, timeoutSeconds: 30, memory: '256MB' })
+    .runWith({ enforceAppCheck: false, timeoutSeconds: 30, memory: '512MB' })
     .https.onCall(async (_data, context) => {
         validateAppCheckV1(context);
         requireAdmin(context);
@@ -1621,7 +1632,7 @@ export const exportUserData = functions
  * Actual deletion happens asynchronously via a scheduled function.
  */
 export const requestAccountDeletion = functions
-    .runWith({ enforceAppCheck: false, timeoutSeconds: 120, memory: "256MB" })
+    .runWith({ enforceAppCheck: false, timeoutSeconds: 120, memory: "512MB" })
     // Item 352: Explicit return type annotation
     .https.onCall(async (_data, context): Promise<{ success: boolean; deletedDocs: number; errors: string[]; deletedAt: string }> => {
         validateAppCheckV1(context);
@@ -1693,7 +1704,7 @@ export const requestAccountDeletion = functions
  * Returns service status and basic diagnostics.
  */
 export const healthCheck = functions
-    .runWith({ enforceAppCheck: false, timeoutSeconds: 60, memory: "256MB" })
+    .runWith({ enforceAppCheck: false, timeoutSeconds: 60, memory: "512MB" })
     .https.onRequest(async (_req, res) => {
         const status: Record<string, unknown> = {
             status: "ok",
@@ -1726,7 +1737,7 @@ export const healthCheck = functions
  */
 export const healthCheckWest1 = functions
     .region("us-central1")
-    .runWith({ enforceAppCheck: false, timeoutSeconds: 60, memory: "256MB" })
+    .runWith({ enforceAppCheck: false, timeoutSeconds: 60, memory: "512MB" })
     .https.onRequest(async (_req, res) => {
         res.status(200).json({
             status: "ok",

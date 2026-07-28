@@ -187,7 +187,7 @@ export const dispatchSocialPost = functions
  */
 export const createInfluencerBounty = functions
     .region("us-central1")
-    .runWith({ enforceAppCheck: true,  timeoutSeconds: 60, memory: "256MB"  })
+    .runWith({ enforceAppCheck: true,  timeoutSeconds: 60, memory: "512MB"  })
     .https.onCall(async (data: Record<string, unknown>, context: functions.https.CallableContext) => {
         if (!context.auth) throw new functions.https.HttpsError("unauthenticated", "Auth required");
 

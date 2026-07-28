@@ -9,7 +9,7 @@ export interface Payee {
 
 export const requestTaxForms = functions
     .region('us-central1')
-    .runWith({ memory: '256MB', timeoutSeconds: 60 })
+    .runWith({ memory: '512MB', timeoutSeconds: 60 })
     .https.onCall(async (data: { payees?: Payee[] }, context: functions.https.CallableContext): Promise<{ requests: Array<{ name: string; email: string; formTypeRequested: string; status: string; }> }> => {
         if (!context.auth) {
             throw new functions.https.HttpsError(
