@@ -3137,11 +3137,13 @@ ordinary use of the running app.
   3. Two `HttpsError` classes: `index.ts` tests `instanceof functions.https.HttpsError` (v1) while v2 code throws the v2 class, so genuine errors were relabelled `code: 'internal'` and their actionable messages hidden → sent the ISSUE-1242 investigation to the wrong subsystem first.
   4. Two default memory tiers (Gen1 256MB vs the v2 global 512MiB).
 - **Why it has not been done, which any plan must account for:** Gen1→Gen2 is **not an in-place upgrade** — `firebase deploy` rejects the change, so each function must be `firebase functions:delete <name> --region=<region>`d first (recorded in PLATINUM_QUALITY_STANDARDS.md:106). Every migration therefore has a window where the function does not exist. That is why it has only ever happened under duress (`mcpEndpoint`, when SSE forced it) and never opportunistically.
-- **Proposed order (not started):**
-  1. **`generateContentStream` first** — it is both the active standards violation and the highest-traffic endpoint. Migrating it also removes the `runWith`/`setGlobalOptions` divergence on the path that just caused a total outage.
-  2. Any other endpoint that streams or holds a connection open — same failure mode, currently unaudited.
-  3. Everything binding `ARCJET_KEY` or touching spend/auth admission, so the security path stops straddling two config systems.
-  4. The long tail, in batches, each with its delete→deploy window scheduled deliberately.
+- **Launch decision (2026-07-28):** Migrate `generateContentStream` to Gen2 before launch; defer remaining 81 Gen1 functions to post-launch.
+  - **Rationale:** generateContentStream is the main chat/agent stream (highest-traffic, critical). It violates Gen2 streaming standard. Recent outage traced to Gen1/Gen2 divergences. Acceptable risk to reduce before $350k Google credits launch.
+  - **Sequence:**
+    1. Migrate `generateContentStream` to the v2 `onRequest({ memory: '512MiB', concurrency: 100, maxInstances: 1000, ... }, handler)` API while preserving its existing secret bindings and admission controls
+    2. Redeploy with same `setGlobalOptions` + Arcjet + cost admission; test streaming (SSE, long-polling, chunked responses)
+    3. Monitor Cloud Logging for timeout/connection/memory issues post-deploy
+    4. Post-launch: migrate remaining 81 Gen1 functions (split into batches with delete→deploy windows)
 - **Interim mitigation already in place:** `scripts/check-function-memory.cjs` now matches both spellings, so the memory class of this problem is at least *visible* on both generations. It does not address the `HttpsError`, `setGlobalOptions`, or streaming-ceiling divergences.
 - **Do not:** do not migrate in bulk without per-function delete windows, and do not treat the widened memory guard as having solved this — it covers one of four divergences.
 
