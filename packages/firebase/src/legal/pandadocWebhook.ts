@@ -12,7 +12,7 @@
  * PandaDoc webhooks: https://developers.pandadoc.com/docs/webhooks
  */
 import * as crypto from "crypto";
-import * as functions from "firebase-functions/v1";
+import { onRequest } from "firebase-functions/v2/https";
 import * as admin from "firebase-admin";
 import { pandadocWebhookSecret } from "../config/secrets";
 import { findWritableReleaseRef } from "../functions/distribution/distributionRecords";
@@ -44,14 +44,16 @@ interface PandaDocWebhookEvent {
  * SECURITY: Requires a valid HMAC-SHA256 x-signature (timing-safe compare).
  * Fails closed if the shared secret is not configured.
  */
-export const pandadocWebhook = functions
-    .region(REGION)
-    .runWith({
+export const pandadocWebhook = onRequest(
+    {
+        region: REGION,
         secrets: [pandadocWebhookSecret],
         timeoutSeconds: 60,
-        memory: "512MB",
-     })
-    .https.onRequest(async (req, res) => {
+        memory: "512MiB",
+        cpu: 'gcf_gen1',
+        concurrency: 1,
+    },
+    async (req, res) => {
         // Only accept POST
         if (req.method !== "POST") {
             res.status(405).send("Method Not Allowed");

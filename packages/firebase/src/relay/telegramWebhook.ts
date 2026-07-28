@@ -16,11 +16,11 @@
  *   /agent <id>    — Set default agent for this chat
  *   (any text)     — Forward to the linked indii account's relay
  *
- * Architecture: Gen 1 HTTPS function with secrets
+ * Architecture: Gen 2 HTTPS function with secrets
  * Timeout: 120s (webhook must respond within 60s to Telegram, but we need time to poll)
- * Memory: 256MB
+ * Memory: 512MiB
  */
-import * as functions from "firebase-functions/v1";
+import { onRequest } from "firebase-functions/v2/https";
 import * as admin from "firebase-admin";
 import { telegramBotToken, telegramWebhookSecret } from "../config/secrets";
 
@@ -57,13 +57,15 @@ interface TelegramLinkDoc {
 // ---------------------------------------------------------------------------
 // Cloud Function: HTTPS Webhook
 // ---------------------------------------------------------------------------
-export const telegramWebhook = functions
-    .runWith({
+export const telegramWebhook = onRequest(
+    {
         secrets: [telegramBotToken, telegramWebhookSecret],
         timeoutSeconds: 120,
-        memory: "512MB",
-     })
-    .https.onRequest(async (req, res) => {
+        memory: "512MiB",
+        cpu: 'gcf_gen1',
+        concurrency: 1,
+    },
+    async (req, res) => {
         // Only accept POST
         if (req.method !== "POST") {
             res.status(405).send("Method Not Allowed");

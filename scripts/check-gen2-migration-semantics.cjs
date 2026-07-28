@@ -103,6 +103,9 @@ const MIGRATED = [
     'cleanupOrphanedVideos', 'trackStorageQuotas',
     'cleanupExpiredVideoTemps', 'flagVideosForArchival',
     'processRelayCommand',
+    // inbound webhooks / split escrow
+    'pandadocWebhook', 'telegramWebhook',
+    'initiateSplitEscrow', 'signEscrow', 'releaseEscrow',
 ];
 const MIGRATED_SET = new Set(MIGRATED);
 

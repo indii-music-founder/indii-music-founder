@@ -60,13 +60,13 @@ describe('Split Escrow Functions', () => {
     describe('initiateSplitEscrow', () => {
         it('should require authentication', async () => {
             const wrapped = testEnv.wrap(initiateSplitEscrow);
-            await expect(wrapped({ trackId: '123', holdAmount: 1000, parties: ['user1'] }, {} as any))
+            await expect(wrapped({ data: { trackId: '123', holdAmount: 1000, parties: ['user1'] } } as any))
                 .rejects.toThrow('User must be signed in.');
         });
 
         it('should validate inputs', async () => {
             const wrapped = testEnv.wrap(initiateSplitEscrow);
-            await expect(wrapped({ holdAmount: 1000, parties: ['user1'] } as any, { auth: { uid: 'user1' } } as any))
+            await expect(wrapped({ data: { holdAmount: 1000, parties: ['user1'] }, auth: { uid: 'user1' } } as any))
                 .rejects.toThrow('trackId, holdAmount (positive cents), and non-empty parties array are required.');
         });
     });
@@ -74,7 +74,7 @@ describe('Split Escrow Functions', () => {
     describe('signEscrow', () => {
         it('should require authentication', async () => {
             const wrapped = testEnv.wrap(signEscrow);
-            await expect(wrapped({ escrowDocId: 'escrow123' }, {} as any))
+            await expect(wrapped({ data: { escrowDocId: 'escrow123' } } as any))
                 .rejects.toThrow('User must be signed in.');
         });
     });
@@ -82,7 +82,7 @@ describe('Split Escrow Functions', () => {
     describe('releaseEscrow', () => {
         it('should require authentication', async () => {
             const wrapped = testEnv.wrap(releaseEscrow);
-            await expect(wrapped({ escrowDocId: 'escrow123' }, {} as any))
+            await expect(wrapped({ data: { escrowDocId: 'escrow123' } } as any))
                 .rejects.toThrow('User must be signed in.');
         });
     });

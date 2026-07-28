@@ -6,7 +6,7 @@
  * When all parties call signEscrow(), the escrow transitions to RELEASED
  * and the FinanceTools client can call createTransfer() for each split.
  */
-import * as functions from 'firebase-functions/v1';
+import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import * as admin from 'firebase-admin';
 import { stripe } from './config';
 
@@ -35,11 +35,12 @@ interface SplitEscrowResponse {
  * Creates a Stripe PaymentIntent (capture_method: manual) to hold funds
  * and records the pending signatures in Firestore.
  */
-export const initiateSplitEscrow = functions
-    .runWith({ enforceAppCheck: true,  timeoutSeconds: 60, memory: '512MB'  })
-    .https.onCall(async (data: SplitEscrowRequest, context) => {
-        if (!context.auth) {
-            throw new functions.https.HttpsError(
+export const initiateSplitEscrow = onCall(
+    { enforceAppCheck: true, timeoutSeconds: 60, memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1 },
+    async (request) => {
+        const data = (request.data ?? {}) as SplitEscrowRequest;
+        if (!request.auth) {
+            throw new HttpsError(
                 'unauthenticated',
                 'User must be signed in.'
             );
@@ -54,7 +55,7 @@ export const initiateSplitEscrow = functions
             !Array.isArray(parties) ||
             parties.length === 0
         ) {
-            throw new functions.https.HttpsError(
+            throw new HttpsError(
                 'invalid-argument',
                 'trackId, holdAmount (positive cents), and non-empty parties array are required.'
             );
@@ -66,30 +67,30 @@ export const initiateSplitEscrow = functions
             let totalPct = 0;
             for (const [party, pct] of Object.entries(data.splits)) {
                 if (!parties.includes(party)) {
-                    throw new functions.https.HttpsError('invalid-argument', `Split defined for unknown party: ${party}`);
+                    throw new HttpsError('invalid-argument', `Split defined for unknown party: ${party}`);
                 }
                 if (typeof pct !== 'number' || !isFinite(pct) || pct <= 0) {
-                    throw new functions.https.HttpsError('invalid-argument', `Invalid split percentage for party ${party}.`);
+                    throw new HttpsError('invalid-argument', `Invalid split percentage for party ${party}.`);
                 }
                 totalPct += pct;
             }
             if (totalPct > 100) {
-                throw new functions.https.HttpsError('invalid-argument', `Split percentages total ${totalPct}% — must not exceed 100%.`);
+                throw new HttpsError('invalid-argument', `Split percentages total ${totalPct}% — must not exceed 100%.`);
             }
         }
         if (data.stripeAccountIds) {
             for (const [party, accountId] of Object.entries(data.stripeAccountIds)) {
                 if (!parties.includes(party)) {
-                    throw new functions.https.HttpsError('invalid-argument', `Stripe account defined for unknown party: ${party}`);
+                    throw new HttpsError('invalid-argument', `Stripe account defined for unknown party: ${party}`);
                 }
                 if (typeof accountId !== 'string' || !accountId.startsWith('acct_')) {
-                    throw new functions.https.HttpsError('invalid-argument', `Invalid Stripe account ID for party ${party}.`);
+                    throw new HttpsError('invalid-argument', `Invalid Stripe account ID for party ${party}.`);
                 }
             }
         }
 
         const db = admin.firestore();
-        const uid = context.auth.uid;
+        const uid = request.auth.uid;
 
         // Transfer group ties all split payouts together for reconciliation
         const transferGroup = `escrow_${trackId}_${Date.now()}`;
@@ -98,7 +99,7 @@ export const initiateSplitEscrow = functions
         // be backed by a real Stripe PaymentIntent. No Firestore-only escrows.
         const platformAccountId = process.env.STRIPE_PLATFORM_ACCOUNT_ID;
         if (!platformAccountId) {
-            throw new functions.https.HttpsError(
+            throw new HttpsError(
                 'failed-precondition',
                 'ESCROW_NOT_FUNDED: Stripe platform account is not configured. No funds can be held.'
             );
@@ -122,7 +123,7 @@ export const initiateSplitEscrow = functions
             stripeEscrowId = intent.id;
         } catch (stripeErr) {
             console.error('[splitEscrow] Stripe PaymentIntent creation failed:', stripeErr);
-            throw new functions.https.HttpsError(
+            throw new HttpsError(
                 'failed-precondition',
                 'ESCROW_NOT_FUNDED: Stripe could not create the escrow payment intent. No funds are held.'
             );
@@ -179,32 +180,33 @@ export const initiateSplitEscrow = functions
  * and records Stripe transfer receipts; until that exists, a fully signed
  * escrow honestly reports that no money has moved yet.
  */
-export const signEscrow = functions
-    .runWith({ enforceAppCheck: true,  timeoutSeconds: 60, memory: '512MB'  })
-    .https.onCall(async (data: { escrowDocId: string }, context) => {
-        if (!context.auth) {
-            throw new functions.https.HttpsError('unauthenticated', 'User must be signed in.');
+export const signEscrow = onCall(
+    { enforceAppCheck: true, timeoutSeconds: 60, memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1 },
+    async (request) => {
+        const data = (request.data ?? {}) as { escrowDocId: string };
+        if (!request.auth) {
+            throw new HttpsError('unauthenticated', 'User must be signed in.');
         }
 
         const { escrowDocId } = data;
         if (!escrowDocId) {
-            throw new functions.https.HttpsError('invalid-argument', 'escrowDocId is required.');
+            throw new HttpsError('invalid-argument', 'escrowDocId is required.');
         }
 
         const db = admin.firestore();
-        const uid = context.auth.uid;
+        const uid = request.auth.uid;
         const escrowRef = db.collection('split_escrows').doc(escrowDocId);
 
         let fullySigned = false;
         await db.runTransaction(async (tx) => {
             const snap = await tx.get(escrowRef);
             if (!snap.exists) {
-                throw new functions.https.HttpsError('not-found', 'Escrow record not found.');
+                throw new HttpsError('not-found', 'Escrow record not found.');
             }
 
             const data = snap.data()!;
             if (!data.parties.includes(uid)) {
-                throw new functions.https.HttpsError(
+                throw new HttpsError(
                     'permission-denied',
                     'User is not a party to this escrow.'
                 );
@@ -238,20 +240,21 @@ export const signEscrow = functions
  * Verifies that the escrow is fully signed, captures the PaymentIntent,
  * and creates Stripe transfers for each party based on their split percentage.
  */
-export const releaseEscrow = functions
-    .runWith({ enforceAppCheck: true, timeoutSeconds: 120, memory: '512MB' })
-    .https.onCall(async (data: { escrowDocId: string }, context) => {
-        if (!context.auth) {
-            throw new functions.https.HttpsError('unauthenticated', 'User must be signed in.');
+export const releaseEscrow = onCall(
+    { enforceAppCheck: true, timeoutSeconds: 120, memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1 },
+    async (request) => {
+        const data = (request.data ?? {}) as { escrowDocId: string };
+        if (!request.auth) {
+            throw new HttpsError('unauthenticated', 'User must be signed in.');
         }
 
         const { escrowDocId } = data;
         if (!escrowDocId) {
-            throw new functions.https.HttpsError('invalid-argument', 'escrowDocId is required.');
+            throw new HttpsError('invalid-argument', 'escrowDocId is required.');
         }
 
         const db = admin.firestore();
-        const uid = context.auth.uid;
+        const uid = request.auth.uid;
         const escrowRef = db.collection('split_escrows').doc(escrowDocId);
 
         let escrowData: FirebaseFirestore.DocumentData | undefined;
@@ -259,18 +262,18 @@ export const releaseEscrow = functions
         await db.runTransaction(async (tx) => {
             const snap = await tx.get(escrowRef);
             if (!snap.exists) {
-                throw new functions.https.HttpsError('not-found', 'Escrow record not found.');
+                throw new HttpsError('not-found', 'Escrow record not found.');
             }
 
             const record = snap.data()!;
 
             // Only initiator or a party can release
             if (record.initiatorUid !== uid && (!record.parties || !record.parties.includes(uid))) {
-                throw new functions.https.HttpsError('permission-denied', 'User is not authorized to release this escrow.');
+                throw new HttpsError('permission-denied', 'User is not authorized to release this escrow.');
             }
 
             if (record.status !== 'FULLY_SIGNED') {
-                throw new functions.https.HttpsError('failed-precondition', 'Escrow must be FULLY_SIGNED before release.');
+                throw new HttpsError('failed-precondition', 'Escrow must be FULLY_SIGNED before release.');
             }
 
             // ISSUE-720: validate the full payout plan BEFORE any money moves.
@@ -280,18 +283,18 @@ export const releaseEscrow = functions
             const escrowAccounts: Record<string, string> = record.stripeAccountIds || {};
 
             if (!record.holdAmountCents || record.holdAmountCents <= 0) {
-                throw new functions.https.HttpsError('failed-precondition', 'Escrow has no held amount to release.');
+                throw new HttpsError('failed-precondition', 'Escrow has no held amount to release.');
             }
 
             const totalPct = escrowParties.reduce((sum, p) => sum + (escrowSplits[p] || 0), 0);
             if (totalPct <= 0) {
-                throw new functions.https.HttpsError(
+                throw new HttpsError(
                     'failed-precondition',
                     'No split percentages are defined. Releasing would capture funds without paying any party.'
                 );
             }
             if (totalPct > 100) {
-                throw new functions.https.HttpsError(
+                throw new HttpsError(
                     'failed-precondition',
                     `Split percentages total ${totalPct}% — payouts would exceed the held amount.`
                 );
@@ -299,7 +302,7 @@ export const releaseEscrow = functions
 
             const unpayable = escrowParties.filter((p) => (escrowSplits[p] || 0) > 0 && !escrowAccounts[p]);
             if (unpayable.length > 0) {
-                throw new functions.https.HttpsError(
+                throw new HttpsError(
                     'failed-precondition',
                     `Missing Stripe account for parties with a split: ${unpayable.join(', ')}. All payees must onboard before release.`
                 );
@@ -315,7 +318,7 @@ export const releaseEscrow = functions
         });
 
         if (!escrowData) {
-            throw new functions.https.HttpsError('internal', 'Escrow state could not be loaded.');
+            throw new HttpsError('internal', 'Escrow state could not be loaded.');
         }
 
         const {
@@ -387,6 +390,6 @@ export const releaseEscrow = functions
                 releaseError: message
             });
 
-            throw new functions.https.HttpsError('internal', `Failed to release funds: ${message}`);
+            throw new HttpsError('internal', `Failed to release funds: ${message}`);
         }
     });
