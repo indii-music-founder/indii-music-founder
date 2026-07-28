@@ -4,6 +4,11 @@ import dotenv from 'dotenv';
 import admin from 'firebase-admin';
 import { google } from 'googleapis';
 import { randomBytes } from 'node:crypto';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 dotenv.config();
 
@@ -269,11 +274,11 @@ app.post('/api/webhooks/ci-alerts', requireWebhookSecret, async (req, res) => {
 
 // ─── Google Workspace OAuth & API Integration ──────────────────────────────────
 if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
-  throw new Error('GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET environment variables are required');
+  console.warn('[Admin] GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET environment variables are missing. Google OAuth will fail.');
 }
 const oauth2Client = new google.auth.OAuth2(
-  process.env.GOOGLE_CLIENT_ID,
-  process.env.GOOGLE_CLIENT_SECRET,
+  process.env.GOOGLE_CLIENT_ID || 'dummy_client_id',
+  process.env.GOOGLE_CLIENT_SECRET || 'dummy_client_secret',
   process.env.GOOGLE_REDIRECT_URI || 'http://localhost:5174/api/google/oauth/callback'
 );
 
@@ -675,6 +680,16 @@ app.get('/api/nexus/logs', requireAdminAuth, async (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
+// Serve the frontend for any non-API routes
+app.use(express.static(path.join(__dirname, 'dist')));
+app.use((req, res, next) => {
+  if (req.method === 'GET') {
+    res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+  } else {
+    next();
+  }
+});
+
+app.listen(PORT as number, '0.0.0.0', () => {
   console.log(`Admin Dashboard backend listening on port ${PORT}`);
 });
