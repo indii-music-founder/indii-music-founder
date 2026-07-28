@@ -1,24 +1,23 @@
-import * as functions from 'firebase-functions/v1';
+import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { stripe } from './config';
 
 /**
  * Triggered by the client to create a Stripe Connect Express account for an artist.
  */
-export const createStripeAccount = functions
-    .region('us-central1')
-    .runWith({ memory: '512MB', timeoutSeconds: 60 })
-    .https.onCall(async (data: { artistId: string }, context: functions.https.CallableContext): Promise<{ accountId: string; onboardingUrl: string }> => {
+export const createStripeAccount = onCall(
+    { region: 'us-central1', memory: '512MiB', timeoutSeconds: 60, cpu: 'gcf_gen1', concurrency: 1 },
+    async (request): Promise<{ accountId: string; onboardingUrl: string }> => {
         // 1. Basic auth check
-        if (!context.auth) {
-            throw new functions.https.HttpsError('unauthenticated', 'User must be signed in.');
+        if (!request.auth) {
+            throw new HttpsError('unauthenticated', 'User must be signed in.');
         }
 
-        const { artistId } = data;
+        const { artistId } = (request.data ?? {}) as { artistId: string };
         if (!artistId || typeof artistId !== 'string' || artistId.trim().length === 0) {
-            throw new functions.https.HttpsError('invalid-argument', "Missing or invalid 'artistId'.");
+            throw new HttpsError('invalid-argument', "Missing or invalid 'artistId'.");
         }
-        if (context.auth.uid !== artistId) {
-            throw new functions.https.HttpsError('permission-denied', 'Cannot create Stripe account for another artist.');
+        if (request.auth.uid !== artistId) {
+            throw new HttpsError('permission-denied', 'Cannot create Stripe account for another artist.');
         }
 
         try {
@@ -46,35 +45,35 @@ export const createStripeAccount = functions
             };
         } catch (error: unknown) {
             console.error('[StripeConnect] Error creating account:', error);
-            throw new functions.https.HttpsError('internal', `Stripe account creation failed: ${error instanceof Error ? error.message : String(error)}`);
+            throw new HttpsError('internal', `Stripe account creation failed: ${error instanceof Error ? error.message : String(error)}`);
         }
-    });
+    },
+);
 
 /**
  * Triggered by the client to onboard a collaborator to Stripe Connect.
  * Moved from createStripeConnectAccount.ts to connect.ts to consolidate duplicates.
  */
-export const createStripeConnectAccount = functions
-    .region('us-central1')
-    .runWith({ memory: '512MB', timeoutSeconds: 60 })
-    .https.onCall(async (data: { email: string; businessType?: string }, context: functions.https.CallableContext): Promise<{ accountId: string; onboardingUrl: string }> => {
-        if (!context.auth) {
-            throw new functions.https.HttpsError(
+export const createStripeConnectAccount = onCall(
+    { region: 'us-central1', memory: '512MiB', timeoutSeconds: 60, cpu: 'gcf_gen1', concurrency: 1 },
+    async (request): Promise<{ accountId: string; onboardingUrl: string }> => {
+        if (!request.auth) {
+            throw new HttpsError(
                 'unauthenticated',
                 'User must be authenticated to create a Stripe Connect account.'
             );
         }
 
-        const { email, businessType } = data;
+        const { email, businessType } = (request.data ?? {}) as { email: string; businessType?: string };
 
         if (!email || typeof email !== 'string' || email.trim().length === 0) {
-            throw new functions.https.HttpsError(
+            throw new HttpsError(
                 'invalid-argument',
                 "Missing or invalid 'email' parameter."
             );
         }
         if (businessType !== undefined && typeof businessType !== 'string') {
-            throw new functions.https.HttpsError(
+            throw new HttpsError(
                 'invalid-argument',
                 "Parameter 'businessType' must be a string if provided."
             );
@@ -88,7 +87,7 @@ export const createStripeConnectAccount = functions
                 type: 'express',
                 email: email,
                 business_type: businessType === 'company' ? 'company' : 'individual',
-                metadata: { userId: context.auth.uid },
+                metadata: { userId: request.auth.uid },
                 capabilities: {
                     card_payments: { requested: true },
                     transfers: { requested: true },
@@ -109,38 +108,38 @@ export const createStripeConnectAccount = functions
             };
         } catch (error: unknown) {
             console.error('[StripeConnect] Error creating collaborator account:', error);
-            throw new functions.https.HttpsError(
+            throw new HttpsError(
                 'internal',
                 `Stripe account creation failed: ${error instanceof Error ? error.message : String(error)}`
             );
         }
-    });
+    },
+);
 
 /**
  * Triggers a payout/transfer from the platform to the destination artist.
  */
-export const createTransfer = functions
-    .region('us-central1')
-    .runWith({ memory: '512MB', timeoutSeconds: 60 })
-    .https.onCall(async (data: { amount: number; destinationId: string; currency?: string }, context: functions.https.CallableContext): Promise<{ transferId: string }> => {
-        if (!context.auth) {
-            throw new functions.https.HttpsError('unauthenticated', 'User must be signed in.');
+export const createTransfer = onCall(
+    { region: 'us-central1', memory: '512MiB', timeoutSeconds: 60, cpu: 'gcf_gen1', concurrency: 1 },
+    async (request): Promise<{ transferId: string }> => {
+        if (!request.auth) {
+            throw new HttpsError('unauthenticated', 'User must be signed in.');
         }
 
-        if (!context.auth.token['admin']) {
-            throw new functions.https.HttpsError('permission-denied', 'Insufficient privileges.');
+        if (!request.auth.token['admin']) {
+            throw new HttpsError('permission-denied', 'Insufficient privileges.');
         }
 
-        const { amount, destinationId, currency = 'usd' } = data;
+        const { amount, destinationId, currency = 'usd' } = (request.data ?? {}) as { amount: number; destinationId: string; currency?: string };
 
         if (amount === undefined || typeof amount !== 'number' || amount <= 0 || !Number.isInteger(amount)) {
-            throw new functions.https.HttpsError('invalid-argument', "Parameter 'amount' must be a positive integer representing cents.");
+            throw new HttpsError('invalid-argument', "Parameter 'amount' must be a positive integer representing cents.");
         }
         if (!destinationId || typeof destinationId !== 'string' || destinationId.trim().length === 0) {
-            throw new functions.https.HttpsError('invalid-argument', "Missing or invalid 'destinationId' parameter.");
+            throw new HttpsError('invalid-argument', "Missing or invalid 'destinationId' parameter.");
         }
         if (typeof currency !== 'string') {
-            throw new functions.https.HttpsError('invalid-argument', "Parameter 'currency' must be a string.");
+            throw new HttpsError('invalid-argument', "Parameter 'currency' must be a string.");
         }
 
         try {
@@ -154,6 +153,7 @@ export const createTransfer = functions
             return { transferId: transfer.id };
         } catch (error: unknown) {
             console.error('[StripeConnect] Transfer failed:', error);
-            throw new functions.https.HttpsError('internal', `Stripe transfer failed: ${error instanceof Error ? error.message : String(error)}`);
+            throw new HttpsError('internal', `Stripe transfer failed: ${error instanceof Error ? error.message : String(error)}`);
         }
-    });
+    },
+);

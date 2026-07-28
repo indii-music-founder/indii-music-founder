@@ -1,4 +1,4 @@
-import * as functions from "firebase-functions/v1";
+import { onCall, HttpsError } from "firebase-functions/v2/https";
 import * as admin from "firebase-admin";
 import { defineString } from "firebase-functions/params";
 import { z } from "zod";
@@ -67,7 +67,7 @@ export function normalizeDispatchPlatform(platform: unknown): 'twitter' | 'insta
     // 'youtube' — this alias was previously rejected here before ever
     // reaching the worker.
     if (normalized === 'youtube' || normalized === 'youtube_shorts') return 'youtube';
-    throw new functions.https.HttpsError(
+    throw new HttpsError(
         "failed-precondition",
         `Social platform '${String(platform)}' is not wired for native delivery.`
     );
@@ -77,16 +77,16 @@ export function normalizeDispatchPlatform(platform: unknown): 'twitter' | 'insta
  * Executes a social media campaign.
  * Queues supported posts for the scheduled social delivery worker.
  */
-export const executeCampaign = functions
-    .runWith({ enforceAppCheck: true, timeoutSeconds: 60 })
-    .https.onCall(async (data, context) => {
-        if (!context.auth) {
-            throw new functions.https.HttpsError("unauthenticated", "Auth required");
+export const executeCampaign = onCall(
+    { enforceAppCheck: true, timeoutSeconds: 60, memory: "512MiB", cpu: 'gcf_gen1', concurrency: 1 },
+    async (request) => {
+        if (!request.auth) {
+            throw new HttpsError("unauthenticated", "Auth required");
         }
 
-        const validation = CampaignExecutionRequestSchema.safeParse(data);
+        const validation = CampaignExecutionRequestSchema.safeParse(request.data);
         if (!validation.success) {
-            throw new functions.https.HttpsError("invalid-argument", validation.error.message);
+            throw new HttpsError("invalid-argument", validation.error.message);
         }
 
         const { campaignId, posts, dryRun } = validation.data;
@@ -95,7 +95,7 @@ export const executeCampaign = functions
 
         const unsupported = posts.filter(p => !SUPPORTED_SOCIAL_PLATFORMS.includes(p.platform as SupportedCampaignPlatform));
         if (unsupported.length > 0) {
-            throw new functions.https.HttpsError(
+            throw new HttpsError(
                 "failed-precondition",
                 `Campaign contains platforms without native delivery: ${unsupported.map(p => p.platform).join(', ')}.`
             );
@@ -115,7 +115,7 @@ export const executeCampaign = functions
             const scheduledAt = scheduledAtForPost(post);
             const mediaUrl = (post as { imageAsset?: { imageUrl?: string } }).imageAsset?.imageUrl;
             const docRef = await db.collection('scheduledPosts').add({
-                userId: context.auth!.uid,
+                userId: request.auth!.uid,
                 campaignId,
                 campaignPostId: post.id,
                 platform: toDeliveryPlatform(platform),
@@ -143,24 +143,24 @@ export const executeCampaign = functions
             posts: queuedPosts,
             message: "Campaign posts queued for scheduled delivery."
         };
-    });
+    },
+);
 
 /**
  * Dispatches a specific media post to a social platform (TikTok, IG, YT).
  * Fulfills PRODUCTION_200:141.
  */
-export const dispatchSocialPost = functions
-    .region("us-central1")
-    .runWith({ enforceAppCheck: true,  timeoutSeconds: 120, memory: "512MB"  })
-    .https.onCall(async (data: Record<string, unknown>, context: functions.https.CallableContext) => {
-        if (!context.auth) throw new functions.https.HttpsError("unauthenticated", "Auth required");
+export const dispatchSocialPost = onCall(
+    { region: "us-central1", enforceAppCheck: true, timeoutSeconds: 120, memory: "512MiB", cpu: 'gcf_gen1', concurrency: 1 },
+    async (request) => {
+        if (!request.auth) throw new HttpsError("unauthenticated", "Auth required");
 
-        const { mediaUrl, platform, caption } = data;
+        const { mediaUrl, platform, caption } = (request.data ?? {}) as Record<string, unknown>;
         const normalizedPlatform = normalizeDispatchPlatform(platform);
         console.info(`[SocialPost] Queueing ${normalizedPlatform}: ${mediaUrl}`);
 
         const docRef = await admin.firestore().collection('scheduledPosts').add({
-            userId: context.auth.uid,
+            userId: request.auth.uid,
             platform: normalizedPlatform,
             text: String(caption || ''),
             mediaUrl: typeof mediaUrl === 'string' ? mediaUrl : null,
@@ -179,19 +179,19 @@ export const dispatchSocialPost = functions
             status: 'queued',
             timestamp: new Date().toISOString()
         };
-    });
+    },
+);
 
 /**
  * Creates and persists a tracking link for an influencer.
  * Fulfills PRODUCTION_200:149.
  */
-export const createInfluencerBounty = functions
-    .region("us-central1")
-    .runWith({ enforceAppCheck: true,  timeoutSeconds: 60, memory: "512MB"  })
-    .https.onCall(async (data: Record<string, unknown>, context: functions.https.CallableContext) => {
-        if (!context.auth) throw new functions.https.HttpsError("unauthenticated", "Auth required");
+export const createInfluencerBounty = onCall(
+    { region: "us-central1", enforceAppCheck: true, timeoutSeconds: 60, memory: "512MiB", cpu: 'gcf_gen1', concurrency: 1 },
+    async (request) => {
+        if (!request.auth) throw new HttpsError("unauthenticated", "Auth required");
 
-        const { influencerHandle, trackName, rewardAmount: _rewardAmount, action } = data;
+        const { influencerHandle, trackName, rewardAmount: _rewardAmount, action } = (request.data ?? {}) as Record<string, unknown>;
         let bountyBaseUrl = process.env.INFLUENCER_BOUNTY_BASE_URL || '';
         if (!bountyBaseUrl) {
             try {
@@ -202,7 +202,7 @@ export const createInfluencerBounty = functions
             }
         }
         if (!bountyBaseUrl) {
-            throw new functions.https.HttpsError(
+            throw new HttpsError(
                 "failed-precondition",
                 "Influencer bounty base URL is not configured."
             );
@@ -212,7 +212,7 @@ export const createInfluencerBounty = functions
         const link = `${bountyBaseUrl.replace(/\/$/, '')}/ref/${refCode}`;
 
         await admin.firestore().collection('influencerBounties').doc(refCode).set({
-            userId: context.auth.uid,
+            userId: request.auth.uid,
             influencerHandle,
             trackName,
             rewardAmount: _rewardAmount ?? null,
@@ -230,4 +230,5 @@ export const createInfluencerBounty = functions
             refCode,
             link
         };
-    });
+    },
+);

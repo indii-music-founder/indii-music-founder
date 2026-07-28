@@ -1,4 +1,4 @@
-import * as functions from "firebase-functions/v1";
+import { onCall, HttpsError } from "firebase-functions/v2/https";
 
 import { z } from "zod";
 import { Client } from "@googlemaps/google-maps-services-js";
@@ -72,14 +72,14 @@ const FindPlacesSchema = z.object({
 // Cloud Functions
 // ----------------------------------------------------------------------------
 
-export const generateItinerary = functions
-    .runWith({ enforceAppCheck: true })
-    .https.onCall(async (data, context) => {
-        if (!context.auth) throw new functions.https.HttpsError("unauthenticated", "Auth required");
+export const generateItinerary = onCall(
+    { enforceAppCheck: true, memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1 },
+    async (request) => {
+        if (!request.auth) throw new HttpsError("unauthenticated", "Auth required");
 
-        const validation = ItineraryRequestSchema.safeParse(data);
+        const validation = ItineraryRequestSchema.safeParse(request.data);
         if (!validation.success) {
-            throw new functions.https.HttpsError("invalid-argument", validation.error.message);
+            throw new HttpsError("invalid-argument", validation.error.message);
         }
 
         const { locations, dates } = validation.data;
@@ -114,18 +114,19 @@ export const generateItinerary = functions
             const itinerary = await generateWithGemini(prompt, true);
             return itinerary;
         } catch (error: unknown) {
-            throw new functions.https.HttpsError("internal", (error as Error).message);
+            throw new HttpsError("internal", (error as Error).message);
         }
-    });
+    },
+);
 
-export const checkLogistics = functions
-    .runWith({ enforceAppCheck: true })
-    .https.onCall(async (data, context) => {
-        if (!context.auth) throw new functions.https.HttpsError("unauthenticated", "Auth required");
+export const checkLogistics = onCall(
+    { enforceAppCheck: true, memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1 },
+    async (request) => {
+        if (!request.auth) throw new HttpsError("unauthenticated", "Auth required");
 
-        const validation = LogisticsCheckSchema.safeParse(data);
+        const validation = LogisticsCheckSchema.safeParse(request.data);
         if (!validation.success) {
-            throw new functions.https.HttpsError("invalid-argument", validation.error.message);
+            throw new HttpsError("invalid-argument", validation.error.message);
         }
 
         const { itinerary } = validation.data;
@@ -152,18 +153,19 @@ export const checkLogistics = functions
             const report = await generateWithGemini(prompt, true);
             return report;
         } catch (error: unknown) {
-            throw new functions.https.HttpsError("internal", (error as Error).message);
+            throw new HttpsError("internal", (error as Error).message);
         }
-    });
+    },
+);
 
-export const findPlaces = functions
-    .runWith({ enforceAppCheck: true,  secrets: [googleMapsApiKey]  })
-    .https.onCall(async (data, context) => {
-        if (!context.auth) throw new functions.https.HttpsError("unauthenticated", "Auth required");
+export const findPlaces = onCall(
+    { enforceAppCheck: true, secrets: [googleMapsApiKey], memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1 },
+    async (request) => {
+        if (!request.auth) throw new HttpsError("unauthenticated", "Auth required");
 
-        const validation = FindPlacesSchema.safeParse(data);
+        const validation = FindPlacesSchema.safeParse(request.data);
         if (!validation.success) {
-            throw new functions.https.HttpsError("invalid-argument", validation.error.message);
+            throw new HttpsError("invalid-argument", validation.error.message);
         }
 
         const { location, type, radius } = validation.data;
@@ -180,7 +182,7 @@ export const findPlaces = functions
 
             if (geocodeRes.data.results.length === 0) {
                 // Return HttpsError directly so the catch block doesn't wrap it in "internal"
-                throw new functions.https.HttpsError("not-found", "Location not found");
+                throw new HttpsError("not-found", "Location not found");
             }
 
             const locationCoords = geocodeRes.data.results[0].geometry.location;
@@ -208,9 +210,15 @@ export const findPlaces = functions
             return { places };
         } catch (error: unknown) {
             console.error("Maps API Error:", error);
-            if (error instanceof functions.https.HttpsError) {
+            // Trap 3 of 7 (see ISSUE-1243). The "Location not found" throw above
+            // is raised inside this try specifically so it can pass through
+            // here - the comment at that site says so. It tested the v1 class
+            // while the throw is v2, so the pass-through never fired and a
+            // real not-found surfaced as 'internal: Failed to fetch places'.
+            if (error instanceof HttpsError) {
                 throw error;
             }
-            throw new functions.https.HttpsError("internal", "Failed to fetch places");
+            throw new HttpsError("internal", "Failed to fetch places");
         }
-    });
+    },
+);
