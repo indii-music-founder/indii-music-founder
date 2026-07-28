@@ -15,7 +15,10 @@ import {
     ChevronRight,
     ScrollText,
     Rocket,
+    AlertCircle,
+    Mail,
 } from 'lucide-react';
+import { sendEmailVerification, getAuth } from 'firebase/auth';
 import { StoreState, useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { useToast } from '@/core/context/ToastContext';
@@ -38,7 +41,26 @@ const SecuritySection: React.FC = () => {
     const { showToast } = useToast();
     const [showAuditLog, setShowAuditLog] = useState(false);
     const [syncing, setSyncing] = useState(false);
+    const [sendingVerification, setSendingVerification] = useState(false);
     const { updatePreferences } = useStore(useShallow((s: StoreState) => ({ updatePreferences: s.updatePreferences })));
+
+    const handleResendVerification = async () => {
+        const currentUser = getAuth().currentUser;
+        if (!currentUser) {
+            showToast('No active session found', 'error');
+            return;
+        }
+        setSendingVerification(true);
+        try {
+            await sendEmailVerification(currentUser);
+            showToast('Verification email sent! Check your inbox.', 'success');
+        } catch (err: unknown) {
+            logger.error('[Settings] Resend email verification failed:', err);
+            showToast(err instanceof Error ? err.message : 'Failed to send verification email', 'error');
+        } finally {
+            setSendingVerification(false);
+        }
+    };
 
     const handleSyncBilling = async () => {
         if (!userProfile?.id || userProfile.id === 'pending') {
@@ -78,22 +100,48 @@ const SecuritySection: React.FC = () => {
             />
 
             <div className="flex flex-col gap-3 mb-6">
-                {/* Sign Out Card */}
-                <div className="p-4 rounded-xl bg-slate-800/40 border border-slate-700/50 flex items-center justify-between">
-                    <div>
-                        <h3 className="text-sm font-semibold text-white">Active Session</h3>
-                        <p className="text-xs text-slate-400 mt-1 flex items-center gap-1">
-                            <Check size={12} className="text-emerald-400" />
-                            {user?.email || 'Authenticated'}
-                        </p>
+                {/* Active Session & Verification Status Card */}
+                <div className="p-4 rounded-xl bg-slate-800/40 border border-slate-700/50 flex flex-col gap-3">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <h3 className="text-sm font-semibold text-white">Active Session</h3>
+                            <div className="text-xs text-slate-400 mt-1 flex items-center gap-2">
+                                <span>{user?.email || 'Authenticated'}</span>
+                                {user?.emailVerified ? (
+                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                                        <Check size={10} /> Email Verified
+                                    </span>
+                                ) : (
+                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                                        <AlertCircle size={10} /> Unverified
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+                        <button
+                            onClick={handleLogout}
+                            className="flex items-center gap-2 text-xs font-medium text-red-400 hover:text-red-300 hover:bg-red-500/10 px-3 py-2 rounded-lg transition-colors border border-red-500/20"
+                        >
+                            <LogOut size={14} />
+                            Sign Out
+                        </button>
                     </div>
-                    <button
-                        onClick={handleLogout}
-                        className="flex items-center gap-2 text-xs font-medium text-red-400 hover:text-red-300 hover:bg-red-500/10 px-3 py-2 rounded-lg transition-colors border border-red-500/20"
-                    >
-                        <LogOut size={14} />
-                        Sign Out
-                    </button>
+
+                    {!user?.emailVerified && (
+                        <div className="pt-2 border-t border-slate-700/30 flex items-center justify-between">
+                            <p className="text-xs text-amber-300/80 flex items-center gap-1">
+                                <AlertCircle size={12} /> Email verification is required for AI generation.
+                            </p>
+                            <button
+                                onClick={handleResendVerification}
+                                disabled={sendingVerification}
+                                className="flex items-center gap-1.5 text-xs font-medium text-amber-400 hover:text-amber-300 bg-amber-500/10 px-2.5 py-1.5 rounded-lg border border-amber-500/20 disabled:opacity-50 cursor-pointer"
+                            >
+                                <Mail size={12} />
+                                {sendingVerification ? 'Sending...' : 'Resend Verification Email'}
+                            </button>
+                        </div>
+                    )}
                 </div>
 
                 {/* Sync Billing & Quotas Card */}

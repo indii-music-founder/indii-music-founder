@@ -113,8 +113,12 @@ export class CostControlService {
       if (currentUser && typeof currentUser.getIdTokenResult === 'function') {
         // forceRefresh=true ensures we pick up server-side claim changes immediately.
         const tokenResult = await currentUser.getIdTokenResult(/* forceRefresh */ true);
-        if (tokenResult?.claims?.god_mode === true) {
-          logger.info('[CostControl] god_mode bypass: operation auto-allowed for platform owner.', {
+        if (
+          tokenResult?.claims?.god_mode === true ||
+          tokenResult?.claims?.founder === true ||
+          tokenResult?.claims?.admin === true
+        ) {
+          logger.info('[CostControl] god_mode/founder/admin bypass: operation auto-allowed for platform owner.', {
             userId: req.userId,
             operationType: req.operationType,
           });
@@ -130,7 +134,7 @@ export class CostControlService {
       }
     } catch (claimErr) {
       // If we can't read claims, fall through to normal flow — don't block on claim read failure
-      logger.warn('[CostControl] Could not read god_mode claim, proceeding with normal flow.', claimErr);
+      logger.warn('[CostControl] Could not read platform owner claim, proceeding with normal flow.', claimErr);
     }
 
     if (import.meta.env.VITE_INTELLIGENCE_MOCK_MODE === 'true') {
@@ -197,15 +201,19 @@ export class CostControlService {
     } catch (err) {
       logger.error('[CostControl] Check failed', err);
 
-      // SAFETY NET: Before blocking anyone, re-check god_mode with a fresh token.
+      // SAFETY NET: Before blocking anyone, re-check god_mode/founder/admin with a fresh token.
       // This handles the case where the callable fails (App Check, cold-start, network)
       // but the user IS the platform owner — they must never be blocked.
       try {
         const currentUser = auth.currentUser;
         if (currentUser && typeof currentUser.getIdTokenResult === 'function') {
           const tokenResult = await currentUser.getIdTokenResult(/* forceRefresh */ true);
-          if (tokenResult?.claims?.god_mode === true) {
-            logger.warn('[CostControl] Callable failed but god_mode confirmed — auto-allowing platform owner.', {
+          if (
+            tokenResult?.claims?.god_mode === true ||
+            tokenResult?.claims?.founder === true ||
+            tokenResult?.claims?.admin === true
+          ) {
+            logger.warn('[CostControl] Callable failed but platform owner claim confirmed — auto-allowing platform owner.', {
               userId: req.userId,
               operationType: req.operationType,
             });
@@ -220,12 +228,23 @@ export class CostControlService {
           }
         }
       } catch (claimErr) {
-        logger.warn('[CostControl] god_mode re-check in catch also failed.', claimErr);
+        logger.warn('[CostControl] platform owner re-check in catch also failed.', claimErr);
       }
 
       // Permission/auth failures block the operation so spend is never untracked.
       const errMsg = err instanceof Error ? err.message : String(err);
       const lowerMsg = errMsg.toLowerCase();
+
+      if (lowerMsg.includes('verify your email') || lowerMsg.includes('email_verified')) {
+        logger.warn('[CostControl] Email verification required for operation:', err);
+        return {
+          allowed: false,
+          reason: 'Email verification required. Please sign out and sign back in to refresh your account verification status.',
+          remainingBudget: 0,
+          dailyUsed: 0,
+          monthlyUsed: 0,
+        };
+      }
       const isPermissionError = lowerMsg.includes('permission') || 
                                 lowerMsg.includes('unauthorized') ||
                                 lowerMsg.includes('unauthenticated') ||

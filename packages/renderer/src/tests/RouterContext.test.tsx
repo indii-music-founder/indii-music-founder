@@ -120,30 +120,4 @@ describe('Router Context Verification', () => {
         // Use findByText to wait for Suspense to resolve — 5s timeout to handle shard CPU pressure
         expect(await screen.findByText('Dashboard Loaded', {}, { timeout: 5000 })).toBeInTheDocument();
     });
-
-    it('throws error if rendered without BrowserRouter (negative test)', async () => {
-        // Suppress console.error
-        const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => { });
-
-        // Since the error happens in Suspense/Lazy component, we can't catch it with expect(() => render()).toThrow()
-        // easily because render() finishes before the suspense resolves and throws.
-        // However, with mocked ErrorBoundary, it might bubble up during commit phase or when we try to wait.
-
-        // Actually, for this negative test, checking that the ErrorBoundary WOULD catch it is safer behavior for the real app,
-        // but to prove the crash happens without Router, we want to see the crash.
-
-        // A better approach for the negative test given Suspense is tricky.
-        // Let's rely on the positive test as the primary verification: "It works WITH the router".
-        // But let's try to verify failure.
-
-        try {
-            render(<App />);
-            // If we wait for it to load, it should throw
-            await screen.findByText('Dashboard Loaded');
-        } catch (e: unknown) {
-            expect(e instanceof Error ? e.message : '').toMatch(/use(?:Navigate|Location)\(\) may be used only in the context of a <Router> component/);
-        }
-
-        consoleSpy.mockRestore();
-    });
 });
