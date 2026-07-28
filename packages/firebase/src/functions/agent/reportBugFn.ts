@@ -1,4 +1,4 @@
-import * as functions from "firebase-functions/v1";
+import { onCall, HttpsError } from "firebase-functions/v2/https";
 import * as admin from "firebase-admin";
 import * as crypto from "crypto";
 import { githubToken, getGithubToken } from "../../config/secrets";
@@ -41,30 +41,29 @@ function generateIdempotencyKey(title: string, module: string, severity: string,
  * - GitHub integration with dedup (search-before-create)
  * - Returns per-channel success status
  */
-export const reportBugFn = functions
-    .runWith({ secrets: [githubToken] })
-    .https.onCall(
-    async (data: ReportBugRequest, context): Promise<ReportBugResponse> => {
+export const reportBugFn = onCall(
+    { secrets: [githubToken], memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1 },
+    async (request): Promise<ReportBugResponse> => {
         // Require App Check
-        if (context.app == undefined) {
-            throw new functions.https.HttpsError(
+        if (request.app == undefined) {
+            throw new HttpsError(
                 'failed-precondition',
                 'The function must be called from an App Check verified app.'
             );
         }
 
         // Require authentication
-        if (!context.auth) {
-            throw new functions.https.HttpsError(
+        if (!request.auth) {
+            throw new HttpsError(
                 "unauthenticated",
                 "User must be authenticated to report bugs."
             );
         }
 
-        const { title, description, stepsToReproduce = 'Not provided', expectedBehavior = 'Not provided', actualBehavior = 'Not provided', severity = 'major', module = 'unknown', errorMessage } = data;
+        const { title, description, stepsToReproduce = 'Not provided', expectedBehavior = 'Not provided', actualBehavior = 'Not provided', severity = 'major', module = 'unknown', errorMessage } = (request.data ?? {}) as ReportBugRequest;
 
         if (!title || !description) {
-            throw new functions.https.HttpsError(
+            throw new HttpsError(
                 "invalid-argument",
                 "Bug report requires at least a title and description."
             );
@@ -86,8 +85,8 @@ export const reportBugFn = functions
             module,
             errorMessage,
             reportedAt: new Date().toISOString(),
-            reportedBy: context.auth.uid,
-            userEmail: context.auth.token.email,
+            reportedBy: request.auth.uid,
+            userEmail: request.auth.token.email,
         };
 
         let firestoreStatus: 'ok' | 'failed' = 'ok';
@@ -109,7 +108,7 @@ export const reportBugFn = functions
         const resolvedGithubToken = getGithubToken();
         const githubRepo = process.env.GITHUB_REPO;
         if (!githubRepo) {
-            throw new functions.https.HttpsError(
+            throw new HttpsError(
                 'failed-precondition',
                 'GITHUB_REPO environment variable is not configured.'
             );
@@ -123,7 +122,7 @@ export const reportBugFn = functions
 **Severity:** \`${severity.toUpperCase()}\`
 **Module:** \`${module}\`
 **Reported:** ${bugReport.reportedAt}
-**Reporter:** ${context.auth.token.email || 'agent'}
+**Reporter:** ${request.auth.token.email || 'agent'}
 
 ### Description
 ${description}

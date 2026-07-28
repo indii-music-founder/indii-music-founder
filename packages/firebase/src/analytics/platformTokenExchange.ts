@@ -15,10 +15,11 @@
  * Token storage: Firestore `users/{uid}/analyticsTokens/{platform}`
  */
 
-import * as functions from "firebase-functions/v1";
+import { onCall, HttpsError, type CallableRequest } from "firebase-functions/v2/https";
+import { logger } from "firebase-functions/v2";
 import * as admin from "firebase-admin";
 import { randomUUID } from 'node:crypto';
-import { validateAppCheckV1 } from "../middleware/appCheck";
+import { validateAppCheckV2 } from "../middleware/appCheck";
 import {
     spotifyClientId,
     spotifyClientSecret,
@@ -49,11 +50,11 @@ const pendingInstagramIntentPath = (uid: string, intentId: string) =>
 const PENDING_INSTAGRAM_INTENT_TTL_MS = 10 * 60 * 1000;
 
 // ── Helper: make authenticated assertion ─────────────────────────────────────
-function assertAuth(context: functions.https.CallableContext): string {
-    if (!context.auth) {
-        throw new functions.https.HttpsError("unauthenticated", "Authentication required.");
+function assertAuth(request: CallableRequest): string {
+    if (!request.auth) {
+        throw new HttpsError("unauthenticated", "Authentication required.");
     }
-    return context.auth.uid;
+    return request.auth.uid;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -61,12 +62,12 @@ function assertAuth(context: functions.https.CallableContext): string {
 // Exchange an OAuth authorization code for access + refresh tokens.
 // ─────────────────────────────────────────────────────────────────────────────
 
-export const analyticsExchangeToken = functions
-    .runWith({ enforceAppCheck: false,  secrets: ALL_SECRETS, timeoutSeconds: 30  })
-    .https.onCall(async (data: unknown, context) => {
-        validateAppCheckV1(context);
-        const uid = assertAuth(context);
-        const { platform, code, redirectUri, codeVerifier, facebookPageId } = data as {
+export const analyticsExchangeToken = onCall(
+    { enforceAppCheck: false, secrets: ALL_SECRETS, timeoutSeconds: 30, memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1 },
+    async (request) => {
+        validateAppCheckV2(request);
+        const uid = assertAuth(request);
+        const { platform, code, redirectUri, codeVerifier, facebookPageId } = (request.data ?? {}) as {
             platform: string;
             code: string;
             redirectUri: string;
@@ -75,7 +76,7 @@ export const analyticsExchangeToken = functions
         };
 
         if (!platform || !code || !redirectUri) {
-            throw new functions.https.HttpsError("invalid-argument", "platform, code, and redirectUri are required.");
+            throw new HttpsError("invalid-argument", "platform, code, and redirectUri are required.");
         }
 
         let tokenRes: SpotifyTokenResponse | TikTokTokenResponse;
@@ -134,23 +135,23 @@ export const analyticsExchangeToken = functions
             return instagramConnectionResponse(connection);
         }
 
-        throw new functions.https.HttpsError("invalid-argument", `Unsupported platform: ${platform}`);
+        throw new HttpsError("invalid-argument", `Unsupported platform: ${platform}`);
     });
 
 /** Finalize one short-lived server-only Meta Page selection without reusing an OAuth code. */
-export const analyticsFinalizeInstagramConnection = functions
-    .runWith({ enforceAppCheck: false, secrets: ALL_SECRETS, timeoutSeconds: 15 })
-    .https.onCall(async (data: unknown, context) => {
-        validateAppCheckV1(context);
-        const uid = assertAuth(context);
-        const { intentId, facebookPageId } = data as { intentId?: string; facebookPageId?: string };
+export const analyticsFinalizeInstagramConnection = onCall(
+    { enforceAppCheck: false, secrets: ALL_SECRETS, timeoutSeconds: 15, memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1 },
+    async (request) => {
+        validateAppCheckV2(request);
+        const uid = assertAuth(request);
+        const { intentId, facebookPageId } = (request.data ?? {}) as { intentId?: string; facebookPageId?: string };
         if (!isSafeIdentifier(intentId) || !isSafeIdentifier(facebookPageId)) {
-            throw new functions.https.HttpsError('invalid-argument', 'intentId and facebookPageId are required safe identifiers.');
+            throw new HttpsError('invalid-argument', 'intentId and facebookPageId are required safe identifiers.');
         }
         const intent = await consumePendingInstagramIntent(uid, intentId);
         const page = Array.isArray(intent.pages) && intent.pages.find(candidate => candidate.facebookPageId === facebookPageId);
         if (!page || !intent.accessToken || !Number.isFinite(intent.tokenExpiresIn)) {
-            throw new functions.https.HttpsError('failed-precondition', 'The selected Facebook Page is not available for this Instagram connection.');
+            throw new HttpsError('failed-precondition', 'The selected Facebook Page is not available for this Instagram connection.');
         }
         const connection = connectionFromPage(intent.accessToken, intent.tokenExpiresIn, page);
         await storeInstagramConnection(uid, connection);
@@ -158,14 +159,14 @@ export const analyticsFinalizeInstagramConnection = functions
     });
 
 /** Return connection metadata only; OAuth tokens never leave the backend. */
-export const analyticsGetConnectionStatus = functions
-    .runWith({ enforceAppCheck: false, timeoutSeconds: 15 })
-    .https.onCall(async (data: unknown, context) => {
-        validateAppCheckV1(context);
-        const uid = assertAuth(context);
-        const platform = (data as { platform?: unknown }).platform;
+export const analyticsGetConnectionStatus = onCall(
+    { enforceAppCheck: false, timeoutSeconds: 15, memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1 },
+    async (request) => {
+        validateAppCheckV2(request);
+        const uid = assertAuth(request);
+        const platform = (request.data as { platform?: unknown } | undefined)?.platform;
         if (platform !== 'instagram') {
-            throw new functions.https.HttpsError('invalid-argument', 'Only Instagram connection status is available from this endpoint.');
+            throw new HttpsError('invalid-argument', 'Only Instagram connection status is available from this endpoint.');
         }
         const snapshot = await tokenPath(uid, platform).get();
         if (!snapshot.exists) return { connected: false };
@@ -188,24 +189,24 @@ export const analyticsGetConnectionStatus = functions
 // Refresh an expired access token using the stored refresh token.
 // ─────────────────────────────────────────────────────────────────────────────
 
-export const analyticsRefreshToken = functions
-    .runWith({ enforceAppCheck: false,  secrets: ALL_SECRETS, timeoutSeconds: 30  })
-    .https.onCall(async (data: unknown, context) => {
-        validateAppCheckV1(context);
-        const uid = assertAuth(context);
-        const { platform } = data as { platform: string };
+export const analyticsRefreshToken = onCall(
+    { enforceAppCheck: false, secrets: ALL_SECRETS, timeoutSeconds: 30, memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1 },
+    async (request) => {
+        validateAppCheckV2(request);
+        const uid = assertAuth(request);
+        const { platform } = (request.data ?? {}) as { platform: string };
         if (!platform) {
-            throw new functions.https.HttpsError("invalid-argument", "platform is required.");
+            throw new HttpsError("invalid-argument", "platform is required.");
         }
 
         const snap = await tokenPath(uid, platform).get();
         if (!snap.exists) {
-            throw new functions.https.HttpsError("not-found", `No token stored for platform: ${platform}`);
+            throw new HttpsError("not-found", `No token stored for platform: ${platform}`);
         }
 
         const stored = snap.data() as StoredToken;
         if (!stored.refreshToken) {
-            throw new functions.https.HttpsError("failed-precondition", "No refresh token available — user must re-authenticate.");
+            throw new HttpsError("failed-precondition", "No refresh token available — user must re-authenticate.");
         }
 
         // Check if still valid (5-min buffer)
@@ -228,12 +229,12 @@ export const analyticsRefreshToken = functions
             newExpiry  = Date.now() + (r.expires_in ?? 86400) * 1000;
             newRefresh = r.refresh_token ?? stored.refreshToken;
         } else if (platform === "instagram") {
-            throw new functions.https.HttpsError(
+            throw new HttpsError(
                 'failed-precondition',
                 'Instagram Graph access requires reconnecting before the Facebook token expires.',
             );
         } else {
-            throw new functions.https.HttpsError("invalid-argument", `Unsupported platform: ${platform}`);
+            throw new HttpsError("invalid-argument", `Unsupported platform: ${platform}`);
         }
 
         await storeToken(uid, platform, {
@@ -251,14 +252,14 @@ export const analyticsRefreshToken = functions
 // Disconnect a platform — deletes stored tokens from Firestore.
 // ─────────────────────────────────────────────────────────────────────────────
 
-export const analyticsRevokeToken = functions
-    .runWith({ enforceAppCheck: false,  secrets: ALL_SECRETS, timeoutSeconds: 15  })
-    .https.onCall(async (data: unknown, context) => {
-        validateAppCheckV1(context);
-        const uid = assertAuth(context);
-        const { platform } = data as { platform: string };
+export const analyticsRevokeToken = onCall(
+    { enforceAppCheck: false, secrets: ALL_SECRETS, timeoutSeconds: 15, memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1 },
+    async (request) => {
+        validateAppCheckV2(request);
+        const uid = assertAuth(request);
+        const { platform } = (request.data ?? {}) as { platform: string };
         if (!platform) {
-            throw new functions.https.HttpsError("invalid-argument", "platform is required.");
+            throw new HttpsError("invalid-argument", "platform is required.");
         }
 
         // Best-effort revocation at the platform's API
@@ -267,7 +268,7 @@ export const analyticsRevokeToken = functions
             const stored = snap.data() as StoredToken;
             if (platform === "spotify" && stored.accessToken) {
                 await revokeSpotifyToken(stored.accessToken).catch((err: unknown) => {
-                    functions.logger.warn(`[analyticsRevokeToken] Spotify token revocation failed for user ${uid}:`, err);
+                    logger.warn(`[analyticsRevokeToken] Spotify token revocation failed for user ${uid}:`, err);
                 });
             }
         }
@@ -317,9 +318,9 @@ function isSafeIdentifier(value: unknown): value is string {
     return typeof value === 'string' && /^[A-Za-z0-9_-]{1,128}$/.test(value);
 }
 
-function metaConnectionError(error: MetaInstagramConnectionError): functions.https.HttpsError {
+function metaConnectionError(error: MetaInstagramConnectionError): HttpsError {
     const status = error.code === 'META_TOKEN_EXCHANGE_FAILED' ? 'internal' : 'failed-precondition';
-    return new functions.https.HttpsError(status, error.message, {
+    return new HttpsError(status, error.message, {
         code: error.code,
         pages: error.pages,
     });
@@ -357,7 +358,7 @@ async function consumePendingInstagramIntent(uid: string, intentId: string): Pro
         return candidate;
     });
     if (!intent) {
-        throw new functions.https.HttpsError('not-found', 'Instagram Page selection has expired or was already used. Reconnect Instagram and try again.');
+        throw new HttpsError('not-found', 'Instagram Page selection has expired or was already used. Reconnect Instagram and try again.');
     }
     return intent;
 }
@@ -418,7 +419,7 @@ async function exchangeSpotifyCode(
 
     if (!res.ok) {
         const err = await res.text();
-        throw new functions.https.HttpsError("internal", `Spotify token exchange failed: ${err}`);
+        throw new HttpsError("internal", `Spotify token exchange failed: ${err}`);
     }
     return res.json() as Promise<SpotifyTokenResponse>;
 }
@@ -439,7 +440,7 @@ async function refreshSpotifyToken(refreshToken: string): Promise<SpotifyTokenRe
 
     if (!res.ok) {
         const err = await res.text();
-        throw new functions.https.HttpsError("internal", `Spotify refresh failed: ${err}`);
+        throw new HttpsError("internal", `Spotify refresh failed: ${err}`);
     }
     return res.json() as Promise<SpotifyTokenResponse>;
 }
@@ -449,7 +450,7 @@ async function revokeSpotifyToken(accessToken: string): Promise<void> {
         method: "DELETE",
         headers: { Authorization: `Bearer ${accessToken}` },
     }).catch((err: unknown) => {
-        functions.logger.warn('[revokeSpotifyToken] Network request failed for Spotify token deletion:', err);
+        logger.warn('[revokeSpotifyToken] Network request failed for Spotify token deletion:', err);
     });
 }
 
@@ -468,7 +469,7 @@ async function exchangeTikTokCode(code: string, redirectUri: string): Promise<Ti
 
     if (!res.ok) {
         const err = await res.text();
-        throw new functions.https.HttpsError("internal", `TikTok token exchange failed: ${err}`);
+        throw new HttpsError("internal", `TikTok token exchange failed: ${err}`);
     }
 
     const body = await res.json() as { data: TikTokTokenResponse };
@@ -489,7 +490,7 @@ async function refreshTikTokToken(refreshToken: string): Promise<TikTokTokenResp
 
     if (!res.ok) {
         const err = await res.text();
-        throw new functions.https.HttpsError("internal", `TikTok refresh failed: ${err}`);
+        throw new HttpsError("internal", `TikTok refresh failed: ${err}`);
     }
     const body = await res.json() as { data: TikTokTokenResponse };
     return body.data;

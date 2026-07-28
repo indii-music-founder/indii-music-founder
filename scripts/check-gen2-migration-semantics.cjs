@@ -91,6 +91,10 @@ const MIGRATED = [
     'createStripeAccount', 'createStripeConnectAccount', 'createTransfer',
     'generateItinerary', 'checkLogistics', 'findPlaces',
     'executeCampaign', 'dispatchSocialPost', 'createInfluencerBounty',
+    // bug reporting / analytics OAuth token exchange
+    'reportBugFn',
+    'analyticsExchangeToken', 'analyticsFinalizeInstagramConnection',
+    'analyticsGetConnectionStatus', 'analyticsRefreshToken', 'analyticsRevokeToken',
 ];
 const MIGRATED_SET = new Set(MIGRATED);
 
