@@ -36,10 +36,10 @@ export const auditReleaseArtworkForDelivery = onCall(
         try {
             return await auditReleaseArtworkForOwner(request.auth.uid, request.data);
         } catch (error) {
-            // Trap 2 of 7 (see ISSUE-1243). `releaseIdFrom` raises the
-            // invalid-argument errors this is meant to pass through; both are
-            // v2 now, so they survive instead of being flattened to
-            // failed-precondition.
+            // Passes `releaseIdFrom`'s invalid-argument errors through instead
+            // of flattening them to failed-precondition. Reference renamed from
+            // functions.https.HttpsError under ISSUE-1243; behavior unchanged,
+            // since v1 and v2 share one HttpsError class.
             if (error instanceof HttpsError) throw error;
             throw new HttpsError(
                 'failed-precondition',

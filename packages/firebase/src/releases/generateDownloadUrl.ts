@@ -70,11 +70,12 @@ export const generateReleaseDownloadUrl = onCall(
 
             return { success: true, url };
         } catch (error) {
-            // Trap 1 of 7 (see ISSUE-1243): this tested the v1 HttpsError class
-            // while the not-found throw above is now v2, so a genuine
-            // "release file unavailable" would have fallen through and been
-            // relabelled 'internal' with its message discarded. Both sides are
-            // v2 now, so the intended pass-through actually works.
+            // Passes the not-found raised above through unchanged instead of
+            // relabelling it 'internal'. The reference was renamed from
+            // functions.https.HttpsError to HttpsError as part of ISSUE-1243;
+            // that is cosmetic, not a fix. firebase-functions re-exports one
+            // HttpsError class from common/providers/https to both v1 and v2,
+            // so this check behaved identically before the rename.
             if (error instanceof HttpsError) {
                 throw error;
             }

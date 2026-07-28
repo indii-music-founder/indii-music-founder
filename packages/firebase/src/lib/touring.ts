@@ -210,11 +210,11 @@ export const findPlaces = onCall(
             return { places };
         } catch (error: unknown) {
             console.error("Maps API Error:", error);
-            // Trap 3 of 7 (see ISSUE-1243). The "Location not found" throw above
-            // is raised inside this try specifically so it can pass through
-            // here - the comment at that site says so. It tested the v1 class
-            // while the throw is v2, so the pass-through never fired and a
-            // real not-found surfaced as 'internal: Failed to fetch places'.
+            // The "Location not found" throw above is raised inside this try
+            // specifically so it can pass through here rather than surfacing as
+            // 'internal: Failed to fetch places'; the comment at that site says
+            // so. Reference renamed from functions.https.HttpsError under
+            // ISSUE-1243 — cosmetic, since v1 and v2 share one HttpsError class.
             if (error instanceof HttpsError) {
                 throw error;
             }

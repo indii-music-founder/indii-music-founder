@@ -112,9 +112,11 @@ export const emailExchangeToken = onCall(
             };
 
         } catch (error: unknown) {
-            // An HttpsError raised inside the try - the unknown-provider throw
-            // above is in scope - is already the correct, actionable error.
-            // Re-throw it rather than relabelling it 'internal' (ISSUE-1243).
+            // The unknown-provider throw above is raised inside this try, and
+            // this catch previously had no pass-through, so that actionable
+            // invalid-argument was being relabelled 'internal'. Re-throw
+            // HttpsError unchanged. Pre-existing defect, unrelated to the
+            // generation change - v1 and v2 share one HttpsError class.
             if (error instanceof HttpsError) throw error;
             const err = error as Error;
             console.error(`[EmailToken] Exchange failed for ${provider}:`, err);
@@ -201,9 +203,11 @@ export const emailRefreshToken = onCall(
             };
 
         } catch (error: unknown) {
-            // An HttpsError raised inside the try - the unknown-provider throw
-            // above is in scope - is already the correct, actionable error.
-            // Re-throw it rather than relabelling it 'internal' (ISSUE-1243).
+            // The unknown-provider throw above is raised inside this try, and
+            // this catch previously had no pass-through, so that actionable
+            // invalid-argument was being relabelled 'internal'. Re-throw
+            // HttpsError unchanged. Pre-existing defect, unrelated to the
+            // generation change - v1 and v2 share one HttpsError class.
             if (error instanceof HttpsError) throw error;
             const err = error as Error;
             console.error(`[EmailToken] Refresh failed for ${provider}:`, err);

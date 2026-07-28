@@ -119,11 +119,11 @@ export const refreshSocialToken = onCall(
                     throw new HttpsError('invalid-argument', `Unsupported platform: ${req.platform}`);
             }
         } catch (err: unknown) {
-            // An HttpsError raised inside the try — the unsupported-platform
-            // `default` above is thrown in scope — is already the correct,
-            // actionable error. Re-throw it unchanged instead of relabelling it
-            // 'internal', which is the same swallowing that hid ISSUE-1242's
-            // real cause and sent that investigation to the wrong subsystem.
+            // The unsupported-platform `default` above throws inside this try,
+            // and this catch previously had no pass-through at all, so that
+            // actionable invalid-argument was being relabelled 'internal'.
+            // Re-throw HttpsError unchanged. (Pre-existing defect, unrelated to
+            // the generation change — v1 and v2 share one HttpsError class.)
             if (err instanceof HttpsError) throw err;
             const message = err instanceof Error ? err.message : 'Unknown error';
             if (message.includes('Token refresh failed')) {
