@@ -83,19 +83,7 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 echo "PHASE 4: Model Policy Verification"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-# Check for invalid Vertex multi-region hosts. `us` and `eu` are valid Vertex
-# resource locations, but they must use the unprefixed aiplatform.googleapis.com
-# API host; `us-aiplatform.googleapis.com` is invalid.
-echo "▶ Checking for invalid Vertex host construction..."
-if rg -n "https://(us|eu|global)-aiplatform\\.googleapis\\.com|\\bus-aiplatform\\.googleapis\\.com" packages/firebase/src packages/renderer/src scripts e2e .github/workflows > /tmp/indii-invalid-vertex-hosts.txt 2>/dev/null; then
-    echo "  ❌ FAIL: Invalid Vertex API host pattern found!"
-    head -5 /tmp/indii-invalid-vertex-hosts.txt
-    ((FAILED += 1))
-else
-    echo "  ✅ PASS: No invalid Vertex host patterns"
-    ((PASSED += 1))
-fi
-echo ""
+run_test "Canonical Vertex Routing Boundary" "npm run security:vertex-routing"
 
 # ============================================================================
 # RESULTS

@@ -26,19 +26,16 @@
  */
 
 import { GoogleGenAI } from "@google/genai";
+import { resolveVertexLocation } from './vertexRouting';
 
 const clientsCache = new Map<string, GoogleGenAI>();
 
 /**
- * Vertex tuned endpoint resource names can use multi-region locations such as
- * `us`, but the public API host is not `us-aiplatform.googleapis.com`.
+ * Compatibility wrapper for callers that need only the base URL. All routing
+ * decisions are delegated to the canonical typed resolver.
  */
 export function getVertexAIBaseUrl(location: string): string {
-  if (location === 'global' || location === 'us' || location === 'eu') {
-    return 'https://aiplatform.googleapis.com';
-  }
-
-  return `https://${location}-aiplatform.googleapis.com`;
+  return resolveVertexLocation(location).baseUrl;
 }
 
 /**
@@ -55,8 +52,8 @@ export function getVertexAIClient(projectOverride?: string, locationOverride?: s
     return clientsCache.get(cacheKey)!;
   }
 
-  // Global and multi-region locations are served from the unprefixed host
-  // (aiplatform.googleapis.com); regional locations use LOCATION-prefixed hosts.
+  // The canonical resolver preserves global, replica multi-region, and regional
+  // routing semantics. Feature code must not construct these hosts itself.
   const baseUrl = getVertexAIBaseUrl(location);
 
   const client = new GoogleGenAI({

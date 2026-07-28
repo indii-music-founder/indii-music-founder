@@ -3401,3 +3401,36 @@ acceptance criteria.
 - **Honest fallback:** Collapse lower-priority rails behind labeled drawers before covering the primary action or shrinking the central workspace below its supported minimum.
 - **Acceptance:** Through a genuine authenticated application session, verify 2560/1920/1440/1280/1024/768 CSS-pixel widths; sidebar and right-panel open/closed/resized states; 80–200% zoom; empty/loading/image/video/long-error states; Electron maximize/restore/manual resize and supported secondary windows. No body horizontal scroll, hidden primary action, unannounced overlay, undersized stage, or creative-state reset. Record screenshots/DOM measurements from the real path.
 - **DO NOT:** Do not infer internal space from `window.innerWidth`, reset creative state during reflow, hide controls without an accessible trigger, use mock-backed screenshots as customer evidence, or call component tests production validation.
+
+### ISSUE-1264: Vertex multi-region resources were routed through the global host and specialized agents silently downgraded
+
+- **Status:** ✅ FIXED LOCALLY (2026-07-28; production deployment/live request still required)
+- **Severity:** 🔴 CRITICAL
+- **Module:** `packages/firebase/src/lib/vertexRouting.ts`; `vertexClient.ts`; `index.ts`; renderer specialist model/stream contracts; endpoint registry sync
+- **Production evidence:** Authenticated Boardroom calls selected approved R8 resources under `projects/148015878263/locations/us/endpoints/*`, but the client mapped `us` to `https://aiplatform.googleapis.com`. That host returned 404 and `generateContentStream` silently resent the prompt to `gemini-3.1-flash-lite`. A read-only GET of the same generalist resource through `https://aiplatform.us.rep.googleapis.com` returned the live endpoint metadata in both `v1` and `v1beta1`; a read-only preflight subsequently verified all 22 configured specialist endpoints.
+- **Root cause:** A June compatibility workaround collapsed `global`, `us`, and `eu` onto the global host. Current Vertex routing requires global resources on the global host, `us`/`eu` multi-region resources on their replica hosts, and regional resources on location-prefixed hosts. Tuning-job synchronization trusted persisted endpoint names without checking that each resource was reachable through its resolved host.
+- **Correction:** One typed fail-closed resolver now owns location-to-host mapping and full endpoint parsing. Feature code is guarded against direct hostname construction. Registry synchronization performs read-only endpoint metadata preflight before writing and supports a no-write `--check` health command. Specialized routing disabled, malformed, unavailable, timed out, or provider-failed now returns typed `SPECIALIST_UNAVAILABLE`; no base/general model is invoked. The renderer preserves the typed retry/category/next-action contract and no endpoint details are returned publicly.
+- **Validation:** 49 targeted tests pass, including global/US/EU/regional table cases, unsupported and host-mismatch negatives, complete resource identity, typed public payloads, frontend preservation, capability truthfulness, and 404/503/timeout proof that only the requested specialized resource is called. Firebase production build, renderer typecheck, Firebase-test typecheck, routing guard, and 22-endpoint read-only live preflight pass.
+- **Remaining:** No deployment was authorized. After deployment, make one genuine authenticated Boardroom specialist request and verify telemetry reports `routeKind=multi-region`, `location=us`, HTTP 200, and no `SPECIALIST_UNAVAILABLE` or general-model call.
+- **DO NOT:** Do not restore a fallback, rewrite resource locations, hand-build Vertex hosts, expose endpoint identifiers to users, or treat a tuning-job endpoint field alone as serving-health proof.
+
+### ISSUE-1265: Boardroom image failure was masked by a later application rate-limit response
+
+- **Status:** 🟡 DIAGNOSED; FIX OWNED BY DEDICATED IMAGE LANE `7dd4`
+- **Severity:** 🟠 HIGH
+- **Module:** Boardroom/Conductor image delegation; image-generation admission, reservation/job state, Arcjet, provider error mapping, and retry UX
+- **Production evidence:** On 2026-07-28, after normal Boardroom greetings and Conductor responses completed, a founder request to create a simple dog-related image returned: “Too many AI generation requests. Please retry shortly.”
+- **Verified sequence:** Production logs at 15:02 UTC show `generateContentStream` emitted the image tool call; `generateImageV3` received it and Arcjet allowed it, then rejected a synthetic client-side founder reservation receipt before any `creative_jobs` write or provider submission. No durable cost-ledger record, job, provider call, or charge existed. A subsequent Conductor summary turn hit the independent Firestore 10/min text limiter and produced the reported generic text, masking the reservation failure.
+- **Owned correction:** Worktree `7dd4` owns removal of the synthetic founder reservation bypass and Boardroom post-tool recovery. This lane only makes the text-gateway 429 contract truthful and typed as `GENERATION_CAPACITY_LIMITED` / `application_rate_limit`, including `providerSubmitted=false`, a retry delay, and no automatic resubmission.
+- **Acceptance:** Dedicated image lane must land its durable reservation and post-tool recovery changes. After both lanes deploy, make a genuine founder image request and verify one durable reservation, one provider submission or truthful pre-submission failure, no false charge, and no masking summary error.
+- **DO NOT:** Do not increase quota, weaken throttling/Arcjet, fabricate provider quota, silently retry through a general model, or overlap responsive image/video renderer work.
+
+### ISSUE-1266: Conductor capability answers overstated planned or degraded integrations and exposed internal identifiers
+
+- **Status:** ✅ FIXED LOCALLY (2026-07-28; production deployment/live request still required)
+- **Severity:** 🟠 HIGH
+- **Module:** `GeneralistAgent`; `capabilityTruth.ts`; Conductor system prompt
+- **Production evidence:** The Conductor described broad static abilities from prompt memory, including unavailable media work and planned banking/rights/DSP integrations, while exposing raw tool names, internal policy jargon, and unsupported incident speculation.
+- **Correction:** Capability questions bypass freeform model recall and are rendered deterministically from the current agent's authorized-and-registered tool intersection, registered specialists, and typed live health. Output separates available, specialist-routed, approval-required, degraded, and not-active states using safe user labels. Planned integrations and internal tool/provider/security identifiers are not presented as active capabilities.
+- **Validation:** Five capability-specific tests prove unregistered tools are not claimed, degraded image generation is disclosed, planned banking/rights/DSP work stays inactive, approval requirements are labeled, internal identifiers are hidden, and historical incident language is not fabricated.
+- **Remaining:** After deployment, ask the genuine authenticated Conductor the production capability question while image health is degraded and verify the concise deterministic response matches the actual session registry and health.

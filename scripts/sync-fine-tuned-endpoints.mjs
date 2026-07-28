@@ -2,7 +2,7 @@
 /**
  * Sync fine-tuned endpoint IDs from Vertex AI tuningJobs REST API.
  *
- * Usage: node scripts/sync-fine-tuned-endpoints.mjs
+ * Usage: node --import tsx scripts/sync-fine-tuned-endpoints.mjs [--check]
  *
  * Requires: gcloud CLI authenticated (gcloud auth login)
  * Fetches: tuningJobs from Vertex (location: VERTEX_TUNING_LOCATION or us-central1, picks latest per agent by endTime)
@@ -13,18 +13,16 @@ import { spawn } from 'child_process';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import {
+  resolveVertexEndpointResource,
+  resolveVertexLocation,
+} from '../packages/firebase/src/lib/vertexRouting.ts';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PROJECT_ID = process.env.VERTEX_PROJECT_ID || process.env.GOOGLE_CLOUD_PROJECT || process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT || 'indii-music-founder';
 const LOCATION = process.env.VERTEX_TUNING_LOCATION || 'us-central1';
 const OUTPUT_FILE = path.join(__dirname, '../packages/renderer/src/services/agent/fine-tuned-endpoints.generated.ts');
 const FIREBASE_POLICY_OUTPUT_FILE = path.join(__dirname, '../packages/firebase/src/config/textStreamModels.ts');
-
-function getVertexAIBaseUrl(location) {
-  return location === 'global' || location === 'us' || location === 'eu'
-    ? 'https://aiplatform.googleapis.com'
-    : `https://${location}-aiplatform.googleapis.com`;
-}
 
 async function getAccessToken() {
   return new Promise((resolve, reject) => {
@@ -39,11 +37,45 @@ async function getAccessToken() {
 }
 
 async function fetchTuningJobs(token) {
-  const url = `${getVertexAIBaseUrl(LOCATION)}/v1/projects/${PROJECT_ID}/locations/${LOCATION}/tuningJobs?pageSize=200`;
+  const url = `${resolveVertexLocation(LOCATION).baseUrl}/v1/projects/${PROJECT_ID}/locations/${LOCATION}/tuningJobs?pageSize=200`;
   const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
   if (!res.ok) throw new Error(`Vertex API failed (${res.status}): ${await res.text()}`);
   const data = await res.json();
   return data.tuningJobs || [];
+}
+
+async function preflightEndpoints(token, registry) {
+  const resources = [...new Set(Object.values(registry))];
+  const failures = [];
+
+  for (const resourceName of resources) {
+    try {
+      const route = resolveVertexEndpointResource(resourceName);
+      const url = `${route.baseUrl}/v1/${route.resourceName}`;
+      const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+      if (!res.ok) {
+        failures.push({
+          category: res.status === 404 ? 'specialist_unavailable' : 'provider_outage',
+          status: res.status,
+        });
+      }
+    } catch (error) {
+      failures.push({
+        category: 'routing_misconfiguration',
+        status: error?.code || 'VERTEX_ROUTING_UNRESOLVED',
+      });
+    }
+  }
+
+  if (failures.length > 0) {
+    const counts = failures.reduce((acc, failure) => {
+      acc[failure.category] = (acc[failure.category] || 0) + 1;
+      return acc;
+    }, {});
+    throw new Error(`Specialist endpoint preflight failed: ${JSON.stringify(counts)}`);
+  }
+
+  return resources.length;
 }
 
 function extractAgentId(displayName) {
@@ -79,7 +111,7 @@ function generateFile(registry) {
   return `/**
  * GENERATED FILE — DO NOT EDIT BY HAND
  *
- * Regen command: node scripts/sync-fine-tuned-endpoints.mjs
+ * Regen command: node --import tsx scripts/sync-fine-tuned-endpoints.mjs
  * Source: Vertex AI tuningJobs REST API (location: us, latest per agent by endTime)
  * Last synced: ${now}
  *
@@ -102,7 +134,7 @@ function generateFirebasePolicyFile(registry) {
   return `/**
  * GENERATED FILE — DO NOT EDIT BY HAND
  *
- * Regen command: node scripts/sync-fine-tuned-endpoints.mjs
+ * Regen command: node --import tsx scripts/sync-fine-tuned-endpoints.mjs
  * Source: Vertex AI tuningJobs REST API (latest succeeded endpoint per agent).
  *
  * Browser requests may name a capability, but only these Vertex base models
@@ -147,6 +179,14 @@ async function main() {
     const registry = buildRegistry(jobs);
     console.log(`✓ Built registry for ${Object.keys(registry).length} agents`);
 
+    const checkedEndpoints = await preflightEndpoints(token, registry);
+    console.log(`✓ Read-only preflight verified ${checkedEndpoints} specialist endpoints`);
+
+    if (process.argv.includes('--check')) {
+      console.log('✓ Check-only mode: generated files were not modified');
+      return;
+    }
+
     const content = generateFile(registry);
     fs.writeFileSync(OUTPUT_FILE, content, 'utf8');
     console.log(`✓ Wrote ${OUTPUT_FILE}`);
@@ -160,7 +200,7 @@ async function main() {
     });
   } catch (err) {
     console.error(`✗ Error: ${err.message}`);
-    console.error('\nFallback: hand-write fine-tuned-endpoints.generated.ts from the plan.');
+    console.error('\nNo files were written. Restore authorization or correct the typed routing/preflight failure, then retry.');
     process.exit(1);
   }
 }

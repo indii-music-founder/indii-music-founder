@@ -2,10 +2,22 @@
 import { BaseAgent } from '../BaseAgent';
 // useStore removed to prevent circular dependency - dynamically imported in execute()
 // TOOL_REGISTRY removed to prevent circular dependency
-import { FunctionDeclaration, ToolDefinition } from '../types';
+import {
+    AgentContext,
+    AgentProgressCallback,
+    AgentResponse,
+    FunctionDeclaration,
+    ToolDefinition,
+} from '../types';
 
 import systemPrompt from '@agents/conductor/prompt.md?raw';
 import { importWithRetry } from '@/utils/dynamicImport';
+import {
+    buildCapabilitySummary,
+    getCapabilityHealth,
+    isCapabilityQuestion,
+    recordCapabilityHealth,
+} from '../capabilityTruth';
 
 /**
  * GeneralistAgent (indii Conductor) - The primary orchestrator and fallback agent.
@@ -85,6 +97,43 @@ export class GeneralistAgent extends BaseAgent {
         // NOTE: freezeAgentConfig was removed here. It deep-froze `this.tools` (and `this` itself),
         // which caused "Cannot assign to read only property 'parameters'" errors when model
         // gateways normalize tool declarations. Tool integrity is now protected by per-iteration cloning below.
+    }
+
+    override async execute(
+        task: string,
+        context?: AgentContext,
+        onProgress?: AgentProgressCallback,
+        signal?: AbortSignal,
+        attachments?: { mimeType: string; base64: string }[],
+    ): Promise<AgentResponse> {
+        if (isCapabilityQuestion(task)) {
+            if (!this.functions) await this.initialize();
+            const registeredTools = this.authorizedTools.filter(
+                tool => typeof this.functions?.[tool] === 'function',
+            );
+            const { agentRegistry } = await importWithRetry(() => import('../registry'));
+            return {
+                text: buildCapabilitySummary({
+                    authorizedTools: registeredTools,
+                    registeredSpecialistIds: agentRegistry.getAll().map(agent => agent.id),
+                    health: getCapabilityHealth(),
+                }),
+                toolCalls: [],
+            };
+        }
+
+        const response = await super.execute(task, context, onProgress, signal, attachments);
+        if (response.error && /\b(image|picture|artwork|visual)\b/i.test(task)) {
+            const retryMatch = response.text.match(/(\d+)\s*(?:seconds?|s)\b/i);
+            recordCapabilityHealth('image_generation', {
+                status: 'degraded',
+                retryAfterSeconds: retryMatch ? Number(retryMatch[1]) : undefined,
+            });
+        }
+        if (response.error && /\bvideo\b/i.test(task)) {
+            recordCapabilityHealth('video_generation', { status: 'degraded' });
+        }
+        return response;
     }
 
 
@@ -257,7 +306,7 @@ export class GeneralistAgent extends BaseAgent {
             },
             {
                 name: 'consult_specialist',
-                description: 'Consult a specialized agent via the A2A protocol. Use this for precise, single-expert delegation with security gating and session context. Requests routed via secure encrypted channels with automatic fallback if needed.',
+                description: 'Consult a specialized agent via the A2A protocol. Use this for precise, single-expert delegation with security gating and session context. Transport recovery preserves the selected specialist; unavailable specialists are never replaced by a general model.',
                 parameters: {
                     type: 'OBJECT',
                     properties: {

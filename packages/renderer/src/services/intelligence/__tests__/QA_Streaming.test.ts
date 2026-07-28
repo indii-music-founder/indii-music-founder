@@ -97,6 +97,124 @@ describe('Streaming QA', () => {
         expect(r2.done).toBe(true);
     });
 
+    it('preserves the typed specialist-unavailable contract and retry guidance', async () => {
+        vi.mocked(fetch).mockResolvedValueOnce(new Response(JSON.stringify({
+            error: {
+                code: 'SPECIALIST_UNAVAILABLE',
+                message: 'This specialist is temporarily unavailable. Your request was not processed by another model.',
+                retryable: true,
+                category: 'specialist_unavailable',
+                nextActions: ['retry_later', 'select_qualified_specialist'],
+            },
+        }), {
+            status: 503,
+            headers: { 'Content-Type': 'application/json' },
+        }));
+
+        await expect((service as any).callBackendGenerateContentStream(
+            [{ role: 'user', parts: [{ text: 'specialist-only prompt' }] }],
+            'projects/148015878263/locations/us/endpoints/1720656532632240128',
+            {},
+        )).rejects.toMatchObject({
+            code: 'SPECIALIST_UNAVAILABLE',
+            message: 'This specialist is temporarily unavailable. Your request was not processed by another model.',
+            details: {
+                retryable: true,
+                reason: 'specialist_unavailable',
+                context: {
+                    nextActions: ['retry_later', 'select_qualified_specialist'],
+                },
+            },
+        });
+    });
+
+    it('does not automatically resubmit a specialist request after typed unavailability', async () => {
+        vi.mocked(fetch).mockClear();
+        vi.mocked(fetch).mockResolvedValue(new Response(JSON.stringify({
+            error: {
+                code: 'SPECIALIST_UNAVAILABLE',
+                message: 'This specialist is temporarily unavailable. Your request was not processed by another model.',
+                retryable: true,
+                category: 'provider_outage',
+                nextActions: ['retry_later', 'select_qualified_specialist'],
+            },
+        }), {
+            status: 503,
+            headers: { 'Content-Type': 'application/json' },
+        }));
+
+        await expect(service.generateContentStream(
+            'specialist-only prompt',
+            'projects/148015878263/locations/us/endpoints/1720656532632240128',
+        )).rejects.toMatchObject({
+            code: 'SPECIALIST_UNAVAILABLE',
+        });
+
+        expect(fetch).toHaveBeenCalledTimes(1);
+    });
+
+    it('preserves typed application capacity without resubmitting or claiming provider work', async () => {
+        vi.mocked(fetch).mockClear();
+        vi.mocked(fetch).mockResolvedValue(new Response(JSON.stringify({
+            error: {
+                code: 'GENERATION_CAPACITY_LIMITED',
+                message: 'Boardroom is temporarily at capacity. Your request was not sent for generation.',
+                retryable: true,
+                retryAfterSeconds: 60,
+                category: 'application_rate_limit',
+                nextActions: ['retry_after_wait'],
+                providerSubmitted: false,
+            },
+        }), {
+            status: 429,
+            headers: { 'Content-Type': 'application/json' },
+        }));
+
+        await expect(service.generateContentStream('create an image of a dog')).rejects.toMatchObject({
+            code: 'GENERATION_CAPACITY_LIMITED',
+            details: {
+                retryable: true,
+                retryAfterMs: 60_000,
+                reason: 'application_rate_limit',
+                context: {
+                    nextActions: ['retry_after_wait'],
+                    providerSubmitted: false,
+                },
+            },
+        });
+        expect(fetch).toHaveBeenCalledTimes(1);
+    });
+
+    it('rejects partial specialist output when the stream ends with an unavailable record', async () => {
+        vi.mocked(fetch).mockResolvedValueOnce(new Response(
+            `${JSON.stringify({ text: 'partial' })}\n${JSON.stringify({
+                error: {
+                    code: 'SPECIALIST_UNAVAILABLE',
+                    message: 'This specialist is temporarily unavailable. Your request was not processed by another model.',
+                    retryable: true,
+                    category: 'provider_outage',
+                    nextActions: ['retry_later', 'select_qualified_specialist'],
+                },
+            })}\n`,
+            { status: 200, headers: { 'Content-Type': 'application/x-ndjson' } },
+        ));
+
+        const { stream, response } = await service.generateContentStream(
+            'specialist-only prompt',
+            'projects/148015878263/locations/us/endpoints/1720656532632240128',
+        );
+        const responseFailure = response.catch((error: unknown) => error);
+        const reader = stream.getReader();
+
+        await expect(reader.read()).rejects.toMatchObject({
+            code: 'SPECIALIST_UNAVAILABLE',
+        });
+        await expect(responseFailure).resolves.toMatchObject({
+            code: 'SPECIALIST_UNAVAILABLE',
+            details: { reason: 'provider_outage', retryable: true },
+        });
+    });
+
     it('should preserve function calls from SSE candidate parts', async () => {
         vi.mocked(fetch).mockResolvedValueOnce(new Response(
             `data: ${JSON.stringify({

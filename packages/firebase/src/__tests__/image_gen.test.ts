@@ -12,9 +12,17 @@ const mocks = vi.hoisted(() => {
         editImage: vi.fn(),
         secrets: {
             value: vi.fn(() => 'mock-api-key')
-        }
+        },
+        enforceRateLimit: vi.fn().mockResolvedValue(undefined),
     };
 });
+
+vi.mock('../lib/rateLimit', () => ({
+    enforceRateLimit: mocks.enforceRateLimit,
+    RATE_LIMITS: {
+        generation: { maxRequests: 10, windowMs: 60_000 },
+    },
+}));
 
 // Mock @google/genai
 vi.mock('@google/genai', () => {
@@ -197,6 +205,7 @@ import { generateImageV3, editImage, generateContentStream, enrichFanData, healt
 describe('Image and Content Generation Functions', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        mocks.enforceRateLimit.mockResolvedValue(undefined);
     });
 
     describe('generateImageV3', () => {
@@ -321,6 +330,48 @@ describe('Image and Content Generation Functions', () => {
     });
 
     describe('generateContentStream', () => {
+        it('returns a truthful typed application-capacity error before provider submission', async () => {
+            const req: any = {
+                method: 'POST',
+                headers: {
+                    authorization: 'Bearer token',
+                    origin: 'http://localhost:4242',
+                    'x-firebase-appcheck': 'app-check-token',
+                },
+                body: {
+                    model: 'gemini-3.1-pro-preview',
+                    contents: [{ role: 'user', parts: [{ text: 'create an image of a dog' }] }],
+                },
+            };
+            const res: any = {
+                status: vi.fn().mockReturnThis(),
+                json: vi.fn(),
+                send: vi.fn(),
+                end: vi.fn(),
+            };
+            vi.mocked(admin.auth).mockReturnValue({
+                verifyIdToken: vi.fn().mockResolvedValue({ uid: 'user123', email_verified: true }),
+            } as any);
+            const limited = new Error('application limit reached') as Error & { code: string };
+            limited.code = 'resource-exhausted';
+            mocks.enforceRateLimit.mockRejectedValueOnce(limited);
+
+            generateContentStream(req, res);
+            await vi.waitFor(() => expect(res.status).toHaveBeenCalledWith(429));
+
+            expect(res.json).toHaveBeenCalledWith({
+                error: {
+                    code: 'GENERATION_CAPACITY_LIMITED',
+                    message: 'Boardroom is temporarily at capacity. Your request was not sent for generation.',
+                    retryable: true,
+                    retryAfterSeconds: 60,
+                    category: 'application_rate_limit',
+                    nextActions: ['retry_after_wait'],
+                    providerSubmitted: false,
+                },
+            });
+            expect(mocks.generateContentStream).not.toHaveBeenCalled();
+        });
         it('should yield chunks from SDK stream', async () => {
             const req: any = {
                 method: 'POST',
@@ -445,6 +496,109 @@ describe('Image and Content Generation Functions', () => {
 
             expect(res.send).toHaveBeenCalledWith('Invalid or unauthorized model ID.');
             expect(mocks.generateContentStream).not.toHaveBeenCalled();
+        });
+
+        it.each([
+            ['404 NOT_FOUND: endpoint was not found', 'specialist_unavailable'],
+            ['503 provider unavailable', 'provider_outage'],
+            ['request timed out', 'provider_outage'],
+        ])('never sends a specialist prompt to a general fallback after %s', async (providerMessage, category) => {
+            const specialistModel =
+                'projects/148015878263/locations/us/endpoints/1720656532632240128';
+            const req: any = {
+                method: 'POST',
+                headers: {
+                    authorization: 'Bearer token',
+                    origin: 'http://localhost:4242',
+                    'x-firebase-appcheck': 'app-check-token',
+                },
+                body: {
+                    model: specialistModel,
+                    contents: [{ role: 'user', parts: [{ text: 'specialist-only work' }] }],
+                },
+            };
+            const res: any = {
+                setHeader: vi.fn(),
+                status: vi.fn().mockReturnThis(),
+                json: vi.fn(),
+                send: vi.fn(),
+                end: vi.fn(),
+                headersSent: false,
+            };
+            vi.mocked(admin.auth).mockReturnValue({
+                verifyIdToken: vi.fn().mockResolvedValue({ uid: 'user123', email_verified: true }),
+            } as any);
+            mocks.generateContentStream.mockRejectedValueOnce(new Error(providerMessage));
+
+            generateContentStream(req, res);
+            await vi.waitFor(() => expect(res.json).toHaveBeenCalled());
+
+            expect(mocks.generateContentStream).toHaveBeenCalledTimes(1);
+            expect(mocks.generateContentStream).toHaveBeenCalledWith(
+                expect.objectContaining({ model: specialistModel }),
+            );
+            expect(mocks.generateContentStream).not.toHaveBeenCalledWith(
+                expect.objectContaining({ model: expect.stringMatching(/^gemini-/) }),
+            );
+            expect(res.status).toHaveBeenCalledWith(503);
+            expect(res.json).toHaveBeenCalledWith({
+                error: {
+                    code: 'SPECIALIST_UNAVAILABLE',
+                    message: 'This specialist is temporarily unavailable. Your request was not processed by another model.',
+                    retryable: true,
+                    category,
+                    nextActions: ['retry_later', 'select_qualified_specialist'],
+                },
+            });
+        });
+
+        it('emits a terminal typed failure when a specialist stream fails after its first chunk', async () => {
+            const specialistModel =
+                'projects/148015878263/locations/us/endpoints/1720656532632240128';
+            const req: any = {
+                method: 'POST',
+                headers: {
+                    authorization: 'Bearer token',
+                    origin: 'http://localhost:4242',
+                    'x-firebase-appcheck': 'app-check-token',
+                },
+                body: {
+                    model: specialistModel,
+                    contents: [{ role: 'user', parts: [{ text: 'specialist-only work' }] }],
+                },
+            };
+            const res: any = {
+                setHeader: vi.fn(),
+                status: vi.fn().mockReturnThis(),
+                json: vi.fn(),
+                send: vi.fn(),
+                write: vi.fn(),
+                end: vi.fn(),
+                headersSent: false,
+            };
+            vi.mocked(admin.auth).mockReturnValue({
+                verifyIdToken: vi.fn().mockResolvedValue({ uid: 'user123', email_verified: true }),
+            } as any);
+            async function* interruptedStream() {
+                yield { text: 'partial' };
+                throw new Error('503 provider unavailable');
+            }
+            mocks.generateContentStream.mockResolvedValueOnce(interruptedStream());
+
+            generateContentStream(req, res);
+            await vi.waitFor(() => expect(res.end).toHaveBeenCalled());
+
+            expect(mocks.generateContentStream).toHaveBeenCalledTimes(1);
+            expect(res.write).toHaveBeenCalledWith(`${JSON.stringify({ text: 'partial' })}\n`);
+            expect(res.write).toHaveBeenCalledWith(`${JSON.stringify({
+                error: {
+                    code: 'SPECIALIST_UNAVAILABLE',
+                    message: 'This specialist is temporarily unavailable. Your request was not processed by another model.',
+                    retryable: true,
+                    category: 'provider_outage',
+                    nextActions: ['retry_later', 'select_qualified_specialist'],
+                },
+            })}\n`);
         });
     });
 

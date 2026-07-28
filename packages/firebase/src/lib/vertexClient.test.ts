@@ -35,17 +35,17 @@ describe('vertexClient', () => {
     }));
   });
 
-  it('keeps Vertex multi-region locations while using a valid client host', async () => {
+  it('keeps Vertex multi-region locations on their replica hosts', async () => {
     const { getVertexAIBaseUrl, getVertexAIClient } = await import('./vertexClient');
 
-    expect(getVertexAIBaseUrl('us')).toBe('https://aiplatform.googleapis.com');
+    expect(getVertexAIBaseUrl('us')).toBe('https://aiplatform.us.rep.googleapis.com');
     getVertexAIClient('148015878263', 'us');
 
     expect(mockGoogleGenAI).toHaveBeenCalledWith(expect.objectContaining({
       vertexai: true,
       project: '148015878263',
       location: 'us',
-      httpOptions: { baseUrl: 'https://aiplatform.googleapis.com' },
+      httpOptions: { baseUrl: 'https://aiplatform.us.rep.googleapis.com' },
     }));
   });
 

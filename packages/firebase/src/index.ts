@@ -57,6 +57,11 @@ import { checkOperationBudget, finalizeOperationReservation } from './functions/
 import { policyClassForServerEntitlement, protectAuthenticatedApiRequest } from './functions/security/arcjet';
 import { requireVerifiedCreativeAdmissionV1 } from './functions/creative/legacyAdmission';
 import { clampTextStreamOutputTokens } from './functions/creative/textStreamAdmission';
+import { resolveVertexEndpointResource } from './lib/vertexRouting';
+import {
+    classifySpecialistFailure,
+    SpecialistUnavailableError,
+} from './lib/specialistAvailability';
 
 
 // Vertex AI SDK
@@ -1073,9 +1078,24 @@ export const generateContentStream = functions
             try {
                 await enforceRateLimit(decodedToken.uid, 'generateContentStream', RATE_LIMITS.generation);
             } catch (error) {
-                const code = error instanceof functions.https.HttpsError ? error.code : undefined;
+                const code = (error as { code?: unknown })?.code;
                 if (code === 'resource-exhausted') {
-                    res.status(429).send('Too many AI generation requests. Please retry shortly.');
+                    functions.logger.warn('[generateContentStream] Application generation limit reached.', {
+                        category: 'application_rate_limit',
+                        providerSubmitted: false,
+                        retryAfterSeconds: 60,
+                    });
+                    res.status(429).json({
+                        error: {
+                            code: 'GENERATION_CAPACITY_LIMITED',
+                            message: 'Boardroom is temporarily at capacity. Your request was not sent for generation.',
+                            retryable: true,
+                            retryAfterSeconds: 60,
+                            category: 'application_rate_limit',
+                            nextActions: ['retry_after_wait'],
+                            providerSubmitted: false,
+                        },
+                    });
                     return;
                 }
                 functions.logger.error('[generateContentStream] Rate-limit check failed:', error);
@@ -1114,45 +1134,57 @@ export const generateContentStream = functions
                     return;
                 }
 
-                // Initialize Vertex AI Client (ADC auth, no API key)
+                // Initialize Vertex AI Client lazily (ADC auth, no API key).
                 const { getVertexAIClient } = await import("./lib/vertexClient");
-                let client = getVertexAIClient();
-                let finalModelId = modelId;
-
-                // KILL SWITCH (pre-emptive fallback): the tuned agents were redeployed
-                // 2026-06-21, so by DEFAULT we now TRY the fine-tuned endpoint and let the
-                // runtime auto-fallback below catch any straggler that is still spinning up.
-                // Setting DISABLE_FINE_TUNED=true forces every agent straight to the base
-                // model WITHOUT touching the endpoint at all — a manual kill switch for when
-                // the whole tuned set must be bypassed (e.g. a bad training run). It is OFF
-                // by default (only the literal 'true' triggers it) so CI deploys — where the
-                // gitignored .env is absent — route to the live tuned endpoints. The base
-                // model is served from the 'global' location (where the gemini-3.1 models
-                // live, via aiplatform.googleapis.com). See ERROR_LEDGER 2026-06-20/21.
-                const FINE_TUNED_FALLBACK_MODEL = 'gemini-3.1-flash-lite';
                 const isFineTunedEndpoint = isApprovedFineTunedTextEndpoint(modelId);
                 if (process.env.DISABLE_FINE_TUNED === 'true' && isFineTunedEndpoint) {
-                    functions.logger.warn(`[generateContentStream] DISABLE_FINE_TUNED kill switch active; routing ${modelId} -> ${FINE_TUNED_FALLBACK_MODEL} (global)`);
-                    finalModelId = FINE_TUNED_FALLBACK_MODEL;
-                    client = getVertexAIClient(undefined, 'global');
+                    const unavailable = new SpecialistUnavailableError(
+                        'routing_misconfiguration',
+                        false,
+                        new Error('Specialized routing is disabled by server policy.'),
+                    );
+                    functions.logger.error('[generateContentStream] Specialist request blocked before provider call.', {
+                        category: unavailable.category,
+                        code: unavailable.code,
+                        reason: 'DISABLE_FINE_TUNED',
+                    });
+                    res.status(503).json(unavailable.toPublicPayload());
+                    return;
                 }
 
-                // Match fine-tuned endpoint resource paths: projects/{project}/locations/{location}/endpoints/{endpointId}
-                const match = finalModelId.match(/^projects\/([^/]+)\/locations\/([^/]+)\/(endpoints\/[^/]+)$/);
-                if (match) {
-                    const [, parsedProject, parsedLocation, parsedEndpoint] = match;
-                    client = getVertexAIClient(parsedProject, parsedLocation);
-                    finalModelId = modelId; // Keep full path so SDK doesn't mangle it into publishers/endpoints/models/...
-                    functions.logger.info(`[generateContentStream] Routing to fine-tuned endpoint: project=${parsedProject}, location=${parsedLocation}, endpoint=${parsedEndpoint}`);
+                let client: ReturnType<typeof getVertexAIClient>;
+                let finalModelId = modelId;
+                if (isFineTunedEndpoint) {
+                    try {
+                        const route = resolveVertexEndpointResource(modelId);
+                        client = getVertexAIClient(route.project, route.location);
+                        // Preserve the complete resource identity so the SDK does
+                        // not rewrite it as a publisher model.
+                        finalModelId = route.resourceName;
+                        functions.logger.info('[generateContentStream] Specialist route resolved.', {
+                            routeKind: route.kind,
+                            location: route.location,
+                        });
+                    } catch (routingError: unknown) {
+                        const unavailable = classifySpecialistFailure(routingError);
+                        functions.logger.error('[generateContentStream] Specialist routing failed closed.', {
+                            category: unavailable.category,
+                            code: unavailable.code,
+                            causeCode: routingError && typeof routingError === 'object' && 'code' in routingError
+                                ? (routingError as { code: unknown }).code
+                                : undefined,
+                        });
+                        res.status(503).json(unavailable.toPublicPayload());
+                        return;
+                    }
+                } else {
+                    client = getVertexAIClient();
                 }
 
                 // Generate Content Stream.
-                // Self-heal on a missing fine-tuned endpoint: when DISABLE_FINE_TUNED=false
-                // routes us to a tuned endpoint that is still spinning up (or never
-                // redeployed), the request 404s. Rather than hard-fail that agent, pull the
-                // first chunk BEFORE sending response headers so we can retry once against the
-                // base model (global) on NOT_FOUND. Once the first chunk lands we know the
-                // endpoint is alive, so the rest streams normally. See ERROR_LEDGER 2026-06-20.
+                // Pull the first chunk before sending headers. For a specialized
+                // request, every provider failure returns a typed unavailable
+                // outcome; the prompt is never sent to a general model.
                 const openStream = (modelToUse: string, clientToUse: typeof client) =>
                     clientToUse.models.generateContentStream({
                         model: modelToUse,
@@ -1169,17 +1201,17 @@ export const generateContentStream = functions
                     iterator = stream[Symbol.asyncIterator]();
                     firstResult = await iterator.next();
                 } catch (streamErr: unknown) {
-                    const msg = streamErr instanceof Error ? streamErr.message : String(streamErr);
-                    const isNotFound = /NOT_FOUND|404|not found|does not exist|was not found/i.test(msg);
-                    if (isFineTunedEndpoint && isNotFound && finalModelId !== FINE_TUNED_FALLBACK_MODEL) {
-                        functions.logger.warn(`[generateContentStream] Fine-tuned endpoint ${finalModelId} unavailable (${msg}); auto-falling back to ${FINE_TUNED_FALLBACK_MODEL} (global)`);
-                        const fallbackClient = getVertexAIClient(undefined, 'global');
-                        const stream = await openStream(FINE_TUNED_FALLBACK_MODEL, fallbackClient);
-                        iterator = stream[Symbol.asyncIterator]();
-                        firstResult = await iterator.next();
-                    } else {
-                        throw streamErr;
+                    if (isFineTunedEndpoint) {
+                        const unavailable = classifySpecialistFailure(streamErr);
+                        functions.logger.error('[generateContentStream] Specialist provider request failed closed.', {
+                            category: unavailable.category,
+                            code: unavailable.code,
+                            retryable: unavailable.retryable,
+                        });
+                        res.status(503).json(unavailable.toPublicPayload());
+                        return;
                     }
+                    throw streamErr;
                 }
 
                 res.setHeader('Content-Type', 'text/plain');
@@ -1196,26 +1228,44 @@ export const generateContentStream = functions
                     }
                 })();
 
-                // Iterate over SDK Stream
-                for await (const chunk of replayStream) {
-                    const parts = chunk.candidates?.[0]?.content?.parts || [];
-                    const text = typeof chunk.text === 'string'
-                        ? chunk.text
-                        : parts
-                            .map((part: any) => typeof part.text === 'string' ? part.text : '')
-                            .join('');
-                    const functionCalls = parts
-                        .filter((part: any) => part.functionCall)
-                        .map((part: any) => part.functionCall);
-                    const thoughtSignature = parts.find((part: any) => part.thoughtSignature)?.thoughtSignature;
+                try {
+                    // Iterate over SDK Stream
+                    for await (const chunk of replayStream) {
+                        const parts = chunk.candidates?.[0]?.content?.parts || [];
+                        const text = typeof chunk.text === 'string'
+                            ? chunk.text
+                            : parts
+                                .map((part: any) => typeof part.text === 'string' ? part.text : '')
+                                .join('');
+                        const functionCalls = parts
+                            .filter((part: any) => part.functionCall)
+                            .map((part: any) => part.functionCall);
+                        const thoughtSignature = parts.find((part: any) => part.thoughtSignature)?.thoughtSignature;
 
-                    if (text || functionCalls.length > 0 || thoughtSignature) {
-                        const payload: { text?: string; functionCalls?: any[]; thoughtSignature?: string } = {};
-                        if (text) payload.text = text;
-                        if (functionCalls.length > 0) payload.functionCalls = functionCalls;
-                        if (thoughtSignature) payload.thoughtSignature = thoughtSignature;
-                        res.write(JSON.stringify(payload) + '\n');
+                        if (text || functionCalls.length > 0 || thoughtSignature) {
+                            const payload: { text?: string; functionCalls?: any[]; thoughtSignature?: string } = {};
+                            if (text) payload.text = text;
+                            if (functionCalls.length > 0) payload.functionCalls = functionCalls;
+                            if (thoughtSignature) payload.thoughtSignature = thoughtSignature;
+                            res.write(JSON.stringify(payload) + '\n');
+                        }
                     }
+                } catch (streamErr: unknown) {
+                    if (isFineTunedEndpoint) {
+                        const unavailable = classifySpecialistFailure(streamErr);
+                        functions.logger.error('[generateContentStream] Specialist stream interrupted.', {
+                            category: unavailable.category,
+                            code: unavailable.code,
+                            retryable: unavailable.retryable,
+                        });
+                        // Headers may already be committed, so emit the same typed
+                        // contract as a terminal NDJSON record. The renderer rejects
+                        // the response instead of claiming partial specialist work.
+                        res.write(JSON.stringify(unavailable.toPublicPayload()) + '\n');
+                        res.end();
+                        return;
+                    }
+                    throw streamErr;
                 }
 
                 res.end();

@@ -23,7 +23,9 @@ describe('Fine-Tuned Model Registry', () => {
         vi.stubEnv('VITE_USE_FINE_TUNED_AGENTS', 'false');
         const { getFineTunedModel } = await importWithRetry(() => import('../fine-tuned-models'));
 
-        expect(getFineTunedModel('generalist')).toBe('gemini-3.1-pro-preview');
+        expect(() => getFineTunedModel('generalist')).toThrow(
+            'Specialized agents are unavailable because tuned routing is disabled'
+        );
     });
 
     it('should return endpoint strings for every valid agent when feature flag is enabled', async () => {

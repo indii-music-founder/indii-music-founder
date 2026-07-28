@@ -92,8 +92,9 @@ export function getFineTunedModel(agentId: ValidAgentId): string {
     }
 
     if (!USE_FINE_TUNED_AGENTS) {
-        // Fallback to the latest approved Pro model since fine-tuned endpoints are unavailable
-        return 'gemini-3.1-pro-preview';
+        throw new Error(
+            `[FineTunedModels] Specialized agents are unavailable because tuned routing is disabled for "${agentId}"`
+        );
     }
 
     return endpoint;

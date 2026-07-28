@@ -72,6 +72,58 @@ type BackendStreamPayload = {
     functionCalls?: FunctionCallPart['functionCall'][];
     thoughtSignature?: string;
     candidates?: Array<{ content?: { parts?: ContentPart[] } }>;
+    error?: {
+        code?: string;
+        message?: string;
+        retryable?: boolean;
+        category?: string;
+        nextActions?: string[];
+        retryAfterSeconds?: number;
+        providerSubmitted?: boolean;
+    };
+};
+
+const generationCapacityFromPayload = (
+    payload: BackendStreamPayload | null,
+): AppException | null => {
+    if (payload?.error?.code !== 'GENERATION_CAPACITY_LIMITED') return null;
+
+    const retryAfterSeconds = payload.error.retryAfterSeconds;
+    return new AppException(
+        AppErrorCode.GENERATION_CAPACITY_LIMITED,
+        payload.error.message
+            || 'Boardroom is temporarily at capacity. Your request was not sent for generation.',
+        {
+            retryable: payload.error.retryable === true,
+            retryAfterMs: typeof retryAfterSeconds === 'number'
+                ? retryAfterSeconds * 1000
+                : undefined,
+            reason: payload.error.category,
+            context: {
+                nextActions: payload.error.nextActions || ['retry_after_wait'],
+                providerSubmitted: payload.error.providerSubmitted === true,
+            },
+        },
+    );
+};
+
+const specialistUnavailableFromPayload = (
+    payload: BackendStreamPayload | null,
+): AppException | null => {
+    if (payload?.error?.code !== 'SPECIALIST_UNAVAILABLE') return null;
+
+    return new AppException(
+        AppErrorCode.SPECIALIST_UNAVAILABLE,
+        payload.error.message
+            || 'This specialist is temporarily unavailable. Your request was not processed by another model.',
+        {
+            retryable: payload.error.retryable === true,
+            reason: payload.error.category,
+            context: {
+                nextActions: payload.error.nextActions || ['retry_later'],
+            },
+        },
+    );
 };
 
 const stripSseDataPrefix = (line: string): string | null => {
@@ -331,6 +383,14 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
 
         if (!response.ok || !response.body) {
             const message = await response.text().catch(() => response.statusText);
+            const specialistUnavailable = specialistUnavailableFromPayload(
+                safeJsonParse(message) as BackendStreamPayload | null,
+            );
+            if (specialistUnavailable) throw specialistUnavailable;
+            const generationCapacity = generationCapacityFromPayload(
+                safeJsonParse(message) as BackendStreamPayload | null,
+            );
+            if (generationCapacity) throw generationCapacity;
             if (response.status === 401 || response.status === 403) {
                 throw new AppException(AppErrorCode.UNAUTHORIZED, message || 'AI backend authentication failed', { retryable: false });
             }
@@ -386,6 +446,8 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
                             if (!jsonLine) continue;
                             const parsed = safeJsonParse(jsonLine) as BackendStreamPayload | null;
                             if (!parsed) continue;
+                            const specialistUnavailable = specialistUnavailableFromPayload(parsed);
+                            if (specialistUnavailable) throw specialistUnavailable;
                             const text = extractText(parsed);
                             finalText += text;
                             const chunk: StreamChunk = {
@@ -401,6 +463,8 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
                         const jsonLine = stripSseDataPrefix(buffer);
                         const parsed = jsonLine ? safeJsonParse(jsonLine) as BackendStreamPayload | null : null;
                         if (parsed) {
+                            const specialistUnavailable = specialistUnavailableFromPayload(parsed);
+                            if (specialistUnavailable) throw specialistUnavailable;
                             const text = extractText(parsed);
                             finalText += text;
                             const chunk: StreamChunk = {
@@ -1103,7 +1167,13 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
                 }
 
                 const appException = this.handleError(error);
-                const isRetryable = appException.details?.retryable;
+                // Specialist availability is manually retryable, but automatic
+                // retries could resubmit a prompt after the provider accepted it
+                // and failed before the first chunk. Preserve the user's request
+                // for an explicit retry instead of risking duplicate spend/work.
+                const isRetryable = appException.details?.retryable
+                    && appException.code !== AppErrorCode.SPECIALIST_UNAVAILABLE
+                    && appException.code !== AppErrorCode.GENERATION_CAPACITY_LIMITED;
 
                 if (attempt < retries && isRetryable) {
                     // Exponential backoff with jitter
