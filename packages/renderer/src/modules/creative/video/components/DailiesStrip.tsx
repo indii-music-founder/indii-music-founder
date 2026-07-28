@@ -2,6 +2,7 @@ import React from 'react';
 import { Film } from 'lucide-react';
 import { HistoryItem } from '@/core/store/slices/creative';
 import { DailyItem } from './DailyItem';
+import { useOptionalAdaptiveWorkspace } from '@/components/layout/AdaptiveWorkspaceContext';
 
 interface DailiesStripProps {
     items: HistoryItem[];
@@ -17,6 +18,7 @@ export const DailiesStrip = React.memo<DailiesStripProps>(({
     onSelect,
     onDragStart
 }) => {
+    const workspaceMode = useOptionalAdaptiveWorkspace()?.mode ?? 'wide';
     // Filter only videos (and maybe images if needed, but "Dailies" implies footage)
     const videos = items.filter(item => item.type === 'video');
 
@@ -24,10 +26,15 @@ export const DailiesStrip = React.memo<DailiesStripProps>(({
 
     return (
         <div
-            className="absolute bottom-6 left-6 right-6 h-32 glass rounded-xl border border-white/10 flex flex-col pointer-events-auto overflow-hidden z-20"
+            className={`absolute glass rounded-xl border border-white/10 flex flex-col pointer-events-auto overflow-hidden z-20 ${
+                workspaceMode === 'focused'
+                    ? 'bottom-20 left-3 right-3 h-24'
+                    : 'bottom-24 left-6 right-6 h-32'
+            }`}
             role="region"
             aria-label="Dailies Bin"
             data-testid="dailies-strip"
+            data-workspace-mode={workspaceMode}
         >
             {/* Header */}
             <div className="h-8 px-3 flex items-center justify-between border-b border-white/5 bg-black/20">

@@ -6,9 +6,13 @@ import { VideoGeneration } from '@/services/video/VideoGenerationService';
 import { useToast } from '@/core/context/ToastContext';
 import { resolveStorageUrl } from '@/services/storage/resolveStorageUrl';
 
-const { mockUploadReferenceMedia, mockGenerateImages } = vi.hoisted(() => ({
+const { mockUploadReferenceMedia, mockGenerateImages, mockWorkspaceLayout } = vi.hoisted(() => ({
     mockUploadReferenceMedia: vi.fn(),
     mockGenerateImages: vi.fn(),
+    mockWorkspaceLayout: { mode: 'wide' as 'wide' | 'standard' | 'focused', width: 1440 },
+}));
+vi.mock('@/components/layout/AdaptiveWorkspaceContext', () => ({
+    useOptionalAdaptiveWorkspace: () => mockWorkspaceLayout,
 }));
 vi.mock('@/services/creative/CreativeStorageService', () => ({
     CreativeStorageService: { uploadReferenceMedia: mockUploadReferenceMedia },
@@ -139,6 +143,8 @@ describe('DirectGenerationTab', () => {
         vi.useRealTimers();
         vi.clearAllMocks();
         vi.mocked(resolveStorageUrl).mockImplementation((uri: string) => Promise.resolve(uri));
+        mockWorkspaceLayout.mode = 'wide';
+        mockWorkspaceLayout.width = 1440;
         mockUploadReferenceMedia.mockResolvedValue('gs://test-bucket/creative/test-user/references/selected-project-image.png');
         mockGenerateImages.mockResolvedValue([{
             id: 'mock-job-id',
@@ -178,6 +184,18 @@ describe('DirectGenerationTab', () => {
         expect(screen.getByPlaceholderText(/Describe your image/i)).toBeDefined();
         expect(screen.getByTestId('direct-image-mode-btn')).toBeDefined();
         expect(screen.getByTestId('direct-video-mode-btn')).toBeDefined();
+    });
+
+    it('uses the measured workspace mode instead of viewport breakpoints', () => {
+        mockWorkspaceLayout.mode = 'focused';
+        mockWorkspaceLayout.width = 720;
+
+        render(<DirectGenerationTab />);
+
+        expect(screen.getByTestId('direct-generation-workspace')).toHaveAttribute('data-workspace-mode', 'focused');
+        expect(screen.getByTestId('direct-generation-workspace')).toHaveClass('flex-col');
+        expect(screen.getByTestId('direct-generation-controls')).toHaveClass('w-full');
+        expect(screen.getByTestId('direct-generation-results')).toHaveClass('min-w-0');
     });
 
     it('switches between image and video modes', () => {

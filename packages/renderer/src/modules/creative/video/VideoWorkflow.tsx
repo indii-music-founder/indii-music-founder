@@ -26,6 +26,7 @@ import { resolveStorageUri } from '@/services/storage/storageUri';
 // Lazy load SceneBuilder to prevent vendor-three → vendor-react circular dependency
 const SceneBuilder = lazy(() => import('./visualizer/SceneBuilder').then(m => ({ default: m.SceneBuilder })));
 import { useToast, ToastContextType } from '@/core/context/ToastContext';
+import { useOptionalAdaptiveWorkspace } from '@/components/layout/AdaptiveWorkspaceContext';
 
 /** Valid job status values for video generation */
 export type JobStatus = 'idle' | 'queued' | 'processing' | 'completed' | 'failed' | 'stitching' | 'cancelled';
@@ -204,6 +205,7 @@ export const processJobUpdate = async (
 }
 
 export default function VideoWorkflow() {
+    const workspaceMode = useOptionalAdaptiveWorkspace()?.mode ?? 'wide';
     // Global State
     // ⚡ Bolt Optimization: Use useShallow to prevent re-renders on unrelated store updates (like prompt keystrokes)
     const {
@@ -913,7 +915,11 @@ export default function VideoWorkflow() {
     }, [addToHistory, setActiveVideo, setViewMode, toast]);
 
     return (
-        <div className={`flex-1 flex overflow-hidden h-full bg-background relative`}>
+        <div
+            className="flex-1 flex min-h-0 min-w-0 overflow-hidden h-full bg-background relative"
+            data-testid="video-workflow-workspace"
+            data-workspace-mode={workspaceMode}
+        >
             {/* Main Stage (Director View) */}
             <div
                 id="director-panel"
@@ -931,7 +937,16 @@ export default function VideoWorkflow() {
 
 
                 {/* Central Preview Stage (Memoized) */}
-                <div className="flex-1 overflow-hidden px-8 pb-32 relative">
+                <div
+                    className={`flex-1 min-h-0 overflow-hidden relative ${
+                        workspaceMode === 'wide'
+                            ? 'px-8 pb-56'
+                            : workspaceMode === 'standard'
+                                ? 'px-5 pb-52'
+                                : 'px-3 pb-44'
+                    }`}
+                    data-testid="video-primary-stage"
+                >
                             <VideoStage
                                 jobStatus={jobStatus}
                                 jobProgress={jobProgress}
@@ -944,7 +959,9 @@ export default function VideoWorkflow() {
                             />
                             {/* Send Output Actions */}
                             {activeVideo && activeVideo.type === 'video' && (
-                                <div className="absolute bottom-6 right-8 flex gap-2 z-20">
+                                <div className={`absolute flex gap-2 z-20 ${
+                                    workspaceMode === 'focused' ? 'bottom-48 right-3' : 'bottom-60 right-6'
+                                }`}>
                                     <button
                                         onClick={() => {
                                             sendToStage('omni', {
@@ -980,7 +997,14 @@ export default function VideoWorkflow() {
                 </div>
 
                 {/* Mode Switcher Shortcut buttons (Overlay) */}
-                <div className="absolute top-24 left-4 z-40 flex flex-col gap-2">
+                <div
+                    className={`absolute z-40 flex gap-2 ${
+                        workspaceMode === 'focused'
+                            ? 'left-3 top-3 flex-row'
+                            : 'left-4 top-24 flex-col'
+                    }`}
+                    data-testid="video-mode-actions"
+                >
                     <SessionIngestionPanel
                         organizationId={currentOrganizationId}
                         projectId={currentProjectId}
@@ -1010,7 +1034,14 @@ export default function VideoWorkflow() {
                 </div>
 
                 {/* Technical Settings Panel (Collapsible, Bottom-Right) */}
-                <div className="absolute bottom-24 right-4 z-30 w-72">
+                <div
+                    className={`absolute right-3 top-3 z-30 ${
+                        workspaceMode === 'focused'
+                            ? 'w-[min(18rem,calc(100%-4.5rem))]'
+                            : 'w-72'
+                    }`}
+                    data-testid="video-technical-settings"
+                >
                     <button
                         onClick={() => setShowSettings(s => !s)}
                         data-testid="toggle-settings-btn"
@@ -1024,7 +1055,7 @@ export default function VideoWorkflow() {
                     </button>
 
                     {showSettings && (
-                        <div className="glass rounded-xl p-4 space-y-3 border border-white/10 shadow-2xl shadow-black/60 animate-in fade-in slide-in-from-bottom-2 duration-200">
+                        <div className="glass max-h-[min(30rem,calc(100vh-8rem))] overflow-y-auto rounded-xl p-4 space-y-3 border border-white/10 shadow-2xl shadow-black/60 animate-in fade-in slide-in-from-top-2 duration-200">
                             {/* Seed Control */}
                             <div className="space-y-1.5">
                                 <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
@@ -1108,8 +1139,12 @@ export default function VideoWorkflow() {
                 />
 
                 {/* Bottom Prompt Input Bar */}
-                <div className="flex-none border-t border-white/10 bg-background/80 backdrop-blur-xl p-4 shrink-0 z-30">
-                    <div className="flex items-center gap-4 justify-center max-w-4xl mx-auto w-full">
+                <div className={`flex-none border-t border-white/10 bg-background/80 backdrop-blur-xl shrink-0 z-30 ${
+                    workspaceMode === 'focused' ? 'p-2' : 'p-4'
+                }`}>
+                    <div className={`flex items-center justify-center max-w-4xl mx-auto w-full ${
+                        workspaceMode === 'focused' ? 'gap-2' : 'gap-4'
+                    }`}>
                         <div className="flex-1 flex flex-col gap-2 relative">
                             {useVideoEditorStore.getState().inputAudio && (
                                 <div className="absolute -top-8 left-1/2 -translate-x-1/2 flex items-center gap-2 px-3 py-1 bg-green-500/90 backdrop-blur-md rounded-full border border-green-400/50 shadow-lg shadow-green-500/20 animate-in fade-in zoom-in duration-300">

@@ -15,6 +15,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { VideoGenerationProgress } from './veo/VideoGenerationProgress';
 import { WhiskService } from '@/services/WhiskService';
 import { useToast } from '@/core/context/ToastContext';
+import { useOptionalAdaptiveWorkspace } from '@/components/layout/AdaptiveWorkspaceContext';
 
 // ISSUE-788: the backend only special-cases '9:16' for a Veo video request
 // and silently coerces every other aspect ratio to '16:9'
@@ -24,6 +25,7 @@ const VALID_VIDEO_ASPECT_RATIOS = new Set(['16:9', '9:16']);
 
 export default function DirectGenerationTab() {
     const toast = useToast();
+    const workspaceMode = useOptionalAdaptiveWorkspace()?.mode ?? 'wide';
     const { 
         setGenerationMode, 
         isPromptBuilderOpen, 
@@ -130,9 +132,24 @@ export default function DirectGenerationTab() {
     }, [mode, studioControls.aspectRatio, setStudioControls]);
 
     return (
-        <div className="flex flex-col md:flex-row h-full w-full bg-[#050406] text-foreground select-none overflow-hidden">
+        <div
+            className={`flex h-full min-h-0 w-full bg-[#050406] text-foreground select-none overflow-hidden ${
+                workspaceMode === 'focused' ? 'flex-col' : 'flex-row'
+            }`}
+            data-testid="direct-generation-workspace"
+            data-workspace-mode={workspaceMode}
+        >
             {/* LEFT COLUMN: Premium Glassmorphic Control Console */}
-            <div className="w-full md:w-[38%] border-b md:border-b-0 md:border-r border-white/5 bg-[#0a090c]/80 backdrop-blur-3xl p-6 flex flex-col justify-between overflow-y-auto shrink-0 select-none h-full relative">
+            <div
+                className={`border-white/5 bg-[#0a090c]/80 backdrop-blur-3xl flex flex-col justify-between overflow-y-auto shrink-0 select-none relative ${
+                    workspaceMode === 'focused'
+                        ? 'h-[min(24rem,48%)] w-full border-b p-4'
+                        : workspaceMode === 'standard'
+                            ? 'h-full w-[min(23rem,42%)] border-r p-4'
+                            : 'h-full w-[38%] border-r p-6'
+                }`}
+                data-testid="direct-generation-controls"
+            >
                 
                 {/* Glowing subtle top gradient mesh for a premium look */}
                 <div className="absolute top-0 left-0 right-0 h-40 bg-radial-gradient from-dept-creative/10 to-transparent pointer-events-none" />
@@ -661,7 +678,12 @@ export default function DirectGenerationTab() {
             </div>
 
             {/* RIGHT COLUMN: Spacious Visual Canvas & Results Gallery */}
-            <div className="flex-1 bg-[#060507] p-8 overflow-y-auto flex flex-col justify-start relative select-none h-full">
+            <div
+                className={`min-h-0 min-w-0 flex-1 bg-[#060507] overflow-y-auto flex flex-col justify-start relative select-none ${
+                    workspaceMode === 'wide' ? 'p-8' : 'p-4'
+                }`}
+                data-testid="direct-generation-results"
+            >
                 
                 {/* mesh background accent */}
                 <div className="absolute top-0 right-0 w-96 h-96 bg-radial-gradient from-green-900/10 to-transparent pointer-events-none filter blur-3xl" />
@@ -785,7 +807,16 @@ export default function DirectGenerationTab() {
                         </div>
 
                         {/* Grid container with spring animation */}
-                        <motion.div layout className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
+                        <motion.div
+                            layout
+                            className={`grid gap-5 ${
+                                workspaceMode === 'wide'
+                                    ? 'grid-cols-4'
+                                    : workspaceMode === 'standard'
+                                        ? 'grid-cols-2'
+                                        : 'grid-cols-1'
+                            }`}
+                        >
                             <AnimatePresence mode="popLayout">
                                 {activeJobs.map((job) => (
                                     <VideoGenerationProgress key={job.id} job={job} onCancel={cancelJob} />

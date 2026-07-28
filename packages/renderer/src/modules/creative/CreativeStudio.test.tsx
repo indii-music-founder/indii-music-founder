@@ -159,6 +159,7 @@ describe('CreativeStudio', () => {
         expect(screen.getByTestId('creative-navbar')).toBeInTheDocument();
         expect(screen.getByTestId('direct-generation-tab')).toBeInTheDocument();
         expect(screen.getByTestId('creative-mode-overlay')).toBeInTheDocument();
+        expect(screen.getByTestId('adaptive-workspace')).toHaveAttribute('data-workspace-mode', 'wide');
     });
 
     it('does not mount a pointer-enabled mode overlay above Image Studio', () => {

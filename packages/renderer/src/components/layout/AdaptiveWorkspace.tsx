@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { PanelLeft, PanelRight, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useWorkspaceLayout } from '@/hooks/useWorkspaceLayout';
@@ -33,6 +33,7 @@ export function AdaptiveWorkspace({
     const { ref, width, mode } = useWorkspaceLayout();
     const [openDrawer, setOpenDrawer] = useState<DrawerSide>(null);
     const triggerRef = useRef<HTMLButtonElement | null>(null);
+    const drawerRef = useRef<HTMLElement | null>(null);
 
     const hasPersistentLeftRail = Boolean(leftRail) && mode !== 'focused';
     const hasPersistentRightRail = Boolean(rightRail) && mode === 'wide';
@@ -42,17 +43,51 @@ export function AdaptiveWorkspace({
             ? null
             : openDrawer;
 
+    const closeDrawer = useCallback(() => {
+        setOpenDrawer(null);
+        triggerRef.current?.focus();
+    }, []);
+
     useEffect(() => {
         if (!activeDrawer) return;
+        const focusableSelector = [
+            'button:not([disabled])',
+            '[href]',
+            'input:not([disabled])',
+            'select:not([disabled])',
+            'textarea:not([disabled])',
+            '[tabindex]:not([tabindex="-1"])',
+        ].join(',');
+        const focusableElements = () => Array.from(
+            drawerRef.current?.querySelectorAll<HTMLElement>(focusableSelector) ?? [],
+        );
+        (focusableElements()[0] ?? drawerRef.current)?.focus();
+
         const onKeyDown = (event: KeyboardEvent) => {
             if (event.key === 'Escape') {
-                setOpenDrawer(null);
-                triggerRef.current?.focus();
+                closeDrawer();
+                return;
+            }
+            if (event.key !== 'Tab') return;
+            const focusable = focusableElements();
+            if (focusable.length === 0) {
+                event.preventDefault();
+                drawerRef.current?.focus();
+                return;
+            }
+            const first = focusable[0]!;
+            const last = focusable[focusable.length - 1]!;
+            if (event.shiftKey && document.activeElement === first) {
+                event.preventDefault();
+                last.focus();
+            } else if (!event.shiftKey && document.activeElement === last) {
+                event.preventDefault();
+                first.focus();
             }
         };
         window.addEventListener('keydown', onKeyDown);
         return () => window.removeEventListener('keydown', onKeyDown);
-    }, [activeDrawer]);
+    }, [activeDrawer, closeDrawer]);
 
     const openRail = (side: Exclude<DrawerSide, null>, event: React.MouseEvent<HTMLButtonElement>) => {
         triggerRef.current = event.currentTarget;
@@ -66,10 +101,14 @@ export function AdaptiveWorkspace({
                 <button
                     aria-label={`Close ${label}`}
                     className="absolute inset-0 z-30 bg-black/50 backdrop-blur-[1px]"
-                    onClick={() => setOpenDrawer(null)}
+                    onClick={closeDrawer}
                 />
                 <aside
+                    ref={drawerRef}
+                    role="dialog"
+                    aria-modal="true"
                     aria-label={label}
+                    tabIndex={-1}
                     className={cn(
                         'absolute inset-y-0 z-40 flex w-[min(20rem,calc(100%-2rem))] flex-col overflow-y-auto border-white/10 bg-[#0b0d11]/98 p-3 shadow-2xl',
                         side === 'left' ? 'left-0 border-r' : 'right-0 border-l',
@@ -79,7 +118,7 @@ export function AdaptiveWorkspace({
                         <span className="text-xs font-bold uppercase tracking-wider text-gray-300">{label}</span>
                         <button
                             aria-label={`Close ${label}`}
-                            onClick={() => setOpenDrawer(null)}
+                            onClick={closeDrawer}
                             className="rounded-md p-1.5 text-gray-400 transition-colors hover:bg-white/10 hover:text-white"
                         >
                             <X size={16} />

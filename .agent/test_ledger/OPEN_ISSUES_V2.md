@@ -2688,6 +2688,7 @@ Listed only so they are not lost. No assessment is implied.
   - **The +3 is most likely this session's own work, not external drift** — ISSUE-1236's `retrySessionProxyJob.ts` and the ISSUE-1220 `pollTimelineMilestones.ts` changes both add `await`s inside `try` blocks that this detector's grep-level heuristic does not recognize as protected. Stated as a likelihood, not a measured attribution: the detector reports totals, not a diff, so nothing here proves which lines moved the number. A category-level diff tool is what would make this answerable, and does not exist.
   - **Category 1 is genuinely at 0**, which is worth preserving — that was the original module-initialization failure class this detector was built for.
   - **Baseline re-measured 2026-07-28 during the server-only video `/start` and after scoped elevation: risk score 172, delta 0 within the session.** Categories: exported-null services 0; Base64/`imageBytes` 61; `httpsCallable` 52; awaits without recognized try/catch ~533; direct Firebase-function imports 30; `.then()` without `.catch()` 63; string-enum comparisons 9. The active video patch did not worsen the detector. ISSUE-1235/1134/1136 contain the bounded fixes and evidence; the remaining repository-wide categories stay governed by this issue.
+  - **Baseline re-measured 2026-07-28 after the Creative/Video adaptive-workspace slice: risk score 172, delta 0 from the preceding delivery.** The detector continues to exit nonzero because the repository-wide baseline is open; the responsive UI patch added no new category or count.
 
 ---
 
@@ -3388,3 +3389,15 @@ acceptance criteria.
 - **Honest fallback:** Honest empty catalog and `valuation_unavailable` or clearly labeled scenario.
 - **Acceptance:** Reloaded owner inventory matches canonical records; missing financial evidence cannot produce a dollar valuation.
 - **DO NOT:** Do not substitute empty props for a catalog or fixed multipliers for valuation evidence.
+
+### ISSUE-1263: Creative and Video workspaces do not consistently reflow from their actual remaining container width
+
+- **Status:** 🟡 PARTIAL — shared container behavior is wired locally; authenticated browser/Electron matrix remains open
+- **Severity:** 🟠 HIGH
+- **Module:** `components/layout/AdaptiveWorkspace*`; `modules/creative/CreativeStudio.tsx`; Direct Generation; Video Director/Dailies
+- **Evidence:** Creative Studio previously exposed no measured workspace context to its image/video surfaces. Direct Generation used viewport `md`/`lg` breakpoints plus a fixed 38% control column, while Video Director used fixed stage padding and absolute mode/settings/Dailies positions. Opening or resizing the global sidebar/chat therefore could shrink the actual module without changing these layouts, covering or crushing the primary result/stage.
+- **2026-07-28 local implementation:** Creative Studio now establishes one `ResizeObserver`-driven `AdaptiveWorkspace`; Direct Generation consumes its `wide`/`standard`/`focused` mode to resize or stack controls and preserve a minimum result surface; Video Director consumes the same mode to protect stage space and reposition mode actions, settings, output actions, Dailies, and the prompt bar. Adaptive drawers now move focus inside, contain keyboard Tab navigation, close on Escape, and return focus to their opener. Mode-transition tests prove prompt state survives rail reflow. Focused gate: 40/40 layout/Creative/Video tests, renderer typecheck, scoped zero-warning ESLint, and `git diff --check` pass.
+- **Expected behavior:** Sidebar, chat, controls, history, and other adjacent rails respond to the module's actual remaining width. Wide, standard, and focused modes preserve the primary canvas/stage plus selection, zoom, playhead, prompts, progress, and unsaved edits. Drawers remain keyboard and screen-reader operable.
+- **Honest fallback:** Collapse lower-priority rails behind labeled drawers before covering the primary action or shrinking the central workspace below its supported minimum.
+- **Acceptance:** Through a genuine authenticated application session, verify 2560/1920/1440/1280/1024/768 CSS-pixel widths; sidebar and right-panel open/closed/resized states; 80–200% zoom; empty/loading/image/video/long-error states; Electron maximize/restore/manual resize and supported secondary windows. No body horizontal scroll, hidden primary action, unannounced overlay, undersized stage, or creative-state reset. Record screenshots/DOM measurements from the real path.
+- **DO NOT:** Do not infer internal space from `window.innerWidth`, reset creative state during reflow, hide controls without an accessible trigger, use mock-backed screenshots as customer evidence, or call component tests production validation.

@@ -35,6 +35,7 @@ import CreativeClipboard from './components/CreativeClipboard';
 import OmniWorkflow from './video/OmniWorkflow';
 import CanvasModePicker from './components/CanvasModePicker';
 import PlpBatchStatus from './components/PlpBatchStatus';
+import { AdaptiveWorkspace } from '@/components/layout/AdaptiveWorkspace';
 
 /**
  * ISSUE-1007: decodes the actual persisted image's pixel dimensions instead
@@ -594,6 +595,7 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
                 </div>
 
                 <div className="flex-1 flex overflow-hidden relative">
+                    <AdaptiveWorkspace contentClassName="relative">
                     {/* Mobile Controls Tab Content */}
                     <div className={`${activeMobileTab === 'controls' ? 'flex' : 'hidden'} md:hidden flex-1 flex-col overflow-y-auto bg-[#0f0f0f]`}>
                         <Suspense fallback={<div className="flex items-center justify-center h-full text-gray-500">Loading controls...</div>}>
@@ -686,6 +688,7 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
                                 }}
                             />
                     </div>
+                    </AdaptiveWorkspace>
                 </div>
 
                 {/* Main Prompt Bar Removed - Using Global CommandBar */}

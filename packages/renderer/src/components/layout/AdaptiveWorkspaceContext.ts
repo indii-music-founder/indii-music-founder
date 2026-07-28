@@ -15,3 +15,12 @@ export function useAdaptiveWorkspace() {
     }
     return context;
 }
+
+/**
+ * Allows leaf surfaces to retain a safe wide-layout fallback in focused unit
+ * tests and isolated previews while still consuming the measured workspace
+ * contract in the real application shell.
+ */
+export function useOptionalAdaptiveWorkspace() {
+    return useContext(AdaptiveWorkspaceContext);
+}

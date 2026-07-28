@@ -16,7 +16,7 @@ function droppedAssetDataTransfer(asset: Record<string, unknown>): DataTransfer 
 
 // --- Mocks ---
 
-const { mockStoreState, mockVideoEditorState, mockUseStore, mockUseVideoEditorStore } = vi.hoisted(() => {
+const { mockStoreState, mockVideoEditorState, mockUseStore, mockUseVideoEditorStore, mockWorkspaceLayout } = vi.hoisted(() => {
     const store = {
         generatedHistory: [],
         selectedItem: null,
@@ -86,9 +86,14 @@ const { mockStoreState, mockVideoEditorState, mockUseStore, mockUseVideoEditorSt
         mockStoreState: store,
         mockVideoEditorState: editorStore,
         mockUseStore: useStore,
-        mockUseVideoEditorStore: useVideoEditorStore
+        mockUseVideoEditorStore: useVideoEditorStore,
+        mockWorkspaceLayout: { mode: 'wide' as 'wide' | 'standard' | 'focused', width: 1440 },
     };
 });
+
+vi.mock('@/components/layout/AdaptiveWorkspaceContext', () => ({
+    useOptionalAdaptiveWorkspace: () => mockWorkspaceLayout,
+}));
 
 vi.mock('@/core/store', () => ({
     useStore: mockUseStore,
@@ -192,6 +197,8 @@ describe('VideoWorkflow', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
+        mockWorkspaceLayout.mode = 'wide';
+        mockWorkspaceLayout.width = 1440;
         (extractVideoFrame as import("vitest").Mock).mockResolvedValue('data:image/jpeg;base64,extracted-frame');
 
         // Reset mock states
@@ -243,6 +250,22 @@ describe('VideoWorkflow', () => {
             expect(mockGenerateVideo).toHaveBeenCalled();
             expect(mockVideoEditorState.setStatus).toHaveBeenCalledWith('queued');
         });
+    });
+
+    it('protects the primary stage when the measured workspace is focused', () => {
+        mockWorkspaceLayout.mode = 'focused';
+        mockWorkspaceLayout.width = 720;
+
+        render(
+            <ToastProvider>
+                <VideoWorkflow />
+            </ToastProvider>
+        );
+
+        expect(screen.getByTestId('video-workflow-workspace')).toHaveAttribute('data-workspace-mode', 'focused');
+        expect(screen.getByTestId('video-primary-stage')).toHaveClass('px-3', 'pb-44');
+        expect(screen.getByTestId('video-mode-actions')).toHaveClass('flex-row', 'top-3');
+        expect(screen.getByTestId('video-technical-settings')).toHaveClass('top-3');
     });
 
     it('listens to job updates via VideoGeneration service', async () => {
