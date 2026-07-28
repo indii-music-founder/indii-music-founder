@@ -1,4 +1,4 @@
-import * as functions from "firebase-functions/v1";
+import { onCall, HttpsError, type CallableRequest } from "firebase-functions/v2/https";
 import * as admin from "firebase-admin";
 
 const CACHE_HASH_PATTERN = /^-?[0-9a-f]{1,16}$/;
@@ -19,14 +19,14 @@ interface RecordInstrumentUsageRequest {
     executionId: string;
 }
 
-function requireAuthenticatedUid(context: functions.https.CallableContext): string {
-    if (!context.auth) {
-        throw new functions.https.HttpsError(
+function requireAuthenticatedUid(request: CallableRequest): string {
+    if (!request.auth) {
+        throw new HttpsError(
             "unauthenticated",
             "User must be authenticated.",
         );
     }
-    return context.auth.uid;
+    return request.auth.uid;
 }
 
 export function validateContextCacheRegistration(data: RegisterAiContextCacheRequest): {
@@ -44,7 +44,7 @@ export function validateContextCacheRegistration(data: RegisterAiContextCacheReq
         ttlSeconds < MIN_CACHE_TTL_SECONDS ||
         ttlSeconds > MAX_CACHE_TTL_SECONDS
     ) {
-        throw new functions.https.HttpsError(
+        throw new HttpsError(
             "invalid-argument",
             "Invalid context-cache registration.",
         );
@@ -61,10 +61,12 @@ export function validateContextCacheRegistration(data: RegisterAiContextCacheReq
  * uid prevents two users with the same content hash from sharing or replacing
  * one another's Vertex resource reference.
  */
-export const registerAiContextCache = functions.https.onCall(
-    async (data: RegisterAiContextCacheRequest, context) => {
-        const userId = requireAuthenticatedUid(context);
-        const validated = validateContextCacheRegistration(data);
+export const registerAiContextCache = onCall(
+    async (request) => {
+        const userId = requireAuthenticatedUid(request);
+        const validated = validateContextCacheRegistration(
+            (request.data ?? {}) as RegisterAiContextCacheRequest,
+        );
         const now = Date.now();
 
         await admin.firestore()
@@ -91,7 +93,7 @@ export function validateInstrumentUsage(data: RecordInstrumentUsageRequest): Rec
         typeof data.executionId !== "string" ||
         !/^[A-Za-z0-9_-]{8,80}$/.test(data.executionId)
     ) {
-        throw new functions.https.HttpsError(
+        throw new HttpsError(
             "invalid-argument",
             "Invalid instrument usage event.",
         );
@@ -103,10 +105,12 @@ export function validateInstrumentUsage(data: RecordInstrumentUsageRequest): Rec
  * Server-only aggregate writer. The client reports one bounded outcome; it
  * cannot replace aggregate counters or inject arbitrary instrument IDs.
  */
-export const recordInstrumentUsage = functions.https.onCall(
-    async (data: RecordInstrumentUsageRequest, context) => {
-        const userId = requireAuthenticatedUid(context);
-        const { instrumentId, outcome, executionId } = validateInstrumentUsage(data);
+export const recordInstrumentUsage = onCall(
+    async (request) => {
+        const userId = requireAuthenticatedUid(request);
+        const { instrumentId, outcome, executionId } = validateInstrumentUsage(
+            (request.data ?? {}) as RecordInstrumentUsageRequest,
+        );
         const db = admin.firestore();
         const statsRef = db.collection("instrument_usage_stats").doc(instrumentId);
         const eventRef = db.collection("instrument_usage_events").doc(`${userId}_${executionId}`);
@@ -137,7 +141,7 @@ export const recordInstrumentUsage = functions.https.onCall(
                 now - priorRate.windowStartedAt < 60_000;
             const count = sameWindow && typeof priorRate?.count === "number" ? priorRate.count : 0;
             if (count >= maxPerMinute) {
-                throw new functions.https.HttpsError(
+                throw new HttpsError(
                     "resource-exhausted",
                     "Instrument usage reporting rate exceeded.",
                 );

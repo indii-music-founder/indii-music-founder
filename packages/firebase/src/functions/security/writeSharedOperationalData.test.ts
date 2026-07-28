@@ -21,17 +21,15 @@ const mocks = vi.hoisted(() => {
 
 vi.mock("firebase-admin", () => ({ firestore: mocks.firestore }));
 
-vi.mock("firebase-functions/v1", () => {
+vi.mock("firebase-functions/v2/https", () => {
     class HttpsError extends Error {
         constructor(public code: string, message: string) {
             super(message);
         }
     }
     return {
-        https: {
-            HttpsError,
-            onCall: vi.fn((handler: unknown) => handler),
-        },
+        HttpsError,
+        onCall: vi.fn((handler: unknown) => handler),
     };
 });
 
@@ -42,7 +40,9 @@ import {
     validateInstrumentUsage,
 } from "./writeSharedOperationalData";
 
-type Callable = (data: unknown, context: unknown) => Promise<unknown>;
+// Gen2 callables receive a single CallableRequest ({ data, auth, app, ... })
+// rather than Gen1's (data, context) pair.
+type Callable = (request: unknown) => Promise<unknown>;
 
 describe("shared operational data server writers", () => {
     beforeEach(() => {
@@ -60,10 +60,13 @@ describe("shared operational data server writers", () => {
 
     it("writes a cache reference under the authenticated user's namespace", async () => {
         await (registerAiContextCache as unknown as Callable)({
-            hash: "-1a2b3c",
-            resourceName: "projects/indii-music-founder/locations/us-central1/cachedContents/cache_123",
-            ttlSeconds: 3_600,
-        }, { auth: { uid: "user-123" } });
+            data: {
+                hash: "-1a2b3c",
+                resourceName: "projects/indii-music-founder/locations/us-central1/cachedContents/cache_123",
+                ttlSeconds: 3_600,
+            },
+            auth: { uid: "user-123" },
+        });
 
         expect(mocks.collection).toHaveBeenCalledWith("ai_context_cache");
         expect(mocks.doc).toHaveBeenCalledWith("user-123_-1a2b3c");
@@ -76,9 +79,11 @@ describe("shared operational data server writers", () => {
 
     it("requires authentication before writing shared operational data", async () => {
         await expect((registerAiContextCache as unknown as Callable)({
-            hash: "abc123",
-            resourceName: "projects/indii-music-founder/locations/us-central1/cachedContents/cache_123",
-        }, {})).rejects.toMatchObject({ code: "unauthenticated" });
+            data: {
+                hash: "abc123",
+                resourceName: "projects/indii-music-founder/locations/us-central1/cachedContents/cache_123",
+            },
+        })).rejects.toMatchObject({ code: "unauthenticated" });
         expect(mocks.set).not.toHaveBeenCalled();
     });
 
@@ -97,10 +102,13 @@ describe("shared operational data server writers", () => {
 
     it("increments one server-owned aggregate outcome instead of accepting counters", async () => {
         await (recordInstrumentUsage as unknown as Callable)({
-            instrumentId: "generate_video",
-            outcome: "failed",
-            executionId: "execution_123",
-        }, { auth: { uid: "user-123" } });
+            data: {
+                instrumentId: "generate_video",
+                outcome: "failed",
+                executionId: "execution_123",
+            },
+            auth: { uid: "user-123" },
+        });
 
         expect(mocks.collection).toHaveBeenCalledWith("instrument_usage_stats");
         expect(mocks.doc).toHaveBeenCalledWith("generate_video");
@@ -122,10 +130,13 @@ describe("shared operational data server writers", () => {
             .mockResolvedValueOnce({ exists: false, data: () => undefined });
 
         await expect((recordInstrumentUsage as unknown as Callable)({
-            instrumentId: "generate_image",
-            outcome: "success",
-            executionId: "execution_replay",
-        }, { auth: { uid: "user-123" } })).resolves.toEqual({ success: true, duplicate: true });
+            data: {
+                instrumentId: "generate_image",
+                outcome: "success",
+                executionId: "execution_replay",
+            },
+            auth: { uid: "user-123" },
+        })).resolves.toEqual({ success: true, duplicate: true });
 
         expect(mocks.txSet).not.toHaveBeenCalled();
     });
@@ -139,10 +150,13 @@ describe("shared operational data server writers", () => {
             });
 
         await expect((recordInstrumentUsage as unknown as Callable)({
-            instrumentId: "generate_video",
-            outcome: "success",
-            executionId: "execution_random",
-        }, { auth: { uid: "user-123" } })).rejects.toMatchObject({ code: "resource-exhausted" });
+            data: {
+                instrumentId: "generate_video",
+                outcome: "success",
+                executionId: "execution_random",
+            },
+            auth: { uid: "user-123" },
+        })).rejects.toMatchObject({ code: "resource-exhausted" });
 
         expect(mocks.txSet).not.toHaveBeenCalled();
     });

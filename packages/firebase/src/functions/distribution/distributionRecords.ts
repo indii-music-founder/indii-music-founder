@@ -1,4 +1,4 @@
-import * as functions from "firebase-functions/v1";
+import { onCall, HttpsError, type CallableRequest } from "firebase-functions/v2/https";
 import * as admin from "firebase-admin";
 
 type IdentifierType = "isrc" | "upc";
@@ -63,7 +63,7 @@ function normalizeIdentifier(type: IdentifierType, raw: string): string {
     const code = raw.replace(/[\s-]/g, "").toUpperCase();
     const format = type === "isrc" ? ISRC_FORMAT : UPC_FORMAT;
     if (!format.test(code)) {
-        throw new functions.https.HttpsError(
+        throw new HttpsError(
             "invalid-argument",
             type === "isrc"
                 ? "ISRC must be 12 characters: 2-letter country, 3-char registrant, 2-digit year, 5-digit designation (ISO 3901)."
@@ -87,30 +87,30 @@ async function assertIdentifierUnique(
         admin.firestore().collection(registryCollection).where(codeField, "==", code).limit(1),
     );
     if (!dup.empty) {
-        throw new functions.https.HttpsError(
+        throw new HttpsError(
             "already-exists",
             `${codeField.toUpperCase()} ${code} is already recorded in the registry.`,
         );
     }
 }
 
-function requireAuth(context: functions.https.CallableContext): string {
-    if (!context.auth) {
-        throw new functions.https.HttpsError("unauthenticated", "User must be authenticated.");
+function requireAuth(request: CallableRequest): string {
+    if (!request.auth) {
+        throw new HttpsError("unauthenticated", "User must be authenticated.");
     }
-    return context.auth.uid;
+    return request.auth.uid;
 }
 
 function requireString(value: unknown, field: string, maxLength = 240): string {
     if (typeof value !== "string" || value.trim().length === 0 || value.length > maxLength) {
-        throw new functions.https.HttpsError("invalid-argument", `${field} is required.`);
+        throw new HttpsError("invalid-argument", `${field} is required.`);
     }
     return value.trim();
 }
 
 function assertRecord(value: unknown, field: string): Record<string, unknown> {
     if (!value || typeof value !== "object" || Array.isArray(value)) {
-        throw new functions.https.HttpsError("invalid-argument", `${field} must be an object.`);
+        throw new HttpsError("invalid-argument", `${field} must be an object.`);
     }
     return value as Record<string, unknown>;
 }
@@ -150,7 +150,7 @@ export async function findWritableReleaseRef(releaseId: string, uid: string): Pr
         }
     }
 
-    throw new functions.https.HttpsError(
+    throw new HttpsError(
         "permission-denied",
         "Release was not found for this user.",
     );
@@ -173,7 +173,7 @@ async function assignIdentifier(
         .get();
 
     if (available.empty) {
-        throw new functions.https.HttpsError(
+        throw new HttpsError(
             "failed-precondition",
             `${type.toUpperCase()} pool is exhausted.`,
         );
@@ -182,7 +182,7 @@ async function assignIdentifier(
     const poolDoc = available.docs[0]!;
     const code = poolDoc.get(codeField);
     if (typeof code !== "string" || code.trim().length === 0) {
-        throw new functions.https.HttpsError(
+        throw new HttpsError(
             "failed-precondition",
             `${type.toUpperCase()} pool record is missing its code.`,
         );
@@ -192,7 +192,7 @@ async function assignIdentifier(
     await db.runTransaction(async (tx) => {
         const freshPool = await tx.get(poolDoc.ref);
         if (!freshPool.exists || freshPool.get("status") !== "available") {
-            throw new functions.https.HttpsError(
+            throw new HttpsError(
                 "aborted",
                 `${type.toUpperCase()} was already assigned. Try again.`,
             );
@@ -226,11 +226,12 @@ async function assignIdentifier(
     return { code, registryId: registryRef.id };
 }
 
-export const assignDistributionIdentifier = functions.https.onCall(
-    async (data: AssignIdentifierRequest, context) => {
-        const uid = requireAuth(context);
+export const assignDistributionIdentifier = onCall(
+    async (request) => {
+        const uid = requireAuth(request);
+        const data = (request.data ?? {}) as AssignIdentifierRequest;
         if (data.type !== "isrc" && data.type !== "upc") {
-            throw new functions.https.HttpsError("invalid-argument", "Identifier type is invalid.");
+            throw new HttpsError("invalid-argument", "Identifier type is invalid.");
         }
 
         const assignedTo = requireString(data.assignedTo, "assignedTo");
@@ -255,11 +256,12 @@ export const assignDistributionIdentifier = functions.https.onCall(
     },
 );
 
-export const recordDistributionIdentifier = functions.https.onCall(
-    async (data: RecordIdentifierRequest, context) => {
-        const uid = requireAuth(context);
+export const recordDistributionIdentifier = onCall(
+    async (request) => {
+        const uid = requireAuth(request);
+        const data = (request.data ?? {}) as RecordIdentifierRequest;
         if (data.type !== "isrc" && data.type !== "upc") {
-            throw new functions.https.HttpsError("invalid-argument", "Identifier type is invalid.");
+            throw new HttpsError("invalid-argument", "Identifier type is invalid.");
         }
 
         const codeField = data.type;
@@ -301,9 +303,10 @@ export const recordDistributionIdentifier = functions.https.onCall(
     },
 );
 
-export const recordDistributionAuditEvent = functions.https.onCall(
-    async (data: RecordDistributionAuditRequest, context) => {
-        const uid = requireAuth(context);
+export const recordDistributionAuditEvent = onCall(
+    async (request) => {
+        const uid = requireAuth(request);
+        const data = (request.data ?? {}) as RecordDistributionAuditRequest;
         const releaseId = requireString(data.releaseId, "releaseId");
         await findWritableReleaseRef(releaseId, uid);
 
@@ -341,13 +344,14 @@ export const recordDistributionAuditEvent = functions.https.onCall(
             return { id: docRef.id };
         }
 
-        throw new functions.https.HttpsError("invalid-argument", "Distribution audit kind is invalid.");
+        throw new HttpsError("invalid-argument", "Distribution audit kind is invalid.");
     },
 );
 
-export const requestDistributionTakedown = functions.https.onCall(
-    async (data: RequestDistributionTakedownRequest, context) => {
-        const uid = requireAuth(context);
+export const requestDistributionTakedown = onCall(
+    async (request) => {
+        const uid = requireAuth(request);
+        const data = (request.data ?? {}) as RequestDistributionTakedownRequest;
         const releaseId = requireString(data.releaseId, "releaseId");
         const distributorId = data.distributorId ? requireString(data.distributorId, "distributorId") : "all";
         const reason = data.reason ? requireString(data.reason, "reason", 1000) : "voluntary_withdrawal";
@@ -400,9 +404,10 @@ export const requestDistributionTakedown = functions.https.onCall(
     },
 );
 
-export const createSftpIngestionRecord = functions.https.onCall(
-    async (data: CreateSftpIngestionRequest, context) => {
-        const uid = requireAuth(context);
+export const createSftpIngestionRecord = onCall(
+    async (request) => {
+        const uid = requireAuth(request);
+        const data = (request.data ?? {}) as CreateSftpIngestionRequest;
         const targetDSP = requireString(data.targetDSP, "targetDSP", 160);
         const releaseFolder = requireString(data.releaseFolder, "releaseFolder", 1000);
         const now = admin.firestore.FieldValue.serverTimestamp();
@@ -420,21 +425,22 @@ export const createSftpIngestionRecord = functions.https.onCall(
     },
 );
 
-export const updateSftpIngestionRecord = functions.https.onCall(
-    async (data: UpdateSftpIngestionRequest, context) => {
-        const uid = requireAuth(context);
+export const updateSftpIngestionRecord = onCall(
+    async (request) => {
+        const uid = requireAuth(request);
+        const data = (request.data ?? {}) as UpdateSftpIngestionRequest;
         const ingestionId = requireString(data.ingestionId, "ingestionId");
         const status = requireString(data.status, "status", 80);
         const filesTransferred = data.filesTransferred;
         if (filesTransferred !== undefined && (!Number.isInteger(filesTransferred) || filesTransferred < 0)) {
-            throw new functions.https.HttpsError("invalid-argument", "filesTransferred must be a non-negative integer.");
+            throw new HttpsError("invalid-argument", "filesTransferred must be a non-negative integer.");
         }
 
         const ref = admin.firestore().collection("sftp_ingestions").doc(ingestionId);
         await admin.firestore().runTransaction(async (tx) => {
             const snap = await tx.get(ref);
             if (!snap.exists || snap.data()?.userId !== uid) {
-                throw new functions.https.HttpsError("permission-denied", "SFTP ingestion was not found for this user.");
+                throw new HttpsError("permission-denied", "SFTP ingestion was not found for this user.");
             }
 
             tx.set(ref, {

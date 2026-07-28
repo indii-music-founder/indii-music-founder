@@ -46,16 +46,14 @@ vi.mock('firebase-admin', () => ({
     ),
 }));
 
-vi.mock('firebase-functions/v1', () => ({
-    https: {
-        onCall: vi.fn((handler: unknown) => handler),
-        HttpsError: class extends Error {
-            code: string;
-            constructor(code: string, message: string) {
-                super(message);
-                this.code = code;
-            }
-        },
+vi.mock('firebase-functions/v2/https', () => ({
+    onCall: vi.fn((handler: unknown) => handler),
+    HttpsError: class extends Error {
+        code: string;
+        constructor(code: string, message: string) {
+            super(message);
+            this.code = code;
+        }
     },
 }));
 
@@ -68,13 +66,15 @@ describe('distributionRecords', () => {
     it('records takedown requests without marking the release as provider-requested', async () => {
         const { requestDistributionTakedown } = await import('./distributionRecords');
 
+        // Gen2 callables receive a single CallableRequest ({ data, auth, ... })
+        // rather than Gen1's (data, context) pair.
         const result = await (requestDistributionTakedown as unknown as (
-            data: Record<string, unknown>,
-            context: { auth: { uid: string } }
+            request: { data: Record<string, unknown>; auth: { uid: string } }
         ) => Promise<Record<string, unknown>>)({
-            releaseId: 'release-1',
-            reason: 'voluntary withdrawal',
-        }, {
+            data: {
+                releaseId: 'release-1',
+                reason: 'voluntary withdrawal',
+            },
             auth: { uid: 'user-1' },
         });
 
