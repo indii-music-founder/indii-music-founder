@@ -3098,3 +3098,25 @@ ordinary use of the running app.
 - **Honest scope note:** raising the other 28 is the safe direction, not a proven fix for each — several of those functions deploy and run fine at 256MB today. Gen1 at 256MB is not uniformly fatal the way Gen2 was (Gen2 OOM-killed at cold start before binding a port; Gen1 degrades on heavy work like outbound TLS). They were raised because headroom is cheap, the shared bundle only grows, and the alternative is rediscovering this per-function during the next outage.
 - **Verification:** `packages/firebase` `tsc` clean; full firebase suite **566 passed / 0 failed**; guard passes. **Not yet confirmed live** — one authenticated request must show `[Arcjet] Request allowed` instead of `Decision failed` before this closes.
 - **Related:** the founder-facing symptom chain today was: ISSUE-1238 (deploy blocked) → IAM roles stripped from the runtime SA (entitlement 503) → this. Each masked the next.
+
+### ISSUE-1243: Backend is split across two Cloud Functions generations with no recorded decision — and the app's main streaming endpoint violates the Gen2 streaming standard
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH (not a live outage by itself, but it is the shared root beneath ISSUE-1238, ISSUE-1242, and the mislabelled-error investigation that cost hours on 2026-07-27)
+- **Module:** `packages/firebase/src/**` (repo-wide), `docs/PLATINUM_QUALITY_STANDARDS.md`
+- **Measured 2026-07-27:** **82 Gen1** and **85 Gen2** functions deployed in `us-central1` — roughly half the backend on each generation.
+- **There is no recorded decision.** Searched `.agent/test_ledger/OPEN_ISSUES_V2.md` and `docs/` — no migration ticket, plan, or ADR exists. The only Gen1 rule anywhere is `docs/PLATINUM_QUALITY_STANDARDS.md:106`, which is narrowly scoped to streaming endpoints. This is accretion: the codebase began on `firebase-functions/v1`, new work went to v2, the old half was never revisited.
+- **Live standards violation, found while answering "why is there any Gen1 left":** `generateContentStream` (`index.ts:1009-1265`) is a **chunked streaming endpoint** — `for await` at :1231, `res.write()` at :1248, `res.end()` at :1252 — and it is declared **Gen1** (`functions.runWith(...).https.onRequest`). PLATINUM_QUALITY_STANDARDS.md:106 requires Gen2 for exactly this shape, because Gen1 hard-kills a connection at its execution ceiling regardless of `timeoutSeconds`. That rule was written from a real incident (ERROR_LEDGER 2026-07-21, the `mcpEndpoint` SSE migration). This is the primary chat/agent stream for the whole product.
+- **Concrete cost already paid — every layer of the 2026-07-27 outage traces to this split:**
+  1. `setGlobalOptions({ memory: '512MiB' })` applies to v2 only, so Gen1 functions silently kept the 256MB default → ISSUE-1242.
+  2. Two unit spellings (`MiB` vs `MB`) meant `scripts/check-function-memory.cjs` was blind to all 82 Gen1 declarations → ISSUE-1238 was closed while the Gen1 half stayed exposed.
+  3. Two `HttpsError` classes: `index.ts` tests `instanceof functions.https.HttpsError` (v1) while v2 code throws the v2 class, so genuine errors were relabelled `code: 'internal'` and their actionable messages hidden → sent the ISSUE-1242 investigation to the wrong subsystem first.
+  4. Two default memory tiers (Gen1 256MB vs the v2 global 512MiB).
+- **Why it has not been done, which any plan must account for:** Gen1→Gen2 is **not an in-place upgrade** — `firebase deploy` rejects the change, so each function must be `firebase functions:delete <name> --region=<region>`d first (recorded in PLATINUM_QUALITY_STANDARDS.md:106). Every migration therefore has a window where the function does not exist. That is why it has only ever happened under duress (`mcpEndpoint`, when SSE forced it) and never opportunistically.
+- **Proposed order (not started):**
+  1. **`generateContentStream` first** — it is both the active standards violation and the highest-traffic endpoint. Migrating it also removes the `runWith`/`setGlobalOptions` divergence on the path that just caused a total outage.
+  2. Any other endpoint that streams or holds a connection open — same failure mode, currently unaudited.
+  3. Everything binding `ARCJET_KEY` or touching spend/auth admission, so the security path stops straddling two config systems.
+  4. The long tail, in batches, each with its delete→deploy window scheduled deliberately.
+- **Interim mitigation already in place:** `scripts/check-function-memory.cjs` now matches both spellings, so the memory class of this problem is at least *visible* on both generations. It does not address the `HttpsError`, `setGlobalOptions`, or streaming-ceiling divergences.
+- **Do not:** do not migrate in bulk without per-function delete windows, and do not treat the widened memory guard as having solved this — it covers one of four divergences.
