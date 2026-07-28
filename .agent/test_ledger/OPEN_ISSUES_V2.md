@@ -3158,3 +3158,21 @@ ordinary use of the running app.
 - **Note on the 20 internal-trigger files:** they are exemption *candidates*, not confirmed exemptions. Each still needs an explicit documented exemption per ISSUE-1228's acceptance — "nothing calls it from outside" must be written down and verified, not assumed. `test/setup.ts` in that list is a test harness and should simply be excluded from the matrix.
 - **Acceptance for this entry:** every one of the 90 files carries either an intentional Arcjet policy or a written exemption with rationale; the matrix is regenerated and re-checked as part of the ISSUE-1228 close.
 - **Do not:** do not bulk-bind `ARCJET_KEY` to all 85. ISSUE-1228 explicitly forbids putting Guard in a generic dispatcher and requires request-based protection only on HTTP/callable boundaries — the 20 internal triggers need a different mechanism, and binding a secret to a function that never calls Arcjet is pure noise.
+
+### ISSUE-1245: All CI deployment blocked — GitHub Actions budget exhausted (founder-only fix)
+
+- **Status:** 🔴 OPEN (founder action required; no engineering fix exists)
+- **Severity:** 🔴 CRITICAL (100% of deployment blocked; every verified fix on `main` is stranded)
+- **Module:** GitHub Actions billing — not a repository defect
+- **Evidence:** every job across every workflow fails 3–11 seconds after starting with `steps: []` and all downstream jobs `skipped`. Runs `30322433508` (push), `30322940839` (workflow_dispatch), `30330164125` and `30342064156` (schedule) all show the identical shape. The per-job log blob 404s (`BlobNotFound`) because no log was ever produced, and `--log-failed` returns nothing — so the failure is invisible through every normal diagnostic path.
+- **The actual message, which lives only on the check-run annotation:**
+  `The job was not started because an Actions budget is preventing further use.`
+  Retrieved via `gh api repos/<owner>/<repo>/check-runs/<jobId>/annotations`. It is not in the run log, not in the job object, and not in `gh run view --log-failed`.
+- **Timing:** hard cutover. Last successful run `2026-07-28T01:54Z` (Health Check Monitor); every run from `02:12Z` onward refused. A *scheduled* workflow failing identically at the same moment is what confirms this is account-wide rather than repo- or commit-specific.
+- **Misleading signal to ignore:** `gh api .../actions/permissions` reports `{"enabled": true, "allowed_actions": "all"}`. Actions is enabled; it is the budget that refuses.
+- **Fix (founder-only):** GitHub → Settings → Billing and licensing → **Budgets and alerts** → raise or remove the budget covering Actions. No code change helps.
+- **What is stranded behind it** — all verified green locally, all pushed, none deployed since `87fe982ea`:
+  - ISSUE-1242's Arcjet memory fix did make it out on `87fe982ea` before the cutover, so production has it; but any follow-up cannot ship.
+  - ISSUE-1190, ISSUE-1191, ISSUE-1189, ISSUE-1244 (commits `1563e6f53`, `e241f91f2`) are on `main` and undeployed.
+- **Local verification standing in for CI while blocked (2026-07-28):** `npm test -- --run` → 876 files / 5,450 tests / **0 failed** / exit 0; `npm run typecheck` → 0 errors; `npm run lint` → 0 errors (127 warnings); `npm run build:studio` → succeeds; `packages/firebase` `tsc` → clean; `npm run check:fn-memory` → pass. These are not a substitute for CI acceptance and are recorded only so the next reader knows the red is not the code.
+- **Do not:** do not bisect commits, revert, or edit code to chase this. Do not re-run — the refusal is deterministic and each attempt is wasted. Read the check-run annotation first on any zero-step failure.

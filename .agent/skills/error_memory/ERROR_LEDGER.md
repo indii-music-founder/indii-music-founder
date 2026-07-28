@@ -1711,3 +1711,29 @@ committing.
   1. Do NOT set a per-function `memory` below `512MiB` in `packages/firebase`. Omit the option entirely to inherit the safe global default.
   2. A "Container Healthcheck failed" deploy error is a symptom, never a diagnosis — `gcloud logging read 'resource.labels.service_name="<lowercased-fn-name>"'` for the real reason. Cloud Run service names are lowercase (`getcustomerportal`, not `getCustomerPortal`).
   3. When a fix ships with a documented "this will recur" caveat, ship a detector with it. A prediction with no guard is how this returned.
+
+## 2026-07-28 CI Jobs Fail in Seconds With Zero Steps — GitHub Actions BUDGET, Not Code
+
+**SEVERITY:** Critical (blocks 100% of deployment; trivially misread as a code regression)
+
+- SYMPTOM: every job across every workflow fails 3–11s after starting with `steps: []` and all
+  downstream jobs `skipped`. `gh run view --log-failed` returns nothing useful; the per-job log blob
+  404s (`BlobNotFound`) because no log was ever produced. `gh api .../actions/permissions` shows
+  Actions `enabled` with `allowed_actions: all`, which looks healthy and is misleading.
+- CAUSE: `The job was not started because an Actions budget is preventing further use.` A GitHub
+  **budget** (Settings → Billing and licensing → Budgets and alerts) hit its cap. Hard cutover:
+  last success 2026-07-28T01:54Z, every run from 02:12Z onward refused.
+- HOW TO GET THE REAL MESSAGE — this is the whole trick, none of the obvious commands surface it:
+  ```
+  JID=$(gh api repos/<owner>/<repo>/actions/runs/<runId>/jobs --jq '.jobs[0].id')
+  gh api repos/<owner>/<repo>/check-runs/$JID/annotations --jq '.[] | "\(.annotation_level): \(.message)"'
+  ```
+  The explanation lives on the **check-run annotation**, not in the run log, not in the job object,
+  not in `--log-failed`.
+- FIX: founder-only. Raise or remove the budget. No code change helps.
+- PREVENTION:
+  1. Zero steps + no log blob = platform refusal, not a build failure. Check annotations BEFORE
+     bisecting commits. Re-running only burns time — the refusal is deterministic.
+  2. Do not "fix" a green-locally/red-in-CI split by editing code until the annotation is read.
+  3. A scheduled workflow failing the same way at the same moment is strong evidence the cause is
+     account-wide rather than repo- or commit-specific.
