@@ -685,6 +685,129 @@ jobs:
           npx --no-install firebase functions:delete createTransfer --region us-central1 --project indii-music-founder --force --non-interactive || true
           npx --no-install firebase functions:delete calculateFuelLogistics --region us-central1 --project indii-music-founder --force --non-interactive || true
           npx --no-install firebase functions:delete agentLoopCron --region us-central1 --project indii-music-founder --force --non-interactive || true
+          # Gen1 -> Gen2 cutover (ISSUE-1243). Cloud Functions cannot change
+          # generation in place, so each former Gen1 endpoint must be deleted
+          # before the Gen2 replacement can deploy. Idempotent and re-runnable:
+          # once an endpoint is Gen2 it is preserved, so repeat deploys are no-ops.
+          #
+          # Generation is detected by ASKING FOR THE FIELD, not by matching a
+          # string. `gcloud functions describe --format="value(environment)"`
+          # prints GEN_2 for a 2nd-gen function and prints NOTHING for a 1st-gen
+          # one. An earlier version of this block tested for the literal "GEN_1",
+          # which gcloud never emits, so every Gen1 endpoint fell through to the
+          # "absent" branch, was logged as "not deployed", was never deleted, and
+          # the deploy then failed minutes later on the in-place generation change.
+          # It also passed --gen2, which filters the lookup to 2nd-gen only and so
+          # could never see a Gen1 endpoint at all.
+          #
+          # The list is every former Gen1 export, derived from the MIGRATED
+          # manifest in scripts/check-gen2-migration-semantics.cjs. It excludes
+          # generateImageV3Fn, which that manifest tracks as a source declaration
+          # but which index.ts never instantiates, so it has no deployed endpoint.
+          # editImageFn and analyzeAudioFn deploy under their aliases editImage
+          # and analyzeAudio.
+          for function_name in \
+            logAuditEvent \
+            persistFraudAlert \
+            registerAiContextCache \
+            recordInstrumentUsage \
+            assignDistributionIdentifier \
+            recordDistributionIdentifier \
+            recordDistributionAuditEvent \
+            requestDistributionTakedown \
+            createSftpIngestionRecord \
+            updateSftpIngestionRecord \
+            onMilestoneScheduled \
+            refreshSocialToken \
+            issueStudioExecutorLease \
+            publishStudioPresence \
+            releaseStudioPresence \
+            claimStudioCommand \
+            publishStudioResponse \
+            completeStudioCommand \
+            generateReleaseDownloadUrl \
+            auditReleaseArtworkForDelivery \
+            verifyMechanicalLicense \
+            sendForDigitalSignature \
+            requestTaxForms \
+            generateTelegramLinkCode \
+            getTelegramLinkStatus \
+            createStripeAccount \
+            createStripeConnectAccount \
+            createTransfer \
+            generateItinerary \
+            checkLogistics \
+            findPlaces \
+            executeCampaign \
+            dispatchSocialPost \
+            createInfluencerBounty \
+            reportBugFn \
+            analyticsExchangeToken \
+            analyticsFinalizeInstagramConnection \
+            analyticsGetConnectionStatus \
+            analyticsRefreshToken \
+            analyticsRevokeToken \
+            emailExchangeToken \
+            emailRefreshToken \
+            emailRevokeToken \
+            pandadocListTemplates \
+            pandadocCreateDocument \
+            pandadocSendDocument \
+            pandadocGetDocumentStatus \
+            pandadocGetSigningLink \
+            cleanupOrphanedVideos \
+            trackStorageQuotas \
+            cleanupExpiredVideoTemps \
+            flagVideosForArchival \
+            processRelayCommand \
+            pandadocWebhook \
+            telegramWebhook \
+            initiateSplitEscrow \
+            signEscrow \
+            releaseEscrow \
+            triggerVideoJob \
+            executeVideoJob \
+            triggerLongFormVideoJob \
+            renderVideo \
+            inngestApi \
+            generateSpeech \
+            generateContentStream \
+            ragProxy \
+            listGKEClusters \
+            getGKEClusterStatus \
+            scaleGKENodePool \
+            listGCEInstances \
+            restartGCEInstance \
+            executeBigQueryQuery \
+            getBigQueryTableSchema \
+            listBigQueryDatasets \
+            exportUserData \
+            requestAccountDeletion \
+            healthCheck \
+            healthCheckWest1 \
+            enrichFanData \
+            editImage \
+            analyzeAudio
+          do
+            # Two lookups: one to prove existence, one to read generation.
+            existing="$(gcloud functions describe "$function_name" \
+              --region us-central1 --project indii-music-founder \
+              --format="value(name)" 2>/dev/null || true)"
+            if [ -z "$existing" ]; then
+              echo "$function_name is not deployed; the deploy will create it as Gen2."
+              continue
+            fi
+            generation="$(gcloud functions describe "$function_name" \
+              --region us-central1 --project indii-music-founder \
+              --format="value(environment)" 2>/dev/null || true)"
+            if [ "$generation" = "GEN_2" ]; then
+              echo "$function_name is already Gen2; preserving it."
+            else
+              echo "::notice::Deleting Gen1 $function_name so its Gen2 replacement can deploy."
+              npx --no-install firebase functions:delete "$function_name" \
+                --region us-central1 --project indii-music-founder --force --non-interactive
+            fi
+          done
           printf '%s\n' \
             "INFLUENCER_BOUNTY_BASE_URL=$INFLUENCER_BOUNTY_BASE_URL" \
             "MEDIA_PROVIDER=$MEDIA_PROVIDER" \
