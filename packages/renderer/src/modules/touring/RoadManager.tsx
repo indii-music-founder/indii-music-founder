@@ -452,7 +452,7 @@ const RoadManager: React.FC = () => {
                                                 onUpdateStop={handleUpdateStop}
                                             />
                                         </div>
-                                        <div className="hidden xl:flex w-96 flex-col border-l border-gray-800 p-6 overflow-y-auto custom-scrollbar flex-shrink-0">
+                                        <div className="hidden @6xl:flex w-96 flex-col border-l border-gray-800 p-6 overflow-y-auto custom-scrollbar flex-shrink-0">
                                             <h3 className="text-sm font-bold text-white mb-4">Route Optimization</h3>
                                             <TourRouteOptimizer />
                                         </div>
@@ -489,7 +489,7 @@ const RoadManager: React.FC = () => {
                 </div>
 
                 {/* ── RIGHT PANEL — Tour Info ─────────────────────────── */}
-                <aside className="hidden lg:flex w-72 2xl:w-80 flex-col border-l border-white/5 overflow-y-auto p-3 gap-3 flex-shrink-0">
+                <aside className="hidden @6xl:flex w-72 @7xl:w-80 flex-col border-l border-white/5 overflow-y-auto p-3 gap-3 flex-shrink-0">
                     <ItinerarySummaryPanel itinerary={itinerary} />
                     <EmergencyContactsPanel
                         contacts={emergencyContacts}

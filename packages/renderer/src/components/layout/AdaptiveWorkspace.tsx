@@ -12,6 +12,8 @@ interface AdaptiveWorkspaceProps {
     rightRailLabel?: string;
     className?: string;
     contentClassName?: string;
+    /** Overrides the root `data-testid` for callers with an existing test contract (default: 'adaptive-workspace'). */
+    testId?: string;
 }
 
 type DrawerSide = 'left' | 'right' | null;
@@ -29,6 +31,7 @@ export function AdaptiveWorkspace({
     rightRailLabel = 'Workspace details',
     className,
     contentClassName,
+    testId = 'adaptive-workspace',
 }: AdaptiveWorkspaceProps) {
     const { ref, width, mode } = useWorkspaceLayout();
     const [openDrawer, setOpenDrawer] = useState<DrawerSide>(null);
@@ -134,7 +137,7 @@ export function AdaptiveWorkspace({
         <AdaptiveWorkspaceContext.Provider value={{ mode, width }}>
             <div
                 ref={ref}
-                data-testid="adaptive-workspace"
+                data-testid={testId}
                 data-workspace-mode={mode}
                 className={cn('absolute inset-0 flex min-w-0 overflow-hidden @container', className)}
             >

@@ -26,6 +26,7 @@ import { RegistrationChecklistPanel } from './components/RegistrationChecklistPa
 import { useDistributionDashboard } from './hooks/useDistributionDashboard';
 import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
 import { useTranslation } from 'react-i18next';
+import { AdaptiveWorkspace } from '@/components/layout/AdaptiveWorkspace';
 
 /* ================================================================== */
 /*  Distribution Dashboard — Three-Panel Layout                        */
@@ -37,14 +38,27 @@ export default function DistributionDashboard() {
 
     return (
         <ModuleErrorBoundary moduleName="Distribution">
-            <div data-testid="distribution-dashboard" className="absolute inset-0 flex bg-bg-dark/50">
-                {/* ── LEFT PANEL — Distributor Status & Health ────────── */}
-                <aside className="hidden @5xl:flex w-64 @6xl:w-72 @7xl:w-80 flex-col border-r border-white/5 overflow-y-auto p-3 gap-3 flex-shrink-0 bg-black/20 backdrop-blur-md">
-                    <DistributorQuickView />
-                    <DeliveryHealthPanel releases={releases} />
-                    <QuickLinksPanel />
-                </aside>
-
+            <AdaptiveWorkspace
+                testId="distribution-dashboard"
+                className="bg-bg-dark/50"
+                leftRailLabel="Distributor status & delivery health"
+                rightRailLabel="Registration, QC, keys & authority"
+                leftRail={
+                    <>
+                        <DistributorQuickView />
+                        <DeliveryHealthPanel releases={releases} />
+                        <QuickLinksPanel />
+                    </>
+                }
+                rightRail={
+                    <>
+                        <RegistrationChecklistPanel />
+                        <QCQuickPanel />
+                        <KeysStatusPanel />
+                        <AuthorityInfoPanel />
+                    </>
+                }
+            >
                 {/* ── CENTER — Tabbed Content ─────────────────────────── */}
                 <div className="flex-1 flex flex-col min-w-0">
                     {/* Header */}
@@ -175,15 +189,7 @@ export default function DistributionDashboard() {
                         </div>
                     </Tabs>
                 </div>
-
-                {/* ── RIGHT PANEL — QC, Keys, Authority, & Checklist ──────────────── */}
-                <aside className="hidden @6xl:flex w-72 @7xl:w-80 flex-col border-l border-white/5 overflow-y-auto p-3 gap-3 flex-shrink-0 bg-black/20 backdrop-blur-md">
-                    <RegistrationChecklistPanel />
-                    <QCQuickPanel />
-                    <KeysStatusPanel />
-                    <AuthorityInfoPanel />
-                </aside>
-            </div>
+            </AdaptiveWorkspace>
         </ModuleErrorBoundary>
     );
 }

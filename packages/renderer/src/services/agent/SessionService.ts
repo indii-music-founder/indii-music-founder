@@ -8,6 +8,7 @@ import { where, orderBy, limit, Timestamp, onSnapshot, collection, query, Unsubs
 import { db } from '../firebase';
 import { cleanFirestoreData } from '@/services/utils/firebase';
 import { logger } from '@/utils/logger';
+import { toMillisSafe } from '@/utils/timestamps';
 
 // Define the Firestore document shape (handling timestamps)
 interface SessionDocument extends Omit<ConversationSession, 'createdAt' | 'updatedAt'> {
@@ -175,8 +176,8 @@ class SessionServiceImpl extends FirestoreService<SessionDocument> {
         const docs = await this.list(constraints);
         return docs.map(d => ({
             ...d,
-            createdAt: d.createdAt.toMillis(),
-            updatedAt: d.updatedAt.toMillis()
+            createdAt: toMillisSafe(d.createdAt),
+            updatedAt: toMillisSafe(d.updatedAt)
         }));
     }
 
@@ -214,8 +215,8 @@ class SessionServiceImpl extends FirestoreService<SessionDocument> {
             return {
                 ...d,
                 id: doc.id,
-                createdAt: d.createdAt.toMillis(),
-                updatedAt: d.updatedAt.toMillis()
+                createdAt: toMillisSafe(d.createdAt),
+                updatedAt: toMillisSafe(d.updatedAt)
             } as ConversationSession;
         });
 
@@ -282,8 +283,8 @@ class SessionServiceImpl extends FirestoreService<SessionDocument> {
                 return {
                     ...d,
                     id: doc.id,
-                    createdAt: d.createdAt.toMillis(),
-                    updatedAt: d.updatedAt.toMillis()
+                    createdAt: toMillisSafe(d.createdAt),
+                    updatedAt: toMillisSafe(d.updatedAt)
                 } as ConversationSession;
             });
             onUpdate(sessions);

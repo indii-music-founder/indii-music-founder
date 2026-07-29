@@ -491,7 +491,7 @@ export default function WorkflowLab() {
                 </div>
 
                 {/* ── RIGHT PANEL — Node Library & Inspector ─────────── */}
-                <aside className="hidden lg:flex w-72 2xl:w-80 flex-col border-l border-white/5 overflow-y-auto p-3 gap-3 flex-shrink-0 bg-[#0f0f0f]">
+                <aside className="hidden @6xl:flex w-72 @7xl:w-80 flex-col border-l border-white/5 overflow-y-auto p-3 gap-3 flex-shrink-0 bg-[#0f0f0f]">
                     <NodeLibraryPanel />
                     {selectedNodeId ? (
                         <WorkflowNodeInspector />

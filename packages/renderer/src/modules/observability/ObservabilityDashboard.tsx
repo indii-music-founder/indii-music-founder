@@ -11,6 +11,7 @@ import type { RUMSnapshot, VitalsReport } from '@/services/observability';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Search, MessageSquareWarning, ThumbsDown, ThumbsUp } from 'lucide-react';
 import { AdminLockScreen } from './AdminLockScreen';
+import { toMillisSafe } from '@/utils/timestamps';
 
 interface MetricPoint {
   timestamp: string;
@@ -280,7 +281,7 @@ export const ObservabilityDashboard: React.FC = () => {
                         {event.actionContext.agentId} <span className="text-slate-400 font-normal">executed</span> {event.actionContext.actionType}
                       </h4>
                       <span className="text-xs text-slate-500 shrink-0 ml-2">
-                        {new Date(event.createdAt.toMillis()).toLocaleTimeString('en-US')}
+                        {new Date(toMillisSafe(event.createdAt)).toLocaleTimeString('en-US')}
                       </span>
                     </div>
                     {event.comment && (

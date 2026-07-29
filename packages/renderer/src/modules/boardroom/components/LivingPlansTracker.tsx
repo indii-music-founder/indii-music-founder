@@ -7,6 +7,7 @@ import { PlanCard } from '@/core/components/chat/PlanCard';
 import { useToast } from '@/core/context/ToastContext';
 import { agentService } from '@/services/agent/AgentService';
 import { logger } from '@/utils/logger';
+import { toMillisSafe } from '@/utils/timestamps';
 
 interface LivingPlansTrackerProps {
     isOpen: boolean;
@@ -38,7 +39,7 @@ export function LivingPlansTracker({ isOpen, onClose }: LivingPlansTrackerProps)
         livingPlanService.getPlansForProject(currentProjectId).then(data => {
             if (isMounted) {
                 // Sort by newest first
-                setPlans(data.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis()));
+                setPlans(data.sort((a, b) => toMillisSafe(b.createdAt) - toMillisSafe(a.createdAt)));
                 setLoading(false);
             }
         }).catch(err => {

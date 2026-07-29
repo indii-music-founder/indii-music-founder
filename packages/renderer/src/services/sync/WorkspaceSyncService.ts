@@ -67,6 +67,34 @@ function getWorkspaceRef() {
     return doc(db, 'users', uid, 'workspace', 'current');
 }
 
+/**
+ * Firestore rejects any `undefined` value anywhere in a written document tree.
+ * `LivingPlan.approvedAt`/`.executionRef` are optional TS fields, which means the
+ * runtime object can carry an explicit `undefined` key rather than omitting it —
+ * setDoc() throws invalid-argument on the whole write in that case. Strip
+ * recursively rather than widening this to every Firestore write in the app.
+ *
+ * Only recurses into plain objects/arrays. Firestore `Timestamp` instances and
+ * `serverTimestamp()` FieldValue sentinels are class instances, not plain
+ * objects — Object.entries() on those would shred their prototype and break
+ * the sentinel Firestore's SDK detects by identity, so they pass through as-is.
+ */
+function stripUndefinedDeep<T>(value: T): T {
+    if (Array.isArray(value)) {
+        return value.map(stripUndefinedDeep) as unknown as T;
+    }
+    if (value !== null && typeof value === 'object' && value.constructor === Object) {
+        const result: Record<string, unknown> = {};
+        for (const [key, val] of Object.entries(value as Record<string, unknown>)) {
+            if (val !== undefined) {
+                result[key] = stripUndefinedDeep(val);
+            }
+        }
+        return result as T;
+    }
+    return value;
+}
+
 const DEVICE_ID_KEY = 'indii-workspace-device-id';
 
 function generateDeviceId(): string {
@@ -112,7 +140,7 @@ class WorkspaceSyncService {
         }
 
         const doc: WorkspaceDoc = {
-            snapshot,
+            snapshot: stripUndefinedDeep(snapshot),
             updatedAt: serverTimestamp(),
             deviceId: getDeviceId(),
             appVersion: typeof window !== 'undefined' && (window as any).__APP_VERSION__

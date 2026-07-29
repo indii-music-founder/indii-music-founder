@@ -8,10 +8,11 @@ import {
     AudioWaveform, FolderOpen, Video, Map, Briefcase,
     Settings, PenTool, LayoutDashboard, Radio, CreditCard,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    Building, ShieldAlert, Cpu, Workflow, Gem, AlertCircle, Lightbulb, HelpCircle
+    Building, ShieldAlert, Cpu, Workflow, Gem, AlertCircle, Lightbulb, HelpCircle, Activity
 } from 'lucide-react';
 import { useGlobalShortcut } from '@/hooks/useGlobalShortcut';
 import { useBugReport } from '@/modules/debug';
+import { useGodMode } from '@/hooks/useGodMode';
 
 export function UnifiedCommandMenu() {
     const { isCommandMenuOpen, setCommandMenuOpen, setModule } = useStore(
@@ -23,6 +24,7 @@ export function UnifiedCommandMenu() {
     );
 
     const { reportBug, requestFeature } = useBugReport();
+    const { isGodMode } = useGodMode();
 
     // Toggle the menu when ⌘K is pressed
     useGlobalShortcut({
@@ -182,6 +184,16 @@ export function UnifiedCommandMenu() {
                             <Settings className="w-4 h-4 text-cyan-400" />
                             <span>Settings & Preferences</span>
                         </Command.Item>
+                        {isGodMode && (
+                            // ISSUE-1269: the sidebar's "Command Center" pill was removed for routing to this
+                            // ops dashboard under a name shared with the artist-facing Command Center tab.
+                            // Same destination, god-mode gated, distinct name — restores the entry point
+                            // without restoring the naming collision or the loud sidebar pill.
+                            <Command.Item onSelect={() => runCommand(() => setModule('observability'))} className="flex items-center gap-3 cursor-pointer">
+                                <Activity className="w-4 h-4 text-slate-400" />
+                                <span>Ops Dashboard (Internal)</span>
+                            </Command.Item>
+                        )}
                     </Command.Group>
                 </Command.List>
 

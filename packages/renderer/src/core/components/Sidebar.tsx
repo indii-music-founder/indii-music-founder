@@ -474,7 +474,7 @@ export default function Sidebar() {
             <div className={`p-4 border-t border-white/5 mt-auto flex flex-col gap-2 ${!isSidebarOpen ? 'items-center' : ''}`}>
                 {isSidebarOpen && (
                     <p className="text-[10px] text-green-400 text-center italic">
-                        made in Detroit for independence music artists
+                        made in Detroit exclusively for independent music artists
                     </p>
                 )}
             </div>

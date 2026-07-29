@@ -1,4 +1,5 @@
 import { logger } from '@/utils/logger';
+import { toMillisSafe } from '@/utils/timestamps';
 
 import { storage } from './firebase';
 import { Timestamp, where, orderBy, limit, query, onSnapshot, Unsubscribe, QuerySnapshot, DocumentData, QueryDocumentSnapshot, FirestoreError } from 'firebase/firestore';
@@ -305,8 +306,8 @@ class StorageServiceImpl extends FirestoreService<HistoryDocument> {
                 const results = await this.query(
                     fallbackConstraints,
                     (a, b) => {
-                        const timeA = a.timestamp.toMillis();
-                        const timeB = b.timestamp.toMillis();
+                        const timeA = toMillisSafe(a.timestamp);
+                        const timeB = toMillisSafe(b.timestamp);
                         return timeB - timeA;
                     }
                 );
@@ -465,7 +466,7 @@ class StorageServiceImpl extends FirestoreService<HistoryDocument> {
     private mapDocumentToItem(doc: HistoryDocument): HistoryItem {
         return {
             ...doc,
-            timestamp: doc.timestamp.toMillis()
+            timestamp: toMillisSafe(doc.timestamp)
         } as HistoryItem;
     }
 }

@@ -81,7 +81,7 @@ export const ReleaseStatusCard: React.FC<ReleaseStatusCardProps> = ({
             </div>
 
             {/* DDEX / DSP Delivery Mini Badges (Removed - waiting for real backend integration) */}
-            <div className="hidden lg:flex items-center gap-2 mr-Auto">
+            <div className="hidden @lg:flex items-center gap-2 mr-Auto">
                 <div className="flex items-center gap-1.5 text-[10px] text-gray-400 uppercase tracking-widest font-bold bg-gray-900/50 px-2 py-0.5 rounded border border-gray-800">
                     <Globe size={10} /> {release.metadata.genre || 'GENRE'}
                 </div>

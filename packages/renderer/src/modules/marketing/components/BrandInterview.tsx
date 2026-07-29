@@ -85,9 +85,9 @@ const BrandInterview: React.FC = () => {
     const isProfileComplete = coreProgress >= 100 && releaseProgress >= 100;
 
     return (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-0 h-full min-h-[600px]">
+        <div className="grid grid-cols-1 @5xl:grid-cols-12 gap-0 h-full min-h-[600px]">
             {/* Chat Area */}
-            <div className="lg:col-span-8 flex flex-col h-full min-h-0 relative">
+            <div className="@5xl:col-span-8 flex flex-col h-full min-h-0 relative">
                 {/* Mode indicator + Step Stepper */}
                 <div className="px-4 lg:px-6 pt-4 pb-2 border-b border-white/5 bg-[#0a0a0a]/50 backdrop-blur-sm">
                     <div className="flex items-center justify-between mb-3">
@@ -270,7 +270,7 @@ const BrandInterview: React.FC = () => {
             </div>
 
             {/* Right Panel — Profile Progress */}
-            <div className="hidden lg:flex lg:col-span-4 flex-col border-l border-white/5 bg-[#0a0a0a]/30 backdrop-blur-xl p-6 overflow-y-auto custom-scrollbar">
+            <div className="hidden @5xl:flex @5xl:col-span-4 flex-col border-l border-white/5 bg-[#0a0a0a]/30 backdrop-blur-xl p-6 overflow-y-auto custom-scrollbar">
                 {/* Brand Interview Header */}
                 <div className="flex items-center gap-3 mb-6 pb-4 border-b border-white/5">
                     <div className="w-10 h-10 rounded-xl bg-dept-marketing/10 border border-dept-marketing/20 flex items-center justify-center">

@@ -31,6 +31,7 @@ import { ConversationMode } from '@/core/store/slices/agent/agentUISlice';
 import { auth } from '@/services/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { logger } from '@/utils/logger';
+import { toMillisSafe } from '@/utils/timestamps';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import { useVoice } from '@/core/context/VoiceContext';
@@ -237,12 +238,8 @@ export default function AgentChat({ onSendCommand: _onSendCommand, isPaired }: A
         const all: ChatMessage[] = [];
         
         rawCommands.forEach(cmd => {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const ts = cmd.timestamp && 'toMillis' in (cmd.timestamp as any) 
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                ? (cmd.timestamp as any).toMillis() 
-                : typeof cmd.timestamp === 'number' ? cmd.timestamp : 0;
-                
+            const ts = toMillisSafe(cmd.timestamp);
+
             all.push({
                 id: cmd.id || `cmd-${ts}`,
                 commandId: cmd.id,
@@ -253,11 +250,7 @@ export default function AgentChat({ onSendCommand: _onSendCommand, isPaired }: A
         });
 
         rawResponses.forEach(res => {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const ts = res.timestamp && 'toMillis' in (res.timestamp as any) 
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                ? (res.timestamp as any).toMillis() 
-                : typeof res.timestamp === 'number' ? res.timestamp : 0;
+            const ts = toMillisSafe(res.timestamp);
 
             all.push({
                 id: res.id || `res-${ts}`,
