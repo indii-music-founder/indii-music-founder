@@ -270,7 +270,7 @@ const BrandInterview: React.FC = () => {
             </div>
 
             {/* Right Panel — Profile Progress */}
-            <div className="hidden @5xl:flex @5xl:col-span-4 flex-col border-l border-white/5 bg-[#0a0a0a]/30 backdrop-blur-xl p-6 overflow-y-auto custom-scrollbar">
+            <div className="hidden @5xl:flex @5xl:col-span-4 flex-col border-l border-dept-marketing/20 bg-[#0a0a0a]/30 backdrop-blur-xl p-6 overflow-y-auto custom-scrollbar">
                 {/* Brand Interview Header */}
                 <div className="flex items-center gap-3 mb-6 pb-4 border-b border-white/5">
                     <div className="w-10 h-10 rounded-xl bg-dept-marketing/10 border border-dept-marketing/20 flex items-center justify-center">

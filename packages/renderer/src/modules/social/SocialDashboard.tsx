@@ -108,7 +108,7 @@ export default function SocialDashboard() {
         <ModuleErrorBoundary moduleName="Social">
             <div className="absolute inset-0 flex">
                 {/* ── LEFT PANEL — Accounts & Filters ────────────────── */}
-                <aside className="hidden @5xl:flex w-64 @6xl:w-72 @7xl:w-80 flex-col border-r border-white/5 overflow-y-auto p-3 gap-3 flex-shrink-0">
+                <aside className="hidden @5xl:flex w-64 @6xl:w-72 @7xl:w-80 flex-col border-r border-dept-social/20 overflow-y-auto p-3 gap-3 flex-shrink-0">
                     <AccountStatsPanel stats={stats} />
                     <PlatformFiltersPanel />
                     <BestTimesPanel />
@@ -185,7 +185,7 @@ export default function SocialDashboard() {
                 </div>
 
                 {/* ── RIGHT PANEL — Queue & Trends ───────────────────── */}
-                <aside className="hidden @6xl:flex w-72 @7xl:w-80 flex-col border-l border-white/5 overflow-y-auto p-3 gap-3 flex-shrink-0">
+                <aside className="hidden @6xl:flex w-72 @7xl:w-80 flex-col border-l border-dept-social/20 overflow-y-auto p-3 gap-3 flex-shrink-0">
                     <DraftsQueuePanel scheduledPosts={scheduledPosts} />
                     <PlatformStatusPanel />
                     <TrendingTopicsPanel />

@@ -48,11 +48,11 @@
   --color-info-muted: #2196F333;
 
   /* ─────────────────────────────────────────────────────────────────────────────
-   * SURFACE COLORS - Professional dark palette
+   * SURFACE COLORS - Warm dark studio palette (warm near-black, not blue-black)
    * ───────────────────────────────────────────────────────────────────────────── */
-  --color-bg-dark: #0d1117;
-  --color-surface: #1E293B;
-  --color-surface-elevated: #334155;
+  --color-bg-dark: #14100c;
+  --color-surface: #241f19;
+  --color-surface-elevated: #3a3226;
 
   /* ═══════════════════════════════════════════════════════════════════════════
    * DEPARTMENT COLOR SYSTEM
@@ -119,12 +119,12 @@
   --color-dept-default: #00ff66;
   --color-dept-default-muted: #00ff6633;
 
-  /* Sonic OS Identity */
-  --sonic-purple: 145 100% 50%; /* Rebranded to Green */
+  /* Sonic OS Identity — warm dark studio signature: deep amber/gold, not neon green */
+  --sonic-purple: 38 75% 48%;
   --sonic-blue: 190 100% 50%;
   --sonic-yellow: 50 100% 50%;
-  --sonic-glass: 240 10% 3.9% / 0.7;
-  --sonic-glass-border: 240 10% 10%;
+  --sonic-glass: 30 10% 4% / 0.7;
+  --sonic-glass-border: 30 8% 12%;
 
   /* Default Variables */
   --background: 0 0% 100%;
@@ -135,17 +135,17 @@
   --popover-foreground: 240 10% 3.9%;
   --primary: 240 5.9% 10%;
   --primary-foreground: 0 0% 98%;
-  --secondary: 145 100% 50%;
-  --secondary-foreground: 240 5.9% 10%;
+  --secondary: 38 75% 48%;
+  --secondary-foreground: 30 15% 8%;
   --muted: 240 4.8% 95.9%;
   --muted-foreground: 240 3.8% 46.1%;
-  --accent: 145 100% 50%;
-  --accent-foreground: 240 5.9% 10%;
+  --accent: 38 75% 48%;
+  --accent-foreground: 30 15% 8%;
   --destructive: 0 84.2% 60.2%;
   --destructive-foreground: 0 0% 98%;
   --border: 240 5.9% 90%;
   --input: 240 5.9% 90%;
-  --ring: 145 100% 50%;
+  --ring: 38 75% 48%;
   --radius: 0.5rem;
 }
 
@@ -164,21 +164,21 @@
 }
 
 .dark {
-  --background: 240 10% 2%;
-  --foreground: 0 0% 98%;
-  --card: 240 10% 3.9%;
-  --card-foreground: 0 0% 98%;
-  --primary: 240 5.9% 10%;
-  --primary-foreground: 0 0% 98%;
-  --secondary: 145 100% 50%;
-  --secondary-foreground: 0 0% 98%;
-  --muted: 240 5% 10%;
-  --muted-foreground: 240 5% 64.9%;
-  --accent: 145 100% 50%;
-  --accent-foreground: 0 0% 98%;
-  --border: 240 3.7% 15.9%;
-  --input: 240 3.7% 15.9%;
-  --ring: 145 100% 50%;
+  --background: 30 12% 4%;
+  --foreground: 40 20% 96%;
+  --card: 30 10% 7%;
+  --card-foreground: 40 20% 96%;
+  --primary: 30 8% 12%;
+  --primary-foreground: 40 20% 96%;
+  --secondary: 38 75% 48%;
+  --secondary-foreground: 30 15% 8%;
+  --muted: 30 8% 11%;
+  --muted-foreground: 30 6% 64.9%;
+  --accent: 38 75% 48%;
+  --accent-foreground: 30 15% 8%;
+  --border: 30 8% 17%;
+  --input: 30 8% 17%;
+  --ring: 38 75% 48%;
 }
 
 @theme {
@@ -227,8 +227,8 @@
   /* ═══════════════════════════════════════════════════════════════════════════
    * SYSTEM COLORS
    * ═══════════════════════════════════════════════════════════════════════════ */
-  --color-bg-dark: #0d1117;
-  /* GitHub Dark - Standard App Background */
+  --color-bg-dark: #14100c;
+  /* Warm dark studio - Standard App Background */
 
   --color-sonic-purple: var(--sonic-purple);
   --color-sonic-blue: var(--sonic-blue);

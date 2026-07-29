@@ -3,6 +3,8 @@ import { PanelLeft, PanelRight, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useWorkspaceLayout } from '@/hooks/useWorkspaceLayout';
 import { AdaptiveWorkspaceContext } from './AdaptiveWorkspaceContext';
+import { getColorForModule } from '@/core/theme/moduleColors';
+import { type ModuleId } from '@/core/constants';
 
 interface AdaptiveWorkspaceProps {
     children: React.ReactNode;
@@ -14,6 +16,8 @@ interface AdaptiveWorkspaceProps {
     contentClassName?: string;
     /** Overrides the root `data-testid` for callers with an existing test contract (default: 'adaptive-workspace'). */
     testId?: string;
+    /** Tints rail borders with this room's department color instead of the generic neutral edge. */
+    deptModule?: ModuleId;
 }
 
 type DrawerSide = 'left' | 'right' | null;
@@ -32,8 +36,11 @@ export function AdaptiveWorkspace({
     className,
     contentClassName,
     testId = 'adaptive-workspace',
+    deptModule,
 }: AdaptiveWorkspaceProps) {
     const { ref, width, mode } = useWorkspaceLayout();
+    const deptColors = deptModule ? getColorForModule(deptModule) : null;
+    const railBorderClass = deptColors ? `${deptColors.border}/20` : 'border-white/5';
     const [openDrawer, setOpenDrawer] = useState<DrawerSide>(null);
     const triggerRef = useRef<HTMLButtonElement | null>(null);
     const drawerRef = useRef<HTMLElement | null>(null);
@@ -142,7 +149,7 @@ export function AdaptiveWorkspace({
                 className={cn('absolute inset-0 flex min-w-0 overflow-hidden @container', className)}
             >
                 {hasPersistentLeftRail && (
-                    <aside data-testid="adaptive-left-rail" aria-label={leftRailLabel} className="flex w-64 shrink-0 flex-col overflow-y-auto border-r border-white/5 p-3 @4xl:w-72 @6xl:w-80">
+                    <aside data-testid="adaptive-left-rail" aria-label={leftRailLabel} className={cn('flex w-64 shrink-0 flex-col overflow-y-auto border-r p-3 @4xl:w-72 @6xl:w-80', railBorderClass)}>
                         {leftRail}
                     </aside>
                 )}
@@ -152,7 +159,7 @@ export function AdaptiveWorkspace({
                 </main>
 
                 {hasPersistentRightRail && (
-                    <aside data-testid="adaptive-right-rail" aria-label={rightRailLabel} className="flex w-72 shrink-0 flex-col overflow-y-auto border-l border-white/5 p-3 @6xl:w-80">
+                    <aside data-testid="adaptive-right-rail" aria-label={rightRailLabel} className={cn('flex w-72 shrink-0 flex-col overflow-y-auto border-l p-3 @6xl:w-80', railBorderClass)}>
                         {rightRail}
                     </aside>
                 )}

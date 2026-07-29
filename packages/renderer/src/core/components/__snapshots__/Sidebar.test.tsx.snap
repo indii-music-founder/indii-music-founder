@@ -39,7 +39,7 @@ exports[`Sidebar > matches snapshot in collapsed state 1`] = `
   >
     <button
       aria-label="Open Command Menu"
-      class="p-2 rounded-lg text-gray-400 hover:text-green-400 hover:bg-white/10 transition-colors shadow-sm"
+      class="p-2 rounded-lg text-gray-400 hover:text-secondary hover:bg-white/10 transition-colors shadow-sm"
       title="Search (⌘K)"
     >
       <svg
@@ -588,7 +588,7 @@ exports[`Sidebar > matches snapshot in expanded state 1`] = `
         class="flex items-center gap-2"
       >
         <svg
-          class="text-gray-500 group-hover:text-green-400 transition-colors"
+          class="text-gray-500 group-hover:text-secondary transition-colors"
           data-testid="icon-Search"
           size="14"
         />
@@ -739,7 +739,7 @@ exports[`Sidebar > matches snapshot in expanded state 1`] = `
     class="p-4 border-t border-white/5 mt-auto flex flex-col gap-2 "
   >
     <p
-      class="text-[10px] text-green-400 text-center italic"
+      class="text-[10px] text-secondary text-center italic"
     >
       made in Detroit exclusively for independent music artists
     </p>

@@ -89,6 +89,7 @@ export default function MerchDashboard() {
     return (
         <>
             <AdaptiveWorkspace
+                deptModule="merch"
                 className="bg-[#050505] text-white font-sans"
                 leftRail={<MerchLeftRail stats={stats} topSellingProducts={topSellingProducts} products={products} onDesignClick={handleDesignClick} onExit={() => navigate('/dashboard')} />}
                 rightRail={<MerchRightRail stats={stats} products={products} />}

@@ -489,7 +489,7 @@ const RoadManager: React.FC = () => {
                 </div>
 
                 {/* ── RIGHT PANEL — Tour Info ─────────────────────────── */}
-                <aside className="hidden @6xl:flex w-72 @7xl:w-80 flex-col border-l border-white/5 overflow-y-auto p-3 gap-3 flex-shrink-0">
+                <aside className="hidden @6xl:flex w-72 @7xl:w-80 flex-col border-l border-dept-touring/20 overflow-y-auto p-3 gap-3 flex-shrink-0">
                     <ItinerarySummaryPanel itinerary={itinerary} />
                     <EmergencyContactsPanel
                         contacts={emergencyContacts}

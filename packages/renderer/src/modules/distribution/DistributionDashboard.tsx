@@ -40,6 +40,7 @@ export default function DistributionDashboard() {
         <ModuleErrorBoundary moduleName="Distribution">
             <AdaptiveWorkspace
                 testId="distribution-dashboard"
+                deptModule="distribution"
                 className="bg-bg-dark/50"
                 leftRailLabel="Distributor status & delivery health"
                 rightRailLabel="Registration, QC, keys & authority"
