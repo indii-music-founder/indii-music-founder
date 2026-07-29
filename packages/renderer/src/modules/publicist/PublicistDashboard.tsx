@@ -75,7 +75,7 @@ export default function PublicistDashboard() {
                 </div>
 
                 {/* Sidebar Navigation — hidden on mobile, tab bar handles navigation */}
-                <aside className="hidden md:flex w-64 lg:w-72 h-full z-20 flex-col border-r border-white/5 bg-black/40 backdrop-blur-xl relative">
+                <aside className="hidden @5xl:flex w-64 @6xl:w-72 h-full z-20 flex-col border-r border-dept-marketing/20 bg-black/40 backdrop-blur-xl relative">
                     {/* Brand */}
                     <div className="p-6 pb-2">
                         <div className="flex items-center gap-3 mb-6">
