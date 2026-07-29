@@ -26,6 +26,19 @@ npm run security:frontend-api-boundary > /dev/null 2>&1 || {
   exit 1
 }
 
+# Stage 3b: Cloud Function runtime invariants (ISSUE-1238, ISSUE-1242, ISSUE-1243)
+# Two failure modes that no type error or failing test catches, because they
+# only differ in production: a function pinned below the ~259MiB shared
+# cold-start floor (which fails the ENTIRE functions deploy), and a Gen1->Gen2
+# migrated export that silently picked up Gen2's concurrency-80 default instead
+# of Gen1's one-request-per-instance behavior.
+echo "  3️⃣ b Checking Cloud Function runtime invariants..."
+npm run check:functions > /dev/null 2>&1 || {
+  echo "  ❌ Cloud Function runtime invariant violated."
+  npm run check:functions
+  exit 1
+}
+
 # Stage 4: Run affected unit tests (CRITICAL: Closes the pre-commit gap)
 # If any .ts/.tsx source files are staged, run their corresponding tests.
 # This catches broken assertions, type mismatches, mock/stub issues before commit.
