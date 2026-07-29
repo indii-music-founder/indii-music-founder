@@ -1,19 +1,19 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import { policyClassForServerEntitlement } from '../security/arcjet';
-import { requireVerifiedCreativeAdmissionV1 } from './legacyAdmission';
+import { requireVerifiedCreativeAdmission } from './legacyAdmission';
 
 const rawRequest = { headers: {} };
-const context = {
+const request = {
     auth: { uid: 'owner-1', token: { email_verified: true } },
     rawRequest,
-} as unknown as Parameters<typeof requireVerifiedCreativeAdmissionV1>[0];
+} as unknown as Parameters<typeof requireVerifiedCreativeAdmission>[0];
 
-describe('requireVerifiedCreativeAdmissionV1', () => {
+describe('requireVerifiedCreativeAdmission', () => {
     it('uses only server-resolved entitlement to choose a rate policy', async () => {
         const policyForEntitlement = vi.fn<typeof policyClassForServerEntitlement>(() => 'founder');
         const protect = vi.fn().mockResolvedValue({ allowed: true });
-        const result = await requireVerifiedCreativeAdmissionV1(context, 'legacy-edit', {
+        const result = await requireVerifiedCreativeAdmission(request, 'legacy-edit', {
             validateAppCheck: vi.fn(),
             requireVerifiedEmail: vi.fn(() => 'owner-1'),
             resolveEntitlement: vi.fn().mockResolvedValue({ tier: 'founder' }),
@@ -30,7 +30,7 @@ describe('requireVerifiedCreativeAdmissionV1', () => {
     });
 
     it('fails closed when Arcjet denies the request', async () => {
-        await expect(requireVerifiedCreativeAdmissionV1(context, 'legacy-edit', {
+        await expect(requireVerifiedCreativeAdmission(request, 'legacy-edit', {
             validateAppCheck: vi.fn(),
             requireVerifiedEmail: vi.fn(() => 'owner-1'),
             resolveEntitlement: vi.fn().mockResolvedValue({ tier: 'free' }),

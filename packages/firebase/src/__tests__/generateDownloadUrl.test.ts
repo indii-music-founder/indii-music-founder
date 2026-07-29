@@ -38,48 +38,10 @@ vi.mock('firebase-admin', () => {
     };
 });
 
-// Mock firebase-functions/v1
-vi.mock('firebase-functions/v1', () => {
-    const handler = vi.fn((fn: unknown) => fn);
-    const scheduleBuilder = { timeZone: vi.fn().mockReturnThis(), onRun: handler };
-    const topicBuilder = { onPublish: handler };
-    const docBuilder = { onCreate: handler, onUpdate: handler, onDelete: handler, onWrite: handler };
-    const objectBuilder = { onArchive: handler, onDelete: handler, onFinalize: handler, onMetadataUpdate: handler };
 
-    const builder: Record<string, unknown> = {
-        region: vi.fn().mockReturnThis(),
-        runWith: vi.fn().mockReturnThis(),
-        pubsub: {
-            schedule: vi.fn(() => scheduleBuilder),
-            topic: vi.fn(() => topicBuilder),
-        },
-        firestore: { document: vi.fn(() => docBuilder) },
-        storage: {
-            bucket: vi.fn().mockReturnValue({ object: vi.fn(() => objectBuilder) }),
-            object: vi.fn(() => objectBuilder),
-        },
-        https: {
-            onCall: vi.fn((fn: unknown) => fn),
-            onRequest: vi.fn((fn: unknown) => fn),
-            HttpsError: class extends Error {
-                code: string;
-                constructor(code: string, message: string) {
-                    super(message);
-                    this.code = code;
-                }
-            },
-        },
-        config: vi.fn(() => ({})),
-    };
-    (builder.region as ReturnType<typeof vi.fn>).mockReturnValue(builder);
-    (builder.runWith as ReturnType<typeof vi.fn>).mockReturnValue(builder);
-    return builder;
-});
-
-// generateReleaseDownloadUrl is now Gen2 (ISSUE-1243). The v1 mock above stays
-// because `../index` still declares un-migrated Gen1 functions. Gen2 `onCall`
-// accepts either (handler) or (options, handler); unwrap whichever is the
-// handler so the test can invoke it directly.
+// generateReleaseDownloadUrl is Gen2 (ISSUE-1243). Gen2 `onCall` accepts
+// either (handler) or (options, handler); unwrap whichever is the handler so
+// the test can invoke it directly.
 vi.mock('firebase-functions/v2/https', () => {
     const unwrap = vi.fn((optsOrHandler: unknown, maybeHandler?: unknown) =>
         typeof optsOrHandler === 'function' ? optsOrHandler : maybeHandler);

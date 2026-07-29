@@ -106,6 +106,26 @@ const MIGRATED = [
     // inbound webhooks / split escrow
     'pandadocWebhook', 'telegramWebhook',
     'initiateSplitEscrow', 'signEscrow', 'releaseEscrow',
+
+    // ── Final coupled cluster ────────────────────────────────────────────
+    // index.ts and the helpers it shares with lib/image_generation.ts and
+    // lib/audio.ts had to move together: legacyAdmission and appCheck changed
+    // their parameter type from CallableContext to CallableRequest, so every
+    // caller had to convert in the same commit.
+    'triggerVideoJob', 'executeVideoJob', 'triggerLongFormVideoJob', 'renderVideo',
+    'inngestApi', 'generateSpeech', 'generateContentStream', 'ragProxy',
+    'listGKEClusters', 'getGKEClusterStatus', 'scaleGKENodePool',
+    'listGCEInstances', 'restartGCEInstance',
+    'executeBigQueryQuery', 'getBigQueryTableSchema', 'listBigQueryDatasets',
+    'exportUserData', 'requestAccountDeletion',
+    'healthCheck', 'healthCheckWest1', 'enrichFanData',
+
+    // Factory-wrapped. index.ts instantiates these and re-exports the result
+    // under a different name, so the deployed function is listed in brackets:
+    //   editImageFn      -> editImage
+    //   analyzeAudioFn   -> analyzeAudio
+    //   generateImageV3Fn -> (not instantiated; see note below)
+    'editImageFn', 'analyzeAudioFn', 'generateImageV3Fn',
 ];
 const MIGRATED_SET = new Set(MIGRATED);
 
@@ -162,9 +182,14 @@ const RULES = [
     },
 ];
 
-/** `export const name = factory(` — captures the export name and factory. */
+/**
+ * `export const name = factory(` and the factory-wrapped form
+ * `export const nameFn = () => factory(`, which lib/image_generation.ts and
+ * lib/audio.ts use so index.ts can control instantiation order. Both carry
+ * their runtime options on the factory call, so both must be checked.
+ */
 const EXPORT_DECL = new RegExp(
-    String.raw`export\s+const\s+([A-Za-z0-9_$]+)\s*=\s*(${V2_FACTORIES.join('|')})\s*\(`,
+    String.raw`export\s+const\s+([A-Za-z0-9_$]+)\s*=\s*(?:\(\)\s*=>\s*)?(${V2_FACTORIES.join('|')})\s*\(`,
     'g',
 );
 

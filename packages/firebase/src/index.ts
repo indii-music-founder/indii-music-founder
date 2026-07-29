@@ -1,5 +1,7 @@
-// indii.music Cloud Functions - V1.1 (with Phase 2a: v2 streaming endpoint)
-import * as functions from "firebase-functions/v1";
+// indii.music Cloud Functions - V1.1 (all triggers on Gen2 as of ISSUE-1243)
+import { onCall, onRequest, HttpsError, type CallableRequest } from "firebase-functions/v2/https";
+import { onDocumentCreated } from "firebase-functions/v2/firestore";
+import { logger } from "firebase-functions/v2";
 import * as admin from "firebase-admin";
 import { BigQuery } from "@google-cloud/bigquery";
 
@@ -51,11 +53,11 @@ import { arcjetKey, clearbitApiKey, apolloApiKey, getClearbitApiKey, getApolloAp
 
 import { estimateTranscoderRenderCost, estimateVideoCost } from "./config/pricing";
 import { enforceRateLimit, RATE_LIMITS } from "./lib/rateLimit";
-import { requireVerifiedEmailV1, validateAppCheckHttp, validateAppCheckV1 } from "./middleware/appCheck";
+import { requireVerifiedEmailV2, validateAppCheckHttp, validateAppCheckV2 } from "./middleware/appCheck";
 import { entitlementTierToBudgetTier, requireVerifiedServerEntitlement } from './functions/auth/entitlements';
 import { checkOperationBudget, finalizeOperationReservation } from './functions/billing/enforceOperationCost';
 import { policyClassForServerEntitlement, protectAuthenticatedApiRequest } from './functions/security/arcjet';
-import { requireVerifiedCreativeAdmissionV1 } from './functions/creative/legacyAdmission';
+import { requireVerifiedCreativeAdmission } from './functions/creative/legacyAdmission';
 import { clampTextStreamOutputTokens } from './functions/creative/textStreamAdmission';
 import { resolveVertexEndpointResource } from './lib/vertexRouting';
 import {
@@ -236,7 +238,7 @@ const validateOrgAccess = async (userId: string, orgId?: string | null) => {
     const orgDoc = await orgRef.get();
 
     if (!orgDoc.exists) {
-        throw new functions.https.HttpsError(
+        throw new HttpsError(
             "not-found",
             `Organization '${orgId}' not found.`
         );
@@ -247,8 +249,8 @@ const validateOrgAccess = async (userId: string, orgId?: string | null) => {
 
     // 3. Verify Membership
     if (!members.includes(userId)) {
-        functions.logger.warn(`[Security] User ${userId} attempted to access restricted org ${orgId}`);
-        throw new functions.https.HttpsError(
+        logger.warn(`[Security] User ${userId} attempted to access restricted org ${orgId}`);
+        throw new HttpsError(
             "permission-denied",
             "You are not a member of this organization."
         );
@@ -270,10 +272,10 @@ export { getInngestClient };
  * Checks if the user has the 'admin' custom claim.
  * If not, logs a warning and throws Permission Denied.
  */
-const requireAdmin = (context: functions.https.CallableContext) => {
+const requireAdmin = (request: CallableRequest) => {
     // 1. Must be authenticated
-    if (!context.auth) {
-        throw new functions.https.HttpsError(
+    if (!request.auth) {
+        throw new HttpsError(
             "unauthenticated",
             "User must be authenticated."
         );
@@ -282,9 +284,9 @@ const requireAdmin = (context: functions.https.CallableContext) => {
     // 2. Must have 'admin' custom claim
     // Note: If no admins exist yet, this securely defaults to deny-all.
     // Use the Firebase Admin SDK or a script to set `admin: true` on specific UIDs.
-    if (!context.auth.token.admin) {
-        functions.logger.warn(`[Security] Unauthorized access attempt by ${context.auth.uid} (missing admin claim)`);
-        throw new functions.https.HttpsError(
+    if (!request.auth.token.admin) {
+        logger.warn(`[Security] Unauthorized access attempt by ${request.auth.uid} (missing admin claim)`);
+        throw new HttpsError(
             "permission-denied",
             "Access denied: Admin privileges required."
         );
@@ -342,7 +344,7 @@ const corsHandler = corsLib({
         }
 
         // Reject unauthorized origins
-        functions.logger.warn(`[CORS] Blocked request from unauthorized origin: ${origin}`);
+        logger.warn(`[CORS] Blocked request from unauthorized origin: ${origin}`);
         callback(new Error('CORS not allowed'));
     },
     credentials: true
@@ -362,17 +364,19 @@ const corsHandler = corsLib({
  * This callable function acts as the bridge between the Client App (Electron)
  * and the Asynchronous Worker Queue (Inngest).
  */
-export const triggerVideoJob = functions
-    .region("us-central1")
-    .runWith({
+export const triggerVideoJob = onCall(
+    {
+        region: "us-central1",
         secrets: [arcjetKey],
         timeoutSeconds: 60,
-        memory: "2GB",
-        enforceAppCheck: false
-    })
+        memory: "2GiB",
+        cpu: 'gcf_gen1',
+        concurrency: 1,
+    },
     // Item 352: Explicit return type annotation
-    .https.onCall(async (data: unknown, context: functions.https.CallableContext): Promise<{ success: boolean; jobId: string; message: string }> => {
-        const { userId, entitlement } = await requireVerifiedCreativeAdmissionV1(context, 'trigger-video-job');
+    async (request): Promise<{ success: boolean; jobId: string; message: string }> => {
+        const data = request.data as unknown;
+        const { userId, entitlement } = await requireVerifiedCreativeAdmission(request, 'trigger-video-job');
 
         // Construct input matching the schema
         const safeData = (typeof data === 'object' && data !== null) ? data : {};
@@ -381,7 +385,7 @@ export const triggerVideoJob = functions
         // Zod Validation
         const validation = VideoJobSchema.safeParse(inputData);
         if (!validation.success) {
-            throw new functions.https.HttpsError(
+            throw new HttpsError(
                 "invalid-argument",
                 `Validation failed: ${validation.error.issues.map(i => i.message).join(", ")}`
             );
@@ -402,7 +406,7 @@ export const triggerVideoJob = functions
             normalizedDuration = normalizeVeoDuration(options.durationSeconds ?? options.duration);
             normalizedModel = resolveVeoModel(options.model);
         } catch (error) {
-            throw new functions.https.HttpsError(
+            throw new HttpsError(
                 "invalid-argument",
                 error instanceof Error ? error.message : "Unsupported video generation options.",
             );
@@ -428,7 +432,7 @@ export const triggerVideoJob = functions
             metadata: { jobId, orgId: orgId || 'personal', source: 'triggerVideoJob' },
         });
         if (!budget.allowed || !budget.operationId) {
-            throw new functions.https.HttpsError(
+            throw new HttpsError(
                 'resource-exhausted',
                 budget.reason || 'Video generation is unavailable within the current server-side budget.',
             );
@@ -454,7 +458,7 @@ export const triggerVideoJob = functions
             // 2. That's it — the Firestore document creation above will trigger
             //    executeVideoJob via Firestore onCreate. No self-invocation needed.
 
-            functions.logger.log(`[VideoJob] Triggered for JobID: ${jobId}, User: ${userId}`);
+            logger.log(`[VideoJob] Triggered for JobID: ${jobId}, User: ${userId}`);
 
             return { success: true, jobId, message: "Video generation job started." };
 
@@ -464,16 +468,16 @@ export const triggerVideoJob = functions
                 operationId: budget.operationId,
                 outcome: 'VOIDED',
             }).catch((finalizeError: unknown) => {
-                functions.logger.error('[VideoJob] Failed to void an unqueued reservation.', {
+                logger.error('[VideoJob] Failed to void an unqueued reservation.', {
                     jobId,
                     message: finalizeError instanceof Error ? finalizeError.message : 'unknown',
                 });
             });
-            functions.logger.error("[VideoJob] Failed before the worker could start.", {
+            logger.error("[VideoJob] Failed before the worker could start.", {
                 jobId,
                 message: err instanceof Error ? err.message : 'unknown',
             });
-            throw new functions.https.HttpsError(
+            throw new HttpsError(
                 "internal",
                 'Failed to queue the video job. No provider work was started.'
             );
@@ -490,27 +494,33 @@ export const triggerVideoJob = functions
  * a new document in the videoJobs collection.
  * 540s timeout (9 minutes) — enough for Vertex AI video generation + polling.
  */
-export const executeVideoJob = functions
-    .region("us-central1")
-    .runWith({
+export const executeVideoJob = onDocumentCreated(
+    {
+        region: "us-central1",
+        document: "videoJobs/{jobId}",
         timeoutSeconds: 540, // 9 minutes
-        memory: "2GB"
-    })
-    .firestore.document("videoJobs/{jobId}")
-    .onCreate(async (snapshot, context) => {
+        memory: "2GiB",
+        cpu: 'gcf_gen1',
+        concurrency: 1,
+    },
+    async (event) => {
+        // Gen1 onCreate always delivered a snapshot; Gen2 types it optional.
+        if (!event.data) return;
+        const snapshot = event.data;
+        const context = { params: event.params };
         const jobId = context.params.jobId;
         const data = snapshot.data();
 
         // Only process documents with status "queued"
         if (data.status !== "queued") {
-            functions.logger.log(`[executeVideoJob] Skipping job ${jobId} — status is "${data.status}", not "queued".`);
+            logger.log(`[executeVideoJob] Skipping job ${jobId} — status is "${data.status}", not "queued".`);
             return;
         }
         // Versioned gateway jobs are owned exclusively by the Gen2
         // videoJobFirestoreOrchestrator. The legacy worker handles only
         // unversioned triggerVideoJob records.
         if (data.workerVersion === 'gateway-video-v3' || data.type === 'video') {
-            functions.logger.log(`[executeVideoJob] Skipping versioned gateway job ${jobId}.`);
+            logger.log(`[executeVideoJob] Skipping versioned gateway job ${jobId}.`);
             return;
         }
 
@@ -523,7 +533,7 @@ export const executeVideoJob = functions
             : undefined;
 
         if (!userId || !prompt) {
-            functions.logger.error(`[executeVideoJob] Missing required fields for job ${jobId}: userId=${userId}, prompt=${prompt}`);
+            logger.error(`[executeVideoJob] Missing required fields for job ${jobId}: userId=${userId}, prompt=${prompt}`);
             await admin.firestore().collection("videoJobs").doc(jobId).set({
                 status: "failed",
                 error: "Missing required fields: userId or prompt",
@@ -532,7 +542,7 @@ export const executeVideoJob = functions
             return;
         }
 
-        functions.logger.log(`[executeVideoJob] Starting video generation for job ${jobId}`);
+        logger.log(`[executeVideoJob] Starting video generation for job ${jobId}`);
 
         // Run the generation
         try {
@@ -547,7 +557,7 @@ export const executeVideoJob = functions
         } catch (err: unknown) {
             const error = err instanceof Error ? err : new Error(String(err));
             // Error is already handled inside generateVideoDirect (Firestore updated to "failed")
-            functions.logger.error(`[executeVideoJob] Unhandled error for ${jobId}:`, error);
+            logger.error(`[executeVideoJob] Unhandled error for ${jobId}:`, error);
         }
     });
 
@@ -556,17 +566,19 @@ export const executeVideoJob = functions
  *
  * Handles multi-segment video generation (daisychaining) as a background process.
  */
-export const triggerLongFormVideoJob = functions
-    .region("us-central1")
-    .runWith({
+export const triggerLongFormVideoJob = onCall(
+    {
+        region: "us-central1",
         secrets: [inngestEventKey, arcjetKey],
         timeoutSeconds: 60,
-        memory: "2GB",
-        enforceAppCheck: false
-    })
+        memory: "2GiB",
+        cpu: 'gcf_gen1',
+        concurrency: 1,
+    },
     // Item 352: Explicit return type annotation
-    .https.onCall(async (data: unknown, context: functions.https.CallableContext): Promise<{ success: boolean; jobId: string; message: string }> => {
-        const { userId, entitlement } = await requireVerifiedCreativeAdmissionV1(context, 'trigger-long-form-video-job');
+    async (request): Promise<{ success: boolean; jobId: string; message: string }> => {
+        const data = request.data as unknown;
+        const { userId, entitlement } = await requireVerifiedCreativeAdmission(request, 'trigger-long-form-video-job');
 
         // Zod Validation
         const safeData = (typeof data === 'object' && data !== null) ? data : {};
@@ -576,7 +588,7 @@ export const triggerLongFormVideoJob = functions
         const validation = LongFormVideoJobSchema.safeParse(inputData);
 
         if (!validation.success) {
-            throw new functions.https.HttpsError(
+            throw new HttpsError(
                 "invalid-argument",
                 `Validation failed: ${validation.error.issues.map(i => i.message).join(", ")}`
             );
@@ -590,7 +602,7 @@ export const triggerLongFormVideoJob = functions
 
         // Additional validation
         if (prompts.length === 0) {
-            throw new functions.https.HttpsError(
+            throw new HttpsError(
                 "invalid-argument",
                 "Prompts array must not be empty."
             );
@@ -624,7 +636,7 @@ export const triggerLongFormVideoJob = functions
                 },
             });
             if (!budget.allowed || !budget.operationId) {
-                throw new functions.https.HttpsError(
+                throw new HttpsError(
                     'resource-exhausted',
                     budget.reason || 'Long-form video generation is unavailable within the current server-side budget.',
                 );
@@ -687,11 +699,11 @@ export const triggerLongFormVideoJob = functions
                     outcome: eventDispatchAttempted ? 'SETTLED' : 'VOIDED',
                 }).catch(() => undefined);
             }
-            functions.logger.error("[LongFormVideoJob] Error:", error);
-            if (error instanceof functions.https.HttpsError) {
+            logger.error("[LongFormVideoJob] Error:", error);
+            if (error instanceof HttpsError) {
                 throw error;
             }
-            throw new functions.https.HttpsError(
+            throw new HttpsError(
                 "internal",
                 `Failed to queue long form job: ${error.message}`
             );
@@ -704,32 +716,34 @@ export const triggerLongFormVideoJob = functions
  * Receives a project composition from the frontend editor, flattens it,
  * and queues a stitching job via Inngest.
  */
-export const renderVideo = functions
-    .region("us-central1")
-    .runWith({
+export const renderVideo = onCall(
+    {
+        region: "us-central1",
         // renderVideo performs a manual Arcjet check after App Check/Auth, so
         // both secrets must be declared on the deployed V1 function. Without
         // ARCJET_KEY this spend-bearing endpoint would correctly fail closed
         // in production, but no authenticated render could ever be admitted.
         secrets: [inngestEventKey, arcjetKey],
         timeoutSeconds: 60,
-        memory: "2GB",
-        enforceAppCheck: false
-    })
+        memory: "2GiB",
+        cpu: 'gcf_gen1',
+        concurrency: 1,
+    },
     // Item 352: Explicit return type annotation
-    .https.onCall(async (data: unknown, context: functions.https.CallableContext): Promise<{ success: boolean; renderId: string; message: string }> => {
-        validateAppCheckV1(context);
+    async (request): Promise<{ success: boolean; renderId: string; message: string }> => {
+        const data = request.data as unknown;
+        validateAppCheckV2(request);
 
-        const userId = requireVerifiedEmailV1(context);
+        const userId = requireVerifiedEmailV2(request);
         const entitlement = await requireVerifiedServerEntitlement(userId);
-        if (!context.rawRequest) {
-            throw new functions.https.HttpsError('unavailable', 'Request protection is temporarily unavailable.');
+        if (!request.rawRequest) {
+            throw new HttpsError('unavailable', 'Request protection is temporarily unavailable.');
         }
-        const protection = await protectAuthenticatedApiRequest(context.rawRequest as never, {
+        const protection = await protectAuthenticatedApiRequest(request.rawRequest as never, {
             userId,
             policy: policyClassForServerEntitlement({
                 tier: entitlement.tier,
-                isAdmin: context.auth?.token.admin === true,
+                isAdmin: request.auth?.token.admin === true,
             }),
             operationId: `render-video:${Date.now()}`,
         });
@@ -739,7 +753,7 @@ export const renderVideo = functions
                 : protection.status === 403
                     ? 'permission-denied'
                     : 'unavailable';
-            throw new functions.https.HttpsError(code, protection.message, {
+            throw new HttpsError(code, protection.message, {
                 code: protection.code,
                 ...(protection.retryAfterSeconds ? { retryAfterSeconds: protection.retryAfterSeconds } : {}),
             });
@@ -761,7 +775,7 @@ export const renderVideo = functions
             || !Number.isInteger(project.fps) || !Number.isInteger(project.durationInFrames)
             || project.width < 64 || project.width > 4096 || project.height < 64 || project.height > 2160
             || project.fps < 1 || project.fps > 60 || project.durationInFrames < 1) {
-            throw new functions.https.HttpsError(
+            throw new HttpsError(
                 "invalid-argument",
                 "Invalid project data. Canonical dimensions, frame rate, tracks, and clips are required."
             );
@@ -805,7 +819,7 @@ export const renderVideo = functions
                 },
             });
             if (!reservation.allowed || !reservation.operationId) {
-                throw new functions.https.HttpsError(
+                throw new HttpsError(
                     'resource-exhausted',
                     'Cloud render is unavailable because the account budget or safety limit has been reached.',
                 );
@@ -858,18 +872,18 @@ export const renderVideo = functions
                 try {
                     await finalizeOperationReservation({ userId, operationId: costReservationId, outcome: 'VOIDED' });
                 } catch {
-                    functions.logger.warn('[RenderVideo] Reservation reconciliation deferred', { jobId });
+                    logger.warn('[RenderVideo] Reservation reconciliation deferred', { jobId });
                 }
             }
-            functions.logger.error('[RenderVideo] Failed to queue render', {
+            logger.error('[RenderVideo] Failed to queue render', {
                 jobId,
-                code: error instanceof functions.https.HttpsError ? error.code : 'internal',
+                code: error instanceof HttpsError ? error.code : 'internal',
             });
-            if (error instanceof functions.https.HttpsError) throw error;
+            if (error instanceof HttpsError) throw error;
             if (error instanceof CanonicalRenderMasterError) {
-                throw new functions.https.HttpsError(error.code, error.message);
+                throw new HttpsError(error.code, error.message);
             }
-            throw new functions.https.HttpsError(
+            throw new HttpsError(
                 "internal",
                 'Failed to queue the render job. Please retry.'
             );
@@ -882,15 +896,17 @@ export const renderVideo = functions
  * This is the entry point for Inngest Cloud to call back into our functions
  * to execute steps.
  */
-export const inngestApi = functions
-    .runWith({
-        enforceAppCheck: false,
+export const inngestApi = onRequest(
+    {
         secrets: [inngestSigningKey, inngestEventKey],
         timeoutSeconds: 540, // 9 minutes
-        memory: "2GB" // ffmpeg canvas rendering (canvasRenderFn) needs headroom beyond the 256MB v1 default
-    })
-
-    .https.onRequest(async (req, res) => {
+        // ffmpeg canvas rendering (canvasRenderFn) needs headroom well beyond
+        // the 256MB Gen1 default this function used to inherit.
+        memory: "2GiB",
+        cpu: 'gcf_gen1',
+        concurrency: 1,
+    },
+    async (req, res) => {
         const inngestClient = getInngestClient();
 
         // 1. Long Form Video Generation Logic (Daisychaining)
@@ -929,20 +945,25 @@ export const inngestApi = functions
 export const editImage = editImageFn();
 export const analyzeAudio = analyzeAudioFn();
 
-export const generateSpeech = functions
-    .runWith({ secrets: [arcjetKey], enforceAppCheck: false, timeoutSeconds: 60, memory: "512MB" })
+export const generateSpeech = onCall(
+    {
+        secrets: [arcjetKey], enforceAppCheck: false, timeoutSeconds: 60, memory: "512MiB",
+        cpu: 'gcf_gen1',
+        concurrency: 1,
+    },
     // Item 352: Explicit return type annotation
-    .https.onCall(async (data: unknown, context): Promise<{ audioContent: string }> => {
-        await requireVerifiedCreativeAdmissionV1(context, 'generate-speech');
+    async (request): Promise<{ audioContent: string }> => {
+        const data = request.data as unknown;
+        await requireVerifiedCreativeAdmission(request, 'generate-speech');
 
         const validation = GenerateSpeechRequestSchema.safeParse(data);
         if (!validation.success) {
-            throw new functions.https.HttpsError("invalid-argument", validation.error.message);
+            throw new HttpsError("invalid-argument", validation.error.message);
         }
         const { text, voice, model } = validation.data;
 
         try {
-            functions.logger.log(`[generateSpeech] Generating speech with model: ${model}`);
+            logger.log(`[generateSpeech] Generating speech with model: ${model}`);
             const modelId = model || FUNCTION_INTELLIGENCE_MODELS.SPEECH.GENERATION;
 
             // Use Vertex AI SDK (ADC auth, no API key)
@@ -967,7 +988,7 @@ export const generateSpeech = functions
             const audioData = part && 'inlineData' in part ? (part as any).inlineData?.data : null;
 
             if (!audioData) {
-                functions.logger.error("[generateSpeech] Unexpected response structure:", JSON.stringify(result));
+                logger.error("[generateSpeech] Unexpected response structure:", JSON.stringify(result));
                 throw new Error("No audio content returned from API");
             }
 
@@ -975,15 +996,15 @@ export const generateSpeech = functions
 
         } catch (err: unknown) {
             const error = err instanceof Error ? err : new Error(String(err));
-            functions.logger.error("[generateSpeech] Error:", error);
-            throw new functions.https.HttpsError("internal", error.message || "Speech generation failed");
+            logger.error("[generateSpeech] Error:", error);
+            throw new HttpsError("internal", error.message || "Speech generation failed");
         }
     });
 
-export const generateContentStream = functions
-    .runWith({
+export const generateContentStream = onRequest(
+    {
         secrets: [arcjetKey],
-        enforceAppCheck: false, // CORS preflight must pass; App Check is verified manually below.
+        // CORS preflight must pass; App Check is verified manually below.
         timeoutSeconds: 300,
         // ISSUE-1242: this was the only Arcjet-using function in this file with
         // no explicit `memory`, so it inherited the Gen1 default of 256MB —
@@ -991,13 +1012,16 @@ export const generateContentStream = functions
         // Arcjet then failed under memory pressure, Arcjet returned an errored
         // decision, and the fail-closed gate denied 100% of authenticated AI
         // requests in production. Every sibling here already sets this: the two
-        // Inngest+Arcjet functions use "2GB" and `generateSpeech` — same
-        // secrets, same shape — uses "512MB". This was an omission, not a
-        // deliberate tier. Note `setGlobalOptions({memory:'512MiB'})` in this
-        // file does NOT cover Gen1 `functions.runWith(...)` declarations.
-        memory: "512MB"
-    })
-    .https.onRequest((req, res) => {
+        // Inngest+Arcjet functions use "2GiB" and `generateSpeech` — same
+        // secrets, same shape — uses "512MiB". This was an omission, not a
+        // deliberate tier. The tier stays declared explicitly rather than
+        // relying on setGlobalOptions, so the value survives any future change
+        // to the global default.
+        memory: "512MiB",
+        cpu: 'gcf_gen1',
+        concurrency: 1,
+    },
+    (req, res) => {
         corsHandler(req, res, async () => {
             if (req.method !== 'POST') {
                 res.status(405).send('Method Not Allowed');
@@ -1057,14 +1081,18 @@ export const generateContentStream = functions
                     return;
                 }
             } catch (error) {
-                // ISSUE-1242: `error instanceof functions.https.HttpsError` tests
-                // the **v1** class, but the admission path throws v2 HttpsError
-                // (`entitlements.ts` imports from 'firebase-functions/v2/https').
-                // A v2 error is not an instance of the v1 class, so every real,
-                // well-formed entitlement rejection was being reported as
-                // `code: 'internal'` — hiding actionable causes like
-                // "Verify your email…" behind a generic 503. Read the code off
-                // the error itself, which both versions carry.
+                // Read the code off the error object rather than narrowing by
+                // class. This is robust to any thrown shape that carries a
+                // `code`, including non-HttpsError rejections from the
+                // admission path.
+                //
+                // A previous version of this comment attributed the original
+                // mislabelling to v1 and v2 having separate HttpsError classes.
+                // That is false and was retracted in 94d3a30a6:
+                // firebase-functions re-exports ONE class from
+                // common/providers/https to both entry points, so
+                // `v1.https.HttpsError === v2.HttpsError` and instanceof
+                // matches either way.
                 const errCode = (error as { code?: unknown })?.code;
                 console.error('[generateContentStream] Server admission failed:', error, {
                     code: typeof errCode === 'string' ? errCode : 'internal',
@@ -1080,7 +1108,7 @@ export const generateContentStream = functions
             } catch (error) {
                 const code = (error as { code?: unknown })?.code;
                 if (code === 'resource-exhausted') {
-                    functions.logger.warn('[generateContentStream] Application generation limit reached.', {
+                    logger.warn('[generateContentStream] Application generation limit reached.', {
                         category: 'application_rate_limit',
                         providerSubmitted: false,
                         retryAfterSeconds: 60,
@@ -1098,7 +1126,7 @@ export const generateContentStream = functions
                     });
                     return;
                 }
-                functions.logger.error('[generateContentStream] Rate-limit check failed:', error);
+                logger.error('[generateContentStream] Rate-limit check failed:', error);
                 res.status(503).send('AI generation admission is temporarily unavailable.');
                 return;
             }
@@ -1129,7 +1157,7 @@ export const generateContentStream = functions
                 // regex is not authorization: an altered browser could point
                 // at an unrelated Vertex endpoint and spend project capacity.
                 if (!isApprovedTextStreamModel(modelId)) {
-                    functions.logger.warn(`[Security] Blocked unauthorized model access: ${modelId}`);
+                    logger.warn(`[Security] Blocked unauthorized model access: ${modelId}`);
                     res.status(400).send('Invalid or unauthorized model ID.');
                     return;
                 }
@@ -1143,7 +1171,7 @@ export const generateContentStream = functions
                         false,
                         new Error('Specialized routing is disabled by server policy.'),
                     );
-                    functions.logger.error('[generateContentStream] Specialist request blocked before provider call.', {
+                    logger.error('[generateContentStream] Specialist request blocked before provider call.', {
                         category: unavailable.category,
                         code: unavailable.code,
                         reason: 'DISABLE_FINE_TUNED',
@@ -1161,13 +1189,13 @@ export const generateContentStream = functions
                         // Preserve the complete resource identity so the SDK does
                         // not rewrite it as a publisher model.
                         finalModelId = route.resourceName;
-                        functions.logger.info('[generateContentStream] Specialist route resolved.', {
+                        logger.info('[generateContentStream] Specialist route resolved.', {
                             routeKind: route.kind,
                             location: route.location,
                         });
                     } catch (routingError: unknown) {
                         const unavailable = classifySpecialistFailure(routingError);
-                        functions.logger.error('[generateContentStream] Specialist routing failed closed.', {
+                        logger.error('[generateContentStream] Specialist routing failed closed.', {
                             category: unavailable.category,
                             code: unavailable.code,
                             causeCode: routingError && typeof routingError === 'object' && 'code' in routingError
@@ -1203,7 +1231,7 @@ export const generateContentStream = functions
                 } catch (streamErr: unknown) {
                     if (isFineTunedEndpoint) {
                         const unavailable = classifySpecialistFailure(streamErr);
-                        functions.logger.error('[generateContentStream] Specialist provider request failed closed.', {
+                        logger.error('[generateContentStream] Specialist provider request failed closed.', {
                             category: unavailable.category,
                             code: unavailable.code,
                             retryable: unavailable.retryable,
@@ -1253,7 +1281,7 @@ export const generateContentStream = functions
                 } catch (streamErr: unknown) {
                     if (isFineTunedEndpoint) {
                         const unavailable = classifySpecialistFailure(streamErr);
-                        functions.logger.error('[generateContentStream] Specialist stream interrupted.', {
+                        logger.error('[generateContentStream] Specialist stream interrupted.', {
                             category: unavailable.category,
                             code: unavailable.code,
                             retryable: unavailable.retryable,
@@ -1272,7 +1300,7 @@ export const generateContentStream = functions
 
             } catch (err: unknown) {
                 const error = err instanceof Error ? err : new Error(String(err));
-                functions.logger.error("[generateContentStream] Error:", error);
+                logger.error("[generateContentStream] Error:", error);
                 if (!res.headersSent) {
                     res.status(500).send(error.message);
                 } else {
@@ -1282,12 +1310,19 @@ export const generateContentStream = functions
         });
     });
 
-export const ragProxy = functions
-    .runWith({
-        enforceAppCheck: false, // Fix CORS preflight: moved to manual check after corsHandler
+export const ragProxy = onRequest(
+    {
+        // App Check is verified manually after corsHandler so the CORS
+        // preflight can pass; v2 onRequest has no enforceAppCheck option.
         timeoutSeconds: 60,
-    })
-    .https.onRequest((req, res) => {
+        // Declared 512MiB rather than left implicit. The Gen1 original pinned
+        // nothing and so ran at 256MB, below this project's cold-start floor
+        // (ISSUE-1242).
+        memory: "512MiB",
+        cpu: 'gcf_gen1',
+        concurrency: 1,
+    },
+    (req, res) => {
         corsHandler(req, res, async () => {
             // Verify Authentication
             const authHeader = req.headers.authorization;
@@ -1338,22 +1373,26 @@ import * as marketingService from './lib/marketing';
 /**
  * List GKE Clusters
  */
-export const listGKEClusters = functions
-    .runWith({ enforceAppCheck: false, timeoutSeconds: 30, memory: '512MB' })
-    .https.onCall(async (_data, context) => {
-        validateAppCheckV1(context);
-        requireAdmin(context);
+export const listGKEClusters = onCall(
+    {
+        enforceAppCheck: false, timeoutSeconds: 30, memory: '512MiB',
+        cpu: 'gcf_gen1',
+        concurrency: 1,
+    },
+    async (request) => {
+        validateAppCheckV2(request);
+        requireAdmin(request);
 
         const projectId = process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT;
         if (!projectId) {
-            throw new functions.https.HttpsError('failed-precondition', 'GCP Project ID not configured.');
+            throw new HttpsError('failed-precondition', 'GCP Project ID not configured.');
         }
 
         try {
             return await gkeService.listClusters(projectId);
         } catch (err: unknown) {
             const error = err instanceof Error ? err : new Error(String(err));
-            throw new functions.https.HttpsError('internal', error.message);
+            throw new HttpsError('internal', error.message);
         }
     });
 
@@ -1373,88 +1412,107 @@ export const createInfluencerBounty = marketingService.createInfluencerBounty;
 /**
  * Get GKE Cluster Status
  */
-export const getGKEClusterStatus = functions
-    .runWith({ enforceAppCheck: false, timeoutSeconds: 30, memory: '512MB' })
-    .https.onCall(async (data: { location: string; clusterName: string }, context) => {
-        validateAppCheckV1(context);
-        requireAdmin(context);
+export const getGKEClusterStatus = onCall(
+    {
+        enforceAppCheck: false, timeoutSeconds: 30, memory: '512MiB',
+        cpu: 'gcf_gen1',
+        concurrency: 1,
+    },
+    async (request) => {
+        const data = request.data as { location: string; clusterName: string };
+        validateAppCheckV2(request);
+        requireAdmin(request);
 
         const projectId = process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT;
         if (!projectId) {
-            throw new functions.https.HttpsError('failed-precondition', 'GCP Project ID not configured.');
+            throw new HttpsError('failed-precondition', 'GCP Project ID not configured.');
         }
 
         try {
             return await gkeService.getClusterStatus(projectId, data.location, data.clusterName);
         } catch (err: unknown) {
             const error = err instanceof Error ? err : new Error(String(err));
-            throw new functions.https.HttpsError('internal', error.message);
+            throw new HttpsError('internal', error.message);
         }
     });
 
 /**
  * Scale GKE Node Pool
  */
-export const scaleGKENodePool = functions
-    .runWith({ enforceAppCheck: false, timeoutSeconds: 60, memory: '512MB' })
-    .https.onCall(async (data: { location: string; clusterName: string; nodePoolName: string; nodeCount: number }, context) => {
-        validateAppCheckV1(context);
-        requireAdmin(context);
+export const scaleGKENodePool = onCall(
+    {
+        enforceAppCheck: false, timeoutSeconds: 60, memory: '512MiB',
+        cpu: 'gcf_gen1',
+        concurrency: 1,
+    },
+    async (request) => {
+        const data = request.data as { location: string; clusterName: string; nodePoolName: string; nodeCount: number };
+        validateAppCheckV2(request);
+        requireAdmin(request);
 
         const projectId = process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT;
         if (!projectId) {
-            throw new functions.https.HttpsError('failed-precondition', 'GCP Project ID not configured.');
+            throw new HttpsError('failed-precondition', 'GCP Project ID not configured.');
         }
 
         try {
             return await gkeService.scaleNodePool(projectId, data.location, data.clusterName, data.nodePoolName, data.nodeCount);
         } catch (err: unknown) {
             const error = err instanceof Error ? err : new Error(String(err));
-            throw new functions.https.HttpsError('internal', error.message);
+            throw new HttpsError('internal', error.message);
         }
     });
 
 /**
  * List GCE Instances
  */
-export const listGCEInstances = functions
-    .runWith({ enforceAppCheck: false, timeoutSeconds: 30, memory: '512MB' })
-    .https.onCall(async (_data, context) => {
-        validateAppCheckV1(context);
-        requireAdmin(context);
+export const listGCEInstances = onCall(
+    {
+        enforceAppCheck: false, timeoutSeconds: 30, memory: '512MiB',
+        cpu: 'gcf_gen1',
+        concurrency: 1,
+    },
+    async (request) => {
+        validateAppCheckV2(request);
+        requireAdmin(request);
 
         const projectId = process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT;
         if (!projectId) {
-            throw new functions.https.HttpsError('failed-precondition', 'GCP Project ID not configured.');
+            throw new HttpsError('failed-precondition', 'GCP Project ID not configured.');
         }
 
         try {
             return await gceService.listInstances(projectId);
         } catch (err: unknown) {
             const error = err instanceof Error ? err : new Error(String(err));
-            throw new functions.https.HttpsError('internal', error.message);
+            throw new HttpsError('internal', error.message);
         }
     });
 
 /**
  * Restart GCE Instance
  */
-export const restartGCEInstance = functions
-    .runWith({ enforceAppCheck: false, timeoutSeconds: 60, memory: '512MB' })
-    .https.onCall(async (data: { zone: string; instanceName: string }, context) => {
-        validateAppCheckV1(context);
-        requireAdmin(context);
+export const restartGCEInstance = onCall(
+    {
+        enforceAppCheck: false, timeoutSeconds: 60, memory: '512MiB',
+        cpu: 'gcf_gen1',
+        concurrency: 1,
+    },
+    async (request) => {
+        const data = request.data as { zone: string; instanceName: string };
+        validateAppCheckV2(request);
+        requireAdmin(request);
 
         const projectId = process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT;
         if (!projectId) {
-            throw new functions.https.HttpsError('failed-precondition', 'GCP Project ID not configured.');
+            throw new HttpsError('failed-precondition', 'GCP Project ID not configured.');
         }
 
         try {
             return await gceService.resetInstance(projectId, data.zone, data.instanceName);
         } catch (err: unknown) {
             const error = err instanceof Error ? err : new Error(String(err));
-            throw new functions.https.HttpsError('internal', error.message);
+            throw new HttpsError('internal', error.message);
         }
     });
 
@@ -1465,14 +1523,19 @@ export const restartGCEInstance = functions
 /**
  * Execute BigQuery Query
  */
-export const executeBigQueryQuery = functions
-    .runWith({ enforceAppCheck: false, timeoutSeconds: 120, memory: '512MB' })
-    .https.onCall(async (data: { query: string; maxResults?: number }, context) => {
-        validateAppCheckV1(context);
-        requireAdmin(context);
+export const executeBigQueryQuery = onCall(
+    {
+        enforceAppCheck: false, timeoutSeconds: 120, memory: '512MiB',
+        cpu: 'gcf_gen1',
+        concurrency: 1,
+    },
+    async (request) => {
+        const data = request.data as { query: string; maxResults?: number };
+        validateAppCheckV2(request);
+        requireAdmin(request);
 
         if (!data.query) {
-             throw new functions.https.HttpsError('invalid-argument', 'Query is required.');
+             throw new HttpsError('invalid-argument', 'Query is required.');
         }
 
         try {
@@ -1488,51 +1551,60 @@ export const executeBigQueryQuery = functions
         } catch (error: unknown) {
             console.error('[executeBigQueryQuery] failed:', error);
             const message = error instanceof Error ? error.message : String(error);
-            throw new functions.https.HttpsError('internal', `BigQuery execution failed: ${message}`);
+            throw new HttpsError('internal', `BigQuery execution failed: ${message}`);
         }
     });
 
 /**
  * Get BigQuery Table Schema
  */
-export const getBigQueryTableSchema = functions
-    .runWith({ enforceAppCheck: false, timeoutSeconds: 30, memory: '512MB' })
-    .https.onCall(async (data: { datasetId: string; tableId: string }, context) => {
-        validateAppCheckV1(context);
-        requireAdmin(context);
+export const getBigQueryTableSchema = onCall(
+    {
+        enforceAppCheck: false, timeoutSeconds: 30, memory: '512MiB',
+        cpu: 'gcf_gen1',
+        concurrency: 1,
+    },
+    async (request) => {
+        const data = request.data as { datasetId: string; tableId: string };
+        validateAppCheckV2(request);
+        requireAdmin(request);
 
         const projectId = process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT;
         if (!projectId) {
-            throw new functions.https.HttpsError('failed-precondition', 'GCP Project ID not configured.');
+            throw new HttpsError('failed-precondition', 'GCP Project ID not configured.');
         }
 
         try {
             return await bigqueryService.getTableSchema(projectId, data.datasetId, data.tableId);
         } catch (err: unknown) {
             const error = err instanceof Error ? err : new Error(String(err));
-            throw new functions.https.HttpsError('internal', error.message);
+            throw new HttpsError('internal', error.message);
         }
     });
 
 /**
  * List BigQuery Datasets
  */
-export const listBigQueryDatasets = functions
-    .runWith({ enforceAppCheck: false, timeoutSeconds: 30, memory: '512MB' })
-    .https.onCall(async (_data, context) => {
-        validateAppCheckV1(context);
-        requireAdmin(context);
+export const listBigQueryDatasets = onCall(
+    {
+        enforceAppCheck: false, timeoutSeconds: 30, memory: '512MiB',
+        cpu: 'gcf_gen1',
+        concurrency: 1,
+    },
+    async (request) => {
+        validateAppCheckV2(request);
+        requireAdmin(request);
 
         const projectId = process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT;
         if (!projectId) {
-            throw new functions.https.HttpsError('failed-precondition', 'GCP Project ID not configured.');
+            throw new HttpsError('failed-precondition', 'GCP Project ID not configured.');
         }
 
         try {
             return await bigqueryService.listDatasets(projectId);
         } catch (err: unknown) {
             const error = err instanceof Error ? err : new Error(String(err));
-            throw new functions.https.HttpsError('internal', error.message);
+            throw new HttpsError('internal', error.message);
         }
     });
 
@@ -1582,21 +1654,25 @@ export {
  * knowledge base entries, and metadata. Does NOT include binary files
  * (images/audio stored in Cloud Storage) - those URLs are included.
  */
-export const exportUserData = functions
-    .runWith({ enforceAppCheck: false, timeoutSeconds: 120, memory: "512MB" })
+export const exportUserData = onCall(
+    {
+        enforceAppCheck: false, timeoutSeconds: 120, memory: "512MiB",
+        cpu: 'gcf_gen1',
+        concurrency: 1,
+    },
     // Item 352: Explicit return type annotation
-    .https.onCall(async (_data, context): Promise<Record<string, unknown>> => {
-        validateAppCheckV1(context);
-        if (!context.auth) {
-            throw new functions.https.HttpsError("unauthenticated", "Authentication required.");
+    async (request): Promise<Record<string, unknown>> => {
+        validateAppCheckV2(request);
+        if (!request.auth) {
+            throw new HttpsError("unauthenticated", "Authentication required.");
         }
 
-        const userId = context.auth.uid;
+        const userId = request.auth.uid;
         const db = admin.firestore();
         const exportData: Record<string, unknown> = {
             exportedAt: new Date().toISOString(),
             userId,
-            email: context.auth.token.email || null,
+            email: request.auth.token.email || null,
         };
 
         // User profile
@@ -1641,7 +1717,7 @@ export const exportUserData = functions
             exportData.knowledgeBase = [];
         }
 
-        functions.logger.info(`[GDPR] Data export completed for user ${userId}`);
+        logger.info(`[GDPR] Data export completed for user ${userId}`);
         return exportData;
     });
 
@@ -1650,27 +1726,31 @@ export const exportUserData = functions
  * Marks the account for deletion and returns a confirmation token.
  * Actual deletion happens asynchronously via a scheduled function.
  */
-export const requestAccountDeletion = functions
-    .runWith({ enforceAppCheck: false, timeoutSeconds: 120, memory: "512MB" })
+export const requestAccountDeletion = onCall(
+    {
+        enforceAppCheck: false, timeoutSeconds: 120, memory: "512MiB",
+        cpu: 'gcf_gen1',
+        concurrency: 1,
+    },
     // Item 352: Explicit return type annotation
-    .https.onCall(async (_data, context): Promise<{ success: boolean; deletedDocs: number; errors: string[]; deletedAt: string }> => {
-        validateAppCheckV1(context);
-        if (!context.auth) {
-            throw new functions.https.HttpsError("unauthenticated", "Authentication required.");
+    async (request): Promise<{ success: boolean; deletedDocs: number; errors: string[]; deletedAt: string }> => {
+        validateAppCheckV2(request);
+        if (!request.auth) {
+            throw new HttpsError("unauthenticated", "Authentication required.");
         }
 
-        const userId = context.auth.uid;
+        const userId = request.auth.uid;
         const db = admin.firestore();
 
         // Step 1 — Record the deletion request (audit trail)
         await db.collection("_deletion_requests").doc(userId).set({
             userId,
-            email: context.auth.token.email || null,
+            email: request.auth.token.email || null,
             requestedAt: admin.firestore.FieldValue.serverTimestamp(),
             status: "processing",
         });
 
-        functions.logger.info(`[GDPR] Starting account deletion for user ${userId}`);
+        logger.info(`[GDPR] Starting account deletion for user ${userId}`);
 
         const errors: string[] = [];
         let deletedDocs = 0;
@@ -1703,12 +1783,12 @@ export const requestAccountDeletion = functions
         // Step 4 — Delete Firebase Auth account (signs user out of all devices)
         try {
             await admin.auth().deleteUser(userId);
-            functions.logger.info(`[GDPR] Auth account deleted for ${userId}`);
+            logger.info(`[GDPR] Auth account deleted for ${userId}`);
         } catch (err) {
             errors.push(`auth: ${err}`);
         }
 
-        functions.logger.info(`[GDPR] Deletion complete for ${userId}. docs=${deletedDocs} errors=${errors.length}`);
+        logger.info(`[GDPR] Deletion complete for ${userId}. docs=${deletedDocs} errors=${errors.length}`);
 
         return {
             success: errors.length === 0,
@@ -1722,9 +1802,13 @@ export const requestAccountDeletion = functions
  * Health check endpoint for uptime monitoring.
  * Returns service status and basic diagnostics.
  */
-export const healthCheck = functions
-    .runWith({ enforceAppCheck: false, timeoutSeconds: 60, memory: "512MB" })
-    .https.onRequest(async (_req, res) => {
+export const healthCheck = onRequest(
+    {
+        timeoutSeconds: 60, memory: "512MiB",
+        cpu: 'gcf_gen1',
+        concurrency: 1,
+    },
+    async (_req, res) => {
         const status: Record<string, unknown> = {
             status: "ok",
             timestamp: new Date().toISOString(),
@@ -1743,7 +1827,7 @@ export const healthCheck = functions
             status.status = "degraded";
             // Surface the real cause (e.g. IAM permission-denied) instead of
             // silently swallowing it — a bare "error" string was undiagnosable.
-            functions.logger.error("[healthCheck] Firestore ping failed:", error);
+            logger.error("[healthCheck] Firestore ping failed:", error);
             status.firestoreErrorCode = error && typeof error === "object" && "code" in error ? (error as { code: unknown }).code : undefined;
         }
 
@@ -1754,10 +1838,14 @@ export const healthCheck = functions
  * Health Check (legacy export name).
  * Deployed to us-central1 with the primary Firebase Functions fleet.
  */
-export const healthCheckWest1 = functions
-    .region("us-central1")
-    .runWith({ enforceAppCheck: false, timeoutSeconds: 60, memory: "512MB" })
-    .https.onRequest(async (_req, res) => {
+export const healthCheckWest1 = onRequest(
+    {
+        region: "us-central1",
+        timeoutSeconds: 60, memory: "512MiB",
+        cpu: 'gcf_gen1',
+        concurrency: 1,
+    },
+    async (_req, res) => {
         res.status(200).json({
             status: "ok",
             timestamp: new Date().toISOString(),
@@ -1770,20 +1858,22 @@ export const healthCheckWest1 = functions
  * Fan Data Enrichment Service
  * Process batches of fans through configured third-party enrichment providers.
  */
-export const enrichFanData = functions
-    .region("us-central1")
-    .runWith({
+export const enrichFanData = onCall(
+    {
+        region: "us-central1",
         timeoutSeconds: 300,
-        memory: "1GB",
-        enforceAppCheck: false,
-        secrets: [clearbitApiKey, apolloApiKey]
-    })
+        memory: "1GiB",
+        secrets: [clearbitApiKey, apolloApiKey],
+        cpu: 'gcf_gen1',
+        concurrency: 1,
+    },
     // Item 352: Explicit return type annotation
-    .https.onCall(async (data: Record<string, unknown>, context): Promise<{ results: unknown[]; metadata: { provider: string; count: number; timestamp: string } }> => {
-        validateAppCheckV1(context);
+    async (request): Promise<{ results: unknown[]; metadata: { provider: string; count: number; timestamp: string } }> => {
+        const data = request.data as Record<string, unknown>;
+        validateAppCheckV2(request);
         // 1. Security Check
-        if (!context.auth) {
-            throw new functions.https.HttpsError(
+        if (!request.auth) {
+            throw new HttpsError(
                 "unauthenticated",
                 "Unauthorized: User session required for data enrichment."
             );
@@ -1792,17 +1882,17 @@ export const enrichFanData = functions
         const { fans, provider, orgId } = data as { fans?: Record<string, unknown>[]; provider?: string; orgId?: string };
 
         if (!fans || !Array.isArray(fans)) {
-            throw new functions.https.HttpsError("invalid-argument", "Missing fan data array.");
+            throw new HttpsError("invalid-argument", "Missing fan data array.");
         }
 
         // 2. Validate Org Access
-        await validateOrgAccess(context.auth.uid, orgId);
+        await validateOrgAccess(request.auth.uid, orgId);
 
         const normalizedProvider = String(provider || '').toLowerCase();
         const providerName = normalizedProvider === 'clearbit' ? 'clearbit' : normalizedProvider === 'apollo' ? 'apollo' : null;
 
         if (!providerName) {
-            throw new functions.https.HttpsError(
+            throw new HttpsError(
                 'invalid-argument',
                 'Provider must be clearbit or apollo.'
             );
@@ -1810,14 +1900,14 @@ export const enrichFanData = functions
 
         const apiKey = providerName === 'clearbit' ? getClearbitApiKey() : getApolloApiKey();
         if (!apiKey) {
-            functions.logger.warn(`[FanEnrichment] ${providerName} API key missing; refusing to fabricate enrichment results`);
-            throw new functions.https.HttpsError(
+            logger.warn(`[FanEnrichment] ${providerName} API key missing; refusing to fabricate enrichment results`);
+            throw new HttpsError(
                 'failed-precondition',
                 `${providerName === 'clearbit' ? 'Clearbit' : 'Apollo'} enrichment is unavailable because the API key is not configured.`
             );
         }
 
-        functions.logger.info(`[FanEnrichment] Processing ${fans.length} records via ${normalizedProvider || 'unconfigured'}`);
+        logger.info(`[FanEnrichment] Processing ${fans.length} records via ${normalizedProvider || 'unconfigured'}`);
 
         let enrichedFans = [...fans];
         const providerUsed = providerName;
@@ -1847,7 +1937,7 @@ export const enrichFanData = functions
                             avatar: person.avatar || null,
                         };
                     } catch (err) {
-                        functions.logger.warn(`[FanEnrichment] Single Clearbit lookup failed for ${fan.email}:`, err);
+                        logger.warn(`[FanEnrichment] Single Clearbit lookup failed for ${fan.email}:`, err);
                         return { ...fan, enrichedAt: new Date().toISOString(), enrichmentScore: 0, provider: 'clearbit_error' };
                     }
                 }));
@@ -1876,15 +1966,15 @@ export const enrichFanData = functions
                             title: person.title || null,
                         };
                     } catch (err) {
-                        functions.logger.warn(`[FanEnrichment] Single Apollo lookup failed for ${fan.email}:`, err);
+                        logger.warn(`[FanEnrichment] Single Apollo lookup failed for ${fan.email}:`, err);
                         return { ...fan, enrichedAt: new Date().toISOString(), enrichmentScore: 0, provider: 'apollo_error' };
                     }
                 }));
                 enrichedFans = batchResults;
             }
         } catch (error) {
-            functions.logger.error('[FanEnrichment] Enrichment routine failed completely:', error);
-            throw new functions.https.HttpsError('internal', 'Data enrichment execution failed.');
+            logger.error('[FanEnrichment] Enrichment routine failed completely:', error);
+            throw new HttpsError('internal', 'Data enrichment execution failed.');
         }
 
         return {

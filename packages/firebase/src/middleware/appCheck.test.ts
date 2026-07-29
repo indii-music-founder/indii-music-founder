@@ -30,52 +30,21 @@ describe('App Check Middleware', () => {
     vi.clearAllMocks();
   });
 
-  describe('validateAppCheckV1', () => {
-    it('rejects a forgeable Electron client-type header when App Check is missing', () => {
-      const mockContext = {
-        rawRequest: {
-          headers: {
-            'x-app-client-type': 'electron-desktop-app',
-          },
-        },
-      } as any;
+  // The validateAppCheckV1 block was removed with the function itself
+  // (ISSUE-1243). Its three cases — forged Electron client-type header, forged
+  // Electron user agent, and missing token — are covered identically by the
+  // validateAppCheckV2 block below, which guards the same ISSUE-1223 boundary.
 
-      expect(() => appCheckModule.validateAppCheckV1(mockContext)).toThrow('Unauthorized: Missing App Check token.');
-    });
-
-    it('rejects a forgeable Electron user agent when App Check is missing', () => {
-      const mockContext = {
-        rawRequest: {
-          headers: {
-            'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/120 Electron/28.0.0',
-          },
-        },
-      } as any;
-
-      expect(() => appCheckModule.validateAppCheckV1(mockContext)).toThrow('Unauthorized: Missing App Check token.');
-    });
-
-    it('should throw error if App Check is enforced and token is missing', () => {
-      const mockContext = {
-        rawRequest: {
-          headers: {},
-        },
-      } as any;
-
-      expect(() => appCheckModule.validateAppCheckV1(mockContext)).toThrow('Unauthorized: Missing App Check token.');
-    });
-  });
-
-  describe('requireVerifiedEmailV1', () => {
+  describe('requireVerifiedEmailV2', () => {
     it('rejects unauthenticated and unverified callers before a spend-bearing callable can run', () => {
-      expect(() => appCheckModule.requireVerifiedEmailV1({})).toThrow('User must be authenticated.');
-      expect(() => appCheckModule.requireVerifiedEmailV1({
+      expect(() => appCheckModule.requireVerifiedEmailV2({})).toThrow('User must be authenticated.');
+      expect(() => appCheckModule.requireVerifiedEmailV2({
         auth: { uid: 'user-1', token: { email_verified: false } },
       })).toThrow('Verify your email before using creative generation.');
     });
 
     it('returns only the signed-in UID when the Firebase verification claim is true', () => {
-      expect(appCheckModule.requireVerifiedEmailV1({
+      expect(appCheckModule.requireVerifiedEmailV2({
         auth: { uid: 'verified-user', token: { email_verified: true } },
       })).toBe('verified-user');
     });

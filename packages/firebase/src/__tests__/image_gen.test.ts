@@ -95,52 +95,6 @@ vi.mock('firebase-admin', () => {
     };
 });
 
-// Mock firebase-functions/v1 — must include full builder chain because
-// importing from ../index triggers storageMaintenance.ts which uses
-// .region().runWith().pubsub.schedule().timeZone().onRun()
-vi.mock('firebase-functions/v1', () => {
-    const handler = vi.fn((fn: unknown) => fn);
-    const scheduleBuilder = { timeZone: vi.fn().mockReturnThis(), onRun: handler };
-    const topicBuilder = { onPublish: handler };
-    const docBuilder = { onCreate: handler, onUpdate: handler, onDelete: handler, onWrite: handler };
-    const objectBuilder = { onArchive: handler, onDelete: handler, onFinalize: handler, onMetadataUpdate: handler };
-
-    const builder: Record<string, unknown> = {
-        logger: {
-            info: vi.fn(),
-            warn: vi.fn(),
-            error: vi.fn(),
-            debug: vi.fn(),
-            log: vi.fn(),
-        },
-        region: vi.fn().mockReturnThis(),
-        runWith: vi.fn().mockReturnThis(),
-        pubsub: {
-            schedule: vi.fn(() => scheduleBuilder),
-            topic: vi.fn(() => topicBuilder),
-        },
-        firestore: { document: vi.fn(() => docBuilder) },
-        storage: {
-            bucket: vi.fn().mockReturnValue({ object: vi.fn(() => objectBuilder) }),
-            object: vi.fn(() => objectBuilder),
-        },
-        https: {
-            onCall: vi.fn((fn: unknown) => fn),
-            onRequest: vi.fn((fn: unknown) => fn),
-            HttpsError: class extends Error {
-                code: string;
-                constructor(code: string, message: string) {
-                    super(message);
-                    this.code = code;
-                }
-            },
-        },
-        config: vi.fn(() => ({})),
-    };
-    (builder.region as ReturnType<typeof vi.fn>).mockReturnValue(builder);
-    (builder.runWith as ReturnType<typeof vi.fn>).mockReturnValue(builder);
-    return builder;
-});
 
 // Mock firebase-functions/v2 callables exported by functions/creative/gateway.ts.
 vi.mock('firebase-functions/v2/https', () => ({
@@ -177,9 +131,9 @@ vi.mock('../functions/security/arcjet', () => ({
     policyClassForServerEntitlement: vi.fn(() => 'verified-free'),
 }));
 vi.mock('../functions/creative/legacyAdmission', () => ({
-    requireVerifiedCreativeAdmissionV1: vi.fn(async (context: { auth?: { uid?: string } }) => {
-        if (!context.auth?.uid) throw new Error('User must be authenticated.');
-        return { userId: context.auth.uid, entitlement: { tier: 'free' } };
+    requireVerifiedCreativeAdmission: vi.fn(async (request: { auth?: { uid?: string } }) => {
+        if (!request.auth?.uid) throw new Error('User must be authenticated.');
+        return { userId: request.auth.uid, entitlement: { tier: 'free' } };
     }),
 }));
 vi.mock('../functions/billing/enforceOperationCost', () => ({
@@ -314,7 +268,7 @@ describe('Image and Content Generation Functions', () => {
             });
 
             const editImageCall = editImage as any;
-            await editImageCall(data, context);
+            await editImageCall({ ...context, data });
 
             expect(mocks.generateContent).toHaveBeenCalledWith(expect.objectContaining({
                 contents: [{
@@ -680,11 +634,12 @@ describe('Image and Content Generation Functions', () => {
             const callEnrichFanData = enrichFanData as any;
 
             await expect(callEnrichFanData({
-                fans: [{ email: 'fan@example.com' }],
-                provider,
-                orgId: 'personal',
-            }, {
                 auth: { uid: 'user123' },
+                data: {
+                    fans: [{ email: 'fan@example.com' }],
+                    provider,
+                    orgId: 'personal',
+                },
             })).rejects.toMatchObject({
                 code: 'failed-precondition',
                 message: `${label} enrichment is unavailable because the API key is not configured.`,
@@ -711,11 +666,12 @@ describe('Image and Content Generation Functions', () => {
 
             const callEnrichFanData = enrichFanData as any;
             const result = await callEnrichFanData({
-                fans: [{ email: 'fan@example.com' }],
-                provider: 'Clearbit',
-                orgId: 'personal',
-            }, {
                 auth: { uid: 'user123' },
+                data: {
+                    fans: [{ email: 'fan@example.com' }],
+                    provider: 'Clearbit',
+                    orgId: 'personal',
+                },
             });
 
             expect(fetch).toHaveBeenCalledWith(

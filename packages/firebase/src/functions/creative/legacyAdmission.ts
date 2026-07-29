@@ -1,45 +1,49 @@
-import * as functions from 'firebase-functions/v1';
+import { HttpsError, type CallableRequest } from 'firebase-functions/v2/https';
 
-import { requireVerifiedEmailV1, validateAppCheckV1 } from '../../middleware/appCheck';
+import { requireVerifiedEmailV2, validateAppCheckV2 } from '../../middleware/appCheck';
 import { requireVerifiedServerEntitlement } from '../auth/entitlements';
 import { policyClassForServerEntitlement, protectAuthenticatedApiRequest } from '../security/arcjet';
 
 /**
- * Compatibility admission for V1 creative callables that have not yet moved
+ * Shared admission for the legacy creative callables that have not yet moved
  * to the V2 gateway transport. It deliberately resolves all authority on the
  * server: an authenticated browser cannot choose a Founder/paid policy, and
  * a profile field is never an entitlement.
+ *
+ * Named ...V1 while the callables it served were Gen1; they are Gen2 now
+ * (ISSUE-1243), so the suffix was dropped. "Legacy" here means the older
+ * transport, not the function generation.
  */
-export async function requireVerifiedCreativeAdmissionV1(
-    context: functions.https.CallableContext,
+export async function requireVerifiedCreativeAdmission(
+    request: CallableRequest,
     operation: string,
     dependencies: {
-        validateAppCheck?: typeof validateAppCheckV1;
-        requireVerifiedEmail?: typeof requireVerifiedEmailV1;
+        validateAppCheck?: typeof validateAppCheckV2;
+        requireVerifiedEmail?: typeof requireVerifiedEmailV2;
         resolveEntitlement?: typeof requireVerifiedServerEntitlement;
         protect?: typeof protectAuthenticatedApiRequest;
         policyForEntitlement?: typeof policyClassForServerEntitlement;
         operationId?: () => string;
     } = {},
 ) {
-    const validateAppCheck = dependencies.validateAppCheck ?? validateAppCheckV1;
-    const requireVerifiedEmail = dependencies.requireVerifiedEmail ?? requireVerifiedEmailV1;
+    const validateAppCheck = dependencies.validateAppCheck ?? validateAppCheckV2;
+    const requireVerifiedEmail = dependencies.requireVerifiedEmail ?? requireVerifiedEmailV2;
     const resolveEntitlement = dependencies.resolveEntitlement ?? requireVerifiedServerEntitlement;
     const protect = dependencies.protect ?? protectAuthenticatedApiRequest;
     const policyForEntitlement = dependencies.policyForEntitlement ?? policyClassForServerEntitlement;
     const operationId = dependencies.operationId ?? (() => crypto.randomUUID());
 
-    validateAppCheck(context);
-    const userId = requireVerifiedEmail(context);
+    validateAppCheck(request);
+    const userId = requireVerifiedEmail(request);
     const entitlement = await resolveEntitlement(userId);
-    if (!context.rawRequest) {
-        throw new functions.https.HttpsError('unavailable', 'Request protection is temporarily unavailable.');
+    if (!request.rawRequest) {
+        throw new HttpsError('unavailable', 'Request protection is temporarily unavailable.');
     }
-    const protection = await protect(context.rawRequest as never, {
+    const protection = await protect(request.rawRequest as never, {
         userId,
         policy: policyForEntitlement({
             tier: entitlement.tier,
-            isAdmin: context.auth?.token.admin === true,
+            isAdmin: request.auth?.token.admin === true,
         }),
         operationId: `${operation}:${operationId()}`,
     });
@@ -49,7 +53,7 @@ export async function requireVerifiedCreativeAdmissionV1(
             : protection.status === 403
                 ? 'permission-denied'
                 : 'unavailable';
-        throw new functions.https.HttpsError(code, protection.message, {
+        throw new HttpsError(code, protection.message, {
             code: protection.code,
             ...(protection.retryAfterSeconds ? { retryAfterSeconds: protection.retryAfterSeconds } : {}),
         });

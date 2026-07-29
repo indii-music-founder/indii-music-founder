@@ -111,50 +111,6 @@ vi.mock('inngest/express', () => ({
     serve: vi.fn(() => vi.fn())
 }));
 
-// Mock firebase-functions/v1 — full builder chain required by storageMaintenance.ts
-vi.mock('firebase-functions/v1', () => {
-    const handler = vi.fn((fn: unknown) => fn);
-    const scheduleBuilder = { timeZone: vi.fn().mockReturnThis(), onRun: handler };
-    const topicBuilder = { onPublish: handler };
-    const docBuilder = { onCreate: handler, onUpdate: handler, onDelete: handler, onWrite: handler };
-    const objectBuilder = { onArchive: handler, onDelete: handler, onFinalize: handler, onMetadataUpdate: handler };
-
-    const builder: Record<string, unknown> = {
-        logger: {
-            log: vi.fn(),
-            info: vi.fn(),
-            warn: vi.fn(),
-            error: vi.fn(),
-            debug: vi.fn(),
-        },
-        region: vi.fn().mockReturnThis(),
-        runWith: vi.fn().mockReturnThis(),
-        pubsub: {
-            schedule: vi.fn(() => scheduleBuilder),
-            topic: vi.fn(() => topicBuilder),
-        },
-        firestore: { document: vi.fn(() => docBuilder) },
-        storage: {
-            bucket: vi.fn().mockReturnValue({ object: vi.fn(() => objectBuilder) }),
-            object: vi.fn(() => objectBuilder),
-        },
-        https: {
-            onCall: vi.fn((fn: unknown) => fn),
-            onRequest: vi.fn((fn: unknown) => fn),
-            HttpsError: class extends Error {
-                code: string;
-                constructor(code: string, message: string) {
-                    super(message);
-                    this.code = code;
-                }
-            },
-        },
-        config: vi.fn(() => ({})),
-    };
-    (builder.region as ReturnType<typeof vi.fn>).mockReturnValue(builder);
-    (builder.runWith as ReturnType<typeof vi.fn>).mockReturnValue(builder);
-    return builder;
-});
 
 // Mock Stripe to prevent initialization error
 vi.mock('stripe', () => ({
@@ -209,7 +165,7 @@ vi.mock('../functions/security/arcjet', () => ({
 }));
 
 vi.mock('../functions/creative/legacyAdmission', () => ({
-    requireVerifiedCreativeAdmissionV1: mocks.legacyAdmission,
+    requireVerifiedCreativeAdmission: mocks.legacyAdmission,
 }));
 
 vi.mock('../functions/billing/enforceOperationCost', () => ({
@@ -302,7 +258,7 @@ describe('Video Functions', () => {
     describe('triggerVideoJob', () => {
         it('should throw unauthenticated error if no context.auth', async () => {
             const triggerCall = triggerVideoJob as any;
-            await expect(triggerCall({}, {}))
+            await expect(triggerCall({ data: {} }))
                 .rejects.toThrow('User must be authenticated');
         });
 
@@ -310,7 +266,7 @@ describe('Video Functions', () => {
             const context: any = { auth: { uid: 'user123' } };
             const triggerCall = triggerVideoJob as any;
             // Empty object fails validation because prompt is required.
-            await expect(triggerCall({}, context))
+            await expect(triggerCall({ ...context, data: {} }))
                 .rejects.toThrow();
         });
 
@@ -323,7 +279,7 @@ describe('Video Functions', () => {
             };
 
             const triggerCall = triggerVideoJob as any;
-            const result = await triggerCall(data, context);
+            const result = await triggerCall({ ...context, data });
 
             expect(result).toEqual({ success: true, jobId: 'render-server-123', message: "Video generation job started." });
 
@@ -351,11 +307,14 @@ describe('Video Functions', () => {
             const context: any = { auth: { uid: 'user123' } };
 
             await (triggerVideoJob as any)({
-                prompt: 'test prompt',
-                orgId: 'personal',
-                model: 'lite',
-                duration: 5,
-            }, context);
+                ...context,
+                data: {
+                    prompt: 'test prompt',
+                    orgId: 'personal',
+                    model: 'lite',
+                    duration: 5,
+                },
+            });
 
             expect(mocks.checkBudget).toHaveBeenCalledWith(expect.objectContaining({
                 estimatedCost: 0.3,
@@ -380,7 +339,7 @@ describe('Video Functions', () => {
             };
 
             const triggerCall = triggerVideoJob as any;
-            const result = await triggerCall(data, context);
+            const result = await triggerCall({ ...context, data });
 
             expect(result).toEqual({ success: true, jobId: 'render-server-123', message: "Video generation job started." });
 
@@ -397,7 +356,7 @@ describe('Video Functions', () => {
             mocks.checkBudget.mockResolvedValueOnce({ allowed: false, reason: 'Daily budget exceeded.' });
             const context: any = { auth: { uid: 'user123' } };
 
-            await expect((triggerVideoJob as any)({ prompt: 'test prompt', orgId: 'personal' }, context))
+            await expect((triggerVideoJob as any)({ ...context, data: { prompt: 'test prompt', orgId: 'personal' } }))
                 .rejects.toMatchObject({ code: 'resource-exhausted' });
 
             expect(mocks.firestore.set).not.toHaveBeenCalled();
@@ -408,12 +367,15 @@ describe('Video Functions', () => {
         it('creates a server-owned long-form job and reservation instead of trusting browser identity or duration', async () => {
             const context: any = { auth: { uid: 'user123' } };
             const result = await (triggerLongFormVideoJob as any)({
-                jobId: 'browser-long-form-id',
-                userId: 'attacker',
-                totalDuration: 1,
-                prompts: ['first scene', 'second scene'],
-                options: { model: 'fast', resolution: '720p' },
-            }, context);
+                ...context,
+                data: {
+                    jobId: 'browser-long-form-id',
+                    userId: 'attacker',
+                    totalDuration: 1,
+                    prompts: ['first scene', 'second scene'],
+                    options: { model: 'fast', resolution: '720p' },
+                },
+            });
 
             expect(result).toEqual({
                 success: true,
@@ -447,7 +409,7 @@ describe('Video Functions', () => {
             mocks.checkBudget.mockResolvedValueOnce({ allowed: false, reason: 'Hourly budget exceeded.' });
             const context: any = { auth: { uid: 'user123' } };
 
-            await expect((triggerLongFormVideoJob as any)({ prompts: ['scene'] }, context))
+            await expect((triggerLongFormVideoJob as any)({ ...context, data: { prompts: ['scene'] } }))
                 .rejects.toMatchObject({ code: 'resource-exhausted' });
 
             expect(mocks.firestore.set).not.toHaveBeenCalled();
@@ -504,7 +466,7 @@ describe('Video Functions', () => {
                 }
             };
 
-            const result = await (renderVideo as any)(data, context);
+            const result = await (renderVideo as any)({ ...context, data });
 
             expect(result).toEqual({
                 success: true,

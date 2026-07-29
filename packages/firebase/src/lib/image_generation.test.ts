@@ -14,15 +14,15 @@ vi.mock('./rateLimit', () => ({
 }));
 
 const { mockLegacyAdmission, mockCheckOperationBudget } = vi.hoisted(() => ({
-    mockLegacyAdmission: vi.fn(async (context: { auth?: { uid?: string } }) => {
-        if (!context.auth?.uid) throw new Error('User must be authenticated.');
-        return { userId: context.auth.uid, entitlement: { tier: 'free' } };
+    mockLegacyAdmission: vi.fn(async (request: { auth?: { uid?: string } }) => {
+        if (!request.auth?.uid) throw new Error('User must be authenticated.');
+        return { userId: request.auth.uid, entitlement: { tier: 'free' } };
     }),
     mockCheckOperationBudget: vi.fn().mockResolvedValue({ allowed: true, operationId: 'legacy-image-op-1' }),
 }));
 
 vi.mock('../functions/creative/legacyAdmission', () => ({
-    requireVerifiedCreativeAdmissionV1: mockLegacyAdmission,
+    requireVerifiedCreativeAdmission: mockLegacyAdmission,
 }));
 vi.mock('../functions/billing/enforceOperationCost', () => ({
     checkOperationBudget: mockCheckOperationBudget,
@@ -109,7 +109,7 @@ describe('generateImageV3Fn', () => {
             auth: { uid: 'test-user-id' },
         };
 
-        await wrapped(data, context);
+        await wrapped({ ...context, data });
 
         expect(mockGenerateContent).toHaveBeenCalledTimes(1);
         const callArgs = mockGenerateContent.mock.calls[0][0];
@@ -139,7 +139,7 @@ describe('generateImageV3Fn', () => {
             auth: { uid: 'test-user-id' },
         };
 
-        await wrapped(data, context);
+        await wrapped({ ...context, data });
 
         expect(mockGenerateContent).toHaveBeenCalledTimes(1);
         const callArgs = mockGenerateContent.mock.calls[0][0];
@@ -164,7 +164,7 @@ describe('generateImageV3Fn', () => {
             auth: { uid: 'test-user-id' },
         };
 
-        await wrapped(data, context);
+        await wrapped({ ...context, data });
 
         expect(mockGenerateContent).toHaveBeenCalledTimes(1);
         const callArgs = mockGenerateContent.mock.calls[0][0];
@@ -185,7 +185,7 @@ describe('generateImageV3Fn', () => {
             auth: { uid: 'test-user-id' },
         };
 
-        await wrapped(data, context);
+        await wrapped({ ...context, data });
 
         const callArgs = mockGenerateContent.mock.calls[0][0];
         // Should have text prompt + 2 reference images in parts
@@ -209,7 +209,7 @@ describe('generateImageV3Fn', () => {
             auth: { uid: 'test-user-id' },
         };
 
-        await wrapped(data, context);
+        await wrapped({ ...context, data });
 
         const callArgs = mockGenerateContent.mock.calls[0][0];
         // Should have 3 turns: 2 from history + 1 new
@@ -234,7 +234,7 @@ describe('generateImageV3Fn', () => {
         const data: any = { prompt: 'test', model: 'pro' };
         const context = { auth: { uid: 'test-user-id' } };
 
-        const result = await wrapped(data, context) as any;
+        const result = await wrapped({ ...context, data }) as any;
         expect(result.thoughtSignature).toBe('abc123');
     });
 
@@ -247,7 +247,7 @@ describe('generateImageV3Fn', () => {
         };
 
         const context = { auth: { uid: 'test-user-id' } };
-        await wrapped(data, context);
+        await wrapped({ ...context, data });
 
         const callArgs = mockGenerateContent.mock.calls[0][0];
         expect(callArgs.config.tools).toEqual([{
@@ -269,7 +269,7 @@ describe('generateImageV3Fn', () => {
             const data: any = { prompt: 'test', model: 'fast', aspectRatio: ratio };
             const context = { auth: { uid: 'test-user-id' } };
 
-            await wrapped(data, context);
+            await wrapped({ ...context, data });
             const callArgs = mockGenerateContent.mock.calls[0][0];
             expect(callArgs.config.imageConfig.aspectRatio).toBe(ratio);
         }
@@ -279,14 +279,14 @@ describe('generateImageV3Fn', () => {
         const data: any = { prompt: 'test' };
         const context = {}; // No auth
 
-        await expect(wrapped(data, context)).rejects.toThrow(/authenticated/);
+        await expect(wrapped({ ...context, data })).rejects.toThrow(/authenticated/);
     });
 
     it('should reject invalid prompts', async () => {
         const data: any = { prompt: '' };
         const context = { auth: { uid: 'test-user-id' } };
 
-        await expect(wrapped(data, context)).rejects.toThrow(/Validation/);
+        await expect(wrapped({ ...context, data })).rejects.toThrow(/Validation/);
     });
 
     it('should handle backward-compatible legacy fields', async () => {
@@ -298,7 +298,7 @@ describe('generateImageV3Fn', () => {
         };
 
         const context = { auth: { uid: 'test-user-id' } };
-        await wrapped(data, context);
+        await wrapped({ ...context, data });
 
         const callArgs = mockGenerateContent.mock.calls[0][0];
         // `thinking: true` should map to thinkingLevel "high" via compat logic
@@ -333,7 +333,7 @@ describe('editImageFn', () => {
         };
 
         const context = { auth: { uid: 'test-user-id' } };
-        await wrapped(data, context);
+        await wrapped({ ...context, data });
 
         expect(mockGenerateContent).toHaveBeenCalledTimes(1);
         const callArgs = mockGenerateContent.mock.calls[0][0];
@@ -355,7 +355,7 @@ describe('editImageFn', () => {
         };
 
         const context = { auth: { uid: 'test-user-id' } };
-        await wrapped(data, context);
+        await wrapped({ ...context, data });
 
         const callArgs = mockGenerateContent.mock.calls[0][0];
         const parts = callArgs.contents[0].parts;
@@ -375,7 +375,7 @@ describe('editImageFn', () => {
         };
 
         const context = { auth: { uid: 'test-user-id' } };
-        await wrapped(data, context);
+        await wrapped({ ...context, data });
 
         const callArgs = mockGenerateContent.mock.calls[0][0];
         const parts = callArgs.contents[0].parts;
@@ -386,7 +386,7 @@ describe('editImageFn', () => {
     it('should reject unauthenticated edit requests', async () => {
         const data: any = { image: 'test', prompt: 'test' };
         const context = {};
-        await expect(wrapped(data, context)).rejects.toThrow(/authenticated/);
+        await expect(wrapped({ ...context, data })).rejects.toThrow(/authenticated/);
     });
 
     it('should surface a friendly error when Gemini returns no editable image', async () => {
@@ -405,6 +405,6 @@ describe('editImageFn', () => {
         };
 
         const context = { auth: { uid: 'test-user-id' } };
-        await expect(wrapped(data, context)).rejects.toThrow(/did not return an editable image/i);
+        await expect(wrapped({ ...context, data })).rejects.toThrow(/did not return an editable image/i);
     });
 });

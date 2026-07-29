@@ -1,8 +1,8 @@
 /**
  * Firebase package test setup
  *
- * Provides comprehensive mocks for firebase-admin, firebase-functions/v1,
- * firebase-functions/v2/*, and native modules (sharp) to prevent import-time
+ * Provides comprehensive mocks for firebase-admin, firebase-functions/v2/*,
+ * and native modules (sharp) to prevent import-time
  * crashes when barrel files (index.ts) are loaded.
  *
  * The key issue: storageMaintenance.ts uses .pubsub.schedule().timeZone().onRun()
@@ -22,80 +22,7 @@ beforeEach(() => {
 
 
 
-// ─── Firebase Functions v1 Builder Pattern Mock ──────────────────────────────
-// Every chained builder method must return `this` to support arbitrary chains:
-//   functions.region().runWith().pubsub.schedule().timeZone().onRun(handler)
-//   functions.firestore.document().onWrite(handler)
-//   functions.storage.object().onFinalize(handler)
 
-function createFunctionsBuilderMock() {
-    const handler = vi.fn((fn: unknown) => fn);
-
-    const pubsubScheduleBuilder = {
-        timeZone: vi.fn().mockReturnThis(),
-        onRun: handler,
-    };
-
-    const pubsubTopicBuilder = {
-        onPublish: handler,
-    };
-
-    const pubsub = {
-        schedule: vi.fn(() => pubsubScheduleBuilder),
-        topic: vi.fn(() => pubsubTopicBuilder),
-    };
-
-    const firestoreDocBuilder = {
-        onCreate: handler,
-        onUpdate: handler,
-        onDelete: handler,
-        onWrite: handler,
-    };
-
-    const firestoreNs = {
-        document: vi.fn(() => firestoreDocBuilder),
-    };
-
-    const storageObjectBuilder = {
-        onArchive: handler,
-        onDelete: handler,
-        onFinalize: handler,
-        onMetadataUpdate: handler,
-    };
-
-    const storageNs = {
-        bucket: vi.fn().mockReturnValue({ object: vi.fn(() => storageObjectBuilder) }),
-        object: vi.fn(() => storageObjectBuilder),
-    };
-
-    const builder: Record<string, unknown> = {
-        region: vi.fn().mockReturnThis(),
-        runWith: vi.fn().mockReturnThis(),
-        pubsub,
-        firestore: firestoreNs,
-        storage: storageNs,
-        https: {
-            onCall: vi.fn((fn: unknown) => fn),
-            onRequest: vi.fn((fn: unknown) => fn),
-            HttpsError: class extends Error {
-                code: string;
-                constructor(code: string, message: string) {
-                    super(message);
-                    this.code = code;
-                }
-            },
-        },
-        config: vi.fn(() => ({})),
-    };
-
-    // Make builder chainable: region() and runWith() return the full builder
-    (builder.region as ReturnType<typeof vi.fn>).mockReturnValue(builder);
-    (builder.runWith as ReturnType<typeof vi.fn>).mockReturnValue(builder);
-
-    return builder;
-}
-
-vi.mock('firebase-functions/v1', () => createFunctionsBuilderMock());
 
 // ─── Firebase Admin Mock ─────────────────────────────────────────────────────
 
@@ -183,6 +110,19 @@ vi.mock('firebase-functions/params', () => ({
 // etc.). Without these mocks, tests crash on import.
 
 const mockV2Handler = vi.fn((opts: unknown, handler?: unknown) => handler ?? opts);
+
+// index.ts and lib/image_generation.ts import `logger` and `setGlobalOptions`
+// from the v2 root entry point.
+vi.mock('firebase-functions/v2', () => ({
+    setGlobalOptions: vi.fn(),
+    logger: {
+        log: vi.fn(),
+        info: vi.fn(),
+        warn: vi.fn(),
+        error: vi.fn(),
+        debug: vi.fn(),
+    },
+}));
 
 vi.mock('firebase-functions/v2/https', () => ({
     onCall: mockV2Handler,

@@ -1,4 +1,3 @@
-import * as functionsV1 from 'firebase-functions/v1';
 import { CallableRequest, HttpsError } from 'firebase-functions/v2/https';
 import * as express from 'express';
 import * as admin from 'firebase-admin';
@@ -10,31 +9,17 @@ export const ENFORCE_APP_CHECK =
     process.env.ENFORCE_APP_CHECK !== 'false';
 
 /**
- * Validate App Check for Gen 1 Callable functions.
- */
-export function validateAppCheckV1(context: functionsV1.https.CallableContext): void {
-    if (!ENFORCE_APP_CHECK) return;
-
-    if (!context.app) {
-        throw new functionsV1.https.HttpsError(
-            'failed-precondition',
-            'Unauthorized: Missing App Check token.'
-        );
-    }
-}
-
-/**
  * Returns the authenticated UID only after Firebase's signed email-verification
  * claim has been checked. Profile fields and client-provided flags are never
  * accepted as substitutes for this claim.
  */
-export function requireVerifiedEmailV1(context: functionsV1.https.CallableContext): string {
-    const auth = context.auth;
+export function requireVerifiedEmailV2(request: CallableRequest): string {
+    const auth = request.auth;
     if (!auth?.uid) {
-        throw new functionsV1.https.HttpsError('unauthenticated', 'User must be authenticated.');
+        throw new HttpsError('unauthenticated', 'User must be authenticated.');
     }
     if (auth.token.email_verified !== true) {
-        throw new functionsV1.https.HttpsError(
+        throw new HttpsError(
             'failed-precondition',
             'Verify your email before using creative generation.'
         );

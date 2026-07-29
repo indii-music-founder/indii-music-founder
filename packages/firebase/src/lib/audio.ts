@@ -1,7 +1,7 @@
-import * as functions from "firebase-functions/v1";
+import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { z } from "zod";
 import { FUNCTION_INTELLIGENCE_MODELS } from "../config/models";
-import { requireVerifiedEmailV1, validateAppCheckV1 } from "../middleware/appCheck";
+import { requireVerifiedEmailV2, validateAppCheckV2 } from "../middleware/appCheck";
 
 export const GenerateSpeechRequestSchema = z.object({
     text: z.string().min(1, "Text is required"),
@@ -47,27 +47,31 @@ export function resolveOwnedCanonicalMasterPath(
  * of accepting a public URL, an arbitrary GCS bucket, or raw audio bytes that
  * could create SSRF, duplicate model charges, and untraceable provenance.
  */
-export const analyzeAudioFn = () => functions
-    .region("us-central1")
-    .runWith({ enforceAppCheck: false,
+export const analyzeAudioFn = () => onCall(
+    {
+        region: "us-central1",
+        enforceAppCheck: false,
         timeoutSeconds: 120,
-        memory: "512MB"
-     })
-    .https.onCall(async (data: unknown, context) => {
-        validateAppCheckV1(context);
-        const userId = requireVerifiedEmailV1(context);
+        memory: "512MiB",
+        cpu: 'gcf_gen1',
+        concurrency: 1,
+    },
+    async (request) => {
+        validateAppCheckV2(request);
+        const userId = requireVerifiedEmailV2(request);
 
         // 2. Validation
-        const validation = AnalyzeAudioRequestSchema.safeParse(data);
+        const validation = AnalyzeAudioRequestSchema.safeParse(request.data);
         if (!validation.success) {
-            throw new functions.https.HttpsError(
+            throw new HttpsError(
                 "invalid-argument",
                 `Validation failed: ${validation.error.issues.map(i => i.message).join(", ")}`
             );
         }
         resolveOwnedCanonicalMasterPath(userId, validation.data.storagePath);
-        throw new functions.https.HttpsError(
+        throw new HttpsError(
             'failed-precondition',
             'Direct audio analysis is retired. Wait for the verified canonical-master analysis receipt.'
         );
-    });
+    },
+);

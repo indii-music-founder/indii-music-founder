@@ -1,4 +1,5 @@
-import * as functions from "firebase-functions/v1";
+import { onCall, HttpsError } from "firebase-functions/v2/https";
+import { logger } from "firebase-functions/v2";
 import * as admin from "firebase-admin";
 import { GoogleGenAI } from "@google/genai";
 import { FUNCTION_INTELLIGENCE_MODELS, NANO_BANANA_CAPABILITIES, type NanoBananaTier } from "../config/models";
@@ -12,7 +13,7 @@ import {
 import { getVertexAIClient } from "./vertexClient";
 import { parseStorageUri, assertUserOwnsStoragePath } from './storageUri';
 import { arcjetKey } from '../config/secrets';
-import { requireVerifiedCreativeAdmissionV1 } from '../functions/creative/legacyAdmission';
+import { requireVerifiedCreativeAdmission } from '../functions/creative/legacyAdmission';
 import { checkOperationBudget, finalizeOperationReservation } from '../functions/billing/enforceOperationCost';
 import { entitlementTierToBudgetTier } from '../functions/auth/entitlements';
 
@@ -421,7 +422,7 @@ export class GeminiImageService {
      * @param error - The raw error object caught from the SDK.
      * @param context - Descriptive context (e.g., 'generate' or 'edit') for logging.
      * @returns This method never returns normally; it always throws.
-     * @throws {functions.https.HttpsError} Structured error for the client.
+     * @throws {HttpsError} Structured error for the client.
      */
     private handleApiError(error: unknown, context: string): never {
         const err = error as Error & { status?: number };
@@ -453,16 +454,16 @@ export class GeminiImageService {
         }
 
         if (status === 400 || message.includes("400")) {
-            throw new functions.https.HttpsError("invalid-argument", `Gemini API Request Error: ${message}`);
+            throw new HttpsError("invalid-argument", `Gemini API Request Error: ${message}`);
         }
         if (status === 401 || status === 403 || message.includes("401") || message.includes("403")) {
-            throw new functions.https.HttpsError("permission-denied", `Gemini API Authentication Error: ${message}`);
+            throw new HttpsError("permission-denied", `Gemini API Authentication Error: ${message}`);
         }
         if (status === 404 || message.includes("404")) {
-            throw new functions.https.HttpsError("failed-precondition", `Gemini API Resource Not Found: ${message}`);
+            throw new HttpsError("failed-precondition", `Gemini API Resource Not Found: ${message}`);
         }
         if (status === 429 || message.includes("429")) {
-            throw new functions.https.HttpsError("resource-exhausted", "Gemini API rate limit exceeded. Please try again later.");
+            throw new HttpsError("resource-exhausted", "Gemini API rate limit exceeded. Please try again later.");
         }
         if (
             message.includes("No image data found in edit response") ||
@@ -470,16 +471,16 @@ export class GeminiImageService {
             message.includes("No candidates returned from Gemini API") ||
             message.includes("No content parts in response")
         ) {
-            throw new functions.https.HttpsError(
+            throw new HttpsError(
                 "failed-precondition",
                 "Gemini did not return an editable image for this request. Try a clearer prompt or a tighter mask."
             );
         }
         if (status === 504 || status === 503 || message.includes("deadline") || err.name === 'AbortError') {
-            throw new functions.https.HttpsError("deadline-exceeded", "Gemini API timed out during generation. The model may be overloaded.");
+            throw new HttpsError("deadline-exceeded", "Gemini API timed out during generation. The model may be overloaded.");
         }
 
-        throw new functions.https.HttpsError("internal", `Gemini Image Generation Failed (${context}): ${message}`);
+        throw new HttpsError("internal", `Gemini Image Generation Failed (${context}): ${message}`);
     }
 
     // ========================================================================
@@ -820,7 +821,7 @@ const MAX_LEGACY_EDIT_REQUEST_BYTES = 14 * 1024 * 1024;
 export function assertOwnedLegacyEditInputs(userId: string, data: EditImageRequest): void {
     const serializedSize = Buffer.byteLength(JSON.stringify(data), 'utf8');
     if (serializedSize > MAX_LEGACY_EDIT_REQUEST_BYTES) {
-        throw new functions.https.HttpsError(
+        throw new HttpsError(
             'invalid-argument',
             `Image edit input exceeds the ${MAX_LEGACY_EDIT_REQUEST_BYTES} byte safety limit.`,
         );
@@ -835,7 +836,7 @@ export function assertOwnedLegacyEditInputs(userId: string, data: EditImageReque
     for (const uri of uris) {
         const { bucket, path } = parseStorageUri(uri);
         if (bucket !== expectedBucket) {
-            throw new functions.https.HttpsError('permission-denied', 'Image edit assets must be stored in the configured project bucket.');
+            throw new HttpsError('permission-denied', 'Image edit assets must be stored in the configured project bucket.');
         }
         assertUserOwnsStoragePath(path, userId);
     }
@@ -853,22 +854,24 @@ function estimateLegacyImageEditCost(data: EditImageRequest): number {
  * Scalable entry point for generating images with Gemini 3.1+.
  * Enforces authentication, rate limits, and schema validation.
  */
-export const generateImageV3Fn = () => functions
-    .region("us-central1")
-    .runWith({
+export const generateImageV3Fn = () => onCall(
+    {
+        region: "us-central1",
         secrets: [arcjetKey],
         enforceAppCheck: false,
         timeoutSeconds: 120,
-        // Bumped to 1GB: Pro 4K generation + long-context history needs parity with editImageFn
-        memory: "1GB"
-    })
-    .https.onCall(async (data: unknown, context) => {
-        await requireVerifiedCreativeAdmissionV1(context, 'legacy-generate-image');
+        // Bumped to 1GiB: Pro 4K generation + long-context history needs parity with editImageFn
+        memory: "1GiB",
+        cpu: 'gcf_gen1',
+        concurrency: 1,
+    },
+    async (request) => {
+        await requireVerifiedCreativeAdmission(request, 'legacy-generate-image');
 
         // 2. Validate Input
-        const validation = GenerateImageRequestSchema.safeParse(data);
+        const validation = GenerateImageRequestSchema.safeParse(request.data);
         if (!validation.success) {
-            throw new functions.https.HttpsError(
+            throw new HttpsError(
                 "invalid-argument",
                 `Validation failed: ${validation.error.issues.map(i => i.message).join(", ")}`
             );
@@ -884,21 +887,23 @@ export const generateImageV3Fn = () => functions
  * Scalable entry point for editing images using Gemini.
  * Supports reference images, masks, and iterative turns.
  */
-export const editImageFn = () => functions
-    .region("us-central1")
-    .runWith({
+export const editImageFn = () => onCall(
+    {
+        region: "us-central1",
         secrets: [arcjetKey],
         enforceAppCheck: false,
         timeoutSeconds: 120,
-        memory: "1GB" // Bumped from 512MB — editing with references + 4K can exceed 512MB
-    })
-    .https.onCall(async (data: unknown, context) => {
-        const { userId, entitlement } = await requireVerifiedCreativeAdmissionV1(context, 'legacy-edit-image');
+        memory: "1GiB", // Bumped from 512MiB — editing with references + 4K can exceed 512MiB
+        cpu: 'gcf_gen1',
+        concurrency: 1,
+    },
+    async (request) => {
+        const { userId, entitlement } = await requireVerifiedCreativeAdmission(request, 'legacy-edit-image');
 
         // 2. Validate Input
-        const validation = EditImageRequestSchema.safeParse(data);
+        const validation = EditImageRequestSchema.safeParse(request.data);
         if (!validation.success) {
-            throw new functions.https.HttpsError(
+            throw new HttpsError(
                 "invalid-argument",
                 `Validation failed: ${validation.error.issues.map(i => i.message).join(", ")}`
             );
@@ -918,7 +923,7 @@ export const editImageFn = () => functions
             },
         });
         if (!reservation.allowed || !reservation.operationId) {
-            throw new functions.https.HttpsError('resource-exhausted', 'Image edit is unavailable because the account budget or safety limit has been reached.');
+            throw new HttpsError('resource-exhausted', 'Image edit is unavailable because the account budget or safety limit has been reached.');
         }
 
         // 3. Delegate to Service
@@ -933,18 +938,18 @@ export const editImageFn = () => functions
                 operationId: reservation.operationId,
                 outcome: providerAttempted ? 'SETTLED' : 'VOIDED',
             });
-            if (error instanceof functions.https.HttpsError) {
+            if (error instanceof HttpsError) {
                 throw error;
             }
             const message = error instanceof Error ? error.message : String(error);
-            functions.logger.error("[editImage] Image edit service failed", {
+            logger.error("[editImage] Image edit service failed", {
                 message,
                 userId,
                 hasMask: Boolean(validation.data.maskUri),
                 hasReference: Boolean(validation.data.referenceImageUri),
                 model: validation.data.model,
             });
-            throw new functions.https.HttpsError(
+            throw new HttpsError(
                 "internal",
                 message && message !== "internal"
                     ? `Creative image edit failed: ${message}`
