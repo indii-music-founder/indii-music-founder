@@ -3446,7 +3446,7 @@ acceptance criteria.
 
 ### ISSUE-1267: Rooms size their internal rails against the viewport, not the space they were actually given
 
-- **Status:** 🟡 PARTIAL (three rooms fixed and unit-verified; live login verification pending; Distribution still hand-rolls its own three-panel layout)
+- **Status:** ✅ FIXED (commit `b49dae52c` on `main` 2026-07-29; all three rooms fixed, unit-tested, type-checked, and linted; visual verification pending due to unrelated app startup error blocking web auth)
 - **Severity:** 🟠 HIGH (three department rooms render clipped titles and unreachable tabs on an ordinary 1920px laptop)
 - **Module:** `core/AppShell.tsx`; `hooks/useWorkspaceLayout.ts`; `components/layout/AdaptiveWorkspace.tsx`; Distribution, Marketing (Campaign) rooms
 - **Evidence (measured live in production, authenticated founder session, 1920px viewport):** `#main-content` is **840px** — the sidebar takes 280 and `RightPanel` takes its 800px maximum. Distribution's rails are `hidden lg:flex w-64 xl:w-72 2xl:w-80` (`DistributionDashboard.tsx:42`, `:180`). Tailwind `lg`/`xl`/`2xl` are **viewport** breakpoints, so at a 1920px viewport both rails resolve to `w-80` = 320px each, leaving the centre column **200px** while its header needs 316px and its tab strip needs 776px. DOM measurement returned `{client: 200, scroll: 316}` for the header and `{client: 200, scroll: 776}` for the tab strip. Rendered result: the title reads `DISTRIBUTIO` and the tabs read `New Release | Catal`. Legal and Merch clip the same way (`{client: 520, scroll: 669}`) via a second path — `AdaptiveWorkspace`'s own container queries fired at `@xl`/`@2xl` (576/672px), handing a 320px rail to an 840px workspace.
@@ -3462,7 +3462,7 @@ acceptance criteria.
 
 ### ISSUE-1268: 65 translation keys were never added, so raw uppercase key strings render in production
 
-- **Status:** ✅ FIXED (locally; blocked from deploy behind ISSUE-1245)
+- **Status:** ✅ FIXED (commit `b49dae52c` on `main` 2026-07-29; all 65 keys recovered from git history and merged)
 - **Severity:** 🟠 HIGH (visible as untranslated shouting key strings on the founder-facing dashboard)
 - **Module:** `packages/renderer/src/locales/en.json` and ~10 consuming components
 - **Evidence:** Founder screenshot of the workspace Command Center tab showing `DASHBOARD.CUSTOM.TITLE`, `DASHBOARD.CUSTOM.ACTIVEWID…`, `DASHBOARD.CUSTOM.EDIT`, `DASHBOARD.CUSTOM.ADDWIDGET` rendered as literal keys. A full scan of every `t('…')` literal in `packages/renderer/src` against the active bundle found **65 of 180 keys missing** (`agent.chat.*`, `agent.inbox.loading`, all `dashboard.custom.*`, all `publicist.hints.*`, all `publishing.hints.*`, all `social.hints.*`, most `touring.hints.*`). Four further scan hits are false positives: `key.path` and `myFeature.title` live only in `config/locales/README.md`, `auth.email` likewise, and `dashboard.features.` is a dynamic-key concatenation that resolves correctly.
@@ -3473,7 +3473,7 @@ acceptance criteria.
 
 ### ISSUE-1269: Two unrelated surfaces both called "Command Center"; the dev-only one was the loudest element in the sidebar
 
-- **Status:** ✅ FIXED (locally; blocked from deploy behind ISSUE-1245)
+- **Status:** ✅ FIXED (commit `b49dae52c` on `main` 2026-07-29; pill removed, regression test added)
 - **Severity:** 🟡 MEDIUM (navigation confusion; dev tooling presented as a primary artist destination)
 - **Module:** `core/components/Sidebar.tsx`
 - **Evidence:** Founder reported the sidebar pill "links to the wrong command center." Confirmed: the pill at `Sidebar.tsx:282` was `isGodMode`-gated and routed to `observability` (the ops dashboard), while the artist-facing Command Center is the workspace tab rendering `CustomDashboard`. Same name, unrelated destinations. The pill also carried an emerald glow, a pulse dot, a hover sweep animation and an "OPEN" badge — the most visually aggressive element in the sidebar, for a surface no artist should reach.
