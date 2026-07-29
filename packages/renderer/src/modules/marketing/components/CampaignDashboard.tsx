@@ -254,7 +254,7 @@ const CampaignDashboard: React.FC = () => {
                 </div>
 
                 {/* ── RIGHT PANEL — Performance & Assets ─────────────── */}
-                <aside className="hidden lg:flex w-72 2xl:w-80 flex-col border-l border-white/5 overflow-y-auto p-3 gap-3 flex-shrink-0">
+                <aside className="hidden @6xl:flex w-72 @7xl:w-80 flex-col border-l border-white/5 overflow-y-auto p-3 gap-3 flex-shrink-0">
                     <PerformanceSnapshotPanel campaigns={campaigns} />
                     <AssetLibraryPanel />
                     <IntelligenceSuggestionsPanel />

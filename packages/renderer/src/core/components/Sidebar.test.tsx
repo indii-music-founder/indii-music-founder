@@ -80,16 +80,10 @@ describe('Sidebar', () => {
         expect(setModule).toHaveBeenCalledWith('brand');
     });
 
-    it('hides Command Center from non-god-mode users', () => {
-        mockUseGodMode.mockReturnValue({ isGodMode: false, loading: false });
-
-        render(<Sidebar />);
-
-        expect(screen.queryByRole('button', { name: 'Command Center' })).not.toBeInTheDocument();
-        expect(screen.queryByText('Live system overview')).not.toBeInTheDocument();
-    });
-
-    it('shows Command Center to god-mode users and navigates on click', () => {
+    // ISSUE-1269: the god_mode Command Center pill was removed. It routed to the
+    // `observability` ops dashboard while sharing its name with the artist-facing
+    // Command Center tab in the agent workspace. It must not come back for ANY user.
+    it('never shows the removed Command Center pill, even in god mode', () => {
         mockUseGodMode.mockReturnValue({ isGodMode: true, loading: false });
         const setModule = vi.fn();
         (useStore as any).mockReturnValue({
@@ -101,15 +95,13 @@ describe('Sidebar', () => {
 
         render(<Sidebar />);
 
-        expect(screen.getByRole('button', { name: 'Command Center' })).toBeVisible();
-        expect(screen.getByText('Live system overview')).toBeVisible();
-
-        fireEvent.click(screen.getByRole('button', { name: 'Command Center' }));
-        expect(setModule).toHaveBeenCalledWith('observability');
+        expect(screen.queryByTestId('command-center-btn')).not.toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: 'Command Center' })).not.toBeInTheDocument();
+        expect(screen.queryByText('Live system overview')).not.toBeInTheDocument();
+        expect(setModule).not.toHaveBeenCalledWith('observability');
     });
 
     it('provides accessible labels when sidebar is collapsed', () => {
-        // god_mode true so Command Center renders
         mockUseGodMode.mockReturnValue({ isGodMode: true, loading: false });
         (useStore as any).mockReturnValue({
             currentModule: 'dashboard',
@@ -126,7 +118,6 @@ describe('Sidebar', () => {
         // Check for navigation item aria-label
         const brandManagerBtn = screen.getByTestId('nav-item-brand');
         expect(brandManagerBtn).toHaveAttribute('aria-label', 'Brand Manager');
-        expect(screen.getByTestId('command-center-btn')).toHaveAttribute('aria-label', 'Command Center');
 
         // Check sidebar toggle is accessible in collapsed state
         expect(screen.getByTestId('sidebar-toggle')).toBeInTheDocument();

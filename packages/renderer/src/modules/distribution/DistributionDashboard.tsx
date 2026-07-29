@@ -39,7 +39,7 @@ export default function DistributionDashboard() {
         <ModuleErrorBoundary moduleName="Distribution">
             <div data-testid="distribution-dashboard" className="absolute inset-0 flex bg-bg-dark/50">
                 {/* ── LEFT PANEL — Distributor Status & Health ────────── */}
-                <aside className="hidden lg:flex w-64 xl:w-72 2xl:w-80 flex-col border-r border-white/5 overflow-y-auto p-3 gap-3 flex-shrink-0 bg-black/20 backdrop-blur-md">
+                <aside className="hidden @5xl:flex w-64 @6xl:w-72 @7xl:w-80 flex-col border-r border-white/5 overflow-y-auto p-3 gap-3 flex-shrink-0 bg-black/20 backdrop-blur-md">
                     <DistributorQuickView />
                     <DeliveryHealthPanel releases={releases} />
                     <QuickLinksPanel />
@@ -177,7 +177,7 @@ export default function DistributionDashboard() {
                 </div>
 
                 {/* ── RIGHT PANEL — QC, Keys, Authority, & Checklist ──────────────── */}
-                <aside className="hidden lg:flex w-72 2xl:w-80 flex-col border-l border-white/5 overflow-y-auto p-3 gap-3 flex-shrink-0 bg-black/20 backdrop-blur-md">
+                <aside className="hidden @6xl:flex w-72 @7xl:w-80 flex-col border-l border-white/5 overflow-y-auto p-3 gap-3 flex-shrink-0 bg-black/20 backdrop-blur-md">
                     <RegistrationChecklistPanel />
                     <QCQuickPanel />
                     <KeysStatusPanel />

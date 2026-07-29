@@ -412,9 +412,15 @@ function AppContent({ currentModule, showChrome, isDesktop, isAnyPhone, shortcut
                               * Composed here rather than per-module so centred full-height
                               * layouts (onboarding's career grid) are never rendered underneath
                               * the banner. See ISSUE-1187.
+                              *
+                              * `@container` makes this box the query root for every module.
+                              * Modules size their internal rails against the space they were
+                              * actually given, not against the viewport — the viewport can say
+                              * "2xl" while the right panel has left the module 840px. See
+                              * ISSUE-1267.
                               */}
                             <div
-                                className="flex-1 overflow-y-auto relative z-10 custom-scrollbar"
+                                className="@container flex-1 overflow-y-auto relative z-10 custom-scrollbar"
                                 style={{
                                     paddingBottom: `calc(${isAnyPhone ? '88px' : '0px'} + var(--consent-banner-space, 0px))`,
                                 }}

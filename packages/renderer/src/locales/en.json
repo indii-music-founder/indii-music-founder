@@ -72,6 +72,20 @@
       "localFile": "Local File Processing",
       "sftp": "SFTP Delivery",
       "offlineMode": "Offline Mode"
+    },
+    "custom": {
+      "activeWidgets": "{{count}} ACTIVE WIDGETS",
+      "addWidget": "Add Widget",
+      "availableIntelligence": "Available Intelligence",
+      "buildButton": "Build My Dashboard",
+      "dragToReorder": "DRAG TO REORDER",
+      "edit": "Edit",
+      "emptySubtitle": "Initialize your dashboard by adding intelligence widgets to track your performance.",
+      "emptyTitle": "Your OS is empty",
+      "finish": "Finish",
+      "integrated": "Integrated",
+      "title": "My Dashboard",
+      "undo": "Undo"
     }
   },
   "creative": {
@@ -167,6 +181,14 @@
       "budget": "Budget: {{amount}}",
       "noCampaigns": "No campaigns active",
       "goToMarketing": "Go to Marketing"
+    },
+    "chat": {
+      "exportTranscript": "Export chat transcript",
+      "routeTo": "Route to:",
+      "startConversation": "Start a conversation with your Autonomous team."
+    },
+    "inbox": {
+      "loading": "Loading inbox..."
     }
   },
   "sync": {
@@ -324,7 +346,68 @@
     "hints": {
       "current_location": "Current City, State or coordinates (e.g. Austin, TX)",
       "city_state_example": "City, State or coordinates (e.g. Austin, TX)",
-      "agent_request": "Ask road agent (e.g. Find gas station)..."
+      "agent_request": "Ask road agent (e.g. Find gas station)...",
+      "add_requirement": "Add requirement...",
+      "artist_example": "e.g. Mara Sol",
+      "capacity_example": "500",
+      "city_example": "Detroit, MI",
+      "contact_name_tour": "Contact Name",
+      "country_example": "e.g. South Korea, Brazil, Germany...",
+      "email_example": "email@example.com",
+      "event_phase": "Event Phase...",
+      "ident_name": "IDENT_NAME",
+      "name": "Name",
+      "none": "None",
+      "operative_name": "OPERATIVE",
+      "phone_international": "+X XXX XXX XXXX",
+      "phone_number": "Phone Number",
+      "phone_us": "+1 555 000 0000",
+      "role": "Role",
+      "special_requests": "Load-in time, parking, catering windows, special requests...",
+      "tour_example": "e.g. The Collapse Tour",
+      "venue_example": "The Fillmore"
+    }
+  },
+  "publicist": {
+    "hints": {
+      "campaign_budget": "0.00",
+      "campaign_name": "e.g. Neon Nights Album Launch",
+      "campaign_target": "e.g. The Midnight Echo",
+      "contact_name": "e.g. Test Journalist",
+      "contact_outlet": "e.g. Pitchfork / Rolling Stone",
+      "conversation_notes": "Add notes about your last conversation...",
+      "release_genre": "e.g. Retro Wave",
+      "release_tags": "e.g. Synth-pop, 80s nostalgia, energetic",
+      "release_title": "e.g. Neon Nights",
+      "search_fans": "Search fans...",
+      "target_audience": "Who is this song for?"
+    }
+  },
+  "publishing": {
+    "hints": {
+      "ai_tools_example": "e.g., Suno, Udio, AIVA, Amper",
+      "artist_name": "Enter artist name",
+      "bpm_example": "e.g. 120",
+      "confidence_score": "0.0 to 1.0 (e.g. 0.85)",
+      "human_input_desc": "Describe any human creative input (lyrics, melody ideas, arrangement, mixing, etc.)",
+      "isrc_example": "USRC17607839",
+      "isrc_optional": "US-XXX-25-XXXXX (Optional - will generate if empty)",
+      "key_example": "e.g. C minor, 8A",
+      "label_name": "Your label or 'Self-Released'",
+      "pro_work_id": "PA-DPIDA-XXXXXXXXXX-X",
+      "search_releases": "Search by title, artist, or ISRC...",
+      "track_title": "Enter track title",
+      "track_title_example": "e.g. Bohemian Rhapsody",
+      "writer_name_example": "e.g. Freddie Mercury"
+    }
+  },
+  "social": {
+    "hints": {
+      "company_example": "e.g. Acme Corp",
+      "industry_example": "e.g. Technology",
+      "search_products": "Search your products...",
+      "social_post_desc": "What's on your mind?",
+      "studio_update": "What's happening in your studio?"
     }
   }
 }

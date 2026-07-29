@@ -33,7 +33,7 @@ describe('AdaptiveWorkspace', () => {
             </AdaptiveWorkspace>,
         );
 
-        setWidth(900);
+        setWidth(1000);
 
         expect(screen.getByTestId('adaptive-left-rail')).toBeInTheDocument();
         expect(screen.queryByTestId('adaptive-right-rail')).not.toBeInTheDocument();
@@ -67,10 +67,10 @@ describe('AdaptiveWorkspace', () => {
             </AdaptiveWorkspace>,
         );
 
-        setWidth(1280);
+        setWidth(1400);
         expect(screen.getByTestId('adaptive-workspace')).toHaveAttribute('data-workspace-mode', 'wide');
 
-        setWidth(900);
+        setWidth(1000);
         expect(screen.getByTestId('adaptive-workspace')).toHaveAttribute('data-workspace-mode', 'standard');
 
         setWidth(700);

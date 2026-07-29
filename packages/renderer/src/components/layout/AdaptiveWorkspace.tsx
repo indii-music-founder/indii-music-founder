@@ -139,7 +139,7 @@ export function AdaptiveWorkspace({
                 className={cn('absolute inset-0 flex min-w-0 overflow-hidden @container', className)}
             >
                 {hasPersistentLeftRail && (
-                    <aside data-testid="adaptive-left-rail" aria-label={leftRailLabel} className="flex w-64 shrink-0 flex-col overflow-y-auto border-r border-white/5 p-3 @xl:w-72 @2xl:w-80">
+                    <aside data-testid="adaptive-left-rail" aria-label={leftRailLabel} className="flex w-64 shrink-0 flex-col overflow-y-auto border-r border-white/5 p-3 @4xl:w-72 @6xl:w-80">
                         {leftRail}
                     </aside>
                 )}
@@ -149,7 +149,7 @@ export function AdaptiveWorkspace({
                 </main>
 
                 {hasPersistentRightRail && (
-                    <aside data-testid="adaptive-right-rail" aria-label={rightRailLabel} className="flex w-72 shrink-0 flex-col overflow-y-auto border-l border-white/5 p-3 @2xl:w-80">
+                    <aside data-testid="adaptive-right-rail" aria-label={rightRailLabel} className="flex w-72 shrink-0 flex-col overflow-y-auto border-l border-white/5 p-3 @6xl:w-80">
                         {rightRail}
                     </aside>
                 )}

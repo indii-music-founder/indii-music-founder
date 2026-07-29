@@ -695,13 +695,20 @@
 ### ISSUE-1141: Resized-image tool returns synthetic `gs://` paths for missing variants and still says variants were resolved
 
 - **Re-ticketed from:** ISSUE-893 (2026-07-21 housecleaning; original status was: `⏳ BACKLOG — consolidated`)
-- **Status:** ⏳ BACKLOG — consolidated
+- **Status:** ✅ FIXED (2026-07-28 — the unwanted Storage Resize Images
+  extension and its `get_resized_image_variants` tool were retired. The tool
+  can no longer fabricate successful `gs://` variants for missing objects;
+  existing uploads and prior derivative objects were retained.)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Media agent tools / Firebase Storage derivatives
 - **Evidence:** `get_resized_image_variants()` derives variant names like `${basePath}_${dim}${ext}` and tries `getDownloadURL()` (`MediaTools.ts:314-340`). If the object is missing or access is denied, the catch stores `gs://${bucket}/${variantPath}` instead of failing or marking the variant missing (`:336-344`), and the tool returns success with “Resolved Firebase Extension resized variants” (`:347`).
 - **Impact:** Downstream social/poster/thumbnail flows can receive non-downloadable, non-existent derivative URIs and believe resized assets are ready.
-- **Fix:** Return per-dimension states (`ready`, `missing`, `permission_denied`, `extension_pending`) and only include usable download URLs in the ready map. Trigger or queue derivative generation explicitly if supported.
-- **Acceptance:** Missing derivative objects produce `missing` entries and no success wording that says they were resolved.
+- **Fix:** Retire the unsupported deterministic-variant tool together with the
+  unwanted Firebase extension. Social resizing remains available through the
+  explicit `resize_image_for_socials` workflow instead of guessed Storage
+  object names.
+- **Acceptance:** The tool is absent from the registry and implementation, so
+  missing derivative objects cannot produce synthetic success results.
 
 ---
 
@@ -2847,7 +2854,7 @@ renumbered before writing. The ledger is correct; only the commit message is sta
 
 ### ISSUE-1235: Client-created `videoJobs` could trigger legacy Vertex generation without server admission
 
-- **Status:** ✅ FIXED (2026-07-28 — deployed via CI at 11:31 (commit 43f4b55); live unauthenticated rejection proof obtained at 15:47Z: curl to `https://firestore.googleapis.com/v1/projects/indii-music-founder/databases/(default)/documents/videoJobs` with test payload `{userId:"attacker-uid",status:"queued",prompt:"hijack"}` returned HTTP 403 PERMISSION_DENIED, confirming hardened rules block unauthorized writes; no bypassable Firestore client path remains open)
+- **Status:** 🟡 PARTIAL (2026-07-28 — deployment and one live unauthenticated direct-create rejection are proven. At 15:47Z, a request to `https://firestore.googleapis.com/v1/projects/indii-music-founder/databases/(default)/documents/videoJobs` with test payload `{userId:"attacker-uid",status:"queued",prompt:"hijack"}` returned HTTP 403 PERMISSION_DENIED. This proves the deployed rules reject that unauthenticated write; it does not prove authenticated owner-only reads, authenticated create/update/delete and cross-owner denials, rejected admission without Vertex work, or the official short/long-form reservation-to-artifact lifecycle.)
 - **Severity:** 🔴 CRITICAL
 - **Module:** `packages/firebase/firestore.rules`; `triggerVideoJob`; `triggerLongFormVideoJob`; `executeVideoJob`; `video_generation_direct.ts`; `long_form_video.ts`
 - **Evidence:** The legacy `videoJobs` rule permitted verified clients to create/update/delete a record as long as an ownership field matched. A client-created `{ status: "queued" }` document activates the Firestore worker directly, bypassing the callable's App Check, signed-email, server entitlement, Arcjet, and cost-reservation admission. The worker also previously accepted a client-selected job ID and fetched arbitrary HTTP image URLs.
@@ -2855,10 +2862,10 @@ renumbered before writing. The ledger is correct; only the commit message is sta
 - **Acceptance:** [PASS local] Seven focused suites passed **58/58**, including server IDs, admission reservations, model/duration normalization, bounded seed input, private-output guards, long-form request bounds, and provider-failure cost outcomes; Firebase build, renderer typecheck, strict scoped lint, and `git diff --check` pass. Prior emulator evidence remains **194/194**, including authenticated forged-create, status-update, delete, and cross-owner-read attacks. [OPEN live] Complete every production gate below with a genuine verified user session and retain evidence.
 - **Production release-blocker definition of done:**
   1. ✅ Deploy the exact Firestore Rules and Cloud Function revisions; verify required secrets/configuration, App Check, Arcjet admission, and backend-only Vertex ADC. (Rules deployed 2026-07-28 14:57Z; functions deployed via CI at 11:31 commit 43f4b55)
-  2. ✅ Prove the owner can read only their own `videoJobs`; direct client create/update/delete, cross-owner access, forged identity/job ID, and rejected admission must fail without Vertex work. (Unauthenticated write test at 15:47Z: HTTP 403 PERMISSION_DENIED on test payload `{userId:"attacker-uid",status:"queued",prompt:"hijack"}` confirms rules enforcement)
+  2. 🟡 Prove the owner can read only their own `videoJobs`; direct client create/update/delete, cross-owner access, forged identity/job ID, and rejected admission must fail without Vertex work. (Partial evidence only: the 15:47Z unauthenticated direct-create probe returned HTTP 403 PERMISSION_DENIED. Authenticated owner/cross-owner and no-Vertex-work proof remain open.)
   3. ⏳ Generate short-form and long-form video through the official UI/callable; prove the server job, reservation lifecycle, provider state, private final artifact, and owner-authorized playback/download. (Pending authenticated flow test)
   4. ⏳ Review Cloud Logging for unexpected 400/403/429 responses, orphaned reservations, failed/retrying workers, duplicate processing, and public artifact exposure. (Pending log review)
-  5. ✅ Attach production request/job IDs, relevant log references, and a pass/fail checklist. (Live rejection proof recorded above; emulator testing completed, production gate proven)
+  5. 🟡 Attach production request/job IDs, relevant log references, and a pass/fail checklist. (The unauthenticated rejection request and emulator results are recorded; authenticated official-flow request/job IDs and Cloud Logging references remain open.)
 - **Do not:** Do not restore client writes to `videoJobs`, accept a client-issued job ID as the authoritative worker identity, fetch arbitrary HTTP image URLs inside a Cloud Function, or mark a reservation void after a provider submission might have been accepted.
 
 ---
@@ -3114,7 +3121,7 @@ ordinary use of the running app.
 - **Shipped in this pass (diagnostics only, no gate weakened):**
   1. `mapDecision`'s `isErrored()` branch now logs `decision.reason.message` — where Arcjet actually carries the cause (bad key, unreachable API, malformed request) — and is escalated `warn` → `error`, since denying every authenticated request is not a warning-level event.
   2. Both `catch (_error)` blocks now log `err_name` / `err_msg` / `err_cause` / trimmed stack. Never the key.
-  3. `index.ts`'s admission catch tested `error instanceof functions.https.HttpsError` — the **v1** class — while the admission path throws **v2** `HttpsError` (`entitlements.ts` imports from `firebase-functions/v2/https`). Every well-formed entitlement rejection was therefore relabelled `code: 'internal'`, hiding actionable causes such as "Verify your email…" behind a generic 503. Now reads `code` off the error itself, which both versions carry.
+  3. `index.ts`'s admission catch was changed from a constructor check to reading the callable error's `code` property. Direct runtime verification later proved that this SDK version exports the same `HttpsError` constructor from `firebase-functions/v1` and `firebase-functions/v2/https`, and a v2 error passes the v1 `instanceof` check. The change is a structural-robustness improvement; a cross-generation class mismatch was **not** a verified cause of the generic 503.
 - **Deliberately NOT done:** no bypass, allowlist, or downgrade of the failure mode. ISSUE-1228's policy is explicit that spend-bearing operations fail closed, and text generation is spend-bearing. Making the outage invisible is not a fix.
 - **Fix applied (2026-07-27):**
   1. `generateContentStream` now declares `memory: "512MB"`, matching its siblings.
@@ -3126,7 +3133,7 @@ ordinary use of the running app.
 ### ISSUE-1243: Backend is split across two Cloud Functions generations with no recorded decision — and the app's main streaming endpoint violates the Gen2 streaming standard
 
 - **Status:** 🔴 OPEN
-- **Severity:** 🟠 HIGH (not a live outage by itself, but it is the shared root beneath ISSUE-1238, ISSUE-1242, and the mislabelled-error investigation that cost hours on 2026-07-27)
+- **Severity:** 🟠 HIGH (not a live outage by itself, but it is the shared root beneath the generation-specific runtime defaults and deployment complexity exposed by ISSUE-1238 and ISSUE-1242)
 - **Module:** `packages/firebase/src/**` (repo-wide), `docs/PLATINUM_QUALITY_STANDARDS.md`
 - **Measured 2026-07-27:** **82 Gen1** and **85 Gen2** functions deployed in `us-central1` — roughly half the backend on each generation.
 - **There is no recorded decision.** Searched `.agent/test_ledger/OPEN_ISSUES_V2.md` and `docs/` — no migration ticket, plan, or ADR exists. The only Gen1 rule anywhere is `docs/PLATINUM_QUALITY_STANDARDS.md:106`, which is narrowly scoped to streaming endpoints. This is accretion: the codebase began on `firebase-functions/v1`, new work went to v2, the old half was never revisited.
@@ -3134,10 +3141,10 @@ ordinary use of the running app.
 - **Concrete cost already paid — every layer of the 2026-07-27 outage traces to this split:**
   1. `setGlobalOptions({ memory: '512MiB' })` applies to v2 only, so Gen1 functions silently kept the 256MB default → ISSUE-1242.
   2. Two unit spellings (`MiB` vs `MB`) meant `scripts/check-function-memory.cjs` was blind to all 82 Gen1 declarations → ISSUE-1238 was closed while the Gen1 half stayed exposed.
-  3. Two `HttpsError` classes: `index.ts` tests `instanceof functions.https.HttpsError` (v1) while v2 code throws the v2 class, so genuine errors were relabelled `code: 'internal'` and their actionable messages hidden → sent the ISSUE-1242 investigation to the wrong subsystem first.
+  3. Gen1 and Gen2 use different declaration, request/event, deployment, and runtime-default contracts. Direct runtime verification proved that this installed SDK's v1 and v2 `HttpsError` exports are the same constructor, so a class-identity mismatch is not part of the proven generation divergence.
   4. Two default memory tiers (Gen1 256MB vs the v2 global 512MiB).
 - **Why it has not been done, which any plan must account for:** Gen1→Gen2 is **not an in-place upgrade** — `firebase deploy` rejects the change, so each function must be `firebase functions:delete <name> --region=<region>`d first (recorded in PLATINUM_QUALITY_STANDARDS.md:106). Every migration therefore has a window where the function does not exist. That is why it has only ever happened under duress (`mcpEndpoint`, when SSE forced it) and never opportunistically.
-- **Launch decision (2026-07-28):** Migrate `generateContentStream` to Gen2 before launch; defer remaining 81 Gen1 functions to post-launch.
+- **Superseded launch decision (2026-07-28):** The earlier decision was to migrate `generateContentStream` before launch and defer the remaining Gen1 fleet. The founder subsequently directed a complete Gen2-only migration before release; the earlier partial-migration sequence below is retained as decision history, not the active release scope.
   - **Rationale:** generateContentStream is the main chat/agent stream (highest-traffic, critical). It violates Gen2 streaming standard. Recent outage traced to Gen1/Gen2 divergences. Acceptable risk to reduce before $350k Google credits launch.
   - **Sequence:**
     1. Migrate `generateContentStream` to the v2 `onRequest({ memory: '512MiB', concurrency: 100, maxInstances: 1000, ... }, handler)` API while preserving its existing secret bindings and admission controls
@@ -3436,3 +3443,40 @@ acceptance criteria.
 - **Correction:** Capability questions bypass freeform model recall and are rendered deterministically from the current agent's authorized-and-registered tool intersection, registered specialists, and typed live health. Output separates available, specialist-routed, approval-required, degraded, and not-active states using safe user labels. Planned integrations and internal tool/provider/security identifiers are not presented as active capabilities.
 - **Validation:** Five capability-specific tests prove unregistered tools are not claimed, degraded image generation is disclosed, planned banking/rights/DSP work stays inactive, approval requirements are labeled, internal identifiers are hidden, and historical incident language is not fabricated.
 - **Remaining:** After deployment, ask the genuine authenticated Conductor the production capability question while image health is degraded and verify the concise deterministic response matches the actual session registry and health.
+
+### ISSUE-1267: Rooms size their internal rails against the viewport, not the space they were actually given
+
+- **Status:** 🟡 PARTIAL (three rooms fixed and unit-verified; live login verification pending; Distribution still hand-rolls its own three-panel layout)
+- **Severity:** 🟠 HIGH (three department rooms render clipped titles and unreachable tabs on an ordinary 1920px laptop)
+- **Module:** `core/AppShell.tsx`; `hooks/useWorkspaceLayout.ts`; `components/layout/AdaptiveWorkspace.tsx`; Distribution, Marketing (Campaign) rooms
+- **Evidence (measured live in production, authenticated founder session, 1920px viewport):** `#main-content` is **840px** — the sidebar takes 280 and `RightPanel` takes its 800px maximum. Distribution's rails are `hidden lg:flex w-64 xl:w-72 2xl:w-80` (`DistributionDashboard.tsx:42`, `:180`). Tailwind `lg`/`xl`/`2xl` are **viewport** breakpoints, so at a 1920px viewport both rails resolve to `w-80` = 320px each, leaving the centre column **200px** while its header needs 316px and its tab strip needs 776px. DOM measurement returned `{client: 200, scroll: 316}` for the header and `{client: 200, scroll: 776}` for the tab strip. Rendered result: the title reads `DISTRIBUTIO` and the tabs read `New Release | Catal`. Legal and Merch clip the same way (`{client: 520, scroll: 669}`) via a second path — `AdaptiveWorkspace`'s own container queries fired at `@xl`/`@2xl` (576/672px), handing a 320px rail to an 840px workspace.
+- **Root cause:** two separate expressions of one mistake — sizing a room's interior against something wider than the room.
+- **Fix applied:**
+  1. `AppShell.tsx` — the module scroller is now a `@container`, so every room can query the width it was actually given.
+  2. `useWorkspaceLayout.ts` — `focused` 840 → **960**, `wide` 1200 → **1360**. 840 must resolve to `focused` (rails become drawers, centre gets the whole box); the old 840 boundary was the exact width that fails.
+  3. `AdaptiveWorkspace.tsx` — rail steps `@xl/@2xl` → `@4xl/@6xl` (896/1152) so a rail never takes a third of a small workspace.
+  4. `DistributionDashboard.tsx`, `CampaignDashboard.tsx` — viewport `lg:`/`xl:`/`2xl:` rails → container `@5xl:`/`@6xl:`/`@7xl:`.
+- **Verified:** 17/17 unit tests green across `Sidebar`, `AdaptiveWorkspace`, `useWorkspaceLayout`, including a new regression test pinning 840px → `focused`. `npm run typecheck` clean.
+- **NOT yet verified:** no authenticated screenshot of the repaired rooms. The local dev server (`:4243`) runs but sits at the login screen, and no agent may enter founder credentials. **Do not claim these rooms are fixed on screen until a real logged-in pass confirms it.**
+- **Remaining:** 12 more module files still size internal rails off viewport breakpoints (`grep -rln "hidden lg:flex\|hidden xl:flex" packages/renderer/src/modules`). Distribution should be migrated onto `AdaptiveWorkspace` rather than keeping its own copy of the three-panel layout — it would inherit the rail drawers for free.
+
+### ISSUE-1268: 65 translation keys were never added, so raw uppercase key strings render in production
+
+- **Status:** ✅ FIXED (locally; blocked from deploy behind ISSUE-1245)
+- **Severity:** 🟠 HIGH (visible as untranslated shouting key strings on the founder-facing dashboard)
+- **Module:** `packages/renderer/src/locales/en.json` and ~10 consuming components
+- **Evidence:** Founder screenshot of the workspace Command Center tab showing `DASHBOARD.CUSTOM.TITLE`, `DASHBOARD.CUSTOM.ACTIVEWID…`, `DASHBOARD.CUSTOM.EDIT`, `DASHBOARD.CUSTOM.ADDWIDGET` rendered as literal keys. A full scan of every `t('…')` literal in `packages/renderer/src` against the active bundle found **65 of 180 keys missing** (`agent.chat.*`, `agent.inbox.loading`, all `dashboard.custom.*`, all `publicist.hints.*`, all `publishing.hints.*`, all `social.hints.*`, most `touring.hints.*`). Four further scan hits are false positives: `key.path` and `myFeature.title` live only in `config/locales/README.md`, `auth.email` likewise, and `dashboard.features.` is a dynamic-key concatenation that resolves correctly.
+- **Root cause:** commit `51f1d34f8` ("placeholder cleansing (WO-3)") mechanically replaced literal `placeholder="…"` strings with `t('module.hints.key')` calls across the codebase but never wrote the keys into `en.json`. A later work order did the same to `CustomDashboard.tsx` and `AgentDashboard.tsx`. Nothing failed loudly — i18next falls back to echoing the key.
+- **Fix applied:** all 65 strings were **recovered from the pre-migration revisions in git**, not invented. The diff hunks were paired index-wise within each hunk (naive nearest-line pairing mis-assigned `touring.hints.role`, caught by reading the Key Contacts row in `TechnicalRiderGenerator.tsx:729-731`). `dashboard.custom.activeWidgets` was re-authored as `{{count}} ACTIVE WIDGETS` to match its `{ count }` interpolation call site.
+- **Verified:** post-merge scan reports zero real missing keys. `npm run typecheck` clean.
+- **Remaining:** `locales/es.json` was not touched — Spanish users fall back to English for these 65 strings, which is correct behaviour and strictly better than raw keys, but it is real translation debt. Worth a lint rule that fails the build when a `t()` literal has no matching key; this class of bug is silent by construction.
+
+### ISSUE-1269: Two unrelated surfaces both called "Command Center"; the dev-only one was the loudest element in the sidebar
+
+- **Status:** ✅ FIXED (locally; blocked from deploy behind ISSUE-1245)
+- **Severity:** 🟡 MEDIUM (navigation confusion; dev tooling presented as a primary artist destination)
+- **Module:** `core/components/Sidebar.tsx`
+- **Evidence:** Founder reported the sidebar pill "links to the wrong command center." Confirmed: the pill at `Sidebar.tsx:282` was `isGodMode`-gated and routed to `observability` (the ops dashboard), while the artist-facing Command Center is the workspace tab rendering `CustomDashboard`. Same name, unrelated destinations. The pill also carried an emerald glow, a pulse dot, a hover sweep animation and an "OPEN" badge — the most visually aggressive element in the sidebar, for a surface no artist should reach.
+- **Fix applied:** pill removed on founder instruction; unused `Activity` import dropped. The redundant "hides Command Center from non-god-mode users" test was replaced with a stronger one asserting the pill renders for **no** user including god mode, so it cannot silently return.
+- **Verified:** 7/7 `Sidebar.test.tsx` tests green. `npm run typecheck` clean.
+- **Remaining — needs a decision:** removing the pill leaves the standalone `observability` module with **no UI entry point at all**. `UnifiedCommandMenu` is a hardcoded list that does not include it, so it is now reachable only by direct `setModule('observability')`. Its content is already duplicated by the "Observability & Metrics" tab inside the Devops module (`DevopsDashboard.tsx:173`). Either delete the standalone module as dead, or add it to the command palette under a name that is not "Command Center". Do not resolve this by restoring the pill.

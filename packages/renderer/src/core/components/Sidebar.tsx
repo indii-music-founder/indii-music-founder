@@ -7,7 +7,7 @@ import { useStore } from '../store';
 import { getColorForModule } from '../theme/moduleColors';
 import { type ModuleId } from '@/core/constants';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { Scale, Music, Megaphone, Layout, Network, Film, Book, Briefcase, Users, Radio, DollarSign, FileText, Mic, ChevronLeft, ChevronRight, ChevronDown, ShoppingBag, Activity, Palette, AudioLines, Search, Settings, Gem, Share2, CalendarDays, GitBranch, Target, Library, Layers, Shield, Server, PenTool, type LucideIcon } from 'lucide-react';
+import { Scale, Music, Megaphone, Layout, Network, Film, Book, Briefcase, Users, Radio, DollarSign, FileText, Mic, ChevronLeft, ChevronRight, ChevronDown, ShoppingBag, Palette, AudioLines, Search, Settings, Gem, Share2, CalendarDays, GitBranch, Target, Library, Layers, Shield, Server, PenTool, type LucideIcon } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { BiometricToggle } from '@/core/components/ui/BiometricToggle';
 import { motion, AnimatePresence } from 'motion/react';
@@ -279,53 +279,14 @@ export default function Sidebar() {
                 </div>
             )}
 
-            {/* Command Center — god_mode only, persistent operational overview */}
-            {isGodMode && (
-            <div className={`px-4 pb-2 ${isSidebarOpen ? 'pt-2' : 'pt-4 border-b border-white/5 border-dashed'}`}>
-                <button
-                    onClick={() => throttledSetModule('observability')}
-                    data-testid="command-center-btn"
-                    className={cn(
-                        "w-full flex items-center p-2.5 rounded-xl transition-all group relative overflow-hidden",
-                        currentModule === 'observability'
-                            ? "bg-emerald-500/20 border border-emerald-400/60 shadow-[0_0_22px_rgba(16,185,129,0.28)]"
-                            : "bg-linear-to-r from-emerald-500/15 via-cyan-500/10 to-transparent border border-emerald-400/30 hover:border-emerald-300/60 hover:shadow-[0_0_20px_rgba(16,185,129,0.2)]",
-                        isSidebarOpen ? "justify-between gap-3" : "justify-center"
-                    )}
-                    aria-label="Command Center"
-                    title={!isSidebarOpen ? "Command Center" : undefined}
-                >
-                    <span className={cn("flex items-center relative z-10", isSidebarOpen ? "gap-3" : "")}>
-                        <span className="relative">
-                            <Activity
-                                size={17}
-                                className={cn(
-                                    "transition-all",
-                                    currentModule === 'observability'
-                                        ? "text-emerald-200 drop-shadow-[0_0_8px_rgba(52,211,153,0.9)]"
-                                        : "text-emerald-400 group-hover:text-emerald-200 group-hover:scale-110"
-                                )}
-                            />
-                            <span className="absolute -right-1 -top-1 h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_7px_rgba(52,211,153,1)]" />
-                        </span>
-                        {isSidebarOpen && (
-                            <span className="flex flex-col items-start leading-none">
-                                <span className="text-sm font-bold tracking-wide text-emerald-100">Command Center</span>
-                                <span className="mt-1 text-[9px] font-semibold uppercase tracking-[0.16em] text-emerald-400/70">
-                                    Live system overview
-                                </span>
-                            </span>
-                        )}
-                    </span>
-                    {isSidebarOpen && (
-                        <span className="relative z-10 rounded-full border border-emerald-400/25 bg-emerald-400/10 px-2 py-1 text-[8px] font-black uppercase tracking-widest text-emerald-300">
-                            Open
-                        </span>
-                    )}
-                    <div className="absolute inset-0 bg-linear-to-r from-transparent via-emerald-300/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 pointer-events-none" />
-                </button>
-            </div>
-            )}
+            {/*
+              ISSUE-1269: the god_mode "Command Center" pill lived here and routed to
+              `observability` — the ops dashboard, not the artist-facing Command Center
+              tab in the agent workspace. Two unrelated surfaces shared one name, and the
+              dev-only one was the loudest element in the sidebar. Removed on founder
+              instruction. The same metrics are still served by the "Observability &
+              Metrics" tab inside the Devops module.
+            */}
 
             {/* Boardroom Zen Mode Toggle */}
             <div className={`px-4 pb-2 ${isSidebarOpen ? 'pt-2' : 'pt-4 border-b border-white/5 border-dashed'}`}>
