@@ -1,10 +1,28 @@
 # Handoff — ISSUE-1243 Firebase Gen1 → Gen2 migration
 
-**Written:** 2026-07-29 · **Branch:** `main` · **HEAD:** `e55f09cdd` · **19 commits ahead of origin, nothing pushed.**
+**Written:** 2026-07-29 · **Branch:** `main` · **HEAD:** `b15d5322c`.
+
+**UPDATE 2026-07-29 16:07 EDT: CUTOVER COMPLETE AND LIVE-VERIFIED.** Deploy run
+30484389617 (`Deploy to Firebase Hosting`) succeeded. All 81 Gen1 endpoints deleted and
+redeployed as Gen2; live count is now 0 Gen1 / 166 Gen2. Verified live, not just by config:
+- 81/81 formerly-Gen1 endpoints: `environment=GEN_2`, `concurrency=1`, Gen1-ratio CPU,
+  memory ≥512MiB (32 of the 81 had been running at the 256MB ISSUE-1242 outage tier —
+  cutover cleared all of them).
+- 41 endpoints were `allUsers`-public pre-cutover (roughly half, not "a handful" as
+  originally assumed) — all 41 kept `roles/run.invoker=allUsers` post-cutover. Firebase
+  CLI auto-grants this on Gen2 deploy; confirmed by cross-checking 3 pre-existing native
+  Gen2 services which already carried it.
+- Real invocations, not just describes: `healthCheck`/`healthCheckWest1` returned live
+  HTTP 200 with Firestore connected; all 41 public endpoints answered a real OPTIONS
+  preflight with non-403 (0/41 IAM failures). No destructive calls made (no POST to
+  `createTransfer`, `releaseEscrow`, `requestAccountDeletion`, or the webhooks).
+
+ISSUE-1243 is done. Sections below are preserved as the historical record of how the
+cutover was built and verified; they no longer describe a pending blocker.
 
 ---
 
-## 1. State: source migration is COMPLETE. Cutover is NOT.
+## 1. State (as of original writing — now superseded, see UPDATE above)
 
 `packages/firebase/src` contains **zero Gen1**. All 82 source declarations (81 deployed
 endpoints) are Gen2. Typecheck 0 errors. 606 tests pass, 5 skipped, 90 files.
