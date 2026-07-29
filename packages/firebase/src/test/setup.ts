@@ -127,11 +127,17 @@ vi.mock('firebase-functions/v2', () => ({
 vi.mock('firebase-functions/v2/https', () => ({
     onCall: mockV2Handler,
     onRequest: mockV2Handler,
+    // `details` is the third constructor argument on the real HttpsError and
+    // carries structured context that callers assert on — legacyAdmission's
+    // Arcjet rejection puts { code, retryAfterSeconds } there. A mock that
+    // drops it makes those assertions silently compare against undefined.
     HttpsError: class extends Error {
         code: string;
-        constructor(code: string, message: string) {
+        details?: unknown;
+        constructor(code: string, message: string, details?: unknown) {
             super(message);
             this.code = code;
+            this.details = details;
         }
     },
 }));
