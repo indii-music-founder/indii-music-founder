@@ -84,6 +84,24 @@ flowchart TD
     Nodes --> Eval["Music-specific evaluation and real-user validation"]
 ```
 
+## Transition Breakdown
+
+1. **Shell state → measured workspace:** The application shell combines window
+   bounds, sidebar state, and chat width. Each creative module observes its
+   actual container and derives a shared width budget.
+2. **Width budget → layout mode:** The budget selects wide, standard, or
+   focused mode. Lower-priority rails become drawers before the primary canvas,
+   stage, or timeline falls below its useful width.
+3. **Layout mode → preserved context:** Changing modes reflows controls without
+   replacing the selected asset, canvas transform, playhead, prompt, unsaved
+   edits, reservation identity, progress, or recoverable error.
+4. **Verified inputs → generation:** The selected artist master, owner-scoped
+   Audio DNA receipt, and preserved creative context enter backend admission.
+   Only admitted work proceeds to backend-only Vertex generation.
+5. **Generation → durable output:** A durable job and asset receipt feeds
+   Dailies and the master-relative timeline. Owner approval gates the final
+   render, and marketing derivatives retain lineage to the verified master.
+
 ## Verification
 
 - Widths: 2560, 1920, 1440, 1280, 1024, and 768 CSS pixels.

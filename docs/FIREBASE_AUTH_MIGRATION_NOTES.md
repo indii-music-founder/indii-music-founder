@@ -18,7 +18,9 @@
 ## 3. App Hosting & Extensions
 
 - **App Hosting:** `indii-backend` is active on `*.hosted.app`, but the Studio UI is currently served via standard Firebase Hosting on `indii.music`.
-- **Extensions:** Only `storage-resize-images` is installed. No auth-related extensions are complicating the flow.
+- **Extensions:** No Firebase Extensions are installed. The unwanted
+  `storage-resize-images` instance was removed on 2026-07-28; existing uploads
+  and previously generated derivatives were retained.
 
 ## 4. API Key & App Registration Cleanup (Dec 28)
 

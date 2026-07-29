@@ -276,5 +276,6 @@
       "bucket": "indii-music-founder.firebasestorage.app",
       "rules": "packages/firebase/storage.rules"
     }
-  ]
+  ],
+  "extensions": {}
 }

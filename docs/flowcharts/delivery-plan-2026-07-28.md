@@ -72,14 +72,15 @@ flowchart TD
 
 ### ISSUE-1235: Client-created `videoJobs` triggers legacy Vertex generation without server admission
 
-**State:** 🟡 PARTIAL — local rule + callable + billing + worker hardening complete; deployment + live rejection proof open  
+**State:** 🟡 PARTIAL — hardening is deployed and an unauthenticated direct-create rejection is proven; authenticated owner/cross-owner and official lifecycle proof remain open
 **Blocker:** P0 RELEASE BLOCKER  
 
 **What's needed:**
 1. ✅ Local: hardening applied (firestore.rules, callable validation, cost gating)
-2. ⏳ Deploy: `firebase deploy --only firestore:rules,functions`
-3. ⏳ Proof: unauthenticated/malformed probe → expect `PERMISSION_DENIED` from live ruleset
-4. ⏳ Ledger: record ruleset id, revision, probe evidence
+2. ✅ Deploy: hardened rules and functions reached production
+3. ✅ Narrow proof: unauthenticated direct-create probe returned `PERMISSION_DENIED`
+4. ⏳ Authenticated proof: owner-only read, direct create/update/delete, cross-owner and forged-identity denial
+5. ⏳ Official-flow proof: short/long-form job, reservation, provider state, private artifact, playback/download, and Cloud Logging review
 
 **Owner:** engineer (local fixes done; deployment + live probe remaining)
 
@@ -249,11 +250,29 @@ PHASE 4 (Foundation hardening):
 
 ---
 
+## Transition Breakdown
+
+1. **Snapshot → Phase 1:** Start from the measured CI, deployment, and issue
+   states. Phase 1 accepts only evidence that clears a P0 gate; an
+   unauthenticated rejection is retained as narrow rules evidence and does not
+   close authenticated lifecycle acceptance.
+2. **Phase 1 → Phase 2:** Enter verification after deployment blockers are
+   cleared. Each PARTIAL issue advances only when its own live acceptance
+   evidence exists; otherwise it remains PARTIAL with the missing proof named.
+3. **Phase 2 → Phase 3:** Use the verified production findings to record the
+   Gen1/Gen2, Arcjet-coverage, and pattern-baseline decisions. A decision can
+   sequence later work without claiming the migration or remediation is done.
+4. **Phase 3 → Phase 4:** Begin foundation hardening only after the relevant
+   platform decisions identify the canonical contracts and security posture.
+5. **Phase 4 → Ship:** Ship only when the phase acceptance criteria below are
+   met and the issue ledger, architecture records, and exact-main CI agree.
+
 ## Acceptance Criteria (per phase)
 
 **PHASE 1 — UNBLOCK:**
 - ✅ ISSUE-1245: CI is green (verified 15:00Z)
-- ⏳ ISSUE-1235: Live rejection proof recorded in ledger
+- 🟡 ISSUE-1235: unauthenticated rejection is recorded; authenticated owner,
+  cross-owner, official-flow, and logging proof remain open
 - ✅ ISSUE-1238: All functions ≥ 256MiB or streaming-exempt
 
 **PHASE 2 — VERIFICATION:**
@@ -279,4 +298,3 @@ Ship when:
 - ✅ PHASE 2: ≥80% of PARTIAL issues produce live evidence → ✅ FIXED
 - ✅ PHASE 3: Platform decisions recorded in architecture docs
 - ✅ PHASE 4: Knowledge Phase 0 single contract; Desktop and Renderer trust audit complete
-
