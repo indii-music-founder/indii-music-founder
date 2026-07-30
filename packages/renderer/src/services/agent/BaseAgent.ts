@@ -45,6 +45,7 @@ import { toolApprovalService } from './governance/ToolApprovalService';
 import { artistOperatingProfileService } from './governance/ArtistOperatingProfileService';
 import { hasAutonomousComputerControl } from '@indii/shared';
 import { agentNoteService } from './AgentNoteService';
+import { AppErrorCode } from '@/shared/types/errors';
 
 import { AgentPromptBuilder } from './builders/AgentPromptBuilder';
 import { getAgentStreamingService } from './AgentStreamingService';
@@ -80,6 +81,64 @@ export class BaseAgent implements SpecializedAgent {
 
     // Phase 2: Advanced loop detection to prevent stuck agents
     private loopDetector: LoopDetector = new LoopDetector();
+
+    /**
+     * A specialist tool may finish before the model is asked to summarize its
+     * result. If that summary-only turn is throttled, preserve the authoritative
+     * tool outcome instead of replacing it with a misleading generation error.
+     * The limiter remains enforced; this method never makes another model call.
+     */
+    private recoverRateLimitedPostToolTurn(
+        error: unknown,
+        lastToolResult: ToolFunctionResult | undefined,
+        toolCalls: Array<{ name: string; args: ToolFunctionArgs; result: ToolFunctionResult | string }>
+    ): AgentResponse | null {
+        if (!lastToolResult || toolCalls.length === 0) return null;
+
+        const lastToolCall = toolCalls[toolCalls.length - 1];
+        const isImageTool = lastToolCall?.name === 'generate_image' || lastToolCall?.name === 'indii_image_gen';
+        if (!isImageTool) return null;
+
+        const record = error && typeof error === 'object'
+            ? error as { code?: unknown; status?: unknown; message?: unknown }
+            : {};
+        const message = error instanceof Error
+            ? error.message
+            : typeof record.message === 'string'
+                ? record.message
+                : String(error);
+        const isRateLimited = (
+            record.code === AppErrorCode.RATE_LIMITED
+            || record.code === AppErrorCode.GENERATION_CAPACITY_LIMITED
+            || record.code === 'resource-exhausted'
+            || record.code === 'functions/resource-exhausted'
+            || record.status === 429
+            || message.trim() === 'Too many AI generation requests. Please retry shortly.'
+        );
+        if (!isRateLimited) return null;
+
+        if (lastToolResult.success) {
+            return {
+                text: lastToolResult.message?.trim() || 'The requested action completed successfully.',
+                data: lastToolResult.data,
+                toolCalls,
+            };
+        }
+
+        const toolErrorCode = typeof lastToolResult.metadata?.errorCode === 'string'
+            ? lastToolResult.metadata.errorCode
+            : 'TOOL_EXECUTION_FAILED';
+        const isCapacityFailure = ['QUOTA_EXCEEDED', 'RATE_LIMITED', 'RESOURCE_EXHAUSTED', 'GENERATION_CAPACITY_LIMITED'].includes(toolErrorCode);
+        const subject = 'Image generation';
+
+        return {
+            text: isCapacityFailure
+                ? `${subject} is temporarily busy. Please wait about one minute and try again. No result was reported as completed.`
+                : `${subject} did not complete. Please try again. No result was reported as completed.`,
+            error: toolErrorCode,
+            toolCalls,
+        };
+    }
 
     /**
      * Static WeakMaps for identity state — kept outside the instance
@@ -980,6 +1039,15 @@ export class BaseAgent implements SpecializedAgent {
                         if (msg.includes('destructure') || msg.includes('undefined')) {
                             logger.debug(`[BaseAgent] generateContentStream threw mock/destructure error. Trying generateContent fallback.`);
                         } else {
+                            const recovered = this.recoverRateLimitedPostToolTurn(err, lastToolResult, toolCalls);
+                            if (recovered) {
+                                if (lastToolResult?.success && executionContext.hasUncommittedChanges()) {
+                                    await executionContext.commit();
+                                } else if (!lastToolResult?.success) {
+                                    await executionContext.rollback();
+                                }
+                                return recovered;
+                            }
                             throw err;
                         }
                     }

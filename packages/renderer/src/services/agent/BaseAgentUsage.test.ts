@@ -3,6 +3,7 @@ import { BaseAgent } from './BaseAgent';
 import { AgentConfig } from './types';
 import { AutonomousIntelligence as AI } from '@/services/intelligence/AutonomousIntelligence';
 import { importWithRetry } from '@/utils/dynamicImport';
+import { AppErrorCode, AppException } from '@/shared/types/errors';
 
 // Mock dependencies
 vi.mock('@/services/intelligence/AutonomousIntelligence', () => ({
@@ -195,5 +196,117 @@ describe('BaseAgent Judgment Layer — generation config + iteration cap', () =>
         const lastCallContents = calls[2][0] as Array<{ parts?: Array<{ text?: string }> }>;
         const lastText = JSON.stringify(lastCallContents);
         expect(lastText).toContain('[SYSTEM — FINAL STEP]');
+    });
+
+    it('preserves a completed image tool result when only the typed capacity summary turn is rejected', async () => {
+        const agent = new BaseAgent(baseConfig);
+        const agentWithFunctions = agent as unknown as {
+            functions: Record<string, () => Promise<{ success: boolean; message: string; data: { urls: string[] } }>>
+        };
+        agentWithFunctions.functions.generate_image = async () => ({
+            success: true,
+            message: 'Successfully generated 1 image. It is now in the Gallery.',
+            data: { urls: ['https://storage.example/generated-dog.png'] },
+        });
+
+        const aiMock = await importWithRetry(() => import('@/services/intelligence/AutonomousIntelligence'));
+        vi.mocked(aiMock.AutonomousIntelligence.generateContentStream)
+            .mockResolvedValueOnce({
+                stream: new ReadableStream({ start(controller) { controller.close(); } }),
+                response: Promise.resolve({
+                    text: () => '',
+                    functionCalls: () => [{ name: 'generate_image', args: { prompt: 'a happy dog' } }],
+                }),
+            } as unknown as Awaited<ReturnType<typeof AI.generateContentStream>>)
+            .mockRejectedValueOnce(new AppException(
+                AppErrorCode.GENERATION_CAPACITY_LIMITED,
+                'Boardroom is temporarily at capacity. Your request was not sent for generation.',
+                { retryable: true, retryAfterMs: 60_000, context: { providerSubmitted: false } },
+            ));
+
+        const response = await agent.execute('Make an image of a happy dog');
+
+        expect(response.text).toBe('Successfully generated 1 image. It is now in the Gallery.');
+        expect(response.error).toBeUndefined();
+        expect(response.toolCalls).toHaveLength(1);
+        expect(response.toolCalls?.[0]?.result).toMatchObject({ success: true });
+        expect(aiMock.AutonomousIntelligence.generateContentStream).toHaveBeenCalledTimes(2);
+        expect(aiMock.AutonomousIntelligence.generateContent).not.toHaveBeenCalled();
+    });
+
+    it('preserves a typed image-tool failure when the summary turn hits the legacy limiter response', async () => {
+        const agent = new BaseAgent(baseConfig);
+        const agentWithFunctions = agent as unknown as {
+            functions: Record<string, () => Promise<{ success: boolean; error: string; metadata: { errorCode: string } }>>
+        };
+        agentWithFunctions.functions.generate_image = async () => ({
+            success: false,
+            error: 'Internal provider and reservation details that must not be exposed.',
+            metadata: { errorCode: 'GENERATION_CAPACITY_LIMITED' },
+        });
+
+        const aiMock = await importWithRetry(() => import('@/services/intelligence/AutonomousIntelligence'));
+        vi.mocked(aiMock.AutonomousIntelligence.generateContentStream)
+            .mockResolvedValueOnce({
+                stream: new ReadableStream({ start(controller) { controller.close(); } }),
+                response: Promise.resolve({
+                    text: () => '',
+                    functionCalls: () => [{ name: 'generate_image', args: { prompt: 'a happy dog' } }],
+                }),
+            } as unknown as Awaited<ReturnType<typeof AI.generateContentStream>>)
+            .mockRejectedValueOnce(new AppException(
+                AppErrorCode.INTERNAL_ERROR,
+                'Too many AI generation requests. Please retry shortly.',
+            ));
+
+        const response = await agent.execute('Make an image of a happy dog');
+
+        expect(response).toMatchObject({
+            text: 'Image generation is temporarily busy. Please wait about one minute and try again. No result was reported as completed.',
+            error: 'GENERATION_CAPACITY_LIMITED',
+        });
+        expect(response.text).not.toContain('provider');
+        expect(response.text).not.toContain('reservation');
+        expect(aiMock.AutonomousIntelligence.generateContentStream).toHaveBeenCalledTimes(2);
+        expect(aiMock.AutonomousIntelligence.generateContent).not.toHaveBeenCalled();
+    });
+
+    it('propagates a typed capacity error after a non-image tool without exposing its raw result', async () => {
+        const agent = new BaseAgent(baseConfig);
+        const agentWithFunctions = agent as unknown as {
+            functions: Record<string, () => Promise<{ success: boolean; message: string; data: { accessToken: string } }>>
+        };
+        agentWithFunctions.functions.calendar_lookup = async () => ({
+            success: true,
+            message: 'Raw calendar event details must not be returned here.',
+            data: { accessToken: 'sensitive-tool-result' },
+        });
+
+        const aiMock = await importWithRetry(() => import('@/services/intelligence/AutonomousIntelligence'));
+        vi.mocked(aiMock.AutonomousIntelligence.generateContentStream)
+            .mockResolvedValueOnce({
+                stream: new ReadableStream({ start(controller) { controller.close(); } }),
+                response: Promise.resolve({
+                    text: () => '',
+                    functionCalls: () => [{ name: 'calendar_lookup', args: { date: '2026-07-30' } }],
+                }),
+            } as unknown as Awaited<ReturnType<typeof AI.generateContentStream>>)
+            .mockRejectedValueOnce(new AppException(
+                AppErrorCode.GENERATION_CAPACITY_LIMITED,
+                'Boardroom is temporarily at capacity. Your request was not sent for generation.',
+                { retryable: true, retryAfterMs: 60_000, context: { providerSubmitted: false } },
+            ));
+
+        const response = await agent.execute('What is on my calendar?');
+
+        expect(response).toMatchObject({
+            text: 'Error: Boardroom is temporarily at capacity. Your request was not sent for generation.',
+            error: 'Boardroom is temporarily at capacity. Your request was not sent for generation.',
+        });
+        expect(response.text).not.toContain('Raw calendar');
+        expect(response.text).not.toContain('sensitive-tool-result');
+        expect(response.toolCalls).toBeUndefined();
+        expect(aiMock.AutonomousIntelligence.generateContentStream).toHaveBeenCalledTimes(2);
+        expect(aiMock.AutonomousIntelligence.generateContent).not.toHaveBeenCalled();
     });
 });

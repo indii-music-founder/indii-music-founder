@@ -5,6 +5,7 @@ const mocks = vi.hoisted(() => ({
   httpsCallable: vi.fn(),
   isAnonymousOrDemoUser: vi.fn(),
   isDemoUserId: vi.fn(),
+  getIdTokenResult: vi.fn(),
 }));
 
 vi.mock('@/services/firebase', () => ({
@@ -13,6 +14,7 @@ vi.mock('@/services/firebase', () => ({
       uid: 'auth-user-1',
       isAnonymous: false,
       providerData: [{ providerId: 'google.com' }],
+      getIdTokenResult: mocks.getIdTokenResult,
     },
   },
   db: {},
@@ -64,6 +66,7 @@ describe('CostControlService', () => {
     vi.stubEnv('VITE_PLAYWRIGHT_E2E', '');
     mocks.isAnonymousOrDemoUser.mockReturnValue(false);
     mocks.isDemoUserId.mockReturnValue(false);
+    mocks.getIdTokenResult.mockResolvedValue({ claims: {} });
     mocks.httpsCallable.mockReturnValue(mocks.callable);
     mocks.callable.mockResolvedValue({
       data: {
@@ -103,6 +106,45 @@ describe('CostControlService', () => {
       monthlyUsed: 0.01,
       operationId: 'op-server-1',
     });
+  });
+
+  it('requires a durable server reservation for founder and admin accounts', async () => {
+    mocks.getIdTokenResult.mockResolvedValue({
+      claims: { god_mode: true, founder: true, admin: true, tier: 'founder' },
+    });
+
+    const result = await CostControlService.checkAndReserve({
+      operationType: 'image',
+      estimatedCost: 0.04,
+      userId: 'auth-user-1',
+      metadata: { imageCount: 1 },
+    });
+
+    expect(mocks.httpsCallable).toHaveBeenCalledWith(
+      { region: 'us-central1' },
+      'enforceOperationCost',
+    );
+    expect(mocks.callable).toHaveBeenCalledOnce();
+    expect(mocks.getIdTokenResult).not.toHaveBeenCalled();
+    expect(result.operationId).toBe('op-server-1');
+    expect(result.operationId).not.toMatch(/^god(?:-catch)?-/);
+  });
+
+  it('fails closed for founder accounts when the server cannot reserve cost', async () => {
+    mocks.getIdTokenResult.mockResolvedValue({
+      claims: { god_mode: true, founder: true, admin: true, tier: 'founder' },
+    });
+    mocks.callable.mockRejectedValue(new Error('network unavailable'));
+
+    const result = await CostControlService.checkAndReserve({
+      operationType: 'image',
+      estimatedCost: 0.04,
+      userId: 'auth-user-1',
+    });
+
+    expect(result.allowed).toBe(false);
+    expect(result.operationId).toBeUndefined();
+    expect(mocks.callable).toHaveBeenCalledOnce();
   });
 
   it('preserves server confirmation responses', async () => {
