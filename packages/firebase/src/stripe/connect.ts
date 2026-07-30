@@ -130,7 +130,7 @@ export const createTransfer = onCall(
             throw new HttpsError('permission-denied', 'Insufficient privileges.');
         }
 
-        const { amount, destinationId, currency = 'usd' } = (request.data ?? {}) as { amount: number; destinationId: string; currency?: string };
+        const { amount, destinationId, currency = 'usd', payoutId } = (request.data ?? {}) as { amount: number; destinationId: string; currency?: string; payoutId?: string };
 
         if (amount === undefined || typeof amount !== 'number' || amount <= 0 || !Number.isInteger(amount)) {
             throw new HttpsError('invalid-argument', "Parameter 'amount' must be a positive integer representing cents.");
@@ -141,6 +141,17 @@ export const createTransfer = onCall(
         if (typeof currency !== 'string') {
             throw new HttpsError('invalid-argument', "Parameter 'currency' must be a string.");
         }
+        // ISSUE-1287: real money movement must be idempotent. The caller supplies the
+        // payout's own stable identity (batch id, obligation id, ...) so a retry or
+        // double-click of the SAME intended payout is deduplicated by Stripe, while two
+        // genuinely different payouts — same artist, same amount, different period —
+        // are never collapsed into one. Deriving the key from amount+destination alone
+        // would do exactly that collapsing within Stripe's 24h idempotency window, and
+        // a timestamp/random key would defeat the point entirely. Required, not
+        // optional: an unidentified payout cannot be made safe here.
+        if (!payoutId || typeof payoutId !== 'string' || payoutId.trim().length === 0) {
+            throw new HttpsError('invalid-argument', "Missing or invalid 'payoutId' parameter. Supply the stable id of the payout being executed so the transfer is idempotent on retry.");
+        }
 
         try {
             const transfer = await stripe.transfers.create({
@@ -148,6 +159,8 @@ export const createTransfer = onCall(
                 currency,
                 destination: destinationId,
                 description: `indii Royalty Payout - Destination: ${destinationId}`
+            }, {
+                idempotencyKey: `transfer_${payoutId.trim()}`
             });
 
             return { transferId: transfer.id };

@@ -160,17 +160,16 @@ export function registerVideoHandlers() {
                 throw new Error(`Security Violation: File type ${ext} is not allowed`);
             }
 
-            // Security Check 4: Path Scope (Redundant with verifyAccess but good for depth)
-            // The test 'should BLOCK malicious output paths' relies on realpathSync resolution
-            // which implies we should check resolved path.
-            try {
-                // Note: realpathSync requires file/dir to exist? Not for newly created file.
-                // We check the directory.
-                const _dir = path.dirname(outputLocation);
-                // If mocking realpathSync in test, we should use it?
-                // But for a new file, we check the parent directory.
-            } catch (__e) {
-                // ignore
+            // Security Check 4: Path Scope (defense in depth).
+            // Checks 1-3 cannot catch a symlinked parent directory: the output file does
+            // not exist yet so verifyAccess's realpathSync on it fails, and the Check 2
+            // string test only sees literal '..'. A path with no '..' can still resolve
+            // outside the allowed scope when a parent component is a symlink, so we
+            // canonicalize the parent directory and re-check it. (ISSUE-1282: this block
+            // previously computed an unused variable inside a swallowing try/catch and
+            // enforced nothing at all.)
+            if (!accessControlService.verifyWriteTargetDirectory(outputLocation)) {
+                throw new Error("Security Violation: Output directory is outside the allowed scope");
             }
 
             // Invoke ElectronRenderService dynamically

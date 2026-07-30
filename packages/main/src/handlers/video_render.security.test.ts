@@ -17,6 +17,7 @@ const mocks = vi.hoisted(() => ({
     render: vi.fn().mockResolvedValue('/mock/output.mp4'),
     validateSender: vi.fn(),
     verifyAccess: vi.fn().mockReturnValue(true),
+    verifyWriteTargetDirectory: vi.fn().mockReturnValue(true),
     fs: {
         promises: { mkdir: vi.fn().mockResolvedValue(undefined) },
         createWriteStream: vi.fn(),
@@ -46,7 +47,8 @@ vi.mock('../services/ElectronRenderService', () => ({
 // Mock AccessControlService
 vi.mock('../security/AccessControlService', () => ({
     accessControlService: {
-        verifyAccess: mocks.verifyAccess
+        verifyAccess: mocks.verifyAccess,
+        verifyWriteTargetDirectory: mocks.verifyWriteTargetDirectory
     }
 }));
 
@@ -115,6 +117,36 @@ describe('🛡️ Shield: Video Render Security Test', () => {
 
         await expect(invoke('video:render', { senderFrame: { url: 'file://valid' } }, config))
             .rejects.toThrow(/File type .* is not allowed/i);
+    });
+
+    // ISSUE-1282: "Security Check 4" was a no-op block that computed an unused variable
+    // inside a swallowing try/catch. A symlinked parent directory contains no literal
+    // '..' (so Check 2 passes) and the output file doesn't exist yet (so Check 1's
+    // realpathSync-on-the-file can't help), which left this path entirely unguarded.
+    it('should BLOCK an output directory that resolves outside the allowed scope (symlink)', async () => {
+        mocks.verifyWriteTargetDirectory.mockReturnValueOnce(false);
+
+        const config = {
+            compositionId: 'test-comp',
+            // No '..' anywhere — only canonicalizing the parent dir catches this.
+            outputLocation: '/mock/documents/indii/exports/video.mp4'
+        };
+
+        await expect(invoke('video:render', { senderFrame: { url: 'file://valid' } }, config))
+            .rejects.toThrow(/Security Violation/i);
+
+        expect(mocks.render).not.toHaveBeenCalled();
+    });
+
+    it('should actually consult the write-target scope check before rendering', async () => {
+        const config = {
+            compositionId: 'test-comp',
+            outputLocation: '/mock/documents/indii/my-video.mp4'
+        };
+
+        await invoke('video:render', { senderFrame: { url: 'file://valid' } }, config);
+
+        expect(mocks.verifyWriteTargetDirectory).toHaveBeenCalledWith('/mock/documents/indii/my-video.mp4');
     });
 
     it('should ALLOW valid output paths in indii folder', async () => {

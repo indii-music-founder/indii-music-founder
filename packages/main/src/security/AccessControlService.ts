@@ -100,6 +100,59 @@ class AccessControlService {
             return false;
         }
     }
+
+    /**
+     * Verifies a WRITE target whose file does not exist yet (render output, export, save).
+     *
+     * `verifyAccess` canonicalizes the file itself, so it cannot be used here — a
+     * not-yet-created file makes `realpathSync` throw and the check returns false.
+     * This resolves the *parent directory* instead, which must already exist, then
+     * applies the same grant + allowlist scope rules.
+     *
+     * Resolving the parent is what defeats a symlink attack: a path containing no
+     * `..` at all (so a literal string check waves it through) can still sit inside
+     * a directory that is itself a symlink pointing somewhere sensitive.
+     * (ISSUE-1282 — this scope check was previously a no-op block in video:render.)
+     */
+    verifyWriteTargetDirectory(filePath: string): boolean {
+        try {
+            const parentDir = path.dirname(path.resolve(filePath));
+            // Throws if the parent directory doesn't exist — we deny rather than guess.
+            const resolvedDir = fs.realpathSync(parentDir);
+
+            for (const authorized of this.authorizedPaths) {
+                const authorizedWithSep = authorized.endsWith(path.sep) ? authorized : authorized + path.sep;
+                if (resolvedDir === authorized || resolvedDir.startsWith(authorizedWithSep)) {
+                    return true;
+                }
+            }
+
+            const allowedRoots = [
+                app.getPath('userData'),
+                os.tmpdir(),
+                path.join(app.getPath('documents'), 'indii')
+            ].map(p => {
+                try {
+                    return fs.realpathSync(p);
+                } catch (_e) {
+                    return path.resolve(p);
+                }
+            });
+
+            const isAllowed = allowedRoots.some(root => {
+                const rootWithSep = root.endsWith(path.sep) ? root : root + path.sep;
+                return resolvedDir === root || resolvedDir.startsWith(rootWithSep);
+            });
+
+            if (!isAllowed) {
+                log.warn(`[AccessControl] Write target denied — resolved directory outside allowed scope: ${resolvedDir}`);
+            }
+            return isAllowed;
+        } catch (error) {
+            log.error(`[AccessControl] Write target verification failed for ${filePath}:`, error);
+            return false;
+        }
+    }
 }
 
 export const accessControlService = new AccessControlService();

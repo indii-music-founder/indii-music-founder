@@ -621,8 +621,14 @@ class MembershipServiceImpl {
                         currentUsage = snapshot.data().count;
                     }
                 } catch (_e: unknown) {
-                    logger.warn("[MembershipService] Failed to count projects:", _e);
-                    currentUsage = 0; // Fail open but warn
+                    // ISSUE-1277: FAIL CLOSED. This previously set currentUsage = 0
+                    // ("fail open but warn"), so a transient Firestore outage granted
+                    // unlimited project creation on a limited tier. Matches the
+                    // fail-closed policy already documented in SubscriptionService
+                    // (ISSUE-886): a quota check that cannot verify usage must deny,
+                    // not assume zero.
+                    logger.warn("[MembershipService] Failed to count projects; blocking action (fail-closed):", _e);
+                    return { allowed: false, currentUsage: 0, maxAllowed: limits.maxProjects };
                 }
 
                 maxAllowed = limits.maxProjects;

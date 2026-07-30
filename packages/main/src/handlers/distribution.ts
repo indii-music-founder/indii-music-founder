@@ -293,7 +293,11 @@ export const setupDistributionHandlers = () => {
             }
             args.push('--storage-path', storagePath);
             const report = await AgentSupervisor.execute<Record<string, unknown>>('distribution', 'isrc_manager.py', args, { timeoutMs: 30000 }, undefined, {}, sensitiveIndices);
-            return { success: process.env.NODE_ENV !== 'production' || !!report.upc, upc: report.upc, report };
+            // ISSUE-1285: success must reflect whether a UPC was actually produced, in
+            // every environment. This previously read `NODE_ENV !== 'production' || !!report.upc`,
+            // so a dev/staging build reported success even when the generator returned no UPC —
+            // the exact kind of failure that then "works in staging" and breaks in production.
+            return { success: !!report.upc, upc: report.upc, report };
         } catch (error) {
             return { success: false, error: error instanceof Error ? error.message : String(error) };
         }

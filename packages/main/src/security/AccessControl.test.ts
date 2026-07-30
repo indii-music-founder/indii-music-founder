@@ -168,4 +168,30 @@ describe('AccessControlService', () => {
         accessControlService.grantAccess(dir);
         expect(accessControlService.verifyAccess('/authorized/dir-suffix/file.txt')).toBe(false);
     });
+
+    // ISSUE-1282: write targets (render output, exports) don't exist yet, so
+    // verifyAccess's realpathSync-on-the-file always throws and denies. These
+    // paths need the parent directory canonicalized instead.
+    describe('verifyWriteTargetDirectory', () => {
+        it('allows a not-yet-created file inside an allowed root', () => {
+            expect(accessControlService.verifyWriteTargetDirectory(path.join(mockindii, 'new-render.mp4'))).toBe(true);
+        });
+
+        it('allows a not-yet-created file inside an explicitly granted directory', () => {
+            accessControlService.grantAccess('/authorized/exports');
+            expect(accessControlService.verifyWriteTargetDirectory('/authorized/exports/out.mp4')).toBe(true);
+        });
+
+        it('denies a write target whose parent directory is outside every allowed root', () => {
+            expect(accessControlService.verifyWriteTargetDirectory('/etc/passwd.mp4')).toBe(false);
+        });
+
+        it('denies when the parent directory does not exist rather than assuming it is safe', () => {
+            expect(accessControlService.verifyWriteTargetDirectory('/nonexistent/dir/out.mp4')).toBe(false);
+        });
+
+        it('denies a sibling directory that merely prefix-matches an allowed root', () => {
+            expect(accessControlService.verifyWriteTargetDirectory(`${mockindii}-evil/out.mp4`)).toBe(false);
+        });
+    });
 });

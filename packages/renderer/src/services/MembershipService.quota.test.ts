@@ -2,7 +2,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 vi.unmock('@/services/MembershipService');
 import { MembershipService } from './MembershipService';
-import { getDoc, setDoc, updateDoc, increment } from 'firebase/firestore';
+import { getDoc, setDoc, updateDoc, increment, getCountFromServer } from 'firebase/firestore';
 
 // Mock Firebase services
 vi.mock('@/services/firebase', () => ({
@@ -25,6 +25,10 @@ vi.mock('firebase/firestore', () => ({
     setDoc: vi.fn(),
     updateDoc: vi.fn(),
     increment: vi.fn((n) => ({ _type: 'increment', value: n })),
+    collection: vi.fn(() => 'mock-collection-ref'),
+    query: vi.fn(() => 'mock-query'),
+    where: vi.fn(() => 'mock-where'),
+    getCountFromServer: vi.fn(),
     FieldValue: { serverTimestamp: vi.fn() }
 }));
 
@@ -141,6 +145,23 @@ describe('MembershipService (Ledger Checks)', () => {
 
             expect(result.allowed).toBe(true);
             expect(result.maxAllowed).toBe(Infinity);
+        });
+
+        // ISSUE-1277: a Firestore outage while counting projects must DENY, not
+        // default currentUsage to 0. The old "fail open but warn" path granted
+        // unlimited project creation on a limited tier during any transient error.
+        it('🔒 fails CLOSED when the project count cannot be read', async () => {
+            mockGetState.mockReturnValue({
+                userProfile: { id: MOCK_USER_ID },
+                organizations: [{ id: 'org-1', plan: 'free' }],
+                currentOrganizationId: 'org-1'
+            });
+            (getDoc as import("vitest").Mock).mockResolvedValue({ exists: () => false });
+            (getCountFromServer as import("vitest").Mock).mockRejectedValue(new Error('Firestore unavailable'));
+
+            const result = await MembershipService.checkQuota('projects', 1);
+
+            expect(result.allowed).toBe(false);
         });
     });
 
