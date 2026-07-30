@@ -52,7 +52,7 @@ export class GeneralistAgent extends BaseAgent {
         'propose_plan', 'get_plan', 'refine_plan', 'cancel_plan',
         'report_bug', 'request_feature',
         'edit_image_with_annotations', 'edit_document_with_annotations', 'open_remote_setup', 'get_remote_status',
-        'seat_agent', 'unseat_agent'
+        'seat_agent', 'seat_all_department_heads', 'unseat_agent'
     ];
 
     constructor() {
@@ -294,6 +294,15 @@ export class GeneralistAgent extends BaseAgent {
                         targetAgentId: { type: 'STRING', description: 'ID of the specialist agent to seat (e.g., finance, legal, marketing, brand, distribution, music, video, social, publicist, publishing, licensing, road, merchandise, creative, producer, director, screenwriter, devops, security).' }
                     },
                     required: ['targetAgentId']
+                }
+            },
+            {
+                name: 'seat_all_department_heads',
+                description: 'Seat the complete canonical department-head roster in the Boardroom. The roster is resolved internally; this operation accepts no agent IDs and does not contact or invoke the seated agents.',
+                parameters: {
+                    type: 'OBJECT',
+                    properties: {},
+                    required: []
                 }
             },
             {

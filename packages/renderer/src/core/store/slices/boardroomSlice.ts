@@ -1,4 +1,12 @@
 import { StateCreator } from 'zustand';
+import { isValidHeadId, listHeadIds } from '@/services/agent/departments';
+
+export interface SeatAllDepartmentHeadsResult {
+    seatedCount: number;
+    newlySeatedCount: number;
+    stateChanged: boolean;
+    idempotent: boolean;
+}
 
 export interface ReferencedAsset {
     id: string;
@@ -30,6 +38,7 @@ export interface BoardroomSlice {
     toggleAgent: (agentId: string) => void;
     addActiveAgent: (agentId: string) => void;
     removeActiveAgent: (agentId: string) => void;
+    seatAllDepartmentHeads: () => SeatAllDepartmentHeadsResult;
 
     addReferencedAsset: (asset: ReferencedAsset) => void;
     removeReferencedAsset: (assetId: string) => void;
@@ -65,6 +74,46 @@ export const createBoardroomSlice: StateCreator<BoardroomSlice> = (set, get) => 
     removeActiveAgent: (agentId) => set((state) => ({
         activeAgents: state.activeAgents.filter(id => id !== agentId)
     })),
+
+    seatAllDepartmentHeads: () => {
+        const headIds = listHeadIds();
+        let result: SeatAllDepartmentHeadsResult = {
+            seatedCount: headIds.length,
+            newlySeatedCount: 0,
+            stateChanged: false,
+            idempotent: true,
+        };
+
+        set((state) => {
+            const existingHeads = new Set(state.activeAgents.filter(isValidHeadId));
+            const retainedAgents = state.activeAgents.filter(
+                (agentId, index) =>
+                    (agentId === 'generalist' || isValidHeadId(agentId)) &&
+                    state.activeAgents.indexOf(agentId) === index
+            );
+            if (!retainedAgents.includes('generalist')) {
+                retainedAgents.unshift('generalist');
+            }
+            const nextActiveAgents = [
+                ...retainedAgents,
+                ...headIds.filter(agentId => !existingHeads.has(agentId)),
+            ];
+            const stateChanged =
+                nextActiveAgents.length !== state.activeAgents.length ||
+                nextActiveAgents.some((agentId, index) => state.activeAgents[index] !== agentId);
+
+            result = {
+                seatedCount: headIds.length,
+                newlySeatedCount: headIds.filter(agentId => !existingHeads.has(agentId)).length,
+                stateChanged,
+                idempotent: !stateChanged,
+            };
+
+            return stateChanged ? { activeAgents: nextActiveAgents } : state;
+        });
+
+        return result;
+    },
 
     addReferencedAsset: (asset) => set((state) => ({
         referencedAssets: [...state.referencedAssets, asset]

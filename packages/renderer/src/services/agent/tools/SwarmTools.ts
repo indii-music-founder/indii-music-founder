@@ -189,6 +189,40 @@ export const seat_agent = wrapTool(
 );
 
 /**
+ * seat_all_department_heads - Canonical Boardroom roster operation.
+ * Resolves the department heads internally and never invokes or fans out to them.
+ */
+export const seat_all_department_heads = wrapTool(
+    'seat_all_department_heads',
+    async (args: Record<string, never>): Promise<ToolFunctionResult> => {
+        if (Object.keys(args).length > 0) {
+            return toolError('seat_all_department_heads accepts no arguments or caller-supplied agent targets');
+        }
+
+        const { useStore } = await importWithRetry(() => import('@/core/store'));
+
+        try {
+            const result = useStore.getState().seatAllDepartmentHeads();
+            logger.info(
+                `[A2A:Swarm] Canonical department-head roster ready: ${result.seatedCount} seated, ${result.newlySeatedCount} newly seated.`
+            );
+            return toolSuccess(
+                result,
+                result.idempotent
+                    ? `All ${result.seatedCount} department heads were already seated.`
+                    : result.newlySeatedCount === 0
+                        ? `All ${result.seatedCount} department heads were already seated; the roster was normalized.`
+                        : `Seated the canonical ${result.seatedCount} department heads (${result.newlySeatedCount} newly seated).`
+            );
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } catch (error: any) {
+            logger.error('[A2A:Swarm] Failed to seat the canonical department-head roster:', error);
+            return toolError(`Failed to seat department heads: ${error.message}`);
+        }
+    }
+);
+
+/**
  * unseat_agent - Swarm unseating tool.
  * Enables the Conductor to dynamically unseat/remove an agent from the boardroom table when they are no longer needed.
  */
@@ -214,5 +248,3 @@ export const unseat_agent = wrapTool(
         }
     }
 );
-
-

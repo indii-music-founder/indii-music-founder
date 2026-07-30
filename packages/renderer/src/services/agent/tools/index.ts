@@ -51,7 +51,7 @@ import { ArtifactTools } from './ArtifactTools';
 import { ReleaseHarnessTools } from './ReleaseHarnessTools';
 import { CreatorProtectionTools } from './CreatorProtectionTools';
 import { HarnessTools } from './HarnessTools';
-import { consult_specialist, seat_agent, unseat_agent } from './SwarmTools';
+import { consult_specialist, seat_agent, seat_all_department_heads, unseat_agent } from './SwarmTools';
 import { FoundationalTools } from './FoundationalTools';
 import { BillingTools } from './BillingTools';
 import { EmailTools } from './EmailTools';
@@ -65,6 +65,7 @@ export const TOOL_REGISTRY: Record<string, AnyToolFunction> = {
     ...BillingTools,
     consult_specialist,
     seat_agent,
+    seat_all_department_heads,
     unseat_agent,
     ...DirectorTools,
     edit_image_with_annotations: EditImageWithAnnotationsTool.execute,

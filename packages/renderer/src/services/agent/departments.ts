@@ -14,7 +14,7 @@ import type { ValidAgentId } from './types';
 
 export interface Department {
     id: string;
-    headId: string;
+    headId: ValidAgentId;
     workerIds: string[];
     displayName: string;
 }
@@ -74,7 +74,7 @@ export function sameDepartment(agentA: string, agentB: string): boolean {
 }
 
 /** All agent IDs that are department heads. */
-export function listHeadIds(): string[] {
+export function listHeadIds(): ValidAgentId[] {
     return Object.values(DEPARTMENTS).map(d => d.headId);
 }
 
