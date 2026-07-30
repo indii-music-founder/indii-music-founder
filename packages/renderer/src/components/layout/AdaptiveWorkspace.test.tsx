@@ -78,6 +78,32 @@ describe('AdaptiveWorkspace', () => {
         expect(screen.getByLabelText('Prompt')).toHaveValue('Keep this draft');
     });
 
+    it('clears an open drawer when its rail becomes persistent, without reopening after a later shrink', () => {
+        render(
+            <AdaptiveWorkspace leftRail={<button>Left action</button>}>
+                <label>
+                    Prompt
+                    <input aria-label="Prompt" defaultValue="Keep this draft" />
+                </label>
+            </AdaptiveWorkspace>,
+        );
+
+        setWidth(700);
+        fireEvent.click(screen.getByTestId('adaptive-left-rail-trigger'));
+        expect(screen.getByRole('dialog', { name: 'Workspace navigation' })).toBeInTheDocument();
+
+        setWidth(1400);
+        expect(screen.getByTestId('adaptive-left-rail')).toBeInTheDocument();
+        expect(screen.queryByRole('dialog', { name: 'Workspace navigation' })).not.toBeInTheDocument();
+        expect(screen.getByTestId('adaptive-left-rail')).toHaveFocus();
+        expect(screen.getByLabelText('Prompt')).toHaveValue('Keep this draft');
+
+        setWidth(700);
+        expect(screen.getByTestId('adaptive-left-rail-trigger')).toBeInTheDocument();
+        expect(screen.queryByRole('dialog', { name: 'Workspace navigation' })).not.toBeInTheDocument();
+        expect(screen.getByLabelText('Prompt')).toHaveValue('Keep this draft');
+    });
+
     it('closes a focused drawer with Escape and returns focus to its trigger', () => {
         render(
             <AdaptiveWorkspace rightRail={<button>Right action</button>}>

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useReducer, useRef } from 'react';
 import { PanelLeft, PanelRight, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useWorkspaceLayout } from '@/hooks/useWorkspaceLayout';
@@ -22,6 +22,14 @@ interface AdaptiveWorkspaceProps {
 
 type DrawerSide = 'left' | 'right' | null;
 
+type DrawerAction =
+    | { type: 'open'; side: Exclude<DrawerSide, null> }
+    | { type: 'close' };
+
+function drawerReducer(_current: DrawerSide, action: DrawerAction): DrawerSide {
+    return action.type === 'open' ? action.side : null;
+}
+
 /**
  * A department/manager-office frame that reacts to its own width rather than
  * the browser width. Secondary rails yield space before the main workspace is
@@ -41,9 +49,11 @@ export function AdaptiveWorkspace({
     const { ref, width, mode } = useWorkspaceLayout();
     const deptColors = deptModule ? getColorForModule(deptModule) : null;
     const railBorderClass = deptColors ? `${deptColors.border}/20` : 'border-white/5';
-    const [openDrawer, setOpenDrawer] = useState<DrawerSide>(null);
+    const [openDrawer, dispatchDrawer] = useReducer(drawerReducer, null);
     const triggerRef = useRef<HTMLButtonElement | null>(null);
     const drawerRef = useRef<HTMLElement | null>(null);
+    const leftRailRef = useRef<HTMLElement | null>(null);
+    const rightRailRef = useRef<HTMLElement | null>(null);
 
     const hasPersistentLeftRail = Boolean(leftRail) && mode !== 'focused';
     const hasPersistentRightRail = Boolean(rightRail) && mode === 'wide';
@@ -54,9 +64,22 @@ export function AdaptiveWorkspace({
             : openDrawer;
 
     const closeDrawer = useCallback(() => {
-        setOpenDrawer(null);
+        dispatchDrawer({ type: 'close' });
         triggerRef.current?.focus();
     }, []);
+
+    useEffect(() => {
+        if (!openDrawer) return;
+        const persistentRail = openDrawer === 'left'
+            ? (hasPersistentLeftRail ? leftRailRef.current : null)
+            : (hasPersistentRightRail ? rightRailRef.current : null);
+        if (!persistentRail) return;
+
+        // A drawer is no longer an overlay once its rail is persistent. Clear
+        // the stale intent so a later resize cannot reopen it over the canvas.
+        dispatchDrawer({ type: 'close' });
+        persistentRail.focus();
+    }, [hasPersistentLeftRail, hasPersistentRightRail, openDrawer]);
 
     useEffect(() => {
         if (!activeDrawer) return;
@@ -101,7 +124,7 @@ export function AdaptiveWorkspace({
 
     const openRail = (side: Exclude<DrawerSide, null>, event: React.MouseEvent<HTMLButtonElement>) => {
         triggerRef.current = event.currentTarget;
-        setOpenDrawer(side);
+        dispatchDrawer({ type: 'open', side });
     };
 
     const renderDrawer = (side: Exclude<DrawerSide, null>, content: React.ReactNode, label: string) => {
@@ -149,7 +172,7 @@ export function AdaptiveWorkspace({
                 className={cn('absolute inset-0 flex min-w-0 overflow-hidden @container', className)}
             >
                 {hasPersistentLeftRail && (
-                    <aside data-testid="adaptive-left-rail" aria-label={leftRailLabel} className={cn('flex w-64 shrink-0 flex-col overflow-y-auto border-r p-3 @4xl:w-72 @6xl:w-80', railBorderClass)}>
+                    <aside ref={leftRailRef} data-testid="adaptive-left-rail" aria-label={leftRailLabel} tabIndex={-1} className={cn('flex w-64 shrink-0 flex-col overflow-y-auto border-r p-3 @4xl:w-72 @6xl:w-80', railBorderClass)}>
                         {leftRail}
                     </aside>
                 )}
@@ -159,7 +182,7 @@ export function AdaptiveWorkspace({
                 </main>
 
                 {hasPersistentRightRail && (
-                    <aside data-testid="adaptive-right-rail" aria-label={rightRailLabel} className={cn('flex w-72 shrink-0 flex-col overflow-y-auto border-l p-3 @6xl:w-80', railBorderClass)}>
+                    <aside ref={rightRailRef} data-testid="adaptive-right-rail" aria-label={rightRailLabel} tabIndex={-1} className={cn('flex w-72 shrink-0 flex-col overflow-y-auto border-l p-3 @6xl:w-80', railBorderClass)}>
                         {rightRail}
                     </aside>
                 )}
