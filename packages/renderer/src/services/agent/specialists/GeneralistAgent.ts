@@ -18,6 +18,7 @@ import {
     isCapabilityQuestion,
     recordCapabilityHealth,
 } from '../capabilityTruth';
+import { loadCapabilitySnapshot } from '../CapabilitySnapshotService';
 
 /**
  * GeneralistAgent (indii Conductor) - The primary orchestrator and fallback agent.
@@ -112,10 +113,12 @@ export class GeneralistAgent extends BaseAgent {
                 tool => typeof this.functions?.[tool] === 'function',
             );
             const { agentRegistry } = await importWithRetry(() => import('../registry'));
+            const snapshot = await loadCapabilitySnapshot();
             return {
                 text: buildCapabilitySummary({
                     authorizedTools: registeredTools,
                     registeredSpecialistIds: agentRegistry.getAll().map(agent => agent.id),
+                    snapshot,
                     health: getCapabilityHealth(),
                 }),
                 toolCalls: [],

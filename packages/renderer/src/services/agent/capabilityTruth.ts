@@ -1,4 +1,8 @@
-import { getToolRiskMetadata } from './ToolRiskRegistry';
+import type {
+    CapabilityKey,
+    CapabilitySnapshot,
+    CapabilityStatus,
+} from '@shared/schemas/capabilitySnapshot';
 
 export type CapabilityHealthKey =
     | 'image_generation'
@@ -41,11 +45,24 @@ export function isCapabilityQuestion(task: string): boolean {
     return /\b(what can (you|indii)|what (can'?t|cannot) (you|indii)|capabilit(?:y|ies)|tools?.*(?:have|access)|mcp|apis?.*(?:have|access))\b/i.test(task);
 }
 
-const SAFE_DIRECT_CAPABILITIES = [
-    { tools: ['create_project', 'list_projects'], label: 'organize projects and plans' },
-    { tools: ['list_files', 'search_files', 'search_knowledge'], label: 'find workspace files and knowledge' },
-    { tools: ['save_memory', 'recall_memories'], label: 'save and recall approved workspace context' },
-] as const;
+const SAFE_DIRECT_CAPABILITIES: Array<{
+    tools: string[];
+    key: CapabilityKey;
+    label: string;
+}> = [
+    {
+        tools: ['create_project', 'list_projects', 'list_files', 'search_files', 'search_knowledge'],
+        key: 'durable_workspace',
+        label: 'organize projects and find workspace material',
+    },
+    {
+        tools: ['save_memory', 'recall_memories'],
+        key: 'durable_memory',
+        label: 'save and recall approved workspace context',
+    },
+    { tools: ['generate_image'], key: 'image_generation', label: 'create images' },
+    { tools: ['generate_video'], key: 'video_generation', label: 'create videos' },
+];
 
 const SAFE_SPECIALIST_LABELS: Record<string, string> = {
     finance: 'finance analysis',
@@ -56,67 +73,86 @@ const SAFE_SPECIALIST_LABELS: Record<string, string> = {
     music: 'music and metadata review',
 };
 
+const SOCIAL_PUBLISHING_TOOLS = [
+    'schedule_post_execution',
+    'multi_platform_autopost',
+    'dispatch_community_webhook',
+];
+const CALENDAR_ACTION_TOOLS = [
+    'create_calendar_event',
+    'update_calendar_event',
+    'delete_calendar_event',
+];
+
 export function buildCapabilitySummary(input: {
     authorizedTools: string[];
     registeredSpecialistIds: string[];
+    snapshot: CapabilitySnapshot;
     health?: Partial<Record<CapabilityHealthKey, CapabilityHealth>>;
 }): string {
     const authorized = new Set(input.authorizedTools);
     const health = input.health ?? {};
     const available: string[] = [];
     const degraded: string[] = [];
+    const blocked: string[] = [];
+    const unverified: string[] = [];
+
+    const effectiveStatus = (key: CapabilityKey): CapabilityStatus => {
+        const serverStatus = input.snapshot.capabilities[key].status;
+        if (serverStatus !== 'available') return serverStatus;
+        if (key !== 'image_generation' && key !== 'video_generation' && key !== 'specialist_routing') {
+            return serverStatus;
+        }
+        const local = health[key];
+        if (local?.status === 'unavailable') return 'blocked';
+        if (local?.status === 'degraded') return 'degraded';
+        return serverStatus;
+    };
 
     for (const definition of SAFE_DIRECT_CAPABILITIES) {
-        if (definition.tools.some(tool => authorized.has(tool))) available.push(definition.label);
-    }
-
-    const mediaDefinitions = [
-        { tool: 'generate_image', healthKey: 'image_generation' as const, label: 'create images' },
-        { tool: 'generate_video', healthKey: 'video_generation' as const, label: 'create videos' },
-    ];
-    for (const media of mediaDefinitions) {
-        if (!authorized.has(media.tool)) continue;
-        const currentHealth = health[media.healthKey];
-        if (currentHealth?.status === 'degraded' || currentHealth?.status === 'unavailable') {
-            const retry = currentHealth.retryAfterSeconds
-                ? ` Retry in about ${currentHealth.retryAfterSeconds} seconds.`
+        if (!definition.tools.every(tool => authorized.has(tool))) continue;
+        const status = effectiveStatus(definition.key);
+        if (status === 'available') available.push(definition.label);
+        if (status === 'degraded') {
+            const local = definition.key === 'image_generation' || definition.key === 'video_generation'
+                ? health[definition.key]
+                : undefined;
+            const retry = local?.retryAfterSeconds
+                ? ` Retry in about ${local.retryAfterSeconds} seconds.`
                 : ' Please retry later.';
-            degraded.push(`${media.label}${retry}`);
-        } else {
-            available.push(media.label);
+            degraded.push(`${definition.label}.${retry}`);
         }
+        if (status === 'blocked') blocked.push(definition.label);
+        if (status === 'unverified') unverified.push(definition.label);
     }
 
     const specialists = [...new Set(input.registeredSpecialistIds)]
         .map(id => SAFE_SPECIALIST_LABELS[id])
         .filter((label): label is string => Boolean(label))
         .slice(0, 5);
-
-    const approvalCapabilities = input.authorizedTools
-        .filter(tool => getToolRiskMetadata(tool).requiresApproval)
-        .map(tool => {
-            const metadata = getToolRiskMetadata(tool);
-            return metadata.riskTier === 'destructive'
-                ? 'irreversible or external actions'
-                : 'sensitive connected actions';
-        });
+    const canRouteSpecialists = (
+        authorized.has('consult_specialist') || authorized.has('delegate_task')
+    ) && effectiveStatus('specialist_routing') === 'available';
 
     const lines = ['Here’s what I can do in this Boardroom right now:'];
     if (available.length > 0) lines.push(`- Available now: ${available.join(', ')}.`);
-    if (specialists.length > 0 && health.specialist_routing?.status !== 'unavailable') {
+    if (specialists.length > 0 && canRouteSpecialists) {
         lines.push(`- Through qualified specialists: ${specialists.join(', ')}.`);
     }
-    if (approvalCapabilities.length > 0) {
-        lines.push(`- Requires your approval: ${[...new Set(approvalCapabilities)].join(' and ')}.`);
+    if (degraded.length > 0) lines.push(`- Temporarily unavailable: ${degraded.join(' ')}`);
+    if (blocked.length > 0) lines.push(`- Not active right now: ${blocked.join(', ')}.`);
+    if (unverified.length > 0) lines.push(`- Not verified right now: ${unverified.join(', ')}.`);
+    if (
+        input.snapshot.capabilities.social_publishing.status === 'available'
+        && SOCIAL_PUBLISHING_TOOLS.some(tool => authorized.has(tool))
+    ) {
+        lines.push('- Requires your approval: publishing through a verified social connection.');
     }
-    if (degraded.length > 0 || health.specialist_routing?.status === 'unavailable') {
-        const unavailable = [
-            ...degraded,
-            ...(health.specialist_routing?.status === 'unavailable'
-                ? ['specialist routing. Please retry later.']
-                : []),
-        ];
-        lines.push(`- Temporarily unavailable: ${unavailable.join(' ')}`);
+    if (
+        input.snapshot.capabilities.calendar_actions.status === 'available'
+        && CALENDAR_ACTION_TOOLS.some(tool => authorized.has(tool))
+    ) {
+        lines.push('- Requires your approval: actions through a verified calendar connection.');
     }
     lines.push('- Not active in this session: direct banking transactions, rights-society registration, and DSP delivery. I can help prepare or review the work, but I will not claim an external submission without a verified connection and receipt.');
     return lines.join('\n');

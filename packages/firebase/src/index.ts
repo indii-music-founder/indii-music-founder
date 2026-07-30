@@ -90,6 +90,7 @@ export { reportBugFn } from './functions/agent/reportBugFn';
 export { workflowOrchestrator } from './functions/agent/workflowOrchestrator';
 export { manageSemanticMemory } from './functions/agent/manageSemanticMemory';
 export { agentLoopCron } from './functions/agent/agentLoopCron';
+export { getCapabilitySnapshot } from './functions/agent/getCapabilitySnapshot';
 
 // Security Functions
 export { persistFraudAlert } from './functions/security/persistFraudAlert';
