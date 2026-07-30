@@ -803,6 +803,27 @@ describe('creative gateway generateVideoV3', () => {
     expect(mockSet).toHaveBeenCalledTimes(1);
   });
 
+  it('ISSUE-1135: preserves No People when a frame-conditioned job is queued', async () => {
+    await callGenerateVideo({
+      auth: { uid: 'user-123' },
+      data: {
+        prompt: 'An empty gallery with moving shadows',
+        aspectRatio: '16:9',
+        model: 'fast',
+        resolution: '1080p',
+        durationSeconds: 6,
+        firstFrameUri: 'gs://test-bucket/creative/user-123/frames/empty-gallery.png',
+        personGeneration: 'dont_allow',
+        costReservationId: 'op-123',
+      },
+    });
+
+    expect(mockCreate.mock.calls[0]?.[1]).toEqual(expect.objectContaining({
+      firstFrameUri: expect.stringContaining('gs://test-bucket/generated/user-123/video-inputs/job-123/'),
+      personGeneration: 'dont_allow',
+    }));
+  });
+
   it('rejects a browser-supplied cost-check bypass before creating a job', async () => {
     await expect(callGenerateVideo({
       auth: { uid: 'user-123' },
@@ -955,7 +976,7 @@ describe('creative gateway generateVideoV3', () => {
       referenceUris: ['gs://test-bucket/refs/artist.png'],
       firstFrameUri: 'gs://test-bucket/frames/start.png',
       lastFrameUri: 'gs://test-bucket/frames/end.png',
-      personGeneration: 'allow_adult',
+      personGeneration: 'dont_allow',
       negativePrompt: 'no blurry faces',
       seed: '42',
       enhancePrompt: true,
@@ -972,7 +993,7 @@ describe('creative gateway generateVideoV3', () => {
         durationSeconds: 8,
         resolution: '1080p',
         enhancePrompt: true,
-        personGeneration: 'allow_adult',
+        personGeneration: 'dont_allow',
         negativePrompt: 'no blurry faces',
         seed: 42,
         lastFrame: { gcsUri: 'gs://test-bucket/frames/end.png' },

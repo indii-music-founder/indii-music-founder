@@ -345,11 +345,11 @@ function normalizeVideoSeed(seed?: number | string): number | undefined {
   return Number.isSafeInteger(parsed) ? parsed : undefined;
 }
 
+type VeoPersonGeneration = 'dont_allow' | 'allow_adult';
+
 function normalizePersonGeneration(
   personGeneration: z.infer<typeof GenerateVideoSchema>['personGeneration'],
-  hasFrameInput: boolean,
-): 'dont_allow' | 'allow_adult' | undefined {
-  if (hasFrameInput) return 'allow_adult';
+): VeoPersonGeneration | undefined {
   if (personGeneration === 'dont_allow') return 'dont_allow';
   if (personGeneration === 'allow_adult' || personGeneration === 'allow_all') return 'allow_adult';
   return undefined;
@@ -901,7 +901,7 @@ export type VideoGenerationJobRecord = VideoJobDocument & {
   resolution?: z.infer<typeof GenerateVideoSchema>['resolution'];
   durationSeconds?: number;
   negativePrompt?: string;
-  personGeneration?: z.infer<typeof GenerateVideoSchema>['personGeneration'];
+  personGeneration?: VeoPersonGeneration;
   seed?: z.infer<typeof GenerateVideoSchema>['seed'];
   enhancePrompt?: boolean;
   parentId?: string;
@@ -978,6 +978,7 @@ export async function executeVideoJob(jobId: string, job: VideoGenerationJobReco
     const ai = getAiClient('video');
     const image = toImage(job.firstFrameUri || job.referenceUri);
     const referenceImages = toReferenceImages(job.referenceUris);
+    const personGeneration = normalizePersonGeneration(job.personGeneration);
     const config: Record<string, unknown> = {
       numberOfVideos: 1,
       aspectRatio: normalizeVideoAspectRatio(job.aspectRatio ?? '16:9'),
@@ -986,7 +987,7 @@ export async function executeVideoJob(jobId: string, job: VideoGenerationJobReco
       ...(job.negativePrompt ? { negativePrompt: job.negativePrompt } : {}),
       ...(normalizeVideoSeed(job.seed) !== undefined ? { seed: normalizeVideoSeed(job.seed) } : {}),
       ...(job.enhancePrompt !== undefined ? { enhancePrompt: job.enhancePrompt } : {}),
-      ...(normalizePersonGeneration(job.personGeneration, hasFrameInput) ? { personGeneration: normalizePersonGeneration(job.personGeneration, hasFrameInput) } : {}),
+      ...(personGeneration ? { personGeneration } : {}),
       ...(job.lastFrameUri ? { lastFrame: toImage(job.lastFrameUri) } : {}),
       ...(referenceImages ? { referenceImages } : {}),
     };
@@ -1385,6 +1386,11 @@ export const generateVideoV3 = onCall({ ...creativeGatewayCallableOptions, timeo
     );
   }
 
+  // Resolve the public request union into Veo's typed provider contract before
+  // any reservation lookup, input staging, or job creation. Frame inputs never
+  // weaken an explicit No People request.
+  const normalizedPersonGeneration = normalizePersonGeneration(personGeneration);
+
   const jobId = getDb().collection('creative_jobs').doc().id;
   const normalizedResolution = normalizeVideoResolution(resolution, model);
   const hasFrameInput = !!firstFrameUri || !!referenceUri || !!lastFrameUri;
@@ -1491,7 +1497,7 @@ export const generateVideoV3 = onCall({ ...creativeGatewayCallableOptions, timeo
     resolution,
     durationSeconds,
     negativePrompt,
-    personGeneration,
+    personGeneration: normalizedPersonGeneration,
     seed,
     enhancePrompt,
     firstFrameUri: stagedFirstFrameUri,
