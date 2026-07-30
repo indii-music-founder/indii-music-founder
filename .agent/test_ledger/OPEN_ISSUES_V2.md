@@ -616,13 +616,14 @@
 ### ISSUE-1135: “No People” video safety setting is overridden for frame-based jobs
 
 - **Re-ticketed from:** ISSUE-876 (2026-07-21 housecleaning; original status was: `⏳ BACKLOG — consolidated`)
-- **Status:** ⏳ BACKLOG — consolidated
+- **Status:** 🟡 PARTIAL (2026-07-30 — code deployed and exact-main CI green; genuine frame-conditioned production job proof remains open)
 - **Severity:** 🟠 HIGH
 - **Module:** Creative Suite / Veo / Safety controls
 - **Evidence:** The UI exposes “Person Generation” with `No People` / `dont_allow` (`StudioSettingsPanel.tsx:131-135`, `:238-243`) and sends `personGeneration` into video generation (`VideoWorkflow.tsx:669-680`). The backend worker calls `normalizePersonGeneration(job.personGeneration, hasFrameInput)` when building the Veo config (`gateway.ts:904-913`). That normalizer returns `allow_adult` whenever a first frame, reference URI, or last frame is present, before checking `dont_allow` (`gateway.ts:317-324`).
 - **Impact:** A user can explicitly choose “No People,” provide a start/end/reference frame, and still submit a Veo config that allows adults.
 - **Fix:** Do not override an explicit `dont_allow`; if the provider requires `allow_adult` for image-conditioned video, block the combination before submit and explain the constraint.
 - **Acceptance:** `dont_allow` remains `dont_allow` in the worker config, or the job is rejected before generation with a capability message.
+- **2026-07-30 release update:** Commit `0a274bcfa39bf42711900748130ea1ede5d8aad5` normalizes the typed person-generation value before reservation, staging, or job creation and preserves explicit `dont_allow` through frame/reference-conditioned queueing and the Veo worker config. The focused creative gateway gate passed 45/45 and exact deployment run `30552228181` is green. This remains **PARTIAL**, not `FIXED`, until a genuine authorized production job with frame input proves the stored worker payload and provider submission preserve `dont_allow` (or fail before spend with the documented capability response).
 
 ---
 
@@ -3104,7 +3105,7 @@ ordinary use of the running app.
 
 ### ISSUE-1242: Arcjet denies every authenticated AI request in production (`decision_error`), and all three error paths discarded the cause
 
-- **Status:** 🟡 PARTIAL (2026-07-27 — **root cause found and fixed**; awaiting one live authenticated request to confirm the denial is gone)
+- **Status:** ✅ FIXED (2026-07-30 — authenticated production traffic is admitted and specialist routing returns HTTP 200)
 - **ROOT CAUSE (found without needing a production request):** `generateContentStream`'s Gen1 `.runWith({...})` declared `secrets`, `enforceAppCheck`, and `timeoutSeconds` but **no `memory`** — so it inherited the Gen1 default of **256MB**, below the ~259MB shared cold-start bundle. Its outbound HTTPS call to Arcjet failed under that ceiling, Arcjet returned an errored decision, and the fail-closed gate denied every authenticated AI request.
   - **How it was isolated:** ran the real `@arcjet/node` client locally with the production key (read from Secret Manager, never printed) against a synthetic request — result `conclusion: ALLOW`, both rules pass, no error. So the key is valid and registered, the API is reachable, and the SDK works. That eliminated every hypothesis except the runtime environment, and `availableMemoryMb: 256` on the deployed function was the remaining difference.
   - **Confirmed it was an omission, not a tier choice:** every other Arcjet-using function in `index.ts` sets memory explicitly — the two Inngest+Arcjet functions use `"2GB"`, and `generateSpeech` (same secrets, same shape, adjacent in the file) uses `"512MB"`. `generateContentStream` was the only one without.
@@ -3117,7 +3118,7 @@ ordinary use of the running app.
   - The runtime SA (`indii-music-founder@appspot…`) **does** hold `roles/secretmanager.secretAccessor` on that secret, so the key is readable.
   - The key value is well-formed: 32 chars, `ajkey_` prefix (checked without printing the value). `configuredArcjetKey` requires exactly that prefix, so `baseArcjet` is constructed — consistent with `decision_error` rather than `missing_configuration`.
   - Not a throw: `decision_error` here arrives via `mapDecision`'s `decision.isErrored()` branch, i.e. Arcjet returned an errored decision rather than raising. (The `catch` path was instrumented too, but it is not the one firing.)
-- **Root cause: still unknown — and that is itself the primary defect.** All three failure paths discarded their error: two `catch (_error)` blocks threw the error away entirely, and the `isErrored()` branch logged only `decision.id`. A total production outage therefore produced logs saying "something is unavailable" with no cause, in a system where the same blindness had already sent one investigation down the wrong subsystem earlier the same day.
+- **Historical diagnostic gap:** Before the memory-floor cause was isolated, all three failure paths discarded their error: two `catch (_error)` blocks threw the error away entirely, and the `isErrored()` branch logged only `decision.id`. The resulting logs did not identify the cause and prolonged the investigation; the diagnostic correction below remains part of the fix.
 - **Shipped in this pass (diagnostics only, no gate weakened):**
   1. `mapDecision`'s `isErrored()` branch now logs `decision.reason.message` — where Arcjet actually carries the cause (bad key, unreachable API, malformed request) — and is escalated `warn` → `error`, since denying every authenticated request is not a warning-level event.
   2. Both `catch (_error)` blocks now log `err_name` / `err_msg` / `err_cause` / trimmed stack. Never the key.
@@ -3129,10 +3130,11 @@ ordinary use of the running app.
 - **Honest scope note:** raising the other 28 is the safe direction, not a proven fix for each — several of those functions deploy and run fine at 256MB today. Gen1 at 256MB is not uniformly fatal the way Gen2 was (Gen2 OOM-killed at cold start before binding a port; Gen1 degrades on heavy work like outbound TLS). They were raised because headroom is cheap, the shared bundle only grows, and the alternative is rediscovering this per-function during the next outage.
 - **Verification:** `packages/firebase` `tsc` clean; full firebase suite **566 passed / 0 failed**; guard passes. **Not yet confirmed live** — one authenticated request must show `[Arcjet] Request allowed` instead of `Decision failed` before this closes.
 - **Related:** the founder-facing symptom chain today was: ISSUE-1238 (deploy blocked) → IAM roles stripped from the runtime SA (entitlement 503) → this. Each masked the next.
+- **2026-07-30 production verification:** The current Gen2 `generateContentStream` revision is deployed with the explicit memory floor and preserved fail-closed Arcjet policy. A sampled authenticated trace (`3376b8439686cabfa58cba0ce1e58eb4`) records HTTP 200, `[Arcjet] Request allowed` under the admin policy, and the intended multi-region specialist route. The 72-hour routing sample contains 31 multi-region route events and zero `SPECIALIST_UNAVAILABLE` events. This closes the authenticated Arcjet-denial symptom. The earlier cross-generation `HttpsError` theory remains explicitly rejected: runtime evidence showed constructor identity was not causal.
 
 ### ISSUE-1243: Backend is split across two Cloud Functions generations with no recorded decision — and the app's main streaming endpoint violates the Gen2 streaming standard
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-30 — source and deployed registry are Gen2-only)
 - **Severity:** 🟠 HIGH (not a live outage by itself, but it is the shared root beneath the generation-specific runtime defaults and deployment complexity exposed by ISSUE-1238 and ISSUE-1242)
 - **Module:** `packages/firebase/src/**` (repo-wide), `docs/PLATINUM_QUALITY_STANDARDS.md`
 - **Measured 2026-07-27:** **82 Gen1** and **85 Gen2** functions deployed in `us-central1` — roughly half the backend on each generation.
@@ -3153,6 +3155,7 @@ ordinary use of the running app.
     4. Post-launch: migrate remaining 81 Gen1 functions (split into batches with delete→deploy windows)
 - **Interim mitigation already in place:** `scripts/check-function-memory.cjs` now matches both spellings, so the memory class of this problem is at least *visible* on both generations. It does not address the `HttpsError`, `setGlobalOptions`, or streaming-ceiling divergences.
 - **Do not:** do not migrate in bulk without per-function delete windows, and do not treat the widened memory guard as having solved this — it covers one of four divergences.
+- **2026-07-30 completion evidence:** The founder-selected terminal policy is now implemented: the source/static Gen1 guard is clean; the migration-semantics guard accounts for 81 migrated runtime exports plus one source-only factory declaration; and the memory guard enforces the explicit 512MiB cold-start floor while preserving intended CPU/concurrency behavior. Exact deployment run `30560106706` is green across all 26 jobs. After official removal of the failed orphaned `videoJobOrchestrator` registry shell, `firebase functions:list --json` reports **167 functions, 167 `gcfv2`, 167 `ACTIVE`, zero Gen1, zero failed**. The extension registry is empty. The active replacement `videoJobFirestoreOrchestrator` and its Eventarc trigger remain present. This closes the split-generation defect; product-specific authenticated acceptance remains tracked by the relevant feature issues.
 
 ### ISSUE-1244: Arcjet endpoint matrix (ISSUE-1228 acceptance item 1) — 5 of 90 trigger-declaring files are protected; 65 client-reachable surfaces are not
 
@@ -3180,7 +3183,7 @@ ordinary use of the running app.
 
 ### ISSUE-1245: All CI deployment blocked — GitHub Actions budget exhausted (founder-only fix)
 
-- **Status:** 🔴 OPEN (founder action required; no engineering fix exists)
+- **Status:** ✅ FIXED (2026-07-30 — Actions budget gate cleared; repeated exact-main deploy runs are green)
 - **Severity:** 🔴 CRITICAL (100% of deployment blocked; every verified fix on `main` is stranded)
 - **Module:** GitHub Actions billing — not a repository defect
 - **Evidence:** every job across every workflow fails 3–11 seconds after starting with `steps: []` and all downstream jobs `skipped`. Runs `30322433508` (push), `30322940839` (workflow_dispatch), `30330164125` and `30342064156` (schedule) all show the identical shape. The per-job log blob 404s (`BlobNotFound`) because no log was ever produced, and `--log-failed` returns nothing — so the failure is invisible through every normal diagnostic path.
@@ -3195,6 +3198,7 @@ ordinary use of the running app.
   - ISSUE-1190, ISSUE-1191, ISSUE-1189, ISSUE-1244 (commits `1563e6f53`, `e241f91f2`) are on `main` and undeployed.
 - **Local verification standing in for CI while blocked (2026-07-28):** `npm test -- --run` → 876 files / 5,450 tests / **0 failed** / exit 0; `npm run typecheck` → 0 errors; `npm run lint` → 0 errors (127 warnings); `npm run build:studio` → succeeds; `packages/firebase` `tsc` → clean; `npm run check:fn-memory` → pass. These are not a substitute for CI acceptance and are recorded only so the next reader knows the red is not the code.
 - **Do not:** do not bisect commits, revert, or edit code to chase this. Do not re-run — the refusal is deterministic and each attempt is wasted. Read the check-run annotation first on any zero-step failure.
+- **2026-07-30 verification:** The account-level budget refusal is no longer active. Exact-main deployment runs `30549732758`, `30552228181`, `30555585723` (attempt 2 after a transient unchanged Firebase Rules API 503), and `30560106706` all started real jobs and completed successfully. No repository code change was the remedy; the historical annotation remains the diagnostic source if a future run again fails with zero steps.
 
 ---
 
@@ -3413,36 +3417,36 @@ acceptance criteria.
 
 ### ISSUE-1264: Vertex multi-region resources were routed through the global host and specialized agents silently downgraded
 
-- **Status:** ✅ FIXED LOCALLY (2026-07-28; production deployment/live request still required)
+- **Status:** ✅ FIXED (2026-07-30 — deployed and verified in authenticated production traffic)
 - **Severity:** 🔴 CRITICAL
 - **Module:** `packages/firebase/src/lib/vertexRouting.ts`; `vertexClient.ts`; `index.ts`; renderer specialist model/stream contracts; endpoint registry sync
 - **Production evidence:** Authenticated Boardroom calls selected approved R8 resources under `projects/148015878263/locations/us/endpoints/*`, but the client mapped `us` to `https://aiplatform.googleapis.com`. That host returned 404 and `generateContentStream` silently resent the prompt to `gemini-3.1-flash-lite`. A read-only GET of the same generalist resource through `https://aiplatform.us.rep.googleapis.com` returned the live endpoint metadata in both `v1` and `v1beta1`; a read-only preflight subsequently verified all 22 configured specialist endpoints.
 - **Root cause:** A June compatibility workaround collapsed `global`, `us`, and `eu` onto the global host. Current Vertex routing requires global resources on the global host, `us`/`eu` multi-region resources on their replica hosts, and regional resources on location-prefixed hosts. Tuning-job synchronization trusted persisted endpoint names without checking that each resource was reachable through its resolved host.
 - **Correction:** One typed fail-closed resolver now owns location-to-host mapping and full endpoint parsing. Feature code is guarded against direct hostname construction. Registry synchronization performs read-only endpoint metadata preflight before writing and supports a no-write `--check` health command. Specialized routing disabled, malformed, unavailable, timed out, or provider-failed now returns typed `SPECIALIST_UNAVAILABLE`; no base/general model is invoked. The renderer preserves the typed retry/category/next-action contract and no endpoint details are returned publicly.
 - **Validation:** 49 targeted tests pass, including global/US/EU/regional table cases, unsupported and host-mismatch negatives, complete resource identity, typed public payloads, frontend preservation, capability truthfulness, and 404/503/timeout proof that only the requested specialized resource is called. Firebase production build, renderer typecheck, Firebase-test typecheck, routing guard, and 22-endpoint read-only live preflight pass.
-- **Remaining:** No deployment was authorized. After deployment, make one genuine authenticated Boardroom specialist request and verify telemetry reports `routeKind=multi-region`, `location=us`, HTTP 200, and no `SPECIALIST_UNAVAILABLE` or general-model call.
+- **Release verification:** The routing correction was published and survives the current mainline deployment. Exact run `30560106706` is green. A 72-hour production sample contains 31 specialist route events, all `routeKind=multi-region` with `location=us`, and zero `SPECIALIST_UNAVAILABLE` events. Authenticated trace `3376b8439686cabfa58cba0ce1e58eb4` records Arcjet admission, the intended route, and HTTP 200. The read-only endpoint preflight remains 22/22. No general-model retry path exists in the published contract or its guards.
 - **DO NOT:** Do not restore a fallback, rewrite resource locations, hand-build Vertex hosts, expose endpoint identifiers to users, or treat a tuning-job endpoint field alone as serving-health proof.
 
 ### ISSUE-1265: Boardroom image failure was masked by a later application rate-limit response
 
-- **Status:** 🟡 DIAGNOSED; FIX OWNED BY DEDICATED IMAGE LANE `7dd4`
+- **Status:** 🟡 PARTIAL (2026-07-30 — durable-reservation and result-preservation fixes deployed; genuine paid image acceptance remains open)
 - **Severity:** 🟠 HIGH
 - **Module:** Boardroom/Conductor image delegation; image-generation admission, reservation/job state, Arcjet, provider error mapping, and retry UX
 - **Production evidence:** On 2026-07-28, after normal Boardroom greetings and Conductor responses completed, a founder request to create a simple dog-related image returned: “Too many AI generation requests. Please retry shortly.”
 - **Verified sequence:** Production logs at 15:02 UTC show `generateContentStream` emitted the image tool call; `generateImageV3` received it and Arcjet allowed it, then rejected a synthetic client-side founder reservation receipt before any `creative_jobs` write or provider submission. No durable cost-ledger record, job, provider call, or charge existed. A subsequent Conductor summary turn hit the independent Firestore 10/min text limiter and produced the reported generic text, masking the reservation failure.
-- **Owned correction:** Worktree `7dd4` owns removal of the synthetic founder reservation bypass and Boardroom post-tool recovery. This lane only makes the text-gateway 429 contract truthful and typed as `GENERATION_CAPACITY_LIMITED` / `application_rate_limit`, including `providerSubmitted=false`, a retry delay, and no automatic resubmission.
-- **Acceptance:** Dedicated image lane must land its durable reservation and post-tool recovery changes. After both lanes deploy, make a genuine founder image request and verify one durable reservation, one provider submission or truthful pre-submission failure, no false charge, and no masking summary error.
+- **Deployed correction:** Main commit `a24cb4ab21f48c2adeed633fcedaa4fd850658f0` removes both synthetic founder/admin receipt paths, requires the durable server reservation callable, and preserves an authoritative completed or typed-failed image tool result when only the post-tool summary turn is capacity-limited. Recovery is restricted to image tools, recognizes `GENERATION_CAPACITY_LIMITED`, makes no second model/provider submission, and does not expose raw output from non-image tools. The prerequisite reservation lifecycle is also deployed. Exact run `30555585723` attempt 2 is green; the first attempt was an unchanged Firebase Rules API 503.
+- **Remaining acceptance:** Make one founder-approved genuine image request and verify one durable reservation, one provider submission or truthful pre-submission failure, an owner-scoped completed asset/job, exact settle/void outcome, no false charge, and no masking summary error. Paid provider work was not fabricated for closure.
 - **DO NOT:** Do not increase quota, weaken throttling/Arcjet, fabricate provider quota, silently retry through a general model, or overlap responsive image/video renderer work.
 
 ### ISSUE-1266: Conductor capability answers overstated planned or degraded integrations and exposed internal identifiers
 
-- **Status:** ✅ FIXED LOCALLY (2026-07-28; production deployment/live request still required)
+- **Status:** 🟡 PARTIAL (2026-07-30 — server-attested contract deployed; authenticated production answer still required)
 - **Severity:** 🟠 HIGH
 - **Module:** `GeneralistAgent`; `capabilityTruth.ts`; Conductor system prompt
 - **Production evidence:** The Conductor described broad static abilities from prompt memory, including unavailable media work and planned banking/rights/DSP integrations, while exposing raw tool names, internal policy jargon, and unsupported incident speculation.
-- **Correction:** Capability questions bypass freeform model recall and are rendered deterministically from the current agent's authorized-and-registered tool intersection, registered specialists, and typed live health. Output separates available, specialist-routed, approval-required, degraded, and not-active states using safe user labels. Planned integrations and internal tool/provider/security identifiers are not presented as active capabilities.
-- **Validation:** Five capability-specific tests prove unregistered tools are not claimed, degraded image generation is disclosed, planned banking/rights/DSP work stays inactive, approval requirements are labeled, internal identifiers are hidden, and historical incident language is not fabricated.
-- **Remaining:** After deployment, ask the genuine authenticated Conductor the production capability question while image health is degraded and verify the concise deterministic response matches the actual session registry and health.
+- **Correction:** Capability questions use a strict server-attested snapshot rather than a client claim: Firebase Auth, App Check, entitlement, Arcjet, owner-scoped connector/job/workspace evidence, and a bounded versioned cache form the ceiling; unknown, stale, or timed-out state fails closed. The renderer may downgrade that ceiling from local evidence but cannot promote it. Group claims require every grouped tool. Planned integrations, raw identifiers, and internal policy/provider language are not presented as active capabilities.
+- **Validation:** Commit `35e36370b5f3d2148b7b509d695a1020607d42c1` passed 36 focused tests, full typecheck, lint/guards, and exact 26-job deployment run `30560106706`. `getCapabilitySnapshot` is `ACTIVE` at revision `getcapabilitysnapshot-00001-new`. The server deliberately reports calendar and specialist state as blocked/unverified where no live authority exists.
+- **Remaining:** Ask the genuine authenticated Conductor the production capability question and retain the returned snapshot/version plus rendered answer. Confirm it does not promote unverified specialist, calendar, social, image, or video capabilities. Until that proof exists, this issue remains **PARTIAL**.
 
 ### ISSUE-1267: Rooms size their internal rails against the viewport, not the space they were actually given
 
@@ -3710,3 +3714,14 @@ acceptance criteria.
 - **Honest fallback:** N/A — trivial one-line logging addition, no external dependency.
 - **DO NOT:** Do not silently expand the switch to "handle" hypothetical future types speculatively — just add the missing default-case log/bucket for whatever falls through today.
 - **Resolution:** Added the missing `default` case, which logs the unrecognized type so a future usage-type addition is discoverable rather than silently under-counting.
+
+### ISSUE-1290: Scheduled health monitor reported skipped tests as failures and could swallow a failed runner
+
+- **Status:** 🟡 PARTIAL (2026-07-30 — implementation and local validation complete; post-merge scheduled-workflow proof required)
+- **Severity:** 🟠 HIGH (a green monitoring workflow could misreport healthy coverage or remain green after the underlying Vitest process failed)
+- **Module:** `.github/workflows/health-check.yml`; `scripts/log-health-check.ts`; `scripts/health-check-results.ts`
+- **Evidence:** Health Check Monitor run `30548187271` completed successfully but printed `Test Pass Rate: 13% (13/103)`. Its Vitest report actually contained 13 passed assertions, 49 skipped assertions, 41 pending assertions, and zero failures: **13/13 executed passed, 90 skipped/pending, 103 discovered**. The logger divided passed by all discovered tests. It also continued after a nonzero Vitest exit and treated a successful Firestore write as workflow success, so a future runner failure could be recorded by a green job. The workflow additionally wrote an ADC credential file, then passed the base64 secret to the logger as though it were raw JSON, producing an avoidable parse warning.
+- **Correction:** Health aggregation now distinguishes discovered, executed, passed, failed, and skipped counts; pass rate is calculated over executed tests. A record is healthy only when the runner exits cleanly, the report declares success, at least one assertion executed, and no assertion failed. The monitor invokes Vitest without shell redirection, retains the runner exit state, uses ADC directly, writes a versioned `health-check.v2` record with the exact counts, and exits nonzero after persisting any unhealthy result. The workflow creates its ADC file with restrictive permissions and removes that exact temporary file.
+- **Local validation:** Four focused tests prove 13/13 is 100% with 90 skipped/pending; any failed assertion is unhealthy; a nonzero runner is unhealthy even if a malformed report says success; and zero executed tests is unhealthy. Firebase test typecheck and direct NodeNext TypeScript checks pass.
+- **Acceptance:** Merge and deploy the correction, manually dispatch Health Check Monitor on exact main, and retain a terminal run showing 13/13 executed at 100%, 90 skipped/pending recorded separately, no service-account parse warning, and a `health-check.v2` Firestore record. A deliberately failed local unit fixture must continue to prove the workflow cannot report green for a failed runner; do not intentionally break production CI to demonstrate it.
+- **DO NOT:** Do not count skipped/pending assertions as failures or successes, infer health solely from whether Firestore accepted a record, parse a base64 GitHub secret as JSON after ADC is already configured, or swallow the test-runner exit code.

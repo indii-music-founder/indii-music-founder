@@ -6,14 +6,11 @@ work or treating unit tests as live acceptance proof.
 
 ```mermaid
 flowchart TD
-    BASE["Exact main 34f504e7f<br/>CI 30544501763 green"] --> RES["Agent-stream reservation lifecycle<br/>billing helper + Firebase gateway + renderer client"]
-    RES --> RESGATE["Focused validation<br/>full CI<br/>exact-main deployment green"]
-    RESGATE --> PEOPLE["ISSUE-1135 No People safety<br/>creative gateway + focused test"]
-    PEOPLE --> PEOPLE_GATE["Focused validation<br/>exact-main CI green"]
-    PEOPLE_GATE --> IMAGE["Boardroom image reliability<br/>durable receipts + authoritative tool result"]
-    IMAGE --> IMAGE_GATE["Renderer validation<br/>exact-main CI + deploy green"]
-    IMAGE_GATE --> CAP["Capability truth audit<br/>server-attested contract if still required"]
-    CAP --> OPS["Operational truth cleanup<br/>failed function + health workflow + issue ledger"]
+    BASE["Baseline 34f504e7f<br/>CI 30544501763 green"] --> RES["Reservation lifecycle 4a2b78ba<br/>deploy 30549732758 green"]
+    RES --> PEOPLE["ISSUE-1135 0a274bcf<br/>deploy 30552228181 green"]
+    PEOPLE --> IMAGE["Boardroom image a24cb4ab<br/>deploy 30555585723 attempt 2 green"]
+    IMAGE --> CAP["Capability truth 35e36370<br/>deploy 30560106706 green"]
+    CAP --> OPS["Operational truth cleanup<br/>stale registry removed; health monitor correction pending"]
     OPS --> ACCEPT["Authenticated Boardroom acceptance matrix"]
     ACCEPT --> CONVERSATION["Specialist conversation<br/>no general fallback"]
     ACCEPT --> IMAGE_E2E["Image reservation<br/>provider result + settlement + recovery"]
@@ -32,35 +29,39 @@ flowchart TD
 
 ## Step-by-Step Transition Breakdown
 
-1. **Green baseline to reservation lifecycle:** Begin only from the exact
-   `origin/main` SHA whose complete CI and deployment run is green. Integrate
-   the current-main reservation candidate without generated declarations or
-   unrelated workflow files. Preserve typed capacity errors, specialist
-   fail-closed routing, and the Gen2 callable/stream contracts.
-2. **Reservation lifecycle to its gate:** Prove owner/type/status claims,
+1. **Green baseline to reservation lifecycle — complete:** The reservation
+   contract landed as `4a2b78ba41138ca8a90ef5002a5d2e3f3e421cec`
+   from a green exact-main baseline without generated declarations or unrelated
+   workflow files. Typed capacity errors, specialist fail-closed routing, and
+   Gen2 callable/stream contracts were preserved.
+2. **Reservation lifecycle to its gate — complete:** Owner/type/status claims,
    pre-provider voids, settlement before the terminal completion frame,
    cancellation propagation, typed 429 behavior, and bounded stale-claim
-   reconciliation. Deploy the required Firestore index with the same release.
-   Do not open a dependent lane until the exact pushed SHA is green.
-3. **Reservation gate to ISSUE-1135:** Apply the independent creative-gateway
-   fix only after the reservation release is green. Verify that explicit
+   reconciliation are covered. Both required Firestore indexes are `READY`;
+   exact deployment run `30549732758` is green.
+3. **Reservation gate to ISSUE-1135 — complete:** The independent
+   creative-gateway fix landed only after the reservation release was green.
+   Explicit
    `dont_allow` survives every frame/reference path and reaches the Veo worker
-   unchanged. Require a separate exact-main green result.
-4. **ISSUE-1135 gate to Boardroom image reliability:** Rebuild the preserved
-   image patch on the exact new main SHA. Remove synthetic founder/admin
+   unchanged; exact deployment run `30552228181` is green.
+4. **ISSUE-1135 gate to Boardroom image reliability — complete:** The preserved
+   image patch was rebuilt on the exact new main SHA. It removes synthetic founder/admin
    receipts, fail closed when durable reservation creation fails, and preserve
    an authoritative completed or typed-failed image result when only the
    post-tool summary is throttled. Never retry the provider or fall back to a
-   general model.
-5. **Image gate to capability truth:** Audit the current deployed contract
-   before using stale capability work. If the gap remains, define a fresh
-   server-attested session, entitlement, connector, and live-health contract.
-   Unknown state must not silently advertise a capability as available.
-6. **Capability truth to operational cleanup:** Reconcile repository and live
+   general model. Exact deployment run `30555585723` attempt 2 is green.
+5. **Image gate to capability truth — complete:** The deployed contract was
+   audited before stale capability work was used. A fresh server-attested
+   session, entitlement, connector, and live-health contract was defined.
+   Unknown state does not advertise a capability as available. Exact deployment
+   run `30560106706` is green.
+6. **Capability truth to operational cleanup — active:** Repository and live
    function inventories, remove or repair the stale failed function through
    the official deployment path, correct the misleading health workflow, and
    update issue states only to the level proven by exact CI, deployment, logs,
-   and authenticated checks.
+   and authenticated checks. The stale function registry shell is removed; the
+   corrected health monitor and final ledger reconciliation are the active
+   publication gate.
 7. **Operational cleanup to authenticated acceptance:** Exercise the real
    Boardroom with genuine credentials. Record available, degraded, or blocked
    for specialist chat, image, video, long-running plans, approved calendar

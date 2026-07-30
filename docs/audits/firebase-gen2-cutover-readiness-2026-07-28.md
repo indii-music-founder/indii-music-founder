@@ -2,37 +2,45 @@
 
 ## Scope and current release state
 
-This is a preparation artifact, not deployment evidence. It records the
-source migration inventory, the safe cutover/rollback sequence, and the release
-gates that must be satisfied before any live Gen1 function is removed.
+This began as a preparation artifact. It now records the completed Gen2-only
+source and registry cutover, the historical rollback sequence, and the product
+acceptance gates that still require genuine authenticated evidence.
 
-- Published baseline: `333656e03edf3b7c54adb1434ece03b9915f9c28`.
-- The published baseline's exact Build and Test run `30388950058` passed.
-- The latest scheduled Health Check Monitor run `30390996335` is marked
-  successful, but its logs show only 13/103 checks passing and a service-account
-  JSON parsing fallback. The workflow exits successfully after writing results,
-  so that green badge is not service-health acceptance evidence.
-- The exact production deploy run `30388087703` for prior code SHA
-  `0db019fd60942270e95e473db30e83b8c994342c` passed, including its Cloud
-  Functions deployment.
-- A separate active Cloud Build trigger currently fails because it expects a
-  root `Dockerfile` that does not exist. Its build ID is
-  `f73f3917-...`; this is an outstanding attributable release-system failure.
-- The local migration is 13 commits ahead of that baseline and is not
-  published.
-- The final atomic source cluster is intentionally uncommitted while its owner
-  is token-limited. It must not be staged or approximated by another lane.
-- Local migration validation currently passes Firebase production TypeScript,
-  Firebase test TypeScript, and 89 Firebase suites / 600 tests.
-- No migration deployment or live deletion has been authorized or performed.
+- Published capability baseline: `35e36370b5f3d2148b7b509d695a1020607d42c1`.
+- Its exact production run `30560106706` passed all 26 jobs, including rules,
+  unit shards, build, staging E2E, Hosting, media-worker, and Cloud Functions
+  deployment. `getCapabilitySnapshot` is `ACTIVE` at revision
+  `getcapabilitysnapshot-00001-new`.
+- The latest pre-correction scheduled Health Check Monitor run `30548187271`
+  is marked successful but reported `13/103` because it divided by skipped and
+  pending discoveries. It also swallowed a future nonzero Vitest exit and
+  attempted to parse the base64 service-account secret as JSON before falling
+  back to ADC. The release-owned correction now calculates pass rate over
+  executed tests, records skipped/pending counts separately, uses ADC directly,
+  and exits nonzero after recording any failed run. A post-merge
+  `workflow_dispatch` remains required before this becomes live monitor proof.
+- The historical missing-root-Dockerfile Cloud Build failure is not an active
+  release failure. Recent listed Cloud Builds are successful, and the exact
+  production deployment above is green.
+- The complete migration is published. Firebase production/test TypeScript,
+  the no-Gen1 guard, the 512MiB memory floor, the migration-semantics guard,
+  repository lint, pre-commit, and exact-main CI all pass.
+- On 2026-07-30 the official Firebase CLI removed the sole stale failed
+  `videoJobOrchestrator` registry shell after confirming its Cloud Run service
+  and Eventarc trigger were absent and the canonical
+  `videoJobFirestoreOrchestrator` replacement was `ACTIVE`.
+- The post-cleanup official inventory is **167 functions: 167 Gen2, 167
+  `ACTIVE`, zero Gen1, zero failed**, with an empty extension registry.
 
 ## Authoritative source migration inventory
 
-The published source contained 81 runtime exports backed by Gen1 declarations.
-The local migration accounts for all 81 as the 58 committed exports and the 23
-exports in the held atomic cluster below.
+The pre-cutover source contained 81 runtime exports backed by Gen1
+declarations. The published migration accounts for all 81 as 58 independent
+exports plus the 23-export coupled cluster below. The semantics guard tracks
+82 source declarations because it also includes the source-only
+`generateImageV3Fn` factory, which is not a separate deployed endpoint.
 
-### Committed locally — 58 exports
+### Published independent cohort — 58 exports
 
 1. Security and shared operational data (4):
    `logAuditEvent`, `persistFraudAlert`, `registerAiContextCache`,
@@ -73,7 +81,7 @@ exports in the held atomic cluster below.
     `pandadocWebhook`, `telegramWebhook`, `initiateSplitEscrow`,
     `signEscrow`, `releaseEscrow`.
 
-### Held atomic cluster — 23 runtime exports
+### Published coupled cluster — 23 runtime exports
 
 The 21 direct root declarations are:
 
@@ -93,7 +101,7 @@ gateway.
 
 ### Runtime-semantics contract
 
-Every former Gen1 export must declare:
+Every former Gen1 export now declares:
 
 - memory of at least `512MiB`;
 - `cpu: 'gcf_gen1'`; and
@@ -103,43 +111,32 @@ Existing higher memory, region, timeout, secret binding, App Check behavior,
 auth gate, and trigger path must be preserved. Existing native-Gen2 exports
 remain outside this contract so their current concurrency is not reduced.
 
-The committed 58 pass this contract. The held cluster audit found one known
-release blocker: `ragProxy` declares CPU and concurrency but not explicit
-memory. The cluster owner must add the explicit cold-start floor. The current
-semantics guard is also incomplete: it reports only the committed 58 and does
-not parse the 21 direct cluster declarations or the two deployed factory
-aliases. Its green result is not final migration evidence.
+All published migration declarations pass this contract, including
+`ragProxy`, the 21 direct coupled-cluster declarations, the two deployed helper
+aliases, and the source-only image factory. The guard reports all 82 tracked
+source declarations.
 
-## Source and CI safeguards still required
+## Completed source and CI safeguards
 
-Before the migration commit can enter the release lane:
-
-1. Extend the semantics manifest/parser to cover all 81 deployed former-Gen1
-   exports, including the two factory aliases, and reject unmanifested
-   `cpu: 'gcf_gen1'` declarations.
-2. Add a zero-Gen1 static guard over implementation and test source. It must
-   reject `firebase-functions/v1`, v1 builder chains, v1-only helpers, and v1
-   mocks without rejecting legitimate v2 namespace imports.
-3. Wire the memory, semantics, and zero-Gen1 guards into package scripts,
-   pre-commit, and the exact-main Build and Test workflow.
-4. Add direct v2 CloudEvent coverage for `executeVideoJob` using
-   `{ data: snapshot, params: { jobId } }`, including an absent-snapshot no-op
-   and the queued/skip paths.
-5. Preserve `details` in the shared v2 `HttpsError` test mock.
-6. Remove stale Gen1 comments only in the migration owner's coherent source
-   commit.
-7. Require Firebase production/test typechecks, the full Firebase suite,
-   scoped lint, diff check, all three guards, and repository pre-commit gates.
+1. The semantics manifest/parser covers the migrated declarations and rejects
+   missing memory, CPU, or concurrency preservation.
+2. The zero-Gen1 static guard rejects v1 imports, builder chains, helpers,
+   callable types, and mocks across implementation and test source.
+3. Memory, semantics, and zero-Gen1 guards are wired through
+   `check:functions`, repository lint, pre-commit, and exact-main CI.
+4. Direct v2 CloudEvent coverage exists for the video workers, including
+   absent-snapshot and queued/skip behavior.
+5. The shared v2 `HttpsError` test mock preserves details.
+6. Firebase production/test typechecks, focused and sharded tests, lint,
+   security/routing guards, diff checks, and pre-commit gates are green.
 
 ## Generation-aware live manifest
 
 A pre-removal official Firebase CLI inventory reported 167 live registry
 entries: 82 Gen1 and 85 Gen2, all in `us-central1` on Node.js 22. It reported
-166 `ACTIVE` and one `FAILED`, with no duplicate function IDs.
-
-All 58 names in the committed source-migration manifest are still live Gen1.
-The remaining 24 live Gen1 entries are the 23 held-cluster/helper exports plus
-one Firebase Extension function:
+166 `ACTIVE` and one `FAILED`, with no duplicate function IDs. The remaining
+24 Gen1 entries at that historical point were the 23 coupled-cluster/helper
+exports plus one Firebase Extension function:
 
 `analyzeAudio`, `editImage`, `enrichFanData`, `executeBigQueryQuery`,
 `executeVideoJob`, `exportUserData`,
@@ -197,16 +194,17 @@ paths was retired.
   ran 35 test files with 211 tests passing; repository diff checking passed;
   post-removal extensions-only dry run reports no pending changes.
 
-The one `FAILED` registry entry is Gen2 `videoJobOrchestrator`. Its Cloud Run
-service and Eventarc trigger are missing, while published source exports the
-replacement name `videoJobFirestoreOrchestrator`. Treat it as stale broken
-registry state: reconcile ownership and traffic evidence before removing it,
-then prove the canonical replacement is healthy.
+The former sole `FAILED` registry entry, Gen2 `videoJobOrchestrator`, is now
+removed. Before deletion, read-only inspection proved its Cloud Run service
+and Eventarc trigger were absent, its only logs were the failed June deployment,
+published source did not export it, and the canonical
+`videoJobFirestoreOrchestrator` replacement was `ACTIVE` with its
+`videoJobs/{jobId}` Eventarc trigger. The official command deleted only that
+named function. Direct description now returns 404, while the replacement
+remains active.
 
-Current Gen1 trigger mix is 67 callable, 7 HTTP, 4 event-driven, and 4
-scheduled. Current Gen1 memory tiers are 32 at 256MiB, 39 at 512MiB, 5 at
-1024MiB, and 6 at 2048MiB. These live values are snapshot evidence, not the
-candidate Gen2 configuration.
+The current trigger generation count is zero Gen1. The post-cleanup official
+inventory contains 167 Gen2 functions, all `ACTIVE`.
 
 The release manifest must be generated from a single captured JSON inventory
 that records, for every live function:
@@ -291,40 +289,48 @@ Use dependency order, not file order:
 The coupled cluster is atomic because it shares root imports, callable/HTTP
 admission, the video Firestore trigger, specialist routing, and test mocks.
 
-## Downstream integration conflict map
+## Downstream integration completion record
 
-Migration must land and reach exact-main green before either downstream lane.
+The conflict-sensitive downstream sequence is now published in dependency
+order and each gate reached exact-main green before the next one landed.
 
-### Reservation lifecycle (`467c45349`)
+### Reservation lifecycle
 
-- Shared files: `packages/firebase/src/index.ts`,
-  `packages/firebase/src/__tests__/image_gen.test.ts`, billing enforcement,
-  renderer rate limiting, and the uncommitted
-  `FirebaseIntelligenceService.ts` adapter.
-- Preserve the published Vertex route resolver, property-based v2
-  resource-exhausted recognition, typed JSON 429 body/retry metadata, and the
-  no-general-fallback rule.
-- Insert owner-scoped reservation void before returning the typed 429.
-- Add one reservation per stream attempt, opaque `costReservationId` in the
-  request body, atomic claim before provider submission, terminal
-  `{ complete: true }` only after settlement, cancellation propagation, and a
-  callable that can void only an unclaimed hold.
-- Retain both typed-routing tests and claim/settle/void/cancel tests.
-- The backend commit and adapted renderer service must land atomically because
-  the backend makes `costReservationId` mandatory.
+- Main commit `4a2b78ba41138ca8a90ef5002a5d2e3f3e421cec`; exact deployment
+  run `30549732758` green.
+- The published gateway and renderer preserve Vertex typed capacity/retry
+  metadata and the no-general-fallback rule while adding owner/type/status
+  claims, pre-provider voids, settlement before terminal `{ complete: true }`,
+  disconnect cancellation, and bounded stale reconciliation.
+- The backend and renderer client contract landed atomically. Both required
+  `costLedger` composite indexes are `READY`.
 
-### Boardroom image/result preservation (`7dd4`)
+### ISSUE-1135 frame-conditioned safety
 
-- Files are renderer-only: `BaseAgent.ts`, `BaseAgentUsage.test.ts`,
-  `CostControlService.ts`, and `CostControlService.test.ts`.
-- Remove the client-side founder/admin cost bypass; backend admission remains
+- Main commit `0a274bcfa39bf42711900748130ea1ede5d8aad5`; exact deployment
+  run `30552228181` green.
+- Explicit `dont_allow` is normalized before reservation/staging and survives
+  frame/reference-conditioned queueing into the worker payload.
+
+### Boardroom image/result preservation
+
+- Main commit `a24cb4ab21f48c2adeed633fcedaa4fd850658f0`; exact deployment
+  run `30555585723` attempt 2 green after a transient unchanged Firebase Rules
+  API 503 in attempt 1.
+- Both synthetic founder/admin receipt paths are removed; backend admission is
   authoritative.
-- Preserve an already-completed tool result when only the post-tool summary
-  turn is rate-limited, without making another provider call or reporting a
-  failed tool as successful.
-- Apply after reservation lifecycle is exact-main green so the Boardroom's
-  rate-limit recovery is tested against the canonical typed errors and durable
-  reservation behavior.
+- An authoritative completed or typed-failed image result survives a
+  post-tool summary capacity error without a second provider/model call.
+  Recovery is image-only and cannot expose raw results from another tool.
+
+### Server-attested capability truth
+
+- Main commit `35e36370b5f3d2148b7b509d695a1020607d42c1`; exact deployment
+  run `30560106706` green across all 26 jobs.
+- `getCapabilitySnapshot` is `ACTIVE` at revision
+  `getcapabilitysnapshot-00001-new`. Auth, App Check, entitlement, Arcjet,
+  owner-scoped durable evidence, and bounded freshness form the server ceiling.
+  Unknown/stale/transport-failed state is not promoted to available.
 
 The separate image-timeout lane is conclusively a duplicate of the Vertex,
 reservation, and Boardroom lanes; it has no distinct source change to
@@ -337,13 +343,13 @@ Boardroom image/result-preservation patch are integrated and exact-main green.
 Unit tests, source inspection, and planned code are structural evidence only.
 They cannot change a row to `AVAILABLE`.
 
-The application capability answer must be generated from the same status
-record. It must not advertise a connector or workflow as active when this
-matrix says `DEGRADED` or `BLOCKED`.
+The application capability answer must not contradict this evidence matrix. It
+must not advertise a connector or workflow as active when this matrix says
+`DEGRADED` or `BLOCKED`.
 
 | Workflow | Current status | Production evidence required | Billing, rights, and security evidence | Remaining credential or founder action |
 |---|---|---|---|---|
-| Specialist conversation and routing | `BLOCKED` | Genuine authenticated Boardroom conversation; selected specialist and route receipt; typed unavailable/capacity behavior; logs proving no general-model fallback | Verified owner/session, App Check and Arcjet admission, truthful model/capability identity, no prompt or receipt leakage | Genuine founder sign-in and permission to run the production conversation |
+| Specialist conversation and routing | `DEGRADED` | Authenticated production trace `3376b8439686cabfa58cba0ce1e58eb4` records Arcjet admission, multi-region routing, and HTTP 200; a 72-hour sample has 31 `location=us` multi-region events and zero `SPECIALIST_UNAVAILABLE`; endpoint preflight is 22/22. Still required: ask the genuine current Boardroom capability question and retain the returned snapshot/answer, plus an observed typed unavailable/capacity case without general fallback | Authenticated owner/session and Arcjet admission are proven for the sampled request; source and guards prohibit general fallback and redact endpoint identity. Capability status deliberately remains unverified without a current server authority | Genuine founder sign-in and permission to perform the non-destructive production conversation/capability check |
 | Boardroom image generation | `BLOCKED` | Boardroom request ID; durable reservation and claim; one provider submission; completed owned asset/job; settled receipt; an honest recoverable failure/retry observation | Owner-scoped input/output, private storage, immutable result receipt, exact credit settlement/void behavior, no duplicate spend | Genuine verified account with applicable entitlement/credits; founder approval for any paid provider request |
 | Boardroom video generation | `BLOCKED` | Boardroom request/job ID; secure staging evidence; one provider submission despite trigger delivery/retry; completed private result and receipt; playback/download proof | Owner/hash/generation validation for every media input, no arbitrary URL fetch, one claimed reservation, conservative ambiguous-provider handling | Genuine verified account, owned media, applicable entitlement/credits, and founder approval for the paid production job |
 | Long-running marketing plan | `BLOCKED` | Durable task ID and state transitions; progress visible after a long run; pause, resume, and reconnect; final plan retains prior context without duplicate work | Owner-scoped task state, bounded retries/cost, durable audit events, no fabricated external action or lost context | Authorized production session and a founder-approved non-destructive plan scenario |

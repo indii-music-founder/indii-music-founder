@@ -1,112 +1,81 @@
-import { exec } from 'child_process';
+import { execFile } from 'child_process';
 import { promisify } from 'util';
 import { readFileSync, unlinkSync, existsSync } from 'fs';
-import { getApps, initializeApp, cert } from 'firebase-admin/app';
+import { getApps, initializeApp } from 'firebase-admin/app';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { join } from 'path';
 import { tmpdir } from 'os';
 
-const execAsync = promisify(exec);
+import {
+  summarizeHealthResults,
+  type VitestHealthResults,
+} from './health-check-results.js';
 
-async function runHealthCheck() {
-  const tmpFile = join(tmpdir(), `vitest-results-${Date.now()}.json`);
-  let passed = false;
-  
+const execFileAsync = promisify(execFile);
+
+async function runHealthCheck(): Promise<void> {
+  const tmpFile = join(tmpdir(), `vitest-results-${process.pid}-${Date.now()}.json`);
+
   try {
     console.log('Running integration tests for health check...');
-    
-    // Run vitest with json reporter. We catch errors because failing tests exit with non-zero
-    // but still output valid JSON.
-    await execAsync(`npx vitest run integration.test.ts --reporter=json > "${tmpFile}"`).catch(() => {});
-    
-    if (!existsSync(tmpFile)) {
-      throw new Error(`Failed to generate test results at ${tmpFile}`);
+    let runnerSucceeded = true;
+    try {
+      await execFileAsync('npx', [
+        'vitest',
+        'run',
+        'integration.test.ts',
+        '--reporter=json',
+        `--outputFile=${tmpFile}`,
+      ]);
+    } catch {
+      runnerSucceeded = false;
     }
 
-    const resultsJson = readFileSync(tmpFile, 'utf-8');
-    
-    // Handle cases where stdout has other logs before/after the JSON
-    const jsonStartIndex = resultsJson.indexOf('{');
-    const jsonEndIndex = resultsJson.lastIndexOf('}');
-    
-    if (jsonStartIndex === -1 || jsonEndIndex === -1) {
-      throw new Error('Could not find valid JSON in test output:\n' + resultsJson);
+    if (!existsSync(tmpFile)) {
+      throw new Error(`Vitest did not produce its health result file at ${tmpFile}.`);
     }
-    
-    const cleanJson = resultsJson.substring(jsonStartIndex, jsonEndIndex + 1);
-    const results = JSON.parse(cleanJson);
-    
-    const totalTests = results.numTotalTests || 0;
-    const passedTests = results.numPassedTests || 0;
-    const passRate = totalTests > 0 ? `${Math.round((passedTests / totalTests) * 100)}%` : '0%';
-    
-    // Extract latencies
-    const durations: number[] = [];
-    if (results.testResults) {
-      for (const suite of results.testResults) {
-        if (suite.assertionResults) {
-          for (const assertion of suite.assertionResults) {
-            if (typeof assertion.duration === 'number') {
-              durations.push(assertion.duration);
-            }
-          }
-        }
-      }
-    }
-    
-    durations.sort((a, b) => a - b);
-    const p50 = durations.length > 0 ? durations[Math.floor(durations.length * 0.5)] : 0;
-    const p99 = durations.length > 0 ? durations[Math.floor(durations.length * 0.99)] : 0;
-    
-    console.log(`Test Pass Rate: ${passRate} (${passedTests}/${totalTests})`);
-    console.log(`Latency p50: ${Math.round(p50)}ms, p99: ${Math.round(p99)}ms`);
-    
-    // Write to Firestore
-    if (getApps().length === 0) {
-      if (process.env.FIREBASE_SERVICE_ACCOUNT) {
-        try {
-          const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
-          initializeApp({
-            credential: cert(serviceAccount)
-          });
-          console.log('Firebase Admin initialized with FIREBASE_SERVICE_ACCOUNT');
-        } catch (e) {
-          console.warn('Failed to parse FIREBASE_SERVICE_ACCOUNT as JSON. Falling back to default initialization.');
-          initializeApp();
-        }
-      } else {
-        initializeApp();
-      }
-    }
+
+    const results = JSON.parse(readFileSync(tmpFile, 'utf-8')) as VitestHealthResults;
+    const summary = summarizeHealthResults(results, runnerSucceeded);
+
+    console.log(
+      `Test Pass Rate: ${summary.passRate} `
+      + `(${summary.passedTests}/${summary.executedTests} executed; `
+      + `${summary.skippedTests} skipped/pending; ${summary.discoveredTests} discovered)`,
+    );
+    console.log(`Latency p50: ${summary.p50}ms, p99: ${summary.p99}ms`);
+
+    if (getApps().length === 0) initializeApp();
     const db = getFirestore();
-    
     await db.collection('healthChecks').add({
+      schemaVersion: 'health-check.v2',
       timestamp: FieldValue.serverTimestamp(),
-      testCount: totalTests,
-      testPassRate: passRate,
+      status: summary.healthy ? 'passed' : 'failed',
+      testCount: summary.executedTests,
+      discoveredTestCount: summary.discoveredTests,
+      passedTestCount: summary.passedTests,
+      failedTestCount: summary.failedTests,
+      skippedTestCount: summary.skippedTests,
+      testPassRate: summary.passRate,
       latencies: {
-        p50: Math.round(p50),
-        p99: Math.round(p99)
-      }
+        p50: summary.p50,
+        p99: summary.p99,
+      },
     });
-    
     console.log('Successfully wrote health check results to Firestore.');
-    passed = true;
-  } catch (error) {
-    console.error('Failed to run health check:', error);
-  } finally {
-    try {
-      if (existsSync(tmpFile)) {
-        unlinkSync(tmpFile);
-      }
-    } catch (e) {
-      // ignore
+
+    if (!summary.healthy) {
+      throw new Error(
+        `Health tests failed: ${summary.failedTests} failed, `
+        + `${summary.executedTests} executed, runnerSucceeded=${runnerSucceeded}.`,
+      );
     }
-  }
-  
-  if (!passed) {
-    process.exit(1);
+  } finally {
+    if (existsSync(tmpFile)) unlinkSync(tmpFile);
   }
 }
 
-runHealthCheck();
+runHealthCheck().catch(error => {
+  console.error('Failed to run health check:', error);
+  process.exitCode = 1;
+});
