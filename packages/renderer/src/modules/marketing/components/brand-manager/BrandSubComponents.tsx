@@ -15,11 +15,11 @@ export const CareerStageSelector = ({ value, onChange }: { value: string; onChan
             <select
                 value={value || 'Emerging'}
                 onChange={(e) => onChange(e.target.value)}
-                className="w-full appearance-none bg-[#0a0a0a] border border-gray-800 rounded-lg px-3 py-2 text-sm font-bold text-white focus:border-dept-marketing/50 focus:ring-1 focus:ring-dept-marketing/20 outline-none cursor-pointer hover:border-gray-600 transition-colors"
+                className="w-full appearance-none bg-[#0a0a0a] border border-gray-800 rounded-lg px-3 py-2 text-sm font-bold text-white focus:border-dept-brand/50 focus:ring-1 focus:ring-dept-brand/20 outline-none cursor-pointer hover:border-gray-600 transition-colors"
             >
                 {stages.map(s => <option key={s} value={s} className="bg-[#111] text-gray-200">{s}</option>)}
             </select>
-            <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-dept-marketing pointer-events-none" />
+            <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-dept-brand pointer-events-none" />
         </div>
     );
 };
@@ -40,11 +40,11 @@ export const PrimaryGoalSelector = ({ value, onChange }: { value: string; onChan
             <select
                 value={value || 'World Domination'}
                 onChange={(e) => onChange(e.target.value)}
-                className="w-full appearance-none bg-[#0a0a0a] border border-gray-800 rounded-lg px-3 py-2 text-xs font-bold text-white focus:border-dept-marketing/50 focus:ring-1 focus:ring-dept-marketing/20 outline-none cursor-pointer hover:border-gray-600 transition-colors"
+                className="w-full appearance-none bg-[#0a0a0a] border border-gray-800 rounded-lg px-3 py-2 text-xs font-bold text-white focus:border-dept-brand/50 focus:ring-1 focus:ring-dept-brand/20 outline-none cursor-pointer hover:border-gray-600 transition-colors"
             >
                 {goals.map(g => <option key={g} value={g} className="bg-[#111] text-gray-200">{g}</option>)}
             </select>
-            <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-dept-marketing pointer-events-none" />
+            <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-dept-brand pointer-events-none" />
         </div>
     );
 };
@@ -64,7 +64,7 @@ export const FontSelector = ({ value, onChange }: { value: string; onChange: (va
             <select
                 value={value || 'Inter'}
                 onChange={(e) => onChange(e.target.value)}
-                className="w-full bg-[#0a0a0a] border border-gray-800 rounded-lg pl-3 pr-8 py-1.5 text-xs font-bold text-white focus:border-dept-marketing/50 focus:ring-1 focus:ring-dept-marketing/20 outline-none appearance-none cursor-pointer hover:border-gray-600 transition-colors"
+                className="w-full bg-[#0a0a0a] border border-gray-800 rounded-lg pl-3 pr-8 py-1.5 text-xs font-bold text-white focus:border-dept-brand/50 focus:ring-1 focus:ring-dept-brand/20 outline-none appearance-none cursor-pointer hover:border-gray-600 transition-colors"
                 style={{ fontFamily: value || 'Inter' }}
                 aria-label="Select typography"
             >
@@ -106,10 +106,10 @@ export const SocialLinksManager = ({ socials, onChange }: { socials: SocialLinks
                         value={socials?.[p.key] || ''}
                         onChange={(e) => handleChange(p.key, e.target.value)}
                         placeholder={`Add ${p.label} URL...`}
-                        className="flex-1 bg-transparent border-b border-gray-800 text-xs text-gray-300 py-1.5 focus:border-dept-marketing/50 focus:outline-none transition-colors placeholder:text-gray-700 font-medium min-w-0"
+                        className="flex-1 bg-transparent border-b border-gray-800 text-xs text-gray-300 py-1.5 focus:border-dept-brand/50 focus:outline-none transition-colors placeholder:text-gray-700 font-medium min-w-0"
                     />
                     {socials?.[p.key] && (
-                        <a href={socials[p.key]} target="_blank" rel="noreferrer" className="text-gray-600 hover:text-dept-marketing transition-colors shrink-0">
+                        <a href={socials[p.key]} target="_blank" rel="noreferrer" className="text-gray-600 hover:text-dept-brand transition-colors shrink-0">
                             <ExternalLink size={12} />
                         </a>
                     )}

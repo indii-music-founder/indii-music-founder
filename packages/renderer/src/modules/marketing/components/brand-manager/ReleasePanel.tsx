@@ -44,7 +44,7 @@ const ReleasePanel: React.FC<ReleasePanelProps> = ({
         >
             {/* Header Section */}
             <div className="p-8 border-b border-gray-800 bg-[#0a0a0a] relative overflow-hidden">
-                <div className="absolute top-0 right-0 p-32 bg-dept-marketing/5 blur-[80px] rounded-full pointer-events-none" />
+                <div className="absolute top-0 right-0 p-32 bg-dept-brand/5 blur-[80px] rounded-full pointer-events-none" />
 
                 <div className="flex flex-col md:flex-row gap-8 relative z-10">
                     {/* Cover Art Placeholder */}
@@ -65,7 +65,7 @@ const ReleasePanel: React.FC<ReleasePanelProps> = ({
                     <div className="flex-1 space-y-4">
                         <div>
                             <div className="flex items-center justify-between mb-2">
-                                <label className="text-[9px] text-dept-marketing font-bold uppercase tracking-[0.2em]">Mission Architect</label>
+                                <label className="text-[9px] text-dept-brand font-bold uppercase tracking-[0.2em]">Mission Architect</label>
                                 <input
                                     type="date"
                                     value={release.releaseDate || ''}
@@ -85,7 +85,7 @@ const ReleasePanel: React.FC<ReleasePanelProps> = ({
 
                         <div className="flex flex-wrap items-center gap-4">
                             <div className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-lg px-4 py-2">
-                                <Disc size={14} className="text-dept-marketing" />
+                                <Disc size={14} className="text-dept-brand" />
                                 <select
                                     value={release.type}
                                     onChange={(e) => { handleUpdateRelease('type', e.target.value); handleSaveRelease(); }}
@@ -136,7 +136,7 @@ const ReleasePanel: React.FC<ReleasePanelProps> = ({
                             value={release.mood}
                             onChange={(e) => handleUpdateRelease('mood', e.target.value)}
                             onBlur={handleSaveRelease}
-                            className="w-full h-24 bg-[#0a0a0a] border border-gray-800 rounded-xl p-4 text-xs font-medium text-gray-300 focus:border-dept-marketing/30 focus:ring-1 focus:ring-dept-marketing/10 outline-none resize-none custom-scrollbar leading-relaxed"
+                            className="w-full h-24 bg-[#0a0a0a] border border-gray-800 rounded-xl p-4 text-xs font-medium text-gray-300 focus:border-dept-brand/30 focus:ring-1 focus:ring-dept-brand/10 outline-none resize-none custom-scrollbar leading-relaxed"
                             placeholder="Describe the sonic and visual atmosphere..."
                         />
                     </div>
@@ -149,7 +149,7 @@ const ReleasePanel: React.FC<ReleasePanelProps> = ({
                             value={release.themes}
                             onChange={(e) => handleUpdateRelease('themes', e.target.value)}
                             onBlur={handleSaveRelease}
-                            className="w-full h-24 bg-[#0a0a0a] border border-gray-800 rounded-xl p-4 text-xs font-medium text-gray-300 focus:border-dept-marketing/30 focus:ring-1 focus:ring-dept-marketing/10 outline-none resize-none custom-scrollbar leading-relaxed"
+                            className="w-full h-24 bg-[#0a0a0a] border border-gray-800 rounded-xl p-4 text-xs font-medium text-gray-300 focus:border-dept-brand/30 focus:ring-1 focus:ring-dept-brand/10 outline-none resize-none custom-scrollbar leading-relaxed"
                             placeholder="Translate the artistry into narrative goals..."
                         />
                     </div>

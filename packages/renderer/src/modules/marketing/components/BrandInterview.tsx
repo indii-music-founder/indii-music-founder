@@ -92,7 +92,7 @@ const BrandInterview: React.FC = () => {
                 <div className="px-4 lg:px-6 pt-4 pb-2 border-b border-white/5 bg-[#0a0a0a]/50 backdrop-blur-sm">
                     <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-2">
-                            <div className="w-2 h-2 rounded-full bg-dept-marketing animate-pulse" />
+                            <div className="w-2 h-2 rounded-full bg-dept-brand animate-pulse" />
                             <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.15em]">
                                 {resolvedMode === 'onboarding' ? 'New Interview' : 'Profile Update'}
                             </span>
@@ -180,7 +180,7 @@ const BrandInterview: React.FC = () => {
                             className="flex justify-start"
                         >
                             <div className="bg-white/5 border border-white/10 p-4 rounded-2xl flex items-center gap-3">
-                                <Loader2 className="animate-spin text-dept-marketing" size={18} />
+                                <Loader2 className="animate-spin text-dept-brand" size={18} />
                                 <span className="text-xs text-gray-400 font-bold uppercase tracking-widest"><span className="indii-name">indii</span> is thinking...</span>
                             </div>
                         </motion.div>
@@ -207,7 +207,7 @@ const BrandInterview: React.FC = () => {
                                         </div>
                                     ) : (
                                         <div className="w-14 h-14 rounded-xl bg-white/5 border-2 border-white/10 flex flex-col items-center justify-center p-2 shadow-lg">
-                                            <FileText size={18} className="text-dept-marketing mb-0.5" />
+                                            <FileText size={18} className="text-dept-brand mb-0.5" />
                                             <span className="text-[7px] text-gray-500 truncate w-full text-center">{file.file.name}</span>
                                         </div>
                                     )}
@@ -234,7 +234,7 @@ const BrandInterview: React.FC = () => {
                             onKeyDown={(e) => e.key === 'Enter' && handleSend()}
                             placeholder="Tell indii about your music, brand, or goals..."
                             aria-label="Type your message"
-                            className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-3.5 pr-28 focus:outline-none focus:border-dept-marketing/40 transition-all text-sm font-medium placeholder:text-gray-600 focus:bg-white/10"
+                            className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-3.5 pr-28 focus:outline-none focus:border-dept-brand/40 transition-all text-sm font-medium placeholder:text-gray-600 focus:bg-white/10"
                         />
                         <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
                             <button
@@ -249,7 +249,7 @@ const BrandInterview: React.FC = () => {
                                 onClick={() => handleSend()}
                                 disabled={!input.trim() && files.length === 0}
                                 aria-label="Send message"
-                                className="h-9 w-9 bg-dept-marketing text-white flex items-center justify-center rounded-xl hover:brightness-110 transition-all shadow-lg shadow-dept-marketing/20 disabled:opacity-30 disabled:cursor-not-allowed group"
+                                className="h-9 w-9 bg-dept-brand text-white flex items-center justify-center rounded-xl hover:brightness-110 transition-all shadow-lg shadow-dept-brand/20 disabled:opacity-30 disabled:cursor-not-allowed group"
                             >
                                 <Send size={16} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
                             </button>
@@ -270,11 +270,11 @@ const BrandInterview: React.FC = () => {
             </div>
 
             {/* Right Panel — Profile Progress */}
-            <div className="hidden @5xl:flex @5xl:col-span-4 flex-col border-l border-dept-marketing/20 bg-[#0a0a0a]/30 backdrop-blur-xl p-6 overflow-y-auto custom-scrollbar">
+            <div className="hidden @5xl:flex @5xl:col-span-4 flex-col border-l border-dept-brand/20 bg-[#0a0a0a]/30 backdrop-blur-xl p-6 overflow-y-auto custom-scrollbar">
                 {/* Brand Interview Header */}
                 <div className="flex items-center gap-3 mb-6 pb-4 border-b border-white/5">
-                    <div className="w-10 h-10 rounded-xl bg-dept-marketing/10 border border-dept-marketing/20 flex items-center justify-center">
-                        <MessageCircle size={18} className="text-dept-marketing" />
+                    <div className="w-10 h-10 rounded-xl bg-dept-brand/10 border border-dept-brand/20 flex items-center justify-center">
+                        <MessageCircle size={18} className="text-dept-brand" />
                     </div>
                     <div>
                         <h3 className="text-sm font-bold text-white tracking-tight">Brand Interview</h3>
@@ -298,7 +298,7 @@ const BrandInterview: React.FC = () => {
                 {(userProfile.bio || userProfile.brandKit?.releaseDetails?.title) && (
                     <div className="mt-6 pt-6 border-t border-white/5">
                         <h4 className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-4 flex items-center gap-2">
-                            <Sparkles size={10} className="text-dept-marketing" />
+                            <Sparkles size={10} className="text-dept-brand" />
                             Live Preview
                         </h4>
                         {userProfile.bio && (

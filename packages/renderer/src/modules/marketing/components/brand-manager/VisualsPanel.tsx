@@ -119,7 +119,7 @@ const VisualsPanel: React.FC<VisualsPanelProps> = ({
                     </div>
                     <button
                         onClick={handleAddColor}
-                        className="flex items-center gap-2 px-3 py-1.5 bg-dept-marketing text-white rounded-lg text-[10px] font-bold hover:opacity-90 transition-all active:scale-95 border border-white/10"
+                        className="flex items-center gap-2 px-3 py-1.5 bg-dept-brand text-white rounded-lg text-[10px] font-bold hover:opacity-90 transition-all active:scale-95 border border-white/10"
                     >
                         <Plus size={12} />
                         <span>Add Color</span>
@@ -181,7 +181,7 @@ const VisualsPanel: React.FC<VisualsPanelProps> = ({
                             />
                         </div>
                     </div>
-                    <div className="p-6 bg-[#0a0a0a] rounded-xl border border-gray-800 relative overflow-hidden group transition-all hover:border-dept-marketing/30">
+                    <div className="p-6 bg-[#0a0a0a] rounded-xl border border-gray-800 relative overflow-hidden group transition-all hover:border-dept-brand/30">
                         <div className="absolute top-0 right-0 p-12 bg-green-500/5 blur-[40px] rounded-full group-hover:bg-green-500/10 transition-colors" />
                         <p className="text-base font-bold text-white mb-2 tracking-tight transition-all" style={{ fontFamily: brandKit.fonts }}>AaBb</p>
                         <div className="flex items-center gap-2 mt-2">
@@ -201,7 +201,7 @@ const VisualsPanel: React.FC<VisualsPanelProps> = ({
                         {(brandKit.digitalAura || ['High Fidelity', 'Glassmorphism', 'Luxury']).map(tag => (
                             <span
                                 key={tag}
-                                className="group/tag px-3 py-1.5 bg-[#0a0a0a] border border-gray-800 rounded-lg text-[10px] font-bold text-gray-400 uppercase tracking-wide hover:bg-[#151515] hover:text-dept-marketing hover:border-dept-marketing/30 transition-all flex items-center gap-2"
+                                className="group/tag px-3 py-1.5 bg-[#0a0a0a] border border-gray-800 rounded-lg text-[10px] font-bold text-gray-400 uppercase tracking-wide hover:bg-[#151515] hover:text-dept-brand hover:border-dept-brand/30 transition-all flex items-center gap-2"
                             >
                                 {tag}
                                 <button
@@ -215,7 +215,7 @@ const VisualsPanel: React.FC<VisualsPanelProps> = ({
                         <input
                             type="text"
                             placeholder="+ Add Vibe"
-                            className="bg-transparent border border-dashed border-gray-800 rounded-lg px-3 py-1 text-[10px] font-bold text-gray-600 focus:text-white focus:border-dept-marketing/50 focus:ring-0 outline-none w-24 uppercase"
+                            className="bg-transparent border border-dashed border-gray-800 rounded-lg px-3 py-1 text-[10px] font-bold text-gray-600 focus:text-white focus:border-dept-brand/50 focus:ring-0 outline-none w-24 uppercase"
                             onKeyDown={(e) => {
                                 if (e.key === 'Enter') {
                                     handleAddAuraTag((e.target as HTMLInputElement).value);
@@ -229,7 +229,7 @@ const VisualsPanel: React.FC<VisualsPanelProps> = ({
 
             {/* Asset Library Section */}
             <div className="p-8 rounded-2xl border border-gray-800 bg-[#111] relative overflow-hidden">
-                <div className="absolute top-0 right-0 p-32 bg-dept-marketing/5 blur-[80px] rounded-full pointer-events-none" />
+                <div className="absolute top-0 right-0 p-32 bg-dept-brand/5 blur-[80px] rounded-full pointer-events-none" />
                 <div className="relative z-10 space-y-8">
                     <UnifiedAssetLibrary
                         userId={userProfile?.id || ''}

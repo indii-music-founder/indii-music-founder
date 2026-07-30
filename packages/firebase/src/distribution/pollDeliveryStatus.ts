@@ -21,7 +21,11 @@ import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { logger } from 'firebase-functions';
 
 /** Statuses that are still in-flight and warrant polling */
-const PENDING_STATUSES = ['pending', 'processing', 'validating', 'in_review', 'pending_review'];
+// ISSUE-1288: 'likely_live' is included deliberately. It is a GUESS, not a terminal
+// state, so it must keep being polled — otherwise a heuristically-promoted release
+// would never get the real API confirmation that upgrades it to 'live' (or the
+// correction that moves it elsewhere).
+export const PENDING_STATUSES = ['pending', 'processing', 'validating', 'in_review', 'pending_review', 'likely_live'];
 
 /** Minimum hours a release must be in a pending state before we attempt a status check */
 const MIN_HOURS_BEFORE_CHECK = 1;
@@ -106,9 +110,18 @@ async function checkDistributorStatus(
 
 /**
  * Apply time-based heuristics when no API status is available.
- * Transitions pending → in_review → live based on expected lead times.
+ * Transitions pending → in_review → likely_live based on expected lead times.
+ *
+ * ISSUE-1288: this used to promote a release all the way to the terminal `'live'`
+ * purely because enough wall-clock hours had passed, with no confirmation from any
+ * DSP. `deliveryStatus: 'live'` therefore meant two different things — "a
+ * distributor API confirmed it" and "we guessed" — and the only record of which was
+ * a `source: 'heuristic'` tag buried in statusHistory that virtually no reader
+ * consults. A guess must not be able to produce the same value as a confirmation, so
+ * the heuristic now stops at `'likely_live'`. Only a real API status (or a DDEX ack,
+ * see processDDEXAck.ts) can write `'live'`.
  */
-function applyStatusHeuristic(
+export function applyStatusHeuristic(
     currentStatus: string,
     distributorId: string,
     deliveredAtMs?: number
@@ -123,7 +136,7 @@ function applyStatusHeuristic(
     }
 
     if (currentStatus === 'in_review' || currentStatus === 'validating' || currentStatus === 'processing') {
-        if (hoursSinceDelivery >= leadHours) return 'live';
+        if (hoursSinceDelivery >= leadHours) return 'likely_live';
     }
 
     return currentStatus;

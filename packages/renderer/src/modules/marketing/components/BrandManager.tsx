@@ -102,18 +102,18 @@ const BrandManager: React.FC = () => {
 
     return (
         <ModuleErrorBoundary moduleName="Brand Manager">
-            <div className="flex h-screen w-full bg-background text-gray-200 font-sans overflow-hidden selection:bg-dept-marketing/30 relative">
+            <div className="flex h-screen w-full bg-background text-gray-200 font-sans overflow-hidden selection:bg-dept-brand/30 relative">
                 {/* Global Background Ambience - Toned down for professional feel */}
                 <div className="fixed inset-0 pointer-events-none z-0">
-                    <div className="absolute top-[-20%] left-[-10%] w-[70%] h-[70%] bg-dept-marketing/5 blur-[150px]" />
-                    <div className="absolute bottom-[-20%] right-[-10%] w-[60%] h-[60%] bg-dept-marketing/5 blur-[150px]" />
+                    <div className="absolute top-[-20%] left-[-10%] w-[70%] h-[70%] bg-dept-brand/5 blur-[150px]" />
+                    <div className="absolute bottom-[-20%] right-[-10%] w-[60%] h-[60%] bg-dept-brand/5 blur-[150px]" />
                 </div>
 
                 {/* Sidebar Navigation */}
                 <aside className="hidden @5xl:flex w-64 border-r border-dept-brand/20 bg-[#0a0a0a] flex-col h-full z-20">
                     {/* Brand Header */}
                     <div className="p-4 border-b border-white/5 flex items-center gap-2 h-14">
-                        <Shield className="text-dept-marketing" size={16} />
+                        <Shield className="text-dept-brand" size={16} />
                         <span className="text-xs font-bold text-white tracking-widest uppercase">Brand HQ</span>
                     </div>
 
@@ -127,20 +127,20 @@ const BrandManager: React.FC = () => {
                                 className={`
                                     w-full flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium transition-all group relative
                                     ${activeTab === tab.id
-                                        ? 'bg-dept-marketing/10 text-white border border-dept-marketing/30'
+                                        ? 'bg-dept-brand/10 text-white border border-dept-brand/30'
                                         : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'
                                     }
                                 `}
                             >
                                 <tab.icon
                                     size={14}
-                                    className={`transition-colors ${activeTab === tab.id ? 'text-dept-marketing' : 'text-gray-500 group-hover:text-gray-400'}`}
+                                    className={`transition-colors ${activeTab === tab.id ? 'text-dept-brand' : 'text-gray-500 group-hover:text-gray-400'}`}
                                 />
                                 <span>{tab.label}</span>
                                 {tab.id === 'interview' && profileIncomplete && activeTab !== 'interview' && (
-                                    <span className="ml-auto w-2 h-2 rounded-full bg-dept-marketing animate-pulse" />
+                                    <span className="ml-auto w-2 h-2 rounded-full bg-dept-brand animate-pulse" />
                                 )}
-                                {activeTab === tab.id && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-4 bg-dept-marketing rounded-r-full" />}
+                                {activeTab === tab.id && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-4 bg-dept-brand rounded-r-full" />}
                             </button>
                         ))}
                     </div>
@@ -150,7 +150,7 @@ const BrandManager: React.FC = () => {
                         <div className="mb-6 p-4 rounded-xl bg-[#111] border border-gray-800 space-y-4 shadow-lg shadow-black/20">
                             <div>
                                 <div className="text-[10px] uppercase tracking-wider text-slate-500 font-bold mb-2 flex items-center gap-2">
-                                    <Sparkles size={10} className="text-dept-marketing" />
+                                    <Sparkles size={10} className="text-dept-brand" />
                                     Career Stage
                                 </div>
                                 <CareerStageSelector
@@ -193,7 +193,7 @@ const BrandManager: React.FC = () => {
                     <header className="h-12 md:h-14 shrink-0 px-4 md:px-6 flex items-center justify-between border-b border-gray-800 bg-[#0a0a0a] z-20">
                         <div className="flex items-center gap-3">
                             <div className="flex items-center gap-2 text-gray-400">
-                                {tabs.find(t => t.id === activeTab) && React.createElement(tabs.find(t => t.id === activeTab)!.icon, { size: 16, className: "text-dept-marketing" })}
+                                {tabs.find(t => t.id === activeTab) && React.createElement(tabs.find(t => t.id === activeTab)!.icon, { size: 16, className: "text-dept-brand" })}
                                 <h2 className="text-sm font-bold text-gray-200 tracking-tight">
                                     {tabs.find(t => t.id === activeTab)?.label}
                                 </h2>

@@ -113,13 +113,13 @@ const HealthPanel: React.FC<HealthPanelProps> = ({
                 <div className="glass-panel p-1 rounded-3xl flex-1 flex flex-col overflow-hidden bg-white/5 border border-white/5 backdrop-blur-xl">
                     <div className="p-6 border-b border-white/5 bg-black/20 flex justify-between items-center">
                         <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
-                            <TrendingUp size={12} className="text-dept-marketing" />
+                            <TrendingUp size={12} className="text-dept-brand" />
                             System Audit
                         </h3>
                         <select
                             value={contentType}
                             onChange={(e) => setContentType(e.target.value as 'messaging' | 'social' | 'bio' | 'visuals')}
-                            className="bg-transparent border-none text-[10px] uppercase font-black text-gray-500 focus:text-dept-marketing hover:text-white transition-colors outline-none cursor-pointer"
+                            className="bg-transparent border-none text-[10px] uppercase font-black text-gray-500 focus:text-dept-brand hover:text-white transition-colors outline-none cursor-pointer"
                         >
                             <option value="messaging" className="bg-[#111]">Messaging</option>
                             <option value="social" className="bg-[#111]">Social Post</option>
@@ -166,7 +166,7 @@ const HealthPanel: React.FC<HealthPanelProps> = ({
                                     <p className="text-[10px] font-bold text-white truncate">{entry.content}</p>
                                     <div className="flex items-center gap-2 mt-1">
                                         <span className="text-[8px] text-gray-500 uppercase font-black">{entry.date}</span>
-                                        <span className="text-[8px] text-dept-marketing/80 font-black uppercase tracking-tighter">{entry.type}</span>
+                                        <span className="text-[8px] text-dept-brand/80 font-black uppercase tracking-tighter">{entry.type}</span>
                                     </div>
                                 </div>
                                 <div className={`text-sm font-black ${entry.score > 80 ? 'text-emerald-500' : 'text-amber-500'}`}>
@@ -203,7 +203,7 @@ const HealthPanel: React.FC<HealthPanelProps> = ({
 
                         {/* Mini Impact Map in Report */}
                         <div className="h-48 w-full rounded-2xl overflow-hidden border border-white/5 relative">
-                            <div className="absolute top-3 left-3 z-10 bg-black/60 backdrop-blur-md px-2 py-1 rounded text-[8px] font-bold text-dept-marketing uppercase tracking-widest border border-white/10">
+                            <div className="absolute top-3 left-3 z-10 bg-black/60 backdrop-blur-md px-2 py-1 rounded text-[8px] font-bold text-dept-brand uppercase tracking-widest border border-white/10">
                                 Predicted Impact Zones
                             </div>
                             <TourMap
@@ -258,8 +258,8 @@ const HealthPanel: React.FC<HealthPanelProps> = ({
                             />
                             <div className="absolute inset-0 bg-linear-to-b from-transparent via-transparent to-[#111] pointer-events-none" />
                             <div className="absolute top-6 left-6 z-10 flex flex-col gap-2">
-                                <div className="bg-dept-marketing/20 backdrop-blur-md border border-dept-marketing/30 px-3 py-1.5 rounded-full flex items-center gap-2">
-                                    <div className="w-2 h-2 rounded-full bg-dept-marketing animate-pulse" />
+                                <div className="bg-dept-brand/20 backdrop-blur-md border border-dept-brand/30 px-3 py-1.5 rounded-full flex items-center gap-2">
+                                    <div className="w-2 h-2 rounded-full bg-dept-brand animate-pulse" />
                                     <span className="text-[10px] font-black text-white uppercase tracking-widest">Global Resonance Active</span>
                                 </div>
                             </div>
@@ -267,7 +267,7 @@ const HealthPanel: React.FC<HealthPanelProps> = ({
 
                         <div className="p-12 text-center relative z-10">
                             <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mb-6 border border-white/10 mx-auto">
-                                <Activity size={24} className="text-dept-marketing" />
+                                <Activity size={24} className="text-dept-brand" />
                             </div>
                             <h3 className="text-xl font-black text-white mb-3 tracking-tight">DNA Scanner Standby</h3>
                             <p className="max-w-xs mx-auto text-[11px] leading-relaxed font-bold uppercase tracking-wider opacity-40">

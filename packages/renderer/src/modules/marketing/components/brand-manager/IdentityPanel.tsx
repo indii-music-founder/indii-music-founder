@@ -93,7 +93,7 @@ const IdentityPanel: React.FC<IdentityPanelProps> = ({
                         <textarea
                             value={bioDraft}
                             onChange={(e) => setBioDraft(e.target.value)}
-                            className="w-full h-80 bg-black/40 border border-white/10 rounded-lg p-4 text-sm text-gray-300 focus:border-dept-marketing/50 focus:ring-1 focus:ring-dept-marketing/20 outline-none transition-all leading-relaxed custom-scrollbar"
+                            className="w-full h-80 bg-black/40 border border-white/10 rounded-lg p-4 text-sm text-gray-300 focus:border-dept-brand/50 focus:ring-1 focus:ring-dept-brand/20 outline-none transition-all leading-relaxed custom-scrollbar"
                             placeholder="Tell your story..."
                         />
                     ) : (
@@ -133,9 +133,9 @@ const IdentityPanel: React.FC<IdentityPanelProps> = ({
                             <label className="text-[9px] text-gray-500 font-bold uppercase tracking-wider block mb-2">A&R Sentiment</label>
                             <div className="flex items-center gap-2">
                                 <div className="h-1.5 flex-1 bg-white/5 rounded-full overflow-hidden">
-                                    <div className="h-full bg-dept-marketing" style={{ width: '75%' }} />
+                                    <div className="h-full bg-dept-brand" style={{ width: '75%' }} />
                                 </div>
-                                <span className="text-[10px] font-bold text-dept-marketing">75%</span>
+                                <span className="text-[10px] font-bold text-dept-brand">75%</span>
                             </div>
                         </div>
                     </div>
