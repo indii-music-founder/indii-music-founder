@@ -12,13 +12,12 @@
  *     → VeoToRemotionBridge.ingestVeoJob()
  *     → videoEditorStore.addClip() per segment
  *     → MyComposition renders via <Sequence> timeline
- *     → VideoRenderOrchestrator.startRender() (optional)
+ *     → explicit private project render from the authenticated editor
  */
 
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/services/firebase';
 import { useVideoEditorStore, VideoProject } from '@/modules/creative/video/store/videoEditorStore';
-import { videoRenderOrchestrator } from './VideoRenderOrchestrator';
 import { logger } from '@/utils/logger';
 import { v4 as uuidv4 } from 'uuid';
 import { COLLECTIONS } from '@/core/config/collections';
@@ -34,8 +33,17 @@ export interface VeoIngestOptions {
     aspectRatio?: '16:9' | '9:16' | '1:1';
     /** Title for the generated project */
     title?: string;
-    /** Auto-dispatch cloud render after clips are assembled? */
+    /** Legacy option. Private renders require an explicit canonical-master project compile. */
     autoRender?: boolean;
+}
+
+export class PrivateRenderUnsupportedError extends Error {
+    readonly code = 'PRIVATE_RENDER_REQUIRES_CANONICAL_PROJECT';
+
+    constructor() {
+        super('Auto-render is unavailable: open the project editor and compile with canonical video sources and a verified canonical master.');
+        this.name = 'PrivateRenderUnsupportedError';
+    }
 }
 
 interface VeoJobDoc {
@@ -171,24 +179,11 @@ export class VeoToRemotionBridge {
             `${width}×${height} @ ${fps}fps`
         );
 
-        // 7. Optionally dispatch cloud render
+        // A completed Veo job is canonical video input, not authority to create
+        // an output. The private render contract also requires an authenticated
+        // app project/organization and a verified canonical audio master.
         if (autoRender) {
-            try {
-                const renderId = await videoRenderOrchestrator.startRender(
-                    {
-                        compositionId: 'VideoProject', // Matches Root.tsx registration
-                        outputLocation: `renders/${projectId}.mp4`,
-                        inputProps: { project },
-                        codec: 'h264',
-                        useCloudQueue: true,
-                    },
-                    projectTitle
-                );
-                logger.info(`[VeoToRemotionBridge] Cloud render dispatched: ${renderId}`);
-            } catch (renderError: unknown) {
-                logger.error('[VeoToRemotionBridge] Auto-render failed (non-blocking):', renderError);
-                // Non-blocking: user can still trigger manual render from the editor
-            }
+            throw new PrivateRenderUnsupportedError();
         }
 
         return project;

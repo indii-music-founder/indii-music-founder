@@ -8,6 +8,8 @@ export const StoryboardSlotSchema = z.object({
     prompt: z.string(),
     negativePrompt: z.string().optional(),
     videoUrl: z.string().url().optional(),
+    /** Immutable server-owned source identity; videoUrl is preview-only. */
+    canonicalVideoUri: z.string().startsWith('gs://').optional(),
     isGenerating: z.boolean().default(false),
     progress: z.number().min(0).max(100).default(0),
     vocalConditioningAudioUrl: z.string().optional(),

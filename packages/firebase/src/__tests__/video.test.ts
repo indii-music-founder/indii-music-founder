@@ -50,6 +50,7 @@ const mocks = vi.hoisted(() => {
         checkBudget: vi.fn(),
         finalizeReservation: vi.fn(),
         legacyAdmission: vi.fn(),
+        authorizeProject: vi.fn(),
     };
 });
 
@@ -154,6 +155,15 @@ vi.mock('../functions/video/renderMasterContract', () => ({
     resolveVerifiedRenderMaster: (...args: unknown[]) => renderMaster.resolve(...args),
 }));
 
+vi.mock('../functions/video/createVideoSession', () => ({
+    createVideoSession: vi.fn(),
+    assertVideoSessionProjectAccess: mocks.authorizeProject,
+}));
+
+vi.mock('../functions/video/getVideoRenderReceipt', () => ({
+    getVideoRenderReceipt: vi.fn(),
+}));
+
 vi.mock('../functions/auth/entitlements', () => ({
     requireVerifiedServerEntitlement: mocks.entitlement,
     entitlementTierToBudgetTier: vi.fn(() => 'free'),
@@ -236,6 +246,7 @@ describe('Video Functions', () => {
         mocks.policyForEntitlement.mockReturnValue('verified-free');
         mocks.arcjet.mockResolvedValue({ allowed: true });
         mocks.checkBudget.mockResolvedValue({ allowed: true, operationId: 'render-op-123' });
+        mocks.authorizeProject.mockResolvedValue(undefined);
         mocks.legacyAdmission.mockImplementation(async (context: { auth?: { uid?: string } }) => {
             if (!context.auth?.uid) throw new Error('User must be authenticated.');
             return { userId: context.auth.uid, entitlement: { tier: 'free' } };
@@ -425,6 +436,9 @@ describe('Video Functions', () => {
             };
             const data = {
                 compositionId: 'performance-video-123',
+                accessPolicy: 'private-project-render.v1',
+                projectId: 'project-123',
+                organizationId: 'org-123',
                 inputProps: {
                     project: {
                         width: 1920,
@@ -479,6 +493,22 @@ describe('Video Functions', () => {
                 estimatedCost: 0.008,
                 operationId: 'render-stitch-render-server-123',
             }));
+            expect(mocks.authorizeProject).toHaveBeenCalledWith(
+                'user123',
+                'org-123',
+                'project-123',
+            );
+            expect(mocks.authorizeProject.mock.invocationCallOrder[0])
+                .toBeLessThan(mocks.checkBudget.mock.invocationCallOrder[0]);
+            expect(mocks.firestore.set).toHaveBeenCalledWith(expect.objectContaining({
+                id: 'render-server-123',
+                userId: 'user123',
+                orgId: 'org-123',
+                projectId: 'project-123',
+                accessPolicy: 'private-project-render.v1',
+                status: 'queued',
+                type: 'render_stitch',
+            }));
             expect(mocks.inngest.send).toHaveBeenCalledWith(expect.objectContaining({
                 name: 'video/stitch.requested',
                 data: expect.objectContaining({
@@ -495,9 +525,49 @@ describe('Video Functions', () => {
                         preserveNativeAudio: false
                     },
                     costReservationId: 'render-op-123',
+                    privateOutputIdentity: {
+                        policy: 'private-project-render.v1',
+                        ownerUid: 'user123',
+                        projectId: 'project-123',
+                        jobId: 'render-server-123',
+                    },
                     options: expect.objectContaining({ timelineDurationSeconds: 8 }),
                 })
             }));
+        });
+
+        it('denies project access before reservation, durable job creation, or provider dispatch', async () => {
+            mocks.authorizeProject.mockRejectedValueOnce(
+                Object.assign(new Error('Project access denied.'), { code: 'permission-denied' }),
+            );
+            const context: any = {
+                auth: { uid: 'user123', token: { email_verified: true } },
+                rawRequest: { method: 'POST', headers: {} },
+            };
+
+            await expect((renderVideo as any)({
+                ...context,
+                data: {
+                    accessPolicy: 'private-project-render.v1',
+                    projectId: 'project-123',
+                    organizationId: 'org-123',
+                    inputProps: {
+                        project: {
+                            width: 1920,
+                            height: 1080,
+                            fps: 30,
+                            durationInFrames: 240,
+                            tracks: [],
+                            clips: [],
+                        },
+                    },
+                },
+            })).rejects.toMatchObject({ code: 'internal' });
+
+            expect(mocks.checkBudget).not.toHaveBeenCalled();
+            expect(mocks.firestore.set).not.toHaveBeenCalled();
+            expect(mocks.inngest.send).not.toHaveBeenCalled();
+            expect(renderMaster.resolve).not.toHaveBeenCalled();
         });
 
         it('should process job correctly', async () => {

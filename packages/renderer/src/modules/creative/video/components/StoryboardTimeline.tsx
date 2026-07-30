@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     Music, Play, Pause, Trash2, Cpu, Eye, Check, AlertTriangle, 
-    Sparkles, RefreshCw, Layers, Link as LinkIcon, CloudLightning
+    Sparkles, RefreshCw, Layers, Link as LinkIcon, CloudLightning, Copy, Download
 } from 'lucide-react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
@@ -13,11 +13,12 @@ import { useVideoEditorStore } from '../store/videoEditorStore';
 import type { StoryboardSlot, StoryboardProject } from '../schemas/storyboard';
 import { VideoGeneration } from '@/services/video/VideoGenerationService';
 import { useToast } from '@/core/context/ToastContext';
-import { renderService } from '@/services/video/RenderService';
+import { renderService, type VideoRenderReceipt } from '@/services/video/RenderService';
 import { logger } from '@/utils/logger';
 import { useResolvedStorageUrl } from '@/hooks/useResolvedStorageUrl';
 import { resolveStorageUrl } from '@/services/storage/resolveStorageUrl';
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
+import { compileStoryboardRenderProject } from '../services/storyboardRenderProject';
 
 function readAudioDuration(audioUrl: string): Promise<number> {
     return new Promise((resolve, reject) => {
@@ -101,24 +102,61 @@ function StoryboardClipPreview({ videoUrl }: { videoUrl: string }) {
     );
 }
 
+export function StoryboardRenderReceiptView({ receipt }: { receipt: VideoRenderReceipt }) {
+    return (
+        <div
+            data-testid="storyboard-render-receipt"
+            className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-neutral-300"
+        >
+            <span>
+                {receipt.status} · {receipt.renderId} · {receipt.progress}%
+            </span>
+            {receipt.status === 'completed' && (
+                <>
+                    <button
+                        type="button"
+                        onClick={() => void navigator.clipboard.writeText(receipt.asset.url)}
+                        aria-label="Copy authorized render link"
+                        className="rounded border border-white/10 p-1.5 hover:bg-white/10"
+                    >
+                        <Copy size={12} />
+                    </button>
+                    <a
+                        href={receipt.asset.url}
+                        download
+                        aria-label="Download completed render"
+                        className="rounded border border-white/10 p-1.5 hover:bg-white/10"
+                    >
+                        <Download size={12} />
+                    </a>
+                </>
+            )}
+        </div>
+    );
+}
+
 export function StoryboardTimeline() {
     const toast = useToast();
     const audioInputRef = useRef<HTMLInputElement>(null);
 
     // Global Store
-    const { userProfile, clipboardItems } = useStore(useShallow(state => ({
+    const { userProfile, clipboardItems, currentProjectId, currentOrganizationId } = useStore(useShallow(state => ({
         userProfile: state.userProfile,
-        clipboardItems: state.clipboardItems || []
+        clipboardItems: state.clipboardItems || [],
+        currentProjectId: state.currentProjectId,
+        currentOrganizationId: state.currentOrganizationId,
     })));
 
     // Video Editor Store
     const {
         storyboardProject,
+        activeVideoProject,
         setStoryboardProject,
         updateStoryboardSlot,
         generateStoryboardSlots
     } = useVideoEditorStore(useShallow(state => ({
         storyboardProject: state.storyboardProject,
+        activeVideoProject: state.project,
         setStoryboardProject: state.setStoryboardProject,
         updateStoryboardSlot: state.updateStoryboardSlot,
         generateStoryboardSlots: state.generateStoryboardSlots
@@ -132,6 +170,7 @@ export function StoryboardTimeline() {
     const [dragOverSlotId, setDragOverSlotId] = useState<string | null>(null);
 
     const [isIsolatingStems, setIsIsolatingStems] = useState<boolean>(false);
+    const [renderReceipt, setRenderReceipt] = useState<VideoRenderReceipt | null>(null);
 
     // Handle audio upload and trigger automatic beat mapping
     const handleAudioUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -294,6 +333,9 @@ export function StoryboardTimeline() {
                                         isGenerating: false,
                                         progress: 100,
                                         videoUrl: data.videoUrl,
+                                        ...(data.resultUri?.startsWith('gs://')
+                                            ? { canonicalVideoUri: data.resultUri }
+                                            : {}),
                                         driftScore: calculateDriftScore(slot.prompt)
                                     });
                                     toast.success(`Slot ${index + 1} rendering complete!`);
@@ -319,29 +361,30 @@ export function StoryboardTimeline() {
     // Compile entire showreel video
     const handleCompileVideo = async () => {
         if (!storyboardProject) return;
-        
-        const renderedCount = storyboardProject.slots.filter(s => !!s.videoUrl).length;
-        if (renderedCount === 0) {
-            toast.error("Please render at least one storyboard slot before compiling.");
-            return;
-        }
 
-        toast.info("Dispatching Showreel render to Cloud Run...");
+        toast.info("Validating canonical media for a private project render...");
         try {
-            const result = await renderService.renderComposition({
-                compositionId: 'Showreel',
-                inputProps: { project: storyboardProject },
-                outputLocation: 'local_ignored.mp4',
-                useCloudQueue: true
+            const compiledProject = compileStoryboardRenderProject({
+                storyboard: storyboardProject,
+                activeProject: activeVideoProject,
+                expectedProjectId: currentProjectId,
             });
-
-            // ISSUE-995: a queued render has no shareable URL yet — don't
-            // claim one exists. Only a real, completed public URL is a link.
-            if (typeof result === 'string') {
-                toast.success(`Showreel render complete! URL: ${result}`);
-            } else {
-                toast.info(`Showreel render queued (ID: ${result.renderId}). No shareable link yet — this can take several minutes.`);
-            }
+            const queued = await renderService.queueComposition({
+                compositionId: 'Showreel',
+                inputProps: { project: compiledProject },
+                outputLocation: 'local_ignored.mp4',
+                projectId: currentProjectId,
+                organizationId: currentOrganizationId,
+                useCloudQueue: true,
+            });
+            setRenderReceipt(queued);
+            toast.info(`Private render queued (ID: ${queued.renderId}).`);
+            const completed = await renderService.waitForRender(
+                queued.renderId,
+                receipt => setRenderReceipt(receipt),
+            );
+            setRenderReceipt(completed);
+            toast.success('Private Showreel render completed.');
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
             logger.error('[StoryboardTimeline] Showreel render failed:', error);
@@ -398,11 +441,15 @@ export function StoryboardTimeline() {
                     {storyboardProject && (
                         <button
                             onClick={handleCompileVideo}
+                            disabled={renderReceipt?.status === 'queued' || renderReceipt?.status === 'running'}
                             className="flex items-center gap-2 px-5 py-2 rounded-xl bg-[#FFE135] hover:bg-[#FFD700] text-black text-xs font-black uppercase tracking-wider transition-all shadow-lg shadow-yellow-500/10"
                         >
                             <Sparkles size={14} />
                             Compile Showreel
                         </button>
+                    )}
+                    {renderReceipt && (
+                        <StoryboardRenderReceiptView receipt={renderReceipt} />
                     )}
                 </div>
             </div>
@@ -474,7 +521,10 @@ export function StoryboardTimeline() {
                                                 <StoryboardClipPreview videoUrl={slot.videoUrl} />
                                                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                                                     <button
-                                                        onClick={() => updateStoryboardSlot(slot.id, { videoUrl: undefined })}
+                                                        onClick={() => updateStoryboardSlot(slot.id, {
+                                                            videoUrl: undefined,
+                                                            canonicalVideoUri: undefined,
+                                                        })}
                                                         className="p-2.5 rounded-full bg-red-600/90 text-white hover:bg-red-500 transition-colors"
                                                         title="Delete clip"
                                                     >

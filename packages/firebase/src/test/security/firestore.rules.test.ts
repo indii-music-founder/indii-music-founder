@@ -1840,6 +1840,30 @@ describe('Firestore Security Rules', () => {
                 prompt: 'Impersonate another artist',
             }));
         });
+
+        it('denies unauthenticated reads and allows an authorized organization member to read lifecycle only', async () => {
+            if (requireEmulator()) return;
+            const orgJobId = 'server-owned-org-render';
+            await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                await setDoc(doc(ctx.firestore(), 'organizations', ORG_ID), orgDoc(ALICE_UID, BOB_UID));
+                await setDoc(doc(ctx.firestore(), 'videoJobs', orgJobId), {
+                    id: orgJobId,
+                    userId: ALICE_UID,
+                    orgId: ORG_ID,
+                    projectId: 'project-org-1',
+                    accessPolicy: 'private-project-render.v1',
+                    type: 'render_stitch',
+                    status: 'stitching',
+                });
+            });
+
+            await assertFails(getDoc(doc(unauthCtx().firestore(), 'videoJobs', orgJobId)));
+            await assertSucceeds(getDoc(doc(verifiedCtx(BOB_UID).firestore(), 'videoJobs', orgJobId)));
+            await assertFails(updateDoc(
+                doc(verifiedCtx(BOB_UID).firestore(), 'videoJobs', orgJobId),
+                { status: 'completed' },
+            ));
+        });
     });
 
     describe('split_escrows are server-controlled', () => {

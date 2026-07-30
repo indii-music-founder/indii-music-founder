@@ -7,8 +7,15 @@ import { getVertexAIBaseUrl } from "./vertexClient";
 import { verifyMasterAudioObject } from '../functions/storage/verifyMasterAudio';
 import {
     buildMasterAudioStitchPlan,
+    derivePrivateRenderOutputUris,
+    type PrivateRenderOutputIdentity,
     type VerifiedMasterAudioForStitch,
 } from '../functions/video/stitchMasterAudio';
+import {
+    inspectPrivateRenderJob,
+    transitionPrivateRenderJob,
+    type PrivateRenderJobIdentity,
+} from '../functions/video/renderJobLifecycle';
 import { finalizeOperationReservation } from '../functions/billing/enforceOperationCost';
 import { providerFailureReservationOutcome, renderFailureReservationOutcome } from '../functions/video/renderCostLifecycle';
 import { resolveVeoModel } from './video';
@@ -565,6 +572,8 @@ export const stitchVideoFn = (inngestClient: Inngest) => inngestClient.createFun
         const costReservationId = typeof eventData.costReservationId === 'string'
             ? eventData.costReservationId
             : undefined;
+        const rawPrivateOutputIdentity = eventData.privateOutputIdentity;
+        let privateLifecycleIdentity: PrivateRenderJobIdentity | undefined;
         const transcoder = new TranscoderServiceClient();
         try {
             const projectId = admin.app().options.projectId;
@@ -576,11 +585,60 @@ export const stitchVideoFn = (inngestClient: Inngest) => inngestClient.createFun
                 throw new Error('Stitch request is missing its job, owner, or video segment contract.');
             }
 
+            let privateOutputIdentity: PrivateRenderOutputIdentity | undefined;
+            if (rawPrivateOutputIdentity !== undefined) {
+                privateOutputIdentity = rawPrivateOutputIdentity as PrivateRenderOutputIdentity;
+                derivePrivateRenderOutputUris({
+                    bucketName: bucket.name,
+                    expectedOwnerUid: userId,
+                    expectedJobId: jobId,
+                    identity: privateOutputIdentity,
+                });
+                privateLifecycleIdentity = {
+                    jobId,
+                    ownerUid: userId,
+                    projectId: privateOutputIdentity.projectId,
+                };
+                await step.run('verify-private-render-authority', async () => {
+                    const state = await inspectPrivateRenderJob(admin.firestore(), privateLifecycleIdentity!);
+                    if (state.terminal) {
+                        throw new Error(`Private render job is already terminal (${state.status}).`);
+                    }
+                });
+            }
+
+            const requirePrivateTransition = async (
+                allowedStatuses: readonly string[],
+                nextStatus: string,
+                update: Record<string, unknown>,
+            ): Promise<void> => {
+                if (!privateLifecycleIdentity) return;
+                const transition = await transitionPrivateRenderJob(admin.firestore(), {
+                    identity: privateLifecycleIdentity,
+                    allowedStatuses,
+                    nextStatus,
+                    update,
+                });
+                if (!transition.applied) {
+                    throw new Error(`Private render job cannot advance from terminal/status ${transition.status}.`);
+                }
+            };
+            const assertPrivateRenderActive = async (): Promise<void> => {
+                if (!privateLifecycleIdentity) return;
+                const state = await inspectPrivateRenderJob(admin.firestore(), privateLifecycleIdentity);
+                if (state.terminal) {
+                    throw new Error(`Private render job cannot continue from terminal status ${state.status}.`);
+                }
+            };
+
             const rawMaster = eventData.masterAudio;
             const masterRecord = rawMaster && typeof rawMaster === 'object' && !Array.isArray(rawMaster)
                 ? rawMaster as Record<string, unknown>
                 : undefined;
             let masterAudio: VerifiedMasterAudioForStitch | undefined;
+            if (privateOutputIdentity && !masterRecord) {
+                throw new Error('Private project renders require a verified canonical master.');
+            }
             if (masterRecord) {
                 const verification = await step.run('reverify-canonical-master', async () => {
                     return verifyMasterAudioObject(userId, {
@@ -606,7 +664,9 @@ export const stitchVideoFn = (inngestClient: Inngest) => inngestClient.createFun
                 let jobStatus = 'PENDING';
                 let retries = 0;
                 while (jobStatus !== 'SUCCEEDED' && jobStatus !== 'FAILED' && retries < STITCH_MAX_POLL_ATTEMPTS) {
+                    await assertPrivateRenderActive();
                     await step.sleep(`${stepPrefix}-wait-${retries}`, `${STITCH_POLL_INTERVAL_SECONDS}s`);
+                    await assertPrivateRenderActive();
                     jobStatus = await step.run(`${stepPrefix}-status-${retries}`, async () => {
                         const result = await transcoder.getJob({ name: jobName });
                         const job = result[0];
@@ -628,6 +688,17 @@ export const stitchVideoFn = (inngestClient: Inngest) => inngestClient.createFun
             // been accepted between the request and our next Firestore write.
             const markTranscoderSubmissionAttempted = async (stage: string): Promise<void> => {
                 await step.run(`mark-${stage}-transcoder-submission-attempted`, async () => {
+                    if (privateLifecycleIdentity) {
+                        await requirePrivateTransition(['queued', 'processing', 'stitching'], 'stitching', {
+                            renderStage: stage,
+                            transcoderSubmission: {
+                                attemptedAt: admin.firestore.FieldValue.serverTimestamp(),
+                                stage,
+                            },
+                            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+                        });
+                        return;
+                    }
                     await admin.firestore().collection('videoJobs').doc(jobId).set({
                         status: 'stitching',
                         renderStage: stage,
@@ -652,10 +723,12 @@ export const stitchVideoFn = (inngestClient: Inngest) => inngestClient.createFun
                     timelineDurationSeconds: Number(options.timelineDurationSeconds),
                     segmentUris: segmentUrls,
                     masterAudio,
+                    ...(privateOutputIdentity ? { privateOutputIdentity } : {}),
                 });
 
                 await markTranscoderSubmissionAttempted('submitting_video_concatenation');
                 const concatJobName = await step.run('concatenate-video-without-native-audio', async () => {
+                    await assertPrivateRenderActive();
                     const [job] = await transcoder.createJob({
                         parent: transcoder.locationPath(projectId!, location),
                         job: { outputUri: plan.intermediateOutputUri, config: plan.concatenateConfig },
@@ -663,6 +736,14 @@ export const stitchVideoFn = (inngestClient: Inngest) => inngestClient.createFun
                     return job.name as string;
                 });
                 await step.run('mark-master-render-concatenating', async () => {
+                    if (privateLifecycleIdentity) {
+                        await requirePrivateTransition(['stitching'], 'stitching', {
+                            transcoderJobName: concatJobName,
+                            renderStage: 'concatenating_video',
+                            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+                        });
+                        return;
+                    }
                     await admin.firestore().collection('videoJobs').doc(jobId).set({
                         status: 'stitching',
                         transcoderJobName: concatJobName,
@@ -674,6 +755,7 @@ export const stitchVideoFn = (inngestClient: Inngest) => inngestClient.createFun
 
                 await markTranscoderSubmissionAttempted('submitting_canonical_master_mix');
                 const masterJobName = await step.run('map-canonical-master-audio', async () => {
+                    await assertPrivateRenderActive();
                     const [job] = await transcoder.createJob({
                         parent: transcoder.locationPath(projectId!, location),
                         job: { outputUri: plan.finalOutputUri, config: plan.masterMixConfig },
@@ -681,6 +763,14 @@ export const stitchVideoFn = (inngestClient: Inngest) => inngestClient.createFun
                     return job.name as string;
                 });
                 await step.run('mark-master-render-mixing', async () => {
+                    if (privateLifecycleIdentity) {
+                        await requirePrivateTransition(['stitching'], 'stitching', {
+                            transcoderJobName: masterJobName,
+                            renderStage: 'mapping_canonical_master',
+                            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+                        });
+                        return;
+                    }
                     await admin.firestore().collection('videoJobs').doc(jobId).set({
                         status: 'stitching',
                         transcoderJobName: masterJobName,
@@ -690,12 +780,59 @@ export const stitchVideoFn = (inngestClient: Inngest) => inngestClient.createFun
                 });
                 await waitForTranscoderJob(masterJobName, 'map-master-audio');
 
+                const completedVideoUri = privateOutputIdentity
+                    ? plan.finalVideoUri
+                    : `gs://${bucket.name}/generated/${userId}/long-form/${jobId}/output/master-pass/final_output.mp4`;
+                const resultGeneration = privateOutputIdentity
+                    ? await step.run('inspect-private-render-generation', async () => {
+                        await assertPrivateRenderActive();
+                        const bucketPrefix = `gs://${bucket.name}/`;
+                        if (!plan.finalVideoUri.startsWith(bucketPrefix)) {
+                            throw new Error('Private render output left the configured project bucket.');
+                        }
+                        const objectPath = plan.finalVideoUri.slice(bucketPrefix.length);
+                        const [metadata] = await bucket.file(objectPath).getMetadata();
+                        const generation = String(metadata.generation ?? '');
+                        if (!/^[1-9][0-9]{0,29}$/.test(generation) || metadata.contentType !== 'video/mp4') {
+                            throw new Error('Private render output generation or MIME type is invalid.');
+                        }
+                        return generation;
+                    })
+                    : undefined;
                 await step.run('mark-master-render-completed', async () => {
+                    if (privateLifecycleIdentity) {
+                        await requirePrivateTransition(['stitching'], 'completed', {
+                            videoUrl: completedVideoUri,
+                            resultUri: completedVideoUri,
+                            resultGeneration,
+                            progress: 100,
+                            completedAt: admin.firestore.FieldValue.serverTimestamp(),
+                            output: {
+                                url: completedVideoUri,
+                                metadata: {
+                                    duration_seconds: segmentUrls.length * 5,
+                                    fps: 30,
+                                    mime_type: 'video/mp4',
+                                    audioMix: 'master_replaces_native',
+                                    masterContentHash: masterAudio.contentHash,
+                                    masterGeneration: masterAudio.generation,
+                                },
+                            },
+                            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+                        });
+                        return;
+                    }
                     await admin.firestore().collection('videoJobs').doc(jobId).set({
                         status: 'completed',
-                        videoUrl: `gs://${bucket.name}/generated/${userId}/long-form/${jobId}/output/master-pass/final_output.mp4`,
+                        videoUrl: completedVideoUri,
+                        ...(privateOutputIdentity ? {
+                            resultUri: completedVideoUri,
+                            resultGeneration,
+                            progress: 100,
+                            completedAt: admin.firestore.FieldValue.serverTimestamp(),
+                        } : {}),
                         output: {
-                            url: `gs://${bucket.name}/generated/${userId}/long-form/${jobId}/output/master-pass/final_output.mp4`,
+                            url: completedVideoUri,
                             metadata: {
                                 duration_seconds: segmentUrls.length * 5,
                                 fps: 30,
@@ -829,6 +966,19 @@ export const stitchVideoFn = (inngestClient: Inngest) => inngestClient.createFun
             });
             try {
                 await step.run("mark-failed", async () => {
+                    if (privateLifecycleIdentity) {
+                        await transitionPrivateRenderJob(admin.firestore(), {
+                            identity: privateLifecycleIdentity,
+                            allowedStatuses: ['queued', 'processing', 'stitching'],
+                            nextStatus: 'failed',
+                            update: {
+                                stitchError: 'The cloud renderer could not complete this job.',
+                                error: 'The private project render could not complete.',
+                                updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+                            },
+                        });
+                        return;
+                    }
                     await admin.firestore().collection("videoJobs").doc(jobId).set({
                         status: "failed",
                         stitchError: 'The cloud renderer could not complete this job.',

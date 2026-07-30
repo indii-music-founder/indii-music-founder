@@ -16,6 +16,21 @@ export interface MasterAudioStitchPlan {
     masterMixConfig: Record<string, unknown>;
 }
 
+export interface PrivateRenderOutputIdentity {
+    policy: 'private-project-render.v1';
+    ownerUid: string;
+    projectId: string;
+    jobId: string;
+}
+
+export interface PrivateRenderOutputUris {
+    baseOutputUri: string;
+    intermediateOutputUri: string;
+    intermediateVideoUri: string;
+    finalOutputUri: string;
+    finalVideoUri: string;
+}
+
 const MASTER_PATH = /^masters\/([A-Za-z0-9_-]{1,128})\/([a-f0-9]{64})\/original\.(wav|flac)$/;
 
 function requiredIdentifier(value: string, field: string): string {
@@ -23,6 +38,50 @@ function requiredIdentifier(value: string, field: string): string {
         throw new Error(`${field} is invalid.`);
     }
     return value;
+}
+
+export function derivePrivateRenderOutputUris(input: {
+    bucketName: string;
+    expectedOwnerUid: string;
+    expectedJobId: string;
+    identity: PrivateRenderOutputIdentity;
+}): PrivateRenderOutputUris {
+    const bucketName = input.bucketName.trim();
+    if (!/^[A-Za-z0-9._-]{3,222}$/.test(bucketName)) {
+        throw new Error('bucketName is invalid.');
+    }
+    const identity = input.identity;
+    if (
+        !identity
+        || typeof identity !== 'object'
+        || Array.isArray(identity)
+        || Object.keys(identity).sort().join(',') !== 'jobId,ownerUid,policy,projectId'
+        || identity.policy !== 'private-project-render.v1'
+    ) {
+        throw new Error('privateOutputIdentity is invalid.');
+    }
+    const expectedOwnerUid = requiredIdentifier(input.expectedOwnerUid, 'expectedOwnerUid');
+    const expectedJobId = requiredIdentifier(input.expectedJobId, 'expectedJobId');
+    const ownerUid = requiredIdentifier(identity.ownerUid, 'privateOutputIdentity.ownerUid');
+    const projectId = requiredIdentifier(identity.projectId, 'privateOutputIdentity.projectId');
+    const jobId = requiredIdentifier(identity.jobId, 'privateOutputIdentity.jobId');
+    if (ownerUid !== expectedOwnerUid) {
+        throw new Error('privateOutputIdentity owner does not match the authenticated render owner.');
+    }
+    if (jobId !== expectedJobId) {
+        throw new Error('privateOutputIdentity job does not match the server render job.');
+    }
+
+    const baseOutputUri = `gs://${bucketName}/private-renders/${ownerUid}/${projectId}/${jobId}`;
+    const intermediateOutputUri = `${baseOutputUri}/video-pass/`;
+    const finalOutputUri = `${baseOutputUri}/master-pass/`;
+    return {
+        baseOutputUri,
+        intermediateOutputUri,
+        intermediateVideoUri: `${intermediateOutputUri}concatenated.mp4`,
+        finalOutputUri,
+        finalVideoUri: `${finalOutputUri}final_output.mp4`,
+    };
 }
 
 function masterGainDb(volume: number): number {
@@ -80,6 +139,7 @@ export function buildMasterAudioStitchPlan(input: {
     timelineDurationSeconds: number;
     segmentUris: string[];
     masterAudio: VerifiedMasterAudioForStitch;
+    privateOutputIdentity?: PrivateRenderOutputIdentity;
 }): MasterAudioStitchPlan {
     const bucketName = input.bucketName.trim();
     if (!/^[A-Za-z0-9._-]{3,222}$/.test(bucketName)) {
@@ -102,11 +162,19 @@ export function buildMasterAudioStitchPlan(input: {
     ));
     validateMaster(bucketName, userId, input.masterAudio);
 
-    const baseOutputUri = `gs://${bucketName}/videos/${userId}/${jobId}_output`;
-    const intermediateOutputUri = `${baseOutputUri}/video-pass/`;
-    const intermediateVideoUri = `${intermediateOutputUri}concatenated.mp4`;
-    const finalOutputUri = `${baseOutputUri}/master-pass/`;
-    const finalVideoUri = `${finalOutputUri}final_output.mp4`;
+    const privateUris = input.privateOutputIdentity
+        ? derivePrivateRenderOutputUris({
+            bucketName,
+            expectedOwnerUid: userId,
+            expectedJobId: jobId,
+            identity: input.privateOutputIdentity,
+        })
+        : undefined;
+    const baseOutputUri = privateUris?.baseOutputUri ?? `gs://${bucketName}/videos/${userId}/${jobId}_output`;
+    const intermediateOutputUri = privateUris?.intermediateOutputUri ?? `${baseOutputUri}/video-pass/`;
+    const intermediateVideoUri = privateUris?.intermediateVideoUri ?? `${intermediateOutputUri}concatenated.mp4`;
+    const finalOutputUri = privateUris?.finalOutputUri ?? `${baseOutputUri}/master-pass/`;
+    const finalVideoUri = privateUris?.finalVideoUri ?? `${finalOutputUri}final_output.mp4`;
     const videoStream = {
         h264: {
             heightPixels: input.resolution.height,

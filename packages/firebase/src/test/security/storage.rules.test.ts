@@ -266,3 +266,51 @@ describe('owner-bound long-recording staging', () => {
         await assertFails(deleteObject(staging));
     });
 });
+
+describe('private project render outputs', () => {
+    let testEnv: RulesTestEnvironment;
+    const path = `private-renders/${OWNER_ID}/project-1/render-1/master-pass/final_output.mp4`;
+
+    beforeAll(async () => {
+        testEnv = await initializeTestEnvironment({
+            projectId: 'indii-private-render-rules-test',
+            storage: {
+                host: '127.0.0.1',
+                port: 9199,
+                rules: readFileSync(resolve(__dirname, '../../../storage.rules'), 'utf8'),
+            },
+        });
+    });
+
+    beforeEach(async () => {
+        await testEnv.withSecurityRulesDisabled(async (ctx) => {
+            await uploadBytes(ref(ctx.storage(), path), new Uint8Array([1, 2, 3]), {
+                contentType: 'video/mp4',
+            });
+        });
+    });
+
+    afterAll(async () => {
+        await testEnv?.cleanup();
+    });
+
+    const storageFor = (uid: string) => testEnv.authenticatedContext(uid, {
+        email: `${uid}@example.com`,
+        firebase: { sign_in_provider: 'password' },
+    }).storage();
+
+    it('denies direct reads to the owner, another project member, another account, and unauthenticated callers', async () => {
+        await assertFails(getMetadata(ref(storageFor(OWNER_ID), path)));
+        await assertFails(getMetadata(ref(storageFor('project-member'), path)));
+        await assertFails(getMetadata(ref(storageFor('other-user'), path)));
+        await assertFails(getMetadata(ref(testEnv.unauthenticatedContext().storage(), path)));
+    });
+
+    it('denies every direct client write and delete', async () => {
+        const ownerRef = ref(storageFor(OWNER_ID), path);
+        await assertFails(uploadBytes(ownerRef, new Uint8Array([4, 5, 6]), {
+            contentType: 'video/mp4',
+        }));
+        await assertFails(deleteObject(ownerRef));
+    });
+});

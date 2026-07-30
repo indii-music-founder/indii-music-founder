@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { buildMasterAudioStitchPlan } from './stitchMasterAudio';
+import { buildMasterAudioStitchPlan, derivePrivateRenderOutputUris } from './stitchMasterAudio';
 
 const masterAudio = {
     uri: 'gs://indii-music-founder.firebasestorage.app/masters/user-1/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/original.flac',
@@ -12,7 +12,7 @@ const masterAudio = {
 };
 
 describe('buildMasterAudioStitchPlan', () => {
-    it('concatenates server-owned scenes, then maps the verified master into the final MP4', () => {
+    it('preserves the legacy output contract byte-for-byte when no private identity is present', () => {
         const plan = buildMasterAudioStitchPlan({
             bucketName: 'indii-music-founder.firebasestorage.app',
             jobId: 'render-1',
@@ -73,6 +73,86 @@ describe('buildMasterAudioStitchPlan', () => {
                 ],
             },
         });
+    });
+
+    it('derives the exact private project render path without accepting a caller path', () => {
+        const identity = {
+            policy: 'private-project-render.v1' as const,
+            ownerUid: 'user-1',
+            projectId: 'project-1',
+            jobId: 'render-1',
+        };
+        expect(derivePrivateRenderOutputUris({
+            bucketName: 'indii-music-founder.firebasestorage.app',
+            expectedOwnerUid: 'user-1',
+            expectedJobId: 'render-1',
+            identity,
+        })).toEqual({
+            baseOutputUri: 'gs://indii-music-founder.firebasestorage.app/private-renders/user-1/project-1/render-1',
+            intermediateOutputUri: 'gs://indii-music-founder.firebasestorage.app/private-renders/user-1/project-1/render-1/video-pass/',
+            intermediateVideoUri: 'gs://indii-music-founder.firebasestorage.app/private-renders/user-1/project-1/render-1/video-pass/concatenated.mp4',
+            finalOutputUri: 'gs://indii-music-founder.firebasestorage.app/private-renders/user-1/project-1/render-1/master-pass/',
+            finalVideoUri: 'gs://indii-music-founder.firebasestorage.app/private-renders/user-1/project-1/render-1/master-pass/final_output.mp4',
+        });
+
+        const plan = buildMasterAudioStitchPlan({
+            bucketName: 'indii-music-founder.firebasestorage.app',
+            jobId: 'render-1',
+            userId: 'user-1',
+            resolution: { width: 1920, height: 1080 },
+            timelineDurationSeconds: 12,
+            segmentUris: ['gs://indii-music-founder.firebasestorage.app/creative/user-1/scene.mp4'],
+            masterAudio,
+            privateOutputIdentity: identity,
+        });
+        expect(plan.finalVideoUri).toBe(
+            'gs://indii-music-founder.firebasestorage.app/private-renders/user-1/project-1/render-1/master-pass/final_output.mp4',
+        );
+    });
+
+    it('rejects malformed, traversal, cross-owner, mismatched-job, and caller-selected private bases', () => {
+        const base = {
+            bucketName: 'indii-music-founder.firebasestorage.app',
+            expectedOwnerUid: 'user-1',
+            expectedJobId: 'render-1',
+        };
+        expect(() => derivePrivateRenderOutputUris({
+            ...base,
+            identity: {
+                policy: 'private-project-render.v1',
+                ownerUid: 'other-user',
+                projectId: 'project-1',
+                jobId: 'render-1',
+            },
+        })).toThrow('owner does not match');
+        expect(() => derivePrivateRenderOutputUris({
+            ...base,
+            identity: {
+                policy: 'private-project-render.v1',
+                ownerUid: 'user-1',
+                projectId: '../project-1',
+                jobId: 'render-1',
+            },
+        })).toThrow('projectId is invalid');
+        expect(() => derivePrivateRenderOutputUris({
+            ...base,
+            identity: {
+                policy: 'private-project-render.v1',
+                ownerUid: 'user-1',
+                projectId: 'project-1',
+                jobId: 'other-render',
+            },
+        })).toThrow('job does not match');
+        expect(() => derivePrivateRenderOutputUris({
+            ...base,
+            identity: {
+                policy: 'private-project-render.v1',
+                ownerUid: 'user-1',
+                projectId: 'project-1',
+                jobId: 'render-1',
+                baseOutputUri: 'gs://attacker-bucket/public',
+            } as never,
+        })).toThrow('privateOutputIdentity is invalid');
     });
 
     it('rejects an arbitrary, cross-owner, or malformed master before the worker can submit a Transcoder job', () => {

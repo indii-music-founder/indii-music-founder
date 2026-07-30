@@ -254,6 +254,13 @@ service firebase.storage {
     // VIDEO GENERATION OUTPUT (System-managed)
     // ========================================
 
+    // Private project renders are readable only through the authenticated
+    // terminal-receipt callable, which verifies project membership, exact
+    // object generation, revocation, and a maximum five-minute URL lifetime.
+    match /private-renders/{userId}/{projectId}/{jobId}/{allPaths=**} {
+      allow read, write: if false;
+    }
+
     // Generated videos from Veo - read-only for users
     match /generated/{userId}/{allPaths=**} {
       allow read: if isAuthenticated() && request.auth.uid == userId;

@@ -1,93 +1,34 @@
 import { logger } from '@/utils/logger';
-import { renderService, RenderConfig } from './RenderService';
-import { useVideoEditorStore } from '@/modules/creative/video/store/videoEditorStore';
 
 export interface ParallelRenderOptions {
     projectId: string;
     compositionId: string;
-    segmentDurationSeconds: number; // e.g. 30 seconds
+    segmentDurationSeconds: number;
     audioTrackUrl?: string;
 }
 
+export interface ParallelRenderUnsupported {
+    status: 'unsupported';
+    code: 'PRIVATE_PARALLEL_RENDER_NOT_IMPLEMENTED';
+    message: string;
+}
+
+/**
+ * Chunk rendering cannot safely reuse the single-output private render
+ * authority: each chunk needs its own durable identity, generation receipt,
+ * and server-owned stitch manifest. Fail closed until that contract exists.
+ */
 export class ParallelRenderOrchestrator {
-    /**
-     * Slices a long-form composition into smaller parallel chunks,
-     * triggers concurrent Cloud Run renders, and generates the FFmpeg command
-     * for a clean non-transcoded concat stitch.
-     *
-     * ISSUE-885: stitching is NOT executed here — no backend stitch job exists
-     * yet — so the result is `chunks_ready` with the real chunk URLs and the
-     * command to run. It never fabricates a final stitched output URL.
-     */
     static async renderLongFormParallel(
-        options: ParallelRenderOptions,
-        onProgress?: (pct: number) => void
-    ): Promise<{ status: 'chunks_ready'; chunkUrls: string[]; concatInstructions: string; ffmpegStitchCommand: string }> {
-        const store = useVideoEditorStore.getState();
-        const project = store.project;
-        if (!project) {
-            throw new Error('No active project found to render');
-        }
-
-        const totalFrames = project.durationInFrames;
-        const fps = project.fps;
-        const totalDurationSeconds = totalFrames / fps;
-        
-        const segmentDurationFrames = options.segmentDurationSeconds * fps;
-        const numChunks = Math.ceil(totalFrames / segmentDurationFrames);
-        
-        logger.info(`[ParallelRenderOrchestrator] Partitioning ${totalDurationSeconds}s video into ${numChunks} parallel segments of ${options.segmentDurationSeconds}s.`);
-        
-        const renderPromises: Promise<string>[] = [];
-        const progressTracker = new Array(numChunks).fill(0);
-        
-        const updateOverallProgress = () => {
-            const sum = progressTracker.reduce((a, b) => a + b, 0);
-            const overallPct = Math.round(sum / numChunks);
-            onProgress?.(overallPct);
+        _options: ParallelRenderOptions,
+        _onProgress?: (pct: number) => void,
+    ): Promise<ParallelRenderUnsupported> {
+        const result: ParallelRenderUnsupported = {
+            status: 'unsupported',
+            code: 'PRIVATE_PARALLEL_RENDER_NOT_IMPLEMENTED',
+            message: 'Parallel private rendering is unavailable until server-owned chunk and stitch receipts are implemented.',
         };
-
-        for (let i = 0; i < numChunks; i++) {
-            const startFrame = i * segmentDurationFrames;
-            const endFrame = Math.min((i + 1) * segmentDurationFrames, totalFrames);
-            
-            const chunkConfig: RenderConfig = {
-                compositionId: options.compositionId,
-                outputLocation: `chunk_${i}.mp4`,
-                useCloudQueue: true,
-                inputProps: {
-                    project,
-                    frameRange: [startFrame, endFrame],
-                    isSegmentedChunk: true
-                }
-            };
-            
-            const promise = renderService.renderCompositionCloud(chunkConfig, (pct) => {
-                progressTracker[i] = pct;
-                updateOverallProgress();
-            }).then(res => res.publicUrl || `https://storage.googleapis.com/indii-renders/chunk_${i}.mp4`);
-            
-            renderPromises.push(promise);
-        }
-        
-        // Await all parallel segments
-        const chunkUrls = await Promise.all(renderPromises);
-        logger.info('[ParallelRenderOrchestrator] All chunks rendered successfully:', chunkUrls);
-        
-        // Generate FFmpeg concat txt instructions
-        const concatInstructions = chunkUrls.map(url => `file '${url}'`).join('\n');
-        
-        // Fast stitch command using copy codec + overlaying main audio track to prevent pop drift
-        const audioInput = options.audioTrackUrl ? `-i "${options.audioTrackUrl}" -map 0:v -map 1:a -c:v copy -c:a aac -shortest` : '-c copy';
-        const ffmpegStitchCommand = `ffmpeg -f concat -safe 0 -i inputs.txt ${audioInput} -y output_stitched.mp4`;
-        
-        logger.info(`[ParallelRenderOrchestrator] Generated stitching command: ${ffmpegStitchCommand}`);
-
-        return {
-            status: 'chunks_ready',
-            chunkUrls,
-            concatInstructions,
-            ffmpegStitchCommand
-        };
+        logger.warn(`[ParallelRenderOrchestrator] ${result.message}`);
+        return result;
     }
 }

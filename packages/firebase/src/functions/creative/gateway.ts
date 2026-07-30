@@ -20,6 +20,7 @@ import {
   type VerifiedVideoInput,
   type VideoInputRequest,
 } from './videoJobAuthority';
+import { cancelOwnedVideoJobTransactionally } from '../video/renderJobLifecycle';
 import { createHash } from 'node:crypto';
 import { readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -1579,27 +1580,13 @@ export const cancelVideoJob = onCall({ ...creativeGatewayCallableOptions, timeou
   if (!parsed.success) throw new HttpsError('invalid-argument', 'jobId is required.');
 
   const { jobId } = parsed.data;
-  const existing = await loadTrackedVideoJob(jobId);
-  if (!existing) {
-    throw new HttpsError('not-found', 'Video job not found.');
-  }
-  if (existing.userId !== userId) {
-    throw new HttpsError('permission-denied', 'You do not own this video job.');
-  }
-
-  const currentStatus = String(existing.status || '').toLowerCase();
-  if (['completed', 'failed', 'cancelled'].includes(currentStatus)) {
-    return { jobId, status: currentStatus };
-  }
-
-  await syncVideoJobUpdate(jobId, {
-    status: 'cancelled',
-    error: 'Cancelled by user',
+  const result = await cancelOwnedVideoJobTransactionally(getDb(), {
+    jobId,
+    ownerUid: userId,
     cancelledAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
   });
 
-  return { jobId, status: 'cancelled' };
+  return { jobId, status: result.status };
 });
 
 type OmniInteractionStatus = 'in_progress' | 'completed' | 'failed' | 'cancelled' | 'incomplete' | 'requires_action' | string;

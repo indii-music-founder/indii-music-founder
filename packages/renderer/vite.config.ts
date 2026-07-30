@@ -144,7 +144,6 @@ export default defineConfig({
             'react': resolve(repoRoot, 'node_modules/react'),
             'react-dom': resolve(repoRoot, 'node_modules/react-dom'),
             '@remotion/renderer': resolve(__dirname, 'src/services/video/remotion-mock.ts'),
-            '@remotion/cloudrun/client': resolve(__dirname, 'src/services/video/remotion-mock.ts'),
         },
     },
     server: {
@@ -196,7 +195,6 @@ export default defineConfig({
             external: [
                 '@remotion/renderer',
                 '@remotion/cloudrun',
-                '@remotion/cloudrun/client',
                 'fs',
                 'path',
                 'child_process',

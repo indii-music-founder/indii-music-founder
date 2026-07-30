@@ -41,12 +41,14 @@ export { cancelVideoJob } from "./functions/creative/gateway";
 export { videoJobFirestoreOrchestrator } from "./functions/creative/videoJobOrchestrator";
 export { getMediaDuration } from "./functions/creative/getMediaDuration";
 export { createVideoSession } from "./functions/video/createVideoSession";
+export { getVideoRenderReceipt } from "./functions/video/getVideoRenderReceipt";
 export { cancelVideoSession } from "./functions/video/cancelVideoSession";
 export { finalizeVideoSessionUpload } from "./functions/video/finalizeVideoSessionUpload";
 export { retrySessionProxyJob } from "./functions/video/retrySessionProxyJob";
 export { settleVideoSessionCost } from "./functions/video/settleVideoSessionCost";
 export { cleanupExpiredVideoSessions } from "./functions/video/cleanupVideoSessions";
 import { analyzeAudioFn } from "./lib/audio";
+import { assertVideoSessionProjectAccess } from "./functions/video/createVideoSession";
 import { FUNCTION_INTELLIGENCE_MODELS } from "./config/models";
 import { isApprovedFineTunedTextEndpoint, isApprovedTextStreamModel } from './config/textStreamModels';
 import { arcjetKey, clearbitApiKey, apolloApiKey, getClearbitApiKey, getApolloApiKey } from "./config/secrets";
@@ -761,6 +763,29 @@ export const renderVideo = onCall(
         }
         const safeData = (typeof data === 'object' && data !== null) ? data as Record<string, unknown> : {};
         const { inputProps } = safeData as { inputProps?: Record<string, unknown> };
+        const accessPolicy = safeData.accessPolicy;
+        const isPrivateProjectRender = accessPolicy === 'private-project-render.v1';
+        if (accessPolicy !== undefined && !isPrivateProjectRender) {
+            throw new HttpsError('invalid-argument', 'Unsupported render access policy.');
+        }
+        const requestedProjectId = isPrivateProjectRender && typeof safeData.projectId === 'string'
+            ? safeData.projectId.trim()
+            : '';
+        const requestedOrganizationId = isPrivateProjectRender && typeof safeData.organizationId === 'string'
+            ? safeData.organizationId.trim()
+            : '';
+        if (
+            isPrivateProjectRender
+            && (
+                !/^[A-Za-z0-9_-]{1,128}$/.test(requestedProjectId)
+                || !/^[A-Za-z0-9_-]{1,128}$/.test(requestedOrganizationId)
+            )
+        ) {
+            throw new HttpsError(
+                'invalid-argument',
+                'Private renders require valid project and organization identities.',
+            );
+        }
         interface ProjectData {
             width: number;
             height: number;
@@ -788,12 +813,27 @@ export const renderVideo = onCall(
         let jobCreated = false;
 
         try {
+            // Project authorization must precede canonical-media inspection,
+            // cost reservation, durable queue creation, and provider dispatch.
+            if (isPrivateProjectRender) {
+                await assertVideoSessionProjectAccess(
+                    userId,
+                    requestedOrganizationId,
+                    requestedProjectId,
+                );
+            }
             // Preview URLs are not Transcoder authority. Resolve only canonical
             // project-bucket media owned by this authenticated caller.
             const bucketName = admin.storage().bucket().name;
             const segmentUrls = parseProjectCanonicalVideoSegments(userId, bucketName, project.clips);
 
             const canonicalMaster = parseProjectCanonicalMaster(userId, project.clips);
+            if (isPrivateProjectRender && !canonicalMaster) {
+                throw new HttpsError(
+                    'failed-precondition',
+                    'Private project renders require a verified canonical master.',
+                );
+            }
             const verifiedMaster = canonicalMaster
                 ? await resolveVerifiedRenderMaster(userId, canonicalMaster, {
                     bucketName,
@@ -831,9 +871,14 @@ export const renderVideo = onCall(
             await admin.firestore().collection("videoJobs").doc(jobId).create({
                 id: jobId,
                 userId: userId,
-                orgId: "personal",
+                orgId: isPrivateProjectRender ? requestedOrganizationId : "personal",
+                ...(isPrivateProjectRender ? {
+                    projectId: requestedProjectId,
+                    accessPolicy: 'private-project-render.v1',
+                } : {}),
                 status: "queued",
                 type: "render_stitch",
+                progress: 0,
                 clipCount: segmentUrls.length,
                 costReservationId,
                 timelineDurationSeconds,
@@ -852,6 +897,14 @@ export const renderVideo = onCall(
                     userId: userId,
                     segmentUrls: segmentUrls,
                     costReservationId,
+                    ...(isPrivateProjectRender ? {
+                        privateOutputIdentity: {
+                            policy: 'private-project-render.v1',
+                            ownerUid: userId,
+                            projectId: requestedProjectId,
+                            jobId,
+                        },
+                    } : {}),
                     ...(verifiedMaster ? { masterAudio: verifiedMaster } : {}),
                     audioMix: verifiedMaster
                         ? { mode: 'master_replaces_native', preserveNativeAudio: false }
