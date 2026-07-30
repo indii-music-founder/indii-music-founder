@@ -110,7 +110,7 @@ const BrandManager: React.FC = () => {
                 </div>
 
                 {/* Sidebar Navigation */}
-                <aside className="hidden md:flex w-64 border-r border-gray-800 bg-[#0a0a0a] flex-col h-full z-20">
+                <aside className="hidden @5xl:flex w-64 border-r border-dept-brand/20 bg-[#0a0a0a] flex-col h-full z-20">
                     {/* Brand Header */}
                     <div className="p-4 border-b border-white/5 flex items-center gap-2 h-14">
                         <Shield className="text-dept-marketing" size={16} />
