@@ -23,6 +23,7 @@ import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { AnalyticsService } from '@/services/dashboard/AnalyticsService';
 import { MODEL_PRICING } from '@/core/config/intelligence-models';
+import { WidgetEmptyState } from './WidgetEmptyState';
 import type {
     DashboardRevenueStats,
     DashboardStreamsStats,
@@ -174,6 +175,21 @@ function StreamsTodayWidget() {
     const displayValue = streamsData?.streamsToday.formatted || '--';
     const weeklyStreams = streamsData?.weeklyStreams || [0, 0, 0, 0, 0, 0, 0];
     const maxVal = Math.max(...weeklyStreams, 100);
+
+    // ISSUE-1291: a bold `0` under "TOTAL DSP PERFORMANCE" reads as failure and is
+    // indistinguishable from a broken widget. Say what this becomes instead.
+    const hasStreams = !isLoading && (parseInt(displayValue.replace(/,/g, '')) || 0) > 0;
+    if (!isLoading && !hasStreams) {
+        return (
+            <WidgetEmptyState
+                icon={Music}
+                label="Live Streams"
+                promise="Your daily play counts across every DSP land here once a release goes live."
+                ctaLabel="Build a release"
+                ctaModule="distribution"
+            />
+        );
+    }
 
     return (
         <div className="flex flex-col h-full justify-between group/widget">
@@ -547,6 +563,20 @@ function AudienceGrowthWidget() {
     const maxVal = Math.max(...weeklyGrowth, 1);
     const newListeners = data?.newListenersThisWeek.formatted || '--';
 
+    // ISSUE-1291: see StreamsTodayWidget — an empty audience is an on-ramp, not a score.
+    if (!isLoading && (parseInt(newListeners.replace(/,/g, '')) || 0) === 0) {
+        return (
+            <WidgetEmptyState
+                icon={Users}
+                label="Network Scale"
+                promise="Weekly unique listeners appear here as your audience finds you."
+                ctaLabel="Grow your audience"
+                ctaModule="social"
+                accentClass="text-dept-marketing"
+            />
+        );
+    }
+
     return (
         <div className="flex flex-col h-full justify-between group/widget">
             <div>
@@ -595,6 +625,20 @@ function ActiveCampaignsWidget() {
         );
         return () => unsub();
     }, [userId]);
+
+    // ISSUE-1291: zero campaigns is a starting point, not a metric worth a huge 0.
+    if (!isLoading && (data?.activeCount ?? 0) === 0) {
+        return (
+            <WidgetEmptyState
+                icon={Activity}
+                label="Market Velocity"
+                promise="Track every running campaign and its momentum from one place."
+                ctaLabel="Plan a campaign"
+                ctaModule="campaign"
+                accentClass="text-dept-campaign"
+            />
+        );
+    }
 
     return (
         <div className="flex flex-col h-full justify-between group/widget">
@@ -947,6 +991,20 @@ function RevenueAggregatedWidget() {
         };
         fetchStats();
     }, [userId]);
+
+    // ISSUE-1291: $0 gross reads as failure to a pre-release artist. Show the promise.
+    if (!isLoading && (stats?.totalRevenue ?? 0) === 0) {
+        return (
+            <WidgetEmptyState
+                icon={TrendingUp}
+                label="Aggregate Revenue"
+                promise="Streaming, merch, sync and licensing income roll up here as it arrives."
+                ctaLabel="Set up revenue tracking"
+                ctaModule="finance"
+                accentClass="text-dept-royalties"
+            />
+        );
+    }
 
     return (
         <div className="flex flex-col h-full justify-between group/widget cursor-pointer" onClick={() => setModule('finance')} data-testid="revenue-aggregated-widget">

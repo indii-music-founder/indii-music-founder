@@ -29,10 +29,21 @@ interface EmptyStateProps {
     onCommandClick: (cmd: string) => void;
     /** Immediately submit the command to the agent */
     onCommandSubmit: (cmd: string) => void;
+    /**
+     * ISSUE-1291: the artist's real studio numbers, rendered between the indii
+     * greeting and the action grid.
+     *
+     * These used to live behind a second "Command Center" tab that sat beside
+     * "Agent Workspace" as if the two were peers. They are not: this screen asks
+     * "what do you want to make?" while the stats answer "how am I doing?" — and
+     * the more useful of the two lost, because a tab you can overlook once you
+     * overlook forever. Composing them into one room removes the tab entirely.
+     */
+    studioSlot?: React.ReactNode;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-export function EmptyState({ onCommandSubmit, onCommandClick }: EmptyStateProps) {
+export function EmptyState({ onCommandSubmit, onCommandClick, studioSlot }: EmptyStateProps) {
     const { setModule, isEntryAssistantDismissed, setEntryAssistantDismissed, user, setNodes, setEdges } = useStore(useShallow(state => ({
         setModule: state.setModule,
         isEntryAssistantDismissed: state.isEntryAssistantDismissed,
@@ -120,6 +131,32 @@ export function EmptyState({ onCommandSubmit, onCommandClick }: EmptyStateProps)
             >
                 Your Creative Intelligence Engine • What Would You Like To Do?
             </motion.p>
+
+            {/* ISSUE-1291: the artist's real numbers, formerly stranded behind a
+                second tab. Placed above the action grid deliberately — "how am I
+                doing" is the question you arrive with; "what can I make" is the one
+                you answer second. */}
+            {studioSlot && (
+                <motion.div
+                    initial={{ opacity: 0, y: 16 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.25 }}
+                    className="w-full px-4 mb-14"
+                >
+                    {studioSlot}
+                </motion.div>
+            )}
+
+            {studioSlot && (
+                <motion.p
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.3 }}
+                    className="text-emerald-200/50 font-medium uppercase tracking-[0.15em] text-[10px] mb-6 text-center"
+                >
+                    Start Something
+                </motion.p>
+            )}
 
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4 w-full px-4">
                 {displayItems.map((s, i) => (

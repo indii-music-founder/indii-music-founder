@@ -20,7 +20,16 @@ import type { StoreState } from '@/core/store';
 /*    - CommandBar: floats at bottom for input                         */
 /* ================================================================== */
 
-export default function AgentWorkspace() {
+interface AgentWorkspaceProps {
+    /**
+     * ISSUE-1291: the artist's studio stats, composed into this room rather than
+     * living behind a separate tab. Rendered inside the landing state, and again
+     * beneath the canvas so the numbers stay reachable while the agent is working.
+     */
+    studioSlot?: React.ReactNode;
+}
+
+export default function AgentWorkspace({ studioSlot }: AgentWorkspaceProps = {}) {
     const {
         isAgentProcessing,
         uptime,
@@ -43,17 +52,29 @@ export default function AgentWorkspace() {
             <AgentHeader uptime={uptime} isProcessing={isAgentProcessing} />
 
             {/* Center: Canvas or Empty State */}
-            <div className="flex-1 overflow-hidden pb-32">
+            <div className="flex-1 overflow-y-auto pb-32">
                 {canvasItems.length === 0 ? (
                     <EmptyState
                         onCommandClick={(cmd) => setCommandInput(cmd)}
                         onCommandSubmit={submitCommand}
+                        studioSlot={studioSlot}
                     />
                 ) : (
-                    <WorkspaceCanvas
-                        items={canvasItems}
-                        onDismiss={(id) => removeCanvasItem(id)}
-                    />
+                    <>
+                        <WorkspaceCanvas
+                            items={canvasItems}
+                            onDismiss={(id) => removeCanvasItem(id)}
+                        />
+                        {/* ISSUE-1291: keep the studio numbers reachable while the agent
+                            is producing output. Hiding them behind active canvas work
+                            would recreate the same "useful thing you can't get to"
+                            problem the tab merge exists to remove. */}
+                        {studioSlot && (
+                            <div className="mx-auto w-full max-w-7xl px-4 pt-10">
+                                {studioSlot}
+                            </div>
+                        )}
+                    </>
                 )}
             </div>
         </div>

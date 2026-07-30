@@ -2,15 +2,12 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import AgentWorkspace from './components/AgentWorkspace';
 import { CustomDashboard } from './components/CustomDashboard';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { LayoutDashboard, Bot, Gem, ArrowRight, X, Sparkles } from 'lucide-react';
+import { Gem, ArrowRight, X } from 'lucide-react';
 import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
 import { useMobile } from '@/hooks/useMobile';
 import { useStore } from '@/core/store';
 import { PlatformCard } from './components/PlatformCard';
 import { useTranslation } from 'react-i18next';
-
-type DashboardTab = 'agent' | 'custom';
 
 /**
  * Premium Mesh Background for Dashboard
@@ -51,7 +48,6 @@ function DashboardMeshBackground() {
 
 export default function Dashboard() {
     const { t } = useTranslation();
-    const [activeTab, setActiveTab] = useState<DashboardTab>('agent');
     const [bannerDismissed, setBannerDismissed] = useState(false);
     const { isAnyPhone } = useMobile();
     const setModule = useStore(state => state.setModule);
@@ -129,68 +125,18 @@ export default function Dashboard() {
                     <PlatformCard />
                 </div>
 
-                {/* Tab Bar */}
-                <div className={`relative z-10 flex-shrink-0 border-b border-white/5 flex gap-10 ${isAnyPhone ? 'px-4 gap-4' : 'px-8'}`}>
-                    {([
-                        { id: 'agent', label: t('dashboard.agentWorkspace'), icon: Bot, activeColor: 'var(--color-dept-creative)' },
-                        { id: 'custom', label: t('dashboard.commandCenter'), icon: LayoutDashboard, activeColor: '#ffffff' },
-                    ] as const).map(({ id, label, icon: Icon, activeColor }) => (
-                        <button
-                            key={id}
-                            onClick={() => setActiveTab(id as DashboardTab)}
-                            className={`group relative flex items-center gap-2.5 h-14 text-xs font-black transition-all ${activeTab === id
-                                ? 'text-white'
-                                : 'text-gray-500 hover:text-gray-300'
-                                }`}
-                        >
-                            <div className={`p-1.5 rounded-lg transition-colors ${activeTab === id ? 'bg-white/10' : 'group-hover:bg-white/5'}`}>
-                                <Icon size={16} style={{ color: activeTab === id ? activeColor : undefined }} />
-                            </div>
-                            <span className="uppercase tracking-[0.15em]">{label}</span>
-                            {activeTab === id && (
-                                <motion.div
-                                    layoutId="activeTab"
-                                    className="absolute bottom-[-1px] left-0 right-0 h-[3px] rounded-t-full shadow-[0_-4px_10px_rgba(255,255,255,0.2)]"
-                                    style={{ backgroundColor: activeColor }}
-                                />
-                            )}
-                        </button>
-                    ))}
-                </div>
-
-                {/* Content */}
+                {/* ISSUE-1291: the Agent Workspace / Command Center tab bar is gone.
+                    The two were never peers — this room asks "what do you want to
+                    make?", the stats answer "how am I doing?" — and pairing them as
+                    sibling tabs meant the more useful one lost, because a tab you can
+                    overlook once you overlook forever. They are one room now, so
+                    there is no longer a second tab to miss. */}
                 <div className="relative z-10 flex-1 overflow-hidden">
-                    <AnimatePresence mode="wait">
-                        {activeTab === 'agent' ? (
-                            <motion.div
-                                key="agent"
-                                initial={{ opacity: 0, x: -10 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                exit={{ opacity: 0, x: 10 }}
-                                transition={{ duration: 0.3 }}
-                                className="h-full"
-                            >
-                                <div className={`h-full overflow-y-auto w-full ${isAnyPhone ? 'p-4' : 'p-8'}`}>
-                                    <div className="max-w-7xl mx-auto">
-                                        <AgentWorkspace />
-                                    </div>
-                                </div>
-                            </motion.div>
-                        ) : (
-                            <motion.div
-                                key="custom"
-                                initial={{ opacity: 0, x: 10 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                exit={{ opacity: 0, x: -10 }}
-                                transition={{ duration: 0.3 }}
-                                className="h-full overflow-y-auto"
-                            >
-                                <div className="@container mx-auto max-w-7xl p-4 @3xl:p-6 @5xl:p-8">
-                                    <CustomDashboard />
-                                </div>
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
+                    <div className={`@container h-full w-full ${isAnyPhone ? 'px-4' : 'px-8'}`}>
+                        <div className="mx-auto h-full max-w-7xl">
+                            <AgentWorkspace studioSlot={<CustomDashboard />} />
+                        </div>
+                    </div>
                 </div>
             </div>
         </ModuleErrorBoundary>
