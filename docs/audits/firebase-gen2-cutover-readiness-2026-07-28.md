@@ -11,14 +11,18 @@ acceptance gates that still require genuine authenticated evidence.
   unit shards, build, staging E2E, Hosting, media-worker, and Cloud Functions
   deployment. `getCapabilitySnapshot` is `ACTIVE` at revision
   `getcapabilitysnapshot-00001-new`.
-- The latest pre-correction scheduled Health Check Monitor run `30548187271`
+- The pre-correction scheduled Health Check Monitor run `30548187271`
   is marked successful but reported `13/103` because it divided by skipped and
   pending discoveries. It also swallowed a future nonzero Vitest exit and
   attempted to parse the base64 service-account secret as JSON before falling
   back to ADC. The release-owned correction now calculates pass rate over
   executed tests, records skipped/pending counts separately, uses ADC directly,
-  and exits nonzero after recording any failed run. A post-merge
-  `workflow_dispatch` remains required before this becomes live monitor proof.
+  and exits nonzero after recording any failed run. Exact post-merge
+  workflow-dispatch run `30566873144` is green on `33eaa3988`: its log reports
+  `13/13` executed at 100% with 90 skipped/pending and 103 discovered, then a
+  successful Firestore write. Read-only Firestore verification confirms newest
+  `healthChecks/Nw2rS0c15XUYLls6OFCN` is `health-check.v2`, `passed`, with 13
+  passed, 0 failed, 90 skipped, and 103 discovered.
 - The historical missing-root-Dockerfile Cloud Build failure is not an active
   release failure. Recent listed Cloud Builds are successful, and the exact
   production deployment above is green.
