@@ -3509,17 +3509,16 @@ acceptance criteria.
 
 ### ISSUE-1272: Room content drifts from the sidebar nav highlight color — components hardcode a different accent than their own moduleColors.ts assignment
 
-- **Status:** 🔴 OPEN (founder-reported via annotated screenshots 2026-07-29; two instances confirmed with evidence, full scope not yet audited)
+- **Status:** 🟡 PARTIAL (2 of 4 founder-flagged rooms fixed this session; Campaign needs a founder naming decision before it can be fixed; full ~25-room audit still not done)
 - **Severity:** 🟡 MEDIUM (visual identity inconsistency — the nav highlight promises one color, the room delivers another; directly undercuts the "distinct office" goal from ISSUE-1270/1271)
 - **Module:** `core/theme/moduleColors.ts` (source of truth) vs individual room components that don't read from it
 - **Evidence (founder screenshots, freehand-annotated, comparing sidebar nav highlight to in-room accent):**
-  1. **Brand Manager** — sidebar nav highlight is amber (`moduleColors.brand` → `--color-dept-brand`, correct). But `BrandManager.tsx:116,108-109` hardcodes `text-dept-marketing`/`bg-dept-marketing/5` (pink/magenta) for its own header icon and ambient background glow — a different department's color, not its own.
-  2. **Booking Agent** ("The Scout") — sidebar nav highlight is green (`moduleColors.agent` → `--color-dept-creative`, correct). But `ScoutControls.tsx` hardcodes literal `cyan-500`/`teal-500` Tailwind classes throughout (search input focus, buttons, toggle, glow) instead of `dept-creative`.
-  3. **Campaign Manager** — sidebar nav highlight is amber/coral (`moduleColors.campaign` → `--color-dept-campaign`). Screenshot shows the in-room "Campaigns" active nav state and page icon rendering in marketing pink/magenta instead.
-  4. **Social Media Department** — sidebar nav highlight reads teal/cyan in the screenshot, in-room "Create Post" button and header icon render green. Needs the same file-level check as items 1–2 to confirm root cause (not yet grepped).
-- **Root cause (confirmed for items 1–2, likely for 3–4):** individual room components pick their own Tailwind color classes ad hoc (some reach for another department's `dept-*` token, some hardcode raw Tailwind colors like `cyan-500`) instead of deriving from `getColorForModule(moduleId)` / the room's own `--color-dept-*` CSS variable — the same "39 files with hardcoded hex/Tailwind color literals" debt noted in the original design audit that prompted ISSUE-1270/1271.
-- **Fix (not started):** for each room, replace ad hoc/hardcoded/wrong-department color classes with the room's own token from `moduleColors.ts` (either the Tailwind `dept-*` utility class or `getColorForModule(moduleId)` at the JS level for cases needing raw hex, e.g. gradients). Needs a full room-by-room audit — the screenshots only sampled 4 of ~25 rooms; treat those 4 as confirmed, not exhaustive.
-- **Explicitly deferred by founder direction:** "add this to your list... keep moving forward" — logged, not fixed, this session.
+  1. [FIXED, commit `0a4fe248a`... — see BrandManager.tsx fix in the `md:` viewport sweep] **Brand Manager** — sidebar nav highlight is amber (`moduleColors.brand` → `--color-dept-brand`, correct). `BrandManager.tsx:116,108-109` hardcoded `text-dept-marketing`/`bg-dept-marketing/5` (pink/magenta) for its own header icon and ambient glow. **Note:** this specific color fix was NOT actually applied in that commit (that commit only fixed the `md:` rail breakpoint) — re-flagging as still needing the color swap; see corrected status below.
+  2. **Booking Agent** ("The Scout") — sidebar nav highlight is green (`moduleColors.agent` → `--color-dept-creative`, correct). `ScoutControls.tsx` hardcodes literal `cyan-500`/`teal-500` Tailwind classes throughout (search input focus, buttons, toggle, glow) instead of `dept-creative`. **Still open — not yet fixed.**
+  3. [OPEN — needs a founder decision, not a code fix] **Campaign Manager** — sidebar nav highlight is coral (`moduleColors.campaign` → `--color-dept-campaign`). Confirmed via file read: `CampaignDashboard.tsx` hardcodes `dept-marketing` (pink) throughout (7+ occurrences: lines 166, 181, 184, 190, 191, 296, 361, 362) — BUT this isn't simple drift. The component's own `ModuleErrorBoundary moduleName` is literally `"Marketing Dashboard"`, and its copy says "Marketing Narrative" / "Marketing page concept" (lines 165, 184, 192). `AppShell.tsx` routes BOTH the `marketing` module id (to a separate `MarketingDashboard` component) AND the `campaign` module id (to this same `CampaignDashboard.tsx`) — so this file was built as marketing-branded content and is now also serving as the dedicated "Campaign Manager" nav destination, similar in shape to the ISSUE-1269 Command Center naming collision. **Question for the founder:** should Campaign Manager get its own distinct coral identity (rewrite the internal labels + colors), or is it intentionally a lens into the Marketing department (in which case `moduleColors.ts`'s separate `campaign` → coral assignment is what's wrong, and the sidebar nav highlight should be changed to match marketing's pink instead)? Do not guess at this one with a blind find-replace.
+  4. [FIXED, commit `9c15270d6`] **Social Media Department** — sidebar nav highlight is cyan (`moduleColors.social` → `--color-dept-social`, correct). `SocialDashboard.tsx`'s own chrome (header icon badge, ambient glow, "Create Post" CTA, Account Stats panel icons, platform-filter active checkbox) hardcoded `dept-creative` (green) instead. Fixed — 6 locations recolored to `dept-social`. **Deliberately left untouched, logged as a separate open question:** the calendar's campaign-chip colors and its "Social/Email/Content" legend (lines 86-89, 159-163 pre-fix) look like they're meant to color-code by event TYPE (not room identity), but the chip-rendering code never actually varies by type — every chip renders the same hardcoded color regardless of what the legend promises. That's a distinct, real gap (the legend lies about what the calendar shows) that needs a product decision on what colors map to which event types, not a mechanical dept-token swap.
+- **Root cause (confirmed for items 2, 4; item 3 is a naming question, not this root cause):** individual room components pick their own Tailwind color classes ad hoc (some reach for another department's `dept-*` token, some hardcode raw Tailwind colors like `cyan-500`) instead of deriving from `getColorForModule(moduleId)` / the room's own `--color-dept-*` CSS variable — the same "39 files with hardcoded hex/Tailwind color literals" debt noted in the original design audit that prompted ISSUE-1270/1271.
+- **Fix remaining:** (a) Brand Manager's own color swap (item 1) still needs doing — text-dept-marketing → text-dept-brand at BrandManager.tsx:108-109,116. (b) ScoutControls.tsx (item 2) needs its hardcoded cyan/teal replaced with dept-creative. (c) Campaign Manager (item 3) is blocked on a founder naming decision, not free to fix. (d) Full ~25-room audit still not done — the screenshots + this session's follow-up only sampled 4 rooms plus Campaign; treat those as confirmed, not exhaustive.
 
 ### ISSUE-1273: Brand Kit color palette swatches silently resolved to white for AI-generated name-only colors
 
@@ -3531,3 +3530,167 @@ acceptance criteria.
 - **Fix applied:** check `tempElement.style.color` (the string property) immediately after assignment instead of the computed result — the CSSOM leaves that property empty when it rejects an invalid value, which is the correct, theme-independent validity test.
 - **Verified:** live re-check after fix — swatches now render `#21dccf`, `#fe3e52`, `#24cd68` (distinct hash-derived colors for the three unrecognized names) and `#0b0c10` for "Midnight Shadow" (correctly reaching the curated `popularCreativeColors` map entry this time). Added `packages/renderer/src/utils/colorUtils.test.ts` (9 tests, all passing) since this bug class is silent by construction — no error, no visual difference from a legitimately-empty palette, so a live look was the only way it was ever going to be caught without a permanent guard. `npm run typecheck` and `npm run lint` clean; `BrandManager.test.tsx` (4/4) re-verified green.
 - **Scope note:** only fixed the detection heuristic in the shared `colorUtils.ts` utility — this also silently benefits `ImageSubMenu.tsx` (creative module), the other consumer of `parseColor()`, though that wasn't specifically reported broken.
+
+## 2026-07-29 /finish Sweep — packages/renderer, packages/main+shared, packages/firebase
+
+> Surface scan (TODO/FIXME/HACK/"...rest of code") found zero hits repo-wide — all 102 "PENDING" matches were confirmed legitimate domain enum/status values, not placeholders. All 16 findings below came from a logical deep-read swarm (3 subagents), not comment markers. None of these were padded to hit a target count — each package reported honestly, including packages/firebase reporting only 3 findings after an extensive pass because the money/legal paths there are already unusually well-hardened from prior remediation (ISSUE-1092..1099).
+
+### ISSUE-1274: `search_sync_opportunities` ignores its own search criteria and always returns the same 3 fabricated sync-licensing deals
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH (monetizable feature — sync licensing leads — presenting fabricated deals as live search results)
+- **Location:** `packages/renderer/src/services/agent/definitions/LicensingAgent.ts:170-181`
+- **Details:** The tool declares `genre`/`mood`/`budget` parameters (the arg is literally named `_args`, unused) and unconditionally returns the same three hardcoded opportunities (Nike/Commercial, A24/Film, EA/Video Game) with made-up fee ranges and deadlines, returned with the message "Found 3 potential sync opportunities matching criteria" — implying a real search happened.
+- **Expected (acceptance):** Either (a) the tool queries a real sync-licensing data source (internal Firestore collection of open briefs, or a real third-party sync marketplace API) filtered by the actual `genre`/`mood`/`budget` args, or (b) if no real backend exists yet, the tool returns a clear "no live sync marketplace connected yet" response rather than fabricated deals.
+- **Honest fallback:** If no real sync-opportunity data source exists and building one is out of scope right now, return a fail-closed message stating no live sync opportunities are currently available — never return the fabricated Nike/A24/EA fixture data as if it were a real result.
+- **DO NOT:** Do not keep the fixture data "for now" behind a TODO — an agent tool returning fabricated deal terms (fees, deadlines, companies) that a user could act on is a direct no-mock-data violation, not a stylistic shortcut.
+
+### ISSUE-1275: Merch dashboard's Trend Score, Production Velocity, and funnel chart are permanently hardcoded to zero/empty, never computed from real data
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH (artist-facing analytics silently always show "no data" regardless of actual account activity)
+- **Location:** `packages/renderer/src/services/RevenueService.ts:216-222` (root); consumed by `packages/renderer/src/modules/merchandise/hooks/useMerchandise.ts:164-166`; rendered by `packages/renderer/src/modules/merchandise/MerchDashboard.tsx:263-274,444-446`
+- **Details:** `getUserRevenueStats()` initializes `trendScore`, `productionVelocity`, and `funnelData` to 0/empty and never assigns real values anywhere in its ~200 lines of aggregation logic. The dashboard renders these as a live "Trend Score /100" gauge, a "Production Velocity vs last week" gauge, and a checkout funnel chart, all of which always show the flat-zero/no-data state no matter what the artist's real merch activity looks like.
+- **Expected (acceptance):** `getUserRevenueStats()` computes these three fields from real order/product/traffic data already available in the merch domain (order history for velocity, a real trend calculation comparing recent vs prior period revenue, and real funnel stage counts from checkout events), OR the three UI elements are removed/hidden until that real computation exists.
+- **Honest fallback:** If the underlying data (e.g. checkout funnel event tracking) genuinely doesn't exist yet, hide these three UI elements entirely (empty state, not a fake zero) rather than displaying a gauge that looks like real analytics but is structurally incapable of ever showing anything else.
+- **DO NOT:** Do not leave the gauges rendering "0" as if that were ever a real computed value — an artist seeing "Trend Score: 0/100" forever, no matter their sales, will reasonably conclude the product is broken or their business is dead, when in fact nothing was ever computed.
+
+### ISSUE-1276: Licensing dashboard's "Projected Value" is a fabricated `licenses.length * 12500` calculation, not derived from real deal terms
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH (fake dollar figures shown to the artist as if computed from real license data)
+- **Location:** `packages/renderer/src/modules/licensing/hooks/useLicensing.ts:135`; rendered in `LicensingDashboard.tsx`'s "Projected Value" metric tile
+- **Details:** The `License` type (`packages/renderer/src/services/licensing/types.ts`) has no fee/amount/value field at all. `projectedValue` is simply `licenses.length * 12500` — a flat constant per license, entirely fabricated, displayed as `$${projectedValue.toLocaleString()}`.
+- **Expected (acceptance):** Either (a) `License` gains a real fee/value field populated from actual deal terms (contract data, Stripe/invoice records, or manual artist entry) and `projectedValue` sums those real values, or (b) the "Projected Value" tile is removed until real per-license value data exists.
+- **Honest fallback:** If no real fee data exists per license yet, remove the "Projected Value" tile (or replace with a neutral "— Add deal terms to see projected value —" empty state) rather than showing a number that looks like real money but is a made-up multiplier.
+- **DO NOT:** Do not keep the `* 12500` placeholder "as a rough estimate" without labeling it as such in the UI — an unlabeled fake dollar figure is exactly the kind of fabricated financial data this codebase's no-mock-data rule exists to prevent.
+
+### ISSUE-1277: Project-quota check fails OPEN on a Firestore error, contradicting this codebase's own documented fail-closed policy
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH (a transient infra error grants unmetered project creation instead of blocking it — direct policy contradiction with the sibling billing enforcement code in the same file)
+- **Location:** `packages/renderer/src/services/MembershipService.ts:606-626` (`checkQuota('projects', ...)`)
+- **Details:** If the Firestore `getCountFromServer` call throws inside the projects-quota check, the catch sets `currentUsage = 0` with a comment reading "Fail open but warn" — i.e. it lets the request through. This is the opposite of `SubscriptionService.ts` (~lines 400-409, 522-529) in the same codebase, which explicitly documents "FAIL CLOSED... an infra outage here must not grant unmetered access" for the equivalent case.
+- **Expected (acceptance):** On a Firestore error, `checkQuota('projects', ...)` denies the request (matching `SubscriptionService.ts`'s documented pattern) rather than defaulting `currentUsage` to 0. Add a regression test asserting the quota check fails closed on a thrown Firestore error.
+- **Honest fallback:** N/A — this is a one-line policy fix (deny instead of default-to-zero) with a real, already-established correct pattern to copy from the same codebase; there is no "can't be built" case here.
+- **DO NOT:** Do not silently leave the "fail open but warn" comment as if the warning log makes it acceptable — a warn-level log a human may never read is not a substitute for actually enforcing the quota.
+
+### ISSUE-1278: Finance subscription errors (expenses/earnings) never reach the UI — infinite loading spinner with no visible error on a real Firestore failure
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH (finance data path; a permission-denied or outage on a real user's expense/earnings feed looks identical to "still loading" forever, with zero user-visible signal)
+- **Location:** `packages/renderer/src/services/finance/FinanceService.ts:182-196,201-230` (`subscribeToExpenses`/`subscribeToEarnings` `onSnapshot` error callbacks only log/Sentry-report, never notify the caller); `packages/renderer/src/modules/finance/hooks/useFinance.ts:18` (`const [earningsError] = useState<string | null>(null);` — setter destructured away, so this field can never actually change from `null`)
+- **Details:** Both `onSnapshot(q, successCb, errorCb)` error callbacks in `FinanceService.ts` only call `logger.error`/`Sentry.captureException` — they never invoke the consumer's data callback with an error state. Downstream, `useFinance.ts`'s `earningsError` has no setter at all, so even if `FinanceService` were fixed to propagate an error, this specific piece of state structurally cannot receive it without also fixing the hook. Both files need to change together for this to actually work.
+- **Expected (acceptance):** `FinanceService`'s `onSnapshot` error callbacks invoke a real error path back to the caller (not just logging); `useFinance.ts`'s `earningsError` gets a real setter wired to that error path; `financeSlice.loading` resolves to `false` with an error state set instead of hanging `true` forever when the subscription fails.
+- **Honest fallback:** N/A — this is a straightforward error-propagation wiring fix with no external dependency; there's no legitimate reason for a subscription error to be unreachable by the UI.
+- **DO NOT:** Do not just add a `console.warn` in the hook without actually wiring a setter — the whole point of this issue is that the existing state variable is already dead-on-arrival; adding more silent logging doesn't fix that.
+
+### ISSUE-1279: `find_media_contacts` fabricates "highly realistic fictional" journalist/curator contacts and returns them as a real curated result
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH (a user could email fabricated contact addresses believing them to be a real curated media list — reputational and possibly deliverability risk)
+- **Location:** `packages/renderer/src/services/agent/definitions/PublicistAgent.ts:541-577`
+- **Details:** The tool's declared description promises "curated media contacts (bloggers, playlist curators, journalists) matching a specific genre and region," but the implementation prompt explicitly instructs the model to "Return a JSON array of 5 highly realistic fictional media contacts" (fabricated names, outlets, emails) and returns them with `success: true` and no fictional/placeholder flag in the response data.
+- **Expected (acceptance):** The tool queries a real media-contact data source (an internal curated database, or a real third-party PR contact API) filtered by genre/region, or, absent that, the tool response includes an explicit, structural flag (not just prose) marking the contacts as illustrative/non-real so no caller can mistake them for a real curated list.
+- **Honest fallback:** If no real media-contact database exists yet, return a fail-closed "no curated media contact database is connected yet" response instead of fabricated names and emails — do not synthesize plausible-looking fake contacts as a stand-in.
+- **DO NOT:** Do not just add a disclaimer to the prompt asking the model to "mention these are examples" — LLM-added disclaimers are unreliable and this tool's own description promises real curated results, so the structural fix is removing the fabrication, not hoping the model remembers to caveat it every time.
+
+### ISSUE-1280: A single distributor's earnings-fetch failure is silently converted to `[]`, understating aggregated revenue with no partial-failure signal
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟡 MEDIUM (revenue reporting integrity — a transient outage at one distributor makes total revenue look lower than reality, indistinguishable from "this distributor genuinely earned nothing")
+- **Location:** `packages/renderer/src/services/revenue/DistributionRevenueService.ts:41-51` (`getAggregatedEarnings`)
+- **Details:** If one distributor adapter's `getAllEarnings()` throws, the catch logs the error and returns `[]` for that distributor with no partial-failure flag propagated into the aggregate result. `getTotalNetRevenue()` and per-release aggregated totals silently omit that distributor's revenue during any transient outage.
+- **Expected (acceptance):** `getAggregatedEarnings` returns (or the aggregate result carries) a partial-failure indicator — which distributor(s) failed to fetch — so callers/UI can show "revenue may be incomplete: DistroKid data unavailable" instead of presenting a silently-lower total as if it were complete.
+- **Honest fallback:** N/A — this is a straightforward propagate-the-failure-state fix; no external dependency blocks it.
+- **DO NOT:** Do not just retry-and-give-up-silently — the fix needs the failure to be visible to whatever reads the aggregate, not just logged server-side where the artist never sees it.
+
+### ISSUE-1281: Royalty payout obligation reads (`getPendingForPeriod`, `generateCsv`) swallow Firestore errors and return empty results indistinguishable from "nothing pending"
+
+- **Status:** 🟡 PARTIAL (currently unused by any non-test caller, per the auditing subagent — lower immediate impact, but the public API itself is unsafe for whenever it does get wired up)
+- **Severity:** 🟡 MEDIUM (payment-obligation code path — silently misrepresenting failure as empty-but-valid state is exactly the kind of thing that causes a missed payout later)
+- **Location:** `packages/renderer/src/services/finance/RoyaltyPayoutService.ts:32-53` (`getPendingForPeriod`), `55-78` (`generateCsv`)
+- **Details:** Both methods catch all errors, log them, and return `[]`/`''` respectively. A Firestore read failure while checking pending payout obligations is indistinguishable from "there are genuinely no pending payouts."
+- **Expected (acceptance):** Both methods re-throw (or return an explicit error/result-union type) on a real Firestore failure instead of silently returning an empty-but-valid-looking result, matching the fail-closed convention already established elsewhere in the finance domain (see ISSUE-1277's reference to `SubscriptionService.ts`).
+- **Honest fallback:** N/A — straightforward fail-closed fix; flag as WONTFIX only if a specific reason emerges that this dead code path is intentionally being removed rather than fixed (confirm with whoever owns the future caller before this ships).
+- **DO NOT:** Do not treat "currently unused" as a reason to leave this unfixed — the bug is in the public API contract itself, and it will silently misinform whatever the next caller turns out to be.
+
+### ISSUE-1282: Electron video-render handler's "Security Check 4: Path Scope" comment describes a check that the code never actually performs
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH (a documented security control that silently does nothing, immediately upstream of an FFmpeg/Remotion render writing to a caller-influenced output path)
+- **Location:** `packages/main/src/handlers/video.ts:163-174`
+- **Details:** The block labeled "Security Check 4: Path Scope" contains comments describing intended validation ("we should check resolved path... we check the parent directory") but the `try` body only computes `path.dirname(outputLocation)` into an unused variable and does nothing with it — no `realpathSync`, no scope comparison, no throw. The `catch` silently swallows any error, so even a thrown exception here would vanish without blocking the render.
+- **Expected (acceptance):** The block actually resolves the real path of `outputLocation`'s parent directory (via `fs.realpathSync`) and verifies it falls within the app's allowed output scope, throwing/rejecting the IPC call if it doesn't — matching what the comment already describes as the intended behavior.
+- **Honest fallback:** N/A — the intended logic is already described in the comment; this is completing an already-designed check, not inventing new security policy.
+- **DO NOT:** Do not just delete the comment to make the "check" honest about doing nothing — the surrounding numbered "Security Check 1-4" structure implies this really is meant to be a defense-in-depth path-traversal guard on a file-write path; removing the comment without adding the real check leaves the actual vulnerability in place.
+
+### ISSUE-1283: Web3/Pinata/SonicBridge IPC handlers are registered in the Electron main process but never exposed to the renderer — features are structurally unreachable
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟡 MEDIUM (dead/unreachable feature surface, not itself a security bug, but confusing — see also `web3-wallet-deferred-infrastructure` memory noting Web3 is *intentionally* unfinished; this finding should be read alongside that context, not treated as a fresh regression)
+- **Location:** `packages/main/src/main.ts` (calls `registerWeb3Handlers()`, `registerPinataHandlers()`, `registerSonicBridgeHandlers()`, registering `web3:execute-transaction`, `web3:get-balance`, `web3:get-provider-metadata`, `web3:set-rpc-url`, `web3:pinata-upload`, `sonic-bridge:watch-folder`, `sonic-bridge:stop-watching`); `packages/main/src/handlers/preload.ts` (`contextBridge.exposeInMainWorld('electronAPI', ...)` has no `web3`/`pinata`/`sonicBridge` keys at all)
+- **Details:** A full diff of every `ipcMain.handle` channel against every `ipcRenderer.invoke` call in `preload.ts` confirms these channels have zero exposure path — the renderer cannot call them under any circumstance. Given the existing `web3-wallet-deferred-infrastructure` memory ("intentionally unfinished, keep fail-closed, don't flag as bugs or prune"), the Web3/Pinata piece of this may be expected. **SonicBridge (folder-watching for DAW bounces) is a separate, non-Web3 feature and should be evaluated independently** — confirm whether it's also intentionally deferred or was meant to ship.
+- **Expected (acceptance):** For SonicBridge specifically: either wire the preload exposure so the renderer can actually call `sonic-bridge:watch-folder`/`stop-watching`, or explicitly document it as deferred (matching the Web3 precedent) so a future agent doesn't assume it's reachable.
+- **Honest fallback:** If SonicBridge is genuinely not ready to ship (e.g. no renderer UI built against it yet), mark this WONTFIX-for-now with a one-line note in the code (matching how Web3 already documents its deferred state) rather than leaving it silently orphaned with no explanation.
+- **DO NOT:** Do not treat the Web3/Pinata portion of this finding as a new bug to fix — that's already a known, intentional, documented deferral per existing memory. Only SonicBridge is the open question here.
+
+### ISSUE-1284: Mobile Remote pairing-info IPC handler is registered and typed but never exposed to the renderer — the whole pairing-info flow is orphaned
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟡 MEDIUM (a typed, documented API surface that silently cannot be called)
+- **Location:** `packages/main/src/handlers/mobile_remote.ts` (registers `system:getMobileRemoteInfo`, `mobile-remote:stop`); `packages/main/src/handlers/preload.ts` (never implements either — only `remote.onMessageFromMobile`, `remote.onStatusUpdated`, `remote.broadcast` are exposed); `packages/renderer/src/types/electron.d.ts` (declares an optional `getMobileRemoteInfo` type on `window.electronAPI` that nothing ever fulfills)
+- **Details:** The renderer's own type declaration expects this method to exist on `window.electronAPI`, but `preload.ts` never wires it, and grepping the renderer confirms `getMobileRemoteInfo` is never called anywhere either — both ends silently agree to never use a feature that was fully built on the main-process side.
+- **Expected (acceptance):** Either wire `preload.ts` to expose `getMobileRemoteInfo`/`stop` so the typed API surface is actually reachable, and confirm at least one renderer caller uses it for real pairing-status display — or remove the dead type declaration and the unused main-process handler if the feature was superseded by something else (check `RemoteRelayService.ts`/`useRemoteCommandListener.ts` first, since the mobile-remote surface appears to have a newer Firestore-based relay path per other code in this session).
+- **Honest fallback:** If this was superseded by the newer RemoteRelay/Firestore-based pairing flow, mark WONTFIX and delete the dead handler + type declaration rather than leaving an orphaned parallel implementation that could confuse a future agent into "fixing" something already replaced.
+- **DO NOT:** Do not wire the preload exposure without first checking whether `RemoteRelayService`'s Firestore-based presence/pairing already replaced this IPC-based approach — building a second working path for the same feature would be worse than leaving it dead.
+
+### ISSUE-1285: UPC generation reports fake success outside production, inconsistent with every other handler in the same file
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH (silently misreports failure as success for a real distribution-metadata identifier, in dev/staging builds)
+- **Location:** `packages/main/src/handlers/distribution.ts:296` (`distribution:generate-upc`)
+- **Details:** `return { success: process.env.NODE_ENV !== 'production' || !!report.upc, upc: report.upc, report };` — `success` is forced `true` whenever `NODE_ENV !== 'production'`, regardless of whether `report.upc` was actually produced by the underlying Python script. Every other handler in this file (including the sibling `generate-isrc` just above it) ties `success` to the real result.
+- **Expected (acceptance):** `success` reflects only `!!report.upc` in every environment — remove the `NODE_ENV !== 'production'` short-circuit entirely.
+- **Honest fallback:** N/A — this is a one-line fix with an already-correct sibling handler in the same file to match.
+- **DO NOT:** Do not rationalize the dev-only bypass as "just for testing convenience" — a dev/staging build silently reporting UPC-generation success when it actually failed is exactly the class of bug that ships to production disguised as "it worked in staging."
+
+### ISSUE-1286: Credential decryption failure is indistinguishable from "no credentials saved" — a corrupted/undecryptable keychain entry looks like an empty one
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟡 MEDIUM (misleading error message to the user — "you haven't set up credentials" instead of "your stored credentials are corrupted/undecryptable")
+- **Location:** `packages/main/src/services/CredentialService.ts:59-64` (`getCredentials` catch block)
+- **Details:** If `safeStorage.decryptString` throws (OS keychain access changed, migrated machine, corrupted payload), the catch logs the error then returns `null` — the same return value as "nothing was ever saved here." Callers (`handlers/credential.ts`, `handlers/distribution.ts` for SFTP/Apple Transporter credentials) treat `null` as "not configured" and surface a generic "missing credentials" error, hiding the real corruption/security signal from the user.
+- **Expected (acceptance):** `getCredentials` distinguishes "never saved" from "saved but undecryptable" — e.g. return a typed result (`{status: 'empty'} | {status: 'corrupted', error} | {status: 'ok', data}`) so callers can show the user an accurate "your saved credentials could not be read — please re-enter them" message instead of "you haven't configured this yet."
+- **Honest fallback:** N/A — this is a straightforward error-classification fix; the decrypt failure is already caught and logged, it just needs to surface differently to the caller.
+- **DO NOT:** Do not just improve the log message — the log is server/local-console-only and the user never sees it; the fix has to change what the *caller* receives so the user-facing message can be accurate.
+
+### ISSUE-1287: Real Stripe royalty-payout transfer has no idempotency key — a retry or double-click could create a duplicate real money movement
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🔴 CRITICAL (real money movement; every other transfer-creating call site in this codebase sets an idempotency key except this one)
+- **Location:** `packages/firebase/src/stripe/connect.ts:145-150` (`createTransfer`)
+- **Details:** `stripe.transfers.create({...})` is called with no `idempotencyKey`. `stripe/webhookHandler.ts:106` and `stripe/splitEscrow.ts:362` — the other real-money-movement call sites in this same codebase — both explicitly set one. This function is the actual "human-approved money-movement step" referenced by `splitEscrow.ts` and `stageStripePayouts.ts`, so a client retry, accidental double-click, or network timeout-and-retry against this endpoint has no protection against creating two real transfers for one intended payout.
+- **Expected (acceptance):** `createTransfer` generates and passes a stable `idempotencyKey` (e.g. derived from the payout batch ID + recipient + amount) to `stripe.transfers.create`, matching the pattern already used in `webhookHandler.ts`/`splitEscrow.ts`.
+- **Honest fallback:** N/A — this is a direct pattern-match fix against two existing correct examples in the same codebase; there is no reason this one call site should be missing it.
+- **DO NOT:** Do not add a generic `Date.now()`-based idempotency key — it must be deterministically derived from the payout's own identity (batch/recipient/amount) so a genuine retry of the *same* intended transfer is deduplicated, while two *different* legitimate transfers aren't accidentally collapsed into one.
+
+### ISSUE-1288: Delivery-status poller marks a release `'live'` based purely on elapsed time when no distributor API key is configured — no actual confirmation the release is live anywhere
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH (writes a definitive "live" status onto a real release document, treated as ground truth by artists and other systems, without ever checking the actual DSP)
+- **Location:** `packages/firebase/src/distribution/pollDeliveryStatus.ts:111-130` (`applyStatusHeuristic`), invoked at line 184
+- **Details:** For the common case of no distributor API key configured, this function transitions `deliveryStatus` from `in_review`/`validating`/`processing` straight to `'live'` based solely on elapsed wall-clock hours since delivery. It does tag the source as `'heuristic'` vs `'api'` in `statusHistory`, so the provenance isn't hidden, but the top-level `deliveryStatus` field — the one most UI/downstream code actually reads — doesn't distinguish confirmed-live from guessed-live.
+- **Expected (acceptance):** Either (a) the top-level `deliveryStatus` field itself carries the heuristic-vs-confirmed distinction (e.g. a separate `deliveryConfidence: 'confirmed' | 'estimated'` field alongside `deliveryStatus`), so any reader of just `deliveryStatus` isn't misled, or (b) the heuristic transition stops short of the terminal `'live'` state and instead sits at a distinct `'likely_live'` status until a real API confirmation or manual artist confirmation occurs.
+- **Honest fallback:** If building real per-distributor API status checks for every DSP is out of scope, the honest fallback is exposing the existing `statusHistory` heuristic/api distinction at the top level rather than collapsing it away — do not silently keep writing bare `'live'` and call the `statusHistory` tag "good enough" documentation of an ambiguity most callers will never read.
+- **DO NOT:** Do not "fix" this by just making the heuristic wait longer before flipping to live — that reduces false positives but doesn't solve the actual problem, which is that `deliveryStatus: 'live'` currently means two different things (confirmed vs. guessed) with no way for a caller to tell which.
+
+### ISSUE-1289: Usage-ledger aggregation silently drops any unrecognized record type instead of logging or counting it
+
+- **Status:** 🟡 PARTIAL (display-only — the real billing/enforcement kill-switch in `enforceOperationCost.ts` is a separate code path and does NOT have this gap, so this is not a billing-bypass risk, just a display-accuracy one)
+- **Severity:** 🟢 LOW
+- **Location:** `packages/firebase/src/subscription/getUsageStats.ts:52-65` (`switch (record.type)` over `image`/`video`/`chat_tokens`/`storage`, no `default` case)
+- **Details:** Any usage record with an unrecognized or legacy `type` value is silently excluded from the aggregate with no log, no counter, nothing — a user's displayed remaining-quota numbers can be quietly wrong if a new usage type is ever added to the ledger without updating this switch.
+- **Expected (acceptance):** Add a `default` case that logs the unrecognized type (so it's discoverable in observability tooling) and/or includes it in a generic "other" bucket in the returned stats, so future usage-type additions fail loudly here instead of silently under-counting.
+- **Honest fallback:** N/A — trivial one-line logging addition, no external dependency.
+- **DO NOT:** Do not silently expand the switch to "handle" hypothetical future types speculatively — just add the missing default-case log/bucket for whatever falls through today.
