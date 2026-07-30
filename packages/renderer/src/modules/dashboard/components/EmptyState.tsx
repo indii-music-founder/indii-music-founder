@@ -84,17 +84,11 @@ export function EmptyState({ onCommandSubmit, onCommandClick, studioSlot }: Empt
         action?: () => void;
         isWorkflow?: boolean;
     }> = [
-        ...savedWorkflows.map(wf => ({
-            icon: Zap,
-            title: wf.name,
-            prompt: null as string | null,
-            action: () => {
-                setNodes(wf.nodes);
-                setEdges(wf.edges);
-                setModule('workflow');
-            },
-            isWorkflow: true
-        })),
+        // ISSUE-1292: saved workflows used to be prepended here and the combined list
+        // truncated with .slice(0, 10) — so every workflow an artist saved silently
+        // evicted one of indii's built-in actions, and with zero workflows saved there
+        // was no sign the Workflow Builder existed at all. Workflows now have their own
+        // section below, which both fixes the eviction and makes the builder findable.
         ...getDashboardEntryCommands().map((command: EntryCommandDefinition) => ({
             icon: commandIcons[command.id] || Command,
             title: command.title,
@@ -103,6 +97,12 @@ export function EmptyState({ onCommandSubmit, onCommandClick, studioSlot }: Empt
             action: command.id === 'custom-workflow' ? () => onCommandSubmit(command.slash) : undefined,
         }))
     ].slice(0, 10); // keep to max 10 to fit the 5-column grid nicely
+
+    const openWorkflow = (wf: SavedWorkflow) => {
+        setNodes(wf.nodes);
+        setEdges(wf.edges);
+        setModule('workflow');
+    };
 
     return (
         <div className="flex-1 flex flex-col items-center justify-center p-3 sm:p-8 max-w-6xl mx-auto w-full">
@@ -188,6 +188,68 @@ export function EmptyState({ onCommandSubmit, onCommandClick, studioSlot }: Empt
                         </p>
                     </motion.button>
                 ))}
+            </div>
+
+            {/* ISSUE-1292: Your Workflows — always rendered, including when the artist
+                has none. The Workflow Builder is a real, executing system (72 typed
+                nodes, a live engine), but it lived as one entry inside a collapsed
+                sidebar section, so in practice nobody would ever find it. This is its
+                front door. */}
+            <div className="w-full px-4 mt-16">
+                <div className="flex items-center justify-between mb-4">
+                    <p className="text-emerald-200/50 font-medium uppercase tracking-[0.15em] text-[10px]">
+                        Your Workflows
+                    </p>
+                    {savedWorkflows.length > 0 && (
+                        <button
+                            onClick={() => setModule('workflow')}
+                            className="text-[10px] font-bold uppercase tracking-wider text-white/40 hover:text-emerald-300 transition-colors"
+                        >
+                            Open builder →
+                        </button>
+                    )}
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+                    {savedWorkflows.map((wf, i) => (
+                        <motion.button
+                            key={wf.id ?? wf.name + i}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.05 * i }}
+                            onClick={() => openWorkflow(wf)}
+                            className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-amber-500/20 bg-white/[0.02] p-5 text-left transition-all duration-300 hover:border-amber-500/40 hover:bg-white/[0.06] hover:shadow-lg hover:shadow-amber-500/5"
+                        >
+                            <div className="absolute right-0 top-0 p-3 opacity-0 transition-opacity group-hover:opacity-100">
+                                <MousePointer2 size={12} className="text-amber-400" />
+                            </div>
+                            <Zap size={22} className="mb-3 text-amber-400 transition-transform duration-300 group-hover:scale-110" />
+                            <h3 className="mb-1.5 line-clamp-1 text-xs font-semibold tracking-wide text-white">{wf.name}</h3>
+                            <p className="line-clamp-2 text-[10px] font-normal leading-relaxed text-slate-400 transition-colors group-hover:text-slate-300">
+                                {wf.nodes?.length ? `${wf.nodes.length} steps · yours` : 'Custom workflow'}
+                            </p>
+                        </motion.button>
+                    ))}
+
+                    {/* Always present — this is the discoverability fix. */}
+                    <motion.button
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.05 * savedWorkflows.length }}
+                        onClick={() => setModule('workflow')}
+                        className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-dashed border-white/15 bg-transparent p-5 text-left transition-all duration-300 hover:border-amber-500/40 hover:bg-white/[0.04]"
+                    >
+                        <Network size={22} className="mb-3 text-white/40 transition-all duration-300 group-hover:scale-110 group-hover:text-amber-400" />
+                        <h3 className="mb-1.5 text-xs font-semibold tracking-wide text-white/80 group-hover:text-white">
+                            {savedWorkflows.length === 0 ? 'Build a workflow' : 'New workflow'}
+                        </h3>
+                        <p className="line-clamp-2 text-[10px] font-normal leading-relaxed text-slate-500 group-hover:text-slate-400">
+                            {savedWorkflows.length === 0
+                                ? 'Chain your departments into something that runs on its own.'
+                                : 'Start from a blank canvas.'}
+                        </p>
+                    </motion.button>
+                </div>
             </div>
 
             {/* NEW: Entry Overlay (Chat Overlay) */}
