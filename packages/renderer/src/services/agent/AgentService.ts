@@ -6,7 +6,7 @@ import { agentFirebaseConnector } from '@/services/agent/AgentFirebaseConnector'
 import { ContextPipeline, PipelineContext } from './components/ContextPipeline';
 import { AgentOrchestrator } from './components/AgentOrchestrator';
 import { AgentExecutor } from './components/AgentExecutor';
-import { AgentContext } from './types';
+import { AgentContext, type BoardroomDispatchTask } from './types';
 import { agentRegistry } from './registry';
 import { livingPlanService } from './LivingPlanService';
 
@@ -415,7 +415,17 @@ export class AgentService {
         // 0. Dispatch by Mode — MUST be checked FIRST.
         if (conversationMode === 'boardroom') {
             logger.debug('[AgentService] Routing to boardroom multi-dispatch flow');
-            await this.handleBoardroomSwarmFlow(text, attachments, context, responseId, signal);
+            const rawUserUtterance = this.sanitizeBoardroomUtterance(text);
+            const boardroomTask: Readonly<BoardroomDispatchTask> = Object.freeze({
+                rawUserUtterance,
+            });
+            await this.handleBoardroomSwarmFlow(
+                boardroomTask,
+                attachments,
+                { ...context, boardroomTask },
+                responseId,
+                signal,
+            );
             return;
         }
 
@@ -831,7 +841,7 @@ export class AgentService {
      * Boardroom Multi-Dispatch Flow: Dispatches the user's prompt to all active agents simultaneously.
      */
     private async handleBoardroomSwarmFlow(
-        text: string,
+        task: Readonly<BoardroomDispatchTask>,
         attachments: { mimeType: string; base64: string }[] | undefined,
         context: AgentContext,
         initialResponseId: string,
@@ -910,19 +920,7 @@ export class AgentService {
                     .map(id => `${agentRegistry.get(id)?.name || id} (ID: '${id}')`)
                     .join(', ');
 
-        // Sanitize incoming text to prevent spoofing of systemic delimiters
-        const systemicDelimiters = [
-            /\(SYSTEM NOTE\):/g,
-            /\[SEATED_AGENTS\]:/g,
-            /\(PRIOR CONTEXT\):/g,
-            /<<<SYSTEM_ORCHESTRATION>>>/g
-        ];
-        let sanitizedText = text;
-        for (const pattern of systemicDelimiters) {
-            sanitizedText = sanitizedText.replace(pattern, '[REDACTED_SPOOF]');
-        }
-
-        const enhancedText = sanitizedText + assetContext + 
+        const enhancedText = task.rawUserUtterance + assetContext +
             '\n\n(SYSTEM NOTE): You are in a Boardroom meeting. Swarm Protocol active. Respond from your specific department\'s perspective.' +
             `\n\n[SEATED_AGENTS]: The following agents are currently seated in the Boardroom: ${seatedAgentNames}. ONLY address or delegate to agents in this list. If a needed specialist is absent, use the seat_agent tool to invite them, or tell the user to seat them if you do not have that tool.` +
             (accumulatedContext ? `\n\n(PRIOR CONTEXT):\n${accumulatedContext}` : '');
@@ -1045,6 +1043,19 @@ export class AgentService {
                 }
             }
         }
+    }
+
+    private sanitizeBoardroomUtterance(text: string): string {
+        const systemicDelimiters = [
+            /\(SYSTEM NOTE\):/g,
+            /\[SEATED_AGENTS\]:/g,
+            /\(PRIOR CONTEXT\):/g,
+            /<<<SYSTEM_ORCHESTRATION>>>/g,
+        ];
+        return systemicDelimiters.reduce(
+            (sanitized, pattern) => sanitized.replace(pattern, '[REDACTED_SPOOF]'),
+            text,
+        );
     }
 
     /**

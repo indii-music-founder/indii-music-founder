@@ -47,9 +47,30 @@ function snapshot(
 describe('Boardroom capability truthfulness', () => {
     beforeEach(resetCapabilityHealthForTests);
 
-    it('recognizes capability questions without relying on model interpretation', () => {
-        expect(isCapabilityQuestion('What can and can’t you do based on the APIs you have?')).toBe(true);
-        expect(isCapabilityQuestion('Please make a dog image')).toBe(false);
+    it.each([
+        'What can you do?',
+        'What can and can’t you do based on the APIs you have?',
+        'What are indii’s capabilities?',
+        'Which tools can you use?',
+        'Do you have access to any tools?',
+        'Are your tools available right now?',
+        'Is image generation available right now?',
+        'Can you generate videos right now?',
+        'Are you ready to create an image?',
+    ])('recognizes explicit capability or readiness intent: %s', task => {
+        expect(isCapabilityQuestion(task)).toBe(true);
+    });
+
+    it.each([
+        "well I'm just trying to get some Chit Chat going right now and it really we're just testing",
+        'Hello, we are only testing the Boardroom.',
+        'Our API discussion is about release metadata.',
+        'The API capabilities changed in the vendor documentation.',
+        'The prior agent mentioned its tools and capabilities.',
+        'Please make a dog image.',
+        'Can you help me design a video campaign?',
+    ])('keeps chitchat, generic API talk, and ordinary tasks on normal execution: %s', task => {
+        expect(isCapabilityQuestion(task)).toBe(false);
     });
 
     it('requires both registered authorization and server evidence before claiming a tool', () => {

@@ -202,6 +202,14 @@ export interface DistributorInfo {
     promptContext: string;
 }
 
+/**
+ * Privacy-sanitized user intent captured before Boardroom-only prompt
+ * augmentation. This is the sole input for deterministic intent matching.
+ */
+export interface BoardroomDispatchTask {
+    readonly rawUserUtterance: string;
+}
+
 export interface AgentContext {
     userId?: string;
     orgId?: string;
@@ -218,6 +226,7 @@ export interface AgentContext {
     activeModule?: string;
     conversationMode?: 'direct' | 'department' | 'boardroom';
     seatedAgents?: string[];
+    readonly boardroomTask?: Readonly<BoardroomDispatchTask>;
     userProfile?: UserProfile;
     distributor?: DistributorInfo;
     traceId?: string;

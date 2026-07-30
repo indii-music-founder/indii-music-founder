@@ -42,7 +42,21 @@ export function resetCapabilityHealthForTests(): void {
 }
 
 export function isCapabilityQuestion(task: string): boolean {
-    return /\b(what can (you|indii)|what (can'?t|cannot) (you|indii)|capabilit(?:y|ies)|tools?.*(?:have|access)|mcp|apis?.*(?:have|access))\b/i.test(task);
+    const normalized = task.trim().replace(/[’]/g, "'").replace(/\s+/g, ' ');
+    const subject = String.raw`(?:you|indii)`;
+
+    return [
+        new RegExp(String.raw`\bwhat can(?: and can(?:not|'t))? ${subject} do\b`, 'i'),
+        new RegExp(String.raw`\bwhat (?:can(?:not|'t)|can't) ${subject} do\b`, 'i'),
+        new RegExp(String.raw`\bwhat are (?:your|indii(?:'s)?) capabilit(?:y|ies)\b`, 'i'),
+        new RegExp(String.raw`\b(?:tell|show|list|explain)(?: me)? (?:your|indii(?:'s)?) capabilit(?:y|ies)\b`, 'i'),
+        new RegExp(String.raw`\b(?:what|which) tools? (?:do|can) ${subject} (?:have(?: access to)?|access|use)\b`, 'i'),
+        new RegExp(String.raw`\b(?:do|can) ${subject} (?:have access to|access|use|have) (?:any |the )?tools?\b`, 'i'),
+        new RegExp(String.raw`\bare (?:your|indii(?:'s)?) tools? (?:available|ready|working|accessible)(?: right now| now)?\b`, 'i'),
+        /\b(?:is|are) (?:image|video)(?: generation)? (?:available|ready|working)(?: right now| now)?\b/i,
+        new RegExp(String.raw`\b(?:can|could) ${subject} (?:generate|create|make) (?:an? |any )?(?:image|images|video|videos)(?: right now| now)?\??$`, 'i'),
+        new RegExp(String.raw`\b(?:is|are) ${subject} (?:able|ready) to (?:generate|create|make) (?:an? |any )?(?:image|images|video|videos)(?: right now| now)?\b`, 'i'),
+    ].some(pattern => pattern.test(normalized));
 }
 
 const SAFE_DIRECT_CAPABILITIES: Array<{

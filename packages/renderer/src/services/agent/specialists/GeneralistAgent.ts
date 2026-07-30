@@ -107,7 +107,10 @@ export class GeneralistAgent extends BaseAgent {
         signal?: AbortSignal,
         attachments?: { mimeType: string; base64: string }[],
     ): Promise<AgentResponse> {
-        if (isCapabilityQuestion(task)) {
+        const capabilityIntent = context?.conversationMode === 'boardroom'
+            ? context.boardroomTask?.rawUserUtterance
+            : task;
+        if (capabilityIntent !== undefined && isCapabilityQuestion(capabilityIntent)) {
             if (!this.functions) await this.initialize();
             const registeredTools = this.authorizedTools.filter(
                 tool => typeof this.functions?.[tool] === 'function',
