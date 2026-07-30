@@ -430,6 +430,15 @@ export default function MobileRemote() {
       pairingTimeoutRef.current = setTimeout(() => {
         setConnectionStatus('idle');
         setIsPaired(false);
+        // ISSUE-1290: this used to drop silently back to 'idle' with the reason only
+        // in a log line the user never sees — the phone just bounced back to the
+        // pairing screen as if nothing had happened, which is indistinguishable from
+        // "the code didn't work". By this point the code HAS worked and sign-in HAS
+        // succeeded; the one missing piece is a Studio publishing executor presence,
+        // so say exactly that instead of leaving the user to guess.
+        setHandoffError(
+          'Paired successfully, but no Studio is online to connect to. Open the indii desktop app on your computer and sign in — a browser tab cannot act as the Studio.'
+        );
         logger.info('[MobileRemote] Pairing timeout — desktop not found, falling back to idle');
       }, 10_000);
     } else {

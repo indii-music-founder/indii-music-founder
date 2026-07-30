@@ -1,23 +1,15 @@
 /**
  * Sonic Bridge — watches a DAW bounce folder for new audio and forwards it to the app.
  *
- * ─────────────────────────────────────────────────────────────────────────────
- * ISSUE-1283 — UNREACHABLE FROM THE RENDERER. DO NOT ASSUME THIS IS LIVE.
+ * Flow: renderer calls `sonicBridge.watchFolder()` → native folder picker →
+ * chokidar watches that folder (top level only, dotfiles ignored) → each new
+ * .wav/.mp3/.aif/.flac fires `sonic-bridge:new-bounce` back to the window.
  *
- * `registerSonicBridgeHandlers()` is called from main.ts and registers
- * `sonic-bridge:watch-folder` and `sonic-bridge:stop-watching`, but
- * `handlers/preload.ts` exposes no `sonicBridge` key on `window.electronAPI`, so
- * the renderer has no way to invoke either channel. Verified 2026-07-29 by
- * diffing every registered `ipcMain.handle` channel against every
- * `ipcRenderer.invoke` in preload.ts; a repo-wide grep also finds zero renderer
- * references to `sonicBridge`/`sonic-bridge`.
- *
- * Unlike the Web3/Pinata handlers next door — whose unfinished state is a
- * deliberate, documented deferral — it is NOT established whether this was meant
- * to ship. Left in place rather than deleted per the Asset Deletion Fail-Safe
- * (CLAUDE.md §7); needs a human decision to either wire up the preload exposure
- * or remove it.
- * ─────────────────────────────────────────────────────────────────────────────
+ * ISSUE-1283: these handlers shipped long ago but `preload.ts` never exposed a
+ * `sonicBridge` key, so the feature was unreachable from the renderer for its
+ * entire existence. Wired up 2026-07-30 on founder instruction — see
+ * `preload.ts` (bridge), `packages/shared/src/ipc/electron-api.types.ts`
+ * (contract), and `hooks/useSonicBridge.ts` (renderer half).
  */
 import { ipcMain, dialog, BrowserWindow } from 'electron';
 import chokidar from 'chokidar';

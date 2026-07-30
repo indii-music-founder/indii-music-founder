@@ -177,6 +177,21 @@ contextBridge.exposeInMainWorld('electronAPI', {
         validateXSD: (xmlContent: string) => ipcRenderer.invoke('distribution:validate-xsd', xmlContent),
     },
 
+    // Sonic Bridge — watches a DAW bounce folder and pushes new audio to the app.
+    // ISSUE-1283: the main-process handlers existed but were never exposed here, so
+    // the whole feature was unreachable from the renderer. Wired up 2026-07-30.
+    sonicBridge: {
+        /** Opens a native folder picker, then watches the chosen folder for new bounces. */
+        watchFolder: () => ipcRenderer.invoke('sonic-bridge:watch-folder'),
+        stopWatching: () => ipcRenderer.invoke('sonic-bridge:stop-watching'),
+        /** Subscribe to new-bounce events. Returns an unsubscribe function. */
+        onNewBounce: (callback: (data: unknown) => void) => {
+            const handler = (_event: unknown, data: unknown) => callback(data);
+            ipcRenderer.on('sonic-bridge:new-bounce', handler);
+            return () => ipcRenderer.removeListener('sonic-bridge:new-bounce', handler);
+        },
+    },
+
     // IndiiRemote
     remote: {
         onMessageFromMobile: (callback: (data: unknown) => void) => {

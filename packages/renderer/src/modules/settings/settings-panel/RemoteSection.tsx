@@ -22,6 +22,14 @@ import { buildMobileRemotePairingUrl } from '@/modules/mobile-remote/routing';
 
 const CODE_TTL_MS = 5 * 60 * 1000; // matches auth_handoffs expiry in functions/auth/handoff.ts
 
+/**
+ * Only the Electron desktop app can issue a Studio executor lease — the lease is
+ * keyed to an OS-keychain enrollment secret reached through `window.electronAPI`
+ * (see StudioExecutorLeaseService). A browser tab has no such bridge, so it can
+ * never become the Studio a paired phone connects to.
+ */
+const isElectronStudio = typeof window !== 'undefined' && !!window.electronAPI;
+
 const RemoteSection: React.FC = () => {
     const [code, setCode] = useState<string | null>(null);
     const [qrUrl, setQrUrl] = useState<string>('');
@@ -263,12 +271,16 @@ const RemoteSection: React.FC = () => {
                 {assetFolderError && <p className="mt-3 text-xs text-red-400/80">{assetFolderError}</p>}
             </div>
 
-            {/* Sync status */}
+            {/* ISSUE-1290: pairing has two independent requirements — an authorized
+                account AND a Studio executor that can publish presence. Only the first
+                was surfaced, so a browser-tab Studio (which structurally cannot issue an
+                executor lease) still showed a reassuring green "Signed in" while every
+                pairing attempt silently timed out on the phone. Both are reported now. */}
             <div className="space-y-1">
                 <SettingRow
                     icon={Wifi}
                     label="Cloud Relay Account"
-                    description="Signing in authorizes cloud relay access. The controller reports Active only after it discovers a ready Studio executor."
+                    description="Signing in authorizes cloud relay access."
                 >
                     <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${auth.currentUser
                         ? 'text-emerald-400 bg-emerald-500/10 border border-emerald-500/20'
@@ -277,7 +289,33 @@ const RemoteSection: React.FC = () => {
                         {auth.currentUser ? 'Signed in' : 'Signed out'}
                     </span>
                 </SettingRow>
+
+                <SettingRow
+                    icon={Smartphone}
+                    label="Studio Executor"
+                    description={isElectronStudio
+                        ? 'This desktop app can act as the Studio your phone connects to.'
+                        : 'Only the installed Electron desktop app can act as a Studio executor. A browser tab cannot — your phone will pair, then find no Studio and give up.'}
+                >
+                    <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${isElectronStudio
+                        ? 'text-emerald-400 bg-emerald-500/10 border border-emerald-500/20'
+                        : 'text-amber-400 bg-amber-500/10 border border-amber-500/20'
+                        }`}>
+                        {isElectronStudio ? 'Ready' : 'Not available in browser'}
+                    </span>
+                </SettingRow>
             </div>
+
+            {!isElectronStudio && (
+                <p className="mt-3 text-xs text-amber-300/90 bg-amber-500/5 p-3 rounded-lg border border-amber-500/15 leading-relaxed">
+                    <strong className="font-semibold">Pairing will not complete from this browser tab.</strong>{' '}
+                    The pairing code itself will work and your phone will sign in, but a
+                    browser Studio cannot publish the executor presence the phone looks
+                    for — so the phone waits, finds nothing, and returns to its pairing
+                    screen. Open the installed indii desktop app and generate the code
+                    there instead.
+                </p>
+            )}
 
             {/* Info */}
             <div className="mt-6 flex items-start gap-3 p-3.5 rounded-xl bg-slate-800/30 border border-slate-700/30">

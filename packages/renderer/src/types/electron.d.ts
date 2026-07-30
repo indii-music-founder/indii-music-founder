@@ -28,6 +28,16 @@ export interface DAWState {
     trackNames: string[];
 }
 
+/** A new audio file detected in a watched DAW bounce folder (Sonic Bridge). */
+export interface SonicBridgeBounce {
+    /** Absolute path on the user's machine. */
+    path: string;
+    /** Filename only, e.g. "final_mix_v3.wav". */
+    name: string;
+    /** Detection time (epoch ms). */
+    timestamp: number;
+}
+
 export interface AudioAnalysisResult {
     status: 'success' | 'error';
     hash: string;
@@ -287,6 +297,14 @@ export interface ElectronAPI {
     remote?: {
         onMessageFromMobile: (cb: (payload: RemoteMobilePayload) => void) => (() => void);
         broadcast: (msg: Record<string, unknown>) => void;
+    };
+    // Sonic Bridge — watches a DAW bounce folder for new audio (Electron-only)
+    sonicBridge?: {
+        /** Opens a native folder picker, then watches that folder. Resolves with the chosen path. */
+        watchFolder: () => Promise<{ success: boolean; path?: string; error?: string }>;
+        stopWatching: () => Promise<{ success: boolean }>;
+        /** Subscribe to new-bounce events. Returns an unsubscribe function. */
+        onNewBounce: (callback: (bounce: SonicBridgeBounce) => void) => (() => void);
     };
     // DAW Integration (Ableton/Logic/FL Studio Link)
     daw?: {

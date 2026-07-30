@@ -154,6 +154,28 @@ export interface ElectronDawAPI {
     onStateChanged: (callback: (state: unknown) => void) => () => void;
 }
 
+/** A new audio file detected in a watched DAW bounce folder. */
+export interface SonicBridgeBounce {
+    /** Absolute path on the user's machine. */
+    path: string;
+    /** Filename only, e.g. "final_mix_v3.wav". */
+    name: string;
+    /** Detection time (epoch ms). */
+    timestamp: number;
+}
+
+/**
+ * Sonic Bridge — watches a DAW bounce folder and pushes new audio to the app.
+ * ISSUE-1283: main-process handlers existed but were never exposed via preload.
+ */
+export interface ElectronSonicBridgeAPI {
+    /** Opens a native folder picker, then watches the chosen folder. */
+    watchFolder: () => Promise<{ success: boolean; path?: string; error?: string }>;
+    stopWatching: () => Promise<{ success: boolean }>;
+    /** Subscribe to new-bounce events. Returns an unsubscribe function. */
+    onNewBounce: (callback: (bounce: SonicBridgeBounce) => void) => (() => void);
+}
+
 export interface ElectronDistributionAPI {
     stageRelease: (releaseId: string, files: { type: string; data: string; name: string }[]) => Promise<{ success: boolean; error?: string; itmspPath?: string; packagePath?: string; files?: string[]; message?: string }>;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -281,6 +303,12 @@ export interface ElectronAPI {
     daw: ElectronDawAPI;
     distribution: ElectronDistributionAPI;
     remote: ElectronRemoteAPI;
+    /**
+     * Optional: only present in builds where the Sonic Bridge preload block is
+     * exposed. Callers must feature-detect (`window.electronAPI?.sonicBridge`)
+     * rather than assume it — the browser build has no Electron bridge at all.
+     */
+    sonicBridge?: ElectronSonicBridgeAPI;
     updater: ElectronUpdaterAPI;
     scheduler: ElectronSchedulerAPI;
     sidecar: ElectronSidecarAPI;
