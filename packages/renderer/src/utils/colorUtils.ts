@@ -35,11 +35,23 @@ export function parseColor(colorStr: string): { hex: string; label: string } {
         try {
             const tempElement = document.createElement('div');
             tempElement.style.color = cleanStr;
-            document.body.appendChild(tempElement);
-            const computedColor = window.getComputedStyle(tempElement).color;
-            document.body.removeChild(tempElement);
-            
-            if (computedColor && computedColor !== 'rgb(0, 0, 0)' && computedColor !== 'rgba(0, 0, 0, 0)' && !computedColor.includes('canvas')) {
+            // The CSSOM silently rejects invalid color values and leaves style.color
+            // empty — that's the only reliable validity check. Checking the *computed*
+            // color instead (the old approach) is a false-positive trap: an unset
+            // color inherits the ambient text color, and in this app's dark theme
+            // that's near-white, not black — so every made-up name (e.g. an
+            // AI-generated "Golden Hour Amber" with no hex attached) silently passed
+            // as "valid" and resolved to white instead of falling through to the
+            // name-map/hash fallback below.
+            const isRecognizedColorName = tempElement.style.color !== '';
+            let computedColor = '';
+            if (isRecognizedColorName) {
+                document.body.appendChild(tempElement);
+                computedColor = window.getComputedStyle(tempElement).color;
+                document.body.removeChild(tempElement);
+            }
+
+            if (isRecognizedColorName && computedColor && !computedColor.includes('canvas')) {
                 // Convert rgb/rgba to hex
                 const rgb = computedColor.match(/\d+/g);
                 if (rgb && rgb.length >= 3) {
