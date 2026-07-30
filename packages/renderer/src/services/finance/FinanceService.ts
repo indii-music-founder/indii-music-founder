@@ -165,10 +165,14 @@ export class FinanceService {
 
   /**
    * Subscribe to expenses for real-time updates.
+   *
+   * @param onError Invoked when the underlying snapshot listener fails. Supply this
+   * so the UI can surface the failure and stop showing a loading state (ISSUE-1278).
    */
-  subscribeToExpenses(userId: string, callback: (expenses: Expense[]) => void): () => void {
+  subscribeToExpenses(userId: string, callback: (expenses: Expense[]) => void, onError?: (error: Error) => void): () => void {
     if (auth.currentUser && auth.currentUser.uid !== userId) {
       logger.error('Unauthorized subscribe to expenses');
+      onError?.(new Error('Unauthorized subscription to expenses.'));
       return () => { };
     }
 
@@ -190,17 +194,25 @@ export class FinanceService {
       });
       callback(expenses);
     }, (error) => {
+      // ISSUE-1278: this used to only log/report. The consumer was never told, so
+      // a permission-denied or outage left the finance UI spinning "loading"
+      // forever with no visible error. Callers now receive the failure.
       logger.error("Error subscribing to expenses:", error);
       Sentry.captureException(error);
+      onError?.(error instanceof Error ? error : new Error(String(error)));
     });
   }
 
   /**
    * Subscribe to earnings reports for real-time updates.
+   *
+   * @param onError Invoked when the underlying snapshot listener fails. Supply this
+   * so the UI can surface the failure and stop showing a loading state (ISSUE-1278).
    */
-  subscribeToEarnings(userId: string, callback: (earnings: EarningsSummary | null) => void): () => void {
+  subscribeToEarnings(userId: string, callback: (earnings: EarningsSummary | null) => void, onError?: (error: Error) => void): () => void {
     if (auth.currentUser && auth.currentUser.uid !== userId) {
       logger.error('Unauthorized subscribe to earnings');
+      onError?.(new Error('Unauthorized subscription to earnings.'));
       return () => { };
     }
 
@@ -224,8 +236,10 @@ export class FinanceService {
         callback(null);
       }
     }, (error) => {
+      // ISSUE-1278: see subscribeToExpenses — the consumer must learn about this.
       logger.error("Error subscribing to earnings:", error);
       Sentry.captureException(error);
+      onError?.(error instanceof Error ? error : new Error(String(error)));
     });
   }
 

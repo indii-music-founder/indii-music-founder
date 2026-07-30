@@ -21,7 +21,7 @@ vi.mock('keytar', () => ({
     }
 }));
 
-import { CredentialService } from './CredentialService';
+import { CredentialService, CredentialDecryptionError } from './CredentialService';
 
 describe('CredentialService', () => {
     let service: CredentialService;
@@ -104,22 +104,30 @@ describe('CredentialService', () => {
             expect(result).toEqual(creds);
         });
 
-        it('should throw error inside try if safeStorage is not available for encrypted data, and return null', async () => {
+        // ISSUE-1286: these two cases are "credentials EXIST but cannot be read",
+        // which is not the same as "no credentials saved". They used to return null,
+        // so every caller reported the misleading "missing credentials" and the user
+        // was told to set up credentials they had already saved.
+        it('throws (not returns null) when safeStorage is unavailable for an encrypted payload', async () => {
             const encryptedBase64 = Buffer.from('encrypted-data').toString('base64');
             vi.mocked(keytar.getPassword).mockResolvedValue(encryptedBase64);
             vi.mocked(safeStorage.isEncryptionAvailable).mockReturnValue(false);
 
-            const result = await service.getCredentials('dist1');
-            expect(result).toBeNull();
+            await expect(service.getCredentials('dist1')).rejects.toBeInstanceOf(CredentialDecryptionError);
         });
 
-        it('should return null if decryption throws and payload is not legacy JSON', async () => {
+        it('throws (not returns null) when decryption fails on a stored payload', async () => {
             vi.mocked(keytar.getPassword).mockResolvedValue('not-a-json-or-base64-that-decrypts');
             vi.mocked(safeStorage.isEncryptionAvailable).mockReturnValue(true);
             vi.mocked(safeStorage.decryptString).mockImplementation(() => { throw new Error('decrypt error'); });
 
-            const result = await service.getCredentials('dist1');
-            expect(result).toBeNull();
+            await expect(service.getCredentials('dist1')).rejects.toBeInstanceOf(CredentialDecryptionError);
+        });
+
+        it('still returns null when there is genuinely nothing saved', async () => {
+            vi.mocked(keytar.getPassword).mockResolvedValue(null);
+
+            await expect(service.getCredentials('dist1')).resolves.toBeNull();
         });
 
         it('should catch keytar errors and return null', async () => {

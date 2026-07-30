@@ -47,8 +47,14 @@ export class RoyaltyPayoutService {
             });
             return payouts;
         } catch (error: unknown) {
+            // ISSUE-1281: this used to return [] on failure, making "the read failed"
+            // indistinguishable from "there are no pending payouts" — in a payment
+            // OBLIGATION path, where that confusion means a missed payout. Fails
+            // closed instead, matching the finance-domain convention (ISSUE-886/1277).
             logger.error('[Royalty] Failed to fetch pending payouts:', error);
-            return [];
+            throw error instanceof Error
+                ? error
+                : new Error(`Failed to fetch pending payouts: ${String(error)}`);
         }
     }
 
@@ -72,8 +78,13 @@ export class RoyaltyPayoutService {
             logger.info(`[Royalty] Generated CSV for ${payouts.length} payouts.`);
             return csvContent;
         } catch (error: unknown) {
+            // ISSUE-1281: returning '' made a failed export look like a legitimately
+            // empty file. A caller writing that to disk would ship an empty payout
+            // run and never know.
             logger.error('[Royalty] CSV generation failed:', error);
-            return '';
+            throw error instanceof Error
+                ? error
+                : new Error(`Payout CSV generation failed: ${String(error)}`);
         }
     }
 }

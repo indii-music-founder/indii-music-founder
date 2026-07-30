@@ -3,7 +3,7 @@ import { ipcMain } from 'electron';
 import { CredentialSchema, CredentialIdSchema } from '../utils/validation';
 import { validateSender } from '../utils/ipc-security';
 import { z } from 'zod';
-import { credentialService } from '../services/CredentialService';
+import { credentialService, CredentialDecryptionError } from '../services/CredentialService';
 
 interface Credentials {
     apiKey?: string;
@@ -39,6 +39,11 @@ export function registerCredentialHandlers() {
             return await credentialService.getCredentials(validatedId);
         } catch (error) {
             log.error('Credential Get Failed:', error);
+            // ISSUE-1286: "saved but undecryptable" must reach the user as its own
+            // failure. Returning null here would put back exactly the ambiguity the
+            // typed error exists to remove — the renderer would show "not configured"
+            // for credentials the user has already saved.
+            if (error instanceof CredentialDecryptionError) throw error;
             return null;
         }
     });

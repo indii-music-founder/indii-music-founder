@@ -62,7 +62,7 @@ describe('DistributionRevenueService', () => {
 
     describe('getAggregatedEarnings', () => {
         it('should return empty array when no adapters are connected', async () => {
-            const earnings = await service.getAggregatedEarnings(testPeriod);
+            const { earnings } = await service.getAggregatedEarnings(testPeriod);
 
             expect(earnings).toEqual([]);
         });
@@ -94,7 +94,7 @@ describe('DistributionRevenueService', () => {
                 },
             ] as DistributorEarnings[]);
 
-            const earnings = await service.getAggregatedEarnings(testPeriod);
+            const { earnings } = await service.getAggregatedEarnings(testPeriod);
 
             expect(earnings).toHaveLength(2);
 
@@ -142,7 +142,7 @@ describe('DistributionRevenueService', () => {
                 },
             ] as DistributorEarnings[]);
 
-            const earnings = await service.getAggregatedEarnings(testPeriod);
+            const { earnings } = await service.getAggregatedEarnings(testPeriod);
 
             expect(earnings).toHaveLength(1); // Same release, merged
             const release = earnings[0]!;
@@ -163,14 +163,51 @@ describe('DistributionRevenueService', () => {
             dkAdapter.getAllEarnings.mockRejectedValue(new Error('API timeout'));
 
             // Should not throw, should return empty
-            const earnings = await service.getAggregatedEarnings(testPeriod);
+            const { earnings } = await service.getAggregatedEarnings(testPeriod);
             expect(earnings).toEqual([]);
+        });
+
+        // ISSUE-1280: swallowing a distributor failure into [] made an understated
+        // total indistinguishable from a genuine zero. The failure must be reported.
+        it('reports which distributor failed instead of silently understating revenue', async () => {
+            const adapters = (service as unknown as { adapters: Map<string, { isConnected: import('vitest').Mock, getAllEarnings: import('vitest').Mock, connect: import('vitest').Mock }> }).adapters;
+            const dkAdapter = adapters.get('distrokid')!;
+            const tcAdapter = adapters.get('tunecore')!;
+
+            dkAdapter.isConnected.mockResolvedValue(true);
+            dkAdapter.getAllEarnings.mockRejectedValue(new Error('API timeout'));
+
+            tcAdapter.isConnected.mockResolvedValue(true);
+            tcAdapter.getAllEarnings.mockResolvedValue([{
+                releaseId: 'r-1', distributorId: 'tunecore', streams: 1000, downloads: 10,
+                grossRevenue: 20.0, distributorFee: 0, netRevenue: 20.0,
+            }] as DistributorEarnings[]);
+
+            const { earnings, failedDistributors } = await service.getAggregatedEarnings(testPeriod);
+
+            // TuneCore's real data still comes through...
+            expect(earnings).toHaveLength(1);
+            // ...but the caller can see DistroKid's contribution is missing.
+            expect(failedDistributors).toHaveLength(1);
+            expect(failedDistributors[0]).toMatch(/distrokid/i);
+        });
+
+        it('marks the total as incomplete when a distributor fails', async () => {
+            const adapters = (service as unknown as { adapters: Map<string, { isConnected: import('vitest').Mock, getAllEarnings: import('vitest').Mock, connect: import('vitest').Mock }> }).adapters;
+            const dkAdapter = adapters.get('distrokid')!;
+            dkAdapter.isConnected.mockResolvedValue(true);
+            dkAdapter.getAllEarnings.mockRejectedValue(new Error('API timeout'));
+
+            const result = await service.getTotalNetRevenue(testPeriod);
+
+            expect(result.complete).toBe(false);
+            expect(result.failedDistributors.length).toBeGreaterThan(0);
         });
     });
 
     describe('getTotalNetRevenue', () => {
         it('should return 0 when no adapters connected', async () => {
-            const total = await service.getTotalNetRevenue(testPeriod);
+            const { total } = await service.getTotalNetRevenue(testPeriod);
             expect(total).toBe(0);
         });
 
@@ -199,7 +236,7 @@ describe('DistributionRevenueService', () => {
                 },
             ] as DistributorEarnings[]);
 
-            const total = await service.getTotalNetRevenue(testPeriod);
+            const { total } = await service.getTotalNetRevenue(testPeriod);
             expect(total).toBe(45.0);
         });
     });

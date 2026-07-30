@@ -6,6 +6,7 @@
  */
 
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
+import { logger } from 'firebase-functions';
 import { getFirestore, FieldPath } from 'firebase-admin/firestore';
 import { UsageStats, SubscriptionTier } from '../shared/subscription/types';
 import { TIER_CONFIGS } from '../shared/subscription/SubscriptionTier';
@@ -61,6 +62,17 @@ export const getUsageStats = onCall({ enforceAppCheck: false /* true */ }, async
           break;
         case 'storage':
           storageUsedBytes += record.amount;
+          break;
+        default:
+          // ISSUE-1289: an unrecognized/legacy record type used to vanish silently,
+          // quietly under-reporting the user's usage. Log it so a new usage type added
+          // to the ledger without updating this switch is discoverable rather than
+          // invisible. (Display-only path — the billing kill-switch in
+          // enforceOperationCost.ts is separate and does not share this gap.)
+          logger.warn('[getUsageStats] Unrecognized usage record type; excluded from totals', {
+            type: record.type,
+            docId: doc.id,
+          });
           break;
       }
     });

@@ -15,13 +15,17 @@ export function useFinance() {
 
     const [earningsSummary, setEarningsSummary] = useState<ValidatedEarningsSummary | null>(null);
     const [earningsLoading, setEarningsLoading] = useState(true);
-    const [earningsError] = useState<string | null>(null);
+    // ISSUE-1278: this previously destructured only the value, with no setter, so
+    // the field could never change from null — any earnings-subscription failure
+    // was structurally invisible to the UI.
+    const [earningsError, setEarningsError] = useState<string | null>(null);
 
     const toast = useToast();
 
     // Expenses State
     const [expenses, setExpenses] = useState<Expense[]>([]);
     const [expensesLoading, setExpensesLoading] = useState(true);
+    const [expensesError, setExpensesError] = useState<string | null>(null);
 
     // Mounted guard to prevent state updates on unmounted component (Firestore b815 crash fix)
     const isMountedRef = useRef(true);
@@ -39,13 +43,21 @@ export function useFinance() {
         }
 
         setEarningsLoading(true);
+        setEarningsError(null);
         const unsubscribe = financeService.subscribeToEarnings(userProfile.id, (data) => {
             if (!isMountedRef.current) return;
             setEarningsSummary(data);
             setEarningsLoading(false);
+            setEarningsError(null);
             if (!data) {
                 logger.info('[useFinance] No validated earnings data available for user.');
             }
+        }, (error) => {
+            // ISSUE-1278: clear the loading flag on failure. Without this the UI
+            // spins forever, indistinguishable from a slow load.
+            if (!isMountedRef.current) return;
+            setEarningsLoading(false);
+            setEarningsError(error.message || 'Failed to load earnings.');
         });
 
         return () => safeUnsubscribe(unsubscribe);
@@ -60,10 +72,17 @@ export function useFinance() {
         }
 
         setExpensesLoading(true);
+        setExpensesError(null);
         const unsubscribe = financeService.subscribeToExpenses(userProfile.id, (data: Expense[]) => {
             if (!isMountedRef.current) return;
             setExpenses(data);
             setExpensesLoading(false);
+            setExpensesError(null);
+        }, (error) => {
+            // ISSUE-1278: as above — surface the failure instead of hanging.
+            if (!isMountedRef.current) return;
+            setExpensesLoading(false);
+            setExpensesError(error.message || 'Failed to load expenses.');
         });
 
         return () => safeUnsubscribe(unsubscribe);
@@ -104,6 +123,7 @@ export function useFinance() {
         // Expenses
         expenses,
         expensesLoading,
+        expensesError,
 
         actions: {
             addExpense

@@ -12,6 +12,31 @@ export interface Credentials {
     [key: string]: string | undefined;
 }
 
+/**
+ * Thrown when a credential entry EXISTS in the keychain but cannot be read back —
+ * OS keychain access changed, the machine was migrated, or the payload is corrupt.
+ *
+ * ISSUE-1286: this case used to return `null`, which every caller reasonably
+ * interpreted as "nothing configured" and reported as "missing credentials". The
+ * user was told to set up credentials they had in fact already saved, with no hint
+ * that the real problem was decryption. These are different failures and now have
+ * different types.
+ */
+export class CredentialDecryptionError extends Error {
+    readonly distributorId: string;
+
+    constructor(distributorId: string, cause?: unknown) {
+        super(
+            `Stored credentials for "${distributorId}" exist but could not be decrypted. ` +
+            `They may have been saved on a different machine or by a different OS user. ` +
+            `Re-enter and save them to repair.`
+        );
+        this.name = 'CredentialDecryptionError';
+        this.distributorId = distributorId;
+        if (cause !== undefined) this.cause = cause;
+    }
+}
+
 export class CredentialService {
 
     /**
@@ -57,15 +82,20 @@ export class CredentialService {
                         throw new Error('safeStorage not available for decryption');
                     }
                 } catch (_e) {
+                    // ISSUE-1286: a stored-but-unreadable entry is NOT the same as no
+                    // entry, so it must not collapse to `null` here. (The previous
+                    // `startsWith('{')` retry on this line was also unreachable — this
+                    // branch only runs when the payload does not start with '{'.)
                     console.error('[CredentialService] SafeStorage decryption failed:', _e);
-                    // If it's not JSON and decryption failed, we can't use it
-                    if (storedPayload.trim().startsWith('{')) return JSON.parse(storedPayload);
-                    return null;
+                    throw new CredentialDecryptionError(distributorId, _e);
                 }
             }
 
             return JSON.parse(decryptedPayload) as Credentials;
         } catch (_error) {
+            // Preserve the distinction established above rather than flattening every
+            // failure into "not configured".
+            if (_error instanceof CredentialDecryptionError) throw _error;
             console.error('[CredentialService] getCredentials failed:', _error);
             return null;
         }

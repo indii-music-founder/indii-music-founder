@@ -51,6 +51,17 @@ export const createFinanceSlice: StateCreator<FinanceSlice & ProfileSlice & Subs
                         error: null
                     }
                 }));
+            }, (error: Error) => {
+                // ISSUE-1278: the try/catch below only covers synchronous setup. A
+                // snapshot listener that fails later (permission-denied, outage) never
+                // reached it, so `loading` stayed true forever and `error` stayed null.
+                set((state) => ({
+                    finance: {
+                        ...state.finance,
+                        loading: false,
+                        error: error.message || 'Failed to fetch earnings'
+                    }
+                }));
             });
 
             financeUnsubscribe = unsubscribe;

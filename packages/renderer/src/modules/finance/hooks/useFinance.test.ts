@@ -86,7 +86,7 @@ describe('useFinance', () => {
 
         renderHook(() => useFinance());
 
-        expect(financeService.subscribeToEarnings).toHaveBeenCalledWith('user-123', expect.any(Function));
+        expect(financeService.subscribeToEarnings).toHaveBeenCalledWith('user-123', expect.any(Function), expect.any(Function));
     });
 
     it('should load expenses successfully', async () => {
@@ -105,7 +105,7 @@ describe('useFinance', () => {
         // Since subscription callback is synchronous in our mock, state should update immediately
         expect(result.current.expenses).toEqual(mockExpenses);
         expect(result.current.expensesLoading).toBe(false);
-        expect(financeService.subscribeToExpenses).toHaveBeenCalledWith('user-123', expect.any(Function));
+        expect(financeService.subscribeToExpenses).toHaveBeenCalledWith('user-123', expect.any(Function), expect.any(Function));
     });
 
 
@@ -140,5 +140,44 @@ describe('useFinance', () => {
 
         expect(financeService.addExpense).toHaveBeenCalledWith(newExpenseInput);
 
+    });
+
+    // ISSUE-1278: subscription errors were only logged. The consumer was never
+    // notified, and `earningsError` had no setter at all, so a permission-denied
+    // or outage left the finance UI spinning "loading" forever with no visible error.
+    describe('ISSUE-1278: subscription failures surface instead of hanging', () => {
+        it('clears earnings loading and exposes the error when the subscription fails', async () => {
+            vi.mocked(financeService.subscribeToExpenses).mockReturnValue(() => { });
+            vi.mocked(financeService.subscribeToEarnings).mockImplementation(
+                (_userId: string, _cb: unknown, onError?: (e: Error) => void) => {
+                    onError?.(new Error('Missing or insufficient permissions.'));
+                    return () => { };
+                }
+            );
+
+            const { result } = renderHook(() => useFinance());
+
+            await act(async () => { });
+
+            expect(result.current.earningsLoading).toBe(false);
+            expect(result.current.earningsError).toBe('Missing or insufficient permissions.');
+        });
+
+        it('clears expenses loading and exposes the error when the subscription fails', async () => {
+            vi.mocked(financeService.subscribeToEarnings).mockReturnValue(() => { });
+            vi.mocked(financeService.subscribeToExpenses).mockImplementation(
+                (_userId: string, _cb: unknown, onError?: (e: Error) => void) => {
+                    onError?.(new Error('Backend unavailable.'));
+                    return () => { };
+                }
+            );
+
+            const { result } = renderHook(() => useFinance());
+
+            await act(async () => { });
+
+            expect(result.current.expensesLoading).toBe(false);
+            expect(result.current.expensesError).toBe('Backend unavailable.');
+        });
     });
 });

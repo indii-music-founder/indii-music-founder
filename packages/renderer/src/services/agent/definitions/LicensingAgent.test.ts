@@ -7,7 +7,8 @@ vi.mock('../../licensing/LicensingService', () => ({
     licensingService: {
         createRequest: vi.fn(),
         updateRequest: vi.fn(),
-        updateRequestStatus: vi.fn()
+        updateRequestStatus: vi.fn(),
+        getSyncBriefs: vi.fn()
     }
 }));
 
@@ -184,15 +185,58 @@ describe('LicensingAgent', () => {
         });
     });
 
+    // ISSUE-1274: this tool used to ignore its arguments entirely and return three
+    // fabricated deals (Nike / A24 / EA) with invented fees and deadlines. The test
+    // that lived here asserted exactly that fixture — it encoded the bug.
     describe('search_sync_opportunities', () => {
-        it('should return mock opportunities', async () => {
-            const args = { genre: 'Rock', mood: 'Upbeat' };
-            type ResultType = { success: boolean; data: { opportunities?: any[]; message?: string } };
-            const result = await (LicensingAgent.functions!.search_sync_opportunities as (args: unknown) => Promise<ResultType>)(args);
+        type ResultType = { success: boolean; data: { opportunities?: any[]; message?: string } };
+        const call = (args: unknown) =>
+            (LicensingAgent.functions!.search_sync_opportunities as (a: unknown) => Promise<ResultType>)(args);
+
+        const brief = (over: Partial<Record<string, unknown>> = {}) => ({
+            id: 'b1', project: 'Indie Feature', type: 'Film', network: 'A24',
+            deadline: '2026-09-01', bpmMin: 90, bpmMax: 120, moods: ['Upbeat'],
+            budget: '$10,000 - $50,000', description: 'Rock-driven montage', ...over,
+        });
+
+        it('returns real sync briefs from the user pipeline, not a fixture', async () => {
+            vi.mocked(licensingService.getSyncBriefs).mockResolvedValue([brief()] as any);
+
+            const result = await call({ genre: 'Rock', mood: 'Upbeat' });
 
             expect(result.success).toBe(true);
-            expect(result.data.opportunities).toHaveLength(3);
-            expect(result.data.message).toContain('Found 3 potential sync opportunities');
+            expect(result.data.opportunities).toHaveLength(1);
+            expect(result.data.opportunities![0].project).toBe('Indie Feature');
+        });
+
+        it('actually applies the mood filter instead of ignoring its arguments', async () => {
+            vi.mocked(licensingService.getSyncBriefs).mockResolvedValue([
+                brief({ id: 'b1', moods: ['Upbeat'] }),
+                brief({ id: 'b2', moods: ['Melancholy'] }),
+            ] as any);
+
+            const result = await call({ mood: 'Melancholy' });
+
+            expect(result.data.opportunities).toHaveLength(1);
+            expect(result.data.opportunities![0].id).toBe('b2');
+        });
+
+        it('reports an honest empty result rather than inventing opportunities', async () => {
+            vi.mocked(licensingService.getSyncBriefs).mockResolvedValue([] as any);
+
+            const result = await call({ genre: 'Rock' });
+
+            expect(result.success).toBe(true);
+            expect(result.data.opportunities).toEqual([]);
+            expect(result.data.message).toMatch(/no sync briefs/i);
+        });
+
+        it('never returns the old fabricated Nike/A24/EA fixture', async () => {
+            vi.mocked(licensingService.getSyncBriefs).mockResolvedValue([] as any);
+
+            const result = await call({ genre: 'Rock', mood: 'Upbeat' });
+
+            expect(JSON.stringify(result)).not.toMatch(/SYNC-00\d|Nike|\bEA\b/);
         });
     });
 
