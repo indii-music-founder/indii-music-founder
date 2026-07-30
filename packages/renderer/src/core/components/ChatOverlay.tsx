@@ -1,18 +1,77 @@
 import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence, useDragControls } from 'motion/react';
-import { X, Minimize2, RefreshCw, Bot, Maximize2, Smartphone } from 'lucide-react';
+import {
+    X,
+    Minimize2,
+    RefreshCw,
+    Bot,
+    Maximize2,
+    Smartphone,
+    BriefcaseBusiness,
+    Calculator,
+    CalendarDays,
+    Camera,
+    Clapperboard,
+    CloudCog,
+    GraduationCap,
+    Handshake,
+    Landmark,
+    Library,
+    LockKeyhole,
+    Megaphone,
+    Music2,
+    Palette,
+    PenLine,
+    Route,
+    Scale,
+    Share2,
+    ShieldCheck,
+    Sparkles,
+    Utensils,
+    Video,
+    type LucideIcon,
+} from 'lucide-react';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import type { AgentMessage } from '@/core/store';
 import { useVoice } from '@/core/context/VoiceContext';
 import { Virtuoso, VirtuosoHandle } from 'react-virtuoso';
-import { agentRegistry } from '@/services/agent/registry';
 import { MessageItem } from './chat/ChatMessage';
 import { PromptArea } from './command-bar/PromptArea';
 import { ErrorBoundary } from '@/core/components/ErrorBoundary';
 import { cn } from '@/lib/utils';
 import { AgentSwitcherStrip } from './AgentSwitcherStrip';
+import {
+    resolveAgentVisualIdentity,
+    type AgentVisualIconKey,
+} from '@/services/agent/AgentVisualIdentity';
+
+const AGENT_ICONS: Readonly<Record<AgentVisualIconKey, LucideIcon>> = Object.freeze({
+    bot: Bot,
+    'briefcase-business': BriefcaseBusiness,
+    calculator: Calculator,
+    'calendar-days': CalendarDays,
+    camera: Camera,
+    clapperboard: Clapperboard,
+    'cloud-cog': CloudCog,
+    'graduation-cap': GraduationCap,
+    handshake: Handshake,
+    landmark: Landmark,
+    library: Library,
+    'lock-keyhole': LockKeyhole,
+    megaphone: Megaphone,
+    'music-2': Music2,
+    palette: Palette,
+    'pen-line': PenLine,
+    route: Route,
+    scale: Scale,
+    'share-2': Share2,
+    'shield-check': ShieldCheck,
+    sparkles: Sparkles,
+    utensils: Utensils,
+    video: Video,
+});
 
 interface ChatOverlayProps {
     onClose: () => void;
@@ -122,25 +181,11 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, onToggleMinimize }) 
         return session?.participants[0] || 'generalist';
     });
 
-    const activeAgent = useMemo(() => {
-        try {
-            return agentRegistry.get(activeAgentId);
-        } catch {
-            return null;
-        }
-    }, [activeAgentId]);
-
-    const activeBrandColor = useMemo(() => {
-        if (activeAgent?.color) {
-            const colorMap: Record<string, string> = {
-                purple: 'purple', blue: 'blue', green: 'green', red: 'red',
-                orange: 'orange', yellow: 'yellow', cyan: 'cyan', rose: 'rose',
-                indigo: 'indigo', teal: 'teal', emerald: 'emerald',
-            };
-            return colorMap[activeAgent.color] || 'purple';
-        }
-        return chatChannel === 'indii' ? 'purple' : 'blue';
-    }, [activeAgent, chatChannel]);
+    const activeIdentity = useMemo(
+        () => resolveAgentVisualIdentity(activeAgentId),
+        [activeAgentId],
+    );
+    const ActiveAgentIcon = AGENT_ICONS[activeIdentity.iconKey];
 
     const filteredMessages = useMemo(() => (
         sourceFilter === 'all'
@@ -245,9 +290,25 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, onToggleMinimize }) 
                                 }}
                             >
                                 <div className="flex items-center gap-3">
-                                    <div className={`w-2 h-2 rounded-full bg-${activeBrandColor}-500 animate-pulse`} />
+                                    <div
+                                        className="w-8 h-8 rounded-full border flex flex-col items-center justify-center animate-pulse"
+                                        style={{
+                                            ...activeIdentity.cssProperties,
+                                            backgroundColor: activeIdentity.surface,
+                                            borderColor: activeIdentity.border,
+                                            color: activeIdentity.foreground,
+                                            boxShadow: `0 0 12px ${activeIdentity.glow}`,
+                                        } as React.CSSProperties}
+                                        aria-label={activeIdentity.ariaLabel}
+                                        data-agent-id={activeIdentity.agentId}
+                                        data-agent-accent={activeIdentity.accent}
+                                        data-agent-icon={activeIdentity.iconKey}
+                                    >
+                                        <ActiveAgentIcon size={11} aria-hidden="true" style={{ color: activeIdentity.accent }} />
+                                        <span className="text-[7px] font-black leading-none">{activeIdentity.initials}</span>
+                                    </div>
                                     <span className="text-xs font-bold uppercase tracking-widest text-gray-400">
-                                        {activeAgent?.name || 'indii'}
+                                        {activeIdentity.displayName}
                                     </span>
                                     <span className="text-[9px] text-gray-600 font-mono">
                                         {chatChannel === 'indii' ? 'ORCHESTRATOR' : 'SPECIALIST'}
@@ -278,15 +339,25 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, onToggleMinimize }) 
                                             <button
                                                 key={filter}
                                                 onClick={() => setSourceFilter(filter)}
-                                                className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest transition-all ${isActive
-                                                    ? `bg-${activeBrandColor}-500/20 text-${activeBrandColor}-300 border border-${activeBrandColor}-500/30`
-                                                    : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'
-                                                    }`}
+                                                className={cn(
+                                                    'flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest transition-all border',
+                                                    isActive
+                                                        ? 'hover:brightness-110'
+                                                        : 'text-gray-500 hover:text-gray-300 hover:bg-white/5 border-transparent',
+                                                )}
+                                                style={isActive ? {
+                                                    backgroundColor: activeIdentity.surface,
+                                                    borderColor: activeIdentity.border,
+                                                    color: activeIdentity.foreground,
+                                                } : undefined}
                                             >
                                                 {filter === 'mobile-remote' && <Smartphone size={10} />}
                                                 {label}
                                                 {count > 0 && (
-                                                    <span className={`px-1.5 py-0.5 rounded-full text-[9px] ${isActive ? `bg-${activeBrandColor}-500/30` : 'bg-white/5'}`}>
+                                                    <span
+                                                        className={`px-1.5 py-0.5 rounded-full text-[9px] ${isActive ? '' : 'bg-white/5'}`}
+                                                        style={isActive ? { backgroundColor: activeIdentity.accent, color: activeIdentity.onAccentForeground } : undefined}
+                                                    >
                                                         {count}
                                                     </span>
                                                 )}
@@ -298,11 +369,25 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, onToggleMinimize }) 
 
                             {/* Messages Area */}
                             <div className="flex-1 relative bg-[#0c0c0e] min-h-0">
-                                <div className={`absolute top-1/4 left-1/4 w-64 h-64 bg-${activeBrandColor}-900/10 rounded-full blur-[100px] opacity-50`} />
+                                <div
+                                    className="absolute top-1/4 left-1/4 w-64 h-64 rounded-full blur-[100px] opacity-50"
+                                    style={{ backgroundColor: activeIdentity.glow }}
+                                />
                                 {messages.length === 0 ? (
                                     <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-8 z-10">
-                                        <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br from-${activeBrandColor}-500/20 to-${activeBrandColor}-900/20 flex items-center justify-center mb-4 border border-${activeBrandColor}-500/20 backdrop-blur-xl`}>
-                                            <Bot size={32} className={`text-${activeBrandColor}-400`} />
+                                        <div
+                                            className="w-16 h-16 rounded-2xl flex flex-col items-center justify-center mb-4 border backdrop-blur-xl"
+                                            style={{
+                                                ...activeIdentity.cssProperties,
+                                                backgroundColor: activeIdentity.surface,
+                                                borderColor: activeIdentity.border,
+                                                color: activeIdentity.foreground,
+                                                boxShadow: `0 0 20px ${activeIdentity.glow}`,
+                                            } as React.CSSProperties}
+                                            aria-label={activeIdentity.ariaLabel}
+                                        >
+                                            <ActiveAgentIcon size={25} aria-hidden="true" style={{ color: activeIdentity.accent }} />
+                                            <span className="text-[9px] font-black leading-none">{activeIdentity.initials}</span>
                                         </div>
                                         <h3 className="text-lg font-bold text-white mb-1">How can I help you?</h3>
                                         <p className="text-xs text-gray-400 max-w-[240px]">Create content, manage your studio, or analyze metrics.</p>
@@ -336,7 +421,13 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, onToggleMinimize }) 
                                                         align: 'end',
                                                     });
                                                 }}
-                                                className={`absolute bottom-8 left-1/2 -translate-x-1/2 bg-${activeBrandColor}-600 text-white px-3 py-1.5 rounded-full shadow-lg z-30 flex items-center gap-2 hover:bg-${activeBrandColor}-700 transition-all text-[10px] font-bold uppercase tracking-wider backdrop-blur-md border border-white/10`}
+                                                className="absolute bottom-8 left-1/2 -translate-x-1/2 px-3 py-1.5 rounded-full shadow-lg z-30 flex items-center gap-2 hover:brightness-110 transition-all text-[10px] font-bold uppercase tracking-wider backdrop-blur-md border"
+                                                style={{
+                                                    backgroundColor: activeIdentity.accent,
+                                                    borderColor: activeIdentity.border,
+                                                    color: activeIdentity.onAccentForeground,
+                                                    boxShadow: `0 0 16px ${activeIdentity.glow}`,
+                                                }}
                                                 title="Resume Feed"
                                             >
                                                 <RefreshCw size={12} />
@@ -400,12 +491,20 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, onToggleMinimize }) 
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     onClick={toggleLocalMinimize}
-                    className={`fixed bottom-6 right-6 z-[600] bg-${activeBrandColor}-600 text-white px-4 py-2.5 rounded-full shadow-lg shadow-${activeBrandColor}-500/30 flex items-center gap-2 hover:brightness-110 transition-all border border-white/10`}
+                    className="fixed bottom-6 right-6 z-[600] px-4 py-2.5 rounded-full shadow-lg flex items-center gap-2 hover:brightness-110 transition-all border"
+                    style={{
+                        ...activeIdentity.cssProperties,
+                        backgroundColor: activeIdentity.accent,
+                        borderColor: activeIdentity.border,
+                        color: activeIdentity.onAccentForeground,
+                        boxShadow: `0 0 16px ${activeIdentity.glow}`,
+                    } as React.CSSProperties}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                 >
-                    <Bot size={16} />
-                    <span className="text-xs font-bold tracking-wider">{activeAgent?.name || 'indii'}</span>
+                    <ActiveAgentIcon size={16} aria-hidden="true" />
+                    <span className="text-[9px] font-black">{activeIdentity.initials}</span>
+                    <span className="text-xs font-bold tracking-wider">{activeIdentity.displayName}</span>
                     {messages.length > 0 && (
                         <span className="text-[10px] bg-white/20 px-1.5 py-0.5 rounded-full">{messages.length}</span>
                     )}

@@ -28,16 +28,6 @@ function filterDomProps(props: Record<string, unknown>): Record<string, unknown>
     return filtered;
 }
 
-vi.mock('@/services/agent/registry', () => ({
-    agentRegistry: {
-        getAll: vi.fn(() => [
-            { id: 'marketing', name: 'Marketing Agent', color: '#FFE135' },
-            { id: 'finance', name: 'Finance Agent', color: '#4B0082' },
-            { id: 'creative', name: 'Creative Director', color: '#FF6B6B' },
-        ]),
-    },
-}));
-
 vi.mock('@/core/components/command-bar/PromptArea', () => ({
     PromptArea: ({ className }: { className?: string }) => (
         <div data-testid="prompt-area" className={className}>Prompt Area Mock</div>
@@ -128,7 +118,7 @@ describe('BoardroomConversationPanel', () => {
             { id: 'msg-1', role: 'model' as const, text: 'Campaign update', timestamp: Date.now(), agentId: 'marketing' },
         ];
         render(<BoardroomConversationPanel messages={messages} />);
-        expect(screen.getByText('Marketing Agent')).toBeInTheDocument();
+        expect(screen.getByText('Marketing Director')).toBeInTheDocument();
     });
 
     it('shows agent initials for known agents', () => {
@@ -136,7 +126,7 @@ describe('BoardroomConversationPanel', () => {
             { id: 'msg-1', role: 'model' as const, text: 'Revenue report', timestamp: Date.now(), agentId: 'finance' },
         ];
         render(<BoardroomConversationPanel messages={messages} />);
-        expect(screen.getByText('FA')).toBeInTheDocument(); // Finance Agent initials
+        expect(screen.getByText('FD')).toBeInTheDocument();
     });
 
     it('shows "You" label and avatar for user messages', () => {
@@ -154,7 +144,8 @@ describe('BoardroomConversationPanel', () => {
             { id: 'msg-1', role: 'model' as const, text: 'Unknown agent response', timestamp: Date.now(), agentId: 'unknown-agent' },
         ];
         render(<BoardroomConversationPanel messages={messages} />);
-        expect(screen.getByText('Unknown-agent')).toBeInTheDocument();
+        expect(screen.getByText('Unknown Agent')).toBeInTheDocument();
+        expect(screen.getByLabelText('Unknown Agent, neutral fallback identity')).toBeInTheDocument();
     });
 
     // --- Multi-Agent Conversation ---
@@ -170,7 +161,21 @@ describe('BoardroomConversationPanel', () => {
         expect(screen.getByText('Creating album artwork now')).toBeInTheDocument();
         expect(screen.getByText('Analyzing production costs')).toBeInTheDocument();
         expect(screen.getByText('Creative Director')).toBeInTheDocument();
-        expect(screen.getByText('Finance Agent')).toBeInTheDocument();
+        expect(screen.getByText('Finance Director')).toBeInTheDocument();
+    });
+
+    it('uses the canonical Social cyan identity, initials, and icon in discussion messages', () => {
+        const messages = [
+            { id: 'msg-social', role: 'model' as const, text: 'Social update', timestamp: Date.now(), agentId: 'social' },
+        ];
+        const { container } = render(<BoardroomConversationPanel messages={messages} />);
+
+        const message = container.querySelector('[data-agent-id="social"]');
+        expect(message).toHaveAttribute('data-agent-accent', '#00BCD4');
+        expect(message).toHaveAttribute('data-agent-icon', 'share-2');
+        expect(screen.getByText('Social Media Director')).toBeInTheDocument();
+        expect(screen.getByText('SM')).toBeInTheDocument();
+        expect(screen.getByLabelText('Social Media Director, Social department head')).toBeInTheDocument();
     });
 
     // --- Message Sanitization ---

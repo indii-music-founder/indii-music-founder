@@ -1,14 +1,69 @@
 import React, { useRef, useEffect, useLayoutEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import type { AgentMessage } from '@/core/store/slices/agent/agentSessionSlice';
-import { agentRegistry } from '@/services/agent/registry';
-import { Bot, MessageSquare } from 'lucide-react';
+import {
+    Bot,
+    BriefcaseBusiness,
+    Calculator,
+    CalendarDays,
+    Camera,
+    Clapperboard,
+    CloudCog,
+    GraduationCap,
+    Handshake,
+    Landmark,
+    Library,
+    LockKeyhole,
+    Megaphone,
+    MessageSquare,
+    Music2,
+    Palette,
+    PenLine,
+    Route,
+    Scale,
+    Share2,
+    ShieldCheck,
+    Sparkles,
+    Utensils,
+    Video,
+    type LucideIcon,
+} from 'lucide-react';
 import { PromptArea } from '@/core/components/command-bar/PromptArea';
 import { ThoughtChain } from '@/core/components/chat/ThoughtChain';
 import { useStore } from '@/core/store';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { TextEffect } from '@/components/motion-primitives/text-effect';
+import {
+    resolveAgentVisualIdentity,
+    type AgentVisualIconKey,
+} from '@/services/agent/AgentVisualIdentity';
+
+const AGENT_ICONS: Readonly<Record<AgentVisualIconKey, LucideIcon>> = Object.freeze({
+    bot: Bot,
+    'briefcase-business': BriefcaseBusiness,
+    calculator: Calculator,
+    'calendar-days': CalendarDays,
+    camera: Camera,
+    clapperboard: Clapperboard,
+    'cloud-cog': CloudCog,
+    'graduation-cap': GraduationCap,
+    handshake: Handshake,
+    landmark: Landmark,
+    library: Library,
+    'lock-keyhole': LockKeyhole,
+    megaphone: Megaphone,
+    'music-2': Music2,
+    palette: Palette,
+    'pen-line': PenLine,
+    route: Route,
+    scale: Scale,
+    'share-2': Share2,
+    'shield-check': ShieldCheck,
+    sparkles: Sparkles,
+    utensils: Utensils,
+    video: Video,
+});
 
 interface BoardroomConversationPanelProps {
     messages: AgentMessage[];
@@ -122,13 +177,16 @@ export function BoardroomConversationPanel({ messages }: BoardroomConversationPa
             >
                 <AnimatePresence initial={false}>
                     {messages.map((msg) => {
-                        const identity = resolveAgentIdentity(msg.agentId);
+                        const identity = resolveAgentVisualIdentity(msg.agentId);
                         const isUser = msg.role === 'user';
+                        const AgentIcon = AGENT_ICONS[identity.iconKey];
 
                         return (
                             <motion.div
                                 key={msg.id}
                                 data-agent-id={msg.agentId}
+                                data-agent-accent={isUser ? undefined : identity.accent}
+                                data-agent-icon={isUser ? undefined : identity.iconKey}
                                 initial={{ opacity: 0, y: 12 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ type: 'spring', stiffness: 300, damping: 30 }}
@@ -142,22 +200,18 @@ export function BoardroomConversationPanel({ messages }: BoardroomConversationPa
                                         </div>
                                     ) : (
                                         <div
-                                            className="w-8 h-8 rounded-full flex items-center justify-center border"
+                                            className="w-8 h-8 rounded-full flex flex-col items-center justify-center border"
                                             style={{
-                                                backgroundColor: `${identity?.color || '#a855f7'}20`,
-                                                borderColor: `${identity?.color || '#a855f7'}40`,
-                                            }}
+                                                ...identity.cssProperties,
+                                                backgroundColor: identity.surface,
+                                                borderColor: identity.border,
+                                                color: identity.foreground,
+                                                boxShadow: `0 0 12px ${identity.glow}`,
+                                            } as React.CSSProperties}
+                                            aria-label={identity.ariaLabel}
                                         >
-                                            {identity ? (
-                                                <span
-                                                    className="text-[10px] font-bold"
-                                                    style={{ color: identity.color }}
-                                                >
-                                                    {identity.initials}
-                                                </span>
-                                            ) : (
-                                                <Bot size={14} className="text-green-300" />
-                                            )}
+                                            <AgentIcon size={11} aria-hidden="true" style={{ color: identity.accent }} />
+                                            <span className="text-[7px] font-black leading-none">{identity.initials}</span>
                                         </div>
                                     )}
                                 </div>
@@ -165,9 +219,9 @@ export function BoardroomConversationPanel({ messages }: BoardroomConversationPa
                                 {/* Message Content */}
                                 <div className="flex-1 min-w-0">
                                     {/* Agent Name Label */}
-                                    {!isUser && identity && (
+                                    {!isUser && (
                                         <p className="text-[10px] font-bold uppercase tracking-wider text-white/30 mb-1">
-                                            {identity.name}
+                                            {identity.displayName}
                                         </p>
                                     )}
                                     {isUser && (
@@ -253,33 +307,4 @@ function sanitizeBoardroomMessage(text: string): string {
         .replace(/^\[Thought\]:.*$/gm, '')
         .replace(/^\[Action\]:.*$/gm, '')
         .trim();
-}
-
-function resolveAgentIdentity(agentId: string | undefined): { name: string; color: string; initials: string } | null {
-    if (!agentId) return null;
-
-    const allMeta = agentRegistry.getAll();
-    const agentMeta = allMeta.find(a => a.id === agentId);
-
-    if (!agentMeta) {
-        // Fallback: capitalize the agentId
-        const fallbackName = agentId.charAt(0).toUpperCase() + agentId.slice(1);
-        return {
-            name: fallbackName,
-            color: '#a855f7', // default purple hex
-            initials: fallbackName.substring(0, 2).toUpperCase(),
-        };
-    }
-
-    const nameStr = agentMeta.name || 'Agent';
-    const words = nameStr.split(' ');
-    const initials = (words.length > 1 && words[0]?.[0] && words[1]?.[0])
-        ? (words[0][0] + words[1][0]).toUpperCase()
-        : nameStr.substring(0, 2).toUpperCase();
-
-    return {
-        name: nameStr,
-        color: agentMeta.color || '#a855f7',
-        initials,
-    };
 }

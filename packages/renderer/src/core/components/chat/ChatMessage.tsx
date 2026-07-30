@@ -3,7 +3,33 @@ import React, { memo, useMemo } from 'react';
 import { motion } from 'motion/react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { Bot, Star } from 'lucide-react';
+import {
+    Bot,
+    BriefcaseBusiness,
+    Calculator,
+    CalendarDays,
+    Camera,
+    Clapperboard,
+    CloudCog,
+    GraduationCap,
+    Handshake,
+    Landmark,
+    Library,
+    LockKeyhole,
+    Megaphone,
+    Music2,
+    Palette,
+    PenLine,
+    Route,
+    Scale,
+    Share2,
+    ShieldCheck,
+    Sparkles,
+    Star,
+    Utensils,
+    Video,
+    type LucideIcon,
+} from 'lucide-react';
 import { AgentMessage } from '@/core/store';
 import { useStore } from '@/core/store';
 
@@ -29,15 +55,41 @@ import { useToast } from '@/core/context/ToastContext';
 // Types
 import { Components } from 'react-markdown';
 import { logger } from '@/utils/logger';
+import {
+    resolveAgentVisualIdentity,
+    type AgentVisualIconKey,
+} from '@/services/agent/AgentVisualIdentity';
+
+const AGENT_ICONS: Readonly<Record<AgentVisualIconKey, LucideIcon>> = Object.freeze({
+    bot: Bot,
+    'briefcase-business': BriefcaseBusiness,
+    calculator: Calculator,
+    'calendar-days': CalendarDays,
+    camera: Camera,
+    clapperboard: Clapperboard,
+    'cloud-cog': CloudCog,
+    'graduation-cap': GraduationCap,
+    handshake: Handshake,
+    landmark: Landmark,
+    library: Library,
+    'lock-keyhole': LockKeyhole,
+    megaphone: Megaphone,
+    'music-2': Music2,
+    palette: Palette,
+    'pen-line': PenLine,
+    route: Route,
+    scale: Scale,
+    'share-2': Share2,
+    'shield-check': ShieldCheck,
+    sparkles: Sparkles,
+    utensils: Utensils,
+    video: Video,
+});
 
 interface MessageItemProps {
     msg: AgentMessage & { agentId?: string };
     avatarUrl?: string;
     variant?: 'default' | 'compact';
-    agentIdentity?: {
-        color: string;
-        initials: string;
-    };
     key?: React.Key;
 }
 
@@ -162,10 +214,15 @@ const MessageRating = memo(({ messageId, currentRating }: { messageId: string, c
     );
 });
 
-export const MessageItem = memo(({ msg, avatarUrl, variant = 'default', agentIdentity }: MessageItemProps) => {
+export const MessageItem = memo(({ msg, avatarUrl, variant = 'default' }: MessageItemProps) => {
     const showCognitiveLogicByDefault = useStore(
         state => state.userProfile?.preferences?.showCognitiveLogicByDefault ?? false,
     );
+    const agentIdentity = useMemo(
+        () => resolveAgentVisualIdentity(msg.agentId),
+        [msg.agentId],
+    );
+    const AgentIcon = AGENT_ICONS[agentIdentity.iconKey];
     // Custom Markdown Components
     const { cleanText, extractedTools, planIdFallback } = useMemo(() => {
         const text = msg.text || '';
@@ -277,23 +334,43 @@ export const MessageItem = memo(({ msg, avatarUrl, variant = 'default', agentIde
             animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{ type: 'spring', stiffness: 400, damping: 30 }}
             className={`flex gap-3 ${msg.role === 'user' ? 'justify-end' : 'justify-start'} ${variant === 'compact' ? 'mb-3' : 'mb-6'} px-1`}
+            data-agent-id={msg.role === 'model' ? agentIdentity.agentId : undefined}
+            data-agent-accent={msg.role === 'model' ? agentIdentity.accent : undefined}
+            data-agent-icon={msg.role === 'model' ? agentIdentity.iconKey : undefined}
         >
             {msg.role === 'model' && (
                 <div className="relative mt-1 shrink-0">
-                    <div className={`absolute -inset-1 bg-${agentIdentity?.color || 'purple'}-500/20 rounded-full blur-sm opacity-0 group-hover:opacity-100 transition-opacity`}></div>
+                    <div
+                        className="absolute -inset-1 rounded-full blur-sm opacity-40 transition-opacity"
+                        style={{ backgroundColor: agentIdentity.glow }}
+                    />
                     {avatarUrl ? (
                         <img
                             src={avatarUrl}
-                            className={`${variant === 'compact' ? 'w-6 h-6' : 'w-9 h-9'} rounded-full object-cover relative z-10 border border-${agentIdentity?.color || 'purple'}-500/30 shadow-[0_0_15px_rgba(168,85,247,0.2)]`}
-                            alt="Autonomous"
+                            className={`${variant === 'compact' ? 'w-6 h-6' : 'w-9 h-9'} rounded-full object-cover relative z-10 border`}
+                            style={{ borderColor: agentIdentity.border, boxShadow: `0 0 15px ${agentIdentity.glow}` }}
+                            alt={agentIdentity.ariaLabel}
                         />
-                    ) : agentIdentity ? (
-                        <div className={`${variant === 'compact' ? 'w-6 h-6 text-[8px]' : 'w-9 h-9 text-xs'} rounded-full bg-linear-to-br from-${agentIdentity.color}-600 to-${agentIdentity.color}-800 flex items-center justify-center font-bold relative z-10 border border-${agentIdentity.color}-500/30 text-white shadow-lg`}>
-                            {agentIdentity.initials}
-                        </div>
                     ) : (
-                        <div className={`${variant === 'compact' ? 'w-6 h-6' : 'w-9 h-9'} rounded-full bg-linear-to-br from-green-600 to-green-800 flex items-center justify-center text-xs font-bold relative z-10 border border-green-500/30`}>
-                            <Bot size={variant === 'compact' ? 12 : 18} className="text-green-200" />
+                        <div
+                            className={`${variant === 'compact' ? 'w-7 h-7' : 'w-10 h-10'} rounded-full flex flex-col items-center justify-center font-bold relative z-10 border shadow-lg`}
+                            style={{
+                                ...agentIdentity.cssProperties,
+                                backgroundColor: agentIdentity.surface,
+                                borderColor: agentIdentity.border,
+                                color: agentIdentity.foreground,
+                                boxShadow: `0 0 15px ${agentIdentity.glow}`,
+                            } as React.CSSProperties}
+                            aria-label={agentIdentity.ariaLabel}
+                        >
+                            <AgentIcon
+                                size={variant === 'compact' ? 11 : 15}
+                                aria-hidden="true"
+                                style={{ color: agentIdentity.accent }}
+                            />
+                            <span className={`${variant === 'compact' ? 'text-[6px]' : 'text-[8px]'} font-black leading-none`}>
+                                {agentIdentity.initials}
+                            </span>
                         </div>
                     )}
                 </div>
@@ -307,7 +384,20 @@ export const MessageItem = memo(({ msg, avatarUrl, variant = 'default', agentIde
                     : msg.role === 'system'
                         ? 'bg-white/5 backdrop-blur-sm text-gray-400 text-[10px] font-mono tracking-wider uppercase border border-white/5 w-full text-center rounded-xl p-1.5'
                         : 'bg-linear-to-br from-[rgba(16,16,22,0.6)] to-[rgba(10,10,14,0.9)] text-gray-200 border border-white/5 rounded-tl-sm shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)]'
-                    }`}>
+                    }`}
+                style={msg.role === 'model' ? {
+                    ...agentIdentity.cssProperties,
+                    backgroundColor: agentIdentity.surface,
+                    borderColor: agentIdentity.border,
+                    color: agentIdentity.foreground,
+                } as React.CSSProperties : undefined}
+            >
+
+                {msg.role === 'model' && (
+                    <div className="mb-1 text-[9px] font-black uppercase tracking-widest" style={{ color: agentIdentity.accent }}>
+                        {agentIdentity.displayName}
+                    </div>
+                )}
 
                 {msg.role === 'model' && msg.thoughts && (
                     <ThoughtChain
