@@ -142,6 +142,14 @@ export const BrandAgent: AgentConfig = {
                 return { success: false, error: e instanceof Error ? e.message : String(e) };
             }
         },
+        update_brand_color: async (args: { from: string; to: string }) => {
+            const { updateBrandColorByName } = await importWithRetry(() => import('@/services/brand/updateBrandColor'));
+            const result = await updateBrandColorByName(args.from, args.to);
+            if (!result.success) {
+                return { success: false, error: result.message };
+            }
+            return { success: true, data: { matchedColor: result.matchedColor, newColor: result.newColor, message: result.message } };
+        },
         generate_brand_kit: async (args: { description: string; core_values: string[] }) => {
             const prompt = `Generate a comprehensive brand kit based on the following description and core values.
             Description: ${args.description}
@@ -157,7 +165,7 @@ export const BrandAgent: AgentConfig = {
         },
         fetch_brand_kit: McpTools.fetch_brand_kit
     },
-    authorizedTools: ['verify_output', 'analyze_brand_consistency', 'generate_brand_guidelines', 'audit_visual_assets', 'analyze_audio', 'analyze_brand_sentiment', 'generate_brand_kit', 'list_domain_records', 'fetch_brand_kit'],
+    authorizedTools: ['verify_output', 'analyze_brand_consistency', 'generate_brand_guidelines', 'audit_visual_assets', 'analyze_audio', 'analyze_brand_sentiment', 'update_brand_color', 'generate_brand_kit', 'list_domain_records', 'fetch_brand_kit'],
     tools: [{
         functionDeclarations: [
             ...brandRetrievalDeclarations,
@@ -231,6 +239,18 @@ export const BrandAgent: AgentConfig = {
                         context: { type: 'STRING', description: 'Optional context regarding the source of the text.' }
                     },
                     required: ['text']
+                }
+            },
+            {
+                name: 'update_brand_color',
+                description: 'Rename a color in the artist\'s saved Brand Kit palette by matching its current name (e.g. change "Golden Hour Amber" to "Silver Hour Amber"). Fuzzy-matches the existing color name; fails with the available color list if no unambiguous match is found.',
+                parameters: {
+                    type: 'OBJECT',
+                    properties: {
+                        from: { type: 'STRING', description: 'The current name of the color to rename, as the artist refers to it.' },
+                        to: { type: 'STRING', description: 'The new name for that color.' }
+                    },
+                    required: ['from', 'to']
                 }
             },
             {

@@ -5,6 +5,7 @@ import { zodToJsonSchema } from 'zod-to-json-schema';
 import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
 import type { AnyToolFunction } from '../types';
 import { importWithRetry } from '@/utils/dynamicImport';
+import { updateBrandColorByName } from '@/services/brand/updateBrandColor';
 
 /** Typed Electron IPC bridge for brand tools */
 interface ElectronBrandBridge {
@@ -277,6 +278,17 @@ export const BrandTools = {
         };
     }),
 
+    update_brand_color: wrapTool('update_brand_color', async (args: { from: string; to: string }) => {
+        const result = await updateBrandColorByName(args.from, args.to);
+        if (!result.success) {
+            return toolError(result.message, 'COLOR_NOT_FOUND', { availableColors: result.availableColors });
+        }
+        return toolSuccess(
+            { matchedColor: result.matchedColor, newColor: result.newColor },
+            result.message
+        );
+    }),
+
     generate_brand_kit: wrapTool('generate_brand_kit', async (args: { description: string; core_values: string[] }) => {
         const schema = zodToJsonSchema(GenerateBrandKitSchema);
         const prompt = `
@@ -307,5 +319,6 @@ export const {
     save_brand_kit,
     load_brand_kit,
     analyze_brand_sentiment,
-    generate_brand_kit
+    generate_brand_kit,
+    update_brand_color
 } = BrandTools;
