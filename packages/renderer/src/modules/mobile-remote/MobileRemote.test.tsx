@@ -2,8 +2,11 @@ import React from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import MobileRemote from './MobileRemote';
+import { MobileRemoteProviders } from './MobileRemoteProviders';
 import { getRemoteConnectionPhase } from './RemoteConnectionState';
 import { remoteRelayService } from '@/services/agent/RemoteRelayService';
+
+vi.unmock('@/core/context/ToastContext');
 
 const mockOnAuthStateChanged = vi.fn();
 const relayMocks = vi.hoisted(() => ({
@@ -80,16 +83,25 @@ vi.mock('qrcode.react', () => ({
 }));
 
 vi.mock('motion/react', () => {
+    const components = new Map<string, React.ElementType>();
     const motionProxy = new Proxy({}, {
         get: (_target, prop: string) => {
-            return ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) => {
-                // ISSUE-1190: `keyof JSX.IntrinsicElements` used to widen to `string` under the
-                // old blanket index signature. With real element types it is a union of every
-                // tag, so props must satisfy ALL of them (three/drei elements demand `map`).
-                // These mocks render a plain DOM tag, so `ElementType` is the accurate cast.
-                const Tag = prop as unknown as React.ElementType;
-                return <Tag {...filterDomProps(props)}>{children}</Tag>;
-            };
+            const existing = components.get(prop);
+            if (existing) return existing;
+
+            const component = React.forwardRef<HTMLElement, React.PropsWithChildren<Record<string, unknown>>>(
+                ({ children, ...props }, ref) => {
+                    // ISSUE-1190: `keyof JSX.IntrinsicElements` used to widen to `string` under the
+                    // old blanket index signature. With real element types it is a union of every
+                    // tag, so props must satisfy ALL of them (three/drei elements demand `map`).
+                    // These mocks render a plain DOM tag, so `ElementType` is the accurate cast.
+                    const Tag = prop as unknown as React.ElementType;
+                    return <Tag {...filterDomProps(props)} ref={ref}>{children}</Tag>;
+                }
+            );
+            component.displayName = `MotionMock(${prop})`;
+            components.set(prop, component);
+            return component;
         },
     });
 
@@ -109,9 +121,17 @@ vi.mock('./components/StatusDashboard', () => ({
     ),
 }));
 
-vi.mock('./components/QuickCaptureView', () => ({
-    default: () => <div>Quick Capture</div>,
-}));
+vi.mock('./components/QuickCaptureView', async () => {
+    const { useToast } = await vi.importActual<typeof import('@/core/context/ToastContext')>(
+        '@/core/context/ToastContext'
+    );
+    return {
+        default: function QuickCaptureViewMock() {
+            useToast();
+            return <div>Quick Capture</div>;
+        },
+    };
+});
 
 vi.mock('./components/StreamView', () => ({
     default: () => <div>Stream View</div>,
@@ -121,13 +141,37 @@ vi.mock('./components/SettingsView', () => ({
     default: () => <div>Settings View</div>,
 }));
 
-vi.mock('./components/AgentChat', () => ({
-    default: () => <div>Agent Chat</div>,
-}));
+vi.mock('./components/AgentChat', async () => {
+    const { useVoice } = await vi.importActual<typeof import('@/core/context/VoiceContext')>(
+        '@/core/context/VoiceContext'
+    );
+    return {
+        default: function AgentChatMock() {
+            useVoice();
+            return <div>Agent Chat</div>;
+        },
+    };
+});
 
-vi.mock('@/modules/touring/components/RoadMode', () => ({
-    RoadMode: () => <div>Road Mode Surface</div>,
-}));
+vi.mock('@/modules/touring/components/RoadMode', async () => {
+    const { useVoice } = await vi.importActual<typeof import('@/core/context/VoiceContext')>(
+        '@/core/context/VoiceContext'
+    );
+    return {
+        RoadMode: () => {
+            useVoice();
+            return <div>Road Mode Surface</div>;
+        },
+    };
+});
+
+function renderController() {
+    return render(
+        <MobileRemoteProviders>
+            <MobileRemote />
+        </MobileRemoteProviders>
+    );
+}
 
 describe('MobileRemote', () => {
     beforeEach(() => {
@@ -152,7 +196,7 @@ describe('MobileRemote', () => {
     });
 
     it('surfaces Road Mode in the mobile shell', async () => {
-        render(<MobileRemote />);
+        renderController();
 
         const roadTab = await screen.findByRole('button', { name: /road/i });
         await waitFor(() => expect(roadTab).toBeEnabled());
@@ -163,7 +207,7 @@ describe('MobileRemote', () => {
     });
 
     it('keeps a valid pairing interactive when the Studio heartbeat enters Standby', async () => {
-        const view = render(<MobileRemote />);
+        const view = renderController();
         const roadTab = await screen.findByRole('button', { name: /road/i });
         await waitFor(() => expect(roadTab).toBeEnabled());
 
@@ -194,7 +238,7 @@ describe('MobileRemote', () => {
         relayMocks.emitFreshStateOnSubscribe = false;
         relayMocks.isFreshStudioState.mockReturnValue(false);
 
-        render(<MobileRemote />);
+        renderController();
         const retry = await screen.findByRole('button', { name: /try reconnecting now/i });
         fireEvent.click(retry);
 
@@ -210,7 +254,7 @@ describe('MobileRemote', () => {
     });
 
     it('reports a typed error phase when the Firestore listener fails', async () => {
-        render(<MobileRemote />);
+        renderController();
 
         act(() => relayMocks.desktopStateErrorCallback?.(new Error('permission-denied')));
 
@@ -227,7 +271,7 @@ describe('MobileRemote', () => {
         });
         window.history.replaceState({}, '', '/mobile-remote?code=not-a-valid-code');
 
-        render(<MobileRemote />);
+        renderController();
 
         expect(await screen.findByText('Pairing Link Needed')).toBeInTheDocument();
         expect(screen.getByText(/Generate a new link from Desktop Studio/i)).toBeInTheDocument();
@@ -245,7 +289,7 @@ describe('MobileRemote', () => {
         }));
         window.history.replaceState({}, '', `/mobile-remote?code=${'a'.repeat(64)}`);
 
-        render(<MobileRemote />);
+        renderController();
 
         await waitFor(() => {
             expect(relayMocks.signInWithCustomToken).toHaveBeenCalledWith(
@@ -255,5 +299,53 @@ describe('MobileRemote', () => {
         });
         expect(window.location.pathname).toBe('/mobile-remote');
         expect(window.location.search).toBe('');
+    });
+
+    it('keeps every supported room renderable in a connected Controller session', async () => {
+        renderController();
+
+        const rooms = [
+            { name: 'Capture', content: 'Quick Capture' },
+            { name: 'Boardroom', content: 'Agent Chat' },
+            { name: 'Road', content: 'Road Mode Surface' },
+            { name: 'Stream', content: 'Stream View' },
+            { name: 'Settings', content: 'Settings View' },
+            { name: 'Home', content: 'Home Dashboard' },
+        ];
+
+        for (const room of rooms) {
+            const roomButton = await screen.findByRole('button', { name: room.name });
+            expect(roomButton).toBeEnabled();
+
+            fireEvent.click(roomButton);
+
+            expect(await screen.findByText(room.content)).toBeInTheDocument();
+            expect(roomButton).toHaveAttribute('aria-current', 'page');
+        }
+    });
+
+    it('labels the pairing dialog, closes it with Escape, and restores trigger focus', async () => {
+        vi.mocked(remoteRelayService.isAuthenticated).mockReturnValue(false);
+        mockOnAuthStateChanged.mockImplementation((_auth: unknown, callback: (user: unknown | null) => void) => {
+            callback(null);
+            return vi.fn();
+        });
+
+        renderController();
+
+        const linkButton = await screen.findByRole('button', { name: 'Link' });
+        linkButton.focus();
+        fireEvent.click(linkButton);
+
+        const dialog = await screen.findByRole('dialog', { name: 'Pair from Studio' });
+        expect(dialog).toHaveAttribute('aria-modal', 'true');
+        expect(screen.getByRole('button', { name: 'Close' })).toHaveFocus();
+
+        fireEvent.keyDown(document, { key: 'Escape' });
+
+        await waitFor(() => {
+            expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+            expect(screen.getByRole('button', { name: 'Link' })).toHaveFocus();
+        });
     });
 });

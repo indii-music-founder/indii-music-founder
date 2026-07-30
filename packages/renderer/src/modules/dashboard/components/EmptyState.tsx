@@ -15,6 +15,8 @@ import {
     Network,
     MessageSquare,
     Zap,
+    Smartphone,
+    ArrowRight,
 } from 'lucide-react';
 import { getUserWorkflows } from '@/modules/workflow/services/workflowPersistence';
 import type { SavedWorkflow } from '@/modules/workflow/types';
@@ -87,15 +89,18 @@ export function EmptyState({ onCommandSubmit, onCommandClick, studioSlot }: Empt
         // ISSUE-1292: saved workflows used to be prepended here and the combined list
         // truncated with .slice(0, 10) — so every workflow an artist saved silently
         // evicted one of indii's built-in actions, and with zero workflows saved there
-        // was no sign the Workflow Builder existed at all. Workflows now have their own
-        // section below, which both fixes the eviction and makes the builder findable.
-        ...getDashboardEntryCommands().map((command: EntryCommandDefinition) => ({
-            icon: commandIcons[command.id] || Command,
-            title: command.title,
-            prompt: command.slash,
-            summary: command.summary,
-            action: command.id === 'custom-workflow' ? () => onCommandSubmit(command.slash) : undefined,
-        }))
+        // was no sign the Workflow Builder existed at all. Saved workflows retain
+        // their own listing while the builder now occupies a stable suggestion slot.
+        ...getDashboardEntryCommands()
+            .filter(command => command.id !== 'connect-remote')
+            .map((command: EntryCommandDefinition) => ({
+                icon: commandIcons[command.id] || Command,
+                title: command.id === 'custom-workflow' ? 'Build a Workflow' : command.title,
+                prompt: command.slash,
+                summary: command.summary,
+                action: command.id === 'custom-workflow' ? () => onCommandSubmit(command.slash) : undefined,
+                isWorkflow: command.id === 'custom-workflow',
+            }))
     ].slice(0, 10); // keep to max 10 to fit the 5-column grid nicely
 
     const openWorkflow = (wf: SavedWorkflow) => {
@@ -190,24 +195,49 @@ export function EmptyState({ onCommandSubmit, onCommandClick, studioSlot }: Empt
                 ))}
             </div>
 
-            {/* ISSUE-1292: Your Workflows — always rendered, including when the artist
-                has none. The Workflow Builder is a real, executing system (72 typed
-                nodes, a live engine), but it lived as one entry inside a collapsed
-                sidebar section, so in practice nobody would ever find it. This is its
-                front door. */}
-            <div className="w-full px-4 mt-16">
+            {/* ISSUE-1294: Mobile Remote remains in the homepage's card language, but
+                gets a full-row treatment so pairing and status are not buried among
+                creative prompts. The command still travels through the canonical
+                EntryCommandService contract. */}
+            <motion.button
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.8 }}
+                onClick={() => onCommandSubmit('/connect-remote')}
+                aria-label="Connect Mobile Remote — open pairing and connection status"
+                className="group mx-4 mt-5 flex self-stretch items-center gap-4 overflow-hidden rounded-2xl border border-cyan-400/25 bg-linear-to-r from-cyan-500/10 via-white/[0.035] to-blue-500/10 p-4 text-left shadow-lg shadow-cyan-950/10 transition-all duration-300 hover:border-cyan-300/45 hover:bg-white/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/70"
+            >
+                <span className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-cyan-300/20 bg-cyan-400/10 text-cyan-300 transition-transform duration-300 group-hover:scale-105">
+                    <Smartphone size={22} aria-hidden="true" />
+                </span>
+                <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-semibold tracking-wide text-white">
+                        Connect Mobile Remote
+                    </span>
+                    <span className="mt-1 block text-[11px] leading-relaxed text-slate-400 group-hover:text-slate-300">
+                        Pair your phone or tablet, check Studio status, and control your rooms from anywhere.
+                    </span>
+                </span>
+                <span className="hidden shrink-0 items-center gap-2 text-[10px] font-bold uppercase tracking-[0.16em] text-cyan-300 sm:flex">
+                    Open pairing
+                    <ArrowRight size={14} aria-hidden="true" className="transition-transform group-hover:translate-x-1" />
+                </span>
+            </motion.button>
+
+            {/* Saved workflows keep their real Firestore-backed listing. The builder
+                entry moved into the suggestion grid, so this section only exists
+                when there is genuinely something saved to show. */}
+            {savedWorkflows.length > 0 && <div className="w-full px-4 mt-16">
                 <div className="flex items-center justify-between mb-4">
                     <p className="text-emerald-200/50 font-medium uppercase tracking-[0.15em] text-[10px]">
                         Your Workflows
                     </p>
-                    {savedWorkflows.length > 0 && (
-                        <button
-                            onClick={() => setModule('workflow')}
-                            className="text-[10px] font-bold uppercase tracking-wider text-white/40 hover:text-emerald-300 transition-colors"
-                        >
-                            Open builder →
-                        </button>
-                    )}
+                    <button
+                        onClick={() => setModule('workflow')}
+                        className="text-[10px] font-bold uppercase tracking-wider text-white/40 hover:text-emerald-300 transition-colors"
+                    >
+                        Open builder →
+                    </button>
                 </div>
 
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
@@ -231,26 +261,8 @@ export function EmptyState({ onCommandSubmit, onCommandClick, studioSlot }: Empt
                         </motion.button>
                     ))}
 
-                    {/* Always present — this is the discoverability fix. */}
-                    <motion.button
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.05 * savedWorkflows.length }}
-                        onClick={() => setModule('workflow')}
-                        className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-dashed border-white/15 bg-transparent p-5 text-left transition-all duration-300 hover:border-amber-500/40 hover:bg-white/[0.04]"
-                    >
-                        <Network size={22} className="mb-3 text-white/40 transition-all duration-300 group-hover:scale-110 group-hover:text-amber-400" />
-                        <h3 className="mb-1.5 text-xs font-semibold tracking-wide text-white/80 group-hover:text-white">
-                            {savedWorkflows.length === 0 ? 'Build a workflow' : 'New workflow'}
-                        </h3>
-                        <p className="line-clamp-2 text-[10px] font-normal leading-relaxed text-slate-500 group-hover:text-slate-400">
-                            {savedWorkflows.length === 0
-                                ? 'Chain your departments into something that runs on its own.'
-                                : 'Start from a blank canvas.'}
-                        </p>
-                    </motion.button>
                 </div>
-            </div>
+            </div>}
 
             {/* NEW: Entry Overlay (Chat Overlay) */}
             {!isEntryAssistantDismissed ? (

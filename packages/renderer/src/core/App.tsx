@@ -32,6 +32,7 @@ import {
     isMobileRemotePath,
     shouldUseMobileRemoteSurface,
 } from '@/modules/mobile-remote/routing';
+import { MobileRemoteProviders } from '@/modules/mobile-remote/MobileRemoteProviders';
 import '@/core/i18n'; // Initialize i18next — must run before any component renders
 import { AppInitializationProvider } from '@/providers/AppInitializationProvider';
 
@@ -219,7 +220,9 @@ export default function App() {
     return (
         <AppInitializationProvider>
             {shouldUseRemoteSurface ? (
-                <Suspense fallback={<LoadingFallback />}><MobileRemote /></Suspense>
+                <MobileRemoteProviders>
+                    <Suspense fallback={<LoadingFallback />}><MobileRemote /></Suspense>
+                </MobileRemoteProviders>
             ) : publicLegalPage ? (
                 <PublicLegalPage type={publicLegalPage} />
             ) : isTaxFormUploadPage ? (

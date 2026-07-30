@@ -19,6 +19,7 @@
  */
 
 import { useEffect, useCallback, useState, useRef, lazy, Suspense } from 'react';
+import { flushSync } from 'react-dom';
 import {
   isFreshStudioState,
   remoteRelayService,
@@ -78,6 +79,24 @@ const TRANSIENT_HEARTBEAT_GRACE_MS = 10_000;
 // ─── Pairing Help ────────────────────────────────────────────────────────────
 
 function PairingModal({ onClose }: { onClose: () => void }) {
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    closeButtonRef.current?.focus();
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        onClose();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [onClose]);
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -86,6 +105,10 @@ function PairingModal({ onClose }: { onClose: () => void }) {
       className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/90 backdrop-blur-2xl p-6"
     >
       <motion.div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="mobile-remote-pairing-title"
+        aria-describedby="mobile-remote-pairing-description"
         initial={{ scale: 0.9, opacity: 0, y: 20 }}
         animate={{ scale: 1, opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: 20 }}
@@ -95,11 +118,12 @@ function PairingModal({ onClose }: { onClose: () => void }) {
         <div className="w-14 h-14 rounded-2xl bg-blue-500/10 flex items-center justify-center mb-6 border border-blue-500/20">
           <QrCode className="w-7 h-7 text-blue-400" />
         </div>
-        <h2 className="text-2xl font-bold text-white mb-2 text-center tracking-tight">Pair from Studio</h2>
-        <p className="text-[#a1a1a6] text-center text-sm mb-8 leading-relaxed">
+        <h2 id="mobile-remote-pairing-title" className="text-2xl font-bold text-white mb-2 text-center tracking-tight">Pair from Studio</h2>
+        <p id="mobile-remote-pairing-description" className="text-[#a1a1a6] text-center text-sm mb-8 leading-relaxed">
           Open the desktop Studio, then go to Settings → Mobile Remote and scan its pairing code. Controller pages cannot create Studio pairing codes.
         </p>
         <button
+          ref={closeButtonRef}
           onClick={onClose}
           className="w-full h-12 flex items-center justify-center rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-white text-base font-semibold transition-all active:scale-[0.98] cursor-pointer"
           style={{ minHeight: '44px' }}
@@ -132,6 +156,23 @@ export default function MobileRemote() {
   const [showPairingModal, setShowPairingModal] = useState(false);
   const [desktopState, setDesktopState] = useState<DesktopState | null>(null);
   const [handoffError, setHandoffError] = useState<string | null>(null);
+  const headerPairingTriggerRef = useRef<HTMLButtonElement>(null);
+  const instructionsPairingTriggerRef = useRef<HTMLButtonElement>(null);
+  const activePairingTriggerRef = useRef<'header' | 'instructions' | null>(null);
+  const openPairingModal = useCallback((trigger: 'header' | 'instructions') => {
+    activePairingTriggerRef.current = trigger;
+    setShowPairingModal(true);
+  }, []);
+  const closePairingModal = useCallback(() => {
+    const trigger = activePairingTriggerRef.current;
+    flushSync(() => setShowPairingModal(false));
+    if (trigger === 'header') {
+      headerPairingTriggerRef.current?.focus();
+    } else {
+      instructionsPairingTriggerRef.current?.focus();
+    }
+    activePairingTriggerRef.current = null;
+  }, []);
 
   // Reconnection state machine
   const [isReconnecting, setIsReconnecting] = useState(false);
@@ -608,7 +649,7 @@ export default function MobileRemote() {
   return (
     <div
       data-connection-phase={connectionPhase}
-      className="min-h-screen bg-black text-white flex flex-col font-sans selection:bg-blue-500/30 overflow-hidden relative pb-safe-bottom"
+      className="h-[100dvh] min-h-[100dvh] bg-black text-white flex flex-col font-sans selection:bg-blue-500/30 overflow-hidden relative"
     >
       {/* ─── Premium Background ────────────────────────────────────────── */}
       <div className="fixed inset-0 z-0 pointer-events-none">
@@ -626,7 +667,10 @@ export default function MobileRemote() {
       </div>
 
       {/* ─── Header ─────────────────────────────────────────────────────── */}
-      <header className="sticky top-0 z-40 bg-black/40 backdrop-blur-2xl border-b border-white/5 safe-top">
+      <header
+        className="sticky top-0 z-40 bg-black/40 backdrop-blur-2xl border-b border-white/5"
+        style={{ paddingTop: 'env(safe-area-inset-top)' }}
+      >
         <div className="flex items-center justify-between px-6 py-4">
           <motion.div 
             initial={{ opacity: 0, x: -10 }}
@@ -688,13 +732,14 @@ export default function MobileRemote() {
                 )
               ) : (
                 <motion.button
+                  ref={headerPairingTriggerRef}
                   key="idle"
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.8 }}
                   onClick={() => {
                     triggerHaptic(50);
-                    setShowPairingModal(true);
+                    openPairingModal('header');
                   }}
                   whileTap={{ scale: 0.95 }}
                   className="flex items-center gap-2 px-5 py-3.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white transition-all shadow-lg shadow-blue-600/20 cursor-pointer"
@@ -717,9 +762,12 @@ export default function MobileRemote() {
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
-        className="flex-1 overflow-y-auto overflow-x-hidden scroll-smooth relative z-10 custom-scrollbar"
+        className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden scroll-smooth relative z-10 custom-scrollbar"
       >
-        <div className="p-6 pb-32 max-w-md mx-auto w-full relative">
+        <div
+          className="p-6 max-w-md mx-auto w-full relative"
+          style={{ paddingBottom: 'calc(8rem + env(safe-area-inset-bottom))' }}
+        >
           
           {/* Pull-to-refresh visualizer */}
           <div 
@@ -792,10 +840,11 @@ export default function MobileRemote() {
               
               <div className="flex flex-col gap-4 w-full px-6">
                 <motion.button
+                  ref={instructionsPairingTriggerRef}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => {
                     triggerHaptic(50);
-                    setShowPairingModal(true);
+                    openPairingModal('instructions');
                   }}
                   className="group flex items-center justify-center gap-3 w-full h-14 rounded-[20px] bg-white text-black font-bold transition-all hover:bg-[#f2f2f7] shadow-xl shadow-white/5 cursor-pointer"
                   style={{ minHeight: '56px' }}
@@ -832,7 +881,11 @@ export default function MobileRemote() {
         </div>
       </main>
 
-      <nav className="fixed bottom-0 inset-x-0 z-40 px-6 pb-safe-bottom mb-6 pointer-events-none">
+      <nav
+        aria-label="Mobile Remote rooms"
+        className="fixed bottom-0 inset-x-0 z-40 px-6 pointer-events-none"
+        style={{ paddingBottom: 'calc(1.5rem + env(safe-area-inset-bottom))' }}
+      >
         <div className="max-w-md mx-auto h-[72px] bg-white/3 backdrop-blur-3xl border border-white/10 rounded-[28px] shadow-[0_20px_40px_rgba(0,0,0,0.4)] flex items-center justify-around px-2 pointer-events-auto relative overflow-hidden">
           {/* Subtle Inner Glow */}
           <div className="absolute inset-0 bg-linear-to-b from-white/2 to-transparent pointer-events-none" />
@@ -849,6 +902,7 @@ export default function MobileRemote() {
                   }
                 }}
                 disabled={!isPaired}
+                aria-current={isActive ? 'page' : undefined}
                 className={cn(
                   "relative flex flex-col items-center justify-center flex-1 h-full gap-1 transition-all duration-300 cursor-pointer",
                   !isPaired ? "opacity-20 grayscale cursor-not-allowed" : "active:scale-90",
@@ -897,13 +951,11 @@ export default function MobileRemote() {
       </nav>
 
       {/* ─── Modals ─────────────────────────────────────────────────────── */}
-      <AnimatePresence>
-        {showPairingModal && (
-          <PairingModal
-            onClose={() => setShowPairingModal(false)}
-          />
-        )}
-      </AnimatePresence>
+      {showPairingModal && (
+        <PairingModal
+          onClose={closePairingModal}
+        />
+      )}
     </div>
   );
 }
