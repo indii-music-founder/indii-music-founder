@@ -14,6 +14,8 @@ const mocks = vi.hoisted(() => {
             value: vi.fn(() => 'mock-api-key')
         },
         enforceRateLimit: vi.fn().mockResolvedValue(undefined),
+        claimReservation: vi.fn().mockResolvedValue(undefined),
+        finalizeReservation: vi.fn().mockResolvedValue(undefined),
     };
 });
 
@@ -138,7 +140,8 @@ vi.mock('../functions/creative/legacyAdmission', () => ({
 }));
 vi.mock('../functions/billing/enforceOperationCost', () => ({
     checkOperationBudget: vi.fn().mockResolvedValue({ allowed: true, operationId: 'legacy-image-op-1' }),
-    finalizeOperationReservation: vi.fn().mockResolvedValue(undefined),
+    finalizeOperationReservation: mocks.finalizeReservation,
+    claimOperationReservation: mocks.claimReservation,
     requireVerifiedCreativeUser: vi.fn((auth: { uid?: string; token?: Record<string, unknown> } | undefined) => {
         if (!auth?.uid) throw new Error('User must be authenticated.');
         if (auth.token?.email_verified !== true) throw new Error('Verify your email before using creative generation.');
@@ -293,6 +296,7 @@ describe('Image and Content Generation Functions', () => {
                     'x-firebase-appcheck': 'app-check-token',
                 },
                 body: {
+                    costReservationId: 'agent-stream-op-1',
                     model: 'gemini-3.1-pro-preview',
                     contents: [{ role: 'user', parts: [{ text: 'create an image of a dog' }] }],
                 },
@@ -325,6 +329,11 @@ describe('Image and Content Generation Functions', () => {
                 },
             });
             expect(mocks.generateContentStream).not.toHaveBeenCalled();
+            expect(mocks.claimReservation).toHaveBeenCalledWith(expect.objectContaining({
+                userId: 'user123', operationId: 'agent-stream-op-1', operationType: 'agent_stream',
+            }));
+            expect(mocks.finalizeReservation).toHaveBeenCalledWith(expect.objectContaining({ outcome: 'VOIDED' }));
+            expect(mocks.finalizeReservation.mock.invocationCallOrder[0]).toBeLessThan(res.json.mock.invocationCallOrder[0]);
         });
         it('should yield chunks from SDK stream', async () => {
             const req: any = {
@@ -335,6 +344,7 @@ describe('Image and Content Generation Functions', () => {
                     'x-firebase-appcheck': 'app-check-token',
                 },
                 body: {
+                    costReservationId: 'agent-stream-op-1',
                     model: 'gemini-3.1-pro-preview',
                     contents: [{ role: 'user', parts: [{ text: 'say hello' }] }],
                     config: { maxOutputTokens: 100_000 },
@@ -391,6 +401,11 @@ describe('Image and Content Generation Functions', () => {
             expect(mocks.generateContentStream).toHaveBeenCalledWith(expect.objectContaining({
                 config: expect.objectContaining({ maxOutputTokens: 1_024 }),
             }));
+            expect(mocks.claimReservation.mock.invocationCallOrder[0]).toBeLessThan(mocks.generateContentStream.mock.invocationCallOrder[0]);
+            expect(mocks.finalizeReservation).toHaveBeenCalledWith(expect.objectContaining({ outcome: 'SETTLED' }));
+            const terminalWrite = res.write.mock.calls.find(([value]: [string]) => value === `${JSON.stringify({ complete: true })}\n`);
+            expect(terminalWrite).toBeDefined();
+            expect(mocks.finalizeReservation.mock.invocationCallOrder[0]).toBeLessThan(res.write.mock.invocationCallOrder[2]);
 
         });
 
@@ -403,6 +418,7 @@ describe('Image and Content Generation Functions', () => {
                     'x-firebase-appcheck': 'app-check-token',
                 },
                 body: {
+                    costReservationId: 'agent-stream-op-1',
                     model: 'gemini-3.1-pro-preview',
                     contents: [{ role: 'user', parts: [{ text: 'say hello' }] }],
                 },
@@ -432,6 +448,7 @@ describe('Image and Content Generation Functions', () => {
                     'x-firebase-appcheck': 'app-check-token',
                 },
                 body: {
+                    costReservationId: 'agent-stream-op-1',
                     model: 'projects/attacker-project/locations/us/endpoints/9999999999999999999',
                     contents: [{ role: 'user', parts: [{ text: 'spend someone else\'s endpoint' }] }],
                 },
@@ -467,6 +484,7 @@ describe('Image and Content Generation Functions', () => {
                     'x-firebase-appcheck': 'app-check-token',
                 },
                 body: {
+                    costReservationId: 'agent-stream-op-1',
                     model: specialistModel,
                     contents: [{ role: 'user', parts: [{ text: 'specialist-only work' }] }],
                 },
@@ -517,6 +535,7 @@ describe('Image and Content Generation Functions', () => {
                     'x-firebase-appcheck': 'app-check-token',
                 },
                 body: {
+                    costReservationId: 'agent-stream-op-1',
                     model: specialistModel,
                     contents: [{ role: 'user', parts: [{ text: 'specialist-only work' }] }],
                 },
@@ -553,6 +572,62 @@ describe('Image and Content Generation Functions', () => {
                     nextActions: ['retry_later', 'select_qualified_specialist'],
                 },
             })}\n`);
+            expect(mocks.finalizeReservation).toHaveBeenCalledWith(expect.objectContaining({ outcome: 'VOIDED' }));
+            expect(mocks.finalizeReservation.mock.invocationCallOrder[0]).toBeLessThan(res.end.mock.invocationCallOrder[0]);
+        });
+
+        it('actively terminates a pending provider iterator and voids exactly once when the client disconnects', async () => {
+            let closeHandler: (() => void) | undefined;
+            let resolvePendingNext!: (value: IteratorResult<unknown>) => void;
+            const pendingNext = new Promise<IteratorResult<unknown>>(resolve => { resolvePendingNext = resolve; });
+            const providerIterator = {
+                next: vi.fn()
+                    .mockResolvedValueOnce({ done: false, value: { text: 'partial' } })
+                    .mockReturnValueOnce(pendingNext),
+                return: vi.fn().mockResolvedValue({ done: true, value: undefined }),
+            };
+            let releaseFinalizer!: () => void;
+            mocks.finalizeReservation.mockImplementationOnce(() => new Promise<void>(resolve => { releaseFinalizer = resolve; }));
+            mocks.generateContentStream.mockResolvedValueOnce({ [Symbol.asyncIterator]: () => providerIterator });
+            const req: any = {
+                method: 'POST',
+                headers: { authorization: 'Bearer token', origin: 'http://localhost:4242', 'x-firebase-appcheck': 'app-check-token' },
+                body: { costReservationId: 'agent-stream-op-1', model: 'gemini-3.1-pro-preview', contents: [{ role: 'user', parts: [{ text: 'cancel' }] }] },
+            };
+            const res: any = {
+                setHeader: vi.fn(), write: vi.fn(), end: vi.fn(), status: vi.fn().mockReturnThis(), send: vi.fn(),
+                headersSent: true, writableEnded: false, once: vi.fn((_event: string, handler: () => void) => { closeHandler = handler; }),
+            };
+            vi.mocked(admin.auth).mockReturnValue({ verifyIdToken: vi.fn().mockResolvedValue({ uid: 'user123', email_verified: true }) } as any);
+
+            generateContentStream(req, res);
+            await vi.waitFor(() => expect(res.write).toHaveBeenCalledWith(`${JSON.stringify({ text: 'partial' })}\n`));
+            closeHandler?.();
+            await vi.waitFor(() => expect(providerIterator.return).toHaveBeenCalledOnce());
+            await vi.waitFor(() => expect(mocks.finalizeReservation).toHaveBeenCalledWith(expect.objectContaining({ outcome: 'VOIDED' })));
+            expect(mocks.finalizeReservation).toHaveBeenCalledTimes(1);
+            expect(res.write).not.toHaveBeenCalledWith(`${JSON.stringify({ complete: true })}\n`);
+            releaseFinalizer();
+            resolvePendingNext({ done: true, value: undefined });
+            await new Promise(resolve => setTimeout(resolve, 0));
+            expect(mocks.finalizeReservation).toHaveBeenCalledTimes(1);
+        });
+
+        it('does not submit a provider request when close arrives during deferred admission', async () => {
+            let closeHandler: (() => void) | undefined;
+            let releaseAdmission!: () => void;
+            mocks.enforceRateLimit.mockImplementationOnce(() => new Promise<void>(resolve => { releaseAdmission = resolve; }));
+            const req: any = { method: 'POST', headers: { authorization: 'Bearer token', origin: 'http://localhost:4242', 'x-firebase-appcheck': 'app-check-token' }, body: { costReservationId: 'agent-stream-op-1', model: 'gemini-3.1-pro-preview', contents: [{ role: 'user', parts: [{ text: 'cancel' }] }] } };
+            const res: any = { status: vi.fn().mockReturnThis(), json: vi.fn(), send: vi.fn(), write: vi.fn(), end: vi.fn(), headersSent: false, writableEnded: false, once: vi.fn((_event: string, handler: () => void) => { closeHandler = handler; }) };
+            vi.mocked(admin.auth).mockReturnValue({ verifyIdToken: vi.fn().mockResolvedValue({ uid: 'user123', email_verified: true }) } as any);
+            generateContentStream(req, res);
+            await vi.waitFor(() => expect(mocks.enforceRateLimit).toHaveBeenCalled());
+            closeHandler?.();
+            releaseAdmission();
+            await vi.waitFor(() => expect(mocks.finalizeReservation).toHaveBeenCalledWith(expect.objectContaining({ outcome: 'VOIDED' })));
+            expect(mocks.generateContentStream).not.toHaveBeenCalled();
+            expect(mocks.finalizeReservation).toHaveBeenCalledTimes(1);
+            expect(res.write).not.toHaveBeenCalledWith(`${JSON.stringify({ complete: true })}\n`);
         });
     });
 

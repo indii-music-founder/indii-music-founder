@@ -73,6 +73,7 @@ describe('Streaming QA', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
+        vi.mocked(fetch).mockResolvedValue(new Response(`${JSON.stringify({ text: 'Good' })}\n${JSON.stringify({ complete: true })}\n`));
         service = new FirebaseIntelligenceService();
     });
 
@@ -97,6 +98,32 @@ describe('Streaming QA', () => {
         expect(r2.done).toBe(true);
     });
 
+    it('rejects an EOF that lacks the backend billing-settlement frame', async () => {
+        vi.mocked(fetch).mockResolvedValueOnce(new Response(`${JSON.stringify({ text: 'partial' })}\n`));
+        const { stream, response } = await service.generateContentStream('prompt');
+        const failure = response.catch(error => error);
+        const reader = stream.getReader();
+        await expect(reader.read()).rejects.toMatchObject({ code: 'NETWORK_ERROR' });
+        await expect(failure).resolves.toMatchObject({ code: 'NETWORK_ERROR' });
+    });
+
+    it('propagates caller abort to the in-flight backend fetch signal', async () => {
+        const controller = new AbortController();
+        let observedAbort = false;
+        vi.mocked(fetch).mockImplementationOnce((_url, init) => new Promise((_resolve, reject) => {
+            const signal = init?.signal as AbortSignal;
+            signal.addEventListener('abort', () => {
+                observedAbort = signal.aborted;
+                reject(new DOMException('aborted', 'AbortError'));
+            }, { once: true });
+        }));
+        const request = service.generateContentStream('prompt', undefined, {}, undefined, undefined, { signal: controller.signal });
+        await vi.waitFor(() => expect(fetch).toHaveBeenCalled());
+        controller.abort('caller cancelled');
+        await expect(request).rejects.toBeDefined();
+        expect(observedAbort).toBe(true);
+    });
+
     it('preserves the typed specialist-unavailable contract and retry guidance', async () => {
         vi.mocked(fetch).mockResolvedValueOnce(new Response(JSON.stringify({
             error: {
@@ -115,6 +142,8 @@ describe('Streaming QA', () => {
             [{ role: 'user', parts: [{ text: 'specialist-only prompt' }] }],
             'projects/148015878263/locations/us/endpoints/1720656532632240128',
             {},
+            'agent-stream-op-1',
+            { authorization: 'Bearer test-token', 'content-type': 'application/json', 'x-firebase-appcheck': 'test-app-check-token' },
         )).rejects.toMatchObject({
             code: 'SPECIALIST_UNAVAILABLE',
             message: 'This specialist is temporarily unavailable. Your request was not processed by another model.',
@@ -228,7 +257,7 @@ describe('Streaming QA', () => {
                     },
                     finishReason: 'STOP',
                 }],
-            })}\n\n`,
+            })}\n${JSON.stringify({ complete: true })}\n`,
             { status: 200, headers: { 'Content-Type': 'text/event-stream' } },
         ));
 

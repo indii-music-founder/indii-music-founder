@@ -36,7 +36,7 @@ import { generateVideoDirect } from "./lib/video_generation_direct";
 import { executeMilestoneFn } from "./timeline/milestone_execution";
 import { editImageFn } from "./lib/image_generation";
 export { generateImageV3, generateVideoV3, generateOmniRemixV3, generateAudioV3 } from "./functions/creative/gateway";
-export { getOperationCostHistory, getOperationCostStatus } from "./functions/billing/enforceOperationCost";
+export { getOperationCostHistory, getOperationCostStatus, voidAgentStreamCostReservation } from "./functions/billing/enforceOperationCost";
 export { cancelVideoJob } from "./functions/creative/gateway";
 export { videoJobFirestoreOrchestrator } from "./functions/creative/videoJobOrchestrator";
 export { getMediaDuration } from "./functions/creative/getMediaDuration";
@@ -55,7 +55,7 @@ import { estimateTranscoderRenderCost, estimateVideoCost } from "./config/pricin
 import { enforceRateLimit, RATE_LIMITS } from "./lib/rateLimit";
 import { requireVerifiedEmailV2, validateAppCheckHttp, validateAppCheckV2 } from "./middleware/appCheck";
 import { entitlementTierToBudgetTier, requireVerifiedServerEntitlement } from './functions/auth/entitlements';
-import { checkOperationBudget, finalizeOperationReservation } from './functions/billing/enforceOperationCost';
+import { checkOperationBudget, claimOperationReservation, finalizeOperationReservation } from './functions/billing/enforceOperationCost';
 import { policyClassForServerEntitlement, protectAuthenticatedApiRequest } from './functions/security/arcjet';
 import { requireVerifiedCreativeAdmission } from './functions/creative/legacyAdmission';
 import { clampTextStreamOutputTokens } from './functions/creative/textStreamAdmission';
@@ -1065,6 +1065,69 @@ export const generateContentStream = onRequest(
                 return;
             }
 
+            const rawCostReservationId = req.body?.costReservationId;
+            if (typeof rawCostReservationId !== 'string' || !rawCostReservationId.trim() || rawCostReservationId.length > 256) {
+                res.status(400).send('Missing or invalid agent-stream cost reservation.');
+                return;
+            }
+            const costReservationId = rawCostReservationId;
+            const reservationClaimId = `agent-stream:${crypto.randomUUID()}`;
+            try {
+                await claimOperationReservation({
+                    userId: decodedToken.uid,
+                    operationId: costReservationId,
+                    operationType: 'agent_stream',
+                    claimId: reservationClaimId,
+                });
+            } catch (error) {
+                const message = error instanceof Error ? error.message : String(error);
+                const status = message.includes('owner mismatch') ? 403 : message.startsWith('Missing cost reservation') ? 404 : 409;
+                logger.warn('[generateContentStream] Rejected cost reservation', { userId: decodedToken.uid, status, reason: message });
+                res.status(status).send(status === 403
+                    ? 'Cost reservation does not belong to the authenticated user.'
+                    : 'Cost reservation is missing, invalid, or no longer approved.');
+                return;
+            }
+
+            let reservationFinalized = false;
+            let reservationFinalization: Promise<void> | undefined;
+            let streamCompleted = false;
+            let clientDisconnected = false;
+            let cancelProviderStream: (() => void) | undefined;
+            res.once?.('close', () => {
+                if (!streamCompleted && !res.writableEnded) {
+                    clientDisconnected = true;
+                    cancelProviderStream?.();
+                    void voidAgentStreamReservation('client-cancelled');
+                }
+            });
+            const finalizeAgentStreamReservation = async (outcome: 'SETTLED' | 'VOIDED') => {
+                if (reservationFinalization) return reservationFinalization;
+                reservationFinalization = (async () => {
+                    await finalizeOperationReservation({
+                        userId: decodedToken.uid,
+                        operationId: costReservationId,
+                        outcome,
+                        jobId: reservationClaimId,
+                        expectedType: 'agent_stream',
+                    });
+                    reservationFinalized = true;
+                })();
+                return reservationFinalization;
+            };
+            const voidAgentStreamReservation = async (reason: string) => {
+                if (reservationFinalized) return;
+                try {
+                    await finalizeAgentStreamReservation('VOIDED');
+                } catch (error) {
+                    logger.error('[generateContentStream] Failed to void agent-stream reservation', {
+                        userId: decodedToken.uid,
+                        reason,
+                        error: error instanceof Error ? error.message : String(error),
+                    });
+                }
+            };
+
             let entitlement: Awaited<ReturnType<typeof requireVerifiedServerEntitlement>>;
             try {
                 entitlement = await requireVerifiedServerEntitlement(decodedToken.uid);
@@ -1077,6 +1140,7 @@ export const generateContentStream = onRequest(
                     operationId: `generate-content-stream:${crypto.randomUUID()}`,
                 });
                 if (!protection.allowed) {
+                    await voidAgentStreamReservation('arcjet-denied');
                     res.status(protection.status).send(protection.message);
                     return;
                 }
@@ -1099,6 +1163,7 @@ export const generateContentStream = onRequest(
                     err_msg: error instanceof Error ? error.message : String(error),
                     err_stack: error instanceof Error ? error.stack : undefined,
                 });
+                await voidAgentStreamReservation('server-admission-failed');
                 res.status(503).send('AI generation admission is temporarily unavailable.');
                 return;
             }
@@ -1113,6 +1178,7 @@ export const generateContentStream = onRequest(
                         providerSubmitted: false,
                         retryAfterSeconds: 60,
                     });
+                    await voidAgentStreamReservation('rate-limited');
                     res.status(429).json({
                         error: {
                             code: 'GENERATION_CAPACITY_LIMITED',
@@ -1127,6 +1193,7 @@ export const generateContentStream = onRequest(
                     return;
                 }
                 logger.error('[generateContentStream] Rate-limit check failed:', error);
+                await voidAgentStreamReservation('rate-limit-unavailable');
                 res.status(503).send('AI generation admission is temporarily unavailable.');
                 return;
             }
@@ -1134,20 +1201,24 @@ export const generateContentStream = onRequest(
             try {
                 const { model, contents, config: rawConfig } = req.body ?? {};
                 if (!Array.isArray(contents) || contents.length === 0 || contents.length > 32) {
+                    await voidAgentStreamReservation('invalid-contents');
                     res.status(400).send('Invalid content payload.');
                     return;
                 }
                 if (JSON.stringify(contents).length > 200_000) {
+                    await voidAgentStreamReservation('oversized-contents');
                     res.status(413).send('Content payload is too large.');
                     return;
                 }
                 if (rawConfig !== undefined && (typeof rawConfig !== 'object' || rawConfig === null || Array.isArray(rawConfig))) {
+                    await voidAgentStreamReservation('invalid-config');
                     res.status(400).send('Invalid generation configuration.');
                     return;
                 }
                 const config = { ...(rawConfig ?? {}) } as Record<string, unknown>;
                 config.maxOutputTokens = clampTextStreamOutputTokens(config.maxOutputTokens, entitlement.tier);
                 if (model !== undefined && (typeof model !== 'string' || !model.trim() || model.length > 256)) {
+                    await voidAgentStreamReservation('invalid-model');
                     res.status(400).send('Invalid or unauthorized model ID.');
                     return;
                 }
@@ -1158,6 +1229,7 @@ export const generateContentStream = onRequest(
                 // at an unrelated Vertex endpoint and spend project capacity.
                 if (!isApprovedTextStreamModel(modelId)) {
                     logger.warn(`[Security] Blocked unauthorized model access: ${modelId}`);
+                    await voidAgentStreamReservation('unauthorized-model');
                     res.status(400).send('Invalid or unauthorized model ID.');
                     return;
                 }
@@ -1176,6 +1248,7 @@ export const generateContentStream = onRequest(
                         code: unavailable.code,
                         reason: 'DISABLE_FINE_TUNED',
                     });
+                    await voidAgentStreamReservation('specialist-disabled');
                     res.status(503).json(unavailable.toPublicPayload());
                     return;
                 }
@@ -1202,6 +1275,7 @@ export const generateContentStream = onRequest(
                                 ? (routingError as { code: unknown }).code
                                 : undefined,
                         });
+                        await voidAgentStreamReservation('specialist-routing-failed');
                         res.status(503).json(unavailable.toPublicPayload());
                         return;
                     }
@@ -1220,6 +1294,7 @@ export const generateContentStream = onRequest(
                         config: config
                     });
 
+                if (clientDisconnected) throw new Error('Client disconnected before provider submission.');
                 type ContentStream = Awaited<ReturnType<typeof openStream>>;
                 type ContentChunk = ContentStream extends AsyncIterable<infer C> ? C : never;
                 let iterator: AsyncIterator<ContentChunk>;
@@ -1227,6 +1302,15 @@ export const generateContentStream = onRequest(
                 try {
                     const stream = await openStream(finalModelId, client);
                     iterator = stream[Symbol.asyncIterator]();
+                    cancelProviderStream = () => {
+                        void iterator.return?.().catch((cancelError: unknown) => {
+                            logger.warn('[generateContentStream] Provider stream cancellation failed.', cancelError);
+                        });
+                    };
+                    if (clientDisconnected) {
+                        cancelProviderStream();
+                        throw new Error('Client disconnected before provider submission.');
+                    }
                     firstResult = await iterator.next();
                 } catch (streamErr: unknown) {
                     if (isFineTunedEndpoint) {
@@ -1236,6 +1320,7 @@ export const generateContentStream = onRequest(
                             code: unavailable.code,
                             retryable: unavailable.retryable,
                         });
+                        await voidAgentStreamReservation('specialist-provider-failed');
                         res.status(503).json(unavailable.toPublicPayload());
                         return;
                     }
@@ -1250,6 +1335,10 @@ export const generateContentStream = onRequest(
                 const replayStream = (async function* () {
                     if (!firstResult.done) yield firstResult.value;
                     while (true) {
+                        if (clientDisconnected) {
+                            await iterator.return?.();
+                            throw new Error('Client disconnected before the stream completed.');
+                        }
                         const next = await iterator.next();
                         if (next.done) break;
                         yield next.value;
@@ -1290,17 +1379,24 @@ export const generateContentStream = onRequest(
                         // contract as a terminal NDJSON record. The renderer rejects
                         // the response instead of claiming partial specialist work.
                         res.write(JSON.stringify(unavailable.toPublicPayload()) + '\n');
+                        await voidAgentStreamReservation('specialist-stream-interrupted');
                         res.end();
                         return;
                     }
                     throw streamErr;
                 }
 
+                if (clientDisconnected) throw new Error('Client disconnected before the stream completed.');
+                await finalizeAgentStreamReservation('SETTLED');
+                if (clientDisconnected) return;
+                res.write(JSON.stringify({ complete: true }) + '\n');
+                streamCompleted = true;
                 res.end();
 
             } catch (err: unknown) {
                 const error = err instanceof Error ? err : new Error(String(err));
                 logger.error("[generateContentStream] Error:", error);
+                await voidAgentStreamReservation(clientDisconnected ? 'client-cancelled' : 'stream-failed');
                 if (!res.headersSent) {
                     res.status(500).send(error.message);
                 } else {

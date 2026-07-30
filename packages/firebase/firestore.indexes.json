@@ -100,6 +100,24 @@
       "collectionGroup": "costLedger",
       "fields": [
         {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "type",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "timestamp",
+          "order": "ASCENDING"
+        }
+      ],
+      "queryScope": "COLLECTION"
+    },
+    {
+      "collectionGroup": "costLedger",
+      "fields": [
+        {
           "fieldPath": "userId",
           "order": "ASCENDING"
         },

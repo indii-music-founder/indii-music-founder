@@ -59,16 +59,24 @@ vi.mock('../../config/secrets', () => ({
 }));
 
 import {
+  claimOperationReservation,
   checkOperationBudget,
   enforceOperationCost,
   expireStaleOperationReservations,
   finalizeOperationReservation,
   getOperationCostHistoryPage,
   reconcileStaleClaimedVideoReservations,
+  reconcileStaleClaimedAgentStreamReservations,
   serializeCostOperationHistoryItem,
+  voidAgentStreamCostReservation,
 } from './enforceOperationCost';
 
 const callEnforceOperationCost = enforceOperationCost as unknown as (request: {
+  auth?: { uid: string; token?: Record<string, unknown> };
+  data: Record<string, unknown>;
+  rawRequest?: Record<string, unknown>;
+}) => Promise<unknown>;
+const callVoidAgentStreamCostReservation = voidAgentStreamCostReservation as unknown as (request: {
   auth?: { uid: string; token?: Record<string, unknown> };
   data: Record<string, unknown>;
   rawRequest?: Record<string, unknown>;
@@ -277,6 +285,7 @@ describe('ISSUE-1006 operation cost receipts and expiry', () => {
       new Date('2026-07-16T20:30:00.000Z'),
       finalize,
     )).resolves.toBe(1);
+    expect(query.where).toHaveBeenCalledWith('type', '==', 'video');
     expect(finalize).toHaveBeenCalledWith({
       userId: 'user-1',
       operationId: 'video-op-1',
@@ -469,6 +478,50 @@ describe('ISSUE-1006 operation cost receipts and expiry', () => {
       jobId: 'video-job-1',
     })).resolves.toBeUndefined();
     expect(transaction.update).toHaveBeenCalledTimes(1);
+  });
+
+  it('claims only the authenticated owner\'s approved agent-stream reservation of the matching type', async () => {
+    const state: Record<string, unknown> = { userId: 'user-1', type: 'agent_stream', status: 'APPROVED' };
+    const transaction = {
+      get: vi.fn(async () => ({ exists: true, data: () => ({ ...state }) })),
+      update: vi.fn((_ref, value) => Object.assign(state, value)),
+    };
+    mocks.firestore.mockReturnValue({ doc: vi.fn((path: string) => ({ path })), runTransaction: vi.fn((fn) => fn(transaction)) });
+    await claimOperationReservation({ userId: 'user-1', operationId: 'op-1', operationType: 'agent_stream', claimId: 'claim-1' });
+    expect(state).toMatchObject({ status: 'CLAIMED', claimedJobId: 'claim-1' });
+    state.status = 'APPROVED';
+    await expect(claimOperationReservation({ userId: 'user-2', operationId: 'op-1', operationType: 'agent_stream', claimId: 'claim-2' })).rejects.toThrow('owner mismatch');
+    await expect(claimOperationReservation({ userId: 'user-1', operationId: 'op-1', operationType: 'video', claimId: 'claim-2' })).rejects.toThrow('type mismatch');
+    state.status = 'VOIDED';
+    await expect(claimOperationReservation({ userId: 'user-1', operationId: 'op-1', operationType: 'agent_stream', claimId: 'claim-2' })).rejects.toThrow('already VOIDED');
+  });
+
+  it('voids an owner-scoped unclaimed agent stream and reconciles stale claimed streams with their server claim', async () => {
+    mocks.validateAppCheck.mockReturnValue(undefined);
+    mocks.requireEntitlement.mockResolvedValue({ tier: 'free' });
+    mocks.entitlementTierToBudgetTier.mockReturnValue('free');
+    mocks.arcjetPolicyForEntitlement.mockReturnValue('verified-free');
+    mocks.arcjetProtect.mockResolvedValue({ allowed: true });
+    const state: Record<string, unknown> = {
+      userId: 'user-1', type: 'agent_stream', status: 'APPROVED', estimatedCost: 0.01,
+      ledgerDocumentPaths: { daily: 'users/user-1/costLedger/daily-1' },
+    };
+    const transaction = {
+      get: vi.fn(async () => ({ exists: true, data: () => ({ ...state }) })),
+      update: vi.fn((_ref, value) => Object.assign(state, value)), set: vi.fn(),
+    };
+    mocks.firestore.mockReturnValue({ doc: vi.fn((path: string) => ({ path })), runTransaction: vi.fn((fn) => fn(transaction)) });
+    await expect(callVoidAgentStreamCostReservation({ auth: { uid: 'user-2', token: { email_verified: true } }, data: { operationId: 'op-1' }, rawRequest: {} })).rejects.toMatchObject({ code: 'permission-denied' });
+    expect(state.status).toBe('APPROVED');
+    await expect(callVoidAgentStreamCostReservation({ auth: { uid: 'user-1', token: { email_verified: true } }, data: { operationId: 'op-1' }, rawRequest: {} })).resolves.toEqual({ voided: true });
+    expect(state.status).toBe('VOIDED');
+
+    const query = createQuery([{ id: 'op-claimed', data: () => ({ userId: 'user-1', type: 'agent_stream', claimedJobId: 'claim-1' }) }]);
+    mocks.firestore.mockReturnValue({ collection: vi.fn(() => query) });
+    const finalize = vi.fn().mockResolvedValue(undefined);
+    await expect(reconcileStaleClaimedAgentStreamReservations(new Date(), finalize)).resolves.toBe(1);
+    expect(query.where).toHaveBeenCalledWith('type', '==', 'agent_stream');
+    expect(finalize).toHaveBeenCalledWith(expect.objectContaining({ operationId: 'op-claimed', outcome: 'VOIDED', jobId: 'claim-1', expectedType: 'agent_stream' }));
   });
 });
 
