@@ -118,10 +118,10 @@ export default function SocialDashboard() {
                 <div className="flex-1 flex flex-col min-w-0">
                     {/* Header */}
                     <div className="px-4 md:px-6 py-4 border-b border-white/5 flex-shrink-0 relative overflow-hidden">
-                        <div className="absolute top-[-80px] left-[-80px] w-[300px] h-[300px] bg-dept-creative/10 blur-[100px] pointer-events-none rounded-full" />
+                        <div className="absolute top-[-80px] left-[-80px] w-[300px] h-[300px] bg-dept-social/10 blur-[100px] pointer-events-none rounded-full" />
                         <div className="relative z-10 flex items-center justify-between">
                             <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-lg bg-dept-creative flex items-center justify-center shadow-lg shadow-dept-creative/20">
+                                <div className="w-8 h-8 rounded-lg bg-dept-social flex items-center justify-center shadow-lg shadow-dept-social/20">
                                     <Megaphone size={18} className="text-black" />
                                 </div>
                                 <div>
@@ -138,7 +138,7 @@ export default function SocialDashboard() {
                                 </button>
                                 <button
                                     onClick={() => setIsCreateModalOpen(true)}
-                                    className="flex items-center gap-1.5 px-4 py-2 bg-dept-creative hover:bg-dept-creative/90 text-black font-bold rounded-lg transition-colors text-xs shadow-[0_0_15px_rgba(0,255,102,0.3)]"
+                                    className="flex items-center gap-1.5 px-4 py-2 bg-dept-social hover:bg-dept-social/90 text-black font-bold rounded-lg transition-colors text-xs shadow-[0_0_15px_rgba(0,188,212,0.3)]"
                                 >
                                     <Plus size={14} /> Create Post
                                 </button>
@@ -216,9 +216,9 @@ export default function SocialDashboard() {
 
 function AccountStatsPanel({ stats }: { stats: SocialStats | null }) {
     const items = [
-        { label: 'Total Reach', value: (stats?.followers || 0).toLocaleString('en-US'), icon: Users, color: 'text-dept-creative' },
-        { label: 'Following', value: (stats?.following || 0).toLocaleString('en-US'), icon: TrendingUp, color: 'text-dept-marketing' },
-        { label: 'Posts', value: (stats?.posts || 0).toLocaleString('en-US'), icon: Megaphone, color: 'text-dept-creative' },
+        { label: 'Total Reach', value: (stats?.followers || 0).toLocaleString('en-US'), icon: Users, color: 'text-dept-social' },
+        { label: 'Following', value: (stats?.following || 0).toLocaleString('en-US'), icon: TrendingUp, color: 'text-dept-social' },
+        { label: 'Posts', value: (stats?.posts || 0).toLocaleString('en-US'), icon: Megaphone, color: 'text-dept-social' },
     ];
 
     return (
@@ -257,8 +257,8 @@ function PlatformFiltersPanel() {
                     <div key={p.name} className="flex items-center gap-2 py-2 px-2 rounded-lg transition-colors">
                         <div className={`w-2 h-2 rounded-full ${p.color}`} />
                         <span className="text-xs text-gray-300 flex-1">{p.name}</span>
-                        <div className={`w-3 h-3 rounded-sm border flex items-center justify-center ${p.active ? 'bg-dept-creative/20 border-dept-creative/40' : 'border-white/10'}`}>
-                            {p.active && <div className="w-1.5 h-1.5 rounded-sm bg-dept-creative" />}
+                        <div className={`w-3 h-3 rounded-sm border flex items-center justify-center ${p.active ? 'bg-dept-social/20 border-dept-social/40' : 'border-white/10'}`}>
+                            {p.active && <div className="w-1.5 h-1.5 rounded-sm bg-dept-social" />}
                         </div>
                     </div>
                 ))}
