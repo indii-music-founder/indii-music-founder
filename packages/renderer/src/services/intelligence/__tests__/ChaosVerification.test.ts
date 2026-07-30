@@ -119,14 +119,21 @@ describe('ChaosVerification', () => {
             // Mock ensureInitialized to bypass bootstrap
             vi.spyOn(AutonomousIntelligence as unknown as { ensureInitialized: any }, 'ensureInitialized').mockResolvedValue(true);
 
-            // Mock a long running operation (e.g. rateLimiter.acquire)
-            vi.spyOn((AutonomousIntelligence as unknown as { rateLimiter: { acquire: any } }).rateLimiter, 'acquire').mockImplementation(() => new Promise(resolve => setTimeout(resolve, 500)));
+            // Hold admission until the request timeout reaches the limiter's signal.
+            vi.spyOn((AutonomousIntelligence as unknown as { rateLimiter: { acquire: any } }).rateLimiter, 'acquire')
+                .mockImplementation((_timeoutMs: number, signal?: AbortSignal) => new Promise<void>((resolve, reject) => {
+                    const fallback = setTimeout(resolve, 500);
+                    signal?.addEventListener('abort', () => {
+                        clearTimeout(fallback);
+                        reject(new Error(String(signal.reason)));
+                    }, { once: true });
+                }));
 
             const promise = AutonomousIntelligence.rawGenerateContent('Slow request', undefined, {}, undefined, [], { timeout });
 
             await expect(promise).rejects.toThrow('AI Request timed out');
             const end = Date.now();
-            expect(end - start).toBeLessThan(700); // Should have aborted well before 700ms
+            expect(end - start).toBeLessThan(300); // Admission should abort at the request timeout, not after the queued work.
         });
 
         it('should succeed after retry for transient 503 errors', async () => {

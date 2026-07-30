@@ -1,5 +1,6 @@
 import { getToken as getAppCheckToken } from 'firebase/app-check';
-import { appCheck, auth, remoteConfig } from '@/services/firebase';
+import { httpsCallable } from 'firebase/functions';
+import { appCheck, auth, functions, remoteConfig } from '@/services/firebase';
 import { fetchAndActivate, getValue } from 'firebase/remote-config';
 import { AppErrorCode, AppException } from '@/shared/types/errors';
 import { safeJsonParse } from '@/services/utils/json';
@@ -71,6 +72,7 @@ type BackendStreamPayload = {
     text?: string;
     functionCalls?: FunctionCallPart['functionCall'][];
     thoughtSignature?: string;
+    complete?: boolean;
     candidates?: Array<{ content?: { parts?: ContentPart[] } }>;
     error?: {
         code?: string;
@@ -173,8 +175,9 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
     // File Service (Gemini API 2GB limit)
     public fileService = GeminiFileService.getInstance();
 
-    // Default: 60 RPM (adjust based on quota)
-    public rateLimiter: RateLimiter = new RateLimiter(60);
+    // Match the strict backend generation window so a nine-seat Boardroom turn
+    // is paced locally instead of self-throttling the shared gateway.
+    public rateLimiter: RateLimiter = new RateLimiter(10, 1);
 
     // Circuit Breakers
     public contentBreaker = new CircuitBreaker(BREAKER_CONFIGS.CONTENT_GENERATION!);
@@ -343,41 +346,64 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
         return `https://us-central1-${projectId}.cloudfunctions.net/generateContentStream`;
     }
 
-    private async callBackendGenerateContentStream(
-        contents: Content[],
-        modelName: string,
-        config: Record<string, unknown>,
-        signal?: AbortSignal
-    ): Promise<{ stream: ReadableStream<StreamChunk>; response: Promise<WrappedResponse> }> {
+    private async prepareBackendRequestHeaders(): Promise<Record<string, string>> {
         const currentUser = auth.currentUser;
-        if (!currentUser) {
-            throw new AppException(AppErrorCode.UNAUTHORIZED, 'User must be authenticated for AI requests.', { retryable: false });
-        }
-
+        if (!currentUser) throw new AppException(AppErrorCode.UNAUTHORIZED, 'User must be authenticated for AI requests.', { retryable: false });
         const getIdToken = currentUser.getIdToken;
         if (typeof getIdToken !== 'function' && import.meta.env.MODE !== 'test') {
             throw new AppException(AppErrorCode.UNAUTHORIZED, 'Authenticated user is missing an ID token provider.', { retryable: false });
         }
-
         const headers: Record<string, string> = {
             'content-type': 'application/json',
-            authorization: `Bearer ${typeof getIdToken === 'function' ? await getIdToken.call(currentUser) : 'test-token'}`
+            authorization: `Bearer ${typeof getIdToken === 'function' ? await getIdToken.call(currentUser) : 'test-token'}`,
         };
-
-        if (appCheck) {
-            try {
-                headers['x-firebase-appcheck'] = (await getAppCheckToken(appCheck, false)).token;
-            } catch (error: unknown) {
-                logger.warn('[FirebaseIntelligenceService] Failed to attach App Check token to backend AI request, proceeding without it:', error);
-            }
-        } else {
-            logger.warn('[FirebaseIntelligenceService] App Check is not initialized, proceeding without it.');
+        if (!appCheck) {
+            if (import.meta.env.MODE === 'test') return { ...headers, 'x-firebase-appcheck': 'test-app-check-token' };
+            throw new AppException(AppErrorCode.UNAUTHORIZED, 'App Check is required for backend AI requests.', { retryable: false });
         }
+        try {
+            headers['x-firebase-appcheck'] = (await getAppCheckToken(appCheck, false)).token;
+        } catch (error: unknown) {
+            throw new AppException(AppErrorCode.UNAUTHORIZED, 'Could not verify this app for an AI request.', { retryable: false, originalError: error instanceof Error ? error.message : String(error) });
+        }
+        return headers;
+    }
 
+    private async voidUnclaimedAgentStreamReservation(operationId: string): Promise<void> {
+        if (!functions) throw new Error('Firebase Functions us-central1 client is unavailable.');
+        await httpsCallable<{ operationId: string }, { voided: true }>(functions, 'voidAgentStreamCostReservation')({ operationId });
+    }
+
+    private async reserveAgentStream(userId: string, model: string, streaming: boolean): Promise<string> {
+        const costCheck = await CostControlService.checkAndReserve({
+            operationType: 'agent_stream',
+            estimatedCost: 0.001,
+            userId,
+            metadata: { model, streaming },
+        });
+        if (!costCheck.allowed) {
+            const unavailable = costCheck.reason?.includes('unavailable') || costCheck.reason?.includes('permission/auth check failed');
+            throw new AppException(unavailable ? AppErrorCode.INTERNAL_ERROR : AppErrorCode.QUOTA_EXCEEDED,
+                unavailable ? 'AI service temporarily unavailable' : costCheck.reason || 'Budget limit reached');
+        }
+        if (!costCheck.operationId) {
+            throw new AppException(AppErrorCode.INTERNAL_ERROR, 'Cost ledger approved the request without a durable reservation id.');
+        }
+        return costCheck.operationId;
+    }
+
+    private async callBackendGenerateContentStream(
+        contents: Content[],
+        modelName: string,
+        config: Record<string, unknown>,
+        costReservationId: string,
+        headers: Record<string, string>,
+        signal?: AbortSignal
+    ): Promise<{ stream: ReadableStream<StreamChunk>; response: Promise<WrappedResponse> }> {
         const response = await fetch(this.getBackendStreamUrl(), {
             method: 'POST',
             headers,
-            body: JSON.stringify({ model: modelName, contents, config }),
+            body: JSON.stringify({ model: modelName, contents, config, costReservationId }),
             signal
         });
 
@@ -401,6 +427,7 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
         const decoder = new TextDecoder();
         let buffer = '';
         let finalText = '';
+        let receivedComplete = false;
         const chunks: StreamChunk[] = [];
         let resolveWrappedResponse!: (response: WrappedResponse) => void;
         let rejectWrappedResponse!: (error: unknown) => void;
@@ -446,6 +473,7 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
                             if (!jsonLine) continue;
                             const parsed = safeJsonParse(jsonLine) as BackendStreamPayload | null;
                             if (!parsed) continue;
+                            if (parsed.complete === true) { receivedComplete = true; continue; }
                             const specialistUnavailable = specialistUnavailableFromPayload(parsed);
                             if (specialistUnavailable) throw specialistUnavailable;
                             const text = extractText(parsed);
@@ -463,6 +491,8 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
                         const jsonLine = stripSseDataPrefix(buffer);
                         const parsed = jsonLine ? safeJsonParse(jsonLine) as BackendStreamPayload | null : null;
                         if (parsed) {
+                            if (parsed.complete === true) { receivedComplete = true; }
+                            else {
                             const specialistUnavailable = specialistUnavailableFromPayload(parsed);
                             if (specialistUnavailable) throw specialistUnavailable;
                             const text = extractText(parsed);
@@ -474,16 +504,21 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
                             };
                             chunks.push(chunk);
                             controller.enqueue(chunk);
+                            }
                         }
                     }
+                    if (!receivedComplete) throw new AppException(AppErrorCode.NETWORK_ERROR, 'AI stream ended before billing settlement completed.', { retryable: true });
                     controller.close();
                     const finalResponse = buildWrappedResponse();
                     logger.debug(`[FirebaseIntelligenceService] Final built response:`, JSON.stringify(finalResponse.functionCalls()));
                     resolveWrappedResponse(finalResponse);
                 } catch (error) {
-                    controller.error(error);
+                    try { controller.error(error); } catch { /* cancellation already closed controller */ }
                     rejectWrappedResponse(error);
                 }
+            },
+            async cancel(reason) {
+                await reader.cancel(reason);
             }
         });
 
@@ -579,11 +614,10 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
             }
 
             const internalSignal = timeoutController.signal;
+            let costReservationId: string | undefined;
 
             try {
-                // 2. Rate Limiting (Client Side)
-                await this.rateLimiter.acquire(30000);
-
+                await this.rateLimiter.acquire(300_000, internalSignal);
                 return this.contentBreaker.execute(async () => {
                     return this.withRetry(async () => {
                         // Check if already aborted
@@ -602,29 +636,15 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
 
                         // 2. Quota & Rate Limit
                         const userId = auth.currentUser?.uid;
-                        if (userId) {
+                        if (!userId) throw new AppException(AppErrorCode.UNAUTHORIZED, 'User must be authenticated for AI requests.', { retryable: false });
+                        {
                             // Check basic token quotas
                             await TokenUsageService.checkQuota(userId);
                             await TokenUsageService.checkRateLimit(userId);
 
-                            // Check hard-coded budget caps ($500/month kill-switch)
-                            const costCheck = await CostControlService.checkAndReserve({
-                                operationType: 'agent_stream', // Default for text
-                                estimatedCost: 0.001, // Estimate
-                                userId,
-                                metadata: { model: modelName }
-                            });
-
-                            if (!costCheck.allowed) {
-                                const isInfraFailure = costCheck.reason?.includes('unavailable') || costCheck.reason?.includes('permission/auth check failed');
-                                if (isInfraFailure) {
-                                    logger.error('[FirebaseIntelligenceService] Cost check infrastructure failure. Failing closed.', { reason: costCheck.reason });
-                                    throw new AppException(AppErrorCode.INTERNAL_ERROR, 'AI service temporarily unavailable');
-                                } else {
-                                    throw new AppException(AppErrorCode.QUOTA_EXCEEDED, costCheck.reason || 'Budget limit reached');
-                                }
-                            }
+                            costReservationId = await this.reserveAgentStream(userId, modelName, false);
                         }
+                        const headers = await this.prepareBackendRequestHeaders();
 
                         // 4. Sanitize & Prepare Prompt
                         const sanitizedPrompt = this.sanitizePrompt(prompt);
@@ -671,7 +691,7 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
                             toolConfig: options?.toolConfig,
                             safetySettings: options?.safetySettings || STANDARD_SAFETY_SETTINGS
                         };
-                        const streamResult = await this.callBackendGenerateContentStream(contents, modelName, backendConfig, internalSignal);
+                        const streamResult = await this.callBackendGenerateContentStream(contents, modelName, backendConfig, costReservationId, headers, internalSignal);
                         const reader = streamResult.stream.getReader();
                         while (!(await reader.read()).done) {
                             // Drain the stream so the backend response promise has the final text.
@@ -689,8 +709,20 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
                         }
 
                         return result;
-                    }, 3, 1000, internalSignal);
+                    }, 0, 1000, internalSignal);
                 });
+            } catch (error) {
+                if (costReservationId) {
+                    try { await this.voidUnclaimedAgentStreamReservation(costReservationId); }
+                    catch (releaseError) { logger.warn('[FirebaseIntelligenceService] Reservation release deferred to gateway recovery.', { operationId: costReservationId, releaseError }); }
+                }
+                if (internalSignal.aborted) {
+                    if (internalSignal.reason === 'TIMEOUT') {
+                        throw new AppException(AppErrorCode.TIMEOUT, `AI Request timed out after ${requestTimeout}ms`);
+                    }
+                    throw new AppException(AppErrorCode.CANCELLED, 'AI Request was cancelled by user');
+                }
+                throw error;
             } finally {
                 if (timeoutId) {
                     clearTimeout(timeoutId);
@@ -769,12 +801,18 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
 
         // Combine with user signal if provided
         if (options?.signal) {
-            options.signal.addEventListener('abort', () => timeoutController.abort(options.signal?.reason || 'CANCELLED'));
+            if (options.signal.aborted) {
+                timeoutController.abort(options.signal.reason || 'CANCELLED');
+            } else {
+                options.signal.addEventListener('abort', () => timeoutController.abort(options.signal?.reason || 'CANCELLED'));
+            }
         }
 
         const internalSignal = timeoutController.signal;
+        let costReservationId: string | undefined;
 
         try {
+            await this.rateLimiter.acquire(300_000, internalSignal);
             return this.contentBreaker.execute(async () => {
                 return this.withRetry(async () => {
                     if (internalSignal.aborted) {
@@ -792,23 +830,15 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
 
                     // 2. Quota & Rate Limit (Backend)
                     const userId = auth.currentUser?.uid;
-                    if (userId) {
+                    if (!userId) throw new AppException(AppErrorCode.UNAUTHORIZED, 'User must be authenticated for AI requests.', { retryable: false });
+                    {
                         // Check basic token quotas
                         await TokenUsageService.checkQuota(userId);
                         await TokenUsageService.checkRateLimit(userId);
 
-                        // Check hard-coded budget caps ($500/month kill-switch)
-                        const costCheck = await CostControlService.checkAndReserve({
-                            operationType: 'agent_stream', 
-                            estimatedCost: 0.001, 
-                            userId,
-                            metadata: { model: modelName, streaming: true }
-                        });
-
-                        if (!costCheck.allowed) {
-                            throw new AppException(AppErrorCode.INTERNAL_ERROR, costCheck.reason || 'Cost ledger check failed');
-                        }
+                        costReservationId = await this.reserveAgentStream(userId, modelName, true);
                     }
+                    const headers = await this.prepareBackendRequestHeaders();
 
                     // 2. Sanitize & Prepare Prompt
                     const sanitizedPrompt = this.sanitizePrompt(prompt);
@@ -836,9 +866,21 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
                         clearTimeout(timeoutId);
                         timeoutId = undefined;
                     }
-                    return this.callBackendGenerateContentStream(contents, modelName, backendConfig, internalSignal);
-                }, 3, 1000, internalSignal);
+                    return this.callBackendGenerateContentStream(contents, modelName, backendConfig, costReservationId, headers, internalSignal);
+                }, 0, 1000, internalSignal);
             });
+        } catch (error) {
+            if (costReservationId) {
+                try { await this.voidUnclaimedAgentStreamReservation(costReservationId); }
+                catch (releaseError) { logger.warn('[FirebaseIntelligenceService] Reservation release deferred to gateway recovery.', { operationId: costReservationId, releaseError }); }
+            }
+            if (internalSignal.aborted) {
+                if (internalSignal.reason === 'TIMEOUT') {
+                    throw new AppException(AppErrorCode.TIMEOUT, `AI Request timed out after ${requestTimeout}ms`);
+                }
+                throw new AppException(AppErrorCode.CANCELLED, 'AI Request was cancelled by user');
+            }
+            throw error;
         } finally {
             if (timeoutId) {
                 clearTimeout(timeoutId);

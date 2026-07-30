@@ -787,7 +787,7 @@ globalThis.fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) =>
                 ? 'Stream'
                 : 'Mock Autonomous Response';
 
-        return new Response(`${JSON.stringify({ text })}\n`, {
+        return new Response(`${JSON.stringify({ text })}\n${JSON.stringify({ complete: true })}\n`, {
             status: 200,
             headers: { 'content-type': 'application/x-ndjson' }
         });

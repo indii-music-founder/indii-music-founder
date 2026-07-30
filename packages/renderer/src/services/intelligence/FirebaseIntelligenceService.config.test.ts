@@ -116,6 +116,7 @@ describe('FirebaseIntelligenceService Configuration Mapping', () => {
         mockGenerateContent.mockResolvedValue({
             response: { text: () => 'Mock Response' }
         });
+        vi.mocked(fetch).mockResolvedValue(new Response(`${JSON.stringify({ text: 'Mock Response' })}\n${JSON.stringify({ complete: true })}\n`));
     });
 
     it('should map thinkingBudget and set includeThoughts in generateText', async () => {

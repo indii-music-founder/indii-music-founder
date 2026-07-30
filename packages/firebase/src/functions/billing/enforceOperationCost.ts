@@ -85,6 +85,17 @@ function parseCostEnforcementRequest(value: unknown): CostEnforcementRequest {
   };
 }
 
+function parseOperationReservationId(value: unknown): string {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    throw new functions.https.HttpsError('invalid-argument', 'A cost reservation payload is required.');
+  }
+  const operationId = (value as Record<string, unknown>).operationId;
+  if (typeof operationId !== 'string' || !operationId.trim() || operationId.length > 256) {
+    throw new functions.https.HttpsError('invalid-argument', 'operationId is invalid.');
+  }
+  return operationId;
+}
+
 async function requireCostCallableAdmission(
   request: functions.https.CallableRequest<unknown>,
   operation: string,
@@ -600,6 +611,7 @@ export async function finalizeOperationReservation(params: {
   operationId: string;
   outcome: 'SETTLED' | 'VOIDED';
   jobId?: string;
+  expectedType?: OperationType;
 }): Promise<void> {
   const db = admin.firestore();
   const operationRef = db.doc(`costLedger/${params.operationId}`);
@@ -608,6 +620,9 @@ export async function finalizeOperationReservation(params: {
     if (!snapshot.exists) throw new Error(`Missing cost reservation ${params.operationId}`);
     const data = snapshot.data() || {};
     if (data.userId !== params.userId) throw new Error('Cost reservation owner mismatch');
+    if (params.expectedType && data.type !== params.expectedType) {
+      throw new Error(`Cost reservation type mismatch: expected ${params.expectedType}`);
+    }
     if (data.status === params.outcome) return;
     if (data.status !== 'APPROVED' && data.status !== 'CLAIMED') {
       throw new Error(`Cost reservation is already ${data.status}`);
@@ -641,6 +656,32 @@ export async function finalizeOperationReservation(params: {
         lastUpdated: FieldValue.serverTimestamp(),
       }, { merge: true });
     }
+  });
+}
+
+export async function claimOperationReservation(params: {
+  userId: string;
+  operationId: string;
+  operationType: OperationType;
+  claimId: string;
+}): Promise<void> {
+  if (!params.operationId.trim() || params.operationId.length > 256) throw new Error('Cost reservation id is invalid');
+  if (!params.claimId.trim() || params.claimId.length > 256) throw new Error('Cost reservation claim id is invalid');
+
+  const db = admin.firestore();
+  const operationRef = db.doc(`costLedger/${params.operationId}`);
+  await db.runTransaction(async (tx) => {
+    const snapshot = await tx.get(operationRef);
+    if (!snapshot.exists) throw new Error(`Missing cost reservation ${params.operationId}`);
+    const data = snapshot.data() || {};
+    if (data.userId !== params.userId) throw new Error('Cost reservation owner mismatch');
+    if (data.type !== params.operationType) throw new Error(`Cost reservation type mismatch: expected ${params.operationType}`);
+    if (data.status !== 'APPROVED') throw new Error(`Cost reservation is already ${String(data.status || 'invalid')}`);
+    tx.update(operationRef, {
+      status: 'CLAIMED',
+      claimedJobId: params.claimId,
+      claimedAt: FieldValue.serverTimestamp(),
+    });
   });
 }
 
@@ -720,6 +761,7 @@ export async function reconcileStaleClaimedVideoReservations(
   const cutoff = admin.firestore.Timestamp.fromMillis(now.getTime() - RESERVATION_TTL_MS);
   const stale = await db.collection('costLedger')
     .where('status', '==', 'CLAIMED')
+    .where('type', '==', 'video')
     .where('timestamp', '<=', cutoff)
     .orderBy('timestamp', 'asc')
     .limit(100)
@@ -730,7 +772,7 @@ export async function reconcileStaleClaimedVideoReservations(
     const data = operation.data();
     const userId = typeof data.userId === 'string' ? data.userId : null;
     const jobId = typeof data.claimedJobId === 'string' ? data.claimedJobId : null;
-    if (!userId || !jobId || data.type !== 'video') {
+    if (!userId || !jobId) {
       console.error('[CostControl] Cannot reconcile malformed claimed video reservation', operation.id);
       continue;
     }
@@ -779,14 +821,47 @@ export async function reconcileStaleClaimedVideoReservations(
   return reconciled;
 }
 
+export async function reconcileStaleClaimedAgentStreamReservations(
+  now = new Date(),
+  finalize: typeof finalizeOperationReservation = finalizeOperationReservation,
+): Promise<number> {
+  const db = admin.firestore();
+  const cutoff = admin.firestore.Timestamp.fromMillis(now.getTime() - RESERVATION_TTL_MS);
+  const stale = await db.collection('costLedger')
+    .where('status', '==', 'CLAIMED')
+    .where('type', '==', 'agent_stream')
+    .where('timestamp', '<=', cutoff)
+    .orderBy('timestamp', 'asc')
+    .limit(100)
+    .get();
+  let reconciled = 0;
+  for (const operation of stale.docs) {
+    const data = operation.data();
+    const userId = typeof data.userId === 'string' ? data.userId : null;
+    const claimId = typeof data.claimedJobId === 'string' ? data.claimedJobId : null;
+    if (!userId || !claimId) {
+      console.error('[CostControl] Cannot reconcile malformed claimed agent-stream reservation', operation.id);
+      continue;
+    }
+    try {
+      await finalize({ userId, operationId: operation.id, outcome: 'VOIDED', jobId: claimId, expectedType: 'agent_stream' });
+      reconciled += 1;
+    } catch (error) {
+      console.warn('[CostControl] Claimed agent-stream reconciliation skipped', operation.id, error);
+    }
+  }
+  return reconciled;
+}
+
 export const expireStaleOperationCostReservations = onSchedule(
   { schedule: 'every 5 minutes', timeZone: 'Etc/UTC', region: 'us-central1' },
   async () => {
-    const [expired, reconciledClaims] = await Promise.all([
+    const [expired, reconciledVideoClaims, reconciledAgentStreamClaims] = await Promise.all([
       expireStaleOperationReservations(),
       reconcileStaleClaimedVideoReservations(),
+      reconcileStaleClaimedAgentStreamReservations(),
     ]);
-    console.info('[CostControl] Reconciled stale reservations', { expired, reconciledClaims });
+    console.info('[CostControl] Reconciled stale reservations', { expired, reconciledVideoClaims, reconciledAgentStreamClaims });
   },
 );
 
@@ -816,6 +891,24 @@ export const enforceOperationCost = functions.https.onCall(
       operationType: req.operationType,
       metadata: req.metadata,
     });
+  },
+);
+
+export const voidAgentStreamCostReservation = functions.https.onCall(
+  { ...costCallableSecurityOptions, region: 'us-central1', maxInstances: 10, timeoutSeconds: 30 },
+  async (request: functions.https.CallableRequest<unknown>): Promise<{ voided: true }> => {
+    const { userId } = await requireCostCallableAdmission(request, 'void-agent-stream-cost');
+    const operationId = parseOperationReservationId(request.data);
+    try {
+      await finalizeOperationReservation({ userId, operationId, outcome: 'VOIDED', expectedType: 'agent_stream' });
+      return { voided: true };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      const code = message.includes('owner mismatch') ? 'permission-denied'
+        : message.startsWith('Missing cost reservation') ? 'not-found' : 'failed-precondition';
+      throw new functions.https.HttpsError(code, code === 'permission-denied'
+        ? 'Cost reservation does not belong to the authenticated user.' : message);
+    }
   },
 );
 

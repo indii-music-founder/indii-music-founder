@@ -66,4 +66,27 @@ describe('RateLimiter', () => {
 
         await expect(resultPromise).rejects.toThrow('Rate limit acquisition timed out');
     });
+
+    it('removes an aborted queued Boardroom dispatch without consuming or reordering the next FIFO slot', async () => {
+        const limiter = new RateLimiter(10, 1);
+        expect(limiter.tryAcquire()).toBe(true);
+        const cancelled = new AbortController();
+        const order: string[] = [];
+        const first = limiter.acquire(60_000, cancelled.signal).then(() => { order.push('cancelled'); });
+        const second = limiter.acquire(60_000).then(() => { order.push('second'); });
+        const third = limiter.acquire(60_000).then(() => { order.push('third'); });
+
+        cancelled.abort('Boardroom turn cancelled');
+        await expect(first).rejects.toThrow('Boardroom turn cancelled');
+
+        vi.setSystemTime(startTime + 6_001);
+        await vi.advanceTimersByTimeAsync(6_001);
+        await expect(second).resolves.toBeUndefined();
+        expect(order).toEqual(['second']);
+
+        vi.setSystemTime(startTime + 12_002);
+        await vi.advanceTimersByTimeAsync(6_001);
+        await expect(third).resolves.toBeUndefined();
+        expect(order).toEqual(['second', 'third']);
+    });
 });
