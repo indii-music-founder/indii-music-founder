@@ -132,7 +132,14 @@ export function useLicensing() {
     }
   };
 
-  const projectedValue = licenses.length * 12500;
+  // ISSUE-1276: this was `licenses.length * 12500` — a flat invented constant per
+  // license, displayed as a real dollar figure. `License` carries no fee at all
+  // unless the deal terms have been recorded, so the honest answer when none do is
+  // "unknown" (null), not a synthesized number. Sums only licenses with real fees.
+  const licensesWithFee = licenses.filter(l => typeof l.feeUsd === 'number' && Number.isFinite(l.feeUsd));
+  const projectedValue = licensesWithFee.length > 0
+    ? licensesWithFee.reduce((sum, l) => sum + (l.feeUsd as number), 0)
+    : null;
 
   return {
     licenses,

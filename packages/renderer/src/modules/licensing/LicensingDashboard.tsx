@@ -265,12 +265,19 @@ export default function LicensingDashboard() {
 /* ================================================================== */
 
 function DealHealthPanel({ activeLicenses, pendingRequests, projectedValue }: {
-    activeLicenses: number; pendingRequests: number; projectedValue: number;
+    activeLicenses: number; pendingRequests: number; projectedValue: number | null;
 }) {
     const items = [
         { label: 'Active Licenses', value: activeLicenses.toString(), icon: ShieldCheck, color: 'text-emerald-400' },
         { label: 'Pending Clearances', value: pendingRequests.toString(), icon: Clock, color: 'text-yellow-400' },
-        { label: 'Projected Value', value: `$${projectedValue.toLocaleString('en-US')}`, icon: TrendingUp, color: 'text-emerald-400' },
+        // ISSUE-1276: null means no license has recorded deal terms yet. Show an
+        // honest dash rather than a synthesized dollar figure.
+        {
+            label: 'Projected Value',
+            value: projectedValue === null ? '—' : `$${projectedValue.toLocaleString('en-US')}`,
+            icon: TrendingUp,
+            color: projectedValue === null ? 'text-gray-500' : 'text-emerald-400',
+        },
     ];
 
     return (

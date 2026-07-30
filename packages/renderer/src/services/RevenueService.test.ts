@@ -148,4 +148,55 @@ describe('RevenueService (Production Logic)', () => {
         const dates = stats.history.map(h => h.date);
         expect(dates).toEqual(['2024-01-01', '2024-01-03', '2024-01-05']);
     });
+
+    // ISSUE-1275: trendScore / productionVelocity were hardcoded to 0 and never
+    // assigned, and funnelData was three zeroes — so the merch dashboard's gauges
+    // showed a permanent fake "no data" state regardless of real activity.
+    describe('ISSUE-1275: derived merch analytics', () => {
+        const mockWith = (docs: any[]) => {
+            mocks.getDocs.mockResolvedValue({
+                docs,
+                empty: docs.length === 0,
+                forEach: (callback: (doc: any) => void) => docs.forEach(callback)
+            });
+        };
+
+        it('reports funnelData as null (untracked) rather than zeroes posing as measurements', async () => {
+            mockWith([{ data: () => ({ amount: 100, userId: 'user-123', createdAt: { toDate: () => new Date('2024-01-01T00:00:00Z') } }) }]);
+
+            const stats = await revenueService.getUserRevenueStats('user-123', 'all');
+
+            expect(stats.funnelData).toBeNull();
+        });
+
+        it('derives trendScore from real revenue movement rather than reporting a hardcoded 0', async () => {
+            // This mock serves the same docs to the current- and previous-period
+            // queries, so revenue is genuinely flat period-over-period.
+            mockWith([{ data: () => ({ amount: 500, userId: 'user-123', createdAt: { toDate: () => new Date('2024-01-01T00:00:00Z') } }) }]);
+
+            const stats = await revenueService.getUserRevenueStats('user-123', 'all');
+
+            // Flat revenue scores the neutral midpoint — NOT the old hardcoded 0,
+            // which is what proves the value is actually being computed.
+            expect(stats.trendScore).toBe(50);
+        });
+
+        it('scores a genuinely empty account as 0 rather than inventing momentum', async () => {
+            mockWith([]);
+
+            const stats = await revenueService.getUserRevenueStats('user-123', 'all');
+
+            expect(stats.trendScore).toBe(0);
+            expect(stats.productionVelocity).toBe(0);
+        });
+
+        it('keeps trendScore within the 0-100 range the gauge renders', async () => {
+            mockWith([{ data: () => ({ amount: 999999, userId: 'user-123', createdAt: { toDate: () => new Date('2024-01-01T00:00:00Z') } }) }]);
+
+            const stats = await revenueService.getUserRevenueStats('user-123', 'all');
+
+            expect(stats.trendScore).toBeGreaterThanOrEqual(0);
+            expect(stats.trendScore).toBeLessThanOrEqual(100);
+        });
+    });
 });

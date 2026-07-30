@@ -46,15 +46,15 @@ export const RevenueStatsSchema = z.object({
   })),
   trendScore: z.number().default(0),
   productionVelocity: z.number().default(0),
+  // ISSUE-1275: null means storefront funnel tracking is not wired up, which is
+  // the current reality — there is no page-view/add-to-cart event source anywhere
+  // in the codebase. Defaulting this to three zeroes made "untracked" and
+  // "measured zero" indistinguishable, and the UI rendered the former as the latter.
   funnelData: z.object({
     pageViews: z.number().default(0),
     addToCart: z.number().default(0),
     checkout: z.number().default(0),
-  }).default({
-    pageViews: 0,
-    addToCart: 0,
-    checkout: 0
-  }),
+  }).nullable().default(null),
 });
 
 export type RevenueStats = z.infer<typeof RevenueStatsSchema>;

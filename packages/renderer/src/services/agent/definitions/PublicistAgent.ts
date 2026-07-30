@@ -528,7 +528,7 @@ Format as a standard, ready-to-publish press release with a catchy headline, dat
     .withTool({
         functionDeclarations: [{
             name: "find_media_contacts",
-            description: "Find curated media contacts (bloggers, playlist curators, journalists) matching a specific genre and region.",
+            description: "Search the artist's own saved media list (bloggers, playlist curators, journalists) for contacts matching a genre, type and region. Only returns contacts the artist has already saved — it never invents contacts, and returns an empty result if the list has no match.",
             parameters: {
                 type: "OBJECT",
                 properties: {
@@ -541,35 +541,55 @@ Format as a standard, ready-to-publish press release with a catchy headline, dat
         }]
     }, async (args: { genre: string; region?: string; contact_type: string }) => {
         /**
-         * Find curated media contacts.
+         * Find media contacts from the artist's own saved media list.
+         *
+         * ISSUE-1279: this previously prompted the model for "5 highly realistic
+         * fictional media contacts" — including fabricated names, outlets and email
+         * addresses — and returned them as success with no fictional flag, under a
+         * tool description promising "curated media contacts". A user could have
+         * pitched invented addresses believing them to be a real curated list.
+         * Same policy as ISSUE-931 in the sibling publicist tools: the model must
+         * never invent contact/identity facts. Reads the real user-scoped
+         * `publicist_media_contacts` collection instead, and returns an honest
+         * empty result rather than inventing entries when the list has no match.
          */
-        const prompt = `You are a music PR database. Return a JSON array of 5 highly realistic fictional media contacts that match the following criteria:
-Genre: ${args.genre}
-Region: ${args.region || 'Global'}
-Type: ${args.contact_type}
-
-Each object should have:
-- name: Contact person's name
-- outlet: Name of the publication, blog, or station
-- email: Fictional email address
-- preferences: Short string describing what they usually cover
-- reach: Estimated audience size (e.g., "50k Monthly Readers")
-
-Return ONLY valid JSON. No markdown fences.`;
-
         try {
-            const { AutonomousIntelligence } = await importWithRetry(() => import('@/services/intelligence/AutonomousIntelligence'));
-            const { INTELLIGENCE_MODELS } = await importWithRetry(() => import('@/core/config/intelligence-models'));
-            const raw = await AutonomousIntelligence.generateText(prompt, INTELLIGENCE_MODELS.TEXT.FAST);
-            const cleaned = raw.replace(/```(?:json)?\n?/g, '').replace(/```$/g, '').trim();
-            const contacts = JSON.parse(cleaned);
+            const { auth, db } = await importWithRetry(() => import('@/services/firebase'));
+            const { collection, getDocs } = await importWithRetry(() => import('firebase/firestore'));
 
+            const userId = auth.currentUser?.uid;
+            if (!userId) {
+                return { success: false, error: 'Finding media contacts requires an authenticated user.' };
+            }
+
+            const snapshot = await getDocs(collection(db, 'users', userId, 'publicist_media_contacts'));
+            const all = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as { id: string; name?: string; contact?: string; tags?: string[] }));
+
+            const norm = (s: string) => s.trim().toLowerCase();
+            const wanted = [args.genre, args.contact_type, args.region]
+                .filter((v): v is string => typeof v === 'string' && v.trim().length > 0 && norm(v) !== 'global')
+                .map(norm);
+
+            const contacts = wanted.length === 0
+                ? all
+                : all.filter(c => {
+                    const haystack = [...(c.tags || []), c.name || ''].map(norm);
+                    // A contact matches when any requested criterion appears in its tags.
+                    return wanted.some(w => haystack.some(h => h.includes(w) || w.includes(h)));
+                });
+
+            const criteria = `${args.genre} / ${args.contact_type}${args.region ? ` / ${args.region}` : ''}`;
             return {
                 success: true,
                 data: {
                     search_criteria: args,
                     results_count: contacts.length,
-                    contacts
+                    contacts,
+                    message: contacts.length > 0
+                        ? `Found ${contacts.length} saved media ${contacts.length === 1 ? 'contact' : 'contacts'} matching ${criteria}.`
+                        : (all.length === 0
+                            ? 'Your media list is empty. Add verified contacts with manage_media_list before pitching — contacts are never invented.'
+                            : `None of your ${all.length} saved media contacts match ${criteria}.`)
                 }
             };
         } catch (error: unknown) {

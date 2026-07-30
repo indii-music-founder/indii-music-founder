@@ -213,13 +213,26 @@ export class RevenueService {
         revenueByProduct,
         salesByProduct,
         history,
-        trendScore: 0,
-        productionVelocity: 0,
-        funnelData: {
-          pageViews: 0,
-          addToCart: 0,
-          checkout: 0
-        }
+        // ISSUE-1275: these were hardcoded to 0 and never assigned anywhere, so the
+        // merch dashboard's Trend Score gauge and Production Velocity gauge always
+        // read zero no matter the artist's real activity — a permanent fake
+        // "no data" state rendered as if it were a live measurement.
+        //
+        // trendScore: revenue momentum on a 0-100 scale, where 50 is flat vs the
+        // previous period. Derived from the real revenueChange computed above and
+        // clamped; a ±100% swing saturates the gauge. Zero revenue in both periods
+        // means there is genuinely nothing to score, so it reports 0.
+        trendScore: (totalRevenue === 0 && previousRevenue === 0)
+          ? 0
+          : Math.max(0, Math.min(100, Math.round(50 + revenueChange / 2))),
+        // productionVelocity: the UI labels this "vs last week" as a percentage,
+        // which is exactly the real unitsChange already computed above.
+        productionVelocity: Math.round(unitsChange),
+        // funnelData: pageViews/addToCart/checkout require storefront funnel event
+        // tracking that does not exist anywhere in this codebase. There is no honest
+        // value to compute, so this reports null and the UI renders an explicit
+        // "not tracked yet" state rather than three zeroes posing as measurements.
+        funnelData: null
       };
 
       return result;

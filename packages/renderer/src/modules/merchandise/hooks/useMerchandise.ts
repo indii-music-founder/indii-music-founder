@@ -14,11 +14,12 @@ export interface MerchStats {
     unitsChange: number; // Percentage
     trendScore: number;
     productionVelocity: number;
+    /** ISSUE-1275: null when storefront funnel tracking isn't wired up (currently always). */
     funnelData: {
         pageViews: number;
         addToCart: number;
         checkout: number;
-    };
+    } | null;
 }
 
 const createZeroMerchStats = (): MerchStats => ({
@@ -29,11 +30,7 @@ const createZeroMerchStats = (): MerchStats => ({
     unitsChange: 0,
     trendScore: 0,
     productionVelocity: 0,
-    funnelData: {
-        pageViews: 0,
-        addToCart: 0,
-        checkout: 0
-    }
+    funnelData: null
 });
 
 export const useMerchandise = () => {
@@ -163,11 +160,7 @@ export const useMerchandise = () => {
                         unitsChange: Number(revenueStats.unitsChange) || 0,
                         trendScore: Number(revenueStats.trendScore) || 0,
                         productionVelocity: Number(revenueStats.productionVelocity) || 0,
-                        funnelData: (revenueStats.funnelData as { pageViews: number; addToCart: number; checkout: number; }) || {
-                            pageViews: 0,
-                            addToCart: 0,
-                            checkout: 0
-                        }
+                        funnelData: (revenueStats.funnelData as { pageViews: number; addToCart: number; checkout: number; } | null) ?? null
                     });
 
                     const topSellers = products

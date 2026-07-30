@@ -14,6 +14,15 @@ export interface License {
     endDate?: Timestamp;
     usage: string;
     notes?: string;
+    /**
+     * Agreed license fee in whole USD, when the deal terms are known.
+     * Optional and frequently absent — a license can be tracked before its fee is
+     * settled. Consumers MUST treat "no license carries a fee" as unknown and show
+     * an empty state, never a synthesized figure (ISSUE-1276: the licensing
+     * dashboard previously displayed `licenses.length * 12500` as "Projected Value",
+     * which was not derived from any real deal term).
+     */
+    feeUsd?: number;
     createdAt?: Timestamp;
     updatedAt?: Timestamp;
 }

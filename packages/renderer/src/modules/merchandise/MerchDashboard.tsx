@@ -440,10 +440,33 @@ function PODPartnerStatusPanel() {
 }
 
 function ConversionFunnelPanel({ stats }: { stats: MerchStats }) {
+    const funnel = stats.funnelData;
+
+    // ISSUE-1275: funnelData is null when storefront funnel tracking isn't wired up.
+    // This previously rendered three zeroed bars, which read as "nobody visited your
+    // store" rather than the truth, "this is not being measured".
+    if (!funnel) {
+        return (
+            <div className="rounded-xl bg-white/[0.02] border border-white/5 p-3">
+                <h3 className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest mb-3 px-1 flex items-center gap-1.5">
+                    <BarChart3 size={10} /> Conversion Funnel
+                </h3>
+                <p className="text-[11px] text-neutral-500 px-1">
+                    Storefront traffic isn&apos;t being tracked yet, so page view and cart
+                    stages are unavailable.
+                </p>
+                <div className="mt-3 px-1 flex items-center justify-between border-t border-white/5 pt-2">
+                    <span className="text-[10px] text-neutral-400">Purchased</span>
+                    <span className="text-[10px] font-bold text-neutral-300">{stats.unitsSold.toLocaleString('en-US')}</span>
+                </div>
+            </div>
+        );
+    }
+
     const stages = [
-        { label: 'Page Views', value: stats.funnelData.pageViews.toLocaleString('en-US'), pct: 100 },
-        { label: 'Add to Cart', value: stats.funnelData.addToCart.toLocaleString('en-US'), pct: stats.funnelData.pageViews > 0 ? (stats.funnelData.addToCart / stats.funnelData.pageViews) * 100 : 0 },
-        { label: 'Checkout', value: stats.funnelData.checkout.toLocaleString('en-US'), pct: stats.funnelData.pageViews > 0 ? (stats.funnelData.checkout / stats.funnelData.pageViews) * 100 : 0 },
+        { label: 'Page Views', value: funnel.pageViews.toLocaleString('en-US'), pct: 100 },
+        { label: 'Add to Cart', value: funnel.addToCart.toLocaleString('en-US'), pct: funnel.pageViews > 0 ? (funnel.addToCart / funnel.pageViews) * 100 : 0 },
+        { label: 'Checkout', value: funnel.checkout.toLocaleString('en-US'), pct: funnel.pageViews > 0 ? (funnel.checkout / funnel.pageViews) * 100 : 0 },
         { label: 'Purchased', value: stats.unitsSold.toLocaleString('en-US'), pct: stats.conversionRate ?? 0 },
     ];
 

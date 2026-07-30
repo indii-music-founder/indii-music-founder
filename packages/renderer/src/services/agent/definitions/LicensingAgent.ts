@@ -167,18 +167,58 @@ export const LicensingAgent: AgentConfig = {
                 return { success: false, error: "Failed to draft license: " + (error as Error).message };
             }
         },
-        search_sync_opportunities: async (_args: { genre?: string, mood?: string, budget?: string }) => {
-            return {
-                success: true,
-                data: {
-                    opportunities: [
-                        { id: 'SYNC-001', type: 'Commercial', brand: 'Nike', fee: '$5,000 - $15,000', deadline: '2026-07-01' },
-                        { id: 'SYNC-002', type: 'Film', production: 'A24', fee: '$10,000 - $50,000', deadline: '2026-08-15' },
-                        { id: 'SYNC-003', type: 'Video Game', publisher: 'EA', fee: '$8,000 - $20,000', deadline: '2026-09-01' }
-                    ],
-                    message: `Found 3 potential sync opportunities matching criteria.`
-                }
-            };
+        // ISSUE-1274: this previously ignored its own arguments (the parameter was
+        // literally named `_args`) and returned the same three fabricated deals —
+        // Nike / A24 / EA, with invented fee ranges and deadlines — under the message
+        // "Found 3 potential sync opportunities matching criteria". Now reads the real
+        // user-scoped `syncBriefs` collection and actually applies the filters, and
+        // returns an honest empty result when there is nothing to match.
+        search_sync_opportunities: async (args: { genre?: string, mood?: string, budget?: string }) => {
+            try {
+                const briefs = await licensingService.getSyncBriefs();
+
+                const norm = (s: string) => s.trim().toLowerCase();
+                const matches = briefs.filter(brief => {
+                    if (args.mood) {
+                        const wanted = norm(args.mood);
+                        const moods = (brief.moods || []).map(m => norm(String(m)));
+                        if (!moods.some(m => m.includes(wanted) || wanted.includes(m))) return false;
+                    }
+                    if (args.budget) {
+                        const wanted = norm(args.budget);
+                        if (!norm(brief.budget || '').includes(wanted)) return false;
+                    }
+                    if (args.genre) {
+                        // Briefs have no genre field; match against the free-text
+                        // description/project so a genre filter narrows rather than
+                        // silently doing nothing.
+                        const wanted = norm(args.genre);
+                        const haystack = `${norm(brief.description || '')} ${norm(brief.project || '')} ${norm(brief.type || '')}`;
+                        if (!haystack.includes(wanted)) return false;
+                    }
+                    return true;
+                });
+
+                const criteria = [
+                    args.genre ? `genre "${args.genre}"` : null,
+                    args.mood ? `mood "${args.mood}"` : null,
+                    args.budget ? `budget "${args.budget}"` : null,
+                ].filter(Boolean).join(', ');
+
+                return {
+                    success: true,
+                    data: {
+                        opportunities: matches,
+                        message: matches.length === 0
+                            ? (briefs.length === 0
+                                ? 'No sync briefs are currently available in your pipeline.'
+                                : `No sync briefs match ${criteria || 'those criteria'} (${briefs.length} total in pipeline).`)
+                            : `Found ${matches.length} sync ${matches.length === 1 ? 'brief' : 'briefs'} matching ${criteria || 'your pipeline'}.`
+                    }
+                };
+            } catch (error: unknown) {
+                return { success: false, error: `Failed to search sync opportunities: ${(error as Error).message}` };
+            }
         },
         calculate_sync_fee_estimate: async (args: { usage_type: string, territory: string, term: string }) => {
             const baseRates: Record<string, number> = {
