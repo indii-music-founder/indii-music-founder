@@ -104,7 +104,7 @@ export const smartLinkRedirect = onRequest(
     // 512MiB is the floor here, not a tuning choice: below ~259MiB the shared
     // cold-start footprint OOMs before the container binds its port, failing
     // the deploy health check. Enforced by `npm run check:functions`.
-    { region: REGION, timeoutSeconds: 10, memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1, cors: false },
+    { region: REGION, timeoutSeconds: 60, memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1, cors: false },
     async (req, res) => {
         const slug = (req.path.split('/').filter(Boolean).pop() ?? '').toLowerCase();
 

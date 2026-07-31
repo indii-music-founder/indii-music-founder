@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'motion/react';
 import { TrendingUp, TrendingDown, Minus, BarChart2, Heart, Users, Share2, Music, type LucideIcon } from 'lucide-react';
 import type { ComputedMetrics } from '@/services/analytics/types';
+import { getColorForModule } from '@/core/theme/moduleColors';
 
 interface MetricsGridProps {
     metrics: ComputedMetrics;
@@ -104,7 +105,7 @@ export const MetricsGrid: React.FC<MetricsGridProps> = ({ metrics, totalStreams 
             subtitle: 'Viral spread potential',
             icon: Share2,
             trend: metrics.shareRate >= 0.02 ? 'up' : 'neutral',
-            color: 'bg-cyan-500/20',
+            color: getColorForModule('analytics').bg.replace('/10', '/20'),
             delay: 0.25,
         },
     ];

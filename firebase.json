@@ -29,7 +29,8 @@
     "rules": "packages/firebase/firestore.rules"
   },
   "functions": {
-    "source": "./packages/firebase"
+    "source": "./packages/firebase",
+    "codebase": "default"
   },
   "hosting": [
     {
@@ -92,7 +93,9 @@
       ],
       "rewrites": [
         {
-          "function": "smartLinkRedirect",
+          "function": {
+            "functionId": "smartLinkRedirect"
+          },
           "source": "/l/**"
         },
         {

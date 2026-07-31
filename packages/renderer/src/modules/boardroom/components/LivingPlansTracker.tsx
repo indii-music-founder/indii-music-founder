@@ -6,6 +6,7 @@ import { X, Layers } from 'lucide-react';
 import { PlanCard } from '@/core/components/chat/PlanCard';
 import { useToast } from '@/core/context/ToastContext';
 import { agentService } from '@/services/agent/AgentService';
+import { getColorForModule } from '@/core/theme/moduleColors';
 import { logger } from '@/utils/logger';
 import { toMillisSafe } from '@/utils/timestamps';
 
@@ -115,7 +116,7 @@ export function LivingPlansTracker({ isOpen, onClose }: LivingPlansTrackerProps)
                         {/* Header */}
                         <div className="flex items-center justify-between px-6 py-4 border-b border-white/5 bg-white/5">
                             <div className="flex items-center gap-2">
-                                <Layers className="text-cyan-400" size={18} />
+                                <Layers className={getColorForModule('agent').text} size={18} />
                                 <h2 className="text-base font-bold tracking-tight text-gray-100">Living Plans</h2>
                             </div>
                             <button onClick={onClose} className="p-2 rounded-full hover:bg-white/10 text-gray-400 transition-colors">
@@ -127,7 +128,7 @@ export function LivingPlansTracker({ isOpen, onClose }: LivingPlansTrackerProps)
                         <div className="flex-1 overflow-y-auto p-4 space-y-4">
                             {loading ? (
                                 <div className="flex justify-center p-12">
-                                    <div className="w-6 h-6 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin" />
+                                    <div className={`w-6 h-6 border-2 ${getColorForModule('agent').border.replace('/20', '').replace('/30', '')} border-t-transparent rounded-full animate-spin`} />
                                 </div>
                             ) : plans.length === 0 ? (
                                 <div className="text-center p-12 text-white/40">
@@ -143,7 +144,7 @@ export function LivingPlansTracker({ isOpen, onClose }: LivingPlansTrackerProps)
                                         <div className={`absolute left-0 top-4 bottom-4 w-1 rounded-r-md z-10 pointer-events-none ${
                                             plan.status === 'executing' ? 'bg-blue-500' :
                                             plan.status === 'completed' ? 'bg-emerald-500' :
-                                            plan.status === 'drafting' || plan.status === 'proposed' ? 'bg-cyan-500' :
+                                            plan.status === 'drafting' || plan.status === 'proposed' ? getColorForModule('agent').bg.replace('/10', '') :
                                             'bg-gray-500'
                                         }`} />
                                         
