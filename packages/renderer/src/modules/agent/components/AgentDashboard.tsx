@@ -26,6 +26,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { useTranslation } from 'react-i18next';
 import { AgentLoopMonitor } from './AgentLoopMonitor';
 import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
+import { getColorForModule } from '@/core/theme/moduleColors';
 
 const InboxTabNew = React.lazy(() => import('./InboxTab'));
 
@@ -39,6 +40,7 @@ const CampaignsTab: React.FC = () => {
     const { t } = useTranslation();
     const [campaigns, setCampaigns] = React.useState<CampaignAsset[]>([]);
     const [loading, setLoading] = React.useState(true);
+    const moduleColor = getColorForModule('agent');
 
     const fetchCampaigns = React.useCallback(async () => {
         setLoading(true);
@@ -71,7 +73,7 @@ const CampaignsTab: React.FC = () => {
         <div className="absolute inset-0 overflow-y-auto custom-scrollbar p-4 md:p-6 space-y-4">
             <div className="flex items-center justify-between">
                 <h2 className="text-lg font-semibold text-white flex items-center gap-2">
-                    <Megaphone size={18} className="text-cyan-400" /> {t('agent.tabs.campaigns')}
+                    <Megaphone size={18} className={moduleColor.text} /> {t('agent.tabs.campaigns')}
                 </h2>
                 <button
                     onClick={fetchCampaigns}
@@ -94,7 +96,7 @@ const CampaignsTab: React.FC = () => {
                     <p className="text-sm">{t('agent.campaigns.noCampaigns')}</p>
                     <a
                         href="?module=marketing"
-                        className="text-xs text-cyan-400 hover:text-cyan-300 flex items-center gap-1 transition-colors"
+                        className={`text-xs ${moduleColor.text} ${moduleColor.hoverText} flex items-center gap-1 transition-colors`}
                     >
                         {t('agent.campaigns.goToMarketing')} <ExternalLink size={10} />
                     </a>
@@ -132,6 +134,7 @@ const CampaignsTab: React.FC = () => {
 
 const AgentDashboard: React.FC = () => {
     const { t } = useTranslation();
+    const moduleColor = getColorForModule('agent');
     // Hooks must be called unconditionally before early returns
     const [activeTab, setActiveTab] = useState<'scout' | 'campaigns' | 'inbox' | 'browser' | 'chat' | 'tasks' | 'loops'>('scout');
     const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
@@ -229,7 +232,7 @@ const AgentDashboard: React.FC = () => {
                                     key={tab}
                                     onClick={() => setActiveTab(tab)}
                                     className={`px-4 py-2.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${activeTab === tab
-                                        ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'
+                                        ? `${moduleColor.bg} ${moduleColor.text} border ${moduleColor.border}`
                                         : 'text-slate-400 hover:text-white hover:bg-slate-800'
                                         }`}
                                 >
@@ -245,7 +248,7 @@ const AgentDashboard: React.FC = () => {
                                 <div className="flex items-center gap-3">
                                     <h2 className="font-bold text-lg text-white tracking-tight">{t('agent.title')}</h2>
                                     <span className="text-slate-600">/</span>
-                                    <span className="flex items-center gap-2 text-cyan-400 text-sm font-medium bg-cyan-500/10 px-2 py-0.5 rounded-full border border-cyan-500/20">
+                                    <span className={`flex items-center gap-2 ${moduleColor.text} text-sm font-medium ${moduleColor.bg} px-2 py-0.5 rounded-full border ${moduleColor.border}`}>
                                         <Sparkles size={12} />
                                         {t(`agent.tabs.${activeTab}`)}
                                     </span>

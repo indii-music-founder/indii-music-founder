@@ -3386,9 +3386,9 @@ acceptance criteria.
 
 ### ISSUE-1261: Renderer smart-contract actions use hand-built calldata and client-written success state
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-07-31 — disabled client-side transaction deployment, token minting, and payout execution; replaced with unverified drafts. Removed client-side ledger writes. Awaiting backend deployment support)
 - **Severity:** 🔴 CRITICAL
-- **Module:** `packages/renderer/src/services/web3/SmartContractService.ts`
+- **Module:** `packages/renderer/src/services/blockchain/SmartContractService.ts`
 - **Evidence:** The renderer uses raw bytecode/environment values and hand-built calldata, does not correctly encode constructor/ABI behavior, and can write a success-looking Firestore state from the client.
 - **Expected behavior:** Use verified versioned artifacts and ABI encoding, chain/account allowlists, server-side simulation and policy, explicit wallet approval, transaction receipt/finality/reorg tracking, and backend-owned audit records.
 - **Honest fallback:** Draft/manual transaction data marked unverified; no deployment or success claim.
