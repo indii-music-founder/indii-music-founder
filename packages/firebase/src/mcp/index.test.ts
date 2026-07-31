@@ -1,4 +1,4 @@
-import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as http from 'node:http';
 import type { AddressInfo } from 'node:net';
 
@@ -37,7 +37,7 @@ describe('mcpEndpoint auth gate', () => {
         baseUrl = `http://127.0.0.1:${listening.port}`;
     });
 
-    afterAll(() => {
+    afterEach(() => {
         server?.close();
     });
 

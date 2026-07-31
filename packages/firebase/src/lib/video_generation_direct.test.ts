@@ -5,11 +5,12 @@ import { FUNCTION_INTELLIGENCE_MODELS } from '../config/models';
 import { normalizeVeoDuration, resolveVeoModel } from './video';
 import { decodeInlineVideoSeedImage, parseOwnedVideoSeedUri, generateVideoDirect } from './video_generation_direct';
 
-vi.mock('firebase-admin', () => {
+vi.mock('firebase-admin', async (importOriginal) => {
+    const actual = await importOriginal() as any;
     const setMock = vi.fn().mockResolvedValue(undefined);
     const docMock = vi.fn(() => ({ set: setMock }));
     const collectionMock = vi.fn(() => ({ doc: docMock }));
-    const runTransactionMock = vi.fn(async (cb) => cb({ get: vi.fn(), set: vi.fn() }));
+    const runTransactionMock = vi.fn(async (cb: any) => cb({ get: vi.fn(), set: vi.fn() }));
     const firestoreMock = vi.fn(() => ({ collection: collectionMock, doc: docMock, runTransaction: runTransactionMock }));
     const firestoreObj = Object.assign(firestoreMock, {
         FieldValue: { serverTimestamp: vi.fn() },
@@ -26,12 +27,9 @@ vi.mock('firebase-admin', () => {
     }));
     
     return {
+        ...actual,
         firestore: firestoreObj,
         storage: storageMock,
-        default: {
-            firestore: firestoreObj,
-            storage: storageMock,
-        },
     };
 });
 
