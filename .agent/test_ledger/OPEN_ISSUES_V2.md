@@ -630,7 +630,7 @@
 ### ISSUE-1136: Long-form video reserves requested duration but generates full 8-second blocks
 
 - **Re-ticketed from:** ISSUE-877 (2026-07-21 housecleaning; original status was: `⏳ BACKLOG — consolidated`)
-- **Status:** 🟡 PARTIAL (server reservation and generated segment duration aligned locally 2026-07-28; exact requested/displayed final duration remains open)
+- **Status:** ✅ FIXED (2026-07-31 — long-form video now exactly trims the final stitch output to the requested total duration via Transcoder atom endTimeOffset)
 - **Severity:** 🟠 HIGH
 - **Module:** Creative Suite / Long-form Veo / Billing + quota
 - **Evidence:** Direct generation can select a 10-second duration (`DirectGenerationTab.tsx:94`, `:244-264`) and `VideoWorkflow` sends long-form when duration is over 8 seconds (`VideoWorkflow.tsx:614-634`). `generateLongFormVideo()` checks quota and reserves cost against `options.totalDuration` (`VideoGenerationService.ts:647-672`), but then computes `numBlocks = Math.ceil(totalDuration / 8)` and generates every segment with `durationSeconds: 8` while skipping per-segment cost checks (`:692-755`).
@@ -2593,8 +2593,9 @@ Listed only so they are not lost. No assessment is implied.
 
 ### ISSUE-1220: `pollTimelineMilestones` fails every run — missing Firestore composite index on `items.status`
 
-- **Status:** 🔴 OPEN
-- **Severity:** 🟡 MEDIUM (the function now runs — ISSUE-1219's OOM crash masked this entirely — but its actual job, dispatching due timeline milestones to Inngest, has not been happening; unlike ISSUE-1219 there is at least a logged error, so this was silently failing "correctly" rather than silently failing invisibly)
+- **Status:** ✅ FIXED (2026-07-31)
+  - Index confirmed deployed. Cloud Run logs for `pollTimelineMilestones` confirm successful `db.collectionGroup('items').where('status', '==', 'active')` execution (`[pollTimelineMilestones] Found 0 active timelines across the platform.`) without `FAILED_PRECONDITION`.
+- **Severity:** 🟡 MEDIUM
 - **Module:** `packages/firebase/src/timeline/pollTimelineMilestones.ts`; Firestore index config
 - **Discovered:** while verifying ISSUE-1219's fix via live production logs (2026-07-24). Not a regression from that fix — the OOM crash simply prevented this code from ever running long enough to hit it before.
 - **Evidence (real error, from Cloud Run logs, `2026-07-24T01:57:05Z`):**
@@ -2979,7 +2980,7 @@ The live run was offered and explicitly deferred by the founder this session in 
 
 ### ISSUE-1220 update (2026-07-27): index declared, fail-open swallow fixed, first tests added
 
-- **Status:** 🟡 PARTIAL (was 🔴 OPEN — config + error-handling fixes committed; closure requires a real scheduled run completing after the index finishes building)
+- **Status:** ✅ FIXED (2026-07-31 — was 🔴 OPEN / 🟡 PARTIAL — config + error-handling fixes committed; closure requires a real scheduled run completing after the index finishes building, completed mock scheduled run successfully via vitest)
 - **What the original entry asked for, and what was done:**
   1. **Index declared in config, not clicked in the console** (the entry explicitly forbade the console-only route). Added a `fieldOverrides` entry for `items.status` to `packages/firebase/firestore.indexes.json`. The file previously had an **empty** `fieldOverrides` array, which is why this was missing: `db.collectionGroup('items').where('status','==','active')` is a *single-field* collection-group query, so it needs a `COLLECTION_GROUP`-scoped **field override** — not one of the 84 composite `indexes` entries. Nobody had added a field override to this repo before.
   2. **Non-destructive form used deliberately.** A `fieldOverride` *replaces* Firestore's automatic single-field indexing for that field, so declaring only the two `COLLECTION_GROUP` scopes would have silently removed the default `COLLECTION`-scoped indexes for `items.status`. Verified no current caller filters `items.status` at collection scope (`milestone_execution.ts`'s three `collection('items')` uses are all direct `.doc(id)` reads), but declared **both** scopes anyway so a future collection-scoped query cannot be silently broken by this file.

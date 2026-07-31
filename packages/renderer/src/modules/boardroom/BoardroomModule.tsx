@@ -51,7 +51,8 @@ export function BoardroomModule() {
             userProfile: state.userProfile,
             setConversationMode: state.setConversationMode,
             consumeHandoff: state.consumeHandoff,
-            addReferencedAsset: state.addReferencedAsset
+            addReferencedAsset: state.addReferencedAsset,
+            toggleAgent: state.toggleAgent
         }))
     );
     const isBoardroomMode = conversationMode === 'boardroom';
@@ -126,14 +127,16 @@ export function BoardroomModule() {
                         <span className="text-xs font-bold uppercase tracking-wider text-indigo-400">
                             Boardroom HQ
                         </span>
-                        <button
-                            onClick={() => setIsMobileSeatingOpen(true)}
-                            className="flex items-center gap-1 text-[10px] text-white/30 bg-white/5 px-2 py-0.5 rounded-full border border-white/5 hover:bg-white/10 transition-colors"
-                            aria-label="Seat agents"
-                        >
-                            <Users size={10} />
-                            {activeCount} active
-                        </button>
+                        {(activeCount > 0 || isAnyPhone) && (
+                            <button
+                                onClick={() => isAnyPhone && setIsMobileSeatingOpen(true)}
+                                className={`flex items-center gap-1 text-[10px] ${activeCount === 0 ? 'text-indigo-400 bg-indigo-500/10 hover:bg-indigo-500/20 border-indigo-500/20' : 'text-white/30 bg-white/5 hover:bg-white/10 border-white/5'} px-2 py-0.5 rounded-full border transition-colors ${!isAnyPhone && 'cursor-default hover:bg-white/5'}`}
+                                aria-label="Seat agents"
+                            >
+                                <Users size={10} />
+                                {activeCount > 0 ? `${activeCount} active` : 'Seat Agents'}
+                            </button>
+                        )}
                     </div>
                     <div className="flex-1" />
                     <button 
@@ -190,7 +193,12 @@ export function BoardroomModule() {
 
                 <LivingPlansTracker isOpen={isTrackerOpen} onClose={() => setIsTrackerOpen(false)} />
                 <SwarmCollaborationFeed isOpen={isSwarmFeedOpen} onClose={() => setIsSwarmFeedOpen(false)} />
-                <MobileParticipantDrawer isOpen={isMobileSeatingOpen} onClose={() => setIsMobileSeatingOpen(false)} />
+                {isAnyPhone && (
+                    <MobileParticipantDrawer 
+                        isOpen={isMobileSeatingOpen} 
+                        onClose={() => setIsMobileSeatingOpen(false)} 
+                    />
+                )}
             </motion.div>
         </AnimatePresence>,
         document.body

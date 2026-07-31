@@ -155,7 +155,7 @@ export function BoardroomConversationPanel({ messages }: BoardroomConversationPa
                             </TextEffect>
                         ) : (
                             <TextEffect preset="fade" delay={0.5} className="text-xs text-white/20 mt-1 max-w-[240px]">
-                                Tap '0 active' above to seat agents and start the session.
+                                Tap 'Seat Agents' above to select participants and start.
                             </TextEffect>
                         )
                     ) : (
