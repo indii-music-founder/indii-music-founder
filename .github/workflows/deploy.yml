@@ -208,6 +208,9 @@ jobs:
         continue-on-error: true
         run: npm audit --audit-level=high
 
+      - name: Build shared package
+        run: npx tsc -b packages/shared
+
       - name: Run linting checks
         run: npm run lint
 
