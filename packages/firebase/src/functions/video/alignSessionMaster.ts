@@ -143,7 +143,7 @@ export function createAlignSessionMasterHandler(
 
             const updatedAlignment: MasterSyncAlignment = {
                 ...existing,
-                anchors: [
+                anchors: ([
                     ...existing.anchors,
                     {
                         videoUs: manualOverride.videoUs,
@@ -151,7 +151,7 @@ export function createAlignSessionMasterHandler(
                         confidence: 1.0,
                         method: 'manual' as const,
                     },
-                ].sort((a, b) => a.videoUs - b.videoUs),
+                ] as MasterSyncAlignment['anchors']).sort((a, b) => a.videoUs - b.videoUs),
                 manualOverrides: updatedOverrides,
                 updatedAt: now,
             };
