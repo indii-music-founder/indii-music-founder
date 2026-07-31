@@ -94,6 +94,29 @@ enforces this.
 The fan-facing action already succeeded. Losing analytics is bad; failing a
 pre-save because analytics failed is worse.
 
+**I11. Adding a file to `packages/shared/src/` means committing its build
+output too.**
+`packages/shared/dist/` is listed in `.gitignore`, but the whole emitted tree
+is tracked anyway — force-added historically, test artifacts included. This
+matters because `npm run build` is `preflight:prod && electron-vite build`: it
+never runs `tsc -b`, so Vite consumes the **committed** `dist`, not a fresh
+one. Only `npm run typecheck` rebuilds it, which is why a green typecheck can
+sit alongside a red build.
+
+After adding a schema:
+
+```bash
+rm -f packages/shared/tsconfig.tsbuildinfo   # stale state will claim "up to date"
+npx tsc -b packages/shared --force
+git add -f packages/shared/dist/index.js packages/shared/dist/index.d.ts \
+           packages/shared/dist/index.d.ts.map \
+           packages/shared/dist/schemas/<name>.*
+```
+
+Committing the barrel without the schema file it references is what breaks the
+build — Rollup resolves `./schemas/<name>.js` from the tracked barrel and finds
+nothing. Verify with `npm run build:studio`, not `npm run typecheck`.
+
 ---
 
 ## Phase 1 — Finish the attribution spine
