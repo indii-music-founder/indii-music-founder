@@ -20,14 +20,30 @@
 
 import { logger } from 'firebase-functions/v2';
 
-import { clickhouseHost, clickhousePassword, clickhouseUsername } from '../config/secrets';
+import {
+    clickhouseHost, clickhousePassword, clickhouseUsername,
+    clickhouseWriterPassword, clickhouseWriterUsername,
+} from '../config/secrets';
 
 /** ClickHouse types permitted in bind parameters. */
-export type ClickHouseParamType = 'String' | 'UInt32' | 'Date' | 'DateTime';
+export type ClickHouseParamType = 'String' | 'UInt32' | 'Date' | 'DateTime' | 'Array(String)';
 
 export interface ClickHouseParam {
     type: ClickHouseParamType;
-    value: string | number;
+    value: string | number | readonly string[];
+}
+
+/**
+ * ClickHouse expects array parameters as a bracketed list of single-quoted
+ * literals — `['a','b']` — which is not JSON. Serializing with JSON.stringify
+ * produces double quotes and silently yields an empty match set.
+ */
+function serializeParam(param: ClickHouseParam): string {
+    if (Array.isArray(param.value)) {
+        const escaped = param.value.map(item => `'${String(item).replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'`);
+        return `[${escaped.join(',')}]`;
+    }
+    return String(param.value);
 }
 
 export class ClickHouseError extends Error {
@@ -95,7 +111,7 @@ export async function queryWarehouse<TRow>(
     });
 
     for (const [name, param] of Object.entries(params)) {
-        body.set(`param_${name}`, String(param.value));
+        body.set(`param_${name}`, serializeParam(param));
     }
 
     const response = await fetcher(`https://${host}:8443/`, {
@@ -120,5 +136,54 @@ export async function queryWarehouse<TRow>(
     return parsed.data ?? [];
 }
 
+/**
+ * Inserts rows using the INSERT-only writer role.
+ *
+ * JSONEachRow is used rather than VALUES so that column order is carried by
+ * each object's keys — a warehouse column added later cannot silently shift
+ * every value one position to the left.
+ *
+ * Callers must batch. See `conversionEventOutbox` for why single-row inserts
+ * are not an option with MergeTree.
+ *
+ * @param table Fully-qualified target, e.g. `indii_analytics.omnichannel_events`.
+ * @param rows  Already-validated, warehouse-shaped rows.
+ */
+export async function insertWarehouseRows(
+    table: string,
+    rows: ReadonlyArray<Record<string, unknown>>,
+    fetcher: WarehouseFetch = fetch,
+): Promise<void> {
+    if (rows.length === 0) return;
+
+    const host = readSecret('CLICKHOUSE_HOST', clickhouseHost);
+    const username = readSecret('CLICKHOUSE_WRITER_USERNAME', clickhouseWriterUsername);
+    const password = readSecret('CLICKHOUSE_WRITER_PASSWORD', clickhouseWriterPassword);
+
+    const url = new URL(`https://${host}:8443/`);
+    url.searchParams.set('query', `INSERT INTO ${table} FORMAT JSONEachRow`);
+
+    const response = await fetcher(url.toString(), {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-ndjson',
+            'X-ClickHouse-User': username,
+            'X-ClickHouse-Key': password,
+        },
+        body: rows.map(row => JSON.stringify(row)).join('\n'),
+    });
+
+    if (!response.ok) {
+        const detail = await response.text().catch(() => '');
+        logger.error('[clickhouseClient] Insert failed', {
+            table, rowCount: rows.length, status: response.status, detail: detail.slice(0, 2000),
+        });
+        throw new ClickHouseError('QUERY_FAILED', `Warehouse insert failed with HTTP ${response.status}.`);
+    }
+}
+
 /** Secrets every function issuing warehouse reads must declare. */
 export const WAREHOUSE_SECRETS = [clickhouseHost, clickhouseUsername, clickhousePassword];
+
+/** Secrets the outbox flusher must declare — host plus the INSERT-only role. */
+export const WAREHOUSE_WRITER_SECRETS = [clickhouseHost, clickhouseWriterUsername, clickhouseWriterPassword];

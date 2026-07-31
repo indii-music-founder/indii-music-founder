@@ -43,9 +43,18 @@ CREATE TABLE IF NOT EXISTS indii_analytics.omnichannel_events
     -- Untyped passthrough for platform-specific fields. Query with JSONExtract.
     raw_metadata            String DEFAULT '{}'
 )
-ENGINE = MergeTree()
+-- ReplacingMergeTree, not MergeTree: the outbox flusher is at-least-once, so a
+-- crash between "insert succeeded" and "mark flushed" re-sends a batch. Keying
+-- on event_id lets the engine collapse those on merge.
+--
+-- This is a backstop, NOT the primary defence. Merges are asynchronous, and a
+-- materialized view fires per insert block — before any dedup — so a duplicate
+-- that reaches this table double-counts in daily_ad_performance_mv forever.
+-- flushConversionEvents therefore filters already-present event_ids *before*
+-- inserting. Both layers are load-bearing.
+ENGINE = ReplacingMergeTree()
 PARTITION BY toYYYYMM(event_time)
-ORDER BY (artist_id, event_time, platform)
+ORDER BY (artist_id, event_time, platform, event_id)
 TTL toDateTime(event_time) + INTERVAL 2 YEAR;
 
 -- ── Daily ad rollup ─────────────────────────────────────────────────────────

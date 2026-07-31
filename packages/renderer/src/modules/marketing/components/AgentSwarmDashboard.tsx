@@ -33,12 +33,13 @@ const currency = new Intl.NumberFormat('en-US', { style: 'currency', currency: '
 
 const AgentSwarmDashboard: React.FC = () => {
     const {
-        agentLogs, campaignMetrics, isSwarmActive,
+        agentLogs, campaignMetrics, revenueVisibility, isSwarmActive,
         swarmMetricsLoading, swarmMetricsError, swarmLogsError, swarmStatusError,
         subscribeAgentLogs, fetchCampaignMetrics, loadSwarmStatus, toggleSwarmStatus,
     } = useStore(useShallow(state => ({
         agentLogs: state.agentLogs,
         campaignMetrics: state.campaignMetrics,
+        revenueVisibility: state.revenueVisibility,
         isSwarmActive: state.isSwarmActive,
         swarmMetricsLoading: state.swarmMetricsLoading,
         swarmMetricsError: state.swarmMetricsError,
@@ -63,11 +64,29 @@ const AgentSwarmDashboard: React.FC = () => {
         (acc, row) => ({
             spend: acc.spend + row.total_spend,
             revenue: acc.revenue + row.total_revenue,
-            conversions: acc.conversions + row.total_conversions,
+            linkClicks: acc.linkClicks + row.link_clicks,
+            dspRedirects: acc.dspRedirects + row.dsp_redirects,
+            presaves: acc.presaves + row.presaves,
         }),
-        { spend: 0, revenue: 0, conversions: 0 },
+        { spend: 0, revenue: 0, linkClicks: 0, dspRedirects: 0, presaves: 0 },
     );
+
+    /**
+     * Cost per outcome, not ROAS.
+     *
+     * For an artist with no connected store there is no attributable revenue —
+     * streams can't be tied to a click and royalties land months later
+     * unlinked. A ROAS tile would read 0.00x however well the ads performed,
+     * which is worse than not showing it. When a store *is* connected, revenue
+     * is real and ROAS appears.
+     */
+    const showRoas = revenueVisibility === 'measurable';
     const roas = totals.spend > 0 ? totals.revenue / totals.spend : null;
+    const costPer = (count: number) => (count > 0 && totals.spend > 0 ? totals.spend / count : null);
+    const costPerFan = costPer(totals.dspRedirects);
+    const costPerPresave = costPer(totals.presaves);
+
+    const formatCostPer = (value: number | null) => (value === null ? '—' : currency.format(value));
 
     return (
         <div className="h-full overflow-y-auto p-6 space-y-6">
@@ -110,10 +129,37 @@ const AgentSwarmDashboard: React.FC = () => {
             {/* Rollup stats */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 <StatTile label="Ad Spend" value={currency.format(totals.spend)} />
-                <StatTile label="Revenue" value={currency.format(totals.revenue)} />
-                <StatTile label="Conversions" value={totals.conversions.toLocaleString('en-US')} />
-                <StatTile label="ROAS" value={roas === null ? '—' : `${roas.toFixed(2)}x`} />
+                <StatTile
+                    label="Listeners Reached"
+                    value={totals.dspRedirects.toLocaleString('en-US')}
+                    hint="Fans who picked a streaming service and left"
+                />
+                <StatTile
+                    label="Cost / Listener"
+                    value={formatCostPer(costPerFan)}
+                    hint="Ad spend divided by fans sent to a DSP"
+                />
+                {showRoas ? (
+                    <StatTile
+                        label="ROAS"
+                        value={roas === null ? '—' : `${roas.toFixed(2)}x`}
+                        hint="Store revenue per dollar of ad spend"
+                    />
+                ) : (
+                    <StatTile
+                        label="Cost / Pre-Save"
+                        value={formatCostPer(costPerPresave)}
+                        hint="Connect a store to see ROAS"
+                    />
+                )}
             </div>
+
+            {!showRoas && totals.spend > 0 && (
+                <p className="text-[11px] text-gray-600 -mt-3">
+                    Revenue isn&apos;t shown because streams can&apos;t be attributed to an ad click and royalties
+                    arrive months later unlinked. Connect a store to measure ROAS directly.
+                </p>
+            )}
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Performance chart */}
@@ -162,16 +208,30 @@ const AgentSwarmDashboard: React.FC = () => {
                                             borderRadius: '0.5rem',
                                             fontSize: '12px',
                                         }}
-                                        formatter={(value: number) => currency.format(value)}
+                                        formatter={(value: number, name: string) => (
+                                            name === 'Ad Spend' || name === 'Revenue'
+                                                ? currency.format(value)
+                                                : value.toLocaleString('en-US')
+                                        )}
                                     />
                                     <Line
                                         yAxisId="left" type="monotone" dataKey="total_spend"
                                         stroke="#3b82f6" strokeWidth={2} dot={false} name="Ad Spend"
                                     />
-                                    <Line
-                                        yAxisId="right" type="monotone" dataKey="total_revenue"
-                                        stroke="#10b981" strokeWidth={2} dot={false} name="Revenue"
-                                    />
+                                    {/* Against spend, plot whichever outcome is actually
+                                        measurable for this artist. Charting a flat-zero
+                                        revenue line would read as "the ads failed". */}
+                                    {showRoas ? (
+                                        <Line
+                                            yAxisId="right" type="monotone" dataKey="total_revenue"
+                                            stroke="#10b981" strokeWidth={2} dot={false} name="Revenue"
+                                        />
+                                    ) : (
+                                        <Line
+                                            yAxisId="right" type="monotone" dataKey="dsp_redirects"
+                                            stroke="#10b981" strokeWidth={2} dot={false} name="Listeners Reached"
+                                        />
+                                    )}
                                 </LineChart>
                             </ResponsiveContainer>
                         )}
@@ -224,10 +284,11 @@ const AgentSwarmDashboard: React.FC = () => {
     );
 };
 
-const StatTile: React.FC<{ label: string; value: string }> = ({ label, value }) => (
+const StatTile: React.FC<{ label: string; value: string; hint?: string }> = ({ label, value, hint }) => (
     <div className="bg-white/[0.03] border border-white/5 rounded-xl p-4">
         <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider">{label}</p>
         <p className="text-lg font-bold text-white mt-1">{value}</p>
+        {hint && <p className="text-[10px] text-gray-600 mt-0.5 leading-tight">{hint}</p>}
     </div>
 );
 

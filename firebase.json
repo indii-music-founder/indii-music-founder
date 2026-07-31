@@ -92,6 +92,10 @@
       ],
       "rewrites": [
         {
+          "function": "smartLinkRedirect",
+          "source": "/l/**"
+        },
+        {
           "destination": "/index.html",
           "source": "**"
         }

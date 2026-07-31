@@ -204,13 +204,21 @@ export const twitterClientSecret = defineSecret("TWITTER_CLIENT_SECRET");
 // it is infrastructure-minted and rotates with the cluster. Nothing in the
 // renderer holds it — reads go through marketingGetCampaignMetrics.
 //
+// Two roles, deliberately separate. The API that serves artist-facing metrics
+// can only read; only the outbox flusher can write. A bug in a query path must
+// not be able to mutate the event history the optimizer trusts.
+//
 // Required secrets in GCP Secret Manager:
-//   - CLICKHOUSE_HOST      (hostname only, no scheme — e.g. abc.clickhouse.cloud)
-//   - CLICKHOUSE_USERNAME  (read-only role used by the API)
+//   - CLICKHOUSE_HOST             (hostname only, no scheme — e.g. abc.clickhouse.cloud)
+//   - CLICKHOUSE_USERNAME         (read-only role, used by marketingGetCampaignMetrics)
 //   - CLICKHOUSE_PASSWORD
+//   - CLICKHOUSE_WRITER_USERNAME  (INSERT-only role, used by flushConversionEvents)
+//   - CLICKHOUSE_WRITER_PASSWORD
 export const clickhouseHost = defineSecret("CLICKHOUSE_HOST");
 export const clickhouseUsername = defineSecret("CLICKHOUSE_USERNAME");
 export const clickhousePassword = defineSecret("CLICKHOUSE_PASSWORD");
+export const clickhouseWriterUsername = defineSecret("CLICKHOUSE_WRITER_USERNAME");
+export const clickhouseWriterPassword = defineSecret("CLICKHOUSE_WRITER_PASSWORD");
 
 export const printfulApiKey = defineSecret("PRINTFUL_API_KEY");
 

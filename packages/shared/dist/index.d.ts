@@ -12,6 +12,7 @@ export * from './schemas/approvalReceipt.js';
 export * from './schemas/derivativeHandoff.js';
 export * from './schemas/artistOperatingProfile.js';
 export * from './schemas/knowledge.js';
+export * from './schemas/conversionEvent.js';
 export * from './types/ai.dto.js';
 export * from './types/errors.js';
 export * from './types/founderFunnel.js';

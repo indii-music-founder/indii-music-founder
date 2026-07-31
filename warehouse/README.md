@@ -16,6 +16,19 @@ Spotify / TikTok / Meta / Shopify
                                   Swarm Command Center (ROAS chart)
 ```
 
+## How events get in
+
+Two paths, deliberately different:
+
+| Source | Path | Why |
+| --- | --- | --- |
+| Our own observations (clicks, pre-saves, sales) | Cloud Function → Firestore outbox → batched flush | Latency-critical and must survive warehouse downtime |
+| Platform volume (streams, ad spend) | Airbyte → dbt → warehouse | Bulk, scheduled, no request path involved |
+
+The outbox exists because MergeTree creates a data part per INSERT — per-event
+writes cause part explosion and eventually `TOO_MANY_PARTS`. See
+`packages/firebase/src/marketing/conversionEventOutbox.ts`.
+
 ## Layout
 
 | Path | Purpose |

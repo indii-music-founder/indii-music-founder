@@ -1918,6 +1918,34 @@ service cloud.firestore {
     // campaigns) await processors per ISSUE-1100.
 
     // =========================================================================
+    // Attribution spine — smart links and the conversion event outbox
+    // =========================================================================
+
+    // Smart links resolve to a redirect destination. The artist manages their
+    // own; the public never reads this collection, because the redirect
+    // function resolves slugs with the Admin SDK.
+    //
+    // artistId is immutable after creation: allowing it to change would let one
+    // artist reassign a link — and every conversion attributed through it — to
+    // another account.
+    match /smartLinks/{slug} {
+      allow read: if isAuthenticated() && resource.data.get('artistId', '') == request.auth.uid;
+      allow create: if isAuthenticated() && request.resource.data.get('artistId', '') == request.auth.uid;
+      allow update: if isAuthenticated()
+        && resource.data.get('artistId', '') == request.auth.uid
+        && request.resource.data.get('artistId', '') == resource.data.get('artistId', '');
+      allow delete: if isAuthenticated() && resource.data.get('artistId', '') == request.auth.uid;
+    }
+
+    // Conversion events are the evidence the optimizer spends money on. A
+    // client that could write here could manufacture conversions and steer an
+    // artist's budget; a client that could read here would see every other
+    // artist's fan activity. Server-only, both directions.
+    match /conversionEventOutbox/{eventId} {
+      allow read, write: if false;
+    }
+
+    // =========================================================================
     // Deny all other access by default
     // =========================================================================
     match /{document=**} {

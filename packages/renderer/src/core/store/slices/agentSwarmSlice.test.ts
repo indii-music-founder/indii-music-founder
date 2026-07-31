@@ -119,20 +119,37 @@ describe('loadSwarmStatus', () => {
 });
 
 describe('fetchCampaignMetrics', () => {
+    const row = (date: string) => ({
+        date, total_spend: 50, total_revenue: 120, total_clicks: 90,
+        total_conversions: 4, link_clicks: 80, dsp_redirects: 60, presaves: 12,
+    });
+
     it('stores the returned series', async () => {
-        const metrics = [{ date: '2026-07-28', total_spend: 50, total_revenue: 120, total_clicks: 90, total_conversions: 4 }];
-        callable.mockResolvedValue({ data: { ok: true, metrics } });
+        const metrics = [row('2026-07-28')];
+        callable.mockResolvedValue({ data: { ok: true, metrics, revenueVisibility: 'measurable' } });
         const holder = makeSlice();
 
         await holder.state.fetchCampaignMetrics(7);
 
         expect(callable).toHaveBeenCalledWith({ rangeDays: 7 });
         expect(holder.state.campaignMetrics).toEqual(metrics);
+        expect(holder.state.revenueVisibility).toBe('measurable');
         expect(holder.state.swarmMetricsLoading).toBe(false);
     });
 
+    it('defaults to no_revenue_source when the backend omits visibility', async () => {
+        // Never assume revenue is measurable — that is what puts a misleading
+        // 0.00x ROAS in front of an artist.
+        callable.mockResolvedValue({ data: { ok: true, metrics: [row('2026-07-28')] } });
+        const holder = makeSlice();
+
+        await holder.state.fetchCampaignMetrics();
+
+        expect(holder.state.revenueVisibility).toBe('no_revenue_source');
+    });
+
     it('clears the series on failure rather than showing stale spend', async () => {
-        callable.mockResolvedValue({ data: { ok: true, metrics: [{ date: '2026-07-01', total_spend: 10, total_revenue: 20, total_clicks: 5, total_conversions: 1 }] } });
+        callable.mockResolvedValue({ data: { ok: true, metrics: [row('2026-07-01')], revenueVisibility: 'measurable' } });
         const holder = makeSlice();
         await holder.state.fetchCampaignMetrics();
 

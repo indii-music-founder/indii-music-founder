@@ -47,11 +47,26 @@ export interface CampaignMetrics {
     total_revenue: number;
     total_clicks: number;
     total_conversions: number;
+    /** Fans who reached our own redirect — observed by us, not reported by Meta. */
+    link_clicks: number;
+    dsp_redirects: number;
+    presaves: number;
 }
+
+/**
+ * Whether this artist has any attributable revenue.
+ *
+ * Streams are not attributable to an ad click and royalties arrive months
+ * later unlinked, so for most artists revenue is structurally unobservable.
+ * The dashboard shows cost-per-outcome instead of a ROAS that would read
+ * 0.00x no matter how well the campaign performed.
+ */
+export type RevenueVisibility = 'measurable' | 'no_revenue_source';
 
 export interface AgentSwarmSlice {
     agentLogs: AgentActionLog[];
     campaignMetrics: CampaignMetrics[];
+    revenueVisibility: RevenueVisibility;
     isSwarmActive: boolean;
 
     /** Non-null while the metrics request is in flight. */
@@ -131,6 +146,9 @@ function errorMessage(error: unknown, fallback: string): string {
 export const createAgentSwarmSlice: StateCreator<AgentSwarmSlice> = (set, get) => ({
     agentLogs: [],
     campaignMetrics: [],
+    // Assume unmeasurable until the warehouse says otherwise — the honest
+    // default, and it keeps a misleading 0.00x ROAS off the first paint.
+    revenueVisibility: 'no_revenue_source',
     isSwarmActive: true,
     swarmMetricsLoading: false,
     swarmMetricsError: null,
@@ -176,12 +194,13 @@ export const createAgentSwarmSlice: StateCreator<AgentSwarmSlice> = (set, get) =
         try {
             const getMetrics = httpsCallable<
                 { rangeDays: number },
-                { ok: boolean; metrics: CampaignMetrics[] }
+                { ok: boolean; metrics: CampaignMetrics[]; revenueVisibility: RevenueVisibility }
             >(functions, 'marketingGetCampaignMetrics');
 
             const response = await getMetrics({ rangeDays });
             set({
                 campaignMetrics: response.data?.metrics ?? [],
+                revenueVisibility: response.data?.revenueVisibility ?? 'no_revenue_source',
                 swarmMetricsLoading: false,
             });
         } catch (error) {
