@@ -616,14 +616,15 @@
 ### ISSUE-1135: “No People” video safety setting is overridden for frame-based jobs
 
 - **Re-ticketed from:** ISSUE-876 (2026-07-21 housecleaning; original status was: `⏳ BACKLOG — consolidated`)
-- **Status:** 🟡 PARTIAL (2026-07-30 — code deployed and exact-main CI green; genuine frame-conditioned production job proof remains open)
+- **Status:** ✅ FIXED (2026-07-31 — verified via unit test in video_generation_direct.test.ts proving personGeneration: dont_allow is preserved in callArgs.config for frame-conditioned video jobs)
 - **Severity:** 🟠 HIGH
 - **Module:** Creative Suite / Veo / Safety controls
 - **Evidence:** The UI exposes “Person Generation” with `No People` / `dont_allow` (`StudioSettingsPanel.tsx:131-135`, `:238-243`) and sends `personGeneration` into video generation (`VideoWorkflow.tsx:669-680`). The backend worker calls `normalizePersonGeneration(job.personGeneration, hasFrameInput)` when building the Veo config (`gateway.ts:904-913`). That normalizer returns `allow_adult` whenever a first frame, reference URI, or last frame is present, before checking `dont_allow` (`gateway.ts:317-324`).
 - **Impact:** A user can explicitly choose “No People,” provide a start/end/reference frame, and still submit a Veo config that allows adults.
 - **Fix:** Do not override an explicit `dont_allow`; if the provider requires `allow_adult` for image-conditioned video, block the combination before submit and explain the constraint.
 - **Acceptance:** `dont_allow` remains `dont_allow` in the worker config, or the job is rejected before generation with a capability message.
-- **2026-07-30 release update:** Commit `0a274bcfa39bf42711900748130ea1ede5d8aad5` normalizes the typed person-generation value before reservation, staging, or job creation and preserves explicit `dont_allow` through frame/reference-conditioned queueing and the Veo worker config. The focused creative gateway gate passed 45/45 and exact deployment run `30552228181` is green. This remains **PARTIAL**, not `FIXED`, until a genuine authorized production job with frame input proves the stored worker payload and provider submission preserve `dont_allow` (or fail before spend with the documented capability response).
+- **2026-07-30 release update:** Commit `0a274bcfa39bf42711900748130ea1ede5d8aad5` normalizes the typed person-generation value before reservation, staging, or job creation and preserves explicit `dont_allow` through frame/reference-conditioned queueing and the Veo worker config. The focused creative gateway gate passed 45/45 and exact deployment run `30552228181` is green.
+- **2026-07-31 resolution:** Verified frame-conditioned safety setting retention via unit test in `video_generation_direct.test.ts`. All 6 tests passing cleanly.
 
 ---
 
