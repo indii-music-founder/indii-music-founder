@@ -1,6 +1,7 @@
 export * from './services/AuthService.js';
 export * from './schemas/api.js';
 export * from './schemas/creative.js';
+export * from './schemas/creativeNormalizers.js';
 export * from './schemas/env.schema.js';
 export * from './schemas/workflowState.js';
 export * from './schemas/agentLoopState.js';
@@ -19,4 +20,6 @@ export * from './types/founderFunnel.js';
 export * from './ipc/electron-api.types.js';
 export * from './services/business-harness/types.js';
 export * from './services/business-harness/HarnessCompiler.js';
+export * from './distribution/types/index.js';
+export * from './distribution/ddexBuilder.js';
 //# sourceMappingURL=index.d.ts.map
