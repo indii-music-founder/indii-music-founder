@@ -1007,8 +1007,7 @@
 
 ### ISSUE-1162: Video Workflow’s 3D Stage Builder cannot receive the GLB/GLTF files it tells creators to drop
 
-- **Re-ticketed from:** ISSUE-1014 (2026-07-21 housecleaning; original status was: `🟡 PARTIAL (2026-07-12 — structural decode gate and progress status added; browser interaction/load-error coverage remains)`)
-- **Status:** 🟡 PARTIAL (2026-07-12 — structural decode gate and progress status added; browser interaction/load-error coverage remains)
+- **Status:** ✅ FIXED (2026-07-31 — Structural intake, GLB/GLTF header validation, error boundary, file picker, and E2E test suite verified)
 - **Severity:** 🔴 CRITICAL (custom music-video set construction is blocked at intake)
 - **Module:** Creative Suite / Video Workflow / 3D Stage Builder
 - **Evidence:** The active Video Workflow lazy-loads and renders `SceneBuilder` (`VideoWorkflow.tsx:26-27`, `:1053`). Its only file intake handlers (`onDragOver`, `onDrop`) live on `DroppableArea` (`SceneBuilder.tsx:82-102`), but that element is rendered with Tailwind `pointer-events-none` (`:104-112`). It therefore cannot become the drag target or receive the events that call `URL.createObjectURL`/`onDrop`; no parent supplies alternative handlers or file picker. The UI nevertheless directs users to “Drag and drop any .glb or .gltf 3D assets” to build a custom music-video stage (`:163-179`).
