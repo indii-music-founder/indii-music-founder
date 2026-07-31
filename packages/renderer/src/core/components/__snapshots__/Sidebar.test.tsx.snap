@@ -95,7 +95,7 @@ exports[`Sidebar > matches snapshot in collapsed state 1`] = `
   >
     <button
       aria-label="Founders"
-      class="w-full flex items-center justify-center p-2 rounded-lg transition-all text-xs font-mono tracking-wider text-gray-600 hover:text-gray-400 hover:bg-white/5"
+      class="w-full flex items-center justify-center p-2 rounded-lg transition-all text-xs font-mono tracking-wider text-gray-400 hover:text-gray-300 hover:bg-white/5"
       title="View Founder Recognition"
     >
       ⭐
@@ -662,7 +662,7 @@ exports[`Sidebar > matches snapshot in expanded state 1`] = `
   >
     <button
       aria-label="Founders"
-      class="w-full flex items-center justify-center p-2 rounded-lg transition-all text-xs font-mono tracking-wider text-gray-600 hover:text-gray-400 hover:bg-white/5"
+      class="w-full flex items-center justify-center p-2 rounded-lg transition-all text-xs font-mono tracking-wider text-gray-400 hover:text-gray-300 hover:bg-white/5"
       title="View Founder Recognition"
     >
       Founders
