@@ -1,13 +1,15 @@
 -- ClickHouse Schema for Indii.music Growth Intelligence
+-- High-throughput, real-time analytics for music performance and paid acquisition ROI
 
 -- 1. Create the overarching Analytics Database
 CREATE DATABASE IF NOT EXISTS indii_analytics;
 
 -- 2. Create the unified Omnichannel Events Table
+-- LowCardinality strings optimize dictionary compression and memory footprint for recurring string tokens
 CREATE TABLE IF NOT EXISTS indii_analytics.omnichannel_events (
     event_id UUID DEFAULT generateUUIDv4(),
     artist_id String,
-    platform LowCardinality(String), -- 'spotify', 'tiktok', 'facebook_ads'
+    platform LowCardinality(String), -- 'spotify', 'tiktok', 'facebook_ads', 'shopify'
     event_type LowCardinality(String), -- 'stream', 'ad_click', 'sale'
     event_time DateTime64(3, 'UTC'),
     revenue Decimal(18,4) DEFAULT 0.0000,
@@ -25,6 +27,8 @@ ORDER BY (artist_id, event_time, platform)
 TTL event_time + INTERVAL 2 YEAR;
 
 -- 3. Create a Materialized View for Daily Ad Performance
+-- SummingMergeTree automatically merges and sums non-key numeric columns (spend, revenue, clicks, conversions)
+-- when rows with identical ORDER BY keys are merged in background background tasks.
 CREATE MATERIALIZED VIEW IF NOT EXISTS indii_analytics.daily_ad_performance_mv
 ENGINE = SummingMergeTree()
 PARTITION BY toYYYYMM(date)

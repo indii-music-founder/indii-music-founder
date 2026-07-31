@@ -11,6 +11,7 @@ export interface AdCreativePayload {
   imageUrl?: string;
   videoUrl?: string;
   linkUrl: string;
+  pageId?: string;
 }
 
 /**
@@ -23,31 +24,49 @@ export async function pushAdCreative(
   payload: AdCreativePayload
 ) {
   try {
-    // 1. Fetch user's encrypted Meta token from Firestore
+    // Sanitize adAccountId (remove 'act_' prefix if provided)
+    const cleanAccountId = adAccountId.replace(/^act_/, '');
+
+    // 1. Fetch user's Meta token and pageId from Firestore
     const userDoc = await db.collection('users').doc(userId).collection('analyticsTokens').doc('meta').get();
     
     if (!userDoc.exists) {
       throw new Error('User has not connected a Meta account.');
     }
-    const { accessToken } = userDoc.data()!;
+    const userData = userDoc.data() || {};
+    const accessToken = userData.accessToken;
+    const pageId = payload.pageId || userData.pageId;
+
+    if (!accessToken) {
+      throw new Error('Meta access token missing.');
+    }
+    if (!pageId) {
+      throw new Error('Meta Page ID is missing from user configuration.');
+    }
 
     // 2. Step One: Upload the Image/Video Asset
     let imageHash: string | null = null;
     if (payload.imageUrl) {
-      const assetRes = await axios.post(`${FB_BASE_URL}/act_${adAccountId}/adimages`, null, {
+      const assetRes = await axios.post(`${FB_BASE_URL}/act_${cleanAccountId}/adimages`, null, {
         params: {
           image_url: payload.imageUrl,
           access_token: accessToken,
         },
       });
-      imageHash = assetRes.data.images[Object.keys(assetRes.data.images)[0]].hash;
+
+      const imagesObj = assetRes.data?.images || {};
+      const firstImageKey = Object.keys(imagesObj)[0];
+      if (!firstImageKey || !imagesObj[firstImageKey]?.hash) {
+        throw new Error('Failed to retrieve image hash from Meta API response.');
+      }
+      imageHash = imagesObj[firstImageKey].hash;
     }
 
     // 3. Step Two: Create the Ad Creative Concept
-    const creativeRes = await axios.post(`${FB_BASE_URL}/act_${adAccountId}/adcreatives`, {
+    const creativeRes = await axios.post(`${FB_BASE_URL}/act_${cleanAccountId}/adcreatives`, {
       name: payload.name,
       object_story_spec: {
-        page_id: '<ARTIST_PAGE_ID>', // Fetched from user config
+        page_id: pageId,
         link_data: {
           image_hash: imageHash,
           link: payload.linkUrl,
@@ -56,6 +75,10 @@ export async function pushAdCreative(
       },
       access_token: accessToken,
     });
+
+    if (!creativeRes.data?.id) {
+      throw new Error('Meta API did not return a valid creative ID.');
+    }
 
     // 4. Log the execution to indii's Timeline Audit Trail
     await db.collection('timelineExecutionLogs').add({

@@ -25,4 +25,18 @@ describe('VisionQC Tool', () => {
     expect(result.reason).toBe('Matches brand kit.');
     expect(AutonomousIntelligence.generateStructuredData).toHaveBeenCalled();
   });
+
+  it('handles evaluation errors gracefully and fails closed', async () => {
+    vi.mocked(AutonomousIntelligence.generateStructuredData).mockRejectedValueOnce(new Error('API Timeout'));
+
+    const mockBrandKit = {
+      primaryColors: ['#000000'],
+      forbiddenElements: [],
+      vibe: 'Minimal',
+    };
+
+    const result = await runCreativeVisionCheck('raw_base64_data', mockBrandKit);
+    expect(result.approved).toBe(false);
+    expect(result.reason).toContain('failed to execute');
+  });
 });

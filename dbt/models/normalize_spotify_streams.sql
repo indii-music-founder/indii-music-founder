@@ -1,10 +1,11 @@
-INSERT INTO indii_analytics.omnichannel_events 
-(event_id, artist_id, platform, event_type, event_time, listen_duration_seconds)
+-- dbt model: normalize_spotify_streams
+-- Transforms raw Airbyte Spotify streaming history into the unified omnichannel_events schema
+
 SELECT 
-    generateUUIDv4() as event_id,
-    '{{ var("artist_uid") }}' as artist_id,
-    'spotify' as platform,
-    'stream' as event_type,
-    toDateTime(played_at) as event_time,
-    duration_ms / 1000 as listen_duration_seconds
+    generateUUIDv4() AS event_id,
+    '{{ var("artist_uid", "default_artist") }}' AS artist_id,
+    'spotify' AS platform,
+    'stream' AS event_type,
+    toDateTime(played_at) AS event_time,
+    CAST(duration_ms AS Float64) / 1000.0 AS listen_duration_seconds
 FROM {{ source('airbyte_raw', 'spotify_stream_history') }}

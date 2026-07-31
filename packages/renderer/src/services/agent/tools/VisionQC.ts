@@ -38,9 +38,12 @@ export async function runCreativeVisionCheck(
   `;
 
   try {
+    // Strip data URI prefix if present (e.g. "data:image/jpeg;base64,")
+    const cleanBase64 = base64Image.replace(/^data:image\/[a-zA-Z]+;base64,/, '');
+
     const parts = [
       { text: prompt },
-      { inlineData: { data: base64Image, mimeType: 'image/jpeg' } }
+      { inlineData: { data: cleanBase64, mimeType: 'image/jpeg' } }
     ];
 
     const result = await AutonomousIntelligence.generateStructuredData<{ approved: boolean; reason: string }>(
