@@ -8,7 +8,6 @@ import {
   KNOWLEDGE_WORKER_VERSION,
   KNOWLEDGE_EMBEDDING_MODEL,
   KNOWLEDGE_EMBEDDING_DIMENSION,
-  type KnowledgeDocument,
   type KnowledgeIndexReceipt,
 } from '../../shared/knowledge';
 

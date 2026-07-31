@@ -101,9 +101,8 @@ export interface ElectronAPI {
     }>>;
     showNotification: (title: string, body: string) => void;
 
-    // System Info (Mobile Remote, Device Detection)
+    // System Info (Device Detection)
     system?: {
-        getMobileRemoteInfo?: () => Promise<{ localIp: string; port: number; passcode?: string } | null>;
     };
 
     // Filesystem (Electron IPC)

@@ -31,7 +31,7 @@ export const queryKnowledgeBase = onCall({ enforceAppCheck: true }, async (reque
   }
 
   const uid = request.auth.uid;
-  const { query, topK = 5, minSimilarity = 0.5 } = request.data || {};
+  const { query, topK = 5 } = request.data || {};
 
   if (!query || typeof query !== 'string' || query.trim().length === 0) {
     throw new HttpsError('invalid-argument', 'Query string must not be empty.');
@@ -52,8 +52,9 @@ export const queryKnowledgeBase = onCall({ enforceAppCheck: true }, async (reque
     if (queryEmbedding.length !== KNOWLEDGE_EMBEDDING_DIMENSION) {
       throw new Error(`Expected ${KNOWLEDGE_EMBEDDING_DIMENSION}-dim embedding, got ${queryEmbedding.length}.`);
     }
-  } catch (err: any) {
-    throw new HttpsError('internal', `Failed to generate query embedding: ${err.message || String(err)}`);
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : String(err);
+    throw new HttpsError('internal', `Failed to generate query embedding: ${errorMsg}`);
   }
 
   // 2. Query vector index on user-isolated collectionGroup / subcollection
@@ -65,8 +66,9 @@ export const queryKnowledgeBase = onCall({ enforceAppCheck: true }, async (reque
       limit: k,
       distanceMeasure: 'COSINE',
     }).get();
-  } catch (vectorErr: any) {
-    throw new HttpsError('internal', `Vector search query failed: ${vectorErr.message || String(vectorErr)}`);
+  } catch (vectorErr: unknown) {
+    const errorMsg = vectorErr instanceof Error ? vectorErr.message : String(vectorErr);
+    throw new HttpsError('internal', `Vector search query failed: ${errorMsg}`);
   }
 
   const citations: KnowledgeCitation[] = [];
@@ -118,7 +120,7 @@ Instructions:
     } else {
         answer = "I couldn't generate an answer from the provided documents.";
     }
-  } catch (genErr: any) {
+  } catch (genErr: unknown) {
     console.error("Gemini generation failed:", genErr);
     answer = "An error occurred while generating the answer from the documents.";
   }

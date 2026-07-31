@@ -34,6 +34,7 @@ const AudioAnalyzer: React.FC = () => {
     const [tags, setTags] = useState<string[]>([]);
 
     const [profile, setProfile] = useState<AudioIntelligenceProfile | null>(null);
+    const abortControllerRef = React.useRef<AbortController | null>(null);
 
     const startTour = () => {
         const driverObj = driver({
@@ -161,6 +162,8 @@ const AudioAnalyzer: React.FC = () => {
 
     const runAnalysis = async (audioFile: File | string) => {
         setIsAnalyzing(true);
+        abortControllerRef.current = new AbortController();
+        const signal = abortControllerRef.current.signal;
         // ISSUE-997: this is a heuristic estimate (RMS-derived loudness, unweighted
         // peak sample) — not a certified BS.1770 loudness/true-peak measurement.
         const extractToastId = toast.loading("Estimating technical & semantic audio profile...");
@@ -172,7 +175,7 @@ const AudioAnalyzer: React.FC = () => {
             if (window.electronAPI) {
                 // Desktop: local technical analysis plus a bounded FFmpeg proxy
                 // upload for semantic/energy-map Gemini calls.
-                resultProfile = await audioIntelligence.analyze(audioFile);
+                resultProfile = await audioIntelligence.analyze(audioFile, signal);
             } else {
                 // ISSUE-1152: a browser must never base64-encode and upload the
                 // raw master to Gemini. `audioIntelligence.analyze()` correctly
@@ -197,13 +200,13 @@ const AudioAnalyzer: React.FC = () => {
                 ]);
                 const masterFingerprint = await fingerprintService.generateFingerprint(audioFile);
                 toast.updateProgress(extractToastId, 20, 'Uploading canonical master…');
-                const masterAsset = await masterAudioService.persist(audioFile, { userId, masterFingerprint });
+                const masterAsset = await masterAudioService.persist(audioFile, { userId, masterFingerprint, signal });
                 toast.updateProgress(
                     extractToastId,
                     50,
                     'Waiting for the server analysis receipt — this can take a few minutes…',
                 );
-                resultProfile = await audioIntelligence.analyzeCanonicalMaster(masterAsset, userId);
+                resultProfile = await audioIntelligence.analyzeCanonicalMaster(masterAsset, userId, signal);
             }
 
             // Populate tags from the semantic output
@@ -222,6 +225,12 @@ const AudioAnalyzer: React.FC = () => {
         } catch (error: unknown) {
             logger.error("Deep Extraction Failed", error);
             toast.dismiss(extractToastId);
+            if (error instanceof DOMException && error.name === 'AbortError') {
+                toast.error("Analysis cancelled by user.");
+                setFile(null);
+                setAudioUrl(null);
+                return;
+            }
             // Surface the real reason (e.g. a receipt still processing, a
             // rejected legacy/oversized master, offline detection) instead of a
             // canned "connectivity issues" message that actively misrepresents
@@ -289,11 +298,22 @@ const AudioAnalyzer: React.FC = () => {
                                     </h2>
                                     <p className="text-sm text-muted-foreground mt-1">Upload an audio master to extract precise metadata via Intelligence-driven acoustic analysis.</p>
                                 </div>
-                                <label onClick={handleLoadClick} className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold px-6 py-3 rounded-xl cursor-pointer transition-all flex items-center gap-3 shadow-[0_0_15px_rgba(var(--primary),0.2)]">
-                                    {isAnalyzing ? <Loader2 className="animate-spin" size={18} /> : <Upload size={18} />}
-                                    {isAnalyzing ? "Deep Analysis Running..." : "Load Audio Master"}
-                                    <input type="file" accept={LOSSLESS_ACCEPT} className="sr-only" onChange={handleFileUpload} disabled={isAnalyzing} data-testid="import-track-input" />
-                                </label>
+                                <div className="flex items-center gap-4">
+                                    <label onClick={handleLoadClick} className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold px-6 py-3 rounded-xl cursor-pointer transition-all flex items-center gap-3 shadow-[0_0_15px_rgba(var(--primary),0.2)]">
+                                        {isAnalyzing ? <Loader2 className="animate-spin" size={18} /> : <Upload size={18} />}
+                                        {isAnalyzing ? "Deep Analysis Running..." : "Load Audio Master"}
+                                        <input type="file" accept={LOSSLESS_ACCEPT} className="sr-only" onChange={handleFileUpload} disabled={isAnalyzing} data-testid="import-track-input" />
+                                    </label>
+                                    {isAnalyzing && (
+                                        <Button 
+                                            variant="destructive" 
+                                            onClick={() => abortControllerRef.current?.abort()}
+                                            className="font-bold rounded-xl"
+                                        >
+                                            Cancel
+                                        </Button>
+                                    )}
+                                </div>
                             </div>
 
                             {/* Audio Waveform Viewer Feature */}

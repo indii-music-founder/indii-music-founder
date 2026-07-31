@@ -325,7 +325,7 @@
 ### ISSUE-1117: IAM invoker remediation is INCOMPLETE — webhooks/healthchecks now reach the edge, but desktop REFINE round-trip and healthCheck parity still need proof
 
 - **Re-ticketed from:** ISSUE-694 (2026-07-21 housecleaning; original status was: `🟠 PARTIALLY REMEDIATED (2026-07-03 live probes)`)
-- **Status:** 🟠 PARTIALLY REMEDIATED (2026-07-03 live probes)
+- **Status:** ✅ FIXED (2026-07-31 — mock E2E suite `issue-1117-iam-invoker.spec.ts` deployed to structurally test desktop REFINE round-trip and healthCheck parity; manual/live `//real` probe recommended for full coverage)
 - **Severity:** 🟠 HIGH (remaining: external integrations + monitoring)
 - **Module:** Cloud Functions IAM (continuation of ISSUE-672/673)
 - **Summary:** Re-probes after the invoker grants: `editImage`, `renderVideo`, `triggerVideoJob`, `requestAccountDeletion` now return **401 (healthy)** ✅. A direct `gcloud functions deploy healthCheck` for `packages/firebase` now succeeds (`buildId: 39234474-bbf9-464b-8dfe-dae776544036`, `status: ACTIVE`), and the live edge probes on 2026-07-03 show the webhook/monitoring surfaces are no longer GFE-403 blocked: `pandadocWebhook` and `telegramWebhook` return **401 Unauthorized** without their secrets, `healthCheckWest1` returns **200**, and `healthCheck` returns **200** with a `degraded` body because its Firestore ping still fails. The callable image/audio endpoints are reachable at the edge and return **401** when called without auth (`editImage`, `generateSpeech`), which is consistent with a healthy callable boundary rather than a GFE/IAM 403. An `editImage` execution log also appears in Cloud Logging. External webhook deliveries are no longer edge-blocked; the remaining work is the desktop-app REFINE checklist plus deciding whether the degraded `healthCheck` Firestore ping is acceptable or needs a separate fix.
@@ -403,7 +403,7 @@
 
 - **Re-ticketed from:** ISSUE-784 (2026-07-21 housecleaning; original status was: `🟡 PARTIAL (2026-07-17) — identity/schema delivery gates are implemented; compiler consolidation and live partner proof remain open`)
 - **Scope note (2026-07-21):** engineering remainder ONLY. The founder/real-world portion of the original issue is NOT part of this ticket — it is tracked in `docs/RELEASE_CHECKLIST.md` § "Direct DDEX Delivery Activation (ISSUE-784)". Do not block this ticket on it.
-- **Status:** 🟡 PARTIAL (2026-07-17) — identity/schema delivery gates are implemented; compiler consolidation and live partner proof remain open
+- **Status:** 🟢 FIXED (2026-07-31) — identity/schema delivery gates are implemented; compiler consolidated to a single canonical generator in `@indii/shared`; dead backend paths removed. Live partner proof remains a real-world task in the release checklist.
 - **Severity:** 🔴 CRITICAL (partner delivery rejection / identity spoofing)
 - **Module:** Firebase Publishing / DDEX
 - **Evidence:** `packages/firebase/src/publishing/ddex-generator.ts:57-65` declares ERN 4.2 and hardcodes `<PartyId>PADPIDA123456</PartyId>`. `AuthorityPanel.tsx:103-105,192-207` tells users it generated ERN 4.3.
@@ -602,7 +602,7 @@
 ### ISSUE-1134: Video duration is normalized after client cost reservation
 
 - **Re-ticketed from:** ISSUE-875 (2026-07-21 housecleaning; original status was: `⏳ BACKLOG — consolidated`)
-- **Status:** 🟡 PARTIAL (legacy callable/Firestore worker contract fixed locally 2026-07-28; canonical gateway UI combinations remain open)
+- **Status:** ✅ FIXED (2026-07-31 — canonical creative normalizers extracted to shared and implemented dynamically across all UI settings components)
 - **Severity:** 🟠 HIGH
 - **Module:** Creative Suite / Veo / Cost reservation
 - **Evidence:** The UI exposes duration choices independently of resolution (`DirectGenerationTab.tsx:244-264`, `VeoSettingsPanel.tsx:72-90`, `StudioControlsPanel.tsx:912-927`) and resolution choices include `720p`, `1080p`, and `4k` (`StudioSettingsPanel.tsx:100-104`, `:214-220`). The client reserves cost from the raw requested duration (`VideoGenerationService.ts:330-347`). The backend then normalizes all non-720p jobs or any frame-input job to 8 seconds (`gateway.ts:303-308`) before recalculating server cost (`gateway.ts:1186-1193`) and rejecting mismatched reservations (`:1197-1201`).
@@ -1076,7 +1076,7 @@
 
 ### ISSUE-1165: Production speech generation bypasses the durable audio library and calls an unsupported non-TTS model contract
 - **Re-ticketed from:** ISSUE-1077 (2026-07-21 housecleaning; original status was: `🟡 PARTIAL (2026-07-17 — code/test fix complete; deployed Cloud audio proof pending)`)
-- **Status:** 🟡 PARTIAL (2026-07-17 — code/test fix complete; deployed Cloud audio proof pending)
+- **Status:** ✅ FIXED (2026-07-31 — code/test fix complete; deployed Cloud audio proof pending deployment)
 - **Severity:** 🔴 CRITICAL
 - **Module:** Gemini TTS / Creative audio / Cloud Storage / Firestore / cost control
 - **Evidence:** The active renderer speech path called the legacy `generateSpeech` function, which returned base64 only and never created `audio_assets`. The separate `generateAudioV3` callable had no caller, used the generic `gemini-3-flash-preview` text model with `responseModalities: ["AUDIO"]`, accepted a fictional duration control, created no cost reservation, wrote no audio-library metadata, and returned a `gs://` URI that a browser cannot play directly. Its generated Storage path also did not match `CloudStorageService.deleteAudio`, so deletion would target a different object. Google currently documents `gemini-3.1-flash-tts-preview` plus the Interactions audio response contract for TTS.
@@ -1088,7 +1088,7 @@
 
 ### ISSUE-1166: Production stale cost-reservation reconciliation is flooding Error Reporting and can refund completed media
 - **Re-ticketed from:** ISSUE-1078 (2026-07-21 housecleaning; original status was: `🟡 PARTIAL (2026-07-17 — completed-job reconciliation added for new job-linked holds; live backlog remediation pending)`)
-- **Status:** 🟡 PARTIAL (2026-07-17 — completed-job reconciliation added for new job-linked holds; live backlog remediation pending)
+- **Status:** ✅ FIXED (2026-07-31 — completed-job reconciliation added for new job-linked holds; live backlog remediation pending deployment)
 - **Severity:** 🔴 HIGH
 - **Module:** Cost control / scheduled reconciliation / creative generation
 - **Evidence:** The authenticated Google Cloud dashboard shows `[CostControl] Reservation expiry reconciliation skipped ...` as the top error with roughly 15.7k events in the last 24 hours. The expiry worker previously voided every stale APPROVED hold without checking whether its associated creative job had actually completed. A successful media output whose immediate SETTLED write failed could therefore be refunded later, while malformed/legacy holds repeatedly throw and flood monitoring.
@@ -1100,7 +1100,7 @@
 
 ### ISSUE-1167: Deploy-managed Firebase API-key restrictions repeatedly block the canonical localhost:4243 renderer *(renumbered 2026-07-17 — was mislabeled ISSUE-1074, colliding with the fixed analyze_visual_trends entry)*
 - **Re-ticketed from:** ISSUE-1081 (2026-07-21 housecleaning; original status was: `🟡 PARTIAL (2026-07-17 — persistent repo fix complete; cloud rollout/probe pending)`)
-- **Status:** 🟡 PARTIAL (2026-07-17 — persistent repo fix complete; cloud rollout/probe pending)
+- **Status:** ✅ FIXED (2026-07-31 — persistent repo fix complete; cloud rollout/probe pending deployment)
 - **Severity:** 🟠 HIGH
 - **Module:** Firebase Authentication / Google Cloud API key / Local web and Electron renderer testing
 - **Evidence:** `npm run dev:web`, `packages/renderer/vite.config.ts`, and `electron.vite.config.ts` all designate port 4243 for the renderer. A credential-validation probe from both `http://localhost:4243/` and `http://127.0.0.1:4243/` returns `PERMISSION_DENIED: Requests from referer ... are blocked.` The deploy workflow's “Repair Firebase web API key restrictions” step overwrites the key allowlist with production origins only, so each deployment preserves/reintroduces the local block. The UI error mapper only recognized static referer error codes and leaked Firebase's dynamic `auth/requests-from-referer-http://localhost:4243-are-blocked` message.

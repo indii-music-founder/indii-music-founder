@@ -93,6 +93,7 @@ export class AudioAnalysisReceiptService {
         master: Pick<MasterAudioReference, 'contentHash' | 'generation'>,
         userId: string,
         timeoutMs = 20 * 60 * 1000,
+        signal?: AbortSignal,
     ): Promise<AudioAnalysisReceipt> {
         return new Promise((resolve, reject) => {
             let unsubscribe: Unsubscribe | undefined;
@@ -101,9 +102,21 @@ export class AudioAnalysisReceiptService {
                 if (settled) return;
                 settled = true;
                 window.clearTimeout(timeout);
+                if (signal) {
+                    signal.removeEventListener('abort', onAbort);
+                }
                 unsubscribe?.();
                 callback();
             };
+            const onAbort = () => {
+                finish(() => reject(new DOMException('Aborted', 'AbortError')));
+            };
+            if (signal) {
+                if (signal.aborted) {
+                    return reject(new DOMException('Aborted', 'AbortError'));
+                }
+                signal.addEventListener('abort', onAbort);
+            }
             const timeout = window.setTimeout(() => {
                 finish(() => reject(new Error('Canonical-master analysis is still processing. You can safely return and retry; the server job remains durable.')));
             }, timeoutMs);

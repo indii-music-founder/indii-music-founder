@@ -13,6 +13,7 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useReleaseList } from '../hooks/useReleaseList';
 import { ClientReleaseRecord } from '../hooks/useReleases';
 import { VirtuosoGrid, TableVirtuoso } from 'react-virtuoso';
+import { getColorForModule } from '@/core/theme/moduleColors';
 
 interface ReleaseListViewProps {
     onNewRelease: () => void;
@@ -34,6 +35,7 @@ export const ReleaseListView: React.FC<ReleaseListViewProps> = ({ onNewRelease, 
         archiveRelease
     } = useReleaseList();
 
+    const moduleColor = getColorForModule('publishing');
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
@@ -89,7 +91,7 @@ export const ReleaseListView: React.FC<ReleaseListViewProps> = ({ onNewRelease, 
                             placeholder={t('publishing.hints.search_releases')}
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full pl-10 pr-4 py-2 bg-gray-900/50 border border-gray-800 rounded-xl text-sm text-white placeholder-gray-600 focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 outline-none transition-all"
+                            className={`w-full pl-10 pr-4 py-2 bg-gray-900/50 border border-gray-800 rounded-xl text-sm text-white placeholder-gray-600 focus:${moduleColor.border} focus:ring-1 focus:${moduleColor.ring} outline-none transition-all`}
                         />
                     </div>
 
@@ -99,10 +101,10 @@ export const ReleaseListView: React.FC<ReleaseListViewProps> = ({ onNewRelease, 
                                 initial={{ opacity: 0, scale: 0.9 }}
                                 animate={{ opacity: 1, scale: 1 }}
                                 exit={{ opacity: 0, scale: 0.9 }}
-                                className="flex items-center gap-2 px-3 py-1.5 bg-blue-500/10 border border-blue-500/20 rounded-lg"
+                                className={`flex items-center gap-2 px-3 py-1.5 ${moduleColor.bg} ${moduleColor.border} rounded-lg`}
                             >
-                                <div className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-pulse" />
-                                <span className="text-[10px] font-black text-blue-400 uppercase tracking-widest">Syncing</span>
+                                <div className={`w-1.5 h-1.5 ${moduleColor.bg.replace('/10', '').replace('/20', '')} rounded-full animate-pulse`} />
+                                <span className={`text-[10px] font-black ${moduleColor.text} uppercase tracking-widest`}>Syncing</span>
                             </motion.div>
                         )}
                     </AnimatePresence>
@@ -129,7 +131,7 @@ export const ReleaseListView: React.FC<ReleaseListViewProps> = ({ onNewRelease, 
                     <select
                         value={statusFilter}
                         onChange={(e) => setStatusFilter(e.target.value)}
-                        className="bg-gray-900/50 border border-gray-800 rounded-xl px-4 py-2 text-sm text-gray-300 outline-none focus:border-blue-500/50 transition-all font-bold uppercase tracking-widest text-[10px]"
+                        className={`bg-gray-900/50 border border-gray-800 rounded-xl px-4 py-2 text-sm text-gray-300 outline-none focus:${moduleColor.border} transition-all font-bold uppercase tracking-widest text-[10px]`}
                     >
                         <option value="all">All Statuses</option>
                         <option value="live">Live</option>
@@ -155,9 +157,9 @@ export const ReleaseListView: React.FC<ReleaseListViewProps> = ({ onNewRelease, 
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: 10 }}
-                        className="flex items-center justify-between p-4 bg-blue-500/10 border border-blue-500/20 rounded-2xl"
+                        className={`flex items-center justify-between p-4 ${moduleColor.bg} ${moduleColor.border} rounded-2xl`}
                     >
-                        <span className="text-sm font-bold text-blue-400">
+                        <span className={`text-sm font-bold ${moduleColor.text}`}>
                             {selectedIds.length} item{selectedIds.length > 1 ? 's' : ''} selected
                         </span>
                         <div className="flex items-center gap-3">
@@ -252,7 +254,7 @@ export const ReleaseListView: React.FC<ReleaseListViewProps> = ({ onNewRelease, 
                                     return (
                                         <tr
                                             {...props}
-                                            className={`group hover:bg-white/[0.02] transition-colors cursor-pointer ${selectedIds.includes(release?.id) ? 'bg-blue-500/5' : ''}`}
+                                            className={`group hover:bg-white/[0.02] transition-colors cursor-pointer ${selectedIds.includes(release?.id) ? moduleColor.bg : ''}`}
                                         />
                                     );
                                 },

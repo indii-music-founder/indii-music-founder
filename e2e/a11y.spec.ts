@@ -116,4 +116,14 @@ test.describe('Accessibility Compliance', () => {
             expect(criticalViolations).toHaveLength(0);
         }
     });
+
+    test('Studio shell should have a single visible h1 (ISSUE-1189)', async ({ authedPage }) => {
+        const h1s = authedPage.locator('h1');
+        // Wait for the app to settle and ensure at least one h1 is mounted
+        await h1s.first().waitFor({ state: 'attached', timeout: 5000 }).catch(() => {});
+        
+        // Assert there is exactly 1 h1 and it is visible
+        await expect(h1s).toHaveCount(1);
+        await expect(h1s).toBeVisible();
+    });
 });

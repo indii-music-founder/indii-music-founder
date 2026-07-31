@@ -75,10 +75,10 @@ Return ONLY a JSON object that adheres to the following schema:
                     }],
                     temperature: 0.1,
                     responseMimeType: "application/json"
-                } as any);
+                } as unknown as Parameters<typeof genai.models.generateContent>[0]);
 
                 const part = result?.candidates?.[0]?.content?.parts?.[0];
-                const analysisText = part && 'text' in part ? (part as any).text : null;
+                const analysisText = part && 'text' in part ? (part as { text?: string }).text : null;
                 
                 if (analysisText) {
                     const metadata = JSON.parse(analysisText);
@@ -107,7 +107,7 @@ Return ONLY a JSON object that adheres to the following schema:
                 await new Promise((resolve, reject) => {
                     fileStream
                         .pipe(unzipper.Parse())
-                        .on('entry', (entry: any) => {
+                        .on('entry', (entry: { type: string; path: string; autodrain: () => void }) => {
                             if (entry.type === 'File') {
                                 files.push(entry.path);
                             }

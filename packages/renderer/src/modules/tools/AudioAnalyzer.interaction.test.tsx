@@ -250,6 +250,7 @@ describe('AudioAnalyzer Interaction: Save Analysis', () => {
             expect(masterAudioService.persist).toHaveBeenCalledWith(file, {
                 userId: 'mock-owner',
                 masterFingerprint: 'mock-fingerprint',
+                signal: expect.any(AbortSignal),
             });
             expect(audioIntelligence.analyzeCanonicalMaster).toHaveBeenCalledTimes(1);
             expect(audioIntelligence.analyze).not.toHaveBeenCalled();

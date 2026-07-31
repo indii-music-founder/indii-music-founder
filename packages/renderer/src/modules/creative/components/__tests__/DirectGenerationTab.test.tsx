@@ -304,6 +304,7 @@ describe('DirectGenerationTab', () => {
     });
 
     it('ISSUE-788: only offers 4/6/8-second durations in video mode, never 10s', () => {
+        useMockStore.setState({ studioControls: { ...useMockStore.getState().studioControls, resolution: '720p' } });
         render(<DirectGenerationTab />);
         fireEvent.click(screen.getByTestId('direct-video-mode-btn'));
 

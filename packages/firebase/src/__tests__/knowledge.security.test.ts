@@ -121,7 +121,6 @@ vi.mock('../functions/knowledge/textExtractor', () => ({
 
 import { finalizeKnowledgeUpload, deleteKnowledgeDocument } from '../functions/knowledge/upload';
 import { queryKnowledgeBase } from '../functions/knowledge/query';
-import { executeDocumentIndexing } from '../functions/knowledge/indexWorker';
 import { createHash } from 'node:crypto';
 
 describe('Knowledge Base Security & Abuse Tests', () => {

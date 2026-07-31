@@ -78,7 +78,6 @@ describe('Knowledge Base Index Worker', () => {
   });
 
   it('indexes a valid uploaded text document cleanly', async () => {
-    const content = 'This is a test document content for RAG indexing.';
     const contentSha256 = '81062f0cf71ccb963830343e49677f93976eb957c30b1cc163f7e6379bfd6118';
 
     const payload = {

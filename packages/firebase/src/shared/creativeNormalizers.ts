@@ -25,7 +25,7 @@ export function normalizeVideoDuration(
   hasFrameInput: boolean
 ): 4 | 6 | 8 {
   const safeDurationSeconds = durationSeconds ?? 8;
-  if (resolution !== '720p' || hasFrameInput) return 8;
+  if (resolution !== '720p') return 8;
   if (safeDurationSeconds <= 4) return 4;
   if (safeDurationSeconds <= 6) return 6;
   return 8;

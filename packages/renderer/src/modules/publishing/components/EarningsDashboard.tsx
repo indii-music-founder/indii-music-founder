@@ -3,6 +3,7 @@ import { useEarnings } from '../hooks/useEarnings';
 import { EarningsBreakdown } from './EarningsBreakdown';
 import { DollarSign, Globe, TrendingUp } from 'lucide-react';
 import { SkeletonText, Skeleton } from '@/components/ui/Skeleton';
+import { getColorForModule } from '@/core/theme/moduleColors';
 
 // Compute default period outside component to satisfy react-compiler purity rules
 const DEFAULT_PERIOD = (() => {
@@ -41,6 +42,7 @@ const TERRITORY_SHARES = [
 
 export const EarningsDashboard: React.FC = () => {
     const period = DEFAULT_PERIOD;
+    const moduleColor = getColorForModule('publishing');
 
     const { earnings, loading } = useEarnings(period);
 
@@ -97,7 +99,7 @@ export const EarningsDashboard: React.FC = () => {
                 ) : earnings ? (
                     <div>
                         <div className="flex items-baseline gap-1 mb-6">
-                            <span className="text-2xl font-bold text-green-500 tracking-tighter">$</span>
+                            <span className={`text-2xl font-bold ${moduleColor.text} tracking-tighter`}>$</span>
                             <span className="text-5xl font-black text-white tracking-tighter">
                                 {earnings.totalNetRevenue.toFixed(2)}
                             </span>
@@ -109,14 +111,14 @@ export const EarningsDashboard: React.FC = () => {
                         <div className="space-y-3">
                             <div className="flex items-center justify-between p-3 bg-gray-900/40 rounded-xl border border-gray-800/50">
                                 <div className="flex items-center gap-2">
-                                    <Globe size={14} className="text-green-400" />
+                                    <Globe size={14} className={moduleColor.text} />
                                     <span className="text-sm text-gray-400 font-medium">Global Streams</span>
                                 </div>
                                 <span className="text-sm font-bold text-white tracking-tight">{earnings.totalStreams.toLocaleString('en-US')}</span>
                             </div>
                             <div className="flex items-center justify-between p-3 bg-gray-900/40 rounded-xl border border-gray-800/50">
                                 <div className="flex items-center gap-2">
-                                    <DollarSign size={14} className="text-green-400" />
+                                    <DollarSign size={14} className={moduleColor.text} />
                                     <span className="text-sm text-gray-400 font-medium">Estimated Unprocessed</span>
                                 </div>
                                 <span className="text-sm font-bold text-white tracking-tight">${(earnings.totalGrossRevenue - earnings.totalNetRevenue).toFixed(2)}</span>
@@ -139,7 +141,10 @@ export const EarningsDashboard: React.FC = () => {
                     </div>
                 )}
 
-                <div className="absolute top-0 right-0 w-64 h-64 bg-green-500/5 blur-[100px] pointer-events-none -mr-32 -mt-32" />
+                <div 
+                    className="absolute top-0 right-0 w-64 h-64 blur-[100px] pointer-events-none -mr-32 -mt-32"
+                    style={{ backgroundColor: `color-mix(in srgb, var(${moduleColor.cssVar}) 5%, transparent)` }}
+                />
             </div>
 
             {/* Always show breakdown below the summary card if we have data */}

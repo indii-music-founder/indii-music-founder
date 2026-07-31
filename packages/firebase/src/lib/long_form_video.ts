@@ -71,6 +71,7 @@ export const LongFormVideoJobSchema = z.object({
         resolution: z.enum(["720p", "1080p", "4k"]).optional(),
         seed: z.number().optional(),
         negativePrompt: z.string().optional(),
+        personGeneration: z.enum(['dont_allow', 'allow_adult', 'allow_all']).optional(),
         generateAudio: z.boolean().optional(),
         thinking: z.boolean().optional(),
         model: z.enum(["lite", "fast", "pro"]).optional(),
@@ -243,6 +244,15 @@ export const generateLongFormVideoFn = (inngestClient: Inngest, _legacyUnusedPro
                         imagePayload = { image: { bytesBase64Encoded: base64 } };
                     }
 
+                    // Calculate segment duration dynamically based on totalDuration or fallback
+                    let segmentDuration = DEFAULT_SEGMENT_DURATION_SECONDS;
+                    if (data.totalDuration && prompts.length > 0) {
+                        const calculated = Math.ceil(data.totalDuration / prompts.length);
+                        if (calculated <= 4) segmentDuration = 4;
+                        else if (calculated <= 6) segmentDuration = 6;
+                        else segmentDuration = 8;
+                    }
+
                     const requestBody = {
                         instances: [
                             {
@@ -252,9 +262,10 @@ export const generateLongFormVideoFn = (inngestClient: Inngest, _legacyUnusedPro
                         ],
                         parameters: {
                             sampleCount: 1,
-                            durationSeconds: DEFAULT_SEGMENT_DURATION_SECONDS,
+                            durationSeconds: segmentDuration,
                             aspectRatio: options?.aspectRatio || "16:9",
                             resolution: options?.resolution || "720p",
+                            ...(options?.personGeneration ? { personGeneration: options.personGeneration } : {}),
                             generateAudio: !!options?.generateAudio
                         }
                     };
@@ -395,11 +406,17 @@ export const generateLongFormVideoFn = (inngestClient: Inngest, _legacyUnusedPro
                                         // Normalize Input URI
                                         const inputUri = toGcsUri(segmentUrl);
 
-                                        // Calculate extraction time dynamically
-                                        const extractionTime = Math.min(
-                                            DEFAULT_FRAME_EXTRACTION_OFFSET_SECONDS,
-                                            DEFAULT_SEGMENT_DURATION_SECONDS - 0.5
-                                        );
+                                        // Calculate segment duration dynamically
+                                        let segmentDuration = DEFAULT_SEGMENT_DURATION_SECONDS;
+                                        if (data.totalDuration && prompts.length > 0) {
+                                            const calculated = Math.ceil(data.totalDuration / prompts.length);
+                                            if (calculated <= 4) segmentDuration = 4;
+                                            else if (calculated <= 6) segmentDuration = 6;
+                                            else segmentDuration = 8;
+                                        }
+
+                                        // Calculate extraction time dynamically (0.5s before end of segment)
+                                        const extractionTime = segmentDuration - 0.5;
                                         const extractionSeconds = Math.floor(extractionTime);
                                         const extractionNanos = Math.floor((extractionTime - extractionSeconds) * 1_000_000_000);
 
