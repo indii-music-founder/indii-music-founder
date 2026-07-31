@@ -124,6 +124,9 @@ jobs:
         with:
           credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
 
+      - name: Build shared package
+        run: npx tsc -b packages/shared
+
       - name: Run unit tests (shard ${{ matrix.shard }}/20)
         timeout-minutes: 15
         run: NODE_OPTIONS="--max-old-space-size=5120" npm test -- --run --reporter=verbose --testTimeout=30000 --bail=3 --shard=${{ matrix.shard }}/20 --maxWorkers=1
@@ -162,6 +165,9 @@ jobs:
             node_modules
             packages/*/node_modules
           key: node-modules-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+      - name: Build shared package
+        run: npx tsc -b packages/shared
 
       - name: Run Firestore and Storage rules tests
         run: |
