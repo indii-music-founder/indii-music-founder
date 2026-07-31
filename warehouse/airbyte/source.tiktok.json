@@ -1,0 +1,18 @@
+{
+  "_comment": [
+    "Per-artist TikTok source. ${TIKTOK_ACCESS_TOKEN} is read at provisioning",
+    "time from users/{uid}/analyticsTokens/tiktok. Never commit a resolved copy."
+  ],
+  "name": "TikTok - Artist ${ARTIST_UID}",
+  "workspaceId": "${AIRBYTE_WORKSPACE_ID}",
+  "configuration": {
+    "sourceType": "tiktok-marketing",
+    "credentials": {
+      "auth_type": "oauth2.0",
+      "app_id": "${TIKTOK_CLIENT_KEY}",
+      "secret": "${TIKTOK_CLIENT_SECRET}",
+      "access_token": "${TIKTOK_ACCESS_TOKEN}"
+    },
+    "start_date": "${TIKTOK_SYNC_START_DATE}"
+  }
+}

@@ -423,6 +423,17 @@ service cloud.firestore {
         allow read, write: if false;
       }
 
+      // ── Marketing swarm activity feed ────────────────────────────────────
+      // Written only by the ad executor (Admin SDK, bypasses rules). The owner
+      // reads it to watch agents act on their behalf; a client-forged entry
+      // would be an artist "seeing" an ad buy that never happened, so writes
+      // are closed. The immutable audit copy lives in timelineExecutionLogs,
+      // which no client can reach at all.
+      match /marketingAgentLogs/{logId} {
+        allow read: if isOwner(userId);
+        allow write: if false;
+      }
+
       // ── Memory Inbox (agent handshake requests) ──────────────────────────
       match /memoryInbox/{itemId} {
         // Only the owning user can read their inbox items
@@ -1905,6 +1916,34 @@ service cloud.firestore {
     // Note: mcpJobs collection removed (2026-07-20) — audit_sample_clearance is fail-closed,
     // no tool writes to this collection. Durable intent queues (payoutJobs, mcpRenderJobs,
     // campaigns) await processors per ISSUE-1100.
+
+    // =========================================================================
+    // Attribution spine — smart links and the conversion event outbox
+    // =========================================================================
+
+    // Smart links resolve to a redirect destination. The artist manages their
+    // own; the public never reads this collection, because the redirect
+    // function resolves slugs with the Admin SDK.
+    //
+    // artistId is immutable after creation: allowing it to change would let one
+    // artist reassign a link — and every conversion attributed through it — to
+    // another account.
+    match /smartLinks/{slug} {
+      allow read: if isAuthenticated() && resource.data.get('artistId', '') == request.auth.uid;
+      allow create: if isAuthenticated() && request.resource.data.get('artistId', '') == request.auth.uid;
+      allow update: if isAuthenticated()
+        && resource.data.get('artistId', '') == request.auth.uid
+        && request.resource.data.get('artistId', '') == resource.data.get('artistId', '');
+      allow delete: if isAuthenticated() && resource.data.get('artistId', '') == request.auth.uid;
+    }
+
+    // Conversion events are the evidence the optimizer spends money on. A
+    // client that could write here could manufacture conversions and steer an
+    // artist's budget; a client that could read here would see every other
+    // artist's fan activity. Server-only, both directions.
+    match /conversionEventOutbox/{eventId} {
+      allow read, write: if false;
+    }
 
     // =========================================================================
     // Deny all other access by default

@@ -17,7 +17,8 @@ import {
     Hash,
     Star,
     TrendingUp,
-    Share2
+    Share2,
+    Activity
 } from 'lucide-react';
 import { motion } from 'motion/react';
 
@@ -39,6 +40,7 @@ export const MarketingSidebar: React.FC<MarketingSidebarProps> = ({ activeTab, o
     ];
 
     const growthNav = [
+        { id: 'swarm', label: 'Swarm Command', icon: Activity },
         { id: 'ad-buying', label: 'Ad Buying', icon: DollarSign },
         { id: 'email', label: 'Email Marketing', icon: Mail },
         { id: 'pre-save', label: 'Pre-Save Builder', icon: Bookmark },

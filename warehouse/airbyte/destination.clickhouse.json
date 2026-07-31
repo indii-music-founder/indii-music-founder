@@ -1,0 +1,18 @@
+{
+  "_comment": [
+    "Airbyte destination template for the indii Growth Intelligence warehouse.",
+    "Every ${VAR} is resolved at apply time from the deployment environment —",
+    "no credential is ever committed here. See warehouse/README.md."
+  ],
+  "name": "indii ClickHouse Analytics",
+  "workspaceId": "${AIRBYTE_WORKSPACE_ID}",
+  "configuration": {
+    "destinationType": "clickhouse",
+    "host": "${CLICKHOUSE_HOST}",
+    "port": 8123,
+    "database": "indii_analytics",
+    "username": "${CLICKHOUSE_WRITER_USERNAME}",
+    "password": "${CLICKHOUSE_WRITER_PASSWORD}",
+    "ssl": true
+  }
+}
