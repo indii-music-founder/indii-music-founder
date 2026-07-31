@@ -12,6 +12,7 @@ import { HarnessDecisionDigest } from './components/HarnessDecisionDigest';
 import { ArrowLeft, Users, Layers, Bot } from 'lucide-react';
 import { LivingPlansTracker } from './components/LivingPlansTracker';
 import { SwarmCollaborationFeed } from './components/SwarmCollaborationFeed';
+import { MobileParticipantDrawer } from './components/MobileParticipantDrawer';
 
 import { useToast } from '@/core/context/ToastContext';
 import { trackFounderFunnelEvent } from '@/services/founders/founderFunnel';
@@ -60,6 +61,7 @@ export function BoardroomModule() {
     const activeCount = activeAgents?.length || 0;
     const [isTrackerOpen, setIsTrackerOpen] = React.useState(false);
     const [isSwarmFeedOpen, setIsSwarmFeedOpen] = React.useState(false);
+    const [isMobileSeatingOpen, setIsMobileSeatingOpen] = React.useState(false);
     const hasTrackedBoardroomView = React.useRef(false);
 
     // Staged Handoff Hook Interceptor
@@ -124,12 +126,14 @@ export function BoardroomModule() {
                         <span className="text-xs font-bold uppercase tracking-wider text-indigo-400">
                             Boardroom HQ
                         </span>
-                        {activeCount > 0 && (
-                            <span className="flex items-center gap-1 text-[10px] text-white/30 bg-white/5 px-2 py-0.5 rounded-full border border-white/5">
-                                <Users size={10} />
-                                {activeCount} active
-                            </span>
-                        )}
+                        <button
+                            onClick={() => setIsMobileSeatingOpen(true)}
+                            className="flex items-center gap-1 text-[10px] text-white/30 bg-white/5 px-2 py-0.5 rounded-full border border-white/5 hover:bg-white/10 transition-colors"
+                            aria-label="Seat agents"
+                        >
+                            <Users size={10} />
+                            {activeCount} active
+                        </button>
                     </div>
                     <div className="flex-1" />
                     <button 
@@ -186,6 +190,7 @@ export function BoardroomModule() {
 
                 <LivingPlansTracker isOpen={isTrackerOpen} onClose={() => setIsTrackerOpen(false)} />
                 <SwarmCollaborationFeed isOpen={isSwarmFeedOpen} onClose={() => setIsSwarmFeedOpen(false)} />
+                <MobileParticipantDrawer isOpen={isMobileSeatingOpen} onClose={() => setIsMobileSeatingOpen(false)} />
             </motion.div>
         </AnimatePresence>,
         document.body
