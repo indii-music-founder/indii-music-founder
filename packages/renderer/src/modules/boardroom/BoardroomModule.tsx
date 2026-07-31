@@ -177,7 +177,7 @@ export function BoardroomModule() {
                         initial={{ opacity: 0, x: 20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: 0.15, type: 'spring', damping: 25, stiffness: 200 }}
-                        className={`flex flex-col min-h-0 ${isAnyPhone ? 'flex-1' : 'flex-1 border-l border-white/5'} bg-white/1`}
+                        className={`flex flex-col min-h-0 min-w-0 ${isAnyPhone ? 'flex-1' : 'flex-1 border-l border-white/5'} bg-white/1 overflow-hidden`}
                     >
                         <HarnessDecisionDigest />
                         <BoardroomConversationPanel messages={boardroomMessages} />

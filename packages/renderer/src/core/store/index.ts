@@ -37,6 +37,8 @@ import { MapSlice, createMapSlice } from './slices/mapSlice';
 import { NotesSlice, Note, createNotesSlice } from './slices/notesSlice';
 import { AgentSwarmSlice, createAgentSwarmSlice } from './slices/agentSwarmSlice';
 export type { AgentActionLog, CampaignMetrics } from './slices/agentSwarmSlice';
+import { AgentSwarmSlice, createAgentSwarmSlice } from './slices/createAgentSwarmSlice';
+export type { AgentSwarmSlice, AgentActionLog, CampaignMetrics } from './slices/createAgentSwarmSlice';
 import { useLivingPlanSlice } from './slices/livingPlanSlice';
 import type { LivingPlan } from '@/services/agent/LivingPlanService';
 import type { WorkspaceSnapshot } from '@/services/sync/WorkspaceSyncService';

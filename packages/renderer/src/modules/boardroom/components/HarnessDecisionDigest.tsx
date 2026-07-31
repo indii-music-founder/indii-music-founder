@@ -15,8 +15,8 @@ export function HarnessDecisionDigest() {
   }, [userId]);
 
   return (
-    <div className="border-b border-white/5 bg-white/[0.015] px-4 py-3">
-      <div className="grid grid-cols-3 gap-2">
+    <div className="border-b border-white/5 bg-white/[0.015] px-4 py-3 shrink-0 min-w-0 overflow-hidden">
+      <div className="grid grid-cols-3 gap-2 min-w-0">
         <DigestItem icon={<GitMerge size={13} />} label="Meta Harness" value={decision ? decision.mode.replace('_', ' ') : 'auth required'} />
         <DigestItem icon={<Shield size={13} />} label="Legal Risk" value={decision?.legalRisk ?? 'unavailable'} />
         <DigestItem icon={<WalletCards size={13} />} label="Cost Impact" value={decision ? `$${decision.costImpact.total.toFixed(0)}` : 'unavailable'} />

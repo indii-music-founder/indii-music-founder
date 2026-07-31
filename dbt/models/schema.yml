@@ -1,0 +1,29 @@
+version: 2
+
+models:
+  - name: normalize_spotify_streams
+    description: "Normalized Spotify stream history from Airbyte mapped to the unified omnichannel_events schema."
+    columns:
+      - name: event_id
+        description: "Unique event identifier."
+        tests:
+          - unique
+          - not_null
+      - name: artist_id
+        description: "Artist UID associated with the stream event."
+        tests:
+          - not_null
+      - name: platform
+        description: "Streaming platform identifier ('spotify')."
+        tests:
+          - not_null
+      - name: event_type
+        description: "Type of event ('stream')."
+        tests:
+          - not_null
+      - name: event_time
+        description: "Timestamp when track was played."
+        tests:
+          - not_null
+      - name: listen_duration_seconds
+        description: "Duration of listen in seconds."
