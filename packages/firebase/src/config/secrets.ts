@@ -195,6 +195,23 @@ export const microsoftClientSecret = defineSecret("MICROSOFT_CLIENT_SECRET");
 export const twitterClientId = defineSecret("TWITTER_CLIENT_ID");
 export const twitterClientSecret = defineSecret("TWITTER_CLIENT_SECRET");
 
+// ---------------------------------------------------------------------------
+// Growth Intelligence Warehouse (ClickHouse)
+// ---------------------------------------------------------------------------
+// Analytical store behind the marketing swarm. See warehouse/README.md.
+//
+// CLICKHOUSE_HOST is a secret rather than a checked-in constant deliberately:
+// it is infrastructure-minted and rotates with the cluster. Nothing in the
+// renderer holds it — reads go through marketingGetCampaignMetrics.
+//
+// Required secrets in GCP Secret Manager:
+//   - CLICKHOUSE_HOST      (hostname only, no scheme — e.g. abc.clickhouse.cloud)
+//   - CLICKHOUSE_USERNAME  (read-only role used by the API)
+//   - CLICKHOUSE_PASSWORD
+export const clickhouseHost = defineSecret("CLICKHOUSE_HOST");
+export const clickhouseUsername = defineSecret("CLICKHOUSE_USERNAME");
+export const clickhousePassword = defineSecret("CLICKHOUSE_PASSWORD");
+
 export const printfulApiKey = defineSecret("PRINTFUL_API_KEY");
 
 export function getPrintfulApiKey(): string {

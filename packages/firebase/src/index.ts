@@ -190,6 +190,9 @@ export { sendEmail } from './email/sendEmail';
 // Growth Intelligence Engine — Platform Analytics OAuth (Spotify, TikTok, Instagram)
 export { analyticsExchangeToken, analyticsFinalizeInstagramConnection, analyticsGetConnectionStatus, analyticsRefreshToken, analyticsRevokeToken } from './analytics/platformTokenExchange';
 
+// Growth Intelligence Engine — Autonomous Marketing Swarm (ClickHouse read path)
+export { marketingGetCampaignMetrics } from './marketing/campaignMetricsCallable';
+
 // Storage Maintenance (Scheduled — orphan cleanup, quota tracking, archival flagging, temp cleanup)
 export { cleanupExpiredVideoTemps, cleanupOrphanedVideos, trackStorageQuotas, flagVideosForArchival } from './devops/storageMaintenance';
 export { fetchStorageAssetForCanvas } from './functions/storage/fetchStorageAssetForCanvas';

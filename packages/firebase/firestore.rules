@@ -423,6 +423,17 @@ service cloud.firestore {
         allow read, write: if false;
       }
 
+      // ── Marketing swarm activity feed ────────────────────────────────────
+      // Written only by the ad executor (Admin SDK, bypasses rules). The owner
+      // reads it to watch agents act on their behalf; a client-forged entry
+      // would be an artist "seeing" an ad buy that never happened, so writes
+      // are closed. The immutable audit copy lives in timelineExecutionLogs,
+      // which no client can reach at all.
+      match /marketingAgentLogs/{logId} {
+        allow read: if isOwner(userId);
+        allow write: if false;
+      }
+
       // ── Memory Inbox (agent handshake requests) ──────────────────────────
       match /memoryInbox/{itemId} {
         // Only the owning user can read their inbox items

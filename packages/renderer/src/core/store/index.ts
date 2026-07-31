@@ -35,6 +35,8 @@ import { HandoffSlice, createHandoffSlice } from './slices/handoffSlice';
 import { CRMSlice, createCRMSlice } from './slices/crmSlice';
 import { MapSlice, createMapSlice } from './slices/mapSlice';
 import { NotesSlice, Note, createNotesSlice } from './slices/notesSlice';
+import { AgentSwarmSlice, createAgentSwarmSlice } from './slices/agentSwarmSlice';
+export type { AgentActionLog, CampaignMetrics } from './slices/agentSwarmSlice';
 import { useLivingPlanSlice } from './slices/livingPlanSlice';
 import type { LivingPlan } from '@/services/agent/LivingPlanService';
 import type { WorkspaceSnapshot } from '@/services/sync/WorkspaceSyncService';
@@ -75,7 +77,8 @@ export interface StoreState extends
     HandoffSlice,
     CRMSlice,
     MapSlice,
-    NotesSlice { }
+    NotesSlice,
+    AgentSwarmSlice { }
 
 
 import { OrganizationService } from '@/services/OrganizationService';
@@ -118,6 +121,7 @@ export const useStore = create<StoreState>()(
                 ...createCRMSlice(...a),
                 ...createMapSlice(...a),
                 ...createNotesSlice(...a),
+                ...createAgentSwarmSlice(...a),
             };
 
             // Phase 3.6: Bridge store state to OrganizationService for synchronous access

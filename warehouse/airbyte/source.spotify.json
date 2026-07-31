@@ -1,0 +1,16 @@
+{
+  "_comment": [
+    "Per-artist Spotify source. One connection is provisioned per artist:",
+    "${ARTIST_UID} is the Firebase auth uid, and ${SPOTIFY_REFRESH_TOKEN} is read",
+    "at provisioning time from users/{uid}/analyticsTokens/spotify — the same doc",
+    "platformTokenExchange writes. Never commit a resolved copy of this file."
+  ],
+  "name": "Spotify - Artist ${ARTIST_UID}",
+  "workspaceId": "${AIRBYTE_WORKSPACE_ID}",
+  "configuration": {
+    "sourceType": "spotify",
+    "client_id": "${SPOTIFY_CLIENT_ID}",
+    "client_secret": "${SPOTIFY_CLIENT_SECRET}",
+    "refresh_token": "${SPOTIFY_REFRESH_TOKEN}"
+  }
+}

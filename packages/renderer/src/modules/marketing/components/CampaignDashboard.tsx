@@ -7,6 +7,7 @@ import { MarketingToolbar } from './MarketingToolbar';
 import IntelligenceCampaignModal from './IntelligenceCampaignModal';
 import MarketingAssetGeneratorUI from './MarketingAssetGeneratorUI';
 import AdBuyingPanel from './AdBuyingPanel';
+import AgentSwarmDashboard from './AgentSwarmDashboard';
 import EmailMarketingPanel from './EmailMarketingPanel';
 import PreSaveCampaignBuilder from './PreSaveCampaignBuilder';
 import SMSMarketingPanel from './SMSMarketingPanel';
@@ -225,6 +226,8 @@ const CampaignDashboard: React.FC = () => {
                             <MarketingAssetGeneratorUI />
                         ) : activeTab === 'ad-buying' ? (
                             <AdBuyingPanel />
+                        ) : activeTab === 'swarm' ? (
+                            <AgentSwarmDashboard />
                         ) : activeTab === 'email' ? (
                             <EmailMarketingPanel />
                         ) : activeTab === 'pre-save' ? (
