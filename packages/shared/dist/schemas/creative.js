@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { VideoJobDirectorSettingsSchema } from './videoJob';
+import { VideoJobDirectorSettingsSchema } from './videoJob.js';
 export const BaseMediaRequestSchema = z.object({
     prompt: z.string().min(1),
     referenceUri: z.string().startsWith('gs://').optional(),

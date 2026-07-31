@@ -469,6 +469,34 @@ export interface ElectronRemoteAPI {
     onMessageFromMobile: (callback: (data: unknown) => void) => () => void;
     onStatusUpdated: (callback: (status: unknown) => void) => () => void;
     broadcast: (payload: unknown) => void;
+    getMobileRemoteInfo: () => Promise<{
+        isRunning: boolean;
+        url: string | null;
+        clientCount: number;
+    }>;
+    stop: () => Promise<{
+        success: boolean;
+    }>;
+}
+export interface ElectronWeb3API {
+    executeTransaction: (data: unknown) => Promise<unknown>;
+    getProviderMetadata: () => Promise<unknown>;
+    setRpcUrl: (rpcUrl: string | null) => Promise<unknown>;
+    getBalance: (address: string) => Promise<{
+        success: boolean;
+        balance: string;
+        unit: string;
+        isSimulated: boolean;
+    }>;
+}
+export interface ElectronPinataAPI {
+    uploadFile: (file: number[], filename: string) => Promise<{
+        success: boolean;
+        IpfsHash?: string;
+        PinSize?: number;
+        Timestamp?: string;
+        error?: string;
+    }>;
 }
 export interface ElectronUpdaterAPI {
     check: () => Promise<{
@@ -562,6 +590,8 @@ export interface ElectronAPI {
      * rather than assume it — the browser build has no Electron bridge at all.
      */
     sonicBridge?: ElectronSonicBridgeAPI;
+    web3?: ElectronWeb3API;
+    pinata?: ElectronPinataAPI;
     updater: ElectronUpdaterAPI;
     scheduler: ElectronSchedulerAPI;
     sidecar: ElectronSidecarAPI;

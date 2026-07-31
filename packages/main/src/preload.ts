@@ -192,6 +192,19 @@ contextBridge.exposeInMainWorld('electronAPI', {
         },
     },
 
+    // Web3 / Ethereum Integration
+    web3: {
+        executeTransaction: (data: unknown) => ipcRenderer.invoke('web3:execute-transaction', data),
+        getProviderMetadata: () => ipcRenderer.invoke('web3:get-provider-metadata'),
+        setRpcUrl: (rpcUrl: string | null) => ipcRenderer.invoke('web3:set-rpc-url', rpcUrl),
+        getBalance: (address: string) => ipcRenderer.invoke('web3:get-balance', address)
+    },
+
+    // Pinata / IPFS Integration
+    pinata: {
+        uploadFile: (file: number[], filename: string) => ipcRenderer.invoke('web3:pinata-upload', { file, filename })
+    },
+
     // IndiiRemote
     remote: {
         onMessageFromMobile: (callback: (data: unknown) => void) => {
@@ -199,12 +212,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
             ipcRenderer.on('indii-remote:message-from-mobile', handler);
             return () => ipcRenderer.removeListener('indii-remote:message-from-mobile', handler);
         },
-        onStatusUpdated: (callback: (status: unknown) => void) => {
-            const handler = (_event: unknown, status: unknown) => callback(status);
-            ipcRenderer.on('indii-remote:status-updated', handler);
-            return () => ipcRenderer.removeListener('indii-remote:status-updated', handler);
-        },
-        broadcast: (payload: unknown) => ipcRenderer.send('mobile-remote:broadcast', payload)
+        broadcast: (payload: unknown) => ipcRenderer.send('mobile-remote:broadcast', payload),
+        getMobileRemoteInfo: () => ipcRenderer.invoke('system:getMobileRemoteInfo'),
+        stop: () => ipcRenderer.invoke('mobile-remote:stop'),
     },
 
     // Auto-Updater

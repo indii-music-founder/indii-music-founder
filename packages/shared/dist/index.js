@@ -8,6 +8,7 @@ export * from './schemas/agentLoopState.js';
 export * from './schemas/videoJob.js';
 export * from './schemas/sessionMedia.js';
 export * from './schemas/sessionEditPlan.js';
+export * from './schemas/masterSyncAlignment.js';
 export * from './schemas/audioRecipe.js';
 export * from './schemas/approvalReceipt.js';
 export * from './schemas/derivativeHandoff.js';

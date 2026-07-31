@@ -57,6 +57,23 @@ export function registerMobileRemoteHandlers(): void {
 
 
 
+  /**
+   * Returns current IndiiRemoteService status and pairing info.
+   */
+  ipcMain.handle('system:getMobileRemoteInfo', async (event) => {
+    validateSender(event);
+    return indiiRemoteService.getStatus();
+  });
+
+  /**
+   * Stops the running IndiiRemoteService server.
+   */
+  ipcMain.handle('mobile-remote:stop', async (event) => {
+    validateSender(event);
+    await indiiRemoteService.stop();
+    return { success: true };
+  });
+
   log.info('[MobileRemote] IPC handlers registered for IndiiRemoteService (Ngrok)');
 }
 
