@@ -755,7 +755,10 @@ jobs:
             "DSP_TASKS_QUEUE=$DSP_TASKS_QUEUE" \
             "DSP_TASKS_LOCATION=$DSP_TASKS_LOCATION" \
             > packages/firebase/.env.indii-music-founder
-          rm -rf packages/firebase/lib
+          rm -rf packages/firebase/lib packages/firebase/shared-pkg
+          npx tsc -b packages/shared
+          mkdir -p packages/firebase/shared-pkg
+          cp -r packages/shared/dist packages/shared/package.json packages/firebase/shared-pkg/
           npm run build -w packages/firebase
           if [ ! -f packages/firebase/lib/index.js ]; then
             echo "::error::tsc reported success but packages/firebase/lib/index.js was not produced. Re-running with full diagnostics:"
