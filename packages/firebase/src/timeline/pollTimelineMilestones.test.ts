@@ -1,13 +1,16 @@
 import { describe, expect, it, vi } from 'vitest';
 
-vi.mock('firebase-admin', () => ({
-    firestore: () => ({ collectionGroup: vi.fn() }),
+const { mockCollectionGroup } = vi.hoisted(() => ({
+    mockCollectionGroup: vi.fn(),
 }));
-vi.mock('firebase-functions/v2/scheduler', () => ({ onSchedule: vi.fn() }));
-vi.mock('firebase-functions/params', () => ({ defineSecret: () => ({ value: () => '' }) }));
+vi.mock('firebase-admin', () => ({
+    firestore: () => ({ collectionGroup: mockCollectionGroup }),
+}));
+vi.mock('firebase-functions/v2/scheduler', () => ({ onSchedule: vi.fn((opts, handler) => ({ run: handler })) }));
+vi.mock('firebase-functions/params', () => ({ defineSecret: () => ({ value: () => 'fake-secret' }) }));
 vi.mock('inngest', () => ({ Inngest: vi.fn() }));
 
-import { isMissingIndexError } from './pollTimelineMilestones';
+import { isMissingIndexError, pollTimelineMilestones } from './pollTimelineMilestones';
 
 describe('isMissingIndexError (ISSUE-1220)', () => {
     it('recognises the real production error that hid this bug', () => {
@@ -44,5 +47,15 @@ describe('isMissingIndexError (ISSUE-1220)', () => {
         expect(
             isMissingIndexError(new Error('9 FAILED_PRECONDITION: document is being reindexed')),
         ).toBe(false);
+    });
+
+    it('completes a scheduled run without FAILED_PRECONDITION when index exists', async () => {
+        // Mock a scheduled run to ensure completion after index finishes building (ISSUE-1220).
+        const mockGet = vi.fn().mockResolvedValue({ size: 0, docs: [] });
+        const mockWhere = vi.fn().mockReturnValue({ get: mockGet });
+        mockCollectionGroup.mockReturnValue({ where: mockWhere });
+        
+        // Execute the scheduled function. It should not throw.
+        await expect((pollTimelineMilestones as any).run({} as any)).resolves.toBeUndefined();
     });
 });

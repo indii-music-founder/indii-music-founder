@@ -44,9 +44,11 @@ flowchart TD
     Zustand --> Dashboard
 ```
 
-## System Overview & Flow Description
+## Step-by-Step Transition Breakdown
 
-1. **Directive & Orchestration (Layers 1 & 2):** Campaign parameters flow into the Agent Swarm. Before publishing any ad creative, the `VisionQC` tool executes a Gemini 3 Pro image/prompt evaluation against the artist's Brand Kit to prevent entropy and off-brand visuals.
-2. **Deterministic Execution (Layer 3):** Once approved by Vision QC, `facebookAdsExecutor` performs write-only calls to the Meta Graph API (asset upload, creative concept creation with dynamic `pageId` resolution) and logs immutable execution records to Firestore (`timelineExecutionLogs`).
-3. **Data Warehouse & Pipeline:** Airbyte ingests external performance data from Spotify and TikTok into ClickHouse (`omnichannel_events`). dbt normalizes raw stream history via pure `SELECT` models with column assertions (`schema.yml`), and a ClickHouse materialized view (`daily_ad_performance_mv`) delivers instant aggregates.
-4. **Command Center UI:** The `AgentSwarmDashboard` renders ROAS metrics and live agent action streams directly from Zustand state (`AgentSwarmSlice`).
+1. **Layer 1 to Layer 2**: Campaign goals and budget limits flow from SOP definitions into the Agent Swarm Orchestrator.
+2. **Layer 2 Internal**: Agent Swarm triggers Vision QC evaluation using Gemini 3 Pro, comparing visuals against the Artist Brand Kit.
+3. **Layer 2 to Layer 3**: Approved campaigns route to Facebook Ads API Executor; rejected campaigns log audit events in Firestore.
+4. **Layer 3 External**: FB Executor issues write-only Meta Graph API calls and updates timeline audit trails.
+5. **Analytics Ingestion**: Airbyte pulls external metrics into dbt, transforming data for ClickHouse OLAP queries.
+6. **UI Hydration**: ClickHouse performance metrics and Firestore audit logs hydrate Zustand state for the Recharts dashboard.

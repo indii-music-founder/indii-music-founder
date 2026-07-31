@@ -394,16 +394,16 @@ class DerivedMediaStore:
         creation_receipt_id = _deterministic_id("derived", session_id, job_id, role, sha256)
 
         try:
+            blob.metadata = {
+                "immutable": "true",
+                "role": role,
+                "sha256": sha256,
+                "creationReceiptId": creation_receipt_id,
+            }
             blob.upload_from_filename(
                 str(local_path),
                 content_type=mime_type,
                 if_generation_match=0,
-                metadata={
-                    "immutable": "true",
-                    "role": role,
-                    "sha256": sha256,
-                    "creationReceiptId": creation_receipt_id,
-                },
             )
             blob.reload()
         except (PreconditionFailed, Conflict) as error:

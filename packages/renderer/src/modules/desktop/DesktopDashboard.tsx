@@ -5,6 +5,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { useToast } from '@/core/context/ToastContext';
 import { ResourceBar } from './components/ResourceBar';
 import { SettingCard } from './components/SettingCard';
+import { getColorForModule } from '@/core/theme/moduleColors';
 
 export default function DesktopDashboard() {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -29,17 +30,19 @@ export default function DesktopDashboard() {
         toast.success(`Setting ${key} updated.`);
     };
 
+    const moduleColor = getColorForModule('desktop');
+
     return (
         <div className="flex h-full bg-background overflow-hidden relative text-white">
             {/* Ambient Background Effect */}
-            <div className="absolute top-[-10%] right-[-10%] w-[600px] h-[600px] bg-cyan-500/10 rounded-full blur-[150px] pointer-events-none" />
+            <div className={`absolute top-[-10%] right-[-10%] w-[600px] h-[600px] ${moduleColor.bg} rounded-full blur-[150px] pointer-events-none`} />
 
             <div className="flex-1 flex flex-col z-10 min-w-0">
                 {/* Header */}
                 <div className="h-24 border-b border-white/5 flex items-center justify-between px-10 bg-surface/30 backdrop-blur-md">
                     <div>
-                        <h1 className="text-3xl font-black tracking-tight text-transparent bg-clip-text bg-linear-to-r from-cyan-400 to-blue-500 flex items-center gap-3">
-                            <Monitor size={28} className="text-cyan-500" />
+                        <h1 className={`text-3xl font-black tracking-tight flex items-center gap-3 ${moduleColor.text}`}>
+                            <Monitor size={28} className={moduleColor.text} />
                             DESKTOP INTEGRATION
                         </h1>
                         <p className="text-xs text-muted-foreground font-medium uppercase tracking-widest mt-1">System-Level Configuration</p>
@@ -58,8 +61,8 @@ export default function DesktopDashboard() {
                         {/* System Status Panel */}
                         <div className="lg:col-span-1 space-y-6">
                             <div className="bg-surface/30 border border-white/5 rounded-3xl p-6 backdrop-blur-xl shadow-2xl">
-                                <h3 className="text-sm font-bold text-gray-200 mb-6 flex items-center gap-2">
-                                    <Cpu size={16} className="text-cyan-400" /> SYSTEM RESOURCES
+                                <h3 className={`text-sm font-bold mb-6 flex items-center gap-2 ${moduleColor.text}`}>
+                                    <Cpu size={16} className={moduleColor.text} /> SYSTEM RESOURCES
                                 </h3>
 
                                 <div className="space-y-6">

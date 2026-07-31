@@ -23,6 +23,7 @@ import type { SavedWorkflow } from '@/modules/workflow/types';
 import { IndiiFavicon } from '@/components/shared/IndiiFavicon';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
+import { getColorForModule } from '@/core/theme/moduleColors';
 import { EntryOverlay } from './EntryOverlay';
 import { getDashboardEntryCommands, type EntryCommandDefinition } from '@/services/commands/EntryCommandRegistry';
 
@@ -205,9 +206,9 @@ export function EmptyState({ onCommandSubmit, onCommandClick, studioSlot }: Empt
                 transition={{ delay: 0.8 }}
                 onClick={() => onCommandSubmit('/connect-remote')}
                 aria-label="Connect Mobile Remote — open pairing and connection status"
-                className="group mx-4 mt-5 flex self-stretch items-center gap-4 overflow-hidden rounded-2xl border border-cyan-400/25 bg-linear-to-r from-cyan-500/10 via-white/[0.035] to-blue-500/10 p-4 text-left shadow-lg shadow-cyan-950/10 transition-all duration-300 hover:border-cyan-300/45 hover:bg-white/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/70"
+                className={`group mx-4 mt-5 flex self-stretch items-center gap-4 overflow-hidden rounded-2xl border ${getColorForModule('mobile-remote').border} bg-linear-to-r ${getColorForModule('mobile-remote').bg.replace('bg-', 'from-')} via-white/[0.035] to-blue-500/10 p-4 text-left shadow-lg transition-all duration-300 hover:bg-white/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:${getColorForModule('mobile-remote').ring}`}
             >
-                <span className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-cyan-300/20 bg-cyan-400/10 text-cyan-300 transition-transform duration-300 group-hover:scale-105">
+                <span className={`flex size-11 shrink-0 items-center justify-center rounded-xl border ${getColorForModule('mobile-remote').border} ${getColorForModule('mobile-remote').bg} ${getColorForModule('mobile-remote').text} transition-transform duration-300 group-hover:scale-105`}>
                     <Smartphone size={22} aria-hidden="true" />
                 </span>
                 <span className="min-w-0 flex-1">
@@ -218,7 +219,7 @@ export function EmptyState({ onCommandSubmit, onCommandClick, studioSlot }: Empt
                         Pair your phone or tablet, check Studio status, and control your rooms from anywhere.
                     </span>
                 </span>
-                <span className="hidden shrink-0 items-center gap-2 text-[10px] font-bold uppercase tracking-[0.16em] text-cyan-300 sm:flex">
+                <span className={`hidden shrink-0 items-center gap-2 text-[10px] font-bold uppercase tracking-[0.16em] ${getColorForModule('mobile-remote').text} sm:flex`}>
                     Open pairing
                     <ArrowRight size={14} aria-hidden="true" className="transition-transform group-hover:translate-x-1" />
                 </span>

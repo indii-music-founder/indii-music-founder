@@ -2,7 +2,6 @@ import { createHash } from 'crypto';
 import { getFirestore } from 'firebase-admin/firestore';
 import { HttpsError, onCall } from 'firebase-functions/v2/https';
 import { z } from 'zod';
-import { GoogleGenAI } from '@google/genai';
 import { SessionEditPlan, SessionEditPlanSchema } from '@indii/shared';
 import { validateAppCheckV2 } from '../../middleware/appCheck';
 import { FUNCTION_INTELLIGENCE_MODELS } from '../../config/models';

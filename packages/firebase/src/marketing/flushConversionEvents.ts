@@ -181,7 +181,7 @@ export const flushConversionEvents = onSchedule(
         schedule: 'every 5 minutes',
         // Both roles: the read-only role for the pre-insert dedup check, the
         // INSERT-only role for the write itself. Neither can do the other's job.
-        secrets: [...WAREHOUSE_SECRETS, ...WAREHOUSE_WRITER_SECRETS],
+        secrets: Array.from(new Set([...WAREHOUSE_SECRETS, ...WAREHOUSE_WRITER_SECRETS])),
         timeoutSeconds: 300,
         memory: '512MiB',
     },

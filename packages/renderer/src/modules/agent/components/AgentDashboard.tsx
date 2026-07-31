@@ -30,8 +30,10 @@ import { getColorForModule } from '@/core/theme/moduleColors';
 
 const InboxTabNew = React.lazy(() => import('./InboxTab'));
 
+const agentColor = getColorForModule('agent');
+
 const STATUS_COLORS: Record<string, string> = {
-    active: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30',
+    active: `${agentColor.bg} ${agentColor.text} border ${agentColor.border}/30`,
     scheduled: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
     expired: 'bg-slate-700/50 text-slate-500 border-slate-700',
 };

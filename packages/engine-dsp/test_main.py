@@ -111,5 +111,12 @@ class ProxyRouteTests(unittest.TestCase):
         self.assertEqual(raised.exception.status_code, 409)
 
 
+class AlignRouteTests(unittest.TestCase):
+    def test_the_align_route_is_registered(self):
+        align_routes = [route for route in app.routes if route.path == "/align"]
+        self.assertEqual(len(align_routes), 1)
+        self.assertIn("POST", align_routes[0].methods)
+
+
 if __name__ == "__main__":
     unittest.main()

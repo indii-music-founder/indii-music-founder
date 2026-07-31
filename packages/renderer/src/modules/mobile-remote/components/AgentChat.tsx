@@ -36,6 +36,7 @@ import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import { useVoice } from '@/core/context/VoiceContext';
 import { resolveEntryCommand } from '@/services/commands/EntryCommandRegistry';
+import { resolveAgentVisualIdentity } from '@/services/agent/AgentVisualIdentity';
 
 interface ChatMessage {
     id: string;
@@ -412,10 +413,10 @@ export default function AgentChat({ onSendCommand: _onSendCommand, isPaired }: A
                         <p className="text-xs text-[#8e8e93] mt-2 max-w-[200px]">Your agents are ready to assist with distribution, creative, and more.</p>
                     </div>
                 ) : (
-                    // eslint-disable-next-line @typescript-eslint/no-unused-vars
                     messages.map((msg, idx) => {
                         const isUser = msg.role === 'user';
                         const showAgentHeader = !isUser && msg.agentId && msg.agentId !== 'generalist';
+                        const agentIdentity = msg.agentId ? resolveAgentVisualIdentity(msg.agentId) : null;
                         
                         return (
                             <motion.div 
@@ -428,9 +429,12 @@ export default function AgentChat({ onSendCommand: _onSendCommand, isPaired }: A
                                     isUser ? "items-end" : "items-start"
                                 )}
                             >
-                                {showAgentHeader && (
-                                    <span className="text-[10px] text-blue-400 font-bold uppercase tracking-[0.2em] ml-2 mb-0.5">
-                                        {msg.agentId}
+                                {showAgentHeader && agentIdentity && (
+                                    <span 
+                                        className="text-[10px] font-bold uppercase tracking-[0.2em] ml-2 mb-0.5"
+                                        style={{ color: agentIdentity.cssProperties['--agent-accent'] }}
+                                    >
+                                        {agentIdentity.displayName}
                                     </span>
                                 )}
                                 

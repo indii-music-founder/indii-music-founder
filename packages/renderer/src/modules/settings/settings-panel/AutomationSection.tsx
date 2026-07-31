@@ -14,6 +14,7 @@ import { useToast } from '@/core/context/ToastContext';
 import { artistOperatingProfileService } from '@/services/agent/governance/ArtistOperatingProfileService';
 import { DEFAULT_ARTIST_OPERATING_PROFILE, type ArtistOperatingProfile } from '@indii/shared';
 import { logger } from '@/utils/logger';
+import { getColorForModule } from '@/core/theme/moduleColors';
 
 type ListField = 'businessGoals' | 'creativeBoundaries' | 'installedSoftware';
 
@@ -33,6 +34,7 @@ const ListEditor: React.FC<{
     const [draft, setDraft] = useState('');
     const config = LIST_FIELD_CONFIG[field];
     const Icon = config.icon;
+    const moduleColor = getColorForModule('settings');
 
     const submit = () => {
         const trimmed = draft.trim();
@@ -79,13 +81,13 @@ const ListEditor: React.FC<{
                         if (e.key === 'Enter') submit();
                     }}
                     placeholder={config.placeholder}
-                    className="flex-1 bg-slate-900/60 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-cyan-500/40"
+                    className={`flex-1 bg-slate-900/60 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:${moduleColor.ring}`}
                 />
                 <button
                     aria-label={`Add to ${config.label}`}
                     onClick={submit}
                     disabled={busy || !draft.trim()}
-                    className="flex items-center gap-1 text-xs font-medium text-cyan-400 hover:text-cyan-300 hover:bg-cyan-500/10 px-3 py-1.5 rounded-lg transition-colors border border-cyan-500/20 disabled:opacity-40 disabled:cursor-not-allowed"
+                    className={`flex items-center gap-1 text-xs font-medium ${moduleColor.text} hover:opacity-80 hover:${moduleColor.bg} px-3 py-1.5 rounded-lg transition-colors border ${moduleColor.border}/20 disabled:opacity-40 disabled:cursor-not-allowed`}
                 >
                     <Plus size={14} />
                     Add

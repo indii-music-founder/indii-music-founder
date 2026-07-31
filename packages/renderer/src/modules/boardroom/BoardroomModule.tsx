@@ -13,6 +13,7 @@ import { ArrowLeft, Users, Layers, Bot } from 'lucide-react';
 import { LivingPlansTracker } from './components/LivingPlansTracker';
 import { SwarmCollaborationFeed } from './components/SwarmCollaborationFeed';
 import { MobileParticipantDrawer } from './components/MobileParticipantDrawer';
+import { getColorForModule } from '@/core/theme/moduleColors';
 
 import { useToast } from '@/core/context/ToastContext';
 import { trackFounderFunnelEvent } from '@/services/founders/founderFunnel';
@@ -150,7 +151,7 @@ export function BoardroomModule() {
                     </button>
                     <button 
                         onClick={() => setIsTrackerOpen(true)}
-                        className="flex items-center gap-2 px-4 py-2 rounded-full bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 hover:text-cyan-300 transition-all border border-cyan-500/20 mr-2"
+                        className={`flex items-center gap-2 px-4 py-2 rounded-full ${getColorForModule('agent').bg} hover:${getColorForModule('agent').bg.replace('/10', '/20')} ${getColorForModule('agent').text} transition-all border ${getColorForModule('agent').border} mr-2`}
                         title="View Active Plans"
                         aria-label="Living Plans"
                     >

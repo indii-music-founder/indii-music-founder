@@ -44,6 +44,7 @@ import {
     SETTINGS_SECTION_REQUEST_EVENT,
     type SettingsSectionId,
 } from './SettingsNavigation';
+import { getColorForModule } from '@/core/theme/moduleColors';
 
 // ---------------------------------------------------------------------------
 // Types & Navigation Config
@@ -67,6 +68,7 @@ const SECTIONS: Array<{ id: SettingsSectionId; label: string; icon: LucideIcon; 
 const SettingsPanel: React.FC = () => {
     const { t } = useTranslation();
     const [activeSection, setActiveSection] = useState<SettingsSectionId>(getRequestedSettingsSection);
+    const moduleColor = getColorForModule('settings');
 
     useEffect(() => {
         const handleSectionRequest = (event: Event) => {
@@ -109,7 +111,7 @@ const SettingsPanel: React.FC = () => {
                             onClick={() => selectSection(section.id)}
                             className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all ${
                                 isActive
-                                    ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20'
+                                    ? `${moduleColor.bg} ${moduleColor.text} border ${moduleColor.border}`
                                     : 'text-slate-400 hover:text-white hover:bg-slate-800/50 border border-transparent'
                             }`}
                         >
@@ -130,7 +132,7 @@ const SettingsPanel: React.FC = () => {
                             onClick={() => selectSection(section.id)}
                             className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium whitespace-nowrap transition-all ${
                                 activeSection === section.id
-                                    ? 'bg-cyan-500/20 text-cyan-400'
+                                    ? `${moduleColor.bg} ${moduleColor.text}`
                                     : 'text-slate-500 hover:text-white'
                             }`}
                         >

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Map, List, Mail, Globe, MessageSquare, ListTodo, RotateCcw } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { getColorForModule } from '@/core/theme/moduleColors';
 
 export type AgentTab = 'scout' | 'campaigns' | 'inbox' | 'browser' | 'chat' | 'tasks' | 'loops';
 
@@ -33,7 +34,7 @@ export const AgentSidebar: React.FC<AgentSidebarProps> = ({ activeTab, setActive
                             key={id}
                             onClick={() => setActiveTab(id)}
                             className={`p-3 rounded-xl transition-all duration-200 group relative ${activeTab === id
-                                ? 'bg-cyan-500 text-white shadow-lg shadow-cyan-500/20'
+                                ? `${getColorForModule('agent').bg.replace('/10', '')} text-white shadow-lg`
                                 : 'text-slate-400 hover:text-white hover:bg-slate-800'
                                 }`}
                             title={label}

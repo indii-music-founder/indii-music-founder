@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Bot, ChevronDown, Sparkles } from 'lucide-react';
 import { agentRegistry } from '@/services/agent/registry';
 import type { SpecializedAgent } from '@/services/agent/types';
+import { getColorForModule } from '@/core/theme/moduleColors';
 
 interface SpecialistSelectorProps {
     selectedAgentId: string | null;
@@ -35,15 +36,16 @@ export const SpecialistSelector: React.FC<SpecialistSelectorProps> = ({
     }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
     const selectedAgent = agents.find(a => a.id === selectedAgentId);
+    const moduleColor = getColorForModule('agent');
 
     return (
         <div className="relative">
             <button
                 onClick={() => setOpen(prev => !prev)}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-slate-700 bg-slate-900 text-sm text-slate-300 hover:border-cyan-500/50 hover:text-white transition-all duration-200"
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border border-slate-700 bg-slate-900 text-sm text-slate-300 hover:${moduleColor.border.replace('border-', 'border-')} hover:text-white transition-all duration-200`}
                 title="Select specialist agent"
             >
-                <Bot size={14} className="text-cyan-400 shrink-0" />
+                <Bot size={14} className={`${moduleColor.text} shrink-0`} />
                 <span className="max-w-[120px] truncate">
                     {selectedAgent ? selectedAgent.name : 'Auto'}
                 </span>
@@ -64,11 +66,11 @@ export const SpecialistSelector: React.FC<SpecialistSelectorProps> = ({
                             <button
                                 onClick={() => { onSelect(null); setOpen(false); }}
                                 className={`w-full flex items-start gap-3 px-3 py-2 rounded-lg text-left transition-colors ${selectedAgentId === null
-                                    ? 'bg-cyan-500/20 text-cyan-300'
+                                    ? `${moduleColor.bg} ${moduleColor.text}`
                                     : 'text-slate-400 hover:bg-slate-800 hover:text-white'
                                     }`}
                             >
-                                <Sparkles size={14} className="mt-0.5 shrink-0 text-cyan-400" />
+                                <Sparkles size={14} className={`mt-0.5 shrink-0 ${moduleColor.text}`} />
                                 <div>
                                     <div className="text-sm font-medium">Auto</div>
                                     <div className="text-xs text-slate-500">Route to best specialist</div>
@@ -82,7 +84,7 @@ export const SpecialistSelector: React.FC<SpecialistSelectorProps> = ({
                                             key={agent.id}
                                             onClick={() => { onSelect(agent.id); setOpen(false); }}
                                             className={`w-full flex items-start gap-3 px-3 py-2 rounded-lg text-left transition-colors ${selectedAgentId === agent.id
-                                                ? 'bg-cyan-500/20 text-cyan-300'
+                                                ? `${moduleColor.bg} ${moduleColor.text}`
                                                 : 'text-slate-400 hover:bg-slate-800 hover:text-white'
                                                 }`}
                                         >

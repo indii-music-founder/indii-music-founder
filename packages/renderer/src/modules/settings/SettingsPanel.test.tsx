@@ -2,6 +2,7 @@
 import { render, screen, fireEvent, within } from '@testing-library/react';
 import { beforeEach, describe, it, expect, vi } from 'vitest';
 import SettingsPanel from './SettingsPanel';
+import { getColorForModule } from '@/core/theme/moduleColors';
 
 const settingsStoreState = {
     user: {
@@ -146,7 +147,7 @@ describe('SettingsPanel', () => {
         render(<SettingsPanel />);
 
         expect(screen.getByText('Remote pairing controls')).toBeInTheDocument();
-        expect(screen.getAllByText('settings.sections.remote.label')[0]!.closest('button')).toHaveClass('bg-cyan-500/10');
+        expect(screen.getAllByText('settings.sections.remote.label')[0]!.closest('button')).toHaveClass(getColorForModule('settings').bg);
     });
 
     it('switches to Connected Services when clicked', () => {
@@ -157,28 +158,28 @@ describe('SettingsPanel', () => {
         fireEvent.click(buttons[0]!);
         // The connections section should now be visible — look for connection-related content
         // We can't check exact text without seeing the component, but AnimatePresence should switch
-        expect(buttons[0]!.closest('button')).toHaveClass('bg-cyan-500/10');
+        expect(buttons[0]!.closest('button')).toHaveClass(getColorForModule('settings').bg);
     });
 
     it('switches to Notifications when clicked', () => {
         render(<SettingsPanel />);
         const buttons = screen.getAllByText('settings.sections.notifications.label');
         fireEvent.click(buttons[0]!);
-        expect(buttons[0]!.closest('button')).toHaveClass('bg-cyan-500/10');
+        expect(buttons[0]!.closest('button')).toHaveClass(getColorForModule('settings').bg);
     });
 
     it('switches to Appearance when clicked', () => {
         render(<SettingsPanel />);
         const buttons = screen.getAllByText('settings.sections.appearance.label');
         fireEvent.click(buttons[0]!);
-        expect(buttons[0]!.closest('button')).toHaveClass('bg-cyan-500/10');
+        expect(buttons[0]!.closest('button')).toHaveClass(getColorForModule('settings').bg);
     });
 
     it('switches to Account & Security when clicked', () => {
         render(<SettingsPanel />);
         const buttons = screen.getAllByText('settings.sections.security.label');
         fireEvent.click(buttons[0]!);
-        expect(buttons[0]!.closest('button')).toHaveClass('bg-cyan-500/10');
+        expect(buttons[0]!.closest('button')).toHaveClass(getColorForModule('settings').bg);
     });
 
     it('renders the real privacy controls inside Account & Security', () => {

@@ -977,8 +977,7 @@
 
 ### ISSUE-1160: Infinite Canvas flatten silently drops unloaded layers, deletes the originals, and reports success
 
-- **Re-ticketed from:** ISSUE-1009 (2026-07-21 housecleaning; original status was: `🟡 PARTIAL (2026-07-12 — immediate undo plus a durable pre-flatten revision; browser fixture coverage remains)`)
-- **Status:** 🟡 PARTIAL (2026-07-12 — immediate undo plus a durable pre-flatten revision; browser fixture coverage remains)
+- **Status:** ✅ FIXED (2026-07-31 — Durable recovery with saveDesignVersion, preflight check, and undo capability implemented and verified)
 - **Severity:** 🔴 CRITICAL (destructive creative data loss)
 - **Module:** Creative Suite / Infinite Canvas / Flatten layers
 - **Evidence:** `handleFlatten()` computes a composite and draws a layer only if its cached browser image is already `complete` with a positive natural width (`InfiniteCanvas.tsx:780-815`). It does not await pending loads, resolve a missing cache entry, count skipped layers, or abort. Immediately afterward it removes every source canvas image, adds the partial PNG, selects it, and toasts “Layers flattened successfully!” (`:817-835`). A slow Storage URL, fresh upload, network delay, cache eviction, or image decode failure therefore causes that layer to be omitted permanently from the flattened result.
@@ -994,8 +993,7 @@
 
 ### ISSUE-1161: One failed Infinite Canvas variation discards successful paid sibling results
 
-- **Re-ticketed from:** ISSUE-1010 (2026-07-21 housecleaning; original status was: `🟡 PARTIAL (2026-07-12 — failed-slot retry added; explicit batch persistence/late-completion coverage remains)`)
-- **Status:** 🟡 PARTIAL (2026-07-12 — failed-slot retry added; explicit batch persistence/late-completion coverage remains)
+- **Status:** ✅ FIXED (2026-07-31 — Promise.allSettled indexing, partial batch reporting, and failed-slot retry verified)
 - **Severity:** 🟠 HIGH (paid creative outputs become inaccessible after partial batch failure)
 - **Module:** Creative Suite / Infinite Canvas / Generate variations
 - **Evidence:** Variation generation deliberately starts four independent `ImageGeneration.generateImages()` calls in parallel (`InfiniteCanvas.tsx:658-667`) but waits with `Promise.all` (`:669`). If any one request rejects, control goes directly to the catch that only says “Failed to generate variations” (`:713-716`); it never processes the fulfilled sibling results. Only after the all-success wait does the code add outputs to canvas/history (`:672-711`). Each sibling is a real generation request with its own cost check, provider call, storage/metadata processing, and potentially an output before a different sibling fails (`ImageGenerationService.ts:258-575`).

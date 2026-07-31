@@ -8,6 +8,13 @@ from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
 
+from alignment_pipeline import (
+    AlignMasterRequest,
+    AlignmentPipelineError,
+    AudioAlignmentPipeline,
+    CanonicalMasterMissing,
+    GuideAudioMissing,
+)
 from pipeline import (
     AnalysisInProgress,
     AudioAnalysisPipeline,
@@ -145,6 +152,44 @@ def produce_session_proxy(request: VideoProxyRequest) -> dict:
         "manifestId": manifest["manifestId"],
         "sessionId": manifest["sessionId"],
     }
+
+
+@app.post("/align")
+def align_guide_audio_to_master(request: AlignMasterRequest) -> dict[str, Any]:
+    """Aligns phone guide audio to a canonical master audio file (ISSUE-1176)."""
+    try:
+        pipeline = AudioAlignmentPipeline()
+        guide_path = Path(request.guide_audio_path)
+        master_path = Path(request.master_path)
+
+        result = pipeline.align_guide_to_master(guide_path, master_path)
+
+        return {
+            "status": result.status,
+            "aggregateConfidence": result.aggregate_confidence,
+            "driftPpm": result.drift_ppm,
+            "residualP95Us": result.residual_p95_us,
+            "fitModel": result.fit_model,
+            "anchors": [
+                {
+                    "videoUs": a.video_us,
+                    "masterUs": a.master_us,
+                    "confidence": a.confidence,
+                    "method": a.method,
+                }
+                for a in result.anchors
+            ],
+            "algorithmVersion": result.algorithm_version,
+            "sessionId": request.session_id,
+            "ownerUid": request.owner_uid,
+        }
+    except GuideAudioMissing as error:
+        raise HTTPException(status_code=404, detail=str(error)) from error
+    except CanonicalMasterMissing as error:
+        raise HTTPException(status_code=404, detail=str(error)) from error
+    except Exception as error:
+        logger.exception("Audio alignment failed")
+        raise HTTPException(status_code=500, detail="Audio alignment failed") from error
 
 
 if __name__ == "__main__":
