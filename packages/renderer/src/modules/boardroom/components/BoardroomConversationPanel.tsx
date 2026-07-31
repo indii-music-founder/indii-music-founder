@@ -136,9 +136,9 @@ export function BoardroomConversationPanel({ messages }: BoardroomConversationPa
 
     if (messages.length === 0) {
         return (
-            <div className="flex-1 flex flex-col min-h-0">
+            <div className="flex-1 flex flex-col min-h-0 min-w-0 overflow-hidden">
                 {/* Empty State — centered vertically in the available space */}
-                <div className="flex-1 flex flex-col items-center justify-center text-center p-8">
+                <div className="flex-1 flex flex-col items-center justify-center text-center p-8 min-w-0">
                     <div className="w-14 h-14 rounded-2xl bg-white/3 border border-white/5 flex items-center justify-center mb-4">
                         <MessageSquare size={22} className="text-indigo-400/50" />
                     </div>
@@ -149,22 +149,22 @@ export function BoardroomConversationPanel({ messages }: BoardroomConversationPa
                 </div>
 
                 {/* Prompt Area — always visible so users can start the conversation */}
-                <div className="p-4 border-t border-white/5 bg-white/1 shrink-0">
-                    <PromptArea isDocked className="w-full max-w-none" />
+                <div className="p-4 border-t border-white/5 bg-white/1 shrink-0 min-w-0">
+                    <PromptArea isDocked className="w-full max-w-none min-w-0" />
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="flex-1 flex flex-col min-h-0">
+        <div className="flex-1 flex flex-col min-h-0 min-w-0 overflow-hidden">
             {/* Panel Header */}
-            <div className="flex items-center gap-2 px-5 py-3 border-b border-white/5 shrink-0">
-                <MessageSquare size={14} className="text-indigo-400" />
-                <span className="text-xs font-bold uppercase tracking-wider text-white/60">
+            <div className="flex items-center gap-2 px-5 py-3 border-b border-white/5 shrink-0 min-w-0">
+                <MessageSquare size={14} className="text-indigo-400 shrink-0" />
+                <span className="text-xs font-bold uppercase tracking-wider text-white/60 truncate">
                     Discussion
                 </span>
-                <span className="ml-auto text-[10px] font-mono text-white/20">
+                <span className="ml-auto text-[10px] font-mono text-white/20 shrink-0">
                     {messages.length} message{messages.length !== 1 ? 's' : ''}
                 </span>
             </div>
@@ -173,7 +173,7 @@ export function BoardroomConversationPanel({ messages }: BoardroomConversationPa
             <div
                 ref={scrollRef}
                 onScroll={handleScroll}
-                className="flex-1 overflow-y-auto custom-scrollbar px-4 py-4 space-y-1"
+                className="flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar px-4 py-4 space-y-1 min-w-0"
             >
                 <AnimatePresence initial={false}>
                     {messages.map((msg) => {
@@ -190,7 +190,7 @@ export function BoardroomConversationPanel({ messages }: BoardroomConversationPa
                                 initial={{ opacity: 0, y: 12 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                                className={`flex items-start gap-3 py-3 px-3 rounded-xl transition-colors ${isUser ? 'bg-white/2' : 'hover:bg-white/2'}`}
+                                className={`flex items-start gap-3 py-3 px-3 rounded-xl transition-colors min-w-0 max-w-full ${isUser ? 'bg-white/2' : 'hover:bg-white/2'}`}
                             >
                                 {/* Avatar */}
                                 <div className="shrink-0 mt-0.5">
@@ -217,15 +217,15 @@ export function BoardroomConversationPanel({ messages }: BoardroomConversationPa
                                 </div>
 
                                 {/* Message Content */}
-                                <div className="flex-1 min-w-0">
+                                <div className="flex-1 min-w-0 max-w-full overflow-hidden">
                                     {/* Agent Name Label */}
                                     {!isUser && (
-                                        <p className="text-[10px] font-bold uppercase tracking-wider text-white/30 mb-1">
+                                        <p className="text-[10px] font-bold uppercase tracking-wider text-white/30 mb-1 truncate">
                                             {identity.displayName}
                                         </p>
                                     )}
                                     {isUser && (
-                                        <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-400/50 mb-1">
+                                        <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-400/50 mb-1 truncate">
                                             You
                                         </p>
                                     )}
@@ -240,15 +240,34 @@ export function BoardroomConversationPanel({ messages }: BoardroomConversationPa
                                     )}
 
                                     {/* Message Text */}
-                                    <div className="message-content text-sm text-white/80 leading-relaxed wrap-break-word whitespace-pre-wrap">
+                                    <div className="message-content text-sm text-white/80 leading-relaxed break-words [overflow-wrap:anywhere] [word-break:break-word] whitespace-pre-wrap min-w-0 max-w-full">
                                         <ReactMarkdown
                                             remarkPlugins={[remarkGfm]}
                                             components={{
-                                                a: ({ node, ...props }) => <a {...props} target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:text-indigo-300 underline" />,
-                                                p: ({ node, ...props }) => <p {...props} className="mb-2 last:mb-0" />,
-                                                ul: ({ node, ...props }) => <ul {...props} className="list-disc pl-4 mb-2" />,
-                                                ol: ({ node, ...props }) => <ol {...props} className="list-decimal pl-4 mb-2" />,
-                                                img: ({ node, ...props }) => <img {...props} className="rounded-lg max-w-full max-h-[300px] object-contain my-2 border border-white/10 shadow-lg" alt={props.alt || 'Generated asset'} />
+                                                a: ({ node, ...props }) => <a {...props} target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:text-indigo-300 underline break-all" />,
+                                                p: ({ node, ...props }) => <p {...props} className="mb-2 last:mb-0 break-words [overflow-wrap:anywhere]" />,
+                                                ul: ({ node, ...props }) => <ul {...props} className="list-disc pl-4 mb-2 break-words" />,
+                                                ol: ({ node, ...props }) => <ol {...props} className="list-decimal pl-4 mb-2 break-words" />,
+                                                img: ({ node, ...props }) => <img {...props} className="rounded-lg max-w-full max-h-[300px] object-contain my-2 border border-white/10 shadow-lg" alt={props.alt || 'Generated asset'} />,
+                                                pre: ({ node, ...props }) => (
+                                                    <pre {...props} className="p-3 my-2 rounded-lg bg-black/40 border border-white/10 overflow-x-auto text-xs font-mono text-white/90 max-w-full whitespace-pre-wrap break-all" />
+                                                ),
+                                                code: ({ node, inline, className, children, ...props }: any) => (
+                                                    inline ? (
+                                                        <code {...props} className="px-1.5 py-0.5 rounded bg-white/10 text-indigo-300 font-mono text-xs break-all">
+                                                            {children}
+                                                        </code>
+                                                    ) : (
+                                                        <code {...props} className={`${className || ''} break-all`}>
+                                                            {children}
+                                                        </code>
+                                                    )
+                                                ),
+                                                table: ({ node, ...props }) => (
+                                                    <div className="overflow-x-auto max-w-full my-2 border border-white/10 rounded-lg">
+                                                        <table {...props} className="min-w-full text-xs" />
+                                                    </div>
+                                                )
                                             }}
                                         >
                                              {sanitizeBoardroomMessage(msg.text || (msg as { content?: string }).content || '')}
@@ -277,8 +296,8 @@ export function BoardroomConversationPanel({ messages }: BoardroomConversationPa
             </div>
 
             {/* Inline PromptArea for Boardroom */}
-            <div className="p-4 border-t border-white/5 bg-white/1 shrink-0">
-                <PromptArea isDocked className="w-full max-w-none" />
+            <div className="p-4 border-t border-white/5 bg-white/1 shrink-0 min-w-0">
+                <PromptArea isDocked className="w-full max-w-none min-w-0" />
             </div>
         </div>
     );
