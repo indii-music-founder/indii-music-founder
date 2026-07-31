@@ -677,6 +677,11 @@ jobs:
           SESSION_PROXY_AUDIENCE: https://engine-dsp-148015878263.us-central1.run.app
           SESSION_PROXY_TASKS_QUEUE: session-proxy-queue
           SESSION_PROXY_TASKS_LOCATION: us-central1
+          ENGINE_DSP_URL: https://engine-dsp-148015878263.us-central1.run.app/profile
+          ENGINE_DSP_SERVICE_ACCOUNT: engine-dsp-invoker@indii-music-founder.iam.gserviceaccount.com
+          ENGINE_DSP_AUDIENCE: https://engine-dsp-148015878263.us-central1.run.app
+          DSP_TASKS_QUEUE: dsp-processing-queue
+          DSP_TASKS_LOCATION: us-central1
         run: |
           # Firebase Tools copies stale CPU metadata from existing gen1 endpoints
           # during deploy validation. These two functions were created with bad
@@ -819,6 +824,11 @@ jobs:
             "SESSION_PROXY_AUDIENCE=$SESSION_PROXY_AUDIENCE" \
             "SESSION_PROXY_TASKS_QUEUE=$SESSION_PROXY_TASKS_QUEUE" \
             "SESSION_PROXY_TASKS_LOCATION=$SESSION_PROXY_TASKS_LOCATION" \
+            "ENGINE_DSP_URL=$ENGINE_DSP_URL" \
+            "ENGINE_DSP_SERVICE_ACCOUNT=$ENGINE_DSP_SERVICE_ACCOUNT" \
+            "ENGINE_DSP_AUDIENCE=$ENGINE_DSP_AUDIENCE" \
+            "DSP_TASKS_QUEUE=$DSP_TASKS_QUEUE" \
+            "DSP_TASKS_LOCATION=$DSP_TASKS_LOCATION" \
             > packages/firebase/.env.indii-music-founder
           rm -rf packages/firebase/lib
           npm run build -w packages/firebase
