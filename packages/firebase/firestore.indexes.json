@@ -1385,6 +1385,20 @@
         }
       ],
       "queryScope": "COLLECTION_GROUP"
+    },
+    {
+      "collectionGroup": "agentPlans",
+      "fields": [
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "updatedAt",
+          "order": "ASCENDING"
+        }
+      ],
+      "queryScope": "COLLECTION_GROUP"
     }
   ]
 }

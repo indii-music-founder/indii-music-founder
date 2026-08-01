@@ -59,7 +59,7 @@ export function VeoSettingsPanel({ isOpen }: VeoSettingsPanelProps) {
                                 <p className="text-[9px] uppercase tracking-widest text-gray-500 font-bold">Temporal lock</p>
                                 <p className="text-[11px] font-mono font-bold text-white">{directorFps} fps · {directorFrames} frames</p>
                             </div>
-                            <span className="text-[9px] uppercase tracking-widest text-cyan-300 bg-cyan-500/10 border border-cyan-500/20 rounded-full px-2 py-1">
+                            <span className="text-[9px] uppercase tracking-widest text-purple-300 bg-purple-500/10 border border-purple-500/20 rounded-full px-2 py-1">
                                 Director timing
                             </span>
                         </div>

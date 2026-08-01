@@ -1,6 +1,7 @@
 import React from 'react';
 import { MousePointer, Type, Image as ImageIcon, Box } from 'lucide-react';
 import { motion } from 'motion/react';
+import { getColorForModule } from '@/core/theme/moduleColors';
 
 interface DesignToolbarProps {
     activeTool: string;
@@ -23,8 +24,8 @@ export const DesignToolbar: React.FC<DesignToolbarProps> = ({ activeTool, onTool
                         key={tool.id}
                         onClick={() => onToolSelect(tool.id)}
                         className={`p-3 rounded-xl transition-all duration-200 group relative ${activeTool === tool.id
-                            ? 'bg-cyan-500 text-black shadow-[0_0_15px_rgba(6,182,212,0.4)]'
-                            : 'text-neutral-400 hover:text-cyan-400 hover:bg-neutral-800'
+                            ? `${getColorForModule('creative').bg.replace('/10', '')} text-black shadow-md`
+                            : `text-neutral-400 hover:${getColorForModule('creative').text} hover:bg-neutral-800`
                             }`}
                         title={tool.label}
                     >
@@ -32,7 +33,7 @@ export const DesignToolbar: React.FC<DesignToolbarProps> = ({ activeTool, onTool
                         {activeTool === tool.id && (
                             <motion.div
                                 layoutId="activeToolGlow"
-                                className="absolute inset-0 rounded-xl bg-cyan-500/20 blur-md -z-10"
+                                className={`absolute inset-0 rounded-xl ${getColorForModule('creative').bg.replace('/10', '/20')} blur-md -z-10`}
                             />
                         )}
                     </button>

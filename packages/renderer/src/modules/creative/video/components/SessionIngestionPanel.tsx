@@ -136,7 +136,7 @@ export const SessionIngestionPanel: React.FC<SessionIngestionPanelProps> = ({
             <button
                 type="button"
                 onClick={() => setOpen(value => !value)}
-                className="w-10 h-10 bg-black/40 border border-white/10 rounded-lg flex items-center justify-center text-gray-400 hover:text-cyan-300 hover:bg-cyan-500/10 transition-all shadow-xl backdrop-blur-md"
+                className="w-10 h-10 bg-black/40 border border-white/10 rounded-lg flex items-center justify-center text-gray-400 hover:text-purple-300 hover:bg-purple-500/10 transition-all shadow-xl backdrop-blur-md"
                 aria-label="Import a long recording session"
                 aria-expanded={open}
                 title="Import long recording"
@@ -146,7 +146,7 @@ export const SessionIngestionPanel: React.FC<SessionIngestionPanelProps> = ({
             {open && (
                 <section
                     aria-label="Long recording session"
-                    className="absolute top-0 left-12 w-80 rounded-xl border border-cyan-500/20 bg-gray-950/95 p-4 shadow-2xl backdrop-blur-xl text-xs"
+                    className="absolute top-0 left-12 w-80 rounded-xl border border-purple-500/20 bg-gray-950/95 p-4 shadow-2xl backdrop-blur-xl text-xs"
                 >
                     <div className="flex items-center justify-between gap-3 mb-3">
                         <div>
@@ -165,7 +165,7 @@ export const SessionIngestionPanel: React.FC<SessionIngestionPanelProps> = ({
                     )}
 
                     {canUpload && !completed && (
-                        <label className="flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-cyan-500/40 p-3 text-cyan-200 hover:bg-cyan-500/10">
+                        <label className="flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-purple-500/40 p-3 text-purple-200 hover:bg-purple-500/10">
                             <UploadCloud size={15} />
                             {starting
                                 ? 'Authorizing…'
@@ -192,7 +192,7 @@ export const SessionIngestionPanel: React.FC<SessionIngestionPanelProps> = ({
                             </div>
                             <div className="h-1.5 overflow-hidden rounded bg-gray-800">
                                 <div
-                                    className="h-full bg-cyan-400 transition-all"
+                                    className="h-full bg-purple-400 transition-all"
                                     style={{ width: `${Math.min(100, progress.percent)}%` }}
                                 />
                             </div>

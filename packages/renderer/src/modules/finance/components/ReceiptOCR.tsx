@@ -4,6 +4,7 @@ import { Scan, Upload, FileImage, Plus, CheckCircle, Tag, Calendar, DollarSign, 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { logger } from '@/utils/logger';
+import { getColorForModule } from '@/core/theme/moduleColors';
 
 /* ================================================================== */
 /*  Item 160 — Expense Receipt OCR                                     */
@@ -30,7 +31,7 @@ const CATEGORY_COLORS: Record<string, string> = {
     Software: 'text-green-400 bg-green-500/10',
     Studio: 'text-amber-400 bg-amber-500/10',
     Meals: 'text-green-400 bg-green-500/10',
-    Travel: 'text-cyan-400 bg-cyan-500/10',
+    Travel: `${getColorForModule('road').text} ${getColorForModule('road').bg}`,
     Other: 'text-gray-400 bg-gray-500/10',
 };
 

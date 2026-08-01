@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import * as admin from 'firebase-admin';
 import { HttpsError, onCall, type CallableRequest } from 'firebase-functions/v2/https';
+import { onTaskDispatched } from 'firebase-functions/v2/tasks';
 import { getVertexAIClient } from '../../lib/vertexClient';
 import { extractDocumentText } from './textExtractor';
 import { chunkDocumentPages, type GeneratedChunk } from './chunker';
@@ -9,7 +10,7 @@ import {
   KNOWLEDGE_EMBEDDING_MODEL,
   KNOWLEDGE_EMBEDDING_DIMENSION,
   type KnowledgeIndexReceipt,
-} from '../../shared/knowledge';
+} from '@indii/shared';
 
 export interface IndexWorkerPayload {
   uid: string;
@@ -53,6 +54,19 @@ export async function executeDocumentIndexing(
       console.info(`[KnowledgeWorker] Document ${documentId} already indexed. Idempotent early return.`);
       return { documentId, chunkCount: data.chunkCount, receiptId: receiptRef.id };
     }
+  }
+
+  // Load canonical owner record and verify state
+  const docSnap = await docRef.get();
+  if (!docSnap.exists) {
+    throw new HttpsError('not-found', `Knowledge document ${documentId} not found.`);
+  }
+  const docData = docSnap.data() as any;
+  if (docData.storagePath !== storagePath || docData.storageGeneration !== storageGeneration || docData.contentSha256 !== contentSha256) {
+    throw new HttpsError('failed-precondition', `Document metadata mismatch for ${documentId}.`);
+  }
+  if (docData.state !== 'queued' && docData.state !== 'indexing') {
+    throw new HttpsError('failed-precondition', `Document is in incompatible state: ${docData.state}`);
   }
 
   // Update document state to 'indexing'
@@ -246,22 +260,23 @@ export async function executeDocumentIndexing(
 /**
  * Cloud Function worker trigger for async indexing.
  */
-export const indexKnowledgeDocumentWorker = onCall(
-  { region: 'us-central1', timeoutSeconds: 300, memory: '1GiB' },
-  async (request: CallableRequest<IndexWorkerPayload>) => {
-    if (!request.auth) {
-      throw new HttpsError('unauthenticated', 'Authentication is required.');
-    }
-    const { uid, documentId, storagePath, storageGeneration, contentSha256 } = request.data || {};
-    if (request.auth.uid !== uid) {
-      throw new HttpsError('permission-denied', 'Cannot index document belonging to another user.');
-    }
-    return executeDocumentIndexing({
+export const indexKnowledgeDocumentWorker = onTaskDispatched(
+  {
+    retryConfig: { maxAttempts: 3 },
+    rateLimits: { maxConcurrentDispatches: 10 },
+    region: 'us-central1', 
+    timeoutSeconds: 300, 
+    memory: '1GiB'
+  },
+  async (request) => {
+    const { uid, documentId, storagePath, storageGeneration, contentSha256 } = request.data as IndexWorkerPayload;
+    
+    await executeDocumentIndexing({
       uid,
       documentId,
       storagePath,
       storageGeneration,
       contentSha256,
     });
-  },
+  }
 );

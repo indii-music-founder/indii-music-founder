@@ -468,7 +468,7 @@ export default function DirectGenerationTab() {
                                                         aria-label="Toggle Image Search grounding"
                                                         data-testid="direct-image-search-toggle"
                                                         onClick={() => setStudioControls({ useImageSearch: !studioControls.useImageSearch })}
-                                                        className={`w-9 h-5 rounded-full p-0.5 transition-colors ${studioControls.useImageSearch ? 'bg-cyan-500' : 'bg-white/10'}`}
+                                                        className={`w-9 h-5 rounded-full p-0.5 transition-colors ${studioControls.useImageSearch ? 'bg-dept-creative' : 'bg-white/10'}`}
                                                     >
                                                         <div className={`w-4 h-4 bg-white rounded-full transition-transform ${studioControls.useImageSearch ? 'translate-x-4' : 'translate-x-0'}`} />
                                                     </button>

@@ -88,6 +88,13 @@ describe('Knowledge Base Index Worker', () => {
       contentSha256,
     };
 
+    mockFirestoreData['users/user-123/ragDocuments/doc-abc'] = {
+      storagePath: payload.storagePath,
+      storageGeneration: payload.storageGeneration,
+      contentSha256: payload.contentSha256,
+      state: 'queued',
+    };
+
     const result = await executeDocumentIndexing(payload, {
       db: mockDb,
       storage: mockStorage,
@@ -143,6 +150,13 @@ describe('Knowledge Base Index Worker', () => {
       storagePath: 'rag-sources/user-123/wrong/original.txt',
       storageGeneration: '1001',
       contentSha256: '0000000000000000000000000000000000000000000000000000000000000000',
+    };
+
+    mockFirestoreData['users/user-123/ragDocuments/doc-bad'] = {
+      storagePath: payload.storagePath,
+      storageGeneration: payload.storageGeneration,
+      contentSha256: payload.contentSha256,
+      state: 'queued',
     };
 
     await expect(

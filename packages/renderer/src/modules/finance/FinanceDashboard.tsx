@@ -28,6 +28,7 @@ import {
 } from 'lucide-react';
 import type { EarningsSummary } from '@/services/revenue/schema';
 import type { Expense } from './schemas';
+import { getColorForModule } from '@/core/theme/moduleColors';
 
 /* ================================================================== */
 /*  Finance Dashboard — Three-Panel Layout                             */
@@ -546,7 +547,7 @@ function ExpenseBreakdownPanel({ expenses, loading }: ExpenseBreakdownPanelProps
         const colorMap: Record<string, string> = {
             'Equipment': 'bg-green-500',
             'Software / Plugins': 'bg-blue-500',
-            'Marketing': 'bg-cyan-500',
+            'Marketing': getColorForModule('marketing').bg.replace('/10', ''),
             'Travel': 'bg-emerald-500',
             'Services': 'bg-orange-500',
             'Other': 'bg-gray-500',

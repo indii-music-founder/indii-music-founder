@@ -90,6 +90,12 @@ class KnowledgeRetrievalService {
                     const storageRef = ref(storage, storagePath);
                     await uploadBytes(storageRef, file, {
                         contentType: file.type || 'text/plain',
+                        customMetadata: {
+                            contentHash: contentSha256,
+                            ownerId: auth.currentUser!.uid,
+                            immutable: 'true',
+                            originalFileName: file.name
+                        }
                     });
 
                     const finalizeKnowledgeUpload = httpsCallable(functions, 'finalizeKnowledgeUpload');
@@ -125,7 +131,7 @@ class KnowledgeRetrievalService {
                 return data.answer;
             } else if (data.citations && data.citations.length > 0) {
                 return `Here are the top relevant snippets from your documents:\n\n` + 
-                    data.citations.map((c: any) => `* From **${c.documentTitle || c.documentId}**: "${c.text}"`).join('\n\n');
+                    data.citations.map((c: any) => `* From **${c.documentTitle || c.documentId}**: "${c.snippet || c.text}"`).join('\n\n');
             }
 
             return "I couldn't generate a response based on the knowledge base. Please try again.";

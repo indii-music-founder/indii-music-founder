@@ -135,11 +135,11 @@ export default function FoundersCheckout() {
 
                             <button
                                 onClick={() => { setSelectedPath('founding-support'); setCheckoutState('agreement-review'); }}
-                                className="p-6 rounded-2xl border-2 border-cyan-500/20 hover:border-cyan-500/60 bg-white/[0.02] hover:bg-cyan-500/5 transition-all text-left group"
+                                className="p-6 rounded-2xl border-2 border-amber-500/20 hover:border-amber-500/60 bg-white/[0.02] hover:bg-amber-500/5 transition-all text-left group"
                             >
-                                <h3 className="text-lg font-bold text-white mb-2 group-hover:text-cyan-300">Founding Support</h3>
+                                <h3 className="text-lg font-bold text-white mb-2 group-hover:text-amber-300">Founding Support</h3>
                                 <p className="text-sm text-gray-400 mb-4">Support indii's mission and receive full platform access and founder benefits.</p>
-                                <div className="text-xs text-cyan-300 font-mono">Founder commitment & support</div>
+                                <div className="text-xs text-amber-300 font-mono">Founder commitment & support</div>
                             </button>
                         </div>
                     </motion.div>

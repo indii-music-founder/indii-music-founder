@@ -37,6 +37,15 @@ const mocks = vi.hoisted(() => {
   const mockBucket = vi.fn().mockReturnValue(mockBucketObj);
   const mockStorage = Object.assign(() => ({ bucket: mockBucket }), { bucket: mockBucket });
 
+  const mockEmbedContent = vi.fn();
+  const mockGetVertexAIClient = vi.fn().mockReturnValue({
+    models: { embedContent: mockEmbedContent },
+  });
+
+  const mockEnqueue = vi.fn().mockResolvedValue(undefined);
+  const mockTaskQueue = vi.fn().mockReturnValue({ enqueue: mockEnqueue });
+  const mockGetFunctions = vi.fn().mockReturnValue({ taskQueue: mockTaskQueue });
+
   return {
     mockSet,
     mockUpdate,
@@ -50,6 +59,11 @@ const mocks = vi.hoisted(() => {
     mockFileDownload,
     mockBucket,
     mockStorage,
+    mockEmbedContent,
+    mockGetVertexAIClient,
+    mockEnqueue,
+    mockTaskQueue,
+    mockGetFunctions,
   };
 });
 
@@ -69,6 +83,14 @@ vi.mock('firebase-admin', () => ({
   initializeApp: vi.fn(),
   firestore: mocks.mockFirestore,
   storage: mocks.mockStorage,
+}));
+
+vi.mock('firebase-admin/functions', () => ({
+  getFunctions: mocks.mockGetFunctions,
+}));
+
+vi.mock('../../lib/vertexClient', () => ({
+  getVertexAIClient: mocks.mockGetVertexAIClient,
 }));
 
 vi.mock('./indexWorker', () => ({

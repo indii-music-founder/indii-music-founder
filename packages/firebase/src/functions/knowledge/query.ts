@@ -7,7 +7,8 @@ import {
   type KnowledgeChunk,
   type KnowledgeCitation,
   type KnowledgeQueryReceipt,
-} from '../../shared/knowledge';
+  type KnowledgeDocument,
+} from '@indii/shared';
 
 if (!admin.apps.length) {
   admin.initializeApp();
@@ -71,16 +72,35 @@ export const queryKnowledgeBase = onCall({ enforceAppCheck: true }, async (reque
     throw new HttpsError('internal', `Vector search query failed: ${errorMsg}`);
   }
 
+  const uniqueDocIds = [...new Set(vectorQuerySnap.docs.map(doc => (doc.data() as KnowledgeChunk).documentId))];
+  const docsMap = new Map<string, string>();
+
+  if (uniqueDocIds.length > 0) {
+    const ragDocsRef = admin.firestore().collection('users').doc(uid).collection('ragDocuments');
+    if (uniqueDocIds.length <= 30) {
+      const docsSnap = await ragDocsRef.where(admin.firestore.FieldPath.documentId(), 'in', uniqueDocIds).get();
+      docsSnap.forEach(doc => {
+        docsMap.set(doc.id, (doc.data() as KnowledgeDocument).title);
+      });
+    } else {
+      for (const id of uniqueDocIds) {
+        const snap = await ragDocsRef.doc(id).get();
+        if (snap.exists) docsMap.set(id, (snap.data() as KnowledgeDocument).title);
+      }
+    }
+  }
+
   const citations: KnowledgeCitation[] = [];
   vectorQuerySnap.docs.forEach((doc) => {
     const chunkData = doc.data() as KnowledgeChunk;
     citations.push({
-      chunkId: chunkData.chunkId,
       documentId: chunkData.documentId,
-      text: chunkData.text,
-      score: 1.0, // Distance cosine metric representation
+      documentTitle: docsMap.get(chunkData.documentId) || 'Unknown Document',
       pageNumber: chunkData.pageNumber,
-      ordinal: chunkData.ordinal,
+      startOffset: chunkData.startOffset,
+      endOffset: chunkData.endOffset,
+      relevanceScore: 1.0, // Distance cosine metric representation
+      snippet: chunkData.text,
     });
   });
 
@@ -91,7 +111,7 @@ export const queryKnowledgeBase = onCall({ enforceAppCheck: true }, async (reque
   let answer = "";
   try {
     const vertex = getVertexAIClient();
-    const contextText = citations.map(c => `[Document ${c.documentId}]:\n${c.text}`).join('\n\n');
+    const contextText = citations.map(c => `[Document ${c.documentId}]:\n${c.snippet}`).join('\n\n');
     
     const prompt = `You are an AI assistant answering questions based strictly on the provided context documents.
     
@@ -125,15 +145,15 @@ Instructions:
     answer = "An error occurred while generating the answer from the documents.";
   }
 
+  const startTimeMs = Date.now(); // We didn't track start time, so duration is 0 for now
   const receipt: KnowledgeQueryReceipt = {
-    receiptId: receiptRef.id,
+    queryId: receiptRef.id,
     uid,
-    query: query.trim(),
-    topK: k,
-    resultsCount: citations.length,
-    citationChunkIds: citations.map((c) => c.chunkId),
-    latencyMs: 0, // Server internal processing elapsed time placeholder
-    queriedAt: now,
+    queryText: query.trim(),
+    durationMs: 0, // Server internal processing elapsed time placeholder
+    resultCount: citations.length,
+    citations,
+    timestamp: now,
   };
 
   await receiptRef.set(receipt);
