@@ -27,6 +27,10 @@ vi.mock('./clickhouseClient', () => ({
     },
 }));
 
+const firestoreAuth = vi.hoisted(() => ({
+    credentials: new Map<string, [string, string]>(),
+}));
+
 const store = vi.hoisted(() => {
     interface Doc { id: string; data: Record<string, unknown> }
     const docs: Doc[] = [];
@@ -47,18 +51,43 @@ const store = vi.hoisted(() => {
         },
     };
 
-    return {
-        docs, updates, query,
-        firestore: () => ({
-            collection: () => query,
-            batch: () => ({
-                update: (ref: { id: string }, patch: Record<string, unknown>) => {
-                    updates.push({ id: ref.id, patch });
-                },
-                commit: async () => undefined,
-            }),
+    const firestore = () => ({
+        collection: (name: string) => {
+            if (name === 'users') {
+                return {
+                    doc: (uid: string) => ({
+                        collection: (coll: string) => {
+                            if (coll === 'analyticsTokens') {
+                                return {
+                                    doc: (docId: string) => ({
+                                        get: async () => {
+                                            const creds = firestoreAuth.credentials.get(`${uid}/${docId}`);
+                                            if (!creds) return { exists: false };
+                                            const [pixelId, accessToken] = creds;
+                                            return {
+                                                exists: true,
+                                                data: () => ({ pixel_id: pixelId, access_token: accessToken }),
+                                            };
+                                        },
+                                    }),
+                                };
+                            }
+                            return query;
+                        },
+                    }),
+                };
+            }
+            return query;
+        },
+        batch: () => ({
+            update: (ref: { id: string }, patch: Record<string, unknown>) => {
+                updates.push({ id: ref.id, patch });
+            },
+            commit: async () => undefined,
         }),
-    };
+    });
+
+    return { docs, updates, query, firestore };
 });
 
 vi.mock('firebase-admin', () => ({
@@ -76,6 +105,14 @@ vi.mock('firebase-functions/v2', () => ({
 
 vi.mock('firebase-functions/v2/scheduler', () => ({
     onSchedule: (_opts: unknown, handler: unknown) => handler,
+}));
+
+const metaApi = vi.hoisted(() => ({
+    sendConversions: vi.fn(async (pixelId: string, accessToken: string, events: unknown[]) => events.length),
+}));
+
+vi.mock('./metaConversionsApi', () => ({
+    sendConversions: metaApi.sendConversions,
 }));
 
 import { flushOutboxBatch, toWarehouseRow } from './flushConversionEvents.js';
@@ -114,6 +151,8 @@ beforeEach(() => {
     warehouse.inserted.length = 0;
     warehouse.existingIds.clear();
     warehouse.insertShouldFail = false;
+    firestoreAuth.credentials.clear();
+    vi.clearAllMocks();
 });
 
 describe('toWarehouseRow', () => {
@@ -216,5 +255,17 @@ describe('flushOutboxBatch', () => {
 
         const insertedIds = warehouse.inserted[0].rows.map(row => row.event_id);
         expect(insertedIds).toEqual(['evt-good']);
+    });
+
+    it('continues flushing to warehouse even if Meta API send fails', async () => {
+        seed('evt-1', 'evt-2');
+        store.docs[0].data.artistId = 'artist-uid';
+        store.docs[1].data.artistId = 'artist-uid';
+
+        const flushed = await flushOutboxBatch();
+
+        expect(flushed).toBe(2);
+        expect(warehouse.inserted[0].rows).toHaveLength(2);
+        expect(store.updates.every(u => u.patch.status === 'flushed')).toBe(true);
     });
 });

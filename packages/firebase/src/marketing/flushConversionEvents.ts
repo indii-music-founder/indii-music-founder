@@ -35,6 +35,7 @@ import { OUTBOX_COLLECTION, type OutboxStatus } from './conversionEventOutbox';
 import {
     WAREHOUSE_SECRETS, WAREHOUSE_WRITER_SECRETS, insertWarehouseRows, queryWarehouse,
 } from './clickhouseClient';
+import { sendConversions } from './metaConversionsApi';
 
 const EVENTS_TABLE = 'indii_analytics.omnichannel_events';
 
@@ -108,6 +109,33 @@ export async function findAlreadyInsertedIds(eventIds: readonly string[]): Promi
 }
 
 /**
+ * Fetch Instagram pixel credentials for an artist from their analyticsTokens.
+ * Returns [pixelId, accessToken] or null if not configured.
+ */
+async function getInstagramPixelCredentials(
+    userId: string,
+): Promise<[pixelId: string, accessToken: string] | null> {
+    const db = admin.firestore();
+    try {
+        const snap = await db.collection('users').doc(userId).collection('analyticsTokens').doc('instagram').get();
+        if (!snap.exists) return null;
+
+        const data = snap.data();
+        const pixelId = data?.pixel_id;
+        const accessToken = data?.access_token;
+
+        if (!pixelId || !accessToken) return null;
+        return [pixelId, accessToken];
+    } catch (error) {
+        logger.warn('[getInstagramPixelCredentials] Failed to fetch credentials', {
+            userId: userId.substring(0, 8),
+            error: error instanceof Error ? error.message : String(error),
+        });
+        return null;
+    }
+}
+
+/**
  * Core flush routine, exported so tests can drive it without the scheduler.
  * Returns how many rows reached the warehouse.
  */
@@ -169,6 +197,44 @@ export async function flushOutboxBatch(): Promise<number> {
         });
     }
     await settled.commit();
+
+    // Send conversions to Meta (Conversions API) — non-blocking reporting.
+    // Group events by artistId and send each artist's batch to their pixel.
+    // Failures are logged but do not fail the flush: the warehouse write is
+    // authoritative, and Meta's optimization is best-effort feedback.
+    try {
+        const eventsByArtist = new Map<string, typeof fresh>();
+        for (const doc of fresh) {
+            const event = doc.data() as ConversionEvent;
+            const artistEvents = eventsByArtist.get(event.artistId) ?? [];
+            artistEvents.push(doc);
+            eventsByArtist.set(event.artistId, artistEvents);
+        }
+
+        for (const [artistId, artistDocs] of eventsByArtist) {
+            const credentials = await getInstagramPixelCredentials(artistId);
+            if (!credentials) {
+                logger.info('[flushConversionEvents] Artist not configured for Conversions API', {
+                    artistId: artistId.substring(0, 8),
+                });
+                continue;
+            }
+
+            const [pixelId, accessToken] = credentials;
+            const events = artistDocs.map(doc => ({ event: doc.data() as ConversionEvent }));
+            const sentCount = await sendConversions(pixelId, accessToken, events);
+            logger.info('[flushConversionEvents] Sent conversions to Meta', {
+                artistId: artistId.substring(0, 8),
+                pixelId,
+                eventCount: events.length,
+                sentCount,
+            });
+        }
+    } catch (metaError) {
+        logger.warn('[flushConversionEvents] Conversions API send failed (non-blocking)', {
+            error: metaError instanceof Error ? metaError.message : String(metaError),
+        });
+    }
 
     logger.info('[flushConversionEvents] Flushed batch', { rowCount: docs.length });
     return docs.length;
