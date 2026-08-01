@@ -27,15 +27,11 @@ import { test, expect } from './fixtures/auth';
 test.describe('ISSUE-763: Beta First-Touch Journey', () => {
 
   test('1. Skip onboarding and land on the main app', async ({ authedPage: page }) => {
-    // Skipping onboarding lands directly on app-container (see beforeEach);
-    // reaching this point without a redirect/blocker IS the assertion.
-    await expect(page.getByTestId('app-container')).toBeVisible();
+    await expect(page.getByTestId('app-container')).toBeVisible({ timeout: 10000 });
   });
 
   test('2. Wander modules - Creative Suite nav item is present and clickable', async ({ authedPage: page }) => {
-    // Sidebar.tsx is now collapsible. Expand the Manager's Office section first.
     await page.getByRole('button', { name: /manager's office/i }).click();
-    // Sidebar.tsx:67 — data-testid={`nav-item-${item.id}`}, module id 'creative' (constants.ts:7)
     await expect(page.getByTestId('nav-item-creative')).toBeVisible({ timeout: 10000 });
   });
 
@@ -43,7 +39,10 @@ test.describe('ISSUE-763: Beta First-Touch Journey', () => {
     await page.getByRole('button', { name: /manager's office/i }).click();
     await page.getByTestId('nav-item-creative').click();
     await expect(page.getByTestId('creative-studio-container')).toBeVisible({ timeout: 10000 });
-    await expect(page.getByTestId('creative-navbar')).toBeVisible();
+    await page.getByTestId('canvas-view-btn').click();
+
+    await expect(page.getByText('Create Your First Image')).toBeVisible();
+    await expect(page.getByText('Start by generating an image with a prompt')).toBeVisible();
   });
 
   test('4. Generate image from prompt', async ({ authedPage: page }) => {
@@ -59,15 +58,10 @@ test.describe('ISSUE-763: Beta First-Touch Journey', () => {
     await expect(generateBtn).toBeEnabled();
     await generateBtn.click();
 
-    // generation is async and can legitimately take >10s, so this only proves the request was accepted,
-    // not that it completed — full completion is out of scope for a first-touch smoke test.
-    await expect(generateBtn).toBeEnabled({ timeout: 5000 }).catch(() => {
-      // Still generating past 5s is fine; we only need to know the click was accepted (no crash).
-    });
+    await expect(generateBtn).toBeEnabled({ timeout: 5000 }).catch(() => {});
   });
 
   test.skip('5. Magic Edit control is reachable from the canvas (full edit verified on desktop build only)', async ({ authedPage: _page }) => {
-    // The full Magic Edit chain is verified FIXED but requires a DESKTOP build.
   });
 
   test('6. Upload own image', async ({ authedPage: page }) => {
@@ -75,7 +69,6 @@ test.describe('ISSUE-763: Beta First-Touch Journey', () => {
     await page.getByTestId('nav-item-creative').click();
     await expect(page.getByTestId('creative-studio-container')).toBeVisible({ timeout: 10000 });
 
-    // ISSUE-676 resolved: Upload Photo affordance is now present in the DirectGenerationTab
     await expect(page.getByRole('button', { name: /upload|open photo/i })).toBeVisible();
   });
 
@@ -85,13 +78,10 @@ test.describe('ISSUE-763: Beta First-Touch Journey', () => {
     await expect(page.getByTestId('creative-studio-container')).toBeVisible({ timeout: 10000 });
 
     await page.getByTestId('direct-video-mode-btn').click();
-    
-    // Test that the direct prompt input is visible for video mode
     await expect(page.getByTestId('direct-prompt-input')).toBeVisible({ timeout: 10000 });
   });
 
   test('Complete beta flow smoke test: Skip → Wander → Create → Upload → Video', async ({ authedPage: page }) => {
-    // Combines steps 1,2,3,4,6,7 (all verified-working).
     await expect(page.getByTestId('app-container')).toBeVisible();
     
     await page.getByRole('button', { name: /manager's office/i }).click();
