@@ -168,6 +168,117 @@ describe('immutable canonical cover art', () => {
     });
 });
 
+describe('RAG Document Uploads (/rag-sources)', () => {
+    let testEnv: RulesTestEnvironment;
+    const OWNER_ID = 'rag-owner';
+
+    beforeAll(async () => {
+        testEnv = await initializeTestEnvironment({
+            projectId: 'indii-storage-rules-test',
+            storage: {
+                host: '127.0.0.1',
+                port: 9199,
+                rules: readFileSync(resolve(__dirname, '../../../storage.rules'), 'utf8'),
+            },
+        });
+    });
+
+    beforeEach(async () => {
+        await testEnv.clearStorage();
+    });
+
+    afterAll(async () => {
+        await testEnv?.cleanup();
+    });
+
+    const storageFor = (uid: string) => testEnv.authenticatedContext(uid, {
+        email: `${uid}@example.com`,
+        firebase: { sign_in_provider: 'password' },
+    }).storage();
+
+    const HASH = 'a'.repeat(64);
+    const pathTxt = `rag-sources/${OWNER_ID}/${HASH}/original.txt`;
+    const pathPdf = `rag-sources/${OWNER_ID}/${HASH}/original.pdf`;
+
+    it('should allow owner to upload canonical RAG document with exact hash and limits', async () => {
+        const bytes = new Uint8Array([1, 2, 3]);
+        await assertSucceeds(uploadBytes(ref(storageFor(OWNER_ID), pathTxt), bytes, {
+            contentType: 'text/plain',
+            customMetadata: {
+                contentHash: HASH,
+                ownerId: OWNER_ID,
+                immutable: 'true',
+                originalFileName: 'test.txt'
+            }
+        }));
+        await assertSucceeds(uploadBytes(ref(storageFor(OWNER_ID), pathPdf), bytes, {
+            contentType: 'application/pdf',
+            customMetadata: {
+                contentHash: HASH,
+                ownerId: OWNER_ID,
+                immutable: 'true',
+                originalFileName: 'test.pdf'
+            }
+        }));
+    });
+
+    it('should reject unauthenticated or cross-tenant RAG uploads', async () => {
+        const bytes = new Uint8Array([1, 2, 3]);
+        const meta = {
+            contentType: 'text/plain',
+            customMetadata: {
+                contentHash: HASH,
+                ownerId: 'other-user',
+                immutable: 'true',
+                originalFileName: 'test.txt'
+            }
+        };
+        await assertFails(uploadBytes(ref(storageFor('other-user'), pathTxt), bytes, meta));
+        await assertFails(uploadBytes(ref(testEnv.unauthenticatedContext().storage(), pathTxt), bytes, meta));
+    });
+
+    it('should reject RAG uploads with missing or invalid metadata', async () => {
+        const bytes = new Uint8Array([1, 2, 3]);
+        await assertFails(uploadBytes(ref(storageFor(OWNER_ID), pathTxt), bytes, {
+            contentType: 'text/plain',
+            customMetadata: {
+                originalFileName: 'test.txt'
+            }
+        }));
+    });
+
+    it('should reject RAG uploads with invalid file extension or mime type', async () => {
+        const bytes = new Uint8Array([1, 2, 3]);
+        const invalidExt = `rag-sources/${OWNER_ID}/${HASH}/original.docx`;
+        await assertFails(uploadBytes(ref(storageFor(OWNER_ID), invalidExt), bytes, {
+            contentType: 'application/msword',
+            customMetadata: {
+                contentHash: HASH,
+                ownerId: OWNER_ID,
+                immutable: 'true',
+                originalFileName: 'test.docx'
+            }
+        }));
+    });
+
+    it('should reject modifications or deletions of RAG documents', async () => {
+        const bytes = new Uint8Array([1, 2, 3]);
+        const meta = {
+            contentType: 'text/plain',
+            customMetadata: {
+                contentHash: HASH,
+                ownerId: OWNER_ID,
+                immutable: 'true',
+                originalFileName: 'test.txt'
+            }
+        };
+        await assertSucceeds(uploadBytes(ref(storageFor(OWNER_ID), pathTxt), bytes, meta));
+
+        await assertFails(deleteObject(ref(storageFor(OWNER_ID), pathTxt)));
+        await assertFails(uploadBytes(ref(storageFor(OWNER_ID), pathTxt), new Uint8Array([4, 5]), meta));
+    });
+});
+
 describe('owner-bound long-recording staging', () => {
     let testEnv: RulesTestEnvironment;
     const sessionId = 'd'.repeat(40);

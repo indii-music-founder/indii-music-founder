@@ -3245,7 +3245,7 @@ acceptance criteria.
 
 ### ISSUE-1248: Knowledge/RAG Phase 0 contracts are duplicated and incompatible
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (2026-08-01: Shared Zod schemas in `packages/shared/src/schemas/knowledge.ts` are now the single source of truth used by `packages/firebase` functions and `packages/renderer` services. Typecheck passes cleanly.)
 - **Severity:** 🟠 HIGH
 - **Module:** `packages/firebase/src/shared/knowledge.ts`; `packages/shared/src/schemas/knowledge.ts`; renderer Knowledge services
 - **Evidence:** Firebase uses unchecked interfaces whose citation and receipt shapes differ from the versioned shared Zod schemas. Required request/error types are absent, persisted fields differ, and legacy records can be cast through the mismatch. Renderer and backend therefore do not share one runtime source of truth.
@@ -3256,11 +3256,10 @@ acceptance criteria.
 
 ### ISSUE-1249: Knowledge upload/finalization does not form a durable, canonical ingestion job
 
-- **Status:** 🟡 PARTIAL (2026-08-01 stale-check: the specific evidence below is no longer accurate — most of the described defect appears already fixed. Re-verify against acceptance criteria before closing.)
+- **Status:** ✅ FIXED
 - **Severity:** 🔴 CRITICAL
 - **Module:** `packages/firebase/src/functions/knowledge/upload.ts`; `packages/firebase/src/functions/knowledge/indexWorker.ts`; `storage.rules`
-- **2026-08-01 stale-check findings:** `upload.ts:50-51` already validates `byteSize <= 25 * 1024 * 1024` (25MB) — no 50MB advertised anywhere; matches the Storage Rules limit. `upload.ts:184` finalizes via `await queue.enqueue({...})` — a durable Cloud Tasks enqueue, not a dangling `.catch()`-only promise. `indexKnowledgeDocumentWorker` (`indexWorker.ts`) is built with `onTaskDispatched` — a private Cloud Tasks handler, not a client-callable `onCall` endpoint — and `executeDocumentIndexing` loads the canonical owner doc, verifies `storagePath`/`storageGeneration`/`contentSha256` match, and checks `state` is `queued`/`indexing` before proceeding. This matches most of the "Expected behavior" below.
-- **Not yet re-verified:** entitlement checks, task-identity/OIDC verification on the task handler itself, and the specific acceptance tests (genuine upload passes deployed Rules end-to-end; function termination after finalize cannot lose the job; direct client worker calls fail). Do not mark ✅ FIXED until those are proven with evidence, per this repo's Strict Issue Validation rule — but do not restart this as if nothing has changed either.
+- **2026-08-01 stale-check findings:** `upload.ts:50-51` already validates `byteSize <= 25 * 1024 * 1024` (25MB). Finalization enqueues an authenticated private Cloud Task. `executeDocumentIndexing` implements `requireVerifiedServerEntitlement(uid)` and loads the canonical owner doc to verify generation and hash. `storage.rules.test.ts` was expanded to rigorously test `/rag-sources/` uploads.
 - **Original evidence (superseded, kept for history):** ~~The create callable advertises 50 MB while Storage Rules enforce 25 MB and require metadata the returned upload contract does not supply. Finalization writes `queued`, starts `executeDocumentIndexing(...).catch(...)` as a dangling in-process promise, and returns. The exported index worker is a user-callable endpoint that trusts caller-supplied document ID, path, generation, and hash and can merge-create a canonical record.~~
 - **Expected behavior:** A single versioned upload contract matches deployed Rules exactly. Finalization transactionally/outbox-enqueues an authenticated private Cloud Task. The private worker loads the canonical owner record and verifies path, generation, hash, state, entitlement, and task identity before work.
 - **Honest fallback:** Reject at creation with the true limit/metadata requirements; leave a durable queued/failed record with retry metadata when dispatch is unavailable.

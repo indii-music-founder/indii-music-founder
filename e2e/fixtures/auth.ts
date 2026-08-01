@@ -1107,7 +1107,7 @@ export async function setupE2EPage(page: Page): Promise<void> {
     });
 
     // Wait for either the dashboard button OR the email input to be visible, showing the page has loaded
-    const dashboardBtn = page.getByRole('button', { name: /(Agent Workspace|My Dashboard|Dashboard)/i }).first();
+    const dashboardBtn = page.getByRole('button', { name: /Return to HQ/i }).first();
     const emailInput = page.locator('input[type="email"]').first();
     
     try {

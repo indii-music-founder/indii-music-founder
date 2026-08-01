@@ -3,6 +3,7 @@ import * as admin from 'firebase-admin';
 import { HttpsError } from 'firebase-functions/v2/https';
 import { onTaskDispatched } from 'firebase-functions/v2/tasks';
 import { getVertexAIClient } from '../../lib/vertexClient';
+import { requireVerifiedServerEntitlement } from '../auth/entitlements';
 import { extractDocumentText } from './textExtractor';
 import { chunkDocumentPages, type GeneratedChunk } from './chunker';
 import {
@@ -10,15 +11,10 @@ import {
   KNOWLEDGE_EMBEDDING_MODEL,
   KNOWLEDGE_EMBEDDING_DIMENSION,
   type KnowledgeIndexReceipt,
+  type IndexWorkerPayload,
 } from '@indii/shared';
 
-export interface IndexWorkerPayload {
-  uid: string;
-  documentId: string;
-  storagePath: string;
-  storageGeneration: string;
-  contentSha256: string;
-}
+// IndexWorkerPayload imported from @indii/shared
 
 /**
  * Private indexing worker logic.
@@ -55,6 +51,9 @@ export async function executeDocumentIndexing(
       return { documentId, chunkCount: data.chunkCount, receiptId: receiptRef.id };
     }
   }
+
+  // Entitlement check
+  await requireVerifiedServerEntitlement(uid);
 
   // Load canonical owner record and verify state
   const docSnap = await docRef.get();
