@@ -15,6 +15,7 @@ export const arcjetKey = defineSecret("ARCJET_KEY");
 export const telegramBotToken = defineSecret("TELEGRAM_BOT_TOKEN");
 export const telegramWebhookSecret = defineSecret("TELEGRAM_WEBHOOK_SECRET");
 export const pandadocWebhookSecret = defineSecret("PANDADOC_WEBHOOK_SECRET");
+export const shopifyWebhookSecret = defineSecret("SHOPIFY_WEBHOOK_SECRET");
 
 // ---------------------------------------------------------------------------
 // Founders Program
