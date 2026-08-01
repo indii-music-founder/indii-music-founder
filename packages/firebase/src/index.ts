@@ -52,7 +52,6 @@ export { generateSessionEditPlan } from "./functions/video/generateSessionEditPl
 export { applyAudioRecipe } from "./functions/video/applyAudioRecipe";
 export { approveSessionEditPlan } from "./functions/video/approveSessionEditPlan";
 export { createSocialHandoffDraft } from "./functions/video/createSocialHandoffDraft";
-export { createDerivativeHandoff } from "./functions/video/createDerivativeHandoff";
 import { analyzeAudioFn } from "./lib/audio";
 import { assertVideoSessionProjectAccess } from "./functions/video/createVideoSession";
 import { FUNCTION_INTELLIGENCE_MODELS } from "./config/models";
