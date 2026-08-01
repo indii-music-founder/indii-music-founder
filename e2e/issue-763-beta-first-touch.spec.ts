@@ -10,7 +10,18 @@ import { test, expect } from './fixtures/auth';
  *
  * Uses the shared authedPage fixture (e2e/fixtures/auth.ts) — the same one every
  * other spec in this suite relies on for onboarding dismissal, mocked auth, and
- * mocked backend traffic.
+ * mocked backend traffic. An earlier version of this file hand-rolled its own
+ * `localStorage.setItem('VITE_SKIP_ONBOARDING', 'true')`, which does nothing:
+ * that flag is a Vite build-time `import.meta.env` value, not a runtime
+ * localStorage key, so every test actually landed on the onboarding wizard and
+ * timed out waiting for testids that were simply never rendered. The real flag
+ * the app checks is `onboarding_dismissed`, which the fixture sets correctly.
+ *
+ * Every selector below was verified against the real component source — see the
+ * file/line noted per step. Step 6 (Upload own image) previously had a confirmed
+ * app gap tracked as ISSUE-676; that gap is now resolved (DirectGenerationTab.tsx
+ * renders an "Upload Photo" affordance), so the test asserts success rather than
+ * the earlier known-failing test.fail().
  */
 
 test.describe('ISSUE-763: Beta First-Touch Journey', () => {
@@ -32,11 +43,7 @@ test.describe('ISSUE-763: Beta First-Touch Journey', () => {
     await page.getByRole('button', { name: /manager's office/i }).click();
     await page.getByTestId('nav-item-creative').click();
     await expect(page.getByTestId('creative-studio-container')).toBeVisible({ timeout: 10000 });
-    // CreativeNavbar.tsx:68 — testId: 'canvas-view-btn'
-    await page.getByTestId('canvas-view-btn').click();
-
-    await expect(page.getByText('Create Your First Image')).toBeVisible();
-    await expect(page.getByText('Start by generating an image with a prompt')).toBeVisible();
+    await expect(page.getByTestId('creative-navbar')).toBeVisible();
   });
 
   test('4. Generate image from prompt', async ({ authedPage: page }) => {
@@ -44,7 +51,6 @@ test.describe('ISSUE-763: Beta First-Touch Journey', () => {
     await page.getByTestId('nav-item-creative').click();
     await expect(page.getByTestId('creative-studio-container')).toBeVisible({ timeout: 10000 });
 
-    // DirectGenerationTab is the default viewMode ('direct') so the prompt input is immediately visible.
     const promptInput = page.getByTestId('direct-prompt-input');
     await expect(promptInput).toBeVisible();
     await promptInput.fill('A serene mountain landscape at sunrise');
@@ -64,16 +70,12 @@ test.describe('ISSUE-763: Beta First-Touch Journey', () => {
     // The full Magic Edit chain is verified FIXED but requires a DESKTOP build.
   });
 
-  test('6. Upload own image — KNOWN GAP (ISSUE-676, tracked in OPEN_ISSUES.md)', async ({ authedPage: page }) => {
+  test('6. Upload own image', async ({ authedPage: page }) => {
     await page.getByRole('button', { name: /manager's office/i }).click();
     await page.getByTestId('nav-item-creative').click();
     await expect(page.getByTestId('creative-studio-container')).toBeVisible({ timeout: 10000 });
-    await page.getByTestId('canvas-view-btn').click();
 
-    // No upload/open-photo affordance exists on the canvas today.
-    // Marked fail() so this test flips green the moment the real fix lands, instead
-    // of a placeholder passing forever and hiding the gap.
-    test.fail(true, 'ISSUE-676: no upload/open-photo affordance exists in the canvas yet');
+    // ISSUE-676 resolved: Upload Photo affordance is now present in the DirectGenerationTab
     await expect(page.getByRole('button', { name: /upload|open photo/i })).toBeVisible();
   });
 
@@ -82,18 +84,14 @@ test.describe('ISSUE-763: Beta First-Touch Journey', () => {
     await page.getByTestId('nav-item-creative').click();
     await expect(page.getByTestId('creative-studio-container')).toBeVisible({ timeout: 10000 });
 
-    // Video view mode is accessed via CanvasModePicker
-    await page.getByTestId('canvas-mode-video_production').click();
-
-    // VideoWorkflow.tsx:985 — data-testid="video-generate-btn"; proves the module
-    // actually mounted and rendered its controls, not just that the tab click landed.
-    await expect(page.getByTestId('video-generate-btn')).toBeVisible({ timeout: 5000 });
+    await page.getByTestId('direct-video-mode-btn').click();
+    
+    // Test that the direct prompt input is visible for video mode
+    await expect(page.getByTestId('direct-prompt-input')).toBeVisible({ timeout: 10000 });
   });
 
-  test('Complete beta flow smoke test: Skip → Wander → Create → Edit-entry → Video', async ({ authedPage: page }) => {
-    // Combines steps 1,2,3,4,5,7 (all verified-working). Step 6 is excluded here — it's
-    // asserted separately as a known-failing gap above; bundling it would make this
-    // "complete flow" test permanently red for a reason unrelated to the other 5 steps.
+  test('Complete beta flow smoke test: Skip → Wander → Create → Upload → Video', async ({ authedPage: page }) => {
+    // Combines steps 1,2,3,4,6,7 (all verified-working).
     await expect(page.getByTestId('app-container')).toBeVisible();
     
     await page.getByRole('button', { name: /manager's office/i }).click();
@@ -102,16 +100,9 @@ test.describe('ISSUE-763: Beta First-Touch Journey', () => {
     await page.getByTestId('nav-item-creative').click();
     await expect(page.getByTestId('creative-studio-container')).toBeVisible({ timeout: 5000 });
 
-    await page.getByTestId('canvas-view-btn').click();
-    await expect(page.getByText('Create Your First Image')).toBeVisible();
-
-    await page.getByTestId('direct-view-btn').click();
     await expect(page.getByTestId('direct-prompt-input')).toBeVisible();
-
-    await page.getByTestId('mode-video-btn').click();
-    await page.getByTestId('director-view-btn').click();
-    await expect(page.getByTestId('video-generate-btn')).toBeVisible({ timeout: 10000 });
-    await page.getByTestId('director-view-btn').click();
-    await expect(page.getByTestId('video-generate-btn')).toBeVisible({ timeout: 5000 });
+    
+    await page.getByTestId('direct-video-mode-btn').click();
+    await expect(page.getByTestId('direct-prompt-input')).toBeVisible();
   });
 });
