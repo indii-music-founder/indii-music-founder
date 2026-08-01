@@ -444,7 +444,9 @@ class DerivedMediaStoreTests(unittest.TestCase):
             local_path = Path(directory) / "proxy.mp4"
             local_path.write_bytes(b"my bytes")
 
-            blob = Mock(generation="1700000000000000", metadata={"sha256": "f" * 64})
+            remote_metadata = {"sha256": "f" * 64}
+            blob = Mock(generation="1700000000000000", metadata=remote_metadata)
+            blob.reload.side_effect = lambda: setattr(blob, "metadata", remote_metadata)
             blob.upload_from_filename.side_effect = Conflict("object already exists")
             bucket = Mock()
             bucket.blob.return_value = blob

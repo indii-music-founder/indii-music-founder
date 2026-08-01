@@ -8,19 +8,8 @@ import type { LucideIcon } from 'lucide-react';
 import { motion } from 'motion/react';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import type { ConversationSession } from '@/core/store/slices/agent';
-
-
-const AGENT_ICONS: Record<string, { icon: LucideIcon; color: string }> = {
-    'marketing': { icon: Target, color: 'text-rose-400' },
-    'finance': { icon: DollarSign, color: 'text-emerald-400' },
-    'legal': { icon: Scale, color: 'text-amber-400' },
-    'brand': { icon: Briefcase, color: 'text-fuchsia-400' },
-    'creative': { icon: Palette, color: 'text-green-400' },
-    'video': { icon: Film, color: 'text-sky-400' },
-    'social': { icon: Share2, color: 'text-blue-400' },
-    'publishing': { icon: Library, color: 'text-orange-400' },
-    'indii': { icon: Zap, color: 'text-cyan-400' },
-};
+import { resolveAgentVisualIdentity } from '@/services/agent/AgentVisualIdentity';
+import { AgentIcon } from '@/components/ui/AgentIcon';
 
 const HistoryItem = memo(({
     session,
@@ -91,14 +80,17 @@ const HistoryItem = memo(({
                 {session.participants && session.participants.length > 0 && (
                     <div className="flex gap-1 mb-2">
                         {session.participants.slice(0, 3).map(agentId => {
-                            const agent = AGENT_ICONS[agentId] || { icon: Zap, color: 'text-gray-400' };
-                            const Icon = agent.icon;
+                            const identity = resolveAgentVisualIdentity(agentId);
                             return (
                                 <div key={agentId} className={cn(
-                                    "w-5 h-5 rounded-full bg-white/5 flex items-center justify-center border border-white/10",
-                                    agent.color
-                                )}>
-                                    <Icon size={12} />
+                                    "w-5 h-5 rounded-full flex items-center justify-center border",
+                                )}
+                                style={{
+                                    backgroundColor: `color-mix(in srgb, ${identity.cssProperties['--agent-accent']} 10%, transparent)`,
+                                    borderColor: `color-mix(in srgb, ${identity.cssProperties['--agent-border']} 30%, transparent)`,
+                                    color: identity.cssProperties['--agent-accent']
+                                }}>
+                                    <AgentIcon iconKey={identity.iconKey} size={12} />
                                 </div>
                             );
                         })}

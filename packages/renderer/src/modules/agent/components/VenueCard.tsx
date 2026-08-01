@@ -3,6 +3,7 @@ import { Venue } from '../types';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { MapPin, Users, Globe, Mail, Plus, CheckCircle, Loader2 } from 'lucide-react';
 import { logger } from '@/utils/logger';
+import { getColorForModule } from '@/core/theme/moduleColors';
 
 interface VenueCardProps {
     key?: React.Key;
@@ -30,15 +31,18 @@ export const VenueCard: React.FC<VenueCardProps> = ({ venue, onAdd }) => {
 
     // Determine status color
     const getStatusColor = (status: Venue['status']) => {
+        const moduleColor = getColorForModule('agent');
         switch (status) {
-            case 'active': return 'text-cyan-400 border-cyan-500/30 bg-cyan-500/10';
+            case 'active': return `${moduleColor.text} ${moduleColor.border} ${moduleColor.bg}`;
             case 'closed': return 'text-rose-400 border-rose-500/30 bg-rose-500/10';
             default: return 'text-slate-400 border-slate-700 bg-slate-800/50';
         }
     };
 
+    const moduleColor = getColorForModule('agent');
+
     return (
-        <div className="group relative bg-slate-900 border border-slate-800 rounded-xl overflow-hidden hover:border-slate-600 transition-all duration-300 hover:shadow-2xl hover:shadow-cyan-900/10">
+        <div className={`group relative bg-slate-900 border border-slate-800 rounded-xl overflow-hidden hover:border-slate-600 transition-all duration-300 hover:shadow-2xl`}>
             {/* Image Header */}
             <div className="h-32 bg-slate-800 relative overflow-hidden">
                 {venue.imageUrl ? (
@@ -62,7 +66,7 @@ export const VenueCard: React.FC<VenueCardProps> = ({ venue, onAdd }) => {
                         <div className={`
                             flex flex-col items-center justify-center w-12 h-12 rounded-full border-2 
                             backdrop-blur-md shadow-lg
-                            ${venue.fitScore > 80 ? 'bg-cyan-500/20 border-cyan-400 text-cyan-400' :
+                            ${venue.fitScore > 80 ? `${moduleColor.bg} ${moduleColor.border} ${moduleColor.text}` :
                                 venue.fitScore > 50 ? 'bg-amber-500/20 border-amber-400 text-amber-400' :
                                     'bg-slate-500/20 border-slate-400 text-slate-400'}
                         `}>
@@ -77,7 +81,7 @@ export const VenueCard: React.FC<VenueCardProps> = ({ venue, onAdd }) => {
             <div className="p-4 relative">
                 <div className="flex justify-between items-start mb-2">
                     <div>
-                        <h3 className="font-bold text-lg text-white group-hover:text-cyan-400 transition-colors leading-tight">
+                        <h3 className={`font-bold text-lg text-white group-hover:${moduleColor.text.replace('text-', '')} transition-colors leading-tight`}>
                             {venue.name}
                         </h3>
                         <div className="flex items-center gap-1 text-slate-400 text-xs mt-1">
@@ -126,7 +130,7 @@ export const VenueCard: React.FC<VenueCardProps> = ({ venue, onAdd }) => {
                             flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-bold transition-all shadow-lg
                             ${isAdded
                                 ? 'bg-slate-700 text-slate-300 cursor-default'
-                                : 'bg-cyan-600 hover:bg-cyan-500 text-white active:scale-95 shadow-cyan-900/20'
+                                : `${moduleColor.bg.replace('/10', '')} ${moduleColor.hoverBg.replace('/5', '/90')} text-white active:scale-95`
                             }
                             ${isAdding ? 'opacity-80 cursor-wait' : ''}
                         `}

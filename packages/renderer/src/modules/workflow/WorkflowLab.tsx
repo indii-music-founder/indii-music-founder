@@ -27,6 +27,7 @@ import { logger } from '@/utils/logger';
 import { useToast } from '@/core/context/ToastContext';
 import { driver } from 'driver.js';
 import 'driver.js/dist/driver.css';
+import { getColorForModule } from '@/core/theme/moduleColors';
 
 /* ================================================================== */
 /*  Workflow Lab — Three-Panel Layout                                   */
@@ -553,7 +554,7 @@ function NodeLibraryPanel() {
         { name: 'Send Email', nodeType: 'outputNode', data: {}, icon: Mail, category: 'Action', color: 'text-green-400' },
         { name: 'Filter', nodeType: 'logicNode', data: { departmentName: 'Logic', jobId: 'gatekeeper' }, icon: Filter, category: 'Logic', color: 'text-yellow-400' },
         { name: 'Webhook', nodeType: 'inputNode', data: {}, icon: Webhook, category: 'Integration', color: 'text-orange-400' },
-        { name: 'Delay', nodeType: 'logicNode', data: { departmentName: 'Logic', jobId: 'router' }, icon: Clock, category: 'Flow', color: 'text-cyan-400' },
+        { name: 'Delay', nodeType: 'logicNode', data: { departmentName: 'Logic', jobId: 'router' }, icon: Clock, category: 'Flow', color: getColorForModule('workflow').text },
         { name: 'Transform', nodeType: 'departmentNode', data: { departmentName: 'Music Department' }, icon: Cpu, category: 'Data', color: 'text-emerald-400' },
     ];
 

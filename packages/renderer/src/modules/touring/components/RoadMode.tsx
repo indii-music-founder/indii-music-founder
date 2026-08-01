@@ -28,6 +28,7 @@ import { useStore } from '@/core/store';
 import { agentService } from '@/services/agent/AgentService';
 import { searchNearbyPlaces, navigateToPlace, type NearbyPlace, type NearbySearchResult } from '@/services/places/NearbyPlacesService';
 import { logger } from '@/utils/logger';
+import { getColorForModule } from '@/core/theme/moduleColors';
 
 // ============================================================================
 // RoadMode — Phone-optimized voice-first road interface
@@ -89,8 +90,8 @@ const QUICK_ACTIONS: QuickAction[] = [
         id: 'lodging',
         icon: Hotel,
         label: 'Lodging',
-        color: 'text-cyan-400',
-        bgColor: 'bg-cyan-500/15 border-cyan-500/20',
+        color: getColorForModule('road').text,
+        bgColor: `${getColorForModule('road').bg.replace('/10', '/15')} ${getColorForModule('road').border}`,
         prompt: 'Find me a place to stay tonight. Show me hotels or motels near my current location with availability and prices. Budget-friendly options preferred.',
         usePlacesAPI: true,
     },

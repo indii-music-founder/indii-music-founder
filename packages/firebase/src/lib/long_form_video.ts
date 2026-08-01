@@ -71,6 +71,7 @@ export const LongFormVideoJobSchema = z.object({
         resolution: z.enum(["720p", "1080p", "4k"]).optional(),
         seed: z.number().optional(),
         negativePrompt: z.string().optional(),
+        personGeneration: z.enum(['dont_allow', 'allow_adult', 'allow_all']).optional(),
         generateAudio: z.boolean().optional(),
         thinking: z.boolean().optional(),
         model: z.enum(["lite", "fast", "pro"]).optional(),
@@ -155,7 +156,7 @@ const STITCH_MAX_POLL_ATTEMPTS = 60;
 const DEFAULT_SEGMENT_DURATION_SECONDS = 5;
 
 // Frame extraction defaults
-const DEFAULT_FRAME_EXTRACTION_OFFSET_SECONDS = 4.5;
+const _DEFAULT_FRAME_EXTRACTION_OFFSET_SECONDS = 4.5;
 const FRAME_EXTRACTION_POLL_INTERVAL_MS = 2000;
 const FRAME_EXTRACTION_MAX_POLL_ATTEMPTS = 20;
 
@@ -243,6 +244,15 @@ export const generateLongFormVideoFn = (inngestClient: Inngest, _legacyUnusedPro
                         imagePayload = { image: { bytesBase64Encoded: base64 } };
                     }
 
+                    // Calculate segment duration dynamically based on totalDuration or fallback
+                    let segmentDuration = DEFAULT_SEGMENT_DURATION_SECONDS;
+                    if (data.totalDuration && prompts.length > 0) {
+                        const calculated = Math.ceil(data.totalDuration / prompts.length);
+                        if (calculated <= 4) segmentDuration = 4;
+                        else if (calculated <= 6) segmentDuration = 6;
+                        else segmentDuration = 8;
+                    }
+
                     const requestBody = {
                         instances: [
                             {
@@ -252,9 +262,10 @@ export const generateLongFormVideoFn = (inngestClient: Inngest, _legacyUnusedPro
                         ],
                         parameters: {
                             sampleCount: 1,
-                            durationSeconds: DEFAULT_SEGMENT_DURATION_SECONDS,
+                            durationSeconds: segmentDuration,
                             aspectRatio: options?.aspectRatio || "16:9",
                             resolution: options?.resolution || "720p",
+                            ...(options?.personGeneration ? { personGeneration: options.personGeneration } : {}),
                             generateAudio: !!options?.generateAudio
                         }
                     };
@@ -395,11 +406,17 @@ export const generateLongFormVideoFn = (inngestClient: Inngest, _legacyUnusedPro
                                         // Normalize Input URI
                                         const inputUri = toGcsUri(segmentUrl);
 
-                                        // Calculate extraction time dynamically
-                                        const extractionTime = Math.min(
-                                            DEFAULT_FRAME_EXTRACTION_OFFSET_SECONDS,
-                                            DEFAULT_SEGMENT_DURATION_SECONDS - 0.5
-                                        );
+                                        // Calculate segment duration dynamically
+                                        let segmentDuration = DEFAULT_SEGMENT_DURATION_SECONDS;
+                                        if (data.totalDuration && prompts.length > 0) {
+                                            const calculated = Math.ceil(data.totalDuration / prompts.length);
+                                            if (calculated <= 4) segmentDuration = 4;
+                                            else if (calculated <= 6) segmentDuration = 6;
+                                            else segmentDuration = 8;
+                                        }
+
+                                        // Calculate extraction time dynamically (0.5s before end of segment)
+                                        const extractionTime = segmentDuration - 0.5;
                                         const extractionSeconds = Math.floor(extractionTime);
                                         const extractionNanos = Math.floor((extractionTime - extractionSeconds) * 1_000_000_000);
 
@@ -501,7 +518,7 @@ export const generateLongFormVideoFn = (inngestClient: Inngest, _legacyUnusedPro
 
             // All segments done, trigger stitching
             const derivedMetadata = {
-                duration_seconds: prompts.length * 5,
+                duration_seconds: data.totalDuration ?? (prompts.length * 5),
                 fps: 30,
                 mime_type: "video/mp4",
                 resolution: options?.aspectRatio === "9:16" ? "720x1280" : "1280x720"
@@ -517,6 +534,7 @@ export const generateLongFormVideoFn = (inngestClient: Inngest, _legacyUnusedPro
                     metadata: derivedMetadata,
                     includeAudio: !!options?.generateAudio,
                     ...(costReservationId ? { costReservationId } : {}),
+                    ...(data.totalDuration ? { totalDuration: data.totalDuration } : {})
                 }
             });
 
@@ -855,6 +873,20 @@ export const stitchVideoFn = (inngestClient: Inngest) => inngestClient.createFun
 
             await markTranscoderSubmissionAttempted('submitting_standard_stitch');
             const jobName = await step.run("create-transcoder-job", async () => {
+                const requestedDuration = typeof eventData.totalDuration === 'number'
+                    ? eventData.totalDuration
+                    : (eventData.options && typeof eventData.options === 'object' && (eventData.options as Record<string, unknown>).timelineDurationSeconds
+                        ? Number((eventData.options as Record<string, unknown>).timelineDurationSeconds)
+                        : undefined);
+
+                let endTimeOffset: { seconds: number; nanos: number } | undefined;
+                if (requestedDuration && Number.isFinite(requestedDuration) && requestedDuration > 0) {
+                    endTimeOffset = {
+                        seconds: Math.floor(requestedDuration),
+                        nanos: Math.round((requestedDuration - Math.floor(requestedDuration)) * 1e9)
+                    };
+                }
+
                 // FIX #5: Build elementary streams dynamically based on audio availability
                 const elementaryStreams: Record<string, unknown>[] = [
                     {
@@ -898,7 +930,8 @@ export const stitchVideoFn = (inngestClient: Inngest) => inngestClient.createFun
                             editList: [
                                 {
                                     key: "atom0",
-                                    inputs: segmentUrls.map((_url: string, index: number) => `input${index}`)
+                                    inputs: segmentUrls.map((_url: string, index: number) => `input${index}`),
+                                    ...(endTimeOffset ? { endTimeOffset } : {})
                                 }
                             ],
                             elementaryStreams,
@@ -912,7 +945,7 @@ export const stitchVideoFn = (inngestClient: Inngest) => inngestClient.createFun
                         }
                     }
                 });
-                const jobList = jobResult as Record<string, unknown>[];
+                const jobList = jobResult as unknown as Record<string, unknown>[];
                 const job = jobList[0];
                 return job.name as string;
             });

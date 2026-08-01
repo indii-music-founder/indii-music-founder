@@ -83,8 +83,8 @@ const SEMANTIC_SCHEMA: Schema = {
 
 export class AudioIntelligenceService {
     /** Hydrates browser ingestion exclusively from the server-owned master receipt. */
-    async analyzeCanonicalMaster(master: MasterAudioReference, userId: string): Promise<AudioIntelligenceProfile> {
-        const receipt = await audioAnalysisReceiptService.waitForTerminalReceipt(master, userId);
+    async analyzeCanonicalMaster(master: MasterAudioReference, userId: string, signal?: AbortSignal): Promise<AudioIntelligenceProfile> {
+        const receipt = await audioAnalysisReceiptService.waitForTerminalReceipt(master, userId, undefined, signal);
         return this.profileFromReceipt(receipt, master.masterFingerprint);
     }
 
@@ -134,7 +134,7 @@ export class AudioIntelligenceService {
      * 1. Technical (local WASM)
      * 2. Semantic (Gemini 3 Pro - INTELLIGENCE_MODELS.TEXT.AGENT)
      */
-    async analyze(file: File | string): Promise<AudioIntelligenceProfile> {
+    async analyze(file: File | string, signal?: AbortSignal): Promise<AudioIntelligenceProfile> {
         return withServiceError('AudioIntelligence', 'analyze', async () => {
             const filename = typeof file === 'string'
                 ? file.split(/[/\\]/).pop() || 'audio'

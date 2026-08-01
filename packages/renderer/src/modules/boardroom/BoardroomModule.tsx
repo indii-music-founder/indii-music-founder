@@ -12,6 +12,8 @@ import { HarnessDecisionDigest } from './components/HarnessDecisionDigest';
 import { ArrowLeft, Users, Layers, Bot } from 'lucide-react';
 import { LivingPlansTracker } from './components/LivingPlansTracker';
 import { SwarmCollaborationFeed } from './components/SwarmCollaborationFeed';
+import { MobileParticipantDrawer } from './components/MobileParticipantDrawer';
+import { getColorForModule } from '@/core/theme/moduleColors';
 
 import { useToast } from '@/core/context/ToastContext';
 import { trackFounderFunnelEvent } from '@/services/founders/founderFunnel';
@@ -50,7 +52,8 @@ export function BoardroomModule() {
             userProfile: state.userProfile,
             setConversationMode: state.setConversationMode,
             consumeHandoff: state.consumeHandoff,
-            addReferencedAsset: state.addReferencedAsset
+            addReferencedAsset: state.addReferencedAsset,
+            toggleAgent: state.toggleAgent
         }))
     );
     const isBoardroomMode = conversationMode === 'boardroom';
@@ -60,6 +63,7 @@ export function BoardroomModule() {
     const activeCount = activeAgents?.length || 0;
     const [isTrackerOpen, setIsTrackerOpen] = React.useState(false);
     const [isSwarmFeedOpen, setIsSwarmFeedOpen] = React.useState(false);
+    const [isMobileSeatingOpen, setIsMobileSeatingOpen] = React.useState(false);
     const hasTrackedBoardroomView = React.useRef(false);
 
     // Staged Handoff Hook Interceptor
@@ -124,11 +128,15 @@ export function BoardroomModule() {
                         <span className="text-xs font-bold uppercase tracking-wider text-indigo-400">
                             Boardroom HQ
                         </span>
-                        {activeCount > 0 && (
-                            <span className="flex items-center gap-1 text-[10px] text-white/30 bg-white/5 px-2 py-0.5 rounded-full border border-white/5">
+                        {(activeCount > 0 || isAnyPhone) && (
+                            <button
+                                onClick={() => isAnyPhone && setIsMobileSeatingOpen(true)}
+                                className={`flex items-center gap-1 text-[10px] ${activeCount === 0 ? 'text-indigo-400 bg-indigo-500/10 hover:bg-indigo-500/20 border-indigo-500/20' : 'text-white/30 bg-white/5 hover:bg-white/10 border-white/5'} px-2 py-0.5 rounded-full border transition-colors ${!isAnyPhone && 'cursor-default hover:bg-white/5'}`}
+                                aria-label="Seat agents"
+                            >
                                 <Users size={10} />
-                                {activeCount} active
-                            </span>
+                                {activeCount > 0 ? `${activeCount} active` : 'Seat Agents'}
+                            </button>
                         )}
                     </div>
                     <div className="flex-1" />
@@ -143,7 +151,7 @@ export function BoardroomModule() {
                     </button>
                     <button 
                         onClick={() => setIsTrackerOpen(true)}
-                        className="flex items-center gap-2 px-4 py-2 rounded-full bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 hover:text-cyan-300 transition-all border border-cyan-500/20 mr-2"
+                        className={`flex items-center gap-2 px-4 py-2 rounded-full ${getColorForModule('agent').bg} hover:${getColorForModule('agent').bg.replace('/10', '/20')} ${getColorForModule('agent').text} transition-all border ${getColorForModule('agent').border} mr-2`}
                         title="View Active Plans"
                         aria-label="Living Plans"
                     >
@@ -186,6 +194,12 @@ export function BoardroomModule() {
 
                 <LivingPlansTracker isOpen={isTrackerOpen} onClose={() => setIsTrackerOpen(false)} />
                 <SwarmCollaborationFeed isOpen={isSwarmFeedOpen} onClose={() => setIsSwarmFeedOpen(false)} />
+                {isAnyPhone && (
+                    <MobileParticipantDrawer 
+                        isOpen={isMobileSeatingOpen} 
+                        onClose={() => setIsMobileSeatingOpen(false)} 
+                    />
+                )}
             </motion.div>
         </AnimatePresence>,
         document.body

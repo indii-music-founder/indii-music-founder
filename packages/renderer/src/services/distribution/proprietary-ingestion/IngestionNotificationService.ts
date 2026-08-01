@@ -6,6 +6,7 @@ import type { ExtendedGoldenMetadata } from '@/services/metadata/types';
 import type { ReleaseAssets } from '@/services/distribution/types/distributor';
 import { INGESTION_CONFIG } from '@/core/config/ingestion';
 import { IdentifierService } from '@/services/identity/IdentifierService';
+import { ddexBuilder } from '@indii/shared';
 
 /**
  * IngestionNotification Service
@@ -64,8 +65,8 @@ export class IngestionNotificationService {
                 action: options?.action,
             }, assets);
 
-            // Generate XML using the parser
-            const xml = IngestionParser.buildIngestionNotification(ern);
+            // Generate XML using the shared canonical DDEX builder
+            const xml = ddexBuilder.buildIngestionNotification(ern);
 
             // Item 219: Structural XML validation before returning
             const structureErrors = IngestionNotificationService.validateIngestionNotificationXML(xml);

@@ -20,14 +20,7 @@ interface SwarmGraphProps {
     onNodeClick?: (trace: AgentTrace) => void;
 }
 
-const AGENT_COLORS: Record<string, string> = {
-    'orchestrator': '#9333ea', // purple
-    'generalist': '#2563eb', // blue
-    'legal': '#dc2626', // red
-    'finance': '#16a34a', // green
-    'creative': '#db2777', // pink
-    'publicist': '#ea580c', // orange
-};
+import { resolveAgentVisualIdentity } from '@/services/agent/AgentVisualIdentity';
 
 export function SwarmGraph({ swarmId, onNodeClick }: SwarmGraphProps) {
     const [nodes, setNodes, onNodesChange] = useNodesState([]);
@@ -50,34 +43,40 @@ export function SwarmGraph({ swarmId, onNodeClick }: SwarmGraphProps) {
     }, [swarmId]);
 
     useEffect(() => {
-        const newNodes: Node[] = traces.map((trace, index) => ({
-            id: trace.id,
-            data: {
-                label: (
-                    <div className="flex flex-col items-center gap-1">
-                        <Badge style={{ backgroundColor: AGENT_COLORS[trace.agentId.toLowerCase()] || '#6b7280' }}>
-                            {trace.agentId}
-                        </Badge>
-                        <span className="text-[10px] font-mono opacity-70 truncate max-w-[100px]">
-                            {trace.id.slice(0, 8)}
-                        </span>
-                        {trace.status === 'pending' && (
-                            <div className="w-2 h-2 rounded-full bg-yellow-500 animate-pulse" />
-                        )}
-                    </div>
-                ),
-                trace
-            },
-            position: { x: 0, y: index * 100 }, // Initial vertical layout
-            style: {
-                background: 'rgba(0,0,0,0.8)',
-                color: '#fff',
-                border: `1px solid ${AGENT_COLORS[trace.agentId.toLowerCase()] || '#333'}`,
-                borderRadius: '8px',
-                padding: '10px',
-                width: 150
-            },
-        }));
+        const newNodes: Node[] = traces.map((trace, index) => {
+            const identity = resolveAgentVisualIdentity(trace.agentId);
+            return {
+                id: trace.id,
+                data: {
+                    label: (
+                        <div className="flex flex-col items-center gap-1">
+                            <Badge style={{
+                                backgroundColor: identity.cssProperties['--agent-accent'],
+                                color: identity.cssProperties['--agent-on-accent-foreground']
+                            }}>
+                                {identity.displayName}
+                            </Badge>
+                            <span className="text-[10px] font-mono opacity-70 truncate max-w-[100px]">
+                                {trace.id.slice(0, 8)}
+                            </span>
+                            {trace.status === 'pending' && (
+                                <div className="w-2 h-2 rounded-full bg-yellow-500 animate-pulse" />
+                            )}
+                        </div>
+                    ),
+                    trace
+                },
+                position: { x: 0, y: index * 100 }, // Initial vertical layout
+                style: {
+                    background: identity.cssProperties['--agent-surface'],
+                    color: identity.cssProperties['--agent-foreground'],
+                    border: `1px solid ${identity.cssProperties['--agent-border']}`,
+                    borderRadius: '8px',
+                    padding: '10px',
+                    width: 150
+                },
+            };
+        });
 
         const newEdges: Edge[] = traces
             .filter(t => t.metadata?.parentTraceId)

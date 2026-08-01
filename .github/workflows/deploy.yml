@@ -124,6 +124,9 @@ jobs:
         with:
           credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
 
+      - name: Build shared package
+        run: npx tsc -b packages/shared
+
       - name: Run unit tests (shard ${{ matrix.shard }}/20)
         timeout-minutes: 15
         run: NODE_OPTIONS="--max-old-space-size=5120" npm test -- --run --reporter=verbose --testTimeout=30000 --bail=3 --shard=${{ matrix.shard }}/20 --maxWorkers=1
@@ -163,6 +166,9 @@ jobs:
             packages/*/node_modules
           key: node-modules-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
 
+      - name: Build shared package
+        run: npx tsc -b packages/shared
+
       - name: Run Firestore and Storage rules tests
         run: |
           npx --no-install firebase emulators:exec \
@@ -201,6 +207,9 @@ jobs:
       - name: Audit dependencies for vulnerabilities (Item 252)
         continue-on-error: true
         run: npm audit --audit-level=high
+
+      - name: Build shared package
+        run: npx tsc -b packages/shared
 
       - name: Run linting checks
         run: npm run lint
@@ -579,90 +588,6 @@ jobs:
             --project indii-music-founder \
             --data-file=-
 
-      - name: Deploy landing page to Firebase Hosting
-        run: |
-          export GOOGLE_APPLICATION_CREDENTIALS="${{ steps.auth.outputs.credentials_file_path }}"
-          set +e
-          OUTPUT=$(npx --no-install firebase deploy --only hosting:landing --project indii-music-founder --non-interactive 2>&1)
-          STATUS=$?
-          set -e
-          echo "$OUTPUT"
-          if [ "$STATUS" -ne 0 ]; then
-            # Firebase rejects re-releasing a version that is already the current
-            # active version (HTTP 400). When the landing content is unchanged the
-            # uploaded version matches what is already live, so this is a no-op
-            # success, not a real failure. Any other error still fails the job.
-            if echo "$OUTPUT" | grep -q "is the current active version"; then
-              echo "::notice::Landing version already live (content unchanged) — treating as success."
-            else
-              echo "::error::Landing page deploy failed."
-              exit "$STATUS"
-            fi
-          fi
-
-      - name: Deploy studio app to Firebase Hosting
-        run: |
-          export GOOGLE_APPLICATION_CREDENTIALS="${{ steps.auth.outputs.credentials_file_path }}"
-          set +e
-          OUTPUT=$(npx --no-install firebase deploy --only hosting:app --project indii-music-founder --non-interactive 2>&1)
-          STATUS=$?
-          set -e
-          echo "$OUTPUT"
-          if [ "$STATUS" -ne 0 ]; then
-            # Same idempotency guard as the landing deploy: an unchanged app build
-            # produces a version that is already the current active version, which
-            # Firebase rejects with HTTP 400. Treat that single case as success.
-            if echo "$OUTPUT" | grep -q "is the current active version"; then
-              echo "::notice::App version already live (content unchanged) — treating as success."
-            else
-              echo "::error::Studio app deploy failed."
-              exit "$STATUS"
-            fi
-          fi
-
-      - name: Deploy Firestore rules
-        run: |
-          npx --no-install firebase deploy --only firestore:rules --project indii-music-founder --non-interactive --force
-
-      - name: Deploy Firestore indexes
-        run: |
-          npx --no-install firebase deploy --only firestore:indexes --project indii-music-founder --non-interactive --force
-
-      - name: Configure deterministic media storage
-        run: |
-          set -euo pipefail
-          gcloud storage buckets update \
-            gs://indii-music-founder.firebasestorage.app \
-            --project indii-music-founder \
-            --cors-file=cors.json \
-            --quiet
-          gcloud storage buckets add-iam-policy-binding \
-            gs://indii-music-founder.firebasestorage.app \
-            --project indii-music-founder \
-            --member=serviceAccount:engine-dsp-runtime@indii-music-founder.iam.gserviceaccount.com \
-            --role=roles/storage.objectUser \
-            --quiet
-
-      - name: Deploy deterministic media worker
-        run: |
-          set -euo pipefail
-          gcloud tasks queues describe session-proxy-queue \
-            --project indii-music-founder \
-            --location us-central1 \
-            --quiet
-          gcloud run deploy engine-dsp \
-            --project indii-music-founder \
-            --region us-central1 \
-            --source packages/engine-dsp \
-            --service-account engine-dsp-runtime@indii-music-founder.iam.gserviceaccount.com \
-            --cpu 2 \
-            --memory 2Gi \
-            --concurrency 1 \
-            --timeout 30m \
-            --no-allow-unauthenticated \
-            --update-env-vars SESSION_MEDIA_BUCKET=indii-music-founder.firebasestorage.app \
-            --quiet
-
       - name: Deploy Cloud Functions
         env:
           INFLUENCER_BOUNTY_BASE_URL: https://app.indii.music
@@ -677,6 +602,11 @@ jobs:
           SESSION_PROXY_AUDIENCE: https://engine-dsp-148015878263.us-central1.run.app
           SESSION_PROXY_TASKS_QUEUE: session-proxy-queue
           SESSION_PROXY_TASKS_LOCATION: us-central1
+          ENGINE_DSP_URL: https://engine-dsp-148015878263.us-central1.run.app/profile
+          ENGINE_DSP_SERVICE_ACCOUNT: engine-dsp-invoker@indii-music-founder.iam.gserviceaccount.com
+          ENGINE_DSP_AUDIENCE: https://engine-dsp-148015878263.us-central1.run.app
+          DSP_TASKS_QUEUE: dsp-processing-queue
+          DSP_TASKS_LOCATION: us-central1
         run: |
           # Firebase Tools copies stale CPU metadata from existing gen1 endpoints
           # during deploy validation. These two functions were created with bad
@@ -819,8 +749,16 @@ jobs:
             "SESSION_PROXY_AUDIENCE=$SESSION_PROXY_AUDIENCE" \
             "SESSION_PROXY_TASKS_QUEUE=$SESSION_PROXY_TASKS_QUEUE" \
             "SESSION_PROXY_TASKS_LOCATION=$SESSION_PROXY_TASKS_LOCATION" \
+            "ENGINE_DSP_URL=$ENGINE_DSP_URL" \
+            "ENGINE_DSP_SERVICE_ACCOUNT=$ENGINE_DSP_SERVICE_ACCOUNT" \
+            "ENGINE_DSP_AUDIENCE=$ENGINE_DSP_AUDIENCE" \
+            "DSP_TASKS_QUEUE=$DSP_TASKS_QUEUE" \
+            "DSP_TASKS_LOCATION=$DSP_TASKS_LOCATION" \
             > packages/firebase/.env.indii-music-founder
-          rm -rf packages/firebase/lib
+          rm -rf packages/firebase/lib packages/firebase/shared-pkg
+          npx tsc -b packages/shared
+          mkdir -p packages/firebase/shared-pkg
+          cp -r packages/shared/dist packages/shared/package.json packages/firebase/shared-pkg/
           npm run build -w packages/firebase
           if [ ! -f packages/firebase/lib/index.js ]; then
             echo "::error::tsc reported success but packages/firebase/lib/index.js was not produced. Re-running with full diagnostics:"
@@ -828,6 +766,90 @@ jobs:
             exit 1
           fi
           npx --no-install firebase deploy --only functions --project indii-music-founder --non-interactive --force
+
+      - name: Deploy landing page to Firebase Hosting
+        run: |
+          export GOOGLE_APPLICATION_CREDENTIALS="${{ steps.auth.outputs.credentials_file_path }}"
+          set +e
+          OUTPUT=$(npx --no-install firebase deploy --only hosting:landing --project indii-music-founder --non-interactive 2>&1)
+          STATUS=$?
+          set -e
+          echo "$OUTPUT"
+          if [ "$STATUS" -ne 0 ]; then
+            # Firebase rejects re-releasing a version that is already the current
+            # active version (HTTP 400). When the landing content is unchanged the
+            # uploaded version matches what is already live, so this is a no-op
+            # success, not a real failure. Any other error still fails the job.
+            if echo "$OUTPUT" | grep -q "is the current active version"; then
+              echo "::notice::Landing version already live (content unchanged) — treating as success."
+            else
+              echo "::error::Landing page deploy failed."
+              exit "$STATUS"
+            fi
+          fi
+
+      - name: Deploy studio app to Firebase Hosting
+        run: |
+          export GOOGLE_APPLICATION_CREDENTIALS="${{ steps.auth.outputs.credentials_file_path }}"
+          set +e
+          OUTPUT=$(npx --no-install firebase deploy --only hosting:app --project indii-music-founder --non-interactive 2>&1)
+          STATUS=$?
+          set -e
+          echo "$OUTPUT"
+          if [ "$STATUS" -ne 0 ]; then
+            # Same idempotency guard as the landing deploy: an unchanged app build
+            # produces a version that is already the current active version, which
+            # Firebase rejects with HTTP 400. Treat that single case as success.
+            if echo "$OUTPUT" | grep -q "is the current active version"; then
+              echo "::notice::App version already live (content unchanged) — treating as success."
+            else
+              echo "::error::Studio app deploy failed."
+              exit "$STATUS"
+            fi
+          fi
+
+      - name: Deploy Firestore rules
+        run: |
+          npx --no-install firebase deploy --only firestore:rules --project indii-music-founder --non-interactive --force
+
+      - name: Deploy Firestore indexes
+        run: |
+          npx --no-install firebase deploy --only firestore:indexes --project indii-music-founder --non-interactive --force
+
+      - name: Configure deterministic media storage
+        run: |
+          set -euo pipefail
+          gcloud storage buckets update \
+            gs://indii-music-founder.firebasestorage.app \
+            --project indii-music-founder \
+            --cors-file=cors.json \
+            --quiet
+          gcloud storage buckets add-iam-policy-binding \
+            gs://indii-music-founder.firebasestorage.app \
+            --project indii-music-founder \
+            --member=serviceAccount:engine-dsp-runtime@indii-music-founder.iam.gserviceaccount.com \
+            --role=roles/storage.objectUser \
+            --quiet
+
+      - name: Deploy deterministic media worker
+        run: |
+          set -euo pipefail
+          gcloud tasks queues describe session-proxy-queue \
+            --project indii-music-founder \
+            --location us-central1 \
+            --quiet
+          gcloud run deploy engine-dsp \
+            --project indii-music-founder \
+            --region us-central1 \
+            --source packages/engine-dsp \
+            --service-account engine-dsp-runtime@indii-music-founder.iam.gserviceaccount.com \
+            --cpu 2 \
+            --memory 2Gi \
+            --concurrency 1 \
+            --timeout 30m \
+            --no-allow-unauthenticated \
+            --update-env-vars SESSION_MEDIA_BUCKET=indii-music-founder.firebasestorage.app \
+            --quiet
 
       - name: Pipeline health summary
         run: |

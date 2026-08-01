@@ -3,6 +3,7 @@ import { CheckCircle2, AlertCircle, Loader2, Clock, X } from 'lucide-react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import type { BatchedTask } from '@/services/agent/MaestroBatchingService';
+import { getColorForModule } from '@/core/theme/moduleColors';
 
 const STATUS_CONFIG: Record<BatchedTask['status'], {
     icon: React.FC<{ size?: string | number; className?: string }>;
@@ -21,7 +22,7 @@ const STATUS_CONFIG: Record<BatchedTask['status'], {
     },
     completed: {
         icon: CheckCircle2,
-        color: 'text-cyan-400',
+        color: getColorForModule('agent').text,
         label: 'Done',
     },
     error: {

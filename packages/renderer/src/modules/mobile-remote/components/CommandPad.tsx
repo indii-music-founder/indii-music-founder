@@ -224,8 +224,8 @@ export default function CommandPad({ onSendCommand, isPaired }: CommandPadProps)
       description: 'Superfans and new followers',
       moduleId: 'social',
       agentPrompt: 'Check recent audience demographics. Provide recommendations for moving standard listeners into the high-LTV superfan tier based on recent platform engagement.',
-      color: 'border-cyan-500/25 bg-cyan-500/[0.03] text-cyan-400 hover:bg-cyan-500/[0.08]',
-      glow: 'shadow-cyan-500/5 hover:shadow-cyan-500/15',
+      color: 'border-dept-social/25 bg-dept-social/[0.03] text-dept-social hover:bg-dept-social/[0.08]',
+      glow: 'shadow-dept-social/5 hover:shadow-dept-social/15',
     },
     {
       id: 'active_campaigns',

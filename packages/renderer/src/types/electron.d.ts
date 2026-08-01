@@ -85,6 +85,24 @@ export interface AudioAnalysisResult {
     error?: string;
 }
 
+export interface Web3TransactionPayload {
+    from?: string;
+    to: string;
+    value?: string;
+    data?: string;
+    gasLimit?: string | number;
+    gasPrice?: string;
+    maxFeePerGas?: string;
+    maxPriorityFeePerGas?: string;
+}
+
+export interface Web3ProviderMetadata {
+    rpcUrl: string | null;
+    isSimulated: boolean;
+    chainId: string;
+    networkName: string;
+}
+
 export interface ElectronAPI {
     // General
     getPlatform: () => Promise<string>;
@@ -101,9 +119,8 @@ export interface ElectronAPI {
     }>>;
     showNotification: (title: string, body: string) => void;
 
-    // System Info (Mobile Remote, Device Detection)
+    // System Info (Device Detection)
     system?: {
-        getMobileRemoteInfo?: () => Promise<{ localIp: string; port: number; passcode?: string } | null>;
     };
 
     // Filesystem (Electron IPC)
@@ -293,10 +310,23 @@ export interface ElectronAPI {
         onTick: (callback: (event: SchedulerTypes.SchedulerTickEvent) => void) => () => void;
         onNeuralSync: (callback: (payload: unknown) => void) => () => void;
     };
+    // Web3 / Ethereum Integration
+    web3?: {
+        executeTransaction: (data: Web3TransactionPayload) => Promise<{ success: boolean; txHash?: string; status?: string; isSimulated?: boolean; blockNumber?: number; gasUsed?: number; rpcUrl?: string; error?: string }>;
+        getProviderMetadata: () => Promise<Web3ProviderMetadata | { success: false; error: string }>;
+        setRpcUrl: (rpcUrl: string | null) => Promise<{ success: boolean; error?: string }>;
+        getBalance: (address: string) => Promise<{ success: boolean; balance?: string; unit?: string; isSimulated?: boolean; error?: string }>;
+    };
+    // Pinata / IPFS Integration
+    pinata?: {
+        uploadFile: (file: number[], filename: string) => Promise<{ success: boolean; IpfsHash?: string; PinSize?: number; Timestamp?: string; error?: string }>;
+    };
     // Mobile Remote — P2P Local WebSocket IPC bridge (Electron-only)
     remote?: {
         onMessageFromMobile: (cb: (payload: RemoteMobilePayload) => void) => (() => void);
         broadcast: (msg: Record<string, unknown>) => void;
+        getMobileRemoteInfo: () => Promise<{ isRunning: boolean; url: string | null; clientCount: number }>;
+        stop: () => Promise<{ success: boolean }>;
     };
     // Sonic Bridge — watches a DAW bounce folder for new audio (Electron-only)
     sonicBridge?: {

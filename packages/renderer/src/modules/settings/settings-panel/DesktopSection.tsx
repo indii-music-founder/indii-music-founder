@@ -28,13 +28,29 @@ import {
     Send,
     CheckCircle2,
     XCircle,
+    Cloud,
+    Wifi,
+    WifiOff,
+    UploadCloud,
+    FolderUp,
+    Activity,
+    Key,
+    Database,
+    Globe,
+    Play,
+    MonitorSmartphone,
+    X,
+    ExternalLink,
+    Sparkles,
 } from 'lucide-react';
 import { SectionHeader, SettingRow, SelectDropdown } from './SettingsShared';
 import { logger } from '@/utils/logger';
 import { db } from '@/services/firebase';
 import { doc, setDoc, addDoc, collection } from 'firebase/firestore';
+import { useTranslation } from 'react-i18next';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
+import { getColorForModule } from '@/core/theme/moduleColors';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -66,6 +82,7 @@ const DesktopSection: React.FC = () => {
     const { userProfile } = useStore(useShallow(state => ({
         userProfile: state.userProfile,
     })));
+    const moduleColor = getColorForModule('settings');
     const [appVersion, setAppVersion] = useState<string>('');
     const [status, setStatus] = useState<UpdateStatus>('idle');
     const [availableVersion, setAvailableVersion] = useState<string>('');
@@ -229,7 +246,7 @@ const DesktopSection: React.FC = () => {
     const renderStatusBadge = () => {
         const badges: Record<UpdateStatus, { icon: React.ReactNode; text: string; color: string }> = {
             idle: { icon: <Info size={12} />, text: 'Not checked', color: 'text-slate-500 bg-slate-800/60' },
-            checking: { icon: <Loader2 size={12} className="animate-spin" />, text: 'Checking...', color: 'text-cyan-400 bg-cyan-500/10' },
+            checking: { icon: <Loader2 size={12} className="animate-spin" />, text: 'Checking...', color: `${moduleColor.text} ${moduleColor.bg}` },
             available: { icon: <Download size={12} />, text: `v${availableVersion} available`, color: 'text-amber-400 bg-amber-500/10' },
             downloading: { icon: <Loader2 size={12} className="animate-spin" />, text: `Downloading ${downloadProgress.toFixed(0)}%`, color: 'text-green-400 bg-green-500/10' },
             downloaded: { icon: <CheckCircle size={12} />, text: `v${availableVersion} ready`, color: 'text-emerald-400 bg-emerald-500/10' },
@@ -267,11 +284,11 @@ const DesktopSection: React.FC = () => {
 
                 {isFounderAccess ? (
                     <div className="border border-slate-800 bg-slate-900/40 rounded-2xl p-6 relative overflow-hidden backdrop-blur-md">
-                        <div className="absolute top-0 right-0 w-64 h-64 bg-cyan-500/5 rounded-full blur-3xl pointer-events-none" />
+                        <div className={`absolute top-0 right-0 w-64 h-64 ${getColorForModule('settings').bg.replace('/10', '/5')} rounded-full blur-3xl pointer-events-none`} />
 
                         <div className="flex items-center gap-3 mb-4">
-                            <div className="w-10 h-10 rounded-xl bg-cyan-500/10 flex items-center justify-center border border-cyan-500/20">
-                                <Terminal size={18} className="text-cyan-400" />
+                            <div className={`w-10 h-10 rounded-xl ${moduleColor.bg} flex items-center justify-center border ${moduleColor.border}/20`}>
+                                <Terminal size={18} className={moduleColor.text} />
                             </div>
                             <div>
                                 <h3 className="text-sm font-semibold text-white">Developer Firebase Push Bypass</h3>
@@ -290,7 +307,7 @@ const DesktopSection: React.FC = () => {
                                         value={collectionName}
                                         onChange={(e) => setCollectionName(e.target.value)}
                                         placeholder="e.g. user_usage_stats"
-                                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-sm text-slate-350 placeholder-slate-600 focus:outline-none focus:border-cyan-500/50 transition-all font-mono"
+                                        className={`w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-sm text-slate-350 placeholder-slate-600 focus:outline-none focus:${getColorForModule('settings').border} transition-all font-mono`}
                                     />
                                 </div>
                                 <div>
@@ -302,7 +319,7 @@ const DesktopSection: React.FC = () => {
                                         value={docId}
                                         onChange={(e) => setDocId(e.target.value)}
                                         placeholder="Auto-generated if empty"
-                                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-sm text-slate-350 placeholder-slate-600 focus:outline-none focus:border-cyan-500/50 transition-all font-mono"
+                                        className={`w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-sm text-slate-350 placeholder-slate-600 focus:outline-none focus:${getColorForModule('settings').border} transition-all font-mono`}
                                     />
                                 </div>
                             </div>
@@ -316,7 +333,7 @@ const DesktopSection: React.FC = () => {
                                     onChange={(e) => setJsonData(e.target.value)}
                                     placeholder={`{\n  "tokensUsed": 1000,\n  "requestCount": 1,\n  "userId": "user_id_here"\n}`}
                                     rows={6}
-                                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3.5 text-xs text-slate-350 placeholder-slate-600 focus:outline-none focus:border-cyan-500/50 transition-all font-mono resize-y min-h-[120px]"
+                                    className={`w-full bg-slate-950 border border-slate-800 rounded-xl p-3.5 text-xs text-slate-350 placeholder-slate-600 focus:outline-none focus:${getColorForModule('settings').border} transition-all font-mono resize-y min-h-[120px]`}
                                 />
                             </div>
 
@@ -373,8 +390,8 @@ const DesktopSection: React.FC = () => {
             <div className="mb-6 p-4 rounded-xl bg-linear-to-br from-slate-800/60 to-slate-900/60 border border-slate-700/50">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-linear-to-br from-cyan-500/20 to-green-500/20 flex items-center justify-center">
-                            <Monitor size={18} className="text-cyan-400" />
+                        <div className={`w-10 h-10 rounded-xl bg-linear-to-br ${moduleColor.bg} to-green-500/20 flex items-center justify-center`}>
+                            <Monitor size={18} className={moduleColor.text} />
                         </div>
                         <div>
                             <p className="text-sm font-semibold text-white">{config.releaseName || 'Founders Version One'}</p>
@@ -432,7 +449,7 @@ const DesktopSection: React.FC = () => {
                     id="settings-check-for-updates"
                     onClick={handleCheckForUpdates}
                     disabled={status === 'checking' || status === 'downloading'}
-                    className="flex items-center gap-2 px-4 py-2.5 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/20 rounded-xl text-sm font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.98]"
+                    className={`flex items-center gap-2 px-4 py-2.5 ${moduleColor.bg} hover:bg-opacity-80 ${moduleColor.text} border ${moduleColor.border}/20 rounded-xl text-sm font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.98]`}
                 >
                     <RefreshCw size={14} className={status === 'checking' ? 'animate-spin' : ''} />
                     {status === 'checking' ? 'Checking...' : 'Check for Updates'}

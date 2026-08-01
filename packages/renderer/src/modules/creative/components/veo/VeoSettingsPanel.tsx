@@ -5,26 +5,40 @@ import { useStore } from '@/core/store';
 import { motion, AnimatePresence } from 'motion/react';
 import { clsx } from 'clsx';
 import { useShallow } from 'zustand/react/shallow';
+import { useDirectGeneration } from '../../hooks/useDirectGeneration';
+import { normalizeVideoDuration, normalizeVideoResolution } from '@indii/shared';
 
 interface VeoSettingsPanelProps {
     isOpen: boolean;
 }
 
 export function VeoSettingsPanel({ isOpen }: VeoSettingsPanelProps) {
-    const { studioControls, setStudioControls } = useStore(useShallow(state => ({
+    const { studioControls, setStudioControls, videoInputs, characterReferences } = useStore(useShallow(state => ({
         studioControls: state.studioControls,
-        setStudioControls: state.setStudioControls
+        setStudioControls: state.setStudioControls,
+        videoInputs: state.videoInputs,
+        characterReferences: state.characterReferences
     })));
+
+    const { mappedIngredients } = useDirectGeneration();
 
     // ISSUE-788: Veo 3.1 only honors '9:16' specially and coerces every
     // other aspect ratio to '16:9' server-side (gateway.ts
     // normalizeVideoAspectRatio); supported lengths are 4/6/8 seconds only.
     // '1:1' and '5' looked selectable here but had no effect once submitted.
     const aspectRatios = ['16:9', '9:16'] as const;
-    const durations = [4, 6, 8];
+    const hasFrameInput = !!videoInputs.firstFrame?.url || mappedIngredients.length > 0 || characterReferences.length > 0;
+    const effectiveResolution = normalizeVideoResolution(studioControls.resolution, studioControls.model);
+    const resolvedDuration = normalizeVideoDuration(studioControls.duration, effectiveResolution, hasFrameInput);
+    
+    // Determine which options to show based on the current configuration
+    const durations = (effectiveResolution !== '720p' || hasFrameInput)
+        ? [8] as const
+        : [4, 6, 8] as const;
+
     const cameraMovements = ['Static', 'Pan', 'Tilt', 'Zoom', 'Orbit'];
     const directorFps = studioControls.fps || 24;
-    const directorFrames = Math.round((studioControls.duration || 0) * directorFps);
+    const directorFrames = Math.round((resolvedDuration || 0) * directorFps);
 
     return (
         <AnimatePresence>
@@ -45,7 +59,7 @@ export function VeoSettingsPanel({ isOpen }: VeoSettingsPanelProps) {
                                 <p className="text-[9px] uppercase tracking-widest text-gray-500 font-bold">Temporal lock</p>
                                 <p className="text-[11px] font-mono font-bold text-white">{directorFps} fps · {directorFrames} frames</p>
                             </div>
-                            <span className="text-[9px] uppercase tracking-widest text-cyan-300 bg-cyan-500/10 border border-cyan-500/20 rounded-full px-2 py-1">
+                            <span className="text-[9px] uppercase tracking-widest text-purple-300 bg-purple-500/10 border border-purple-500/20 rounded-full px-2 py-1">
                                 Director timing
                             </span>
                         </div>

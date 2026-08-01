@@ -27,6 +27,7 @@ import { SectionHeader, SettingRow, Toggle } from './SettingsShared';
 import { Database } from 'lucide-react';
 import { subscriptionService } from '@/services/subscription/SubscriptionService';
 import { PrivacySettingsPanel } from '@/components/shared/PrivacySettingsPanel';
+import { getColorForModule } from '@/core/theme/moduleColors';
 
 const AuditLogDashboard = React.lazy(() =>
     import('@/modules/settings/components/AuditLogDashboard').then(m => ({ default: m.AuditLogDashboard }))
@@ -43,6 +44,7 @@ const SecuritySection: React.FC = () => {
     const [syncing, setSyncing] = useState(false);
     const [sendingVerification, setSendingVerification] = useState(false);
     const { updatePreferences } = useStore(useShallow((s: StoreState) => ({ updatePreferences: s.updatePreferences })));
+    const moduleColor = getColorForModule('settings');
 
     const handleResendVerification = async () => {
         const currentUser = getAuth().currentUser;
@@ -155,7 +157,7 @@ const SecuritySection: React.FC = () => {
                     <button
                         onClick={handleSyncBilling}
                         disabled={syncing}
-                        className="flex items-center gap-2 text-xs font-medium text-cyan-400 hover:text-cyan-300 hover:bg-cyan-500/10 px-3 py-2 rounded-lg transition-colors border border-cyan-500/20 disabled:opacity-50 cursor-pointer"
+                        className={`flex items-center gap-2 text-xs font-medium ${moduleColor.text} hover:opacity-80 hover:${moduleColor.bg} px-3 py-2 rounded-lg transition-colors border ${moduleColor.border}/20 disabled:opacity-50 cursor-pointer`}
                     >
                         <RefreshCw size={14} className={syncing ? 'animate-spin' : ''} />
                         {syncing ? 'Syncing...' : 'Sync Limits'}
@@ -186,7 +188,7 @@ const SecuritySection: React.FC = () => {
                 <SettingRow icon={ScrollText} label="Audit Log" description="View account activity and changes">
                     <button
                         onClick={() => setShowAuditLog(!showAuditLog)}
-                        className="text-xs text-cyan-400 hover:text-cyan-300 flex items-center gap-1 transition-colors"
+                        className={`text-xs ${moduleColor.text} hover:opacity-80 flex items-center gap-1 transition-colors`}
                     >
                         {showAuditLog ? 'Hide' : 'View'} <ChevronRight size={12} className={`transition-transform ${showAuditLog ? 'rotate-90' : ''}`} />
                     </button>

@@ -18,6 +18,7 @@ import { updateProfile } from 'firebase/auth';
 import { auth } from '@/services/firebase';
 import { logger } from '@/utils/logger';
 import FounderBadge from '../components/FounderBadge';
+import { getColorForModule } from '@/core/theme/moduleColors';
 import { SectionHeader } from './SettingsShared';
 import { StorageService } from '@/services/StorageService';
 
@@ -144,7 +145,7 @@ const ProfileSection: React.FC = () => {
                         type="text"
                         value={displayName}
                         onChange={(e) => { setDisplayName(e.target.value); setDirty(true); }}
-                        className="w-full bg-slate-800/60 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/40 focus:border-cyan-500/30 transition-all"
+                        className={`w-full bg-slate-800/60 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:${getColorForModule('settings').border} transition-all`}
                         placeholder={t('settings.hints.display_name')}
                     />
                 </div>
@@ -155,7 +156,7 @@ const ProfileSection: React.FC = () => {
                         value={bio}
                         onChange={(e) => { setBio(e.target.value); setDirty(true); }}
                         rows={3}
-                        className="w-full bg-slate-800/60 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/40 focus:border-cyan-500/30 transition-all resize-none"
+                        className={`w-full bg-slate-800/60 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:${getColorForModule('settings').border} transition-all resize-none`}
                         placeholder={t('settings.hints.bio_desc')}
                     />
                     <p className="text-xs text-slate-600 mt-1">{t('settings.profile.characters', { count: bio.length })}</p>
@@ -177,7 +178,7 @@ const ProfileSection: React.FC = () => {
                         <button
                             onClick={handleSave}
                             disabled={saving}
-                            className="flex items-center gap-2 bg-cyan-500 hover:bg-cyan-400 text-black px-4 py-2 rounded-xl text-sm font-medium transition-colors disabled:opacity-50"
+                            className={`flex items-center gap-2 ${getColorForModule('settings').bg.replace('/10', '')} hover:opacity-90 text-black px-4 py-2 rounded-xl text-sm font-medium transition-colors disabled:opacity-50`}
                         >
                             {saving ? <RefreshCw size={14} className="animate-spin" /> : <Save size={14} />}
                             {saving ? t('settings.profile.saving') : t('settings.profile.saveChanges')}

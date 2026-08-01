@@ -279,7 +279,7 @@ const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference
                                                             toast.success("Sent to Veo for frame-continuity generation!");
                                                             setShowSendMenu(false);
                                                         }}
-                                                        className="w-full px-2.5 py-1.5 text-[10px] text-gray-300 hover:bg-cyan-600/20 hover:text-cyan-300 transition-colors"
+                                                        className="w-full px-2.5 py-1.5 text-[10px] text-gray-300 hover:bg-purple-600/20 hover:text-purple-300 transition-colors"
                                                     >
                                                         <span>→ Veo (continue)</span>
                                                     </button>
@@ -331,7 +331,7 @@ const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference
                                                             toast.success("Sent to Veo as first frame!");
                                                             setShowSendMenu(false);
                                                         }}
-                                                        className="w-full px-2.5 py-1.5 text-[10px] text-gray-300 hover:bg-cyan-600/20 hover:text-cyan-300 transition-colors"
+                                                        className="w-full px-2.5 py-1.5 text-[10px] text-gray-300 hover:bg-purple-600/20 hover:text-purple-300 transition-colors"
                                                     >
                                                         <span>→ Veo (frame)</span>
                                                     </button>

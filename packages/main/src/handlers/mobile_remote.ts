@@ -43,54 +43,7 @@ function generatePasscode(): string {
 }
 
 export function registerMobileRemoteHandlers(): void {
-  /**
-   * Renderer requests pairing info (starts server if not running).
-   * It also fetches the active Ngrok Auth Token from the user's environment.
-   */
-  ipcMain.handle('system:getMobileRemoteInfo', async (event) => {
-        validateSender(event);
-    if (!isLegacyEdgeRemoteEnabled()) {
-      return {
-        success: false,
-        errorCode: 'LEGACY_EDGE_DISABLED',
-        error: 'Direct edge pairing is disabled. Use Settings > Mobile Remote for the authenticated cloud relay.',
-      };
-    }
-    try {
-      // In production, we'd grab this from Keytar or user desktop settings.
-      // For now, we try to load the Ngrok token from env vars.
-      const token = process.env.VITE_NGROK_AUTHTOKEN || process.env.NGROK_AUTHTOKEN;
-      const sessionPasscode = generatePasscode();
 
-      const status = indiiRemoteService.getStatus();
-      let url: string;
-
-      if (status.isRunning) {
-        // Service already running — update the password for the new pairing session
-        indiiRemoteService.updatePassword(sessionPasscode);
-        url = status.url!;
-      } else {
-        // Start fresh
-        url = await indiiRemoteService.start({
-          port: 3333,
-          ngrokToken: token,
-          password: sessionPasscode,
-        });
-      }
-
-      return {
-        success: true,
-        // We override localIp to return the Ngrok URL so the QR code generates correctly
-        localIp: url,
-        port: 3333,
-        passcode: sessionPasscode
-      };
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Unknown error';
-      log.error('[MobileRemote] Failed to start WS/Ngrok server', err);
-      return { success: false, error: message };
-    }
-  });
 
   /**
    * Renderer sends a Zustand state slice to broadcast to all mobile clients.
@@ -102,11 +55,21 @@ export function registerMobileRemoteHandlers(): void {
     indiiRemoteService.sendToMobile({ type: 'sync', payload, ts: Date.now() });
   });
 
+
+
   /**
-   * Renderer requests server shutdown.
+   * Returns current IndiiRemoteService status and pairing info.
+   */
+  ipcMain.handle('system:getMobileRemoteInfo', async (event) => {
+    validateSender(event);
+    return indiiRemoteService.getStatus();
+  });
+
+  /**
+   * Stops the running IndiiRemoteService server.
    */
   ipcMain.handle('mobile-remote:stop', async (event) => {
-        validateSender(event);
+    validateSender(event);
     await indiiRemoteService.stop();
     return { success: true };
   });

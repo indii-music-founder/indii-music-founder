@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { motion, AnimatePresence } from 'motion/react';
+import { getColorForModule } from '@/core/theme/moduleColors';
 
 export const CustomizableAnalyticsDashboard: React.FC = () => {
     const userId = useStore(s => s.user?.uid);
@@ -107,18 +108,20 @@ export const CustomizableAnalyticsDashboard: React.FC = () => {
 
     const totalStreams = catalogue.reduce((sum, t) => sum + t.totalStreams, 0);
 
+    const moduleColor = getColorForModule('analytics');
+
     return (
         <div className="p-6 bg-[#090d13] text-slate-100 min-h-screen rounded-xl border border-white/5 shadow-2xl relative overflow-hidden">
             {/* Background glowing decorations */}
-            <div className="absolute top-[-10%] right-[-10%] w-[350px] h-[350px] bg-emerald-500/10 rounded-full blur-[100px] pointer-events-none" />
-            <div className="absolute bottom-[-15%] left-[-15%] w-[450px] h-[450px] bg-indigo-500/10 rounded-full blur-[120px] pointer-events-none" />
+            <div className={`absolute top-[-10%] right-[-10%] w-[350px] h-[350px] ${moduleColor.bg} rounded-full blur-[100px] pointer-events-none`} />
+            <div className={`absolute bottom-[-15%] left-[-15%] w-[450px] h-[450px] ${moduleColor.bg} opacity-50 rounded-full blur-[120px] pointer-events-none`} />
 
             {/* Dashboard Header */}
             <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-8 border-b border-white/10 pb-6 relative z-10">
                 <div>
                     <div className="flex items-center gap-3">
-                        <div className="p-2 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
-                            <LayoutDashboard className="text-emerald-400" size={24} />
+                        <div className={`p-2 ${moduleColor.bg} border ${moduleColor.border} rounded-xl`}>
+                            <LayoutDashboard className={moduleColor.text} size={24} />
                         </div>
                         <div>
                             <h2 className="text-xl font-bold font-mono tracking-tight text-white flex items-center gap-2">
@@ -140,8 +143,8 @@ export const CustomizableAnalyticsDashboard: React.FC = () => {
                         <RefreshCw size={12} className={refreshing ? 'animate-spin' : ''} />
                         Sync Real DB
                     </button>
-                    <div className="flex items-center gap-1.5 px-3 py-1 bg-indigo-500/10 border border-indigo-500/20 rounded-lg text-[11px] font-bold text-indigo-300">
-                        <Sparkles size={11} className="text-indigo-400" />
+                    <div className={`flex items-center gap-1.5 px-3 py-1 ${moduleColor.bg} border ${moduleColor.border} rounded-lg text-[11px] font-bold ${moduleColor.text}`}>
+                        <Sparkles size={11} className={moduleColor.text} />
                         Tier: {currentTier.toUpperCase()}
                     </div>
                 </div>
@@ -149,7 +152,7 @@ export const CustomizableAnalyticsDashboard: React.FC = () => {
 
             {loading ? (
                 <div className="h-64 flex flex-col items-center justify-center text-slate-500 gap-3">
-                    <Zap size={32} className="text-emerald-400 animate-bounce" />
+                    <Zap size={32} className={`${moduleColor.text} animate-bounce`} />
                     <p className="text-xs font-mono">Quarrying Firestore & Stripe metrics...</p>
                 </div>
             ) : (
@@ -162,12 +165,12 @@ export const CustomizableAnalyticsDashboard: React.FC = () => {
                         <div className="flex justify-between items-center mb-5 pb-3 border-b border-white/5">
                             <div>
                                 <h3 className="font-semibold text-white font-mono text-sm flex items-center gap-2">
-                                    <Coins size={16} className="text-indigo-400" />
+                                    <Coins size={16} className={moduleColor.text} />
                                     Stripe Financial Performance
                                 </h3>
                                 <p className="text-[10px] text-slate-400 mt-0.5">Real earnings, expenses, and ledger payouts</p>
                             </div>
-                            <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-indigo-500/10 border border-indigo-500/20 text-indigo-300">
+                            <span className={`text-[10px] uppercase font-mono px-2 py-0.5 rounded ${moduleColor.bg} border ${moduleColor.border} ${moduleColor.text}`}>
                                 30-Day Period
                             </span>
                         </div>
@@ -255,12 +258,12 @@ export const CustomizableAnalyticsDashboard: React.FC = () => {
                         <div className="flex justify-between items-center mb-5 pb-3 border-b border-white/5">
                             <div>
                                 <h3 className="font-semibold text-white font-mono text-sm flex items-center gap-2">
-                                    <Shield size={16} className="text-emerald-400" />
+                                    <Shield size={16} className={moduleColor.text} />
                                     Tier Quota Enforcement
                                 </h3>
                                 <p className="text-[10px] text-slate-400 mt-0.5">Enforcing budget caps & generation limits</p>
                             </div>
-                            <CheckCircle size={14} className="text-emerald-400" />
+                            <CheckCircle size={14} className={moduleColor.text} />
                         </div>
 
                         {/* Quota Progress Bars */}
@@ -300,10 +303,10 @@ export const CustomizableAnalyticsDashboard: React.FC = () => {
 
                         {/* Upgrade CTA banner if free */}
                         {currentTier === 'free' && (
-                            <div className="mt-5 p-3 bg-indigo-500/10 border border-indigo-500/20 rounded-xl flex items-center gap-2.5">
-                                <Sparkles size={14} className="text-indigo-400 animate-pulse shrink-0" />
-                                <div className="text-[10px] text-indigo-200">
-                                    Unlock 10GB storage, 500 daily images and 4K resolution exports. <span className="font-bold">Upgrade to Pro</span>
+                            <div className={`mt-5 p-3 ${moduleColor.bg} border ${moduleColor.border} rounded-xl flex items-center gap-2.5`}>
+                                <Sparkles size={14} className={`${moduleColor.text} animate-pulse shrink-0`} />
+                                <div className={`text-[10px] ${moduleColor.text} opacity-80`}>
+                                    Unlock 10GB storage, 500 daily images and 4K resolution exports. <span className="font-bold text-current opacity-100">Upgrade to Pro</span>
                                 </div>
                             </div>
                         )}
@@ -317,7 +320,7 @@ export const CustomizableAnalyticsDashboard: React.FC = () => {
                         <div className="flex justify-between items-center mb-5 pb-3 border-b border-white/5">
                             <div>
                                 <h3 className="font-semibold text-white font-mono text-sm flex items-center gap-2">
-                                    <Activity size={16} className="text-indigo-400" />
+                                    <Activity size={16} className={moduleColor.text} />
                                     Ledger Expenses
                                 </h3>
                                 <p className="text-[10px] text-slate-400 mt-0.5">Tracked outbound business expenses</p>
@@ -364,12 +367,12 @@ export const CustomizableAnalyticsDashboard: React.FC = () => {
                         <div className="flex justify-between items-center mb-5 pb-3 border-b border-white/5">
                             <div>
                                 <h3 className="font-semibold text-white font-mono text-sm flex items-center gap-2">
-                                    <BarChart2 size={16} className="text-emerald-400" />
+                                    <BarChart2 size={16} className={moduleColor.text} />
                                     Daily User Activity Stats
                                 </h3>
                                 <p className="text-[10px] text-slate-400 mt-0.5">Tracking daily studio resource transactions</p>
                             </div>
-                            <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20 text-emerald-300">
+                            <span className={`text-[10px] uppercase font-mono px-2 py-0.5 rounded ${moduleColor.bg} border ${moduleColor.border} ${moduleColor.text}`}>
                                 Studio Usage
                             </span>
                         </div>
@@ -425,12 +428,12 @@ export const CustomizableAnalyticsDashboard: React.FC = () => {
                         <div className="flex justify-between items-center mb-5 pb-3 border-b border-white/5">
                             <div>
                                 <h3 className="font-semibold text-white font-mono text-sm flex items-center gap-2">
-                                    <Activity size={16} className="text-cyan-400" />
+                                    <Activity size={16} className={moduleColor.text} />
                                     Cross-Platform Streaming Analytics
                                 </h3>
                                 <p className="text-[10px] text-slate-400 mt-0.5">Aggregated metrics from Spotify, YouTube, TikTok</p>
                             </div>
-                            <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-cyan-500/10 border border-cyan-500/20 text-cyan-300">
+                            <span className={`text-[10px] uppercase font-mono px-2 py-0.5 rounded ${moduleColor.bg} border ${moduleColor.border} ${moduleColor.text}`}>
                                 {totalStreams.toLocaleString('en-US')} Total Streams
                             </span>
                         </div>

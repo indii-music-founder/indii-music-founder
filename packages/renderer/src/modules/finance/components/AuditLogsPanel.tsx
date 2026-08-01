@@ -5,6 +5,7 @@ import { db, auth } from '@/services/firebase';
 import { collection, query, where, orderBy, limit, onSnapshot, Timestamp } from 'firebase/firestore';
 import { logger } from '@/utils/logger';
 import { safeUnsubscribe } from '@/utils/safeUnsubscribe';
+import { getColorForModule } from '@/core/theme/moduleColors';
 
 /* ================================================================== */
 /*  Item 158 — Audit Logs GUI                                          */
@@ -112,8 +113,8 @@ export function AuditLogsPanel() {
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-lg bg-cyan-500/10 flex items-center justify-center">
-                        <Shield size={14} className="text-cyan-400" />
+                    <div className={`w-7 h-7 rounded-lg ${getColorForModule('finance').bg} flex items-center justify-center`}>
+                        <Shield size={14} className={getColorForModule('finance').text} />
                     </div>
                     <div>
                         <h2 className="text-sm font-bold text-white">Audit Logs</h2>
@@ -153,7 +154,7 @@ export function AuditLogsPanel() {
                     <select
                         value={agentFilter}
                         onChange={(e) => setAgentFilter(e.target.value)}
-                        className="appearance-none bg-white/[0.03] border border-white/10 rounded-lg pl-3 pr-8 py-1.5 text-[10px] text-white focus:outline-none focus:border-cyan-500/50 cursor-pointer"
+                        className="appearance-none bg-white/[0.03] border border-white/10 rounded-lg pl-3 pr-8 py-1.5 text-[10px] text-white focus:outline-none focus:border-amber-500/50 cursor-pointer"
                     >
                         {agentNames.map((a) => (
                             <option key={a} value={a}>{a === 'ALL' ? 'All Agents' : a}</option>
@@ -167,7 +168,7 @@ export function AuditLogsPanel() {
                     <select
                         value={actionFilter}
                         onChange={(e) => setActionFilter(e.target.value)}
-                        className="appearance-none bg-white/[0.03] border border-white/10 rounded-lg pl-3 pr-8 py-1.5 text-[10px] text-white focus:outline-none focus:border-cyan-500/50 cursor-pointer"
+                        className="appearance-none bg-white/[0.03] border border-white/10 rounded-lg pl-3 pr-8 py-1.5 text-[10px] text-white focus:outline-none focus:border-amber-500/50 cursor-pointer"
                     >
                         {actionTypes.map((a) => (
                             <option key={a} value={a}>{a === 'ALL' ? 'All Actions' : a}</option>
@@ -229,7 +230,7 @@ export function AuditLogsPanel() {
                                             <span className="text-gray-600">—</span>
                                         )}
                                     </td>
-                                    <td className="px-3 py-2 font-mono text-cyan-400 text-[10px]">{log.action}</td>
+                                    <td className={`px-3 py-2 font-mono ${getColorForModule('finance').text} text-[10px]`}>{log.action}</td>
                                     <td className="px-3 py-2 text-gray-400 max-w-[180px] truncate font-mono text-[10px]" title={log.resource}>
                                         {log.resource}
                                     </td>

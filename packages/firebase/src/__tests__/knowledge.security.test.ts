@@ -121,7 +121,6 @@ vi.mock('../functions/knowledge/textExtractor', () => ({
 
 import { finalizeKnowledgeUpload, deleteKnowledgeDocument } from '../functions/knowledge/upload';
 import { queryKnowledgeBase } from '../functions/knowledge/query';
-import { executeDocumentIndexing } from '../functions/knowledge/indexWorker';
 import { createHash } from 'node:crypto';
 
 describe('Knowledge Base Security & Abuse Tests', () => {
@@ -221,7 +220,17 @@ describe('Knowledge Base Security & Abuse Tests', () => {
           mocks.mockFileDownload.mockResolvedValue([buf]);
           const sha = createHash('sha256').update(buf).digest('hex');
           
-          mocks.mockGet.mockResolvedValue({ exists: false }); // mock receipt check
+          mocks.mockGet
+            .mockResolvedValueOnce({ exists: false }) // receipt check
+            .mockResolvedValueOnce({
+              exists: true,
+              data: () => ({
+                storagePath: 'rag-sources/user-1/hash/original.pdf',
+                storageGeneration: '123',
+                contentSha256: sha,
+                state: 'queued',
+              }),
+            }); // docSnap check
           
           const { executeDocumentIndexing: realExecuteDocumentIndexing } = await vi.importActual<any>('../functions/knowledge/indexWorker');
 

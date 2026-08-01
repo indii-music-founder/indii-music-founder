@@ -1,16 +1,7 @@
 import { McpError, ErrorCode } from '@modelcontextprotocol/sdk/types.js';
 import { IndiiMcpTool, McpContext } from '../types.js';
 import { verifyOwnership } from '../helpers.js';
-
-/** Escape a value for safe interpolation into XML content (ISSUE-861). */
-function escapeXmlMcp(value: unknown): string {
-    return String(value ?? '')
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&apos;');
-}
+import { ddexBuilder, type IngestionNotificationMessage } from '@indii/shared';
 
 export const draftDspMetadata: IndiiMcpTool = {
     name: 'draft_dsp_metadata_xml',
@@ -48,7 +39,6 @@ export const draftDspMetadata: IndiiMcpTool = {
                 content: [{ type: 'text', text: e.message }]
             };
         }
-        const uid = context.user.uid;
 
         const args = rawArgs as {
             releaseTitle: string;
@@ -100,80 +90,72 @@ export const draftDspMetadata: IndiiMcpTool = {
         const releaseDateVal = args.releaseDate || new Date().toISOString().split('T')[0];
         const deliveryReady = mode === 'delivery' && defaultedFields.length === 0;
 
-        const ddexXml = `<?xml version="1.0" encoding="utf-8"?>
-<!-- DRAFT ONLY — not XSD/profile validated, no recipient/asset/deal blocks. deliveryReady=${deliveryReady} -->
-<ern:NewReleaseMessage xmlns:ern="http://ddex.net/xml/ern/43">
-  <MessageHeader>
-    <MessageThreadId>${escapeXmlMcp(messageId)}</MessageThreadId>
-    <MessageId>${escapeXmlMcp(messageId)}</MessageId>
-    <MessageSender>
-      <PartyId>${escapeXmlMcp(senderPartyId)}</PartyId>
-      <PartyName>
-        <FullName>Indii Music</FullName>
-      </PartyName>
-    </MessageSender>
-    <MessageCreatedDateTime>${new Date().toISOString()}</MessageCreatedDateTime>
-  </MessageHeader>
-  <ResourceList>
-    <SoundRecording>
-      <ResourceReference>A1</ResourceReference>
-      <Type>Audio</Type>
-      <SoundRecordingId>
-        <ISRC>${escapeXmlMcp(isrcVal)}</ISRC>
-      </SoundRecordingId>
-      <ReferenceTitle>
-        <TitleText>${escapeXmlMcp(args.releaseTitle)}</TitleText>
-      </ReferenceTitle>
-      <Duration>${escapeXmlMcp(durationVal)}</Duration>
-    </SoundRecording>
-  </ResourceList>
-  <ReleaseList>
-    <Release>
-      <ReleaseId>
-        <ICPN IsEan="false">${escapeXmlMcp(upcVal)}</ICPN>
-      </ReleaseId>
-      <ReferenceTitle>
-        <TitleText>${escapeXmlMcp(args.releaseTitle)}</TitleText>
-      </ReferenceTitle>
-      <ReleaseResourceReferenceList>
-        <ReleaseResourceReference>A1</ReleaseResourceReference>
-      </ReleaseResourceReferenceList>
-      <ReleaseType>Album</ReleaseType>
-      <ReleaseDetailsByTerritory>
-        <TerritoryCode>Worldwide</TerritoryCode>
-        <DisplayArtist>
-          <PartyName>
-            <FullName>${escapeXmlMcp(args.artists.join(', '))}</FullName>
-          </PartyName>
-          <ArtistRole>MainArtist</ArtistRole>
-        </DisplayArtist>
-        <Title>
-          <TitleText>${escapeXmlMcp(args.releaseTitle)}</TitleText>
-        </Title>
-        <Genre>
-          <GenreText>${escapeXmlMcp(args.genre)}</GenreText>
-        </Genre>
-        <OriginalReleaseDate>${escapeXmlMcp(releaseDateVal)}</OriginalReleaseDate>
-      </ReleaseDetailsByTerritory>
-    </Release>
-  </ReleaseList>
-  <DealList>
-    <Deal>
-      <DealId>
-        <DDEX_DealId>indii-deal-draft-no-terms</DDEX_DealId>
-      </DealId>
-      <DealType>01</DealType>
-      <DealTerms>
-        <Commercial>
-          <Usage>
-            <UseType>AllUses</UseType>
-          </Usage>
-          <TermsNote>COMMERCIAL TERMS NOT SET — this is a structural draft with placeholder deal configuration. Actual terms must be negotiated and confirmed with recipients before delivery.</TermsNote>
-        </Commercial>
-      </DealTerms>
-    </Deal>
-  </DealList>
-</ern:NewReleaseMessage>`;
+        const ernMessage: IngestionNotificationMessage = {
+            action: 'NewRelease',
+            messageSchemaVersionId: '4.3',
+            messageHeader: {
+                messageThreadId: messageId,
+                messageId: messageId,
+                messageSender: {
+                    systemIdentifier: senderPartyId,
+                    entityName: 'Indii Music',
+                },
+                messageRecipient: {
+                    systemIdentifier: 'PADPIDA_RECIPIENT_DRAFT',
+                    entityName: 'Draft Recipient',
+                },
+                messageCreatedDateTime: new Date().toISOString(),
+                messageControlType: deliveryReady ? 'LiveMessage' : 'TestMessage',
+            },
+            resourceList: [
+                {
+                    resourceType: 'SoundRecording',
+                    resourceReference: 'A1',
+                    resourceId: { isrc: isrcVal },
+                    resourceTitle: { titleText: args.releaseTitle },
+                    duration: durationVal,
+                    displayArtistName: args.artists.join(', '),
+                    contributors: args.artists.map(artist => ({
+                        name: artist,
+                        role: 'MainArtist'
+                    }))
+                }
+            ],
+            releaseList: [
+                {
+                    releaseReference: 'R1',
+                    releaseId: { icpn: upcVal },
+                    releaseTitle: { titleText: args.releaseTitle },
+                    displayArtistName: args.artists.join(', '),
+                    contributors: args.artists.map(artist => ({
+                        name: artist,
+                        role: 'MainArtist'
+                    })),
+                    parentalWarningType: 'NotExplicit',
+                    labelName: 'Indii Music',
+                    genre: { genre: args.genre },
+                    releaseType: 'Album',
+                    releaseResourceReferenceList: ['A1'],
+                    originalReleaseDate: releaseDateVal,
+                }
+            ],
+            dealList: [
+                {
+                    dealReference: 'D1',
+                    dealTerms: {
+                        commercialModelType: 'PayAsYouGoModel',
+                        usage: [{ useType: 'OnDemandStream' }],
+                        territoryCode: ['Worldwide'],
+                        validityPeriod: {
+                            startDate: releaseDateVal,
+                            endDate: '2099-12-31'
+                        }
+                    }
+                }
+            ]
+        };
+
+        const ddexXml = ddexBuilder.buildIngestionNotification(ernMessage);
 
         return {
             content: [

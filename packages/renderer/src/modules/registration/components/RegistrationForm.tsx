@@ -195,10 +195,10 @@ export function RegistrationForm({ adapter, track, userId, onSubmitComplete }: R
         </div>
         <button
           type="button"
-          onClick={() => {
+          onClick={(e) => {
             setPauseConfirmed(true);
             setSubmitting(true);
-            handleSubmit({ preventDefault: () => {} } as any);
+            handleSubmit(e as unknown as React.FormEvent);
           }}
           className="w-full py-3 rounded-xl font-semibold text-sm bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-500/20 transition-all duration-200"
         >
@@ -227,10 +227,10 @@ export function RegistrationForm({ adapter, track, userId, onSubmitComplete }: R
         </div>
         <button
           type="button"
-          onClick={() => {
+          onClick={(e) => {
             setPauseConfirmed(false);
             setSubmitting(true);
-            handleSubmit({ preventDefault: () => {} } as any);
+            handleSubmit(e as unknown as React.FormEvent);
           }}
           className="w-full py-3 rounded-xl font-semibold text-sm bg-amber-600 hover:bg-amber-500 text-white shadow-lg shadow-amber-500/20 transition-all duration-200"
         >

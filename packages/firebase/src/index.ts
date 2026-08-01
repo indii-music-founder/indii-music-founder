@@ -47,6 +47,11 @@ export { finalizeVideoSessionUpload } from "./functions/video/finalizeVideoSessi
 export { retrySessionProxyJob } from "./functions/video/retrySessionProxyJob";
 export { settleVideoSessionCost } from "./functions/video/settleVideoSessionCost";
 export { cleanupExpiredVideoSessions } from "./functions/video/cleanupVideoSessions";
+export { alignSessionMaster } from "./functions/video/alignSessionMaster";
+export { generateSessionEditPlan } from "./functions/video/generateSessionEditPlan";
+export { applyAudioRecipe } from "./functions/video/applyAudioRecipe";
+export { approveSessionEditPlan } from "./functions/video/approveSessionEditPlan";
+export { createSocialHandoffDraft } from "./functions/video/createSocialHandoffDraft";
 import { analyzeAudioFn } from "./lib/audio";
 import { assertVideoSessionProjectAccess } from "./functions/video/createVideoSession";
 import { FUNCTION_INTELLIGENCE_MODELS } from "./config/models";

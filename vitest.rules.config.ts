@@ -14,6 +14,8 @@ export default defineConfig({
         alias: {
             '@': path.resolve(__dirname, './packages/renderer/src'),
             '@agents': path.resolve(__dirname, './agents'),
+            '@shared': path.resolve(__dirname, './packages/shared/src'),
+            '@indii/shared': path.resolve(__dirname, './packages/shared/src'),
         },
     },
     test: {

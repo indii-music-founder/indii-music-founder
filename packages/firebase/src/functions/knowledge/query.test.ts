@@ -3,11 +3,14 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 const mocks = vi.hoisted(() => {
   const mockSet = vi.fn().mockResolvedValue(undefined);
   const mockGet = vi.fn();
+  const mockGetDocs = vi.fn().mockResolvedValue({ docs: [] });
+  const mockWhere = vi.fn().mockReturnValue({ get: mockGetDocs });
   const mockFindNearest = vi.fn().mockReturnValue({ get: mockGet });
   const mockDoc = vi.fn().mockReturnValue({ set: mockSet });
   const mockSubCollection = vi.fn().mockReturnValue({
     findNearest: mockFindNearest,
     doc: mockDoc,
+    where: mockWhere,
   });
 
   const mockCollection = vi.fn().mockReturnValue({
@@ -17,10 +20,12 @@ const mocks = vi.hoisted(() => {
   });
 
   const mockFirestore = () => ({ collection: mockCollection });
+  (mockFirestore as any).FieldPath = { documentId: vi.fn().mockReturnValue('__name__') };
 
   const mockEmbedContent = vi.fn();
+  const mockGenerateContent = vi.fn().mockResolvedValue({ text: 'This is a mocked answer.' });
   const mockGetVertexAIClient = vi.fn().mockReturnValue({
-    models: { embedContent: mockEmbedContent },
+    models: { embedContent: mockEmbedContent, generateContent: mockGenerateContent },
   });
 
   return {
@@ -31,6 +36,8 @@ const mocks = vi.hoisted(() => {
     mockSubCollection,
     mockCollection,
     mockFirestore,
+    mockWhere,
+    mockGetDocs,
     mockEmbedContent,
     mockGetVertexAIClient,
   };
@@ -84,6 +91,20 @@ describe('Knowledge Base Query Endpoint', () => {
       ],
     });
 
+    const fakeDocs = [
+      {
+        id: 'doc-1',
+        data: () => ({
+          title: 'Music distribution overview doc',
+        }),
+      },
+    ];
+
+    mocks.mockGetDocs.mockResolvedValue({
+      docs: fakeDocs,
+      forEach: (cb: any) => fakeDocs.forEach(cb),
+    });
+
     const handler = queryKnowledgeBase as any;
     const res = await handler({
       auth: { uid: 'user-1' },
@@ -92,7 +113,7 @@ describe('Knowledge Base Query Endpoint', () => {
 
     expect(res.query).toBe('how to distribute music');
     expect(res.citations).toHaveLength(1);
-    expect(res.citations[0].chunkId).toBe('chunk-1');
+    expect(res.citations[0].documentId).toBe('doc-1');
     expect(mocks.mockFindNearest).toHaveBeenCalledWith('embedding', dummyEmbedding, {
       limit: 3,
       distanceMeasure: 'COSINE',
@@ -100,10 +121,9 @@ describe('Knowledge Base Query Endpoint', () => {
     expect(mocks.mockSet).toHaveBeenCalledWith(
       expect.objectContaining({
         uid: 'user-1',
-        query: 'how to distribute music',
-        topK: 3,
-        resultsCount: 1,
-        citationChunkIds: ['chunk-1'],
+        queryText: 'how to distribute music',
+        resultCount: 1,
+        citations: expect.any(Array),
       })
     );
   });

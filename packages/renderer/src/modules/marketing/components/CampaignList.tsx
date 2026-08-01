@@ -54,19 +54,19 @@ const CampaignList: React.FC<CampaignListProps> = ({ campaigns, onSelectCampaign
                     <motion.div variants={itemVars}>
                         <button
                             onClick={onAIGenerate}
-                            className="w-full h-full min-h-[240px] group relative flex flex-col items-center justify-center gap-4 p-8 rounded-2xl border border-dashed border-dept-marketing/30 bg-dept-marketing/5 hover:bg-dept-marketing/10 hover:border-dept-marketing/60 transition-all duration-300"
+                            className="w-full h-full min-h-[240px] group relative flex flex-col items-center justify-center gap-4 p-8 rounded-2xl border border-dashed border-[#FF7043]/30 bg-gradient-to-br from-[#FF7043]/5 to-[#E91E63]/5 hover:from-[#FF7043]/15 hover:to-[#E91E63]/15 hover:border-[#FF7043]/60 transition-all duration-300"
                         >
-                            <div className="h-16 w-16 rounded-full bg-dept-marketing/10 flex items-center justify-center group-hover:bg-dept-marketing/20 group-hover:scale-110 transition-all duration-300">
-                                <Sparkles size={32} className="text-dept-marketing group-hover:text-white" />
+                            <div className="h-16 w-16 rounded-full bg-gradient-to-br from-[#FF7043]/20 to-[#E91E63]/20 flex items-center justify-center group-hover:scale-110 transition-all duration-300">
+                                <Sparkles size={32} className="text-[#FF7043] group-hover:text-white" />
                             </div>
                             <div className="text-center">
-                                <h3 className="text-sm font-semibold text-white group-hover:text-dept-marketing transition-colors">Generate with Intelligence</h3>
+                                <h3 className="text-sm font-semibold text-white group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-[#FF7043] group-hover:to-[#E91E63] transition-colors">Generate with Intelligence</h3>
                                 <p className="text-xs text-gray-500 mt-1 max-w-[160px]">Create a complete campaign from a brief</p>
                             </div>
 
                             {/* Decorative Sparkles */}
                             <div className="absolute top-4 right-4">
-                                <Sparkles size={16} className="text-dept-marketing/50 animate-pulse" />
+                                <Sparkles size={16} className="text-[#FF7043]/50 animate-pulse" />
                             </div>
                         </button>
                     </motion.div>
@@ -76,19 +76,19 @@ const CampaignList: React.FC<CampaignListProps> = ({ campaigns, onSelectCampaign
                 <motion.div variants={itemVars}>
                     <button
                         onClick={onCreateNew}
-                        className="w-full h-full min-h-[240px] group relative flex flex-col items-center justify-center gap-4 p-8 rounded-2xl border border-dashed border-gray-800 bg-black/20 hover:bg-black/40 hover:border-dept-creative/50 transition-all duration-300"
+                        className="w-full h-full min-h-[240px] group relative flex flex-col items-center justify-center gap-4 p-8 rounded-2xl border border-dashed border-gray-800 bg-black/20 hover:bg-black/40 hover:border-[#FF7043]/50 transition-all duration-300"
                     >
-                        <div className="h-16 w-16 rounded-full bg-gray-900 flex items-center justify-center group-hover:bg-dept-creative/30 group-hover:scale-110 transition-all duration-300">
-                            <Plus size={32} className="text-gray-600 group-hover:text-dept-creative" />
+                        <div className="h-16 w-16 rounded-full bg-gray-900 flex items-center justify-center group-hover:bg-[#FF7043]/20 group-hover:scale-110 transition-all duration-300">
+                            <Plus size={32} className="text-gray-600 group-hover:text-[#FF7043]" />
                         </div>
                         <div className="text-center">
-                            <h3 className="text-sm font-semibold text-gray-300 group-hover:text-dept-creative transition-colors">New Campaign</h3>
+                            <h3 className="text-sm font-semibold text-gray-300 group-hover:text-[#FF7043] transition-colors">New Campaign</h3>
                             <p className="text-xs text-gray-600 group-hover:text-gray-500 mt-1 max-w-[160px]">Create manually from scratch</p>
                         </div>
 
                         {/* Decorative Autonomous Sparkles */}
                         <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                            <Plus size={16} className="text-dept-creative" />
+                            <Plus size={16} className="text-[#FF7043]" />
                         </div>
                     </button>
                 </motion.div>

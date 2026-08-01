@@ -14,6 +14,8 @@ import {
     Sliders,
     Terminal,
 } from 'lucide-react';
+import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
+import { getColorForModule } from '@/core/theme/moduleColors';
 
 type Tab = 'cicd' | 'observability' | 'credentials' | 'testing';
 
@@ -69,6 +71,7 @@ function StatusBadge({ label, tone }: { label: string; tone: 'neutral' | 'warn' 
 
 export default function DevopsDashboard() {
     const [activeTab, setActiveTab] = useState<Tab>('cicd');
+    const moduleColor = getColorForModule('devops');
 
     return (
         <ThreePanelDashboard
@@ -76,14 +79,14 @@ export default function DevopsDashboard() {
             headerIcon={<Activity size={18} className="text-white" />}
             title="DevOps Command Center"
             subtitle="Read-only status surface until live integrations are connected"
-            bgBlobClass="bg-emerald-500/10"
-            iconBgClass="bg-linear-to-br from-emerald-500 to-emerald-400"
-            iconShadowClass="shadow-emerald-500/20"
+            bgBlobClass={moduleColor.bg}
+            iconBgClass={`bg-linear-to-br from-green-500 to-green-400`}
+            iconShadowClass="shadow-green-500/20"
             leftPanel={
                 <div className="flex flex-col gap-4">
                     <div className="p-4 rounded-xl border border-white/5 bg-white/2 backdrop-blur-md">
                         <div className="flex items-center justify-between mb-3">
-                            <span className="text-[10px] font-black uppercase tracking-wider text-emerald-400 font-mono">Resource Monitor</span>
+                            <span className={`text-[10px] font-black uppercase tracking-wider ${moduleColor.text} font-mono`}>Resource Monitor</span>
                             <StatusBadge label="Offline" tone="warn" />
                         </div>
                         <div className="space-y-3">
@@ -112,7 +115,7 @@ export default function DevopsDashboard() {
                     </div>
 
                     <div className="p-4 rounded-xl border border-white/5 bg-white/2 backdrop-blur-md">
-                        <span className="text-[10px] font-black uppercase tracking-wider text-emerald-400 font-mono block mb-3">Live Actions</span>
+                        <span className={`text-[10px] font-black uppercase tracking-wider ${moduleColor.text} font-mono block mb-3`}>Live Actions</span>
                         <div className="space-y-2 text-xs text-slate-400">
                             <div className="p-3 rounded-lg border border-white/5 bg-black/30">
                                 {LIVE_STATUS_MESSAGE}
@@ -121,7 +124,7 @@ export default function DevopsDashboard() {
                     </div>
 
                     <div className="p-4 rounded-xl border border-white/5 bg-white/2 backdrop-blur-md">
-                        <span className="text-[10px] font-black uppercase tracking-wider text-emerald-400 font-mono block mb-2">Environments</span>
+                        <span className={`text-[10px] font-black uppercase tracking-wider ${moduleColor.text} font-mono block mb-2`}>Environments</span>
                         <div className="space-y-2">
                             <div className="flex items-center justify-between text-xs py-1">
                                 <span className="text-gray-400 font-medium">Production (Host)</span>
@@ -143,7 +146,7 @@ export default function DevopsDashboard() {
                 <div className="flex flex-col gap-4 h-full">
                     <div className="flex-1 flex flex-col p-4 rounded-xl border border-white/5 bg-white/2 backdrop-blur-md overflow-hidden">
                         <div className="flex items-center justify-between mb-3 flex-shrink-0">
-                            <span className="text-[10px] font-black uppercase tracking-wider text-emerald-400 font-mono flex items-center gap-1.5">
+                            <span className={`text-[10px] font-black uppercase tracking-wider ${moduleColor.text} font-mono flex items-center gap-1.5`}>
                                 <Terminal size={12} /> Log Stream
                             </span>
                             <StatusBadge label="Read only" tone="neutral" />
@@ -156,7 +159,7 @@ export default function DevopsDashboard() {
                                     <span className={`font-bold mr-1.5 ${
                                         log.level === 'warn'
                                             ? 'text-amber-400'
-                                            : 'text-cyan-400'
+                                            : getColorForModule('devops').text
                                     }`}>{log.level.toUpperCase()}:</span>
                                     <span className="text-gray-300">{log.message}</span>
                                 </div>
@@ -179,11 +182,11 @@ export default function DevopsDashboard() {
                             onClick={() => setActiveTab(id)}
                             className={`flex items-center gap-2 text-xs font-bold border-b-2 px-1 transition-all ${
                                 activeTab === id
-                                    ? 'border-emerald-500 text-white font-black'
+                                    ? `${moduleColor.border} text-white font-black`
                                     : 'border-transparent text-gray-500 hover:text-gray-300'
                             }`}
                         >
-                            <Icon size={14} className={activeTab === id ? 'text-emerald-400' : ''} />
+                            <Icon size={14} className={activeTab === id ? moduleColor.text : ''} />
                             {label}
                         </button>
                     ))}
@@ -238,7 +241,7 @@ export default function DevopsDashboard() {
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 {METRICS.map(metric => (
                                     <div key={metric.label} className="p-4 rounded-xl border border-white/5 bg-white/1">
-                                        <span className="text-[10px] font-black uppercase tracking-wider text-emerald-400 font-mono block mb-1">{metric.label}</span>
+                                        <span className={`text-[10px] font-black uppercase tracking-wider ${moduleColor.text} font-mono block mb-1`}>{metric.label}</span>
                                         <div className="text-2xl font-black font-mono text-white">{metric.value}</div>
                                         <span className="text-[10px] text-gray-500 font-mono mt-1 block">{metric.sub}</span>
                                     </div>
@@ -264,7 +267,7 @@ export default function DevopsDashboard() {
                         >
                             <div className="p-5 rounded-xl border border-white/5 bg-white/1">
                                 <h3 className="text-sm font-black uppercase text-white mb-4 flex items-center gap-2">
-                                    <Key size={16} className="text-emerald-400" /> Credential Verification
+                                    <Key size={16} className={moduleColor.text} /> Credential Verification
                                 </h3>
                                 <div className="space-y-3">
                                     {CREDENTIALS.map((cred) => (
@@ -296,7 +299,7 @@ export default function DevopsDashboard() {
                                 <div className="space-y-2">
                                     {TEST_COMMANDS.map(command => (
                                         <div key={command} className="flex items-center gap-2 text-xs font-mono text-gray-300 border border-white/5 bg-black/30 rounded-lg px-3 py-2">
-                                            <FileText size={12} className="text-emerald-400 shrink-0" />
+                                            <FileText size={12} className={`${moduleColor.text} shrink-0`} />
                                             {command}
                                         </div>
                                     ))}

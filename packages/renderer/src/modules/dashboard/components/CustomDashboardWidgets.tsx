@@ -24,6 +24,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { AnalyticsService } from '@/services/dashboard/AnalyticsService';
 import { MODEL_PRICING } from '@/core/config/intelligence-models';
 import { WidgetEmptyState } from './WidgetEmptyState';
+import { getColorForModule } from '@/core/theme/moduleColors';
 import type {
     DashboardRevenueStats,
     DashboardStreamsStats,
@@ -758,7 +759,7 @@ function SocialEngagementWidget() {
         <div className="flex flex-col h-full justify-between group/widget">
             <div>
                 <div className="flex items-center gap-3 mb-4">
-                    <div className="w-10 h-10 rounded-xl bg-cyan-500/20 flex items-center justify-center border border-cyan-500/30 shadow-[0_0_15px_rgba(6,182,212,0.2)] group-hover/widget:bg-cyan-500 group-hover/widget:text-black transition-all duration-500">
+                    <div className={`w-10 h-10 rounded-xl ${getColorForModule('social').bg} flex items-center justify-center border ${getColorForModule('social').border} group-hover/widget:${getColorForModule('social').bg.replace('/10', '')} group-hover/widget:text-black transition-all duration-500`}>
                         <ThumbsUp size={18} className="group-hover/widget:rotate-12 transition-transform" />
                     </div>
                     <span className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em]">Engagement Index</span>
@@ -779,7 +780,7 @@ function SocialEngagementWidget() {
                         initial={{ height: 0 }}
                         animate={{ height: `${Math.max(10, (val / maxVal) * 100)}%` }}
                         transition={{ delay: i * 0.05, duration: 0.5 }}
-                        className="flex-1 rounded-sm bg-cyan-500/20 group-hover/widget:bg-cyan-500/40 transition-colors"
+                        className={`flex-1 rounded-sm ${getColorForModule('social').bg} group-hover/widget:${getColorForModule('social').bg.replace('/10', '/40')} transition-colors`}
                     />
                 ))}
             </div>

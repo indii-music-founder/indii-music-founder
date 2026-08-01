@@ -7,7 +7,8 @@ import {
   type KnowledgeChunk,
   type KnowledgeCitation,
   type KnowledgeQueryReceipt,
-} from '../../shared/knowledge';
+  type KnowledgeDocument,
+} from '@indii/shared';
 
 if (!admin.apps.length) {
   admin.initializeApp();
@@ -31,7 +32,8 @@ export const queryKnowledgeBase = onCall({ enforceAppCheck: true }, async (reque
   }
 
   const uid = request.auth.uid;
-  const { query, topK = 5, minSimilarity = 0.5 } = request.data || {};
+  const startTimeMs = Date.now();
+  const { query, topK = 5 } = request.data || {};
 
   if (!query || typeof query !== 'string' || query.trim().length === 0) {
     throw new HttpsError('invalid-argument', 'Query string must not be empty.');
@@ -52,8 +54,9 @@ export const queryKnowledgeBase = onCall({ enforceAppCheck: true }, async (reque
     if (queryEmbedding.length !== KNOWLEDGE_EMBEDDING_DIMENSION) {
       throw new Error(`Expected ${KNOWLEDGE_EMBEDDING_DIMENSION}-dim embedding, got ${queryEmbedding.length}.`);
     }
-  } catch (err: any) {
-    throw new HttpsError('internal', `Failed to generate query embedding: ${err.message || String(err)}`);
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : String(err);
+    throw new HttpsError('internal', `Failed to generate query embedding: ${errorMsg}`);
   }
 
   // 2. Query vector index on user-isolated collectionGroup / subcollection
@@ -65,20 +68,40 @@ export const queryKnowledgeBase = onCall({ enforceAppCheck: true }, async (reque
       limit: k,
       distanceMeasure: 'COSINE',
     }).get();
-  } catch (vectorErr: any) {
-    throw new HttpsError('internal', `Vector search query failed: ${vectorErr.message || String(vectorErr)}`);
+  } catch (vectorErr: unknown) {
+    const errorMsg = vectorErr instanceof Error ? vectorErr.message : String(vectorErr);
+    throw new HttpsError('internal', `Vector search query failed: ${errorMsg}`);
+  }
+
+  const uniqueDocIds = [...new Set(vectorQuerySnap.docs.map(doc => (doc.data() as KnowledgeChunk).documentId))];
+  const docsMap = new Map<string, string>();
+
+  if (uniqueDocIds.length > 0) {
+    const ragDocsRef = admin.firestore().collection('users').doc(uid).collection('ragDocuments');
+    if (uniqueDocIds.length <= 30) {
+      const docsSnap = await ragDocsRef.where(admin.firestore.FieldPath.documentId(), 'in', uniqueDocIds).get();
+      docsSnap.forEach(doc => {
+        docsMap.set(doc.id, (doc.data() as KnowledgeDocument).title);
+      });
+    } else {
+      for (const id of uniqueDocIds) {
+        const snap = await ragDocsRef.doc(id).get();
+        if (snap.exists) docsMap.set(id, (snap.data() as KnowledgeDocument).title);
+      }
+    }
   }
 
   const citations: KnowledgeCitation[] = [];
   vectorQuerySnap.docs.forEach((doc) => {
     const chunkData = doc.data() as KnowledgeChunk;
     citations.push({
-      chunkId: chunkData.chunkId,
       documentId: chunkData.documentId,
-      text: chunkData.text,
-      score: 1.0, // Distance cosine metric representation
+      documentTitle: docsMap.get(chunkData.documentId) || 'Unknown Document',
       pageNumber: chunkData.pageNumber,
-      ordinal: chunkData.ordinal,
+      startOffset: chunkData.startOffset,
+      endOffset: chunkData.endOffset,
+      relevanceScore: 1.0, // Distance cosine metric representation
+      snippet: chunkData.text,
     });
   });
 
@@ -89,7 +112,7 @@ export const queryKnowledgeBase = onCall({ enforceAppCheck: true }, async (reque
   let answer = "";
   try {
     const vertex = getVertexAIClient();
-    const contextText = citations.map(c => `[Document ${c.documentId}]:\n${c.text}`).join('\n\n');
+    const contextText = citations.map(c => `[Document ${c.documentId}]:\n${c.snippet}`).join('\n\n');
     
     const prompt = `You are an AI assistant answering questions based strictly on the provided context documents.
     
@@ -118,20 +141,20 @@ Instructions:
     } else {
         answer = "I couldn't generate an answer from the provided documents.";
     }
-  } catch (genErr: any) {
+  } catch (genErr: unknown) {
     console.error("Gemini generation failed:", genErr);
     answer = "An error occurred while generating the answer from the documents.";
   }
 
+  const durationMs = Date.now() - startTimeMs;
   const receipt: KnowledgeQueryReceipt = {
-    receiptId: receiptRef.id,
+    queryId: receiptRef.id,
     uid,
-    query: query.trim(),
-    topK: k,
-    resultsCount: citations.length,
-    citationChunkIds: citations.map((c) => c.chunkId),
-    latencyMs: 0, // Server internal processing elapsed time placeholder
-    queriedAt: now,
+    queryText: query.trim(),
+    durationMs,
+    resultCount: citations.length,
+    citations,
+    timestamp: now,
   };
 
   await receiptRef.set(receipt);

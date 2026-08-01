@@ -31,9 +31,11 @@ import {
 import { PromptArea } from '@/core/components/command-bar/PromptArea';
 import { ThoughtChain } from '@/core/components/chat/ThoughtChain';
 import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { TextEffect } from '@/components/motion-primitives/text-effect';
+import { useMobile } from '@/hooks/useMobile';
 import {
     resolveAgentVisualIdentity,
     type AgentVisualIconKey,
@@ -81,9 +83,13 @@ export function BoardroomConversationPanel({ messages }: BoardroomConversationPa
     const scrollRef = useRef<HTMLDivElement>(null);
     const shouldFollowRef = useRef(true);
     const previousMessageCountRef = useRef(0);
-    const showCognitiveLogicByDefault = useStore(
-        state => state.userProfile?.preferences?.showCognitiveLogicByDefault ?? false,
+    const { showCognitiveLogicByDefault, activeAgents } = useStore(
+        useShallow(state => ({
+            showCognitiveLogicByDefault: state.userProfile?.preferences?.showCognitiveLogicByDefault ?? false,
+            activeAgents: state.activeAgents,
+        }))
     );
+    const { isAnyPhone } = useMobile();
     const latestMessage = messages[messages.length - 1];
     const latestMessageSignature = latestMessage
         ? `${latestMessage.id}:${latestMessage.text?.length || 0}:${latestMessage.isStreaming ? 1 : 0}:${latestMessage.thoughts?.length || 0}`
@@ -143,9 +149,21 @@ export function BoardroomConversationPanel({ messages }: BoardroomConversationPa
                         <MessageSquare size={22} className="text-indigo-400/50" />
                     </div>
                     <TextEffect preset="fade" className="text-sm font-medium text-white/40">Awaiting discussion...</TextEffect>
-                    <TextEffect preset="fade" delay={0.5} className="text-xs text-white/20 mt-1 max-w-[240px]">
-                        Select agents and submit a brief to start the boardroom session.
-                    </TextEffect>
+                    {isAnyPhone ? (
+                        activeAgents.length > 0 ? (
+                            <TextEffect preset="fade" delay={0.5} className="text-xs text-white/20 mt-1 max-w-[240px]">
+                                {`Talk to ${activeAgents.map(id => resolveAgentVisualIdentity(id).displayName).join(', ')}. Tap '${activeAgents.length} active' above to change.`}
+                            </TextEffect>
+                        ) : (
+                            <TextEffect preset="fade" delay={0.5} className="text-xs text-white/20 mt-1 max-w-[240px]">
+                                Tap 'Seat Agents' above to select participants and start.
+                            </TextEffect>
+                        )
+                    ) : (
+                        <TextEffect preset="fade" delay={0.5} className="text-xs text-white/20 mt-1 max-w-[240px]">
+                            Select agents and submit a brief to start the boardroom session.
+                        </TextEffect>
+                    )}
                 </div>
 
                 {/* Prompt Area — always visible so users can start the conversation */}

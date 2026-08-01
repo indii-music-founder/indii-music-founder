@@ -1,4 +1,4 @@
-import { getDownloadURL, getMetadata, ref, uploadBytes } from 'firebase/storage';
+import { getDownloadURL, getMetadata, ref, uploadBytesResumable } from 'firebase/storage';
 import { httpsCallable } from 'firebase/functions';
 
 import { functions, storage } from '@/services/firebase';
@@ -8,6 +8,7 @@ import { inspectCanonicalMaster } from './MasterAudioValidation';
 interface PersistMasterAudioOptions {
     userId: string;
     masterFingerprint: string;
+    signal?: AbortSignal;
 }
 
 function isObjectNotFound(error: unknown): boolean {
@@ -26,6 +27,9 @@ export class MasterAudioService {
         if (!options.masterFingerprint.trim()) {
             throw new Error('A master fingerprint is required for master ingestion.');
         }
+        if (options.signal?.aborted) {
+            throw new DOMException('Aborted', 'AbortError');
+        }
 
         const { audioProperties, contentHash } = await inspectCanonicalMaster(file);
         const extension = audioProperties.container;
@@ -40,7 +44,7 @@ export class MasterAudioService {
             if (!isObjectNotFound(error)) throw error;
 
             try {
-                await uploadBytes(masterRef, file, {
+                const uploadTask = uploadBytesResumable(masterRef, file, {
                     contentType: canonicalMimeType,
                     customMetadata: {
                         bitDepth: String(audioProperties.bitDepth),
@@ -55,9 +59,20 @@ export class MasterAudioService {
                         sampleRate: String(audioProperties.sampleRate),
                     },
                 });
+
+                if (options.signal) {
+                    options.signal.addEventListener('abort', () => {
+                        uploadTask.cancel();
+                    });
+                }
+
+                await uploadTask;
             } catch (uploadError: unknown) {
                 // A concurrent identical ingestion can win the create-only race.
                 // Re-read the deterministic object before treating that as failure.
+                if (options.signal?.aborted) {
+                    throw new DOMException('Aborted', 'AbortError');
+                }
                 try {
                     metadata = await getMetadata(masterRef);
                 } catch {

@@ -35,6 +35,7 @@ import { useStore, type StoreState } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { useToast } from '@/core/context/ToastContext';
 import type { EmailMessage, EmailProvider, ComposeEmailData } from '@/services/email/types';
+import { getColorForModule } from '@/core/theme/moduleColors';
 
 // ---------------------------------------------------------------------------
 // Utility: Format relative time
@@ -70,14 +71,14 @@ const ConnectCard: React.FC<{
         onClick={onConnect}
         disabled={isLoading}
         className={`flex items-center gap-3 p-4 rounded-xl border border-slate-800 bg-slate-900/50
-                    hover:border-cyan-800 hover:bg-slate-900 transition-all group w-full text-left
+                    hover:${getColorForModule('agent').border} hover:bg-slate-900 transition-all group w-full text-left
                     disabled:opacity-50 disabled:cursor-not-allowed`}
     >
         <div className={`w-10 h-10 rounded-lg ${gradient} flex items-center justify-center text-lg shrink-0`}>
             {icon}
         </div>
         <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-white group-hover:text-cyan-300 transition-colors">
+            <p className="text-sm font-medium text-white group-hover:opacity-80 transition-colors">
                 Connect {label}
             </p>
             <p className="text-xs text-slate-500">
@@ -85,9 +86,9 @@ const ConnectCard: React.FC<{
             </p>
         </div>
         {isLoading ? (
-            <Loader2 size={16} className="text-cyan-400 animate-spin" />
+            <Loader2 size={16} className={`${getColorForModule('agent').text} animate-spin`} />
         ) : (
-            <ChevronRight size={16} className="text-slate-600 group-hover:text-cyan-400 transition-colors" />
+            <ChevronRight size={16} className={`text-slate-600 group-hover:${getColorForModule('agent').hoverText.replace('hover:', '')} transition-colors`} />
         )}
     </button>
 );
@@ -109,14 +110,14 @@ const MessageRow: React.FC<{
         onClick={onSelect}
         className={`flex items-start gap-3 p-3.5 rounded-xl border transition-all cursor-pointer group
                     ${isSelected
-                ? 'bg-cyan-950/30 border-cyan-800'
+                ? `${getColorForModule('agent').bg} ${getColorForModule('agent').border}`
                 : message.isRead
                     ? 'bg-slate-900/30 border-transparent hover:border-slate-800 hover:bg-slate-900/50'
-                    : 'bg-slate-900 border-slate-800 hover:border-cyan-900'}`}
+                    : `bg-slate-900 border-slate-800 hover:${getColorForModule('agent').border}`}`}
     >
         {/* Avatar */}
         <div className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 text-xs font-bold
-                        ${message.isRead ? 'bg-slate-800 text-slate-500' : 'bg-cyan-900/50 text-cyan-400'}`}>
+                        ${message.isRead ? 'bg-slate-800 text-slate-500' : `${getColorForModule('agent').bg} ${getColorForModule('agent').text}`}`}>
             {message.from.name?.[0]?.toUpperCase() || message.from.email[0]?.toUpperCase() || '?'}
         </div>
 
@@ -160,7 +161,7 @@ const MessageRow: React.FC<{
         {/* Actions (visible on hover) */}
         <div className="flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
             {!message.isRead && (
-                <div className="w-2 h-2 bg-cyan-400 rounded-full" />
+                <div className={`w-2 h-2 ${getColorForModule('agent').bg.replace('/10', '')} rounded-full`} />
             )}
             <button
                 onClick={(e) => { e.stopPropagation(); onStar(); }}
@@ -225,7 +226,7 @@ const EmailDetailView: React.FC<{
                     <ArrowLeft size={16} className="text-slate-400" />
                 </button>
                 <div className="flex-1" />
-                <button onClick={onReply} className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-cyan-400 transition-colors" title="Reply">
+                <button onClick={onReply} className={`p-1.5 rounded-lg hover:bg-slate-800 text-slate-400 ${getColorForModule('agent').hoverText} transition-colors`} title="Reply">
                     <Reply size={16} />
                 </button>
                 <button onClick={onStar} className="p-1.5 rounded-lg hover:bg-slate-800 transition-colors" title="Star">
@@ -243,7 +244,7 @@ const EmailDetailView: React.FC<{
                 </h2>
 
                 <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-cyan-900/50 flex items-center justify-center text-sm font-bold text-cyan-400 shrink-0">
+                    <div className={`w-10 h-10 rounded-full ${getColorForModule('agent').bg} flex items-center justify-center text-sm font-bold ${getColorForModule('agent').text} shrink-0`}>
                         {fullMessage.from.name?.[0]?.toUpperCase() || '?'}
                     </div>
                     <div className="min-w-0">
@@ -282,9 +283,9 @@ const EmailDetailView: React.FC<{
                         </div>
                     ) : fullMessage.bodyHtml ? (
                         <div
-                            className="prose prose-invert prose-sm max-w-none
-                                       prose-a:text-cyan-400 prose-a:no-underline hover:prose-a:underline
-                                       prose-p:text-slate-300 prose-headings:text-white"
+                            className={`prose prose-invert prose-sm max-w-none
+                                       prose-a:${getColorForModule('agent').text.replace('text-', '')} prose-a:no-underline hover:prose-a:underline
+                                       prose-p:text-slate-300 prose-headings:text-white`}
                             {...{
                                 ['dangerously' + 'SetInnerHTML']: {
                                     __html: DOMPurify.sanitize(fullMessage.bodyHtml, {
@@ -359,8 +360,8 @@ const ComposeModal: React.FC<{
                     <button
                         onClick={handleSend}
                         disabled={isSending || !to.trim()}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500
-                                   text-white text-xs font-medium transition-colors disabled:opacity-40"
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg ${getColorForModule('agent').bg.replace('/10', '')} hover:opacity-90
+                                   text-white text-xs font-medium transition-colors disabled:opacity-40`}
                     >
                         {isSending ? <Loader2 size={12} className="animate-spin" /> : <Send size={12} />}
                         Send
@@ -394,8 +395,8 @@ const ComposeModal: React.FC<{
                         value={to}
                         onChange={(e) => setTo(e.target.value)}
                         placeholder="recipient@example.com"
-                        className="flex-1 bg-slate-900 border border-slate-800 rounded-lg px-3 py-1.5 text-sm text-white
-                                   placeholder:text-slate-600 focus:border-cyan-800 focus:outline-none"
+                        className={`flex-1 bg-slate-900 border border-slate-800 rounded-lg px-3 py-1.5 text-sm text-white
+                                   placeholder:text-slate-600 focus:${getColorForModule('agent').border} focus:outline-none`}
                         autoFocus={!replyTo}
                     />
                 </div>
@@ -407,7 +408,7 @@ const ComposeModal: React.FC<{
                         onChange={(e) => setSubject(e.target.value)}
                         placeholder="Subject"
                         className="flex-1 bg-slate-900 border border-slate-800 rounded-lg px-3 py-1.5 text-sm text-white
-                                   placeholder:text-slate-600 focus:border-cyan-800 focus:outline-none"
+                                   placeholder:text-slate-600 focus:${getColorForModule('agent').border} focus:outline-none"
                     />
                 </div>
             </div>
@@ -629,9 +630,9 @@ const InboxTab: React.FC = () => {
             <div className="px-4 pt-4 pb-3 space-y-3">
                 <div className="flex items-center justify-between">
                     <h2 className="text-lg font-semibold text-white flex items-center gap-2">
-                        <Mail size={18} className="text-cyan-400" /> Inbox
+                        <Mail size={18} className={getColorForModule('agent').text} /> Inbox
                         {unreadCount > 0 && (
-                            <span className="bg-cyan-500 text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold min-w-[18px] text-center">
+                            <span className={`${getColorForModule('agent').bg.replace('/10', '')} text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold min-w-[18px] text-center`}>
                                 {unreadCount}
                             </span>
                         )}
@@ -642,14 +643,14 @@ const InboxTab: React.FC = () => {
                                 <button
                                     onClick={() => emailSync()}
                                     disabled={emailIsSyncing}
-                                    className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-cyan-400 transition-colors"
+                                    className={`p-1.5 rounded-lg hover:bg-slate-800 text-slate-400 ${getColorForModule('agent').hoverText} transition-colors`}
                                     title="Sync"
                                 >
                                     <RefreshCw size={14} className={emailIsSyncing ? 'animate-spin' : ''} />
                                 </button>
                                 <button
                                     onClick={() => emailSetComposing(true)}
-                                    className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-cyan-400 transition-colors"
+                                    className={`p-1.5 rounded-lg hover:bg-slate-800 text-slate-400 ${getColorForModule('agent').hoverText} transition-colors`}
                                     title="Compose"
                                 >
                                     <Plus size={14} />
@@ -670,7 +671,7 @@ const InboxTab: React.FC = () => {
                                 onChange={(e) => emailSetSearchQuery(e.target.value)}
                                 placeholder="Search emails..."
                                 className="w-full bg-slate-900 border border-slate-800 rounded-lg pl-9 pr-3 py-2 text-sm text-white
-                                           placeholder:text-slate-600 focus:border-cyan-800 focus:outline-none transition-colors"
+                                           placeholder:text-slate-600 focus:${getColorForModule('agent').border} focus:outline-none transition-colors"
                             />
                         </div>
 
@@ -681,7 +682,7 @@ const InboxTab: React.FC = () => {
                                     onClick={() => emailSetFilter(f)}
                                     className={`px-3 py-1 rounded-full text-xs font-medium transition-colors
                                                ${emailFilter === f
-                                            ? 'bg-cyan-900/50 text-cyan-300 border border-cyan-800'
+                                            ? `${getColorForModule('agent').bg} ${getColorForModule('agent').text} border ${getColorForModule('agent').border}`
                                             : 'text-slate-500 hover:text-slate-300 border border-transparent'}`}
                                 >
                                     {f === 'all' ? 'All' : f === 'unread' ? `Unread (${unreadCount})` : 'Starred'}
@@ -710,9 +711,9 @@ const InboxTab: React.FC = () => {
                     <div className="flex flex-col items-center justify-center h-full">
                         <div className="w-full max-w-sm space-y-4">
                             <div className="text-center mb-6">
-                                <div className="w-16 h-16 mx-auto rounded-2xl bg-linear-to-br from-cyan-900/50 to-cyan-950/30
-                                                border border-cyan-800/30 flex items-center justify-center mb-4">
-                                    <Inbox size={28} className="text-cyan-400" />
+                                <div className={`w-16 h-16 mx-auto rounded-2xl ${getColorForModule('agent').bg}
+                                                border ${getColorForModule('agent').border} flex items-center justify-center mb-4`}>
+                                    <Inbox size={28} className={getColorForModule('agent').text} />
                                 </div>
                                 <h3 className="text-base font-semibold text-white mb-1">Connect Your Email</h3>
                                 <p className="text-xs text-slate-500 leading-relaxed">
@@ -747,7 +748,7 @@ const InboxTab: React.FC = () => {
                     // ---- Loading State ----
                     <div className="flex items-center justify-center h-full">
                         <div className="flex flex-col items-center gap-3">
-                            <Loader2 size={24} className="text-cyan-400 animate-spin" />
+                            <Loader2 size={24} className={`${getColorForModule('agent').text} animate-spin`} />
                             <p className="text-sm text-slate-400">Loading inbox...</p>
                         </div>
                     </div>

@@ -19,6 +19,7 @@ import { isPrivateIP } from '@/services/agent/RemoteRelayService';
 import { logger } from '@/utils/logger';
 import { desktopFileIndexService, type ApprovedAssetFolder } from '@/services/agent/DesktopFileIndexService';
 import { buildMobileRemotePairingUrl } from '@/modules/mobile-remote/routing';
+import { getColorForModule } from '@/core/theme/moduleColors';
 
 const CODE_TTL_MS = 5 * 60 * 1000; // matches auth_handoffs expiry in functions/auth/handoff.ts
 
@@ -31,6 +32,7 @@ const CODE_TTL_MS = 5 * 60 * 1000; // matches auth_handoffs expiry in functions/
 const isElectronStudio = typeof window !== 'undefined' && !!window.electronAPI;
 
 const RemoteSection: React.FC = () => {
+    const moduleColor = getColorForModule('settings');
     const [code, setCode] = useState<string | null>(null);
     const [qrUrl, setQrUrl] = useState<string>('');
     const [generating, setGenerating] = useState(false);
@@ -167,8 +169,8 @@ const RemoteSection: React.FC = () => {
             {/* Pairing card */}
             <div className="p-5 rounded-2xl bg-slate-800/30 border border-slate-700/30 mb-6">
                 <div className="flex items-center gap-3 mb-4">
-                    <div className="w-9 h-9 rounded-lg bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center">
-                        <QrCode size={16} className="text-cyan-400" />
+                    <div className={`w-9 h-9 rounded-lg ${moduleColor.bg} border ${moduleColor.border}/20 flex items-center justify-center`}>
+                        <QrCode size={16} className={moduleColor.text} />
                     </div>
                     <div>
                         <p className="text-sm font-medium text-white">Link a Device</p>
@@ -189,7 +191,7 @@ const RemoteSection: React.FC = () => {
                                 Manual pairing code
                             </p>
                             <div className="flex items-center gap-2">
-                                <code className="flex-1 px-3 py-2 rounded-lg bg-black/40 border border-slate-700/50 text-[10px] font-mono text-cyan-300 break-all select-all">
+                                <code className={`flex-1 px-3 py-2 rounded-lg bg-black/40 border border-slate-700/50 text-[10px] font-mono ${moduleColor.text} break-all select-all`}>
                                     {code}
                                 </code>
                                 <button
@@ -210,7 +212,7 @@ const RemoteSection: React.FC = () => {
                             <button
                                 onClick={handleGenerate}
                                 disabled={generating}
-                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-cyan-400 bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/20 transition-colors disabled:opacity-40"
+                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium ${moduleColor.text} ${moduleColor.bg} hover:bg-opacity-80 border ${moduleColor.border}/20 transition-colors disabled:opacity-40`}
                             >
                                 <RefreshCw size={12} className={generating ? 'animate-spin' : ''} />
                                 New Code
@@ -222,7 +224,7 @@ const RemoteSection: React.FC = () => {
                         id="settings-generate-pairing-code"
                         onClick={handleGenerate}
                         disabled={generating}
-                        className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/20 rounded-xl text-sm font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.99]"
+                        className={`w-full flex items-center justify-center gap-2 px-4 py-3 ${moduleColor.bg} hover:bg-opacity-80 ${moduleColor.text} border ${moduleColor.border}/20 rounded-xl text-sm font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.99]`}
                     >
                         {generating ? (
                             <>

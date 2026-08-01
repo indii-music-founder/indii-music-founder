@@ -5,6 +5,12 @@ const storageMocks = vi.hoisted(() => ({
     getMetadata: vi.fn(),
     ref: vi.fn((_storage: unknown, path: string) => ({ fullPath: path })),
     uploadBytes: vi.fn(),
+    uploadBytesResumable: vi.fn().mockReturnValue(
+        Object.assign(Promise.resolve({}), {
+            cancel: vi.fn(),
+            on: vi.fn(),
+        })
+    ),
 }));
 
 const profilingMocks = vi.hoisted(() => ({
@@ -86,7 +92,7 @@ describe('MasterAudioService', () => {
             container: 'wav',
             sampleRate: 48_000,
         });
-        expect(storageMocks.uploadBytes).toHaveBeenCalledWith(
+        expect(storageMocks.uploadBytesResumable).toHaveBeenCalledWith(
             expect.objectContaining({ fullPath: result.storagePath }),
             file,
             {

@@ -327,26 +327,43 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
   );
 
   // Render distribution step
-  const renderDistributionStep = () => (
-    <div className="space-y-8">
-      {/* Distributors */}
-      <div>
-        <h3 className="text-lg font-medium text-white mb-4">Select Distributors</h3>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          {DISTRIBUTORS.map(dist => (
-            <button
-              key={dist.id}
-              onClick={() => toggleDistributor(dist.id)}
-              className={`
-                p-4 rounded-xl border transition-all text-left
-                ${selectedDistributors.includes(dist.id)
-                  ? 'bg-blue-500/10 border-blue-500/50 text-blue-400'
-                  : 'bg-gray-800/30 border-gray-700 text-gray-400 hover:border-gray-600'
-                }
-              `}
-            >
-              <div className="flex items-center justify-between">
-                <span className="font-medium">{dist.name}</span>
+  const renderDistributionStep = () => {
+    const isDesktop = typeof window !== 'undefined' && !!window.electronAPI;
+
+    return (
+      <div className="space-y-8">
+        {!isDesktop && (
+          <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-4 flex gap-3">
+            <AlertCircle size={20} className="text-blue-400 shrink-0" />
+            <div>
+              <h4 className="font-medium text-blue-400 mb-1">Desktop App Required</h4>
+              <p className="text-sm text-blue-300/80">
+                DDEX Distribution to streaming platforms requires the indii Desktop App for secure delivery authority. 
+                Please open this project in the Desktop App to select distributors and deliver your release.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Distributors */}
+        <div className={!isDesktop ? "opacity-50 pointer-events-none" : ""}>
+          <h3 className="text-lg font-medium text-white mb-4">Select Distributors</h3>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            {DISTRIBUTORS.map(dist => (
+              <button
+                key={dist.id}
+                onClick={() => toggleDistributor(dist.id)}
+                disabled={!isDesktop}
+                className={`
+                  p-4 rounded-xl border transition-all text-left
+                  ${selectedDistributors.includes(dist.id)
+                    ? 'bg-blue-500/10 border-blue-500/50 text-blue-400'
+                    : 'bg-gray-800/30 border-gray-700 text-gray-400 hover:border-gray-600'
+                  }
+                `}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-medium">{dist.name}</span>
                 {selectedDistributors.includes(dist.id) && (
                   <CheckCircle size={18} className="text-blue-400" />
                 )}
@@ -356,112 +373,117 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
         </div>
       </div>
 
-      {/* Territories */}
-      <div>
-        <h3 className="text-lg font-medium text-white mb-4">Distribution Territories</h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {TERRITORIES.map(territory => {
-            const isSelected = metadata.territories?.includes(territory.code);
-            return (
-              <button
-                key={territory.code}
-                onClick={() => {
-                  const current = metadata.territories || [];
-                  if (territory.code === 'Worldwide') {
-                    updateMetadata({ territories: isSelected ? [] : ['Worldwide'] });
-                  } else {
-                    const withoutWorldwide = current.filter(t => t !== 'Worldwide');
+        {/* Territories */}
+        <div className={!isDesktop ? "opacity-50 pointer-events-none" : ""}>
+          <h3 className="text-lg font-medium text-white mb-4">Distribution Territories</h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {TERRITORIES.map(territory => {
+              const isSelected = metadata.territories?.includes(territory.code);
+              return (
+                <button
+                  key={territory.code}
+                  disabled={!isDesktop}
+                  onClick={() => {
+                    const current = metadata.territories || [];
+                    if (territory.code === 'Worldwide') {
+                      updateMetadata({ territories: isSelected ? [] : ['Worldwide'] });
+                    } else {
+                      const withoutWorldwide = current.filter(t => t !== 'Worldwide');
+                      updateMetadata({
+                        territories: isSelected
+                          ? withoutWorldwide.filter(t => t !== territory.code)
+                          : [...withoutWorldwide, territory.code]
+                      });
+                    }
+                  }}
+                  className={`
+                    px-4 py-2 rounded-lg border text-sm transition-all
+                    ${isSelected
+                      ? 'bg-green-500/10 border-green-500/50 text-green-400'
+                      : 'bg-gray-800/30 border-gray-700 text-gray-400 hover:border-gray-600'
+                    }
+                  `}
+                >
+                  {territory.name}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Distribution Channels */}
+        <div className={!isDesktop ? "opacity-50 pointer-events-none" : ""}>
+          <h3 className="text-lg font-medium text-white mb-4">Distribution Channels</h3>
+          <div className="flex flex-wrap gap-3">
+            {['streaming', 'download', 'physical'].map(channel => {
+              const isSelected = metadata.distributionChannels?.includes(channel as 'streaming' | 'download' | 'physical');
+              return (
+                <button
+                  key={channel}
+                  disabled={!isDesktop}
+                  onClick={() => {
+                    const current = metadata.distributionChannels || [];
                     updateMetadata({
-                      territories: isSelected
-                        ? withoutWorldwide.filter(t => t !== territory.code)
-                        : [...withoutWorldwide, territory.code]
+                      distributionChannels: isSelected
+                        ? current.filter(c => c !== channel)
+                        : [...current, channel as 'streaming' | 'download' | 'physical']
                     });
-                  }
-                }}
-                className={`
-                  px-4 py-2 rounded-lg border text-sm transition-all
-                  ${isSelected
-                    ? 'bg-green-500/10 border-green-500/50 text-green-400'
-                    : 'bg-gray-800/30 border-gray-700 text-gray-400 hover:border-gray-600'
-                  }
-                `}
-              >
-                {territory.name}
-              </button>
-            );
-          })}
+                  }}
+                  className={`
+                    px-4 py-2 rounded-lg border text-sm capitalize transition-all
+                    ${isSelected
+                      ? 'bg-green-500/10 border-green-500/50 text-green-400'
+                      : 'bg-gray-800/30 border-gray-700 text-gray-400 hover:border-gray-600'
+                    }
+                  `}
+                >
+                  {channel}
+                </button>
+              );
+            })}
+          </div>
         </div>
-      </div>
 
-      {/* Distribution Channels */}
-      <div>
-        <h3 className="text-lg font-medium text-white mb-4">Distribution Channels</h3>
-        <div className="flex flex-wrap gap-3">
-          {['streaming', 'download', 'physical'].map(channel => {
-            const isSelected = metadata.distributionChannels?.includes(channel as 'streaming' | 'download' | 'physical');
-            return (
-              <button
-                key={channel}
-                onClick={() => {
-                  const current = metadata.distributionChannels || [];
-                  updateMetadata({
-                    distributionChannels: isSelected
-                      ? current.filter(c => c !== channel)
-                      : [...current, channel as 'streaming' | 'download' | 'physical']
-                  });
-                }}
-                className={`
-                  px-4 py-2 rounded-lg border text-sm capitalize transition-all
-                  ${isSelected
-                    ? 'bg-green-500/10 border-green-500/50 text-green-400'
-                    : 'bg-gray-800/30 border-gray-700 text-gray-400 hover:border-gray-600'
-                  }
-                `}
-              >
-                {channel}
-              </button>
-            );
-          })}
-        </div>
-      </div>
+        {/* YouTube Content ID */}
+        <div className={!isDesktop ? "opacity-50 pointer-events-none" : ""}>
+          <h3 className="text-lg font-medium text-white mb-4">YouTube Content ID</h3>
+          <div className="space-y-4">
+            <label className="flex items-center gap-3 p-4 bg-gray-800/30 rounded-xl border border-gray-700 cursor-pointer hover:border-gray-600 transition-all">
+              <input
+                type="checkbox"
+                disabled={!isDesktop}
+                checked={metadata.youtubeContentIdOptIn || false}
+                onChange={e => updateMetadata({ youtubeContentIdOptIn: e.target.checked })}
+                className="w-5 h-5 rounded bg-gray-800 border-gray-600 text-blue-500 focus:ring-blue-500"
+              />
+              <div>
+                <span className="text-white font-medium">Opt-in to YouTube Content ID</span>
+                <p className="text-sm text-gray-400">Monetize videos using your music across YouTube (requires eligible content)</p>
+              </div>
+            </label>
 
-      {/* YouTube Content ID */}
-      <div>
-        <h3 className="text-lg font-medium text-white mb-4">YouTube Content ID</h3>
-        <div className="space-y-4">
-          <label className="flex items-center gap-3 p-4 bg-gray-800/30 rounded-xl border border-gray-700 cursor-pointer hover:border-gray-600 transition-all">
-            <input
-              type="checkbox"
-              checked={metadata.youtubeContentIdOptIn || false}
-              onChange={e => updateMetadata({ youtubeContentIdOptIn: e.target.checked })}
-              className="w-5 h-5 rounded bg-gray-800 border-gray-600 text-blue-500 focus:ring-blue-500"
-            />
-            <div>
-              <span className="text-white font-medium">Opt-in to YouTube Content ID</span>
-              <p className="text-sm text-gray-400">Monetize videos using your music across YouTube (requires eligible content)</p>
-            </div>
-          </label>
-
-          {metadata.youtubeContentIdOptIn && (
-            <div className="pl-12">
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Content ID Policy
-              </label>
-              <select
-                value={metadata.youtubeContentIdPolicy || 'monetize'}
-                onChange={e => updateMetadata({ youtubeContentIdPolicy: e.target.value as 'monetize' | 'track' | 'block' })}
-                className="w-full max-w-xs px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
-              >
-                <option value="monetize">Monetize (Show Ads)</option>
-                <option value="track">Track Only (No Ads)</option>
-                <option value="block">Block Copies</option>
-              </select>
+            {metadata.youtubeContentIdOptIn && (
+              <div className="pl-12">
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Content ID Policy
+                </label>
+                <select
+                  disabled={!isDesktop}
+                  value={metadata.youtubeContentIdPolicy || 'monetize'}
+                  onChange={e => updateMetadata({ youtubeContentIdPolicy: e.target.value as 'monetize' | 'track' | 'block' })}
+                  className="w-full max-w-xs px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+                >
+                  <option value="monetize">Monetize (Show Ads)</option>
+                  <option value="track">Track Only (No Ads)</option>
+                  <option value="block">Block Copies</option>
+                </select>
             </div>
           )}
         </div>
       </div>
     </div>
   );
+};
 
   // Render Autonomous disclosure step
   const renderAIDisclosureStep = () => (

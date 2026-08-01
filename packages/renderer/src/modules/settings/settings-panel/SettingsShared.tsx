@@ -10,6 +10,7 @@
 
 import React from 'react';
 import { LucideIcon } from 'lucide-react';
+import { getColorForModule } from '@/core/theme/moduleColors';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -69,9 +70,9 @@ export const Toggle: React.FC<{ enabled: boolean; onChange: (v: boolean) => void
     <button
         onClick={() => !disabled && onChange(!enabled)}
         disabled={disabled}
-        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-cyan-500/40 ${
+        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:${getColorForModule('settings').ring} ${
             disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
-        } ${enabled ? 'bg-cyan-500' : 'bg-slate-700'}`}
+        } ${enabled ? getColorForModule('settings').bg.replace('/10', '') : 'bg-slate-700'}`}
     >
         <span
             className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200 ${
@@ -93,7 +94,7 @@ export const SelectDropdown: React.FC<{
     <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/40 cursor-pointer appearance-none"
+        className={`bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:ring-2 focus:${getColorForModule('settings').ring} cursor-pointer appearance-none`}
     >
         {options.map((opt) => (
             <option key={opt.value} value={opt.value}>

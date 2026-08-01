@@ -38,6 +38,7 @@ interface DraftLoadResult {
     timingRepairs: Record<string, string>;
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function screenwriterDraftStorageKey(userId: string, projectId: string): string {
     return `indii-screenwriter-draft-v2:${userId}:${projectId}`;
 }
@@ -221,7 +222,7 @@ export default function ScreenwriterDashboard() {
                 if (!cancelled) setCloudHydratedKey(storageKey);
             });
         return () => { cancelled = true; };
-    }, [storageKey, draftScope?.userId, draftScope?.projectId]);
+    }, [storageKey, draftScope]);
 
     useEffect(() => {
         if (hydratedKey !== storageKey) return;
@@ -249,7 +250,7 @@ export default function ScreenwriterDashboard() {
                 });
         }, 750);
         return () => window.clearTimeout(timeout);
-    }, [activeTab, cloudHydratedKey, cloudRevision, draftScope?.projectId, draftScope?.userId, hydratedKey, scenes, selectedSceneId, selectedTone, songConcept, storageKey, timingRepairs]);
+    }, [activeTab, cloudHydratedKey, cloudRevision, draftScope, hydratedKey, scenes, selectedSceneId, selectedTone, songConcept, storageKey, timingRepairs]);
 
     const useCloudDraft = () => {
         if (!draftConflict) return;

@@ -373,7 +373,7 @@ export default function Sidebar() {
                         "w-full flex items-center justify-center p-2 rounded-lg transition-all text-xs font-mono tracking-wider",
                         currentModule === 'founders-recognition'
                             ? "bg-amber-500/10 border border-amber-500/30 text-amber-300"
-                            : "text-gray-600 hover:text-gray-400 hover:bg-white/5"
+                            : "text-gray-400 hover:text-gray-300 hover:bg-white/5"
                     )}
                     title="View Founder Recognition"
                     aria-label="Founders"

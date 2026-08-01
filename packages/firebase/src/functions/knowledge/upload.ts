@@ -6,8 +6,8 @@ import {
   KNOWLEDGE_EMBEDDING_MODEL,
   KNOWLEDGE_EMBEDDING_DIMENSION,
   type KnowledgeDocument,
-} from '../../shared/knowledge';
-import { executeDocumentIndexing } from './indexWorker';
+} from '@indii/shared';
+import { getFunctions } from 'firebase-admin/functions';
 
 if (!admin.apps.length) {
   admin.initializeApp();
@@ -47,8 +47,8 @@ export const createKnowledgeUpload = onCall({ enforceAppCheck: true }, async (re
     throw new HttpsError('invalid-argument', `mimeType must be one of: ${validMimeTypes.join(', ')}.`);
   }
 
-  if (typeof byteSize !== 'number' || byteSize <= 0 || byteSize > 50 * 1024 * 1024) {
-    throw new HttpsError('invalid-argument', 'byteSize must be a positive number under 50MB.');
+  if (typeof byteSize !== 'number' || byteSize <= 0 || byteSize > 25 * 1024 * 1024) {
+    throw new HttpsError('invalid-argument', 'byteSize must be a positive number under 25MB.');
   }
 
   if (!contentSha256 || !/^[a-f0-9]{64}$/i.test(contentSha256)) {
@@ -179,15 +179,14 @@ export const finalizeKnowledgeUpload = onCall({ enforceAppCheck: true }, async (
     updatedAt: now,
   });
 
-  // Trigger indexing worker asynchronously
-  executeDocumentIndexing({
+  // Trigger indexing worker asynchronously via Task Queue
+  const queue = getFunctions().taskQueue('indexKnowledgeDocumentWorker');
+  await queue.enqueue({
     uid,
     documentId,
     storagePath: docData.storagePath,
     storageGeneration,
     contentSha256: docData.contentSha256,
-  }).catch((err) => {
-    console.error(`Background indexing failed for doc ${documentId}:`, err);
   });
 
   return {
@@ -266,14 +265,15 @@ export const deleteKnowledgeDocument = onCall({ enforceAppCheck: true }, async (
     await docRef.delete();
 
     return { success: true, documentId };
-  } catch (err: any) {
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : String(err);
     console.error(`Failed to delete document ${documentId}:`, err);
     await docRef.update({
       state: 'failed',
       failureCode: 'deletion-failed',
-      failureReason: err.message || String(err),
+      failureReason: errorMsg,
       updatedAt: new Date().toISOString(),
     });
-    throw new HttpsError('internal', `Failed to delete document: ${err.message || String(err)}`);
+    throw new HttpsError('internal', `Failed to delete document: ${errorMsg}`);
   }
 });
