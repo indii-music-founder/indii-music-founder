@@ -8,7 +8,6 @@ import {
   type KnowledgeDocument,
 } from '@indii/shared';
 import { getFunctions } from 'firebase-admin/functions';
-import { executeDocumentIndexing } from './indexWorker';
 
 if (!admin.apps.length) {
   admin.initializeApp();
@@ -266,14 +265,15 @@ export const deleteKnowledgeDocument = onCall({ enforceAppCheck: true }, async (
     await docRef.delete();
 
     return { success: true, documentId };
-  } catch (err: any) {
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : String(err);
     console.error(`Failed to delete document ${documentId}:`, err);
     await docRef.update({
       state: 'failed',
       failureCode: 'deletion-failed',
-      failureReason: err.message || String(err),
+      failureReason: errorMsg,
       updatedAt: new Date().toISOString(),
     });
-    throw new HttpsError('internal', `Failed to delete document: ${err.message || String(err)}`);
+    throw new HttpsError('internal', `Failed to delete document: ${errorMsg}`);
   }
 });

@@ -32,6 +32,7 @@ export const queryKnowledgeBase = onCall({ enforceAppCheck: true }, async (reque
   }
 
   const uid = request.auth.uid;
+  const startTimeMs = Date.now();
   const { query, topK = 5 } = request.data || {};
 
   if (!query || typeof query !== 'string' || query.trim().length === 0) {
@@ -145,12 +146,12 @@ Instructions:
     answer = "An error occurred while generating the answer from the documents.";
   }
 
-  const startTimeMs = Date.now(); // We didn't track start time, so duration is 0 for now
+  const durationMs = Date.now() - startTimeMs;
   const receipt: KnowledgeQueryReceipt = {
     queryId: receiptRef.id,
     uid,
     queryText: query.trim(),
-    durationMs: 0, // Server internal processing elapsed time placeholder
+    durationMs,
     resultCount: citations.length,
     citations,
     timestamp: now,

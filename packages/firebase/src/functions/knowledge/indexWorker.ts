@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import * as admin from 'firebase-admin';
-import { HttpsError, onCall, type CallableRequest } from 'firebase-functions/v2/https';
+import { HttpsError } from 'firebase-functions/v2/https';
 import { onTaskDispatched } from 'firebase-functions/v2/tasks';
 import { getVertexAIClient } from '../../lib/vertexClient';
 import { extractDocumentText } from './textExtractor';
@@ -61,7 +61,7 @@ export async function executeDocumentIndexing(
   if (!docSnap.exists) {
     throw new HttpsError('not-found', `Knowledge document ${documentId} not found.`);
   }
-  const docData = docSnap.data() as any;
+  const docData = docSnap.data() as Record<string, any>;
   if (docData.storagePath !== storagePath || docData.storageGeneration !== storageGeneration || docData.contentSha256 !== contentSha256) {
     throw new HttpsError('failed-precondition', `Document metadata mismatch for ${documentId}.`);
   }
