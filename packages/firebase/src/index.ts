@@ -193,9 +193,10 @@ export { analyticsExchangeToken, analyticsFinalizeInstagramConnection, analytics
 // Growth Intelligence Engine — Autonomous Marketing Swarm (ClickHouse read path)
 export { marketingGetCampaignMetrics } from './marketing/campaignMetricsCallable';
 
-// Attribution spine — smart-link redirect and the conversion outbox flusher
+// Attribution spine — smart-link redirect, conversion outbox flusher, and presave registration
 export { smartLinkRedirect } from './marketing/smartLink';
 export { flushConversionEvents } from './marketing/flushConversionEvents';
+export { presaveRegister } from './marketing/presaveRegister';
 
 // Storage Maintenance (Scheduled — orphan cleanup, quota tracking, archival flagging, temp cleanup)
 export { cleanupExpiredVideoTemps, cleanupOrphanedVideos, trackStorageQuotas, flagVideosForArchival } from './devops/storageMaintenance';
