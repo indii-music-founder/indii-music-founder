@@ -67,6 +67,7 @@ export declare const GenerateVideoSchema: z.ZodObject<{
     prompt: z.ZodString;
     referenceUri: z.ZodOptional<z.ZodString>;
 } & {
+    costReservationId: z.ZodString;
     mode: z.ZodOptional<z.ZodEnum<["video_remix", "temporal_inpaint"]>>;
     sourceVideoUri: z.ZodOptional<z.ZodString>;
     firstFrameUri: z.ZodOptional<z.ZodString>;
@@ -175,7 +176,6 @@ export declare const GenerateVideoSchema: z.ZodObject<{
     seed: z.ZodOptional<z.ZodUnion<[z.ZodNumber, z.ZodString]>>;
     enhancePrompt: z.ZodOptional<z.ZodBoolean>;
     costEstimate: z.ZodOptional<z.ZodNumber>;
-    costReservationId: z.ZodOptional<z.ZodString>;
     parentId: z.ZodOptional<z.ZodString>;
     inputManifest: z.ZodOptional<z.ZodArray<z.ZodObject<{
         role: z.ZodEnum<["first_frame", "last_frame", "ingredient", "character_reference", "whisk_reference"]>;
@@ -193,6 +193,7 @@ export declare const GenerateVideoSchema: z.ZodObject<{
     aspectRatio: "16:9" | "9:16" | "1:1" | "3:4" | "4:3";
     resolution: "720p" | "1080p" | "4k" | "1280x720" | "1920x1080" | "3840x2160";
     model: "lite" | "fast" | "pro";
+    costReservationId: string;
     sourceVideoUri?: string | undefined;
     maskFrameUri?: string | undefined;
     maskTrackUri?: string | undefined;
@@ -233,7 +234,6 @@ export declare const GenerateVideoSchema: z.ZodObject<{
         motionStrength: z.ZodOptional<z.ZodNumber>;
     }, z.ZodTypeAny, "passthrough"> | undefined;
     costEstimate?: number | undefined;
-    costReservationId?: string | undefined;
     referenceUri?: string | undefined;
     referenceUris?: string[] | undefined;
     personGeneration?: "allow_adult" | "dont_allow" | "allow_all" | undefined;
@@ -246,6 +246,7 @@ export declare const GenerateVideoSchema: z.ZodObject<{
     }[] | undefined;
 }, {
     prompt: string;
+    costReservationId: string;
     sourceVideoUri?: string | undefined;
     maskFrameUri?: string | undefined;
     maskTrackUri?: string | undefined;
@@ -290,7 +291,6 @@ export declare const GenerateVideoSchema: z.ZodObject<{
     }, z.ZodTypeAny, "passthrough"> | undefined;
     model?: "lite" | "fast" | "pro" | undefined;
     costEstimate?: number | undefined;
-    costReservationId?: string | undefined;
     referenceUri?: string | undefined;
     referenceUris?: string[] | undefined;
     personGeneration?: "allow_adult" | "dont_allow" | "allow_all" | undefined;

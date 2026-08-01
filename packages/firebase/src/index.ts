@@ -36,7 +36,7 @@ import { generateVideoDirect } from "./lib/video_generation_direct";
 import { executeMilestoneFn } from "./timeline/milestone_execution";
 import { editImageFn } from "./lib/image_generation";
 export { generateImageV3, generateVideoV3, generateOmniRemixV3, generateAudioV3 } from "./functions/creative/gateway";
-export { getOperationCostHistory, getOperationCostStatus, voidAgentStreamCostReservation } from "./functions/billing/enforceOperationCost";
+export { getOperationCostHistory, getOperationCostStatus, voidAgentStreamCostReservation, voidVideoCostReservation } from "./functions/billing/enforceOperationCost";
 export { cancelVideoJob } from "./functions/creative/gateway";
 export { videoJobFirestoreOrchestrator } from "./functions/creative/videoJobOrchestrator";
 export { getMediaDuration } from "./functions/creative/getMediaDuration";

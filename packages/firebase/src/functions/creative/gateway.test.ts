@@ -836,10 +836,32 @@ describe('creative gateway generateVideoV3', () => {
         skipCostCheck: true,
       },
     })).rejects.toMatchObject({
-      code: 'failed-precondition',
-      message: expect.stringContaining('Missing cost reservation'),
+      code: 'invalid-argument',
+      message: expect.stringContaining('costReservationId'),
     });
     expect(mockSet).not.toHaveBeenCalled();
+  });
+
+  it('reports the exact malformed field instead of falsely blaming every payload on Base64', async () => {
+    await expect(callGenerateVideo({
+      auth: { uid: 'user-123' },
+      data: {
+        prompt: 'A cinematic social clip',
+        costReservationId: 'op-123',
+        aspectRatio: '16:9',
+        firstFrameUri: 'https://example.com/not-canonical.png',
+      },
+    })).rejects.toMatchObject({
+      code: 'invalid-argument',
+      message: expect.stringContaining('firstFrameUri'),
+    });
+    await expect(callGenerateVideo({
+      auth: { uid: 'user-123' },
+      data: { prompt: 'A cinematic social clip', aspectRatio: '16:9' },
+    })).rejects.toMatchObject({
+      code: 'invalid-argument',
+      message: expect.stringContaining('costReservationId'),
+    });
   });
 
   it('ISSUE-1003: persists the exact role-labelled input manifest to both video job documents', async () => {

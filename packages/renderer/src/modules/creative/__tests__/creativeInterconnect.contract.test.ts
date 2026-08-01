@@ -248,6 +248,7 @@ describe('shared creative gateway schemas', () => {
     it('accepts a minimal valid video payload with gs:// reference media', () => {
         const parsed = GenerateVideoSchema.safeParse({
             prompt: 'clip',
+            costReservationId: 'video-reservation-contract-1',
             referenceUris: ['gs://bucket/reference-a.png'],
             sourceVideoUri: 'gs://bucket/source.mp4',
         });
@@ -257,6 +258,7 @@ describe('shared creative gateway schemas', () => {
     it('rejects non-gs:// reference media for video payloads', () => {
         const parsed = GenerateVideoSchema.safeParse({
             prompt: 'clip',
+            costReservationId: 'video-reservation-contract-1',
             referenceUris: ['https://example.com/reference-a.png'],
         });
         expect(parsed.success).toBe(false);

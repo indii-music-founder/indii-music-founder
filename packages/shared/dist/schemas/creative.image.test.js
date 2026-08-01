@@ -16,6 +16,13 @@ describe('GenerateImageSchema', () => {
     });
 });
 describe('GenerateVideoSchema', () => {
+    it('requires a server-issued video cost reservation', () => {
+        expect(GenerateVideoSchema.safeParse({ prompt: 'A live performance' }).success).toBe(false);
+        expect(GenerateVideoSchema.safeParse({
+            prompt: 'A live performance',
+            costReservationId: 'video-reservation-123',
+        }).success).toBe(true);
+    });
     it('does not expose a client cost-check bypass in the shared request contract', () => {
         const parsed = GenerateVideoSchema.parse({
             prompt: 'A live performance cut to the beat',

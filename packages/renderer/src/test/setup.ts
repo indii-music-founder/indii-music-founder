@@ -587,6 +587,7 @@ vi.mock('@/services/billing/CostControlService', () => ({
             monthlyUsed: 0,
             operationId: 'test-cost-reservation'
         }),
+        voidUnclaimedVideoReservation: vi.fn().mockResolvedValue(undefined),
         finalize: vi.fn().mockResolvedValue(undefined),
         getStatus: vi.fn().mockResolvedValue({
             dailyUsed: 0,

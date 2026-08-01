@@ -61,6 +61,9 @@ describe('mcpEndpoint auth gate', () => {
 
     it('rejects POST /message with no Authorization header, even for an unknown session', async () => {
         const res = await fetch(`${baseUrl}/message?sessionId=nonexistent`, { method: 'POST' });
+        if (res.status !== 404) {
+            console.error('UNEXPECTED STATUS:', res.status, await res.text());
+        }
         // Unknown session is checked first and returns 404 regardless of auth —
         // this still proves no session leaks any state without a real transport.
         expect(res.status).toBe(404);

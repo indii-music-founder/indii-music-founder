@@ -883,7 +883,6 @@ export const enforceOperationCost = functions.https.onCall(
   ): Promise<CostEnforcementResponse> => {
     const { userId, entitlement } = await requireCostCallableAdmission(request, 'reserve-cost');
     const req = parseCostEnforcementRequest(request.data);
-
     return checkOperationBudget({
       userId,
       entitlementTier: entitlementTierToBudgetTier(entitlement.tier),
@@ -901,6 +900,24 @@ export const voidAgentStreamCostReservation = functions.https.onCall(
     const operationId = parseOperationReservationId(request.data);
     try {
       await finalizeOperationReservation({ userId, operationId, outcome: 'VOIDED', expectedType: 'agent_stream' });
+      return { voided: true };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      const code = message.includes('owner mismatch') ? 'permission-denied'
+        : message.startsWith('Missing cost reservation') ? 'not-found' : 'failed-precondition';
+      throw new functions.https.HttpsError(code, code === 'permission-denied'
+        ? 'Cost reservation does not belong to the authenticated user.' : message);
+    }
+  },
+);
+
+export const voidVideoCostReservation = functions.https.onCall(
+  { ...costCallableSecurityOptions, region: 'us-central1', maxInstances: 10, timeoutSeconds: 30 },
+  async (request: functions.https.CallableRequest<unknown>): Promise<{ voided: true }> => {
+    const { userId } = await requireCostCallableAdmission(request, 'void-video-cost');
+    const operationId = parseOperationReservationId(request.data);
+    try {
+      await finalizeOperationReservation({ userId, operationId, outcome: 'VOIDED', expectedType: 'video' });
       return { voided: true };
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
