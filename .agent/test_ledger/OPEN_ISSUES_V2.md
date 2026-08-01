@@ -472,13 +472,13 @@
 ### ISSUE-1124: Waterfall payout UI, TypeScript contract, and Python engine use incompatible payload/report shapes
 
 - **Re-ticketed from:** ISSUE-826 (2026-07-21 housecleaning; original status was: `⏳ BACKLOG — consolidated`)
-- **Status:** ⏳ BACKLOG — consolidated
+- **Status:** 🟡 PARTIAL — local renderer and real subprocess boundaries pass; no single running Electron IPC click-through
 - **Severity:** 🟠 HIGH
 - **Module:** Distribution / Finance bank layer
-- **Evidence:** `WaterfallData` defines `gross_revenue` (`types/distribution.ts:61-64`), and `BankPanel.tsx:49-52` sends that field. The Python waterfall engine requires `gross` and exits when it is missing (`waterfall_payout.py:105-116`). If the payload were corrected, the report still would not match the UI contract: the engine returns `gross`, `platform_fee`, nested `distributions`, `summary_status`, and `total_distributed` (`:79-90`), while `WaterfallReport` expects flat numeric `distributions`, `net_revenue`, and `processed_at` (`types/distribution.ts:67-70`), and the UI renders those missing fields (`BankPanel.tsx:296-323`).
-- **Impact:** The “Launch Waterfall” path either fails immediately or renders undefined/nested values, so payout simulations cannot be trusted.
-- **Fix:** Define one shared schema for request and response, map legacy aliases at IPC boundaries, and update UI rendering to match nested distribution objects or flatten the report intentionally.
-- **Acceptance:** A `$1,000` / 50-30-20 fixture completes through React → IPC → Python → UI with a timestamp, correct net revenue, and numeric displayed party amounts.
+- **Evidence:** The request/report shapes are now aligned on `gross`, fractional `splits`, nested distribution entries, `total_distributed`, and `processed_at`, but the remaining binding defect was the subprocess stdout contract: `waterfall_payout.py` pretty-printed the report across 31 lines while `python-bridge.ts` parses only the final stdout line. The final line was `}`, so `PythonBridge` returned raw text and `AgentSupervisor` rejected it as non-JSON. The focused integration regression invokes the real local Python process, proves stdout is exactly one parseable JSON line while calculation diagnostics remain on stderr, and then exercises `AgentSupervisor`/`PythonBridge`; the `$1,000` / 50-30-20 fixture returns `$425`, `$255`, `$170`, `$850` total, and a parseable timestamp. Existing `BankPanel.test.tsx` separately proves the renderer sends the matching request and renders those values plus the fee and timestamp.
+- **Impact:** The local payout simulation previously failed between Python stdout and the main-process schema gate even though its arithmetic and renderer contracts were correct.
+- **Fix:** Emit the Python report as one compact JSON line on stdout, keep calculation logs on stderr, and lock the contract with a real main-process subprocess regression. Existing nonzero error exits and stderr diagnostics remain unchanged; no general `PythonBridge` rewrite or payment-provider integration is required.
+- **Acceptance:** 🟡 PARTIAL — the real subprocess stdout/stderr contract, AgentSupervisor → PythonBridge → Python boundary, and the React → service → UI fixture pass with the canonical values. A single running Electron test traversing the actual IPC handler and renderer in one process has not been added, so the issue is not marked fixed. No live payout or money movement is required for this local contract fix.
 
 ---
 

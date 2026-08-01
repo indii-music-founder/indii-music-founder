@@ -117,7 +117,10 @@ if __name__ == "__main__":
             recoupment_remaining=float(input_data.get("recoupment", 0)),
             platform_fee_percent=float(input_data.get("indii_fee_percent", 0.15))
         )
-        print(json.dumps(payout_report, indent=2))
+        # stdout is the machine-readable IPC channel. Keep the report on one
+        # line because PythonBridge parses the final stdout line as JSON;
+        # diagnostics continue to use the logger's stderr stream.
+        print(json.dumps(payout_report))
 
     except (json.JSONDecodeError, ValueError, TypeError, KeyError) as e:
         logger.error(f"Input Error: {e}")
