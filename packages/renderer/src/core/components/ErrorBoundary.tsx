@@ -2,6 +2,7 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { RefreshCw } from 'lucide-react';
 import { logger } from '@/utils/logger';
+import { captureException } from '@/services/observability/SentryService';
 
 interface Props {
     children: ReactNode;
@@ -60,6 +61,10 @@ export class ErrorBoundary extends Component<Props, State> {
         }
 
         logger.error(`[ErrorBoundary] Uncaught error (${this.state.errorId}):`, error, errorInfo);
+        captureException(error, {
+            errorId: this.state.errorId,
+            componentStack: errorInfo.componentStack,
+        });
     }
 
     private isChunkLoadError(error: Error): boolean {
@@ -176,6 +181,7 @@ export class ModuleErrorBoundary extends Component<Props, ModuleErrorBoundarySta
 
     public componentDidCatch(error: Error, info: ErrorInfo) {
         logger.error('[ModuleErrorBoundary]', error, info);
+        captureException(error, { componentStack: info.componentStack });
     }
 
     public render() {

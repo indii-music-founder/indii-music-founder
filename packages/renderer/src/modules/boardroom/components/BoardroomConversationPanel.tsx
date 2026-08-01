@@ -31,6 +31,7 @@ import {
 import { PromptArea } from '@/core/components/command-bar/PromptArea';
 import { ThoughtChain } from '@/core/components/chat/ThoughtChain';
 import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { TextEffect } from '@/components/motion-primitives/text-effect';
@@ -83,10 +84,10 @@ export function BoardroomConversationPanel({ messages }: BoardroomConversationPa
     const shouldFollowRef = useRef(true);
     const previousMessageCountRef = useRef(0);
     const { showCognitiveLogicByDefault, activeAgents } = useStore(
-        state => ({
+        useShallow(state => ({
             showCognitiveLogicByDefault: state.userProfile?.preferences?.showCognitiveLogicByDefault ?? false,
             activeAgents: state.activeAgents,
-        })
+        }))
     );
     const { isAnyPhone } = useMobile();
     const latestMessage = messages[messages.length - 1];
