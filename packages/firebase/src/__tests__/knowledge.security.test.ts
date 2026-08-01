@@ -31,7 +31,14 @@ const mocks = vi.hoisted(() => {
 
   const mockFirestore = () => ({ 
       collection: mockCollection, 
-      batch: vi.fn().mockReturnValue({ delete: vi.fn(), commit: vi.fn().mockResolvedValue(undefined) }) 
+      batch: vi.fn().mockReturnValue({ delete: vi.fn(), commit: vi.fn().mockResolvedValue(undefined) }),
+      runTransaction: vi.fn(async (callback) => {
+        return callback({
+          get: mockGet,
+          set: mockSet,
+          update: mockUpdate,
+        });
+      })
   });
 
   const mockFileExists = vi.fn();

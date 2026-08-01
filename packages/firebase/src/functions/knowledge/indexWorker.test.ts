@@ -49,6 +49,24 @@ describe('Knowledge Base Index Worker', () => {
         delete: vi.fn(),
         commit: vi.fn(async () => {}),
       }),
+      runTransaction: vi.fn(async (callback) => {
+        const t = {
+          get: vi.fn(async (ref: any) => ref.get()),
+          update: vi.fn((ref: any, data: any) => {
+             if (mockFirestoreData[ref.path]) {
+                mockFirestoreData[ref.path] = { ...mockFirestoreData[ref.path], ...data };
+             }
+          }),
+        };
+        return callback(t);
+      }),
+      bulkWriter: () => ({
+        set: vi.fn((ref: any, data: any) => {
+          mockFirestoreData[ref.path] = data;
+        }),
+        delete: vi.fn(),
+        close: vi.fn(async () => {}),
+      }),
     };
 
     mockStorage = {
