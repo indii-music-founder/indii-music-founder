@@ -1106,15 +1106,15 @@ export async function setupE2EPage(page: Page): Promise<void> {
       }
     });
 
-    // Wait for either the dashboard button OR the email input to be visible, showing the page has loaded
-    const dashboardBtn = page.getByRole('button', { name: /Return to HQ/i }).first();
+    // Wait for either the app-container OR the email input to be visible, showing the page has loaded
+    const appContainer = page.getByTestId('app-container');
     const emailInput = page.locator('input[type="email"]').first();
     
     try {
       // Use Playwright's native locator.or() to avoid dangling rejected promises from Promise.race
-      await dashboardBtn.or(emailInput).waitFor({ state: 'visible', timeout: 45000 });
+      await appContainer.or(emailInput).waitFor({ state: 'visible', timeout: 45000 });
     } catch (e) {
-      console.log("[E2E] App load timeout. Neither login form nor dashboard was visible after 45s.");
+      console.log("[E2E] App load timeout. Neither login form nor app container was visible after 45s.");
     }
     
     if (await emailInput.isVisible().catch(() => false)) {
@@ -1127,11 +1127,11 @@ export async function setupE2EPage(page: Page): Promise<void> {
       await page.locator('form button[type="submit"]').first().click();
       
       // Wait for dashboard to be visible to confirm login
-      await dashboardBtn.waitFor({ state: 'visible', timeout: 15000 }).catch(() => {
-          console.log("[E2E] Dashboard not found after manual login click!");
+      await appContainer.waitFor({ state: 'visible', timeout: 15000 }).catch(() => {
+          console.log("[E2E] App container not found after manual login click!");
       });
-    } else if (await dashboardBtn.isVisible().catch(() => false)) {
-      console.log("[E2E] Dashboard already visible. Already authenticated.");
+    } else if (await appContainer.isVisible().catch(() => false)) {
+      console.log("[E2E] App container already visible. Already authenticated.");
     }
 }
 
