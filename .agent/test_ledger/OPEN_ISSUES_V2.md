@@ -3256,10 +3256,12 @@ acceptance criteria.
 
 ### ISSUE-1249: Knowledge upload/finalization does not form a durable, canonical ingestion job
 
-- **Status:** 🔴 OPEN
+- **Status:** 🟡 PARTIAL (2026-08-01 stale-check: the specific evidence below is no longer accurate — most of the described defect appears already fixed. Re-verify against acceptance criteria before closing.)
 - **Severity:** 🔴 CRITICAL
-- **Module:** `functions/knowledge/upload.ts`; `functions/knowledge/indexWorker.ts`; `storage.rules`
-- **Evidence:** The create callable advertises 50 MB while Storage Rules enforce 25 MB and require metadata the returned upload contract does not supply. Finalization writes `queued`, starts `executeDocumentIndexing(...).catch(...)` as a dangling in-process promise, and returns. The exported index worker is a user-callable endpoint that trusts caller-supplied document ID, path, generation, and hash and can merge-create a canonical record.
+- **Module:** `packages/firebase/src/functions/knowledge/upload.ts`; `packages/firebase/src/functions/knowledge/indexWorker.ts`; `storage.rules`
+- **2026-08-01 stale-check findings:** `upload.ts:50-51` already validates `byteSize <= 25 * 1024 * 1024` (25MB) — no 50MB advertised anywhere; matches the Storage Rules limit. `upload.ts:184` finalizes via `await queue.enqueue({...})` — a durable Cloud Tasks enqueue, not a dangling `.catch()`-only promise. `indexKnowledgeDocumentWorker` (`indexWorker.ts`) is built with `onTaskDispatched` — a private Cloud Tasks handler, not a client-callable `onCall` endpoint — and `executeDocumentIndexing` loads the canonical owner doc, verifies `storagePath`/`storageGeneration`/`contentSha256` match, and checks `state` is `queued`/`indexing` before proceeding. This matches most of the "Expected behavior" below.
+- **Not yet re-verified:** entitlement checks, task-identity/OIDC verification on the task handler itself, and the specific acceptance tests (genuine upload passes deployed Rules end-to-end; function termination after finalize cannot lose the job; direct client worker calls fail). Do not mark ✅ FIXED until those are proven with evidence, per this repo's Strict Issue Validation rule — but do not restart this as if nothing has changed either.
+- **Original evidence (superseded, kept for history):** ~~The create callable advertises 50 MB while Storage Rules enforce 25 MB and require metadata the returned upload contract does not supply. Finalization writes `queued`, starts `executeDocumentIndexing(...).catch(...)` as a dangling in-process promise, and returns. The exported index worker is a user-callable endpoint that trusts caller-supplied document ID, path, generation, and hash and can merge-create a canonical record.~~
 - **Expected behavior:** A single versioned upload contract matches deployed Rules exactly. Finalization transactionally/outbox-enqueues an authenticated private Cloud Task. The private worker loads the canonical owner record and verifies path, generation, hash, state, entitlement, and task identity before work.
 - **Honest fallback:** Reject at creation with the true limit/metadata requirements; leave a durable queued/failed record with retry metadata when dispatch is unavailable.
 - **Acceptance:** A genuine TXT/MD/PDF upload passes deployed Rules; function termination after finalize cannot lose the job; direct client worker calls and payload substitutions fail.
@@ -3303,7 +3305,8 @@ acceptance criteria.
 - **Status:** 🔴 OPEN
 - **Severity:** 🟠 HIGH
 - **Module:** Knowledge upload/index/query; `textExtractor.ts`
-- **Evidence:** Knowledge operations lack verified-email, entitlement/cost admission, Arcjet, concurrency/daily/provider ceilings, and deterministic 429 behavior. “PDF extraction” regexes raw PDF bytes and does not decode compressed streams, font maps, escapes, encryption, or page structure. `text-embedding-004` and a 768-dimension assumption are hardcoded inconsistently between indexing and query despite current Vertex model changes.
+- **2026-08-01 stale-check note:** the PDF-parsing evidence below is now partially stale — `textExtractor.ts` has since added explicit rejection of encrypted PDFs (checks for the `/Encrypt` dictionary) and scanned/image-only (zero-text) PDFs, which the original evidence said was entirely missing. The core defect still stands: extraction is still a hand-rolled BT/ET/TJ/Tj token regex over raw PDF bytes, not a maintained PDF parser with page provenance — it just fails closed on the two cases named above now instead of silently mis-extracting them. The verified-email/entitlement/Arcjet/cost-gate and embedding-model-pinning parts of this issue were not re-checked and should be assumed still open as written.
+- **Evidence (partially superseded, see stale-check note above):** Knowledge operations lack verified-email, entitlement/cost admission, Arcjet, concurrency/daily/provider ceilings, and deterministic 429 behavior. “PDF extraction” regexes raw PDF bytes and does not decode compressed streams, font maps, escapes, encryption, or page structure. `text-embedding-004` and a 768-dimension assumption are hardcoded inconsistently between indexing and query despite current Vertex model changes.
 - **Expected behavior:** Add server-owned verified-email/entitlement/Arcjet/cost gates with Founder product-unlimited but safety-bounded policy. Use a maintained PDF parser with page provenance and encrypted/textless detection. Pin one supported Vertex embedding model, dimension, task types, and migration version identically for index and query.
 - **Honest fallback:** Fail closed `503` when policy/model is unavailable; accept TXT/MD only until PDF parsing is real; mark old vectors `reindex_required`.
 - **Acceptance:** Free/Founder/paid abuse tests, compressed/Unicode/multipage PDF fixtures, provider quota tests, and a production model/index compatibility proof all pass.
@@ -3369,6 +3372,7 @@ acceptance criteria.
 - **Status:** 🔴 OPEN
 - **Severity:** 🟠 HIGH
 - **Module:** Receipt OCR, licensing catalog, likeness QC, Autonomous Lab, valuation, pre-save, and limited-drop UI
+- **2026-08-01 stale-check note:** the "hardcoded $12,500" valuation clause overlaps ISSUE-1262 and is tracked in detail there — see ISSUE-1262's note distinguishing it from the already-fixed ISSUE-1276 (`useLicensing.ts` dashboard tile). The remaining live `$12,500` is in `LicensingService.ts`, not the dashboard hook. The ReceiptOCR/CatalogSearchTab/likeness-QC/AutonomousLab claims were not re-checked in this pass.
 - **Evidence:** ReceiptOCR always throws instead of using the existing OCR service and persists no reviewed result. LicensingDashboard supplies no catalog to CatalogSearchTab. Malformed/unavailable likeness QC becomes acceptable. AutonomousLab converts an error into complete. Licensing valuation multiplies active licenses by a hardcoded `$12,500`. Pre-save and limited-drop false-success behavior remains tracked in ISSUE-1127 and ISSUE-1129.
 - **Expected behavior:** Connect each UI to its canonical backend, persist reviewed evidence and explicit terminal states, load the owner catalog, distinguish `unavailable` from acceptable, and calculate valuation only from evidence-backed terms/cash flows with assumptions.
 - **Honest fallback:** Disabled/setup-required, `unknown`, `failed`, empty catalog, or scenario-only valuation.
@@ -3401,7 +3405,8 @@ acceptance criteria.
 
 - **Status:** 🔴 OPEN
 - **Severity:** 🟠 HIGH
-- **Module:** `LicensingService.ts`; `LicensingDashboard.tsx`; `CatalogSearchTab.tsx`
+- **Module:** `packages/renderer/src/services/licensing/LicensingService.ts`; `LicensingDashboard.tsx`; `CatalogSearchTab.tsx`
+- **2026-08-01 stale-check note:** do not confuse this with ISSUE-1276 (✅ FIXED, commit `497e0da0a`) — that fix was scoped only to `useLicensing.ts`'s dashboard "Projected Value" tile (`licenses.length * 12500`), which now sums a real optional `License.feeUsd` field. It did **not** touch `packages/renderer/src/services/licensing/LicensingService.ts:91-92`, which still has a separate, still-live `const baseValue = 12500;` used for a different valuation code path. This issue's `$12,500` claim remains accurate for `LicensingService.ts` specifically — narrow the fix to that file and don't assume ISSUE-1276 already covers it.
 - **Evidence:** Catalog search receives no canonical track collection and silently renders empty, while valuation uses active-license count multiplied by a fixed `$12,500` as though it were evidence.
 - **Expected behavior:** Load owner-scoped canonical catalog records and derive valuation from signed license terms, actual cash flows, duration/territory/exclusivity, probability model, and explicit assumptions.
 - **Honest fallback:** Honest empty catalog and `valuation_unavailable` or clearly labeled scenario.
@@ -3774,7 +3779,7 @@ acceptance criteria.
 
 ### ISSUE-1295: Opening Boardroom from the full desktop Studio (AppShell path, not Mobile Remote) crashed the whole app with a generic error screen
 
-- **Status:** ✅ FIXED (locally verified: typecheck, scoped lint, existing Boardroom Vitest suites all pass; genuine post-deploy production re-check still recommended)
+- **Status:** ✅ FIXED (locally verified: typecheck, scoped lint, existing Boardroom Vitest suites all pass; deployed to production via CI run 30714456044, commit `c91e30b1c`; founder confirmed live on `app.indii.music` that Boardroom opens normally post-deploy)
 - **Severity:** 🔴 CRITICAL (Boardroom — the product's headline capability — was completely inaccessible from the main desktop/web Studio; full-screen `ErrorBoundary` fallback, "Something went wrong")
 - **Module:** `packages/renderer/src/modules/boardroom/components/BoardroomConversationPanel.tsx`
 - **Founder production evidence:** On `app.indii.music`, from the normal AppShell Studio (HQ dashboard and Social Media Department both rendered fine), clicking "Boardroom" replaced the whole app with the global `ErrorBoundary` fallback, reference code `91fc7106` (client-side `crypto.randomUUID()` slice — not a durable/lookup-able key, confirmed same limitation as ISSUE-1294's `7107863f`). Live DevTools console captured the real error, which `logger.error`/`ErrorBoundary` normally suppress in production: `Minified React error #185` ("Maximum update depth exceeded"), with `componentStack` naming `BoardroomConversationPanel` as the innermost frame, nested under `BoardroomModule` → `AppShell` → `AppContent` (confirms `ToastProvider`/`VoiceProvider` were present — this is a distinct bug from ISSUE-1294's missing-provider crash on the Mobile Remote path).
