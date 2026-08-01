@@ -11,6 +11,8 @@ import Stripe from 'stripe';
 import { stripe, mapStripeStatus, mapStripeTierToSubscriptionTier } from './config';
 import { SubscriptionTier, Subscription as LocalSubscription } from '../shared/subscription/types';
 import { stripeSecretKey, stripeWebhookSecret, getStripeWebhookSecret } from '../config/secrets';
+import { enqueueConversionEvent } from '../marketing/conversionEventOutbox';
+import { buildConversionEventId } from '@indii/shared';
 
 function maskId(id: string): string {
   if (!id) return '';
@@ -288,6 +290,58 @@ async function handleMarketplaceCheckoutExpired(session: Stripe.Checkout.Session
   logger.info(`[handleMarketplaceCheckoutExpired] Released reservation ${reservationId} for expired session ${session.id}`);
 }
 
+/**
+ * Emit a sale conversion event for a Stripe checkout session.
+ * Exported for testing.
+ */
+export async function emitSaleConversion(session: Stripe.Checkout.Session): Promise<void> {
+  const userId = session.metadata?.userId;
+  if (!userId) return; // Artist unknown, cannot attribute
+
+  const amountCents = session.amount_total ?? 0;
+  if (amountCents <= 0) return; // No revenue to record
+
+  const eventId = buildConversionEventId({
+    platform: 'stripe',
+    eventType: 'sale',
+    sourceId: session.id,
+  });
+
+  const occurredAt = new Date().toISOString();
+  const metadata: Record<string, string> = {
+    stripeSessionId: session.id,
+  };
+  if (session.metadata?.fbclid) {
+    metadata.fbclid = session.metadata.fbclid;
+  }
+
+  const conversionEvent = {
+    schemaVersion: 'conversion-event.v1' as const,
+    eventId,
+    artistId: userId,
+    platform: 'stripe' as const,
+    eventType: 'sale' as const,
+    occurredAt,
+    revenueMinor: amountCents,
+    costMinor: 0,
+    currency: session.currency?.toUpperCase() || 'USD',
+    campaignId: session.metadata?.campaignId || '',
+    adCreativeId: '',
+    smartLinkSlug: '',
+    utmSource: '',
+    utmMedium: '',
+    utmCampaign: '',
+    metadata,
+  };
+
+  await enqueueConversionEvent(conversionEvent);
+  logger.info('[emitSaleConversion] Queued Stripe sale conversion', {
+    userId: maskId(userId),
+    sessionId: session.id,
+    revenueMinor: amountCents,
+  });
+}
+
 async function handleCheckoutCompleted(event: Stripe.Event): Promise<void> {
   const session = event.data.object as Stripe.Checkout.Session;
 
@@ -313,6 +367,14 @@ async function handleCheckoutCompleted(event: Stripe.Event): Promise<void> {
   if (session.metadata?.type === 'founder_seat') {
     await handleFounderSeatCheckoutCompleted(session);
     return;
+  }
+
+  // Emit sale conversion for all paid checkouts (attributable to an artist).
+  try {
+    await emitSaleConversion(session);
+  } catch (err) {
+    logger.warn('[handleCheckoutCompleted] Sale conversion emission failed', { error: err });
+    // Non-fatal: subscription logic continues even if conversion emit fails
   }
 
 
