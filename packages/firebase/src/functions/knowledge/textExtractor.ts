@@ -1,7 +1,7 @@
 import { HttpsError } from 'firebase-functions/v2/https';
 import pdfParseModule from 'pdf-parse';
 
-const pdfParse = typeof pdfParseModule === 'function' ? pdfParseModule : (pdfParseModule as any)?.default || pdfParseModule;
+const pdfParse = typeof pdfParseModule === 'function' ? pdfParseModule : (pdfParseModule as Record<string, unknown>)?.default || pdfParseModule;
 
 export interface ExtractedPage {
   pageNumber: number;
@@ -73,7 +73,13 @@ async function extractPdfText(buffer: Buffer): Promise<ExtractionResult> {
   }
 
   try {
-    const data = await pdfParse(buffer, {
+    type PdfParseFn = (
+      dataBuffer: Buffer,
+      options?: { max?: number },
+    ) => Promise<{ text?: string; numpages?: number }>;
+
+    const parsePdf = pdfParse as unknown as PdfParseFn;
+    const data = await parsePdf(buffer, {
       max: 0, // no page limit
     });
     
@@ -92,7 +98,7 @@ async function extractPdfText(buffer: Buffer): Promise<ExtractionResult> {
       pageCount: data.numpages || 1,
       extractedChars: normalized.length,
     };
-  } catch (err: any) {
+  } catch (_err: unknown) {
     throw new HttpsError(
       'failed-precondition',
       'Zero text extracted from PDF or file is encrypted. Scanned or image-only PDFs require pre-processed text.',

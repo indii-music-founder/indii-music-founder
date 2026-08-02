@@ -27,7 +27,7 @@ export async function executeDocumentIndexing(
     db?: admin.firestore.Firestore;
     storage?: admin.storage.Storage;
     getGenAI?: () => ReturnType<typeof getVertexAIClient>;
-    requireVerifiedEntitlement?: (uid: string) => Promise<any>;
+    requireVerifiedEntitlement?: (uid: string) => Promise<unknown>;
   } = {},
 ): Promise<{ documentId: string; chunkCount: number; receiptId: string }> {
   const { uid, documentId, storagePath, storageGeneration, contentSha256 } = payload;
@@ -63,7 +63,7 @@ export async function executeDocumentIndexing(
   if (!docSnap.exists) {
     throw new HttpsError('not-found', `Knowledge document ${documentId} not found.`);
   }
-  const docData = docSnap.data() as Record<string, any>;
+  const docData = docSnap.data() as Record<string, unknown>;
   if (docData.storagePath !== storagePath || docData.storageGeneration !== storageGeneration || docData.contentSha256 !== contentSha256) {
     throw new HttpsError('failed-precondition', `Document metadata mismatch for ${documentId}.`);
   }
