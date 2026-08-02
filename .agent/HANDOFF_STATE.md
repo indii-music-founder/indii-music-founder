@@ -1,12 +1,18 @@
-# Session Handoff — Session Breakdown Repair Order & Open Issues Ledger (2026-07-31)
+# Session Handoff — Session Breakdown Repair Order & Open Issues Ledger (2026-08-02)
 
-**Updated:** 2026-07-31 19:15 EDT  
+**Updated:** 2026-08-02 01:56 UTC  
 **Branch:** `main`  
 **Working tree:** clean / verified  
 
 ## What was accomplished this session
 
-1. **ISSUE-1175 (Live Production Session Ingestion & Proxy Pipeline)**:
+1. **Phase 1.3 Scope Error Fix (Meta Conversions API)**:
+   - Resolved TypeScript scope error (TS2304) in `packages/firebase/src/marketing/flushConversionEvents.ts`.
+   - Root cause: `fresh` variable (deduped conversion events) was declared inside warehouse-insert try block but used in Meta Conversions API sending section (lines 206-237).
+   - Fix: Moved `fresh` declaration to function scope (`let fresh: typeof docs = [];` at line 154), enabling access across both try blocks.
+   - Status: ✅ Committed to main (commit 092c891) and pushed. All marketing tests pass: 75/75.
+
+2. **ISSUE-1175 (Live Production Session Ingestion & Proxy Pipeline)**:
    - Fixed GCS Python SDK metadata kwarg handling in `packages/engine-dsp/video_session_pipeline.py`.
    - Deployed updated worker service to Cloud Run (`engine-dsp-00058-sjw`).
    - Triggered live E2E session transcode pipeline (`313a461450a442dbc7c4a546c1249594cba76fc7`), producing 720p Rec.709 CFR proxy video, WAV guide audio, waveform JSON, contact sheet, keyframe thumbnails, and complete Firestore `ProxyManifest` (`proxy-manifest.v1`).
