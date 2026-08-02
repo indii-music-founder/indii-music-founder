@@ -171,7 +171,6 @@ export interface GenerateContentRequest {
     tools?: Tool[];
     toolConfig?: ToolConfig;
     safetySettings?: SafetySetting[];
-    apiKey?: string;
 }
 
 export interface GenerateVideoRequest {
@@ -179,7 +178,6 @@ export interface GenerateVideoRequest {
     prompt: string;
     image?: { imageBytes?: string; data?: string; mimeType: string };
     config?: GenerationConfig & VideoGenerationConfig;
-    apiKey?: string;
     jobId?: string;
     generateAudio?: boolean;
 }
@@ -213,13 +211,11 @@ export interface GenerateImageRequest {
         aspectRatio?: string;
         negativePrompt?: string;
     };
-    apiKey?: string;
 }
 
 export interface EmbedContentRequest {
     model: string;
     content: Content;
-    apiKey?: string;
 }
 
 // ============================================================================

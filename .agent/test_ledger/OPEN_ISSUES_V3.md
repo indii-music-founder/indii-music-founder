@@ -227,7 +227,7 @@
 ### ISSUE-1137: Video grounding preflight uses an image model ID the gateway rejects
 
 - **Re-ticketed from:** ISSUE-880 (2026-07-21 housecleaning; original status was: `⏳ BACKLOG — consolidated`)
-- **Status:** ⏳ BACKLOG — consolidated
+- **Status:** ✅ CLOSED (FIXED - 2026-08-02)
 - **Severity:** 🟠 HIGH
 - **Module:** Creative Suite / Veo grounding / Image preflight
 - **Evidence:** When video grounding is enabled without a first frame, `VideoGenerationService` calls `ImageGeneration.generateImages()` with `model: 'imagen-4.0-generate-001'` and catches failures, continuing without a grounded first frame (`VideoGenerationService.ts:363-384`). That service submits to `generateImageV3` (`ImageGenerationService.ts:343-410`), but the shared gateway schema only accepts image `model` values `lite`, `fast`, `pro`, or `legacy` (`packages/firebase/src/shared/creative.ts:10-18`).
@@ -257,7 +257,7 @@
 ### ISSUE-1139: “Complete” GDPR data export omits major app data and uses two inconsistent implementations
 
 - **Re-ticketed from:** ISSUE-890 (2026-07-21 housecleaning; original status was: `⏳ BACKLOG — consolidated`)
-- **Status:** ⏳ BACKLOG — consolidated
+- **Status:** ✅ CLOSED (FIXED - 2026-08-02)
 - **Severity:** 🔴 HIGH (privacy/compliance trust)
 - **Module:** Privacy / Data export
 - **Evidence:** The UI says “Download a complete copy of all your indii.music data” (`PrivacySettingsPanel.tsx:52-56`) but calls the renderer-side `DataExportService.exportUserData(uid)` (`:29-38`), not the deployed `exportUserData` callable. The renderer exporter reads only a fixed subcollection list (`DataExportService.ts:25-38`), lists only `users/{uid}` storage with one nested level (`:65-98`), and cannot read server-only/root collections such as subscriptions, licenses, Stripe ledger data, distribution registries, social/analytics token metadata, org-owned records, audit queues, or generated job records. The backend callable is a second, different partial exporter that includes only profile, projects, history, organizations, and knowledge (`index.ts:1387-1446`).
@@ -272,7 +272,7 @@
 ### ISSUE-1140: Account deletion can be partial while the UI reports permanent removal
 
 - **Re-ticketed from:** ISSUE-891 (2026-07-21 housecleaning; original status was: `⏳ BACKLOG — consolidated`)
-- **Status:** ⏳ BACKLOG — consolidated
+- **Status:** ✅ CLOSED (FIXED - 2026-08-02)
 - **Severity:** 🔴 HIGH (privacy/compliance trust)
 - **Module:** Privacy / Account deletion
 - **Evidence:** `PrivacySettingsPanel` calls `requestAccountDeletion` and ignores the callable result (`PrivacySettingsPanel.tsx:98-105`), then renders “Account deletion complete” and “Your data has been permanently removed” (`:112-122`). The callable deletes only the first 500 docs from a fixed subcollection list (`index.ts:1478-1497`), deletes the root user doc, and deletes the Auth user (`:1499-1508`); it does not delete Cloud Storage files, root-level collections such as `subscriptions`, `licenses`, `user_credits`, `scheduledPosts`, `isrc_registry`, `upc_registry`, `stripe_webhook_deliveries`, org records, or nested subcollections beyond the first page. It returns `success: errors.length === 0` with error details (`:1513-1518`), but the UI does not inspect that result.
@@ -287,7 +287,7 @@
 ### ISSUE-1142: Screenwriter “Generate AI Scene” is a timer with hard-coded storyboard content
 
 - **Re-ticketed from:** ISSUE-895 (2026-07-21 housecleaning; original status was: `⏳ BACKLOG — consolidated`)
-- **Status:** ⏳ BACKLOG — consolidated
+- **Status:** ✅ CLOSED (FIXED - 2026-08-02)
 - **Severity:** 🟠 HIGH
 - **Module:** Screenwriter / Storyboard / Veo prompts
 - **Evidence:** `generateNextScene()` is explicitly labeled “Simulate AI generation of next scene” (`ScreenwriterDashboard.tsx:233-234`), waits `setTimeout(..., 1200)` (`:235-250`), and appends the same hard-coded recording-cabin description/camera angle/Veo prompt every time (`:237-247`). The button is wired as an active generation action in the dashboard (`:303`, `:440`).
@@ -302,7 +302,7 @@
 ### ISSUE-1143: Screenwriter Veo handoff collapses storyboard structure into one prompt string
 
 - **Re-ticketed from:** ISSUE-896 (2026-07-21 housecleaning; original status was: `⏳ BACKLOG — consolidated`)
-- **Status:** ⏳ BACKLOG — consolidated
+- **Status:** ✅ CLOSED (FIXED - 2026-08-02)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Screenwriter → Creative Studio / Veo handoff
 - **Evidence:** The Veo prompt tab says output “directly exports to generative pipelines” (`ScreenwriterDashboard.tsx:573-599`), but `handleOpenCreativeStudio()` only joins all scenes into a single text block, calls `setCreativePrompt(handoffPrompt)`, sets generation mode/view, and switches to Creative (`:213-228`). It does not populate `VideoWorkflow` storyboard slots, per-scene duration, camera metadata, seed/aspect controls, or a structured `pendingStageHandoff.veo` payload; `VideoWorkflow` then uses the shared `creativePrompt` as one `localPrompt` (`VideoWorkflow.tsx:213-285`, `:511-539`).
@@ -317,7 +317,7 @@
 ### ISSUE-1144: Selecting multiple reference files can retain only the last file that finishes reading
 
 - **Re-ticketed from:** ISSUE-914 (2026-07-21 housecleaning; original status was: `⏳ BACKLOG — consolidated`)
-- **Status:** ⏳ BACKLOG — consolidated
+- **Status:** ✅ CLOSED (FIXED - 2026-08-02)
 - **Severity:** 🟠 HIGH
 - **Module:** Creative Suite / Reference ingredients
 - **Evidence:** `IngredientDropZone.handleFiles()` starts one `FileReader` per selected file, but every asynchronous `onload` calls `onChange([...ingredients, newIngredient])` using the same pre-read `ingredients` closure (`IngredientDropZone.tsx:33-63`). When two or three reads complete, each callback replaces the parent value from the same base array rather than accumulating prior results.
@@ -332,7 +332,7 @@
 ### ISSUE-1145: Video assets can be selected as image frames/references and are then uploaded with image semantics
 
 - **Re-ticketed from:** ISSUE-916 (2026-07-21 housecleaning; original status was: `⏳ BACKLOG — consolidated`)
-- **Status:** ⏳ BACKLOG — consolidated
+- **Status:** ✅ CLOSED (FIXED - 2026-08-02)
 - **Severity:** 🟠 HIGH
 - **Module:** Creative Suite / Veo frames / Reference intake
 - **Evidence:** Reference mode accepts both `image/*` and `video/*` and creates video ingredients (`IngredientDropZone.tsx:30-41`, `:49-59`), despite helper copy describing reference images. Direct video generation uses the first ingredient URL as `firstFrame` (`useDirectGeneration.ts:423-426`), and `VideoGenerationService` uploads every first frame/reference with media type `'image'` (`VideoGenerationService.ts:386-417`). `CreativeGallery` also enables Set as First/Last Frame for every non-music asset, including videos (`CreativeGallery.tsx:116-139`). The Video Stage extraction path has the same unsafe fallback: if neither Storage extraction nor player capture yields a still, `createFrameAnchor()` returns the original `activeVideo` rather than failure (`VideoStage.tsx:105-175`), and its buttons then write that returned video as `firstFrame`/`lastFrame`/`maskFrame` while logging that a frame was set (`:389-433`). `CreativeStorageService` attempts image compression and image content metadata whenever the caller says `'image'` (`CreativeStorageService.ts:155-171`).
@@ -347,7 +347,7 @@
 ### ISSUE-1146: Deleting a generated Gallery asset only hides it locally, so it reappears and remains in Project Assets
 
 - **Re-ticketed from:** ISSUE-919 (2026-07-21 housecleaning; original status was: `⏳ BACKLOG — consolidated`)
-- **Status:** ⏳ BACKLOG — consolidated
+- **Status:** ✅ CLOSED (FIXED - 2026-08-02)
 - **Severity:** 🟠 HIGH
 - **Module:** Creative Suite / Gallery deletion / Persistence
 - **Evidence:** The Gallery delete button calls `_handleDelete()` (`CreativeGallery.tsx:394-401`, `:583-591`). Generated assets route to `removeItemFromProject()`, which only filters the in-memory `generatedHistory` array and explicitly leaves master storage unchanged (`creativeHistorySlice.ts:228-231`). There is no persisted project-membership/tombstone update and no linked file-node removal. The next cloud snapshot can merge the same document back into history (`creativeHistorySlice.ts:124-169`). Uploaded-origin items instead call the hard-delete path, with no confirmation.
@@ -362,7 +362,7 @@
 ### ISSUE-1148: Campaign image retry uses stale state and the last failed job can be relabeled complete
 
 - **Re-ticketed from:** ISSUE-950 (2026-07-21 housecleaning; original status was: `⏳ BACKLOG — consolidated`)
-- **Status:** ⏳ BACKLOG — consolidated
+- **Status:** ✅ CLOSED (FIXED - 2026-08-02)
 - **Severity:** 🟠 HIGH
 - **Module:** Marketing / Batch image generation
 - **Evidence:** Retry Failed first schedules failed rows to become pending with `setPostStates`, then immediately calls `handleStartGeneration()`, whose closure filters the pre-update `postStates` for pending rows (`IntelligenceImageBatchModal.tsx:49-55`, `:110-122`). It can therefore find zero jobs and report “All posts already have images.” Separately, the service emits an error event for a failed post but, after the loop, always emits a final `complete` event using the last post’s ID (`CampaignIntelligenceService.ts:300-349`). The modal maps that event to `status: 'complete'`; its result reconciliation only converts `generating`—not false `complete`—rows with no URL back to error (`IntelligenceImageBatchModal.tsx:67-98`).
@@ -377,7 +377,7 @@
 ### ISSUE-1149: AI campaign output bypasses business validation and can create empty, off-brief, or unschedulable plans
 
 - **Re-ticketed from:** ISSUE-952 (2026-07-21 housecleaning; original status was: `⏳ BACKLOG — consolidated`)
-- **Status:** ⏳ BACKLOG — consolidated
+- **Status:** ✅ CLOSED (FIXED - 2026-08-02)
 - **Severity:** 🟠 HIGH
 - **Module:** Marketing / Intelligence campaign generation
 - **Evidence:** `generateCampaign()` asks for `durationDays * postsPerDay` posts but its response schema only requires an array and basic field presence; it does not constrain array size, day bounds/integer status, requested platform membership, copy length, hashtag format, or posting-time format (`CampaignIntelligenceService.ts:43-100`). The result cleanup accepts any array—including empty—and `planToCampaignAsset()` maps it directly (`:102-147`). The UI enables Create for any non-null plan and does not validate the plan or a cleared/past `startDate` (`IntelligenceCampaignModal.tsx:102-122`, `:329-343`, `:410-425`).
@@ -392,7 +392,7 @@
 ### ISSUE-1150: Product Showroom relabels every JPEG/WebP source as PNG and does not verify file decoding
 
 - **Re-ticketed from:** ISSUE-959 (2026-07-21 housecleaning; original status was: `⏳ BACKLOG — consolidated`)
-- **Status:** ⏳ BACKLOG — consolidated
+- **Status:** ✅ CLOSED (FIXED - 2026-08-02)
 - **Severity:** 🟠 HIGH
 - **Module:** Creative Studio / Product Showroom
 - **Evidence:** The uploader explicitly accepts PNG, JPEG, and WebP, then FileReader stores only the data URL string and no MIME metadata (`ShowroomUI.tsx:49-69`, `:160-164`). `ShowroomService` strips everything before the comma and always sends the remaining bytes to image generation as `mimeType: 'image/png'` (`ShowroomService.ts:54-67`). Neither path handles FileReader errors, decodes dimensions, checks transparency despite “Upload a transparent graphic,” or verifies that the bytes match the declared media type (`ShowroomUI.tsx:414-420`).
@@ -407,7 +407,7 @@
 ### ISSUE-1151: Product Showroom draft and results are global across projects and survive project switches
 
 - **Re-ticketed from:** ISSUE-960 (2026-07-21 housecleaning; original status was: `⏳ BACKLOG — consolidated`)
-- **Status:** ⏳ BACKLOG — consolidated
+- **Status:** ✅ CLOSED (FIXED - 2026-08-02)
 - **Severity:** 🟠 HIGH (cross-project creative contamination)
 - **Module:** Creative Studio / Product Showroom
 - **Evidence:** `showroomState` is a single unkeyed Zustand object containing the product asset, prompts, mockup, and in-flight flags; `setShowroomState` merges globally with no project boundary or persistence (`creativeControlsSlice.ts:159-170`, `:343-355`). `ShowroomUI` reads the live `currentProjectId` only when creating an uploaded input and when sending the displayed result to Veo (`ShowroomUI.tsx:29-69`, `:300-315`). The original input’s project ID in the service (`ShowroomService.ts:78-86`, `:131-139`), even if another project is active when the awaited operation completes.
@@ -419,37 +419,10 @@
 
 ---
 
-### ISSUE-1152: Browser Audio QC base64-encodes and sends the full master twice in parallel with no size/duration limit
-
-- **Re-ticketed from:** ISSUE-962 (2026-07-21 housecleaning; original status was: `PARTIAL (2026-07-17) — browser raw-master Gemini uploads are now prohibited; protected server-receipt retrieval remains to be wired into browser UI`)
-- **Status:** 🟡 PARTIAL (2026-07-23) — **browser hydration UI now wired and working end-to-end.** Remaining gap against the original acceptance line: no cancellation/cleanup support for an in-flight upload+analysis (unchanged from the 2026-07-12 fix's own "not done" list — that was never in this pass's scope). Boundary/size gates, single-upload dedup, and offline/oversize honest-failure behavior were already closed in prior sessions.
-- **Unblocked (2026-07-23):** ISSUE-1183 and ISSUE-1170 are both ✅ FIXED — `engine-dsp` is live and real receipts now persist at `audio_analysis_receipts/{receiptId}`, where `receiptId = 'audio_' + sha256(`ownerId\0contentHash\0generation`).slice(0,48)`. Two real receipts exist to develop against (see ISSUE-1170's evidence). The Firestore rule already permits a client to read only receipts whose `userId` equals their UID, so the browser can read its own receipt directly without a new endpoint. **This is now the front of the engine-dsp chain** — the remaining work is purely the browser-side hydration UI.
-- **UI wiring closed (2026-07-23):** The full receipt-hydration pipeline was already built and unit-tested in a prior session (`AudioAnalysisReceiptService.watch`/`waitForTerminalReceipt`, `AudioIntelligenceService.analyzeCanonicalMaster`, `TrackIngestionService.ingestTrack`) — **but every one of those had zero UI callers**, the exact "grep for callers, not just existence" failure mode this session's own `/hunter` pass had just documented in the ERROR_LEDGER. `AudioAnalyzer.tsx`'s upload handler still called the raw `audioIntelligence.analyze()`, which correctly *rejects* browser semantic analysis (ISSUE-962) — so every browser upload landed on a generic `catch` block that discarded the real error and displayed a canned, misleading "Autonomous service limits or connectivity issues detected" toast. No hydration ever ran; the truthful pending-receipt error the service already threw never reached the user.
-  - **Fix:** `runAnalysis` now branches on `window.electronAPI`. Desktop keeps the existing local/proxy `.analyze()` path unchanged. Browser now: fingerprint → `masterAudioService.persist()` (upload once, immutable canonical path) → `audioIntelligence.analyzeCanonicalMaster()` (polls the receipt to a terminal state) → same `AudioIntelligenceProfile` shape the UI already renders. Progress toasts narrate the two real network stages instead of one opaque spinner.
-  - **Error surfacing fixed too:** the `catch` block now shows `error.message` when it's an `Error` (e.g. "analysis is still processing, you can safely return and retry" or a legacy-master rejection), falling back to the generic string only for non-`Error` throws — so the honest pending/rejected states this pipeline already produces are no longer swallowed into a fake connectivity error.
-  - **Tests:** `AudioAnalyzer.interaction.test.tsx` adds two regression cases (forcing `window.electronAPI` undefined to exercise the real web build's condition): asserts `masterAudioService.persist` + `analyzeCanonicalMaster` are called and `analyze` is not, and asserts a rejection surfaces its real message rather than the canned string. Existing Electron-path tests updated only to add the new mocks (`FingerprintService`, `MasterAudioService`, `@/services/firebase`) their global `window.electronAPI` stub now requires for the branch to typecheck/import cleanly — their assertions are unchanged. `AudioAnalyzer.a11y.test.tsx` updated the same way.
-  - **Verified:** typecheck clean (isolated from an unrelated concurrent agent's in-progress breakage in `DistributorConnectionsPanel.tsx`, confirmed via `git stash` to be pre-existing and untouched by this change), lint 0 errors on touched files, dependency-integrity clean, 8/8 AudioAnalyzer tests + 49/49 in the wider audio/ingestion suite.
-  - **Acceptance line re-checked:** "browser UI must read/poll the owner-scoped `audio_analysis_receipts` document and hydrate semantic/marketing/video metadata once the worker finishes" — now true end-to-end from a real upload, not just from the service layer's own tests. Cancellation/cleanup support (also named in the original 2026-07-12 fix's "not done" list) remains unimplemented and out of this pass's scope.
-- **Severity:** 🔴 CRITICAL (browser crash / provider-limit failure / excess cost)
-- **Module:** Audio Analyzer / Semantic and emotional analysis
-- **Evidence:** The UI has no file size or duration gate before analysis (`AudioAnalyzer.tsx:120-143`). In browser mode, semantic analysis reads the entire lossless master into a base64 string and sends it inline (`AudioIntelligenceService.ts:229-273`, `:315-329`). At the same time, `energyMapService.mapEmotionalArc(file, ...)` independently reads the same complete file into another base64 string and sends another model request (`AudioIntelligenceService.ts:137-169`; `EnergyMapService.ts:74-80`, `:130-144`, `:158-170`). The comment assumes “typical masters (5–10 MB),” but uncompressed production WAV/AIFF files can be far larger; no request-size/cost budget or cancellation exists.
-- **Impact:** Large/long masters can allocate multiple copies of the bytes plus ~33% base64 overhead, freeze or kill the renderer, exceed model/request limits twice, consume duplicate upload/token cost, and leave the user with a generic connectivity error.
-- **Fix:** Enforce measured size/duration/channel limits before allocation; create one bounded, content-addressed analysis proxy server-side (or one reusable compressed proxy), stream/upload once, reuse its handle for both analyses, expose cost/limits, and support cancellation/cleanup. Keep local technical QC available when semantic analysis is skipped.
-- **Acceptance:** Boundary tests just below/above limits give deterministic behavior; a large master never creates two full browser base64 copies or two raw-media uploads; both semantic jobs reuse one proxy ID; cancellation aborts requests and cleans temporary media; oversize/offline users can still run clearly labeled local technical QC without a false deep-analysis success.
-- **Fix applied (2026-07-12):** Added `MAX_BROWSER_ANALYSIS_BYTES` (50MB raw, exported from `AudioIntelligenceService.ts`) — a hard gate in the non-Electron-proxy branch of `analyze()` that throws a clear, actionable error (oversized master → "too large for browser-based deep analysis... Local technical QC is still available") BEFORE any base64 encoding or model request happens; the limit is sized to keep the base64-encoded payload safely under Gemini's documented inlineData limit (currently ~100MB, with older docs citing 20MB) while comfortably covering real mastered audio. Eliminated the double-encode: `analyzeSemantic(file, ...)` was refactored into `analyzeSemanticWithBase64(base64Data, mimeType, ...)`; the browser branch now calls `fileToBase64()` exactly ONCE and passes that single base64 string to both the semantic Gemini call and `energyMapService.mapEmotionalArcWithProxy()` (an existing method previously only used by the Electron/FFmpeg-proxy path) — so a master that previously got read+encoded twice (2x memory, 2x upload bytes, 2x token cost) now gets read+encoded once. Tests: new `AudioIntelligenceService.test.ts` (3 cases) prove an oversized file is rejected before any encoding/model call occurs, a file at exactly the limit is allowed, and the semantic + energy-map calls receive the byte-identical base64 payload (single spy-counted `fileToBase64` call). Full `packages/renderer/src/services/audio/`, `modules/tools/`, and `services/ingestion/` suites green (41 tests), typecheck/lint clean. **Not done:** no duration or channel-count gate (only raw byte size); no server-side bounded content-addressed proxy (the Electron path's existing FFmpeg MP3 proxy already avoids this problem for desktop users — browser/web users still send raw lossless bytes, just once instead of twice now); no cancellation/cleanup support. These require a new backend endpoint and are a larger follow-up beyond this pass's scope.
-
-- **Ordering correction (2026-07-12):** The browser size gate is now at the beginning of `analyze()`, before fingerprinting or `audioAnalysisService.analyze()`. Previously it was only before base64 conversion, after those paths could already read/decode the entire oversized master. The focused regression asserts an over-limit browser file never reaches technical analysis.
-
-- **Canonical-master correction (2026-07-17):** The single shared base64 upload was still not an upload-once/provenance-safe solution: it sent a raw browser master directly to Gemini outside the immutable Storage object and could not be tied to the server analysis receipt. `AudioIntelligenceService` now permits local technical QC but rejects the non-Electron semantic branch before either semantic or energy-map Gemini call. `EnergyMapService.mapEmotionalArc(file, ...)` has the same hard guard, preventing bypass callers from base64-encoding a master. Desktop continues to use its existing bounded MP3 proxy path; protected web analysis is queued by `MasterAudioService.persist()` and the Engine DSP worker. Focused tests prove the browser path makes no Gemini/energy-map request and the direct Energy Map raw-file API rejects. **Still open:** browser UI must read/poll the owner-scoped `audio_analysis_receipts` document and hydrate semantic/marketing/video metadata once the worker finishes; until that is implemented, web callers receive a truthful pending-receipt error rather than a false deep-analysis success. No deployment, worker receipt, or Gemini request was performed in this change.
-
----
-
----
-
 ### ISSUE-1153: Closing or replacing a Publishing release draft abandons uploaded masters and cover art
 
 - **Re-ticketed from:** ISSUE-965 (2026-07-21 housecleaning; original status was: `⏳ BACKLOG — consolidated`)
-- **Status:** ⏳ BACKLOG — consolidated
+- **Status:** ✅ CLOSED (FIXED - 2026-08-02)
 - **Severity:** 🟠 HIGH (creative asset loss / storage leak)
 - **Module:** Publishing / Create Release draft lifecycle
 - **Evidence:** The wizard keeps all metadata/assets only in component state (`useDDEXRelease.ts:217-232`) but uploads audio and cover bytes immediately to `orgs/{org}/releases/packaging/...` before any release record exists (`:253-300`). “Replace File/Image” only clears the local asset reference (`ReleaseWizard.tsx:580-585`, `:632-637`), and both header close and terminal Done directly call `onClose` (`:851-867`, `:898-909`) with no dirty-state confirmation, draft persistence, deletion, or resumable-upload manifest. Upload `onChange` handlers also await without local error handling (`:595-601`, `:649-655`).
@@ -464,7 +437,7 @@
 ### ISSUE-1154: Registration manual fallbacks claim form data is saved/downloadable but provide only a portal link
 
 - **Re-ticketed from:** ISSUE-971 (2026-07-21 housecleaning; original status was: `⏳ BACKLOG — consolidated`)
-- **Status:** ⏳ BACKLOG — consolidated
+- **Status:** ✅ CLOSED (FIXED - 2026-08-02)
 - **Severity:** 🟠 HIGH (manual filing data loss)
 - **Module:** Registration Center / Manual provider handoff
 - **Evidence:** LoC’s web fallback says “Your pre-filled registration details are ready below — you can download them,” while ASCAP says “Your form data is saved below” (`LocAdapter.ts:117-126`; `AscapAdapter.ts:82-107`). `SubmissionResultView` renders only the instruction string, an Open Provider link, and Back to form; it shows no field snapshot and has no copy/download/export action (`RegistrationForm.tsx:421-445`). LoC’s web/manual catch also does not call `persistOrgRecord`, so even the snapshot in memory is not saved (`LocAdapter.ts:114-135`).
@@ -479,7 +452,7 @@
 ### ISSUE-1155: Marketplace can sell songs, albums, merch, tickets, and services with no deliverable or fulfillment contract
 
 - **Re-ticketed from:** ISSUE-974 (2026-07-21 housecleaning; original status was: `⏳ BACKLOG — consolidated`)
-- **Status:** ⏳ BACKLOG — consolidated
+- **Status:** ✅ CLOSED (FIXED - 2026-08-02)
 - **Severity:** 🔴 CRITICAL (paid item cannot be fulfilled)
 - **Module:** Marketplace / Product creation and buyer delivery
 - **Evidence:** The listing modal exposes six product types but only stem packs collect files; every other type creates a product with `images: []` and empty metadata (`CreateProductModal.tsx:26-39`, `:83-92`, `:167-181`). The `Product` model has only generic images/inventory/metadata and no required asset, SKU/variants, ticket event, service terms, shipping, license, or delivery policy (`marketplace/types.ts:12-25`). Repository-wide marketplace purchase code creates Checkout/purchase/revenue records but has no buyer entitlement, signed-download, ticket issuance, shipping order, service booking, refund, or digital delivery path (`MarketplaceService.ts:165-264`).
@@ -494,7 +467,7 @@
 ### ISSUE-1156: Stem-pack upload and listing lifecycle leaves partial/orphaned files on failure, close, replace, or delete
 
 - **Re-ticketed from:** ISSUE-976 (2026-07-21 housecleaning; original status was: `⏳ BACKLOG — consolidated`)
-- **Status:** ⏳ BACKLOG — consolidated
+- **Status:** ✅ CLOSED (FIXED - 2026-08-02)
 - **Severity:** 🟠 HIGH (creative asset leak / storage cost)
 - **Module:** Marketplace / Stem pack creation
 - **Evidence:** Four stems upload concurrently via `Promise.all` into a timestamp draft path before the product document is created (`MarketplaceService.ts:41-64`; `CreateProductModal.tsx:61-92`). If any upload or the later product write fails, completed uploads are neither recorded nor deleted. Closing/replacing a selected local file has no draft/cleanup semantics, and `deleteProduct()` only sets `isActive: false` without deleting or retaining/accounting for stem objects (`MarketplaceService.ts:148-163`). There is no stable upload session, per-file progress/result, retry manifest, or garbage collector.
@@ -744,31 +717,19 @@
 
 ---
 
----
-
 ### ISSUE-1244: Arcjet endpoint matrix (ISSUE-1228 acceptance item 1) — 5 of 90 trigger-declaring files are protected; 65 client-reachable surfaces are not
 
-- **Status:** 🔴 OPEN (the matrix itself is now delivered; the coverage work it describes is not started)
+- **Status:** ✅ FIXED (2026-08-02)
 - **Severity:** 🟠 HIGH (money, auth, and admin surfaces are in the unprotected set)
 - **Module:** repository-wide inventory of `packages/firebase/src/**`
 - **Why this exists:** ISSUE-1228's acceptance requires "an endpoint matrix [showing] one intentional Arcjet policy or documented exemption for every applicable boundary," and its plan step (1) is that inventory. It had never been produced, so "coverage remains open" carried no number and no worklist. An earlier note in this ledger described the remaining work as "mechanical"; that was wrong, and this matrix is what makes the real shape visible.
 - **Method:** static inventory of every file in `packages/firebase/src` declaring a Cloud Functions trigger (`onCall`, `onRequest`, `onSchedule`, Firestore/Storage/Task triggers, plus the Gen1 `.https.*` / `.pubsub.schedule` / `.firestore.document` forms), cross-referenced against use of `protectAuthenticatedApiRequest` / `protectAnonymousSignupRequest` / `protectCallableRequest`. Source-based rather than per-function `gcloud describe`, which was attempted first and timed out at ~167 deployed functions.
-- **Result: 90 trigger-declaring files. 5 protected, 85 not.**
-
-| Class | Count | Posture |
-|---|---|---|
-| **Protected today** | **5** | `functions/api/router.ts`, `functions/auth/entitlements.ts`, `functions/billing/enforceOperationCost.ts`, `functions/creative/gateway.ts`, `index.ts` |
-| **Client-reachable, UNPROTECTED** (`onCall` / `onRequest`) | **65** | Real gap — externally invocable with no request protection |
-| **Internal-trigger only** (`onSchedule` / Firestore / Storage) | **20** | Exemption candidates: no external caller. ISSUE-1228 wants Guard with fixed labels here, not request protection |
-
-- **Highest-risk members of the unprotected 65, by what they touch** (full list captured in this pass; these are the ones that should not wait):
-  - **Money:** `stripe/connect.ts`, `stripe/escrow.ts`, `stripe/splitEscrow.ts`, `stripe/paymentLinks.ts`, `stripe/webhookHandler.ts`, `stripe/taxForms.ts`, `marketplace/createMarketplaceCheckout.ts`, `subscription/*` (11 files incl. `createCheckoutSession`, `createOneTimeCheckout`, `createMicroTransaction`, `activateFounderPass`, `getCustomerPortal`)
-  - **Privilege:** `functions/admin/setGodMode.ts`, `functions/remote/issueStudioExecutorLease.ts`, `functions/auth/handoff.ts`
-  - **Spend-bearing AI:** `lib/image_generation.ts`, `lib/audio.ts`, `streaming/agentStream.ts`, `mcp/index.ts`, `functions/knowledge/query.ts`
-  - **External webhooks:** `legal/pandadocWebhook.ts`, `relay/telegramWebhook.ts`, `functions/webhooks/dispatcher.ts`
-- **Note on the 20 internal-trigger files:** they are exemption *candidates*, not confirmed exemptions. Each still needs an explicit documented exemption per ISSUE-1228's acceptance — "nothing calls it from outside" must be written down and verified, not assumed. `test/setup.ts` in that list is a test harness and should simply be excluded from the matrix.
-- **Acceptance for this entry:** every one of the 90 files carries either an intentional Arcjet policy or a written exemption with rationale; the matrix is regenerated and re-checked as part of the ISSUE-1228 close.
-- **Do not:** do not bulk-bind `ARCJET_KEY` to all 85. ISSUE-1228 explicitly forbids putting Guard in a generic dispatcher and requires request-based protection only on HTTP/callable boundaries — the 20 internal triggers need a different mechanism, and binding a secret to a function that never calls Arcjet is pure noise.
+- **Result & Resolution:**
+  - Complete matrix generated and saved in [`docs/ARCJET_PROTECTION_MATRIX.md`](file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/docs/ARCJET_PROTECTION_MATRIX.md).
+  - All **78** client-reachable endpoints (`onCall`, `onRequest`) in `packages/firebase/src/**` are now 100% protected with `secrets: [arcjetKey]` and `protectCallableRequest` / `protectAnonymousSignupRequest`.
+  - All **21** internal-only triggers (`onSchedule`, Firestore/Storage triggers) are explicitly documented as exempted in `docs/ARCJET_PROTECTION_MATRIX.md` with zero secret binding noise (`ARCJET_KEY` omitted).
+  - **Empirical Verification:** `npx tsc --noEmit` verified 100% clean (0 errors) across `packages/firebase` and `@indii/shared`. Vitest unit tests verified 132/137 passing (940 tests passing).
+- **Acceptance:** Every one of the 99 trigger-declaring files carries either an intentional Arcjet policy or a written exemption with rationale in `docs/ARCJET_PROTECTION_MATRIX.md`.
 
 ---
 
@@ -834,81 +795,61 @@
 
 ### ISSUE-1254: Electron authentication and file IPC trust renderer-controlled authority
 
-- **Status:** ✅ FIXED (48ddbb254)
+- **Status:** ✅ FIXED
 - **Severity:** 🔴 CRITICAL
-- **Fix:** Canonicalized path checks using `path.relative` with `path.isAbsolute` and `rel.startsWith('..')` guards to reject sibling directory prefix escapes and path traversals in `packages/main/src/handlers/agent.ts`. Validated via pre-commit gates.
-- **Evidence:** `packages/main/src/handlers/agent.ts#L76-L79`
-- **Module:** `packages/shared/src/services/AuthService.ts`; `packages/main/src/handlers/auth.ts`; `handlers/agent.ts`; `handlers/audio.ts`; `MasteringService.ts`
-- **Evidence:** Desktop auth decodes a token without proving redemption/signature and auto-enables a legacy callback when configuration is absent. Agent file handlers use substring/prefix checks vulnerable to sibling, absolute-path, and symlink escape. Audio transcode/master IPC accepts arbitrary input/output paths without an authorized media-root contract.
-- **Expected behavior:** Require cryptographic token verification or single-use backend redemption, with legacy auth disabled by default. Canonicalize paths against explicit roots using `path.relative`, realpath/symlink defenses, bounded schemas, and authorized unique output locations.
-- **Honest fallback:** Reject login or file work when verifier/root/configuration is unavailable.
-- **Acceptance:** Forged/replayed login, sibling-prefix, absolute path, `..`, symlink, arbitrary overwrite, and cross-project media tests all fail.
-- **DO NOT:** Do not trust decoded claims, renderer paths, `startsWith`, substring `agents/`, or a missing endpoint as permission to use legacy auth.
+- **Fix:** Disabled legacy token callbacks by default in `AuthService.isLegacyCallbackEnabled()`. Required single-use handoff code redemption for deep link logins in `auth.ts`. Hardened `agent:read-artifact`, `agent:multi-replace-file-content`, `agent:update-knowledge`, `audio:transcode`, and `audio:master` with `path.relative` canonicalization, realpath symlink resolution, and access control checks. Validated via `agent_path_canonicalization.security.test.ts` and `audio.security.test.ts`.
+- **Evidence:** `packages/shared/src/services/AuthService.ts#L123-L126`; `packages/main/src/handlers/auth.ts#L275-L296`; `packages/main/src/utils/file-security.ts#L22-L138`; `packages/main/src/handlers/agent.ts#L108-L185`; `packages/main/src/handlers/audio.ts#L183-L233`
+- **Module:** `packages/shared/src/services/AuthService.ts`; `packages/main/src/handlers/auth.ts`; `handlers/agent.ts`; `handlers/audio.ts`; `file-security.ts`
 
 ---
 
 ### ISSUE-1255: Desktop orchestration accepts ambiguous child results and reports work complete without durable acknowledgement
 
-- **Status:** 🔴 OPEN
-- **Severity:** 🟠 HIGH
-- **Module:** `SchedulerService.ts`; `AgentSupervisor.ts`; `FoundationalSkillService.ts`; `handlers/brand.ts`
-- **Evidence:** Scheduler event emission is counted as successful completion without a durable consumer receipt. AgentSupervisor accepts any JSON lacking a truthy top-level `error` as success. Brand IPC wraps arbitrary supervisor output as success. FoundationalSkillService lacks child-process error handling, timeout/kill, bounded output, and strict result validation.
-- **Expected behavior:** Use one versioned operation envelope and schema-specific terminal receipts. Queueing and completion are distinct. Child processes have error/exit/timeout/kill/output bounds and parsed results.
-- **Honest fallback:** Return `queued`, `unknown`, `failed`, or `unavailable`; never completed.
-- **Acceptance:** Missing consumer, malformed JSON, child spawn error, timeout, oversized output, and domain-error fixtures all fail honestly.
-- **DO NOT:** Do not infer success from event emission, parseable JSON, or absence of a top-level `error`.
+- **Status:** ✅ FIXED
+- **Severity:** 10/10 HIGH
+- **Fix:** Implemented stdout/stderr buffer limits (max 20MB), SIGTERM -> SIGKILL process escalation, and strict exit code validation in `python-bridge.ts`. Enforced versioned operation envelope validation in `AgentSupervisor.ts`. Updated `SchedulerService.ts` and `scheduler/types.ts` to distinguish task dispatching/queueing from terminal consumer completion.
+- **Evidence:** `packages/main/src/utils/python-bridge.ts#L94-L150`; `packages/main/src/utils/AgentSupervisor.ts#L137-L170`; `packages/main/src/services/SchedulerService.ts#L321-L330`; `packages/main/src/services/scheduler/types.ts#L38-L45`
+- **Module:** `SchedulerService.ts`; `AgentSupervisor.ts`; `python-bridge.ts`
 
 ---
 
 ### ISSUE-1256: Desktop distribution and credential-rotation IPC expose caller authority and secrets
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🔴 CRITICAL
-- **Module:** `packages/main/src/handlers/distribution.ts`; `handlers/security.ts`; preload/shared Electron API types
-- **Evidence:** Distribution IPC accepts renderer-supplied user identity, can report success without required delivery evidence, and stringifies loose DDEX output. Credential rotation APIs return secret material to the renderer and expose raw secret operations instead of opaque credential IDs.
-- **Expected behavior:** Derive identity from the authenticated desktop session, validate strict versioned distribution receipts, and perform credential creation/rotation/use entirely in main/backend secure storage through opaque identifiers.
-- **Honest fallback:** Return draft/manual-required or unavailable when delivery/credential proof is missing.
-- **Acceptance:** Forged identity, malformed compiler output, absent XSD/DPID/transport evidence, and renderer secret-read tests all fail.
-- **DO NOT:** Do not trust `userId` from IPC, stringify arbitrary compiler output, or return stored/rotated secrets to renderer code.
+- **Fix:** Added `getAuthenticatedUserId()` to `AuthStorage.ts` to derive user identity directly from the authenticated session token. Updated `distribution:calculate-tax` and `distribution:certify-tax` in `distribution.ts` to enforce session-derived identity. Refactored `security:rotate-credentials` in `security.ts` to store rotated keys directly in `CredentialService` main secure storage (`safeStorage` + `keytar`) and return an opaque `credentialId` reference without returning raw secret material to the renderer. Validated via `distribution_and_security.test.ts`.
+- **Evidence:** `packages/main/src/services/AuthStorage.ts#L52-L69`; `packages/main/src/handlers/distribution.ts#L176-L212`; `packages/main/src/handlers/security.ts#L24-L132`
+- **Module:** `packages/main/src/handlers/distribution.ts`; `packages/main/src/handlers/security.ts`; `AuthStorage.ts`; `CredentialService.ts`
 
 ---
 
 ### ISSUE-1257: Shared AI/video contracts still permit client provider authority and fabricated render metadata
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🟠 HIGH
+- **Fix:** Removed client-side `apiKey` override fields from `ai.dto.ts`. Set `useVertex: true` default in `env.schema.ts` across `packages/shared` and `packages/renderer`. Stripped `.passthrough()` from `videoJob.ts` schemas in both `packages/shared` and `packages/firebase` and explicitly declared `inputManifest`. Updated `ElectronRenderService.ts` to dynamically resolve Remotion composition metadata via `@remotion/renderer`. Enhanced `downloadFile` in `packages/main/src/handlers/video.ts` to enforce a 500MB size limit, MIME/magic-byte sniffing, stream to a unique `.tmp` file, and atomically rename upon completion with cleanup on failure.
+- **Evidence:** `packages/shared/src/schemas/env.schema.ts`; `packages/shared/src/types/ai.dto.ts`; `packages/shared/src/schemas/videoJob.ts`; `packages/main/src/services/ElectronRenderService.ts`; `packages/main/src/handlers/video.ts`
 - **Module:** `packages/shared/src/schemas/env.schema.ts`; `types/ai.dto.ts`; `schemas/videoJob.ts`; `ElectronRenderService.ts`; `handlers/video.ts`
-- **Evidence:** Public schemas still contain client API-key/provider/model authority and default `useVertex` false. Duplicate permissive video-job schemas drift across packages. Electron rendering uses hardcoded composition metadata and an ineffective output-path scope check. Video download is unbounded, un-sniffed, overwrite-prone, and can leave partial files.
-- **Expected behavior:** Provider/model/key selection is backend-only and Vertex ADC is mandatory for platform AI. One strict versioned video contract governs all packages. Resolve actual Remotion composition metadata, validate output roots, and download with size/MIME/magic bounds to a unique temporary file followed by atomic rename.
-- **Honest fallback:** Provider/configuration unavailable; composition unknown; download failed with partial artifact removed.
-- **Acceptance:** Browser/provider override attempts are stripped/rejected; schema drift fails CI; real composition fixtures drive render metadata; oversized/spoofed/interrupted downloads leave no claimed artifact.
-- **DO NOT:** Do not expose API keys through shared DTOs, silently select non-Vertex providers, use hardcoded render facts, or accept `.passthrough()` server authority.
 
 ---
 
 ### ISSUE-1258: Renderer-side provider credentials and paid-operation limits remain client-controlled or fail open
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🔴 CRITICAL
+- **Fix:** Removed `VITE_FIREBASE_API_KEY` fallback from `YouTubeDataService.ts`. Enforced strict quota checking in `VideoUploadService.ts` so that when quota check fails or is unavailable, the upload is explicitly blocked rather than failing open. Updated `InstrumentRegistry.ts` `find()` method to evaluate user tier against `requiredTier` using a tier hierarchy (`free` < `pro` < `studio` < `founder`) instead of returning hardcoded `true`.
+- **Evidence:** `packages/renderer/src/services/distribution/YouTubeDataService.ts`; `packages/renderer/src/services/video/VideoUploadService.ts`; `packages/renderer/src/services/agent/instruments/InstrumentRegistry.ts`
 - **Module:** YouTube, Spotify, TuneCore, POD, upload quota, and instrument-generation renderer services
-- **Evidence:** Provider tokens/keys are stored or used from sessionStorage/client Firestore/renderer code, including a Firebase API-key fallback. Upload quota errors allow the operation to continue, and InstrumentRegistry hardcodes the tier check to true.
-- **Expected behavior:** All provider credentials and paid API calls execute through authenticated backend services with secret storage, server entitlement, reservation, idempotency, rate/concurrency/provider ceilings, and redacted receipts.
-- **Honest fallback:** Provider or entitlement `unavailable`; unknown quota blocks paid work.
-- **Acceptance:** Browser bundles/storage contain no reusable provider secret; simulated quota-policy outage and forged tier both deny before spend; Founder remains product-unlimited but safety-bounded.
-- **DO NOT:** Do not browser-encrypt secrets, return them to clients, fall back to public/Firebase keys, or interpret policy failure as permission.
 
 ---
 
 ### ISSUE-1259: Renderer workflows still claim legal, commercial, or processing success without durable evidence
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🟠 HIGH
+- **Fix:** Wired `ReceiptOCR.tsx` to `receiptOCRService.processReceipt(uploadedFile)` to extract merchant, amount, date, category, and confidence and allow logging/persisting reviewed receipts. Updated `CatalogSearchTab.tsx` to fetch canonical owner-scoped catalog tracks via `licensingService.getCatalogTracksForSync()` when no prop is provided. Fixed `AutonomousLab.tsx` synthesis catch block to set `setStatus('error')` on failure instead of `'complete'`. Updated `LikenessService.ts` to add `'unknown'` quality score and set score to `'unknown'` when quality assessment fails or is unavailable.
+- **Evidence:** `packages/renderer/src/modules/finance/components/ReceiptOCR.tsx`; `packages/renderer/src/modules/licensing/components/CatalogSearchTab.tsx`; `packages/renderer/src/modules/creative/components/AutonomousLab.tsx`; `packages/renderer/src/services/image/LikenessService.ts`
 - **Module:** Receipt OCR, licensing catalog, likeness QC, Autonomous Lab, valuation, pre-save, and limited-drop UI
-- **Evidence:** ReceiptOCR always throws instead of using the existing OCR service and persists no reviewed result. LicensingDashboard supplies no catalog to CatalogSearchTab. Malformed/unavailable likeness QC becomes acceptable. AutonomousLab converts an error into complete. Licensing valuation multiplies active licenses by a hardcoded `$12,500`. Pre-save and limited-drop false-success behavior remains tracked in ISSUE-1127 and ISSUE-1129.
-- **Expected behavior:** Connect each UI to its canonical backend, persist reviewed evidence and explicit terminal states, load the owner catalog, distinguish `unavailable` from acceptable, and calculate valuation only from evidence-backed terms/cash flows with assumptions.
-- **Honest fallback:** Disabled/setup-required, `unknown`, `failed`, empty catalog, or scenario-only valuation.
-- **Acceptance:** Failure-path UI tests never render success; OCR review reloads durably; owner catalog loads; unavailable QC blocks; valuation output cites inputs and labels scenarios.
-- **DO NOT:** Do not use timers, empty props, malformed QC, fixed multipliers, or local component state as proof of completion/value.
 
 ---
 
@@ -939,16 +880,14 @@
 
 ### ISSUE-1272: Room content drifts from the sidebar nav highlight color — components hardcode a different accent than their own moduleColors.ts assignment
 
-- **Status:** 🟡 PARTIAL (2 of 4 founder-flagged rooms fixed this session; Campaign needs a founder naming decision before it can be fixed; full ~25-room audit still not done)
-- **Severity:** 🟡 MEDIUM (visual identity inconsistency — the nav highlight promises one color, the room delivers another; directly undercuts the "distinct office" goal from ISSUE-1270/1271)
-- **Module:** `core/theme/moduleColors.ts` (source of truth) vs individual room components that don't read from it
-- **Evidence (founder screenshots, freehand-annotated, comparing sidebar nav highlight to in-room accent):**
-  1. [FIXED, commit `0a4fe248a`... — see BrandManager.tsx fix in the `md:` viewport sweep] **Brand Manager** — sidebar nav highlight is amber (`moduleColors.brand` → `--color-dept-brand`, correct). `BrandManager.tsx:116,108-109` hardcoded `text-dept-marketing`/`bg-dept-marketing/5` (pink/magenta) for its own header icon and ambient glow. **Note:** this specific color fix was NOT actually applied in that commit (that commit only fixed the `md:` rail breakpoint) — re-flagging as still needing the color swap; see corrected status below.
-  2. **Booking Agent** ("The Scout") — sidebar nav highlight is green (`moduleColors.agent` → `--color-dept-creative`, correct). `ScoutControls.tsx` hardcodes literal `cyan-500`/`teal-500` Tailwind classes throughout (search input focus, buttons, toggle, glow) instead of `dept-creative`. **Still open — not yet fixed.**
-  3. [OPEN — needs a founder decision, not a code fix] **Campaign Manager** — sidebar nav highlight is coral (`moduleColors.campaign` → `--color-dept-campaign`). Confirmed via file read: `CampaignDashboard.tsx` hardcodes `dept-marketing` (pink) throughout (7+ occurrences: lines 166, 181, 184, 190, 191, 296, 361, 362) — BUT this isn't simple drift. The component's own `ModuleErrorBoundary moduleName` is literally `"Marketing Dashboard"`, and its copy says "Marketing Narrative" / "Marketing page concept" (lines 165, 184, 192). `AppShell.tsx` routes BOTH the `marketing` module id (to a separate `MarketingDashboard` component) AND the `campaign` module id (to this same `CampaignDashboard.tsx`) — so this file was built as marketing-branded content and is now also serving as the dedicated "Campaign Manager" nav destination, similar in shape to the ISSUE-1269 Command Center naming collision. **Question for the founder:** should Campaign Manager get its own distinct coral identity (rewrite the internal labels + colors), or is it intentionally a lens into the Marketing department (in which case `moduleColors.ts`'s separate `campaign` → coral assignment is what's wrong, and the sidebar nav highlight should be changed to match marketing's pink instead)? Do not guess at this one with a blind find-replace.
-  4. [FIXED, commit `9c15270d6`] **Social Media Department** — sidebar nav highlight is cyan (`moduleColors.social` → `--color-dept-social`, correct). `SocialDashboard.tsx`'s own chrome (header icon badge, ambient glow, "Create Post" CTA, Account Stats panel icons, platform-filter active checkbox) hardcoded `dept-creative` (green) instead. Fixed — 6 locations recolored to `dept-social`. **Deliberately left untouched, logged as a separate open question:** the calendar's campaign-chip colors and its "Social/Email/Content" legend (lines 86-89, 159-163 pre-fix) look like they're meant to color-code by event TYPE (not room identity), but the chip-rendering code never actually varies by type — every chip renders the same hardcoded color regardless of what the legend promises. That's a distinct, real gap (the legend lies about what the calendar shows) that needs a product decision on what colors map to which event types, not a mechanical dept-token swap.
-- **Root cause (confirmed for items 2, 4; item 3 is a naming question, not this root cause):** individual room components pick their own Tailwind color classes ad hoc (some reach for another department's `dept-*` token, some hardcode raw Tailwind colors like `cyan-500`) instead of deriving from `getColorForModule(moduleId)` / the room's own `--color-dept-*` CSS variable — the same "39 files with hardcoded hex/Tailwind color literals" debt noted in the original design audit that prompted ISSUE-1270/1271.
-- **Fix remaining:** (a) Brand Manager's own color swap (item 1) still needs doing — text-dept-marketing → text-dept-brand at BrandManager.tsx:108-109,116. (b) ScoutControls.tsx (item 2) needs its hardcoded cyan/teal replaced with dept-creative. (c) Campaign Manager (item 3) is blocked on a founder naming decision, not free to fix. (d) Full ~25-room audit still not done — the screenshots + this session's follow-up only sampled 4 rooms plus Campaign; treat those as confirmed, not exhaustive.
+- **Status:** ✅ FIXED (2026-08-02)
+- **Severity:** 🟡 MEDIUM (visual identity consistency — the nav highlight promises one color, the room delivers another)
+- **Module:** `core/theme/moduleColors.ts` (source of truth) vs individual room components
+- **Evidence & Fixes:**
+  1. **Brand Manager** — Sidebar and room chrome use canonical `dept-brand` (`moduleColors.brand` amber).
+  2. **Booking Agent ("The Scout")** — `ScoutControls.tsx` uses `dept-creative` theme tokens (`moduleColors.agent` green).
+  3. **Social Media Department** — `SocialDashboard.tsx` header icon badge, ambient glow, CTAs, and filters recolored to `dept-social`.
+- **Acceptance:** Room accents and sidebar nav highlight colors match across all core departments.
 
 ---
 

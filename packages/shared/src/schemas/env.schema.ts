@@ -5,7 +5,7 @@ export const CommonEnvSchema = z.object({
     projectId: z.string().min(1, "Project ID is required"),
     location: z.string().default('us-central1'),
     functionsRegion: z.string().default('us-central1'),
-    useVertex: z.boolean().default(false),
+    useVertex: z.boolean().default(true),
     googleMapsApiKey: z.string().optional(),
     firebaseApiKey: z.string().optional(),
 });

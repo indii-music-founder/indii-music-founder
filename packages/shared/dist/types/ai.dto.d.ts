@@ -133,7 +133,6 @@ export interface GenerateContentRequest {
     tools?: Tool[];
     toolConfig?: ToolConfig;
     safetySettings?: SafetySetting[];
-    apiKey?: string;
 }
 export interface GenerateVideoRequest {
     model?: string;
@@ -144,7 +143,6 @@ export interface GenerateVideoRequest {
         mimeType: string;
     };
     config?: GenerationConfig & VideoGenerationConfig;
-    apiKey?: string;
     jobId?: string;
     generateAudio?: boolean;
 }
@@ -183,12 +181,10 @@ export interface GenerateImageRequest {
         aspectRatio?: string;
         negativePrompt?: string;
     };
-    apiKey?: string;
 }
 export interface EmbedContentRequest {
     model: string;
     content: Content;
-    apiKey?: string;
 }
 export interface SafetyRating {
     category: string;

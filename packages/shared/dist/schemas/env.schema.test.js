@@ -9,7 +9,7 @@ describe('CommonEnvSchema', () => {
         const result = CommonEnvSchema.parse(data);
         expect(result.location).toBe('us-central1');
         expect(result.functionsRegion).toBe('us-central1');
-        expect(result.useVertex).toBe(false);
+        expect(result.useVertex).toBe(true);
     });
     it('should allow missing raw AI apiKey and require projectId', () => {
         const data = {
