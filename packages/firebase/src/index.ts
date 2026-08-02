@@ -1052,15 +1052,16 @@ export const generateSpeech = onCall(
             } as any);
 
             // Extract audio data from SDK response (direct candidates, no .response wrapper)
-            const part = result?.candidates?.[0]?.content?.parts?.[0];
-            const audioData = part && 'inlineData' in part ? (part as any).inlineData?.data : null;
+            const part = (result?.candidates?.[0]?.content?.parts as unknown[])?.[0] as Record<string, unknown> | undefined;
+            const inlineData = part && typeof part === 'object' && 'inlineData' in part ? (part as { inlineData?: { data?: string } }).inlineData : null;
+            const b64Data = inlineData?.data || null;
 
-            if (!audioData) {
+            if (!b64Data) {
                 logger.error("[generateSpeech] Unexpected response structure:", JSON.stringify(result));
                 throw new Error("No audio content returned from API");
             }
 
-            return { audioContent: audioData };
+            return { audioContent: b64Data };
 
         } catch (err: unknown) {
             const error = err instanceof Error ? err : new Error(String(err));
@@ -1416,19 +1417,19 @@ export const generateContentStream = onRequest(
                 try {
                     // Iterate over SDK Stream
                     for await (const chunk of replayStream) {
-                        const parts = chunk.candidates?.[0]?.content?.parts || [];
+                        const parts = (chunk.candidates?.[0]?.content?.parts || []) as Record<string, unknown>[];
                         const text = typeof chunk.text === 'string'
                             ? chunk.text
                             : parts
-                                .map((part: any) => typeof part.text === 'string' ? part.text : '')
+                                .map((part) => typeof part.text === 'string' ? part.text : '')
                                 .join('');
                         const functionCalls = parts
-                            .filter((part: any) => part.functionCall)
-                            .map((part: any) => part.functionCall);
-                        const thoughtSignature = parts.find((part: any) => part.thoughtSignature)?.thoughtSignature;
+                            .filter((part) => Boolean(part.functionCall))
+                            .map((part) => part.functionCall);
+                        const thoughtSignature = parts.find((part) => Boolean(part.thoughtSignature))?.thoughtSignature as string | undefined;
 
                         if (text || functionCalls.length > 0 || thoughtSignature) {
-                            const payload: { text?: string; functionCalls?: any[]; thoughtSignature?: string } = {};
+                            const payload: { text?: string; functionCalls?: unknown[]; thoughtSignature?: string } = {};
                             if (text) payload.text = text;
                             if (functionCalls.length > 0) payload.functionCalls = functionCalls;
                             if (thoughtSignature) payload.thoughtSignature = thoughtSignature;

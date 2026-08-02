@@ -110,7 +110,8 @@ export function registerAgentHandlers() {
             validateSender(event);
             const artifactDir = path.join(process.cwd(), 'artifacts');
             const safePath = path.resolve(artifactDir, filename);
-            if (!safePath.startsWith(artifactDir)) {
+            const rel = path.relative(artifactDir, safePath);
+            if (!rel || rel.startsWith('..') || path.isAbsolute(rel)) {
                 throw new Error('Invalid artifact filename');
             }
             const content = await fs.readFile(safePath, 'utf-8');
@@ -139,12 +140,17 @@ export function registerAgentHandlers() {
             validateSender(event);
             const { targetFile, replacementChunks } = args;
             
-            // Verify path safety
-            if (!targetFile || targetFile.includes('..')) {
+            if (!targetFile || typeof targetFile !== 'string') {
+                 throw new Error('Invalid file path');
+            }
+            const allowedRoot = process.cwd();
+            const resolvedPath = path.resolve(allowedRoot, targetFile);
+            const rel = path.relative(allowedRoot, resolvedPath);
+            if (rel.startsWith('..') || path.isAbsolute(rel)) {
                  throw new Error('Invalid file path');
             }
 
-            let content = await fs.readFile(targetFile, 'utf-8');
+            let content = await fs.readFile(resolvedPath, 'utf-8');
 
             for (const chunk of replacementChunks) {
                 const { targetContent, replacementContent } = chunk;
@@ -158,8 +164,8 @@ export function registerAgentHandlers() {
                 }
             }
 
-            await fs.writeFile(targetFile, content, 'utf-8');
-            return { success: true, data: { file: targetFile } };
+            await fs.writeFile(resolvedPath, content, 'utf-8');
+            return { success: true, data: { file: resolvedPath } };
         } catch (error) {
             log.error('Agent Multi Replace Failed:', error);
             return { success: false, error: String(error) };
@@ -169,13 +175,18 @@ export function registerAgentHandlers() {
     ipcMain.handle('agent:update-knowledge', async (event: IpcMainInvokeEvent, filePath: string, action: 'add' | 'remove', content: string) => {
         try {
             validateSender(event);
-            // Basic path safety check
-            if (!filePath.includes('agents/') || filePath.includes('..')) {
+            if (!filePath || typeof filePath !== 'string') {
+                throw new Error('Invalid file path for knowledge update');
+            }
+            const agentsDir = path.join(process.cwd(), 'agents');
+            const resolvedPath = path.resolve(process.cwd(), filePath);
+            const rel = path.relative(agentsDir, resolvedPath);
+            if (rel.startsWith('..') || path.isAbsolute(rel)) {
                 throw new Error('Invalid file path for knowledge update');
             }
             
             const { foundationalSkillService } = await import('../services/FoundationalSkillService');
-            const result = await foundationalSkillService.updateKnowledge(filePath, action, content);
+            const result = await foundationalSkillService.updateKnowledge(resolvedPath, action, content);
             return { ...result, success: result.success ?? true };
         } catch (error) {
             log.error('Agent Update Knowledge Failed:', error);

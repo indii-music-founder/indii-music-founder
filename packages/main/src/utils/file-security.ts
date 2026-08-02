@@ -31,8 +31,8 @@ function isPathInsideSystemRoot(resolvedPath: string): boolean {
             ? normalizedRoot.toLowerCase()
             : normalizedRoot;
 
-        return pathForComparison === rootForComparison
-            || pathForComparison.startsWith(rootForComparison + path.sep);
+        const rel = path.relative(rootForComparison, pathForComparison);
+        return rel === '' || (!rel.startsWith('..') && !path.isAbsolute(rel));
     });
 }
 
@@ -78,6 +78,58 @@ export function validateSafeAudioPath(filePath: string): string {
 }
 
 /**
+ * Validates that an audio output path is safe to write to.
+ */
+export function validateSafeAudioOutputPath(filePath: string, allowedRoots: string[]): string {
+    const ext = path.extname(filePath).toLowerCase();
+    if (!ALLOWED_AUDIO_EXTENSIONS.has(ext)) {
+        throw new Error(`Security Violation: File type '${ext}' is not allowed`);
+    }
+
+    const dir = path.dirname(filePath);
+    let resolvedDir: string;
+    try {
+        if (!fs.existsSync(dir)) {
+            fs.mkdirSync(dir, { recursive: true });
+        }
+        resolvedDir = fs.realpathSync(dir);
+    } catch {
+        throw new Error(`Security Violation: Parent directory does not exist or is inaccessible`);
+    }
+
+    const resolvedRoots = allowedRoots.map(root => {
+        try {
+            if (!fs.existsSync(root)) {
+                fs.mkdirSync(root, { recursive: true });
+            }
+            return fs.realpathSync(root);
+        } catch {
+            return root;
+        }
+    });
+
+    const isAllowed = resolvedRoots.some(root => {
+        const rel = path.relative(root, resolvedDir);
+        return rel === '' || (!rel.startsWith('..') && !path.isAbsolute(rel));
+    });
+
+    if (!isAllowed) {
+        throw new Error(`Security Violation: Output directory '${resolvedDir}' is not in an allowed location`);
+    }
+
+    if (hasHiddenPathSegment(resolvedDir)) {
+        throw new Error("Security Violation: Hidden directories are not allowed");
+    }
+
+    const filename = path.basename(filePath);
+    if (filename.startsWith('.')) {
+        throw new Error("Security Violation: Hidden files are not allowed");
+    }
+
+    return path.join(resolvedDir, filename);
+}
+
+/**
  * Validates that a video output path is safe to write to.
  * Enforces:
  * 1. Extension whitelist.
@@ -115,8 +167,8 @@ export function validateSafeVideoOutputPath(filePath: string, allowedRoots: stri
     });
 
     const isAllowed = resolvedRoots.some(root => {
-        const safeRoot = root.endsWith(path.sep) ? root : root + path.sep;
-        return resolvedDir === root || resolvedDir.startsWith(safeRoot);
+        const rel = path.relative(root, resolvedDir);
+        return rel === '' || (!rel.startsWith('..') && !path.isAbsolute(rel));
     });
 
     if (!isAllowed) {
