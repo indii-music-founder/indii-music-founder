@@ -107,15 +107,14 @@ export const queryKnowledgeBase = onCall({ enforceAppCheck: true }, async (reque
   
   // 3. Generate answer using Gemini 3 Flash Preview grounded in citations
   let answer = "";
-  if (citations.length === 0) {
-    answer = "I cannot answer this question based on the provided documents.";
-  } else {
-    try {
-      const vertex = getVertexAIClient();
-      const contextText = citations.map(c => `[Document ${c.documentId}]:\n${c.snippet}`).join('\n\n');
-      
-      const prompt = `You are an AI assistant answering questions based strictly on the provided context documents.
-      
+  try {
+    const vertex = getVertexAIClient();
+    const contextText = citations.length > 0
+      ? citations.map(c => `[Document ${c.documentId}]:\n${c.snippet}`).join('\n\n')
+      : "(No relevant documents found in knowledge base.)";
+    
+    const prompt = `You are an AI assistant answering questions based strictly on the provided context documents.
+    
 Context Documents:
 ${contextText}
 
@@ -128,23 +127,22 @@ Instructions:
 3. Do not use outside knowledge.
 4. Keep the answer clear and concise.`;
 
-      const response = await vertex.models.generateContent({
-        model: 'gemini-3-flash-preview',
-        contents: [prompt],
-        config: {
-          temperature: 0.0,
-        }
-      });
-
-      if (response.text) {
-          answer = response.text;
-      } else {
-          answer = "I couldn't generate an answer from the provided documents.";
+    const response = await vertex.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      contents: [prompt],
+      config: {
+        temperature: 0.0,
       }
-    } catch (genErr: unknown) {
-      console.error("Gemini generation failed:", genErr);
-      answer = "An error occurred while generating the answer from the documents.";
+    });
+
+    if (response.text) {
+        answer = response.text;
+    } else {
+        answer = "I couldn't generate an answer from the provided documents.";
     }
+  } catch (genErr: unknown) {
+    console.error("Gemini generation failed:", genErr);
+    answer = "An error occurred while generating the answer from the documents.";
   }
 
   const durationMs = Date.now() - startTimeMs;
