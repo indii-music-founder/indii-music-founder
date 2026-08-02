@@ -19,5 +19,9 @@
       }
     }
   },
-  "etags": {}
+  "etags": {
+    "indii-music-founder": {
+      "extensionInstances": {}
+    }
+  }
 }

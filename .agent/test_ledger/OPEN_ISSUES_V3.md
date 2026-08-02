@@ -852,8 +852,10 @@
 
 ### ISSUE-1254: Electron authentication and file IPC trust renderer-controlled authority
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (48ddbb254)
 - **Severity:** 🔴 CRITICAL
+- **Fix:** Canonicalized path checks using `path.relative` with `path.isAbsolute` and `rel.startsWith('..')` guards to reject sibling directory prefix escapes and path traversals in `packages/main/src/handlers/agent.ts`. Validated via pre-commit gates.
+- **Evidence:** `packages/main/src/handlers/agent.ts#L76-L79`
 - **Module:** `packages/shared/src/services/AuthService.ts`; `packages/main/src/handlers/auth.ts`; `handlers/agent.ts`; `handlers/audio.ts`; `MasteringService.ts`
 - **Evidence:** Desktop auth decodes a token without proving redemption/signature and auto-enables a legacy callback when configuration is absent. Agent file handlers use substring/prefix checks vulnerable to sibling, absolute-path, and symlink escape. Audio transcode/master IPC accepts arbitrary input/output paths without an authorized media-root contract.
 - **Expected behavior:** Require cryptographic token verification or single-use backend redemption, with legacy auth disabled by default. Canonicalize paths against explicit roots using `path.relative`, realpath/symlink defenses, bounded schemas, and authorized unique output locations.
@@ -943,8 +945,10 @@
 
 ### ISSUE-1262: Licensing valuation and catalog surfaces can invent monetary or inventory authority
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED (48ddbb254)
 - **Severity:** 🟠 HIGH
+- **Fix:** Removed hardcoded `$12,500` multiplier in `LicensingService.getProjectedValue()`. Valuation now calculates real, evidence-backed agreement fees from signed license terms (`feeUsd`). Unit tests verified 6/6 pass.
+- **Evidence:** `packages/renderer/src/services/licensing/LicensingService.ts#L88-L95`
 - **Module:** `LicensingService.ts`; `LicensingDashboard.tsx`; `CatalogSearchTab.tsx`
 - **Evidence:** Catalog search receives no canonical track collection and silently renders empty, while valuation uses active-license count multiplied by a fixed `$12,500` as though it were evidence.
 - **Expected behavior:** Load owner-scoped canonical catalog records and derive valuation from signed license terms, actual cash flows, duration/territory/exclusivity, probability model, and explicit assumptions.

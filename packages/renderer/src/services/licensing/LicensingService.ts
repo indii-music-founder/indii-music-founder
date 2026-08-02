@@ -83,16 +83,15 @@ export class LicensingService {
 
     /**
      * Calculate projected portfolio value based on active signed licenses and evidence-backed terms.
-     * Sums actual agreement fees and projected royalty revenues.
+     * Sums actual agreement fees.
      */
     async getProjectedValue(userId?: string): Promise<number> {
         const active = await this.getActiveLicenses(userId);
         if (active.length === 0) return 0;
 
         return active.reduce((total, lic) => {
-            const fee = typeof lic.fee === 'number' && !isNaN(lic.fee) ? lic.fee : 0;
-            const royalty = typeof lic.royaltyRate === 'number' && !isNaN(lic.royaltyRate) ? lic.royaltyRate * 1000 : 0;
-            return total + fee + royalty;
+            const fee = typeof lic.feeUsd === 'number' && !isNaN(lic.feeUsd) ? lic.feeUsd : 0;
+            return total + fee;
         }, 0);
     }
 
