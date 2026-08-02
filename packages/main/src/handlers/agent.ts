@@ -72,9 +72,10 @@ export function registerAgentHandlers() {
             const artifactDir = path.join(process.cwd(), 'artifacts');
             await fs.mkdir(artifactDir, { recursive: true });
             
-            // Basic path safety check to prevent directory traversal
+            // Path safety check using path.relative to prevent directory traversal & sibling escape
             const safePath = path.resolve(artifactDir, filename);
-            if (!safePath.startsWith(artifactDir)) {
+            const rel = path.relative(artifactDir, safePath);
+            if (!rel || rel.startsWith('..') || path.isAbsolute(rel)) {
                 throw new Error('Invalid artifact filename');
             }
             

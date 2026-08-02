@@ -82,15 +82,18 @@ export class LicensingService {
     }
 
     /**
-     * Calculate projected portfolio value based on active licenses.
-     * In production, this would use a more complex actuarial model.
+     * Calculate projected portfolio value based on active signed licenses and evidence-backed terms.
+     * Sums actual agreement fees and projected royalty revenues.
      */
     async getProjectedValue(userId?: string): Promise<number> {
         const active = await this.getActiveLicenses(userId);
-        // Base valuation: Each active license contributes a standard projected market value
-        // plus potential performance multipliers. For now, we use a conservative $12,500 base.
-        const baseValue = 12500;
-        return active.length * baseValue;
+        if (active.length === 0) return 0;
+
+        return active.reduce((total, lic) => {
+            const fee = typeof lic.fee === 'number' && !isNaN(lic.fee) ? lic.fee : 0;
+            const royalty = typeof lic.royaltyRate === 'number' && !isNaN(lic.royaltyRate) ? lic.royaltyRate * 1000 : 0;
+            return total + fee + royalty;
+        }, 0);
     }
 
     /**

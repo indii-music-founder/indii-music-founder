@@ -7,7 +7,7 @@ description: Deliver the ordered Session Breakdown roadmap in ISSUE-1175 through
 
 ## Purpose
 
-Implement the Session Breakdown roadmap as one dependency-ordered product path. The authoritative requirements, acceptance criteria, and status remain in `.agent/test_ledger/OPEN_ISSUES_V2.md` under ISSUE-1175 through ISSUE-1181. Do not copy or replace those records with a separate issue ledger.
+Implement the Session Breakdown roadmap as one dependency-ordered product path. The authoritative requirements, acceptance criteria, and status remain in `.agent/test_ledger/OPEN_ISSUES_V3.md` under ISSUE-1175 through ISSUE-1181. Do not copy or replace those records with a separate issue ledger.
 
 The product turns one long phone recording into artist-approved selects. It preserves the immutable original, normalizes a private editing proxy, aligns performance footage to a verified canonical master, classifies and proposes reversible edits, permits explicit Director's Cut approval, compiles one durable project timeline, then creates private typed derivative handoffs. It never auto-publishes.
 

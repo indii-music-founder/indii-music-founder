@@ -4,7 +4,7 @@ description: The master manifest of all approved, global /commands for the agent
 
 > [!IMPORTANT]
 > **CRITICAL ISSUE TRACKING RULE:**
-> You MUST ONLY log issues in `.agent/test_ledger/OPEN_ISSUES_V2.md`. Do NOT create new or standalone markdown files (like BROWSER_ISSUES.md or issue-specific files) for issues.
+> You MUST ONLY log issues in `.agent/test_ledger/OPEN_ISSUES_V3.md`. Do NOT create new or standalone markdown files (like BROWSER_ISSUES.md or issue-specific files) for issues.
 
 
 # WIIL-Skill: The Master Command Manifest
@@ -99,7 +99,7 @@ These commands are called by the Core Pipeline or can be invoked directly as nee
 - **When to use:** Can be invoked manually anytime. In the automated pipeline it runs in exactly two places: per-task inside `/go` (Step 5, scoped to the files just modified) and once in `/end` before `/ci-validate`. No other workflow auto-invokes it — chained auto-polish passes were removed to stop redundant triple-audits of the same files.
 
 ### `/finish` — Unfinished Work Sweep
-- **Purpose:** Scours the repo for TODOs, stubs, placeholders, and AI slop using a subagent swarm, then logs all findings to `.agent/test_ledger/OPEN_ISSUES_V2.md` for `/issue` to fix.
+- **Purpose:** Scours the repo for TODOs, stubs, placeholders, and AI slop using a subagent swarm, then logs all findings to `.agent/test_ledger/OPEN_ISSUES_V3.md` for `/issue` to fix.
 - **When to use:** Periodically, or before a release seal, to flush out half-finished work.
 
 ### `/devex-review` — Developer Experience Audit
@@ -189,7 +189,7 @@ Beyond `.agent/skills/`, three additional skill registries exist. They are part 
 - **When to use:** Triggered when a build completes or when visual verification is needed.
 
 ### `/issue` — The Fix Agent
-- **Purpose:** Scans `.agent/test_ledger/OPEN_ISSUES_V2.md` for unresolved issues logged by test agents, diagnoses, and fixes them.
+- **Purpose:** Scans `.agent/test_ledger/OPEN_ISSUES_V3.md` for unresolved issues logged by test agents, diagnoses, and fixes them.
 - **When to use:** The counterpart to the test agents. Runs surgically to clear the issue backlog.
 
 ---

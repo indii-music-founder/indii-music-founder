@@ -60,13 +60,19 @@ describe('remote surface device and executor boundaries', () => {
         expect(isStudioExecutorSurface('dashboard', false)).toBe(true);
     });
 
-    it('reserves the app host and legacy remote path for the Controller', () => {
+    it('routes mobile/tablet devices to Controller and computer browsers to regular Studio app on app.indii.music', () => {
         expect(shouldUseMobileRemoteSurface({
             hostname: 'app.indii.music',
-            pathname: '/legal',
+            pathname: '/dashboard',
+            isElectron: false,
+            isRemoteDevice: true,
+        })).toBe(true);
+        expect(shouldUseMobileRemoteSurface({
+            hostname: 'app.indii.music',
+            pathname: '/dashboard',
             isElectron: false,
             isRemoteDevice: false,
-        })).toBe(true);
+        })).toBe(false);
         expect(shouldUseMobileRemoteSurface({
             hostname: 'indii.music',
             pathname: '/mobile-remote',
