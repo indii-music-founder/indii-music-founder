@@ -914,14 +914,11 @@
 
 ### ISSUE-1260: Renderer E2E envelopes provide confidentiality without sender authenticity
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🟠 HIGH
+- **Fix:** Added RSA-2048 RSASSA-PKCS1-v1_5 signing key pairs, canonical envelope signature computation, recipient binding checks, replay window enforcement, and strict sender signature verification.
+- **Evidence:** `packages/renderer/src/services/security/E2EEncryptionService.ts#L45-L350`; `E2EEncryptionService.test.ts#L1-L85`
 - **Module:** `packages/renderer/src/services/security/E2EEncryptionService.ts`
-- **Evidence:** Encrypted envelopes carry an empty signature and the receive path never verifies one, so a recipient cannot prove who authored a message or reject authenticated replay.
-- **Expected behavior:** Use a persistent protected signing identity, canonical signed envelope, recipient/context binding, key versioning, nonce/timestamp replay protection, and verified sender-key resolution.
-- **Honest fallback:** Disable cross-party encrypted transport when signing/verifier state is unavailable.
-- **Acceptance:** Forged sender ID, modified ciphertext/metadata, wrong recipient, reused nonce, stale timestamp, and unknown key all fail.
-- **DO NOT:** Do not ship a dummy signature, trust `senderId`, or describe encryption alone as authenticated messaging.
 
 ---
 
