@@ -122,6 +122,8 @@ export default defineConfig({
         'VITE_SPOTIFY_',
         'VITE_TIKTOK_',
         'VITE_YOUTUBE_',
+        'VITE_SENTRY_',
+        'VITE_DEBUG_SENTRY',
     ],
     plugins: [
         react(),

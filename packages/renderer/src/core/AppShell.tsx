@@ -334,17 +334,6 @@ function ModuleRenderer({
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function AppContent({ currentModule, showChrome, isDesktop, isAnyPhone, shortcutsModal }: any) {
-    const [shouldCrash, setShouldCrash] = useState(false);
-    useEffect(() => {
-        setTimeout(() => {
-            setShouldCrash(true);
-        }, 4000);
-    }, []);
-
-    if (shouldCrash) {
-        throw new Error('Test crash for ISSUE-1296 (AppShell render phase)');
-    }
-
     useOnboardingRedirect();
 
     const { subscription, loading: subLoading } = useSubscription();

@@ -27,6 +27,7 @@ export async function executeDocumentIndexing(
     db?: admin.firestore.Firestore;
     storage?: admin.storage.Storage;
     getGenAI?: () => ReturnType<typeof getVertexAIClient>;
+    requireVerifiedEntitlement?: (uid: string) => Promise<any>;
   } = {},
 ): Promise<{ documentId: string; chunkCount: number; receiptId: string }> {
   const { uid, documentId, storagePath, storageGeneration, contentSha256 } = payload;
@@ -52,8 +53,10 @@ export async function executeDocumentIndexing(
     }
   }
 
+  const requireVerifiedEntitlement = dependencies.requireVerifiedEntitlement ?? requireVerifiedServerEntitlement;
+
   // Entitlement check
-  await requireVerifiedServerEntitlement(uid);
+  await requireVerifiedEntitlement(uid);
 
   // Load canonical owner record and verify state
   const docSnap = await docRef.get();

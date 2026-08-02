@@ -117,6 +117,7 @@ describe('Knowledge Base Index Worker', () => {
       db: mockDb,
       storage: mockStorage,
       getGenAI: () => mockGenAI,
+      requireVerifiedEntitlement: vi.fn().mockResolvedValue({}),
     });
 
     expect(result.documentId).toBe('doc-abc');
@@ -155,6 +156,7 @@ describe('Knowledge Base Index Worker', () => {
       db: mockDb,
       storage: mockStorage,
       getGenAI: () => mockGenAI,
+      requireVerifiedEntitlement: vi.fn().mockResolvedValue({}),
     });
 
     expect(result.chunkCount).toBe(2);
@@ -182,6 +184,7 @@ describe('Knowledge Base Index Worker', () => {
         db: mockDb,
         storage: mockStorage,
         getGenAI: () => mockGenAI,
+        requireVerifiedEntitlement: vi.fn().mockResolvedValue({}),
       }),
     ).rejects.toThrow('File SHA-256 hash mismatch');
 
