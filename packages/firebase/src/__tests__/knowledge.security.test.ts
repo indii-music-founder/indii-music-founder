@@ -251,7 +251,8 @@ describe('Knowledge Base Security & Abuse Tests', () => {
             }, {
                 db: mocks.mockFirestore() as any,
                 storage: mocks.mockStorage() as any,
-                getGenAI: vi.fn() as any
+                getGenAI: vi.fn() as any,
+                requireVerifiedEntitlement: vi.fn().mockResolvedValue({}),
             })
           ).rejects.toThrow('Zero text chunks generated from document.');
       });
