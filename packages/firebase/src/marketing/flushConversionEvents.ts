@@ -151,13 +151,14 @@ export async function flushOutboxBatch(): Promise<number> {
     if (pending.empty) return 0;
 
     const docs = pending.docs;
+    let fresh: typeof docs = [];
 
     try {
         // Drop anything a previous crashed flush already landed. Doing this
         // before the insert keeps duplicates out of the materialized view,
         // which cannot un-count them later.
         const alreadyInserted = await findAlreadyInsertedIds(docs.map(doc => doc.id));
-        const fresh = docs.filter(doc => !alreadyInserted.has(doc.id));
+        fresh = docs.filter(doc => !alreadyInserted.has(doc.id));
 
         if (alreadyInserted.size > 0) {
             logger.info('[flushConversionEvents] Skipped rows already in the warehouse', {
