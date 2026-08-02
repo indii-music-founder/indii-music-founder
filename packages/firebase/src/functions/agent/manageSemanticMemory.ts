@@ -181,12 +181,14 @@ export const manageSemanticMemory = onCall({
 
             // Perform vector search with +1 to detect if more results exist (pagination support)
             // findNearest is available in the current firebase-admin SDK line used by this repo.
-            const vectorQuery = memoriesRef.findNearest({
-                vectorField: 'embedding',
+            const vectorQuery = memoriesRef.findNearest(
+                'embedding',
                 queryVector,
-                limit: searchLimit + 1, // +1 to detect more results
-                distanceMeasure: 'COSINE'
-            });
+                {
+                    limit: searchLimit + 1, // +1 to detect more results
+                    distanceMeasure: 'COSINE'
+                }
+            );
 
             const snapshot = await vectorQuery.get();
             const docs = snapshot.docs;

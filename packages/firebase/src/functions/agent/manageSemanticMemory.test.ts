@@ -222,14 +222,17 @@ describe('manageSemanticMemory', () => {
     })).resolves.toEqual({ results: [], hasMore: false });
 
     expect(mockFindNearest).toHaveBeenCalledWith(
+      'embedding',
+      [
+        0.3, // "cancel" semantic vector
+        0.3, // "action"
+        0.3, // "intention"
+      ],
       expect.objectContaining({
-        vectorField: 'embedding',
-        queryVector: [0.3, 0.3, 0.3],
-        limit: 8,
         distanceMeasure: 'COSINE',
-      }),
-    );
-    expect(mockVector).not.toHaveBeenCalled();
+        limit: 8,
+      })
+    );expect(mockVector).not.toHaveBeenCalled();
   });
 
   it('rejects unsupported actions after normalization', async () => {
@@ -365,14 +368,17 @@ describe('manageSemanticMemory', () => {
     });
 
     expect(mockFindNearest).toHaveBeenCalledWith(
+      'embedding',
+      [
+        0.1, // "how"
+        0.2, // "do"
+        0.3, // "i"
+      ],
       expect.objectContaining({
-        vectorField: 'embedding',
-        queryVector: [0.1, 0.2, 0.3],
-        limit: 6,
         distanceMeasure: 'COSINE',
-      }),
-    );
-    expect(mockVector).not.toHaveBeenCalled();
+        limit: 6,
+      })
+    );expect(mockVector).not.toHaveBeenCalled();
   });
 
   it('caps search limits to a safe maximum', async () => {
@@ -395,13 +401,16 @@ describe('manageSemanticMemory', () => {
     });
 
     expect(mockFindNearest).toHaveBeenCalledWith(
+      'embedding',
+      [
+        0.2,
+        0.4,
+        0.6,
+      ],
       expect.objectContaining({
-        vectorField: 'embedding',
-        queryVector: [0.2, 0.4, 0.6],
-        limit: 101,
         distanceMeasure: 'COSINE',
-      }),
+        limit: 101, // Max limit = 100 + 1 pagination buffer
+      })
     );
-    expect(mockVector).not.toHaveBeenCalled();
-  });
+});
 });
