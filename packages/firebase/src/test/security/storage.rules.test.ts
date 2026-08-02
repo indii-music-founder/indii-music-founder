@@ -262,20 +262,22 @@ describe('RAG Document Uploads (/rag-sources)', () => {
     });
 
     it('should reject modifications or deletions of RAG documents', async () => {
+        const hashImmutable = 'c'.repeat(64);
+        const pathImmutable = `rag-sources/${OWNER_ID}/${hashImmutable}/original.txt`;
         const bytes = new Uint8Array([1, 2, 3]);
         const meta = {
             contentType: 'text/plain',
             customMetadata: {
-                contentHash: HASH,
+                contentHash: hashImmutable,
                 ownerId: OWNER_ID,
                 immutable: 'true',
                 originalFileName: 'test.txt'
             }
         };
-        await assertSucceeds(uploadBytes(ref(storageFor(OWNER_ID), pathTxt), bytes, meta));
+        await assertSucceeds(uploadBytes(ref(storageFor(OWNER_ID), pathImmutable), bytes, meta));
 
-        await assertFails(deleteObject(ref(storageFor(OWNER_ID), pathTxt)));
-        await assertFails(uploadBytes(ref(storageFor(OWNER_ID), pathTxt), new Uint8Array([4, 5]), meta));
+        await assertFails(deleteObject(ref(storageFor(OWNER_ID), pathImmutable)));
+        await assertFails(uploadBytes(ref(storageFor(OWNER_ID), pathImmutable), new Uint8Array([4, 5]), meta));
     });
 });
 
