@@ -42,6 +42,8 @@ describe('Health Check workflow clean-install contract', () => {
       .toBe('file:./shared-pkg');
     expect(lock.packages['packages/firebase/node_modules/@indii/shared'])
       .toEqual({ resolved: 'packages/firebase/shared-pkg', link: true });
-    expect(lock.packages['packages/firebase/shared-pkg']).toEqual({});
+    expect(lock.packages['packages/firebase/shared-pkg']).toEqual(
+      expect.objectContaining({ name: '@indii/shared' })
+    );
   });
 });

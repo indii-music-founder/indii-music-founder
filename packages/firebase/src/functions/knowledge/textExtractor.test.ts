@@ -1,7 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { extractDocumentText } from './textExtractor';
 
-const mockPdfParse = vi.fn();
+const { mockPdfParse } = vi.hoisted(() => ({
+  mockPdfParse: vi.fn(),
+}));
+
 vi.mock('pdf-parse', () => ({
   default: (...args: any[]) => mockPdfParse(...args),
 }));

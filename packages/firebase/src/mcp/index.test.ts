@@ -43,6 +43,9 @@ describe('mcpEndpoint auth gate', () => {
 
     it('rejects GET /sse with no Authorization header', async () => {
         const res = await fetch(`${baseUrl}/sse`);
+        if (res.status !== 401) {
+            console.error('UNEXPECTED GET /sse STATUS:', res.status, await res.text());
+        }
         expect(res.status).toBe(401);
         expect(verifyIdTokenMock).not.toHaveBeenCalled();
     });

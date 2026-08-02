@@ -1,6 +1,7 @@
 import { HttpsError } from 'firebase-functions/v2/https';
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const pdfParse = require('pdf-parse');
+import pdfParseModule from 'pdf-parse';
+
+const pdfParse = typeof pdfParseModule === 'function' ? pdfParseModule : (pdfParseModule as any)?.default || pdfParseModule;
 
 export interface ExtractedPage {
   pageNumber: number;
