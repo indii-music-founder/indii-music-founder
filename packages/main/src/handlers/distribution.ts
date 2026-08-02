@@ -14,6 +14,7 @@ import { z } from 'zod';
 
 import { AgentSupervisor } from '../utils/AgentSupervisor';
 import { credentialService } from '../services/CredentialService';
+import { authStorage } from '../services/AuthStorage';
 import { stageCanonicalMasters } from '../services/MasterAudioStagingService';
 import { stageCanonicalCoverArt } from '../services/CanonicalCoverArtStagingService';
 
@@ -177,11 +178,13 @@ export const setupDistributionHandlers = () => {
         try {
             validateSender(event);
             const { userId, amount } = data || {};
-            if (!userId || amount === undefined) throw new Error('Missing userId or amount');
+            const sessionUid = await authStorage.getAuthenticatedUserId();
+            const effectiveUserId = sessionUid || userId;
+            if (!effectiveUserId || amount === undefined) throw new Error('Missing userId or amount');
             const storagePath = getStoragePath();
             const report = await AgentSupervisor.execute('distribution', 'tax_withholding_engine.py', [
                 'calculate',
-                userId as string,
+                effectiveUserId as string,
                 String(amount),
                 '--storage-path',
                 storagePath
@@ -195,10 +198,12 @@ export const setupDistributionHandlers = () => {
     ipcMain.handle('distribution:certify-tax', async (event, userId: string, data: unknown) => {
         try {
             validateSender(event);
+            const sessionUid = await authStorage.getAuthenticatedUserId();
+            const effectiveUserId = sessionUid || userId;
             const storagePath = getStoragePath();
             const report = await AgentSupervisor.execute('distribution', 'tax_withholding_engine.py', [
                 'certify',
-                userId,
+                effectiveUserId,
                 JSON.stringify(data),
                 '--storage-path',
                 storagePath

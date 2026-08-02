@@ -33,6 +33,7 @@ export function createApproveSessionEditPlanHandler(
             throw new HttpsError('not-found', 'The specified video session does not exist.');
         }
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const session = sessionSnap.data() as Record<string, any>;
         if (session.ownerUid !== authUid) {
             throw new HttpsError('permission-denied', 'Cross-owner video session access is prohibited.');

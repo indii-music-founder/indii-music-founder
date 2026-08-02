@@ -1049,6 +1049,7 @@ export const generateSpeech = onCall(
                         }
                     }
                 }
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
             } as any);
 
             // Extract audio data from SDK response (direct candidates, no .response wrapper)
