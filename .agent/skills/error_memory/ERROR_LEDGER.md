@@ -1755,3 +1755,13 @@ committing.
 - PREVENTION: Monitoring and release evidence must fail closed. An unavailable
   source may be labeled unavailable, but it must never be replaced with
   representative, simulated, placeholder, or default-success numbers.
+
+## 2026-08-02 — Agent Tool Identity & Third-Party Model Hallucination Prevention
+
+**SEVERITY:** High (agent claiming unintegrated external models like DALL-E 3 / Sora undermines user trust and truthfulness)
+
+- FILES: `packages/renderer/src/services/agent/BaseAgent.ts`, `docs/agent-training/datasets/*`, `.agent/skills/error_memory/ERROR_LEDGER.md`
+- BUG: Agents in status reports or capability audits mapped native internal tools (`generate_image`, `generate_video`) to third-party brand names (DALL-E 3, Sora) due to parametric LLM completion and dataset references mentioning external AI models.
+- FIX: Injected a mandatory `TRUTHFULNESS & TOOL IDENTITY (STRICT MANDATE)` protocol into `BaseAgent.ts` system prompt (`SUPERPOWER_PROMPT`). Strictly forbids attributing or conflating internal tools with third-party models (DALL-E 3, Sora, Midjourney, Runway, Pika) and mandates reporting authorized capabilities using exact registered tool names.
+- PREVENTION: Every agent system prompt inherits this non-negotiable truthfulness mandate. All dataset examples must reference native tool names without external model brand attribution.
+
