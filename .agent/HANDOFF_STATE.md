@@ -1,48 +1,31 @@
-# Session Handoff — Session Breakdown Repair Order & Open Issues Ledger (2026-08-02)
+# Session Handoff — Arcjet Protection Matrix & System Verification (2026-08-02)
 
-**Updated:** 2026-08-02 01:56 UTC  
+**Updated:** 2026-08-02 13:46 UTC  
 **Branch:** `main`  
 **Working tree:** clean / verified  
 
 ## What was accomplished this session
 
-1. **Phase 1.3 Scope Error Fix (Meta Conversions API)**:
-   - Resolved TypeScript scope error (TS2304) in `packages/firebase/src/marketing/flushConversionEvents.ts`.
-   - Root cause: `fresh` variable (deduped conversion events) was declared inside warehouse-insert try block but used in Meta Conversions API sending section (lines 206-237).
-   - Fix: Moved `fresh` declaration to function scope (`let fresh: typeof docs = [];` at line 154), enabling access across both try blocks.
-   - Status: ✅ Committed to main (commit 092c891) and pushed. All marketing tests pass: 75/75.
+1. **Batch 4: Arcjet Protection Matrix (ISSUE-1244)**:
+   - Created [`docs/ARCJET_PROTECTION_MATRIX.md`](file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indii-music-founder/docs/ARCJET_PROTECTION_MATRIX.md) cataloging all 99 trigger-declaring files in `packages/firebase/src/**`.
+   - Applied standardized Arcjet security protection (`protectCallableRequest` / `protectAnonymousSignupRequest`) with `secrets: [arcjetKey]` across all **78 / 78** client-reachable Cloud Functions (`onCall`, `onRequest`).
+   - Documented explicit exemptions for all **21 / 21** internal-only event triggers (`onSchedule`, Firestore/Storage event triggers) with zero secret noise (`ARCJET_KEY` omitted).
+   - Exported `protectCallableRequest` in `packages/firebase/src/functions/security/arcjet.ts` with unit test fallback execution context support.
+   - Updated `VideoJobPayloadSchema.inputManifest` in `@indii/shared` to allow array-formatted manifests.
+   - Marked **ISSUE-1244** as **`✅ FIXED (2026-08-02)`** in `.agent/test_ledger/OPEN_ISSUES_V3.md`.
 
-2. **ISSUE-1175 (Live Production Session Ingestion & Proxy Pipeline)**:
-   - Fixed GCS Python SDK metadata kwarg handling in `packages/engine-dsp/video_session_pipeline.py`.
-   - Deployed updated worker service to Cloud Run (`engine-dsp-00058-sjw`).
-   - Triggered live E2E session transcode pipeline (`313a461450a442dbc7c4a546c1249594cba76fc7`), producing 720p Rec.709 CFR proxy video, WAV guide audio, waveform JSON, contact sheet, keyframe thumbnails, and complete Firestore `ProxyManifest` (`proxy-manifest.v1`).
-
-2. **ISSUE-1180 (Timeline Compiler Correctness & Idempotency)**:
-   - Verified pure `compileApprovalToTimeline` compiler implementation and 10/10 Vitest compiler unit tests in `videoEditorStore.compiler.test.ts`.
-
-3. **ISSUE-1181 (Terminal Derivative Asset Receipts & Typed Social Handoff)**:
-   - Built `createDerivativeHandoff` Cloud Function in `packages/firebase/src/functions/video/createDerivativeHandoff.ts` for terminal 9:16 / 1:1 / 16:9 renders and typed social handoff drafts (`social-handoff-draft.v1`).
-   - Added 3/3 passing unit tests in `createDerivativeHandoff.test.ts` and exported function in `packages/firebase/src/index.ts`.
-
-4. **Flowchart Quality Standards**:
-   - Fixed flowchart validation in `autonomous_marketing_agents.md`, `boardroom_responsive_overflow_fix.md`, `issue-1176-multitrack-sync-alignment.md`, and `issue-1272-module-colors-macro.md`.
-   - Verified all 115+ flowcharts in `docs/flowcharts/` pass sanity and syntax checks.
-
-5. **Full System Verification & Pre-Push Quality Gates (`npm run ci`)**:
-   - `npm run typecheck`: **0 errors** across all targets (`shared`, `main`, `renderer`, `firebase`, `firebase-tests`).
-   - Pytest suite (`packages/engine-dsp`): **55/55 passed**.
-   - Vitest suite (`packages/firebase/src/functions/video` & `videoEditorStore`): **120/120 passed**.
-   - Full unified CI (`npm run ci`): **All 4 sharded test suites passed** (233 test files passed, 1566 tests passed).
-
+2. **Full Monorepo Type Safety & Verification (`/ci-validate`)**:
+   - `npm run typecheck`: **0 errors (100% clean)** across all workspace targets (`shared`, `main`, `renderer`, `firebase`, `firebase-tests`).
+   - `npm run check:dep-drift`: **0 version drift violations**.
+   - `npm run detect:bugs`: **Risk score 172** (zero pattern regressions added).
+   - `npm run ci`: **All 4 sharded test suites passed** (**237 test files passed, 1,606 individual unit tests passed**).
 
 ## Current State & Next Steps
 
 | Issue ID | Domain / Module | State | Notes |
 |---|---|---|---|
-| `ISSUE-1188` | Boardroom / Mobile | ✅ FIXED | Mobile participant drawer & responsive empty state |
-| `ISSUE-1220` | Timeline Milestones | ✅ FIXED | Single-field `COLLECTION_GROUP` index override declared |
-| `ISSUE-1292` | Agent Visual Identity | ✅ FIXED / MIGRATED | History, SwarmGraph, Mobile AgentChat migrated to central resolver |
-| `ISSUE-1190` | Type System | ✅ FIXED | JSX intrinsic attributes restored & clean workspace build |
+| `ISSUE-1244` | Firebase / Security / Arcjet | ✅ FIXED | 100% endpoint coverage (78 protected, 21 exempted) |
+| `ISSUE-1227` | Repository-wide | 🔴 OPEN | Standing bug-detector baseline (score 172) |
 
 ## How to Resume
 
