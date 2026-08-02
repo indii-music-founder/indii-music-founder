@@ -172,15 +172,25 @@ export const finalizeKnowledgeUpload = onCall({ enforceAppCheck: true }, async (
     updatedAt: now,
   });
 
-  // Trigger indexing worker asynchronously via Task Queue
-  const queue = getFunctions().taskQueue('indexKnowledgeDocumentWorker');
-  await queue.enqueue({
-    uid,
-    documentId,
-    storagePath: docData.storagePath,
-    storageGeneration,
-    contentSha256: docData.contentSha256,
-  });
+  // Trigger indexing worker asynchronously via Task Queue with fallback error tracking
+  try {
+    const queue = getFunctions().taskQueue('indexKnowledgeDocumentWorker');
+    await queue.enqueue({
+      uid,
+      documentId,
+      storagePath: docData.storagePath,
+      storageGeneration,
+      contentSha256: docData.contentSha256,
+    });
+  } catch (queueErr: unknown) {
+    const errorMsg = queueErr instanceof Error ? queueErr.message : String(queueErr);
+    console.error(`[KnowledgeUpload] Failed to enqueue Cloud Task for document ${documentId}:`, queueErr);
+    await docRef.update({
+      failureCode: 'task-enqueue-failed',
+      failureReason: errorMsg,
+      updatedAt: new Date().toISOString(),
+    });
+  }
 
   return {
     documentId,

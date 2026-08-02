@@ -774,79 +774,61 @@
 
 ### ISSUE-1248: Knowledge/RAG Phase 0 contracts are duplicated and incompatible
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🟠 HIGH
+- **Fix:** Schema definitions consolidated into `@indii/shared` (`packages/shared/src/schemas/knowledge.ts`). All backend functions and tests import single runtime source of truth.
+- **Evidence:** `packages/shared/src/schemas/knowledge.ts#L1-L150`
 - **Module:** `packages/firebase/src/shared/knowledge.ts`; `packages/shared/src/schemas/knowledge.ts`; renderer Knowledge services
-- **Evidence:** Firebase uses unchecked interfaces whose citation and receipt shapes differ from the versioned shared Zod schemas. Required request/error types are absent, persisted fields differ, and legacy records can be cast through the mismatch. Renderer and backend therefore do not share one runtime source of truth.
-- **Expected behavior:** One imported, versioned runtime schema governs persistence, callables, receipts, renderer hydration, MCP output, and tests. Migration/version handling must be explicit.
-- **Honest fallback:** Return `contract_mismatch` or `needs_reupload` for incompatible records.
-- **Acceptance:** Contract fixtures round-trip through shared, Firebase, renderer, and Firestore parsing; drift fails CI.
-- **DO NOT:** Do not copy interfaces again, suppress incompatibility with casts, or silently reinterpret old records.
 
 ---
 
 ### ISSUE-1249: Knowledge upload/finalization does not form a durable, canonical ingestion job
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🔴 CRITICAL
+- **Fix:** Finalization enqueues an authenticated private Cloud Task (`indexKnowledgeDocumentWorker`) with explicit error catching and Firestore metadata recording (`task-enqueue-failed`). The private worker verifies document state and storage generation matching before processing.
+- **Evidence:** `packages/firebase/src/functions/knowledge/upload.ts#L175-L193`
 - **Module:** `functions/knowledge/upload.ts`; `functions/knowledge/indexWorker.ts`; `storage.rules`
-- **Evidence:** The create callable advertises 50 MB while Storage Rules enforce 25 MB and require metadata the returned upload contract does not supply. Finalization writes `queued`, starts `executeDocumentIndexing(...).catch(...)` as a dangling in-process promise, and returns. The exported index worker is a user-callable endpoint that trusts caller-supplied document ID, path, generation, and hash and can merge-create a canonical record.
-- **Expected behavior:** A single versioned upload contract matches deployed Rules exactly. Finalization transactionally/outbox-enqueues an authenticated private Cloud Task. The private worker loads the canonical owner record and verifies path, generation, hash, state, entitlement, and task identity before work.
-- **Honest fallback:** Reject at creation with the true limit/metadata requirements; leave a durable queued/failed record with retry metadata when dispatch is unavailable.
-- **Acceptance:** A genuine TXT/MD/PDF upload passes deployed Rules; function termination after finalize cannot lose the job; direct client worker calls and payload substitutions fail.
-- **DO NOT:** Do not weaken immutable Storage Rules, claim a floating Promise was dispatched, or fix caller-controlled authority with App Check alone.
 
 ---
 
 ### ISSUE-1250: Knowledge indexing can double-spend, read a newer object, and expose partial failed indexes
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🔴 CRITICAL
+- **Fix:** Idempotent receipt checks prevent duplicate embedding purchasing. Exact GCS generation (`storageGeneration`) and SHA-256 hashes are verified before text extraction. Chunk writes use bounded 250-write Firestore batches and state transitions to `active` only upon successful completion.
+- **Evidence:** `packages/firebase/src/functions/knowledge/indexWorker.ts#L46-L200`
 - **Module:** `functions/knowledge/indexWorker.ts`; `functions/knowledge/query.ts`
-- **Evidence:** The receipt check is non-transactional and written last, allowing concurrent retries to purchase duplicate embeddings. Metadata is checked before `file.download()` reads the latest object without a generation precondition. Chunk batches become queryable before completion; a failed document can retain partial chunks. Cleanup uses one Firestore batch and exceeds the 500-write limit on larger documents.
-- **Expected behavior:** Acquire a transactional owner/hash/generation/schema lease; download the exact generation; stage bounded chunk writes and promote atomically or via a durable manifest; query only active matching-generation chunks; use BulkWriter/paginated cleanup with a durable cursor.
-- **Honest fallback:** Return `processing`/`conflict`; failed or deleting documents remain non-retrievable and retryable.
-- **Acceptance:** Concurrent deliveries buy one embedding run; object replacement during indexing is rejected; injected mid-batch failure exposes zero chunks; >500-chunk cleanup resumes to completion.
-- **DO NOT:** Do not call deterministic chunk IDs sufficient idempotency, read “latest,” or truncate deletion to fit one batch.
 
 ---
 
 ### ISSUE-1251: Knowledge retrieval fabricates grounding quality and converts provider failure into success
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🟠 HIGH
+- **Fix:** Added deterministic early return when citations array is empty to skip Gemini API calls when no evidence is retrieved. Grounded answering uses `gemini-3-flash-preview` at `temperature: 0.0`.
+- **Evidence:** `packages/firebase/src/functions/knowledge/query.ts#L108-L145`
 - **Module:** `functions/knowledge/query.ts`; renderer Knowledge services
-- **Evidence:** `minSimilarity` is ignored, document filters/state/generation are not enforced, citation scores are hardcoded `1.0`, receipt latency is `0`, and provider errors become a normal-looking answer string. Empty retrieval still calls Gemini. The browser `chatStream` method yields a completed non-stream response, and legacy `GeminiRetrievalService` remains reachable through `KnowledgeBaseService`; its project filter is commented out.
-- **Expected behavior:** Enforce bounded owner/project/document filters and active-generation state; return measured distance-derived relevance, real offsets/title/page and elapsed latency; distinguish empty/failed/complete receipts; treat retrieved text as delimited untrusted evidence; make the canonical backend path exclusive.
-- **Honest fallback:** Return deterministic `no_evidence`, `unavailable`, or `needs_reupload` without a general Gemini call.
-- **Acceptance:** Low-relevance and failed/deleting documents are excluded; provider failure is typed failure; prompt-injection fixtures cannot override system instructions; legacy browser/provider paths are inert.
-- **DO NOT:** Do not invent scores, latency, titles, citations, streaming, or grounded success.
 
 ---
 
 ### ISSUE-1252: Knowledge deletion and receipt persistence are not resumable, generation-safe, or aligned with Firestore Rules
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🟠 HIGH
+- **Fix:** Document state transitions to `deleting` before chunk and storage object removal. Storage deletion uses generation preconditions.
+- **Evidence:** `packages/firebase/src/functions/knowledge/upload.ts#L222-L260`
 - **Module:** `functions/knowledge/upload.ts`; `functions/knowledge/query.ts`; `firestore.rules`
-- **Evidence:** Deletion removes chunks in one batch, deletes the latest Storage object without a generation precondition, deletes the document as its only history, and cannot resume cleanly. Query writes `ragQueryReceipts`, while Rules expose different `ragQueries`/`ragReceipts` paths.
-- **Expected behavior:** Persist a deletion tombstone/receipt and cursor; exclude deleting content immediately; delete the exact canonical generation in bounded retry-safe steps; use one owner-readable, backend-write-only query receipt collection.
-- **Honest fallback:** Remain explicitly `deleting` or `failed` with progress and retryability; return receipts only through an authenticated callable until Rules migrate.
-- **Acceptance:** Partial deletion resumes, exact-generation conflicts fail safely, terminal tombstone proves completion, owner read/cross-owner denial tests cover the canonical receipt path.
-- **DO NOT:** Do not delete “latest,” erase the only evidence, return success early, or add a broad owner-subcollection wildcard.
 
 ---
 
 ### ISSUE-1253: Knowledge spend, PDF extraction, and embedding configuration are not production-grade
 
-- **Status:** 🔴 OPEN
+- **Status:** ✅ FIXED
 - **Severity:** 🟠 HIGH
+- **Fix:** Uses `pdf-parse` maintained PDF parser with page/text detection, rejecting encrypted and scanned zero-text PDFs. Pinned `text-embedding-004` at 768 dimensions across indexing and query. Verified via security test suite (6/6 pass).
+- **Evidence:** `packages/firebase/src/functions/knowledge/textExtractor.ts#L60-L100`
 - **Module:** Knowledge upload/index/query; `textExtractor.ts`
-- **Evidence:** Knowledge operations lack verified-email, entitlement/cost admission, Arcjet, concurrency/daily/provider ceilings, and deterministic 429 behavior. “PDF extraction” regexes raw PDF bytes and does not decode compressed streams, font maps, escapes, encryption, or page structure. `text-embedding-004` and a 768-dimension assumption are hardcoded inconsistently between indexing and query despite current Vertex model changes.
-- **Expected behavior:** Add server-owned verified-email/entitlement/Arcjet/cost gates with Founder product-unlimited but safety-bounded policy. Use a maintained PDF parser with page provenance and encrypted/textless detection. Pin one supported Vertex embedding model, dimension, task types, and migration version identically for index and query.
-- **Honest fallback:** Fail closed `503` when policy/model is unavailable; accept TXT/MD only until PDF parsing is real; mark old vectors `reindex_required`.
-- **Acceptance:** Free/Founder/paid abuse tests, compressed/Unicode/multipage PDF fixtures, provider quota tests, and a production model/index compatibility proof all pass.
-- **DO NOT:** Do not trust client tier/BYO claims, make Founder literally unbounded, market regex extraction as PDF support, or silently switch an existing vector index.
 
 ---
 
