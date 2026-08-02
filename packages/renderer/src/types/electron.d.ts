@@ -321,13 +321,7 @@ export interface ElectronAPI {
     pinata?: {
         uploadFile: (file: number[], filename: string) => Promise<{ success: boolean; IpfsHash?: string; PinSize?: number; Timestamp?: string; error?: string }>;
     };
-    // Mobile Remote — P2P Local WebSocket IPC bridge (Electron-only)
-    remote?: {
-        onMessageFromMobile: (cb: (payload: RemoteMobilePayload) => void) => (() => void);
-        broadcast: (msg: Record<string, unknown>) => void;
-        getMobileRemoteInfo: () => Promise<{ isRunning: boolean; url: string | null; clientCount: number }>;
-        stop: () => Promise<{ success: boolean }>;
-    };
+
     // Sonic Bridge — watches a DAW bounce folder for new audio (Electron-only)
     sonicBridge?: {
         /** Opens a native folder picker, then watches that folder. Resolves with the chosen path. */
