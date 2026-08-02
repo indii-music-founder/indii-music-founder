@@ -116,13 +116,14 @@ describe('Knowledge Base Query Endpoint', () => {
     expect(res.query).toBe('how to distribute music');
     expect(res.citations).toHaveLength(1);
     expect(res.citations[0].documentId).toBe('doc-1');
-    expect(mocks.mockFindNearest).toHaveBeenCalledWith({
-      vectorField: 'embedding',
-      queryVector: dummyEmbedding, // mock ignores FieldValue.vector wrapper
-      limit: 6,
-      distanceMeasure: 'COSINE',
-      distanceResultField: 'distance',
-    });
+    expect(mocks.mockFindNearest).toHaveBeenCalledWith(
+      'embedding',
+      dummyEmbedding, // mock ignores FieldValue.vector wrapper differences
+      {
+        limit: 3,
+        distanceMeasure: 'COSINE',
+      }
+    );
     expect(mocks.mockSet).toHaveBeenCalledWith(
       expect.objectContaining({
         uid: 'user-1',

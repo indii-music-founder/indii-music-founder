@@ -174,7 +174,7 @@ describe('RAG Document Uploads (/rag-sources)', () => {
 
     beforeAll(async () => {
         testEnv = await initializeTestEnvironment({
-            projectId: 'indii-storage-rules-test',
+            projectId: 'indii-storage-rules-test-rag',
             storage: {
                 host: '127.0.0.1',
                 port: 9199,
