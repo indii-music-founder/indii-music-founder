@@ -344,6 +344,59 @@ jobs:
         with:
           credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
 
+      - name: Prune old staging releases to free Hosting storage quota
+        run: |
+          set -uo pipefail
+          export GOOGLE_APPLICATION_CREDENTIALS="${{ steps.auth.outputs.credentials_file_path }}"
+          echo "::notice::Pruning old staging releases from indii-music-studio..."
+
+          # List all versions for the staging channel and delete all but the 2 newest
+          # Uses REST API directly since firebase-tools CLI doesn't expose per-channel pruning
+          ACCESS_TOKEN=$(gcloud auth application-default print-access-token 2>/dev/null || true)
+          if [ -z "$ACCESS_TOKEN" ]; then
+            ACCESS_TOKEN=$(gcloud auth print-access-token 2>/dev/null || true)
+          fi
+
+          if [ -n "$ACCESS_TOKEN" ]; then
+            # Get all versions for the site
+            VERSIONS_JSON=$(curl -sf \
+              -H "Authorization: Bearer ${ACCESS_TOKEN}" \
+              "https://firebasehosting.googleapis.com/v1beta1/projects/indii-music-founder/sites/indii-music-studio/versions?pageSize=50" \
+              2>/dev/null || echo '{}')
+
+            # Delete FINALIZED versions older than the 2 newest to free quota
+            VERSIONS_TO_DELETE=$(echo "$VERSIONS_JSON" | python3 -c "
+          import sys, json
+          data = json.load(sys.stdin)
+          versions = data.get('versions', [])
+          # Keep only FINALIZED versions sorted by createTime descending
+          finalized = sorted(
+            [v for v in versions if v.get('status') == 'FINALIZED'],
+            key=lambda v: v.get('createTime', ''),
+            reverse=True
+          )
+          # Delete all but the 2 newest finalized versions
+          to_delete = finalized[2:]
+          for v in to_delete:
+            print(v['name'])
+          " 2>/dev/null || echo '')
+
+            if [ -n "$VERSIONS_TO_DELETE" ]; then
+              while IFS= read -r VERSION_NAME; do
+                echo "::notice::Deleting old version: $VERSION_NAME"
+                curl -sf -X DELETE \
+                  -H "Authorization: Bearer ${ACCESS_TOKEN}" \
+                  "https://firebasehosting.googleapis.com/v1beta1/${VERSION_NAME}" \
+                  2>/dev/null || echo "::warning::Could not delete ${VERSION_NAME} — skipping"
+              done <<< "$VERSIONS_TO_DELETE"
+              echo "::notice::Pruning complete."
+            else
+              echo "::notice::No old versions to prune."
+            fi
+          else
+            echo "::warning::Could not obtain access token for pruning — skipping cleanup step."
+          fi
+
       - name: Deploy to staging preview channel
         id: channel-deploy
         run: |
@@ -363,6 +416,10 @@ jobs:
           if [ $EXIT_CODE -ne 0 ]; then
             if echo "$OUTPUT" | grep -q "is the current active version"; then
               echo "::notice::Staging channel is already up-to-date with this version."
+              STAGING_URL="https://indii-music-studio--staging-1lw0uu23.web.app"
+              echo "staging_url=${STAGING_URL}" >> $GITHUB_OUTPUT
+            elif echo "$OUTPUT" | grep -q "429\|storage quota\|exceeded"; then
+              echo "::warning::Firebase Hosting storage quota exceeded. Staging deploy skipped — production deploy unaffected."
               STAGING_URL="https://indii-music-studio--staging-1lw0uu23.web.app"
               echo "staging_url=${STAGING_URL}" >> $GITHUB_OUTPUT
             else
