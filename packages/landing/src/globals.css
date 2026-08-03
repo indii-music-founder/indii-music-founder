@@ -1,12 +1,36 @@
 @import "tailwindcss";
 
 :root {
-  --background: #000000;
+  --background: #08080A;
   --foreground: #FFFFFF;
 
-  /* Subliminal Theme Colors - Refined for "Drippy" 2026 Aesthetic */
+  /* Color Palette Specs */
+  --bg-black: #08080A;
+  --surface-dark: #0F1115;
+  --surface-border: #1F222A;
+  --surface-border-active: #333846;
+  
+  --text-main: #FFFFFF;
+  --text-muted: #8A8F9E;
+  --text-mono: #636875;
+  
+  --accent-gold: #FFB800;
+  --accent-gold-dark: #CCA000;
+  --gold-glow-rgba: rgba(255, 184, 0, 0.35);
+
+  /* Typography */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+
+  /* Layout */
+  --container-max-width: 1400px;
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-pill: 9999px;
+
+  /* Subliminal Theme Colors */
   --void: #000000;
-  --true-black: #000000;
+  --true-black: #08080A;
   --resonance-blue: #2E2EFE;
   --electric-blue: #00F0FF;
   --frequency-pink: #FE2E9A;
@@ -14,7 +38,7 @@
   --signal-white: #FFFFFF;
   --liquid-chrome: linear-gradient(135deg, #FFFFFF 0%, #A0A0A0 50%, #FFFFFF 100%);
 
-  /* Machine Experience (MX) Gradients */
+  /* Machine Experience Gradients */
   --gradient-tech-bro: linear-gradient(135deg, #2E2EFE 0%, #00F0FF 100%);
   --gradient-dopamine: linear-gradient(135deg, #FF0099 0%, #FE2E9A 100%);
   --gradient-liquid: linear-gradient(180deg, rgba(46, 46, 254, 0.15) 0%, rgba(254, 46, 154, 0.1) 100%);
@@ -247,3 +271,64 @@ footer span {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ──────────────────────────────────────────────────────────────────────────
+ * 5-COLOR PREMIUM METALLIC PRINT & FOIL SHEEN SYSTEM
+ * Gives the site the depth, shine, and sheen of a 5-color metallic press.
+ * ──────────────────────────────────────────────────────────────────────────*/
+
+/* 5-Color Metallic Foil Border */
+.foil-gold-border {
+  position: relative;
+  background: #040404;
+  border-radius: 1rem;
+}
+
+.foil-gold-border::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, #ffd700 0%, #b8860b 25%, #f59e0b 50%, #fff8dc 75%, #d97706 100%);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  opacity: 0.7;
+  transition: opacity 0.3s ease;
+}
+
+.foil-gold-border:hover::before {
+  opacity: 1;
+}
+
+/* Metallic Specular Glass Card */
+.specular-card {
+  background: linear-gradient(180deg, rgba(20, 18, 12, 0.95) 0%, rgba(5, 5, 5, 0.98) 100%);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  box-shadow:
+    inset 0 1px 1px rgba(255, 255, 255, 0.35),
+    inset 0 0 20px rgba(245, 158, 11, 0.08),
+    0 20px 60px rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(24px) saturate(220%);
+}
+
+.specular-card:hover {
+  border-color: rgba(245, 158, 11, 0.5);
+  box-shadow:
+    inset 0 1px 2px rgba(255, 255, 255, 0.5),
+    inset 0 0 30px rgba(245, 158, 11, 0.15),
+    0 25px 80px rgba(245, 158, 11, 0.2);
+}
+
+/* 5-Color Metallic Sheen Text */
+.foil-sheen-text {
+  background: linear-gradient(135deg, #ffffff 0%, #fbbf24 30%, #f59e0b 60%, #ffffff 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 2px 8px rgba(245, 158, 11, 0.35));
+}
+

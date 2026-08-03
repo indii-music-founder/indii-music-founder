@@ -17,6 +17,10 @@ import { isFounderPreviewEnabled } from './lib/previewAccess';
 import AgentGrid from './components/AgentGrid';
 import ConductorSection from './components/ConductorSection';
 import ThesisCrawl from './components/ThesisCrawl';
+import AppStudioShowcase from './components/AppStudioShowcase';
+import LegacyComparison from './components/LegacyComparison';
+import NanoBananaStudio from './components/NanoBananaStudio';
+import { FounderRoyaltyCalculator } from './components/FounderRoyaltyCalculator';
 
 const heroWords = ['Run', 'your', 'music', 'career', 'without', 'giving', 'it', 'away.'];
 
@@ -58,6 +62,7 @@ const founderIncludes = [
   'Lifetime access to the Founder edition',
   'Boardroom and Conductor access',
   'Guided Project White Glove onboarding',
+  'First year of API usage included',
   'Founder-level product updates',
   'Permanent founder recognition',
   'No recurring platform subscription',
@@ -256,14 +261,19 @@ export default function Home({ founder = true }: { founder?: boolean }) {
         </div>
 
         <div className="relative my-auto py-16 md:py-12">
-          <div className="absolute left-[58%] top-1/2 h-[38vw] max-h-[620px] min-h-[300px] w-[38vw] min-w-[300px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-amber-400/15">
-            <div className="absolute inset-[9%] rounded-full border border-white/[0.05]" />
-            <div className="absolute inset-[22%] rounded-full bg-amber-400/[0.07] blur-3xl" />
-            <motion.div
-              className="absolute inset-[35%] rounded-full bg-amber-300/80 shadow-[0_0_80px_rgba(245,158,11,0.48)]"
-              animate={{ opacity: [0.4, 0.9, 0.4], scale: [0.9, 1.04, 0.9] }}
-              transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
+          {/* Top Right Mixing Console Faders Photo Overlay */}
+          <div className="pointer-events-none absolute -right-5 -top-12 h-[680px] w-[60%] overflow-hidden opacity-30 mix-blend-screen [mask-image:radial-gradient(ellipse_at_top_right,black_30%,transparent_85%)]">
+            <img
+              src="/assets/mixing_desk.png"
+              alt=""
+              className="h-full w-full object-cover object-right-top filter brightness-90 contrast-125 saturate-[0.8]"
             />
+          </div>
+
+          {/* Background subtle radial glow anchor */}
+          <div className="pointer-events-none absolute left-[58%] top-1/2 h-[38vw] max-h-[620px] min-h-[300px] w-[38vw] min-w-[300px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-amber-400/10">
+            <div className="absolute inset-[9%] rounded-full border border-white/[0.03]" />
+            <div className="absolute inset-[22%] rounded-full bg-amber-400/[0.04] blur-3xl" />
           </div>
 
           <h1 className="relative max-w-[1450px] text-[15.4vw] font-black leading-[0.73] tracking-[-0.075em] text-white sm:text-[12.3vw] lg:text-[10.6rem]">
@@ -278,10 +288,30 @@ export default function Home({ founder = true }: { founder?: boolean }) {
                   ease: [0.16, 1, 0.3, 1],
                 }}
                 className={`mr-[0.18em] inline-block last:mr-0 ${
-                  word === 'music' || word === 'away.' ? 'text-amber-400' : ''
+                  word === 'music' || word === 'away.'
+                    ? 'text-[#FFB800] [text-shadow:0_0_45px_rgba(255,184,0,0.75)] font-black'
+                    : ''
                 }`}
               >
-                {word}
+                {word === 'it' ? (
+                  <span className="relative inline-flex items-baseline">
+                    <span className="relative inline-block">
+                      <motion.span
+                        className="absolute -top-[0.26em] left-[50%] -translate-x-1/2 text-[0.34em] font-black text-[#FFB800] [text-shadow:0_0_20px_rgba(255,184,0,0.95)]"
+                        animate={{ scale: [1, 1.25, 1], opacity: [0.85, 1, 0.85] }}
+                        transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
+                      >
+                        $
+                      </motion.span>
+                      <span className="inline-block text-white" style={{ fontFamily: 'inherit' }}>
+                        ı
+                      </span>
+                    </span>
+                    <span>t</span>
+                  </span>
+                ) : (
+                  word
+                )}
               </motion.span>
             ))}
           </h1>
@@ -290,50 +320,103 @@ export default function Home({ founder = true }: { founder?: boolean }) {
             initial={{ opacity: 0, y: 25 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.72, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-            className="relative mt-12 grid gap-9 border-t border-white/12 pt-7 md:grid-cols-[1fr_1fr]"
+            className="relative mt-12 grid gap-9 border-t border-white/12 pt-8 lg:grid-cols-[1.1fr_0.9fr]"
           >
-            <div className="font-mono text-[10px] uppercase leading-relaxed tracking-[0.22em] text-white/30">
-              The operating system
-              <br />
-              for musical independence
-            </div>
+            {/* Left Column: Hero Manifesto & Gatekeeper Card */}
             <div>
-              <p className="max-w-2xl text-lg leading-relaxed text-white/60 md:text-xl">
-                indii.music brings the work around a release—files, rights, money, campaigns, distribution, and the road—into one artist-controlled workspace.
-              </p>
-              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                <a
-                  href={previewHref}
-                  target={previewEnabled ? '_blank' : undefined}
-                  rel={previewEnabled ? 'noopener noreferrer' : undefined}
-                  onClick={() => trackPreview('hero')}
-                  className="group inline-flex items-center justify-center gap-3 rounded-full bg-amber-400 px-7 py-4 text-sm font-black text-black shadow-[0_0_34px_rgba(245,158,11,0.28)] transition-transform hover:scale-[1.025]"
-                >
-                  {previewEnabled
-                    ? founder
-                      ? 'Enter Founder Preview'
-                      : 'Enter indii.music'
-                    : 'Preview coming soon'}
-                  <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" />
-                </a>
-                {founder && (
-                  <button
-                    type="button"
-                    onClick={() => setIsThesisOpen(true)}
-                    className="group inline-flex items-center justify-center gap-3 rounded-full border border-white/15 px-7 py-4 text-sm font-bold text-white transition-colors hover:border-amber-400/50 hover:text-amber-300"
-                  >
-                    <Play size={14} fill="currentColor" />
-                    Watch the thesis
-                  </button>
-                )}
+              <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.25em] text-amber-400">
+                <span className="h-2 w-2 rounded-full bg-amber-400 shadow-[0_0_12px_rgba(245,158,11,0.8)]" />
+                The Artist Operating System
               </div>
-              {founder && (
-                <p className="mt-4 font-mono text-[9px] uppercase tracking-[0.16em] text-white/25">
-                  {previewEnabled
-                    ? 'Explore before you buy / no payment required for the preview'
-                    : 'Explore the system here / product entry remains private for now'}
+
+              {/* New Catchphrase */}
+              <h2 className="mt-3 text-2xl font-black tracking-tight text-white md:text-3xl lg:text-4xl">
+                Tools for your music career <span className="text-[#FFB800] [text-shadow:0_0_25px_rgba(255,184,0,0.6)]">without sacrifice</span>.
+              </h2>
+
+              <p className="mt-4 text-lg font-medium leading-relaxed text-white/80 md:text-xl">
+                Artists already bypassed labels and recording studios. <span className="text-amber-400 font-bold">Distribution is the last gatekeeper standing.</span> Everything you create sits right in front of the pipeline.
+              </p>
+
+              {/* No More Gatekeepers / Handlers Card */}
+              <div className="mt-6 specular-card rounded-2xl p-6 shadow-[0_10px_50px_rgba(0,0,0,0.8)]">
+                <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                  <span className="font-mono text-[10px] font-bold uppercase tracking-[0.25em] text-amber-400">
+                    The Freedom Principle
+                  </span>
+                  <span className="rounded bg-amber-400/20 px-2.5 py-0.5 font-mono text-[9px] font-bold text-amber-300 border border-amber-400/40">
+                    Direct Distribution Pipeline
+                  </span>
+                </div>
+
+                <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                  <div className="border-l-2 border-amber-400 pl-3">
+                    <div className="text-xs font-black uppercase tracking-wider text-white">Distribution IS The Workspace</div>
+                    <p className="mt-1 text-xs leading-relaxed text-white/70">
+                      Instead of 20 fragmented tools scattered everywhere, all assets, rights, and rollouts sit directly connected in front of your distribution pipeline.
+                    </p>
+                  </div>
+                  <div className="border-l-2 border-amber-400 pl-3">
+                    <div className="text-xs font-black uppercase tracking-wider text-white">No Handlers. 24 Specialists.</div>
+                    <p className="mt-1 text-xs leading-relaxed text-white/70">
+                      No middleman making decisions for you. You call the shots—our 24 agent specialists coordinate the work and guide the pipeline.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Column: Primary CTAs & Guarantee Badges */}
+            <div className="flex flex-col justify-between rounded-2xl border border-white/10 bg-white/[0.02] p-7 backdrop-blur-md">
+              <div>
+                <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-white/40">
+                  Immediate Access / Founder Edition
+                </div>
+                <p className="mt-3 text-base text-white/70">
+                  Join independent artists taking control of their releases, catalog, and finances.
                 </p>
-              )}
+
+                <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+                  <a
+                    href={previewHref}
+                    target={previewEnabled ? '_blank' : undefined}
+                    rel={previewEnabled ? 'noopener noreferrer' : undefined}
+                    onClick={() => trackPreview('hero')}
+                    className="group inline-flex items-center justify-center gap-3 rounded-full bg-amber-400 px-7 py-4 text-sm font-black text-black shadow-[0_0_34px_rgba(245,158,11,0.35)] transition-all hover:scale-[1.03]"
+                  >
+                    {previewEnabled
+                      ? founder
+                        ? 'Enter Founder Preview'
+                        : 'Enter indii.music'
+                      : 'Preview coming soon'}
+                    <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" />
+                  </a>
+                  {founder && (
+                    <button
+                      type="button"
+                      onClick={() => setIsThesisOpen(true)}
+                      className="group inline-flex items-center justify-center gap-3 rounded-full border border-white/20 px-7 py-4 text-sm font-bold text-white transition-colors hover:border-amber-400/50 hover:text-amber-300"
+                    >
+                      <Play size={14} fill="currentColor" />
+                      Watch the Thesis
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              <div className="mt-8 border-t border-white/10 pt-4">
+                <div className="grid grid-cols-3 gap-2 text-center font-mono text-[9px] uppercase tracking-wider">
+                  <div className="rounded bg-black/60 p-2 text-white/80 border border-white/5">
+                    <span className="block font-bold text-amber-400">100%</span> Rights
+                  </div>
+                  <div className="rounded bg-black/60 p-2 text-white/80 border border-white/5">
+                    <span className="block font-bold text-amber-400">0%</span> Royalty Cut
+                  </div>
+                  <div className="rounded bg-black/60 p-2 text-white/80 border border-white/5">
+                    <span className="block font-bold text-amber-400">24</span> Departments
+                  </div>
+                </div>
+              </div>
             </div>
           </motion.div>
         </div>
@@ -408,12 +491,12 @@ export default function Home({ founder = true }: { founder?: boolean }) {
               transition={{ duration: 0.8 }}
             >
               <h2 className="max-w-5xl text-5xl font-black leading-[0.94] tracking-[-0.055em] text-white md:text-7xl lg:text-[7rem]">
-                Built in Detroit for the work
-                <span className="block text-amber-400">behind the music.</span>
+                Built in Detroit for your work
+                <span className="block text-amber-400">behind the music scene.</span>
               </h2>
               <div className="mt-12 grid gap-8 border-t border-white/10 pt-8 md:grid-cols-2">
                 <p className="text-lg leading-relaxed text-white/55">
-                  indii started with a practical question: what would independent artists need if the departments around a career were tools they controlled?
+                  indii started with a practical question: what would independent artists need if the departments and gatekeepers around them were tools for their career instead?
                 </p>
                 <div>
                   <p className="text-lg leading-relaxed text-white/55">
@@ -494,7 +577,7 @@ export default function Home({ founder = true }: { founder?: boolean }) {
         <div className="mx-auto grid max-w-[1500px] gap-px bg-black/15 sm:grid-cols-2 lg:grid-cols-4">
           {[
             ['One workspace', 'Projects and career operations'],
-            ['15 connected areas', 'The public operating model'],
+            ['24 connected departments', 'The public operating model'],
             ['Artist review', 'High-impact actions stay visible'],
             ['0% royalty share', 'indii is software, not your label'],
           ].map(([value, label]) => (
@@ -506,8 +589,11 @@ export default function Home({ founder = true }: { founder?: boolean }) {
         </div>
       </section>
 
+      <LegacyComparison />
       <AgentGrid />
       <ConductorSection />
+      <AppStudioShowcase />
+      <FounderRoyaltyCalculator />
 
       <section className="relative z-20 w-full border-t border-white/10">
         <div className="mx-auto max-w-[1500px] px-5 py-28 md:px-10 md:py-40">
@@ -626,11 +712,11 @@ export default function Home({ founder = true }: { founder?: boolean }) {
                   Private founder release / software access
                 </div>
                 <h2 className="text-6xl font-black leading-[0.85] tracking-[-0.065em] text-white sm:text-7xl md:text-9xl lg:text-[10rem]">
-                  Own the
-                  <span className="block text-amber-400">first seat.</span>
+                  Your seat is
+                  <span className="block text-amber-400">waiting.</span>
                 </h2>
                 <p className="mt-10 max-w-2xl text-lg leading-relaxed text-white/55 md:text-xl">
-                  Founder Access is a one-time purchase of enterprise software access. It is not an investment, security, ownership interest, or promise of financial return.
+                  Founder Access is a one-time purchase of enterprise software access. It is not an investment, security, ownership interest, or promise of financial return. Any future investment or strategic participation is a separate conversation.
                 </p>
               </motion.div>
 
