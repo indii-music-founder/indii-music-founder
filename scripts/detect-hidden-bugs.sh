@@ -70,10 +70,21 @@ grep -r "from.*firebase/functions" packages/renderer/src/modules --include="*.ts
 echo
 
 # Pattern 6: Missing error boundaries in async chains
+# A same-line-only grep produces ~60% false positives on this codebase's style
+# (`.then(...)` callbacks are almost always multi-line, with `.catch(` chained
+# after the closing `})` several lines down). Instead, look ahead a bounded
+# window from each `.then(` hit and only flag it if no `.catch(` appears in
+# that window — still a heuristic, not a parser, but matches actual code shape.
 echo "6️⃣  ASYNC ERROR HANDLING"
 echo "   Checking for proper error handling in async chains..."
-PATTERN6=$(grep -r "\.then(" packages/renderer/src/modules --include="*.tsx" --include="*.ts" | grep -v ".catch" | wc -l)
-echo "   Found $PATTERN6 .then() calls without .catch()"
+PATTERN6=0
+while IFS=: read -r hitfile hitline _; do
+    window=$(sed -n "${hitline},$((hitline+15))p" "$hitfile")
+    if ! echo "$window" | grep -q "\.catch("; then
+        PATTERN6=$((PATTERN6+1))
+    fi
+done < <(grep -rn "\.then(" packages/renderer/src/modules --include="*.tsx" --include="*.ts")
+echo "   Found $PATTERN6 .then() calls without .catch() within 15 lines"
 if [ "$PATTERN6" -gt 5 ]; then
     echo "   ⚠️  RISK: Unhandled promise rejections"
 fi

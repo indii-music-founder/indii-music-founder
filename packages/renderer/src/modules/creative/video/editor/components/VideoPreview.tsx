@@ -2,6 +2,7 @@ import React from 'react';
 import { Player, PlayerRef } from '@remotion/player';
 import { MyComposition } from '../../remotion/MyComposition';
 import { VideoProject } from '../../store/videoEditorStore';
+import { logger } from '@/utils/logger';
 
 interface VideoPreviewProps {
     playerRef: React.RefObject<PlayerRef | null>;
@@ -82,9 +83,9 @@ export const VideoPreview: React.FC<VideoPreviewProps> = ({ playerRef, project, 
                                 ScreenControl.openProjectorWindow('/video-popout', 1);
                                 import('../../store/videoEditorStore').then(({ useVideoEditorStore }) => {
                                     useVideoEditorStore.getState().setIsPopoutActive(true);
-                                });
-                            });
-                        });
+                                }).catch((err) => logger.error('Failed to load video editor store for pop-out:', err));
+                            }).catch((err) => logger.error('Screen control permission request failed:', err));
+                        }).catch((err) => logger.error('Failed to load screen control service:', err));
                     }}
                     className="flex items-center gap-2 px-3 py-1.5 bg-white/5 hover:bg-white/10 rounded-lg text-xs text-gray-300 font-medium transition-colors ring-1 ring-white/10 hover:ring-white/20"
                 >

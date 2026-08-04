@@ -206,6 +206,9 @@ const EmailDetailView: React.FC<{
                 } finally {
                     setIsLoadingBody(false);
                 }
+            }).catch(() => {
+                // Module failed to load — keep snippet as fallback
+                setIsLoadingBody(false);
             });
         }
     }, [message]);

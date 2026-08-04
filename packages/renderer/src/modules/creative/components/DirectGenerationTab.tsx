@@ -755,6 +755,8 @@ export default function DirectGenerationTab() {
                                                     } else {
                                                         toast.error('Photo available locally but failed to backup to cloud');
                                                     }
+                                                }).catch(() => {
+                                                    toast.error('Photo available locally but failed to backup to cloud');
                                                 });
                                             };
                                             reader.readAsDataURL(file);
