@@ -75,28 +75,7 @@ export const UniversalTools = {
             }
         }
 
-        // Fallback: localStorage for non-Electron / web-only dev environment
-        try {
-            const storageKey = `indii_vault_${service}`;
-            if (action === 'get' || action === 'retrieve') {
-                const stored = localStorage.getItem(storageKey);
-                const credentials = stored ? JSON.parse(stored) : null;
-                return toolSuccess({ credentials, fallback: true }, `Retrieved credentials for ${service} from fallback storage.`);
-            } else if (action === 'save' || action === 'store' || action === 'set') {
-                const val = args.credentials ?? args.value ?? args.data ?? args.password ?? args.token ?? args.key;
-                const { action: _a, service: _s, ...rest } = args;
-                const finalValue = val !== undefined ? val : rest;
-                localStorage.setItem(storageKey, JSON.stringify(finalValue));
-                return toolSuccess({ success: true, fallback: true }, `Credentials for ${service} saved in fallback storage.`);
-            } else if (action === 'delete' || action === 'remove') {
-                localStorage.removeItem(storageKey);
-                return toolSuccess({ success: true, fallback: true }, `Credentials for ${service} deleted from fallback storage.`);
-            } else {
-                return toolError(`Unsupported credential vault action: ${args.action}`, 'INVALID_INPUT');
-            }
-        } catch (error: unknown) {
-            return toolError(`Credential vault local storage fallback error: ${error instanceof Error ? error.message : String(error)}`, 'CREDENTIAL_FALLBACK_ERROR');
-        }
+        return toolError('Credential vault not available: Electron API required for secure credential storage', 'CREDENTIAL_STORAGE_UNAVAILABLE');
     }),
 
     /**
