@@ -49,6 +49,24 @@ export interface BWarmData {
     period_end?: string;
 }
 
+export interface FounderReadinessIdentifier {
+    type: 'isrc_prefix' | 'gs1_prefix' | 'ddex_dpid' | 'meta_rm_account';
+    status: 'verified' | 'pending' | 'unknown';
+    value?: string; // The actual prefix/ID assigned
+    certificateUrl?: string; // Evidence/document reference
+    renewalDate?: string; // ISO 8601 date for expiry/renewal
+    feeDueDate?: string; // ISO 8601 date for fee payment
+    notes?: string;
+    verifiedAt?: string; // Timestamp when last verified
+}
+
+export interface FounderReadiness {
+    organizationId: string;
+    identifiers: FounderReadinessIdentifier[];
+    completedAt?: string;
+    lastUpdated?: string;
+}
+
 export interface TaxCalculationData {
     userId: string;
     amount: number;

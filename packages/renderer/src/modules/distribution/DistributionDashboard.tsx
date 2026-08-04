@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { Radio, PlusCircle, Library, BarChart3, Activity } from 'lucide-react';
+import { Radio, PlusCircle, Library, BarChart3, Activity, CheckSquare } from 'lucide-react';
 
 /* ── UI Components ── */
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -11,6 +11,7 @@ import { QCPanel } from './components/QCPanel';
 import { KeysPanel } from './components/KeysPanel';
 import { TransferPanel } from './components/TransferPanel';
 import { QCVisualizer } from './components/QCVisualizer';
+import { FounderReadinessPanel } from './components/FounderReadinessPanel';
 
 /* ── Extracted Sub-components ── */
 import { ReleasesContent } from './components/ReleasesContent';
@@ -121,6 +122,13 @@ export default function DistributionDashboard() {
                                     <Library size={14} /> {t('distribution.tabs.keys')}
                                 </TabsTrigger>
                                 <TabsTrigger
+                                    value="founder"
+                                    data-testid="distro-tab-founder"
+                                    className="text-muted-foreground data-[state=active]:text-dept-distro data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-dept-distro rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs"
+                                >
+                                    <CheckSquare size={14} /> Founder Readiness
+                                </TabsTrigger>
+                                <TabsTrigger
                                     value="brain"
                                     data-testid="distro-tab-brain"
                                     className="text-muted-foreground data-[state=active]:text-dept-distro data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-dept-distro rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs"
@@ -171,6 +179,11 @@ export default function DistributionDashboard() {
                                 <TabsContent value="keys" data-testid="distro-content-keys" className="mt-0 border-none outline-none focus-visible:ring-0">
                                     <ModuleErrorBoundary moduleName="Distribution / Keys">
                                         <KeysPanel />
+                                    </ModuleErrorBoundary>
+                                </TabsContent>
+                                <TabsContent value="founder" data-testid="distro-content-founder" className="mt-0 border-none outline-none focus-visible:ring-0">
+                                    <ModuleErrorBoundary moduleName="Distribution / Founder Readiness">
+                                        <FounderReadinessPanel />
                                     </ModuleErrorBoundary>
                                 </TabsContent>
                                 <TabsContent value="brain" data-testid="distro-content-brain" className="mt-0 border-none outline-none focus-visible:ring-0">
