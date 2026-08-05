@@ -922,3 +922,17 @@
 ## Production Release Scan Findings (V3)
 
 *(New findings from release scans will be appended below starting at ISSUE-1297)*
+
+---
+
+### ISSUE-1297: Backdrop-blur values hardcoded across component tree; --sonic-* effects tokens undocumented
+
+- **Status:** ✅ FIXED (2026-08-05)
+- **Severity:** 🟢 LOW (design-system consistency, no functional impact)
+- **Module:** `packages/renderer/src/index.css` + component tree
+- **Origin:** Flagged by `Canvas.dc.html`'s design audit ("Backdrop Blur Values Hardcoded", card.tsx:17/ThreeDCard.tsx) and carried forward as Priority 2 in `.agent/HANDOFF_SESSION-2026-08-05.md` after the ISSUE-1164 icon work.
+- **Evidence:** 13 occurrences of raw `blur(Npx)` across `card.tsx`, `AgentSelector.tsx`, `ChatOverlay.tsx`, `SessionTimeoutOverlay.tsx`, `MerchandiseAnalytics.tsx` (inline styles) and Tailwind arbitrary values (`backdrop-blur-[1px]`/`[2px]`/`[4px]`) in `AdaptiveWorkspace.tsx`, `AudioVisualizer.tsx`, `AnalyticsCharts.tsx`, `CapturePreview.tsx`, `FileDashboard.tsx`, `StandardMerch.tsx`. Separately, `--sonic-purple`/`-blue`/`-yellow` are real, heavily-used Tailwind color tokens (Publicist module), but `--sonic-glass`/`-glass-border` were defined and never referenced anywhere.
+- **Fix:** Added a `--blur-2xs` … `--blur-2xl` scale to `index.css`'s `@theme` (1/2/4/10/20/24/40px — named to match every value actually found, zero value changes) which auto-generates `backdrop-blur-*` Tailwind utilities. Replaced every arbitrary-value class and inline `blur(Npx)` string with the matching token/utility. `SessionTimeoutOverlay.tsx`'s Framer Motion `animate`/`initial`/`exit` blur values were left as literal px (Framer Motion tweens by parsing a number out of the string; `var(--blur-xl)` would not interpolate) with a comment explaining why and noting it should track `--blur-xl`. Documented the `--sonic-*` tokens under a new "EFFECTS LAYER" heading in `index.css`, noting `--sonic-glass`/`-glass-border` are defined but unused — `.glass`/`.glass-panel` still use raw `bg-black/40`/`bg-card/60`. Left that gap unfixed rather than silently re-skin existing glass surfaces without a visual design pass.
+- **Verification:** `npm run typecheck` and `npm run lint` clean (0 errors). Live-verified in browser: `getComputedStyle` on a `backdrop-blur-xs` probe element resolves to `blur(2px)`, exactly matching the arbitrary value it replaced. Affected component test files pass (`card`, `useSurfaceIcon`, etc. — 14/14).
+- **Acceptance:** No component's rendered blur amount changed (token values match prior literals exactly); new code has a named scale to reach for instead of another arbitrary value.
+- **Residual (not done, intentionally out of scope):** `.glass`/`.glass-panel` still don't consume `--sonic-glass`/`-glass-border`; `--shadow-*` tokens (also recommended by the Canvas.dc.html audit's "Phase 1") were not added — neither was part of the specific ask.
