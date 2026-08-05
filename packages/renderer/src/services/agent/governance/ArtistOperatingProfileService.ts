@@ -22,7 +22,7 @@ import {
     ArtistOperatingProfileSchema,
     DEFAULT_ARTIST_OPERATING_PROFILE,
     type ArtistOperatingProfile,
-} from '@shared';
+} from '@indii/shared';
 
 function getUserId(): string | null {
     return getRealAuthenticatedUserId(auth.currentUser);

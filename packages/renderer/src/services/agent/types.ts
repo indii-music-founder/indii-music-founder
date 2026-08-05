@@ -466,7 +466,7 @@ import type {
     WorkflowStep,
     WorkflowStepExecution,
     WorkflowExecution
-} from '@shared';
+} from '@indii/shared';
 
 export type {
     WorkflowExecutionStatus,

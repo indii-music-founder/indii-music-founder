@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { clsx } from 'clsx';
 import { useShallow } from 'zustand/react/shallow';
 import { useDirectGeneration } from '../../hooks/useDirectGeneration';
-import { normalizeVideoDuration, normalizeVideoResolution } from '@shared';
+import { normalizeVideoDuration, normalizeVideoResolution } from '@indii/shared';
 
 interface VeoSettingsPanelProps {
     isOpen: boolean;

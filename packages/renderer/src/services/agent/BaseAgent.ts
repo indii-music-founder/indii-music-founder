@@ -43,7 +43,7 @@ import { validateAgentCommunication } from './governance/AgentCommunicationPolic
 import { TOOL_RISK_REGISTRY } from './ToolRiskRegistry';
 import { toolApprovalService } from './governance/ToolApprovalService';
 import { artistOperatingProfileService } from './governance/ArtistOperatingProfileService';
-import { hasAutonomousComputerControl } from '@shared';
+import { hasAutonomousComputerControl } from '@indii/shared';
 import { agentNoteService } from './AgentNoteService';
 import { AppErrorCode } from '@/shared/types/errors';
 

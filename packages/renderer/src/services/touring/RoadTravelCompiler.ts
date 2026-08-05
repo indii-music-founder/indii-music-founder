@@ -7,7 +7,7 @@ import {
   HarnessFinding,
   HarnessAgentBrief,
   HarnessApprovalGate,
-} from '@shared';
+} from '@indii/shared';
 
 export interface RoadTravelInput {
   eventName: string;

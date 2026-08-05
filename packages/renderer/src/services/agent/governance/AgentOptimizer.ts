@@ -1,6 +1,6 @@
 import { logger } from '@/utils/logger';
 import { workflowStateService } from '../WorkflowStateService';
-import { WorkflowStepStatusEnum, normalizeWorkflowStepStatus } from '@shared';
+import { WorkflowStepStatusEnum, normalizeWorkflowStepStatus } from '@indii/shared';
 import { ArmorViolation } from './ModelArmor';
 
 export interface OptimizationSuggestion {

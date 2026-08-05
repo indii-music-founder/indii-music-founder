@@ -1,4 +1,4 @@
-import { VideoSessionSchema, type VideoSession } from '@shared';
+import { VideoSessionSchema, type VideoSession } from '@indii/shared';
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '../firebase';
 

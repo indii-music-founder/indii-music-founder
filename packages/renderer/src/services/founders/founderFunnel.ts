@@ -4,7 +4,7 @@ import {
     createFounderFunnelEventRecord,
     type FounderFunnelEventDetails,
     type FounderFunnelEventName,
-} from '@shared';
+} from '@indii/shared';
 
 const QUEUE_KEY = 'indii_founder_funnel_queue';
 const SESSION_KEY = 'indii_founder_funnel_session_id';

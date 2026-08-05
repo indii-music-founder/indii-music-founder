@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { agentLoopService } from './AgentLoopService';
 import { maestroBatchingService } from '../MaestroBatchingService';
-import { AgentLoopDefinition, AgentLoopTriggerEnum, AgentLoopJudgeModeEnum, AgentLoopStatusEnum } from '@shared';
+import { AgentLoopDefinition, AgentLoopTriggerEnum, AgentLoopJudgeModeEnum, AgentLoopStatusEnum } from '@indii/shared';
 
 // Mock dependencies
 vi.mock('../MaestroBatchingService', () => ({

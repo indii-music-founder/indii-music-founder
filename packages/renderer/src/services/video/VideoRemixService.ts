@@ -1,6 +1,6 @@
 import { httpsCallable } from 'firebase/functions';
 import { z } from 'zod';
-import { GenerateOmniRemixSchema } from '@shared';
+import { GenerateOmniRemixSchema } from '@indii/shared';
 import { auth, functions } from '@/services/firebase';
 import { CostControlService } from '@/services/billing/CostControlService';
 import { CreativeStorageService } from '@/services/creative/CreativeStorageService';

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { ActivityTimeValueCompiler } from './ActivityTimeValueCompiler';
-import { BusinessActivityEvent } from '@shared';
+import { BusinessActivityEvent } from '@indii/shared';
 
 describe('ActivityTimeValueCompiler', () => {
   const compiler = new ActivityTimeValueCompiler();

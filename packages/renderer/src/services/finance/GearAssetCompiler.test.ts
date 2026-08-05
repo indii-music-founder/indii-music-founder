@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { GearAssetCompiler, GearAssetInput } from './GearAssetCompiler';
-import { HarnessContext } from '@shared';
+import { HarnessContext } from '@indii/shared';
 
 describe('GearAssetCompiler', () => {
   let compiler: GearAssetCompiler;

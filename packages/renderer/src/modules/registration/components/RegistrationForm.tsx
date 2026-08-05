@@ -3,7 +3,7 @@ import { HelpCircle, Loader2, CheckCircle2, ExternalLink, AlertCircle, Copy, Che
 import { cn } from '@/lib/utils';
 import type { OrgAdapter, CatalogTrack, FormValues, RegistrationField, SubmissionResult } from '../types';
 import { compileHarness } from '@/services/business-harness/HarnessCompiler';
-import type { HarnessRun } from '@shared';
+import type { HarnessRun } from '@indii/shared';
 import type { PublishingRightsOutput } from '@/services/publishing/PublishingRightsCompiler';
 import { computePassportHash, validateApprovalFreshness } from '../services/PassportHashService';
 import { persistOrgRecord } from '../services/RegistrationPersistence';

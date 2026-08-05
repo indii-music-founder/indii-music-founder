@@ -890,7 +890,7 @@ export default function VideoWorkflow() {
 
     const estimatedCost = VideoGeneration.estimateVideoCost(studioControls.duration || 6, studioControls.model);
 
-    const openSessionProxy = useCallback(async (session: import('@shared').VideoSession) => {
+    const openSessionProxy = useCallback(async (session: import('@indii/shared').VideoSession) => {
         const proxy = session.proxyManifest?.proxy;
         if (!proxy) {
             toast.error('This session does not have a completed proxy manifest.');

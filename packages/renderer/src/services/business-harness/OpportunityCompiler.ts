@@ -10,7 +10,7 @@ import {
   HarnessRecommendation,
   HarnessAgentBrief,
   HarnessApprovalGate
-} from '@shared';
+} from '@indii/shared';
 
 export type OpportunityType = 'show' | 'playlist' | 'collab' | 'sponsorship' | 'grant' | 'press' | 'brand_deal';
 

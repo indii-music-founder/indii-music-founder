@@ -6,7 +6,7 @@ import {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   EducationCurriculumOutput
 } from './EducationCurriculumCompiler';
-import { HarnessContext } from '@shared';
+import { HarnessContext } from '@indii/shared';
 
 describe('EducationCurriculumCompiler', () => {
   const compiler = new EducationCurriculumCompiler();

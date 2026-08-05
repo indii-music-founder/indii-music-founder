@@ -7,7 +7,7 @@ import { QuotaExceededError } from '@/shared/types/errors';
 import { CostControlService } from '@/services/billing/CostControlService';
 import { UserProfile } from '@/modules/workflow/types';
 import { getVideoConstraints } from '../onboarding/DistributorContext';
-import { GenerateVideoSchema } from '@shared';
+import { GenerateVideoSchema } from '@indii/shared';
 import { VideoGenerationOptionsSchema, VideoGenerationOptions, VideoAspectRatioSchema, DirectorSettingsSchema } from '@/modules/creative/video/schemas';
 import { z } from 'zod';
 import { InputSanitizer } from '@/services/intelligence/utils/InputSanitizer';

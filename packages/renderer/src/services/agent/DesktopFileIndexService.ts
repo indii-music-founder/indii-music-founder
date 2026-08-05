@@ -1,6 +1,6 @@
 import { addDoc, collection, deleteDoc, doc, getDocs, orderBy, query, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '@/services/firebase';
-import type { ElectronAPI } from '@shared/ipc/electron-api.types';
+import type { ElectronAPI } from '@indii/shared/ipc/electron-api.types';
 
 export interface ApprovedAssetFolder {
     id: string;
