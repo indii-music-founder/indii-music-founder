@@ -188,12 +188,21 @@ describe('🛡️ Shield: Distribution PII Redaction', () => {
         expect(mocks.agentSupervisor.execute).toHaveBeenCalledWith(
             'distribution',
             'keys_manager.py',
-            expect.arrayContaining(['merlin_check', JSON.stringify(sensitiveData)]),
+            expect.arrayContaining([
+                'merlin_check',
+                JSON.stringify({
+                    total_tracks: 0,
+                    has_isrcs: false,
+                    has_upcs: false,
+                    exclusive_rights: false
+                })
+            ]),
             expect.any(Object),
             undefined,
             expect.anything(),
             [1]
         );
+        expect(JSON.stringify(mocks.agentSupervisor.execute.mock.calls[0][2])).not.toContain(sensitiveData.isrc);
     });
 
     it('should redact sensitive metadata in register-release', async () => {
