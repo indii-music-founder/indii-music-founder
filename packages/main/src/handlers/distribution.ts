@@ -358,9 +358,22 @@ export const setupDistributionHandlers = () => {
         try {
             validateSender(event);
             const storagePath = getStoragePath();
+
+            // ISSUE-1122: Aggregate track-level data to flat shape for fail-closed verification
+            // Input: { catalog_id, tracks: [{ isrc, title, rights_holder, exclusive_rights }, ...] }
+            // Output: { total_tracks, has_isrcs, has_upcs, exclusive_rights }
+            const dataObj = data as Record<string, unknown>;
+            const tracks = Array.isArray(dataObj?.tracks) ? dataObj.tracks : [];
+            const aggregatedData = {
+                total_tracks: tracks.length,
+                has_isrcs: tracks.some((t: Record<string, unknown>) => !!t.isrc),
+                has_upcs: tracks.some((t: Record<string, unknown>) => !!t.upc),
+                exclusive_rights: tracks.every((t: Record<string, unknown>) => t.exclusive_rights === true)
+            };
+
             const report = await AgentSupervisor.execute<Record<string, unknown>>('distribution', 'keys_manager.py', [
                 'merlin_check',
-                JSON.stringify(data),
+                JSON.stringify(aggregatedData),
                 '--storage-path',
                 storagePath
             ], { timeoutMs: 30000 }, undefined, {}, [1]); // Redact JSON data

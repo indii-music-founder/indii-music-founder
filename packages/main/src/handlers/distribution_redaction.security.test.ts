@@ -180,15 +180,29 @@ describe('🛡️ Shield: Distribution PII Redaction', () => {
     });
 
     it('should redact sensitive metadata in check-merlin-status', async () => {
-        const sensitiveData = { isrc: 'US123' };
+        const sensitiveData = {
+            catalog_id: 'CAT-user123',
+            tracks: [
+                { isrc: 'US123', title: 'Song 1', rights_holder: 'Artist', exclusive_rights: true },
+                { isrc: 'US124', title: 'Song 2', rights_holder: 'Artist', exclusive_rights: false }
+            ]
+        };
         mocks.agentSupervisor.execute.mockResolvedValue({ status: 'SUCCESS' });
 
         await invoke('distribution:check-merlin-status', sensitiveData);
 
+        // ISSUE-1122: check-merlin-status aggregates tracks to fail-closed shape
+        const expectedAggregatedData = {
+            total_tracks: 2,
+            has_isrcs: true,
+            has_upcs: false,
+            exclusive_rights: false // false because not ALL tracks have exclusive_rights=true
+        };
+
         expect(mocks.agentSupervisor.execute).toHaveBeenCalledWith(
             'distribution',
             'keys_manager.py',
-            expect.arrayContaining(['merlin_check', JSON.stringify(sensitiveData)]),
+            expect.arrayContaining(['merlin_check', JSON.stringify(expectedAggregatedData)]),
             expect.any(Object),
             undefined,
             expect.anything(),
