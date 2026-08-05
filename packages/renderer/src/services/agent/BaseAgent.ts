@@ -552,6 +552,24 @@ export class BaseAgent implements SpecializedAgent {
                 try {
                     const response = await AutonomousIntelligence.generateSpeech(text, selectedVoice);
                     await audioService.playUrl(response.audio.playbackUrl, response.audio.mimeType);
+
+                    // Persist generated audio to library if backend provided it
+                    if ('persistedAsset' in response && response.persistedAsset) {
+                        const { useStore } = await importWithRetry(() => import('@/core/store'));
+                        const store = useStore.getState();
+                        const asset = {
+                            id: response.persistedAsset.id,
+                            userId: '',
+                            type: 'tts' as const,
+                            prompt: text,
+                            mimeType: response.audio.mimeType,
+                            estimatedDuration: 0,
+                            generatedAt: new Date().toISOString(),
+                            storageUrl: response.persistedAsset.storageUrl,
+                        };
+                        await store.persistGeneratedAsset(asset);
+                    }
+
                     return {
                         success: true,
                         message: 'Speech generated and played'

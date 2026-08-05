@@ -1,5 +1,7 @@
 import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import { audioService } from '@/services/audio/AudioService';
+import { useStore } from '@/core/store';
+import { PersistedAudioMetadata } from '@/services/audio/AudioPersistenceService';
 
 interface SpeechRecognitionInstance {
     continuous: boolean;
@@ -82,6 +84,22 @@ export class VoiceService {
         try {
             const response = await AutonomousIntelligence.generateSpeech(text, voiceName || 'Kore');
             await audioService.playUrl(response.audio.playbackUrl, response.audio.mimeType);
+
+            // Persist generated audio to library if backend provided it
+            if ('persistedAsset' in response && response.persistedAsset) {
+                const asset: PersistedAudioMetadata = {
+                    id: response.persistedAsset.id,
+                    userId: '', // Will be set by service
+                    type: 'tts',
+                    prompt: text,
+                    mimeType: response.audio.mimeType,
+                    estimatedDuration: 0, // Will be calculated by backend
+                    generatedAt: new Date().toISOString(),
+                    storageUrl: response.persistedAsset.storageUrl,
+                };
+                const store = useStore.getState();
+                await store.persistGeneratedAsset(asset);
+            }
         } catch {
             this.fallbackSpeak(text);
         }
