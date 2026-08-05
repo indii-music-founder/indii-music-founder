@@ -14,7 +14,10 @@ on:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  # A retry may be for an older commit. Let it wait rather than cancelling the
+  # current mainline deployment; otherwise a manual retry can supersede the
+  # deploy that actually contains the fix.
+  cancel-in-progress: ${{ github.run_attempt == '1' }}
 
 permissions:
   contents: read

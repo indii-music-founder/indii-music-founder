@@ -423,6 +423,52 @@ service cloud.firestore {
         allow read, write: if false;
       }
 
+      // ── Audio Asset Library (Generated/Uploaded Audio) ──────────────────
+      // Audio assets with playable Storage URLs or bounded data URIs.
+      // Schema validation: type in ['soundfx', 'music', 'tts'], duration 0-7200s,
+      // prompt/mimeType required, storageUrl or dataUri (bounded ≤1MiB), userId consistency.
+      match /audio_assets/{assetId} {
+        function isValidAudioAsset() {
+          return request.resource.data.get('type', '') in ['soundfx', 'music', 'tts'] &&
+            request.resource.data.get('duration', -1) >= 0 &&
+            request.resource.data.get('duration', 7201) <= 7200 &&
+            request.resource.data.get('prompt', '') is string &&
+            request.resource.data.get('mimeType', '') is string &&
+            (request.resource.data.get('storageUrl', null) != null ||
+             (request.resource.data.get('dataUri', null) != null &&
+              request.resource.data.dataUri.size() <= 1048576)) &&
+            request.resource.data.get('timestamp', 0) > 0 &&
+            request.resource.data.get('userId', '') == request.auth.uid;
+        }
+        allow read: if isOwner(request.resource.data.get('userId', ''));
+        allow create: if isAuthenticated() && isValidAudioAsset();
+        allow update: if false; // Audio assets are immutable
+        allow delete: if isOwner(resource.data.get('userId', ''));
+      }
+
+      // ── Platform Stats Cache (Social Analytics) ──────────────────────────
+      // Cache of fetched platform statistics. Server writes via Admin SDK;
+      // client reads only. Platform stats are derived from socialTokens
+      // but expose no token details to the client.
+      match /platformStats/{platform} {
+        allow read: if isOwner(userId);
+        allow create, update, delete: if false;
+      }
+
+      // ── Tax Collaborators (Finance/W9/W8BEN) ──────────────────────────────
+      // Collaborators for tax form collection. Owner manages list; backend
+      // handles form uploads to Storage and Firestore documents.
+      match /tax_collaborators/{collaboratorId} {
+        allow read: if isOwner(userId);
+        allow create, update: if isOwner(userId) &&
+          request.resource.data.keys().hasOnly([
+            'id', 'name', 'email', 'country', 'formType', 'status',
+            'uploadedAt', 'fileName', 'storagePath', 'requestedAt',
+            'consumedToken', 'consumedAt', 'reviewedAt', 'on_file'
+          ]);
+        allow delete: if isOwner(userId);
+      }
+
       // ── Marketing swarm activity feed ────────────────────────────────────
       // Written only by the ad executor (Admin SDK, bypasses rules). The owner
       // reads it to watch agents act on their behalf; a client-forged entry
@@ -1943,6 +1989,45 @@ service cloud.firestore {
     // artist's fan activity. Server-only, both directions.
     match /conversionEventOutbox/{eventId} {
       allow read, write: if false;
+    }
+
+    // =========================================================================
+    // Limited Drops (Merchandise / Limited-Time Campaigns)
+    // =========================================================================
+    // Draft drops created by users. Admin SDK publishes them (status -> 'active').
+    // Only owner can read/update; deletion is audit-only (denied).
+    match /limitedDrops/{dropId} {
+      function isValidLimitedDrop() {
+        return request.resource.data.get('userId', '') == request.auth.uid &&
+          request.resource.data.get('selectedProductIds', []) is list &&
+          request.resource.data.get('selectedProductIds', []).size() >= 1 &&
+          request.resource.data.get('dropName', '') is string &&
+          request.resource.data.get('dropName', '').size() >= 1 &&
+          request.resource.data.get('dropName', '').size() <= 200 &&
+          request.resource.data.get('dropDateTime', '') is string &&
+          request.resource.data.get('status', '') == 'draft' &&
+          request.resource.data.get('countdownMessage', '') is string &&
+          request.resource.data.get('countdownMessage', '').size() <= 500;
+      }
+      allow read: if isAuthenticated() && resource.data.get('userId', '') == request.auth.uid;
+      allow create: if isAuthenticated() && isVerifiedUser() && isValidLimitedDrop();
+      allow update: if isAuthenticated() &&
+        resource.data.get('userId', '') == request.auth.uid &&
+        request.resource.data.get('userId', '') == resource.data.get('userId', '') &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(
+          ['status', 'publishedAt', 'notificationSentAt', 'countdownMessage']
+        );
+      allow delete: if false;
+    }
+
+    // =========================================================================
+    // Tax Form Submission Requests (Finance/Tokens)
+    // =========================================================================
+    // Single-use token-based links for collaborators to submit tax forms without auth.
+    // Token is 64-char hex. Once consumedAt is set (by backend), reuse is denied.
+    match /taxFormRequests/{token} {
+      allow read: if request.query.limit <= 1 && token.size() == 64;
+      allow create, update, delete: if false; // Callable/Admin SDK only
     }
 
     // =========================================================================
