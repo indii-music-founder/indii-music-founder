@@ -15,6 +15,7 @@ export interface Organization {
     members: string[];
     ownerId?: string;
     memberRoles?: Record<string, 'owner' | 'manager' | 'producer' | 'member'>;
+    founderReadiness?: import('@/types/distribution').FounderReadiness;
 }
 
 export interface ProfileSlice {

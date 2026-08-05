@@ -51,12 +51,19 @@ export const KeysPanel: React.FC = () => {
             }
 
             // Map real catalog to MerlinTrack format
-            const tracks: MerlinTrack[] = catalog.map(record => ({
-                isrc: record.isrc,
-                title: record.trackTitle,
-                rights_holder: record.artistName, // Best guess mapping
-                exclusive_rights: true // Default assumption for independent distribution
-            }));
+            // ISSUE-1122: exclusive_rights is fail-closed (default false).
+            // Only set true if explicitly verified in track metadata.
+            const tracks: MerlinTrack[] = catalog.map(record => {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const meta = (record.metadataSnapshot as Record<string, any>) || {};
+                const confirmed = meta.exclusiveRightsConfirmed === true || meta.rights?.exclusive === true;
+                return {
+                    isrc: record.isrc,
+                    title: record.trackTitle,
+                    rights_holder: record.artistName,
+                    exclusive_rights: confirmed
+                };
+            });
 
             const checkData: MerlinCheckData = {
                 catalog_id: `CAT-${auth.currentUser?.uid?.substring(0, 8) || 'USER'}`,

@@ -49,6 +49,37 @@ export interface BWarmData {
     period_end?: string;
 }
 
+export interface FounderReadinessIdentifier {
+    type: 'isrc_prefix' | 'gs1_prefix' | 'ddex_dpid' | 'meta_rm_account';
+    status: 'verified' | 'pending' | 'unknown';
+    value?: string; // The actual prefix/ID assigned
+    certificateUrl?: string; // Evidence/document reference
+    renewalDate?: string; // ISO 8601 date for expiry/renewal
+    feeDueDate?: string; // ISO 8601 date for fee payment
+    notes?: string;
+    verifiedAt?: string; // Timestamp when last verified
+}
+
+export interface ExternalActionItem {
+    id: string;
+    title: string; // e.g., "Pay ISRC Prefix Annual Fee"
+    description: string; // e.g., "Annual $95 renewal for ISRC prefix USA123456"
+    relatedIdentifier?: string; // Reference to identifier type (isrc_prefix, etc.)
+    status: 'acknowledged' | 'in_progress' | 'completed' | 'blocked';
+    dueDate?: string; // ISO 8601
+    notes?: string;
+    acknowledgedAt?: string;
+    completedAt?: string;
+}
+
+export interface FounderReadiness {
+    organizationId: string;
+    identifiers: FounderReadinessIdentifier[];
+    externalActions?: ExternalActionItem[]; // Real-world tasks (pay fees, register, etc.)
+    completedAt?: string;
+    lastUpdated?: string;
+}
+
 export interface TaxCalculationData {
     userId: string;
     amount: number;

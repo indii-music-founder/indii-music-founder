@@ -1,8 +1,6 @@
 import { useRef, useState, useMemo, useCallback, useEffect } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { PlayerRef } from '@remotion/player';
-import { httpsCallable } from 'firebase/functions';
-import { functionsWest1 } from '@/services/firebase';
 import { useVideoEditorStore, VideoClip, syncChannel } from '@/modules/creative/video/store/videoEditorStore';
 import { HistoryItem } from '@/core/store/slices/creative';
 import { useToast } from '@/core/context/ToastContext';
@@ -12,6 +10,7 @@ import { resolveMediaDurationSeconds, durationSecondsToFrames } from '../utils/m
 import { readCreativeAssetDrag, writeCreativeAssetDrag } from '@/services/creative/CreativeAssetDragService';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { cloudRenderEligibilityError } from '../utils/renderEligibility';
+import { RenderService } from '@/services/video/RenderService';
 
 export function useVideoEditor(initialVideo?: HistoryItem) {
     const {
@@ -165,14 +164,46 @@ export function useVideoEditor(initialVideo?: HistoryItem) {
         setIsExporting(true);
         toast.info('Starting cloud export... This may take a while.');
         try {
-            const render = httpsCallable(functionsWest1, 'renderVideo');
-            const result = await render({ compositionId: project.id, inputProps: { project } });
-            const data = result.data as { renderId?: string; success?: boolean; url?: string; error?: string };
-            if (data.renderId || data.success) toast.success('Cloud render started successfully!');
-            else throw new Error(data.error || 'Export failed');
+            const { useStore } = await import('@/core/store');
+            const state = useStore.getState();
+            const projectId = state.currentProjectId || project.id;
+            const organizationId = state.currentOrganizationId;
+
+            if (!organizationId) {
+                throw new Error('Organization context required for cloud rendering');
+            }
+
+            const renderService = new RenderService();
+            const receipt = await renderService.renderCompositionCloud(
+                {
+                    compositionId: project.id,
+                    outputLocation: `gs://indii-cloud-renders/${projectId}/${Date.now()}.mp4`,
+                    inputProps: { project },
+                    projectId,
+                    organizationId
+                },
+                (progress) => {
+                    logger.info(`[VideoEditor] Cloud render progress: ${progress}%`);
+                }
+            );
+
+            if (receipt.asset?.url) {
+                toast.success('Cloud render complete!');
+                // Auto-save to generatedHistory
+                state.addToHistory({
+                    id: `export_${receipt.renderId}`,
+                    type: 'video',
+                    url: receipt.asset.url,
+                    origin: 'editor',
+                    prompt: `Cloud export of ${project.name || 'Project'}`,
+                    timestamp: Date.now(),
+                    projectId,
+                    orgId: organizationId
+                });
+            }
         } catch (error: unknown) {
-            logger.error('Export error:', error);
-            toast.error(`Export failed: ${error instanceof Error ? error.message : String(error)}`);
+            logger.error('Cloud export error:', error);
+            toast.error(`Cloud export failed: ${error instanceof Error ? error.message : String(error)}`);
         } finally {
             setIsExporting(false);
         }
@@ -184,28 +215,35 @@ export function useVideoEditor(initialVideo?: HistoryItem) {
         try {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const { electronAPI } = window as any;
+            if (!electronAPI?.selectDirectory) {
+                throw new Error("Directory selection is not available. Please use the desktop app.");
+            }
             if (!electronAPI?.video?.render) {
                 throw new Error("Local rendering is not supported in the browser environment. Please use the desktop app.");
             }
-            
+
             const timestamp = Date.now();
-            // Typically we ask user or store in default directory. Since IPC takes care of it, we pass an ideal name.
-            // But IPC actually expects an absolute path if it checks verifyAccess, wait.
-            // Let's pass a placeholder filename, and if the IPC allows relative paths or handles it, great.
-            // Wait, IPC handler says: `const hasAccess = accessControlService.verifyAccess(outputLocation);`
-            // Let's just ask the user for a path using selectFile or selectDirectory, or assume we can save to Desktop.
-            // Actually, `window.electronAPI.selectFile`? Wait, `system:select-directory`.
-            const path = electronAPI.getPlatform ? await electronAPI.getPlatform() : 'mac';
-            const defaultPath = path === 'win32' ? 'C:\\video.mp4' : '/tmp/video.mp4';
-            
+            const filename = `video_${timestamp}.mp4`;
+
+            // Prompt user to select export directory (handles access granting via AccessControlService)
+            const selectedDirectory = await electronAPI.selectDirectory();
+            if (!selectedDirectory) {
+                // User cancelled selection
+                setIsExporting(false);
+                return;
+            }
+
+            // Construct full output path (forward slashes work on all platforms in Electron)
+            const outputLocation = `${selectedDirectory}/${filename}`;
+
             const resultLocation = await electronAPI.video.render({
                 compositionId: project.id,
-                outputLocation: defaultPath, // Mocking local absolute path
+                outputLocation,
                 inputProps: { project }
             });
-            
+
             toast.success(`Render complete: ${resultLocation}`);
-            
+
             // Auto-save output to generatedHistory globally
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             import('@/core/store').then((module: any) => {
@@ -225,7 +263,7 @@ export function useVideoEditor(initialVideo?: HistoryItem) {
             }).catch((error) => {
                 logger.error('Failed to record local export in history:', error);
             });
-            
+
         } catch (error: unknown) {
             logger.error('Local export error:', error);
             toast.error(`Local render failed: ${error instanceof Error ? error.message : String(error)}`);
