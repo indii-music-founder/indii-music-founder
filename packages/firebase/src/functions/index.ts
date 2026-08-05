@@ -26,5 +26,9 @@ export { setGodMode } from './admin/setGodMode';
 // Creative Suite (5-API Waterfall API Gateway)
 export * from './creative/gateway';
 
+// Social Platform Connections & Stats Sync
+export { getSocialConnectionStatus } from './social-connections';
+export { syncPlatformStats } from './social-stats-sync';
+
 // Ingestion Pipeline
 export * from './ingestion';
