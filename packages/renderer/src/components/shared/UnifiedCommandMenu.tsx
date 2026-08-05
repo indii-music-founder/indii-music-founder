@@ -83,7 +83,11 @@ export function UnifiedCommandMenu() {
             onClick={() => setCommandMenuOpen(false)}
         >
             <div
-                className="w-full max-w-2xl bg-[#0f1115]/95 border border-white/10 rounded-2xl shadow-[0_0_40px_rgba(0,0,0,0.5)] overflow-hidden transition-all flex flex-col"
+                className="w-full max-w-2xl border border-white/10 rounded-2xl shadow-[0_0_40px_rgba(0,0,0,0.5)] overflow-hidden transition-all flex flex-col"
+                style={{
+                    backgroundColor: 'var(--color-surface-elevated, #3a3226)',
+                    opacity: 0.95
+                }}
                 onClick={e => e.stopPropagation()}
             >
                 <div className="flex items-center border-b border-white/5 px-4 h-14">

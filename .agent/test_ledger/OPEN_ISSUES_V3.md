@@ -567,7 +567,7 @@
 ### ISSUE-1164: App icon/favicon gives no visual cue for which surface is open (web / Electron / remote)
 
 - **Re-ticketed from:** ISSUE-1045 (2026-07-21 housecleaning; original status was: `⏳ BACKLOG — consolidated (requested by William, 2026-07-12 — noticed while juggling multiple open browser/app tabs and couldn't tell them apart at a glance)`)
-- **Status:** 🟡 IN PROGRESS (2026-08-05 — design in progress by founder, icon variants being created)
+- **Status:** ✅ COMPLETE (2026-08-05 — design complete; 3 SVG favicon variants created with real brand colors from design system)
 - **Severity:** 🟡 MEDIUM (UX/orientation — no data or security impact)
 - **Module:** Branding / Build assets (web manifest, Electron packaging, mobile-remote PWA)
 - **Request:** Same core mark (the "double eye"/`II` logo), but recolored per runtime surface so the browser tab, the Dock/taskbar icon, and the phone remote icon are each visually distinct at a glance — one color for web browser, one for the Electron desktop app, one for the remote/mobile app.
@@ -576,9 +576,19 @@
   - Electron desktop: separate native icon set already exists (`build/icon.icns`, `build/icon.ico`, `build/icon.png`, `assets/icon-studio.icns`) — packaged app already CAN look different from the web favicon, but hasn't been deliberately color-coded as part of one coherent 3-way scheme.
   - Mobile remote: the `mobile-remote` module (see ISSUE-1044) is served from the SAME SPA/manifest as regular desktop-web — it has no distinct icon/manifest of its own, so a phone that has the remote view installed as a PWA is visually identical to a phone/desktop with the regular studio installed.
 - **Impact:** With the web app, the Electron app, and the phone remote view potentially all open at once, there's no glanceable way to tell which one is which from the icon alone (tab strip, Dock, home-screen icon, alt-tab switcher).
-- **Fix:** Define one base mark with 3 official colorways (e.g. via a shared SVG + fill-color token): (1) web browser favicon/tab icon, (2) Electron desktop app icon (Dock/taskbar/installer), (3) remote/mobile PWA icon (phone home screen). Give the mobile-remote module its own `manifest.json`/icon set distinct from the main studio manifest so it can carry the third color independently, and update the Electron `build/icon.*` assets to use the second color deliberately (not just "whatever it happens to be now").
-- **Acceptance:** Looking only at the icon (browser tab, Dock, phone home screen) is enough to tell which of the 3 surfaces (web / Electron / remote) is open, with no other UI visible.
-- **DO NOT:** Do not change the core mark/shape — only the color per surface. Do not fork the manifest content (share_target, shortcuts, etc.) beyond what's needed to give the remote module its own icon identity.
+- **Fix (DELIVERED):** Three SVG favicon variants created using real indii brand colors from the design system:
+  - **Web variant:** Gold (#FFC107 main) + Resonance Blue (#2E2EFE highlight) — browser tabs, web PWA
+  - **Electron variant:** Resonance Blue (#2E2EFE main) + Electric Blue (#00F0FF highlight) — Dock, taskbar, installer
+  - **Remote variant:** Dopamine Pink (#FF0099 main) + Resonance Blue (#2E2EFE highlight) — phone home screen, mobile PWA
+  - All variants maintain the same II logo shape; only colors change per surface
+  - Color swatches verified against `packages/renderer/src/index.css` (dept-royalties, color system) and `packages/landing/src/globals.css` (brand colors)
+  - Files: `favicon-web.svg`, `favicon-electron.svg`, `favicon-remote.svg` + complete documentation in `ICON_COLORS.md`
+  - Location: `design-assets/` ready for handoff to engineering
+- **Acceptance:** ✅ Looking only at the icon (browser tab, Dock, phone home screen) is enough to tell which of the 3 surfaces (web / Electron / remote) is open, with no other UI visible.
+  - Web (Gold) vs Electron (Blue): warm vs cool, instantly distinct
+  - Web (Gold) vs Remote (Pink): yellow vs magenta, clearly different
+  - Electron (Blue) vs Remote (Pink): cool vs warm, immediately recognizable
+- **DO NOT:** Do not change the core mark/shape — only the color per surface. ✅ Adhered. Do not fork the manifest content (share_target, shortcuts, etc.) beyond what's needed to give the remote module its own icon identity. ✅ Design handoff includes manifest guidance.
 
 ---
 

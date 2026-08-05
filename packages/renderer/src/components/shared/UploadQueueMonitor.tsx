@@ -35,10 +35,13 @@ export const UploadQueueMonitor: React.FC = () => {
     };
 
     return (
-        <div className="fixed bottom-4 right-4 z-[9990] w-80 bg-[#1a1a1a] border border-gray-800 rounded-xl shadow-2xl overflow-hidden flex flex-col transition-all duration-300">
+        <div className="fixed bottom-4 right-4 z-[9990] w-80 border border-gray-800 rounded-xl shadow-2xl overflow-hidden flex flex-col transition-all duration-300" style={{ backgroundColor: 'var(--color-surface, #241f19)' }}>
             {/* Header */}
             <div
-                className="flex items-center justify-between p-3 bg-[#252525] border-b border-gray-800 cursor-pointer hover:bg-[#2a2a2a] transition-colors"
+                className="flex items-center justify-between p-3 border-b border-gray-800 cursor-pointer transition-colors"
+                style={{
+                    backgroundColor: 'var(--color-surface-elevated, #3a3226)'
+                }}
                 onClick={() => toggleUploadQueue()}
                 role="button"
                 tabIndex={0}
@@ -76,7 +79,7 @@ export const UploadQueueMonitor: React.FC = () => {
                     {uploadQueue.length > 0 ? (
                         <div className="flex flex-col divide-y divide-gray-800">
                             {uploadQueue.map(item => (
-                                <div key={item.id} className="p-3 flex items-start gap-3 hover:bg-[#222] transition-colors group">
+                                <div key={item.id} className="p-3 flex items-start gap-3 transition-colors group" style={{ '--hover-bg': 'var(--color-surface-elevated, #3a3226)' } as React.CSSProperties} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--hover-bg)'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
                                     <div className="shrink-0 mt-0.5">
                                         {getIconForType(item.type)}
                                     </div>
@@ -120,7 +123,7 @@ export const UploadQueueMonitor: React.FC = () => {
 
                     {/* Footer Actions */}
                     {completedCount > 0 && (
-                        <div className="bg-[#1f1f1f] border-t border-gray-800 p-2 flex justify-end">
+                        <div className="border-t border-gray-800 p-2 flex justify-end" style={{ backgroundColor: 'var(--color-bg-dark, #14100c)' }}>
                             <button
                                 onClick={clearCompletedUploads}
                                 className="text-[10px] flex items-center gap-1 text-gray-400 hover:text-white transition-colors"
