@@ -54,7 +54,7 @@ export const MerchandiseAnalytics: React.FC = () => {
                                 <CartesianGrid strokeDasharray="3 3" stroke="#ffffff0a" vertical={false} />
                                 <XAxis dataKey="name" stroke="#555" tick={{ fill: '#666', fontSize: 10, fontWeight: 700 }} axisLine={false} tickLine={false} />
                                 <YAxis stroke="#555" tick={{ fill: '#666', fontSize: 10, fontWeight: 700 }} axisLine={false} tickLine={false} tickFormatter={(value) => `$${value}`} />
-                                <Tooltip contentStyle={{ backgroundColor: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px', padding: '12px' }} itemStyle={{ color: '#fff', fontSize: '12px', fontWeight: 'bold' }} labelStyle={{ color: '#888', marginBottom: '4px', fontSize: '10px' }} />
+                                <Tooltip contentStyle={{ backgroundColor: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(var(--blur-md))', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px', padding: '12px' }} itemStyle={{ color: '#fff', fontSize: '12px', fontWeight: 'bold' }} labelStyle={{ color: '#888', marginBottom: '4px', fontSize: '10px' }} />
                                 <Area type="monotone" dataKey="revenue" stroke="var(--color-dept-royalties)" strokeWidth={4} fillOpacity={1} fill="url(#merchRevenueGradient)" animationDuration={2000} animationEasing="ease-in-out" />
                             </AreaChart>
                         </ResponsiveContainer>
@@ -97,7 +97,7 @@ export const MerchandiseAnalytics: React.FC = () => {
                             <BarChart data={conversionCycleData}>
                                 <CartesianGrid strokeDasharray="3 3" stroke="#ffffff0a" vertical={false} />
                                 <XAxis dataKey="day" stroke="#555" tick={{ fill: '#666', fontSize: 10, fontWeight: 700 }} axisLine={false} tickLine={false} />
-                                <Tooltip cursor={{ fill: 'rgba(255,255,255,0.02)' }} contentStyle={{ backgroundColor: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px' }} itemStyle={{ color: '#fff' }} />
+                                <Tooltip cursor={{ fill: 'rgba(255,255,255,0.02)' }} contentStyle={{ backgroundColor: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(var(--blur-md))', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px' }} itemStyle={{ color: '#fff' }} />
                                 <Bar dataKey="revenue" radius={[8, 8, 0, 0]} animationDuration={1500} animationEasing="ease-out">
                                     {conversionCycleData.map((entry: ConversionCycle, index: number) => (
                                         <Cell key={`cell-${index}`} fill={entry.revenue > 0 ? 'var(--color-dept-creative)' : 'rgba(255,255,255,0.05)'} stroke={entry.revenue > 0 ? 'var(--color-dept-creative)' : 'rgba(255,255,255,0.1)'} strokeWidth={1} />

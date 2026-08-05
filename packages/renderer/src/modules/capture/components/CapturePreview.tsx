@@ -38,7 +38,7 @@ export function CapturePreview({ imagePreview, isScanning, scanComplete, onTrans
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
-                        className="absolute inset-0 bg-green-500/20 backdrop-blur-[2px] flex items-center justify-center pointer-events-none"
+                        className="absolute inset-0 bg-green-500/20 backdrop-blur-xs flex items-center justify-center pointer-events-none"
                     >
                         <div className="bg-green-500 text-black font-bold px-6 py-3 rounded-full flex items-center gap-2 shadow-[0_0_30px_#22c55e]">
                             PREVIEW READY

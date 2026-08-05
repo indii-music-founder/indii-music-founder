@@ -54,7 +54,7 @@ export const AgentSelector = ({ onClose }: { onClose: () => void }) => {
             className="absolute top-16 right-0 w-[90vw] max-w-[380px] origin-top-right z-50 rounded-3xl overflow-hidden border border-white/10 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.7)]"
             style={{
                 background: 'rgba(10, 10, 14, 0.95)',
-                backdropFilter: 'blur(40px) saturate(200%)'
+                backdropFilter: 'blur(var(--blur-2xl)) saturate(200%)'
             }}
         >
             <div className="p-6 border-b border-white/5 bg-white/[0.02]">

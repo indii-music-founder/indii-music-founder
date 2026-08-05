@@ -97,7 +97,7 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({
 
             <div className="h-[300px] w-full relative">
                 {loading ? (
-                    <div className="absolute inset-0 flex items-center justify-center bg-gray-900/10 backdrop-blur-[2px] rounded-xl z-10">
+                    <div className="absolute inset-0 flex items-center justify-center bg-gray-900/10 backdrop-blur-xs rounded-xl z-10">
                         <Loader2 size={32} className="text-gray-700 animate-spin" />
                     </div>
                 ) : !data.some(d => (d.revenue || 0) > 0 || (d.streams || 0) > 0) ? (
