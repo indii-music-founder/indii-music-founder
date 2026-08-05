@@ -1,0 +1,992 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Design Audit Canvas - indii</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --bg-dark: #030303;
+      --bg-darker: #08080A;
+      --bg-card: #14100c;
+      --bg-elevated: #0d1117;
+      --bg-surface: #1a1a1a;
+      --border: rgba(255, 255, 255, 0.1);
+      --text-primary: #ffffff;
+      --text-muted: #a0a0a0;
+      --accent: #FFB800;
+      --accent-secondary: #FF7043;
+    }
+
+    body {
+      background: var(--bg-dark);
+      color: var(--text-primary);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      overflow: hidden;
+    }
+
+    .canvas-container {
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .header {
+      padding: 24px;
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(135deg, var(--bg-dark) 0%, var(--bg-elevated) 100%);
+    }
+
+    .header h1 {
+      font-size: 28px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .header p {
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+
+    .content {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+    }
+
+    .sidebar {
+      width: 280px;
+      background: var(--bg-surface);
+      border-right: 1px solid var(--border);
+      overflow-y: auto;
+      padding: 16px;
+    }
+
+    .sidebar-section {
+      margin-bottom: 24px;
+    }
+
+    .sidebar-title {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+      letter-spacing: 0.5px;
+    }
+
+    .sidebar-item {
+      padding: 10px 12px;
+      margin-bottom: 4px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.2s;
+      border: 1px solid transparent;
+    }
+
+    .sidebar-item:hover {
+      background: rgba(255, 184, 0, 0.1);
+      border-color: rgba(255, 184, 0, 0.3);
+      color: var(--accent);
+    }
+
+    .sidebar-item.active {
+      background: rgba(255, 184, 0, 0.15);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .main-view {
+      flex: 1;
+      overflow: auto;
+      padding: 32px;
+    }
+
+    /* View Styles */
+    .view {
+      display: none;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .view.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .view-title {
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 24px;
+      color: var(--accent);
+    }
+
+    /* Design Tokens View */
+    .tokens-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+
+    .token-card {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+      transition: all 0.2s;
+    }
+
+    .token-card:hover {
+      border-color: var(--accent);
+      box-shadow: 0 8px 24px rgba(255, 184, 0, 0.1);
+    }
+
+    .token-name {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    .token-value {
+      font-size: 14px;
+      font-family: 'Monaco', monospace;
+      margin-bottom: 12px;
+      word-break: break-all;
+    }
+
+    .color-swatch {
+      width: 100%;
+      height: 48px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      margin-bottom: 8px;
+    }
+
+    /* Components View */
+    .components-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 16px;
+    }
+
+    .component-card {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      transition: all 0.2s;
+    }
+
+    .component-card:hover {
+      border-color: var(--accent);
+      transform: translateY(-2px);
+      box-shadow: 0 12px 32px rgba(255, 184, 0, 0.15);
+    }
+
+    .component-header {
+      background: var(--bg-card);
+      padding: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .component-name {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--accent);
+    }
+
+    .component-file {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-family: monospace;
+      margin-top: 4px;
+    }
+
+    .component-body {
+      padding: 12px;
+    }
+
+    .component-preview {
+      height: 100px;
+      background: linear-gradient(135deg, var(--bg-surface) 0%, var(--bg-card) 100%);
+      border-radius: 4px;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .component-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+
+    .tag {
+      font-size: 10px;
+      padding: 3px 6px;
+      background: rgba(255, 184, 0, 0.1);
+      border: 1px solid rgba(255, 184, 0, 0.3);
+      border-radius: 3px;
+      color: var(--accent);
+    }
+
+    /* Issues View */
+    .issues-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .issue-card {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--accent-secondary);
+      border-radius: 6px;
+      padding: 16px;
+      transition: all 0.2s;
+    }
+
+    .issue-card:hover {
+      border-left-color: var(--accent);
+      box-shadow: 0 8px 24px rgba(255, 112, 67, 0.1);
+    }
+
+    .issue-severity {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 4px 8px;
+      border-radius: 3px;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+    }
+
+    .severity-high {
+      background: rgba(244, 67, 54, 0.2);
+      color: #f44336;
+    }
+
+    .severity-medium {
+      background: rgba(255, 152, 0, 0.2);
+      color: #ff9800;
+    }
+
+    .severity-low {
+      background: rgba(76, 175, 80, 0.2);
+      color: #4caf50;
+    }
+
+    .issue-title {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: var(--text-primary);
+    }
+
+    .issue-description {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+      line-height: 1.5;
+    }
+
+    .issue-file {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-family: monospace;
+      background: var(--bg-card);
+      padding: 4px 6px;
+      border-radius: 3px;
+      display: inline-block;
+    }
+
+    /* Color Palette View */
+    .palette-section {
+      margin-bottom: 40px;
+    }
+
+    .palette-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      color: var(--text-primary);
+    }
+
+    .color-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+      gap: 12px;
+    }
+
+    .color-item {
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .color-item:hover {
+      transform: scale(1.05);
+    }
+
+    .color-sample {
+      width: 100%;
+      aspect-ratio: 1;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      margin-bottom: 8px;
+      transition: all 0.2s;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    }
+
+    .color-item:hover .color-sample {
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5);
+    }
+
+    .color-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-family: monospace;
+      word-break: break-word;
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: var(--bg-dark);
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 184, 0, 0.3);
+    }
+
+    .loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      color: var(--text-muted);
+    }
+
+    .spinner {
+      border: 2px solid var(--border);
+      border-top: 2px solid var(--accent);
+      border-radius: 50%;
+      width: 32px;
+      height: 32px;
+      animation: spin 0.8s linear infinite;
+      margin-right: 12px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .stat-box {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 12px;
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 4px;
+    }
+
+    .stat-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+  </style>
+</head>
+<body>
+  <div class="canvas-container">
+    <div class="header">
+      <h1>Design Audit Canvas</h1>
+      <p>packages/renderer → packages/landing | Design system consistency review</p>
+    </div>
+
+    <div class="content">
+      <div class="sidebar">
+        <div class="sidebar-section">
+          <div class="sidebar-title">Overview</div>
+          <div class="sidebar-item active" data-view="overview">Dashboard</div>
+          <div class="sidebar-item" data-view="stats">Audit Stats</div>
+        </div>
+
+        <div class="sidebar-section">
+          <div class="sidebar-title">Design System</div>
+          <div class="sidebar-item" data-view="tokens">Design Tokens</div>
+          <div class="sidebar-item" data-view="colors">Color Palette</div>
+          <div class="sidebar-item" data-view="typography">Typography</div>
+        </div>
+
+        <div class="sidebar-section">
+          <div class="sidebar-title">Components</div>
+          <div class="sidebar-item" data-view="components">Components</div>
+          <div class="sidebar-item" data-view="patterns">Patterns</div>
+        </div>
+
+        <div class="sidebar-section">
+          <div class="sidebar-title">Quality</div>
+          <div class="sidebar-item" data-view="issues">Issues Found</div>
+          <div class="sidebar-item" data-view="fixes">Recommended Fixes</div>
+        </div>
+      </div>
+
+      <div class="main-view">
+        <!-- Overview View -->
+        <div class="view active" id="overview">
+          <div class="view-title">Design Audit Overview</div>
+
+          <div class="stats">
+            <div class="stat-box">
+              <div class="stat-value">14</div>
+              <div class="stat-label">Issues Found</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-value">6</div>
+              <div class="stat-label">High Priority</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-value">48</div>
+              <div class="stat-label">Components</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-value">32</div>
+              <div class="stat-label">Design Tokens</div>
+            </div>
+          </div>
+
+          <div style="background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 8px; padding: 20px; margin-top: 24px;">
+            <h3 style="font-size: 16px; margin-bottom: 12px; color: var(--accent);">Key Findings</h3>
+            <ul style="list-style: none; color: var(--text-muted); line-height: 1.8;">
+              <li>✓ Inconsistent hardcoded colors in Sidebar.tsx, card.tsx, and index.css</li>
+              <li>✓ Duplicate design token systems (--sonic-* separate from --dept-color)</li>
+              <li>✓ CSS variable naming conventions not consistently applied</li>
+              <li>✓ Opportunity to consolidate glass-panel pattern</li>
+              <li>✓ Box shadow and border tokens need standardization</li>
+              <li>✓ Department color system muted/glow variants missing in some files</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Stats View -->
+        <div class="view" id="stats">
+          <div class="view-title">Audit Statistics</div>
+
+          <div class="stats">
+            <div class="stat-box">
+              <div class="stat-value" style="color: #f44336;">6</div>
+              <div class="stat-label">High Severity</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-value" style="color: #ff9800;">5</div>
+              <div class="stat-label">Medium Severity</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-value" style="color: #4caf50;">3</div>
+              <div class="stat-label">Low Severity</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-value">12</div>
+              <div class="stat-label">Files Affected</div>
+            </div>
+          </div>
+
+          <div style="background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 8px; padding: 20px; margin-top: 24px;">
+            <h3 style="font-size: 16px; margin-bottom: 16px; color: var(--accent);">Audit Summary</h3>
+            <div style="font-size: 14px; line-height: 1.8; color: var(--text-muted);">
+              <p>This design audit analyzed <strong>12 component files</strong> across packages/renderer and packages/landing for design consistency, token usage, and CSS best practices.</p>
+              <p style="margin-top: 12px;">The audit identified <strong>14 distinct issues</strong> related to hardcoded colors, inconsistent token systems, and naming convention violations. All findings include recommended fixes and refactoring paths.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Design Tokens View -->
+        <div class="view" id="tokens">
+          <div class="view-title">Design Tokens</div>
+
+          <h3 style="font-size: 14px; margin: 24px 0 16px 0; color: var(--text-muted);">CSS Variables</h3>
+          <div class="tokens-grid">
+            <div class="token-card">
+              <div class="token-name">--primary</div>
+              <div class="token-value">#2196F3</div>
+              <div class="color-swatch" style="background: #2196F3;"></div>
+            </div>
+            <div class="token-card">
+              <div class="token-name">--accent</div>
+              <div class="token-value">#FFB800</div>
+              <div class="color-swatch" style="background: #FFB800;"></div>
+            </div>
+            <div class="token-card">
+              <div class="token-name">--accent-gold</div>
+              <div class="token-value">hsl(38 75% 48%)</div>
+              <div class="color-swatch" style="background: hsl(38 75% 48%);"></div>
+            </div>
+            <div class="token-card">
+              <div class="token-name">--border</div>
+              <div class="token-value">rgba(255, 255, 255, 0.1)</div>
+              <div class="color-swatch" style="background: rgba(255, 255, 255, 0.1);"></div>
+            </div>
+            <div class="token-card">
+              <div class="token-name">--card</div>
+              <div class="token-value">hsl(36, 3%, 6%)</div>
+              <div class="color-swatch" style="background: #14100c;"></div>
+            </div>
+            <div class="token-card">
+              <div class="token-name">--background</div>
+              <div class="token-value">#030303</div>
+              <div class="color-swatch" style="background: #030303;"></div>
+            </div>
+          </div>
+
+          <h3 style="font-size: 14px; margin: 32px 0 16px 0; color: var(--text-muted);">Department Colors</h3>
+          <div class="tokens-grid">
+            <div class="token-card">
+              <div class="token-name">--dept-color</div>
+              <div class="token-value">Modular</div>
+              <p style="font-size: 12px; color: var(--text-muted); margin-top: 8px;">Primary, muted, glow variants per department</p>
+            </div>
+            <div class="token-card">
+              <div class="token-name">--dept-color-muted</div>
+              <div class="token-value">Variant</div>
+              <p style="font-size: 12px; color: var(--text-muted); margin-top: 8px;">Lower opacity department colors</p>
+            </div>
+            <div class="token-card">
+              <div class="token-name">--dept-color-glow</div>
+              <div class="token-value">Variant</div>
+              <p style="font-size: 12px; color: var(--text-muted); margin-top: 8px;">Glowing shadow variant</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Colors View -->
+        <div class="view" id="colors">
+          <div class="view-title">Color Palette</div>
+
+          <div class="palette-section">
+            <div class="palette-title">Primary Colors</div>
+            <div class="color-grid">
+              <div class="color-item">
+                <div class="color-sample" style="background: #030303;"></div>
+                <div class="color-label">#030303</div>
+              </div>
+              <div class="color-item">
+                <div class="color-sample" style="background: #08080A;"></div>
+                <div class="color-label">#08080A</div>
+              </div>
+              <div class="color-item">
+                <div class="color-sample" style="background: #14100c;"></div>
+                <div class="color-label">#14100c</div>
+              </div>
+              <div class="color-item">
+                <div class="color-sample" style="background: #0d1117;"></div>
+                <div class="color-label">#0d1117</div>
+              </div>
+              <div class="color-item">
+                <div class="color-sample" style="background: #1a1a1a;"></div>
+                <div class="color-label">#1a1a1a</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="palette-section">
+            <div class="palette-title">Department Colors</div>
+            <div class="color-grid">
+              <div class="color-item">
+                <div class="color-sample" style="background: #FFC107;"></div>
+                <div class="color-label">#FFC107</div>
+              </div>
+              <div class="color-item">
+                <div class="color-sample" style="background: #2196F3;"></div>
+                <div class="color-label">#2196F3</div>
+              </div>
+              <div class="color-item">
+                <div class="color-sample" style="background: #E91E63;"></div>
+                <div class="color-label">#E91E63</div>
+              </div>
+              <div class="color-item">
+                <div class="color-sample" style="background: #455A64;"></div>
+                <div class="color-label">#455A64</div>
+              </div>
+              <div class="color-item">
+                <div class="color-sample" style="background: #00BCD4;"></div>
+                <div class="color-label">#00BCD4</div>
+              </div>
+              <div class="color-item">
+                <div class="color-sample" style="background: #009688;"></div>
+                <div class="color-label">#009688</div>
+              </div>
+              <div class="color-item">
+                <div class="color-sample" style="background: #FFB300;"></div>
+                <div class="color-label">#FFB300</div>
+              </div>
+              <div class="color-item">
+                <div class="color-sample" style="background: #FF7043;"></div>
+                <div class="color-label">#FF7043</div>
+              </div>
+              <div class="color-item">
+                <div class="color-sample" style="background: #00ff66;"></div>
+                <div class="color-label">#00ff66</div>
+              </div>
+              <div class="color-item">
+                <div class="color-sample" style="background: #FF5722;"></div>
+                <div class="color-label">#FF5722</div>
+              </div>
+              <div class="color-item">
+                <div class="color-sample" style="background: #8BC34A;"></div>
+                <div class="color-label">#8BC34A</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Typography View -->
+        <div class="view" id="typography">
+          <div class="view-title">Typography System</div>
+
+          <div class="tokens-grid">
+            <div class="token-card">
+              <div class="token-name">--font-main</div>
+              <div class="token-value">System Font Stack</div>
+              <p style="font-size: 12px; color: var(--text-muted); margin-top: 8px;">Primary font for body text and UI</p>
+            </div>
+            <div class="token-card">
+              <div class="token-name">--font-geist-sans</div>
+              <div class="token-value">Geist Sans</div>
+              <p style="font-size: 12px; color: var(--text-muted); margin-top: 8px;">Secondary font for headings</p>
+            </div>
+            <div class="token-card">
+              <div class="token-name">Heading XL</div>
+              <div class="token-value">28px / 600</div>
+              <p style="font-size: 28px; font-weight: 600; margin-top: 8px;">Sample Heading</p>
+            </div>
+            <div class="token-card">
+              <div class="token-name">Heading L</div>
+              <div class="token-value">20px / 600</div>
+              <p style="font-size: 20px; font-weight: 600; margin-top: 8px;">Sample Heading</p>
+            </div>
+            <div class="token-card">
+              <div class="token-name">Body</div>
+              <div class="token-value">14px / 400</div>
+              <p style="font-size: 14px; margin-top: 8px;">Sample body text</p>
+            </div>
+            <div class="token-card">
+              <div class="token-name">Caption</div>
+              <div class="token-value">12px / 400</div>
+              <p style="font-size: 12px; margin-top: 8px;">Sample caption text</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Components View -->
+        <div class="view" id="components">
+          <div class="view-title">Components Catalog</div>
+
+          <div class="components-list">
+            <div class="component-card">
+              <div class="component-header">
+                <div class="component-name">Button</div>
+                <div class="component-file">components/ui/button.tsx</div>
+              </div>
+              <div class="component-body">
+                <div class="component-preview">button.tsx</div>
+                <div class="component-tags">
+                  <span class="tag">interactive</span>
+                  <span class="tag">glass</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="component-card">
+              <div class="component-header">
+                <div class="component-name">Card</div>
+                <div class="component-file">components/ui/card.tsx</div>
+              </div>
+              <div class="component-body">
+                <div class="component-preview">card.tsx</div>
+                <div class="component-tags">
+                  <span class="tag">surface</span>
+                  <span class="tag">container</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="component-card">
+              <div class="component-header">
+                <div class="component-name">ThreeDCard</div>
+                <div class="component-file">components/ThreeDCard.tsx</div>
+              </div>
+              <div class="component-body">
+                <div class="component-preview">ThreeDCard.tsx</div>
+                <div class="component-tags">
+                  <span class="tag">animation</span>
+                  <span class="tag">3d</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="component-card">
+              <div class="component-header">
+                <div class="component-name">Sidebar</div>
+                <div class="component-file">components/Sidebar.tsx</div>
+              </div>
+              <div class="component-body">
+                <div class="component-preview">Sidebar.tsx</div>
+                <div class="component-tags">
+                  <span class="tag">layout</span>
+                  <span class="tag">navigation</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="component-card">
+              <div class="component-header">
+                <div class="component-name">AppShell</div>
+                <div class="component-file">components/AppShell.tsx</div>
+              </div>
+              <div class="component-body">
+                <div class="component-preview">AppShell.tsx</div>
+                <div class="component-tags">
+                  <span class="tag">layout</span>
+                  <span class="tag">root</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="component-card">
+              <div class="component-header">
+                <div class="component-name">Dialogs</div>
+                <div class="component-file">components/*Dialog.tsx</div>
+              </div>
+              <div class="component-body">
+                <div class="component-preview">Dialog System</div>
+                <div class="component-tags">
+                  <span class="tag">modal</span>
+                  <span class="tag">overlay</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Patterns View -->
+        <div class="view" id="patterns">
+          <div class="view-title">Design Patterns</div>
+
+          <div style="background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+            <h3 style="font-size: 16px; margin-bottom: 12px; color: var(--accent);">Glass Panel Pattern</h3>
+            <div style="background: #14100c; padding: 16px; border-radius: 6px; margin-bottom: 12px;">
+              <code style="font-size: 12px; color: #00ff66; font-family: monospace;">
+                .glass-panel {<br/>
+                &nbsp;&nbsp;background: hsl(var(--card) / 0.6);<br/>
+                &nbsp;&nbsp;backdrop-filter: blur(24px) saturate(160%);<br/>
+                &nbsp;&nbsp;border: 1px solid hsl(var(--border) / 0.5);<br/>
+                }
+              </code>
+            </div>
+            <p style="font-size: 13px; color: var(--text-muted);">Used across UI for frosted glass effect</p>
+          </div>
+
+          <div style="background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+            <h3 style="font-size: 16px; margin-bottom: 12px; color: var(--accent);">Motion System</h3>
+            <div style="display: flex; gap: 12px; margin-top: 16px;">
+              <div style="background: var(--bg-card); padding: 12px; border-radius: 6px; flex: 1;">
+                <div style="font-size: 12px; font-weight: 600; margin-bottom: 8px; color: var(--text-muted);">Rotation</div>
+                <div style="font-size: 12px; font-family: monospace; color: var(--accent);">layoutId, rotateX, rotateY</div>
+              </div>
+              <div style="background: var(--bg-card); padding: 12px; border-radius: 6px; flex: 1;">
+                <div style="font-size: 12px; font-weight: 600; margin-bottom: 8px; color: var(--text-muted);">Animation</div>
+                <div style="font-size: 12px; font-family: monospace; color: var(--accent);">Framer Motion</div>
+              </div>
+            </div>
+          </div>
+
+          <div style="background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 8px; padding: 20px;">
+            <h3 style="font-size: 16px; margin-bottom: 12px; color: var(--accent);">Text Effects</h3>
+            <div style="margin-top: 16px;">
+              <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 8px;">Text Chrome (gradient overflow effect)</div>
+              <div style="padding: 12px; background: var(--bg-card); border-radius: 6px; font-size: 14px;">
+                <span style="background: linear-gradient(90deg, #FFB800, #FF7043); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">text-chrome effect</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Issues View -->
+        <div class="view" id="issues">
+          <div class="view-title">Issues Found (14)</div>
+
+          <div class="issues-list">
+            <div class="issue-card">
+              <div class="issue-severity severity-high">High</div>
+              <div class="issue-title">Hardcoded Colors in Sidebar.tsx</div>
+              <div class="issue-description">bg-[#0d1117], bg-[#1a1a1a] hardcoded; should use CSS variables for consistency</div>
+              <div class="issue-file">Sidebar.tsx:42-58</div>
+            </div>
+
+            <div class="issue-card">
+              <div class="issue-severity severity-high">High</div>
+              <div class="issue-title">Inconsistent Border Usage in card.tsx</div>
+              <div class="issue-description">border-white/10 literal when --border token exists; inconsistent with design system</div>
+              <div class="issue-file">card.tsx:15-20</div>
+            </div>
+
+            <div class="issue-card">
+              <div class="issue-severity severity-high">High</div>
+              <div class="issue-title">Duplicate Design Token Systems</div>
+              <div class="issue-description">--sonic-purple, --sonic-blue, --sonic-yellow in index.css parallel to --dept-color system</div>
+              <div class="issue-file">index.css:80-95</div>
+            </div>
+
+            <div class="issue-card">
+              <div class="issue-severity severity-high">High</div>
+              <div class="issue-title">Inconsistent Shadow Tokens</div>
+              <div class="issue-description">shadow-black/20 hardcoded; should use standardized shadow token</div>
+              <div class="issue-file">card.tsx:18, Sidebar.tsx:52</div>
+            </div>
+
+            <div class="issue-card">
+              <div class="issue-severity severity-high">High</div>
+              <div class="issue-title">Missing Department Color Variants</div>
+              <div class="issue-description">--dept-color-muted and --dept-color-glow not applied consistently in all components</div>
+              <div class="issue-file">AppShell.tsx, multiple files</div>
+            </div>
+
+            <div class="issue-card">
+              <div class="issue-severity severity-high">High</div>
+              <div class="issue-title">Hardcoded RGBA in Sidebar.tsx</div>
+              <div class="issue-description">rgba(99,102,241,*) and rgba(245,158,11,*) for Boardroom and Founders CTAs bypassing token system</div>
+              <div class="issue-file">Sidebar.tsx:65-72</div>
+            </div>
+
+            <div class="issue-card">
+              <div class="issue-severity severity-medium">Medium</div>
+              <div class="issue-title">Background Color Inconsistency</div>
+              <div class="issue-description">bg-surface/30 not consistently applied; should use CSS variable</div>
+              <div class="issue-file">card.tsx:16</div>
+            </div>
+
+            <div class="issue-card">
+              <div class="issue-severity severity-medium">Medium</div>
+              <div class="issue-title">Backdrop Blur Values Hardcoded</div>
+              <div class="issue-description">backdrop-blur-xl appears hardcoded; should reference token value</div>
+              <div class="issue-file">card.tsx:17, ThreeDCard.tsx</div>
+            </div>
+
+            <div class="issue-card">
+              <div class="issue-severity severity-medium">Medium</div>
+              <div class="issue-title">Glass Panel Not Extracted</div>
+              <div class="issue-description">glass-panel pattern defined but not applied uniformly across all components</div>
+              <div class="issue-file">index.css:12-15, components/</div>
+            </div>
+
+            <div class="issue-card">
+              <div class="issue-severity severity-low">Low</div>
+              <div class="issue-title">Font Stack Not Tokenized</div>
+              <div class="issue-description">Font stacks should reference --font-main and --font-geist-sans consistently</div>
+              <div class="issue-file">Multiple files</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Fixes View -->
+        <div class="view" id="fixes">
+          <div class="view-title">Recommended Fixes</div>
+
+          <div style="background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+            <h3 style="font-size: 16px; margin-bottom: 16px; color: var(--accent);">Phase 1: Token Consolidation</h3>
+            <ol style="list-style: decimal; margin-left: 20px; color: var(--text-muted); line-height: 2;">
+              <li>Merge --sonic-* tokens into main CSS variable system</li>
+              <li>Define --shadow-* tokens (sm, md, lg, xl)</li>
+              <li>Create --backdrop-blur-* tokens</li>
+              <li>Document all tokens in design-tokens.md</li>
+            </ol>
+          </div>
+
+          <div style="background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+            <h3 style="font-size: 16px; margin-bottom: 16px; color: var(--accent);">Phase 2: Component Refactoring</h3>
+            <ol style="list-style: decimal; margin-left: 20px; color: var(--text-muted); line-height: 2;">
+              <li>Refactor Sidebar.tsx to use CSS variables for backgrounds</li>
+              <li>Update card.tsx to use glass-panel pattern</li>
+              <li>Apply --dept-color variants to all department-aware components</li>
+              <li>Add guard rule to prevent hardcoded colors in future PRs</li>
+            </ol>
+          </div>
+
+          <div style="background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 8px; padding: 20px;">
+            <h3 style="font-size: 16px; margin-bottom: 16px; color: var(--accent);">Phase 3: Quality Gates</h3>
+            <ol style="list-style: decimal; margin-left: 20px; color: var(--text-muted); line-height: 2;">
+              <li>Implement guard-no-hardcoded-color.mjs ESLint rule</li>
+              <li>Add security:frontend-api-boundary check to package.json</li>
+              <li>Document design token usage in contribution guide</li>
+              <li>Monthly design system health audits</li>
+            </ol>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="support.js"></script>
+  <script>
+    // View navigation
+    document.querySelectorAll('.sidebar-item').forEach(item => {
+      item.addEventListener('click', (e) => {
+        const viewName = e.target.dataset.view;
+
+        // Update active state
+        document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'));
+        e.target.classList.add('active');
+
+        // Show view
+        document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+        document.getElementById(viewName).classList.add('active');
+      });
+    });
+
+    // Initialize canvas with support module
+    if (typeof initializeDesignCanvas !== 'undefined') {
+      initializeDesignCanvas();
+    }
+  </script>
+</body>
+</html>
