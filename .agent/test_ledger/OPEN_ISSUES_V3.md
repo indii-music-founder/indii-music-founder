@@ -514,6 +514,17 @@
 
 - **Focused interaction completion (2026-07-17):** Added an explicit 15-slot PLP batch model and visible status panel. The UI distinguishes queued/completed/failed slots, exposes per-slot diagnostics, retries only failed slots, blocks rapid duplicate retries/launches, and keeps output/history ownership bound to the project that started the batch. Only terminal outputs with playable URLs enter history or campaign eligibility; the first terminal event is immutable and duplicate terminal events cannot duplicate history. Campaign launch requires all 15 validated outputs and fails closed after an ambiguous deployment response so a blind retry cannot create duplicate paid spend. Focused component/integration/service coverage passes 62 tests across Creative Studio, PLP lifecycle/status, auth, and video generation; renderer typecheck and scoped ESLint pass. Remaining before FIXED: a live provider/emulator generation receipt. That proof is intentionally not fabricated or run against paid production generation without an approved test fixture/budget.
 
+- **Emulator-backed integration test suite (2026-08-05):** Added comprehensive integration test coverage (`plpBatch.integration.test.ts`, 7 tests) for the 5 critical scenarios in the acceptance criteria:
+  1. **Mixed completion order:** Videos complete in random order (2→4→1→0→3); each yields exactly one immutable result and only terminal outputs are eligible.
+  2. **Retry lifecycle:** Failed video retries, attempt counter increments, eventual completion succeeds.
+  3. **Duplicate terminal events:** Multiple listener firings for the same job yield exactly one immutable result; first event wins.
+  4. **Project switch:** Batch stays bound to originating project throughout lifecycle.
+  5. **Cleanup:** Batch with mixed (completed/failed/queued) results cleans up consistently with all 15 slots preserved.
+  6. **Combined scenario:** All five execute in sequence without data loss; counts remain accurate.
+  7. **Acceptance:** 10 images + 5 video slots report correctly (10 queued images + variable video mix), no empty-URL items eligible for deployment.
+  
+  All tests pass (7/7). Remaining before FIXED: live (non-emulated) video generation receipt with a real provider/platform (intentionally blocked from production spend; would require approved test fixture/budget).
+
 ---
 
 ---
