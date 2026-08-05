@@ -14,7 +14,6 @@ import {
     Sliders,
     Terminal,
 } from 'lucide-react';
-import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
 import { getColorForModule } from '@/core/theme/moduleColors';
 
 type Tab = 'cicd' | 'observability' | 'credentials' | 'testing';
@@ -159,7 +158,7 @@ export default function DevopsDashboard() {
                                     <span className={`font-bold mr-1.5 ${
                                         log.level === 'warn'
                                             ? 'text-amber-400'
-                                            : getColorForModule('devops').text
+                                            : 'text-cyan-400'
                                     }`}>{log.level.toUpperCase()}:</span>
                                     <span className="text-gray-300">{log.message}</span>
                                 </div>

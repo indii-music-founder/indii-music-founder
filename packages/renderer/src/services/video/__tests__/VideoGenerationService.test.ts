@@ -98,7 +98,11 @@ vi.mock('@/services/intelligence/utils/InputSanitizer', () => ({
 // Mock CostControlService
 vi.mock('@/services/billing/CostControlService', () => ({
     CostControlService: {
-        checkAndReserve: vi.fn().mockResolvedValue({ allowed: true }),
+        checkAndReserve: vi.fn().mockResolvedValue({
+            allowed: true,
+            operationId: 'video-reservation-1'
+        }),
+        voidUnclaimedVideoReservation: vi.fn().mockResolvedValue(undefined),
         releaseReservation: vi.fn().mockResolvedValue(undefined),
         confirmUsage: vi.fn().mockResolvedValue(undefined),
     }

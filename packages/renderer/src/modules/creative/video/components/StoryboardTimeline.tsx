@@ -403,7 +403,7 @@ export function StoryboardTimeline() {
                     <div>
                         <h2 className="text-sm font-bold uppercase tracking-widest text-white flex items-center gap-2">
                             Editable Timing Storyboard
-                            <span className="text-[9px] bg-purple-500/10 text-purple-400 px-2 py-0.5 rounded-full border border-purple-500/20 uppercase tracking-widest">Audio-timed planning</span>
+                            <span className="text-[9px] bg-cyan-500/10 text-cyan-400 px-2 py-0.5 rounded-full border border-cyan-500/20 uppercase tracking-widest">Audio-timed planning</span>
                         </h2>
                         <p className="text-[10px] text-neutral-500 mt-1 font-mono uppercase tracking-wider">
                             {storyboardProject
@@ -496,7 +496,7 @@ export function StoryboardTimeline() {
                                     onDrop={(e) => handleDropOnSlot(e, slot.id)}
                                     className={`relative w-80 h-[480px] shrink-0 rounded-2xl border transition-all duration-300 flex flex-col overflow-hidden backdrop-blur-xl ${
                                         isDragOver
-                                            ? 'border-purple-500 bg-purple-950/25 ring-2 ring-purple-500 shadow-[0_0_30px_rgba(168,85,247,0.15)] scale-[1.03]'
+                                            ? 'border-cyan-500 bg-cyan-950/25 ring-2 ring-cyan-500 shadow-[0_0_30px_rgba(6,182,212,0.15)] scale-[1.03]'
                                             : isHovered
                                                 ? 'border-white/15 bg-white/[0.04] shadow-[0_12px_40px_rgba(0,0,0,0.5)] scale-[1.01]'
                                                 : 'border-white/5 bg-white/[0.02]'
@@ -581,7 +581,7 @@ export function StoryboardTimeline() {
                                                     onClick={() => updateStoryboardSlot(slot.id, { useDaisyChain: !slot.useDaisyChain })}
                                                     className={`flex items-center gap-1 px-2.5 py-1 rounded border font-bold uppercase tracking-wider transition-colors ${
                                                         slot.useDaisyChain 
-                                                            ? 'bg-purple-600/10 border-purple-500/30 text-purple-400' 
+                                                            ? 'bg-cyan-600/10 border-cyan-500/30 text-cyan-400' 
                                                             : 'bg-black/30 border-white/5 text-neutral-500 hover:text-neutral-300'
                                                     }`}
                                                 >

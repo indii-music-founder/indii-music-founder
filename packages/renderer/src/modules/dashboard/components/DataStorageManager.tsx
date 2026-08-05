@@ -3,12 +3,13 @@ import { Database, Download, ExternalLink, HardDrive } from 'lucide-react';
 import { DashboardService, StorageStats } from '@/services/dashboard/DashboardService';
 import { AnimatedNumber } from '@/components/motion-primitives/animated-number';
 import { useStore } from '@/core/store';
+import { logger } from '@/utils/logger';
 
 export default function DataStorageManager() {
     const [stats, setStats] = useState<StorageStats | null>(null);
 
     useEffect(() => {
-        DashboardService.getStorageStats().then(setStats);
+        DashboardService.getStorageStats().then(setStats).catch((err) => logger.error('Failed to load storage stats:', err));
     }, []);
 
     const formatBytes = (bytes: number) => {

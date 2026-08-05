@@ -66,7 +66,7 @@ export default function DesktopDashboard() {
                                 </h3>
 
                                 <div className="space-y-6">
-                                    <ResourceBar label="MEMORY / VRAM" value={64} color={moduleColor.bg.replace('/10', '')} />
+                                    <ResourceBar label="MEMORY / VRAM" value={64} color="bg-cyan-500" />
                                     <ResourceBar label="CPU UTILIZATION" value={28} color="bg-blue-500" />
                                     <ResourceBar label="FILE CACHE" value={82} color="bg-green-500" />
                                 </div>

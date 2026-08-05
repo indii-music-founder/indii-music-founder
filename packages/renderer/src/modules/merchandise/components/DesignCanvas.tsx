@@ -227,7 +227,7 @@ export const DesignCanvas: React.FC<DesignCanvasProps> = ({
                             e.preventDefault();
                             activeObject.clone().then((cloned: fabric.Object) => {
                                 (canvas as FabricCanvasWithClipboard)._clipboard = cloned;
-                            });
+                            }).catch((err) => logger.error('Failed to copy object:', err));
                         }
                     }
                 }),
@@ -265,7 +265,7 @@ export const DesignCanvas: React.FC<DesignCanvasProps> = ({
                                 }
                                 canvas.setActiveObject(cloned);
                                 canvas.requestRenderAll();
-                            });
+                            }).catch((err) => logger.error('Failed to paste object:', err));
                         }
                     }
                 }),
@@ -310,7 +310,7 @@ export const DesignCanvas: React.FC<DesignCanvasProps> = ({
                             e.preventDefault();
                             activeObject.clone().then((cloned: fabric.Object) => {
                                 (canvas as FabricCanvasWithClipboard)._clipboard = cloned;
-                            });
+                            }).catch((err) => logger.error('Failed to copy object:', err));
                         }
                     }
                 }),
@@ -348,7 +348,7 @@ export const DesignCanvas: React.FC<DesignCanvasProps> = ({
                                 }
                                 canvas.setActiveObject(cloned);
                                 canvas.requestRenderAll();
-                            });
+                            }).catch((err) => logger.error('Failed to paste object:', err));
                         }
                     }
                 }),

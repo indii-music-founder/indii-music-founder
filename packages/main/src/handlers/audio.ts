@@ -1,5 +1,5 @@
 import log from 'electron-log';
-import { ipcMain } from 'electron';
+import { ipcMain, app } from 'electron';
 import ffmpeg from 'fluent-ffmpeg';
 import ffmpegPath from 'ffmpeg-static';
 import ffprobePath from 'ffprobe-static';
@@ -8,7 +8,7 @@ import fs from 'fs';
 import path from 'path';
 import { apiService } from '../services/APIService';
 import { AudioLookupSchema } from '../utils/validation';
-import { validateSafeAudioPath } from '../utils/file-security';
+import { validateSafeAudioPath, validateSafeAudioOutputPath } from '../utils/file-security';
 import { validateSender } from '../utils/ipc-security';
 import { accessControlService } from '../security/AccessControlService';
 import { masteringService } from '../services/MasteringService';
@@ -187,14 +187,22 @@ export function registerAudioHandlers() {
         try {
             validateSender(event);
 
-            // Security: Ensure output directory exists
-            const outputDir = path.dirname(outputPath);
-            if (!fs.existsSync(outputDir)) {
-                fs.mkdirSync(outputDir, { recursive: true });
+            const validatedInputPath = validateSafeAudioPath(inputPath);
+            if (!accessControlService.verifyAccess(validatedInputPath)) {
+                throw new Error(`Security Violation: Access to ${validatedInputPath} is denied. File was not authorized by user.`);
             }
 
+            const allowedRoots = [os.tmpdir(), process.cwd()];
+            try {
+                allowedRoots.push(app.getPath('userData'));
+            } catch {
+                // Testing/Dev fallback
+            }
+
+            const validatedOutputPath = validateSafeAudioOutputPath(outputPath, allowedRoots);
+
             return new Promise((resolve) => {
-                let command = ffmpeg(inputPath)
+                let command = ffmpeg(validatedInputPath)
                     .toFormat(targetFormat);
 
                 if (bitRate) command = command.audioBitrate(bitRate);
@@ -203,13 +211,13 @@ export function registerAudioHandlers() {
                 command
                     .on('end', () => {
                         log.info('[Main] Transcoding finished');
-                        resolve({ success: true, path: outputPath });
+                        resolve({ success: true, path: validatedOutputPath });
                     })
                     .on('error', (err) => {
                         log.error('[Main] Transcoding failed:', err);
                         resolve({ success: false, error: err.message });
                     })
-                    .save(outputPath);
+                    .save(validatedOutputPath);
             });
         } catch (error) {
             log.error('[Main] Transcode setup failed:', error);
@@ -223,7 +231,22 @@ export function registerAudioHandlers() {
 
         try {
             validateSender(event);
-            return await masteringService.masterAudio(inputPath, outputPath, style);
+
+            const validatedInputPath = validateSafeAudioPath(inputPath);
+            if (!accessControlService.verifyAccess(validatedInputPath)) {
+                throw new Error(`Security Violation: Access to ${validatedInputPath} is denied. File was not authorized by user.`);
+            }
+
+            const allowedRoots = [os.tmpdir(), process.cwd()];
+            try {
+                allowedRoots.push(app.getPath('userData'));
+            } catch {
+                // Testing/Dev fallback
+            }
+
+            const validatedOutputPath = validateSafeAudioOutputPath(outputPath, allowedRoots);
+
+            return await masteringService.masterAudio(validatedInputPath, validatedOutputPath, style);
         } catch (error) {
             log.error('[Main] Audio mastering setup failed:', error);
             return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };

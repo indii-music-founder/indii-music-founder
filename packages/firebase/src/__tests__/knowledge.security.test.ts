@@ -31,7 +31,14 @@ const mocks = vi.hoisted(() => {
 
   const mockFirestore = () => ({ 
       collection: mockCollection, 
-      batch: vi.fn().mockReturnValue({ delete: vi.fn(), commit: vi.fn().mockResolvedValue(undefined) }) 
+      batch: vi.fn().mockReturnValue({ delete: vi.fn(), commit: vi.fn().mockResolvedValue(undefined) }),
+      runTransaction: vi.fn(async (callback) => {
+        return callback({
+          get: mockGet,
+          set: mockSet,
+          update: mockUpdate,
+        });
+      })
   });
 
   const mockFileExists = vi.fn();
@@ -244,7 +251,8 @@ describe('Knowledge Base Security & Abuse Tests', () => {
             }, {
                 db: mocks.mockFirestore() as any,
                 storage: mocks.mockStorage() as any,
-                getGenAI: vi.fn() as any
+                getGenAI: vi.fn() as any,
+                requireVerifiedEntitlement: vi.fn().mockResolvedValue({}),
             })
           ).rejects.toThrow('Zero text chunks generated from document.');
       });

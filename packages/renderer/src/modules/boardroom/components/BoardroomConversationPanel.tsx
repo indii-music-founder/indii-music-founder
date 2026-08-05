@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useLayoutEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import { logger } from '@/utils/logger';
 import type { AgentMessage } from '@/core/store/slices/agent/agentSessionSlice';
 import {
     Bot,
@@ -134,7 +135,7 @@ export function BoardroomConversationPanel({ messages }: BoardroomConversationPa
                             state.updateAgentMessage(msg.id, { isStreaming: false });
                         }
                     });
-                });
+                }).catch((err) => logger.error('Failed to load store for stale-stream cleanup:', err));
             }, 60000); // Max Swarm execution timeout is 60s
             return () => clearTimeout(timeout);
         }

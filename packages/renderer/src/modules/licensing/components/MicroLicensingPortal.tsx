@@ -163,7 +163,7 @@ export function MicroLicensingPortal() {
         navigator.clipboard.writeText(contractHTML).then(() => {
             setCopied(true);
             setTimeout(() => setCopied(false), 2000);
-        });
+        }).catch(() => toast.error('Failed to copy contract to clipboard.'));
     };
 
     const handleDownload = () => {

@@ -6,7 +6,11 @@ import { logger } from '@/utils/logger';
 import {
   KnowledgeDocument,
   KnowledgeOperationError,
-  KnowledgeQueryReceipt
+  KnowledgeQueryReceipt,
+  CreateKnowledgeUploadRequest,
+  FinalizeKnowledgeUploadRequest,
+  DeleteKnowledgeDocumentRequest,
+  KnowledgeQueryRequest,
 } from '@indii/shared/schemas/knowledge';
 
 export interface FrontendKnowledgeDoc {
@@ -75,10 +79,10 @@ class KnowledgeRetrievalService {
 
                     const contentSha256 = await this.computeSha256(file);
                     
-                    const createKnowledgeUpload = httpsCallable(functions, 'createKnowledgeUpload');
+                    const createKnowledgeUpload = httpsCallable<CreateKnowledgeUploadRequest, unknown>(functions, 'createKnowledgeUpload');
                     const createRes = await createKnowledgeUpload({
                         title: file.name,
-                        mimeType: file.type || 'text/plain',
+                        mimeType: (file.type === 'application/pdf' || file.type === 'text/markdown' || file.type === 'text/plain') ? file.type : 'text/plain',
                         byteSize: file.size,
                         contentSha256
                     });
@@ -98,7 +102,7 @@ class KnowledgeRetrievalService {
                         }
                     });
 
-                    const finalizeKnowledgeUpload = httpsCallable(functions, 'finalizeKnowledgeUpload');
+                    const finalizeKnowledgeUpload = httpsCallable<FinalizeKnowledgeUploadRequest, unknown>(functions, 'finalizeKnowledgeUpload');
                     await finalizeKnowledgeUpload({ documentId });
 
                     successCount++;
@@ -113,16 +117,18 @@ class KnowledgeRetrievalService {
     }
 
     async deleteDocument(documentId: string): Promise<void> {
-        const deleteKnowledgeDocument = httpsCallable(functions, 'deleteKnowledgeDocument');
+        const deleteKnowledgeDocument = httpsCallable<DeleteKnowledgeDocumentRequest, unknown>(functions, 'deleteKnowledgeDocument');
         await deleteKnowledgeDocument({ documentId });
     }
 
     async chat(queryText: string, fileUri: string | null = null, projectId?: string): Promise<string> {
-        const queryKnowledgeBase = httpsCallable(functions, 'queryKnowledgeBase');
+        const queryKnowledgeBase = httpsCallable<KnowledgeQueryRequest, unknown>(functions, 'queryKnowledgeBase');
         
         try {
             const result = await queryKnowledgeBase({
                 query: queryText,
+                topK: 5,
+                minRelevance: 0.5
             });
 
             // If the backend doesn't return an answer yet (only citations), we format the citations.

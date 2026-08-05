@@ -6,6 +6,9 @@ import {
   KNOWLEDGE_EMBEDDING_MODEL,
   KNOWLEDGE_EMBEDDING_DIMENSION,
   type KnowledgeDocument,
+  type CreateKnowledgeUploadRequest,
+  type FinalizeKnowledgeUploadRequest,
+  type DeleteKnowledgeDocumentRequest,
 } from '@indii/shared';
 import { getFunctions } from 'firebase-admin/functions';
 
@@ -13,24 +16,14 @@ if (!admin.apps.length) {
   admin.initializeApp();
 }
 
-export interface CreateKnowledgeUploadPayload {
-  title: string;
-  mimeType: 'text/plain' | 'text/markdown' | 'application/pdf';
-  byteSize: number;
-  contentSha256: string;
-  ext?: string;
-}
-
-export interface FinalizeKnowledgeUploadPayload {
-  documentId: string;
-}
+// Types imported from @indii/shared
 
 /**
  * Endpoint 1: createKnowledgeUpload
  * Authorizes upload, records 'uploading' state, and returns canonical storage path.
  * Path pattern: rag-sources/{uid}/{sha256}/original.{ext}
  */
-export const createKnowledgeUpload = onCall({ enforceAppCheck: true }, async (request: CallableRequest<CreateKnowledgeUploadPayload>) => {
+export const createKnowledgeUpload = onCall({ enforceAppCheck: true }, async (request: CallableRequest<CreateKnowledgeUploadRequest>) => {
   if (!request.auth) {
     throw new HttpsError('unauthenticated', 'User must be authenticated to create knowledge upload.');
   }
@@ -101,7 +94,7 @@ export const createKnowledgeUpload = onCall({ enforceAppCheck: true }, async (re
  * Verifies object exists in Storage, matches metadata/generation/SHA, updates state to 'queued',
  * and dispatches background indexing.
  */
-export const finalizeKnowledgeUpload = onCall({ enforceAppCheck: true }, async (request: CallableRequest<FinalizeKnowledgeUploadPayload>) => {
+export const finalizeKnowledgeUpload = onCall({ enforceAppCheck: true }, async (request: CallableRequest<FinalizeKnowledgeUploadRequest>) => {
   if (!request.auth) {
     throw new HttpsError('unauthenticated', 'User must be authenticated to finalize knowledge upload.');
   }
@@ -179,15 +172,25 @@ export const finalizeKnowledgeUpload = onCall({ enforceAppCheck: true }, async (
     updatedAt: now,
   });
 
-  // Trigger indexing worker asynchronously via Task Queue
-  const queue = getFunctions().taskQueue('indexKnowledgeDocumentWorker');
-  await queue.enqueue({
-    uid,
-    documentId,
-    storagePath: docData.storagePath,
-    storageGeneration,
-    contentSha256: docData.contentSha256,
-  });
+  // Trigger indexing worker asynchronously via Task Queue with fallback error tracking
+  try {
+    const queue = getFunctions().taskQueue('indexKnowledgeDocumentWorker');
+    await queue.enqueue({
+      uid,
+      documentId,
+      storagePath: docData.storagePath,
+      storageGeneration,
+      contentSha256: docData.contentSha256,
+    });
+  } catch (queueErr: unknown) {
+    const errorMsg = queueErr instanceof Error ? queueErr.message : String(queueErr);
+    console.error(`[KnowledgeUpload] Failed to enqueue Cloud Task for document ${documentId}:`, queueErr);
+    await docRef.update({
+      failureCode: 'task-enqueue-failed',
+      failureReason: errorMsg,
+      updatedAt: new Date().toISOString(),
+    });
+  }
 
   return {
     documentId,
@@ -195,17 +198,13 @@ export const finalizeKnowledgeUpload = onCall({ enforceAppCheck: true }, async (
     storageGeneration,
     updatedAt: now,
   };
-});
-
-export interface DeleteKnowledgeDocumentPayload {
-  documentId: string;
-}
+});// Delete payload imported from @indii/shared
 
 /**
  * Endpoint 3: deleteKnowledgeDocument
  * Marks document state as deleting, batch deletes chunks, and deletes the GCS object.
  */
-export const deleteKnowledgeDocument = onCall({ enforceAppCheck: true }, async (request: CallableRequest<DeleteKnowledgeDocumentPayload>) => {
+export const deleteKnowledgeDocument = onCall({ enforceAppCheck: true }, async (request: CallableRequest<DeleteKnowledgeDocumentRequest>) => {
   if (!request.auth) {
     throw new HttpsError('unauthenticated', 'User must be authenticated to delete knowledge upload.');
   }

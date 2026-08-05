@@ -196,9 +196,9 @@ export async function createClaimedVideoJob(
     jobRecord: Record<string, unknown>;
   },
 ): Promise<void> {
-  const reservationRef = db.collection('costLedger').doc(input.reservationId);
   const jobRef = db.collection('videoJobs').doc(input.jobId);
   await db.runTransaction(async transaction => {
+    const reservationRef = db.collection('costLedger').doc(input.reservationId);
     const [reservation, existingJob] = await Promise.all([
       transaction.get(reservationRef),
       transaction.get(jobRef),
@@ -218,7 +218,7 @@ export async function createClaimedVideoJob(
       claimedJobId: input.jobId,
       claimedAt: FieldValue.serverTimestamp(),
     });
-    transaction.create(jobRef, input.jobRecord);
+    transaction.create(jobRef, input.jobRecord as FirebaseFirestore.WithFieldValue<FirebaseFirestore.DocumentData>);
   });
 }
 

@@ -44,6 +44,7 @@ describe('Creative request schemas', () => {
     it('rejects invalid video model, frame URI, and duration values', () => {
         expect(GenerateVideoSchema.safeParse({
             prompt: 'A live performance cut to the beat',
+            costReservationId: 'video-reservation-1',
             model: 'fast',
             aspectRatio: '16:9',
             resolution: '1080p',
@@ -52,14 +53,17 @@ describe('Creative request schemas', () => {
 
         expect(GenerateVideoSchema.safeParse({
             prompt: 'A live performance',
+            costReservationId: 'video-reservation-1',
             model: 'unbounded-provider-model',
         }).success).toBe(false);
         expect(GenerateVideoSchema.safeParse({
             prompt: 'A live performance',
+            costReservationId: 'video-reservation-1',
             firstFrameUri: 'data:image/png;base64,Zm9yZ2Vk',
         }).success).toBe(false);
         expect(GenerateVideoSchema.safeParse({
             prompt: 'A live performance',
+            costReservationId: 'video-reservation-1',
             durationSeconds: 60,
         }).success).toBe(false);
     });

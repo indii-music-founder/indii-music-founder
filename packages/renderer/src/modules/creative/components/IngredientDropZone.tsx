@@ -174,7 +174,8 @@ export function IngredientDropZone({ ingredients, onChange, mode = 'reference', 
                                             type: 'image'
                                         };
                                         onChange([...ingredients, newIngredient]);
-                                    });
+                                    })
+                                    .catch(() => error('Failed to process captured photo. Please try again.'));
                             }}
                             onClose={() => setShowCamera(false)}
                         />

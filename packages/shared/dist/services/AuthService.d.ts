@@ -30,7 +30,8 @@ export declare class AuthService {
      */
     static validateDeepLinkOrigin(url: string): DeepLinkValidationResult;
     /**
-     * Checks if legacy token callback is allowed based on environment
+     * Checks if legacy token callback is allowed based on environment.
+     * Disabled by default for security unless explicitly enabled via AUTH_ALLOW_LEGACY_TOKEN_CALLBACK=true.
      */
     static isLegacyCallbackEnabled(env: Record<string, string | undefined>): boolean;
 }

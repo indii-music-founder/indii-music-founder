@@ -69,6 +69,7 @@ import {
   reconcileStaleClaimedAgentStreamReservations,
   serializeCostOperationHistoryItem,
   voidAgentStreamCostReservation,
+  voidVideoCostReservation,
 } from './enforceOperationCost';
 
 const callEnforceOperationCost = enforceOperationCost as unknown as (request: {
@@ -77,6 +78,11 @@ const callEnforceOperationCost = enforceOperationCost as unknown as (request: {
   rawRequest?: Record<string, unknown>;
 }) => Promise<unknown>;
 const callVoidAgentStreamCostReservation = voidAgentStreamCostReservation as unknown as (request: {
+  auth?: { uid: string; token?: Record<string, unknown> };
+  data: Record<string, unknown>;
+  rawRequest?: Record<string, unknown>;
+}) => Promise<unknown>;
+const callVoidVideoCostReservation = voidVideoCostReservation as unknown as (request: {
   auth?: { uid: string; token?: Record<string, unknown> };
   data: Record<string, unknown>;
   rawRequest?: Record<string, unknown>;
@@ -522,6 +528,27 @@ describe('ISSUE-1006 operation cost receipts and expiry', () => {
     await expect(reconcileStaleClaimedAgentStreamReservations(new Date(), finalize)).resolves.toBe(1);
     expect(query.where).toHaveBeenCalledWith('type', '==', 'agent_stream');
     expect(finalize).toHaveBeenCalledWith(expect.objectContaining({ operationId: 'op-claimed', outcome: 'VOIDED', jobId: 'claim-1', expectedType: 'agent_stream' }));
+  });
+
+  it('voids only the authenticated owner\'s unclaimed video reservation', async () => {
+    mocks.validateAppCheck.mockReturnValue(undefined);
+    mocks.requireEntitlement.mockResolvedValue({ tier: 'free' });
+    mocks.entitlementTierToBudgetTier.mockReturnValue('free');
+    mocks.arcjetPolicyForEntitlement.mockReturnValue('verified-free');
+    mocks.arcjetProtect.mockResolvedValue({ allowed: true });
+    const state: Record<string, unknown> = {
+      userId: 'user-1', type: 'video', status: 'APPROVED', estimatedCost: 0.6,
+      ledgerDocumentPaths: { daily: 'users/user-1/costLedger/daily-1' },
+    };
+    const transaction = {
+      get: vi.fn(async () => ({ exists: true, data: () => ({ ...state }) })),
+      update: vi.fn((_ref, value) => Object.assign(state, value)), set: vi.fn(),
+    };
+    mocks.firestore.mockReturnValue({ doc: vi.fn((path: string) => ({ path })), runTransaction: vi.fn((fn) => fn(transaction)) });
+    await expect(callVoidVideoCostReservation({ auth: { uid: 'user-2', token: { email_verified: true } }, data: { operationId: 'op-video-1' }, rawRequest: {} })).rejects.toMatchObject({ code: 'permission-denied' });
+    expect(state.status).toBe('APPROVED');
+    await expect(callVoidVideoCostReservation({ auth: { uid: 'user-1', token: { email_verified: true } }, data: { operationId: 'op-video-1' }, rawRequest: {} })).resolves.toEqual({ voided: true });
+    expect(state.status).toBe('VOIDED');
   });
 });
 

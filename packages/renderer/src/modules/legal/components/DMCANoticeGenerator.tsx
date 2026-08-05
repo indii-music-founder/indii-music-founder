@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Shield, Copy, Download, CheckCircle2, AlertTriangle, FileText } from 'lucide-react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
+import { logger } from '@/utils/logger';
 
 /* ================================================================== */
 /*  DMCA / Takedown Notice Generator                                    */
@@ -143,7 +144,7 @@ export function DMCANoticeGenerator() {
         navigator.clipboard.writeText(noticeHTML).then(() => {
             setCopied(true);
             setTimeout(() => setCopied(false), 2000);
-        });
+        }).catch((err) => logger.error('Failed to copy DMCA notice to clipboard:', err));
     };
 
     const handleDownload = () => {

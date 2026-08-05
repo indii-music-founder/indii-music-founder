@@ -67,6 +67,8 @@ export function useVideoEditor(initialVideo?: HistoryItem) {
                 trackId,
                 name: initialVideo.prompt || 'Imported Video'
             });
+        }).catch((error) => {
+            logger.error('Failed to resolve duration for imported media:', error);
         });
     }, [initialVideo, addClip, project.clips, project.tracks]);
 
@@ -258,6 +260,8 @@ export function useVideoEditor(initialVideo?: HistoryItem) {
                     projectId: project.id,
                     orgId: state.currentOrganizationId
                 });
+            }).catch((error) => {
+                logger.error('Failed to record local export in history:', error);
             });
 
         } catch (error: unknown) {

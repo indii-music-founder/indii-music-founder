@@ -67,6 +67,7 @@ export declare const GenerateVideoSchema: z.ZodObject<{
     prompt: z.ZodString;
     referenceUri: z.ZodOptional<z.ZodString>;
 } & {
+    costReservationId: z.ZodString;
     mode: z.ZodOptional<z.ZodEnum<["video_remix", "temporal_inpaint"]>>;
     sourceVideoUri: z.ZodOptional<z.ZodString>;
     firstFrameUri: z.ZodOptional<z.ZodString>;
@@ -115,67 +116,46 @@ export declare const GenerateVideoSchema: z.ZodObject<{
         lastFrameUri: z.ZodOptional<z.ZodString>;
         cameraMovement: z.ZodOptional<z.ZodString>;
         motionStrength: z.ZodOptional<z.ZodNumber>;
-    }, "passthrough", z.ZodTypeAny, z.objectOutputType<{
-        fps: z.ZodDefault<z.ZodNumber>;
-        durationSeconds: z.ZodOptional<z.ZodNumber>;
-        totalFrames: z.ZodOptional<z.ZodNumber>;
-        aspectRatio: z.ZodOptional<z.ZodEnum<["16:9", "9:16", "1:1"]>>;
-        resolution: z.ZodOptional<z.ZodEnum<["720p", "1080p", "4k"]>>;
-        seed: z.ZodOptional<z.ZodUnion<[z.ZodNumber, z.ZodString]>>;
-        cameraPhysics: z.ZodOptional<z.ZodObject<{
-            pan: z.ZodOptional<z.ZodOptional<z.ZodNumber>>;
-            tilt: z.ZodOptional<z.ZodOptional<z.ZodNumber>>;
-            zoom: z.ZodOptional<z.ZodOptional<z.ZodNumber>>;
-            crane: z.ZodOptional<z.ZodOptional<z.ZodNumber>>;
-        }, "strip", z.ZodTypeAny, {
+    }, "strip", z.ZodTypeAny, {
+        fps: number;
+        cameraPhysics?: {
             pan?: number | undefined;
             tilt?: number | undefined;
             zoom?: number | undefined;
             crane?: number | undefined;
-        }, {
+        } | undefined;
+        durationSeconds?: number | undefined;
+        totalFrames?: number | undefined;
+        aspectRatio?: "16:9" | "9:16" | "1:1" | undefined;
+        resolution?: "720p" | "1080p" | "4k" | undefined;
+        seed?: string | number | undefined;
+        firstFrameUri?: string | undefined;
+        lastFrameUri?: string | undefined;
+        cameraMovement?: string | undefined;
+        motionStrength?: number | undefined;
+    }, {
+        cameraPhysics?: {
             pan?: number | undefined;
             tilt?: number | undefined;
             zoom?: number | undefined;
             crane?: number | undefined;
-        }>>;
-        firstFrameUri: z.ZodOptional<z.ZodString>;
-        lastFrameUri: z.ZodOptional<z.ZodString>;
-        cameraMovement: z.ZodOptional<z.ZodString>;
-        motionStrength: z.ZodOptional<z.ZodNumber>;
-    }, z.ZodTypeAny, "passthrough">, z.objectInputType<{
-        fps: z.ZodDefault<z.ZodNumber>;
-        durationSeconds: z.ZodOptional<z.ZodNumber>;
-        totalFrames: z.ZodOptional<z.ZodNumber>;
-        aspectRatio: z.ZodOptional<z.ZodEnum<["16:9", "9:16", "1:1"]>>;
-        resolution: z.ZodOptional<z.ZodEnum<["720p", "1080p", "4k"]>>;
-        seed: z.ZodOptional<z.ZodUnion<[z.ZodNumber, z.ZodString]>>;
-        cameraPhysics: z.ZodOptional<z.ZodObject<{
-            pan: z.ZodOptional<z.ZodOptional<z.ZodNumber>>;
-            tilt: z.ZodOptional<z.ZodOptional<z.ZodNumber>>;
-            zoom: z.ZodOptional<z.ZodOptional<z.ZodNumber>>;
-            crane: z.ZodOptional<z.ZodOptional<z.ZodNumber>>;
-        }, "strip", z.ZodTypeAny, {
-            pan?: number | undefined;
-            tilt?: number | undefined;
-            zoom?: number | undefined;
-            crane?: number | undefined;
-        }, {
-            pan?: number | undefined;
-            tilt?: number | undefined;
-            zoom?: number | undefined;
-            crane?: number | undefined;
-        }>>;
-        firstFrameUri: z.ZodOptional<z.ZodString>;
-        lastFrameUri: z.ZodOptional<z.ZodString>;
-        cameraMovement: z.ZodOptional<z.ZodString>;
-        motionStrength: z.ZodOptional<z.ZodNumber>;
-    }, z.ZodTypeAny, "passthrough">>>;
+        } | undefined;
+        fps?: number | undefined;
+        durationSeconds?: number | undefined;
+        totalFrames?: number | undefined;
+        aspectRatio?: "16:9" | "9:16" | "1:1" | undefined;
+        resolution?: "720p" | "1080p" | "4k" | undefined;
+        seed?: string | number | undefined;
+        firstFrameUri?: string | undefined;
+        lastFrameUri?: string | undefined;
+        cameraMovement?: string | undefined;
+        motionStrength?: number | undefined;
+    }>>;
     personGeneration: z.ZodOptional<z.ZodEnum<["allow_adult", "dont_allow", "allow_all"]>>;
     negativePrompt: z.ZodOptional<z.ZodString>;
     seed: z.ZodOptional<z.ZodUnion<[z.ZodNumber, z.ZodString]>>;
     enhancePrompt: z.ZodOptional<z.ZodBoolean>;
     costEstimate: z.ZodOptional<z.ZodNumber>;
-    costReservationId: z.ZodOptional<z.ZodString>;
     parentId: z.ZodOptional<z.ZodString>;
     inputManifest: z.ZodOptional<z.ZodArray<z.ZodObject<{
         role: z.ZodEnum<["first_frame", "last_frame", "ingredient", "character_reference", "whisk_reference"]>;
@@ -193,6 +173,7 @@ export declare const GenerateVideoSchema: z.ZodObject<{
     aspectRatio: "16:9" | "9:16" | "1:1" | "3:4" | "4:3";
     resolution: "720p" | "1080p" | "4k" | "1280x720" | "1920x1080" | "3840x2160";
     model: "lite" | "fast" | "pro";
+    costReservationId: string;
     sourceVideoUri?: string | undefined;
     maskFrameUri?: string | undefined;
     maskTrackUri?: string | undefined;
@@ -200,52 +181,42 @@ export declare const GenerateVideoSchema: z.ZodObject<{
         startFrame: number;
         endFrame: number;
     } | undefined;
+    inputManifest?: {
+        role: "first_frame" | "last_frame" | "ingredient" | "character_reference" | "whisk_reference";
+        uri: string;
+    }[] | undefined;
     seed?: string | number | undefined;
     firstFrameUri?: string | undefined;
     lastFrameUri?: string | undefined;
     mode?: "temporal_inpaint" | "video_remix" | undefined;
-    directorSettings?: z.objectOutputType<{
-        fps: z.ZodDefault<z.ZodNumber>;
-        durationSeconds: z.ZodOptional<z.ZodNumber>;
-        totalFrames: z.ZodOptional<z.ZodNumber>;
-        aspectRatio: z.ZodOptional<z.ZodEnum<["16:9", "9:16", "1:1"]>>;
-        resolution: z.ZodOptional<z.ZodEnum<["720p", "1080p", "4k"]>>;
-        seed: z.ZodOptional<z.ZodUnion<[z.ZodNumber, z.ZodString]>>;
-        cameraPhysics: z.ZodOptional<z.ZodObject<{
-            pan: z.ZodOptional<z.ZodOptional<z.ZodNumber>>;
-            tilt: z.ZodOptional<z.ZodOptional<z.ZodNumber>>;
-            zoom: z.ZodOptional<z.ZodOptional<z.ZodNumber>>;
-            crane: z.ZodOptional<z.ZodOptional<z.ZodNumber>>;
-        }, "strip", z.ZodTypeAny, {
+    directorSettings?: {
+        fps: number;
+        cameraPhysics?: {
             pan?: number | undefined;
             tilt?: number | undefined;
             zoom?: number | undefined;
             crane?: number | undefined;
-        }, {
-            pan?: number | undefined;
-            tilt?: number | undefined;
-            zoom?: number | undefined;
-            crane?: number | undefined;
-        }>>;
-        firstFrameUri: z.ZodOptional<z.ZodString>;
-        lastFrameUri: z.ZodOptional<z.ZodString>;
-        cameraMovement: z.ZodOptional<z.ZodString>;
-        motionStrength: z.ZodOptional<z.ZodNumber>;
-    }, z.ZodTypeAny, "passthrough"> | undefined;
+        } | undefined;
+        durationSeconds?: number | undefined;
+        totalFrames?: number | undefined;
+        aspectRatio?: "16:9" | "9:16" | "1:1" | undefined;
+        resolution?: "720p" | "1080p" | "4k" | undefined;
+        seed?: string | number | undefined;
+        firstFrameUri?: string | undefined;
+        lastFrameUri?: string | undefined;
+        cameraMovement?: string | undefined;
+        motionStrength?: number | undefined;
+    } | undefined;
     costEstimate?: number | undefined;
-    costReservationId?: string | undefined;
     referenceUri?: string | undefined;
     referenceUris?: string[] | undefined;
     personGeneration?: "allow_adult" | "dont_allow" | "allow_all" | undefined;
     negativePrompt?: string | undefined;
     enhancePrompt?: boolean | undefined;
     parentId?: string | undefined;
-    inputManifest?: {
-        role: "first_frame" | "last_frame" | "ingredient" | "character_reference" | "whisk_reference";
-        uri: string;
-    }[] | undefined;
 }, {
     prompt: string;
+    costReservationId: string;
     sourceVideoUri?: string | undefined;
     maskFrameUri?: string | undefined;
     maskTrackUri?: string | undefined;
@@ -253,6 +224,10 @@ export declare const GenerateVideoSchema: z.ZodObject<{
         startFrame: number;
         endFrame: number;
     } | undefined;
+    inputManifest?: {
+        role: "first_frame" | "last_frame" | "ingredient" | "character_reference" | "whisk_reference";
+        uri: string;
+    }[] | undefined;
     durationSeconds?: number | undefined;
     aspectRatio?: "16:9" | "9:16" | "1:1" | "3:4" | "4:3" | undefined;
     resolution?: "720p" | "1080p" | "4k" | "1280x720" | "1920x1080" | "3840x2160" | undefined;
@@ -260,47 +235,32 @@ export declare const GenerateVideoSchema: z.ZodObject<{
     firstFrameUri?: string | undefined;
     lastFrameUri?: string | undefined;
     mode?: "temporal_inpaint" | "video_remix" | undefined;
-    directorSettings?: z.objectInputType<{
-        fps: z.ZodDefault<z.ZodNumber>;
-        durationSeconds: z.ZodOptional<z.ZodNumber>;
-        totalFrames: z.ZodOptional<z.ZodNumber>;
-        aspectRatio: z.ZodOptional<z.ZodEnum<["16:9", "9:16", "1:1"]>>;
-        resolution: z.ZodOptional<z.ZodEnum<["720p", "1080p", "4k"]>>;
-        seed: z.ZodOptional<z.ZodUnion<[z.ZodNumber, z.ZodString]>>;
-        cameraPhysics: z.ZodOptional<z.ZodObject<{
-            pan: z.ZodOptional<z.ZodOptional<z.ZodNumber>>;
-            tilt: z.ZodOptional<z.ZodOptional<z.ZodNumber>>;
-            zoom: z.ZodOptional<z.ZodOptional<z.ZodNumber>>;
-            crane: z.ZodOptional<z.ZodOptional<z.ZodNumber>>;
-        }, "strip", z.ZodTypeAny, {
+    directorSettings?: {
+        cameraPhysics?: {
             pan?: number | undefined;
             tilt?: number | undefined;
             zoom?: number | undefined;
             crane?: number | undefined;
-        }, {
-            pan?: number | undefined;
-            tilt?: number | undefined;
-            zoom?: number | undefined;
-            crane?: number | undefined;
-        }>>;
-        firstFrameUri: z.ZodOptional<z.ZodString>;
-        lastFrameUri: z.ZodOptional<z.ZodString>;
-        cameraMovement: z.ZodOptional<z.ZodString>;
-        motionStrength: z.ZodOptional<z.ZodNumber>;
-    }, z.ZodTypeAny, "passthrough"> | undefined;
+        } | undefined;
+        fps?: number | undefined;
+        durationSeconds?: number | undefined;
+        totalFrames?: number | undefined;
+        aspectRatio?: "16:9" | "9:16" | "1:1" | undefined;
+        resolution?: "720p" | "1080p" | "4k" | undefined;
+        seed?: string | number | undefined;
+        firstFrameUri?: string | undefined;
+        lastFrameUri?: string | undefined;
+        cameraMovement?: string | undefined;
+        motionStrength?: number | undefined;
+    } | undefined;
     model?: "lite" | "fast" | "pro" | undefined;
     costEstimate?: number | undefined;
-    costReservationId?: string | undefined;
     referenceUri?: string | undefined;
     referenceUris?: string[] | undefined;
     personGeneration?: "allow_adult" | "dont_allow" | "allow_all" | undefined;
     negativePrompt?: string | undefined;
     enhancePrompt?: boolean | undefined;
     parentId?: string | undefined;
-    inputManifest?: {
-        role: "first_frame" | "last_frame" | "ingredient" | "character_reference" | "whisk_reference";
-        uri: string;
-    }[] | undefined;
 }>;
 export declare const OmniVideoTaskSchema: z.ZodEnum<["text_to_video", "image_to_video", "reference_to_video", "edit"]>;
 export declare const OmniStoryboardFrameSchema: z.ZodObject<{

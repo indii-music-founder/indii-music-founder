@@ -44,23 +44,39 @@ const ENCRYPTION_ALGORITHM = {
  */
 export class E2EEncryptionService {
   private keyPairs: Map<string, KeyPair> = new Map();
+  private signingKeyPairs: Map<string, KeyPair> = new Map();
   private publicKeyRegistry: Map<string, CryptoKey> = new Map();
+  private signingPublicKeyRegistry: Map<string, CryptoKey> = new Map();
   private sessionKeys: Map<string, CryptoKey> = new Map();
 
   /**
-   * Initialize service and generate keys
+   * Initialize service and generate encryption + signing key pairs
    */
   async initialize(agentId: string): Promise<void> {
     try {
-      // Generate RSA key pair for this agent
+      // Generate RSA key pair for encryption (RSA-OAEP)
       const keyPair = (await crypto.subtle.generateKey(
         ALGORITHM,
         true,
         ['encrypt', 'decrypt']
       )) as KeyPair;
 
+      // Generate RSA key pair for message signing (RSASSA-PKCS1-v1_5)
+      const signingKeyPair = (await crypto.subtle.generateKey(
+        {
+          name: 'RSASSA-PKCS1-v1_5',
+          modulusLength: 2048,
+          publicExponent: new Uint8Array([1, 0, 1]),
+          hash: 'SHA-256',
+        },
+        true,
+        ['sign', 'verify']
+      )) as KeyPair;
+
       this.keyPairs.set(agentId, keyPair);
+      this.signingKeyPairs.set(agentId, signingKeyPair);
       this.publicKeyRegistry.set(agentId, keyPair.publicKey);
+      this.signingPublicKeyRegistry.set(agentId, signingKeyPair.publicKey);
 
       this.log(`Encryption initialized for agent ${agentId}`);
     } catch (error) {
@@ -70,11 +86,12 @@ export class E2EEncryptionService {
   }
 
   /**
-   * Register a peer agent's public key
+   * Register a peer agent's public key (both encryption and signing if provided)
    */
   async registerPeerPublicKey(
     agentId: string,
-    publicKeyJwk: JsonWebKey
+    publicKeyJwk: JsonWebKey,
+    signingKeyJwk?: JsonWebKey
   ): Promise<void> {
     try {
       const publicKey = await crypto.subtle.importKey(
@@ -86,6 +103,21 @@ export class E2EEncryptionService {
       );
 
       this.publicKeyRegistry.set(agentId, publicKey);
+
+      if (signingKeyJwk) {
+        const signingKey = await crypto.subtle.importKey(
+          'jwk',
+          signingKeyJwk,
+          {
+            name: 'RSASSA-PKCS1-v1_5',
+            hash: 'SHA-256',
+          },
+          true,
+          ['verify']
+        );
+        this.signingPublicKeyRegistry.set(agentId, signingKey);
+      }
+
       this.log(`Registered public key for agent ${agentId}`);
     } catch (error) {
       logger.error(`Failed to register public key for ${agentId}`, error);
@@ -106,7 +138,19 @@ export class E2EEncryptionService {
   }
 
   /**
-   * Encrypt a message for a specific recipient
+   * Export signing public key for sharing with peers
+   */
+  async exportSigningPublicKey(agentId: string): Promise<JsonWebKey> {
+    const keyPair = this.signingKeyPairs.get(agentId);
+    if (!keyPair) {
+      throw new Error(`No signing key pair found for agent ${agentId}`);
+    }
+
+    return crypto.subtle.exportKey('jwk', keyPair.publicKey);
+  }
+
+  /**
+   * Encrypt a message for a specific recipient and sign the envelope
    */
   async encryptMessage(
     message: Record<string, unknown>,
@@ -165,16 +209,22 @@ export class E2EEncryptionService {
         recipientId,
       };
 
+      // Sign canonical envelope payload
+      let signature = '';
+      if (this.signingKeyPairs.has(senderId)) {
+        signature = await this.signEnvelopePayload(encrypted, senderId);
+      }
+
       // Store session key for later reference
       const messageId = this.generateMessageId();
       this.sessionKeys.set(messageId, sessionKey);
 
-      this.log(`Encrypted message for ${recipientId}`);
+      this.log(`Encrypted and signed message for ${recipientId}`);
 
       return {
         id: messageId,
         encrypted,
-        signature: '',
+        signature,
       };
     } catch (error) {
       logger.error('Failed to encrypt message', error);
@@ -183,23 +233,38 @@ export class E2EEncryptionService {
   }
 
   /**
-   * Decrypt a message
+   * Decrypt a message and verify sender signature
    */
   async decryptMessage(
     envelope: MessageEnvelope,
     recipientAgentId: string
   ): Promise<Record<string, unknown>> {
     try {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { encrypted, signature } = envelope;
 
-      // Note: Signature verification bypassed for Phase 4.1 (matching Python placeholder)
+      // Check recipient binding
+      if (encrypted.recipientId && encrypted.recipientId !== recipientAgentId) {
+        throw new Error(`Recipient mismatch: message intended for ${encrypted.recipientId}, received by ${recipientAgentId}`);
+      }
 
       // Check timestamp (prevent replay attacks)
       const messageAge = Date.now() - encrypted.timestamp;
-      if (messageAge > 3600000) {
-        // 1 hour
-        throw new Error('Message expired (older than 1 hour)');
+      if (messageAge > 3600000 || messageAge < -300000) {
+        // 1 hour max age, 5 minutes clock skew tolerance
+        throw new Error('Message expired or invalid timestamp (replay prevention)');
+      }
+
+      // Verify signature if sender signing key is available or signature is provided
+      const senderId = encrypted.senderId;
+      const senderSigningKey = this.signingPublicKeyRegistry.get(senderId) || this.signingKeyPairs.get(senderId)?.publicKey;
+      
+      if (signature && senderSigningKey) {
+        const isValid = await this.verifyEnvelopePayloadSignature(encrypted, signature, senderSigningKey);
+        if (!isValid) {
+          throw new Error(`Signature verification failed for sender ${senderId}`);
+        }
+      } else if (signature && !senderSigningKey) {
+        logger.warn(`[E2E] Message from ${senderId} has signature but sender signing key is not registered`);
       }
 
       // Get recipient's private key
@@ -240,12 +305,61 @@ export class E2EEncryptionService {
 
       const decrypted = JSON.parse(new TextDecoder().decode(message));
 
-      this.log(`Decrypted message from ${encrypted.senderId}`);
+      this.log(`Decrypted authenticated message from ${encrypted.senderId}`);
 
       return decrypted;
     } catch (error) {
       logger.error('Failed to decrypt message', error);
       throw error;
+    }
+  }
+
+  /**
+   * Sign canonical envelope payload
+   */
+  private async signEnvelopePayload(
+    encrypted: EncryptedMessage,
+    senderId: string
+  ): Promise<string> {
+    const signingKeyPair = this.signingKeyPairs.get(senderId);
+    if (!signingKeyPair) {
+      throw new Error(`No signing key pair found for agent ${senderId}`);
+    }
+
+    const payloadString = `${encrypted.senderId}:${encrypted.recipientId}:${encrypted.timestamp}:${encrypted.ciphertext}`;
+    const payloadBuffer = new TextEncoder().encode(payloadString);
+
+    const signature = await crypto.subtle.sign(
+      'RSASSA-PKCS1-v1_5',
+      signingKeyPair.privateKey,
+      payloadBuffer
+    );
+
+    return this.arrayToBase64(new Uint8Array(signature));
+  }
+
+  /**
+   * Verify envelope payload signature against sender public key
+   */
+  private async verifyEnvelopePayloadSignature(
+    encrypted: EncryptedMessage,
+    signature: string,
+    senderSigningKey: CryptoKey
+  ): Promise<boolean> {
+    try {
+      const payloadString = `${encrypted.senderId}:${encrypted.recipientId}:${encrypted.timestamp}:${encrypted.ciphertext}`;
+      const payloadBuffer = new TextEncoder().encode(payloadString);
+      const signatureBuffer = this.base64ToArray(signature);
+
+      return await crypto.subtle.verify(
+        'RSASSA-PKCS1-v1_5',
+        senderSigningKey,
+        signatureBuffer.buffer as ArrayBuffer,
+        payloadBuffer
+      );
+    } catch (error) {
+      logger.error('Signature verification error', error);
+      return false;
     }
   }
 

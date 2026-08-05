@@ -119,3 +119,31 @@ export const KnowledgeOperationErrorSchema = z.object({
   details: z.record(z.unknown()).optional(),
 });
 export type KnowledgeOperationError = z.infer<typeof KnowledgeOperationErrorSchema>;
+
+export const CreateKnowledgeUploadRequestSchema = z.object({
+  title: z.string().min(1).max(512),
+  mimeType: z.enum(['text/plain', 'text/markdown', 'application/pdf']),
+  byteSize: z.number().int().nonnegative(),
+  contentSha256: z.string().regex(/^[a-f0-9]{64}$/i),
+  ext: z.string().optional(),
+});
+export type CreateKnowledgeUploadRequest = z.infer<typeof CreateKnowledgeUploadRequestSchema>;
+
+export const FinalizeKnowledgeUploadRequestSchema = z.object({
+  documentId: z.string().min(1),
+});
+export type FinalizeKnowledgeUploadRequest = z.infer<typeof FinalizeKnowledgeUploadRequestSchema>;
+
+export const DeleteKnowledgeDocumentRequestSchema = z.object({
+  documentId: z.string().min(1),
+});
+export type DeleteKnowledgeDocumentRequest = z.infer<typeof DeleteKnowledgeDocumentRequestSchema>;
+
+export const IndexWorkerPayloadSchema = z.object({
+  uid: z.string().min(1),
+  documentId: z.string().min(1),
+  storagePath: z.string().min(1),
+  storageGeneration: z.string().min(1),
+  contentSha256: z.string().regex(/^[a-f0-9]{64}$/i),
+});
+export type IndexWorkerPayload = z.infer<typeof IndexWorkerPayloadSchema>;

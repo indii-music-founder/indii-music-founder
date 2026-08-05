@@ -171,6 +171,8 @@ const MerchCanvas = forwardRef<MerchCanvasRef, MerchCanvasProps>(({ width = 400,
                     }).catch(err => {
                         logger.error("[MerchCanvas] Blob fetch fallback failed", err);
                     });
+                }).catch(err => {
+                    logger.error("[MerchCanvas] Failed to load storage fetch module", err);
                 });
             });
         },
@@ -189,7 +191,7 @@ const MerchCanvas = forwardRef<MerchCanvasRef, MerchCanvasProps>(({ width = 400,
                 const json = history.current[historyIndex.current]!;
                 fabricCanvas.current?.loadFromJSON(json).then(() => {
                     fabricCanvas.current?.renderAll();
-                });
+                }).catch(err => logger.error('[MerchCanvas] Undo failed to load canvas state', err));
             }
         },
         redo: () => {
@@ -198,7 +200,7 @@ const MerchCanvas = forwardRef<MerchCanvasRef, MerchCanvasProps>(({ width = 400,
                 const json = history.current[historyIndex.current]!;
                 fabricCanvas.current?.loadFromJSON(json).then(() => {
                     fabricCanvas.current?.renderAll();
-                });
+                }).catch(err => logger.error('[MerchCanvas] Redo failed to load canvas state', err));
             }
         }
     }));

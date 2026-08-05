@@ -49,6 +49,24 @@ describe('Knowledge Base Index Worker', () => {
         delete: vi.fn(),
         commit: vi.fn(async () => {}),
       }),
+      runTransaction: vi.fn(async (callback) => {
+        const t = {
+          get: vi.fn(async (ref: any) => ref.get()),
+          update: vi.fn((ref: any, data: any) => {
+             if (mockFirestoreData[ref.path]) {
+                mockFirestoreData[ref.path] = { ...mockFirestoreData[ref.path], ...data };
+             }
+          }),
+        };
+        return callback(t);
+      }),
+      bulkWriter: () => ({
+        set: vi.fn((ref: any, data: any) => {
+          mockFirestoreData[ref.path] = data;
+        }),
+        delete: vi.fn(),
+        close: vi.fn(async () => {}),
+      }),
     };
 
     mockStorage = {
@@ -99,6 +117,7 @@ describe('Knowledge Base Index Worker', () => {
       db: mockDb,
       storage: mockStorage,
       getGenAI: () => mockGenAI,
+      requireVerifiedEntitlement: vi.fn().mockResolvedValue({}),
     });
 
     expect(result.documentId).toBe('doc-abc');
@@ -137,6 +156,7 @@ describe('Knowledge Base Index Worker', () => {
       db: mockDb,
       storage: mockStorage,
       getGenAI: () => mockGenAI,
+      requireVerifiedEntitlement: vi.fn().mockResolvedValue({}),
     });
 
     expect(result.chunkCount).toBe(2);
@@ -164,6 +184,7 @@ describe('Knowledge Base Index Worker', () => {
         db: mockDb,
         storage: mockStorage,
         getGenAI: () => mockGenAI,
+        requireVerifiedEntitlement: vi.fn().mockResolvedValue({}),
       }),
     ).rejects.toThrow('File SHA-256 hash mismatch');
 

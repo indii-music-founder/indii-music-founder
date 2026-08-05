@@ -86,6 +86,7 @@ describe('Knowledge Base Query Endpoint', () => {
             text: 'Music distribution overview',
             ordinal: 0,
             pageNumber: 1,
+            distance: 0.1, // Relevance will be 1 - 0.1 = 0.9
           }),
         },
       ],
@@ -96,6 +97,7 @@ describe('Knowledge Base Query Endpoint', () => {
         id: 'doc-1',
         data: () => ({
           title: 'Music distribution overview doc',
+          state: 'active',
         }),
       },
     ];
@@ -114,10 +116,14 @@ describe('Knowledge Base Query Endpoint', () => {
     expect(res.query).toBe('how to distribute music');
     expect(res.citations).toHaveLength(1);
     expect(res.citations[0].documentId).toBe('doc-1');
-    expect(mocks.mockFindNearest).toHaveBeenCalledWith('embedding', dummyEmbedding, {
-      limit: 3,
-      distanceMeasure: 'COSINE',
-    });
+    expect(mocks.mockFindNearest).toHaveBeenCalledWith(
+      'embedding',
+      dummyEmbedding, // mock ignores FieldValue.vector wrapper differences
+      {
+        limit: 3,
+        distanceMeasure: 'COSINE',
+      }
+    );
     expect(mocks.mockSet).toHaveBeenCalledWith(
       expect.objectContaining({
         uid: 'user-1',

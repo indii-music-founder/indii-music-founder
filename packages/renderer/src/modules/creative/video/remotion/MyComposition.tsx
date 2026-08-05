@@ -1,9 +1,10 @@
 import React from 'react';
-import { AbsoluteFill, Sequence, Video, Img, Audio, useCurrentFrame, interpolate, Easing, EasingFunction, useVideoConfig } from 'remotion';
+import { AbsoluteFill, Sequence, Video, Img, Audio, useCurrentFrame, interpolate, Easing, EasingFunction, useVideoConfig, delayRender, continueRender, cancelRender } from 'remotion';
 import { useAudioData, visualizeAudio } from '@remotion/media-utils';
+import { useSafeMediaUrl } from '@/hooks/useSafeImageUrl';
 import { VideoProject, VideoClip } from '../store/videoEditorStore';
 
-const AudioVisualizer: React.FC<{ src: string, color?: string }> = ({ src, color = 'white' }) => {
+const AudioVisualizer: React.FC<{ src: string, color?: string, offsetFrames?: number }> = ({ src, color = 'white', offsetFrames = 0 }) => {
     const frame = useCurrentFrame();
     const { fps } = useVideoConfig();
     const audioData = useAudioData(src);
@@ -14,7 +15,7 @@ const AudioVisualizer: React.FC<{ src: string, color?: string }> = ({ src, color
 
     const visualization = visualizeAudio({
         fps,
-        frame,
+        frame: frame + offsetFrames,
         audioData,
         numberOfSamples: 64,
     });
@@ -39,7 +40,11 @@ const AudioVisualizer: React.FC<{ src: string, color?: string }> = ({ src, color
 
 const ClipRenderer: React.FC<{ clip: VideoClip }> = ({ clip }) => {
     const frame = useCurrentFrame();
+    const { fps } = useVideoConfig();
     const { durationInFrames, transitionIn, transitionOut } = clip;
+
+    const startFrom = clip.sourceInUs ? Math.round((clip.sourceInUs / 1000000) * fps) : 0;
+    const endAt = clip.sourceOutUs ? Math.round((clip.sourceOutUs / 1000000) * fps) : undefined;
 
     // --- Opacity Calculation ---
     let opacity = clip.opacity ?? 1;
@@ -191,7 +196,7 @@ const ClipRenderer: React.FC<{ clip: VideoClip }> = ({ clip }) => {
             );
         case 'video':
             if (!clip.src) return null;
-            return <Video src={clip.src} style={style} crossOrigin="anonymous" volume={volume} />;
+            return <Video src={clip.src} style={style} crossOrigin="anonymous" volume={volume} startFrom={startFrom} endAt={endAt} />;
         case 'image':
             if (!clip.src) return null;
             return <Img src={clip.src} style={style} crossOrigin="anonymous" />;
@@ -199,13 +204,41 @@ const ClipRenderer: React.FC<{ clip: VideoClip }> = ({ clip }) => {
             if (!clip.src) return null;
             return (
                 <div style={{ ...style, position: 'relative' }}>
-                    <Audio src={clip.src} volume={volume} />
-                    <AudioVisualizer src={clip.src} color={clip.textColor || 'white'} />
+                    <Audio src={clip.src} volume={volume} startFrom={startFrom} endAt={endAt} />
+                    <AudioVisualizer src={clip.src} color={clip.textColor || 'white'} offsetFrames={startFrom} />
                 </div>
             );
         default:
             return null;
     }
+};
+
+const HydratedClipRenderer: React.FC<{ clip: VideoClip }> = ({ clip }) => {
+    const [handle] = React.useState(() => delayRender('Hydrating clip URL'));
+    const hydration = useSafeMediaUrl(clip.src);
+    const continued = React.useRef(false);
+
+    React.useEffect(() => {
+        if (!continued.current && hydration.status !== 'loading') {
+            continued.current = true;
+            continueRender(handle);
+        }
+    }, [hydration.status, handle]);
+
+    // Only render the inner clip once the URL has hydrated
+    if (!clip.src) {
+        return <ClipRenderer clip={clip} />;
+    }
+    if (hydration.status === 'failed') {
+        cancelRender(new Error(`Unable to hydrate media for clip ${clip.id}: ${hydration.error.message}`));
+        return null;
+    }
+    if (hydration.status !== 'ready') {
+        return null;
+    }
+
+    const hydratedClip = { ...clip, src: hydration.url };
+    return <ClipRenderer clip={hydratedClip} />;
 };
 
 export const MyComposition: React.FC<{ project: VideoProject }> = ({ project }) => {
@@ -215,15 +248,14 @@ export const MyComposition: React.FC<{ project: VideoProject }> = ({ project }) 
                 const trackClips = project.clips.filter((c) => c.trackId === track.id);
 
                 return (
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    <React.Fragment {...({ key: track.id } as any)}>
+                    <React.Fragment key={track.id}>
                         {trackClips.map((clip) => (
                             <Sequence
                                 key={clip.id}
                                 from={clip.startFrame}
                                 durationInFrames={clip.durationInFrames}
                             >
-                                <ClipRenderer clip={clip} />
+                                <HydratedClipRenderer clip={clip} />
                             </Sequence>
                         ))}
                     </React.Fragment>

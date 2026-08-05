@@ -3,6 +3,8 @@ import { ipcMain, IpcMainInvokeEvent } from 'electron';
 import { AgentSupervisor } from '../utils/AgentSupervisor';
 import { validateSender } from '../utils/ipc-security';
 import { z } from 'zod';
+import crypto from 'crypto';
+import { credentialService } from '../services/CredentialService';
 import sodium from 'libsodium-wrappers';
 
 // ARCHITECTURE NOTE: This handler does NOT import Firebase.
@@ -116,12 +118,19 @@ export function registerSecurityHandlers() {
                 return { success: false, error: 'Rotation succeeded but no new key was returned by provider.' };
             }
 
-            // Return the new key to the renderer — it handles the Firestore write
+            const credentialId = `cred-${crypto.randomUUID()}`;
+            await credentialService.saveCredentials(credentialId, {
+                service: serviceName,
+                apiSecret: newKey,
+                updatedAt: new Date().toISOString()
+            });
+
+            // Return opaque credentialId reference to renderer — raw secret material is NOT returned
             return {
                 success: true,
+                credentialId,
                 service: serviceName,
-                newKey,
-                message: `Credentials for ${serviceName} rotated successfully via provider API.`
+                message: `Credentials for ${serviceName} rotated successfully and stored in secure main storage.`
             };
 
         } catch (error: unknown) {

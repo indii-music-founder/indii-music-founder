@@ -4,6 +4,22 @@ vi.stubEnv('VITE_INTELLIGENCE_MOCK_MODE', 'false');
 vi.stubEnv('VITE_FIREBASE_E2E_MOCK', 'false');
 vi.stubEnv('VITE_E2E', 'false');
 
+// Mock keytar globally to prevent libsecret-1.so.0 ERR_DLOPEN_FAILED on headless Linux CI
+vi.mock('keytar', () => ({
+    default: {
+        setPassword: vi.fn().mockResolvedValue(undefined),
+        getPassword: vi.fn().mockResolvedValue(null),
+        deletePassword: vi.fn().mockResolvedValue(true),
+        findPassword: vi.fn().mockResolvedValue(null),
+        findCredentials: vi.fn().mockResolvedValue([]),
+    },
+    setPassword: vi.fn().mockResolvedValue(undefined),
+    getPassword: vi.fn().mockResolvedValue(null),
+    deletePassword: vi.fn().mockResolvedValue(true),
+    findPassword: vi.fn().mockResolvedValue(null),
+    findCredentials: vi.fn().mockResolvedValue([]),
+}));
+
 beforeEach(() => {
     vi.useRealTimers();
 });
@@ -587,6 +603,7 @@ vi.mock('@/services/billing/CostControlService', () => ({
             monthlyUsed: 0,
             operationId: 'test-cost-reservation'
         }),
+        voidUnclaimedVideoReservation: vi.fn().mockResolvedValue(undefined),
         finalize: vi.fn().mockResolvedValue(undefined),
         getStatus: vi.fn().mockResolvedValue({
             dailyUsed: 0,

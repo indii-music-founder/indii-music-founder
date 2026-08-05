@@ -41,8 +41,9 @@ export const VideoJobPayloadSchema = z.object({
         startFrame: z.number().int().min(0),
         endFrame: z.number().int().min(0),
     }).optional(),
+    inputManifest: z.union([z.string(), z.record(z.unknown()), z.array(z.record(z.unknown()))]).optional(),
     cameraPhysics: VideoJobDirectorPhysicsSchema.optional(),
-}).passthrough();
+});
 
 export const VideoJobDirectorSettingsSchema = z.object({
     fps: z.number().int().positive().default(24),
@@ -56,7 +57,7 @@ export const VideoJobDirectorSettingsSchema = z.object({
     lastFrameUri: z.string().startsWith('gs://').optional(),
     cameraMovement: z.string().optional(),
     motionStrength: z.number().min(0).max(1).optional(),
-}).passthrough();
+});
 
 export const VideoJobDocumentSchema = z.object({
     id: z.string().min(1),
@@ -97,6 +98,6 @@ export const VideoJobDocumentSchema = z.object({
         metadata: z.record(z.unknown()).optional(),
     }).optional(),
     metadata: z.record(z.unknown()).optional(),
-}).passthrough();
+});
 
 export type VideoJobDocument = z.infer<typeof VideoJobDocumentSchema>;

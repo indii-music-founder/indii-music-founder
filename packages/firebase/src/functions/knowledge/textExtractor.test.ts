@@ -1,7 +1,18 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { extractDocumentText } from './textExtractor';
 
+const { mockPdfParse } = vi.hoisted(() => ({
+  mockPdfParse: vi.fn(),
+}));
+
+vi.mock('pdf-parse', () => ({
+  default: (...args: any[]) => mockPdfParse(...args),
+}));
+
 describe('Document Text Extractor', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
   it('extracts plain text documents cleanly', async () => {
     const textBuffer = Buffer.from('Hello world. This is indii Knowledge Base document.', 'utf8');
     const result = await extractDocumentText(textBuffer, 'text/plain', 'original.txt');
@@ -35,6 +46,7 @@ describe('Document Text Extractor', () => {
   it('rejects image-only / scanned PDFs with zero text', async () => {
     const imageOnlyPdf = '%PDF-1.4\n1 0 obj\n<< /Type /Page >>\nendobj\nstream\nendstream';
     const buffer = Buffer.from(imageOnlyPdf, 'binary');
+    mockPdfParse.mockResolvedValue({ text: '    ', numpages: 1 });
     await expect(
       extractDocumentText(buffer, 'application/pdf', 'original.pdf'),
     ).rejects.toThrow('Zero text extracted from PDF');
@@ -44,6 +56,7 @@ describe('Document Text Extractor', () => {
     const pdfContent =
       '%PDF-1.4\n1 0 obj\n<< /Type /Page >>\nendobj\nstream\nBT (Welcome to indii RAG Search) Tj ET\nendstream';
     const buffer = Buffer.from(pdfContent, 'binary');
+    mockPdfParse.mockResolvedValue({ text: 'Welcome to indii RAG Search', numpages: 1 });
     const result = await extractDocumentText(buffer, 'application/pdf', 'original.pdf');
     expect(result.text).toBe('Welcome to indii RAG Search');
   });

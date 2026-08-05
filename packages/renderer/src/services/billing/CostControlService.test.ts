@@ -108,6 +108,17 @@ describe('CostControlService', () => {
     });
   });
 
+  it('voids an unclaimed video hold through the owner-scoped server callable', async () => {
+    mocks.callable.mockResolvedValueOnce({ data: { voided: true } });
+
+    await expect(CostControlService.voidUnclaimedVideoReservation('op-video-1')).resolves.toBeUndefined();
+    expect(mocks.httpsCallable).toHaveBeenCalledWith(
+      { region: 'us-central1' },
+      'voidVideoCostReservation',
+    );
+    expect(mocks.callable).toHaveBeenCalledWith({ operationId: 'op-video-1' });
+  });
+
   it('requires a durable server reservation for founder and admin accounts', async () => {
     mocks.getIdTokenResult.mockResolvedValue({
       claims: { god_mode: true, founder: true, admin: true, tier: 'founder' },

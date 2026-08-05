@@ -62,13 +62,20 @@ describe('isStudioExecutorSurface (ISSUE-1025)', () => {
 });
 
 describe('shouldUseMobileRemoteSurface', () => {
-    it('reserves app.indii.music for the Controller at every viewport size', () => {
+    it('opens Mobile Remote on mobile/tablets and regular Studio app on computer browsers when visiting app.indii.music', () => {
         expect(shouldUseMobileRemoteSurface({
             hostname: 'app.indii.music',
-            pathname: '/legal',
+            pathname: '/dashboard',
+            isElectron: false,
+            isRemoteDevice: true,
+        })).toBe(true);
+
+        expect(shouldUseMobileRemoteSurface({
+            hostname: 'app.indii.music',
+            pathname: '/dashboard',
             isElectron: false,
             isRemoteDevice: false,
-        })).toBe(true);
+        })).toBe(false);
     });
 
     it('keeps the native Electron application on the Studio surface', () => {

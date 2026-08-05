@@ -115,6 +115,14 @@ export const OnboardingModal = ({ isOpen, onClose }: { isOpen: boolean; onClose:
                                 type: 'document',
                                 content: text
                             });
+                        }).catch(() => {
+                            resolve({
+                                id: uuidv4(),
+                                file,
+                                preview: '',
+                                type: 'document',
+                                content: `[Could not read file: ${file.name}]`
+                            });
                         });
                     }
                 });

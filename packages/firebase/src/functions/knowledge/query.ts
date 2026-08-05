@@ -8,17 +8,14 @@ import {
   type KnowledgeCitation,
   type KnowledgeQueryReceipt,
   type KnowledgeDocument,
+  type KnowledgeQueryRequest,
 } from '@indii/shared';
 
 if (!admin.apps.length) {
   admin.initializeApp();
 }
 
-export interface QueryKnowledgeBasePayload {
-  query: string;
-  topK?: number;
-  minSimilarity?: number;
-}
+// Query request type imported from @indii/shared
 
 /**
  * Phase 3: queryKnowledgeBase
@@ -26,7 +23,7 @@ export interface QueryKnowledgeBasePayload {
  * using Firestore findNearest on user-isolated subcollection, returns top-K citations,
  * and logs an immutable KnowledgeQueryReceipt.
  */
-export const queryKnowledgeBase = onCall({ enforceAppCheck: true }, async (request: CallableRequest<QueryKnowledgeBasePayload>) => {
+export const queryKnowledgeBase = onCall({ enforceAppCheck: true }, async (request: CallableRequest<KnowledgeQueryRequest>) => {
   if (!request.auth) {
     throw new HttpsError('unauthenticated', 'User must be authenticated to query knowledge base.');
   }
@@ -112,7 +109,9 @@ export const queryKnowledgeBase = onCall({ enforceAppCheck: true }, async (reque
   let answer = "";
   try {
     const vertex = getVertexAIClient();
-    const contextText = citations.map(c => `[Document ${c.documentId}]:\n${c.snippet}`).join('\n\n');
+    const contextText = citations.length > 0
+      ? citations.map(c => `[Document ${c.documentId}]:\n${c.snippet}`).join('\n\n')
+      : "(No relevant documents found in knowledge base.)";
     
     const prompt = `You are an AI assistant answering questions based strictly on the provided context documents.
     

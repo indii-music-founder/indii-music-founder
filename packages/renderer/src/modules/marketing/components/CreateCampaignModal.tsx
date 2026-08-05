@@ -279,7 +279,7 @@ export default function CreateCampaignModal({ onClose, onSave }: Props) {
                         <button
                             type="submit"
                             disabled={isLoading}
-                            className="flex-1 py-3 bg-gradient-to-r from-[#FF7043] to-[#E91E63] hover:from-[#FF8052] hover:to-[#F50057] text-white font-bold rounded-lg transition-all shadow-lg shadow-[#FF7043]/20 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-[#FF7043] focus-visible:outline-none"
+                            className="flex-1 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:outline-none"
                             data-testid="create-campaign-submit-btn"
                         >
                             {isLoading ? (

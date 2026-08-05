@@ -274,4 +274,60 @@ export declare const KnowledgeOperationErrorSchema: z.ZodObject<{
     details?: Record<string, unknown> | undefined;
 }>;
 export type KnowledgeOperationError = z.infer<typeof KnowledgeOperationErrorSchema>;
+export declare const CreateKnowledgeUploadRequestSchema: z.ZodObject<{
+    title: z.ZodString;
+    mimeType: z.ZodEnum<["text/plain", "text/markdown", "application/pdf"]>;
+    byteSize: z.ZodNumber;
+    contentSha256: z.ZodString;
+    ext: z.ZodOptional<z.ZodString>;
+}, "strip", z.ZodTypeAny, {
+    title: string;
+    mimeType: "text/plain" | "text/markdown" | "application/pdf";
+    byteSize: number;
+    contentSha256: string;
+    ext?: string | undefined;
+}, {
+    title: string;
+    mimeType: "text/plain" | "text/markdown" | "application/pdf";
+    byteSize: number;
+    contentSha256: string;
+    ext?: string | undefined;
+}>;
+export type CreateKnowledgeUploadRequest = z.infer<typeof CreateKnowledgeUploadRequestSchema>;
+export declare const FinalizeKnowledgeUploadRequestSchema: z.ZodObject<{
+    documentId: z.ZodString;
+}, "strip", z.ZodTypeAny, {
+    documentId: string;
+}, {
+    documentId: string;
+}>;
+export type FinalizeKnowledgeUploadRequest = z.infer<typeof FinalizeKnowledgeUploadRequestSchema>;
+export declare const DeleteKnowledgeDocumentRequestSchema: z.ZodObject<{
+    documentId: z.ZodString;
+}, "strip", z.ZodTypeAny, {
+    documentId: string;
+}, {
+    documentId: string;
+}>;
+export type DeleteKnowledgeDocumentRequest = z.infer<typeof DeleteKnowledgeDocumentRequestSchema>;
+export declare const IndexWorkerPayloadSchema: z.ZodObject<{
+    uid: z.ZodString;
+    documentId: z.ZodString;
+    storagePath: z.ZodString;
+    storageGeneration: z.ZodString;
+    contentSha256: z.ZodString;
+}, "strip", z.ZodTypeAny, {
+    storagePath: string;
+    uid: string;
+    contentSha256: string;
+    storageGeneration: string;
+    documentId: string;
+}, {
+    storagePath: string;
+    uid: string;
+    contentSha256: string;
+    storageGeneration: string;
+    documentId: string;
+}>;
+export type IndexWorkerPayload = z.infer<typeof IndexWorkerPayloadSchema>;
 //# sourceMappingURL=knowledge.d.ts.map

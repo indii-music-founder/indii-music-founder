@@ -1,41 +1,49 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { PODCredentialService } from './PODCredentialService';
-
-// firebase/firestore is mocked globally in src/test/setup.ts
-// We re-import the mock handles here so we can configure per-test behavior.
-import * as firestore from 'firebase/firestore';
-
-const mockGetDoc = vi.mocked(firestore.getDoc);
-const mockSetDoc = vi.mocked(firestore.setDoc);
-const mockUpdateDoc = vi.mocked(firestore.updateDoc);
 
 const USER_ID = 'user_test_123';
 
 describe('PODCredentialService', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        // Mock electronAPI.credentials bridge
+        window.electronAPI = {
+            credentials: {
+                save: vi.fn(),
+                get: vi.fn(),
+                delete: vi.fn(),
+            },
+        } as any;
+    });
+
+    afterEach(() => {
+        window.electronAPI = undefined as any;
     });
 
     // -------------------------------------------------------------------------
     // saveCredential
     // -------------------------------------------------------------------------
     describe('saveCredential', () => {
-        it('calls setDoc with merge:true and the correct provider key', async () => {
-            mockSetDoc.mockResolvedValueOnce(undefined as unknown as void);
+        it('calls electronAPI.credentials.save with serviceId and credentials', async () => {
+            const mockSave = vi.mocked(window.electronAPI?.credentials?.save);
             await PODCredentialService.saveCredential(USER_ID, 'printful', 'pk_test_abc');
 
-            expect(mockSetDoc).toHaveBeenCalledOnce();
-            const [, data, options] = mockSetDoc.mock.calls[0]!;
-            expect(data).toEqual({ printful: 'pk_test_abc' });
-            expect(options).toEqual({ merge: true });
+            expect(mockSave).toHaveBeenCalledOnce();
+            expect(mockSave).toHaveBeenCalledWith('indii-pod-printful', { [USER_ID]: 'pk_test_abc' });
         });
 
         it('saves printify credentials', async () => {
-            mockSetDoc.mockResolvedValueOnce(undefined as unknown as void);
+            const mockSave = vi.mocked(window.electronAPI?.credentials?.save);
             await PODCredentialService.saveCredential(USER_ID, 'printify', 'py_key_xyz');
 
-            const [, data] = mockSetDoc.mock.calls[0]!;
-            expect(data).toEqual({ printify: 'py_key_xyz' });
+            expect(mockSave).toHaveBeenCalledWith('indii-pod-printify', { [USER_ID]: 'py_key_xyz' });
+        });
+
+        it('throws when Electron API is unavailable', async () => {
+            window.electronAPI = undefined as any;
+            await expect(
+                PODCredentialService.saveCredential(USER_ID, 'printful', 'key')
+            ).rejects.toThrow('Credential storage requires Electron desktop environment');
         });
     });
 
@@ -43,41 +51,33 @@ describe('PODCredentialService', () => {
     // loadCredential
     // -------------------------------------------------------------------------
     describe('loadCredential', () => {
-        it('returns the stored key when the document exists', async () => {
-            mockGetDoc.mockResolvedValueOnce({
-                exists: () => true,
-                data: () => ({ printful: 'stored_key_123' }),
-                id: 'pod_credentials',
-            } as ReturnType<typeof mockGetDoc> extends Promise<infer R> ? R : never);
+        it('returns the stored key when credentials exist', async () => {
+            const mockGet = vi.mocked(window.electronAPI?.credentials?.get);
+            mockGet.mockResolvedValueOnce({ [USER_ID]: 'stored_key_123' });
 
             const key = await PODCredentialService.loadCredential(USER_ID, 'printful');
             expect(key).toBe('stored_key_123');
+            expect(mockGet).toHaveBeenCalledWith('indii-pod-printful');
         });
 
-        it('returns null when the document does not exist', async () => {
-            mockGetDoc.mockResolvedValueOnce({
-                exists: () => false,
-                data: () => undefined,
-                id: 'pod_credentials',
-            } as ReturnType<typeof mockGetDoc> extends Promise<infer R> ? R : never);
+        it('returns null when credentials do not exist', async () => {
+            const mockGet = vi.mocked(window.electronAPI?.credentials?.get);
+            mockGet.mockResolvedValueOnce(null);
 
             const key = await PODCredentialService.loadCredential(USER_ID, 'printful');
             expect(key).toBeNull();
         });
 
-        it('returns null when the provider field is absent', async () => {
-            mockGetDoc.mockResolvedValueOnce({
-                exists: () => true,
-                data: () => ({ printify: 'other_key' }),
-                id: 'pod_credentials',
-            } as ReturnType<typeof mockGetDoc> extends Promise<infer R> ? R : never);
+        it('returns null when the userId key is absent', async () => {
+            const mockGet = vi.mocked(window.electronAPI?.credentials?.get);
+            mockGet.mockResolvedValueOnce({ other_user: 'other_key' });
 
             const key = await PODCredentialService.loadCredential(USER_ID, 'printful');
             expect(key).toBeNull();
         });
 
-        it('returns null and does not throw when getDoc rejects', async () => {
-            mockGetDoc.mockRejectedValueOnce(new Error('Firestore unavailable'));
+        it('returns null when Electron API is unavailable', async () => {
+            window.electronAPI = undefined as any;
 
             const key = await PODCredentialService.loadCredential(USER_ID, 'printful');
             expect(key).toBeNull();
@@ -88,34 +88,34 @@ describe('PODCredentialService', () => {
     // loadAllCredentials
     // -------------------------------------------------------------------------
     describe('loadAllCredentials', () => {
-        it('returns all stored provider keys', async () => {
-            const stored = { printful: 'k1', printify: 'k2', gooten: 'k3' };
-            mockGetDoc.mockResolvedValueOnce({
-                exists: () => true,
-                data: () => stored,
-                id: 'pod_credentials',
-            } as ReturnType<typeof mockGetDoc> extends Promise<infer R> ? R : never);
+        it('returns all stored provider credentials', async () => {
+            const mockGet = vi.mocked(window.electronAPI?.credentials?.get);
+            mockGet
+                .mockResolvedValueOnce({ [USER_ID]: 'k1' }) // printful
+                .mockResolvedValueOnce({ [USER_ID]: 'k2' }) // printify
+                .mockResolvedValueOnce(null) // gooten
+                .mockResolvedValueOnce({ [USER_ID]: 'k4' }); // prodigi
 
             const result = await PODCredentialService.loadAllCredentials(USER_ID);
-            expect(result).toEqual(stored);
+            expect(result).toEqual({ printful: 'k1', printify: 'k2', prodigi: 'k4' });
         });
 
-        it('returns empty object when document does not exist', async () => {
-            mockGetDoc.mockResolvedValueOnce({
-                exists: () => false,
-                data: () => undefined,
-                id: 'pod_credentials',
-            } as ReturnType<typeof mockGetDoc> extends Promise<infer R> ? R : never);
+        it('returns empty object when Electron API is unavailable', async () => {
+            window.electronAPI = undefined as any;
 
             const result = await PODCredentialService.loadAllCredentials(USER_ID);
             expect(result).toEqual({});
         });
 
-        it('returns empty object and does not throw on error', async () => {
-            mockGetDoc.mockRejectedValueOnce(new Error('Network error'));
+        it('skips providers that fail to load', async () => {
+            const mockGet = vi.mocked(window.electronAPI?.credentials?.get);
+            mockGet
+                .mockResolvedValueOnce({ [USER_ID]: 'k1' }) // printful succeeds
+                .mockRejectedValueOnce(new Error('Network error')) // printify fails
+                .mockResolvedValueOnce({ [USER_ID]: 'k3' }); // gooten succeeds
 
             const result = await PODCredentialService.loadAllCredentials(USER_ID);
-            expect(result).toEqual({});
+            expect(result).toEqual({ printful: 'k1', gooten: 'k3' });
         });
     });
 
@@ -123,14 +123,19 @@ describe('PODCredentialService', () => {
     // removeCredential
     // -------------------------------------------------------------------------
     describe('removeCredential', () => {
-        it('calls updateDoc with deleteField() for the given provider', async () => {
-            mockUpdateDoc.mockResolvedValueOnce(undefined as unknown as void);
+        it('calls electronAPI.credentials.delete with serviceId', async () => {
+            const mockDelete = vi.mocked(window.electronAPI?.credentials?.delete);
             await PODCredentialService.removeCredential(USER_ID, 'printful');
 
-            expect(mockUpdateDoc).toHaveBeenCalledOnce();
-            const [, fields] = mockUpdateDoc.mock.calls[0]!;
-            // deleteField() returns a sentinel object — just verify the key exists
-            expect(Object.keys(fields as object)).toContain('printful');
+            expect(mockDelete).toHaveBeenCalledOnce();
+            expect(mockDelete).toHaveBeenCalledWith('indii-pod-printful');
+        });
+
+        it('throws when Electron API is unavailable', async () => {
+            window.electronAPI = undefined as any;
+            await expect(
+                PODCredentialService.removeCredential(USER_ID, 'printful')
+            ).rejects.toThrow('Credential storage requires Electron desktop environment');
         });
     });
 

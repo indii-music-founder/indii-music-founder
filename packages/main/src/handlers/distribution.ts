@@ -14,6 +14,7 @@ import { z } from 'zod';
 
 import { AgentSupervisor } from '../utils/AgentSupervisor';
 import { credentialService } from '../services/CredentialService';
+import { authStorage } from '../services/AuthStorage';
 import { stageCanonicalMasters } from '../services/MasterAudioStagingService';
 import { stageCanonicalCoverArt } from '../services/CanonicalCoverArtStagingService';
 
@@ -177,11 +178,13 @@ export const setupDistributionHandlers = () => {
         try {
             validateSender(event);
             const { userId, amount } = data || {};
-            if (!userId || amount === undefined) throw new Error('Missing userId or amount');
+            const sessionUid = await authStorage.getAuthenticatedUserId();
+            const effectiveUserId = sessionUid || userId;
+            if (!effectiveUserId || amount === undefined) throw new Error('Missing userId or amount');
             const storagePath = getStoragePath();
             const report = await AgentSupervisor.execute('distribution', 'tax_withholding_engine.py', [
                 'calculate',
-                userId as string,
+                effectiveUserId as string,
                 String(amount),
                 '--storage-path',
                 storagePath
@@ -195,10 +198,12 @@ export const setupDistributionHandlers = () => {
     ipcMain.handle('distribution:certify-tax', async (event, userId: string, data: unknown) => {
         try {
             validateSender(event);
+            const sessionUid = await authStorage.getAuthenticatedUserId();
+            const effectiveUserId = sessionUid || userId;
             const storagePath = getStoragePath();
             const report = await AgentSupervisor.execute('distribution', 'tax_withholding_engine.py', [
                 'certify',
-                userId,
+                effectiveUserId,
                 JSON.stringify(data),
                 '--storage-path',
                 storagePath
@@ -374,9 +379,54 @@ export const setupDistributionHandlers = () => {
             const report = await AgentSupervisor.execute<Record<string, unknown>>('distribution', 'keys_manager.py', [
                 'merlin_check',
                 JSON.stringify(aggregatedData),
+            // Transform input: handle both KeysPanel format {catalog_id, tracks:[]}
+            // and DistributionTools format {total_tracks, has_isrcs, has_upcs, exclusive_rights}
+            let pythonInput: Record<string, unknown>;
+            const input = data as Record<string, unknown>;
+
+            if (Array.isArray(input.tracks)) {
+                // KeysPanel format: aggregate tracks array to flat format
+                const tracks = input.tracks as Array<Record<string, unknown>>;
+                const hasIsrcs = tracks.some(t => t.isrc);
+                const hasUpcs = tracks.some(t => t.upc);
+                const allExclusive = tracks.every(t => t.exclusive_rights !== false);
+                pythonInput = {
+                    total_tracks: tracks.length,
+                    has_isrcs: hasIsrcs,
+                    has_upcs: hasUpcs,
+                    exclusive_rights: allExclusive
+                };
+            } else {
+                // Already in flat format from DistributionTools
+                pythonInput = {
+                    total_tracks: input.total_tracks ?? 0,
+                    has_isrcs: input.has_isrcs ?? false,
+                    has_upcs: input.has_upcs ?? false,
+                    exclusive_rights: input.exclusive_rights ?? false
+                };
+            }
+
+            const pythonReport = await AgentSupervisor.execute<Record<string, unknown>>('distribution', 'keys_manager.py', [
+                'merlin_check',
+                JSON.stringify(pythonInput),
                 '--storage-path',
                 storagePath
-            ], { timeoutMs: 30000 }, undefined, {}, [1]); // Redact JSON data
+            ], { timeoutMs: 30000 }, undefined, {}, [1]);
+
+            // Transform output from Python {status, score, checks, timestamp}
+            // to MerlinReport format {status, issues, passed_count, failed_count, timestamp}
+            const checks = (pythonReport.checks as string[]) || [];
+            const passedChecks = checks.filter(c => c.includes('✓') || c.includes('confirmed') || c.includes('assigned'));
+            const failedChecks = checks.filter(c => !c.includes('✓') && !c.includes('confirmed'));
+
+            const report = {
+                status: pythonReport.status === 'READY' ? 'READY' : 'NOT_READY',
+                issues: checks,
+                passed_count: passedChecks.length,
+                failed_count: failedChecks.length,
+                timestamp: pythonReport.timestamp || new Date().toISOString()
+            };
+
             return { success: true, report };
         } catch (error) {
             return { success: false, error: error instanceof Error ? error.message : String(error) };

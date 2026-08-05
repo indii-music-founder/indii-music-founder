@@ -829,7 +829,7 @@ export default function OmniWorkflow() {
                                 <button
                                     onClick={handleSendOutputToVeo}
                                     disabled={routingOutputTo !== null}
-                                    className="bg-purple-600 hover:bg-purple-500 text-white p-3 rounded-full shadow-2xl hover:scale-105 transition-all flex items-center justify-center border border-purple-400/30"
+                                    className="bg-cyan-600 hover:bg-cyan-500 text-white p-3 rounded-full shadow-2xl hover:scale-105 transition-all flex items-center justify-center border border-cyan-400/30"
                                     title="Continue from this video's last frame in Veo"
                                     aria-label="Continue Omni video in Veo"
                                 >

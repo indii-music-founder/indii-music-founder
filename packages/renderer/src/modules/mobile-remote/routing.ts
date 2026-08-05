@@ -6,7 +6,12 @@ export const MOBILE_REMOTE_PATH = '/mobile-remote';
 export function isRemoteSurfaceDevice(
     mobile: Pick<MobileState, 'isAnyPhone' | 'isTablet' | 'isTouchDevice'>
 ): boolean {
-    return mobile.isAnyPhone || (mobile.isTablet && mobile.isTouchDevice);
+    // iPadOS 13+ Safari presents as MacIntel with multi-touch support
+    const isIpadUA = typeof navigator !== 'undefined' && 
+                     ((/iPad/i.test(navigator.userAgent)) || 
+                      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1));
+
+    return mobile.isAnyPhone || (mobile.isTablet && (mobile.isTouchDevice || isIpadUA)) || isIpadUA;
 }
 
 /**
@@ -48,9 +53,11 @@ export function shouldUseMobileRemoteSurface(input: {
     isRemoteDevice: boolean;
 }): boolean {
     if (input.isElectron) return false;
-    return (
-        isMobileRemoteHost(input.hostname) ||
-        isMobileRemotePath(input.pathname) ||
-        input.isRemoteDevice
-    );
+
+    // Explicit /mobile-remote route always opens the Controller surface
+    if (isMobileRemotePath(input.pathname)) return true;
+
+    // Mobile phones and tablets (specifically iPad) open the Remote Control surface.
+    // Desktop / computer browsers loading app.indii.music or any web domain load the regular Studio app.
+    return input.isRemoteDevice;
 }

@@ -177,11 +177,16 @@ export class VideoGenerationService {
             costReservationId = costCheck.operationId;
         }
         const effectiveCostReservationId = options.costReservationId || costReservationId;
+        if (!effectiveCostReservationId?.trim()) {
+            throw new Error('Video generation blocked: the cost authority did not return a valid reservation ID.');
+        }
+        const ownsUnclaimedReservation = !options.costReservationId && costReservationId === effectiveCostReservationId;
 
-        logger.info('[VideoGeneration] 🎬 generateVideo() called (via Gateway):', {
-            promptPreview: options.prompt.substring(0, 100),
-            userId,
-        });
+        try {
+            logger.info('[VideoGeneration] 🎬 generateVideo() called (via Gateway):', {
+                promptPreview: options.prompt.substring(0, 100),
+                userId,
+            });
 
         // Google Search Grounding Pre-flight: Imagen 4 grounding generation used as firstFrame
         let groundingFirstFrame = options.firstFrame;
@@ -271,7 +276,6 @@ export class VideoGenerationService {
             thinkingLevel: options.thinkingLevel
         }, options.userProfile);
 
-        try {
             const generateVideoV3 = httpsCallable(functions, 'generateVideoV3');
             
             const payload = {
@@ -304,7 +308,7 @@ export class VideoGenerationService {
 
             const payloadValidation = GenerateVideoSchema.safeParse(compactedPayload);
             if (!payloadValidation.success) {
-                const errorMsg = payloadValidation.error.issues.map(issue => issue.message).join(', ');
+                const errorMsg = payloadValidation.error.issues.map(issue => `${issue.path.join('.')}: ${issue.message}`).join(', ');
                 throw new Error(`Invalid video gateway payload: ${errorMsg}`);
             }
 
@@ -319,6 +323,16 @@ export class VideoGenerationService {
             }];
         } catch (error: unknown) {
             logger.error('[VideoGeneration] ❌ Gateway generateVideoV3 failed:', error);
+            if (ownsUnclaimedReservation) {
+                try {
+                    await CostControlService.voidUnclaimedVideoReservation(effectiveCostReservationId);
+                } catch (releaseError) {
+                    logger.warn('[VideoGeneration] Reservation release deferred to server reconciliation.', {
+                        operationId: effectiveCostReservationId,
+                        releaseError,
+                    });
+                }
+            }
             throw error;
         }
     }

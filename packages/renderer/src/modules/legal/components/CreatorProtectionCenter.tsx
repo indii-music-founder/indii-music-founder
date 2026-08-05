@@ -8,7 +8,6 @@ import {
   type ReplicaIncident,
   type TakedownCase,
 } from '@/services/creator-protection';
-import { getColorForModule } from '@/core/theme/moduleColors';
 
 export function CreatorProtectionCenter() {
   const userId = auth.currentUser?.uid ?? null;
@@ -122,7 +121,7 @@ export function CreatorProtectionCenter() {
 
       <section className="grid grid-cols-1 xl:grid-cols-3 gap-4">
         <StatusPanel
-          icon={<Fingerprint size={15} className={getColorForModule('legal').text} />}
+          icon={<Fingerprint size={15} className="text-cyan-300" />}
           title="Voice & Likeness Vault"
           rows={[
             ['Default permission', profile?.aiVoiceLikenessPermission.replaceAll('_', ' ') ?? 'not compiled'],
@@ -226,7 +225,7 @@ function Toggle({ checked, onChange, label }: { checked: boolean; onChange: (val
 function ReadinessCard({ run }: { run: ReturnType<typeof creatorProtectionHarnessService.compileReadiness> | null }) {
   const readiness = run?.output.readiness;
   return (
-    <div className={`rounded-xl bg-linear-to-br from-blue-500/10 to-blue-500/5 border border-blue-500/20 p-4 space-y-4`}>
+    <div className="rounded-xl bg-linear-to-br from-blue-500/10 to-cyan-500/5 border border-blue-500/20 p-4 space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Shield size={16} className="text-blue-300" />

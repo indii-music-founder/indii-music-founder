@@ -88,15 +88,10 @@ export class AuthService {
         }
     }
     /**
-     * Checks if legacy token callback is allowed based on environment
+     * Checks if legacy token callback is allowed based on environment.
+     * Disabled by default for security unless explicitly enabled via AUTH_ALLOW_LEGACY_TOKEN_CALLBACK=true.
      */
     static isLegacyCallbackEnabled(env) {
-        if (env.AUTH_ALLOW_LEGACY_TOKEN_CALLBACK === 'true') {
-            return true;
-        }
-        if (!env.AUTH_HANDOFF_REDEEM_URL) {
-            return true;
-        }
-        return false;
+        return env.AUTH_ALLOW_LEGACY_TOKEN_CALLBACK === 'true';
     }
 }

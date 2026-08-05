@@ -74,6 +74,20 @@ export class CostControlService {
     return isTestHarnessRuntime();
   }
 
+  static async voidUnclaimedVideoReservation(operationId: string): Promise<void> {
+    if (!functions) {
+      throw new Error('Firebase Functions us-central1 client is unavailable.');
+    }
+    if (!operationId.trim()) {
+      throw new Error('Video cost reservation ID is required.');
+    }
+    const voidReservation = httpsCallable<{ operationId: string }, { voided: true }>(
+      functions,
+      'voidVideoCostReservation',
+    );
+    await voidReservation({ operationId });
+  }
+
   /**
    * Check if an operation is allowed under current budget.
    * MUST be called before any expensive API operation.

@@ -9,6 +9,8 @@ import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntell
 const mocks = vi.hoisted(() => ({
     httpsCallable: vi.fn(),
     generateVideoV3: vi.fn(),
+    checkAndReserve: vi.fn(),
+    voidUnclaimedVideoReservation: vi.fn(),
 }));
 
 // 2. Mock Firebase
@@ -63,12 +65,8 @@ vi.mock('@/services/subscription/SubscriptionService', () => ({
 
 vi.mock('@/services/billing/CostControlService', () => ({
     CostControlService: {
-        checkAndReserve: vi.fn().mockResolvedValue({ 
-            allowed: true,
-            remainingBudget: 100,
-            dailyUsed: 0,
-            monthlyUsed: 0
-        }),
+        checkAndReserve: mocks.checkAndReserve,
+        voidUnclaimedVideoReservation: mocks.voidUnclaimedVideoReservation,
         getStatus: vi.fn().mockResolvedValue({
             dailyUsed: 0,
             monthlyUsed: 0,
@@ -104,6 +102,14 @@ describe('🛡️ Shield: Video Generation PII Security Test', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         mocks.generateVideoV3.mockResolvedValue({ data: { jobId: 'job-123' } });
+        mocks.checkAndReserve.mockResolvedValue({
+            allowed: true,
+            remainingBudget: 100,
+            dailyUsed: 0,
+            monthlyUsed: 0,
+            operationId: 'video-reservation-1',
+        });
+        mocks.voidUnclaimedVideoReservation.mockResolvedValue(undefined);
     });
 
     it('should REDACT Credit Card numbers from prompt before triggering backend generation', async () => {
@@ -148,5 +154,49 @@ describe('🛡️ Shield: Video Generation PII Security Test', () => {
         expect(callArgs).toBeDefined();
         expect(callArgs?.prompt).toMatch(expectedRedactedPattern);
         expect(callArgs?.prompt).not.toContain("SuperSecretPassword123!");
+    });
+
+    it('fails closed when cost authority allows generation without a reservation identity', async () => {
+        mocks.checkAndReserve.mockResolvedValue({
+            allowed: true,
+            remainingBudget: 100,
+            dailyUsed: 0,
+            monthlyUsed: 0,
+        });
+
+        await expect(VideoGeneration.generateVideo({
+            prompt: 'A stage performance',
+            duration: 5,
+            aspectRatio: '16:9',
+        })).rejects.toThrow(/did not return a valid reservation ID/);
+
+        expect(mocks.generateVideoV3).not.toHaveBeenCalled();
+        expect(mocks.voidUnclaimedVideoReservation).not.toHaveBeenCalled();
+    });
+
+    it('voids its own unclaimed reservation when the gateway rejects the payload', async () => {
+        mocks.generateVideoV3.mockRejectedValue(new Error('Invalid video payload: directorSettings.resolution'));
+
+        await expect(VideoGeneration.generateVideo({
+            prompt: 'A stage performance',
+            duration: 5,
+            aspectRatio: '16:9',
+        })).rejects.toThrow(/directorSettings\.resolution/);
+
+        expect(mocks.voidUnclaimedVideoReservation).toHaveBeenCalledWith('video-reservation-1');
+    });
+
+    it('never voids a caller-supplied reservation after a gateway failure', async () => {
+        mocks.generateVideoV3.mockRejectedValue(new Error('gateway unavailable'));
+
+        await expect(VideoGeneration.generateVideo({
+            prompt: 'A stage performance',
+            duration: 5,
+            aspectRatio: '16:9',
+            costReservationId: 'caller-reservation-1',
+        })).rejects.toThrow(/gateway unavailable/);
+
+        expect(mocks.checkAndReserve).not.toHaveBeenCalled();
+        expect(mocks.voidUnclaimedVideoReservation).not.toHaveBeenCalled();
     });
 });

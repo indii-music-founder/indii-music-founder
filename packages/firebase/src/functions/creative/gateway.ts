@@ -1299,11 +1299,19 @@ export const generateImageV3 = onCall({ ...creativeGatewayCallableOptions, timeo
 /**
  * generateVideoV3 - Routes to Veo 3.1 via the long-running generateVideos API.
  */
+export function describeVideoPayloadValidationFailure(error: z.ZodError): string {
+  return error.issues
+    .map((issue) => `${issue.path.length > 0 ? issue.path.join('.') : 'request'}: ${issue.message}`)
+    .join('; ');
+}
+
 export const generateVideoV3 = onCall({ ...creativeGatewayCallableOptions, timeoutSeconds: 540 }, async (request) => {
   const { userId } = await requireCreativeGatewayAdmission(request, 'generate-video');
   
   const parsed = GenerateVideoSchema.safeParse(request.data);
-  if (!parsed.success) throw new HttpsError('invalid-argument', 'Invalid video payload. Base64 forbidden; use gs:// URIs for reference media.');
+  if (!parsed.success) {
+    throw new HttpsError('invalid-argument', `Invalid video payload: ${describeVideoPayloadValidationFailure(parsed.error)}`);
+  }
 
   const {
     prompt,
@@ -1371,9 +1379,11 @@ export const generateVideoV3 = onCall({ ...creativeGatewayCallableOptions, timeo
   }
 
   const serverEstimatedCost = estimateVideoCost(normalizedDuration, modelId, effectiveMode);
-  if (!costReservationId) {
-    throw new HttpsError('failed-precondition', 'Missing cost reservation. Reserve cost before submitting the job.');
+  const reservation = await loadCostReservation(userId, costReservationId, 'video');
+  if (reservation.estimatedCost + 0.0001 < serverEstimatedCost) {
+    console.warn(`[generateVideoV3] Job cost reservation (${reservation.estimatedCost}) is lower than the server estimated cost (${serverEstimatedCost}).`);
   }
+
   const requestedInputs: VideoInputRequest[] = [
     ...(sourceVideoUri ? [{
       role: 'source_video',
@@ -1759,14 +1769,18 @@ export const generateOmniRemixV3 = onCall({ ...creativeGatewayCallableOptions, t
   const jobId = getDb().collection('creative_jobs').doc().id;
   const modelId = resolveOmniFlashModel();
   const task = resolveOmniTask(data);
-  if (!data.costReservationId) {
-    throw new HttpsError('failed-precondition', 'Missing cost reservation. Reserve cost before submitting the job.');
-  }
-
   const durationSeconds = Math.min(10, Math.max(3, data.durationSeconds));
   // Official paid-tier Standard pricing is approximately $0.10 per second of
   // 720p output. This is deliberately independent of the retired pipelineMode.
   const serverEstimatedCost = estimateVideoCost(durationSeconds, VIDEO_MODEL_IDS.fast);
+
+  if (!data.costReservationId) {
+    throw new HttpsError('failed-precondition', 'Missing cost reservation. Reserve cost before submitting the job.');
+  }
+  const reservation = await loadCostReservation(userId, data.costReservationId, 'video');
+  if (Math.abs(reservation.estimatedCost - serverEstimatedCost) > 0.01) {
+    throw new HttpsError('failed-precondition', 'Cost reservation estimate does not match the current Omni job estimate.');
+  }
 
   let outputCompleted = false;
   let outputUri: string | null = null;
@@ -1779,11 +1793,6 @@ export const generateOmniRemixV3 = onCall({ ...creativeGatewayCallableOptions, t
     }
     if (data.previousInteractionId && data.previousJobId) {
       await assertOwnedPreviousOmniInteraction(userId, data.previousJobId, data.previousInteractionId);
-    }
-
-    const reservation = await loadCostReservation(userId, data.costReservationId);
-    if (Math.abs(reservation.estimatedCost - serverEstimatedCost) > 0.01) {
-      throw new HttpsError('failed-precondition', 'Cost reservation estimate does not match the current Omni job estimate.');
     }
 
     const initialJob = {

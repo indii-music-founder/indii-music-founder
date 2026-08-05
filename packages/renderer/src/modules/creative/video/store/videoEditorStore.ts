@@ -667,6 +667,7 @@ export function compileApprovalToTimeline(
             id: compiledClipId(approval.approvalReceiptId, segment.segmentId),
             type: 'video',
             name: segment.transcriptText.slice(0, 30) || `Segment ${segment.segmentId}`,
+            src: `gs://${session.proxyManifest.proxy.bucket}/${session.proxyManifest.proxy.path}`,
             startFrame: currentTimelineFrame,
             durationInFrames,
             trackId: mainTrack.id,

@@ -23,6 +23,7 @@ export const GenerateImageSchema = BaseMediaRequestSchema.extend({
 });
 
 export const GenerateVideoSchema = BaseMediaRequestSchema.extend({
+    costReservationId: z.string().trim().min(1).max(256),
     mode: z.enum(['video_remix', 'temporal_inpaint']).optional(),
     sourceVideoUri: z.string().startsWith('gs://').optional(),
     firstFrameUri: z.string().startsWith('gs://').optional(),
@@ -44,7 +45,6 @@ export const GenerateVideoSchema = BaseMediaRequestSchema.extend({
     seed: z.union([z.number().int(), z.string().regex(/^\d+$/)]).optional(),
     enhancePrompt: z.boolean().optional(),
     costEstimate: z.number().optional(),
-    costReservationId: z.string().optional(),
     parentId: z.string().optional(),
     inputManifest: z.array(z.object({
         role: z.enum(['first_frame', 'last_frame', 'ingredient', 'character_reference', 'whisk_reference']),

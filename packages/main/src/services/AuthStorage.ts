@@ -48,6 +48,22 @@ export class AuthStorage {
             return false;
         }
     }
+
+    async getAuthenticatedUserId(): Promise<string | null> {
+        const token = await this.getToken();
+        if (!token) return null;
+        try {
+            const parts = token.split('.');
+            if (parts.length >= 2) {
+                const payloadJson = Buffer.from(parts[1], 'base64').toString('utf-8');
+                const parsed = JSON.parse(payloadJson) as { user_id?: string; sub?: string; uid?: string };
+                return parsed.user_id || parsed.sub || parsed.uid || null;
+            }
+        } catch (_e) {
+            // Non-JWT raw token format fallback
+        }
+        return token;
+    }
 }
 
 export const authStorage = new AuthStorage();
