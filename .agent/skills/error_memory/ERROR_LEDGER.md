@@ -1,3 +1,28 @@
+## 2026-08-05 Committed Stale Build Artifacts + Asymmetric CI Regeneration Silently Breaks Bundle Resolution
+
+**SEVERITY:** High (blocked PR #264, CI build.yml failed with "Could not resolve ./schemas/creativeNormalizers.js" while deploy.yml passed)
+
+**MISTAKE:** `packages/shared/dist/` (99 compiled TypeScript files) was tracked in git despite `dist/` being in `.gitignore`. A stale committed copy had exports in its re-export file (`dist/index.js`) that were **never committed**, only regenerated locally:
+- `./schemas/creativeNormalizers.js`
+- `./schemas/masterSyncAlignment.js`
+- `./distribution/types/index.js`
+- `./distribution/ddexBuilder.js`
+
+Only 21 of the 25 re-exported targets existed in the committed copy. `.github/workflows/deploy.yml` had explicit `npx tsc -b packages/shared` in all jobs (unit-tests, rules-tests, build, deploy-production), which regenerated the missing files on the deployed runner. `.github/workflows/build.yml`'s build job did NOT, so Vite bundler resolved `@indii/shared` (which resolves to `main: dist/index.js` per package.json) and found broken re-exports.
+
+**ROOT CAUSE:** Two separate workflows, asymmetric regeneration strategy: `deploy.yml` explicitly builds shared, `build.yml` relied on artifact. Committed dist is a maintenance burden that gets out of sync. The gitignore rule was correct; the force-add and no subsequent cleanup created the inconsistency.
+
+**WHY IT WASN'T CAUGHT:** Every developer's local `npm run typecheck` regenerates dist perfectly. The error only surfaced in CI where the build job didn't have a typecheck step first. Pre-commit gates locally passed because typecheck had just run.
+
+**FIX:** Three-part:
+1. Add `npx tsc -b packages/shared` step to `.github/workflows/build.yml` build job (before Electron build)
+2. `git rm -r --cached packages/shared/dist` — stop tracking the 99 files
+3. Add `npm run build:shared` to root `package.json` prepare hook — ensures dist always exists after any `npm ci` without workflow edits
+
+**PREVENTION:** Never commit generated artifacts even if a rule exists to prevent it. A `.gitignore` rule is a documentation promise, not a barrier. If an artifact is committed by accident (via force-add or old-HEAD merge), remove it immediately with `git rm --cached`. For any artifact that multiple CI jobs depend on, either: (a) always regenerate it the same way in all jobs, or (b) don't commit it at all and make regeneration automatic (prepare hook). Asymmetric regeneration is the bug signature.
+
+---
+
 ## 2026-07-23 Adding `composite: true` to a tsconfig Without an Explicit `rootDir` Silently Moves Emit Output
 
 **SEVERITY:** High (broke the production Cloud Functions deploy; CI's `deploy-production` job failed on `Deploy Cloud Functions`)
