@@ -567,7 +567,7 @@
 ### ISSUE-1164: App icon/favicon gives no visual cue for which surface is open (web / Electron / remote)
 
 - **Re-ticketed from:** ISSUE-1045 (2026-07-21 housecleaning; original status was: `⏳ BACKLOG — consolidated (requested by William, 2026-07-12 — noticed while juggling multiple open browser/app tabs and couldn't tell them apart at a glance)`)
-- **Status:** ⏳ BACKLOG — consolidated (requested by William, 2026-07-12 — noticed while juggling multiple open browser/app tabs and couldn't tell them apart at a glance)
+- **Status:** 🟡 IN PROGRESS (2026-08-05 — design in progress by founder, icon variants being created)
 - **Severity:** 🟡 MEDIUM (UX/orientation — no data or security impact)
 - **Module:** Branding / Build assets (web manifest, Electron packaging, mobile-remote PWA)
 - **Request:** Same core mark (the "double eye"/`II` logo), but recolored per runtime surface so the browser tab, the Dock/taskbar icon, and the phone remote icon are each visually distinct at a glance — one color for web browser, one for the Electron desktop app, one for the remote/mobile app.
