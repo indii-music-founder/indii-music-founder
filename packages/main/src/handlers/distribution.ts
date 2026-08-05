@@ -367,13 +367,14 @@ export const setupDistributionHandlers = () => {
             // ISSUE-1122: Aggregate track-level data to flat shape for fail-closed verification
             // Input: { catalog_id, tracks: [{ isrc, title, rights_holder, exclusive_rights }, ...] }
             // Output: { total_tracks, has_isrcs, has_upcs, exclusive_rights }
-            const dataObj = data as Record<string, unknown>;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const dataObj = data as any;
             const tracks = Array.isArray(dataObj?.tracks) ? dataObj.tracks : [];
             const aggregatedData = {
                 total_tracks: tracks.length,
-                has_isrcs: tracks.some((t: Record<string, unknown>) => !!t.isrc),
-                has_upcs: tracks.some((t: Record<string, unknown>) => !!t.upc),
-                exclusive_rights: tracks.every((t: Record<string, unknown>) => t.exclusive_rights === true)
+                has_isrcs: tracks.some((t: any) => !!t.isrc),
+                has_upcs: tracks.some((t: any) => !!t.upc),
+                exclusive_rights: tracks.every((t: any) => t.exclusive_rights === true)
             };
 
             const report = await AgentSupervisor.execute<Record<string, unknown>>('distribution', 'keys_manager.py', [
