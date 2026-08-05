@@ -567,7 +567,7 @@
 ### ISSUE-1164: App icon/favicon gives no visual cue for which surface is open (web / Electron / remote)
 
 - **Re-ticketed from:** ISSUE-1045 (2026-07-21 housecleaning; original status was: `⏳ BACKLOG — consolidated (requested by William, 2026-07-12 — noticed while juggling multiple open browser/app tabs and couldn't tell them apart at a glance)`)
-- **Status:** ✅ COMPLETE (2026-08-05 — design complete; 3 SVG favicon variants created with real brand colors from design system)
+- **Status:** ✅ COMPLETE (2026-08-05 — design AND engineering integration shipped; all 3 surfaces wired into the live build)
 - **Severity:** 🟡 MEDIUM (UX/orientation — no data or security impact)
 - **Module:** Branding / Build assets (web manifest, Electron packaging, mobile-remote PWA)
 - **Request:** Same core mark (the "double eye"/`II` logo), but recolored per runtime surface so the browser tab, the Dock/taskbar icon, and the phone remote icon are each visually distinct at a glance — one color for web browser, one for the Electron desktop app, one for the remote/mobile app.
@@ -589,6 +589,12 @@
   - Web (Gold) vs Remote (Pink): yellow vs magenta, clearly different
   - Electron (Blue) vs Remote (Pink): cool vs warm, immediately recognizable
 - **DO NOT:** Do not change the core mark/shape — only the color per surface. ✅ Adhered. Do not fork the manifest content (share_target, shortcuts, etc.) beyond what's needed to give the remote module its own icon identity. ✅ Design handoff includes manifest guidance.
+- **Engineering integration (DELIVERED 2026-08-05):**
+  - **Web:** `packages/renderer/public/favicon.svg` replaced in place with the gold/Resonance-Blue variant — every existing reference (`index.html`, `manifest.json`, `service-worker.ts` notification badge) inherits it with zero other edits.
+  - **Electron:** `packages/renderer/public/icon-192.png` / `icon-512.png` (used directly by `packages/main/src/main.ts` and `updater.ts` for the window/tray/notification icons) and `build/icon.{icns,ico,png}` (electron-builder packaging icon — Dock/taskbar/installer) all regenerated from `favicon-electron.svg` via `qlmanage` (accurate gradient rasterization; ImageMagick's SVG delegate dropped the gradients/inner mark and was rejected) + `iconutil`/`magick` for `.icns`/`.ico`. Verified: `iconutil -c iconset` round-trips build/icon.icns back to all 10 expected PNG sizes.
+  - **Remote:** discovered the real mobile-remote Controller (`packages/renderer/src/modules/mobile-remote/`) is a lazy-loaded module inside the *same* SPA/`index.html`/`manifest.json` as the desktop Studio — not the orphaned static prototype at `packages/renderer/public/remote/index.html` (left untouched; unrelated legacy file, no code references it). Since the icon can't be forked at build time, added `packages/renderer/src/hooks/useSurfaceIcon.ts`, wired into `App.tsx` on the existing `shouldUseRemoteSurface` flag, which swaps the `<link rel="icon">`/`<link rel="manifest">` hrefs between `/favicon.svg`+`/manifest.json` and `/favicon-remote.svg`+`/manifest-remote.json` (new file) at runtime. Live-verified via browser preview: hrefs flip correctly on `/mobile-remote` and revert on the main app.
+  - **Incidental fix:** `index.html`'s `apple-touch-icon`/`apple-touch-startup-image` links pointed at `/icons/icon-192x192.png` / `/icons/icon-512x512.png` — a directory that has never existed in `public/` (dead 404 links; iOS "Add to Home Screen" was silently falling back to no icon). Same dead path was the `service-worker.ts` push-notification icon fallback. Fixed to point at new dedicated web-variant PNGs (`apple-touch-icon.png` at 180×180, `icon-web-192.png`/`icon-web-512.png`) rasterized from `favicon-web.svg` — required for the "phone home screen" acceptance bullet above to actually hold on iOS Safari, which ignores `manifest.json` icons entirely for Home Screen and only reads the `apple-touch-icon` link.
+  - Typecheck and lint clean (0 errors); all raster outputs spot-checked at correct pixel dimensions.
 
 ---
 

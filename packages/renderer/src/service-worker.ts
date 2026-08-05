@@ -88,7 +88,7 @@ self.addEventListener('push', (event: PushEvent) => {
     const title = data?.title ?? 'indii.music';
     const options: NotificationOptions = {
         body: data?.body ?? 'You have a new notification',
-        icon: data?.icon ?? '/icons/icon-192x192.png',
+        icon: data?.icon ?? '/icon-web-192.png',
         badge: '/favicon.svg',
     };
     event.waitUntil(self.registration.showNotification(title, options));

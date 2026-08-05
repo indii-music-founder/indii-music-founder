@@ -17,6 +17,7 @@ import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useMobile } from '@/hooks/useMobile';
 import { useGlobalShortcutsModal } from '@/components/shared/GlobalKeyboardShortcuts';
 import { useRemoteCommandListener } from '@/hooks/useRemoteCommandListener';
+import { useSurfaceIcon } from '@/hooks/useSurfaceIcon';
 import { useConnectivityMonitor } from '@/hooks/useConnectivityMonitor';
 import { useAutoSleep } from '@/hooks/useAutoSleep';
 import { useWorkspaceSync } from '@/hooks/useWorkspaceSync';
@@ -151,6 +152,9 @@ export default function App() {
     // Remote Relay: only the actual Studio surface may publish presence or
     // consume Studio-owned work. Controller pages can only produce commands.
     useRemoteCommandListener(isStudioExecutor);
+
+    // ISSUE-1164: distinct tab/home-screen icon for the mobile-remote Controller surface.
+    useSurfaceIcon(shouldUseRemoteSurface);
 
     const publicLegalPage = useMemo(() => {
         const path = location.pathname.replace(/\/+$/, '') || '/';

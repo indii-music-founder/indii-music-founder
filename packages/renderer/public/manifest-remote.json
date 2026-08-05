@@ -1,0 +1,34 @@
+{
+  "background_color": "#0f0f0f",
+  "categories": [
+    "productivity",
+    "entertainment",
+    "music"
+  ],
+  "description": "indii Remote: control your indii.music Studio session from your phone.",
+  "display": "standalone",
+  "icons": [
+    {
+      "purpose": "any",
+      "sizes": "any",
+      "src": "/favicon-remote.svg",
+      "type": "image/svg+xml"
+    },
+    {
+      "sizes": "192x192",
+      "src": "/icon-remote-192.png",
+      "type": "image/png"
+    },
+    {
+      "sizes": "512x512",
+      "src": "/icon-remote-512.png",
+      "type": "image/png"
+    }
+  ],
+  "name": "indii Remote",
+  "orientation": "portrait-primary",
+  "scope": "/mobile-remote",
+  "short_name": "indii Remote",
+  "start_url": "/mobile-remote",
+  "theme_color": "#0f0f0f"
+}
