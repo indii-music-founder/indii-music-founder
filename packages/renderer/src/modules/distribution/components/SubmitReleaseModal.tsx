@@ -94,7 +94,9 @@ export const SubmitReleaseModal: React.FC<Props> = ({ open, onClose, onSubmitted
             .then(tracks => setAvailableTracks(tracks.filter(track => (
                 !!track.masterFingerprint && !!track.masterAsset?.audioProperties
             ))))
+            .catch(() => toastError('Failed to load your track library.'))
             .finally(() => setLoadingTracks(false));
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- toastError is a stable useCallback from ToastContext
     }, [open]);
     const [done, setDone] = useState(false);
     const [deliveryState, setDeliveryState] = useState<'idle' | 'delivered' | 'ready_for_manual' | 'skipped'>('idle');

@@ -335,7 +335,7 @@ const FeedItem = React.memo(({ post }: FeedItemProps) => {
             // ⚡ Bolt Optimization: MarketplaceService now uses caching to prevent redundant requests
             MarketplaceService.getProductById(post.productId).then(product => {
                 if (product) setEmbeddedProduct(product);
-            });
+            }).catch(error => logger.error('Failed to load embedded product:', error));
         }
     }, [post.productId]);
 
