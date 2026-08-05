@@ -182,13 +182,14 @@
 ### ISSUE-1131: Split escrow UI treats zero collaborators as ready to release
 
 - **Re-ticketed from:** ISSUE-855 (2026-07-21 housecleaning; original status was: `⏳ BACKLOG — consolidated`)
-- **Status:** ⏳ BACKLOG — consolidated
+- **Status:** ✅ FIXED (2026-08-05)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Finance / Split escrow UI
 - **Evidence:** `SplitSheetEscrow` initializes `collaborators` as an empty array (`SplitSheetEscrow.tsx:24-30`), computes `allSigned = signedCount === totalCount` (`:36-39`), and computes `progressPct` as `signedCount / totalCount` (`:39`). With zero collaborators, `allSigned` is true and `progressPct` is `NaN`, so the escrow banner can show “Ready to Release” (`:162-166`) and the release button path renders as enabled for the all-signed state (`:271-284`).
 - **Impact:** Empty setup state looks like a release-ready escrow and can produce invalid progress styles/copy.
 - **Fix:** Require `totalCount > 0`, escrow amount > 0, valid splits totaling 100, and connected accounts before `allSigned` or release-ready UI can be true.
 - **Acceptance:** With zero collaborators, the UI shows setup-required, progress is 0%, and release controls are disabled with a specific missing-collaborators reason.
+- **Resolution (2026-08-05):** Refactored `allSigned` condition to require `totalCount > 0` explicitly. Added guard to `splitsValid` (require collaborators before valid splits). Added “Setup Required” alert when collaborators list is empty. Finance tests: 44/44 passing. Commit: `e7f3e9ad3`.
 
 ---
 
