@@ -86,9 +86,11 @@ export function SplitSheetEscrow() {
     const signedCount = collaborators.filter(c => c.signed).length;
     const totalCount = collaborators.length;
     const totalSplitPct = collaborators.reduce((sum, c) => sum + (c.splitPct || 0), 0);
-    const splitsValid = totalSplitPct === 100 || collaborators.length === 0;
-    const allHavePayoutAccounts = collaborators.every(c => c.accountId);
-    const allSigned = splitsValid && allHavePayoutAccounts && escrowAmount > 0 && totalCount > 0 && signedCount === totalCount;
+    // Splits are valid only if we have collaborators AND their splits sum to 100
+    const splitsValid = totalCount > 0 && totalSplitPct === 100;
+    const allHavePayoutAccounts = totalCount > 0 && collaborators.every(c => c.accountId);
+    // Release requires: amount > 0, at least one collaborator, all signed, valid splits, all have payout accounts
+    const allSigned = escrowAmount > 0 && totalCount > 0 && signedCount === totalCount && splitsValid && allHavePayoutAccounts;
     const progressPct = totalCount > 0 ? Math.round((signedCount / totalCount) * 100) : 0;
 
     /**
@@ -249,6 +251,15 @@ export function SplitSheetEscrow() {
 
                     {/* Collaborator List */}
                     <div className="space-y-2">
+                        {totalCount === 0 ? (
+                            <div className="flex items-center gap-3 p-4 rounded-xl bg-amber-500/5 border border-amber-500/20">
+                                <AlertTriangle size={16} className="text-amber-400 flex-shrink-0" />
+                                <div className="flex-1 text-sm text-amber-300">
+                                    <p className="font-semibold">Setup Required</p>
+                                    <p className="text-[12px] text-amber-300/70">Add at least one collaborator to enable release</p>
+                                </div>
+                            </div>
+                        ) : null}
                         {collaborators.map(c => {
                             const amount = (escrowAmount * c.splitPct) / 100;
                             return (
