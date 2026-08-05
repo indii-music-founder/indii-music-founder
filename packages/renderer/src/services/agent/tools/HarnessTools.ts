@@ -10,7 +10,7 @@ import {
   listRecentHarnessRuns,
 } from '@/services/business-harness';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import type { HarnessDomain, HarnessRun, HarnessInputRef, BoardroomHarnessDecision } from '@indii/shared';
+import type { HarnessDomain, HarnessRun, HarnessInputRef, BoardroomHarnessDecision } from '@shared';
 import { boardroomMetaHarnessService } from '@/services/business-harness/BoardroomMetaHarnessService';
 import { wrapTool, toolError, toolSuccess } from '../utils/ToolUtils';
 import type { AnyToolFunction } from '../types';

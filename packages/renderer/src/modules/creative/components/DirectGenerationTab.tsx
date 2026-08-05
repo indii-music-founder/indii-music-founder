@@ -22,7 +22,7 @@ import { useOptionalAdaptiveWorkspace } from '@/components/layout/AdaptiveWorksp
 // (gateway.ts normalizeVideoAspectRatio) — 1:1/4:3/3:4 look selectable in
 // video mode but have zero effect once submitted.
 const VALID_VIDEO_ASPECT_RATIOS = new Set(['16:9', '9:16']);
-import { normalizeVideoDuration, normalizeVideoResolution } from '@indii/shared';
+import { normalizeVideoDuration, normalizeVideoResolution } from '@shared';
 
 export default function DirectGenerationTab() {
     const toast = useToast();

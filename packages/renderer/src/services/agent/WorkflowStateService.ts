@@ -11,7 +11,7 @@ import {
     WorkflowExecutionSchema,
     WorkflowExecutionStatusEnum,
     WorkflowStepStatusEnum
-} from '@indii/shared';
+} from '@shared';
 
 /**
  * WorkflowStateService — Persistent Workflow State Machine

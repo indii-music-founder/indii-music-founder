@@ -7,7 +7,7 @@ import {
   HarnessRecommendation,
   HarnessApprovalGate,
   HarnessAgentBrief,
-} from '@indii/shared';
+} from '@shared';
 
 export interface FanData {
   id: string;

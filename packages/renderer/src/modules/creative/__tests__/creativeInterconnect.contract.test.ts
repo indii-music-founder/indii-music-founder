@@ -18,7 +18,7 @@
  *     characterization test FAILS on purpose — flip the assertion and close the issue.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { GenerateImageSchema, GenerateOmniRemixSchema, GenerateVideoSchema } from '@indii/shared';
+import { GenerateImageSchema, GenerateOmniRemixSchema, GenerateVideoSchema } from '@shared';
 import { buildCreativeHandoffState } from '@/core/store/slices/creative/creativeHandoffSlice';
 import type { StageHandoffPayload } from '@/types/handoff';
 import type { HistoryItem } from '@/core/types/history';

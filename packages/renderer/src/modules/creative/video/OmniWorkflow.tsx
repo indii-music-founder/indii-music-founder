@@ -18,7 +18,7 @@ import { materializeVideoFrameForHandoff } from '@/services/creative/CreativeMed
 import { creativeAssetPayloadToHistoryItem, readCreativeAssetDrag } from '@/services/creative/CreativeAssetDragService';
 import { resolveStorageUri } from '@/services/storage/storageUri';
 import { normalizeVideoAspectRatio } from '@/services/video/videoAspectRatio';
-import { GenerateOmniRemixSchema } from '@indii/shared';
+import { GenerateOmniRemixSchema } from '@shared';
 import { downloadAsset } from '@/utils/download';
 import { z } from 'zod';
 

@@ -8,7 +8,7 @@ import {
   HarnessDomain,
   HarnessScore,
   HarnessInputRef
-} from '@indii/shared';
+} from '@shared';
 
 export interface ActivityTimeValueInput {
   events: BusinessActivityEvent[];

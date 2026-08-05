@@ -8,7 +8,7 @@ import {
   BusinessActivityEvent,
   HarnessFinding,
   HarnessScore
-} from '@indii/shared';
+} from '@shared';
 import { activityValueService } from '../business-harness/ActivityValueService';
 import type { Expense } from '@/modules/finance/schemas';
 import type { PayoutRecord, RecoupmentBalance } from './RoyaltyService';
@@ -195,7 +195,7 @@ export class FinanceCompiler implements HarnessCompiler<FinanceCompilerInput, Fi
       }
     }
 
-    const approvalGates: import('@indii/shared').HarnessApprovalGate[] = [];
+    const approvalGates: import('@shared').HarnessApprovalGate[] = [];
     if (projectRoi !== null && projectRoi < 0) {
       approvalGates.push({
         id: 'negative_roi_spend_approval',

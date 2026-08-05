@@ -4,7 +4,7 @@ import {
     AgentLoopExecution, 
     AgentLoopStatusEnum,
     AgentLoopIteration
-} from '@indii/shared';
+} from '@shared';
 import { AgentContext } from '../types';
 import { logger } from '@/utils/logger';
 import { useStore } from '@/core/store';

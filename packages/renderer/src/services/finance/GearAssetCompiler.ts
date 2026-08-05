@@ -9,7 +9,7 @@ import {
   HarnessCostLine,
   HarnessAgentBrief,
   HarnessApprovalGate
-} from '@indii/shared';
+} from '@shared';
 
 export type GearCategory = 'instrument' | 'string' | 'cable' | 'pedal' | 'laptop' | 'software' | 'repair' | 'warranty' | 'other';
 export type GearAssetType = 'durable' | 'consumable';

@@ -6,7 +6,7 @@ import type { ExtendedGoldenMetadata } from '@/services/metadata/types';
 import type { ReleaseAssets } from '@/services/distribution/types/distributor';
 import { INGESTION_CONFIG } from '@/core/config/ingestion';
 import { IdentifierService } from '@/services/identity/IdentifierService';
-import { ddexBuilder } from '@indii/shared';
+import { ddexBuilder } from '@shared';
 
 /**
  * IngestionNotification Service

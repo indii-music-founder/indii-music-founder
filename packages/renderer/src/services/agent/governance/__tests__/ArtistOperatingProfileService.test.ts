@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { DEFAULT_ARTIST_OPERATING_PROFILE } from '@indii/shared';
+import { DEFAULT_ARTIST_OPERATING_PROFILE } from '@shared';
 
 vi.mock('@/utils/e2eMode', () => ({ isFirebaseE2EMockEnabled: vi.fn(() => false) }));
 

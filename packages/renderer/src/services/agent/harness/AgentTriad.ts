@@ -1,5 +1,5 @@
 import { logger } from '@/utils/logger';
-import { WorkflowStepStatusEnum, type WorkflowStepStatus } from '@indii/shared';
+import { WorkflowStepStatusEnum, type WorkflowStepStatus } from '@shared';
 
 export interface TriadResult {
     status: WorkflowStepStatus;

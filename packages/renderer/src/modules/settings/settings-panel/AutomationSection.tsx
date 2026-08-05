@@ -12,7 +12,7 @@ import { MousePointerClick, ShieldAlert, Target, ShieldCheck, Laptop2, Plus, X }
 import { SectionHeader, SettingRow, Toggle } from './SettingsShared';
 import { useToast } from '@/core/context/ToastContext';
 import { artistOperatingProfileService } from '@/services/agent/governance/ArtistOperatingProfileService';
-import { DEFAULT_ARTIST_OPERATING_PROFILE, type ArtistOperatingProfile } from '@indii/shared';
+import { DEFAULT_ARTIST_OPERATING_PROFILE, type ArtistOperatingProfile } from '@shared';
 import { logger } from '@/utils/logger';
 import { getColorForModule } from '@/core/theme/moduleColors';
 

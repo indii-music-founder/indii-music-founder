@@ -1,7 +1,7 @@
 import React from 'react';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { Film, Pause, Play, UploadCloud, X } from 'lucide-react';
-import { VideoSessionSchema, type VideoSession } from '@indii/shared';
+import { VideoSessionSchema, type VideoSession } from '@shared';
 import {
     SessionVideoUploadService,
     type SessionUploadHandle,

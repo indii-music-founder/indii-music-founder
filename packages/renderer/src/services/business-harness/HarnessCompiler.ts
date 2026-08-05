@@ -1,1 +1,1 @@
-export * from '@indii/shared';
+export * from '@shared';

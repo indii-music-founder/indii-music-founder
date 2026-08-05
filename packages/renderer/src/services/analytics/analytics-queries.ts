@@ -8,7 +8,7 @@
  * - Aggregations (count, unique users, etc.)
  */
 
-import type { AnalyticsEvent } from '@indii/shared';
+import type { AnalyticsEvent } from '@shared';
 
 export interface DateRange {
   startDate: Date;

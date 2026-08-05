@@ -1,7 +1,7 @@
 import React from 'react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
-import { AgentLoopStatusEnum } from '@indii/shared';
+import { AgentLoopStatusEnum } from '@shared';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';

@@ -2,7 +2,7 @@ import { StateCreator } from 'zustand';
 import { doc, onSnapshot, Unsubscribe } from 'firebase/firestore';
 import { db, auth } from '@/services/firebase';
 import type { GraphExecutionState, AgentGraph } from '@/services/agent/types';
-import type { AgentLoopExecution } from '@indii/shared';
+import type { AgentLoopExecution } from '@shared';
 
 // Re-using the types defined in the shared firebase package
 export enum AgentTaskStateEnum {

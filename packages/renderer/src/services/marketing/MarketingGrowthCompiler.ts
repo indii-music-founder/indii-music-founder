@@ -10,7 +10,7 @@ import {
   HarnessScore,
   HarnessFinding,
   HarnessCostLine
-} from '@indii/shared';
+} from '@shared';
 
 export interface MarketingCampaign {
   id: string;

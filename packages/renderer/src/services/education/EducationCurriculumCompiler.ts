@@ -8,7 +8,7 @@ import {
   HarnessRecommendation,
   HarnessAgentBrief,
   HarnessApprovalGate
-} from '@indii/shared';
+} from '@shared';
 
 export interface EducationBehaviorSignal {
   type: 'ddex_failure' | 'agent_interaction' | 'onboarding_step_completed' | 'onboarding_step_skipped';

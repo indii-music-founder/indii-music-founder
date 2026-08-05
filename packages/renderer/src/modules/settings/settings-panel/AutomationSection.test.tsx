@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import AutomationSection from './AutomationSection';
-import { DEFAULT_ARTIST_OPERATING_PROFILE } from '@indii/shared';
+import { DEFAULT_ARTIST_OPERATING_PROFILE } from '@shared';
 
 const showToast = vi.fn();
 vi.mock('@/core/context/ToastContext', () => ({ useToast: () => ({ showToast }) }));

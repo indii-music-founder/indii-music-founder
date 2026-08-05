@@ -4,7 +4,7 @@ import { AgentContext } from './types';
 import { maestroBatchingService } from './MaestroBatchingService';
 import { WORKFLOW_REGISTRY, WorkflowDefinition } from './WorkflowRegistry';
 import { workflowStateService } from './WorkflowStateService';
-import { WorkflowExecutionStatusEnum, WorkflowStepStatusEnum } from '@indii/shared';
+import { WorkflowExecutionStatusEnum, WorkflowStepStatusEnum } from '@shared';
 import { v4 as uuidv4 } from 'uuid';
 import { logger } from '@/utils/logger';
 

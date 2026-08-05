@@ -11,7 +11,7 @@ import {
   FinalizeKnowledgeUploadRequest,
   DeleteKnowledgeDocumentRequest,
   KnowledgeQueryRequest,
-} from '@indii/shared/schemas/knowledge';
+} from '@shared/schemas/knowledge';
 
 export interface FrontendKnowledgeDoc {
     id: string; // The Firestore document ID

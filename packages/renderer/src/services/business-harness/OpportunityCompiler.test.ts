@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { OpportunityCompiler } from './OpportunityCompiler';
-import { HarnessContext } from '@indii/shared';
+import { HarnessContext } from '@shared';
 
 describe('OpportunityCompiler', () => {
   const compiler = new OpportunityCompiler();
