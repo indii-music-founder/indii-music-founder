@@ -85,7 +85,10 @@ export function SplitSheetEscrow() {
 
     const signedCount = collaborators.filter(c => c.signed).length;
     const totalCount = collaborators.length;
-    const allSigned = totalCount > 0 && signedCount === totalCount;
+    const totalSplitPct = collaborators.reduce((sum, c) => sum + (c.splitPct || 0), 0);
+    const splitsValid = totalSplitPct === 100 || collaborators.length === 0;
+    const allHavePayoutAccounts = collaborators.every(c => c.accountId);
+    const allSigned = splitsValid && allHavePayoutAccounts && escrowAmount > 0 && totalCount > 0 && signedCount === totalCount;
     const progressPct = totalCount > 0 ? Math.round((signedCount / totalCount) * 100) : 0;
 
     /**
@@ -328,6 +331,24 @@ export function SplitSheetEscrow() {
                                 <p className="text-[10px] text-red-300/80 leading-relaxed">{releaseError}</p>
                             </div>
                         )}
+                        {!splitsValid && !released && (
+                            <div className="flex items-start gap-2 p-3 rounded-lg bg-red-500/5 border border-red-500/20">
+                                <AlertTriangle size={12} className="text-red-400 flex-shrink-0 mt-0.5" />
+                                <p className="text-[10px] text-red-300/80 leading-relaxed">Split percentages must sum to exactly 100%. Current total: {totalSplitPct}%</p>
+                            </div>
+                        )}
+                        {!allHavePayoutAccounts && collaborators.length > 0 && !released && (
+                            <div className="flex items-start gap-2 p-3 rounded-lg bg-red-500/5 border border-red-500/20">
+                                <AlertTriangle size={12} className="text-red-400 flex-shrink-0 mt-0.5" />
+                                <p className="text-[10px] text-red-300/80 leading-relaxed">Not all collaborators have connected payout accounts. Release cannot proceed.</p>
+                            </div>
+                        )}
+                        {escrowAmount === 0 && !released && (
+                            <div className="flex items-start gap-2 p-3 rounded-lg bg-red-500/5 border border-red-500/20">
+                                <AlertTriangle size={12} className="text-red-400 flex-shrink-0 mt-0.5" />
+                                <p className="text-[10px] text-red-300/80 leading-relaxed">Escrow amount must be greater than zero to release funds.</p>
+                            </div>
+                        )}
                         <button
                             onClick={handleReleaseFunds}
                             disabled={!allSigned || releasing}
@@ -340,6 +361,14 @@ export function SplitSheetEscrow() {
                                 <><Loader2 size={16} className="animate-spin" />Processing Transfers...</>
                             ) : allSigned ? (
                                 <><Unlock size={16} />Release Funds via Stripe Connect</>
+                            ) : totalCount === 0 ? (
+                                <><Lock size={16} />Setup required — add collaborators</>
+                            ) : escrowAmount === 0 ? (
+                                <><AlertTriangle size={16} />Escrow amount must be greater than zero</>
+                            ) : !allHavePayoutAccounts ? (
+                                <><AlertTriangle size={16} />All collaborators must connect payout accounts</>
+                            ) : !splitsValid ? (
+                                <><AlertTriangle size={16} />Splits must sum to 100%</>
                             ) : (
                                 <><Lock size={16} />{`Waiting for ${totalCount - signedCount} more signature${totalCount - signedCount !== 1 ? 's' : ''}...`}</>
                             )}
