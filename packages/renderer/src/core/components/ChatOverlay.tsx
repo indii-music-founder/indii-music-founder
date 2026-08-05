@@ -278,7 +278,7 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, onToggleMinimize }) 
                             // 64px = 56px tab bar height + 8px extra bottom padding
                             height: isDesktop ? undefined : 'calc(100dvh - 64px - env(safe-area-inset-bottom, 0px))',
                             background: 'linear-gradient(180deg, rgba(12,12,14,0.98) 0%, rgba(8,8,10,0.99) 100%)',
-                            backdropFilter: 'blur(var(--blur-lg))',
+                            backdropFilter: 'blur(var(--blur-overlay))',
                         }}
                     >
                         <ErrorBoundary>

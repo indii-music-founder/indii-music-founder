@@ -21,7 +21,7 @@ export const StandardMerch: React.FC = () => {
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-[2000ms] ease-out"
                     fetchPriority="high"
                 />
-                <div className="absolute inset-0 z-20 flex flex-col justify-center px-12 bg-background/30 backdrop-blur-sm">
+                <div className="absolute inset-0 z-20 flex flex-col justify-center px-12 bg-background/30 backdrop-blur-xs">
                     <div className="w-fit mb-4 bg-primary text-primary-foreground px-3 py-1 rounded-full text-[10px] font-black tracking-widest uppercase">
                         Season 25 // Summer
                     </div>

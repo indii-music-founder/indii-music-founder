@@ -53,7 +53,7 @@ export const SessionTimeoutOverlay: React.FC = () => {
                 <motion.div
                     // Literal px required — Framer Motion tweens filter values by parsing
                     // the number out of the string, so a var(--blur-xl) reference here
-                    // wouldn't interpolate. Keep in sync with --blur-xl (24px) in index.css.
+                    // wouldn't interpolate. Keep in sync with Tailwind's --blur-xl (24px).
                     initial={{ opacity: 0, backdropFilter: "blur(0px)" }}
                     animate={{ opacity: 1, backdropFilter: "blur(24px)" }}
                     exit={{ opacity: 0, backdropFilter: "blur(0px)" }}

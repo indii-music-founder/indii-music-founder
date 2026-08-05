@@ -133,7 +133,7 @@ export function AdaptiveWorkspace({
             <>
                 <button
                     aria-label={`Close ${label}`}
-                    className="absolute inset-0 z-30 bg-black/50 backdrop-blur-2xs"
+                    className="absolute inset-0 z-30 bg-black/50 backdrop-blur-hairline"
                     onClick={closeDrawer}
                 />
                 <aside

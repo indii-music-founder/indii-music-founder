@@ -27,7 +27,7 @@ export const AudioVisualizer: React.FC = () => {
                     </Suspense>
 
                     {/* Dark overlay to ensure UI readability */}
-                    <div className="absolute inset-0 bg-background/40 backdrop-blur-xs" />
+                    <div className="absolute inset-0 bg-background/40 backdrop-blur-subtle" />
                 </motion.div>
             )}
         </AnimatePresence>

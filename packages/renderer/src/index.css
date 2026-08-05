@@ -244,15 +244,11 @@
   --color-sonic-glass: var(--sonic-glass);
   --color-sonic-glass-border: var(--sonic-glass-border);
 
-  /* Backdrop-blur scale — generates blur and backdrop-blur utilities. These
-   * theme variables also remain available to inline styles via var(--blur-*). */
-  --blur-2xs: 1px;
-  --blur-xs: 2px;
-  --blur-sm: 4px;
-  --blur-md: 10px;
-  --blur-lg: 20px;
-  --blur-xl: 24px;
-  --blur-2xl: 40px;
+  /* Nonstandard backdrop-blur values. Tailwind's standard scale remains intact. */
+  --blur-hairline: 1px;
+  --blur-subtle: 2px;
+  --blur-tooltip: 10px;
+  --blur-overlay: 20px;
 
   /* Typography Mapping - Tailwind v4 CSS-first */
   --font-sans: var(--font-main);

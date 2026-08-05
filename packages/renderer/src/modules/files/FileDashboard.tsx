@@ -184,7 +184,7 @@ export default function FileDashboard() {
 
                                             {/* Hover Actions — only for files with a real URL */}
                                             {node.data?.url && (
-                                                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 backdrop-blur-xs">
+                                                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 backdrop-blur-subtle">
                                                     <button
                                                         onClick={(e) => { e.stopPropagation(); openFileUrl(node.data?.url); }}
                                                         title="Open in new tab"
