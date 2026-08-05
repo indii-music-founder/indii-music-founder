@@ -111,6 +111,10 @@ if __name__ == "__main__":
         if "gross" not in input_data or "splits" not in input_data:
             raise ValueError("Missing 'gross' or 'splits' in input data.")
 
+        # Validate non-empty splits
+        if not input_data["splits"] or len(input_data["splits"]) == 0:
+            raise ValueError("splits must contain at least one distribution party.")
+
         payout_report = calculate_waterfall(
             gross_amount=float(input_data["gross"]),
             party_splits=input_data["splits"],
