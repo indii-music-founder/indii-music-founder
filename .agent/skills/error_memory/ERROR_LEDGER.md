@@ -1,3 +1,17 @@
+## 2026-08-06 `npm install` Tolerates an `overrides`/Direct-Dependency Mismatch That `npm ci` Treats as a Hard Failure
+
+**SEVERITY:** High (would have merged straight to `main` and broken every PR's `build.yml` gate if not caught in review — CI red on 100% of pushes after the merge)
+
+**MISTAKE:** Bumped a root `package.json` `overrides` entry (`"fast-xml-parser": "^5.9.3"` → `"^5.10.1"`) to close a CVE, verified with `npm install`, `npm ls <pkg>`, `npm run typecheck`, `npm run build:ci`, and the full test suite — all green, all committed, all pushed to a PR. Missed that `packages/renderer/package.json` and `packages/shared/package.json` each *also* directly depend on `fast-xml-parser` with their own exact pin (`"fast-xml-parser": "5.9.3"`, no caret) — a completely different declaration site than the root override, invisible unless you specifically `grep -rn "\"fast-xml-parser\"" --include=package.json` across every workspace (same shape of bug as the react-router-dom 4-pin-location issue earlier the same session — should have generalized the lesson the first time). `npm install` silently tolerated the resulting override/direct-pin disagreement and produced a lockfile that looked fine to every check that was run. `npm ci` — which is what `.github/workflows/build.yml`'s `pull_request` gate actually runs, not `npm install` — refused it outright: `Invalid: lock file's fast-xml-parser@5.9.3 does not satisfy fast-xml-parser@5.10.1`.
+
+**WHY IT WASN'T CAUGHT SOONER:** `npm install`, `npm run typecheck`, `npm run build:ci`, and `npm test` all read from whatever's already resolved in `node_modules`/`package-lock.json` — none of them re-validate that the *declared* dependency tree (package.json overrides + every workspace's own dependencies) is *self-consistent*. `npm ci` is the only one of these commands that performs that specific check, and it wasn't run locally until a final pre-merge review specifically asked "does this pass the exact command the PR gate runs" instead of trusting the broader test suite as a proxy for it.
+
+**FIX:** Reverted the override (and would-be-matching direct pins) back to the original `^5.9.3` rather than chase the fix further — see ISSUE-1300 in `.agent/test_ledger/OPEN_ISSUES_V3.md` for why a full fix wasn't reachable in-session (an unrelated, pre-existing, unsatisfiable nested peer want). Confirmed the revert with a real `npm ci`, not just `npm install`.
+
+**PREVENTION:** Before merging any change to a root `overrides` entry, `grep -rn "\"<package>\"" --include=package.json .` across every workspace — if any workspace declares the same package directly, it must move in lockstep with the override or `npm ci` will reject the lockfile even though `npm install` accepts it silently. More generally: **`npm install` succeeding is not proof `npm ci` will succeed.** For any PR that touches `package.json` or `package-lock.json`, run `npm ci` locally (in a disposable location — it deletes and rebuilds `node_modules` from the lockfile) as the actual pre-merge gate, matching whatever command CI's install step really runs — don't assume `npm install` is an equivalent proxy for it.
+
+---
+
 ## 2026-08-06 `npm update`/`npm install` for a Dependency CVE Fix Silently Diverges in a Shared Multi-Agent Checkout
 
 **SEVERITY:** Medium (no bad code shipped — the affected commits were never made; caught by re-checking `npm audit` counts and `npm ls` after each step instead of trusting the first success message)
