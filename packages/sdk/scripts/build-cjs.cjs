@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * build-cjs.js - Convert ESM build to CommonJS
+ * build-cjs.cjs - Convert ESM build to CommonJS
  *
  * This script takes the ESM build and creates a CommonJS version
  * for backwards compatibility with CommonJS projects.

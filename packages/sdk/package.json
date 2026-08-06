@@ -19,7 +19,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsc && node scripts/build-cjs.js",
+    "build": "tsc && node scripts/build-cjs.cjs",
     "typecheck": "tsc --noEmit",
     "test": "vitest",
     "prepublishOnly": "npm run build && npm run test"
