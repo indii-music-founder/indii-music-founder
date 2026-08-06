@@ -299,13 +299,13 @@ export default function Sidebar() {
                         "w-full flex items-center justify-center p-2.5 rounded-xl transition-all group relative overflow-hidden",
                         isBoardroomMode
                             ? "bg-indigo-500/20 border border-indigo-500/50"
-                            : "bg-linear-to-r from-indigo-500/10 to-indigo-600/5 border border-indigo-500/20 hover:border-indigo-500/40",
+                            : "bg-linear-to-r from-indigo-500/10 to-indigo-600/5 border border-indigo-500/20 hover:border-indigo-500/40 hover:shadow-[0_0_15px_var(--color-dept-creative-glow)]",
                         isSidebarOpen ? "gap-3" : ""
                     )}
                     style={{
                         boxShadow: isBoardroomMode
-                            ? 'var(--dept-creative-glow, 0 0 20px rgba(0, 255, 102, 0.3))'
-                            : 'none'
+                            ? '0 0 20px var(--color-dept-creative-glow, rgba(0, 255, 102, 0.3))'
+                            : undefined
                     }}
                     aria-label="Enter Boardroom"
                     title={!isSidebarOpen ? "Enter Boardroom" : undefined}
@@ -341,13 +341,13 @@ export default function Sidebar() {
                         "w-full flex items-center justify-center p-2.5 rounded-xl transition-all group relative overflow-hidden",
                         currentModule === 'founders-checkout'
                             ? "bg-amber-500/20 border border-amber-500/50"
-                            : "bg-linear-to-r from-amber-500/15 to-amber-600/10 border border-amber-500/30 hover:border-amber-500/60",
+                            : "bg-linear-to-r from-amber-500/15 to-amber-600/10 border border-amber-500/30 hover:border-amber-500/60 hover:shadow-[0_0_25px_var(--color-dept-royalties-glow)]",
                         isSidebarOpen ? "gap-3" : ""
                     )}
                     style={{
                         boxShadow: currentModule === 'founders-checkout'
-                            ? 'var(--dept-royalties-glow, 0 0 20px rgba(255, 193, 7, 0.3))'
-                            : 'none'
+                            ? '0 0 20px var(--color-dept-royalties-glow, rgba(255, 193, 7, 0.3))'
+                            : undefined
                     }}
                     aria-label="Back the Vision — Invest"
                     title={!isSidebarOpen ? "Back the Vision" : undefined}
