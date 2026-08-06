@@ -1,6 +1,6 @@
 ---
 name: health-audit
-version: 1.1.1
+version: 1.1.2
 description: |
   Full-spectrum engineering health audit for indii. Scans build health,
   tests, module completeness, service layer, agent fleet, security posture,
@@ -169,6 +169,31 @@ npm run build:mcp
 
 Treat a health command that discovers tests but skips all of them as a failed
 readiness signal even when the process exits with status 0.
+
+### 13. Workspace Package Coverage
+
+Root `package.json` declares npm workspaces. Dimensions 1, 2, and 12 only
+exercise a subset of them (`shared`, `main`, `renderer`, `firebase` via
+typecheck; `mcp-server-local`/`mcp-server-harness` via `build:mcp`;
+`landing` via `build:landing`). Any workspace not covered by one of those
+is invisible to every other dimension. Discover and build the gap:
+
+```bash
+echo "=== WORKSPACE COVERAGE ==="
+python3 -c "import json;print(json.load(open('package.json')).get('workspaces',[]))"
+# For each workspace NOT already covered by build:ci / build:firebase /
+# build:landing / build:mcp, build it directly and record pass/fail:
+npm run build -w packages/<uncovered-workspace-name>
+```
+
+Discovered 2026-08-05: `packages/admin-dashboard` and `packages/sdk` had
+zero coverage anywhere in the audit. `admin-dashboard` built clean.
+`sdk` failed — a ~3.5-month-old ESM/CommonJS mismatch in
+`packages/sdk/scripts/build-cjs.js` that had never been caught because
+no dimension ever ran its build. Treat any workspace directory under
+`packages/*` that doesn't appear in another dimension's command as a
+coverage gap worth building ad hoc, every run — new workspaces get added
+to `package.json` without necessarily being wired into `build:*` scripts.
 
 ## Report Generation
 
