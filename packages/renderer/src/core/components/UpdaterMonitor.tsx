@@ -75,7 +75,7 @@ export const UpdaterMonitor: React.FC = () => {
                     initial={{ opacity: 0, y: 50, scale: 0.9 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 20, scale: 0.9 }}
-                    className="fixed bottom-6 right-6 z-[9999] w-80 bg-black/60 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden"
+                    className="fixed bottom-6 right-6 z-[9999] w-80 bg-black/60 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-float overflow-hidden"
                 >
                     <div className="p-4 flex flex-col gap-3">
                         <div className="flex items-center justify-between">

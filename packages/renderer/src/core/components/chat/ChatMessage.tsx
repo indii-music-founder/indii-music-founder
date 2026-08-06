@@ -383,7 +383,7 @@ export const MessageItem = memo(({ msg, avatarUrl, variant = 'default' }: Messag
                     ? 'bg-linear-to-br from-white/10 to-transparent text-gray-100 border border-white/10 rounded-tr-sm shadow-sm'
                     : msg.role === 'system'
                         ? 'bg-white/5 backdrop-blur-sm text-gray-400 text-[10px] font-mono tracking-wider uppercase border border-white/5 w-full text-center rounded-xl p-1.5'
-                        : 'bg-linear-to-br from-[rgba(16,16,22,0.6)] to-[rgba(10,10,14,0.9)] text-gray-200 border border-white/5 rounded-tl-sm shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)]'
+                        : 'bg-linear-to-br from-[rgba(16,16,22,0.6)] to-[rgba(10,10,14,0.9)] text-gray-200 border border-white/5 rounded-tl-sm shadow-bubble'
                     }`}
                 style={msg.role === 'model' ? {
                     ...agentIdentity.cssProperties,
