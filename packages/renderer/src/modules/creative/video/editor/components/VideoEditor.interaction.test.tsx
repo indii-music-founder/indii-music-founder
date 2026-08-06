@@ -4,6 +4,7 @@ import React from 'react';
 import { VideoEditor } from '../VideoEditor';
 import { useVideoEditorStore } from '../../store/videoEditorStore';
 import { useToast } from '@/core/context/ToastContext';
+import { useStore } from '@/core/store';
 import { httpsCallable } from 'firebase/functions';
 
 // Mock dependencies
@@ -97,6 +98,7 @@ describe('VideoEditor Integration', () => {
     const mockSetIsPlaying = vi.fn();
     const mockSetCurrentTime = vi.fn();
     const mockSetSelectedClipId = vi.fn();
+    const mockAddToHistory = vi.fn();
 
     const mockToast = {
         info: vi.fn(),
@@ -127,6 +129,7 @@ describe('VideoEditor Integration', () => {
         vi.clearAllMocks();
 
         (useToast as unknown as import("vitest").Mock).mockReturnValue(mockToast);
+        useStore.getState().addToHistory = mockAddToHistory;
 
         const mockState = {
             project: mockProject,
@@ -156,9 +159,22 @@ describe('VideoEditor Integration', () => {
             (selector?: (s: typeof mockState) => unknown) => (selector ? selector(mockState) : mockState)
         );
 
-        (httpsCallable as import("vitest").Mock).mockReturnValue(vi.fn().mockResolvedValue({
-            data: { success: true, renderId: 'r1' }
-        }));
+        (httpsCallable as import("vitest").Mock).mockReturnValue(vi.fn()
+            .mockResolvedValueOnce({ data: { success: true, renderId: 'r1' } })
+            .mockResolvedValueOnce({
+                data: {
+                    status: 'completed',
+                    renderId: 'r1',
+                    projectId: 'proj1',
+                    progress: 100,
+                    asset: {
+                        url: 'https://storage.example/private-render.mp4',
+                        expiresAt: Date.now() + 60_000,
+                        generation: '1',
+                        mimeType: 'video/mp4',
+                    },
+                },
+            }));
     });
 
     it('manages playback state', () => {
@@ -198,7 +214,13 @@ describe('VideoEditor Integration', () => {
 
         await waitFor(() => {
             expect(httpsCallable).toHaveBeenCalled();
-            expect(mockToast.success).toHaveBeenCalledWith(expect.stringContaining('Cloud render started'));
+            expect(mockToast.success).toHaveBeenCalledWith(expect.stringContaining('Cloud render complete'));
+            expect(mockToast.error).not.toHaveBeenCalled();
+            expect(mockAddToHistory).toHaveBeenCalledWith(expect.objectContaining({
+                id: 'export_r1',
+                url: 'https://storage.example/private-render.mp4',
+                projectId: 'proj1',
+            }));
         });
     });
 
