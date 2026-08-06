@@ -372,7 +372,7 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                 isDocked ? "rounded-none border-x-0 border-b-0 border-t border-white/10 px-1" : "rounded-3xl",
                 isIndiiMode
                     ? "border-green-500/50 ring-green-500/20 shadow-[0_0_30px_rgba(34,197,94,0.15)] bg-green-950/30"
-                    : `${colors.border} ${colors.ring} bg-white/4 shadow-[0_8px_32px_rgba(0,0,0,0.4)]`,
+                    : `${colors.border} ${colors.ring} bg-white/4 shadow-panel`,
                 isDragging && "ring-4 ring-blue-500/50 bg-blue-500/20",
                 className
             )}
@@ -534,7 +534,7 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                                             onTouchStart={(e) => e.stopPropagation()}
                                             onMouseDown={(e) => e.stopPropagation()}
                                         >
-                                            <AgentModePicker className="w-80 shadow-[0_20px_50px_rgba(0,0,0,0.5)] border-white/10" />
+                                            <AgentModePicker className="w-80 shadow-float border-white/10" />
                                         </motion.div>
                                     </div>,
                                     document.body

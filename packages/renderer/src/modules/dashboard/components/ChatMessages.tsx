@@ -51,7 +51,7 @@ export function ChatMessages({ history, isProcessing, chatEndRef }: ChatMessages
                                 <Bot size={18} className="text-green-200" />
                             </div>
                         </div>
-                        <div className="bg-linear-to-br from-[rgba(16,16,22,0.6)] to-[rgba(10,10,14,0.9)] border border-white/5 rounded-[1.2rem] rounded-tl-sm px-5 py-4 flex items-center justify-center shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)] h-[48px]">
+                        <div className="bg-linear-to-br from-[rgba(16,16,22,0.6)] to-[rgba(10,10,14,0.9)] border border-white/5 rounded-[1.2rem] rounded-tl-sm px-5 py-4 flex items-center justify-center shadow-bubble h-[48px]">
                             <div className="flex items-center gap-1.5" role="status" aria-label="AI is thinking">
                                 <motion.div animate={{ y: [0, -4, 0] }} transition={{ repeat: Infinity, duration: 0.6, ease: "easeInOut", delay: 0 }} className="w-1.5 h-1.5 bg-green-400 rounded-full" />
                                 <motion.div animate={{ y: [0, -4, 0] }} transition={{ repeat: Infinity, duration: 0.6, ease: "easeInOut", delay: 0.15 }} className="w-1.5 h-1.5 bg-green-400/80 rounded-full" />

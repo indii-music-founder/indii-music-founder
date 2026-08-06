@@ -11,7 +11,7 @@ const Card = React.forwardRef<
             borderColor: 'var(--color-border, rgba(255, 255, 255, 0.1))',
             backgroundColor: 'var(--color-surface, rgba(36, 31, 25, 0.3))',
             backdropFilter: 'blur(var(--blur-xl))',
-            boxShadow: '0 10px 24px rgba(0, 0, 0, 0.2)'
+            boxShadow: 'var(--shadow-card)'
         }}
         {...props}
     />
