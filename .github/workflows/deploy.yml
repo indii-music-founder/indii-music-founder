@@ -103,6 +103,13 @@ jobs:
     runs-on: ubuntu-latest
     needs: setup
     strategy:
+      # ISSUE-1298: default fail-fast cancels the other ~19 shards the moment
+      # any one fails, so a single failure hides whether the rest are actually
+      # green — every fix has to be discovered one shard at a time across
+      # repeated pushes instead of all at once. fail-fast: false still fails
+      # the job (and still blocks downstream deploy jobs) if any shard fails —
+      # it only stops masking the other shards' real results while it does.
+      fail-fast: false
       matrix:
         shard: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
     steps:
