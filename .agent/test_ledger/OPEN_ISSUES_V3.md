@@ -994,7 +994,7 @@
 
 ---
 
-### ISSUE-1298: Every shadcn/sonic HSL color token missing its hsl() wrapper — silently no-ops wherever consumed directly
+### ISSUE-1301: Every shadcn/sonic HSL color token missing its hsl() wrapper — silently no-ops wherever consumed directly
 
 - **Status:** ✅ FIXED (2026-08-06)
 - **Severity:** 🟠 HIGH (visual correctness — the entire base UI color system and Publicist accent colors were silently non-functional wherever used without another mechanism papering over it)
