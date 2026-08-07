@@ -15,7 +15,7 @@
     },
     "dependencies": {
         "zod": "3.25.76",
-        "fast-xml-parser": "5.9.3"
+        "fast-xml-parser": "^5.9.3"
     },
     "devDependencies": {
         "typescript": "5.8.2"
