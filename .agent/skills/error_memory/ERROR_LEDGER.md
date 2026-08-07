@@ -1,3 +1,24 @@
+## 2026-08-06 A Shared FIFO `mockResolvedValueOnce()` Queue Desyncs the Moment It's Keyed by Call Order Instead of Callable Name
+
+**SEVERITY:** High (blocked `main`'s `Deploy to Firebase Hosting` pipeline — `unit-tests (1)` shard failing on every push since the commit that introduced it)
+
+**MISTAKE:** `VideoEditor.interaction.test.tsx`'s `'handles export flow'` test mocked `httpsCallable` with `mockReturnValue(vi.fn().mockResolvedValueOnce(A).mockResolvedValueOnce(B))` — ONE shared inner mock function returned for *every* `httpsCallable(functions, name)` call regardless of `name`, serving `A` then `B` strictly by **global invocation order**. The real code path (`RenderService.renderCompositionCloud`) calls `httpsCallable` twice with two *different* endpoint names — `renderVideo` (queue) then `getVideoRenderReceipt` (poll) — intending `A` for the first and `B` (the completed receipt) for the second. Under Vitest 4.1.8, inside the full rendered `<VideoEditor />` component tree, the second invocation observably received `A` again instead of `B` (confirmed via instrumentation: same mock reference, `mock.calls.length === 1` before the second call, yet it resolved to the first queued value) — an isolated reproduction of the identical two-call sequence outside the component passed correctly, so the desync is specific to something in the full render/mock-interaction context that was never fully root-caused at the Vitest-internals level. `getRenderReceipt`'s `parseReceipt` then threw `receipt.projectId is required...` (since `A` has no `projectId` field), which `renderCompositionCloud` caught and rewrapped, so `toast.success` was never called — exactly the failure surfaced in CI.
+
+**ROOT CAUSE:** A call-order-indexed FIFO queue is not the same contract as "endpoint X returns A, endpoint Y returns B." It only stays correct if every call happens in the exact order assumed at mock-setup time, with no possibility of an extra, missing, or reordered call — a fragile invariant with zero enforcement and no error if violated (the mock just silently serves the wrong value for the wrong endpoint).
+
+**WHY IT WASN'T CAUGHT:** The test was originally written with `mockResolvedValue` (a single persistent value, immune to ordering since every call returns the same thing) and later hand-upgraded to `mockResolvedValueOnce().mockResolvedValueOnce()` to model the two-phase queue+poll flow in a separate commit from the one that shipped the feature it was testing — the upgrade was never verified to actually pass locally before landing on `main` (or passed under different conditions than CI's).
+
+**FIX:** Route the mock by the callable `name` argument instead of by call order:
+```ts
+(httpsCallable as Mock).mockImplementation((_functions, name) => {
+    if (name === 'getVideoRenderReceipt') return vi.fn().mockResolvedValue({ data: <completed receipt> });
+    return vi.fn().mockResolvedValue({ data: <queued receipt> });
+});
+```
+This is immune to call count/order entirely — each endpoint always returns its own fixed response no matter how many times it (or any other endpoint) is invoked.
+
+**PREVENTION:** When a mocked function is called with a discriminating argument (an endpoint name, an action type, a URL) and different call sites expect different responses, **branch on that argument inside `mockImplementation`**, never rely on `mockResolvedValueOnce().mockResolvedValueOnce()...` chains keyed purely on invocation order — the moment a poll loop, a retry, or an unrelated caller shares the same mock, the FIFO desyncs silently with no signal beyond a downstream assertion failure that looks unrelated to mocking at all. Grep for `mockReturnValue(vi.fn()...mockResolvedValueOnce` patterns feeding a function invoked with a name/type discriminator and convert them to name-routed `mockImplementation`.
+
 ## 2026-08-06 `npm install` Tolerates an `overrides`/Direct-Dependency Mismatch That `npm ci` Treats as a Hard Failure
 
 **SEVERITY:** High (would have merged straight to `main` and broken every PR's `build.yml` gate if not caught in review — CI red on 100% of pushes after the merge)
