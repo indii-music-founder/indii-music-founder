@@ -159,22 +159,31 @@ describe('VideoEditor Integration', () => {
             (selector?: (s: typeof mockState) => unknown) => (selector ? selector(mockState) : mockState)
         );
 
-        (httpsCallable as import("vitest").Mock).mockReturnValue(vi.fn()
-            .mockResolvedValueOnce({ data: { success: true, renderId: 'r1' } })
-            .mockResolvedValueOnce({
-                data: {
-                    status: 'completed',
-                    renderId: 'r1',
-                    projectId: 'proj1',
-                    progress: 100,
-                    asset: {
-                        url: 'https://storage.example/private-render.mp4',
-                        expiresAt: Date.now() + 60_000,
-                        generation: '1',
-                        mimeType: 'video/mp4',
+        // Route by callable name rather than a shared call-order queue: a single
+        // FIFO of .mockResolvedValueOnce() entries is consumed by ANY call through
+        // httpsCallable, regardless of which endpoint name requested it, so it
+        // silently desyncs the moment the two endpoints aren't invoked in the
+        // exact order assumed here (e.g. a poll iteration reads receipt.status
+        // from the queue endpoint's own payload instead of the receipt endpoint's).
+        (httpsCallable as import("vitest").Mock).mockImplementation((_functions: unknown, name: string) => {
+            if (name === 'getVideoRenderReceipt') {
+                return vi.fn().mockResolvedValue({
+                    data: {
+                        status: 'completed',
+                        renderId: 'r1',
+                        projectId: 'proj1',
+                        progress: 100,
+                        asset: {
+                            url: 'https://storage.example/private-render.mp4',
+                            expiresAt: Date.now() + 60_000,
+                            generation: '1',
+                            mimeType: 'video/mp4',
+                        },
                     },
-                },
-            }));
+                });
+            }
+            return vi.fn().mockResolvedValue({ data: { success: true, renderId: 'r1' } });
+        });
     });
 
     it('manages playback state', () => {
