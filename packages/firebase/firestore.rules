@@ -1415,6 +1415,25 @@ service cloud.firestore {
       allow delete: if isOwner(userId);
     }
 
+    // Evolas implicit interaction signals (docs/EVOLAS_BUILD_PLAN.md T1.6):
+    // observational events only (copied/acted-on/re-asked/switched/abandoned).
+    // Immutable — each signal is a point-in-time record of what the user did,
+    // never edited after the fact, never deleted (permanent telemetry record,
+    // same posture as visualVerifications above).
+    match /users/{userId}/personaInteractionSignals/{signalId} {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId)
+        && request.resource.data.personaId is string
+        && request.resource.data.personaId.size() > 0
+        && request.resource.data.responseId is string
+        && request.resource.data.responseId.size() > 0
+        && request.resource.data.signalType in [
+             'copied', 'actedOn', 'reAsked', 'personaSwitched', 'threadAbandoned'
+           ]
+        && request.resource.data.occurredAt is number;
+      allow update, delete: if false;
+    }
+
     // Server-generated MCP evidence receipts. The authenticated owner may read
     // the byte-level audit result, but cannot forge, alter, or erase evidence.
     match /users/{userId}/assetAuditReceipts/{auditId} {

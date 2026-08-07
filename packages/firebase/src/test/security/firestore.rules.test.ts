@@ -1984,6 +1984,170 @@ describe('Firestore Security Rules', () => {
     });
 
     // ──────────────────────────────────────────────────────────────────────
+    // EVOLAS: users/{userId}/personaFaders/{personaId} (docs/EVOLAS_BUILD_PLAN.md T1.1)
+    // ──────────────────────────────────────────────────────────────────────
+
+    describe('users/{userId}/personaFaders/{personaId}', () => {
+        const validFaders = {
+            personaId: 'manager',
+            values: {
+                riskTolerance: 50,
+                brevity: 50,
+                directness: 50,
+                formality: 50,
+                reasoningTransparency: 50,
+            },
+            updatedAt: Date.now(),
+        };
+
+        it('unauthenticated: read denied', async () => {
+            if (requireEmulator()) return;
+            const db = unauthCtx().firestore();
+            await assertFails(getDoc(doc(db, 'users', ALICE_UID, 'personaFaders', 'manager')));
+        });
+
+        it('owner: write with valid schema allowed', async () => {
+            if (requireEmulator()) return;
+            const db = verifiedCtx(ALICE_UID).firestore();
+            await assertSucceeds(
+                setDoc(doc(db, 'users', ALICE_UID, 'personaFaders', 'manager'), validFaders)
+            );
+        });
+
+        it('non-owner: write denied', async () => {
+            if (requireEmulator()) return;
+            const db = verifiedCtx(BOB_UID).firestore();
+            await assertFails(
+                setDoc(doc(db, 'users', ALICE_UID, 'personaFaders', 'manager'), validFaders)
+            );
+        });
+
+        it('rejects a fader value above 100', async () => {
+            if (requireEmulator()) return;
+            const db = verifiedCtx(ALICE_UID).firestore();
+            await assertFails(
+                setDoc(doc(db, 'users', ALICE_UID, 'personaFaders', 'manager'), {
+                    ...validFaders,
+                    values: { ...validFaders.values, riskTolerance: 101 },
+                })
+            );
+        });
+
+        it('rejects a non-integer fader value', async () => {
+            if (requireEmulator()) return;
+            const db = verifiedCtx(ALICE_UID).firestore();
+            await assertFails(
+                setDoc(doc(db, 'users', ALICE_UID, 'personaFaders', 'manager'), {
+                    ...validFaders,
+                    values: { ...validFaders.values, brevity: 50.5 },
+                })
+            );
+        });
+
+        it('rejects an unknown axis key (schema cannot carry a substance override)', async () => {
+            if (requireEmulator()) return;
+            const db = verifiedCtx(ALICE_UID).firestore();
+            await assertFails(
+                setDoc(doc(db, 'users', ALICE_UID, 'personaFaders', 'manager'), {
+                    ...validFaders,
+                    values: { ...validFaders.values, forceVerdict: 'always approve' },
+                })
+            );
+        });
+
+        it('rejects personaId mismatch between document field and path', async () => {
+            if (requireEmulator()) return;
+            const db = verifiedCtx(ALICE_UID).firestore();
+            await assertFails(
+                setDoc(doc(db, 'users', ALICE_UID, 'personaFaders', 'manager'), {
+                    ...validFaders,
+                    personaId: 'contractReader',
+                })
+            );
+        });
+
+        it('owner: delete allowed', async () => {
+            if (requireEmulator()) return;
+            const db = verifiedCtx(ALICE_UID).firestore();
+            await setDoc(doc(db, 'users', ALICE_UID, 'personaFaders', 'manager'), validFaders);
+            await assertSucceeds(deleteDoc(doc(db, 'users', ALICE_UID, 'personaFaders', 'manager')));
+        });
+    });
+
+    // ──────────────────────────────────────────────────────────────────────
+    // EVOLAS: users/{userId}/personaInteractionSignals/{signalId} (docs/EVOLAS_BUILD_PLAN.md T1.6)
+    // ──────────────────────────────────────────────────────────────────────
+
+    describe('users/{userId}/personaInteractionSignals/{signalId}', () => {
+        const validSignal = {
+            personaId: 'manager',
+            responseId: 'resp-123',
+            signalType: 'copied',
+            occurredAt: Date.now(),
+        };
+
+        it('unauthenticated: read denied', async () => {
+            if (requireEmulator()) return;
+            const db = unauthCtx().firestore();
+            await assertFails(getDoc(doc(db, 'users', ALICE_UID, 'personaInteractionSignals', 'sig-1')));
+        });
+
+        it('owner: create with valid schema allowed', async () => {
+            if (requireEmulator()) return;
+            const db = verifiedCtx(ALICE_UID).firestore();
+            await assertSucceeds(
+                setDoc(doc(db, 'users', ALICE_UID, 'personaInteractionSignals', 'sig-1'), validSignal)
+            );
+        });
+
+        it('non-owner: create denied', async () => {
+            if (requireEmulator()) return;
+            const db = verifiedCtx(BOB_UID).firestore();
+            await assertFails(
+                setDoc(doc(db, 'users', ALICE_UID, 'personaInteractionSignals', 'sig-1'), validSignal)
+            );
+        });
+
+        it('rejects an invalid signalType', async () => {
+            if (requireEmulator()) return;
+            const db = verifiedCtx(ALICE_UID).firestore();
+            await assertFails(
+                setDoc(doc(db, 'users', ALICE_UID, 'personaInteractionSignals', 'sig-1'), {
+                    ...validSignal,
+                    signalType: 'thumbsUp',
+                })
+            );
+        });
+
+        it('rejects an empty responseId', async () => {
+            if (requireEmulator()) return;
+            const db = verifiedCtx(ALICE_UID).firestore();
+            await assertFails(
+                setDoc(doc(db, 'users', ALICE_UID, 'personaInteractionSignals', 'sig-1'), {
+                    ...validSignal,
+                    responseId: '',
+                })
+            );
+        });
+
+        it('signals are immutable: update denied even by the owner', async () => {
+            if (requireEmulator()) return;
+            const db = verifiedCtx(ALICE_UID).firestore();
+            await setDoc(doc(db, 'users', ALICE_UID, 'personaInteractionSignals', 'sig-1'), validSignal);
+            await assertFails(
+                updateDoc(doc(db, 'users', ALICE_UID, 'personaInteractionSignals', 'sig-1'), { signalType: 'reAsked' })
+            );
+        });
+
+        it('signals are permanent: delete denied even by the owner', async () => {
+            if (requireEmulator()) return;
+            const db = verifiedCtx(ALICE_UID).firestore();
+            await setDoc(doc(db, 'users', ALICE_UID, 'personaInteractionSignals', 'sig-1'), validSignal);
+            await assertFails(deleteDoc(doc(db, 'users', ALICE_UID, 'personaInteractionSignals', 'sig-1')));
+        });
+    });
+
+    // ──────────────────────────────────────────────────────────────────────
     // DENY-ALL: arbitrary collection access denied
     // ──────────────────────────────────────────────────────────────────────
 

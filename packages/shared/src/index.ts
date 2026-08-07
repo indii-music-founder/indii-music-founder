@@ -22,6 +22,8 @@ export * from './schemas/conversionEvent.js';
 export * from './types/ai.dto.js';
 export * from './types/errors.js';
 export * from './types/founderFunnel.js';
+export * from './types/PersonaFaders.js';
+export * from './types/PersonaInteractionSignal.js';
 export * from './ipc/electron-api.types.js';
 export * from './services/business-harness/types.js';
 export * from './services/business-harness/HarnessCompiler.js';
