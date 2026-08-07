@@ -81,6 +81,25 @@
 
 ---
 
+## 5. Full-Spectrum Department Color System
+
+**Problem:** The indii icon family (web/electron/remote surfaces) currently ships with 3 colorways out of a possible 14 generated from one shared recipe. Departments/modules across the studio (Legal, Creative, Finance, Music, etc.) are visually flat gray today — nothing distinguishes them at a glance.
+
+**Concept:**
+
+- Extend the existing icon-generation recipe (hue rotates, saturation/lightness stay fixed to the master brand green) so each department gets its own hue-tinted gradient, consistent with the shipping app icons rather than an unrelated palette.
+- Full hue wheel already prototyped as a 10×10 (100-hue) reference sheet — proves the recipe holds up across the entire spectrum, not just the 14 curated colorways.
+- Doubles as a marketing visual: "this app is for everybody" reads directly from a spread of the icon across every color in the wheel.
+
+**Foundation already in place:**
+- `design-assets/generate-icons.mjs` — single source of truth for the recipe (`tile top = hsl(H, 68%, 53%)`, `tile bottom = hsl(H+7, 83%, 24%)`, `ink panel = hsl(H, 60%, 6%)`, shared cyan mark). Purely parametric on hue — no new recipe work needed to extend it.
+- `design-assets/colorways/` — 14 generated colorways already on disk as a starting palette.
+- `design-assets/ICON_COLORS.md` — documents measured contrast ratios per colorway; cool hues (blue/purple/indigo) lean on the mark's stroke for panel/tile separation more than warm hues do, worth reading before assigning colorways to departments.
+
+**Not started:** which hue maps to which department, how the color threads through the UI (nav, headers, badges), and whether it's the tile gradient or a lighter accent-only treatment for in-app use vs. app-icon use.
+
+---
+
 ## Priority & Sequencing
 
 These features are all high-level and may develop in parallel or sequence depending on market demand and resource availability. They share infrastructure with the existing platform:
@@ -91,3 +110,4 @@ These features are all high-level and may develop in parallel or sequence depend
 | Sync Licensing | Distribution pipeline, audio DNA matching | Licensing marketplace UI, contract automation |
 | Services Marketplace | Legal module, payment infrastructure | Marketplace listings, booking, ratings |
 | Micro-Transactions | Stripe integration, MembershipService | Credit system, per-feature pricing, usage metering |
+| Department Color System | Icon generator recipe (`design-assets/generate-icons.mjs`), 14 colorways on disk | Hue-to-department mapping, UI threading (nav/headers/badges), accent vs. tile treatment |
