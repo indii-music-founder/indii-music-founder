@@ -1,162 +1,111 @@
-# ISSUE-1164: Icon Colorways Documentation
+# indii — Icon Colorways
 
-## Overview
-Three distinct color variants of the indii "double eye" (II) logo for visual differentiation across surfaces. **All colors sourced from indii's actual brand design system.**
+A 14-colorway family. Every tile is the same recipe at a different hue, so
+nothing in the set drifts lighter or more saturated than the master green and
+reads as candy beside it.
 
----
+Do not hand-edit the SVGs. They are generated:
 
-## Color Specifications
-
-### 1. Web Browser Variant
-**Purpose:** Browser tabs, PWA home screen (web-only)  
-**Main Color:** Gold (Official indii accent)  
-**Highlight Color:** Resonance Blue (interactive elements)  
-**Main Hex:** `#FFC107`  
-**Highlight Hex:** `#2E2EFE`  
-**Darker Gradient End:** `#FFB300` / `#1E1ECE`
-
-```
-Outer gradient: #FFC107 (top-left) → #FFB300 (bottom-right)
-II Mark gradient: #2E2EFE (top-left) → #1E1ECE (bottom-right)
-Background: Dark true-black (#08080A)
-Feel: Wealth, precision, gold standard — primary brand accent
-Source: packages/renderer/src/index.css --color-dept-royalties
+```bash
+node design-assets/generate-icons.mjs
 ```
 
----
+`generate-icons.mjs` is the single source of truth for the recipe, the hue
+list, and which colorway each surface uses.
 
-### 2. Electron Desktop App Variant
-**Purpose:** Dock icon (macOS), taskbar (Windows), alt-tab switcher, installer  
-**Main Color:** Resonance Blue (tech/interactive)  
-**Highlight Color:** Electric Blue (digital presence)  
-**Main Hex:** `#2E2EFE`  
-**Highlight Hex:** `#00F0FF`  
-**Darker Gradient End:** `#1E1ECE` / `#00C0CF`
+## The recipe
 
 ```
-Outer gradient: #2E2EFE (top-left) → #1E1ECE (bottom-right)
-II Mark gradient: #00F0FF (top-left) → #00C0CF (bottom-right)
-Background: Dark true-black (#08080A)
-Feel: Deep, premium, tech-forward — desktop-native experience
-Source: packages/landing/src/globals.css --resonance-blue + --electric-blue
+tile top    = hsl(H,     68%, 53%)
+tile bottom = hsl(H + 7, 83%, 24%)
+ink panel   = hsl(H,     60%,  6%)
+mark        = #3BEAF0 -> #12C6D4      identical in every colorway
 ```
 
----
+The recipe is lifted from the master brand green. Rotating hue only — never
+saturation or lightness — is what keeps the family level. The shared cyan mark
+is the other half of that; do not re-tint it per colorway.
 
-### 3. Remote/Mobile PWA Variant
-**Purpose:** Phone home screen (PWA installation), mobile remote control interface  
-**Main Color:** Dopamine Pink (energy/attention)  
-**Highlight Color:** Resonance Blue (tech integration)  
-**Main Hex:** `#FF0099`  
-**Highlight Hex:** `#2E2EFE`  
-**Darker Gradient End:** `#FE2E9A` / `#1E1ECE`
+## Geometry (512×512)
+
+| Element | Spec |
+| --- | --- |
+| Tile | `rect 0,0,512,512` — `rx="115"` |
+| Ink panel | `rect 72,72,368,368` — `rx="104"`, 12px mark-gradient stroke |
+| Dots | `r="29"` at `cx=218` / `cx=294`, `cy=155` |
+| Stems | `58×178`, `rx="29"`, at `x=189` / `x=265`, `y=208` |
+
+The colored border is 72px — deliberately narrow, so the mark carries as much
+of the tile as possible and survives downscaling.
+
+## The family
+
+Contrast columns are measured (WCAG 2.x relative luminance). **mark/ink** uses
+the dark end of the mark gradient (`#12C6D4`) — the worst case.
+
+| Colorway | Hue | Tile top | Tile bottom | Ink panel | mark/ink | ink/tile | Surface |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `lime` | 95 | `#7AD936` | `#29700A` | `#0E1806` | 8.73:1 | 2.97:1 | — |
+| `grass` | 112 | `#4BD936` | `#0C700A` | `#091806` | 8.78:1 | 2.92:1 | — |
+| `kelly` | 128 | `#36D94B` | `#0A7024` | `#061809` | 8.80:1 | 2.94:1 | — |
+| `spring` | 141 | `#36D96F` | `#0A703A` | `#06180D` | 8.79:1 | 2.96:1 | **Web** |
+| `emerald` | 155 | `#36D995` | `#0A7052` | `#061811` | 8.77:1 | 3.01:1 | — |
+| `jade` | 168 | `#36D9B8` | `#0A7068` | `#061815` | 8.75:1 | 3.07:1 | — |
+| `teal` | 190 | `#36BDD9` | `#0A5370` | `#061518` | 8.91:1 | 2.20:1 | — |
+| `azure` | 212 | `#3682D9` | `#0A2E70` | `#060F18` | 9.23:1 | 1.50:1 | — |
+| `indigo` | 230 | `#3651D9` | `#0A0F70` | `#060918` | 9.48:1 | 1.24:1 | **Electron** |
+| `violet` | 252 | `#5636D9` | `#2B0A70` | `#0A0618` | 9.56:1 | 1.31:1 | — |
+| `purple` | 275 | `#9536D9` | `#520A70` | `#110618` | 9.46:1 | 1.54:1 | — |
+| `orchid` | 300 | `#D936D9` | `#700A64` | `#180618` | 9.33:1 | 1.78:1 | **Remote** |
+| `magenta` | 320 | `#D936A2` | `#700A42` | `#180612` | 9.36:1 | 1.69:1 | — |
+| `rose` | 338 | `#D93671` | `#700A24` | `#18060D` | 9.39:1 | 1.64:1 | — |
+
+## Reading the contrast columns
+
+**mark/ink** is uniform across the family (8.73–9.56:1) and clears WCAG AA for
+non-text graphics (3:1) several times over. The mark is never at risk.
+
+**ink/tile** is not uniform, and that is physics rather than a defect. Blue
+contributes only 0.0722 to relative luminance against green's 0.7152, so at
+identical HSL lightness a blue tile bottom and a blue ink panel sit far closer
+in luminance than their green equivalents. Greens land near 3:1; blues and
+purples fall to 1.24–1.78:1.
+
+What this means in practice: on the cooler colorways the cyan stroke — not the
+fill difference — is what separates panel from tile. That is exactly how the
+master icon reads too, so it is faithful rather than broken. The consequence is
+that the cooler tiles depend on the stroke surviving. Flattening a colorway to
+a format that drops or thins the stroke will hurt `indigo` and `violet` well
+before it hurts `spring`.
+
+Equalizing `ink/tile` across hues would require lifting the tile bottoms on the
+cool end, which would visibly change colorways that are already approved. Not
+done.
+
+## Small sizes
+
+The set holds from roughly 24px up. At 16px the 12px stroke and the gap between
+the two stems collapse and the icon reads as a solid colored square. A true
+16px favicon needs a separate simplified cut — drop the ink panel, put the mark
+straight on the tile. **That asset does not exist yet.**
+
+## Files
 
 ```
-Outer gradient: #FF0099 (top-left) → #FE2E9A (bottom-right)
-II Mark gradient: #2E2EFE (top-left) → #1E1ECE (bottom-right)
-Background: Dark true-black (#08080A)
-Feel: Warm, energetic, approachable — mobile-first presence
-Source: packages/landing/src/globals.css --dopamine-pink + --resonance-blue
+design-assets/
+  generate-icons.mjs      source of truth — regenerates everything below
+  favicon-web.svg         spring
+  favicon-electron.svg    indigo
+  favicon-remote.svg      orchid
+  colorways/*.svg         all 14, one file per colorway
+  icon-comparison.html    full family sheet, open directly in a browser
 ```
 
----
+## Not yet wired up
 
-## Design Notes
+These are source assets only. Still outstanding:
 
-### Structure (All Variants)
-- **Canvas:** 512×512 px (square, scalable SVG)
-- **Outer Container:** Rounded square (`rx="128"`) with color gradient
-- **Inner Panel:** Dark background (`#0C0C1A`) — provides contrast and depth
-- **II Mark:** Two identical "i" characters
-  - **Dot:** Circle at position (200, 155) and (312, 155), radius 28px
-  - **Bar:** Rectangle from y=210 to y=370 (160px height), width 52px, radius 26px (rounded ends)
-  - Both dots and bars use the same gradient fill as outer container
-
-### Transparency & Sizing
-- **Transparency:** None. SVG uses solid fills and gradients (no alpha channel needed)
-- **Minimum Icon Size:** 16×16 px (favicon in browser tabs)
-- **Recommended Icon Sizes:**
-  - Favicon (browser tab): 16×16, 32×32, 64×64
-  - Dock (macOS): 128×128, 256×256, 512×512
-  - Taskbar (Windows): 16×16, 32×32, 48×48, 256×256
-  - Phone home screen: 192×192, 512×512
-  - All SVG variants scale cleanly to any size
-
-### Color Contrast Ratios
-✅ All variants meet WCAG AA standards for color contrast (3.5:1 minimum for icons)
-- Web (Gold on dark): **5.2:1**
-- Electron (Resonance Blue on dark): **4.8:1**
-- Remote (Dopamine Pink on dark): **5.4:1**
-
-### Visual Distinctiveness
-At glance (small icon size):
-- ✅ Web (gold) vs Electron (blue): Easy to distinguish (warm/yellow vs. cool/blue)
-- ✅ Web (gold) vs Remote (pink): Easy to distinguish (yellow vs. magenta)
-- ✅ Electron (blue) vs Remote (pink): Easy to distinguish (cool blue vs. warm pink)
-
-All three are immediately identifiable without context. Colors match the actual indii brand palette, ensuring visual consistency with the website and app.
-
----
-
-## Files Generated
-
-| File | Surface | Main Color | Highlight Color | Use Case |
-|------|---------|-----------|-----------------|----------|
-| `favicon-web.svg` | Web Browser | Gold (#FFC107) | Resonance Blue (#2E2EFE) | Browser tabs, web PWA |
-| `favicon-electron.svg` | Electron App | Resonance Blue (#2E2EFE) | Electric Blue (#00F0FF) | Dock, taskbar, installer |
-| `favicon-remote.svg` | Mobile Remote | Dopamine Pink (#FF0099) | Resonance Blue (#2E2EFE) | Phone home screen, PWA |
-
----
-
-## Implementation Notes for Engineering
-
-### Web Integration
-- Place `favicon-web.svg` at `packages/renderer/public/favicon-web.svg`
-- Update `packages/renderer/public/manifest.json`:
-  ```json
-  "icons": [
-    {
-      "src": "favicon-web.svg",
-      "sizes": "192x192 512x512",
-      "type": "image/svg+xml"
-    }
-  ]
-  ```
-
-### Electron Desktop
-- The `.icns`, `.ico`, and `.png` files can be generated from the SVG by rasterizing at the required dimensions
-- Primary Color: `#2E2EFE` (Resonance Blue)
-- Highlight Color: `#00F0FF` (Electric Blue)
-- Recommended tool: ImageMagick or online SVG-to-PNG converter with gradient support
-- Note: Colors match the mobile-remote module's existing UI theme
-
-### Mobile Remote PWA
-- Place `favicon-remote.svg` at `packages/renderer/public/favicon-remote.svg`
-- Create `packages/renderer/public/manifest-remote.json` (separate from main manifest):
-  ```json
-  "icons": [
-    {
-      "src": "favicon-remote.svg",
-      "sizes": "192x192 512x512",
-      "type": "image/svg+xml"
-    }
-  ]
-  ```
-- Route mobile-remote module to use `manifest-remote.json` in the `<head>`
-
----
-
-## Verification Checklist
-
-- [ ] Open web studio in browser → browser tab shows **emerald** icon
-- [ ] Open Electron app → Dock/taskbar shows **indigo** icon
-- [ ] Install mobile remote PWA → phone home screen shows **orange** icon
-- [ ] All three icons are visually distinct at small sizes (16×16, 192×192)
-- [ ] No blurring or degradation of gradient in rasterized formats
-- [ ] Dark background (#0C0C1A) maintains contrast in all contexts
-
----
-
-**Status:** ✅ Design handoff complete  
-**Created:** 2026-08-05  
-**Related Issue:** `.agent/test_ledger/OPEN_ISSUES_V3.md` (ISSUE-1164)
+- Web manifest + `<link rel="icon">` in `packages/renderer`
+- Rasterization to `.icns` / `.ico` / PNG set for Electron packaging
+- Separate manifest for the Remote/mobile PWA
+- 16px simplified cut (see above)

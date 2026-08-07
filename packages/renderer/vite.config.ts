@@ -149,7 +149,7 @@ export default defineConfig({
         },
     },
     server: {
-        port: 4243,
+        port: Number(process.env.PORT) || 4243,
         host: 'localhost',
         strictPort: true,
         fs: {

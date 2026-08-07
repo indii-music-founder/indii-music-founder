@@ -5,7 +5,8 @@
       "name": "dev:web",
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev:web"],
-      "port": 4243
+      "port": 4243,
+      "autoPort": true
     },
     {
       "name": "dev:e2e-mock",
