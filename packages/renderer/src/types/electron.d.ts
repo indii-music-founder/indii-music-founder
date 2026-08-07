@@ -238,6 +238,7 @@ export interface ElectronAPI {
         save: (id: string, creds: unknown) => Promise<void>;
         get: (id: string) => Promise<unknown | null>;
         delete: (id: string) => Promise<boolean>;
+        list: () => Promise<string[]>;
     };
 
     // Distribution (Proprietary Ingestion IP)

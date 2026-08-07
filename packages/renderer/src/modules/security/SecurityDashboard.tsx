@@ -1,6 +1,8 @@
 import React from 'react';
 import { Shield, Key, Activity, Lock } from 'lucide-react';
 import { VisualVerificationsPane } from './VisualVerificationsPane';
+import { AgentEncryptionPane } from './AgentEncryptionPane';
+import { ApiCredentialsPane } from './ApiCredentialsPane';
 
 export default function SecurityDashboard() {
     return (
@@ -52,10 +54,7 @@ export default function SecurityDashboard() {
                         <p className="text-sm text-gray-400 mb-6">
                             Configure integration keys and third-party secrets securely.
                         </p>
-                        <div className="flex-1 flex flex-col items-center justify-center border-2 border-dashed border-white/10 rounded-xl text-gray-500 bg-white/[0.01]">
-                            <Key size={32} className="mb-3 opacity-20" />
-                            <span className="font-bold uppercase tracking-widest text-[10px]">Credential Vault Pending</span>
-                        </div>
+                        <ApiCredentialsPane />
                     </div>
 
                     {/* Pane 3: Audit Logs */}
@@ -83,10 +82,7 @@ export default function SecurityDashboard() {
                         <p className="text-sm text-gray-400 mb-6">
                             Manage swarm protocol keys and A2A signature enforcement.
                         </p>
-                        <div className="flex-1 flex flex-col items-center justify-center border-2 border-dashed border-white/10 rounded-xl text-gray-500 bg-white/[0.01]">
-                            <Shield size={32} className="mb-3 opacity-20" />
-                            <span className="font-bold uppercase tracking-widest text-[10px]">E2E Diagnostics Pending</span>
-                        </div>
+                        <AgentEncryptionPane />
                     </div>
                 </div>
             </div>

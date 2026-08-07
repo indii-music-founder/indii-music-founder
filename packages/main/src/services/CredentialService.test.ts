@@ -18,6 +18,7 @@ vi.mock('keytar', () => ({
         setPassword: vi.fn(),
         getPassword: vi.fn(),
         deletePassword: vi.fn(),
+        findCredentials: vi.fn(),
     }
 }));
 
@@ -153,6 +154,34 @@ describe('CredentialService', () => {
 
             const result = await service.deleteCredentials('dist1');
             expect(result).toBe(false);
+        });
+    });
+
+    describe('listConfigured', () => {
+        it('returns the account name for every stored entry, never the password', async () => {
+            vi.mocked(keytar.findCredentials).mockResolvedValue([
+                { account: 'spotify', password: 'base64-secret-1' },
+                { account: 'distrokid', password: 'base64-secret-2' },
+            ]);
+
+            const result = await service.listConfigured();
+
+            expect(keytar.findCredentials).toHaveBeenCalledWith('indii_Distribution');
+            expect(result).toEqual(['spotify', 'distrokid']);
+        });
+
+        it('returns an empty array when nothing is stored', async () => {
+            vi.mocked(keytar.findCredentials).mockResolvedValue([]);
+
+            const result = await service.listConfigured();
+            expect(result).toEqual([]);
+        });
+
+        it('catches keytar errors and returns an empty array rather than throwing', async () => {
+            vi.mocked(keytar.findCredentials).mockRejectedValue(new Error('keytar error'));
+
+            const result = await service.listConfigured();
+            expect(result).toEqual([]);
         });
     });
 });

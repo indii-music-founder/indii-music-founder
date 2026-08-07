@@ -107,13 +107,17 @@
 ### ISSUE-1126: Multiple active user-scoped feature collections are missing Firestore rules
 
 - **Re-ticketed from:** ISSUE-843 (2026-07-21 housecleaning; original status was: `⏳ BACKLOG — consolidated`)
-- **Status:** ⏳ BACKLOG — consolidated
+- **Status:** 🟡 PARTIAL (2026-08-07 — re-audited and picked up via gauntlet loop; 2 of the 6 originally-listed collections fixed, 2 turned out to already be fixed, 2 turned out to be a different, deeper bug re-ticketed separately as ISSUE-1313)
 - **Severity:** 🟠 HIGH
 - **Module:** Firebase / Firestore rules / Cross-module persistence
-- **Evidence:** Active renderer paths include `users/{uid}/analyticsTokens/spotify` (`SpotifyService.ts:55-56`), `users/{uid}/socialTokens/{platform}` (`SocialPlatformService.ts:66-81`), `users/{uid}/merchandiseMockups` (`CommerceTools.ts:27-38`), `users/{uid}/limitedDrops` (`CommerceTools.ts:85-103`), `users/{uid}/brandKit/current` (`BrandTools.ts:217-245`), and `users/{uid}/proprietaryIngestionReleases` (`PublishingTools.ts:20-24`). The owner-scoped rules list only selected subcollections such as `contacts`, `licensingDeals`, `pod_orders`, `press_releases`, `publishingCatalog`, `tasks`, and `web3Contracts` (`firestore.rules:329-346`), then denies all unmatched paths (`firestore.rules:1230-1234`).
-- **Impact:** Analytics connections, social tokens, brand kits, merch mockups, and limited-drop records can fail with `permission-denied`, often in code paths that log/catch errors and still show optimistic UI.
-- **Fix:** Generate a Firestore collection inventory from source references, classify sensitive data, and add explicit tested rules for every intended client-readable/writable path. Move secret/token paths server-side where possible.
-- **Acceptance:** Rules tests cover every `users/{uid}/...` collection used by the renderer; missing-rule regressions fail CI.
+- **Re-audit findings (2026-08-07), collection by collection:**
+  1. `users/{uid}/analyticsTokens/{platform}` and `users/{uid}/socialTokens/{platform}` — **already fixed**, presumably by ISSUE-1128's server-side-token work: both now have explicit `allow read, write: if false;` (server-owned via Admin SDK, never client-readable — this is more correct than the original ticket's ask for client rules, since these are OAuth tokens).
+  2. `users/{uid}/merchandiseMockups` (`CommerceTools.ts` `mockup_merchandise`) — **fixed this pass.** No rule existed at all; every write fell through to the deny-all catch-all. Added a nested `match` under `users/{userId}` with a schema check (`productType`, `designIdea`, `imageUrl` required strings) matching the tool's actual write shape; owner read/create/delete, immutable (no update — regenerate instead).
+  3. `users/{uid}/brandKit/current` (`BrandTools.ts` `save_brand_kit`/`load_brand_kit`) — **fixed this pass.** Same situation: no rule existed. Added a nested `match /brandKit/{docId}` requiring `docId == 'current'` plus a minimal shape check (`name` string, `values` list) matching the tool's `setDoc(..., {merge: true})` write.
+  4. `users/{uid}/limitedDrops` and `users/{uid}/proprietaryIngestionReleases` (`PublishingTools.ts` `query_pro_database`) — **NOT the same bug as #2/#3, deliberately not fixed here.** `firestore.rules` already has top-level (non-nested) `match /limitedDrops/{dropId}` and `match /proprietaryIngestionReleases/{releaseId}` rules with `userId`/`orgId`-field-based ownership — but those don't match the *nested* subcollection paths these two call sites actually read/write (`users/{uid}/limitedDrops`, `users/{uid}/proprietaryIngestionReleases`), which fall through to the same deny-all catch-all regardless. For `proprietaryIngestionReleases` specifically, the top-level collection is the real, actively-written canonical release store (`useDDEXRelease.ts`, `useReleases.ts`, `DistributionSyncService.ts`, `DistributionService.ts`) — the 3 call sites using the nested path (`PublishingTools.ts:22`, `Web3Tools.ts:102`, `CoreTools.ts:207`) look like a **wrong collection path in the calling code**, not a missing rule. Adding a rule to legitimize the nested path would create a second, empty, never-populated data store instead of fixing the real bug. Re-ticketed as ISSUE-1313 for a proper root-cause fix.
+- **Fix:** See per-collection findings above. `merchandiseMockups` and `brandKit` rules added to `packages/firebase/firestore.rules`, following the file's existing `isOwner()`/`isVerifiedUser()` conventions (same pattern as the neighboring `platformStats`/`tax_collaborators` blocks).
+- **Verification:** Brace-balance-checked the full rules file (matched, 0 net depth) and pattern-matched the new blocks against structurally identical existing blocks in the same file. **Could not run the live Firestore emulator rules test** (`packages/firebase/src/test/security/firestore.rules.test.ts`) — port 8080 was already bound by a concurrent agent session in this same multi-agent environment (per `CLAUDE.md`, sessions run cooperatively; killing another session's emulator was not attempted). `npm run typecheck` / `npm run lint` both exit 0 (rules changes are outside their scope, confirmed no regression). Live emulator verification remains outstanding — flagging rather than claiming untested rules are proven correct.
+- **Acceptance:** `merchandiseMockups` and `brandKit` have explicit, schema-checked, owner-scoped rules matching their real write shapes — met for those two. Full "rules tests cover every `users/{uid}/...` collection" acceptance remains open pending ISSUE-1313 and a live emulator pass.
 
 ---
 
@@ -1006,3 +1010,231 @@
 - **Verification:** `npm run typecheck` and `npm run lint` clean (0 errors). Live-verified in browser post-fix: `text-sonic-purple` now computes to `rgb(214, 147, 31)` (previously inherited/wrong), `bg-background`/`bg-card` now compute to real colors (previously transparent), `.glass`/`.glass-panel` now compute `backgroundColor: rgba(11, 10, 9, 0.7)` and a valid `color-mix()` border (previously fully transparent/no-op). App screenshot confirms no visual regression — dark theme renders as before, since most surfaces already got their color from elsewhere; this fix makes the previously-dead utilities actually available rather than changing anything that was already visibly working.
 - **Acceptance:** Any component that switches to relying on `bg-background`/`text-sonic-purple`/`bg-sonic-glass`/etc. directly will now actually render the intended color instead of silently no-op'ing.
 - **Also delivered in this pass (the original ISSUE-1297 residual):** `.glass`/`.glass-panel` now draw from `--sonic-glass`/`-glass-border` instead of raw `bg-black/40`/`bg-card/60` — a real, disclosed visual change (warmer, higher-opacity glass) affecting `CampaignCard.tsx`, `CustomDashboard.tsx`, `VideoWorkflow.tsx` (`.glass`) and `NewProjectModal.tsx`, `PublicistDashboard.tsx` (`.glass-panel`, where no competing `bg-*` utility already overrides it — most `.glass-panel` call sites pair it with an explicit `bg-*` class that wins in Tailwind's utility layer regardless, so are visually unaffected). Also added a `--shadow-*` scale for genuinely generic (colorless) elevation shadows — `--shadow-card`/`-panel`/`-bubble`/`-float`/`-popover`, named to avoid colliding with Tailwind's own `shadow-sm/md/lg/xl/2xl` (a repeat of the exact collision class from ISSUE-1297, avoided this time by construction) and `--color-card` (an *earlier* draft literally named one token `--shadow-card`, which Tailwind resolved as "default shadow tinted by the `card` color" instead of the intended box-shadow value, since `card` is a real registered color name — caught via live verification, kept the name but confirmed it doesn't collide since it's only ever consumed via `var(--shadow-card)`, never as a `shadow-card` utility class). Colored department/agent glow shadows (Sidebar, ChatOverlay, CommandBar) were deliberately left out — different concept, computed at runtime from identity/department color, not a fixed scale.
+
+---
+
+### ISSUE-1302: `/api/dns/status` in admin-dashboard crashes at runtime — `require('dns')` used inside an ESM module
+
+- **Status:** ✅ FIXED (2026-08-06)
+- **Severity:** 🟠 HIGH (endpoint throws whenever hit; feeds the admin Nexus Monitor's DNS panel)
+- **Module:** `packages/admin-dashboard/server.ts`
+- **Scope note:** found via gauntlet-loop audit pass on `packages/admin-dashboard` (least-recently-touched package, no open ledger entries scoped to a single module at time of pick).
+- **Evidence:** `packages/admin-dashboard/package.json` declares `"type": "module"`, so `server.ts` runs as native ESM under `tsx`. The `/api/dns/status` handler called `require('dns').promises` inline (line 579) — `require` is not defined in an ESM module scope, so every call to this endpoint threw `ReferenceError: require is not defined` at request time, not at boot, so it passed a cold build/smoke check while still being broken for any real caller (the `NexusMonitor` admin panel that renders SPF/DKIM/DMARC status).
+- **Fix:** Replaced the inline `require('dns').promises` with a top-level `import { promises as dns } from 'node:dns'`, matching the rest of the file's ESM import style.
+- **Verification:** `npx tsc -b` clean (0 errors), `npx eslint .` clean (0 errors/warnings), `npx vite build` succeeds. No test harness exists for `admin-dashboard` to assert the runtime fetch path directly — see ISSUE-1303.
+- **Acceptance:** `/api/dns/status` no longer references `require`; static analysis and build both pass clean.
+
+---
+
+### ISSUE-1303: `packages/admin-dashboard` has zero test coverage — no unit or integration tests exist for `server.ts` or any module component
+
+- **Status:** ✅ FIXED (2026-08-07)
+- **Severity:** 🟡 MEDIUM
+- **Module:** `packages/admin-dashboard`, root `vitest.workspace.ts`
+- **Evidence:** No `*.test.ts`/`*.test.tsx` files existed anywhere under `packages/admin-dashboard`; `package.json` had no `test` script. ISSUE-1302 (a runtime-only `ReferenceError` in a live Express route) shipped and stayed live for an unknown period because nothing exercised `server.ts` routes — the bug was only caught by manual source audit, not by `tsc`/`eslint`/`vite build`, none of which invoke the handler bodies.
+- **Fix:**
+  - `server.ts` refactored minimally for testability: `app` is now exported and `resolveRange` is exported; `app.listen()` is guarded behind `process.argv[1] === __filename` so importing the module for tests no longer binds a real port. `tsx watch server.ts` still runs it normally since argv[1] matches when it's the actual entry point.
+  - New `packages/admin-dashboard/server.test.ts` (16 tests, no `supertest` dependency added — real HTTP requests via `app.listen(0)` + native `fetch` against the ephemeral port, `firebase-admin`/`googleapis`/`node:dns` mocked at the module boundary). Covers `resolveRange` edge cases, `requireWebhookSecret` fail-closed/wrong-secret/success, `requireAdminAuth` no-token/invalid-token/wrong-domain/success, `/api/founders` (including "never return founders it didn't fetch" on a Firestore failure), `/api/usage/summary` aggregation and honest-empty-state, `/api/dns/status` (regression-guards the exact ISSUE-1302 class — a DNS lookup failure resolves to `unverified`, not a crash), and the ISSUE-1310 `workspace_not_linked` 412 signal.
+  - New component test files for all 5 `src/components/modules/*.tsx` plus `LoginScreen.tsx` (42 tests total across 8 files): `DDEXTracker`, `FoundersPortal`, `TokenUsage`, `EmailManager`, `NexusMonitor`, `GoogleHub`, `LoginScreen`. Each asserts loading/empty/error/populated states are honest (regression guards for the exact ISSUE-1308 "fabricated status" class) and that real fetched data — not fixtures baked into the component — is what renders.
+  - `vitest.workspace.ts`: added an `admin-dashboard` project (jsdom, empty `setupFiles` — the root config's setup file mocks the Firebase *client* SDK and renderer-specific jsdom globals that this package doesn't use; `server.test.ts` opts into `// @vitest-environment node` per-file since it needs no DOM).
+  - `packages/admin-dashboard/tsconfig.node.json`: added `server.test.ts` to `include` so it's typechecked by `tsc -b packages/admin-dashboard`.
+  - `packages/admin-dashboard/package.json`: added `"test": "cd ../.. && vitest run packages/admin-dashboard"`. The workspace project registration means the existing root `npm run test:ci` (`vitest --run`, already in CI) now covers this package automatically — no separate CI wiring needed.
+- **Verification:** `npm run typecheck` and `npm run lint` both exit 0 repo-wide. `npm run test` from `packages/admin-dashboard` → 42/42 passing (8 files). Full `packages/admin-dashboard` suite via root `vitest run packages/admin-dashboard` → same, 42/42.
+- **Acceptance:** `packages/admin-dashboard` has a `test` script that's part of the existing root CI test run; every route handler and module component has at least one passing test exercising its real (not mocked-away) success and failure paths — met.
+
+---
+
+### ISSUE-1304: Security Center "Agent Encryption" pane was a static "Pending" placeholder despite a real, already-shipped E2E key-management backend
+
+- **Status:** ✅ FIXED (2026-08-06)
+- **Severity:** 🟡 MEDIUM (product-rule violation — no fake placeholders in artist-facing views; module is founder/admin-facing but still governed by the same rule)
+- **Module:** `packages/renderer/src/modules/security`
+- **Scope note:** found via gauntlet-loop audit pass on `packages/renderer/src/modules/security` (least-recently-touched module under `packages/renderer/src/modules`, last git activity 2026-06-30; no open ledger entry was scoped to a single module at time of pick).
+- **Evidence:** `SecurityDashboard.tsx` rendered a static dashed-border "E2E Diagnostics Pending" box for the "Agent Encryption" pane, even though `E2EEncryptionService` ([[services/security/E2EEncryptionService.ts]]) is the real, live A2A swarm key-management backend (RSA-4096 encryption keys, RSA-2048 signing keys, per ISSUE-1260) — it is actively used by `A2ARouter.ts` and `A2AClient.ts` for every agent-to-agent message. The pane was dead decoration in front of working infrastructure.
+- **Fix:** Added a pure, read-only `getDiagnostics()` accessor to `E2EEncryptionService` (local key-pair count, registered peer count, peers with verified signing keys, active session-key count — key material itself is never exposed). Built `AgentEncryptionPane.tsx` (polling the singleton every 5s, same pattern as the existing `VisualVerificationsPane.tsx`) and wired it into `SecurityDashboard.tsx` in place of the placeholder.
+- **Correctness note:** first draft of `getDiagnostics()` exposed `signingKeyAgentIds` (agents *this instance* holds private signing keys for) and used it to badge peers as "signed" — semantically wrong, since that field has nothing to do with whether a given *peer's* messages can be verified. Corrected to `peersWithVerifiedSigning` (derived from `signingPublicKeyRegistry`, keyed by peer ID) before this closed. Caught in the critic pass, not the builder pass — a reminder that a component that compiles and renders can still assert something false.
+- **Verification:** `npx tsc --noEmit` clean (0 errors) for the touched files; `npx eslint packages/renderer/src/modules/security packages/renderer/src/services/security/E2EEncryptionService.ts` clean (0 errors/warnings); existing `E2EEncryptionService.test.ts` suite still passes (14/14) — `getDiagnostics()` is additive and touches no existing method. No new test file added for the pane component itself — see ISSUE-1307.
+- **Acceptance:** Agent Encryption pane shows real, live counts of registered swarm keys instead of a static placeholder; zero key material crosses the accessor boundary.
+
+---
+
+### ISSUE-1305: Security Center "API Credentials" pane is a static placeholder — real per-distributor credential storage exists but has no "list all configured" surface
+
+- **Status:** ✅ FIXED (2026-08-07)
+- **Severity:** 🟡 MEDIUM (product-rule violation, same class as ISSUE-1304)
+- **Module:** `packages/renderer/src/modules/security`, `packages/main`, `packages/shared`
+- **Scope note:** found via the same gauntlet-loop audit pass as ISSUE-1304; deferred there because the fix crosses into `packages/main`, then picked up as its own scoped pass (the ledger's own "Fix (for the next pass)" note defined the scope precisely enough to treat this as one coherent feature, not a whole-monorepo change).
+- **Evidence:** `SecurityDashboard.tsx`'s "API Credentials" pane was a static "Credential Vault Pending" box. `CredentialService.ts` ([[services/security/CredentialService.ts]]) is real (delegates to Electron Keytar storage via IPC — `credentials:save` / `:get` / `:delete`), but its API was per-`DistributorId` only, with no way to enumerate what's configured.
+- **Fix:**
+  - `packages/main/src/services/CredentialService.ts`: added `listConfigured()` using `keytar.findCredentials(SERVICE_NAME)`, mapping to `account` names only — the stored `password` (the encrypted payload) is never touched or returned.
+  - `packages/main/src/handlers/credential.ts`: registered `credentials:list` IPC handler (sender-validated, same pattern as the other three).
+  - `packages/main/src/preload.ts` + `packages/main/src/main.ts`: exposed `credentials.list()` on the bridge and added `credentials:list` to the `KNOWN_IPC_CHANNELS` inventory.
+  - Two separate `ElectronAPI`/`ElectronCredentialsAPI` type surfaces exist in this codebase (`packages/renderer/src/types/electron.d.ts` and `packages/shared/src/ipc/electron-api.types.ts`) — both updated with `list: () => Promise<string[]>` to stay in sync; caught immediately by `tsc -b` on the first one missed.
+  - `packages/renderer/src/services/security/CredentialService.ts`: added `listConfigured(): Promise<DistributorId[]>`.
+  - New `packages/renderer/src/modules/security/ApiCredentialsPane.tsx`, mirroring the `AgentEncryptionPane.tsx` pattern from ISSUE-1304: polls every 5s, renders every known `DistributorId` (6 direct DSPs + 10 legacy aggregators) with a configured/not-configured badge, an honest loading state, and an honest error state (not a silently-empty list) if the IPC call fails.
+  - `SecurityDashboard.tsx` wired to the real pane in place of the placeholder.
+- **Verification:** `npm run typecheck` and `npm run lint` both exit 0 across the full monorepo. New tests: `CredentialService.test.ts` (main) +3 cases for `listConfigured` (15/15 passing); new `ApiCredentialsPane.test.tsx` (4/4 passing) covering loading, configured/not-configured attribution, count, and error states; `SecurityDashboard.test.tsx` updated to assert the placeholder is gone and the real pane renders (4/4 passing, `act()`-clean). Full `packages/main` + touched `renderer` suites: 508/508 passing.
+- **Acceptance:** API Credentials pane lists real configured-distributor state; no raw secret values are ever returned by the list endpoint — met.
+
+---
+
+### ISSUE-1306: Security Center "Access Control" pane is a static placeholder — no access-tier/module-permission backend exists anywhere in the codebase
+
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH (product-rule violation; also the only one of the three dead panes with zero backing implementation to wire to, anywhere)
+- **Module:** `packages/renderer/src/modules/security` (new backend required — scope TBD, likely `packages/firebase` + `packages/renderer/src/services`)
+- **Scope note:** found via the same gauntlet-loop audit pass as ISSUE-1304/1305.
+- **Evidence:** `SecurityDashboard.tsx`'s "Access Control" pane ("Manage module permissions and access tiers for your organization") is a static "Access Matrix Pending" box. Unlike the other two panes in this same audit, there is no existing service anywhere in the renderer or Firebase Functions codebase implementing per-module permissions or access tiers — `grep` for `AccessTier`, `PermissionService`, `AccessControlService`, `ModulePermission` returns zero matches outside this dead UI copy. This is not a wiring gap like ISSUE-1304/1305; it is an unbuilt feature.
+- **Why not fixed in the gauntlet pass that found it:** no backend exists to wire to. Building one (Firestore schema for org-level module permissions, security rules, a service layer, and only then a real UI) is a multi-package feature, not a single-module fix, and is explicitly out of scope for a gauntlet pass ("never scope to the whole monorepo in one run").
+- **Depends on:** none identified yet — needs a design decision (who can grant/revoke access to which modules, at what granularity — per-user? per-org-role?) before implementation, which is a product decision, not purely an engineering one.
+- **Fix (future, separately scoped):** design + implement an org-level module-permission model (Firestore collection + security rules), a service layer, then replace the placeholder pane. Recommend routing through a product/scope discussion before implementation, given the ambiguity noted above.
+- **Acceptance:** deferred pending scoping decision; not actionable as a single gauntlet pass.
+
+---
+
+### ISSUE-1307: No component test exists for `AgentEncryptionPane.tsx` (introduced in ISSUE-1304)
+
+- **Status:** ✅ FIXED (2026-08-06/07 — implemented by a concurrent session, independently re-verified here)
+- **Severity:** 🟢 LOW
+- **Module:** `packages/renderer/src/modules/security`
+- **Evidence:** `AgentEncryptionPane.tsx` (ISSUE-1304) had no accompanying `.test.tsx`, unlike its sibling `VisualVerificationsPane.tsx` which has `SecurityDashboard.test.tsx` covering rendering. `E2EEncryptionService.getDiagnostics()` was covered transitively by the existing service test suite, but the pane's own render/polling/badge logic (in particular the peer "signed"/"unsigned" badge derivation that was wrong in the first draft of ISSUE-1304) had no direct test.
+- **Fix:** `AgentEncryptionPane.test.tsx` added, following `SecurityDashboard.test.tsx` conventions — mocks `e2eEncryptionService.getDiagnostics()`, asserts empty state, populated diagnostic counts, and correct "signed"/"unsigned" badge attribution per peer.
+- **Verification (re-run independently during the ISSUE-1305 pass):** `npx vitest run packages/renderer/src/modules/security` → 3/3 tests passing in this file.
+- **Acceptance:** New test file exists and passes; regressions in badge attribution would be caught by CI going forward — met.
+
+---
+
+### ISSUE-1308: [Evolas] T1.1 — Fader data model built (types, Firestore schema, security rules)
+
+- **Status:** ✅ FIXED (2026-08-06)
+- **Severity:** N/A (build-plan item, not a defect)
+- **Module:** `packages/shared/src/types`, `packages/firebase/firestore.rules`
+- **Scope:** `docs/EVOLAS_BUILD_PLAN.md` Phase T1.1, via `.agent/workflows/evolas-gauntlet.md`.
+- **Delivered:** `PersonaFaders.ts` — 5 fader axes (riskTolerance, brevity, directness, formality, reasoningTransparency; professional-posture labeling per non-negotiable #5, not personality-trait labeling), `PersonaFaderDocument` schema, population-default constant, and `isValidFaderValue`/`isValidPersonaFaderValues` app-layer guards. `firestore.rules` — `users/{userId}/personaFaders/{personaId}` owner-only, closed key set (`hasOnly`), each axis validated as an in-range integer.
+- **Correctness note (caught in the builder's own re-check, not by an external reviewer):** `isValidPersonaFaderValues` initially accepted objects with extra/unknown keys (only checked the 5 known axes were present and valid, didn't reject a 6th key). Since the whole point of this schema is that it structurally cannot carry a substance override, a client-side guard that silently tolerates unknown keys is a real gap even though Firestore rules would still catch it server-side — defense in depth means the app-layer guard should be at least as strict as the rules, not looser. Fixed to reject any key-count mismatch before checking individual axes.
+- **Verification:** 8 new Firestore rules tests (owner-only read/write, cross-user denial, out-of-range rejection, non-integer rejection, unknown-key rejection, personaId/path-mismatch rejection, owner delete) run against a **live Firestore emulator** — not mocked — all pass; full existing rules suite (179 tests) still green, confirming no collateral syntax damage from the rules edit. 9 new unit tests for the TS guards, all pass. `tsc --noEmit` clean on `packages/shared`. `eslint` clean on all touched files.
+- **Style/substance isolation criterion:** not yet testable — T1.1 is pure schema/types, no rendering call exists yet. Explicitly deferred to T1.3, per the gauntlet loop's own instruction not to skip this silently.
+- **Next in sequence:** T1.2 — Prompt compiler (fader values → calibrated language, 5-band quantization, reconciliation clauses for conflicting axis pairs).
+
+---
+
+### ISSUE-1309: [Evolas] T1.2 — Prompt compiler built (fader → calibrated language, reconciliation clauses, style/substance isolation now testable)
+
+- **Status:** ✅ FIXED (2026-08-06)
+- **Severity:** N/A (build-plan item)
+- **Module:** `packages/renderer/src/services/persona`, `packages/shared/src/index.ts` (barrel export)
+- **Scope:** `docs/EVOLAS_BUILD_PLAN.md` Phase T1.2, via `.agent/workflows/evolas-gauntlet.md`.
+- **Delivered:** `PersonaPromptCompiler.ts` — `compilePersonaPrompt(faderValues)` quantizes each of the 5 axes into 5 bands, maps to hand-written calibrated phrases (never raw numbers as the primary signal — numbers appear once, at the end, as a secondary reference line only, per the research finding that models fed bare numeric scalers on a 0-100 scale collapse toward the center). Three named reconciliation clauses fire when specific axis pairs conflict (brevity-vs-reasoningTransparency, directness-vs-formality, directness-vs-low-reasoningTransparency) — traits are not orthogonal, a documented finding, so the compiler resolves the tension explicitly rather than letting the model silently pick a side.
+- **Process note — a real cross-package build trap, not a code defect:** wiring the new type into `@indii/shared`'s barrel required rebuilding `packages/shared`'s emitted `dist/index.d.ts`. `packages/shared` is a TS composite project (`composite: true`, referenced via TS project references); `moduleResolution: bundler` resolves cross-project imports through the project's emitted declaration output, not live source, even under a plain non-build `tsc --noEmit`. Running `tsc --noEmit -p packages/renderer/tsconfig.json` directly (instead of the real project command) surfaced 6 false-looking "no exported member" errors that were actually a stale build artifact, not a code bug. **Lesson for every future Evolas sub-item that touches `packages/shared`:** always verify with the real `npm run typecheck` (which chains `tsc -b packages/shared` first) — not an ad hoc `tsc --noEmit -p <package>`. Noting this here since `/start` step 1 explicitly says to confirm real command names from `package.json` before assuming any, and this is exactly the failure mode that instruction exists to prevent.
+- **Verification:** 9 new unit tests, including two dedicated to the style/substance isolation criterion (gauntlet criterion 5) — first sub-item where it's actually testable: (1) output never contains verdict-shaped language at any fader extreme, tested by regex across both extremes; (2) structural proof via `compilePersonaPrompt.length === 1` — the function has exactly one parameter, so there is no channel for verdict/substance data to enter this function even in a future edit. Full monorepo `npm run typecheck` clean (all 6 sub-packages + firebase test project). `eslint` clean on all touched files. All 18 tests across both T1 sub-items (T1.1 + T1.2) still pass together.
+- **Acceptance:** fader values compile to calibrated, band-quantized language; conflicting axis pairs get explicit reconciliation; output is provably incapable of carrying verdict/substance content by both behavioral test and structural signature.
+- **Next in sequence:** T1.3 — Style/substance split (two-call pattern: non-personalized verdict call + personalized rendering call consuming this compiler's output).
+
+---
+
+### ISSUE-1308: Admin dashboard fabricated its own status — hardcoded DDEX stats, an always-green "All Systems Nominal" badge, and backend failures rendered as honest-looking empty states
+
+- **Status:** ✅ FIXED (2026-08-06)
+- **Severity:** 🟠 HIGH (the operator console asserted health and delivery numbers it had never measured)
+- **Module:** `packages/admin-dashboard` (`server.ts`, `src/components/modules/NexusMonitor.tsx`, `src/components/modules/DDEXTracker.tsx`)
+- **Scope note:** found via gauntlet-loop audit pass on `packages/admin-dashboard` (4 commits in 30 days — least-recently-touched package with real UI). Concurrent with the `packages/renderer/src/modules/security` pass that produced ISSUE-1302..1307; no overlapping files.
+- **Evidence (three distinct violations of the "every UI component must have a real backend, no hardcoded data" rule):**
+  1. `DDEXTracker.tsx` rendered two literal stat cards — `Active Endpoints: 48 / +2 this week` and `XML Validator: 100% passing schema validation`. Neither number came from any API; both were typed into the JSX. There is no endpoint registry and no XML validation result anywhere in this package to source them from.
+  2. `NexusMonitor.tsx` rendered a pulsing green dot and the words **"All Systems Nominal"** unconditionally — it stayed green while the DNS fetch was still in flight, while it had failed outright, and while SPF/DKIM/DMARC all read `unverified`. The one element in the module whose entire job is to communicate health was the one element that never looked at the data.
+  3. `server.ts` answered `200 {deliveries: []}` / `{logs: []}` / `{messages: []}` inside the `catch` blocks of `/api/deliveries/list`, `/api/nexus/logs`, and `/api/messaging/inbox`. A Firestore outage was therefore indistinguishable from a genuinely empty queue, and the UI dutifully rendered "Queue is currently empty. No releases submitted." during a backend failure. Empty states are only honest when the emptiness is real.
+- **Fix:**
+  - `DDEXTracker`: both fabricated cards replaced with figures derived from the fetched queue — distinct DSP destinations, and in-flight (`Processing`) count with the real ERN format count. Failure rate now reads `—` rather than a green `0.00%` when there is nothing to divide. All counters folded into one O(N) `reduce` (was three separate `filter` passes).
+  - `NexusMonitor`: the badge is now derived — `Checking…` while loading, `Status unavailable` (red) on error, `All records verified` (green) only when SPF, DKIM and DMARC each actually read `verified`, `Records unverified` (amber) otherwise.
+  - `server.ts`: all three swallowing `catch` blocks now return `500` with an error body, so the client's existing error branch fires instead of a false empty state.
+  - Both components now narrow untrusted JSON through explicit parsers (malformed rows dropped, unknown DNS fields default to `unverified`) rather than casting the response body, clear stale state on failure, and report `401/403` as an actionable "admin authentication required" message instead of a bare status code.
+  - `NexusMonitor`'s two independent fetches now issue concurrently via `Promise.allSettled` (was sequential `await`; `allSettled` rather than `all` so a second-to-fail request cannot surface as an unhandled rejection).
+- **Also fixed (security, same files):** `server.ts` called `app.use(cors())` with no configuration, which reflects **any** origin — any website on the internet could drive this admin API against a logged-in admin's session. Now deny-by-default: same-origin and non-browser callers pass, additional browser origins must be named explicitly in `ADMIN_ALLOWED_ORIGINS`. Production serves the dashboard's static assets from this same process and dev proxies `/api` through Vite, so both real deployment paths are same-origin and unaffected.
+- **Also fixed (tooling):** `server.ts` was in **no** TypeScript project — `tsconfig.node.json` included only `vite.config.ts`, so 695 lines of Express route handlers were never typechecked by anything. Added to the project's `include`; this immediately surfaced 10 `noUnusedParameters` errors (unused `req` bindings), all corrected. This is the same blind spot that let ISSUE-1302's `require()`-in-ESM survive.
+- **Verification:** `npx tsc -b --force` clean (0 errors, now including `server.ts`), `npx eslint .` clean (0 errors/warnings), `npx vite build` succeeds (1703 modules, 391 kB). No runtime/route test exists to exercise the fixed handlers — that gap is ISSUE-1303, not re-logged here.
+- **Acceptance:** No stat rendered by this dashboard originates anywhere but a real API response; the health badge is a function of fetched state; a backend failure renders as an error, never as an empty state.
+
+---
+
+### ISSUE-1309: `EmailManager.tsx` uses native `window.alert()` for error reporting — banned by the project dialog convention
+
+- **Status:** ✅ FIXED (2026-08-06)
+- **Severity:** 🟢 LOW
+- **Module:** `packages/admin-dashboard/src/components/modules/EmailManager.tsx`
+- **Scope note:** found during the ISSUE-1308 audit pass; not fixed there — `admin-dashboard` has no `react-call` dependency and no dialog primitives, so this needed a small deliberate addition rather than an in-place edit.
+- **Evidence:** `handleApproveDraft` calls `alert(data.error || 'Failed to approve draft')` and `alert('Network request failed')`. `CLAUDE.md` ("Dialogs and Modals") bans `window.alert`/`confirm`/`prompt` outright in favour of awaited `react-call` dialogs.
+- **Fix:** Took the inline route rather than adding a `react-call` dependency to this package. `handleApproveDraft`'s two `alert(...)` call sites now call `setError(...)` instead, reusing the component's existing `error` state and its render branch (already unconditionally rendered above both the inbox/drafts list and the message-detail view, so a failure is visible in either).
+- **Verification:** `grep -rn "alert(\|confirm(\|prompt(" packages/admin-dashboard/src/` returns zero hits (excluding the unrelated `ShieldAlert`/`AlertTriangle` icon imports). `npx tsc -b packages/admin-dashboard` and `npx eslint --config packages/admin-dashboard/eslint.config.js packages/admin-dashboard/src` both clean.
+- **Acceptance:** zero `alert(`/`confirm(`/`prompt(` call sites in `packages/admin-dashboard/src` — met.
+
+---
+
+### ISSUE-1310: Google Workspace routes report "not linked" as an empty result set — same false-empty class as ISSUE-1308, different cause
+
+- **Status:** ✅ FIXED (2026-08-07)
+- **Severity:** 🟡 MEDIUM
+- **Module:** `packages/admin-dashboard/server.ts` (`/api/google/gmail/list`, `/api/google/calendar/events`, `/api/google/drive/files`) + `src/components/modules/GoogleHub.tsx`
+- **Evidence:** when `getGoogleAuthClient()` returns `null` (no stored OAuth token — i.e. Workspace was never linked), the three read routes previously answered `200` with an empty collection. The dashboard then showed an empty inbox / empty calendar / empty Drive, which reads as "you have no mail" rather than "you have not connected your Google account."
+- **Fix:**
+  - **server.ts:** all three read routes now return `412` with `{ error: 'Google Workspace account is not connected', code: 'workspace_not_linked' }` when `!auth` (instead of `200` with empty collection).
+  - **GoogleHub.tsx:** added `linkStatusKnown` state to distinguish "the backend couldn't be reached to check" from "the Workspace is genuinely not linked". Rendering logic: if `!linkStatusKnown` (status check failed/unavailable), show "Workspace link status unavailable" + retry button. If `linkStatusKnown && !authorized`, show "Google Workspace Not Linked" + link prompt. Otherwise, show data. The `fetchTabData()` handler catches `412` responses and sets `authorized=false`, so if the OAuth token expires between the initial status check and a read, the UI correctly falls back to "not linked" instead of "no data".
+- **Verification:** `npx tsc -b --force` clean (0 errors), `npx eslint .` clean (0 errors/warnings). Manual code review confirms three distinct states: loading/unknown, not-linked, and linked-with-data.
+- **Acceptance:** an unlinked Workspace renders a connect prompt, never an empty inbox; a linked-but-genuinely-empty inbox still renders the empty state; status check failures render as recoverable "check again" state, not a false "not linked" assertion.
+
+---
+
+### ISSUE-1311: `packages/admin-dashboard` and `packages/sdk` are excluded from the root `typecheck` script; `admin-dashboard` is excluded from root `lint` too
+
+- **Status:** ✅ FIXED (2026-08-06)
+- **Severity:** 🟡 MEDIUM
+- **Module:** root `package.json`
+- **Scope note:** found during the ISSUE-1308 audit pass; not fixed there because the fix edits root `package.json`, outside the audited package.
+- **Evidence:** root `"typecheck"` runs `tsc -b` over `shared`, `main`, `renderer`, `firebase` (+ firebase tests) only. Root `"lint"` runs `eslint` over `main`, `renderer`, `shared`, `firebase`, `landing`, `sdk` — `admin-dashboard` appears in neither. Both packages carry their own working `tsc`/`eslint` configs (verified clean under ISSUE-1308), so nothing is broken today — but CI would not notice if that changed, which is precisely how ISSUE-1302 and the untypechecked `server.ts` under ISSUE-1308 both survived.
+- **Fix:** Root `typecheck` now runs `tsc -b packages/sdk` and `tsc -b packages/admin-dashboard` alongside the existing packages; root `lint` now runs `eslint --config packages/admin-dashboard/eslint.config.js packages/admin-dashboard/src packages/admin-dashboard/server.ts` after the existing `eslint` invocation (its own flat config, since it uses a different Vite/React/Node toolchain than the root config targets). `sdk` was already covered by root `lint` before this pass — only `typecheck` was missing it.
+- **Verification:** `npm run typecheck` exits 0 with both packages in the chain; `npm run lint` exits 0 (172 pre-existing `no-explicit-any` warnings elsewhere in the tree, 0 errors, unrelated to this change).
+- **Acceptance:** a type error or lint error introduced anywhere in `packages/admin-dashboard` or `packages/sdk` fails the root `npm run typecheck` / `npm run lint` — met.
+
+---
+
+### ISSUE-1312: [Evolas] T1.3 — Style/substance split built (the load-bearing piece)
+
+- **Status:** ✅ FIXED (2026-08-07)
+- **Severity:** N/A (build-plan item)
+- **Module:** `packages/renderer/src/services/persona`
+- **Scope:** `docs/EVOLAS_BUILD_PLAN.md` Phase T1.3, via `.agent/workflows/evolas-gauntlet.md`.
+- **Delivered:** `PersonaResponseService.ts` — `getVerdict(question, personaContext)` is the non-personalized substance call (2-parameter signature, no fader/style channel exists on it structurally); returns a schema-validated `PersonaVerdict` (`verdict`, `riskLevel`, `caveats[]`, `escalate`) via `AutonomousIntelligence.generateStructuredData` — the existing production Gemini call layer (backend-only architecture already in place, correctly reused rather than hand-rolling a raw `@google/genai` client call). `renderInStyle(verdict, faderValues)` is the personalized call — receives the already-computed verdict as data, compiles the fader values via `PersonaPromptCompiler` (T1.2) into a style instruction block, and explicitly instructs the model it may not alter the verdict/riskLevel/caveats/escalate fields, only their phrasing. `getPersonaResponse()` composes both for convenience; callers needing to re-render one verdict across multiple style settings should call the two functions separately.
+- **Verification (the CI check specified in the plan, implemented literally):** a canary verdict is computed once via a mocked substance call, then rendered through `renderInStyle` at all 5 band test points (0/25/50/75/100) on every one of the 5 fader axes — 25 renders total — asserting `JSON.stringify(verdict)` is byte-identical after every single one. A second test sweeps `getPersonaResponse` across the same 5 points and asserts the returned verdict is `toEqual` the canary verdict every time. Both pass. Additional coverage: malformed substance-call responses (missing field, invalid enum value) are rejected with `PersonaResponseError` rather than passed downstream; `renderInStyle` is proven not to mutate the verdict object it receives; the prompt sent to the style call is asserted to contain the explicit "Do NOT change the verdict" instruction.
+- **Full sweep:** 9 new tests, all pass. Combined with T1.1 + T1.2, all 27 Evolas T1 tests pass together. `npm run typecheck` (full monorepo, real CI command — used correctly this time per the ISSUE-1309 lesson) clean, 0 errors. `eslint` clean, 0 errors/warnings.
+- **What's deliberately not built yet:** archetype/persona-context grounding text (the 8 music-industry roles' actual system-prompt content) is not part of T1.3's file target and wasn't built here — `personaContext` is accepted as a caller-supplied parameter. Not scope creep to defer; the build plan doesn't list it under T1.3.
+- **Acceptance:** substance and style are two structurally separate calls; the style call cannot alter verdict fields, proven both structurally (function signatures) and behaviorally (25-point sweep, byte-identical verdict every time).
+- **Next in sequence:** T1.4 — Context caching (shared persona prompt cached across users; Genkit 1.26 has no explicit-cache API, so this sub-item uses the raw `@google/genai` client as the documented escape hatch — unlike T1.3, which correctly stayed on the existing `AutonomousIntelligence` production layer).
+
+---
+
+### ISSUE-1313: Three call sites read/write `proprietaryIngestionReleases`/`limitedDrops` at a nested `users/{uid}/...` path that doesn't match the canonical top-level collection
+
+- **Re-ticketed from:** ISSUE-1126 (2026-08-07 gauntlet-loop re-audit; split out because it's a different bug class than the missing-rules items fixed in that pass)
+- **Status:** 🔴 OPEN
+- **Severity:** 🟠 HIGH (silent data-loss shape — writes/reads appear to succeed or fail in ways that don't point at the real cause)
+- **Module:** `packages/renderer/src/services/agent/tools/PublishingTools.ts`, `Web3Tools.ts`, `CoreTools.ts`; `packages/firebase/firestore.rules`
+- **Evidence:** The real, actively-written release store is the **top-level** `proprietaryIngestionReleases` collection — used by `useDDEXRelease.ts`, `useReleases.ts`, `SubmitReleaseModal.tsx`, `DistributionSyncService.ts`, `DistributionService.ts`, and `DistributionTools.ts`, and covered by a real `firestore.rules` rule (`userId`/`orgId`-field ownership). Three other call sites instead read/query a **nested** `users/{uid}/proprietaryIngestionReleases` subcollection that nothing ever writes to: `PublishingTools.ts:22` (`query_pro_database` — searches the user's own catalog for an existing PRO registration before creating a new one), `Web3Tools.ts:102` (reads stored tx hashes by ISRC), `CoreTools.ts:207`. Firestore does not treat a nested subcollection as an alias of a same-named top-level collection — these three reads query a permanently-empty location (and, since no `firestore.rules` match covers that nested path either, would additionally hit the deny-all catch-all if any write to it were ever attempted). The `limitedDrops` collection has the identical shape: a top-level `match /limitedDrops/{dropId}` rule exists with a schema (`selectedProductIds`, `dropDateTime`, `countdownMessage`) that doesn't match what the only writer (`CommerceTools.ts` `create_limited_drop_campaign`, which writes `dropName`/`totalItems`/`releaseDate`/`status` to the nested `users/{uid}/limitedDrops` path) actually produces — suggesting the top-level rule was written for a planned redesign that was never finished, while the nested writer is the only code that actually runs today and is unprotected by any rule.
+- **Impact:** `query_pro_database` always reports "no existing registration found" for every user regardless of history (silently wrong, not an error) since it queries a collection nothing populates. `create_limited_drop_campaign` fails with `permission-denied` on every call (no rule covers the path it actually writes to).
+- **Why not fixed inline:** this needs a decision, not a rule addition — either (a) the three misdirected call sites are bugs and should be repointed at the real top-level collection with proper `userId`/`orgId` filtering (matching the pattern every other consumer already uses), or (b) the nested-subcollection design is intentional for some other reason not evident from the code, in which case the top-level rule/schema is the stale one and should be removed. Adding a rule to legitimize the nested path without resolving which design is canonical would create a second, permanently-empty data store that looks like it works.
+- **Fix:** Read `git blame`/history on the top-level `limitedDrops` rule and the `proprietaryIngestionReleases` nested references to determine which came first / which is the intended design; then either repoint the 3 nested-path call sites at the top-level collections (deleting the dead nested-rule-shaped comment/schema if any), or build out the nested-subcollection rules for real with a schema matching what should actually be written. Whichever direction, add a rules-emulator regression test asserting the collection the code actually touches is the one with a passing rule.
+- **Acceptance:** `query_pro_database` returns real existing-registration matches from data that was actually written; `create_limited_drop_campaign` succeeds against a rule that matches its real write path; no rule exists for a path nothing writes to.
+
+---
+
+### ISSUE-1314: [Evolas] Build plan defect caught before coding — T1.4 file target violated this repo's own backend-only AI architecture
+
+- **Status:** ✅ FIXED (2026-08-07)
+- **Severity:** N/A (plan-correction + build-plan item, not a runtime defect)
+- **Module:** `docs/EVOLAS_BUILD_PLAN.md`, `packages/firebase/src/lib`
+- **Scope:** `docs/EVOLAS_BUILD_PLAN.md` Phase T1.4, via `.agent/workflows/evolas-gauntlet.md`.
+- **The defect:** `EVOLAS_BUILD_PLAN.md`'s original T1.4 spec targeted `packages/renderer/src/services/persona/PersonaCacheManager.ts` using a raw `@google/genai` client — written from generic Gemini-caching research earlier in the session, without checking this specific repo's architecture. `docs/BACKEND_ONLY_API_DECLARATION.md` (dated 2026-06-18, CI-checked via bundle grep for `AIza`/`gemini-`/`apiKey`) is explicit and hard: **no Gemini/Vertex client, key, or endpoint may exist in the renderer bundle** — all AI access is Cloud-Functions-only via ADC. Building the plan as originally written would have shipped a genuine security/architecture violation of the exact category that declaration exists to prevent.
+- **Caught:** before any code was written, per the gauntlet loop's own orient step and its instruction to resolve ambiguity by reading repo conventions rather than trusting an externally-derived plan at face value.
+- **Fix:** corrected `EVOLAS_BUILD_PLAN.md` T1.4 to target `packages/firebase/src/lib/PersonaCacheManager.ts`, then built it there — `getOrCreatePersonaCache(personaId, systemInstructionText, model?, ttl?)` and `invalidatePersonaCache(personaId)`, using the existing `getVertexAIClient()` ADC singleton from `vertexClient.ts` (the same pattern every other backend AI call in this repo already follows). One cache per persona (content-hash-tracked so a persona-prompt edit triggers a fresh cache rather than silently serving stale grounding), never per user — the per-user fader-compiled style block from T1.2 stays entirely outside this module by construction (no fader/style parameter exists on any exported function here).
+- **Verification:** confirmed the real `@google/genai` SDK's `Caches` class API directly against installed type definitions (`node_modules/@google/genai/dist/genai.d.ts`) rather than trusting prior research-agent claims — `create`/`get`/`delete`/`update`/`list` all genuinely exist (delete in particular; earlier session research on a different provider had suggested no delete API exists, which does not hold for this SDK). 11 new tests: cache reuse across repeated calls, per-persona isolation, staleness detection on content change (with best-effort cleanup of the superseded resource, non-blocking if that delete fails), explicit invalidation, and the structural style/substance isolation proof (`getOrCreatePersonaCache.length === 2` — model/ttl are defaulted config, not fader/style data). All pass. `npm run typecheck` (full monorepo) clean. `eslint` clean.
+- **Acceptance:** shared persona cache exists and is genuinely shared across calls to the same persona; no fader/style data has any path into a cross-user-shared resource; the plan document itself no longer directs future work toward a security violation.
+- **Next in sequence:** T1.5 — Measurement harness (Semantic Similarity Rating against human-written anchor texts — the single highest-leverage remaining T1 item per the build plan, since nothing built so far proves a fader's effect is measurable in the actual model output, only that the plumbing carrying it is structurally sound).
+
+---

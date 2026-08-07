@@ -476,6 +476,24 @@ export class E2EEncryptionService {
     this.log('All keys cleared');
   }
 
+  /**
+   * Diagnostics snapshot for security/audit surfaces.
+   * Exposes only key presence and counts — never key material itself.
+   */
+  getDiagnostics(): {
+    localAgentIds: string[];
+    registeredPeerIds: string[];
+    peersWithVerifiedSigning: string[];
+    activeSessionCount: number;
+  } {
+    return {
+      localAgentIds: Array.from(this.keyPairs.keys()),
+      registeredPeerIds: Array.from(this.publicKeyRegistry.keys()),
+      peersWithVerifiedSigning: Array.from(this.signingPublicKeyRegistry.keys()),
+      activeSessionCount: this.sessionKeys.size,
+    };
+  }
+
   // Helper methods
 
   private arrayToBase64(array: Uint8Array): string {

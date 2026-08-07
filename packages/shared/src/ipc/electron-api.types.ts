@@ -45,6 +45,7 @@ export interface ElectronCredentialsAPI {
     save: (id: string, creds: Credentials) => Promise<void>;
     get: (id: string) => Promise<Credentials | null>;
     delete: (id: string) => Promise<void>;
+    list: () => Promise<string[]>;
 }
 
 export interface ElectronAudioAPI {

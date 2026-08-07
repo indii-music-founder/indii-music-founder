@@ -35,6 +35,16 @@ export class CredentialService {
         const result = await window.electronAPI.credentials.delete(distributorId) as unknown;
         return result === false ? false : true;
     }
+
+    /**
+     * List which distributor IDs currently have stored credentials.
+     * Existence only — never returns secret values.
+     */
+    async listConfigured(): Promise<DistributorId[]> {
+        if (!window.electronAPI?.credentials) throw new Error('Electron API not available');
+        const ids = await window.electronAPI.credentials.list();
+        return ids as DistributorId[];
+    }
 }
 
 export const credentialService = new CredentialService();

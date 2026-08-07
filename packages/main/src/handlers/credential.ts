@@ -63,4 +63,17 @@ export function registerCredentialHandlers() {
             return { success: false, error: String(error) };
         }
     });
+
+    // ISSUE-1305: existence-only enumeration for the Security Center "API
+    // Credentials" pane. Never returns secret values — only which distributor
+    // IDs currently have something stored.
+    ipcMain.handle('credentials:list', async (event) => {
+        try {
+            validateSender(event);
+            return await credentialService.listConfigured();
+        } catch (error) {
+            log.error('Credential List Failed:', error);
+            return [];
+        }
+    });
 }

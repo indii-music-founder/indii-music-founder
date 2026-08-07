@@ -59,4 +59,20 @@ export default [
       exclude: ['dist/**', 'e2e/**', 'node_modules/**'],
     }
   },
+  {
+    extends: './vitest.config.ts',
+    test: {
+      name: 'admin-dashboard',
+      environment: 'jsdom',
+      include: [
+        'packages/admin-dashboard/**/*.{test,spec}.{ts,tsx}',
+        'packages/admin-dashboard/src/**/*.{test,spec}.{ts,tsx}',
+      ],
+      exclude: ['dist/**', 'e2e/**', 'node_modules/**'],
+      // The root config's setupFiles mock Firebase client SDKs and jsdom globals
+      // for the renderer; admin-dashboard uses firebase-admin (server-side) and
+      // its own React tree, neither of which needs that mock surface.
+      setupFiles: [],
+    }
+  },
 ];

@@ -455,6 +455,38 @@ service cloud.firestore {
         allow create, update, delete: if false;
       }
 
+      // ── Merchandise Mockups (Commerce) ────────────────────────────────────
+      // AI-generated product mockup previews, written by CommerceTools.mockup_merchandise.
+      // Preview-only records (readyForPOD is always false at this stage) — owner
+      // read/write, immutable once created (regenerate instead of editing).
+      match /merchandiseMockups/{mockupId} {
+        function isValidMerchandiseMockup() {
+          return request.resource.data.get('productType', '') is string &&
+            request.resource.data.get('productType', '').size() >= 1 &&
+            request.resource.data.get('designIdea', '') is string &&
+            request.resource.data.get('imageUrl', '') is string &&
+            request.resource.data.get('imageUrl', '').size() >= 1;
+        }
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && isVerifiedUser() && isValidMerchandiseMockup();
+        allow update: if false;
+        allow delete: if isOwner(userId);
+      }
+
+      // ── Brand Kit (Brand consistency tooling) ─────────────────────────────
+      // Single document at 'current', written by BrandTools.save_brand_kit via
+      // setDoc(..., {merge: true}). Owner-only; no server-owned fields to protect.
+      match /brandKit/{docId} {
+        function isValidBrandKit() {
+          return docId == 'current' &&
+            request.resource.data.get('name', '') is string &&
+            request.resource.data.get('values', []) is list;
+        }
+        allow read: if isOwner(userId);
+        allow create, update: if isOwner(userId) && isVerifiedUser() && isValidBrandKit();
+        allow delete: if isOwner(userId);
+      }
+
       // ── Tax Collaborators (Finance/W9/W8BEN) ──────────────────────────────
       // Collaborators for tax form collection. Owner manages list; backend
       // handles form uploads to Storage and Firestore documents.
@@ -1355,6 +1387,32 @@ service cloud.firestore {
 
     match /users/{userId}/styleDNA/{docId} {
       allow read, write: if isOwner(userId);
+    }
+
+    // Evolas fader values (docs/EVOLAS_BUILD_PLAN.md, non-negotiable #1):
+    // this document may only ever contain style-rendering knobs. It has no
+    // field capable of carrying a substance/verdict override, by schema.
+    match /users/{userId}/personaFaders/{personaId} {
+      allow read: if isOwner(userId);
+      allow create, update: if isOwner(userId)
+        && request.resource.data.personaId is string
+        && request.resource.data.personaId == personaId
+        && request.resource.data.updatedAt is number
+        && request.resource.data.values is map
+        && request.resource.data.values.keys().hasOnly([
+             'riskTolerance', 'brevity', 'directness', 'formality', 'reasoningTransparency'
+           ])
+        && request.resource.data.values.riskTolerance is int
+        && request.resource.data.values.riskTolerance >= 0 && request.resource.data.values.riskTolerance <= 100
+        && request.resource.data.values.brevity is int
+        && request.resource.data.values.brevity >= 0 && request.resource.data.values.brevity <= 100
+        && request.resource.data.values.directness is int
+        && request.resource.data.values.directness >= 0 && request.resource.data.values.directness <= 100
+        && request.resource.data.values.formality is int
+        && request.resource.data.values.formality >= 0 && request.resource.data.values.formality <= 100
+        && request.resource.data.values.reasoningTransparency is int
+        && request.resource.data.values.reasoningTransparency >= 0 && request.resource.data.values.reasoningTransparency <= 100;
+      allow delete: if isOwner(userId);
     }
 
     // Server-generated MCP evidence receipts. The authenticated owner may read

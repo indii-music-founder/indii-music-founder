@@ -112,6 +112,21 @@ export class CredentialService {
             return false;
         }
     }
+
+    /**
+     * List which distributor IDs currently have stored credentials.
+     * Existence only — never returns the stored secret value. Backs the
+     * Security Center "API Credentials" pane (ISSUE-1305).
+     */
+    async listConfigured(): Promise<string[]> {
+        try {
+            const entries = await keytar.findCredentials(SERVICE_NAME);
+            return entries.map((entry) => entry.account);
+        } catch (_error) {
+            console.error('[CredentialService] listConfigured failed:', _error);
+            return [];
+        }
+    }
 }
 
 export const credentialService = new CredentialService();

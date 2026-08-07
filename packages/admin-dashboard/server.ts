@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import admin from 'firebase-admin';
 import { google } from 'googleapis';
 import { randomBytes } from 'node:crypto';
+import { promises as dns } from 'node:dns';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -40,7 +41,28 @@ if (!admin.apps.length) {
 const app = express();
 const PORT = process.env.PORT || 3333;
 
-app.use(cors());
+// CORS is deny-by-default. In production the dashboard is served as static
+// assets by this same process (same origin, no CORS needed); in dev Vite proxies
+// /api from :4173-style ports, also same origin. Any additional browser origin
+// must be named explicitly via ADMIN_ALLOWED_ORIGINS (comma-separated). An
+// unrestricted `cors()` here would let any site on the internet drive the admin
+// API with a victim admin's credentials.
+const allowedOrigins = (process.env.ADMIN_ALLOWED_ORIGINS ?? '')
+  .split(',')
+  .map((o) => o.trim())
+  .filter(Boolean);
+
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // No Origin header = same-origin or a non-browser client (curl, server-to-server).
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin)) return callback(null, true);
+      return callback(null, false);
+    },
+    credentials: true,
+  })
+);
 app.use(express.json());
 
 // Auth Middleware
@@ -63,7 +85,7 @@ const requireAdminAuth = async (req: express.Request, res: express.Response, nex
 
 // Health check — also verifies Firestore connectivity so a missing/invalid
 // credential surfaces immediately instead of failing later inside a data route.
-app.get('/api/health', async (req, res) => {
+app.get('/api/health', async (_req, res) => {
   try {
     await admin.firestore().collection('user_usage_stats').limit(1).get();
     res.json({ status: 'ok', service: 'admin-dashboard-backend', firestore: 'connected' });
@@ -192,7 +214,7 @@ app.get('/api/usage/summary', requireAdminAuth, async (req, res) => {
 // Serves the REAL founders roster from the `founders` Firestore collection
 // (written by activateFounderPass). Empty array when no founders have activated yet —
 // never invented names.
-app.get('/api/founders', requireAdminAuth, async (req, res) => {
+app.get('/api/founders', requireAdminAuth, async (_req, res) => {
   try {
     const snapshot = await admin
       .firestore()
@@ -383,16 +405,18 @@ app.get('/api/google/oauth/callback', async (req, res) => {
 });
 
 // Check if Workspace is linked
-app.get('/api/google/status', requireAdminAuth, async (req, res) => {
+app.get('/api/google/status', requireAdminAuth, async (_req, res) => {
   const auth = await getGoogleAuthClient();
   res.json({ authorized: auth !== null });
 });
 
 // Gmail - List Inbox Messages
-app.get('/api/google/gmail/list', requireAdminAuth, async (req, res) => {
+app.get('/api/google/gmail/list', requireAdminAuth, async (_req, res) => {
   const auth = await getGoogleAuthClient();
   if (!auth) {
-    return res.json({ messages: [] });
+    // Not an empty result — the Workspace was never linked. Say so explicitly so
+    // the client renders its connect prompt instead of "you have no mail".
+    return res.status(412).json({ error: 'Google Workspace account is not connected', code: 'workspace_not_linked' });
   }
   try {
     const gmail = google.gmail({ version: 'v1', auth });
@@ -461,10 +485,12 @@ app.post('/api/google/gmail/send', requireAdminAuth, async (req, res) => {
 });
 
 // Calendar - Fetch Events
-app.get('/api/google/calendar/events', requireAdminAuth, async (req, res) => {
+app.get('/api/google/calendar/events', requireAdminAuth, async (_req, res) => {
   const auth = await getGoogleAuthClient();
   if (!auth) {
-    return res.json({ events: [] });
+    // Not an empty result — the Workspace was never linked. Say so explicitly so
+    // the client renders its connect prompt instead of "you have no mail".
+    return res.status(412).json({ error: 'Google Workspace account is not connected', code: 'workspace_not_linked' });
   }
   try {
     const calendar = google.calendar({ version: 'v3', auth });
@@ -518,10 +544,12 @@ app.post('/api/google/calendar/events/create', requireAdminAuth, async (req, res
 });
 
 // Drive - List Files
-app.get('/api/google/drive/files', requireAdminAuth, async (req, res) => {
+app.get('/api/google/drive/files', requireAdminAuth, async (_req, res) => {
   const auth = await getGoogleAuthClient();
   if (!auth) {
-    return res.json({ files: [] });
+    // Not an empty result — the Workspace was never linked. Say so explicitly so
+    // the client renders its connect prompt instead of "you have no mail".
+    return res.status(412).json({ error: 'Google Workspace account is not connected', code: 'workspace_not_linked' });
   }
   try {
     const drive = google.drive({ version: 'v3', auth });
@@ -574,9 +602,8 @@ app.post('/api/google/drive/upload', requireAdminAuth, async (req, res) => {
 });
 
 // Protected Route for DNS Status
-app.get('/api/dns/status', requireAdminAuth, async (req, res) => {
+app.get('/api/dns/status', requireAdminAuth, async (_req, res) => {
   try {
-    const dns = require('dns').promises;
     const domain = 'indii.music';
     
     let spf = 'unverified';
@@ -617,7 +644,7 @@ app.get('/api/dns/status', requireAdminAuth, async (req, res) => {
 });
 
 // Consolidated Messaging Inbox
-app.get('/api/messaging/inbox', requireAdminAuth, async (req, res) => {
+app.get('/api/messaging/inbox', requireAdminAuth, async (_req, res) => {
   try {
     const snapshot = await admin.firestore().collection('messages').orderBy('date', 'desc').limit(20).get();
     const emails: Record<string, unknown>[] = [];
@@ -626,8 +653,10 @@ app.get('/api/messaging/inbox', requireAdminAuth, async (req, res) => {
     });
     res.json({ messages: emails });
   } catch (error) {
+    // Never answer 200-with-empty on failure: the UI cannot tell a real empty
+    // inbox from a broken backend, and would render "no messages" for an outage.
     console.error('[Messaging] Failed to query inbox messages:', error);
-    res.json({ messages: [] });
+    res.status(500).json({ error: 'Failed to query inbox messages' });
   }
 });
 
@@ -651,7 +680,7 @@ app.post('/api/messaging/approve-draft', requireAdminAuth, async (req, res) => {
 });
 
 // Live deliveries list
-app.get('/api/deliveries/list', requireAdminAuth, async (req, res) => {
+app.get('/api/deliveries/list', requireAdminAuth, async (_req, res) => {
   try {
     const snapshot = await admin.firestore().collection('deliveries').orderBy('time', 'desc').limit(20).get();
     const deliveries: Record<string, unknown>[] = [];
@@ -661,12 +690,12 @@ app.get('/api/deliveries/list', requireAdminAuth, async (req, res) => {
     res.json({ deliveries });
   } catch (error) {
     console.error('[Deliveries] Failed to retrieve deliveries:', error);
-    res.json({ deliveries: [] });
+    res.status(500).json({ error: 'Failed to retrieve deliveries' });
   }
 });
 
 // Nexus/System monitoring logs
-app.get('/api/nexus/logs', requireAdminAuth, async (req, res) => {
+app.get('/api/nexus/logs', requireAdminAuth, async (_req, res) => {
   try {
     const snapshot = await admin.firestore().collection('system_events').orderBy('time', 'desc').limit(25).get();
     const logs: Record<string, unknown>[] = [];
@@ -676,7 +705,7 @@ app.get('/api/nexus/logs', requireAdminAuth, async (req, res) => {
     res.json({ logs });
   } catch (error) {
     console.error('[Nexus] Failed to retrieve system logs:', error);
-    res.json({ logs: [] });
+    res.status(500).json({ error: 'Failed to retrieve system logs' });
   }
 });
 
@@ -690,6 +719,12 @@ app.use((req, res, next) => {
   }
 });
 
-app.listen(PORT as number, '0.0.0.0', () => {
-  console.log(`Admin Dashboard backend listening on port ${PORT}`);
-});
+// Only bind a real port when this file is the process entry point — not when a
+// test imports `app` to drive it via an ephemeral in-process listener.
+if (process.argv[1] === __filename) {
+  app.listen(PORT as number, '0.0.0.0', () => {
+    console.log(`Admin Dashboard backend listening on port ${PORT}`);
+  });
+}
+
+export { app, resolveRange };

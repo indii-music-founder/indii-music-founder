@@ -508,7 +508,7 @@ if (!gotTheLock) {
         const KNOWN_IPC_CHANNELS = new Set([
             'get-platform', 'get-app-version', 'privacy:toggle-protection',
             'system:select-file', 'system:select-directory', 'system:get-directory-contents', 'system:search-approved-assets', 'system:get-gpu-info', 'system:getMobileRemoteInfo',
-            'auth:logout', 'credentials:save', 'credentials:get', 'credentials:delete',
+            'auth:logout', 'credentials:save', 'credentials:get', 'credentials:delete', 'credentials:list',
             'audio:analyze', 'audio:lookup-metadata', 'audio:transcode', 'audio:master',
             'net:fetch-url', 'net:fetch-url-base64',
             'sftp:connect', 'sftp:upload-directory', 'sftp:disconnect', 'sftp:is-connected',

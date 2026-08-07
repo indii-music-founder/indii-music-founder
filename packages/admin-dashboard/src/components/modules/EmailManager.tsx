@@ -62,6 +62,7 @@ export const EmailManager: React.FC = () => {
 
   const handleApproveDraft = async (id: string) => {
     setApproving(id);
+    setError(null);
     try {
       const token = getAdminToken();
       const res = await fetch('/api/messaging/approve-draft', {
@@ -79,10 +80,10 @@ export const EmailManager: React.FC = () => {
         await fetchInbox();
       } else {
         const data = await res.json();
-        alert(data.error || 'Failed to approve draft');
+        setError(data.error || 'Failed to approve draft');
       }
     } catch {
-      alert('Network request failed');
+      setError('Network request failed');
     } finally {
       setApproving(null);
     }

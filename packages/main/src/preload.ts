@@ -54,7 +54,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     credentials: {
         save: (id: string, creds: Credentials) => ipcRenderer.invoke('credentials:save', id, creds),
         get: (id: string): Promise<Credentials | null> => ipcRenderer.invoke('credentials:get', id),
-        delete: (id: string) => ipcRenderer.invoke('credentials:delete', id)
+        delete: (id: string) => ipcRenderer.invoke('credentials:delete', id),
+        list: (): Promise<string[]> => ipcRenderer.invoke('credentials:list')
     },
 
     // Audio (Native Processing)

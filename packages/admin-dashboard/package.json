@@ -9,7 +9,8 @@
     "dev:all": "concurrently -n api,web -c blue,magenta \"npm:server\" \"npm:dev\"",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "cd ../.. && vitest run packages/admin-dashboard"
   },
   "dependencies": {
     "cors": "^2.8.6",
