@@ -114,12 +114,6 @@ describe('Sidebar Navigation Integration', () => {
         loadBoardroomMessages: vi.fn().mockResolvedValue(vi.fn()),
         // App.tsx calls loadSessions().catch(...) on mount — must resolve, not return undefined.
         loadSessions: vi.fn().mockResolvedValue(undefined),
-        pendingCount: 0,
-        isSyncing: false,
-        lastSyncError: null,
-        setPendingCount: vi.fn(),
-        setIsSyncing: vi.fn(),
-        setLastSyncError: vi.fn(),
         isAgentOpen: false,
         toggleAgentWindow: vi.fn(),
         setSidecarStatus: vi.fn(),

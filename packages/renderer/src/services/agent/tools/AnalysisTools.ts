@@ -25,53 +25,42 @@ export const AnalysisTools = {
     }),
 
     sync_dsp_stats: wrapTool('sync_dsp_stats', async (args: { dsp: 'Spotify' | 'Apple'; artistId: string }) => {
-        const platformKey = args.dsp === 'Spotify' ? 'spotify' : 'apple_music';
-
-        // 1. Try reading cached stats from Firestore (written by SocialPlatformService.syncSpotifyStats)
-        try {
-            const { db, auth } = await importWithRetry(() => import('@/services/firebase'));
-            const { doc, getDoc } = await importWithRetry(() => import('firebase/firestore'));
-
-            const uid = auth.currentUser?.uid;
-            if (uid) {
-                const cacheRef = doc(db, 'users', uid, 'platformStats', platformKey);
-                const snap = await getDoc(cacheRef);
-
-                if (snap.exists()) {
-                    const cached = snap.data();
-                    const ageMs = Date.now() - (cached.fetchedAt || 0);
-                    // Serve cache if fresher than 6 hours
-                    if (ageMs < 6 * 60 * 60 * 1000) {
-                        return toolSuccess({
-                            dsp: args.dsp,
-                            artistId: args.artistId,
-                            timestamp: new Date(cached.fetchedAt).toISOString(),
-                            stats: cached,
-                            source: 'cache'
-                        }, `${args.dsp} stats loaded from cache (${Math.round(ageMs / 60000)} min old). Followers: ${cached.followers?.toLocaleString('en-US') ?? 'N/A'}.`);
-                    }
-                }
-
-                // 2. Cache miss or stale — attempt live sync for Spotify
-                if (args.dsp === 'Spotify') {
-                    const { syncSpotifyStats } = await importWithRetry(() => import('@/services/social/SocialPlatformService'));
-                    const live = await syncSpotifyStats(uid, args.artistId);
-                    if (live.followers !== undefined) {
-                        return toolSuccess({
-                            dsp: args.dsp,
-                            artistId: args.artistId,
-                            timestamp: new Date(live.fetchedAt).toISOString(),
-                            stats: live,
-                            source: 'live'
-                        }, `${args.dsp} stats synced live. Followers: ${live.followers?.toLocaleString('en-US') ?? 'N/A'}.`);
-                    }
-                }
-            }
-        } catch (_err: unknown) {
-            // Fall through to not-connected error
+        if (args.dsp === 'Apple') {
+            return toolError(
+                'Apple Music live analytics is not integrated. No connection or fresh metrics can be verified.',
+                'DSP_INTEGRATION_UNAVAILABLE',
+            );
         }
 
-        // 3. Token not connected or sync failed — return actionable error, not fake numbers
+        try {
+            const { auth } = await importWithRetry(() => import('@/services/firebase'));
+            const uid = auth.currentUser?.uid;
+            if (!uid) return toolError('User is not authenticated.', 'UNAUTHENTICATED');
+
+            const { syncSpotifyStats } = await importWithRetry(() => import('@/services/social/SocialPlatformService'));
+            const result = await syncSpotifyStats(uid, args.artistId);
+            if (result.liveSyncOk) {
+                return toolSuccess({
+                    dsp: args.dsp,
+                    artistId: args.artistId,
+                    timestamp: new Date(result.fetchedAt).toISOString(),
+                    stats: result,
+                    source: 'live',
+                }, `${args.dsp} stats synced live. Followers: ${result.followers?.toLocaleString('en-US') ?? 'N/A'}.`);
+            }
+            if (result.authorized && result.cacheOnly) {
+                return toolSuccess({
+                    dsp: args.dsp,
+                    artistId: args.artistId,
+                    timestamp: new Date(result.fetchedAt).toISOString(),
+                    stats: result,
+                    source: 'cache_only',
+                }, `${args.dsp} authorization exists, but live sync failed. Showing cached metrics from ${new Date(result.fetchedAt).toISOString()}; they are not current.`);
+            }
+        } catch (_err: unknown) {
+            // Fall through to an actionable, non-fabricated connection error.
+        }
+
         return toolError(
             `${args.dsp} is not connected. Connect via Settings → Social Platforms to enable live stat sync.`,
             'DSP_NOT_CONNECTED'

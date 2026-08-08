@@ -15,13 +15,16 @@ vi.mock('@/services/firebase', () => ({
     functions: {}
 }));
 
-// Mock firestore methods
-vi.mock('firebase/firestore', () => ({
-    doc: vi.fn(),
-    getDoc: vi.fn().mockResolvedValue({
-        exists: () => true,
-        data: () => ({ followers: 5000 })
-    })
+vi.mock('@/services/social/SocialPlatformService', () => ({
+    syncSpotifyStats: vi.fn().mockResolvedValue({
+        platform: 'spotify',
+        followers: 5000,
+        fetchedAt: 1_800_000_000_000,
+        connected: true,
+        authorized: true,
+        liveSyncOk: true,
+        cacheOnly: false,
+    }),
 }));
 
 // Mock functions httpsCallable
@@ -75,6 +78,8 @@ describe('AnalyticsAgent', () => {
             expect(result.success).toBe(true);
             expect(result.data.followers).toBe(5000);
             expect(result.data.velocityCurve.day30).toBe(9000); // 5000 * 1.8
+            expect(result.data.confidence).toBe('low');
+            expect(result.data.estimateMetadata.providerVerifiedForecast).toBe(false);
         });
     });
 

@@ -23,7 +23,7 @@ export const AlertsPanel: React.FC<AlertsPanelProps> = ({ alerts, onDismiss }) =
         return (
             <div className="bg-slate-800/30 border border-white/5 rounded-xl p-5 text-center">
                 <p className="text-slate-500 text-sm">No active alerts</p>
-                <p className="text-slate-600 text-xs mt-1">Breakout triggers will appear here in real time.</p>
+                <p className="text-slate-600 text-xs mt-1">Observed metric alerts and review signals will appear here.</p>
             </div>
         );
     }

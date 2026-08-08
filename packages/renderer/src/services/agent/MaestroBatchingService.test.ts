@@ -104,5 +104,30 @@ describe('MaestroBatchingService', () => {
         const result = await resultPromise;
         expect(result.success).toBe(true);
     });
-});
 
+    it('sends the workflow prompt to the agent instead of the display description', async () => {
+        const directService = new MaestroBatchingService();
+        const runner = vi.fn().mockResolvedValue({ text: 'Prepared package' });
+        directService.setRunner(runner);
+
+        const resultPromise = directService.executeTask({
+            description: 'Workflow Step: campaign_package',
+            prompt: 'Prepare the real campaign package and preserve provider receipts.',
+            agentId: 'marketing',
+            priority: 'HIGH',
+            params: {},
+            context: { userId: 'user-1', projectId: 'project-1' },
+            traceId: 'trace-1',
+        });
+
+        await vi.advanceTimersByTimeAsync(350);
+        await resultPromise;
+
+        expect(runner).toHaveBeenCalledWith(
+            'marketing',
+            'Prepare the real campaign package and preserve provider receipts.',
+            { userId: 'user-1', projectId: 'project-1' },
+            'trace-1',
+        );
+    });
+});

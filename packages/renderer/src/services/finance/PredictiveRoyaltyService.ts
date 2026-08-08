@@ -1,4 +1,9 @@
-import { RoyaltyEscalator } from './LabelDealRecoupmentService';
+export interface RoyaltyEscalator {
+    unitThreshold: number;
+    newRate: number;
+    unitType: 'streams' | 'sales' | 'revenue';
+    triggered: boolean;
+}
 
 export interface ForecastPoint {
     date: string;

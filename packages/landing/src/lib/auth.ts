@@ -24,48 +24,13 @@ function isLocalLandingDevHost() {
   );
 }
 
-function createMockUser(email: string, displayName?: string): User {
-  return {
-    uid: `landing-dev-${email}`,
-    email,
-    displayName: displayName || email.split('@')[0] || 'Founder',
-    photoURL: null,
-    emailVerified: true,
-    isAnonymous: false,
-    providerId: 'password',
-    refreshToken: 'landing-dev-refresh-token',
-    tenantId: null,
-    metadata: {
-      creationTime: new Date().toISOString(),
-      lastSignInTime: new Date().toISOString(),
-    },
-    providerData: [],
-    delete: async () => {},
-    getIdToken: async () => 'landing-dev-id-token',
-    getIdTokenResult: async () => ({
-      token: 'landing-dev-id-token',
-      expirationTime: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
-      authTime: new Date().toISOString(),
-      issuedAtTime: new Date().toISOString(),
-      signInProvider: 'password',
-      signInSecondFactor: null,
-      claims: {},
-    }),
-    reload: async () => {},
-    toJSON: () => ({ uid: `landing-dev-${email}`, email, displayName }),
-  } as unknown as User;
-}
-
 /**
  * Sign in with email and password
  */
 export async function signInWithEmail(email: string, password: string) {
   const firebaseAuth = auth;
-  if (!firebaseAuth && !isLocalLandingDevHost()) throw new Error('Firebase Auth not initialized');
-  if (!firebaseAuth && isLocalLandingDevHost()) {
-    return createMockUser(email);
-  }
-  const result = await signInWithEmailAndPassword(firebaseAuth!, email, password);
+  if (!firebaseAuth) throw new Error('Firebase Auth not initialized');
+  const result = await signInWithEmailAndPassword(firebaseAuth, email, password);
   await updateLastLogin(result.user.uid);
   return result.user;
 }
@@ -75,11 +40,8 @@ export async function signInWithEmail(email: string, password: string) {
  */
 export async function signUpWithEmail(email: string, password: string, displayName: string) {
   const firebaseAuth = auth;
-  if (!firebaseAuth && !isLocalLandingDevHost()) throw new Error('Firebase Auth not initialized');
-  if (!firebaseAuth && isLocalLandingDevHost()) {
-    return createMockUser(email, displayName);
-  }
-  const result = await createUserWithEmailAndPassword(firebaseAuth!, email, password);
+  if (!firebaseAuth) throw new Error('Firebase Auth not initialized');
+  const result = await createUserWithEmailAndPassword(firebaseAuth, email, password);
 
   // Update display name
   await updateProfile(result.user, { displayName });
@@ -124,9 +86,8 @@ export async function resendEmailVerification(): Promise<void> {
  */
 export async function logOut() {
   const firebaseAuth = auth;
-  if (!firebaseAuth && !isLocalLandingDevHost()) throw new Error('Firebase Auth not initialized');
-  if (!firebaseAuth && isLocalLandingDevHost()) return;
-  await signOut(firebaseAuth!);
+  if (!firebaseAuth) throw new Error('Firebase Auth not initialized');
+  await signOut(firebaseAuth);
 }
 
 /**
@@ -134,9 +95,8 @@ export async function logOut() {
  */
 export async function resetPassword(email: string) {
   const firebaseAuth = auth;
-  if (!firebaseAuth && !isLocalLandingDevHost()) throw new Error('Firebase Auth not initialized');
-  if (!firebaseAuth && isLocalLandingDevHost()) return;
-  await sendPasswordResetEmail(firebaseAuth!, email);
+  if (!firebaseAuth) throw new Error('Firebase Auth not initialized');
+  await sendPasswordResetEmail(firebaseAuth, email);
 }
 
 /**
@@ -144,7 +104,6 @@ export async function resetPassword(email: string) {
  */
 async function createUserDocument(user: User, displayName?: string) {
   if (!db) {
-    if (isLocalLandingDevHost()) return;
     throw new Error('Firestore not initialized');
   }
   const userRef = doc(db, 'users', user.uid);
@@ -163,7 +122,6 @@ async function createUserDocument(user: User, displayName?: string) {
  */
 async function updateLastLogin(uid: string) {
   if (!db) {
-    if (isLocalLandingDevHost()) return;
     throw new Error('Firestore not initialized');
   }
   const userRef = doc(db, 'users', uid);

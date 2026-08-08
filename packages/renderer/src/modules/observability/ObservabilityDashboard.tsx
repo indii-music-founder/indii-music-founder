@@ -90,7 +90,7 @@ export const ObservabilityDashboard: React.FC = () => {
     const tracing = getRequestTracingService();
     const bundle = getBundleAnalysisService();
 
-    rum.onMetricsReady(handleMetricsUpdate);
+    const unsubscribeMetrics = rum.onMetricsReady(handleMetricsUpdate);
 
     const requestInterval = setInterval(() => {
       setRequestMetrics(tracing.getMetrics());
@@ -106,7 +106,10 @@ export const ObservabilityDashboard: React.FC = () => {
       });
     }
 
-    return () => clearInterval(requestInterval);
+    return () => {
+      unsubscribeMetrics();
+      clearInterval(requestInterval);
+    };
   }, [handleMetricsUpdate]);
 
   const formatSize = (bytes: number): string => {

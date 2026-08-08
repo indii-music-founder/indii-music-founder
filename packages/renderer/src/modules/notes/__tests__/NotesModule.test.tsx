@@ -18,6 +18,8 @@ function buildState(overrides: Record<string, unknown> = {}) {
         deleteNote: vi.fn(),
         setSelectedNote: vi.fn(),
         user: null,
+        notesLoading: false,
+        notesSyncError: null,
         ...overrides,
     };
 }
@@ -35,13 +37,27 @@ describe('NotesModule', () => {
         expect(screen.getByText('Saved on this device only until you sign in')).toBeInTheDocument();
     });
 
-    it('shows that signed-in notes are synced to the workspace', () => {
+    it('does not claim a signed-in note is already synced', () => {
         mockUseStore.mockImplementation((selector: (state: ReturnType<typeof buildState>) => unknown) =>
             selector(buildState({ user: { uid: 'user-123' } }))
         );
 
         render(<NotesModule />);
 
-        expect(screen.getByText('Saved locally and synced to your workspace')).toBeInTheDocument();
+        expect(screen.getByText('Cloud sync enabled; recent changes may still be pending')).toBeInTheDocument();
+        expect(screen.queryByText('Saved locally and synced to your workspace')).not.toBeInTheDocument();
+    });
+
+    it('shows a cloud failure without claiming the local edit was lost', () => {
+        mockUseStore.mockImplementation((selector: (state: ReturnType<typeof buildState>) => unknown) =>
+            selector(buildState({
+                user: { uid: 'user-123' },
+                notesSyncError: 'Cloud sync failed. Your current note remains on this device.',
+            }))
+        );
+
+        render(<NotesModule />);
+
+        expect(screen.getByText('Cloud sync failed. Your current note remains on this device.')).toBeInTheDocument();
     });
 });

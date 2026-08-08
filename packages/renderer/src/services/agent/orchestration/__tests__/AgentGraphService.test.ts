@@ -23,7 +23,7 @@ vi.mock('../../AgentService', () => ({
 
 vi.mock('../../memory/MemoryBankService', () => ({
     memoryBankService: {
-        searchMemories: vi.fn().mockResolvedValue([]),
+        searchMemories: vi.fn().mockResolvedValue({ results: [] }),
         addMemory: vi.fn().mockResolvedValue([{ id: 'mem-123' }]),
     },
 }));
@@ -274,10 +274,59 @@ describe('AgentGraphService', () => {
         (agentService.delegateTask as any).mockRejectedValue(new Error('Agent Crash'));
 
         await expect(agentGraphService.executeGraph(simpleGraph, mockContext))
-            .rejects.toThrow('Execution exec-fail lost during run');
+            .rejects.toThrow('Graph node node-1 failed: Agent Crash');
 
         expect(agentGraphStateService.finalizeStatus).toHaveBeenCalledWith(
             mockUserId, mockExecutionId, 'FAILED'
+        );
+    });
+
+    it('fails instead of completing when a planned node is unreachable', async () => {
+        const unreachableGraph: AgentGraph = {
+            ...mockGraph,
+            nodes: [
+                { id: 'node-1', agentId: 'generalist', taskTemplate: 'Done', waitCondition: 'all' },
+                { id: 'orphan', agentId: 'generalist', taskTemplate: 'Never reachable', waitCondition: 'all' },
+            ],
+            edges: [],
+        };
+        const state = {
+            executionId: 'exec-stuck',
+            status: 'EXECUTING',
+            nodeStates: {
+                'node-1': { status: 'STEP_COMPLETE', output: 'Done' },
+                orphan: { status: 'PLANNED' },
+            },
+        };
+        (agentGraphStateService.createExecution as any).mockResolvedValue(state);
+        (agentGraphStateService.getExecution as any).mockResolvedValue(state);
+
+        await expect(agentGraphService.executeGraph(unreachableGraph, mockContext))
+            .rejects.toThrow('stuck with unreachable node(s): orphan');
+        expect(agentGraphStateService.finalizeStatus).toHaveBeenCalledWith(
+            mockUserId, 'exec-stuck', 'FAILED'
+        );
+        expect(agentGraphStateService.finalizeStatus).not.toHaveBeenCalledWith(
+            mockUserId, 'exec-stuck', 'COMPLETED'
+        );
+    });
+
+    it('fails aggregate status when resolved nodes include a failed node', async () => {
+        const state = {
+            executionId: 'exec-partial-failure',
+            status: 'EXECUTING',
+            nodeStates: {
+                'node-1': { status: 'STEP_COMPLETE', output: 'Partial output' },
+                'node-2': { status: 'FAILED', error: 'Provider failed' },
+            },
+        };
+        (agentGraphStateService.createExecution as any).mockResolvedValue(state);
+        (agentGraphStateService.getExecution as any).mockResolvedValue(state);
+
+        await expect(agentGraphService.executeGraph(mockGraph, mockContext))
+            .rejects.toThrow('failed at node(s): node-2');
+        expect(agentGraphStateService.finalizeStatus).toHaveBeenCalledWith(
+            mockUserId, 'exec-partial-failure', 'FAILED'
         );
     });
 

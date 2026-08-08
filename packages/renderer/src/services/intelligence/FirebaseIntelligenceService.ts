@@ -596,6 +596,7 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
             // Create an internal AbortController for timeout if specified
             const timeoutController = new AbortController();
             let timeoutId: NodeJS.Timeout | number | undefined;
+            let externalAbortHandler: (() => void) | undefined;
 
             const requestTimeout = options?.timeout || 25000;
             if (requestTimeout > 0) {
@@ -609,7 +610,8 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
                 if (options.signal.aborted) {
                     timeoutController.abort(options.signal.reason || 'CANCELLED');
                 } else {
-                    options.signal.addEventListener('abort', () => timeoutController.abort(options.signal?.reason || 'CANCELLED'));
+                    externalAbortHandler = () => timeoutController.abort(options.signal?.reason || 'CANCELLED');
+                    options.signal.addEventListener('abort', externalAbortHandler, { once: true });
                 }
             }
 
@@ -727,6 +729,9 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
                 if (timeoutId) {
                     clearTimeout(timeoutId);
                 }
+                if (externalAbortHandler && options?.signal) {
+                    options.signal.removeEventListener('abort', externalAbortHandler);
+                }
             }
         };
 
@@ -791,6 +796,7 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
         // Create an internal AbortController for timeout if specified
         const timeoutController = new AbortController();
         let timeoutId: NodeJS.Timeout | number | undefined;
+        let externalAbortHandler: (() => void) | undefined;
 
         const requestTimeout = options?.timeout || 25000;
         if (requestTimeout > 0) {
@@ -804,16 +810,27 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
             if (options.signal.aborted) {
                 timeoutController.abort(options.signal.reason || 'CANCELLED');
             } else {
-                options.signal.addEventListener('abort', () => timeoutController.abort(options.signal?.reason || 'CANCELLED'));
+                externalAbortHandler = () => timeoutController.abort(options.signal?.reason || 'CANCELLED');
+                options.signal.addEventListener('abort', externalAbortHandler, { once: true });
             }
         }
 
         const internalSignal = timeoutController.signal;
         let costReservationId: string | undefined;
+        const cleanupRequestLifecycle = () => {
+            if (timeoutId) {
+                clearTimeout(timeoutId);
+                timeoutId = undefined;
+            }
+            if (externalAbortHandler && options?.signal) {
+                options.signal.removeEventListener('abort', externalAbortHandler);
+                externalAbortHandler = undefined;
+            }
+        };
 
         try {
             await this.rateLimiter.acquire(300_000, internalSignal);
-            return this.contentBreaker.execute(async () => {
+            const streamResult = await this.contentBreaker.execute(async () => {
                 return this.withRetry(async () => {
                     if (internalSignal.aborted) {
                         if (internalSignal.reason === 'TIMEOUT') {
@@ -862,14 +879,15 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
                         toolConfig: options?.toolConfig,
                         safetySettings: options?.safetySettings || STANDARD_SAFETY_SETTINGS
                     };
-                    if (timeoutId) {
-                        clearTimeout(timeoutId);
-                        timeoutId = undefined;
-                    }
                     return this.callBackendGenerateContentStream(contents, modelName, backendConfig, costReservationId, headers, internalSignal);
                 }, 0, 1000, internalSignal);
             });
+            return {
+                stream: streamResult.stream,
+                response: streamResult.response.finally(cleanupRequestLifecycle),
+            };
         } catch (error) {
+            cleanupRequestLifecycle();
             if (costReservationId) {
                 try { await this.voidUnclaimedAgentStreamReservation(costReservationId); }
                 catch (releaseError) { logger.warn('[FirebaseIntelligenceService] Reservation release deferred to gateway recovery.', { operationId: costReservationId, releaseError }); }
@@ -881,10 +899,6 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
                 throw new AppException(AppErrorCode.CANCELLED, 'AI Request was cancelled by user');
             }
             throw error;
-        } finally {
-            if (timeoutId) {
-                clearTimeout(timeoutId);
-            }
         }
     }
 
@@ -1225,12 +1239,16 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
                     logger.warn(`[FirebaseIntelligenceService] Transient error, retrying in ${Math.round(waitTime)}ms... (Attempt ${attempt + 1}/${retries})`);
 
                     await new Promise((resolve, reject) => {
-                        const timer = setTimeout(resolve, waitTime);
+                        const handleAbort = () => {
+                            clearTimeout(timer);
+                            reject(new Error('Operation cancelled by user during retry backoff'));
+                        };
+                        const timer = setTimeout(() => {
+                            signal?.removeEventListener('abort', handleAbort);
+                            resolve(undefined);
+                        }, waitTime);
                         if (signal) {
-                            signal.addEventListener('abort', () => {
-                                clearTimeout(timer);
-                                reject(new Error('Operation cancelled by user during retry backoff'));
-                            }, { once: true });
+                            signal.addEventListener('abort', handleAbort, { once: true });
                         }
                     });
 

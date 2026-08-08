@@ -1,11 +1,10 @@
-import { db } from '../firebase';
+import { auth, db } from '../firebase';
 import { logger } from '@/utils/logger';
 
 import { FirestoreService } from '../FirestoreService';
 import { License, LicenseRequest } from './types';
-import { query, where, orderBy, limit, Unsubscribe, collection, getDocs } from 'firebase/firestore';
+import { query, where, orderBy, limit, Unsubscribe, collection, getDocs, Timestamp } from 'firebase/firestore';
 import { useStore } from '@/core/store';
-import { createOneTimePayment } from '@/services/payment/PaymentService';
 
 // ── Types for SyncBriefMatcher ────────────────────────────────────────────────
 
@@ -96,56 +95,21 @@ export class LicensingService {
     }
 
     /**
-     * Create a new license.
-     */
-    async createLicense(license: Omit<License, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {
-        return this.licensesStore.add(license as unknown as License);
-    }
-
-    /**
      * Create a new license request.
      */
-    async createRequest(request: Omit<LicenseRequest, 'id' | 'requestedAt' | 'updatedAt'>): Promise<string> {
+    async createRequest(request: Omit<LicenseRequest, 'id' | 'userId' | 'requestedAt' | 'updatedAt'>): Promise<string> {
+        const userId = auth.currentUser?.uid;
+        if (!userId) throw new Error('Sign in before creating a license request.');
+
         // We cast to any to satisfy the store's simplified generic constraints
         // while maintaining internal type safety from the method signature.
         // Fixing the strict type chain for Omit<T, K> -> Partial<T> is out of scope for this hotfix.
         return this.requestsStore.add({
             ...request,
-            status: request.status || 'checking'
-        } as unknown as LicenseRequest);
-    }
-
-    /**
-     * Initiate a license purchase checkout session.
-     */
-    async initiateLicensePurchase(params: {
-        userId: string;
-        trackTitle: string;
-        artist: string;
-        price: number; // in cents
-        connectedAccountId: string;
-        metadata?: Record<string, string>;
-    }): Promise<string> {
-        const { userId, trackTitle, artist, price, connectedAccountId, metadata } = params;
-
-        return createOneTimePayment({
             userId,
-            items: [{
-                name: `Sync License - ${trackTitle}`,
-                description: `Sync license agreement for ${trackTitle} by ${artist}`,
-                amount: price,
-                quantity: 1,
-            }],
-            applySurcharge: true,
-            metadata: {
-                type: 'licensing_purchase',
-                trackTitle,
-                artist,
-                connectedAccountId,
-                artistAmount: String(price),
-                ...metadata,
-            }
-        });
+            status: 'checking',
+            requestedAt: Timestamp.now(),
+        } as unknown as LicenseRequest);
     }
 
     /**

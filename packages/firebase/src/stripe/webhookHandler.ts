@@ -80,21 +80,62 @@ async function handleLicensingCheckoutCompleted(session: Stripe.Checkout.Session
   }
 
   const userId = session.metadata?.userId;
-  const connectedAccountId = session.metadata?.connectedAccountId;
-  const artistAmountStr = session.metadata?.artistAmount;
-  const trackTitle = session.metadata?.trackTitle || 'Sync License';
-  const artist = session.metadata?.artist || 'indii Artist';
-
-  if (!userId || !connectedAccountId || !artistAmountStr) {
-    logger.error('[handleLicensingCheckoutCompleted] Missing metadata for licensing purchase');
-    return;
+  const agreementId = session.metadata?.agreementId;
+  const expectedTermsHash = session.metadata?.termsHash;
+  if (!userId || !agreementId || !expectedTermsHash) {
+    throw new Error('Licensing checkout is missing a versioned agreement reference.');
   }
 
-  const artistAmount = parseInt(artistAmountStr, 10);
-  if (isNaN(artistAmount) || artistAmount <= 0) {
-    logger.error('[handleLicensingCheckoutCompleted] Invalid artist amount');
-    return;
+  const db = getFirestore();
+  const agreementRef = db.collection('license_agreements').doc(agreementId);
+  const agreementSnapshot = await agreementRef.get();
+  if (!agreementSnapshot.exists) throw new Error(`License agreement ${agreementId} was not found.`);
+
+  const agreement = agreementSnapshot.data() ?? {};
+  const licensee = agreement.licensee as { name?: unknown; email?: unknown } | undefined;
+  const term = agreement.term as { startsAt?: unknown; endsAt?: unknown } | undefined;
+  const rightsCovered = agreement.rightsCovered;
+  const feeCents = agreement.feeCents;
+  const connectedAccountId = agreement.connectedAccountId;
+  const trackTitle = agreement.trackTitle;
+  const artist = agreement.artist;
+
+  const agreementIsComplete = agreement.status === 'accepted'
+    && agreement.licensorUserId === userId
+    && typeof agreement.agreementVersion === 'string' && agreement.agreementVersion.length > 0
+    && typeof agreement.termsHash === 'string' && agreement.termsHash === expectedTermsHash
+    && typeof agreement.acceptedAt !== 'undefined' && agreement.acceptedAt !== null
+    && typeof licensee?.name === 'string' && licensee.name.trim().length > 0
+    && typeof licensee?.email === 'string' && licensee.email.trim().length > 0
+    && typeof agreement.usage === 'string' && agreement.usage.trim().length > 0
+    && typeof agreement.territory === 'string' && agreement.territory.trim().length > 0
+    && typeof term?.startsAt !== 'undefined' && term.startsAt !== null
+    && Object.prototype.hasOwnProperty.call(term ?? {}, 'endsAt')
+    && (agreement.exclusivity === 'exclusive' || agreement.exclusivity === 'non-exclusive')
+    && Array.isArray(rightsCovered) && rightsCovered.length > 0
+    && rightsCovered.every((right) => typeof right === 'string' && right.trim().length > 0)
+    && typeof agreement.masterRights === 'boolean'
+    && typeof agreement.compositionRights === 'boolean'
+    && Number.isInteger(feeCents) && feeCents > 0
+    && typeof connectedAccountId === 'string' && /^acct_[a-zA-Z0-9]+$/.test(connectedAccountId)
+    && typeof trackTitle === 'string' && trackTitle.trim().length > 0
+    && typeof artist === 'string' && artist.trim().length > 0;
+
+  if (!agreementIsComplete) {
+    throw new Error(`License agreement ${agreementId} is incomplete or was not accepted.`);
   }
+  if (session.consent?.terms_of_service !== 'accepted') {
+    throw new Error(`License agreement ${agreementId} lacks Stripe terms acceptance.`);
+  }
+  if (session.customer_details?.email
+    && session.customer_details.email.toLowerCase() !== String(licensee.email).toLowerCase()) {
+    throw new Error(`License agreement ${agreementId} licensee does not match the Stripe customer.`);
+  }
+  if (typeof session.amount_subtotal !== 'number' || session.amount_subtotal < feeCents) {
+    throw new Error(`License checkout ${session.id} was underpaid for agreement ${agreementId}.`);
+  }
+
+  const artistAmount = feeCents as number;
 
   // Execute Stripe transfer to connected account
   let transfer: Stripe.Transfer;
@@ -117,7 +158,6 @@ async function handleLicensingCheckoutCompleted(session: Stripe.Checkout.Session
   // the same transfer for the idempotency key above; deterministic Firestore
   // IDs make the rest of fulfillment idempotent as well. A batch prevents a
   // license without its matching financial ledger entry (or vice versa).
-  const db = getFirestore();
   const licenseRef = db.collection('licenses').doc(session.id);
   const ledgerRef = db.collection(`users/${userId}/ledger`).doc(`sync_license_${session.id}`);
   const batch = db.batch();
@@ -129,6 +169,18 @@ async function handleLicensingCheckoutCompleted(session: Stripe.Checkout.Session
     licenseType: 'sync',
     status: 'active',
     amount: artistAmount,
+    agreementId,
+    agreementVersion: agreement.agreementVersion,
+    termsHash: agreement.termsHash,
+    licensee,
+    usage: agreement.usage,
+    territory: agreement.territory,
+    term,
+    exclusivity: agreement.exclusivity,
+    rightsCovered,
+    masterRights: agreement.masterRights,
+    compositionRights: agreement.compositionRights,
+    acceptedAt: agreement.acceptedAt,
     stripeSessionId: session.id,
     stripeTransferId: transfer.id,
     createdAt: FieldValue.serverTimestamp(),
@@ -143,6 +195,14 @@ async function handleLicensingCheckoutCompleted(session: Stripe.Checkout.Session
     stripeSessionId: session.id,
     stripeTransferId: transfer.id,
     createdAt: FieldValue.serverTimestamp(),
+  }, { merge: true });
+
+  batch.set(agreementRef, {
+    status: 'active',
+    stripeSessionId: session.id,
+    stripeTransferId: transfer.id,
+    fulfilledAt: FieldValue.serverTimestamp(),
+    updatedAt: FieldValue.serverTimestamp(),
   }, { merge: true });
 
   await batch.commit();

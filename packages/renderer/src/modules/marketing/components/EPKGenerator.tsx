@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
     FileText, Image as ImageIcon, Tag, Link2, Music,
-    ExternalLink, Copy, Download, CheckCircle, Globe, Loader2
+    Download
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -52,13 +52,11 @@ export default function EPKGenerator() {
     const [appleMusicUrl, setAppleMusicUrl] = useState('');
     const [instagramUrl, setInstagramUrl] = useState('');
     const [tracks] = useState<Track[]>(DEFAULT_TRACKS);
-    const [generating, setGenerating] = useState(false);
     const [generated, setGenerated] = useState(false);
-    const [copied, setCopied] = useState(false);
-    const [pressPhotoUrl, setPressPhotoUrl] = useState<string | null>(null);
+    const [pressPhotoDataUrl, setPressPhotoDataUrl] = useState<string | null>(null);
+    const [pressPhotoError, setPressPhotoError] = useState<string | null>(null);
 
     const slug = slugify(artistName || 'your-artist');
-    const epkUrl = `indii.vip/artist/${slug}/epk`;
 
     const toggleGenre = (g: string) => {
         setGenreTags(prev =>
@@ -67,23 +65,26 @@ export default function EPKGenerator() {
     };
 
     const handleGenerate = () => {
-        setGenerating(true);
-        setTimeout(() => {
-            setGenerating(false);
-            setGenerated(true);
-        }, 1800);
+        setGenerated(true);
     };
 
     const handlePressPhoto = (file: File | undefined) => {
         if (!file) return;
-        if (pressPhotoUrl) URL.revokeObjectURL(pressPhotoUrl);
-        setPressPhotoUrl(URL.createObjectURL(file));
-    };
-
-    const handleCopyLink = () => {
-        void navigator.clipboard.writeText(`https://${epkUrl}`);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
+        const allowedTypes = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
+        if (!allowedTypes.has(file.type) || file.size > 10 * 1024 * 1024) {
+            setPressPhotoDataUrl(null);
+            setPressPhotoError('Choose a JPEG, PNG, WebP, or GIF image up to 10 MB.');
+            return;
+        }
+        const reader = new FileReader();
+        reader.onload = () => {
+            if (typeof reader.result === 'string') {
+                setPressPhotoDataUrl(reader.result);
+                setPressPhotoError(null);
+            }
+        };
+        reader.onerror = () => setPressPhotoError('The press photo could not be read.');
+        reader.readAsDataURL(file);
     };
 
     const handleDownloadHtml = () => {
@@ -106,6 +107,9 @@ export default function EPKGenerator() {
                 return safeUrl ? `<a href="${escapeHtml(safeUrl)}">${escapeHtml(label)}</a>` : '';
             })
             .join('');
+        const safePressPhoto = pressPhotoDataUrl
+            ? `<img class="press-photo" src="${escapeHtml(pressPhotoDataUrl)}" alt="${safeArtistName} press photo">`
+            : '';
 
         const html = `<!DOCTYPE html>
 <html>
@@ -122,11 +126,12 @@ export default function EPKGenerator() {
     .section-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #888; margin: 28px 0 12px; }
     .track { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee; font-size: 14px; }
     .links a { display: inline-block; margin-right: 16px; color: #555; font-size: 13px; text-decoration: none; }
-    .epk-url { font-size: 12px; color: #888; margin-top: 32px; }
+    .press-photo { display: block; width: 220px; max-height: 220px; object-fit: cover; border-radius: 16px; margin: 20px 0; }
   </style>
 </head>
 <body>
   <h1>${safeArtistName}</h1>
+  ${safePressPhoto}
   <div class="tags">${safeTags}</div>
   <p class="bio">${safeBio}</p>
   <div class="section-title">Recent Releases</div>
@@ -135,7 +140,6 @@ export default function EPKGenerator() {
   <div class="links">
     ${safeLinks}
   </div>
-  <p class="epk-url">EPK: https://${escapeHtml(epkUrl)}</p>
 </body>
 </html>`;
         const blob = new Blob([html], { type: 'text/html' });
@@ -153,9 +157,9 @@ export default function EPKGenerator() {
             <div>
                 <h2 className="text-lg font-bold text-white flex items-center gap-2">
                     <FileText size={18} className="text-dept-marketing" />
-                    EPK Live Generator
+                    EPK Export Builder
                 </h2>
-                <p className="text-xs text-gray-500 mt-1">Generate a dynamic Electronic Press Kit live at your personal EPK URL.</p>
+                <p className="text-xs text-gray-500 mt-1">Build a local preview and download a self-contained HTML press kit. Hosting is not included.</p>
             </div>
 
             {/* Artist Name */}
@@ -177,13 +181,14 @@ export default function EPKGenerator() {
                 </label>
                 <div className="flex items-center gap-4">
                     <div className="w-20 h-20 rounded-xl bg-linear-to-br from-dept-marketing/30 to-green-600/20 border border-white/10 flex items-center justify-center flex-shrink-0">
-                        {pressPhotoUrl ? <img src={pressPhotoUrl} alt="Selected press" className="w-full h-full object-cover rounded-xl" /> : <ImageIcon size={20} className="text-gray-600" />}
+                        {pressPhotoDataUrl ? <img src={pressPhotoDataUrl} alt="Selected press" className="w-full h-full object-cover rounded-xl" /> : <ImageIcon size={20} className="text-gray-600" />}
                     </div>
                     <label className="flex-1 flex flex-col items-center py-3 rounded-xl border border-dashed border-white/10 hover:border-dept-marketing/30 text-xs text-gray-500 cursor-pointer hover:text-gray-400 transition-all bg-white/[0.02]">
                         Click to upload press photo
-                        <input type="file" accept="image/*" className="sr-only" onChange={e => handlePressPhoto(e.target.files?.[0])} />
+                        <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" className="sr-only" onChange={e => handlePressPhoto(e.target.files?.[0])} />
                     </label>
                 </div>
+                {pressPhotoError && <p className="mt-2 text-xs text-red-400">{pressPhotoError}</p>}
             </div>
 
             {/* Bio */}
@@ -267,20 +272,10 @@ export default function EPKGenerator() {
             {/* Generate Button */}
             <button
                 onClick={handleGenerate}
-                disabled={generating}
-                className="flex items-center justify-center gap-2 py-3 rounded-xl bg-dept-marketing text-white font-semibold text-sm hover:bg-dept-marketing/90 transition-all disabled:opacity-50 shadow-lg shadow-dept-marketing/20"
+                className="flex items-center justify-center gap-2 py-3 rounded-xl bg-dept-marketing text-white font-semibold text-sm hover:bg-dept-marketing/90 transition-all shadow-lg shadow-dept-marketing/20"
             >
-                {generating ? (
-                    <>
-                        <Loader2 size={16} className="animate-spin" />
-                        Generating EPK...
-                    </>
-                ) : (
-                    <>
-                        <Globe size={16} />
-                        Generate EPK
-                    </>
-                )}
+                <FileText size={16} />
+                Build Downloadable EPK
             </button>
 
             {/* EPK Preview + Actions */}
@@ -298,13 +293,14 @@ export default function EPKGenerator() {
                                 <span className="w-2.5 h-2.5 rounded-full bg-yellow-500/60" />
                                 <span className="w-2.5 h-2.5 rounded-full bg-green-500/60" />
                                 <div className="flex-1 mx-2 px-2 py-0.5 bg-white/5 rounded text-[9px] text-gray-500 font-mono">
-                                    https://{epkUrl}
+                                    Local preview — not published
                                 </div>
-                                <ExternalLink size={9} className="text-gray-600" />
                             </div>
                             <div className="p-5 flex gap-4">
                                 <div className="w-16 h-16 rounded-xl bg-linear-to-br from-dept-marketing/30 to-green-600/20 border border-white/10 flex-shrink-0 flex items-center justify-center">
-                                    <ImageIcon size={18} className="text-gray-600" />
+                                    {pressPhotoDataUrl
+                                        ? <img src={pressPhotoDataUrl} alt="Press preview" className="h-full w-full rounded-xl object-cover" />
+                                        : <ImageIcon size={18} className="text-gray-600" />}
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <p className="text-sm font-bold text-white">{artistName || 'Artist Name'}</p>
@@ -320,13 +316,6 @@ export default function EPKGenerator() {
 
                         {/* Actions */}
                         <div className="flex gap-2">
-                            <button
-                                onClick={handleCopyLink}
-                                className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-white/5 border border-white/10 text-sm text-gray-300 hover:border-white/20 transition-all font-medium"
-                            >
-                                {copied ? <CheckCircle size={14} className="text-green-400" /> : <Copy size={14} />}
-                                {copied ? 'Copied!' : 'Copy Link'}
-                            </button>
                             <button
                                 onClick={handleDownloadHtml}
                                 className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-white/5 border border-white/10 text-sm text-gray-300 hover:border-white/20 transition-all font-medium"

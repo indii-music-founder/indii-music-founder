@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { AlertTriangle, CheckCircle, FileText, Fingerprint, Gavel, Link, Loader2, Scale, Shield, Siren } from 'lucide-react';
+import { AlertTriangle, CheckCircle, FileText, Fingerprint, Gavel, Link, Scale, Shield, Siren } from 'lucide-react';
 import { auth } from '@/services/firebase';
 import {
   CREATOR_PROTECTION_SOURCES,
@@ -22,7 +22,6 @@ export function CreatorProtectionCenter() {
   const [incidentUrl, setIncidentUrl] = useState('');
   const [incident, setIncident] = useState<ReplicaIncident | null>(null);
   const [takedown, setTakedown] = useState<TakedownCase | null>(null);
-  const [isCompiling, setIsCompiling] = useState(false);
 
   const readinessRun = useMemo(() => {
     if (!profile) return null;
@@ -36,7 +35,6 @@ export function CreatorProtectionCenter() {
 
   const handleCompile = () => {
     if (!userId) return;
-    setIsCompiling(true);
     const nextProfile = creatorProtectionHarnessService.createIdentityProtectionProfile({
       userId,
       artistName: artistName || undefined,
@@ -49,7 +47,6 @@ export function CreatorProtectionCenter() {
       copyrightStatus: 'unknown',
     });
     setProfile(nextProfile);
-    window.setTimeout(() => setIsCompiling(false), 250);
   };
 
   const handleClassifyIncident = () => {
@@ -108,10 +105,10 @@ export function CreatorProtectionCenter() {
           </div>
           <button
             onClick={handleCompile}
-            disabled={isCompiling || !userId}
+            disabled={!userId}
             className="w-full py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-colors flex items-center justify-center gap-2"
           >
-            {isCompiling ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle size={14} />}
+            <CheckCircle size={14} />
             Compile Protection Readiness
           </button>
         </div>

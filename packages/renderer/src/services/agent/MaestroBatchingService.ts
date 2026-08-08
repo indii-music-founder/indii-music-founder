@@ -10,6 +10,8 @@ export type TaskPriority = 'URGENT' | 'HIGH' | 'MEDIUM' | 'LOW';
 export interface BatchedTask {
     id: string;
     description: string;
+    /** Full instruction sent to the agent. Falls back to description for legacy callers. */
+    prompt?: string;
     agentId: string;
     priority: TaskPriority;
     params: any;
@@ -118,7 +120,7 @@ export class MaestroBatchingService {
 
             const result = await this.agentRunner(
                 task.agentId,
-                task.description,
+                task.prompt || task.description,
                 task.context,
                 task.traceId
             );

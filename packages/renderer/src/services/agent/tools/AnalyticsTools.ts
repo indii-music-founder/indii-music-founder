@@ -35,61 +35,71 @@ export const AnalyticsTools = {
 
         return toolSuccess({
             viralScore: score,
+            confidence: 'low',
+            method: 'static_tempo_genre_mood_heuristic',
+            predictive: false,
+            assumptions: {
+                baseScore: 50,
+                bpmAdjustment: bpm > 120 ? 15 : bpm < 90 ? 5 : 0,
+                recognizedGenreAdjustment: popGenres.includes(genre) ? 20 : 0,
+                recognizedMoodAdjustment: viralMoods.includes(mood) ? 10 : 0,
+            },
             platformBreakdown: {
                 tiktok: Math.min(100, score + 10),
                 reels: Math.min(100, score + 5),
                 shorts: score
             },
             recommendation: score > 75 ? "High" : score > 50 ? "Medium" : "Low"
-        }, `Calculated viral potential score: ${score}/100.`);
+        }, `Low-confidence viral-potential heuristic: ${score}/100. This static tempo/genre/mood rubric is not a historical-data prediction.`);
     }),
 
     benchmark_release_velocity: wrapTool('benchmark_release_velocity', async (args: { trackId?: string; artistId?: string }) => {
-        // 1. Get auth and Firestore db
-        const { db, auth } = await importWithRetry(() => import('@/services/firebase'));
-        const { doc, getDoc } = await importWithRetry(() => import('firebase/firestore'));
-
+        const { auth } = await importWithRetry(() => import('@/services/firebase'));
         const uid = auth.currentUser?.uid;
         if (!uid) {
             return toolError('User is not authenticated.', 'UNAUTHENTICATED');
         }
 
-        // 2. Fetch stats
-        const cacheRef = doc(db, 'users', uid, 'platformStats', 'spotify');
-        const snap = await getDoc(cacheRef);
+        const { syncSpotifyStats } = await importWithRetry(() => import('@/services/social/SocialPlatformService'));
+        const stats = await syncSpotifyStats(uid, args.artistId ?? '');
+        const hasUserFollowers = typeof stats.followers === 'number' && Number.isFinite(stats.followers) && stats.followers >= 0;
+        const followers = hasUserFollowers ? stats.followers! : 1500;
+        const personalized = hasUserFollowers;
+        const source = stats.liveSyncOk && personalized
+            ? 'live_spotify_followers'
+            : stats.cacheOnly && personalized
+                ? 'cached_spotify_followers'
+                : 'hypothetical_1500_follower_baseline';
 
-        let followers = 1500; // default benchmark baseline
-        let source = 'benchmark_baseline';
-        let personalized = true;
-
-        if (snap.exists()) {
-            const cached = snap.data();
-            if (cached.followers) {
-                followers = cached.followers;
-                source = 'user_spotify_stats';
-                personalized = true;
-            } else {
-                personalized = false;
-            }
-        } else {
-            personalized = false;
-        }
-
-        // Calculate a deterministic release velocity curve based on followers
-        // Assume standard curves for independent artists
+        // Illustrative multipliers only; they are not a provider forecast.
         const day1 = Math.round(followers * 0.12);
         const day7 = Math.round(followers * 0.45);
         const day30 = Math.round(followers * 1.8);
 
         const projectionMessage = personalized
-            ? `Velocity benchmark based on your Spotify followers: day 30 projected ${day30.toLocaleString('en-US')} streams.`
-            : `Generic benchmark (not personalized). Using default audience size: day 30 example ${day30.toLocaleString('en-US')} streams. Connect Spotify for personalized projections.`;
+            ? `Low-confidence release-velocity estimate using ${source === 'live_spotify_followers' ? 'live' : 'cached'} Spotify followers. The day-30 illustration is ${day30.toLocaleString('en-US')} streams; it is not a Spotify forecast.`
+            : `Hypothetical release-velocity example using an assumed 1,500-follower audience. The day-30 illustration is ${day30.toLocaleString('en-US')} streams; it is not personalized or provider-verified.`;
 
         return toolSuccess({
-            trackId: args.trackId || 'unknown_track',
+            trackId: args.trackId ?? null,
             followers,
             source,
             personalized,
+            confidence: 'low',
+            estimateMetadata: {
+                kind: 'illustrative_estimate',
+                providerVerifiedForecast: false,
+                liveSyncOk: stats.liveSyncOk === true,
+                cacheOnly: stats.cacheOnly === true,
+                fetchedAt: personalized ? stats.fetchedAt : null,
+                assumptions: [
+                    'Day 1 streams equal 12% of follower count.',
+                    'Day 7 streams equal 45% of follower count.',
+                    'Day 30 streams equal 180% of follower count.',
+                    'The comparison target equals 200% of follower count.',
+                    ...(personalized ? [] : ['Audience size is a hypothetical 1,500 followers.']),
+                ],
+            },
             velocityCurve: {
                 day1,
                 day7,

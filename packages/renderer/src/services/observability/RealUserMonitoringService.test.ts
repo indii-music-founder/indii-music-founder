@@ -4,7 +4,11 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { RealUserMonitoringService } from './RealUserMonitoringService';
+import {
+  RealUserMonitoringService,
+  getRealUserMonitoringService,
+  initializeRealUserMonitoring,
+} from './RealUserMonitoringService';
 
 describe('RealUserMonitoringService', () => {
   let service: RealUserMonitoringService;
@@ -19,6 +23,14 @@ describe('RealUserMonitoringService', () => {
       expect(sessionId).toBeDefined();
       expect(typeof sessionId).toBe('string');
       expect(sessionId.length).toBeGreaterThan(0);
+    });
+
+    it('should initialize one shared browser service', () => {
+      const first = initializeRealUserMonitoring();
+      const second = initializeRealUserMonitoring();
+
+      expect(second).toBe(first);
+      expect(getRealUserMonitoringService()).toBe(first);
     });
   });
 
@@ -67,9 +79,13 @@ describe('RealUserMonitoringService', () => {
   describe('Callbacks', () => {
     it('should register and call metrics ready callbacks', () => {
       const callback = vi.fn();
-      service.onMetricsReady(callback);
+      const unsubscribe = service.onMetricsReady(callback);
       service.reportMetrics();
       expect(callback).toHaveBeenCalled();
+
+      unsubscribe();
+      service.reportMetrics();
+      expect(callback).toHaveBeenCalledTimes(1);
     });
 
     it('should handle multiple callbacks', () => {

@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import type { ConversationSession } from '@/core/store/slices/agent';
 import { FilterItem } from './components/FilterItem';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import type { FileNode } from '@/services/FileSystemService';
 
 export default function HistoryDashboard() {
     const {
@@ -39,7 +40,7 @@ export default function HistoryDashboard() {
             type: 'agent' | 'file';
             id: string;
             title: string;
-            timestamp: number;
+            timestamp: number | null;
             fileType?: string;
             messageCount?: number;
         }
@@ -51,21 +52,20 @@ export default function HistoryDashboard() {
                     type: 'agent',
                     id: session.id,
                     title: session.title || 'Temporal Stream',
-                    timestamp: session.updatedAt,
+                    timestamp: Number.isFinite(session.updatedAt) ? session.updatedAt : null,
                     messageCount: session.messages?.length || 0,
                 });
             });
         }
 
         if (filterType === 'all' || filterType === 'file') {
-            fileNodes.forEach((file: { id: string; name: string; createdAt?: number; _mockTimestamp?: number }) => {
-                // Approximate timestamp if missing, ideally files have createdAt
+            fileNodes.forEach((file: FileNode) => {
                 items.push({
                     type: 'file',
                     id: file.id,
                     title: file.name,
-                    timestamp: file.createdAt || file._mockTimestamp || parseInt(file.id, 36) % 10000000000 + 1700000000000,
-                    fileType: (file as { fileType?: string }).fileType,
+                    timestamp: Number.isFinite(file.createdAt) ? file.createdAt : null,
+                    fileType: file.fileType,
                 });
             });
         }
@@ -73,7 +73,7 @@ export default function HistoryDashboard() {
         // Sort descending
         return items
             .filter(item => item.title.toLowerCase().includes(searchQuery.toLowerCase()))
-            .sort((a, b) => b.timestamp - a.timestamp);
+            .sort((a, b) => (b.timestamp ?? Number.NEGATIVE_INFINITY) - (a.timestamp ?? Number.NEGATIVE_INFINITY));
     }, [sessions, fileNodes, filterType, searchQuery]);
 
     const getFileIcon = (fileType: string) => {
@@ -177,7 +177,7 @@ export default function HistoryDashboard() {
                                                         <div>
                                                             <h3 className="font-bold text-gray-200">{item.title}</h3>
                                                             <div className="flex items-center gap-3 mt-1 text-xs text-gray-500 font-mono">
-                                                                <span>{formatSmartDate(item.timestamp)}</span>
+                                                                <span>{item.timestamp === null ? 'Date unavailable' : formatSmartDate(item.timestamp)}</span>
                                                                 <span className="w-1 h-1 rounded-full bg-white/20" />
                                                                 <span className="uppercase tracking-widest">{item.type}</span>
                                                                 {item.type === 'agent' && (

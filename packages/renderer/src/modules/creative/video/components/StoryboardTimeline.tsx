@@ -290,8 +290,8 @@ export function StoryboardTimeline() {
                 resolution: '1080p',
                 aspectRatio: '16:9',
                 firstFrame,
-                duration: 8, // 4 bars typically at ~120BPM is ~8 seconds
-                durationSeconds: 8,
+                duration: slot.durationSeconds ?? 8,
+                durationSeconds: slot.durationSeconds ?? 8,
                 model: INTELLIGENCE_MODELS.VIDEO.PRO
             });
 
@@ -407,7 +407,9 @@ export function StoryboardTimeline() {
                         </h2>
                         <p className="text-[10px] text-neutral-500 mt-1 font-mono uppercase tracking-wider">
                             {storyboardProject
-                                ? `Active: ${storyboardProject.name} · Grid: ${storyboardProject.bpm} BPM${storyboardProject.key ? ` · Key: ${storyboardProject.key}` : ' · Key: not analyzed'}`
+                                ? storyboardProject.source === 'screenwriter'
+                                    ? `Active: ${storyboardProject.name} · ${storyboardProject.slots.length} planned scenes · ${storyboardProject.durationSeconds}s total`
+                                    : `Active: ${storyboardProject.name} · Grid: ${storyboardProject.bpm} BPM${storyboardProject.key ? ` · Key: ${storyboardProject.key}` : ' · Key: not analyzed'}`
                                 : "Load audio to create an editable 120 BPM timing scaffold"
                             }
                         </p>
@@ -506,11 +508,13 @@ export function StoryboardTimeline() {
                                     <div className="px-4 py-2.5 bg-black/40 border-b border-white/5 flex items-center justify-between shrink-0 font-mono">
                                         <div className="flex items-center gap-1.5">
                                             <span className="text-[10px] font-black text-green-400 bg-green-500/10 px-2 py-0.5 rounded border border-green-500/20">
-                                                BAR {slot.startBar + 1}-{slot.startBar + slot.durationBars}
+                                                {storyboardProject.source === 'screenwriter'
+                                                    ? `${slot.startSeconds ?? 0}s · ${slot.durationSeconds ?? 8}s`
+                                                    : `BAR ${slot.startBar + 1}-${slot.startBar + slot.durationBars}`}
                                             </span>
                                         </div>
                                         <span className="text-[9px] text-neutral-500 uppercase tracking-widest">
-                                            Segment {index + 1}
+                                            {slot.sourceSceneNumber ? `Scene ${slot.sourceSceneNumber}` : `Segment ${index + 1}`}
                                         </span>
                                     </div>
 
@@ -567,6 +571,12 @@ export function StoryboardTimeline() {
                                     {/* Prompts & Generation parameters */}
                                     <div className="p-4 bg-[#0e1117]/80 border-t border-white/5 space-y-3 shrink-0 flex flex-col justify-between">
                                         <div className="space-y-2">
+                                            {(slot.heading || slot.cameraAngle) && (
+                                                <div className="space-y-1 rounded-lg border border-white/5 bg-black/25 px-3 py-2">
+                                                    {slot.heading && <p className="truncate text-[10px] font-bold text-white">{slot.heading}</p>}
+                                                    {slot.cameraAngle && <p className="line-clamp-2 text-[9px] text-neutral-500">Camera: {slot.cameraAngle}</p>}
+                                                </div>
+                                            )}
                                             <textarea
                                                 className="w-full bg-black/40 border border-white/5 rounded-xl px-3 py-2 text-[11px] text-gray-200 placeholder-neutral-600 focus:outline-none focus:border-green-500/40 resize-none h-16 transition-colors"
                                                 placeholder="Describe scene visual prompt details..."

@@ -19,44 +19,52 @@ vi.mock('motion/react', () => ({
     AnimatePresence: ({ children }: React.PropsWithChildren) => <>{children}</>,
 }));
 
-let mockStore: Record<string, unknown> = {};
-vi.mock('@/core/store', () => ({ useStore: (s: (st: Record<string, unknown>) => unknown) => s(mockStore) }));
-vi.mock('zustand/react/shallow', () => ({ useShallow: (fn: unknown) => fn }));
-vi.mock('@/core/context/ToastContext', () => ({ useToast: () => ({ success: vi.fn(), error: vi.fn() }) }));
 vi.mock('@/lib/utils', () => ({ cn: (...args: string[]) => args.filter(Boolean).join(' ') }));
 
 import DesktopDashboard from './DesktopDashboard';
 import { SettingCard } from './components/SettingCard';
 
 describe('DesktopDashboard', () => {
-    beforeEach(() => { mockStore = { userProfile: { id: 'u1' }, currentProjectId: 'p1' }; });
+    beforeEach(() => {
+        delete (window as unknown as { electronAPI?: unknown }).electronAPI;
+    });
 
     it('renders the title', () => {
         render(<DesktopDashboard />);
         expect(screen.getByText('DESKTOP INTEGRATION')).toBeInTheDocument();
     });
 
-    it('renders all 5 setting cards', () => {
+    it('renders capabilities without pretending unavailable settings are enabled', () => {
         render(<DesktopDashboard />);
         expect(screen.getByText('Run on System Startup')).toBeInTheDocument();
         expect(screen.getByText('Hardware Acceleration')).toBeInTheDocument();
         expect(screen.getByText('Offline Vault Synchronization')).toBeInTheDocument();
-        expect(screen.getByText('Global Command Shortcuts')).toBeInTheDocument();
+        expect(screen.getByText('Computer Control Kill Switch')).toBeInTheDocument();
         expect(screen.getByText('Background Agent Daemon')).toBeInTheDocument();
+        expect(screen.getAllByText('Not available')).toHaveLength(5);
     });
 
-    it('shows daemon status', () => {
+    it('reports a web session instead of a fake active Electron daemon', () => {
         render(<DesktopDashboard />);
-        expect(screen.getByText('ELECTRON DAEMON ACTIVE')).toBeInTheDocument();
+        expect(screen.getByText('WEB SESSION — DESKTOP CONTROLS UNAVAILABLE')).toBeInTheDocument();
+        expect(screen.queryByText('ELECTRON DAEMON ACTIVE')).not.toBeInTheDocument();
+        expect(screen.getByText('Not exposed')).toBeInTheDocument();
+    });
+
+    it('reports only capabilities that the Electron preload proves are present', () => {
+        (window as unknown as { electronAPI?: unknown }).electronAPI = {};
+        render(<DesktopDashboard />);
+        expect(screen.getByText('ELECTRON DESKTOP CONNECTED')).toBeInTheDocument();
+        expect(screen.getByText('Runtime managed')).toBeInTheDocument();
+        expect(screen.getByText('Active')).toBeInTheDocument();
     });
 });
 
 describe('SettingCard', () => {
-    it('renders enabled state', () => {
-        const onClick = vi.fn();
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { container } = render(<SettingCard icon={Zap} title="Test" description="Desc" enabled={true} onClick={onClick} />);
+    it('renders an explicit capability status', () => {
+        render(<SettingCard icon={Zap} title="Test" description="Desc" status="managed" />);
         expect(screen.getByText('Test')).toBeInTheDocument();
         expect(screen.getByText('Desc')).toBeInTheDocument();
+        expect(screen.getByText('Runtime managed')).toBeInTheDocument();
     });
 });

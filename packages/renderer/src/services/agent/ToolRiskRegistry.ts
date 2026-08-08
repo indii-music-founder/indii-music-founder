@@ -241,7 +241,7 @@ export const TOOL_RISK_REGISTRY: Record<string, ToolRiskMetadata> = {
 
     // Commerce & Web3 (destructive — financial/blockchain impact)
     create_artifact_drop: { riskTier: 'destructive', permissionTier: 'plugin', requiresApproval: true, description: 'Destructive operation requiring explicit user approval' },
-    deploy_storefront_preview: { riskTier: 'destructive', permissionTier: 'plugin', requiresApproval: true, description: 'Destructive operation requiring explicit user approval' },
+    deploy_storefront_preview: { riskTier: 'destructive', permissionTier: 'plugin', requiresApproval: true, description: 'Creates persistent Stripe catalog and checkout-preview objects; requires explicit approval' },
     generate_smart_contract: { riskTier: 'destructive', permissionTier: 'plugin', requiresApproval: true, description: 'Destructive operation requiring explicit user approval' },
     trace_blockchain_royalty: { riskTier: 'destructive', permissionTier: 'plugin', requiresApproval: true, description: 'Destructive operation requiring explicit user approval' },
 

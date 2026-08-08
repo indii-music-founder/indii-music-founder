@@ -5,7 +5,7 @@ import { Plus, Search, Trash2, FileText, ImageIcon, Image as ImageIconRegular, C
 import { cn } from '@/lib/utils';
 
 export default function NotesModule() {
-    const { notes, selectedNoteId, addNote, updateNote, deleteNote, setSelectedNote, user } = useStore(
+    const { notes, selectedNoteId, addNote, updateNote, deleteNote, setSelectedNote, user, notesLoading, notesSyncError } = useStore(
         useShallow(state => ({
             notes: state.notes,
             selectedNoteId: state.selectedNoteId,
@@ -14,6 +14,8 @@ export default function NotesModule() {
             deleteNote: state.deleteNote,
             setSelectedNote: state.setSelectedNote,
             user: state.user,
+            notesLoading: state.notesLoading,
+            notesSyncError: state.notesSyncError,
         }))
     );
 
@@ -25,10 +27,21 @@ export default function NotesModule() {
     );
 
     const activeNote = notes.find(n => n.id === selectedNoteId);
-    const syncStatus = user
+    const syncStatus = notesLoading
         ? {
             icon: Cloud,
-            label: 'Saved locally and synced to your workspace',
+            label: 'Checking cloud notes…',
+            tone: 'border-blue-500/20 bg-blue-500/10 text-blue-300',
+        }
+        : user && notesSyncError
+            ? {
+                icon: HardDrive,
+                label: notesSyncError,
+                tone: 'border-red-500/20 bg-red-500/10 text-red-300',
+            }
+            : user ? {
+            icon: Cloud,
+            label: 'Cloud sync enabled; recent changes may still be pending',
             tone: 'border-emerald-500/20 bg-emerald-500/10 text-emerald-300',
         }
         : {

@@ -10,7 +10,7 @@ interface TrackSelectorProps {
 }
 
 const LABEL_COLORS: Record<string, string> = {
-    'Breakout!': 'text-yellow-400 bg-yellow-400/10 border-yellow-400/30',
+    'Strong Signal': 'text-yellow-400 bg-yellow-400/10 border-yellow-400/30',
     'High':      'text-emerald-400 bg-emerald-400/10 border-emerald-400/30',
     'Moderate':  'text-blue-400 bg-blue-400/10 border-blue-400/30',
     'Low':       'text-slate-400 bg-slate-400/10 border-slate-400/30',
@@ -46,7 +46,7 @@ export const TrackSelector: React.FC<TrackSelectorProps> = ({ reports, selectedT
                             </div>
                             <div className="flex flex-col items-end gap-1 shrink-0">
                                 <span className={`text-xs font-bold border rounded-full px-2 py-0.5 ${labelColor}`}>
-                                    {report.viralScore.label === 'Breakout!' && <Zap size={9} className="inline mr-0.5" />}
+                                    {report.viralScore.label === 'Strong Signal' && <Zap size={9} className="inline mr-0.5" />}
                                     {report.viralScore.score}
                                 </span>
                                 <span className="text-xs text-slate-500">{report.viralScore.label}</span>

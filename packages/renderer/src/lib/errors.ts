@@ -120,11 +120,23 @@ export async function retryAsync<T>(
             );
             logger.warn(`[retry] Attempt ${attempt + 1}/${maxRetries} failed, retrying in ${Math.round(delay)}ms`);
             await new Promise<void>((resolve, reject) => {
-                const timeout = setTimeout(resolve, delay);
-                signal?.addEventListener('abort', () => {
+                let settled = false;
+                const finish = (callback: () => void) => {
+                    if (settled) return;
+                    settled = true;
                     clearTimeout(timeout);
+                    signal?.removeEventListener('abort', onAbort);
+                    callback();
+                };
+                const onAbort = () => finish(() => {
                     reject(new AppException(AppErrorCode.CANCELLED, 'Operation cancelled during retry'));
-                }, { once: true });
+                });
+                const timeout = setTimeout(() => finish(resolve), delay);
+                if (signal?.aborted) {
+                    onAbort();
+                } else {
+                    signal?.addEventListener('abort', onAbort, { once: true });
+                }
             });
         }
     }

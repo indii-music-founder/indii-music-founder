@@ -90,6 +90,12 @@ export const FinanceTools = {
     }),
 
     forecast_revenue: wrapTool('forecast_revenue', async (args: { currentStreams: number, platform: string, rightsHolderSplit: number }) => {
+        if (!Number.isFinite(args.currentStreams) || args.currentStreams < 0) {
+            return toolError('Monthly streams must be a non-negative number.', 'INVALID_STREAM_COUNT');
+        }
+        if (!Number.isFinite(args.rightsHolderSplit) || args.rightsHolderSplit < 0 || args.rightsHolderSplit > 100) {
+            return toolError('Rights-holder split must be between 0 and 100 percent.', 'INVALID_RIGHTS_SPLIT');
+        }
         // Industry average payout rates (approximate)
         const PAYOUT_RATES: Record<string, number> = {
             'Spotify': 0.004,
@@ -135,13 +141,24 @@ export const FinanceTools = {
         return toolSuccess({
             platform: args.platform,
             rate_per_stream: rate,
+            estimateType: 'rough_estimate',
+            currency: 'USD',
+            confidenceLevel: 'low',
+            confidenceSource: 'No distributor statement history, territory mix, subscription mix, fee schedule, or variance data was supplied.',
+            assumptions: [
+                `${args.currentStreams} streams repeat every month with no growth or decline.`,
+                `Illustrative ${args.platform} rate of $${rate.toFixed(4)} per stream remains constant.`,
+                `Rights-holder share is ${args.rightsHolderSplit}%.`,
+                'The manager-fee comparison is hypothetical at 20%; it is not verified money saved.',
+                'Taxes, distributor fees, currency conversion, territory mix, and recoupment are excluded.',
+            ],
             projections: {
                 gross: { month_1: projectionsCents.month_1 / 100, month_6: projectionsCents.month_6 / 100, year_1: projectionsCents.year_1 / 100 },
                 manager_fee_saved: managerFeeSaved,
                 net_to_rights_holder: { month_1: netRevenueCents.month_1 / 100, month_6: netRevenueCents.month_6 / 100, year_1: netRevenueCents.year_1 / 100 }
             },
-            message: `Revenue forecast generated for ${args.currentStreams} streams on ${args.platform}. Estimated annual savings on manager fees: $${managerFeeSaved.year_1.toFixed(2)}.`
-        }, `Revenue forecast generated.`);
+            message: `Rough revenue estimate calculated for ${args.currentStreams} monthly streams on ${args.platform}. Hypothetical annual 20% manager-fee comparison: $${managerFeeSaved.year_1.toFixed(2)}.`
+        }, `Rough revenue estimate calculated from static assumptions.`);
     }),
 
     generate_schedule_c: wrapTool('generate_schedule_c', async (args: { taxYear: number; totalIncome: number; totalExpenses: number; ownerName: string }) => {
@@ -283,8 +300,17 @@ export const FinanceTools = {
             currentDailyStreams: args.dailyStreams,
             predictedMonthlyStreams,
             estimatedMonthlyPayout: estimatedMonthlyPayout,
-            confidence: 0.88
-        }, `Daily royalty prediction for ${args.trackId} on ${args.platform}: Based on ${args.dailyStreams} daily streams, estimated monthly payout is $${estimatedMonthlyPayout.toFixed(2)}.`);
+            estimateType: 'rough_estimate',
+            currency: 'USD',
+            ratePerStream: RATE,
+            confidenceLevel: 'low',
+            confidenceSource: 'Static illustrative payout rate with no historical distributor statements or platform/territory mix.',
+            assumptions: [
+                `${args.dailyStreams} streams repeat for 30 consecutive days.`,
+                `Illustrative rate of $${RATE.toFixed(4)} per stream remains constant.`,
+                'Distributor fees, rights splits, taxes, currency, territory, and subscription mix are excluded.',
+            ],
+        }, `Rough royalty estimate for ${args.trackId} on ${args.platform}: ${args.dailyStreams} repeated daily streams imply about $${estimatedMonthlyPayout.toFixed(2)} before fees, splits, and taxes.`);
     }),
 
     convert_multi_currency: wrapTool('convert_multi_currency', async (args: { amount: number; sourceCurrency: string; targetCurrency: string }) => {

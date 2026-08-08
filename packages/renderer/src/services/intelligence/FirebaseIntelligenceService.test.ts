@@ -307,6 +307,30 @@ describe('FirebaseIntelligenceService', () => {
         expect(text).toBe('Stream');
     });
 
+    it('keeps the configured timeout active while opening the backend stream', async () => {
+        vi.useFakeTimers();
+        vi.mocked(fetch).mockImplementationOnce((_url, init) => new Promise((_resolve, reject) => {
+            const signal = init?.signal;
+            signal?.addEventListener('abort', () => {
+                reject(new DOMException('Aborted', 'AbortError'));
+            }, { once: true });
+        }));
+
+        const pending = service.rawGenerateContentStream(
+            'Timeout stream',
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            { timeout: 25 }
+        );
+        const assertion = expect(pending).rejects.toThrow('AI Request timed out');
+        await vi.advanceTimersByTimeAsync(30);
+
+        await assertion;
+        vi.useRealTimers();
+    });
+
     it('should not fall back if bootstrap fails (Resilience)', async () => {
         const { fetchAndActivate } = await import('firebase/remote-config');
         vi.mocked(fetchAndActivate).mockRejectedValueOnce(new Error('firebase-app-check-token-invalid'));

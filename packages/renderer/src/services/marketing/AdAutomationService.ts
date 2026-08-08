@@ -196,8 +196,8 @@ export class AdAutomationService {
     }
 
     /**
-     * Wires the ViralScoreService CPS kill-switch to protect algorithmic momentum.
-     * Pauses the campaign immediately if save rate drops below the critical 5% threshold.
+     * Evaluates a heuristic save-rate threshold for human review. This method
+     * never mutates a provider campaign from the heuristic alone.
      */
     async evaluateCampaignHealth(campaignId: string, currentSaveRate: number): Promise<void> {
         logger.info(`[AdAutomation] Evaluating campaign health for ${campaignId} with Save Rate: ${(currentSaveRate * 100).toFixed(1)}%`);
@@ -206,9 +206,8 @@ export class AdAutomationService {
         const { viralScoreService } = await import('@/services/analytics/ViralScoreService');
         const health = viralScoreService.evaluateSaveRateHealth(currentSaveRate);
 
-        if (health.action === 'pause_campaign') {
-            logger.warn(`[AdAutomation] CRITICAL KILL-SWITCH TRIGGERED. Reason: ${health.message}`);
-            await this.pauseCampaign(campaignId);
+        if (health.action === 'review_pause') {
+            logger.warn(`[AdAutomation] Campaign pause review recommended. No provider mutation was made. Reason: ${health.message}`);
         } else if (health.action === 'refresh_creatives') {
             logger.info(`[AdAutomation] Campaign Warning: ${health.message}. Action required: Refresh creatives.`);
         } else {

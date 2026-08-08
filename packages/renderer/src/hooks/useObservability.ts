@@ -34,7 +34,7 @@ export const useObservability = () => {
       });
     };
 
-    rum.onMetricsReady(handleMetricsReady);
+    const unsubscribeMetrics = rum.onMetricsReady(handleMetricsReady);
 
     // Report metrics on page visibility change
     const handleVisibilityChange = () => {
@@ -46,6 +46,7 @@ export const useObservability = () => {
     document.addEventListener('visibilitychange', handleVisibilityChange);
 
     return () => {
+      unsubscribeMetrics();
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, []);

@@ -46,11 +46,28 @@ export class AnalyticsEngine {
 
     private _generateForecast(track: TrackAnalytics, metrics: { velocity: number }, viralScore: number): GrowthForecast {
         const horizonDays = 14;
+        if (track.history.length < 7) {
+            return {
+                available: false,
+                days: horizonDays,
+                projected: [],
+                peakDay: '',
+                peakStreams: 0,
+                growthMultiplier: 0,
+                confidence: 'unavailable',
+                method: 'insufficient_history',
+                providerVerified: false,
+                sampleDays: track.history.length,
+                assumptions: [],
+                limitations: ['At least seven daily observations are required for an illustrative estimate.'],
+            };
+        }
         const lastDay = track.history[track.history.length - 1];
-        const baseStreams = lastDay?.streams ?? 1000;
+        const baseStreams = lastDay!.streams;
 
-        // Growth rate driven by viral score (higher score = faster growth)
-        const dailyGrowthRate = 1 + (viralScore / 100) * (metrics.velocity - 1) * 0.8;
+        // Bound noisy day-over-day velocity before combining it with the rubric.
+        const boundedVelocity = Math.min(1.25, Math.max(0.75, metrics.velocity));
+        const dailyGrowthRate = 1 + (viralScore / 100) * (boundedVelocity - 1) * 0.8;
 
         const projected: GrowthForecast['projected'] = [];
         let peak = baseStreams;
@@ -79,11 +96,25 @@ export class AnalyticsEngine {
         const growthMultiplier = baseStreams > 0 ? +(peak / baseStreams).toFixed(1) : 1;
 
         return {
+            available: true,
             days: horizonDays,
             projected,
             peakDay: peakDay || (projected[projected.length - 1]?.date ?? ''),
             peakStreams: peak,
             growthMultiplier,
+            confidence: 'low',
+            method: 'bounded_recent_velocity_heuristic',
+            providerVerified: false,
+            sampleDays: track.history.length,
+            assumptions: [
+                'Recent day-over-day velocity is bounded between 0.75x and 1.25x.',
+                'The weighted engagement heuristic scales the bounded velocity.',
+                'A fixed saturation curve reduces growth over the 14-day horizon.',
+            ],
+            limitations: [
+                'Not a Spotify, Apple Music, TikTok, or distributor forecast.',
+                'Does not model release events, playlist adds, paid media, seasonality, or provider algorithm changes.',
+            ],
         };
     }
 }

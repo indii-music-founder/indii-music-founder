@@ -1849,3 +1849,69 @@ committing.
 - BUG: The pre-save builder constructed a branded URL from local form state and exposed Copy/Share immediately, even though the hostname did not resolve and both campaign and lead persistence were commented out.
 - FIX: Make the backend-persisted campaign ID the sole capability that unlocks the hosted URL, QR, Copy, and Share. The public fan path now writes a consented deterministic lead and awaits its conversion outbox record before redirecting to the configured DSP.
 - PREVENTION: Any UI that exposes a shareable, downloadable, payable, or externally actionable artifact must receive its identifier from the durable backend operation that created the artifact. A local timestamp, slug, placeholder QR, log line, or optimistic state is never publication evidence.
+
+## 2026-08-08 — A broad transitive override can satisfy an audit while breaking the consumer's runtime API
+
+**SEVERITY:** High (the admin dashboard lint command crashed before analyzing a single file)
+
+- FILES: root `package.json`, `package-lock.json`, `packages/admin-dashboard/package.json`
+- BUG: A root-wide `brace-expansion@2.1.4` override was forced underneath `minimatch@10.2.5`, whose declared contract requires the newer `brace-expansion` API. The dependency audit looked safer, but ESLint crashed with `TypeError: brace_expansion_1.expand is not a function` before linting source.
+- FIX: Keep `2.1.4` for compatible legacy consumers while adding a selector-specific nested override that gives `minimatch@10.2.5` `brace-expansion@5.0.9`. Re-resolve the lockfile and require `npm ls`, `npm audit`, the real consumer command, and `npm run check:dep-drift` to pass together.
+- PREVENTION: A security override is not accepted merely because installation and audit succeed. For every overridden transitive package, inspect each direct consumer's declared range and run at least one real command that loads the consumer. Use package-selector or parent-scoped overrides when different consumer majors require incompatible APIs.
+
+## 2026-08-08 — A failed preview deploy must not unlock E2E or production with a stale URL
+
+**SEVERITY:** High (a quota-blocked Firebase upload could be presented as a usable staging deployment)
+
+- FILE: `.github/workflows/deploy.yml`
+- BUG: Firebase Hosting can return HTTP 429 before creating the requested preview release. Treating that as a warning, supplying a remembered channel URL, or publishing the URL without a reachability check converts deployment failure into false success and can run acceptance tests against stale code.
+- FIX: The staging job now exits nonzero on quota/storage errors, publishes `staging_url` only after the deploy succeeds and the URL returns HTTP 200, and leaves E2E plus production deployment skipped when staging has no fresh evidence.
+- PREVENTION: Downstream jobs may consume a preview URL only when the current SHA's upload succeeded and the URL was probed. Billing, quota, expired channels, and provider errors are deployment failures—not acceptable fallbacks to an older release.
+
+## 2026-08-08 — Payment cannot create legal authority that was never accepted
+
+**SEVERITY:** Critical (a successful charge was able to create an underspecified active sync license)
+
+- BUG: The license webhook trusted client-supplied Stripe metadata and created an active license without a versioned accepted agreement, complete rights scope, or verified payout destination.
+- FIX: Keep checkout disabled until a server-owned agreement exists. On fulfillment, require and verify its immutable ID/hash, complete terms, acceptance, payer identity, connected-account consent, and minimum paid amount; derive the transfer and license record only from that agreement.
+- PREVENTION: Payment metadata may locate an authoritative record, but it is never the authority itself. Legal status changes must be downstream of immutable accepted terms and server verification.
+
+## 2026-08-08 — Cached analytics are not connection or live-sync evidence
+
+**SEVERITY:** High (stale data made disconnected providers appear healthy)
+
+- BUG: The browser inferred provider connection from token/cache document existence and could display cached numbers as a working live integration.
+- FIX: Keep raw tokens server-only and expose sanitized authorization and live-sync states. Use cache only as an explicitly stale fallback after a live call fails with a still-valid credential.
+- PREVENTION: Model `authorized`, `liveSyncOk`, and `cacheOnly` separately. A cached response, old token document, or previous success can never prove current connectivity.
+
+## 2026-08-08 — Heuristics may advise review but cannot authorize provider mutations
+
+**SEVERITY:** High (unverified engagement formulas could pause real campaigns)
+
+- BUG: Invented forecast defaults and low-context viral/ad-health scores were labeled predictive and could trigger automatic paid-campaign actions.
+- FIX: Return unavailable forecasts without sufficient history, label heuristic scores with low confidence and assumptions, and route weak signals to human review instead of provider mutation.
+- PREVENTION: Automation that spends money, pauses distribution, changes access, or touches an external provider requires verified provider evidence and an explicit policy threshold. A UI heuristic is advisory only.
+
+## 2026-08-08 — A queue is not durable unless its replay path executes the original mutation
+
+**SEVERITY:** Critical (records were dropped while the UI promised future synchronization)
+
+- BUG: Generic browser queues stored non-replayable payloads, assigned unauthenticated records to invented owners, serialized server-only sentinels, capped records by silently deleting the oldest, or emitted an event without any mutation consumer.
+- FIX: Remove the false queues and report failed persistence explicitly. Preserve legacy bytes for recovery instead of deleting them during cleanup.
+- PREVENTION: Offline-success copy requires an authenticated owner, a serializable canonical command, an idempotency key, a real replay consumer, bounded retry with a recoverable dead-letter state, and a test that observes the durable backend mutation.
+
+## 2026-08-08 — Browser state cannot confer security or external authority
+
+**SEVERITY:** Critical (animations and localStorage were presented as authentication, publication, or deployment)
+
+- BUG: A timed fingerprint animation authorized an investor portal; cached wallet text appeared connected; local EPK/token-gate/smart-contract state was described as hosted, verified, or deployed.
+- FIX: Remove simulated authorization, verify wallet state against the provider, restrict unimplemented products to explicit unavailable states, and label persisted contract material `draft_unverified` with immutable rules.
+- PREVENTION: Authentication, publication, payment, deployment, and ownership claims must be downstream of a verifiable external receipt. A timer, animation, local slug, localStorage value, or optimistic component state is never evidence.
+
+## 2026-08-08 — Lazy initialization must honor cleanup that happens before initialization resolves
+
+**SEVERITY:** High (listeners attached after their owning component had unmounted)
+
+- BUG: Several services attached anonymous abort/browser/metrics/message listeners, and lazy push initialization could attach after the caller had already unsubscribed.
+- FIX: Use stable named handlers, settlement cleanup, singleton initialization where appropriate, and a cancellation flag across lazy initialization boundaries.
+- PREVENTION: Every listener registration needs an owner and a tested teardown path. Tests must include cleanup-before-resolution, timeout, success, and failure orderings—not only the normal settled path.

@@ -246,7 +246,7 @@ vi.mock('firebase/auth', () => ({
 
 // Mock the @/core/store module to provide a valid userProfile with ID for tests
 vi.mock('@/core/store', () => {
-    const mockState = {
+    const mockState: Record<string, any> = {
         userProfile: { id: 'test-uid', email: 'test@test.com', displayName: 'Test User' },
         currentOrganizationId: 'org-123',
         organizations: [{ id: 'org-123', plan: 'enterprise' }],
@@ -672,7 +672,8 @@ vi.mock('@/modules/creative/video/store/videoEditorStore', async (importOriginal
         isPlaying: false,
         selectedClipId: null,
         selectedTrackId: null,
-        viewMode: 'timeline' as const,
+        viewMode: 'director',
+        storyboardProject: null,
         setProject: vi.fn(),
         addClip: vi.fn(),
         updateClip: vi.fn(),
@@ -684,7 +685,12 @@ vi.mock('@/modules/creative/video/store/videoEditorStore', async (importOriginal
         setIsPlaying: vi.fn(),
         setSelectedClipId: vi.fn(),
         setSelectedTrackId: vi.fn(),
-        setViewMode: vi.fn(),
+        setViewMode: vi.fn((viewMode: string) => { mockState.viewMode = viewMode; }),
+        setStoryboardProject: vi.fn((storyboardProject: unknown) => { mockState.storyboardProject = storyboardProject; }),
+        receiveStoryboardHandoff: vi.fn((handoff: Parameters<typeof actual.compileScreenwriterStoryboardHandoff>[0]) => {
+            mockState.storyboardProject = actual.compileScreenwriterStoryboardHandoff(handoff);
+            mockState.viewMode = 'storyboard';
+        }),
         setIsPopoutActive: vi.fn(),
         exportProject: vi.fn()
     };

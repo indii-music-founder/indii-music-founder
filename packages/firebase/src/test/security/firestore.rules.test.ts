@@ -52,8 +52,8 @@ const ALICE_UID = 'alice-uid-001';
 const BOB_UID = 'bob-uid-002';
 const ANON_UID = 'anon-uid-003';
 const ORG_ID = 'org-test-001';
-const EMULATOR_HOST = 'localhost';
-const EMULATOR_PORT = 8080;
+const EMULATOR_HOST = process.env.FIRESTORE_EMULATOR_TEST_HOST ?? 'localhost';
+const EMULATOR_PORT = Number(process.env.FIRESTORE_EMULATOR_TEST_PORT ?? 8080);
 
 // Token that simulates an anonymous Firebase session
 // `as const` matters: without it `sign_in_provider` widens to `string`, which is
@@ -550,10 +550,10 @@ describe('Firestore Security Rules', () => {
             await assertFails(setDoc(doc(db, 'licenses', 'lic-anon'), { userId: ANON_UID }));
         });
 
-        it('verified user: create own license allowed', async () => {
+        it('verified user: cannot forge an active license', async () => {
             if (requireEmulator()) return;
             const db = verifiedCtx(ALICE_UID).firestore();
-            await assertSucceeds(setDoc(doc(db, 'licenses', 'lic-new'), { userId: ALICE_UID, title: 'New License' }));
+            await assertFails(setDoc(doc(db, 'licenses', 'lic-new'), { userId: ALICE_UID, title: 'New License', status: 'active' }));
         });
 
         it('verified user: cannot create license for another user', async () => {
@@ -562,10 +562,12 @@ describe('Firestore Security Rules', () => {
             await assertFails(setDoc(doc(db, 'licenses', 'lic-fake'), { userId: BOB_UID, title: 'Fake License' }));
         });
 
-        it('owner cannot transfer license ownership during update', async () => {
+        it('owner cannot mutate a server-issued license', async () => {
             if (requireEmulator()) return;
             const db = verifiedCtx(ALICE_UID).firestore();
             await assertFails(updateDoc(doc(db, 'licenses', 'lic-1'), { userId: BOB_UID }));
+            await assertFails(updateDoc(doc(db, 'licenses', 'lic-1'), { status: 'active', usage: 'Anything' }));
+            await assertFails(deleteDoc(doc(db, 'licenses', 'lic-1')));
         });
 
         it('verified user cannot update or delete another user\'s license', async () => {
@@ -573,6 +575,54 @@ describe('Firestore Security Rules', () => {
             const db = verifiedCtx(BOB_UID).firestore();
             await assertFails(updateDoc(doc(db, 'licenses', 'lic-1'), { title: 'Hijacked' }));
             await assertFails(deleteDoc(doc(db, 'licenses', 'lic-1')));
+        });
+    });
+
+    describe('license_requests/{requestId}', () => {
+        const validRequest = {
+            userId: ALICE_UID,
+            title: 'Midnight Blaze',
+            artist: 'The Flames',
+            usage: 'Online advertising',
+            status: 'checking',
+            requestedAt: new Date(),
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        };
+
+        beforeEach(async () => {
+            if (requireEmulator()) return;
+            await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                await setDoc(doc(ctx.firestore(), 'license_requests', 'request-1'), validRequest);
+            });
+        });
+
+        it('allows an owner to create and read a bounded request', async () => {
+            if (requireEmulator()) return;
+            const db = verifiedCtx(ALICE_UID).firestore();
+            await assertSucceeds(setDoc(doc(db, 'license_requests', 'request-new'), validRequest));
+            await assertSucceeds(getDoc(doc(db, 'license_requests', 'request-1')));
+        });
+
+        it('rejects cross-owner access, forged ownership, and unbounded text', async () => {
+            if (requireEmulator()) return;
+            const alice = verifiedCtx(ALICE_UID).firestore();
+            const bob = verifiedCtx(BOB_UID).firestore();
+            await assertFails(getDoc(doc(bob, 'license_requests', 'request-1')));
+            await assertFails(setDoc(doc(alice, 'license_requests', 'forged'), { ...validRequest, userId: BOB_UID }));
+            await assertFails(setDoc(doc(alice, 'license_requests', 'oversized'), { ...validRequest, notes: 'x'.repeat(5001) }));
+        });
+
+        it('allows only owner negotiation updates and keeps identity immutable', async () => {
+            if (requireEmulator()) return;
+            const alice = verifiedCtx(ALICE_UID).firestore();
+            await assertSucceeds(updateDoc(doc(alice, 'license_requests', 'request-1'), {
+                status: 'negotiating',
+                updatedAt: new Date(),
+            }));
+            await assertFails(updateDoc(doc(alice, 'license_requests', 'request-1'), { status: 'approved' }));
+            await assertFails(updateDoc(doc(alice, 'license_requests', 'request-1'), { userId: BOB_UID }));
+            await assertFails(deleteDoc(doc(alice, 'license_requests', 'request-1')));
         });
     });
 
@@ -1690,7 +1740,6 @@ describe('Firestore Security Rules', () => {
             ['print_jobs', 'userId'],
             ['promoter_pitches', 'userId'],
             ['scheduledPosts', 'userId'],
-            ['smart_contracts', 'userId'],
             ['vinyl_campaigns', 'userId'],
             ['history', 'userId'],
             ['design_versions', 'userId'],
@@ -1698,7 +1747,6 @@ describe('Firestore Security Rules', () => {
             ['knowledge', 'userId'],
             ['publishing_registrations', 'userId'],
             ['notification_tokens', 'userId'],
-            ['label_deals', 'userId'],
             ['ddexReleases', 'userId'],
             ['proprietaryIngestionReleases', 'userId'],
             ['projects', 'userId'],
@@ -1723,7 +1771,6 @@ describe('Firestore Security Rules', () => {
             ['career_memory_archive', 'userId'],
             ['video_releases', 'userId'],
             ['clearance_docs', 'userId'],
-            ['licenses', 'userId'],
             ['file_nodes', 'userId'],
             ['deployments', 'userId'],
             ['tax_profiles', 'userId'],
@@ -2355,6 +2402,232 @@ describe('Firestore Security Rules', () => {
             const ref = doc(verifiedCtx(ALICE_UID).firestore(), 'limitedDrops', 'drop-1');
             await assertFails(updateDoc(ref, { countdownMessage: 'Changed' }));
             await assertFails(deleteDoc(ref));
+        });
+    });
+
+    describe('label_deals/{dealId}', () => {
+        const deal = {
+            label: 'Indie Records LLC',
+            advanceAmount: 50000,
+            recoupedAmount: 12500.25,
+            dealDate: '2026-08-08',
+            notes: 'Artist-entered tracking data',
+            userId: ALICE_UID,
+            createdAt: serverTimestamp(),
+        };
+
+        it('allows the owner to create the live component schema and update only recouped amount', async () => {
+            if (requireEmulator()) return;
+            const ownerRef = doc(verifiedCtx(ALICE_UID).firestore(), 'label_deals', 'deal-1');
+            await assertSucceeds(setDoc(ownerRef, deal));
+            await assertSucceeds(getDoc(ownerRef));
+            await assertSucceeds(updateDoc(ownerRef, { recoupedAmount: 15000.5 }));
+        });
+
+        it('denies cross-owner reads, alternate schemas, polluted writes, and authority changes', async () => {
+            if (requireEmulator()) return;
+            const ownerDb = verifiedCtx(ALICE_UID).firestore();
+            await assertFails(setDoc(doc(ownerDb, 'label_deals', 'legacy-shape'), {
+                labelName: 'Legacy writer',
+                currentRecouped: 100,
+                recoupmentThreshold: 1000,
+                userId: ALICE_UID,
+                createdAt: serverTimestamp(),
+            }));
+            await assertFails(setDoc(doc(ownerDb, 'label_deals', 'polluted'), {
+                ...deal,
+                payoutApproved: true,
+            }));
+            await assertFails(setDoc(doc(ownerDb, 'label_deals', 'wrong-owner'), {
+                ...deal,
+                userId: BOB_UID,
+            }));
+
+            await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                await setDoc(doc(ctx.firestore(), 'label_deals', 'deal-1'), {
+                    ...deal,
+                    createdAt: Timestamp.now(),
+                });
+            });
+            await assertFails(getDoc(doc(verifiedCtx(BOB_UID).firestore(), 'label_deals', 'deal-1')));
+            await assertFails(updateDoc(doc(ownerDb, 'label_deals', 'deal-1'), { advanceAmount: 1 }));
+            await assertFails(updateDoc(doc(ownerDb, 'label_deals', 'deal-1'), { userId: BOB_UID }));
+        });
+
+        it('denies client transaction records until a reconciled writer exists', async () => {
+            if (requireEmulator()) return;
+            await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                await setDoc(doc(ctx.firestore(), 'label_deals', 'deal-1'), {
+                    ...deal,
+                    createdAt: Timestamp.now(),
+                });
+            });
+            await assertFails(setDoc(
+                doc(verifiedCtx(ALICE_UID).firestore(), 'label_deals', 'deal-1', 'transactions', 'tx-1'),
+                { amount: 100, source: 'streaming' }
+            ));
+        });
+    });
+
+    describe('smart_contracts/{contractId}', () => {
+        const draft = {
+            userId: ALICE_UID,
+            isrc: 'US-IND-26-00001',
+            tokenName: 'Night Shift Rights',
+            tokenSymbol: 'NSR',
+            tokenType: 'ERC-1155',
+            status: 'draft_unverified',
+            createdAt: serverTimestamp(),
+            payees: [
+                { walletAddress: `0x${'a'.repeat(40)}`, percentage: 60, role: 'Artist' },
+                { walletAddress: `0x${'b'.repeat(40)}`, percentage: 40, role: 'Producer' },
+            ],
+        };
+
+        it('allows only a verified owner to save and delete a schema-bounded unverified draft', async () => {
+            if (requireEmulator()) return;
+            const ownerRef = doc(verifiedCtx(ALICE_UID).firestore(), 'smart_contracts', 'draft-1');
+            await assertSucceeds(setDoc(ownerRef, draft));
+            await assertSucceeds(getDoc(ownerRef));
+            await assertFails(getDoc(doc(verifiedCtx(BOB_UID).firestore(), 'smart_contracts', 'draft-1')));
+            await assertSucceeds(deleteDoc(ownerRef));
+        });
+
+        it('rejects forged deployment state, bad splits, polluted data, and all client updates', async () => {
+            if (requireEmulator()) return;
+            const ownerDb = verifiedCtx(ALICE_UID).firestore();
+            await assertFails(setDoc(doc(ownerDb, 'smart_contracts', 'deployed'), {
+                ...draft,
+                status: 'deployed',
+                contractAddress: `0x${'c'.repeat(40)}`,
+            }));
+            await assertFails(setDoc(doc(ownerDb, 'smart_contracts', 'bad-split'), {
+                ...draft,
+                payees: [
+                    { ...draft.payees[0], percentage: 99 },
+                    { ...draft.payees[1], percentage: 99 },
+                ],
+            }));
+            await assertFails(setDoc(doc(ownerDb, 'smart_contracts', 'wrong-owner'), {
+                ...draft,
+                userId: BOB_UID,
+            }));
+
+            await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                await setDoc(doc(ctx.firestore(), 'smart_contracts', 'draft-1'), {
+                    ...draft,
+                    createdAt: Timestamp.now(),
+                });
+            });
+            await assertFails(updateDoc(doc(ownerDb, 'smart_contracts', 'draft-1'), {
+                status: 'deployed',
+            }));
+        });
+    });
+
+    describe('owner-scoped notes, media contacts, and PRO drafts', () => {
+        it('allows only the owner to manage schema-bounded notes', async () => {
+            if (requireEmulator()) return;
+            const note = {
+                id: 'note-1',
+                title: 'Release plan',
+                content: 'Finish the mix.',
+                attachments: [],
+                tags: ['release'],
+                createdAt: Date.now(),
+                updatedAt: serverTimestamp(),
+                userId: ALICE_UID,
+            };
+            const ownerRef = doc(verifiedCtx(ALICE_UID).firestore(), 'users', ALICE_UID, 'notes', 'note-1');
+            await assertSucceeds(setDoc(ownerRef, note));
+            await assertSucceeds(getDoc(ownerRef));
+            await assertFails(getDoc(doc(verifiedCtx(BOB_UID).firestore(), 'users', ALICE_UID, 'notes', 'note-1')));
+            await assertFails(setDoc(doc(verifiedCtx(ALICE_UID).firestore(), 'users', ALICE_UID, 'notes', 'polluted'), {
+                ...note,
+                id: 'polluted',
+                billingOverride: true,
+            }));
+        });
+
+        it('allows owner-verified media contacts but rejects polluted and cross-owner records', async () => {
+            if (requireEmulator()) return;
+            const contact = {
+                name: 'Verified Editor',
+                contact: 'editor@example.com',
+                tags: ['editorial', 'Detroit'],
+                createdAt: serverTimestamp(),
+                updatedAt: serverTimestamp(),
+            };
+            const ownerRef = doc(verifiedCtx(ALICE_UID).firestore(), 'users', ALICE_UID, 'publicist_media_contacts', 'contact-1');
+            await assertSucceeds(setDoc(ownerRef, contact));
+            await assertSucceeds(getDoc(ownerRef));
+            await assertFails(getDoc(doc(verifiedCtx(BOB_UID).firestore(), 'users', ALICE_UID, 'publicist_media_contacts', 'contact-1')));
+            await assertFails(setDoc(doc(verifiedCtx(ALICE_UID).firestore(), 'users', ALICE_UID, 'publicist_media_contacts', 'polluted'), {
+                ...contact,
+                verifiedByPlatform: true,
+            }));
+        });
+
+        it('permits only immutable manual-submission PRO drafts', async () => {
+            if (requireEmulator()) return;
+            const draft = {
+                workTitle: 'Night Shift',
+                writers: [{ name: 'Artist', role: 'writer', split: 100 }],
+                publisher: null,
+                society: 'ASCAP',
+                status: 'requires_manual_submission',
+                createdAt: serverTimestamp(),
+                updatedAt: serverTimestamp(),
+            };
+            const ownerRef = doc(verifiedCtx(ALICE_UID).firestore(), 'users', ALICE_UID, 'proSubmissionDrafts', 'draft-1');
+            await assertSucceeds(setDoc(ownerRef, draft));
+            await assertSucceeds(getDoc(ownerRef));
+            await assertFails(setDoc(doc(verifiedCtx(ALICE_UID).firestore(), 'users', ALICE_UID, 'proSubmissionDrafts', 'fake-filed'), {
+                ...draft,
+                status: 'submitted',
+            }));
+            await assertFails(getDoc(doc(verifiedCtx(BOB_UID).firestore(), 'users', ALICE_UID, 'proSubmissionDrafts', 'draft-1')));
+            await assertFails(updateDoc(ownerRef, { status: 'submitted' }));
+            await assertFails(deleteDoc(ownerRef));
+        });
+    });
+
+    describe('users/{userId}/fcm_tokens/{tokenId}', () => {
+        const validToken = {
+            token: 'device-token-1',
+            platform: 'Web',
+            updatedAt: serverTimestamp(),
+        };
+
+        it('allows an owner to register and remove only its matching device token', async () => {
+            if (requireEmulator()) return;
+            const ownerRef = doc(
+                verifiedCtx(ALICE_UID).firestore(),
+                'users', ALICE_UID, 'fcm_tokens', 'device-token-1',
+            );
+            await assertSucceeds(setDoc(ownerRef, validToken));
+            await assertFails(getDoc(ownerRef));
+            await assertSucceeds(deleteDoc(ownerRef));
+        });
+
+        it('rejects cross-owner, mismatched, polluted, and unsupported registrations', async () => {
+            if (requireEmulator()) return;
+            await assertFails(setDoc(
+                doc(verifiedCtx(BOB_UID).firestore(), 'users', ALICE_UID, 'fcm_tokens', 'device-token-1'),
+                validToken,
+            ));
+            await assertFails(setDoc(
+                doc(verifiedCtx(ALICE_UID).firestore(), 'users', ALICE_UID, 'fcm_tokens', 'different-token'),
+                validToken,
+            ));
+            await assertFails(setDoc(
+                doc(verifiedCtx(ALICE_UID).firestore(), 'users', ALICE_UID, 'fcm_tokens', 'device-token-1'),
+                { ...validToken, admin: true },
+            ));
+            await assertFails(setDoc(
+                doc(verifiedCtx(ALICE_UID).firestore(), 'users', ALICE_UID, 'fcm_tokens', 'device-token-1'),
+                { ...validToken, platform: 'Server' },
+            ));
         });
     });
 

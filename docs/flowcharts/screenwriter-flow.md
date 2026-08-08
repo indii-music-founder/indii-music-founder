@@ -1,125 +1,58 @@
-# Screenwriter & Script Generation Flowchart
+# Screenwriter & Storyboard Planner Flow
 
-This flowchart maps the **Screenwriter Module**—an AI-assisted screenplay generator for music video directors and film producers. It guides users from concept through final screenplay with scene breakdowns and video storyboards.
+This diagram documents the behavior that exists today. The module is a manual
+script/storyboard editor with local and Firestore draft persistence, Markdown
+artifact export in Electron, and a structured handoff to Creative Studio. AI
+scene expansion, audio analysis, generated storyboard images, PDF/share-link
+export, and third-party editor sync are not connected.
 
 ```mermaid
-graph TD
-    %% Entry
-    subgraph Entry ["Screenwriter Entry Point"]
-        ConceptInput["Concept Input (Genre, Tone, Characters, Duration)"]
-        MusicUpload["Attach Master Track (Audio File)"]
-        ReferenceInspo["Reference Inspiration (Mood Boards, Clips)"]
-    end
-
-    %% AI Generation
-    subgraph AIGen ["AI Script Generation"]
-        CreativeAgent["CreativeAgent (Story Intent)"]
-        AudioAnalyzer["Audio Analyzer (Extract Beat, Dynamics)"]
-        ScreenplayGen["Gemini 3.1 Pro (Generate Screenplay)"]
-        SceneBreakdown["Scene Breakdown (Timing, Transitions)"]
-    end
-
-    %% Script Editor
-    subgraph ScriptEdit ["Screenplay Editor"]
-        ScriptCanvas["Screenplay Canvas (Full Script + Metadata)"]
-        ScenePanel["Scene Panel (Edit Individual Scenes)"]
-        TimingSync["Audio-to-Script Timing Sync"]
-    end
-
-    %% Storyboarding
-    subgraph Storyboard ["Visual Storyboarding"]
-        GenerateStoryboard["AI Storyboard Generation (Gemini 3.1 Vision)"]
-        StoryboardGallery["Storyboard Frame Gallery"]
-        FrameDescs["Frame Descriptions & Transitions"]
-    end
-
-    %% Data Persistence
-    subgraph Data ["Data & Persistence"]
-        ScreenwriterCollection["Firestore (`screenwriter` collection)"]
-        ScriptStorage["Cloud Storage (PDF/Markdown Scripts)"]
-        StoryboardStorage["Cloud Storage (Storyboard Images)"]
-    end
-
-    %% Export & Distribution
-    subgraph Export ["Export & Distribution"]
-        ExportPDF["Export to PDF (Professional Format)"]
-        ShareLink["Shareable Link (Feedback Collection)"]
-        SyncToProduction["Sync to Production Management (DaVinci, Final Cut)"]
-    end
-
-    %% Flow
-    ConceptInput -->|"Describe Vision"| CreativeAgent
-    MusicUpload -->|"Analyze for Pacing"| AudioAnalyzer
-    ReferenceInspo -->|"Contextual Embedding"| CreativeAgent
-    
-    CreativeAgent -->|"Refined Prompt"| ScreenplayGen
-    AudioAnalyzer -->|"Beat Map, Dynamics"| ScreenplayGen
-    ScreenplayGen -->|"Generate Draft"| SceneBreakdown
-    SceneBreakdown -->|"Map scenes to beat moments"| ScriptCanvas
-    
-    ScriptCanvas -->|"Load Screenplay"| ScenePanel
-    ScenePanel -->|"Edit Scene Text"| ScriptCanvas
-    TimingSync -->|"Sync markers to audio"| ScenePanel
-    
-    ScriptCanvas -->|"Extract scenes + descriptions"| GenerateStoryboard
-    AudioAnalyzer -->|"Provide timing context"| GenerateStoryboard
-    GenerateStoryboard -->|"Generate Visual Storyboard"| StoryboardGallery
-    StoryboardGallery -->|"Display Frame + Desc"| FrameDescs
-    
-    ScriptCanvas -->|"Save Draft"| ScreenwriterCollection
-    ScriptCanvas -->|"Export to PDF"| ExportPDF
-    ExportPDF -->|"Archive"| ScriptStorage
-    StoryboardGallery -->|"Export Frames"| StoryboardStorage
-    
-    ExportPDF -->|"Generate URL"| ShareLink
-    ShareLink -->|"Gather Feedback"| ScriptCanvas
-    
-    ScriptCanvas -->|"Finalize & Export"| SyncToProduction
-
-    %% Styling
-    style ConceptInput fill:#00D4FF,color:#000
-    style MusicUpload fill:#00D4FF,color:#000
-    style ReferenceInspo fill:#00D4FF,color:#000
-
-    style CreativeAgent fill:#FF00FF,color:#FFF
-    style AudioAnalyzer fill:#8A2BE2,color:#FFF
-    style ScreenplayGen fill:#39FF14,color:#000
-    style SceneBreakdown fill:#8A2BE2,color:#FFF
-
-    style ScriptCanvas fill:#00D4FF,color:#000
-    style ScenePanel fill:#00D4FF,color:#000
-    style TimingSync fill:#8A2BE2,color:#FFF
-
-    style GenerateStoryboard fill:#39FF14,color:#000
-    style StoryboardGallery fill:#00D4FF,color:#000
-    style FrameDescs fill:#00D4FF,color:#000
-
-    style ScreenwriterCollection fill:#39FF14,color:#000
-    style ScriptStorage fill:#39FF14,color:#000
-    style StoryboardStorage fill:#39FF14,color:#000
-
-    style ExportPDF fill:#FF8C00,color:#000
-    style ShareLink fill:#FF8C00,color:#000
-    style SyncToProduction fill:#FF8C00,color:#000
+flowchart TD
+    Entry["Open Screenwriter for signed-in project"] --> LoadLocal["Load project-scoped local draft"]
+    Entry --> LoadCloud["Read users/{uid}/screenwriterDrafts/{projectId}"]
+    LoadLocal --> Resolve["Normalize scenes and validate durations"]
+    LoadCloud --> Resolve
+    Resolve --> Edit["Edit concept, tone, scenes, camera notes, duration, and video prompt"]
+    Edit --> Add["Add blank scene"]
+    Add --> Edit
+    Edit --> Validate{"Every scene is 1-60 whole seconds?"}
+    Validate -->|"No"| Block["Show repair error; block save, export, and handoff"]
+    Block --> Edit
+    Validate -->|"Yes"| LocalSave["Save local project-scoped draft"]
+    Validate -->|"Yes"| CloudSave["Debounced revision-checked Firestore save"]
+    CloudSave --> Conflict{"Revision conflict?"}
+    Conflict -->|"Yes"| Choice["User chooses cloud draft or overwrites with local draft"]
+    Choice --> Edit
+    Conflict -->|"No"| Edit
+    Validate -->|"Export"| Desktop{"Electron artifact API available?"}
+    Desktop -->|"No"| ExportUnavailable["Explain desktop-only export"]
+    Desktop -->|"Yes"| Markdown["Create Markdown artifact with timing manifest and scene list"]
+    Validate -->|"Open Creative"| Contract["Build typed ScreenwriterStoryboardHandoff"]
+    Contract --> Slots["Create one editable Creative storyboard slot per scene"]
+    Slots --> Preserve["Preserve order, start time, duration, heading, camera, description, and prompt"]
+    Preserve --> Creative["Open Creative Studio video storyboard"]
+    Edit -.-> AI["AI Expansion Unavailable (disabled)"]
 ```
 
-## Transition Breakdown
+## Step-by-Step Transition Breakdown
 
-1. **Concept Input:** User describes the music video concept—genre, tone, characters, duration. They upload the master track and optionally provide reference mood boards or video clips.
-
-2. **Audio Analysis:** The **Audio Analyzer** extracts tempo, beat map, dynamic peaks, and sections (intro, verse, chorus, bridge). This temporal metadata guides screenplay pacing.
-
-3. **AI Screenplay Generation:** The **Creative Agent** synthesizes the user's concept with the audio analysis and generates a draft screenplay via **Gemini 3.1 Pro**. The output is a full script with scene numbers, action lines, and dialogue.
-
-4. **Scene Breakdown:** The **Scene Breakdown** engine maps each scene to specific moments in the audio (e.g., "Scene 3 starts at 1:32 (kick drop)"). This ensures the visual pacing aligns with the music.
-
-5. **Screenplay Editor:** User loads the draft into the **Screenplay Canvas**—a full-page editor for the complete script. The **Scene Panel** allows frame-by-frame editing of individual scenes, with **Audio-to-Script Timing Sync** markers pinned to beat moments.
-
-6. **Storyboarding:** Once the screenplay is locked, the system **generates a visual storyboard** using **Gemini 3.1 Vision** (image generation). Each frame has a visual description, transitions, and camera direction tied to the audio.
-
-7. **Storyboard Gallery:** User browses the **Frame Gallery**, adjusting visual directions (e.g., "Make the lighting more blue") and adding notes for the production team.
-
-8. **Export & Feedback:** User exports to **PDF** (professional screenplay format) and generates a **Shareable Link** for feedback from collaborators. Comments are synced back to the script.
-
-9. **Production Handoff:** The finalized screenplay and storyboards are exported and synced to video editing software (**DaVinci Resolve, Final Cut Pro**) with embedded timing references.
-
+1. Opening Screenwriter requires a signed-in user and project. The module loads
+   both the project-scoped local draft and
+   `users/{uid}/screenwriterDrafts/{projectId}`, then normalizes the winning
+   draft without hiding invalid legacy durations.
+2. Editing changes only the draft state. Scene duration validation accepts
+   whole seconds from 1 through 60; invalid scenes remain visible for repair and
+   block save, export, and Creative handoff.
+3. A valid draft is written locally and debounced to Firestore with its revision.
+   If the stored revision changed, the user must explicitly load the cloud copy
+   or overwrite it with the current local draft.
+4. Desktop export sends a Markdown artifact containing the timing manifest and
+   scene list through the Electron artifact API. Browser use fails closed with
+   an availability explanation; it does not fabricate a PDF or hosted URL.
+5. Creative handoff builds a typed `ScreenwriterStoryboardHandoff` and creates
+   one editable `StoryboardProject` slot for every scene, preserving order,
+   start time, duration, heading, camera notes, description, and video prompt.
+6. Creative Studio opens the assembled storyboard, but rendering remains an
+   explicit per-slot action. AI scene expansion, audio analysis, generated
+   storyboard images, share-link export, and third-party editor sync remain
+   visibly unavailable until real integrations exist.

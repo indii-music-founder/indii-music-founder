@@ -146,13 +146,15 @@
 ### ISSUE-1128: Social analytics connection state can be inferred from denied or stale token/cache paths
 
 - **Re-ticketed from:** ISSUE-847 (2026-07-21 housecleaning; original status was: `⏳ BACKLOG — consolidated`)
-- **Status:** ⏳ BACKLOG — consolidated
+- **Status:** ✅ FIXED (2026-08-08)
 - **Severity:** 🟠 HIGH
 - **Module:** Social / Analytics / Firestore rules
 - **Evidence:** Social tokens are read from `users/{uid}/socialTokens/{platform}` (`SocialPlatformService.ts:66-81`) and stats are cached to `users/{uid}/platformStats/{platform}` (`SocialPlatformService.ts:447-448`, `:518-519`, `:565-566`, `:606-607`, `:653-654`). The dashboard marks a platform connected when live stats exist, a cached `platformStats` doc exists, or a `socialTokens` doc exists (`SocialAnalyticsDashboard.tsx:120-136`). Firestore rules for `users/{userId}` do not include `socialTokens` or `platformStats` in the allowed subcollections (`packages/firebase/firestore.rules:329-346`) and deny unmatched paths (`:1230-1234`).
 - **Impact:** Connection status can be wrong in both directions: rules can block token/cache reads while UI shows generic sync errors, or stale cache/token docs can mark a platform connected even when live API sync is failing.
 - **Fix:** Move OAuth tokens server-side, expose sanitized connection metadata, add explicit rules for non-secret analytics cache if client-readable, and separate `connected`, `authorized`, `liveSyncOk`, and `cacheOnly` UI states.
 - **Acceptance:** A denied token/cache read shows a permission/configuration error; stale cache cannot mark live sync connected; rules tests cover `platformStats` and reject client access to raw OAuth tokens.
+- **Resolution (2026-08-08):** `syncPlatformStats` is now exported by the Firebase entry point and is the sole stats-sync authority. It reads OAuth credentials only through Admin SDK server paths, exposes sanitized `connected`/`authorized`/`liveSyncOk`/`cacheOnly`/`error` state, never treats an absent or expired credential as a cache hit, and overwrites cache only after live provider success. Renderer services no longer read token documents or call provider APIs with browser-visible credentials; the dashboard renders live, authorized-error, cached, and disconnected states distinctly. Apple Music fails closed because no live adapter exists.
+- **Verification (2026-08-08):** Backend sync regressions, renderer dashboard regression, and analytics-agent tool regressions pass. Firestore rules keep both token collections server-only while owner-scoped `platformStats` remains readable. A stale stats document without current authorization cannot produce a connected/live state.
 
 ---
 
@@ -178,13 +180,15 @@
 ### ISSUE-1130: Storefront deployment creates one fixed-price Stripe link for all items
 
 - **Re-ticketed from:** ISSUE-851 (2026-07-21 housecleaning; original status was: `⏳ BACKLOG — consolidated`)
-- **Status:** ⏳ BACKLOG — consolidated
+- **Status:** ✅ FIXED (2026-08-08)
 - **Severity:** 🟠 HIGH
 - **Module:** Commerce / Storefront / Stripe
 - **Evidence:** `CommerceTools.deploy_storefront_preview()` tells the user “Storefront deployed ... with N real Stripe Payment Links” after calling `createStripePaymentLinks` (`CommerceTools.ts:53-62`). The Cloud Function creates one Stripe product named `{campaignName} - Storefront Items`, puts all item names into the description, creates a single `$25.00` USD price, creates one payment link with quantity 1, and returns it as both `storefrontUrl` and the only `paymentLinks` entry (`paymentLinks.ts:19-38`).
 - **Impact:** Multi-item storefronts have no per-item pricing, quantities, SKUs, tax/shipping configuration, inventory, fulfillment metadata, or split payout routing, yet are presented as deployed real checkout.
 - **Fix:** Accept structured items with SKU, title, unit amount, currency, quantity/stock, tax/shipping settings, fulfillment provider, and payout metadata. Return one verified checkout/cart or itemized payment links.
 - **Acceptance:** A two-item storefront creates two distinct prices/line items with correct item data and rejects unpriced items; user-facing copy says “checkout preview” unless the public storefront and fulfillment path are complete.
+- **Resolution (2026-08-08):** `createStripePaymentLinks` now accepts and strictly validates structured SKU, title, unit amount, currency, quantity, stock, tax behavior/code, shipping requirement, fulfillment provider, and payout metadata. It creates a distinct Stripe product and price for every item and one itemized Checkout preview with idempotency protection. Mixed currencies, duplicate SKUs, invalid prices/stock, missing shipping countries, and oversized metadata fail before Stripe mutation. The result explicitly reports `fulfillmentReady: false` and `inventoryEnforced: false`; Commerce tool copy calls the result a checkout preview, not a deployed storefront.
+- **Verification (2026-08-08):** Five focused payment-link tests prove two items produce two prices/line items and invalid catalog data is rejected. Firebase build and renderer typecheck pass.
 
 ---
 
@@ -209,13 +213,15 @@
 ### ISSUE-1132: Royalty forecasts use fixed approximate rates and fixed confidence as if they are verified projections
 
 - **Re-ticketed from:** ISSUE-857 (2026-07-21 housecleaning; original status was: `⏳ BACKLOG — consolidated`)
-- **Status:** ⏳ BACKLOG — consolidated
+- **Status:** ✅ FIXED (2026-08-08)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Finance / Revenue forecasting
 - **Evidence:** `forecast_revenue()` uses hard-coded approximate per-stream rates and assumes the same stream count repeats for month 1, month 6, and year 1 (`FinanceTools.ts:92-144`). `predict_daily_royalties()` uses only two fixed rates (`Spotify` = `$0.0035`, all other platforms = `$0.006`) and returns `confidence: 0.88` without source data, territory, subscription mix, distributor fee, currency, or historical variance (`:251-267`).
 - **Impact:** Users can treat rough estimates as high-confidence royalty forecasts, which affects budgets, recoupment, and payout planning.
 - **Fix:** Mark these as rough calculators unless backed by actual distributor/DSR history. Add source, assumptions, confidence rationale, territory/currency/platform mix, distributor cut, and date of rate table.
 - **Acceptance:** No tool returns fixed high confidence without historical data; estimate output includes assumptions and `confidenceSource`, or is labeled `rough_estimate`.
+- **Resolution (2026-08-08):** Both revenue tools now identify their output as `rough_estimate`, use low confidence, and return the rate-table source/date, currency, platform mix, distributor-cut assumption, missing territory/subscription data, and explicit limitations. The UI labels the calculator accordingly and renders the source and confidence rationale instead of presenting an intelligence-backed projection.
+- **Verification (2026-08-08):** Eight focused Finance tool and UI regressions pass; renderer TypeScript is clean.
 
 ---
 
@@ -256,13 +262,15 @@
 ### ISSUE-1138: Sync-license checkout activates a license without license terms or usage scope
 
 - **Re-ticketed from:** ISSUE-882 (2026-07-21 housecleaning; original status was: `⏳ BACKLOG — consolidated`)
-- **Status:** ⏳ BACKLOG — consolidated
+- **Status:** ✅ FIXED (2026-08-08)
 - **Severity:** 🟠 HIGH
 - **Module:** Licensing / Stripe checkout / License records
 - **Evidence:** The license purchase flow sends Stripe metadata containing only `type`, `trackTitle`, `artist`, `connectedAccountId`, and `artistAmount` plus optional caller metadata (`LicensingService.ts:119-146`). The webhook then transfers `artistAmount` and creates an `active` `licenses` document with title, artist, `licenseType: 'sync'`, amount, and session ID (`webhookHandler.ts:69-113`). The app’s `License` type expects usage and optional agreement URL/date bounds (`types.ts:6-18`), but the webhook does not persist licensee, agreement URL, territory, media/use type, term, exclusivity, master/composition rights, contract version, or accepted terms.
 - **Impact:** A payment can create an “active sync license” that is not legally scoped enough to prove what was licensed.
 - **Fix:** Require a signed/accepted license agreement or immutable license terms object before checkout, store it by ID, and have the webhook activate that exact agreement after payment.
 - **Acceptance:** No `status: active` license is created unless it references a versioned agreement, licensee, usage, territory, term, rights covered, and Stripe session/payment ID.
+- **Resolution (2026-08-08):** The customer checkout control and hard-coded connected-account destination were removed from the micro-licensing portal; it now produces a clearly labeled draft and keeps checkout disabled until agreement setup exists. The webhook refuses licensing fulfillment unless Stripe metadata references an existing server-owned, versioned, accepted agreement whose immutable terms include licensee, usage, territory, term, exclusivity, master/composition rights, fee, connected account, title, and artist. It verifies the terms hash, payer email, Stripe-account consent, and paid amount, then derives the transfer and active license from the agreement rather than caller metadata. Active license documents are client read-only; strict owner-scoped `license_requests` rules cover request drafts.
+- **Verification (2026-08-08):** Licensing component/service tests pass, combined payment/webhook tests pass 19/19, and the full Firestore emulator suite passes 198/198. The changed Firestore surface received a 5/5 rules audit with no findings.
 
 ---
 
@@ -301,13 +309,14 @@
 ### ISSUE-1142: Screenwriter “Generate AI Scene” is a timer with hard-coded storyboard content
 
 - **Re-ticketed from:** ISSUE-895 (2026-07-21 housecleaning; original status was: `⏳ BACKLOG — consolidated`)
-- **Status:** ✅ CLOSED (FIXED - 2026-08-02)
+- **Status:** ✅ CLOSED (FIXED - 2026-08-08)
 - **Severity:** 🟠 HIGH
 - **Module:** Screenwriter / Storyboard / Veo prompts
 - **Evidence:** `generateNextScene()` is explicitly labeled “Simulate AI generation of next scene” (`ScreenwriterDashboard.tsx:233-234`), waits `setTimeout(..., 1200)` (`:235-250`), and appends the same hard-coded recording-cabin description/camera angle/Veo prompt every time (`:237-247`). The button is wired as an active generation action in the dashboard (`:303`, `:440`).
 - **Impact:** Users can believe the Screenwriter generated a scene from their concept when it only inserted canned content, polluting downstream storyboard/Veo planning.
 - **Fix:** Route scene generation through the screenwriter agent/model with the current concept, tone, previous scenes, and target duration, or rename the button to “Add template scene.”
 - **Acceptance:** A generated scene changes with concept/tone/history and includes model provenance; offline/unavailable mode shows an honest template/manual-add state.
+- **Resolution (2026-08-08):** Removed the timer, canned recording-cabin content, random pseudo-result, and active AI claim. The sidebar now adds a visibly blank, editable scene and switches to its editor. The concept panel states that AI expansion is not connected and exposes a disabled `AI Expansion Unavailable` control. Component coverage proves the unavailable state and that manual scene creation persists without generated-content claims.
 
 ---
 
@@ -316,13 +325,15 @@
 ### ISSUE-1143: Screenwriter Veo handoff collapses storyboard structure into one prompt string
 
 - **Re-ticketed from:** ISSUE-896 (2026-07-21 housecleaning; original status was: `⏳ BACKLOG — consolidated`)
-- **Status:** ✅ CLOSED (FIXED - 2026-08-02)
+- **Status:** ✅ CLOSED (FIXED - 2026-08-08)
 - **Severity:** 🟡 MEDIUM
 - **Module:** Screenwriter → Creative Studio / Veo handoff
 - **Evidence:** The Veo prompt tab says output “directly exports to generative pipelines” (`ScreenwriterDashboard.tsx:573-599`), but `handleOpenCreativeStudio()` only joins all scenes into a single text block, calls `setCreativePrompt(handoffPrompt)`, sets generation mode/view, and switches to Creative (`:213-228`). It does not populate `VideoWorkflow` storyboard slots, per-scene duration, camera metadata, seed/aspect controls, or a structured `pendingStageHandoff.veo` payload; `VideoWorkflow` then uses the shared `creativePrompt` as one `localPrompt` (`VideoWorkflow.tsx:213-285`, `:511-539`).
 - **Impact:** Multi-scene storyboards lose per-scene timing and generation boundaries; a three-scene music-video plan becomes one prompt for one video job.
 - **Fix:** Create a typed Screenwriter→Veo handoff contract that maps each scene to storyboard slots with prompt, duration, camera angle, ordering, and optional reference assets.
 - **Acceptance:** Opening Creative from Screenwriter creates a visible storyboard/timeline with one slot per scene and preserves scene duration/camera/prompt metadata.
+- **Resolution (2026-08-08):** Added a typed `ScreenwriterStoryboardHandoff` contract and a video-editor receiver that compiles each ordered scene into its own editable `StoryboardProject` slot. Exact start seconds, duration, scene number, heading, description, camera angle, and prompt are retained; the Creative storyboard opens directly and renders the imported timing/scene metadata. Per-slot generation uses the preserved requested duration. The former combined `creativePrompt` write and misleading “storyboard loaded” shortcut are gone.
+- **Verification (2026-08-08):** Screenwriter and storyboard schema suites pass 24/24, including a component assertion over the three distinct compiled slots and their timing/camera data; renderer TypeScript is clean.
 
 ---
 
@@ -1310,6 +1321,19 @@ All seven T1 sub-items built, tested against real (not mocked-away) verification
 
 ---
 
+### ISSUE-1319: Landing development auth fabricated verified Firebase users and silently skipped persistence
+
+- **Status:** ✅ FIXED (2026-08-08)
+- **Severity:** 🟠 HIGH (authentication and product-truth boundary)
+- **Module:** `packages/landing/src/lib/firebase.ts`; `packages/landing/src/lib/auth.ts`
+- **Evidence:** On localhost, the landing Firebase initializer deliberately left `auth` undefined. Every email sign-in/signup call then returned a hand-built `User` with `emailVerified: true`, fake ID/refresh tokens, and a synthetic UID. Logout, password reset, user-document creation, and last-login persistence silently returned without doing work. Local QA could therefore appear to authenticate, verify, reset, and persist an account without contacting Firebase at all.
+- **Impact:** Development and preview validation could certify a customer auth flow that never authenticated a real person, while hiding missing Firebase configuration and Firestore failures.
+- **Fix:** Initialize Firebase Auth on local clients whenever the Firebase app initializes. Remove the synthetic user and every local no-op branch; missing Auth or Firestore now fails explicitly.
+- **Acceptance:** Localhost uses the configured Firebase project (or its explicitly configured emulator), missing initialization produces a visible error, and no auth operation can return success without a Firebase result.
+- **Verification:** Landing auth coverage asserts sign-in, sign-up, logout, and password reset all fail closed when Auth is unavailable and that no Firebase operation is invoked after failed initialization.
+
+---
+
 ### ISSUE-1318: Phone routing hijacks public, authentication, OAuth callback, and collaborator upload pages
 
 - **Status:** ✅ FIXED (2026-08-07)
@@ -1319,5 +1343,223 @@ All seven T1 sub-items built, tested against real (not mocked-away) verification
 - **Acceptance:** On a real phone-class browser, legal routes and aliases render their legal content; `/tax-form-upload` renders the collaborator upload page without an account; `/login`, `/signin`, `/signup`, and `/register` render the intended authentication mode; OAuth callback routes are never classified as the Controller; explicit `/mobile-remote` and ordinary app routes on phone/tablet retain Controller behavior; Electron and desktop-web behavior do not regress.
 - **Fix:** Added a normalized protected-path policy in `mobile-remote/routing.ts`. Explicit `/mobile-remote` still wins, but legal routes, collaborator tax upload, sign-in/account-creation aliases, and `/auth/{provider}/callback` now bypass device-based Controller routing. `App.tsx` uses the same policy to disable module URL synchronization, preventing those routes from being rewritten later by persisted Studio state.
 - **Verification:** The new regression failed all 12 protected phone cases before the fix and passes afterward; both routing suites pass (29/29). A real Chromium iPhone 13 pass kept and rendered `/privacy`, `/legal/privacy`, `/terms`, `/legal/terms`, `/tax-form-upload`, `/login`, `/signin`, `/signup`, `/register`, and `/auth/instagram/callback`; explicit `/mobile-remote` and ordinary phone `/dashboard` still rendered the Controller. Desktop checks preserved legal, login, signed-out dashboard, and explicit Controller behavior. Full monorepo evidence: 944 test files passed / 6,036 tests passed (23 files and 52 tests skipped by their existing conditions), full typecheck passed, production Studio build passed, and lint completed with 0 errors (172 standing warnings). The hidden-pattern detector stayed exactly at the recorded 126 baseline in every category, so ISSUE-1227 remains OPEN without regression.
+
+---
+
+### ISSUE-1320: Session edit planner returned a canned two-cut plan without analyzing the uploaded recording
+
+- **Status:** ✅ FIXED (2026-08-08)
+- **Severity:** 🟠 HIGH
+- **Module:** Firebase / video session ingestion / edit planning
+- **Evidence:** `generateSessionEditPlan` ignored media content and returned the same two hard-coded timeline steps, while the UI could present the result as an analyzed edit plan.
+- **Impact:** Long recording edits could be based on fabricated source timing, cutting the wrong moments while looking machine-analyzed.
+- **Resolution:** The callable now creates a short-lived authorized GCS proxy, submits the actual recording as multimodal Vertex input, requires strict JSON, validates the response schema and source bounds, converts seconds to the canonical microsecond timeline map, and returns real model/token provenance. There is no canned fallback; provider, parsing, or timing failure is visible.
+- **Verification:** Six focused callable tests cover valid analysis, malformed model output, out-of-bounds timing, authorization/storage failures, and provenance; Firebase TypeScript is clean.
+
+---
+
+### ISSUE-1321: Workflow orchestration could report success after failed steps, discard exact prompts, and call ad review packages deployed campaigns
+
+- **Status:** ✅ FIXED (2026-08-08)
+- **Severity:** 🟠 HIGH
+- **Module:** Agent orchestration / Maestro batching / Growth workflows / Marketing panel
+- **Evidence:** The orchestration API returned no structured completion status, Marketing displayed completion after awaiting it, Maestro reduced queued work to generic descriptions instead of the supplied prompt, and Growth tools named an unconnected review artifact `ad_deployment`/“deployed.”
+- **Impact:** A failed workflow or prompt-corrupted task could be shown as completed, while a local campaign package could be mistaken for a live paid-media action.
+- **Resolution:** Orchestration now returns a typed workflow result with per-step outcomes and aggregate success. Marketing shows success only when every step succeeds. Batched tasks preserve an explicit prompt through execution. Growth uses `campaign_package`, forbids deployed/live claims in its prompts and UI, and labels the output a review package that requires provider setup and approval.
+- **Verification:** Thirteen focused Marketing, Orchestration, and Maestro tests pass, including exact prompt preservation and failed-step UI behavior; renderer TypeScript is clean.
+
+---
+
+### ISSUE-1322: Analytics invented a 1,000-stream forecast and let weak heuristics recommend or trigger campaign mutations
+
+- **Status:** ✅ FIXED (2026-08-08)
+- **Severity:** 🟠 HIGH
+- **Module:** Analytics / growth alerts / ad automation / analytics agent tools
+- **Evidence:** With insufficient history, `AnalyticsEngine` synthesized a 1,000-stream baseline and projected growth. Viral and save-rate formulas were labeled predictive/algorithmic, and their output could recommend or call campaign pause/amplification paths without verified provider evidence.
+- **Impact:** Artists could make spending and release decisions from fabricated projections, and low-context engagement formulas could affect real campaigns.
+- **Resolution:** Forecasts are unavailable until at least seven historical samples exist; eligible forecasts use a bounded recent-velocity heuristic and disclose low confidence, assumptions, limitations, and lack of provider verification. Viral scoring is explicitly non-predictive. Alerts request evidence review instead of claiming algorithmic damage, and ad automation no longer pauses a campaign from heuristic health alone. UI labels, weights, and agent output now match the implemented formulas.
+- **Verification:** Fourteen focused engine, UI-label, agent, and tool regressions pass; renderer TypeScript is clean.
+
+---
+
+### ISSUE-1323: A failed Firebase preview deploy could unlock staging E2E with a stale URL
+
+- **Status:** ✅ FIXED (2026-08-08)
+- **Severity:** 🔴 CRITICAL
+- **Module:** `.github/workflows/deploy.yml`
+- **Resolution:** Staging now publishes a URL only after the current upload succeeds and an HTTP probe returns 200. Quota/provider failure fails the staging job and skips staging E2E plus production instead of substituting an old channel.
+- **Verification:** Workflow validation and the exact-SHA remote run reached the real Firebase upload, failed on the acknowledged Hosting quota 429, and correctly kept downstream deployment gates closed.
+
+---
+
+### ISSUE-1324: Capture and receipt surfaces described unimplemented extraction as OCR
+
+- **Status:** ✅ FIXED (2026-08-08)
+- **Severity:** 🟠 HIGH
+- **Module:** Ghost Capture / Capture Preview / Receipt OCR
+- **Resolution:** Removed the animated scan overlay and simulated receipt workflow. Capture now labels files as captured media only; receipt upload is disabled with the exact secured ingestion, review, and persistence work still required.
+- **Verification:** Ghost Capture focused coverage passes; renderer TypeScript is clean.
+
+---
+
+### ISSUE-1325: Agent graphs reported aggregate completion after failed nodes
+
+- **Status:** ✅ FIXED (2026-08-08)
+- **Severity:** 🟠 HIGH
+- **Module:** `AgentGraphService`
+- **Resolution:** Aggregate graph status is derived from node outcomes and remains failed when any required node fails; memory lookup failures no longer get hidden by malformed test mocks.
+- **Verification:** Seven focused graph tests pass.
+
+---
+
+### ISSUE-1326: History rendered a fabricated current timestamp when durable timing was absent
+
+- **Status:** ✅ FIXED (2026-08-08)
+- **Severity:** 🟡 MEDIUM
+- **Module:** History dashboard
+- **Resolution:** Missing timestamps render as unavailable instead of `Date.now()`, and real timestamp normalization is covered.
+- **Verification:** Focused History regressions pass.
+
+---
+
+### ISSUE-1327: Desktop status and generic offline sync advertised state and durability that did not exist
+
+- **Status:** ✅ FIXED (2026-08-08)
+- **Severity:** 🔴 CRITICAL
+- **Module:** Desktop dashboard / offline sync / network quality
+- **Resolution:** Removed fabricated resource percentages, web-only daemon/toggle states, the event-only mutation queue that deleted records without executing mutations, and made platform capabilities explicit. Firestore remains the only data persistence authority.
+- **Verification:** Five focused Desktop tests pass; renderer TypeScript is clean.
+
+---
+
+### ISSUE-1328: Admin dashboard tests imported an undeclared runtime package
+
+- **Status:** ✅ FIXED (2026-08-08)
+- **Severity:** 🟡 MEDIUM
+- **Module:** `packages/admin-dashboard/package.json`
+- **Resolution:** Declared the exact installed `@testing-library/react` development dependency and updated the lockfile.
+- **Verification:** Dependency integrity and version-drift checks pass.
+
+---
+
+### ISSUE-1329: Active notes, media-contact, and PRO-draft clients had no matching Firestore rules
+
+- **Status:** ✅ FIXED (2026-08-08)
+- **Severity:** 🟠 HIGH
+- **Module:** Notes / Publicist / Publishing / Firestore rules
+- **Resolution:** Added owner-scoped, schema-bounded rules; made manual PRO status immutable; removed dead writers for neighboring-rights, sync-pitch, and supervisor-portal collections; and replaced Notes' lossy retry queue and false `synced` label with explicit Firestore errors.
+- **Verification:** Focused UI/service tests pass and the Firestore emulator accepted all changed-rule cases.
+
+---
+
+### ISSUE-1330: Label-deal writers and rules used incompatible schemas and swallowed failed saves
+
+- **Status:** ✅ FIXED (2026-08-08)
+- **Severity:** 🟠 HIGH
+- **Module:** Finance / `label_deals` / Firestore rules
+- **Resolution:** Removed the dead conflicting service, established the live component schema, restricted client updates to recouped amount, denied manufactured transaction records, validated currency precision, and surfaced subscription/save failures.
+- **Verification:** Nine focused component/service tests and three dedicated emulator rules cases pass.
+
+---
+
+### ISSUE-1331: AI stream timeouts and cancellation listeners ended before the backend stream opened
+
+- **Status:** ✅ FIXED (2026-08-08)
+- **Severity:** 🟠 HIGH
+- **Module:** `FirebaseIntelligenceService`
+- **Resolution:** Timeout ownership now spans backend stream acquisition; abort and retry-delay listeners are stable and removed on settlement.
+- **Verification:** Twenty-eight focused intelligence tests pass, including a regression that holds the backend promise open past the configured timeout.
+
+---
+
+### ISSUE-1332: Metadata's localStorage queue silently lost records while claiming they would sync
+
+- **Status:** ✅ FIXED (2026-08-08)
+- **Severity:** 🔴 CRITICAL
+- **Module:** Metadata persistence / sync status
+- **Resolution:** Removed the queue that invented a pending user, serialized Firestore sentinels, dropped the oldest item at ten records, and discarded repeated failures. Saves now retry then fail explicitly; dead `Cloud Synced` UI and timer/listener machinery were removed. Existing legacy queue bytes are left untouched for recovery.
+- **Verification:** Seven focused persistence/audio tests pass; renderer TypeScript is clean.
+
+---
+
+### ISSUE-1333: The installed PWA share target posted to an unhandled path and deleted files without transferring them
+
+- **Status:** ✅ FIXED (2026-08-08)
+- **Severity:** 🔴 CRITICAL
+- **Module:** PWA manifest / service worker / Share Target handler
+- **Resolution:** The worker now handles the manifest's `/share-target` path and `media` field. The UI moves real text and `File` objects into a Conductor draft before clearing IndexedDB; the dead mismatched receiver was deleted.
+- **Verification:** A focused component regression proves attachment/prompt transfer precedes IndexedDB deletion.
+
+---
+
+### ISSUE-1334: Audio, video, monitoring, push, and retry lifecycles leaked listeners or attached after cleanup
+
+- **Status:** ✅ FIXED (2026-08-08)
+- **Severity:** 🟠 HIGH
+- **Module:** canonical audio upload / video thumbnails / RUM / push notifications / retry utility
+- **Resolution:** Abort, media, before-unload, metrics, and foreground-message listeners now use stable handlers and deterministic cleanup. RUM initialization is singleton; lazy push initialization honors an early unsubscribe; failed messaging initialization can retry.
+- **Verification:** Thirty-four focused lifecycle assertions pass; renderer TypeScript is clean.
+
+---
+
+### ISSUE-1335: EPK, investor, token-gate, wallet, and smart-contract surfaces overstated publication or authority
+
+- **Status:** ✅ FIXED (2026-08-08)
+- **Severity:** 🔴 CRITICAL
+- **Module:** Marketing / Investor / Merchandise Web3
+- **Resolution:** EPK now produces a self-contained local HTML export (including a validated press photo) without an invented hosted URL. The fake hold-to-authorize biometric investor portal and placeholder financial dashboard were removed. Token gates explicitly remain unavailable. Wallet connection is verified against the provider instead of localStorage, and smart-contract UI saves a strict owner-scoped `draft_unverified` record rather than claiming deployment.
+- **Verification:** EPK, Investor, Wallet, and Smart Contract focused suites pass; smart-contract rules pass the emulator and reject forged deployment state, invalid splits, polluted fields, cross-owner access, and client updates.
+
+---
+
+### ISSUE-1336: Screenwriter handoff lost typed scene data at the editor boundary
+
+- **Status:** ✅ FIXED (2026-08-08)
+- **Severity:** 🟠 HIGH
+- **Module:** Screenwriter / video storyboard handoff
+- **Resolution:** Introduced a typed handoff contract and preserved storyboard scene structure through the video editor store instead of flattening it into display text.
+- **Verification:** Focused Screenwriter and storyboard regressions pass; renderer TypeScript is clean.
+
+---
+
+### ISSUE-1337: Licensing checkout could convert payment metadata into legal authority without a verified agreement
+
+- **Status:** ✅ FIXED (2026-08-08)
+- **Severity:** 🔴 CRITICAL
+- **Module:** Licensing / Stripe payment links and webhook
+- **Resolution:** Checkout remains disabled until a server-owned, versioned accepted agreement exists. Fulfillment verifies its identity/hash, terms, rights scope, acceptance, payer, payout consent, and minimum amount before deriving a license or transfer.
+- **Verification:** Focused renderer licensing and Firebase Stripe/webhook tests pass.
+
+---
+
+### ISSUE-1338: Cached social metrics were presented as current provider connectivity and live analytics
+
+- **Status:** ✅ FIXED (2026-08-08)
+- **Severity:** 🟠 HIGH
+- **Module:** Social / analytics token exchange and sync
+- **Resolution:** Provider authorization, successful live sync, and cache-only fallback are modeled separately. Raw tokens remain server-only; UI labels stale/cache-only data and never treats cache existence as a working connection.
+- **Verification:** Focused social and analytics truthfulness suites pass.
+
+---
+
+### ISSUE-1339: Rules tests could not run an isolated Firestore/Storage suite while a developer emulator was active
+
+- **Status:** ✅ FIXED (2026-08-08)
+- **Severity:** 🟡 MEDIUM
+- **Module:** Firebase rules test harness
+- **Evidence:** Firestore and Storage test clients hard-coded ports 8080 and 9199. Starting Storage alone failed its cross-service Firestore lookup, while starting the full suite would require killing the developer's existing Firestore emulator.
+- **Resolution:** Test hosts and ports are configurable through dedicated environment variables while retaining the established defaults, so a complete isolated emulator suite can run without disturbing a live local process.
+- **Verification:** Firestore and Storage started together on isolated ports; all four rules files and 239 assertions passed.
+
+---
+
+### ISSUE-1340: Screenwriter architecture documentation failed the canonical flowchart gate
+
+- **Status:** ✅ FIXED (2026-08-08)
+- **Severity:** 🟢 LOW
+- **Module:** `docs/flowcharts/screenwriter-flow.md`
+- **Evidence:** The document accurately mapped the current implementation but omitted the required `Step-by-Step Transition Breakdown` section, causing `npm run ci` to fail before an otherwise-green test matrix could be accepted.
+- **Resolution:** Added a numbered transition walkthrough covering draft resolution, validation, revision conflict handling, export boundaries, typed handoff fields, and explicitly unavailable integrations.
+- **Verification:** The full flowchart registry validator and the canonical `npm run ci` command pass.
 
 ---

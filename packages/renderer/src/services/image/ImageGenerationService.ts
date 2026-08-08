@@ -650,9 +650,12 @@ export class ImageGenerationService {
                 }, {
                     showToasts: false,
                     maxRetries: 1,
-                    queueOnFailure: true,
-                }).catch(err => {
-                    logger.warn('[ImageGeneration] Failed to persist image metadata:', err);
+                }).then(result => {
+                    if (!result.success) {
+                        logger.warn('[ImageGeneration] Failed to persist image metadata:', result.error);
+                    }
+                }).catch(error => {
+                    logger.warn('[ImageGeneration] Failed to persist image metadata:', error);
                 });
             }
         }

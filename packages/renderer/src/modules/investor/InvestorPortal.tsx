@@ -1,53 +1,31 @@
-import React, { useState } from 'react';
-import { AnimatePresence } from 'motion/react';
-import { MissionBrief } from './components/MissionBrief';
-import { ProtocolAuth } from './components/ProtocolAuth';
-import { EquityDashboard } from './components/EquityDashboard';
-import { useStore } from '@/core/store';
+import { LockKeyhole, ShieldAlert } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
+
 import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
+import { useStore } from '@/core/store';
 
-type PortalStep = 'brief' | 'auth' | 'dashboard';
-
+/**
+ * Investor data is not yet backed by an entitlement provider or verified cap
+ * table. Never substitute a cinematic client-side gesture for authorization.
+ */
 export default function InvestorPortal() {
-    const [step, setStep] = useState<PortalStep>('brief');
-    const { user } = useStore(useShallow(state => ({
-        user: state.user
-    })));
-
-    const architectData = {
-        name: user?.displayName || 'Authenticated user',
-        role: 'Investor access not configured',
-        clearance: 'Not configured',
-    };
+    const { user } = useStore(useShallow(state => ({ user: state.user })));
 
     return (
         <ModuleErrorBoundary moduleName="Investor">
-            <div className="h-full w-full bg-black text-green-500 font-mono overflow-hidden relative selection:bg-green-900 selection:text-green-100">
-                {/* CRT/Scanline Overlay */}
-                <div className="absolute inset-0 pointer-events-none z-50 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_2px,3px_100%] bg-repeat" />
-
-                <AnimatePresence mode="wait">
-                    {step === 'brief' && (
-                        <MissionBrief
-                            key="brief"
-                            onAccept={() => setStep('auth')}
-                        />
-                    )}
-                    {step === 'auth' && (
-                        <ProtocolAuth
-                            key="auth"
-                            architectName={architectData.name}
-                            onAuthenticated={() => setStep('dashboard')}
-                        />
-                    )}
-                    {step === 'dashboard' && (
-                        <EquityDashboard
-                            key="dashboard"
-                            architect={architectData}
-                        />
-                    )}
-                </AnimatePresence>
+            <div className="flex h-full w-full items-center justify-center bg-black p-8 text-white">
+                <section className="w-full max-w-2xl rounded-2xl border border-amber-500/20 bg-amber-500/5 p-8 text-center">
+                    <ShieldAlert className="mx-auto mb-4 h-12 w-12 text-amber-300" />
+                    <h1 className="text-2xl font-bold">Investor portal unavailable</h1>
+                    <p className="mt-3 text-sm leading-relaxed text-neutral-300">
+                        This account is signed in{user?.email ? ` as ${user.email}` : ''}, but indii has no
+                        verified investor entitlement, cap-table source, valuation feed, or advisory channel
+                        connected for it. No access was granted and no financial figures are being inferred.
+                    </p>
+                    <div className="mt-6 inline-flex items-center gap-2 rounded-lg border border-white/10 bg-black/30 px-4 py-2 text-xs text-neutral-400">
+                        <LockKeyhole size={14} /> Real server authorization is required before investor data can appear
+                    </div>
+                </section>
             </div>
         </ModuleErrorBoundary>
     );

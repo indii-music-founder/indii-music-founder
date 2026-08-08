@@ -50,7 +50,7 @@
 | 25 | **Add Firebase App Check enforcement** for production (currently optional) | `src/config/firebase.ts` | DONE - enforceAppCheck flag on all callable functions |
 | 26 | **Add HTTP caching headers** for static assets beyond JS/CSS (images, fonts, WASM) | `firebase.json` | DONE - Added with CSP headers |
 | 27 | **Add loading skeleton screens** instead of generic spinner for modules | `src/core/App.tsx` | DONE - Dashboard-style skeleton with pulse animation |
-| 28 | **Add offline-first data sync** for Firestore (beyond PWA cache) | `src/services/` | DONE - OfflineFirstService with IndexedDB, auto-sync queue, exponential backoff |
+| 28 | **Add offline-first data sync** for Firestore (beyond PWA cache) | `src/services/` | NOT IMPLEMENTED - removed an event-only placeholder that deleted queued mutations without delivering them; Firestore's built-in persistence remains the supported offline behavior |
 | 29 | **Fix the HACK comment** - add proper mode field to creative panel state | `src/core/components/right-panel/CreativePanel.tsx` | DONE - Uses isTransitionMode from store |
 | 30 | **Add request deduplication** for concurrent API calls | `src/services/ai/AIService.ts` | DONE - Already implemented (activeRequests coalescing) |
 

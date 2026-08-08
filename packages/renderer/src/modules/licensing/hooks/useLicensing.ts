@@ -119,19 +119,6 @@ export function useLicensing() {
     }
   }, [toast]);
 
-  const createLicense = async (licenseData: Omit<License, 'id' | 'createdAt' | 'updatedAt'>) => {
-    try {
-      setIsActionLoading(true);
-      const id = await licensingService.createLicense(licenseData);
-      return id;
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : String(err));
-      throw err;
-    } finally {
-      setIsActionLoading(false);
-    }
-  };
-
   // ISSUE-1276: this was `licenses.length * 12500` — a flat invented constant per
   // license, displayed as a real dollar figure. `License` carries no fee at all
   // unless the deal terms have been recorded, so the honest answer when none do is
@@ -148,6 +135,5 @@ export function useLicensing() {
     loading: isLoading,
     error,
     initiateDrafting,
-    createLicense
   };
 }

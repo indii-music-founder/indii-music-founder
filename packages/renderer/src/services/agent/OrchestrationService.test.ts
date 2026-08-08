@@ -116,14 +116,16 @@ describe('OrchestrationService', () => {
             { success: false, error: 'Generation failed' },
         ]);
 
-        const result = await orchestrationService.executeOrchestratedWorkflow(
-            'Plan a new merch drop',
+        const result = await orchestrationService.executeWorkflowWithStatus(
+            'AI_MERCH_DROP',
             mockContext as unknown as Parameters<typeof orchestrationService.executeOrchestratedWorkflow>[1]
         );
 
-        expect(result).toContain('FAILED');
-        expect(result).toContain('exec-2'); // Execution ID for resumption
-        expect(result).toContain('Workflow execution halted.');
+        expect(result.completed).toBe(false);
+        expect(result.executionId).toBe('exec-2');
+        expect(result.report).toContain('FAILED');
+        expect(result.report).toContain('exec-2'); // Execution ID for resumption
+        expect(result.report).toContain('Workflow execution halted.');
         expect(workflowStateService.failStep).toHaveBeenCalledWith('test-user', 'exec-2', 'design_concepts', 'Generation failed');
         // Step 2 and 3 were never attempted
         expect(workflowStateService.advanceStep).not.toHaveBeenCalled();
@@ -152,7 +154,7 @@ describe('OrchestrationService', () => {
             status: 'PLANNED',
             steps: {
                 'video_generation': { stepId: 'video_generation', agentId: 'creative', prompt: 'Trigger Node recipe', status: 'PLANNED' } as WorkflowStepExecution,
-                'ad_deployment': { stepId: 'ad_deployment', agentId: 'marketing', prompt: 'Deploy all creative', status: 'PLANNED' } as WorkflowStepExecution,
+                'campaign_package': { stepId: 'campaign_package', agentId: 'marketing', prompt: 'Prepare campaign package', status: 'PLANNED' } as WorkflowStepExecution,
             },
             edges: WORKFLOW_REGISTRY['INDII_GROWTH_PROTOCOL']!.edges,
             createdAt: 1000,
@@ -166,7 +168,7 @@ describe('OrchestrationService', () => {
                 ...mockExecution,
                 steps: {
                     'video_generation': { stepId: 'video_generation', agentId: 'creative', prompt: 'Trigger Node recipe', status: 'STEP_COMPLETE' } as WorkflowStepExecution,
-                    'ad_deployment': { stepId: 'ad_deployment', agentId: 'marketing', prompt: 'Deploy all creative', status: 'STEP_COMPLETE' } as WorkflowStepExecution,
+                    'campaign_package': { stepId: 'campaign_package', agentId: 'marketing', prompt: 'Prepare campaign package', status: 'STEP_COMPLETE' } as WorkflowStepExecution,
                 }
             });
         vi.mocked(workflowStateService.advanceStep).mockResolvedValue(mockExecution);

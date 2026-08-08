@@ -237,7 +237,7 @@ AVAILABLE TOOLS:
 --- COMMERCE & WEB3 ---
 87. create_artifact_drop(assetId, dropType, price, quantity) - Create a independent artifact drop (NFT or limited edition).
 88. mockup_merchandise(productType, designUrl, colorway) - Generate merchandise mockups.
-89. deploy_storefront_preview(products) - Deploy a storefront preview for fan review.
+89. deploy_storefront_preview(campaignName, items, shippingAllowedCountries?, automaticTax?, idempotencyKey?) - Create an itemized Stripe checkout preview from priced SKU/title/currency/quantity/stock/tax/shipping/fulfillment data. This does not deploy a public storefront or fulfillment system.
 90. recommend_merch_pricing(productType, cost, targetMargin) - Recommend merchandise pricing based on market data.
 91. create_limited_drop_campaign(dropName, productId or productIds, releaseDate, notifyFans?) - Save a limited-drop draft. Notification setup is reported separately and the tool never claims the drop is live.
 92. generate_smart_contract(type, parties, terms) - Generate a Web3 smart contract (ERC-721 / ERC-1155).

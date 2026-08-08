@@ -77,18 +77,32 @@ function AddDealForm({ onSave, onCancel }: AddDealFormProps) {
     const [dealDate, setDealDate] = useState(new Date().toISOString().slice(0, 10));
     const [notes, setNotes] = useState('');
     const [saving, setSaving] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        const advance = Number(advanceAmount);
+        const recouped = Number(recoupedAmount);
+        if (!label.trim() || !Number.isFinite(advance) || advance <= 0 || !Number.isFinite(recouped) || recouped < 0) {
+            setError('Enter a label, a positive advance, and a non-negative recouped amount.');
+            return;
+        }
+
         setSaving(true);
-        await onSave({
-            label,
-            advanceAmount: parseFloat(advanceAmount) || 0,
-            recoupedAmount: parseFloat(recoupedAmount) || 0,
-            dealDate,
-            notes: notes || undefined,
-        });
-        setSaving(false);
+        setError(null);
+        try {
+            await onSave({
+                label: label.trim(),
+                advanceAmount: Math.round(advance * 100) / 100,
+                recoupedAmount: Math.round(recouped * 100) / 100,
+                dealDate,
+                notes: notes.trim() || undefined,
+            });
+        } catch {
+            setError('The label deal could not be saved. Check your connection and try again.');
+        } finally {
+            setSaving(false);
+        }
     };
 
     return (
@@ -155,6 +169,11 @@ function AddDealForm({ onSave, onCancel }: AddDealFormProps) {
                     className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:border-dept-royalties resize-none"
                 />
             </div>
+            {error && (
+                <p role="alert" className="text-sm text-red-300 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">
+                    {error}
+                </p>
+            )}
             <div className="flex gap-3 justify-end">
                 <button
                     type="button"
@@ -177,7 +196,7 @@ function AddDealForm({ onSave, onCancel }: AddDealFormProps) {
 
 // ── Deal Row ───────────────────────────────────────────────────────────────────
 
-function DealRow({ deal, onUpdateRecouped }: { deal: LabelDeal; onUpdateRecouped: (id: string, amount: number) => void; key?: React.Key }) {
+function DealRow({ deal, onUpdateRecouped }: { deal: LabelDeal; onUpdateRecouped: (id: string, amount: number) => Promise<void>; key?: React.Key }) {
     const [expanded, setExpanded] = useState(false);
     const [editAmount, setEditAmount] = useState(String(deal.recoupedAmount));
     const status = getStatus(deal);
@@ -273,7 +292,7 @@ function DealRow({ deal, onUpdateRecouped }: { deal: LabelDeal; onUpdateRecouped
                                     className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:border-dept-royalties"
                                 />
                                 <button
-                                    onClick={() => onUpdateRecouped(deal.id, parseFloat(editAmount) || 0)}
+                                    onClick={() => void onUpdateRecouped(deal.id, Number(editAmount))}
                                     className="px-3 py-1.5 bg-dept-royalties/20 hover:bg-dept-royalties/30 border border-dept-royalties/30 rounded-lg text-xs text-dept-royalties font-medium transition-colors"
                                 >
                                     Update
@@ -294,6 +313,7 @@ export function LabelDealRecoupment() {
     const uid = auth.currentUser?.uid;
     const [loading, setLoading] = useState(!!uid);
     const [showAddForm, setShowAddForm] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     // Subscribe to label_deals for this user
     useEffect(() => {
@@ -306,22 +326,40 @@ export function LabelDealRecoupment() {
         const unsub = onSnapshot(q, snap => {
             setDeals(snap.docs.map(d => ({ id: d.id, ...d.data() } as LabelDeal)));
             setLoading(false);
-        }, () => setLoading(false));
+            setError(null);
+        }, () => {
+            setLoading(false);
+            setError('Label deals could not be loaded. Check your connection and try again.');
+        });
         return unsub;
     }, [uid]);
 
     const handleAddDeal = useCallback(async (data: Omit<LabelDeal, 'id' | 'userId' | 'createdAt'>) => {
-        if (!uid) return;
+        if (!uid) throw new Error('Sign in is required to save a label deal.');
+        const { notes, ...requiredData } = data;
         await addDoc(collection(db, 'label_deals'), {
-            ...data,
+            ...requiredData,
+            ...(notes ? { notes } : {}),
             userId: uid,
             createdAt: serverTimestamp(),
         });
+        setError(null);
         setShowAddForm(false);
     }, [uid]);
 
     const handleUpdateRecouped = useCallback(async (dealId: string, amount: number) => {
-        await updateDoc(doc(db, 'label_deals', dealId), { recoupedAmount: amount });
+        if (!Number.isFinite(amount) || amount < 0) {
+            setError('Recouped amount must be a non-negative number.');
+            return;
+        }
+        try {
+            await updateDoc(doc(db, 'label_deals', dealId), {
+                recoupedAmount: Math.round(amount * 100) / 100,
+            });
+            setError(null);
+        } catch {
+            setError('The recouped amount could not be updated. Check your connection and try again.');
+        }
     }, []);
 
     // ── Summary stats ──────────────────────────────────────────────────────────
@@ -347,6 +385,12 @@ export function LabelDealRecoupment() {
                     Add Deal
                 </button>
             </div>
+
+            {error && (
+                <p role="alert" className="flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-300">
+                    <AlertTriangle size={16} /> {error}
+                </p>
+            )}
 
             {/* Add form */}
             <AnimatePresence>

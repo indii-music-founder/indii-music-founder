@@ -9,9 +9,17 @@ interface ProjectionData {
     net_to_rights_holder: { month_1: number; month_6: number; year_1: number };
 }
 
+interface EstimateMetadata {
+    estimateType: 'rough_estimate';
+    confidenceLevel: 'low';
+    confidenceSource: string;
+    assumptions: string[];
+}
+
 export const RevenueProjections = () => {
     const [loading, setLoading] = useState(false);
     const [projections, setProjections] = useState<ProjectionData | null>(null);
+    const [estimateMetadata, setEstimateMetadata] = useState<EstimateMetadata | null>(null);
     const [platform, setPlatform] = useState<'Spotify' | 'Apple Music' | 'Other'>('Spotify');
     const [streams, setStreams] = useState<number>(100000);
 
@@ -28,6 +36,12 @@ export const RevenueProjections = () => {
 
             if (result.success) {
                 setProjections(result.data.projections);
+                setEstimateMetadata({
+                    estimateType: result.data.estimateType,
+                    confidenceLevel: result.data.confidenceLevel,
+                    confidenceSource: result.data.confidenceSource,
+                    assumptions: result.data.assumptions,
+                });
             }
         } catch (error: unknown) {
             logger.error("Forecast failed:", error);
@@ -48,11 +62,11 @@ export const RevenueProjections = () => {
                         <Calculator size={16} className="text-dept-royalties" />
                         Revenue Projections
                     </h3>
-                    <p className="text-xs text-gray-500 mt-1">Intelligence-driven earnings forecast</p>
+                    <p className="text-xs text-gray-500 mt-1">Rough calculator using static illustrative payout rates</p>
                 </div>
                 {projections && (
                     <button
-                        onClick={() => setProjections(null)}
+                        onClick={() => { setProjections(null); setEstimateMetadata(null); }}
                         className="p-2 hover:bg-white/10 rounded-full text-gray-400 hover:text-white transition-colors"
                         title="Reset"
                     >
@@ -81,9 +95,9 @@ export const RevenueProjections = () => {
                                     onChange={(e) => setPlatform(e.target.value as 'Spotify' | 'Apple Music' | 'Other')}
                                     className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white text-sm focus:outline-none focus:border-dept-royalties/50 transition-colors"
                                 >
-                                    <option value="Spotify">Spotify (Growth)</option>
-                                    <option value="Apple Music">Apple Music (High Value)</option>
-                                    <option value="Other">Conservative Avg</option>
+                                    <option value="Spotify">Spotify (illustrative rate)</option>
+                                    <option value="Apple Music">Apple Music (illustrative rate)</option>
+                                    <option value="Other">Other (illustrative rate)</option>
                                 </select>
                             </div>
                         </div>
@@ -94,7 +108,7 @@ export const RevenueProjections = () => {
                             className="w-full py-3 bg-dept-royalties hover:opacity-90 text-black rounded-lg font-bold text-sm transition-all shadow-lg shadow-dept-royalties/20 flex items-center justify-center gap-2"
                         >
                             {loading ? <Loader2 size={16} className="animate-spin" /> : <TrendingUp size={16} />}
-                            Calculate Projection
+                            Calculate Rough Estimate
                         </button>
                     </div>
                 ) : (
@@ -102,7 +116,7 @@ export const RevenueProjections = () => {
                         {/* 1 Year Projection Highlight */}
                         <div className="bg-dept-royalties/10 border border-dept-royalties/20 rounded-xl p-5 text-center relative overflow-hidden group">
                             <div className="absolute inset-0 bg-dept-royalties/5 group-hover:bg-dept-royalties/10 transition-colors duration-500" />
-                            <p className="text-dept-royalties text-xs font-bold uppercase tracking-wider mb-1 relative z-10">1 Year Net Revenue</p>
+                            <p className="text-dept-royalties text-xs font-bold uppercase tracking-wider mb-1 relative z-10">1 Year Net Estimate</p>
                             <h2 className="text-lg font-black text-white relative z-10">${projections.net_to_rights_holder.year_1.toLocaleString('en-US', { maximumFractionDigits: 0 })}</h2>
                         </div>
 
@@ -113,14 +127,23 @@ export const RevenueProjections = () => {
                                     <DollarSign size={20} />
                                 </div>
                                 <div>
-                                    <p className="text-xs text-dept-royalties/70 font-medium">Manager Fees Saved</p>
+                                    <p className="text-xs text-dept-royalties/70 font-medium">Hypothetical 20% Manager Fee</p>
                                     <p className="text-lg font-bold text-white">${projections.manager_fee_saved.year_1.toLocaleString('en-US', { maximumFractionDigits: 0 })}</p>
                                 </div>
                             </div>
                             <div className="text-[10px] bg-dept-royalties/20 text-dept-royalties px-2 py-1 rounded font-bold">
-                                20% KEPT
+                                COMPARISON
                             </div>
                         </div>
+                        {estimateMetadata && (
+                            <div className="rounded-lg border border-amber-400/20 bg-amber-400/5 p-3 text-[10px] leading-relaxed text-amber-100/80">
+                                <p className="font-bold uppercase tracking-wider">Low-confidence rough estimate</p>
+                                <p className="mt-1">{estimateMetadata.confidenceSource}</p>
+                                <ul className="mt-2 list-disc space-y-1 pl-4">
+                                    {estimateMetadata.assumptions.map(assumption => <li key={assumption}>{assumption}</li>)}
+                                </ul>
+                            </div>
+                        )}
 
                         {/* Breakdown Grid */}
                         <div className="grid grid-cols-2 gap-3">

@@ -44,16 +44,10 @@ vi.mock('../core/store', () => {
         // App.tsx calls loadSessions().catch(...) on mount — must resolve, not return undefined.
         loadSessions: vi.fn().mockResolvedValue(undefined),
         loginWithGoogle: vi.fn(),
-        pendingCount: 0,
-        isSyncing: false,
-        lastSyncError: null,
         boardroomMessages: [],
         addAgentMessage: vi.fn(),
         updateAgentMessage: vi.fn(),
         removeAgentMessage: vi.fn(),
-        setPendingCount: vi.fn(),
-        setIsSyncing: vi.fn(),
-        setLastSyncError: vi.fn(),
         setSidecarStatus: vi.fn(),
         setIsOffline: vi.fn(),
     };

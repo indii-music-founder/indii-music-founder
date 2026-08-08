@@ -9,6 +9,10 @@ import { afterAll, beforeAll, beforeEach, describe, it } from 'vitest';
 const PROJECT_ID = 'indii-storage-rules-test';
 const OWNER_ID = 'owner-1';
 const HASH = 'a'.repeat(64);
+const FIRESTORE_EMULATOR_HOST = process.env.FIRESTORE_EMULATOR_TEST_HOST ?? '127.0.0.1';
+const FIRESTORE_EMULATOR_PORT = Number(process.env.FIRESTORE_EMULATOR_TEST_PORT ?? 8080);
+const STORAGE_EMULATOR_HOST = process.env.STORAGE_EMULATOR_TEST_HOST ?? '127.0.0.1';
+const STORAGE_EMULATOR_PORT = Number(process.env.STORAGE_EMULATOR_TEST_PORT ?? 9199);
 
 describe('immutable canonical masters', () => {
     let testEnv: RulesTestEnvironment;
@@ -17,8 +21,8 @@ describe('immutable canonical masters', () => {
         testEnv = await initializeTestEnvironment({
             projectId: PROJECT_ID,
             storage: {
-                host: '127.0.0.1',
-                port: 9199,
+                host: STORAGE_EMULATOR_HOST,
+                port: STORAGE_EMULATOR_PORT,
                 rules: readFileSync(resolve(__dirname, '../../../storage.rules'), 'utf8'),
             },
         });
@@ -98,8 +102,8 @@ describe('immutable canonical cover art', () => {
         testEnv = await initializeTestEnvironment({
             projectId: `${PROJECT_ID}-covers`,
             storage: {
-                host: '127.0.0.1',
-                port: 9199,
+                host: STORAGE_EMULATOR_HOST,
+                port: STORAGE_EMULATOR_PORT,
                 rules: readFileSync(resolve(__dirname, '../../../storage.rules'), 'utf8'),
             },
         });
@@ -176,8 +180,8 @@ describe('RAG Document Uploads (/rag-sources)', () => {
         testEnv = await initializeTestEnvironment({
             projectId: 'indii-storage-rules-test-rag',
             storage: {
-                host: '127.0.0.1',
-                port: 9199,
+                host: STORAGE_EMULATOR_HOST,
+                port: STORAGE_EMULATOR_PORT,
                 rules: readFileSync(resolve(__dirname, '../../../storage.rules'), 'utf8'),
             },
         });
@@ -300,13 +304,13 @@ describe('owner-bound long-recording staging', () => {
             // active emulator project, so this suite must use that same ID.
             projectId: 'indii-music-founder',
             firestore: {
-                host: '127.0.0.1',
-                port: 8080,
+                host: FIRESTORE_EMULATOR_HOST,
+                port: FIRESTORE_EMULATOR_PORT,
                 rules: readFileSync(resolve(__dirname, '../../../firestore.rules'), 'utf8'),
             },
             storage: {
-                host: '127.0.0.1',
-                port: 9199,
+                host: STORAGE_EMULATOR_HOST,
+                port: STORAGE_EMULATOR_PORT,
                 rules: readFileSync(resolve(__dirname, '../../../storage.rules'), 'utf8'),
             },
         });
@@ -388,8 +392,8 @@ describe('private project render outputs', () => {
         testEnv = await initializeTestEnvironment({
             projectId: 'indii-private-render-rules-test',
             storage: {
-                host: '127.0.0.1',
-                port: 9199,
+                host: STORAGE_EMULATOR_HOST,
+                port: STORAGE_EMULATOR_PORT,
                 rules: readFileSync(resolve(__dirname, '../../../storage.rules'), 'utf8'),
             },
         });

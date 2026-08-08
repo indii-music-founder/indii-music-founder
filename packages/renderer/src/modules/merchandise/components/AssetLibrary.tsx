@@ -22,7 +22,6 @@ export const AssetLibrary: React.FC<AssetLibraryProps> = ({ onAddAsset, onGenera
     const toast = useToast();
     const [searchQuery, setSearchQuery] = useState('');
     const [isUploading, setIsUploading] = useState(false);
-    const [isLoading, setIsLoading] = useState(true);
     const fileInputRef = React.useRef<HTMLInputElement>(null);
 
     // Filter history for images only
@@ -36,12 +35,6 @@ export const AssetLibrary: React.FC<AssetLibraryProps> = ({ onAddAsset, onGenera
             )
             .sort((a, b) => (Number(b.timestamp) || 0) - (Number(a.timestamp) || 0));
     }, [history]);
-
-    // Loading state management
-    React.useEffect(() => {
-        const timer = setTimeout(() => setIsLoading(false), 300);
-        return () => clearTimeout(timer);
-    }, []);
 
     // Search filter
     const filteredAssets = useMemo(() => {
@@ -68,29 +61,24 @@ export const AssetLibrary: React.FC<AssetLibraryProps> = ({ onAddAsset, onGenera
         setIsUploading(true);
 
         try {
-            const reader = new FileReader();
-            reader.onload = async (event) => {
-                const dataUrl = event.target?.result as string;
-                if (dataUrl) {
-                    await onAddAsset(dataUrl, file.name);
-                    toast.success('Asset added to canvas');
-                }
-                setIsUploading(false);
-            };
-            reader.onerror = () => {
-                toast.error('Failed to load image');
-                setIsUploading(false);
-            };
-            reader.readAsDataURL(file as Blob);
+            const dataUrl = await new Promise<string>((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => typeof reader.result === 'string'
+                    ? resolve(reader.result)
+                    : reject(new Error('Image read returned no data.'));
+                reader.onerror = () => reject(reader.error ?? new Error('Failed to load image.'));
+                reader.readAsDataURL(file);
+            });
+            await onAddAsset(dataUrl, file.name);
+            toast.success('Asset added to canvas');
         } catch (error: unknown) {
             logger.error('Upload error:', error);
-            toast.error('Failed to upload image');
+            toast.error('Failed to add image to the canvas');
+        } finally {
             setIsUploading(false);
-        }
-
-        // Reset input
-        if (fileInputRef.current) {
-            fileInputRef.current.value = '';
+            if (fileInputRef.current) {
+                fileInputRef.current.value = '';
+            }
         }
     };
 
@@ -169,16 +157,7 @@ export const AssetLibrary: React.FC<AssetLibraryProps> = ({ onAddAsset, onGenera
 
             {/* Asset Grid */}
             <div className="flex-1 overflow-y-auto custom-scrollbar">
-                {isLoading ? (
-                    <div className="grid grid-cols-3 gap-2 pb-2">
-                        {[...Array(9)].map((_, i) => (
-                            <div
-                                key={i}
-                                className="aspect-square bg-neutral-800 rounded-lg animate-pulse"
-                            />
-                        ))}
-                    </div>
-                ) : filteredAssets.length === 0 ? (
+                {filteredAssets.length === 0 ? (
                     <div className="h-full flex flex-col items-center justify-center text-center p-4">
                         <ImageIcon size={48} className="text-neutral-700 mb-3" />
                         <p className="text-sm text-neutral-500 mb-2">No assets found</p>

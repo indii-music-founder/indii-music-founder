@@ -33,8 +33,12 @@ export default function MarketingPanel({ toggleRightPanel }: MarketingPanelProps
                 dailyBudget: dailyBudget
             };
 
-            await orchestrationService.executeWorkflow(selectedTemplate, context);
-            toast.success('indii Growth Protocol deployed.');
+            const result = await orchestrationService.executeWorkflowWithStatus(selectedTemplate, context);
+            if (!result.completed) {
+                toast.error(`Protocol stopped before completion. Execution ${result.executionId} was saved for review or resume.`);
+                return;
+            }
+            toast.success('indii Growth Protocol package prepared for review.');
 
             // Auto close panel after success
             setTimeout(() => {
@@ -84,7 +88,7 @@ export default function MarketingPanel({ toggleRightPanel }: MarketingPanelProps
                     </div>
                     {selectedTemplate === 'INDII_GROWTH_PROTOCOL' && (
                         <p className="text-xs text-gray-400 leading-relaxed mt-2 pl-1 border-l-2 border-indigo-500/50">
-                            Front-loaded 28-day algorithmic spike. Generates 6-15 variations. Kills losers by Day 3.
+                            Prepares a 28-day campaign package, creative briefs, and Day-3 optimization rules. Live launch requires connected ad credentials and approval.
                         </p>
                     )}
                 </div>
@@ -126,12 +130,12 @@ export default function MarketingPanel({ toggleRightPanel }: MarketingPanelProps
                         {isDeploying ? (
                             <>
                                 <div className="w-4 h-4 rounded-full border-2 border-white/20 border-t-white animate-spin" />
-                                Deploying Protocol...
+                                Preparing Protocol...
                             </>
                         ) : (
                             <>
                                 <Rocket size={18} />
-                                Deploy Protocol
+                                Prepare Protocol
                             </>
                         )}
                     </motion.button>

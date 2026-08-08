@@ -20,7 +20,7 @@ const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
     const isForecast = payload[0]?.payload?.isForecast;
     return (
         <div className="bg-slate-900/95 backdrop-blur border border-white/10 rounded-xl p-3 shadow-2xl text-sm">
-            <p className="text-slate-400 text-xs mb-1">{label} {isForecast ? '· Forecast' : ''}</p>
+            <p className="text-slate-400 text-xs mb-1">{label} {isForecast ? '· Low-confidence estimate' : ''}</p>
             {payload.map((entry) => (
                 entry.name !== 'lower' && entry.name !== 'upper' && (
                     <p key={entry.name} className="font-semibold" style={{ color: entry.color }}>

@@ -57,6 +57,25 @@ describe('HistoryDashboard', () => {
         render(<HistoryDashboard />);
         expect(screen.getByText('No activity found')).toBeInTheDocument();
     });
+
+    it('labels missing file timestamps instead of fabricating a date from the ID', () => {
+        mockStore.fileNodes = [{
+            id: 'abcdef',
+            name: 'Legacy asset',
+            type: 'file',
+            parentId: null,
+            projectId: 'project-1',
+            userId: 'user-1',
+            fileType: 'image',
+            createdAt: Number.NaN,
+            updatedAt: Number.NaN,
+        }];
+
+        render(<HistoryDashboard />);
+
+        expect(screen.getByText('Legacy asset')).toBeInTheDocument();
+        expect(screen.getByText('Date unavailable')).toBeInTheDocument();
+    });
 });
 
 describe('FilterItem', () => {

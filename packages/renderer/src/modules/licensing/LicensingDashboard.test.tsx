@@ -28,6 +28,7 @@ const mockTimestamp = {
 const mockRequests: LicenseRequest[] = [
     {
         id: 'req1',
+        userId: 'user-123',
         title: 'Song A',
         artist: 'Artist A',
         usage: 'Film',

@@ -8,6 +8,12 @@ import { WorkflowExecutionStatusEnum, WorkflowStepStatusEnum } from '@indii/shar
 import { v4 as uuidv4 } from 'uuid';
 import { logger } from '@/utils/logger';
 
+export interface WorkflowExecutionResult {
+    executionId: string;
+    report: string;
+    completed: boolean;
+}
+
 /**
  * OrchestrationService manages complex, multi-agent workflows.
  * It coordinates specialist agents to achieve high-level goals
@@ -25,6 +31,11 @@ export class OrchestrationService {
      * before advancing to the next step.
      */
     async executeWorkflow(workflowId: string, context: AgentContext): Promise<string> {
+        return (await this.executeWorkflowWithStatus(workflowId, context)).report;
+    }
+
+    /** Execute a workflow while preserving a machine-readable completion state for UI callers. */
+    async executeWorkflowWithStatus(workflowId: string, context: AgentContext): Promise<WorkflowExecutionResult> {
         const workflow = WORKFLOW_REGISTRY[workflowId];
         if (!workflow) throw new Error(`Workflow ${workflowId} not found in registry.`);
 
@@ -67,7 +78,7 @@ export class OrchestrationService {
         const traceId = uuidv4();
         logger.info(`[Orchestration] Resuming workflow: ${workflow.name}, execution: ${executionId}, trace: ${traceId}`);
 
-        return this.runSteps(executionId, workflow, context, userId, traceId);
+        return (await this.runSteps(executionId, workflow, context, userId, traceId)).report;
     }
 
     private async runSteps(
@@ -76,7 +87,7 @@ export class OrchestrationService {
         context: AgentContext,
         userId: string,
         traceId: string
-    ): Promise<string> {
+    ): Promise<WorkflowExecutionResult> {
         // Validate graph before execution to prevent cyclic dependency deadlocks
         validateWorkflowGraph(workflow);
 
@@ -216,7 +227,7 @@ export class OrchestrationService {
 
                 if (batchFailed) {
                     report += `⚠️ **Workflow execution halted.** Address failures and resume via ID: \`${executionId}\`\n`;
-                    return report;
+                    return { executionId, report, completed: false };
                 }
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             } catch (error: any) {
@@ -229,7 +240,7 @@ export class OrchestrationService {
                 
                 report += `## ❌ Critical Batch Failure\n`;
                 report += `${errorMsg}\n\n---\n\n`;
-                return report;
+                return { executionId, report, completed: false };
             }
         }
 
@@ -244,7 +255,7 @@ export class OrchestrationService {
              report += `⚠️ **Workflow terminated with unresolved nodes.** Check graph connectivity.`;
         }
 
-        return report;
+        return { executionId, report, completed: allDone };
     }
 
     /**

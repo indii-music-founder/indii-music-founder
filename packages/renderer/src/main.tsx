@@ -61,17 +61,15 @@ try {
 initViewportFixes();
 initKeyboardDetection();
 
-// Phase 1: Initialize PWA and offline services
-Promise.all([
-    import('@/services/sync/OfflineFirstService').then(({ offlineFirstService }) => offlineFirstService),
-    import('@/services/network/NetworkQualityMonitor').then(({ initializeNetworkQualityMonitor }) => initializeNetworkQualityMonitor()),
-    import('@/services/cache/MediaCacheManager').then(({ initializeMediaCacheManager }) => initializeMediaCacheManager()),
-]).then(async ([offlineService, _networkMonitor, _mediaCache]) => {
-    const { initializeBackgroundSyncManager } = await import('@/services/sync/BackgroundSyncManager');
-    initializeBackgroundSyncManager(offlineService);
-    logger.info('[Phase 1] PWA and offline services initialized');
+// Phase 1: Initialize the implemented PWA media cache. Firestore owns its
+// persistence behavior; there is no separate mutation queue until a real,
+// authenticated sync handler exists.
+import('@/services/cache/MediaCacheManager').then(({ initializeMediaCacheManager }) => (
+    initializeMediaCacheManager()
+)).then(() => {
+    logger.info('[Phase 1] PWA media cache initialized');
 }).catch(err => {
-    logger.error('[Phase 1] Failed to initialize offline services:', err);
+    logger.error('[Phase 1] Failed to initialize PWA media cache:', err);
 });
 
 // Phase 2: Initialize orchestration services

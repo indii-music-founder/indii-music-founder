@@ -52,19 +52,45 @@ export const CommerceTools = {
         }
     }),
 
-    deploy_storefront_preview: wrapTool('deploy_storefront_preview', async (args: { campaignName: string; items: string[] }) => {
-        // Attempt to create real Stripe Payment Links via Cloud Function
+    deploy_storefront_preview: wrapTool('deploy_storefront_preview', async (args: {
+        campaignName: string;
+        items: Array<{
+            sku: string;
+            title: string;
+            unitAmount: number;
+            currency: string;
+            quantity: number;
+            stock: number;
+            taxCode?: string;
+            taxBehavior?: 'inclusive' | 'exclusive' | 'unspecified';
+            shippingRequired: boolean;
+            fulfillmentProvider: string;
+            payoutMetadata?: Record<string, string>;
+        }>;
+        shippingAllowedCountries?: string[];
+        automaticTax?: boolean;
+        idempotencyKey?: string;
+    }) => {
         try {
             const { functions } = await importWithRetry(() => import('@/services/firebase'));
             const { httpsCallable } = await importWithRetry(() => import('firebase/functions'));
             const createPaymentLinksFn = httpsCallable(functions, 'createStripePaymentLinks');
 
-            const result = await createPaymentLinksFn({ campaignName: args.campaignName, items: args.items }) as { data: { storefrontUrl: string; paymentLinks: string[] } };
-            return toolSuccess(result.data, `Storefront deployed for "${args.campaignName}" with ${args.items.length} real Stripe Payment Links.`);
+            const result = await createPaymentLinksFn(args) as { data: {
+                checkoutPreviewUrl: string;
+                checkoutItems: Array<{ sku: string; priceId: string }>;
+                fulfillmentReady: false;
+                inventoryEnforced: false;
+                note: string;
+            } };
+            return toolSuccess(
+                result.data,
+                `Itemized Stripe checkout preview created for "${args.campaignName}" with ${result.data.checkoutItems.length} priced items. It is not a deployed storefront; inventory and fulfillment remain unconnected.`,
+            );
         } catch (_err: unknown) {
             logger.warn('[CommerceTools] createStripePaymentLinks not available');
             return toolError(
-                'Storefront preview deployment requires the createStripePaymentLinks Cloud Function.',
+                'Could not create the Stripe checkout preview. Every item needs a real SKU, price, currency, quantity, stock level, shipping setting, and fulfillment provider.',
                 'STOREFRONT_BACKEND_UNAVAILABLE'
             );
         }

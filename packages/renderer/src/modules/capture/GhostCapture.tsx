@@ -14,10 +14,9 @@ import { CapturePreview } from './components/CapturePreview';
  *
  * Architecture:
  * - CaptureButtons  → Pre-capture action cards (Snap / Upload)
- * - CapturePreview  → Post-capture view with scanning overlay
- *   - ScanOverlay   → Blueprint-style HUD animation
+ * - CapturePreview  → Post-capture file preview
  *
- * Flow: Upload image → Scanning animation → "PREVIEW READY" → Transmit to Studio
+ * Flow: Read image file → show preview → Transmit to Studio
  * Note: Does not perform OCR or image analysis. This is a visual preparation UI only.
  */
 export default function GhostCapture() {
@@ -31,8 +30,6 @@ export default function GhostCapture() {
     );
     const toast = useToast();
     const [imagePreview, setImagePreview] = useState<string | null>(null);
-    const [isScanning, setIsScanning] = useState(false);
-    const [scanComplete, setScanComplete] = useState(false);
     const [capturedFile, setCapturedFile] = useState<File | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -42,8 +39,16 @@ export default function GhostCapture() {
             setCapturedFile(file);
             const reader = new FileReader();
             reader.onloadend = () => {
-                setImagePreview(reader.result as string);
-                startMockIngest();
+                if (typeof reader.result !== 'string') {
+                    toast.error('Could not prepare an image preview.');
+                    setCapturedFile(null);
+                    return;
+                }
+                setImagePreview(reader.result);
+            };
+            reader.onerror = () => {
+                toast.error('Could not read the selected image.');
+                setCapturedFile(null);
             };
             reader.readAsDataURL(file);
         }
@@ -53,20 +58,9 @@ export default function GhostCapture() {
         fileInputRef.current?.click();
     };
 
-    const startMockIngest = () => {
-        setIsScanning(true);
-        setScanComplete(false);
-        setTimeout(() => {
-            setIsScanning(false);
-            setScanComplete(true);
-        }, 2000);
-    };
-
     const resetCapture = () => {
         setImagePreview(null);
         setCapturedFile(null);
-        setIsScanning(false);
-        setScanComplete(false);
         if (fileInputRef.current) fileInputRef.current.value = '';
     };
 
@@ -148,8 +142,6 @@ export default function GhostCapture() {
                     ) : (
                         <CapturePreview
                             imagePreview={imagePreview}
-                            isScanning={isScanning}
-                            scanComplete={scanComplete}
                             onTransmit={transmitToStudio}
                         />
                     )}

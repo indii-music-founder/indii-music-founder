@@ -177,33 +177,6 @@ export const OrganizationTools = {
         }
     }),
 
-    schedule_event: wrapTool('schedule_event', async (args: { title: string; date: string; attendees?: string[]; description?: string }) => {
-        try {
-            const { db, auth } = await importWithRetry(() => import('@/services/firebase'));
-            const { collection, addDoc, serverTimestamp } = await importWithRetry(() => import('firebase/firestore'));
-
-            const uid = auth.currentUser?.uid;
-            if (!uid) {
-                return toolError("User must be authenticated to schedule an event.");
-            }
-
-            const docRef = await addDoc(collection(db, 'users', uid, 'events'), {
-                ...args,
-                status: 'scheduled',
-                createdAt: serverTimestamp()
-            });
-
-            return {
-                eventId: docRef.id,
-                ...args,
-                message: `Successfully scheduled event "${args.title}" on ${args.date}.`
-            };
-        } catch (e: unknown) {
-            const error = e as Error;
-            return toolError(`Failed to schedule event: ${error.message}`);
-        }
-    }),
-
     invite_team_member: wrapTool('invite_team_member', async (args: { email: string; role: 'manager' | 'producer' | 'member' }, _context?: AgentContext, toolContext?: ToolExecutionContext) => {
         try {
             const { useStore } = await importWithRetry(() => import('@/core/store'));

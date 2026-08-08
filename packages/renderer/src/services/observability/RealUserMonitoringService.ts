@@ -94,8 +94,11 @@ export class RealUserMonitoringService {
     };
   }
 
-  onMetricsReady(callback: (snapshot: RUMSnapshot) => void): void {
+  onMetricsReady(callback: (snapshot: RUMSnapshot) => void): () => void {
     this.callbacks.push(callback);
+    return () => {
+      this.callbacks = this.callbacks.filter(registered => registered !== callback);
+    };
   }
 
   reportMetrics(): void {
@@ -110,17 +113,18 @@ export class RealUserMonitoringService {
   }
 }
 
+let rumInstance: RealUserMonitoringService | null = null;
+let beforeUnloadHandler: (() => void) | null = null;
+
 export const initializeRealUserMonitoring = (): RealUserMonitoringService => {
-  const rum = new RealUserMonitoringService();
-  window.addEventListener('beforeunload', () => rum.reportMetrics());
-  return rum;
+  if (rumInstance) return rumInstance;
+
+  rumInstance = new RealUserMonitoringService();
+  beforeUnloadHandler = () => rumInstance?.reportMetrics();
+  window.addEventListener('beforeunload', beforeUnloadHandler);
+  return rumInstance;
 };
 
-let rumInstance: RealUserMonitoringService | null = null;
-
 export const getRealUserMonitoringService = (): RealUserMonitoringService => {
-  if (!rumInstance) {
-    rumInstance = initializeRealUserMonitoring();
-  }
-  return rumInstance;
+  return initializeRealUserMonitoring();
 };

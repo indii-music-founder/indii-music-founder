@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ThreePanelDashboard } from '@/components/layout/ThreePanelDashboard';
 import {
-    FileText, Video, Sparkles, Plus, Trash2, Download, Send, Film, Compass, RotateCw
+    FileText, Video, Sparkles, Plus, Trash2, Download, Send, Film, Compass
 } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
 import { useStore } from '@/core/store';
@@ -14,6 +14,8 @@ import {
     type PersistedScreenwriterDraft,
     type ScreenwriterDraftPayload,
 } from '@/services/screenwriter/ScreenwriterDraftService';
+import { useVideoEditorStore } from '@/modules/creative/video/store/videoEditorStore';
+import type { ScreenwriterStoryboardHandoff } from '@/types/handoff';
 
 export interface StoryboardScene {
     id: string;
@@ -162,11 +164,10 @@ export default function ScreenwriterDashboard() {
     const initialDraft = initialLoad.draft;
     const [activeTab, setActiveTab] = useState<ScreenwriterDraft['activeTab']>(initialDraft.activeTab);
     const toast = useToast();
-    const { setModule, setGenerationMode, setViewMode, setCreativePrompt } = useStore(useShallow(state => ({
+    const { setModule, setGenerationMode, setViewMode } = useStore(useShallow(state => ({
         setModule: state.setModule,
         setGenerationMode: state.setGenerationMode,
         setViewMode: state.setViewMode,
-        setCreativePrompt: state.setCreativePrompt
     })));
     const [isExporting, setIsExporting] = useState(false);
     const [isHandoffLoading, setIsHandoffLoading] = useState(false);
@@ -174,8 +175,7 @@ export default function ScreenwriterDashboard() {
     // Default Script Mood & Song Outline
     const [songConcept, setSongConcept] = useState(initialDraft.songConcept);
     const [selectedTone, setSelectedTone] = useState<ScreenwriterDraft['selectedTone']>(initialDraft.selectedTone);
-    const [isGenerating, setIsGenerating] = useState(false);
-    
+
     // Manage scenes
     const [scenes, setScenes] = useState<StoryboardScene[]>(initialDraft.scenes);
 
@@ -359,44 +359,48 @@ export default function ScreenwriterDashboard() {
         }
         setIsHandoffLoading(true);
         try {
-            const timingManifest = buildTimingManifest();
-            const handoffPrompt = [
-                `Project ID: ${draftScope?.projectId ?? 'unscoped'}`,
-                `Song concept: ${songConcept}`,
-                `Tone: ${selectedTone}`,
-                `Storyboard timing manifest: ${JSON.stringify(timingManifest)}`,
-                'Storyboard beats:',
-                ...scenes.map(scene => `${scene.sceneNumber}. ${scene.heading} (${scene.duration}s) - ${scene.veoPrompt}`)
-            ].join('\n');
+            const projectId = draftScope?.projectId ?? 'unscoped';
+            const handoff: ScreenwriterStoryboardHandoff = {
+                projectId,
+                name: `${songConcept.trim().slice(0, 60) || 'Untitled'} Storyboard`,
+                concept: songConcept,
+                tone: selectedTone,
+                timestamp: Date.now(),
+                scenes: scenes.map(scene => ({
+                    id: scene.id,
+                    sceneNumber: scene.sceneNumber,
+                    heading: scene.heading,
+                    description: scene.description,
+                    cameraAngle: scene.cameraAngle,
+                    durationSeconds: scene.duration,
+                    prompt: scene.veoPrompt,
+                })),
+            };
 
-            setCreativePrompt(handoffPrompt);
+            useVideoEditorStore.getState().receiveStoryboardHandoff(handoff);
             setGenerationMode('video');
             setViewMode('video_production');
             await setModule('creative');
-            toast.success('Storyboard loaded into Creative Studio.');
+            toast.success(`${scenes.length} storyboard scenes opened in Creative Studio.`);
         } finally {
             setIsHandoffLoading(false);
         }
     };
 
-    // Simulate AI generation of next scene
-    const generateNextScene = () => {
-        setIsGenerating(true);
-        setTimeout(() => {
-            const nextNumber = scenes.length + 1;
-            const newScene: StoryboardScene = {
-                id: Math.random().toString(),
-                sceneNumber: nextNumber,
-                heading: `INT. RECORDING CABIN - ${nextNumber % 2 === 0 ? 'NIGHT' : 'DAY'}`,
-                description: `Close-up on a vintage microphone. Soundwaves visualize as glowing threads in the air. The artist sings with raw emotional intensity.`,
-                cameraAngle: 'Macro close-up, shallow depth of field',
-                duration: 6,
-                veoPrompt: 'Macro shot of a vintage tube microphone, glowing neon soundwave lines floating in air, warm moody lighting, cinema quality.'
-            };
-            setScenes(prev => [...prev, newScene]);
-            setSelectedSceneId(newScene.id);
-            setIsGenerating(false);
-        }, 1200);
+    const addBlankScene = () => {
+        const nextNumber = scenes.length + 1;
+        const newScene: StoryboardScene = {
+            id: globalThis.crypto?.randomUUID?.() ?? `scene-${Date.now()}-${nextNumber}`,
+            sceneNumber: nextNumber,
+            heading: 'UNTITLED SCENE',
+            description: '',
+            cameraAngle: '',
+            duration: 5,
+            veoPrompt: '',
+        };
+        setScenes(prev => [...prev, newScene]);
+        setSelectedSceneId(newScene.id);
+        setActiveTab('storyboard');
     };
 
     const deleteScene = (id: string) => {
@@ -423,8 +427,8 @@ export default function ScreenwriterDashboard() {
         <ThreePanelDashboard
             moduleName="Screenwriter"
             headerIcon={<Film size={18} className="text-white" />}
-            title="AI Screenwriter & Storyboarder"
-            subtitle="Draft scripts, build scene-by-scene storyboards, and sync text-to-video Veo cues"
+            title="Screenwriter & Storyboard Planner"
+            subtitle="Draft scripts, edit scene plans, and open structured video storyboards in Creative Studio"
             bgBlobClass="bg-green-500/10"
             iconBgClass="bg-linear-to-br from-green-500 to-green-400"
             iconShadowClass="shadow-green-500/20"
@@ -453,13 +457,12 @@ export default function ScreenwriterDashboard() {
                             ))}
                         </div>
 
-                        <button 
-                            onClick={generateNextScene}
-                            disabled={isGenerating}
+                        <button
+                            onClick={addBlankScene}
                             className="w-full flex items-center justify-center gap-1.5 mt-3 py-1.5 border border-dashed border-green-500/30 hover:border-green-500/60 rounded text-xs font-bold text-green-400 hover:text-green-300 transition-colors"
                         >
-                            {isGenerating ? <RotateCw size={12} className="animate-spin" /> : <Plus size={12} />}
-                            {isGenerating ? 'Drafting with AI...' : 'Draft Next Scene'}
+                            <Plus size={12} />
+                            Add Blank Scene
                         </button>
                     </div>
 
@@ -489,7 +492,7 @@ export default function ScreenwriterDashboard() {
                 <div className="flex flex-col gap-4">
                     {/* Creative Sync Setup */}
                     <div className="p-4 rounded-xl border border-white/5 bg-white/2 backdrop-blur-md">
-                        <span className="text-[10px] font-black uppercase tracking-wider text-green-400 font-mono block mb-3">AI Prompter Controls</span>
+                        <span className="text-[10px] font-black uppercase tracking-wider text-green-400 font-mono block mb-3">Storyboard Controls</span>
                         <div className="space-y-3">
                             <div>
                                 <label className="text-[10px] text-gray-400 font-bold block mb-1">STORYBOARD TONE</label>
@@ -513,7 +516,7 @@ export default function ScreenwriterDashboard() {
                             <div>
                                 <label className="text-[10px] text-gray-400 font-bold block mb-1">TARGET GENERATOR</label>
                                 <div className="text-xs bg-black/40 px-3 py-2 rounded-lg border border-white/5 font-mono text-gray-300">
-                                    Google Veo-3.1-generate-preview
+                                    Creative Studio video storyboard
                                 </div>
                             </div>
                         </div>
@@ -591,10 +594,10 @@ export default function ScreenwriterDashboard() {
                             exit={{ opacity: 0, y: -10 }}
                             className="space-y-6"
                         >
-                            {/* AI Prompt Input Card */}
+                            {/* Story concept input */}
                             <div className="p-5 rounded-xl border border-white/5 bg-white/1">
                                 <h3 className="text-xs font-black uppercase text-green-400 tracking-wider font-mono mb-2 flex items-center gap-1.5">
-                                    <Sparkles size={12} /> AI Story Concept Input
+                                    <Sparkles size={12} /> Story Concept Input
                                 </h3>
                                 <textarea
                                     value={songConcept}
@@ -603,13 +606,13 @@ export default function ScreenwriterDashboard() {
                                     className="w-full min-h-[70px] bg-black/40 border border-white/10 rounded-lg p-3 text-xs text-gray-200 placeholder-gray-600 focus:outline-none focus:border-green-500 mb-3"
                                 />
                                 <div className="flex justify-between items-center">
-                                    <span className="text-[10px] text-gray-500 font-mono">Dynamic contextual generation utilizes Gemini-3-pro-preview</span>
-                                    <button 
-                                        onClick={generateNextScene}
-                                        disabled={isGenerating}
-                                        className="px-4 py-1.5 bg-green-500 hover:bg-green-400 text-white font-black text-xs rounded transition-all flex items-center gap-1"
+                                    <span className="text-[10px] text-gray-500 font-mono">Manual scene editing is available; AI expansion is not connected.</span>
+                                    <button
+                                        disabled
+                                        title="AI scene expansion is not connected"
+                                        className="px-4 py-1.5 bg-gray-700 text-gray-400 font-black text-xs rounded flex items-center gap-1 cursor-not-allowed"
                                     >
-                                        {isGenerating ? <RotateCw size={12} className="animate-spin" /> : <Sparkles size={12} />} Expand Script
+                                        <Sparkles size={12} /> AI Expansion Unavailable
                                     </button>
                                 </div>
                             </div>

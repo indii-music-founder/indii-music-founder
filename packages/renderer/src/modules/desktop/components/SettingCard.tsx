@@ -1,5 +1,5 @@
 import React from 'react';
-import { ToggleLeft, ToggleRight, LucideIcon } from 'lucide-react';
+import { CircleCheck, CircleMinus, LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getColorForModule } from '@/core/theme/moduleColors';
 
@@ -7,43 +7,49 @@ interface SettingCardProps {
     icon: LucideIcon;
     title: string;
     description: string;
-    enabled: boolean;
-    onClick: () => void;
+    status: 'active' | 'managed' | 'unavailable';
 }
 
-/** Toggle card for desktop integration settings with icon, description, and visual toggle state. */
-export function SettingCard({ icon: Icon, title, description, enabled, onClick }: SettingCardProps) {
+const statusLabels = {
+    active: 'Active',
+    managed: 'Runtime managed',
+    unavailable: 'Not available',
+} as const;
+
+/** Read-only capability card backed by the runtime state the app can verify. */
+export function SettingCard({ icon: Icon, title, description, status }: SettingCardProps) {
     const moduleColor = getColorForModule('desktop');
+    const available = status !== 'unavailable';
 
     return (
-        <button
-            onClick={onClick}
+        <div
+            data-availability={status}
             className={cn(
-                "w-full text-left p-6 rounded-3xl border transition-all duration-300 flex items-start gap-6 group hover:scale-[1.01] active:scale-95",
-                enabled
-                    ? `bg-surface/40 hover:bg-surface/60 ${moduleColor.border} shadow-lg`
-                    : "bg-surface/20 hover:bg-surface/40 border-white/5"
+                'w-full text-left p-6 rounded-3xl border flex items-start gap-6',
+                available
+                    ? `bg-surface/40 ${moduleColor.border} shadow-lg`
+                    : 'bg-surface/20 border-white/5'
             )}
         >
             <div className={cn(
-                "p-3 rounded-2xl flex-shrink-0 transition-colors",
-                enabled ? `${moduleColor.bg} ${moduleColor.text}` : "bg-black/40 text-gray-500 group-hover:text-gray-400"
+                'p-3 rounded-2xl flex-shrink-0',
+                available ? `${moduleColor.bg} ${moduleColor.text}` : 'bg-black/40 text-gray-500'
             )}>
                 <Icon size={24} />
             </div>
 
             <div className="flex-1 min-w-0">
-                <h4 className={cn("text-lg font-bold mb-1 transition-colors", enabled ? "text-white" : "text-gray-300")}>{title}</h4>
+                <h4 className={cn('text-lg font-bold mb-1', available ? 'text-white' : 'text-gray-300')}>{title}</h4>
                 <p className="text-sm text-gray-500 leading-relaxed pr-8">{description}</p>
             </div>
 
-            <div className="flex-shrink-0 ml-4 pt-1">
-                {enabled ? (
-                    <ToggleRight size={32} className={`${moduleColor.text} drop-shadow-md`} />
-                ) : (
-                    <ToggleLeft size={32} className="text-gray-600" />
-                )}
+            <div className={cn(
+                'flex flex-shrink-0 items-center gap-2 ml-4 pt-1 text-xs font-bold uppercase tracking-wider',
+                available ? moduleColor.text : 'text-gray-500'
+            )}>
+                {available ? <CircleCheck size={16} /> : <CircleMinus size={16} />}
+                <span>{statusLabels[status]}</span>
             </div>
-        </button>
+        </div>
     );
 }

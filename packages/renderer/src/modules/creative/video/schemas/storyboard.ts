@@ -5,6 +5,12 @@ export const StoryboardSlotSchema = z.object({
     barIndex: z.number().int().nonnegative(),
     startBar: z.number().int().nonnegative(),
     durationBars: z.number().int().positive().default(4), // default 4-bar clips
+    startSeconds: z.number().nonnegative().optional(),
+    durationSeconds: z.number().int().positive().max(60).optional(),
+    sourceSceneNumber: z.number().int().positive().optional(),
+    heading: z.string().optional(),
+    description: z.string().optional(),
+    cameraAngle: z.string().optional(),
     prompt: z.string(),
     negativePrompt: z.string().optional(),
     videoUrl: z.string().url().optional(),
@@ -25,6 +31,9 @@ export const StoryboardProjectSchema = z.object({
     bpm: z.number().positive().default(120),
     key: z.string().optional(),
     durationSeconds: z.number().nonnegative().default(0),
+    source: z.enum(['audio-grid', 'screenwriter']).default('audio-grid'),
+    concept: z.string().optional(),
+    tone: z.enum(['cinematic', 'abstract', 'hype']).optional(),
     slots: z.array(StoryboardSlotSchema).default([])
 });
 

@@ -3,7 +3,7 @@
  *
  * Unified social platform analytics panel. Aggregates real metrics from
  * Twitter, Instagram, TikTok, Spotify, and YouTube into a normalized view.
- * Reads live data via SocialPlatformService and caches to Firestore.
+ * Reads sanitized live/cache status via the server-side SocialPlatformService facade.
  *
  * Item 227: Social Analytics Aggregation Dashboard.
  */
@@ -101,38 +101,31 @@ export default function SocialAnalyticsDashboard() {
         const results = await Promise.allSettled(
             PLATFORM_META.map(async meta => {
                 if (meta.platform === 'spotify') {
-                    // Spotify: sync artist stats (uses stored artistId from profile)
                     const { useStore } = await import('@/core/store');
                     const artistId = (useStore.getState().userProfile as unknown as Record<string, unknown>)?.spotifyArtistId as string || '';
-                    if (!artistId) return { platform: 'spotify', stats: undefined, connected: false };
                     const stats = await syncSpotifyStats(uid, artistId);
-                    return { platform: 'spotify', stats, connected: stats.followers !== undefined };
+                    return {
+                        platform: 'spotify',
+                        stats,
+                        connected: stats.authorized === true,
+                        error: stats.error,
+                    };
                 }
 
-                // Live sync for each connected platform
-                let liveStats: PlatformStats | undefined;
+                let stats: PlatformStats;
                 switch (meta.platform) {
-                    case 'instagram': liveStats = await syncInstagramStats(uid); break;
-                    case 'tiktok': liveStats = await syncTikTokStats(uid); break;
-                    case 'twitter': liveStats = await syncTwitterStats(uid); break;
-                    case 'youtube': liveStats = await syncYouTubeStats(uid); break;
+                    case 'instagram': stats = await syncInstagramStats(uid); break;
+                    case 'tiktok': stats = await syncTikTokStats(uid); break;
+                    case 'twitter': stats = await syncTwitterStats(uid); break;
+                    case 'youtube': stats = await syncYouTubeStats(uid); break;
+                    default: throw new Error(`Unsupported analytics platform: ${meta.platform}`);
                 }
-
-                const connected = liveStats?.followers !== undefined || liveStats?.plays !== undefined;
-
-                // Fall back to Firestore cache if live sync returned empty (token not yet connected)
-                if (!connected) {
-                    const { db } = await import('@/services/firebase');
-                    const { doc, getDoc } = await import('firebase/firestore');
-                    const cacheRef = doc(db, 'users', uid, 'platformStats', meta.platform);
-                    const snap = await getDoc(cacheRef);
-                    if (snap.exists()) {
-                        return { platform: meta.platform, stats: snap.data() as PlatformStats, connected: true };
-                    }
-                    return { platform: meta.platform, stats: undefined, connected: false };
-                }
-
-                return { platform: meta.platform, stats: liveStats, connected: true };
+                return {
+                    platform: meta.platform,
+                    stats,
+                    connected: stats.authorized === true,
+                    error: stats.error,
+                };
             })
         );
 
@@ -146,6 +139,11 @@ export default function SocialAnalyticsDashboard() {
                     loading: false,
                     stats: result.value.stats,
                     connected: result.value.connected,
+                    error: result.value.error === 'authorization_expired'
+                        ? 'Authorization expired — reconnect required'
+                        : result.value.error === 'live_sync_failed'
+                            ? (result.value.stats.cacheOnly ? 'Live sync failed — showing cached metrics' : 'Live sync failed')
+                            : undefined,
                 };
             }
             if (result?.status === 'rejected') {
@@ -229,8 +227,12 @@ export default function SocialAnalyticsDashboard() {
                         <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-1">
                                 <span className="text-sm font-bold text-white">{card.label}</span>
-                                {card.connected ? (
-                                    <span className="text-[9px] font-black uppercase tracking-wider text-green-400 bg-green-500/10 px-1.5 py-0.5 rounded-full">Connected</span>
+                                {card.stats?.liveSyncOk ? (
+                                    <span className="text-[9px] font-black uppercase tracking-wider text-green-400 bg-green-500/10 px-1.5 py-0.5 rounded-full">Live Sync</span>
+                                ) : card.connected && card.stats?.cacheOnly ? (
+                                    <span className="text-[9px] font-black uppercase tracking-wider text-yellow-400 bg-yellow-500/10 px-1.5 py-0.5 rounded-full">Connected · Cached</span>
+                                ) : card.connected ? (
+                                    <span className="text-[9px] font-black uppercase tracking-wider text-yellow-400 bg-yellow-500/10 px-1.5 py-0.5 rounded-full">Authorized · Sync Failed</span>
                                 ) : (
                                     <span className="text-[9px] font-black uppercase tracking-wider text-gray-600 bg-white/5 px-1.5 py-0.5 rounded-full">Not Connected</span>
                                 )}
@@ -250,7 +252,7 @@ export default function SocialAnalyticsDashboard() {
                                 </div>
                             )}
 
-                            {!card.loading && !card.error && card.stats && (
+                            {!card.loading && card.stats && (
                                 <div className="flex items-center gap-4 flex-wrap">
                                     <StatPill label="Followers" value={card.stats.followers} icon={<Users size={10} />} />
                                     <StatPill label="Impressions" value={card.stats.impressions} icon={<Eye size={10} />} />
@@ -259,7 +261,7 @@ export default function SocialAnalyticsDashboard() {
                                 </div>
                             )}
 
-                            {!card.loading && !card.error && !card.stats && card.connected && (
+                            {!card.loading && !card.stats && card.connected && (
                                 <p className="text-[10px] text-gray-600">Stats will appear after first sync</p>
                             )}
                         </div>

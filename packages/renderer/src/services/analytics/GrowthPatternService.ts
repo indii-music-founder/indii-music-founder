@@ -105,14 +105,15 @@ export class GrowthPatternService {
         const alerts: BreakoutAlert[] = [];
         const now = new Date().toISOString();
 
-        // Alert 1: Breakout candidate (viral score ≥ 75)
+        // Alert 1: strong heuristic signal (score ≥ 75). This is review-only;
+        // the rubric cannot authorize paid amplification.
         if (viralScore >= 75) {
             alerts.push({
                 id: uuidv4(),
                 type: 'breakout_candidate' as AlertType,
-                title: 'Breakout Candidate',
-                message: `"${track.trackName}" has a viral score of ${viralScore}/100. Activate paid amplification now.`,
-                severity: 'critical',
+                title: 'Strong Engagement Signal',
+                message: `"${track.trackName}" has an engagement heuristic score of ${viralScore}/100. Review source freshness, attribution, and campaign economics before considering paid amplification.`,
+                severity: 'warning',
                 timestamp: now,
                 trackId: track.trackId,
                 trackName: track.trackName,

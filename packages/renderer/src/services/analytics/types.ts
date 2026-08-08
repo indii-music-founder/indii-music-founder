@@ -27,7 +27,7 @@ export type AlertType =
     | 'popularity_score_tapering'
     | 'spike_72h_sustain_needed';
 
-export type BreakoutProbability = 'Low' | 'Moderate' | 'High' | 'Breakout!';
+export type BreakoutProbability = 'Low' | 'Moderate' | 'High' | 'Strong Signal';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Raw Data Shapes
@@ -92,9 +92,9 @@ export interface ComputedMetrics {
 }
 
 export interface ViralScoreBreakdown {
-    saveRate: number;           // 0-35 pts (weight 0.35)
-    completionRate: number;     // 0-25 pts (weight 0.25)
-    repeatListeners: number;    // 0-20 pts (weight 0.20)
+    saveRate: number;           // 0-45 pts (weight 0.45)
+    completionRate: number;     // 0-20 pts (weight 0.20)
+    repeatListeners: number;    // 0-15 pts (weight 0.15)
     playlistVelocity: number;   // 0-10 pts (weight 0.10)
     shareRate: number;          // 0-10 pts (weight 0.10)
 }
@@ -104,6 +104,10 @@ export interface ViralScore {
     label: BreakoutProbability;
     trend: 'declining' | 'stable' | 'growing' | 'accelerating';
     breakdown: ViralScoreBreakdown;
+    method: 'weighted_engagement_heuristic';
+    confidence: 'low';
+    predictive: false;
+    sampleDays: number;
 }
 
 export interface DetectedPattern {
@@ -131,11 +135,18 @@ export interface BreakoutAlert {
 // ──────────────────────────────────────────────────────────────────────────────
 
 export interface GrowthForecast {
+    available: boolean;
     days: number;           // forecast horizon in days
     projected: { date: string; streams: number; lower: number; upper: number }[];
     peakDay: string;
     peakStreams: number;
     growthMultiplier: number; // e.g. 3.2x expected growth
+    confidence: 'low' | 'unavailable';
+    method: 'bounded_recent_velocity_heuristic' | 'insufficient_history';
+    providerVerified: false;
+    sampleDays: number;
+    assumptions: string[];
+    limitations: string[];
 }
 
 // ──────────────────────────────────────────────────────────────────────────────

@@ -181,7 +181,13 @@ export class AgentGraphService {
             // If we are resuming, pull initialInput from state if not provided
             const inputToUse = initialInput || state.metadata?.initialInput;
 
-            if (state.status === 'COMPLETED' || state.status === 'FAILED' || state.status === 'CANCELLED') {
+            if (state.status === 'FAILED') {
+                throw new Error(`Graph execution ${executionId} is failed.`);
+            }
+            if (state.status === 'CANCELLED') {
+                throw new Error(`Graph execution ${executionId} was cancelled.`);
+            }
+            if (state.status === 'COMPLETED') {
                 running = false;
                 break;
             }
@@ -201,7 +207,10 @@ export class AgentGraphService {
                 }
 
                 // Only consider nodes that haven't been processed yet
-                if (!nodeState || (nodeState.status !== 'PLANNED' && nodeState.status !== 'FAILED')) continue;
+                // Failed nodes are retried only through retryNode(), which resets
+                // them to PLANNED. Automatically re-running FAILED nodes can loop
+                // forever and turns an explicit failure into an implicit retry.
+                if (!nodeState || nodeState.status !== 'PLANNED') continue;
 
                 // Entry node is always ready if it's planned
                 if (node.id === graph.entryNodeId) {
@@ -267,18 +276,35 @@ export class AgentGraphService {
                 continue;
             }
 
+            // Skipped-state writes above are not reflected in the state snapshot
+            // used by this iteration. Refresh before deciding whether the graph
+            // is stuck or terminal.
+            if (readyNodes.length === 0 && nodesToSkip.length > 0) {
+                continue;
+            }
+
             if (readyNodes.length === 0) {
                 const hasPlanned = graph.nodes.some(n => state.nodeStates[n.id]?.status === 'PLANNED');
                 const hasExecuting = graph.nodes.some(n => state.nodeStates[n.id]?.status === 'EXECUTING_GENERATION');
+                const failedNodeIds = graph.nodes
+                    .filter(n => state.nodeStates[n.id]?.status === 'FAILED')
+                    .map(n => n.id);
 
                 if (!hasPlanned && !hasExecuting) {
-                    logger.info(`[AgentGraph] Execution ${executionId} complete (no more nodes to process).`);
+                    if (failedNodeIds.length > 0) {
+                        await agentGraphStateService.finalizeStatus(userId, executionId, 'FAILED');
+                        throw new Error(`Graph execution ${executionId} failed at node(s): ${failedNodeIds.join(', ')}.`);
+                    }
+                    logger.info(`[AgentGraph] Execution ${executionId} complete (all reachable nodes resolved).`);
                     await agentGraphStateService.finalizeStatus(userId, executionId, 'COMPLETED');
                     running = false;
                 } else if (!hasExecuting) {
-                    logger.warn(`[AgentGraph] Graph execution ${executionId} stuck: unreachable planned nodes remaining.`);
-                    await agentGraphStateService.finalizeStatus(userId, executionId, 'COMPLETED');
-                    running = false;
+                    const plannedNodeIds = graph.nodes
+                        .filter(n => state.nodeStates[n.id]?.status === 'PLANNED')
+                        .map(n => n.id);
+                    logger.error(`[AgentGraph] Graph execution ${executionId} stuck: unreachable planned nodes ${plannedNodeIds.join(', ')}.`);
+                    await agentGraphStateService.finalizeStatus(userId, executionId, 'FAILED');
+                    throw new Error(`Graph execution ${executionId} is stuck with unreachable node(s): ${plannedNodeIds.join(', ')}.`);
                 } else {
                     // Wait for background tasks to complete
                     await new Promise(resolve => setTimeout(resolve, 500));
@@ -375,10 +401,9 @@ export class AgentGraphService {
                             );
 
                             if (!hasActiveNodes) {
-                                logger.info(`[AgentGraph] No more active nodes after pruning. Finalizing graph ${executionId}.`);
-                                const hasCompletions = latestState && Object.values(latestState.nodeStates).some(s => s.status === 'STEP_COMPLETE');
-                                await agentGraphStateService.finalizeStatus(userId, executionId, hasCompletions ? 'COMPLETED' : 'FAILED');
-                                break;
+                                logger.error(`[AgentGraph] No successful path remains after node ${res.nodeId} failed.`);
+                                await agentGraphStateService.finalizeStatus(userId, executionId, 'FAILED');
+                                throw new Error(`Graph node ${res.nodeId} failed: ${res.error || 'Unknown error'}`);
                             }
                             continue;
                         }

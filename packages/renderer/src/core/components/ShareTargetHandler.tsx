@@ -17,7 +17,21 @@ interface SharedItem {
 
 export function ShareTargetHandler() {
     const [searchParams, setSearchParams] = useSearchParams();
-    const { setModule } = useStore(useShallow(state => ({ setModule: state.setModule })));
+    const {
+        commandBarAttachments,
+        commandBarInput,
+        isAgentOpen,
+        setCommandBarAttachments,
+        setCommandBarInput,
+        toggleAgentWindow,
+    } = useStore(useShallow(state => ({
+        commandBarAttachments: state.commandBarAttachments,
+        commandBarInput: state.commandBarInput,
+        isAgentOpen: state.isAgentOpen,
+        setCommandBarAttachments: state.setCommandBarAttachments,
+        setCommandBarInput: state.setCommandBarInput,
+        toggleAgentWindow: state.toggleAgentWindow,
+    })));
 
     const [isProcessing, setIsProcessing] = useState(false);
     const [sharedItem, setSharedItem] = useState<SharedItem | null>(null);
@@ -69,10 +83,21 @@ export function ShareTargetHandler() {
         setSharedItem(null);
     };
 
-    const handleRoute = async (targetModule: 'creative' | 'files' | 'audio-analyzer') => {
-        // Here you would typically dispatch the content to the module's store
-        // For now, we just route
-        setModule(targetModule);
+    const handleOpenInConductor = async () => {
+        if (!sharedItem) return;
+
+        const sharedText = [
+            sharedItem.title ? `Title: ${sharedItem.title}` : '',
+            sharedItem.text ?? '',
+            sharedItem.url ?? '',
+        ].filter(Boolean).join('\n');
+        const prompt = sharedText
+            ? `Review this shared content:\n${sharedText}`
+            : 'Review the attached shared files.';
+
+        setCommandBarInput([commandBarInput.trim(), prompt].filter(Boolean).join('\n\n'));
+        setCommandBarAttachments([...commandBarAttachments, ...sharedItem.files]);
+        if (!isAgentOpen) toggleAgentWindow();
         await handleDismiss();
     };
 
@@ -130,36 +155,15 @@ export function ShareTargetHandler() {
                                 )}
                             </div>
 
-                            {/* Actions */}
+                            {/* Action */}
                             <div className="grid grid-cols-1 gap-3">
-                                <p className="text-xs text-center text-gray-500">Where would you like to send this?</p>
-
-                                {sharedItem.files.some(f => f.type.startsWith('image/')) && (
-                                    <button
-                                        onClick={() => handleRoute('creative')}
-                                        className="flex items-center justify-center gap-2 p-3 bg-dept-creative/10 hover:bg-dept-creative/20 text-dept-creative border border-dept-creative/30 rounded-lg transition-colors"
-                                    >
-                                        <ImageIcon size={16} />
-                                        <span className="text-sm font-medium">Creative Studio</span>
-                                    </button>
-                                )}
-
-                                {sharedItem.files.some(f => f.type.startsWith('audio/')) && (
-                                    <button
-                                        onClick={() => handleRoute('audio-analyzer')}
-                                        className="flex items-center justify-center gap-2 p-3 bg-dept-marketing/10 hover:bg-dept-marketing/20 text-dept-marketing border border-dept-marketing/30 rounded-lg transition-colors"
-                                    >
-                                        <Music size={16} />
-                                        <span className="text-sm font-medium">Audio Analyzer</span>
-                                    </button>
-                                )}
-
+                                <p className="text-xs text-center text-gray-500">Open the received text and files as a real Conductor draft.</p>
                                 <button
-                                    onClick={() => handleRoute('files')}
-                                    className="flex items-center justify-center gap-2 p-3 bg-white/5 hover:bg-white/10 text-white border border-white/10 rounded-lg transition-colors"
+                                    onClick={() => void handleOpenInConductor()}
+                                    className="flex items-center justify-center gap-2 p-3 bg-dept-marketing/10 hover:bg-dept-marketing/20 text-dept-marketing border border-dept-marketing/30 rounded-lg transition-colors"
                                 >
-                                    <FileIcon size={16} />
-                                    <span className="text-sm font-medium">Files Manager</span>
+                                    <Share2 size={16} />
+                                    <span className="text-sm font-medium">Open in Conductor</span>
                                 </button>
                             </div>
                         </div>

@@ -5,6 +5,7 @@ import type { ExtendedVideoProject, SceneSegment } from '@/services/video/SceneE
 import type { MasterAudioReference } from '@/services/metadata/types';
 import { logger } from '@/utils/logger';
 import type { StoryboardProject, StoryboardSlot } from '../schemas/storyboard';
+import type { ScreenwriterStoryboardHandoff } from '@/types/handoff';
 
 export type ClipType = 'video' | 'image' | 'text' | 'audio';
 
@@ -154,6 +155,7 @@ interface VideoEditorState {
     setStoryboardProject: (project: StoryboardProject | null) => void;
     updateStoryboardSlot: (slotId: string, updates: Partial<StoryboardSlot>) => void;
     generateStoryboardSlots: (bpm: number, durationSeconds: number) => void;
+    receiveStoryboardHandoff: (handoff: ScreenwriterStoryboardHandoff) => void;
 
     // Popout Viewer State
     isPopoutActive: boolean;
@@ -207,6 +209,46 @@ export const blankProjectForId = (projectId: string): VideoProject => ({
     tracks: INITIAL_PROJECT.tracks.map(t => ({ ...t })),
     clips: [],
 });
+
+export function compileScreenwriterStoryboardHandoff(
+    handoff: ScreenwriterStoryboardHandoff,
+): StoryboardProject {
+    const bpm = 120;
+    const secondsPerBar = 4 * (60 / bpm);
+    let elapsedSeconds = 0;
+    const slots: StoryboardSlot[] = handoff.scenes.map((scene) => {
+        const startSeconds = elapsedSeconds;
+        elapsedSeconds += scene.durationSeconds;
+        return {
+            id: scene.id,
+            barIndex: Math.floor(startSeconds / secondsPerBar),
+            startBar: Math.floor(startSeconds / secondsPerBar),
+            durationBars: Math.max(1, Math.ceil(scene.durationSeconds / secondsPerBar)),
+            startSeconds,
+            durationSeconds: scene.durationSeconds,
+            sourceSceneNumber: scene.sceneNumber,
+            heading: scene.heading,
+            description: scene.description,
+            cameraAngle: scene.cameraAngle,
+            prompt: scene.prompt,
+            isGenerating: false,
+            progress: 0,
+            useVocalSync: false,
+            useDaisyChain: true,
+        };
+    });
+
+    return {
+        id: `screenwriter-${handoff.projectId}-${handoff.timestamp}`,
+        name: handoff.name,
+        bpm,
+        durationSeconds: elapsedSeconds,
+        source: 'screenwriter',
+        concept: handoff.concept,
+        tone: handoff.tone,
+        slots,
+    };
+}
 
 const isSafeDimension = (value: number) => Number.isInteger(value) && value >= 64 && value <= 8192;
 const isSafeFps = (value: number) => Number.isInteger(value) && value >= 1 && value <= 120;
@@ -328,11 +370,16 @@ export const useVideoEditorStore = create<VideoEditorState>((_set, get) => {
                     name: state.storyboardProject?.name || 'New Audio Sync Storyboard',
                     bpm,
                     durationSeconds,
+                    source: 'audio-grid',
                     slots,
                     audioUrl: state.storyboardProject?.audioUrl
                 }
             };
         }),
+        receiveStoryboardHandoff: (handoff: ScreenwriterStoryboardHandoff) => set(() => ({
+            storyboardProject: compileScreenwriterStoryboardHandoff(handoff),
+            viewMode: 'storyboard',
+        })),
 
         isPopoutActive: false,
         setIsPopoutActive: (active) => set({ isPopoutActive: active }),

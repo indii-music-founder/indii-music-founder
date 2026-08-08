@@ -10,7 +10,7 @@ interface ViralScorePanelProps {
 }
 
 const LABEL_STYLES: Record<string, { ring: string; glow: string; text: string; bar: string }> = {
-    'Breakout!': { ring: 'border-yellow-400/60', glow: 'shadow-yellow-500/20', text: 'text-yellow-400', bar: 'bg-yellow-400' },
+    'Strong Signal': { ring: 'border-yellow-400/60', glow: 'shadow-yellow-500/20', text: 'text-yellow-400', bar: 'bg-yellow-400' },
     'High':      { ring: 'border-emerald-400/60', glow: 'shadow-emerald-500/20', text: 'text-emerald-400', bar: 'bg-emerald-400' },
     'Moderate':  { ring: 'border-blue-400/60',    glow: 'shadow-blue-500/20',    text: 'text-blue-400',    bar: 'bg-blue-400'    },
     'Low':       { ring: 'border-slate-600',       glow: '',                      text: 'text-slate-400',   bar: 'bg-slate-500'   },
@@ -104,10 +104,13 @@ export const ViralScorePanel: React.FC<ViralScorePanelProps> = ({ viralScore, me
 
             {/* Score breakdown */}
             <div className="space-y-2.5">
-                <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Score Breakdown</p>
-                <BreakdownRow label="Save Rate"       pts={viralScore.breakdown.saveRate}        maxPts={35} color={style.bar} />
-                <BreakdownRow label="Completion Rate" pts={viralScore.breakdown.completionRate}   maxPts={25} color={style.bar} />
-                <BreakdownRow label="Repeat Listeners"pts={viralScore.breakdown.repeatListeners}  maxPts={20} color={style.bar} />
+                <div>
+                    <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Engagement Heuristic Breakdown</p>
+                    <p className="text-[10px] text-slate-600 mt-1">Low confidence · {viralScore.sampleDays} observed days · not a provider forecast</p>
+                </div>
+                <BreakdownRow label="Save Rate"       pts={viralScore.breakdown.saveRate}        maxPts={45} color={style.bar} />
+                <BreakdownRow label="Completion Rate" pts={viralScore.breakdown.completionRate}   maxPts={20} color={style.bar} />
+                <BreakdownRow label="Repeat Listeners"pts={viralScore.breakdown.repeatListeners}  maxPts={15} color={style.bar} />
                 <BreakdownRow label="Playlist Velocity"pts={viralScore.breakdown.playlistVelocity} maxPts={10} color={style.bar} />
                 <BreakdownRow label="Share Rate"      pts={viralScore.breakdown.shareRate}        maxPts={10} color={style.bar} />
             </div>

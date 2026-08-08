@@ -1,6 +1,6 @@
 
-import { db } from '@/services/firebase';
-import { collection, addDoc, getDocs, query, where, Timestamp } from 'firebase/firestore';
+import { auth, db } from '@/services/firebase';
+import { collection, addDoc, getDocs, query, serverTimestamp, where } from 'firebase/firestore';
 import { logger } from '@/utils/logger';
 
 /**
@@ -22,14 +22,15 @@ import { logger } from '@/utils/logger';
 // window.ethereum type is declared in WalletConnectPanel.tsx (global augmentation)
 
 export interface SplitContractConfig {
-    contractAddress?: string; // On-chain address
     isrc: string;
     payees: {
         walletAddress: string;
         percentage: number; // 0-100
         role: string;
     }[];
-    threshold?: number; // Recoupment threshold in USDC
+    tokenName: string;
+    tokenSymbol: string;
+    tokenType: 'ERC-721' | 'ERC-1155';
 }
 
 export interface LedgerEntry {
@@ -44,13 +45,9 @@ export class SmartContractService {
     private readonly LEDGER_COLLECTION = 'ledger';
     private readonly CONTRACTS_COLLECTION = 'smart_contracts';
 
-    /**
-     * Deploy a Smart Contract for Royalty Splits
-     * ISSUE-1261: Draft transaction data is marked unverified.
-     * We no longer deploy directly from the client using hand-built calldata.
-     */
-    async deploySplitContract(config: SplitContractConfig): Promise<string> {
-        logger.info(`[SmartContract] Drafting Split Contract deployment for ISRC: ${config.isrc}...`);
+    /** Save an owner-scoped, explicitly unverified contract draft. */
+    async saveSplitContractDraft(config: SplitContractConfig): Promise<string> {
+        logger.info(`[SmartContract] Saving split contract draft for ISRC: ${config.isrc}...`);
 
         // Validate splits sum to 100%
         const total = config.payees.reduce((sum, p) => sum + p.percentage, 0);
@@ -58,26 +55,20 @@ export class SmartContractService {
             throw new Error(`Invalid Split Configuration: Total is ${total}%, must be 100%.`);
         }
 
-        if (typeof window !== 'undefined' && window.ethereum) {
-            const accounts = await (window.ethereum as any).request({ method: 'eth_accounts' }) as string[];
-            if (!accounts || accounts.length === 0) {
-                throw new Error('No wallet connected. Connect MetaMask or WalletConnect first.');
-            }
-        } else {
-            throw new Error('No wallet provider available. Connect MetaMask or WalletConnect before deploying contracts.');
+        const userId = auth.currentUser?.uid;
+        if (!userId) {
+            throw new Error('Sign in before saving a smart contract draft.');
         }
 
-        // Persist Contract Config to Firestore as unverified draft
-        await addDoc(collection(db, this.CONTRACTS_COLLECTION), {
+        const draft = await addDoc(collection(db, this.CONTRACTS_COLLECTION), {
             ...config,
-            contractAddress: 'pending:unverified',
-            deployedAt: Timestamp.now(),
+            userId,
             status: 'draft_unverified',
+            createdAt: serverTimestamp(),
         });
 
-        // Do NOT write a success record to the ledger from the client!
-        logger.warn('[SmartContract] On-chain deployment is disabled on the client. Draft saved as unverified.');
-        throw new Error('Server-side smart contract deployment is not yet available. Draft transaction saved as unverified.');
+        logger.info('[SmartContract] Unverified draft saved; no on-chain transaction was submitted.');
+        return draft.id;
     }
 
     /**

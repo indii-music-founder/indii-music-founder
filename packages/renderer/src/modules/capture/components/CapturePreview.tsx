@@ -1,21 +1,17 @@
 import React from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion } from 'motion/react';
 import { ArrowRight } from 'lucide-react';
-import { ScanOverlay } from './ScanOverlay';
 
 interface CapturePreviewProps {
     imagePreview: string;
-    isScanning: boolean;
-    scanComplete: boolean;
     onTransmit: () => void;
 }
 
 /**
- * CapturePreview — Post-capture view showing the image with scanning overlay.
- * Displays the blueprint scanning animation during preview preparation and a
- * "Transmit to Studio" CTA button when ready. Does not perform OCR or analysis.
+ * CapturePreview — Post-capture view showing the decoded local image and an
+ * explicit upload action. It makes no OCR or image-analysis claim.
  */
-export function CapturePreview({ imagePreview, isScanning, scanComplete, onTransmit }: CapturePreviewProps) {
+export function CapturePreview({ imagePreview, onTransmit }: CapturePreviewProps) {
     return (
         <motion.div
             key="preview"
@@ -27,43 +23,22 @@ export function CapturePreview({ imagePreview, isScanning, scanComplete, onTrans
                 <img
                     src={imagePreview}
                     alt="Captured Document"
-                    className={`w-full h-full object-cover transition-all duration-1000 ${isScanning ? 'brightness-50 grayscale' : 'brightness-100'}`}
+                    className="w-full h-full object-cover"
                 />
-
-                {/* The "Blueprint" Scanning UI */}
-                {isScanning && <ScanOverlay />}
-
-                {/* Completion Overlay */}
-                {scanComplete && (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        className="absolute inset-0 bg-green-500/20 backdrop-blur-subtle flex items-center justify-center pointer-events-none"
-                    >
-                        <div className="bg-green-500 text-black font-bold px-6 py-3 rounded-full flex items-center gap-2 shadow-[0_0_30px_#22c55e]">
-                            PREVIEW READY
-                        </div>
-                    </motion.div>
-                )}
             </div>
 
-            {/* Action Footer for Post-Scan */}
-            <AnimatePresence>
-                {scanComplete && (
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="absolute bottom-8 left-0 right-0 flex justify-center px-6"
-                    >
-                        <button
-                            onClick={onTransmit}
-                            className="w-full max-w-sm bg-linear-to-r from-teal-500 to-indigo-600 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-teal-500/20 active:scale-95 transition-transform"
-                        >
-                            Transmit to Studio <ArrowRight size={20} />
-                        </button>
-                    </motion.div>
-                )}
-            </AnimatePresence>
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="absolute bottom-8 left-0 right-0 flex justify-center px-6"
+            >
+                <button
+                    onClick={onTransmit}
+                    className="w-full max-w-sm bg-linear-to-r from-teal-500 to-indigo-600 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-teal-500/20 active:scale-95 transition-transform"
+                >
+                    Upload to Studio <ArrowRight size={20} />
+                </button>
+            </motion.div>
         </motion.div>
     );
 }

@@ -500,14 +500,16 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: Run E2E smoke tests against staging
-        run: npx playwright test e2e/navigation.spec.ts e2e/auth-flow.spec.ts --project=chromium --timeout=30000
+        # This gate deliberately uses no mocked-auth fixture or intercepted
+        # provider responses. It proves only the real public/signed-out paths
+        # that can be exercised without a dedicated production test account.
+        run: npx playwright test e2e/staging-public.spec.ts --project=chromium --timeout=30000
         timeout-minutes: 15
         env:
           PLAYWRIGHT_BASE_URL: ${{ needs.deploy-staging.outputs.staging-url }}
           E2E_STUDIO_URL: ${{ needs.deploy-staging.outputs.staging-url }}
           VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
           VITE_FIREBASE_PROJECT_ID: indii-music-founder
-          VITE_FIREBASE_E2E_MOCK: 'true'
 
       - name: Upload Playwright report
         uses: actions/upload-artifact@v4

@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createGenerateSessionEditPlanHandler } from './generateSessionEditPlan';
+import type { Models } from '@google/genai';
+import { createDefaultEditPlanGenerator, createGenerateSessionEditPlanHandler } from './generateSessionEditPlan';
 
 const HASH_64 = 'a'.repeat(64);
 
@@ -71,17 +72,59 @@ const mockSession = {
         sha256: HASH_64,
     },
     proxyManifest: {
+        proxy: {
+            bucket: 'indii-test.firebasestorage.app',
+            path: 'session-media/user-1/session-1/proxy/video.mp4',
+            mimeType: 'video/mp4',
+        },
         inspection: {
             proxyDurationUs: 10_000_000,
             originalDurationUs: 10_000_000,
         },
+        timeMap: {
+            version: 'presentation-time-map.v1',
+            segments: [{
+                proxyStartUs: 0,
+                proxyEndUs: 10_000_000,
+                originalStartUs: 0,
+                originalEndUs: 10_000_000,
+            }],
+        },
     },
+};
+
+const generatedPlan = {
+    schemaVersion: 'session-edit-plan.v1' as const,
+    planId: 'plan-generated-1',
+    sessionId: 'session-1',
+    ownerUid: 'user-1',
+    organizationId: 'org-1',
+    projectId: 'proj-1',
+    sourceGeneration: '123456789',
+    segments: [{
+        segmentId: 'seg-1',
+        classification: 'spoken' as const,
+        proxyStartUs: 0,
+        proxyEndUs: 5_000_000,
+        originalStartUs: 0,
+        originalEndUs: 5_000_000,
+        transcriptText: 'Opening statement',
+        words: [],
+        confidence: 0.88,
+        takeIndex: 1,
+        isBestTake: true,
+        qualityFlags: [],
+    }],
+    modelProvenance: { provider: 'vertex_ai', modelId: 'test-model' },
+    createdAt: '2026-08-08T20:00:00.000Z',
+    receiptId: 'receipt-plan-generated-1',
 };
 
 describe('generateSessionEditPlan Handler', () => {
     it('generates a new SessionEditPlan and persists it', async () => {
         const db = createFakeFirestore(mockSession);
-        const handler = createGenerateSessionEditPlanHandler(db);
+        const generator = { generate: vi.fn().mockResolvedValue(generatedPlan) };
+        const handler = createGenerateSessionEditPlanHandler(db, generator);
 
         const result = await handler({
             sessionId: 'session-1',
@@ -92,6 +135,14 @@ describe('generateSessionEditPlan Handler', () => {
         expect(result.plan.ownerUid).toBe('user-1');
         expect(result.plan.segments.length).toBeGreaterThan(0);
         expect(result.plan.segments[0]?.classification).toBe('spoken');
+        expect(generator.generate).toHaveBeenCalledWith(expect.objectContaining({
+            proxy: {
+                bucket: 'indii-test.firebasestorage.app',
+                path: 'session-media/user-1/session-1/proxy/video.mp4',
+                mimeType: 'video/mp4',
+            },
+            timeMap: mockSession.proxyManifest.timeMap,
+        }));
     });
 
     it('denies cross-owner session access', async () => {
@@ -155,5 +206,99 @@ describe('generateSessionEditPlan Handler', () => {
 
         expect(result.reused).toBe(true);
         expect(result.plan.planId).toBe('plan-existing-1');
+    });
+});
+
+describe('default session edit-plan generator', () => {
+    const input = {
+        sessionId: 'session-1',
+        ownerUid: 'user-1',
+        organizationId: 'org-1',
+        projectId: 'proj-1',
+        sourceGeneration: '123456789',
+        durationUs: 10_000_000,
+        syncAlignmentId: 'alignment-1',
+        proxy: {
+            bucket: 'indii-test.firebasestorage.app',
+            path: 'session-media/user-1/session-1/proxy/video.mp4',
+            mimeType: 'video/mp4',
+        },
+        timeMap: {
+            version: 'presentation-time-map.v1' as const,
+            segments: [{
+                proxyStartUs: 0,
+                proxyEndUs: 10_000_000,
+                originalStartUs: 0,
+                originalEndUs: 20_000_000,
+            }],
+        },
+    };
+
+    it('builds a validated plan from the private proxy and real model metadata', async () => {
+        const generateContent = vi.fn().mockResolvedValue({
+            text: JSON.stringify({
+                segments: [{
+                    classification: 'performance',
+                    proxyStartUs: 1_000_000,
+                    proxyEndUs: 3_000_000,
+                    transcriptText: '[Visual] Artist performs the chorus.',
+                    confidence: 0.82,
+                    takeIndex: 2,
+                    isBestTake: true,
+                    qualityFlags: ['reverb'],
+                }],
+            }),
+            modelVersion: 'gemini-real-version',
+            usageMetadata: { promptTokenCount: 321, candidatesTokenCount: 123 },
+        });
+        const generator = createDefaultEditPlanGenerator({ generateContent } as unknown as Pick<Models, 'generateContent'>);
+
+        const plan = await generator.generate(input);
+
+        expect(generateContent).toHaveBeenCalledWith(expect.objectContaining({
+            contents: [expect.objectContaining({
+                parts: expect.arrayContaining([
+                    expect.objectContaining({
+                        fileData: {
+                            mimeType: 'video/mp4',
+                            fileUri: 'gs://indii-test.firebasestorage.app/session-media/user-1/session-1/proxy/video.mp4',
+                        },
+                    }),
+                ]),
+            })],
+        }));
+        expect(plan.segments[0]).toEqual(expect.objectContaining({
+            classification: 'performance',
+            proxyStartUs: 1_000_000,
+            proxyEndUs: 3_000_000,
+            originalStartUs: 2_000_000,
+            originalEndUs: 6_000_000,
+            confidence: 0.82,
+        }));
+        expect(plan.modelProvenance).toEqual({
+            provider: 'vertex_ai',
+            modelId: 'gemini-real-version',
+            promptTokens: 321,
+            completionTokens: 123,
+        });
+    });
+
+    it('fails closed instead of persisting a fabricated plan when model timing is invalid', async () => {
+        const generateContent = vi.fn().mockResolvedValue({
+            text: JSON.stringify({
+                segments: [{
+                    classification: 'spoken',
+                    proxyStartUs: 0,
+                    proxyEndUs: 11_000_000,
+                    transcriptText: 'Out of bounds',
+                    confidence: 0.9,
+                    isBestTake: true,
+                    qualityFlags: [],
+                }],
+            }),
+        });
+        const generator = createDefaultEditPlanGenerator({ generateContent } as unknown as Pick<Models, 'generateContent'>);
+
+        await expect(generator.generate(input)).rejects.toThrow('invalid segment timing');
     });
 });

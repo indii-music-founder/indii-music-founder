@@ -179,6 +179,34 @@ service cloud.firestore {
       return field is string && field.size() >= minLen && field.size() <= maxLen;
     }
 
+    function isValidSplitPayee(payee) {
+      return payee is map &&
+        payee.keys().hasOnly(['walletAddress', 'percentage', 'role']) &&
+        payee.walletAddress is string &&
+        payee.walletAddress.matches('^0x[0-9a-fA-F]{40}$') &&
+        payee.percentage is number &&
+        payee.percentage >= 0 &&
+        payee.percentage <= 100 &&
+        isValidString(payee.role, 1, 80);
+    }
+
+    function isValidSplitPayees(payees) {
+      return payees is list && payees.size() >= 2 && payees.size() <= 6 &&
+        isValidSplitPayee(payees[0]) &&
+        isValidSplitPayee(payees[1]) &&
+        (payees.size() < 3 || isValidSplitPayee(payees[2])) &&
+        (payees.size() < 4 || isValidSplitPayee(payees[3])) &&
+        (payees.size() < 5 || isValidSplitPayee(payees[4])) &&
+        (payees.size() < 6 || isValidSplitPayee(payees[5])) &&
+        (
+          (payees.size() == 2 && payees[0].percentage + payees[1].percentage == 100) ||
+          (payees.size() == 3 && payees[0].percentage + payees[1].percentage + payees[2].percentage == 100) ||
+          (payees.size() == 4 && payees[0].percentage + payees[1].percentage + payees[2].percentage + payees[3].percentage == 100) ||
+          (payees.size() == 5 && payees[0].percentage + payees[1].percentage + payees[2].percentage + payees[3].percentage + payees[4].percentage == 100) ||
+          (payees.size() == 6 && payees[0].percentage + payees[1].percentage + payees[2].percentage + payees[3].percentage + payees[4].percentage + payees[5].percentage == 100)
+        );
+    }
+
     function isValidPreSaveLinks(links) {
       return links is map &&
         links.keys().hasOnly(['spotify', 'appleMusic', 'amazonMusic']) &&
@@ -770,6 +798,21 @@ service cloud.firestore {
         allow delete: if isOwner(userId);
       }
 
+      // Browser push registration. The document ID and payload token must
+      // match so one device cannot overwrite an unrelated registration.
+      match /fcm_tokens/{tokenId} {
+        allow read: if false;
+        allow create, update: if isOwner(userId) &&
+          request.resource.data.keys().hasOnly(['token', 'platform', 'updatedAt']) &&
+          request.resource.data.token == tokenId &&
+          request.resource.data.token is string &&
+          request.resource.data.token.size() >= 1 &&
+          request.resource.data.token.size() <= 4096 &&
+          request.resource.data.platform in ['Android', 'iOS', 'Web'] &&
+          request.resource.data.updatedAt is timestamp;
+        allow delete: if isOwner(userId);
+      }
+
       match /contracts/{contractId} {
         allow read, create, update: if isOwner(userId);
         allow delete: if false;
@@ -1318,8 +1361,19 @@ service cloud.firestore {
 
     match /smart_contracts/{contractId} {
       allow read, delete: if isVerifiedUser() && resource.data.userId == request.auth.uid;
-      allow create: if isVerifiedUser() && ownerCreateIsValid('userId');
-      allow update: if isVerifiedUser() && ownerUpdateIsValid('userId');
+      allow create: if isVerifiedUser() && ownerCreateIsValid('userId') &&
+        request.resource.data.keys().hasOnly([
+          'userId', 'isrc', 'payees', 'tokenName', 'tokenSymbol', 'tokenType',
+          'status', 'createdAt'
+        ]) &&
+        isValidString(request.resource.data.isrc, 5, 32) &&
+        isValidString(request.resource.data.tokenName, 1, 120) &&
+        isValidString(request.resource.data.tokenSymbol, 1, 12) &&
+        request.resource.data.tokenType in ['ERC-721', 'ERC-1155'] &&
+        request.resource.data.status == 'draft_unverified' &&
+        request.resource.data.createdAt is timestamp &&
+        isValidSplitPayees(request.resource.data.payees);
+      allow update: if false;
     }
 
     // Doc ID is the user's own uid — no separate userId field needed.
@@ -1520,6 +1574,83 @@ service cloud.firestore {
       allow read, write: if isOwner(userId);
     }
 
+    // Cross-device notes. The path owns the document and every stored identity
+    // field is pinned to that path so queries cannot be shifted across users.
+    match /users/{userId}/notes/{noteId} {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId)
+        && request.resource.data.keys().hasOnly([
+             'id', 'title', 'content', 'attachments', 'tags', 'createdAt', 'updatedAt', 'userId'
+           ])
+        && request.resource.data.keys().hasAll([
+             'id', 'title', 'content', 'attachments', 'tags', 'createdAt', 'updatedAt', 'userId'
+           ])
+        && request.resource.data.id == noteId
+        && request.resource.data.userId == userId
+        && isValidString(request.resource.data.title, 0, 300)
+        && isValidString(request.resource.data.content, 0, 500000)
+        && request.resource.data.attachments is list
+        && request.resource.data.attachments.size() <= 50
+        && request.resource.data.tags is list
+        && request.resource.data.tags.size() <= 50
+        && request.resource.data.createdAt is number
+        && request.resource.data.updatedAt is timestamp;
+      allow update: if isOwner(userId)
+        && request.resource.data.keys().hasOnly([
+             'id', 'title', 'content', 'attachments', 'tags', 'createdAt', 'updatedAt', 'userId'
+           ])
+        && request.resource.data.id == noteId
+        && request.resource.data.userId == userId
+        && request.resource.data.createdAt == resource.data.createdAt
+        && isValidString(request.resource.data.title, 0, 300)
+        && isValidString(request.resource.data.content, 0, 500000)
+        && request.resource.data.attachments is list
+        && request.resource.data.attachments.size() <= 50
+        && request.resource.data.tags is list
+        && request.resource.data.tags.size() <= 50
+        && request.resource.data.updatedAt is timestamp;
+      allow delete: if isOwner(userId);
+    }
+
+    // Contacts are user-verified facts, never model-generated identities.
+    match /users/{userId}/publicist_media_contacts/{contactId} {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId)
+        && request.resource.data.keys().hasOnly(['name', 'contact', 'tags', 'createdAt', 'updatedAt'])
+        && request.resource.data.keys().hasAll(['name', 'contact', 'tags', 'createdAt', 'updatedAt'])
+        && isValidString(request.resource.data.name, 1, 200)
+        && isValidString(request.resource.data.contact, 1, 500)
+        && request.resource.data.tags is list
+        && request.resource.data.tags.size() <= 50
+        && request.resource.data.createdAt is timestamp
+        && request.resource.data.updatedAt is timestamp;
+      allow update: if false;
+      allow delete: if isOwner(userId);
+    }
+
+    // A PRO draft is evidence of local preparation only. It is immutable and
+    // cannot claim a filed/submitted state through a client write.
+    match /users/{userId}/proSubmissionDrafts/{draftId} {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId)
+        && request.resource.data.keys().hasOnly([
+             'workTitle', 'writers', 'publisher', 'society', 'status', 'createdAt', 'updatedAt'
+           ])
+        && request.resource.data.keys().hasAll([
+             'workTitle', 'writers', 'publisher', 'society', 'status', 'createdAt', 'updatedAt'
+           ])
+        && isValidString(request.resource.data.workTitle, 1, 300)
+        && request.resource.data.writers is list
+        && request.resource.data.writers.size() > 0
+        && request.resource.data.writers.size() <= 50
+        && (request.resource.data.publisher == null || request.resource.data.publisher is map)
+        && isValidString(request.resource.data.society, 1, 80)
+        && request.resource.data.status == 'requires_manual_submission'
+        && request.resource.data.createdAt is timestamp
+        && request.resource.data.updatedAt is timestamp;
+      allow update, delete: if false;
+    }
+
     // Evolas fader values (docs/EVOLAS_BUILD_PLAN.md, non-negotiable #1):
     // this document may only ever contain style-rendering knobs. It has no
     // field capable of carrying a substance/verdict override, by schema.
@@ -1646,15 +1777,36 @@ service cloud.firestore {
     // =========================================================================
     match /label_deals/{dealId} {
       allow read: if (isVerifiedUser() && resource.data.get('userId', null) == request.auth.uid) || (isGuest() && resource.data.get('userId', null) == 'founder-demo-uid');
-      allow create: if isVerifiedUser() && ownerCreateIsValid('userId');
-      allow update: if isVerifiedUser() && ownerUpdateIsValid('userId');
+      allow create: if isVerifiedUser()
+        && ownerCreateIsValid('userId')
+        && request.resource.data.keys().hasOnly([
+             'label', 'advanceAmount', 'recoupedAmount', 'dealDate', 'notes', 'userId', 'createdAt'
+           ])
+        && request.resource.data.keys().hasAll([
+             'label', 'advanceAmount', 'recoupedAmount', 'dealDate', 'userId', 'createdAt'
+           ])
+        && isValidString(request.resource.data.label, 1, 200)
+        && request.resource.data.advanceAmount is number
+        && request.resource.data.advanceAmount > 0
+        && request.resource.data.advanceAmount <= 1000000000
+        && request.resource.data.recoupedAmount is number
+        && request.resource.data.recoupedAmount >= 0
+        && request.resource.data.recoupedAmount <= 1000000000
+        && isValidString(request.resource.data.dealDate, 10, 10)
+        && request.resource.data.dealDate.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+        && (!('notes' in request.resource.data) || isValidString(request.resource.data.notes, 1, 5000))
+        && request.resource.data.createdAt is timestamp;
+      allow update: if isVerifiedUser()
+        && ownerUpdateIsValid('userId')
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['recoupedAmount'])
+        && request.resource.data.recoupedAmount is number
+        && request.resource.data.recoupedAmount >= 0
+        && request.resource.data.recoupedAmount <= 1000000000;
       allow delete: if false;
 
-      // Recoupment transactions applied against this deal — owner of the parent deal only.
+      // No transaction writer or server reconciliation exists in this build.
       match /transactions/{txId} {
-        allow read, create: if isVerifiedUser() &&
-          get(/databases/$(database)/documents/label_deals/$(dealId)).data.userId == request.auth.uid;
-        allow update, delete: if false;
+        allow read, create, update, delete: if false;
       }
     }
 
@@ -2065,9 +2217,40 @@ service cloud.firestore {
 
     match /licenses/{licenseId} {
       allow read: if isVerifiedUser() && resource.data.get('userId', null) == request.auth.uid;
-      allow create: if isVerifiedUser() && ownerCreateIsValid('userId');
-      allow update: if isVerifiedUser() && ownerUpdateIsValid('userId');
-      allow delete: if isVerifiedUser() && resource.data.get('userId', null) == request.auth.uid;
+      // Active licenses are financial/legal fulfillment records. Only trusted
+      // server code may create or mutate them after verified payment and terms.
+      allow create, update, delete: if false;
+    }
+
+    match /license_requests/{requestId} {
+      function validLicenseRequest(data) {
+        return data.keys().hasOnly([
+            'userId', 'title', 'artist', 'usage', 'status', 'quote', 'notes',
+            'sourceUrl', 'aiAnalysis', 'requestedAt', 'createdAt', 'updatedAt'
+          ]) &&
+          data.get('userId', null) == request.auth.uid &&
+          data.get('title', '') is string && data.get('title', '').size() > 0 && data.get('title', '').size() <= 200 &&
+          data.get('artist', '') is string && data.get('artist', '').size() > 0 && data.get('artist', '').size() <= 200 &&
+          data.get('usage', '') is string && data.get('usage', '').size() > 0 && data.get('usage', '').size() <= 2000 &&
+          data.get('quote', '') is string && data.get('quote', '').size() <= 500 &&
+          data.get('notes', '') is string && data.get('notes', '').size() <= 5000 &&
+          data.get('sourceUrl', '') is string && data.get('sourceUrl', '').size() <= 2048 &&
+          data.get('aiAnalysis', '') is string && data.get('aiAnalysis', '').size() <= 20000 &&
+          data.get('requestedAt', request.time) is timestamp &&
+          data.get('createdAt', request.time) is timestamp &&
+          data.get('updatedAt', request.time) is timestamp;
+      }
+      allow read: if isVerifiedUser() && resource.data.get('userId', null) == request.auth.uid;
+      allow create: if isVerifiedUser() &&
+        request.resource.data.get('status', null) == 'checking' &&
+        validLicenseRequest(request.resource.data);
+      allow update: if isVerifiedUser() &&
+        resource.data.get('userId', null) == request.auth.uid &&
+        request.resource.data.get('userId', null) == resource.data.get('userId', null) &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'notes', 'updatedAt']) &&
+        request.resource.data.get('status', null) in ['checking', 'pending_approval', 'negotiating'] &&
+        validLicenseRequest(request.resource.data);
+      allow delete: if false;
     }
 
     // Owner-by-path segment (uid).

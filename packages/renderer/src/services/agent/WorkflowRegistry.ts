@@ -137,23 +137,23 @@ export const WORKFLOW_REGISTRY: Record<string, WorkflowDefinition> = {
     'INDII_GROWTH_PROTOCOL': {
         id: 'INDII_GROWTH_PROTOCOL',
         name: 'indii Growth Protocol',
-        description: 'Automated Meta PLP creative pipeline and 28-day algorithmic spike campaign.',
+        description: 'Prepare a review-ready Meta PLP creative and campaign package; no ads are launched without live credentials and approval.',
         steps: [
             {
                 id: 'video_generation',
                 agentId: 'creative',
-                prompt: 'Trigger a Node recipe instructing the Video Agent (using veo-3.1-generate-001) to mass-generate 6 to 15 unique 9:16 vertical video variations. Enforce the 3-Second Hook rule.',
+                prompt: 'Prepare a production brief for 6 to 15 unique 9:16 vertical video variations with a 3-second hook. Generate assets only through an authorized generation tool, preserve every returned asset receipt, and do not claim an asset exists when the tool produced only a brief.',
                 priority: 'URGENT'
             },
             {
-                id: 'ad_deployment',
+                id: 'campaign_package',
                 agentId: 'marketing',
-                prompt: 'Deploy all creative variations simultaneously with a $5-$10 daily budget. Enforce strict Instagram-Only placements. Monitor CTR and Save Rates, autonomously kill losing creatives by Day 3, and scale the winners.',
+                prompt: 'Prepare a Meta micro-campaign package for review using the requested daily budget and Instagram-only placements. Include the measurement and Day-3 optimization plan, but do not claim ads were launched, monitored, paused, or scaled unless a live provider tool returns authoritative campaign and action IDs.',
                 priority: 'HIGH'
             }
         ],
         edges: [
-            { from: 'video_generation', to: 'ad_deployment' }
+            { from: 'video_generation', to: 'campaign_package' }
         ]
     }
 };

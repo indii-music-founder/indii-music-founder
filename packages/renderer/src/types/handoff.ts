@@ -46,6 +46,32 @@ export interface StageHandoffPayload {
     parentJobId?: string;
 }
 
+/**
+ * Structured Screenwriter -> Creative storyboard handoff.
+ *
+ * This is deliberately separate from StageHandoffPayload: that contract moves
+ * one durable media asset, while a screenplay handoff moves an ordered set of
+ * editable scene plans and must not collapse them into one generation prompt.
+ */
+export interface ScreenwriterStoryboardHandoffScene {
+    id: string;
+    sceneNumber: number;
+    heading: string;
+    description: string;
+    cameraAngle: string;
+    durationSeconds: number;
+    prompt: string;
+}
+
+export interface ScreenwriterStoryboardHandoff {
+    projectId: string;
+    name: string;
+    concept: string;
+    tone: 'cinematic' | 'abstract' | 'hype';
+    scenes: ScreenwriterStoryboardHandoffScene[];
+    timestamp: number;
+}
+
 // Type validation: which asset types are valid for each role
 export const VALID_ASSET_TYPES: Record<HandoffRole, ('image' | 'video' | 'music' | 'text')[]> = {
     'source-video': ['video'],

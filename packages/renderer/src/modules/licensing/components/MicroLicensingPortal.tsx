@@ -1,14 +1,12 @@
 import React, { useState } from 'react';
-import { FileText, Copy, Download, CheckCircle2, Music, Globe, Clock, DollarSign, CreditCard, Loader2 } from 'lucide-react';
-import { licensingService } from '@/services/licensing/LicensingService';
-import { useStore } from '@/core/store';
+import { FileText, Copy, Download, CheckCircle2, Music, Globe, Clock, DollarSign, LockKeyhole } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
 
 /* ================================================================== */
 /*  Micro-Licensing Portal — Beat Leasing Contract Builder             */
 /* ================================================================== */
 
-interface LeaseForm {
+export interface LeaseForm {
     trackTitle: string;
     isrc: string;
     leaseType: 'exclusive' | 'non-exclusive';
@@ -34,9 +32,22 @@ const INITIAL_FORM: LeaseForm = {
     streamingRights: true,
 };
 
-function buildContractHTML(form: LeaseForm): string {
+function escapeHtml(value: string): string {
+    return value.replace(/[&<>'"]/g, character => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        "'": '&#39;',
+        '"': '&quot;',
+    }[character] ?? character));
+}
+
+export function buildContractHTML(form: LeaseForm): string {
     const today = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
     const termLabel = form.term === '1yr' ? 'One (1) Year' : form.term === '3yr' ? 'Three (3) Years' : 'Lifetime (perpetual)';
+    const trackTitle = escapeHtml(form.trackTitle || '[TRACK TITLE]');
+    const isrc = escapeHtml(form.isrc || '[ISRC CODE]');
+    const territory = escapeHtml(form.territory);
     const rights: string[] = [];
     if (form.syncRights) rights.push('Synchronization Rights');
     if (form.masterRights) rights.push('Master Use Rights');
@@ -45,7 +56,7 @@ function buildContractHTML(form: LeaseForm): string {
 
     return `<!DOCTYPE html>
 <html lang="en">
-<head><meta charset="UTF-8"><title>Beat Lease Agreement — ${form.trackTitle}</title>
+<head><meta charset="UTF-8"><title>Beat Lease Agreement — ${trackTitle}</title>
 <style>body{font-family:Georgia,serif;max-width:800px;margin:40px auto;padding:0 40px;color:#111;line-height:1.7}
 h1{text-align:center;font-size:20px;text-transform:uppercase;letter-spacing:2px;border-bottom:2px solid #111;padding-bottom:12px}
 h2{font-size:14px;text-transform:uppercase;letter-spacing:1px;margin-top:28px}
@@ -59,16 +70,16 @@ p{margin:8px 0;font-size:13px}.meta{display:grid;grid-template-columns:1fr 1fr;g
 <p style="text-align:center;font-size:12px;color:#555">This agreement is entered into as of <strong>${today}</strong></p>
 
 <div class="meta">
-  <div><span class="label">Track Title</span>${form.trackTitle || '[TRACK TITLE]'}</div>
-  <div><span class="label">ISRC</span>${form.isrc || '[ISRC CODE]'}</div>
+  <div><span class="label">Track Title</span>${trackTitle}</div>
+  <div><span class="label">ISRC</span>${isrc}</div>
   <div><span class="label">Lease Type</span><span class="badge">${form.leaseType.replace('-', ' ')}</span></div>
-  <div><span class="label">Territory</span>${form.territory}</div>
+  <div><span class="label">Territory</span>${territory}</div>
   <div><span class="label">Term</span>${termLabel}</div>
   <div><span class="label">License Fee</span>$${parseFloat(form.price || '0').toFixed(2)} USD</div>
 </div>
 
 <h2>1. Grant of License</h2>
-<p>The Licensor ("Producer") hereby grants the Licensee ("Artist") a <strong>${form.leaseType === 'exclusive' ? 'fully exclusive' : 'non-exclusive'}</strong> license to use the musical composition identified above (the "Beat") within the territory of <strong>${form.territory}</strong> for a term of <strong>${termLabel}</strong> from the date of payment.</p>
+<p>The Licensor ("Producer") hereby grants the Licensee ("Artist") a <strong>${form.leaseType === 'exclusive' ? 'fully exclusive' : 'non-exclusive'}</strong> license to use the musical composition identified above (the "Beat") within the territory of <strong>${territory}</strong> for a term of <strong>${termLabel}</strong> from the date of payment.</p>
 
 <h2>2. Granted Rights</h2>
 <p>This license includes the following rights:</p>
@@ -108,47 +119,6 @@ export function MicroLicensingPortal() {
     const [contractHTML, setContractHTML] = useState<string | null>(null);
     const [copied, setCopied] = useState(false);
     const toast = useToast();
-    const [purchasing, setPurchasing] = useState(false);
-
-    const handlePurchase = async () => {
-        if (!form.trackTitle.trim()) return;
-        const priceNum = parseFloat(form.price);
-        if (isNaN(priceNum) || priceNum <= 0) {
-            toast.error('Please enter a valid price to purchase.');
-            return;
-        }
-
-        const userProfile = useStore.getState().userProfile;
-        if (!userProfile?.id) {
-            toast.error('Please sign in to purchase a license.');
-            return;
-        }
-
-        setPurchasing(true);
-        try {
-            // Default to artist connected account, or developer account for testing
-            const connectedAccountId = 'acct_123456'; 
-            const priceInCents = Math.round(priceNum * 100);
-
-            const checkoutUrl = await licensingService.initiateLicensePurchase({
-                userId: userProfile.id,
-                trackTitle: form.trackTitle,
-                artist: userProfile.displayName || 'indii Artist',
-                price: priceInCents,
-                connectedAccountId,
-            });
-
-            toast.info('Redirecting to Stripe Checkout...');
-            if (typeof window !== 'undefined') {
-                window.location.href = checkoutUrl;
-            }
-        } catch (err: unknown) {
-            console.error('[MicroLicensingPortal] Purchase failed:', err);
-            toast.error(err instanceof Error ? err.message : 'Checkout failed');
-        } finally {
-            setPurchasing(false);
-        }
-    };
 
     const update = <K extends keyof LeaseForm>(key: K, value: LeaseForm[K]) =>
         setForm(prev => ({ ...prev, [key]: value }));
@@ -329,15 +299,15 @@ export function MicroLicensingPortal() {
                             className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-[11px] font-bold uppercase tracking-widest rounded-lg transition-colors flex items-center justify-center gap-2"
                         >
                             <FileText size={14} />
-                            Generate Contract
+                            Generate Draft
                         </button>
                         <button
-                            onClick={handlePurchase}
-                            disabled={!form.trackTitle.trim() || !form.price || purchasing}
-                            className="w-full py-2.5 bg-amber-600 hover:bg-amber-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-[11px] font-bold uppercase tracking-widest rounded-lg transition-colors flex items-center justify-center gap-2"
+                            disabled
+                            title="Checkout requires a versioned agreement accepted by the licensee and a verified payout account."
+                            className="w-full py-2.5 bg-amber-600/30 cursor-not-allowed text-amber-200/60 text-[11px] font-bold uppercase tracking-widest rounded-lg flex items-center justify-center gap-2"
                         >
-                            {purchasing ? <Loader2 size={14} className="animate-spin" /> : <CreditCard size={14} />}
-                            Purchase License
+                            <LockKeyhole size={14} />
+                            Checkout Setup Required
                         </button>
                     </div>
                 </div>
@@ -345,7 +315,7 @@ export function MicroLicensingPortal() {
                 {/* Contract Preview */}
                 <div className="bg-white/[0.02] border border-white/5 rounded-xl p-4 flex flex-col">
                     <div className="flex items-center justify-between mb-3">
-                        <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest">Contract Preview</h3>
+                        <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest">Contract Draft Preview</h3>
                         {contractHTML && (
                             <div className="flex items-center gap-2">
                                 <button
@@ -379,7 +349,7 @@ export function MicroLicensingPortal() {
                             </div>
                             <div>
                                 <p className="text-sm font-bold text-gray-500">No contract generated yet</p>
-                                <p className="text-xs text-gray-600 mt-1">Fill in the form and click "Generate Contract"</p>
+                                <p className="text-xs text-gray-600 mt-1">Fill in the form and click "Generate Draft"</p>
                             </div>
                         </div>
                     )}
@@ -390,7 +360,7 @@ export function MicroLicensingPortal() {
             <div className="flex items-start gap-3 p-3 rounded-xl bg-amber-500/5 border border-amber-500/10">
                 <FileText size={14} className="text-amber-400 flex-shrink-0 mt-0.5" />
                 <p className="text-[11px] text-amber-300/70 leading-relaxed">
-                    Generated contracts are templates only. All agreements must be reviewed by qualified legal counsel before execution. indii is not a law firm and this tool does not constitute legal advice.
+                    Generated contracts are templates only. Checkout is disabled until the product can store a versioned agreement, capture the licensee&apos;s acceptance, and verify the payout recipient. All agreements should be reviewed by qualified legal counsel before execution. indii is not a law firm and this tool does not constitute legal advice.
                 </p>
             </div>
         </div>

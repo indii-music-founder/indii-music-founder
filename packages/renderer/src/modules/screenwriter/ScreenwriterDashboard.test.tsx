@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import ScreenwriterDashboard, { screenwriterDraftStorageKey } from './ScreenwriterDashboard';
 import { useStore } from '@/core/store';
+import { useVideoEditorStore } from '@/modules/creative/video/store/videoEditorStore';
 
 const mockSuccess = vi.fn();
 const mockError = vi.fn();
@@ -10,7 +11,6 @@ const mockCreateArtifact = vi.fn();
 const mockSetModule = vi.fn().mockResolvedValue(undefined);
 const mockSetGenerationMode = vi.fn();
 const mockSetViewMode = vi.fn();
-const mockSetCreativePrompt = vi.fn();
 const DRAFT_KEY = screenwriterDraftStorageKey('test-user', 'test-project');
 
 vi.mock('@/core/context/ToastContext', () => ({
@@ -50,10 +50,11 @@ describe('ScreenwriterDashboard', () => {
             setModule: mockSetModule,
             setGenerationMode: mockSetGenerationMode,
             setViewMode: mockSetViewMode,
-            setCreativePrompt: mockSetCreativePrompt,
             userProfile: { id: 'test-user' },
             currentProjectId: 'test-project',
         });
+        useVideoEditorStore.getState().setStoryboardProject(null);
+        useVideoEditorStore.getState().setViewMode('director');
         (window as any).electronAPI = {
             agent: {
                 createArtifact: mockCreateArtifact.mockResolvedValue({ success: true }),
@@ -81,23 +82,37 @@ describe('ScreenwriterDashboard', () => {
         expect(mockSuccess).toHaveBeenCalledWith('Script exported to an artifact.');
     });
 
-    it('loads the storyboard into Creative Studio instead of faking a send', async () => {
+    it('opens a typed, scene-preserving storyboard in Creative Studio', async () => {
         render(<ScreenwriterDashboard />);
 
         fireEvent.click(screen.getByRole('button', { name: /open creative studio/i }));
 
-        await waitFor(() => {
-            expect(mockSetCreativePrompt).toHaveBeenCalled();
-        });
+        await waitFor(() => expect(mockSetModule).toHaveBeenCalledWith('creative'));
 
-        expect(mockSetCreativePrompt).toHaveBeenCalledWith(expect.stringContaining(
-            'Storyboard timing manifest: {"totalDurationSeconds":20,"scenes":[{"sceneNumber":1,"durationSeconds":5}'
-        ));
-        expect(mockSetCreativePrompt).toHaveBeenCalledWith(expect.stringContaining('(5s)'));
+        const editorState = useVideoEditorStore.getState();
+        expect(editorState.viewMode).toBe('storyboard');
+        expect(editorState.storyboardProject).toMatchObject({
+            source: 'screenwriter',
+            durationSeconds: 20,
+            tone: 'cinematic',
+        });
+        expect(editorState.storyboardProject?.slots).toHaveLength(3);
+        expect(editorState.storyboardProject?.slots[0]).toMatchObject({
+            sourceSceneNumber: 1,
+            heading: 'EXT. CITY ALLEY - NIGHT',
+            cameraAngle: 'Extreme Wide Shot - Slow tracking lateral pan',
+            durationSeconds: 5,
+            startSeconds: 0,
+            prompt: expect.stringContaining('rainy neon alley'),
+        });
+        expect(editorState.storyboardProject?.slots[1]).toMatchObject({
+            sourceSceneNumber: 2,
+            durationSeconds: 8,
+            startSeconds: 5,
+        });
         expect(mockSetGenerationMode).toHaveBeenCalledWith('video');
         expect(mockSetViewMode).toHaveBeenCalledWith('video_production');
-        expect(mockSetModule).toHaveBeenCalledWith('creative');
-        expect(mockSuccess).toHaveBeenCalledWith('Storyboard loaded into Creative Studio.');
+        expect(mockSuccess).toHaveBeenCalledWith('3 storyboard scenes opened in Creative Studio.');
     });
 
     it('persists the draft locally across remounts', async () => {
@@ -122,6 +137,22 @@ describe('ScreenwriterDashboard', () => {
         });
 
         expect(screen.getByDisplayValue('Reloaded scene description')).toBeInTheDocument();
+    });
+
+    it('adds an editable blank scene without pretending AI generated it', async () => {
+        render(<ScreenwriterDashboard />);
+
+        expect(screen.getByRole('button', { name: /ai expansion unavailable/i })).toBeDisabled();
+        expect(screen.getByText(/ai expansion is not connected/i)).toBeInTheDocument();
+
+        fireEvent.click(screen.getByRole('button', { name: /add blank scene/i }));
+
+        expect(screen.getByText('Edit Scene Board')).toBeInTheDocument();
+        expect(screen.getByDisplayValue('UNTITLED SCENE')).toBeInTheDocument();
+        expect(screen.getByText('4 scene boards')).toBeInTheDocument();
+        await waitFor(() => {
+            expect(window.localStorage.getItem(DRAFT_KEY)).toContain('UNTITLED SCENE');
+        });
     });
 
     it('rejects invalid scene timing without corrupting the draft', () => {
@@ -162,6 +193,7 @@ describe('ScreenwriterDashboard', () => {
 
         fireEvent.click(screen.getByRole('button', { name: /open creative studio/i }));
         expect(mockSetModule).not.toHaveBeenCalled();
+        expect(useVideoEditorStore.getState().storyboardProject).toBeNull();
         expect(mockError).toHaveBeenCalledWith(expect.stringContaining('invalid saved duration'));
 
         fireEvent.change(durationInput, { target: { value: '9' } });

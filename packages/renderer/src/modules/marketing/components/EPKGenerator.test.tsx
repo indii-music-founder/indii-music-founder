@@ -35,9 +35,8 @@ describe('EPKGenerator — HTML export security', () => {
     }
 
     async function generateAndDownload(): Promise<string> {
-        fireEvent.click(screen.getByRole('button', { name: /generate epk/i }));
-        // The component's simulated "generate" delay is a real 1.8s setTimeout — wait it out for real.
-        const downloadBtn = await screen.findByRole('button', { name: /download html/i }, { timeout: 3000 });
+        fireEvent.click(screen.getByRole('button', { name: /build downloadable epk/i }));
+        const downloadBtn = await screen.findByRole('button', { name: /download html/i });
         fireEvent.click(downloadBtn);
         expect(capturedBlob).not.toBeNull();
         return readBlobText(capturedBlob!);
@@ -114,5 +113,14 @@ describe('EPKGenerator — HTML export security', () => {
 
         expect(html).not.toContain('"><svg onload=alert(1)>');
         expect(html).toContain('&quot;&gt;&lt;svg onload=alert(1)&gt;');
+    });
+
+    it('never presents an invented hosted URL or copy-link action', () => {
+        render(<EPKGenerator />);
+        fireEvent.click(screen.getByRole('button', { name: /build downloadable epk/i }));
+
+        expect(screen.getByText('Local preview — not published')).toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: /copy link/i })).not.toBeInTheDocument();
+        expect(screen.queryByText(/indii\.vip/i)).not.toBeInTheDocument();
     });
 });

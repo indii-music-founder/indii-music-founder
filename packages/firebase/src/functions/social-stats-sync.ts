@@ -2,106 +2,289 @@ import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import * as admin from 'firebase-admin';
 import { z } from 'zod';
 
-const db = admin.firestore();
+const SyncStatsRequestSchema = z.object({
+  platform: z.enum(['spotify', 'instagram', 'tiktok', 'twitter', 'youtube']),
+  artistId: z.string().regex(/^[A-Za-z0-9]{1,128}$/).optional(),
+});
+
+type SocialStatsPlatform = z.infer<typeof SyncStatsRequestSchema>['platform'];
 
 export interface PlatformStats {
-  platform: string;
+  platform: SocialStatsPlatform;
   followers?: number;
   impressions?: number;
   plays?: number;
   likes?: number;
   shares?: number;
   fetchedAt: number;
-  lastError?: string;
 }
 
-const SyncStatsRequestSchema = z.object({
-  platform: z.enum(['spotify', 'instagram', 'tiktok', 'twitter', 'youtube']),
-});
+export interface PlatformSyncResult extends PlatformStats {
+  connected: boolean;
+  authorized: boolean;
+  liveSyncOk: boolean;
+  cacheOnly: boolean;
+  error?: 'not_connected' | 'authorization_expired' | 'live_sync_failed';
+}
 
-/**
- * Server-side platform stats sync.
- * Reads OAuth tokens via Admin SDK (bypasses client-side rules denials).
- * Client calls this callable instead of reading tokens directly.
- */
-export const syncPlatformStats = onCall(async (request) => {
-  if (!request.auth?.uid) {
-    throw new HttpsError('unauthenticated', 'User must be signed in.');
+interface StoredSocialToken {
+  accessToken?: unknown;
+  expiresAt?: unknown;
+  igUserId?: unknown;
+}
+
+interface SnapshotLike {
+  exists: boolean;
+  data(): Record<string, unknown> | undefined;
+}
+
+interface DocumentRefLike {
+  get(): Promise<SnapshotLike>;
+  set(data: Record<string, unknown>, options: { merge: boolean }): Promise<unknown>;
+}
+
+interface UserDocumentLike {
+  collection(name: string): { doc(id: string): DocumentRefLike };
+}
+
+export interface SocialStatsDependencies {
+  userDocument(uid: string): UserDocumentLike;
+  fetch: typeof fetch;
+  now(): number;
+  serverTimestamp(): unknown;
+}
+
+const defaultDependencies: SocialStatsDependencies = {
+  userDocument: (uid) => admin.firestore().collection('users').doc(uid) as unknown as UserDocumentLike,
+  fetch,
+  now: () => Date.now(),
+  serverTimestamp: () => admin.firestore.FieldValue.serverTimestamp(),
+};
+
+function subdocument(deps: SocialStatsDependencies, uid: string, collection: string, id: string): DocumentRefLike {
+  return deps.userDocument(uid).collection(collection).doc(id);
+}
+
+async function readServerToken(
+  deps: SocialStatsDependencies,
+  uid: string,
+  platform: SocialStatsPlatform,
+): Promise<StoredSocialToken | undefined> {
+  // OAuth analytics connections use analyticsTokens. Legacy publishing/social
+  // connections may still live in socialTokens, so read that only as a migration
+  // fallback. Both paths remain inaccessible to the browser.
+  const analyticsSnapshot = await subdocument(deps, uid, 'analyticsTokens', platform).get();
+  if (analyticsSnapshot.exists) return analyticsSnapshot.data() as StoredSocialToken;
+  const socialSnapshot = await subdocument(deps, uid, 'socialTokens', platform).get();
+  return socialSnapshot.exists ? socialSnapshot.data() as StoredSocialToken : undefined;
+}
+
+function cachedStats(platform: SocialStatsPlatform, data: Record<string, unknown> | undefined): PlatformStats | undefined {
+  if (!data) return undefined;
+  const result: PlatformStats = {
+    platform,
+    fetchedAt: typeof data.fetchedAt === 'number' ? data.fetchedAt : 0,
+  };
+  for (const field of ['followers', 'impressions', 'plays', 'likes', 'shares'] as const) {
+    if (typeof data[field] === 'number' && Number.isFinite(data[field])) result[field] = data[field];
   }
+  return Object.keys(result).length > 2 ? result : undefined;
+}
+
+function failed(platform: SocialStatsPlatform, now: number, lastError: string): PlatformStats & { lastError: string } {
+  return { platform, fetchedAt: now, lastError };
+}
+
+async function fetchJson(
+  fetchImpl: typeof fetch,
+  url: string,
+  init: RequestInit,
+): Promise<{ ok: true; body: Record<string, unknown> } | { ok: false; status: number }> {
+  const response = await fetchImpl(url, init);
+  if (!response.ok) return { ok: false, status: response.status };
+  return { ok: true, body: await response.json() as Record<string, unknown> };
+}
+
+async function fetchLiveStats(
+  platform: SocialStatsPlatform,
+  token: StoredSocialToken,
+  artistId: string | undefined,
+  deps: SocialStatsDependencies,
+): Promise<PlatformStats & { lastError?: string }> {
+  const accessToken = String(token.accessToken);
+  const authorization = { Authorization: `Bearer ${accessToken}` };
+  const timeout = () => AbortSignal.timeout(10_000);
+  const now = deps.now();
 
   try {
-    const parsed = SyncStatsRequestSchema.parse(request.data);
-    const { platform } = parsed;
-    const userId = request.auth.uid;
-
-    // Read token via Admin SDK (always succeeds, rules don't apply)
-    const tokenDoc = await db
-      .collection('users')
-      .doc(userId)
-      .collection('socialTokens')
-      .doc(platform)
-      .get();
-
-    if (!tokenDoc.exists) {
-      // No token stored — user not connected
+    if (platform === 'spotify') {
+      const endpoint = artistId
+        ? `https://api.spotify.com/v1/artists/${artistId}`
+        : 'https://api.spotify.com/v1/me';
+      const response = await fetchJson(deps.fetch, endpoint, { headers: authorization, signal: timeout() });
+      if (!response.ok) return failed(platform, now, `spotify_${response.status}`);
+      const followers = response.body.followers as { total?: unknown } | undefined;
       return {
         platform,
-        fetchedAt: Date.now(),
-        error: 'Not connected',
-      } as PlatformStats;
+        ...(typeof followers?.total === 'number' ? { followers: followers.total } : {}),
+        fetchedAt: now,
+      };
     }
 
-    const token = tokenDoc.data();
-    if (!token?.accessToken) {
-      return {
-        platform,
-        fetchedAt: Date.now(),
-        error: 'Invalid token',
-      } as PlatformStats;
-    }
-
-    let stats: PlatformStats;
-
-    switch (platform) {
-      case 'spotify':
-        stats = await syncSpotifyStatsServerSide(userId, token);
-        break;
-      case 'instagram':
-        stats = await syncInstagramStatsServerSide(userId, token);
-        break;
-      case 'tiktok':
-        stats = await syncTikTokStatsServerSide(userId, token);
-        break;
-      case 'twitter':
-        stats = await syncTwitterStatsServerSide(userId, token);
-        break;
-      case 'youtube':
-        stats = await syncYouTubeStatsServerSide(userId, token);
-        break;
-      default:
-        return {
-          platform,
-          fetchedAt: Date.now(),
-          error: 'Unsupported platform',
-        } as PlatformStats;
-    }
-
-    // Persist to platformStats (server writes, client reads via rules)
-    await db
-      .collection('users')
-      .doc(userId)
-      .collection('platformStats')
-      .doc(platform)
-      .set(
-        {
-          ...stats,
-          lastError: undefined, // Don't persist errors
-          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-        },
-        { merge: true }
+    if (platform === 'instagram') {
+      let instagramUserId = typeof token.igUserId === 'string' ? token.igUserId : undefined;
+      if (!instagramUserId) {
+        const me = await fetchJson(
+          deps.fetch,
+          `https://graph.facebook.com/v20.0/me?fields=instagram_business_account&access_token=${encodeURIComponent(accessToken)}`,
+          { signal: timeout() },
+        );
+        if (!me.ok) return failed(platform, now, `instagram_${me.status}`);
+        const businessAccount = me.body.instagram_business_account as { id?: unknown } | undefined;
+        instagramUserId = typeof businessAccount?.id === 'string' ? businessAccount.id : undefined;
+      }
+      if (!instagramUserId) return failed(platform, now, 'instagram_account_missing');
+      const response = await fetchJson(
+        deps.fetch,
+        `https://graph.facebook.com/v20.0/${encodeURIComponent(instagramUserId)}?fields=followers_count,media_count&access_token=${encodeURIComponent(accessToken)}`,
+        { signal: timeout() },
       );
+      if (!response.ok) return failed(platform, now, `instagram_${response.status}`);
+      return {
+        platform,
+        ...(typeof response.body.followers_count === 'number' ? { followers: response.body.followers_count } : {}),
+        fetchedAt: now,
+      };
+    }
 
-    return stats;
+    if (platform === 'tiktok') {
+      const response = await fetchJson(
+        deps.fetch,
+        'https://open.tiktokapis.com/v2/user/info/?fields=follower_count,likes_count,video_count',
+        { headers: authorization, signal: timeout() },
+      );
+      if (!response.ok) return failed(platform, now, `tiktok_${response.status}`);
+      const data = response.body.data as { user?: Record<string, unknown> } | undefined;
+      const user = data?.user;
+      return {
+        platform,
+        ...(typeof user?.follower_count === 'number' ? { followers: user.follower_count } : {}),
+        ...(typeof user?.likes_count === 'number' ? { likes: user.likes_count } : {}),
+        fetchedAt: now,
+      };
+    }
+
+    if (platform === 'twitter') {
+      const response = await fetchJson(
+        deps.fetch,
+        'https://api.twitter.com/2/users/me?user.fields=public_metrics',
+        { headers: authorization, signal: timeout() },
+      );
+      if (!response.ok) return failed(platform, now, `twitter_${response.status}`);
+      const data = response.body.data as { public_metrics?: Record<string, unknown> } | undefined;
+      const metrics = data?.public_metrics;
+      return {
+        platform,
+        ...(typeof metrics?.followers_count === 'number' ? { followers: metrics.followers_count } : {}),
+        ...(typeof metrics?.impression_count === 'number' ? { impressions: metrics.impression_count } : {}),
+        ...(typeof metrics?.like_count === 'number' ? { likes: metrics.like_count } : {}),
+        fetchedAt: now,
+      };
+    }
+
+    const response = await fetchJson(
+      deps.fetch,
+      'https://www.googleapis.com/youtube/v3/channels?part=statistics&mine=true',
+      { headers: authorization, signal: timeout() },
+    );
+    if (!response.ok) return failed(platform, now, `youtube_${response.status}`);
+    const items = response.body.items as Array<{ statistics?: Record<string, unknown> }> | undefined;
+    const stats = items?.[0]?.statistics;
+    const followers = typeof stats?.subscriberCount === 'string' ? Number.parseInt(stats.subscriberCount, 10) : undefined;
+    const plays = typeof stats?.viewCount === 'string' ? Number.parseInt(stats.viewCount, 10) : undefined;
+    return {
+      platform,
+      ...(Number.isFinite(followers) ? { followers } : {}),
+      ...(Number.isFinite(plays) ? { plays } : {}),
+      fetchedAt: now,
+    };
+  } catch (error) {
+    console.error(`[syncPlatformStats] ${platform} live request failed`, error);
+    return failed(platform, now, `${platform}_network`);
+  }
+}
+
+export async function syncPlatformStatsForUser(
+  uid: string,
+  rawInput: unknown,
+  deps: SocialStatsDependencies = defaultDependencies,
+): Promise<PlatformSyncResult> {
+  const { platform, artistId } = SyncStatsRequestSchema.parse(rawInput);
+  const now = deps.now();
+  const token = await readServerToken(deps, uid, platform);
+  if (!token?.accessToken) {
+    return {
+      platform,
+      fetchedAt: now,
+      connected: false,
+      authorized: false,
+      liveSyncOk: false,
+      cacheOnly: false,
+      error: 'not_connected',
+    };
+  }
+  if (typeof token.expiresAt === 'number' && token.expiresAt <= now) {
+    return {
+      platform,
+      fetchedAt: now,
+      connected: false,
+      authorized: false,
+      liveSyncOk: false,
+      cacheOnly: false,
+      error: 'authorization_expired',
+    };
+  }
+
+  const live = await fetchLiveStats(platform, token, artistId, deps);
+  const cacheRef = subdocument(deps, uid, 'platformStats', platform);
+  if (live.lastError) {
+    const cacheSnapshot = await cacheRef.get();
+    const cache = cacheSnapshot.exists ? cachedStats(platform, cacheSnapshot.data()) : undefined;
+    return {
+      ...(cache ?? { platform, fetchedAt: now }),
+      connected: true,
+      authorized: true,
+      liveSyncOk: false,
+      cacheOnly: Boolean(cache),
+      error: 'live_sync_failed',
+    };
+  }
+
+  await cacheRef.set({
+    ...live,
+    authorized: true,
+    liveSyncOk: true,
+    updatedAt: deps.serverTimestamp(),
+  }, { merge: true });
+
+  return {
+    ...live,
+    connected: true,
+    authorized: true,
+    liveSyncOk: true,
+    cacheOnly: false,
+  };
+}
+
+/**
+ * Server-side platform stats sync. Raw OAuth tokens remain behind Admin SDK;
+ * callers receive sanitized status and numeric analytics only.
+ */
+export const syncPlatformStats = onCall(async (request) => {
+  if (!request.auth?.uid) throw new HttpsError('unauthenticated', 'User must be signed in.');
+
+  try {
+    return await syncPlatformStatsForUser(request.auth.uid, request.data);
   } catch (error) {
     if (error instanceof z.ZodError) {
       throw new HttpsError('invalid-argument', `Invalid request: ${error.message}`);
@@ -110,176 +293,3 @@ export const syncPlatformStats = onCall(async (request) => {
     throw new HttpsError('internal', 'Failed to sync platform stats.');
   }
 });
-
-// ────────────────────────────────────────────────────────────────────
-
-async function syncSpotifyStatsServerSide(
-  userId: string,
-  token: any
-): Promise<PlatformStats> {
-  try {
-    const artistRes = await fetch('https://api.spotify.com/v1/me', {
-      headers: { 'Authorization': `Bearer ${token.accessToken}` },
-      signal: AbortSignal.timeout(10000),
-    });
-
-    if (!artistRes.ok) {
-      return { platform: 'spotify', fetchedAt: Date.now(), lastError: 'API error' };
-    }
-
-    const artist = await artistRes.json() as {
-      followers?: { total: number };
-      popularity?: number;
-    };
-
-    return {
-      platform: 'spotify',
-      followers: artist.followers?.total,
-      fetchedAt: Date.now(),
-    };
-  } catch (err) {
-    console.error('Spotify sync error:', err);
-    return { platform: 'spotify', fetchedAt: Date.now(), lastError: String(err) };
-  }
-}
-
-async function syncInstagramStatsServerSide(
-  userId: string,
-  token: any
-): Promise<PlatformStats> {
-  try {
-    const meRes = await fetch(
-      `https://graph.facebook.com/v19.0/me?fields=instagram_business_account&access_token=${token.accessToken}`,
-      { signal: AbortSignal.timeout(10000) }
-    );
-
-    if (!meRes.ok) {
-      return { platform: 'instagram', fetchedAt: Date.now(), lastError: 'API error' };
-    }
-
-    const meData = await meRes.json() as { instagram_business_account?: { id: string } };
-    const igId = meData.instagram_business_account?.id;
-
-    if (!igId) {
-      return { platform: 'instagram', fetchedAt: Date.now(), lastError: 'No business account' };
-    }
-
-    const statsRes = await fetch(
-      `https://graph.facebook.com/v19.0/${igId}?fields=followers_count,media_count&access_token=${token.accessToken}`,
-      { signal: AbortSignal.timeout(10000) }
-    );
-
-    if (!statsRes.ok) {
-      return { platform: 'instagram', fetchedAt: Date.now(), lastError: 'API error' };
-    }
-
-    const stats = await statsRes.json() as { followers_count?: number; media_count?: number };
-
-    return {
-      platform: 'instagram',
-      followers: stats.followers_count,
-      fetchedAt: Date.now(),
-    };
-  } catch (err) {
-    console.error('Instagram sync error:', err);
-    return { platform: 'instagram', fetchedAt: Date.now(), lastError: String(err) };
-  }
-}
-
-async function syncTikTokStatsServerSide(
-  userId: string,
-  token: any
-): Promise<PlatformStats> {
-  try {
-    const userRes = await fetch('https://open.tiktokapis.com/v1/user/info/', {
-      headers: { 'Authorization': `Bearer ${token.accessToken}` },
-      signal: AbortSignal.timeout(10000),
-    });
-
-    if (!userRes.ok) {
-      return { platform: 'tiktok', fetchedAt: Date.now(), lastError: 'API error' };
-    }
-
-    const userData = await userRes.json() as any;
-    const user = userData.data?.user;
-
-    return {
-      platform: 'tiktok',
-      followers: user?.follower_count,
-      fetchedAt: Date.now(),
-    };
-  } catch (err) {
-    console.error('TikTok sync error:', err);
-    return { platform: 'tiktok', fetchedAt: Date.now(), lastError: String(err) };
-  }
-}
-
-async function syncTwitterStatsServerSide(
-  userId: string,
-  token: any
-): Promise<PlatformStats> {
-  try {
-    const userRes = await fetch('https://api.twitter.com/2/users/me', {
-      headers: { 'Authorization': `Bearer ${token.accessToken}` },
-      signal: AbortSignal.timeout(10000),
-    });
-
-    if (!userRes.ok) {
-      return { platform: 'twitter', fetchedAt: Date.now(), lastError: 'API error' };
-    }
-
-    const userData = await userRes.json() as any;
-    const user = userData.data;
-
-    // Get public_metrics with a second call
-    const metricsRes = await fetch(
-      `https://api.twitter.com/2/users/${user?.id}?user.fields=public_metrics`,
-      { headers: { 'Authorization': `Bearer ${token.accessToken}` } }
-    );
-
-    if (!metricsRes.ok) {
-      return { platform: 'twitter', fetchedAt: Date.now(), lastError: 'API error' };
-    }
-
-    const metricsData = await metricsRes.json() as any;
-    const metrics = metricsData.data?.public_metrics;
-
-    return {
-      platform: 'twitter',
-      followers: metrics?.followers_count,
-      likes: metrics?.like_count,
-      fetchedAt: Date.now(),
-    };
-  } catch (err) {
-    console.error('Twitter sync error:', err);
-    return { platform: 'twitter', fetchedAt: Date.now(), lastError: String(err) };
-  }
-}
-
-async function syncYouTubeStatsServerSide(
-  userId: string,
-  token: any
-): Promise<PlatformStats> {
-  try {
-    const channelRes = await fetch(
-      'https://www.googleapis.com/youtube/v3/channels?part=statistics&mine=true',
-      { headers: { 'Authorization': `Bearer ${token.accessToken}` } }
-    );
-
-    if (!channelRes.ok) {
-      return { platform: 'youtube', fetchedAt: Date.now(), lastError: 'API error' };
-    }
-
-    const channelData = await channelRes.json() as any;
-    const stats = channelData.items?.[0]?.statistics;
-
-    return {
-      platform: 'youtube',
-      followers: parseInt(stats?.subscriberCount, 10),
-      fetchedAt: Date.now(),
-    };
-  } catch (err) {
-    console.error('YouTube sync error:', err);
-    return { platform: 'youtube', fetchedAt: Date.now(), lastError: String(err) };
-  }
-}

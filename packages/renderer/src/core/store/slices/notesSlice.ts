@@ -49,11 +49,14 @@ export const createNotesSlice: StateCreator<StoreState, [], [], NotesSlice> = (s
             notes: [newNote, ...state.notes]
         }));
 
-        // Sync to Firestore (fire-and-forget, but with retry queue)
+        // Keep the local edit immediate; surface the real cloud result separately.
         import('@/services/notes/NotesService').then(({ notesService }) => {
-            notesService.pushNote(newNote).catch(e =>
-                logger.error('[NotesSlice] Failed to push new note:', e)
-            );
+            return notesService.pushNote(newNote);
+        }).then(() => {
+            set({ notesSyncError: null });
+        }).catch(e => {
+            logger.error('[NotesSlice] Failed to push new note:', e);
+            set({ notesSyncError: 'Cloud sync failed. Your current note remains on this device.' });
         });
 
         return id;
@@ -76,9 +79,12 @@ export const createNotesSlice: StateCreator<StoreState, [], [], NotesSlice> = (s
         const updatedNote = useStore.getState().notes.find((n: Note) => n.id === id);
         if (updatedNote) {
             import('@/services/notes/NotesService').then(({ notesService }) => {
-                notesService.pushNote(updatedNote).catch(e =>
-                    logger.error('[NotesSlice] Failed to push updated note:', e)
-                );
+                return notesService.pushNote(updatedNote);
+            }).then(() => {
+                set({ notesSyncError: null });
+            }).catch(e => {
+                logger.error('[NotesSlice] Failed to push updated note:', e);
+                set({ notesSyncError: 'Cloud sync failed. Your current note remains on this device.' });
             });
         }
     },
@@ -91,9 +97,12 @@ export const createNotesSlice: StateCreator<StoreState, [], [], NotesSlice> = (s
 
         // Delete from Firestore
         import('@/services/notes/NotesService').then(({ notesService }) => {
-            notesService.deleteNote(id).catch(e =>
-                logger.error('[NotesSlice] Failed to delete note:', e)
-            );
+            return notesService.deleteNote(id);
+        }).then(() => {
+            set({ notesSyncError: null });
+        }).catch(e => {
+            logger.error('[NotesSlice] Failed to delete note:', e);
+            set({ notesSyncError: 'Cloud deletion failed. The note may reappear after a reload.' });
         });
     },
 
@@ -115,9 +124,12 @@ export const createNotesSlice: StateCreator<StoreState, [], [], NotesSlice> = (s
         const updatedNote = useStore.getState().notes.find((n: Note) => n.id === id);
         if (updatedNote) {
             import('@/services/notes/NotesService').then(({ notesService }) => {
-                notesService.pushNote(updatedNote).catch(e =>
-                    logger.error('[NotesSlice] Failed to push attachment:', e)
-                );
+                return notesService.pushNote(updatedNote);
+            }).then(() => {
+                set({ notesSyncError: null });
+            }).catch(e => {
+                logger.error('[NotesSlice] Failed to push attachment:', e);
+                set({ notesSyncError: 'Cloud sync failed. The attachment remains linked on this device.' });
             });
         }
     },

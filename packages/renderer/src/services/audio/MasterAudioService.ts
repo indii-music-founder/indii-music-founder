@@ -44,6 +44,9 @@ export class MasterAudioService {
             if (!isObjectNotFound(error)) throw error;
 
             try {
+                if (options.signal?.aborted) {
+                    throw new DOMException('Aborted', 'AbortError');
+                }
                 const uploadTask = uploadBytesResumable(masterRef, file, {
                     contentType: canonicalMimeType,
                     customMetadata: {
@@ -60,13 +63,13 @@ export class MasterAudioService {
                     },
                 });
 
-                if (options.signal) {
-                    options.signal.addEventListener('abort', () => {
-                        uploadTask.cancel();
-                    });
+                const abortUpload = () => uploadTask.cancel();
+                options.signal?.addEventListener('abort', abortUpload, { once: true });
+                try {
+                    await uploadTask;
+                } finally {
+                    options.signal?.removeEventListener('abort', abortUpload);
                 }
-
-                await uploadTask;
             } catch (uploadError: unknown) {
                 // A concurrent identical ingestion can win the create-only race.
                 // Re-read the deterministic object before treating that as failure.
@@ -81,6 +84,10 @@ export class MasterAudioService {
             }
 
             metadata ??= await getMetadata(masterRef);
+        }
+
+        if (options.signal?.aborted) {
+            throw new DOMException('Aborted', 'AbortError');
         }
 
         const resolvedMasterFingerprint = metadata.customMetadata?.masterFingerprint?.trim() || options.masterFingerprint;

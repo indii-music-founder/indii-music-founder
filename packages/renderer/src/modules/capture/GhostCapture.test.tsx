@@ -89,7 +89,6 @@ vi.mock('@/utils/logger', () => ({
 
 import GhostCapture from './GhostCapture';
 import { CaptureButtons } from './components/CaptureButtons';
-import { ScanOverlay } from './components/ScanOverlay';
 import { CapturePreview } from './components/CapturePreview';
 
 // ── Tests ────────────────────────────────────────────────────────
@@ -126,51 +125,17 @@ describe('CaptureButtons', () => {
     });
 });
 
-describe('ScanOverlay', () => {
-    it('renders the scanning HUD text', () => {
-        render(<ScanOverlay />);
-        expect(screen.getByText('ANALYZING PIXELS...')).toBeInTheDocument();
-        expect(screen.getByText('OCR TESSERACT ALLOCATED')).toBeInTheDocument();
-    });
-});
-
 describe('CapturePreview', () => {
-    it('renders the captured image', () => {
+    it('renders the captured image and honest upload action without analysis claims', () => {
         render(
             <CapturePreview
                 imagePreview="data:image/png;base64,test"
-                isScanning={false}
-                scanComplete={false}
                 onTransmit={vi.fn()}
             />
         );
         const img = screen.getByAltText('Captured Document');
         expect(img).toBeInTheDocument();
-    });
-
-    it('shows the scan overlay when scanning', () => {
-        render(
-            <CapturePreview
-                imagePreview="data:image/png;base64,test"
-                isScanning={true}
-                scanComplete={false}
-                onTransmit={vi.fn()}
-            />
-        );
-        expect(screen.getByText('ANALYZING PIXELS...')).toBeInTheDocument();
-    });
-
-    it('shows the completion overlay and transmit button when scan is complete', () => {
-        render(
-            <CapturePreview
-                imagePreview="data:image/png;base64,test"
-                isScanning={false}
-                scanComplete={true}
-                onTransmit={vi.fn()}
-            />
-        );
-        // ISSUE-947: honest copy — it's a preview, not real OCR analysis.
-        expect(screen.getByText('PREVIEW READY')).toBeInTheDocument();
-        expect(screen.getByText(/Transmit to Studio/)).toBeInTheDocument();
+        expect(screen.getByText(/Upload to Studio/)).toBeInTheDocument();
+        expect(screen.queryByText(/analyzing|OCR|scan/i)).not.toBeInTheDocument();
     });
 });

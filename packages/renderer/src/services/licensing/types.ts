@@ -29,6 +29,7 @@ export interface License {
 
 export interface LicenseRequest {
     id?: string;
+    userId: string;
     title: string;
     artist: string;
     usage: string;

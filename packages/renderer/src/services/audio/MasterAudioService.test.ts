@@ -121,6 +121,25 @@ describe('MasterAudioService', () => {
         });
     });
 
+    it('removes its abort listener after an upload settles', async () => {
+        storageMocks.getMetadata
+            .mockRejectedValueOnce({ code: 'storage/object-not-found' })
+            .mockResolvedValueOnce({ timeCreated: '2026-07-17T18:00:00.000Z' });
+        const controller = new AbortController();
+        const addListener = vi.spyOn(controller.signal, 'addEventListener');
+        const removeListener = vi.spyOn(controller.signal, 'removeEventListener');
+
+        await masterAudioService.persist(file, {
+            userId: 'owner-1',
+            masterFingerprint: 'SONIC-abc',
+            signal: controller.signal,
+        });
+
+        const abortHandler = addListener.mock.calls.find(([type]) => type === 'abort')?.[1];
+        expect(abortHandler).toBeDefined();
+        expect(removeListener).toHaveBeenCalledWith('abort', abortHandler);
+    });
+
     it('reuses an existing object for identical bytes without overwriting it', async () => {
         storageMocks.getMetadata.mockResolvedValue({
             customMetadata: {

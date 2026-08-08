@@ -7,13 +7,4 @@ export function cleanupLocalStorage() {
     }
     keysToRemove.forEach(k => localStorage.removeItem(k));
 
-    // 2. Clear metadata persistence queue if oversized (>50KB)
-    try {
-        const queue = localStorage.getItem('indii_pendingMetadataSaves');
-        if (queue && queue.length > 50000) {
-            localStorage.removeItem('indii_pendingMetadataSaves');
-        }
-    } catch { /* already broken, try removing anyway */
-        try { localStorage.removeItem('indii_pendingMetadataSaves'); } catch { /* ignore removal failure */ }
-    }
 }

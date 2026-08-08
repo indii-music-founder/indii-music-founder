@@ -18,8 +18,7 @@
  * Firestore token path: users/{uid}/analyticsTokens/spotify
  */
 
-import { db, functions as firebaseFunctions } from '@/services/firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { functions as firebaseFunctions } from '@/services/firebase';
 import { httpsCallable } from 'firebase/functions';
 import { auth } from '@/services/firebase';
 import type { PlatformData, StreamDataPoint } from './types';
@@ -51,18 +50,6 @@ const SPOTIFY_SCOPES = [
     'user-read-private',
     'user-library-read',
 ].join(' ');
-
-const TOKEN_COLLECTION = (uid: string) =>
-    doc(db, 'users', uid, 'analyticsTokens', 'spotify');
-
-// ── Token shape stored in Firestore ──────────────────────────────────────────
-
-interface SpotifyStoredToken {
-    accessToken: string;
-    expiresAt: number;
-    scope: string;
-    connectedAt: number;
-}
 
 // ── Spotify Web API response types ───────────────────────────────────────────
 
@@ -204,10 +191,11 @@ export class SpotifyService {
         const uid = auth.currentUser?.uid;
         if (!uid) return false;
         try {
-            const snap = await getDoc(TOKEN_COLLECTION(uid));
-            if (!snap.exists()) return false;
-            const token = snap.data() as SpotifyStoredToken;
-            return !!token.accessToken;
+            const statusFn = httpsCallable<unknown, { connected?: boolean }>(
+                firebaseFunctions, 'analyticsGetConnectionStatus'
+            );
+            const result = await statusFn({ platform: 'spotify' });
+            return result.data.connected === true;
         } catch (err: unknown) {
             logger.error('[SpotifyService] Failed to check connection:', err);
             Sentry.captureException(err);
@@ -400,21 +388,12 @@ export class SpotifyService {
         const uid = auth.currentUser?.uid;
         if (!uid) throw new Error('Not authenticated.');
 
-        const snap = await getDoc(TOKEN_COLLECTION(uid));
-        if (!snap.exists()) throw new Error('Spotify not connected.');
-
-        const stored = snap.data() as SpotifyStoredToken;
-
-        // Refresh if expiring within 5 minutes
-        if (!stored.expiresAt || stored.expiresAt < Date.now() + 5 * 60 * 1000) {
-            const refreshFn = httpsCallable<unknown, { ok: boolean; accessToken: string; expiresAt: number }>(
-                firebaseFunctions, 'analyticsRefreshToken'
-            );
-            const result = await refreshFn({ platform: 'spotify' });
-            return result.data.accessToken;
-        }
-
-        return stored.accessToken;
+        const refreshFn = httpsCallable<unknown, { ok: boolean; accessToken: string; expiresAt: number }>(
+            firebaseFunctions, 'analyticsRefreshToken'
+        );
+        const result = await refreshFn({ platform: 'spotify' });
+        if (!result.data.accessToken) throw new Error('Spotify not connected.');
+        return result.data.accessToken;
     }
 
     private async _fetch<T>(path: string, token: string): Promise<T> {

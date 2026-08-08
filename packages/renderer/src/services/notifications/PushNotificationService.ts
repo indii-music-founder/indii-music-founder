@@ -1,6 +1,6 @@
 import { getToken, onMessage, type Messaging, type MessagePayload } from 'firebase/messaging';
 import { getAuth } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { app, db, getFirebaseMessaging } from '@/services/firebase';
 import { logger } from '@/utils/logger';
 
@@ -22,6 +22,10 @@ export class PushNotificationService {
         if (!this.initPromise) {
             this.initPromise = getFirebaseMessaging().then((m) => {
                 this.messaging = m;
+            }).catch((error: unknown) => {
+                // A transient SDK/bootstrap failure must not poison every future attempt.
+                this.initPromise = null;
+                throw error;
             });
         }
         await this.initPromise;
@@ -68,10 +72,11 @@ export class PushNotificationService {
         
         if (!messaging) {
             let unsubscribe: (() => void) | null = null;
+            let cancelled = false;
             
             // Try to init lazily and set up listener once ready
             this.ensureMessaging().then((m) => {
-                if (m) {
+                if (m && !cancelled) {
                     try {
                         unsubscribe = onMessage(m, (payload) => {
                             logger.info('[PushNotificationService] Received foreground message:', payload);
@@ -92,6 +97,7 @@ export class PushNotificationService {
             });
             
             return () => {
+                cancelled = true;
                 if (unsubscribe) unsubscribe();
             };
         }
@@ -129,7 +135,7 @@ export class PushNotificationService {
             await setDoc(doc(db, 'users', user.uid, 'fcm_tokens', token), {
                 token,
                 platform: this.detectPlatform(),
-                updatedAt: new Date().toISOString()
+                updatedAt: serverTimestamp(),
             }, { merge: true });
             logger.debug('[PushNotificationService] Saved FCM token to Firestore.');
         } catch (error: unknown) {

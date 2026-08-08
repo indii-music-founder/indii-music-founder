@@ -3,7 +3,7 @@
  * Real wallet connection via window.ethereum (MetaMask EIP-1193).
  * WalletConnect mobile wallet support is disabled until its upstream dependency chain is remediated.
  */
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Wallet, CheckCircle2, Copy, LogOut, Link2, Shield, AlertCircle } from 'lucide-react';
 import { walletConnectService } from '@/services/web3/WalletConnectService';
@@ -34,22 +34,53 @@ interface EthereumProvider {
 
 export function WalletConnectPanel() {
     const ethereum = typeof window !== 'undefined' ? window.ethereum as EthereumProvider | undefined : undefined;
-    const [address, setAddress] = useState<string | null>(() => localStorage.getItem(STORAGE_KEY));
-    const [chain, setChain] = useState<string>(() => localStorage.getItem(CHAIN_KEY) || '0x1');
+    const [address, setAddress] = useState<string | null>(null);
+    const [chain, setChain] = useState<string>('0x1');
     const [copied, setCopied] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    function handleDisconnect() {
+    const handleDisconnect = useCallback(() => {
         localStorage.removeItem(STORAGE_KEY);
         localStorage.removeItem(CHAIN_KEY);
         setAddress(null);
         setError(null);
         walletConnectService.disconnect().catch((err) => { logger.error('[WalletConnect] disconnect error:', err); });
-    }
+    }, []);
 
     // Listen for MetaMask account/chain changes
     useEffect(() => {
-        if (!ethereum?.on) return;
+        let mounted = true;
+        if (!ethereum) {
+            localStorage.removeItem(STORAGE_KEY);
+            localStorage.removeItem(CHAIN_KEY);
+            void walletConnectService.disconnect().catch((err) => {
+                logger.error('[WalletConnect] disconnect error:', err);
+            });
+            return;
+        }
+
+        const synchronizeProviderState = async () => {
+            try {
+                const accounts = await ethereum.request({ method: 'eth_accounts' }) as string[];
+                const chainId = await ethereum.request({ method: 'eth_chainId' }) as string;
+                if (!mounted) return;
+                if (!accounts[0]) {
+                    handleDisconnect();
+                    return;
+                }
+                localStorage.setItem(STORAGE_KEY, accounts[0]);
+                localStorage.setItem(CHAIN_KEY, chainId);
+                setAddress(accounts[0]);
+                setChain(chainId);
+            } catch (providerError) {
+                if (!mounted) return;
+                handleDisconnect();
+                setError(providerError instanceof Error ? providerError.message : 'Wallet state could not be verified.');
+            }
+        };
+        void synchronizeProviderState();
+
+        if (!ethereum.on) return () => { mounted = false; };
 
         const onAccountsChanged = (...args: unknown[]) => {
             const accounts = args[0] as string[];
@@ -70,10 +101,25 @@ export function WalletConnectPanel() {
         ethereum.on('chainChanged', onChainChanged);
 
         return () => {
+            mounted = false;
             ethereum?.removeListener?.('accountsChanged', onAccountsChanged);
             ethereum?.removeListener?.('chainChanged', onChainChanged);
         };
-    }, [ethereum]);
+    }, [ethereum, handleDisconnect]);
+
+    const handleConnect = async () => {
+        setError(null);
+        try {
+            const info = await WalletConnectDialog.call({});
+            if (!info) return;
+            localStorage.setItem(STORAGE_KEY, info.address);
+            localStorage.setItem(CHAIN_KEY, `0x${info.chainId.toString(16)}`);
+            setAddress(info.address);
+            setChain(`0x${info.chainId.toString(16)}`);
+        } catch (connectError) {
+            setError(connectError instanceof Error ? connectError.message : 'Wallet connection failed.');
+        }
+    };
 
     const handleCopy = async () => {
         if (!address) return;
@@ -90,7 +136,7 @@ export function WalletConnectPanel() {
                     <Wallet size={18} className="text-[#FFE135]" />
                     Web3 Wallet
                 </h3>
-                <p className="text-xs text-neutral-500 mt-0.5">Connect your wallet to enable smart contracts and NFT minting</p>
+                <p className="text-xs text-neutral-500 mt-0.5">Verify the active browser wallet account and network.</p>
             </div>
 
             {/* Error banner */}
@@ -136,20 +182,16 @@ export function WalletConnectPanel() {
                             </div>
                         </div>
 
-                        {/* Capabilities */}
+                        {/* Availability */}
                         <div className="space-y-2">
-                            <h4 className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest">Enabled Features</h4>
-                            {[
-                                'Smart contract deployment',
-                                'NFT / SongShares minting',
-                                'Royalty split automation',
-                                'Blockchain rights tracing',
-                            ].map(feature => (
-                                <div key={feature} className="flex items-center gap-2 text-xs text-neutral-400">
-                                    <Shield size={10} className="text-green-400 flex-shrink-0" />
-                                    {feature}
-                                </div>
-                            ))}
+                            <h4 className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest">Verified capability</h4>
+                            <div className="flex items-center gap-2 text-xs text-neutral-400">
+                                <Shield size={10} className="text-green-400 flex-shrink-0" />
+                                Account identity and chain selection
+                            </div>
+                            <p className="rounded-lg border border-yellow-500/20 bg-yellow-500/5 px-3 py-2 text-[10px] text-yellow-300">
+                                Contract deployment, minting, and royalty execution are not connected to a verified server transaction pipeline.
+                            </p>
                         </div>
 
                         <button
@@ -173,15 +215,7 @@ export function WalletConnectPanel() {
                         </p>
 
                         <button
-                            onClick={async () => {
-                                const info = await WalletConnectDialog.call({});
-                                if (info) {
-                                    localStorage.setItem(STORAGE_KEY, info.address);
-                                    localStorage.setItem(CHAIN_KEY, `0x${info.chainId.toString(16)}`);
-                                    setAddress(info.address);
-                                    setChain(`0x${info.chainId.toString(16)}`);
-                                }
-                            }}
+                            onClick={() => void handleConnect()}
                             className="w-full flex items-center justify-center gap-2 p-4 bg-white/10 border border-white/20 rounded-xl hover:bg-white/20 transition-all font-bold text-white"
                         >
                             <Link2 size={16} />
@@ -189,7 +223,7 @@ export function WalletConnectPanel() {
                         </button>
 
                         <p className="text-center text-[10px] text-neutral-700 pt-2">
-                            Real wallet required · Transactions on connected chain
+                            Real wallet required · Connection does not authorize a transaction
                         </p>
                     </motion.div>
                 )}

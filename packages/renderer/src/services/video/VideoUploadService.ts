@@ -152,32 +152,38 @@ export class VideoUploadService {
             const blobUrl = URL.createObjectURL(videoFile);
             video.src = blobUrl;
 
-            const cleanup = () => {
+            let settled = false;
+            let mediaReleased = false;
+
+            const releaseMedia = () => {
+                if (mediaReleased) return;
+                mediaReleased = true;
+                video.removeEventListener('loadeddata', handleLoadedData);
+                video.removeEventListener('seeked', handleSeeked);
+                video.removeEventListener('error', handleError);
                 URL.revokeObjectURL(blobUrl);
                 video.remove();
             };
 
-            // Timeout after 10s — some videos may not load
-            const timeout = setTimeout(() => {
-                cleanup();
-                resolve(undefined);
-            }, 10000);
+            const finish = (result: string | undefined) => {
+                if (settled) return;
+                settled = true;
+                clearTimeout(timeout);
+                releaseMedia();
+                resolve(result);
+            };
 
-            video.addEventListener('loadeddata', async () => {
+            const handleLoadedData = () => {
                 try {
                     // Seek to 0.5s for a representative frame
                     video.currentTime = 0.5;
                 } catch {
-                    clearTimeout(timeout);
-                    cleanup();
-                    resolve(undefined);
+                    finish(undefined);
                 }
-            });
+            };
 
-            video.addEventListener('seeked', async () => {
+            const handleSeeked = () => {
                 try {
-                    clearTimeout(timeout);
-
                     const canvas = document.createElement('canvas');
                     // Thumbnail at 480p width, maintain aspect ratio
                     const scale = Math.min(480 / video.videoWidth, 1);
@@ -186,17 +192,18 @@ export class VideoUploadService {
 
                     const ctx = canvas.getContext('2d');
                     if (!ctx) {
-                        cleanup();
-                        resolve(undefined);
+                        finish(undefined);
                         return;
                     }
 
                     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
                     canvas.toBlob(async (blob) => {
-                        cleanup();
+                        if (settled) return;
+                        clearTimeout(timeout);
+                        releaseMedia();
                         if (!blob) {
-                            resolve(undefined);
+                            finish(undefined);
                             return;
                         }
 
@@ -214,24 +221,24 @@ export class VideoUploadService {
                             });
                             const thumbUrl = await getDownloadURL(thumbRef);
                             Logger.info(TAG, `Thumbnail uploaded: ${thumbUrl}`);
-                            resolve(thumbUrl);
+                            finish(thumbUrl);
                         } catch (uploadErr: unknown) {
                             Logger.warn(TAG, 'Thumbnail upload failed:', uploadErr);
-                            resolve(undefined);
+                            finish(undefined);
                         }
                     }, 'image/jpeg', 0.75);
                 } catch {
-                    clearTimeout(timeout);
-                    cleanup();
-                    resolve(undefined);
+                    finish(undefined);
                 }
-            });
+            };
 
-            video.addEventListener('error', () => {
-                clearTimeout(timeout);
-                cleanup();
-                resolve(undefined);
-            });
+            const handleError = () => finish(undefined);
+
+            // Timeout after 10s — some videos may not load or encode a frame.
+            const timeout = setTimeout(() => finish(undefined), 10000);
+            video.addEventListener('loadeddata', handleLoadedData, { once: true });
+            video.addEventListener('seeked', handleSeeked, { once: true });
+            video.addEventListener('error', handleError, { once: true });
 
             // Trigger load
             video.load();

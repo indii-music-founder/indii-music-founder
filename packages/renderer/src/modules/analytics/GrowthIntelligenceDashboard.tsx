@@ -66,8 +66,8 @@ function NoPlatformsState({ onConnected }: { onConnected: () => void }) {
                     </div>
                     <h2 className="text-xl font-bold text-white mb-2">Connect Your Platforms</h2>
                     <p className="text-sm text-slate-400 max-w-md mx-auto">
-                        Link your streaming and social accounts to see real-time viral scores,
-                        growth patterns, and 14-day breakout forecasts for your tracks.
+                        Link your streaming and social accounts to see engagement heuristics,
+                        observed growth patterns, and clearly labeled track estimates.
                     </p>
                 </div>
                 <PlatformConnector onConnectionChange={onConnected} />
@@ -203,7 +203,7 @@ export default function GrowthIntelligenceDashboard() {
                         </div>
                         <div>
                             <h1 className="text-base font-bold text-white">Growth Intelligence</h1>
-                            <p className="text-xs text-slate-400">Viral scores · Pattern detection · Breakout forecasts</p>
+                            <p className="text-xs text-slate-400">Engagement heuristics · Pattern detection · Low-confidence estimates</p>
                         </div>
                     </div>
                 </div>
@@ -225,7 +225,7 @@ export default function GrowthIntelligenceDashboard() {
                     <div>
                         <h1 className="text-base font-bold text-white">Growth Intelligence</h1>
                         <p className="text-xs text-slate-400">
-                            Viral scores · Pattern detection · Breakout forecasts
+                            Engagement heuristics · Pattern detection · Low-confidence estimates
                         </p>
                     </div>
                 </div>
@@ -387,7 +387,9 @@ export default function GrowthIntelligenceDashboard() {
                                             <div className="bg-slate-800/50 border border-white/8 rounded-xl p-4">
                                                 <div className="flex items-center justify-between mb-3">
                                                     <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Stream Growth</p>
-                                                    <span className="text-xs text-slate-500">30d + 14d forecast</span>
+                                                    <span className="text-xs text-slate-500">
+                                                        {selectedReport.forecast.available ? '30d + 14d low-confidence estimate' : 'Estimate unavailable'}
+                                                    </span>
                                                 </div>
                                                 <StreamGrowthChart
                                                     history={selectedReport.track.history}
@@ -397,8 +399,12 @@ export default function GrowthIntelligenceDashboard() {
                                             </div>
                                             <div className="grid grid-cols-2 gap-2 text-center">
                                                 <div className="bg-slate-800/50 border border-white/8 rounded-xl p-3">
-                                                    <p className="text-lg font-bold text-white">{selectedReport.forecast.growthMultiplier}x</p>
-                                                    <p className="text-xs text-slate-400">Projected Growth</p>
+                                                    <p className="text-lg font-bold text-white">
+                                                        {selectedReport.forecast.available ? `${selectedReport.forecast.growthMultiplier}x` : '—'}
+                                                    </p>
+                                                    <p className="text-xs text-slate-400">
+                                                        {selectedReport.forecast.available ? 'Illustrative Growth' : 'Insufficient History'}
+                                                    </p>
                                                 </div>
                                                 <div className="bg-slate-800/50 border border-white/8 rounded-xl p-3">
                                                     <p className="text-lg font-bold text-white">{selectedReport.track.creatorCount.toLocaleString('en-US')}</p>

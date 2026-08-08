@@ -38,7 +38,7 @@ vi.mock('@/lib/format', () => ({
 
 vi.mock('motion/react', () => ({
     motion: {
-        div: ({ children, ...props }: React.HTMLAttributes<HTMLDivElement>) =>
+        div: ({ children, layout: _layout, ...props }: React.HTMLAttributes<HTMLDivElement> & { layout?: boolean }) =>
             React.createElement('div', props, children),
     },
     AnimatePresence: ({ children }: { children: React.ReactNode }) =>
@@ -130,5 +130,19 @@ describe('LabelDealRecoupment', () => {
 
         render(<LabelDealRecoupment />);
         expect(screen.getByText('At Risk')).toBeTruthy();
+    });
+
+    it('surfaces subscription failures instead of rendering an unexplained empty state', async () => {
+        const { onSnapshot } = vi.mocked(await import('firebase/firestore'));
+        (onSnapshot as import("vitest").Mock).mockImplementation(
+            (_q: unknown, _cb: (...args: unknown[]) => void, onError: () => void) => {
+                onError();
+                return () => {};
+            }
+        );
+
+        render(<LabelDealRecoupment />);
+
+        expect(screen.getByRole('alert')).toHaveTextContent('Label deals could not be loaded');
     });
 });

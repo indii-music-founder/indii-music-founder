@@ -429,7 +429,6 @@ export class AudioAnalysisService {
         }, {
             showToasts: true,
             maxRetries: 2,
-            queueOnFailure: true,
         });
 
         if (!result.success) {

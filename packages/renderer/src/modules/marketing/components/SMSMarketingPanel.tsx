@@ -81,7 +81,7 @@ export default function SMSMarketingPanel() {
                 <textarea
                     value={message}
                     onChange={e => setMessage(e.target.value)}
-                    placeholder="Hey [Fan Name]! 🔥 New drop out now — stream it here: indii.vip/..."
+                    placeholder="Hey [Fan Name]! 🔥 New drop out now — stream it here: https://app.indii.music/presave/..."
                     rows={4}
                     className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-xl text-sm text-white placeholder-gray-600 focus:border-dept-marketing/50 outline-none resize-none leading-relaxed"
                 />

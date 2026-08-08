@@ -31,7 +31,8 @@ const mocks = vi.hoisted(() => {
         id: data['userId'] as string ?? 'user-123',
     });
 
-    const mockDoc = vi.fn(() => ({ set: mockSet, update: mockUpdate, get: vi.fn() }));
+    const mockDocGet = vi.fn();
+    const mockDoc = vi.fn(() => ({ set: mockSet, update: mockUpdate, get: mockDocGet }));
     const mockCollection = vi.fn(() => ({ doc: mockDoc, add: mockAdd, where: vi.fn() }));
 
     // runTransaction: smartly returns the right snapshot type based on the argument.
@@ -86,6 +87,7 @@ const mocks = vi.hoisted(() => {
         mockBatchSet,
         mockBatchCommit,
         mockDoc,
+        mockDocGet,
         mockCollection,
         mockRunTransaction,
         mockWhereGet,
@@ -182,6 +184,7 @@ const stripeWebhook = _stripeWebhook as unknown as (req: unknown, res: unknown) 
 describe('Stripe Webhook Handler (WO-8)', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        mocks.mockDocGet.mockResolvedValue({ exists: false, data: () => undefined });
         // mockRunTransaction call 1 = idempotency check → tx.get returns doc snap (not exists)
         // mockRunTransaction call 2+ = subscription lookup → tx.get returns query snap (docs=[user-123])
         let txCallCount = 0;
@@ -468,16 +471,39 @@ describe('Stripe Webhook Handler (WO-8)', () => {
     // ── checkout.session.completed — Licensing Purchase ───────────────────────
 
     it('should handle checkout.session.completed for a licensing purchase', async () => {
+        mocks.mockDocGet.mockResolvedValueOnce({
+            exists: true,
+            data: () => ({
+                status: 'accepted',
+                licensorUserId: 'user-123',
+                agreementVersion: 'beat-lease-v1',
+                termsHash: 'sha256:agreement-001',
+                acceptedAt: '2026-08-08T20:00:00.000Z',
+                licensee: { name: 'Buyer Name', email: 'buyer@example.com' },
+                usage: 'Online advertising campaign',
+                territory: 'United States',
+                term: { startsAt: '2026-08-08', endsAt: '2027-08-08' },
+                exclusivity: 'non-exclusive',
+                rightsCovered: ['synchronization', 'master-use'],
+                masterRights: true,
+                compositionRights: true,
+                feeCents: 1000000,
+                connectedAccountId: 'acct_artist123',
+                trackTitle: 'Midnight Blaze',
+                artist: 'The Flames',
+            }),
+        });
         const session: Partial<Stripe.Checkout.Session> = {
             id: 'cs_lic_001',
             payment_status: 'paid',
+            amount_subtotal: 1000000,
+            consent: { promotions: null, terms_of_service: 'accepted' },
+            customer_details: { email: 'buyer@example.com', name: 'Buyer Name' } as Stripe.Checkout.Session.CustomerDetails,
             metadata: {
                 userId: 'user-123',
                 type: 'licensing_purchase',
-                connectedAccountId: 'acct_123456',
-                artistAmount: '1000000',
-                trackTitle: 'Midnight Blaze',
-                artist: 'The Flames',
+                agreementId: 'agreement-001',
+                termsHash: 'sha256:agreement-001',
             },
         };
         const event: Partial<Stripe.Event> = {
@@ -498,7 +524,7 @@ describe('Stripe Webhook Handler (WO-8)', () => {
             expect.objectContaining({
                 amount: 1000000,
                 currency: 'usd',
-                destination: 'acct_123456',
+                destination: 'acct_artist123',
             }),
             expect.objectContaining({
                 idempotencyKey: 'transfer_cs_lic_001',
@@ -517,6 +543,11 @@ describe('Stripe Webhook Handler (WO-8)', () => {
                 licenseType: 'sync',
                 status: 'active',
                 amount: 1000000,
+                agreementId: 'agreement-001',
+                agreementVersion: 'beat-lease-v1',
+                usage: 'Online advertising campaign',
+                territory: 'United States',
+                rightsCovered: ['synchronization', 'master-use'],
                 stripeTransferId: 'tr_123',
             }),
             { merge: true },
@@ -536,6 +567,32 @@ describe('Stripe Webhook Handler (WO-8)', () => {
             { merge: true },
         );
         expect(mocks.mockBatchCommit).toHaveBeenCalledTimes(1);
+    });
+
+    it('refuses to fulfill a licensing payment without an accepted agreement', async () => {
+        const session: Partial<Stripe.Checkout.Session> = {
+            id: 'cs_lic_missing_terms',
+            payment_status: 'paid',
+            amount_subtotal: 1000000,
+            metadata: {
+                userId: 'user-123',
+                type: 'licensing_purchase',
+            },
+        };
+        const event: Partial<Stripe.Event> = {
+            id: 'evt_checkout_lic_missing_terms',
+            type: 'checkout.session.completed',
+            data: { object: session as Stripe.Checkout.Session },
+        };
+        mocks.mockConstructEvent.mockReturnValue(event);
+
+        const { req, res, jsonFn, statusFn } = makeReqRes(event);
+        await stripeWebhook(req, res);
+
+        expect(statusFn).toHaveBeenCalledWith(500);
+        expect(jsonFn).toHaveBeenCalledWith({ error: 'Webhook handler failed' });
+        expect(mocks.mockTransferCreate).not.toHaveBeenCalled();
+        expect(mocks.mockBatchCommit).not.toHaveBeenCalled();
     });
 
     // ── Unknown event type ────────────────────────────────────────────────────

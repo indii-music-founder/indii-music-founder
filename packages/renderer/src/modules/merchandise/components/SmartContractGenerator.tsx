@@ -1,11 +1,10 @@
 /**
  * SmartContractGenerator — Item 127 (PRODUCTION_200)
- * UI form to generate ERC-721/ERC-1155 royalty split smart contracts.
- * Calls SmartContractService.deploySplitContract().
+ * UI form to save an unverified ERC-721/ERC-1155 royalty split draft.
  */
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Code2, Plus, Trash2, CheckCircle2, Copy, Loader2, AlertCircle } from 'lucide-react';
+import { Code2, Plus, Trash2, CheckCircle2, Loader2, AlertCircle } from 'lucide-react';
 import { smartContractService, SplitContractConfig } from '@/services/blockchain/SmartContractService';
 
 type TokenType = 'ERC-721' | 'ERC-1155';
@@ -25,10 +24,9 @@ export function SmartContractGenerator() {
         { walletAddress: '', percentage: 50, role: 'Artist' },
         { walletAddress: '', percentage: 50, role: 'Producer' },
     ]);
-    const [isDeploying, setIsDeploying] = useState(false);
-    const [contractAddress, setContractAddress] = useState<string | null>(null);
+    const [isSaving, setIsSaving] = useState(false);
+    const [draftId, setDraftId] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
-    const [copied, setCopied] = useState(false);
 
     const totalPct = payees.reduce((s, p) => s + Number(p.percentage || 0), 0);
     const ETH_ADDRESS_RE = /^0x[0-9a-fA-F]{40}$/;
@@ -52,33 +50,29 @@ export function SmartContractGenerator() {
         setPayees(prev => prev.map((p, idx) => idx === i ? { ...p, [field]: value } : p));
     };
 
-    const handleDeploy = async () => {
-        if (!isValid || isDeploying) return;
-        setIsDeploying(true);
+    const handleSaveDraft = async () => {
+        if (!isValid || isSaving) return;
+        setIsSaving(true);
         setError(null);
         try {
             const config: SplitContractConfig = {
                 isrc: normalizedIsrc,
+                tokenName: normalizedName,
+                tokenSymbol: normalizedSymbol,
+                tokenType,
                 payees: payees.map(p => ({
                     walletAddress: p.walletAddress.trim(),
                     percentage: Number(p.percentage),
                     role: p.role,
                 })),
             };
-            const address = await smartContractService.deploySplitContract(config);
-            setContractAddress(address);
+            const persistedDraftId = await smartContractService.saveSplitContractDraft(config);
+            setDraftId(persistedDraftId);
         } catch (err: unknown) {
-            setError(err instanceof Error ? err.message : 'Deployment failed.');
+            setError(err instanceof Error ? err.message : 'Draft save failed.');
         } finally {
-            setIsDeploying(false);
+            setIsSaving(false);
         }
-    };
-
-    const handleCopy = async () => {
-        if (!contractAddress) return;
-        await navigator.clipboard.writeText(contractAddress);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
     };
 
     return (
@@ -87,9 +81,9 @@ export function SmartContractGenerator() {
             <div>
                 <h3 className="text-lg font-bold text-white flex items-center gap-2">
                     <Code2 size={18} className="text-[#FFE135]" />
-                    Smart Contract Generator
+                    Smart Contract Draft
                 </h3>
-                <p className="text-xs text-neutral-500 mt-0.5">Deploy royalty-splitting contracts for digital collectibles</p>
+                <p className="text-xs text-neutral-500 mt-0.5">Save an unverified royalty-split draft. No blockchain transaction is submitted.</p>
             </div>
 
             {/* Token Type Toggle */}
@@ -195,7 +189,7 @@ export function SmartContractGenerator() {
 
             {/* Result */}
             <AnimatePresence>
-                {contractAddress && (
+                {draftId && (
                     <motion.div
                         initial={{ opacity: 0, y: 8 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -203,31 +197,28 @@ export function SmartContractGenerator() {
                     >
                         <CheckCircle2 size={18} className="text-green-400 flex-shrink-0" />
                         <div className="flex-1 min-w-0">
-                            <div className="text-xs font-bold text-green-400 mb-0.5">Contract Deployed!</div>
-                            <div className="text-[11px] text-neutral-400 font-mono truncate">{contractAddress}</div>
+                            <div className="text-xs font-bold text-green-400 mb-0.5">Draft Saved — Not Deployed</div>
+                            <div className="text-[11px] text-neutral-400 font-mono truncate">Draft ID: {draftId}</div>
                         </div>
-                        <button onClick={handleCopy} className="text-neutral-500 hover:text-white transition-colors flex-shrink-0">
-                            {copied ? <CheckCircle2 size={13} className="text-green-400" /> : <Copy size={13} />}
-                        </button>
                     </motion.div>
                 )}
             </AnimatePresence>
 
             {/* Deploy Button */}
             <button
-                onClick={handleDeploy}
-                disabled={!isValid || isDeploying}
+                onClick={handleSaveDraft}
+                disabled={!isValid || isSaving}
                 className="w-full flex items-center justify-center gap-2 py-3 bg-[#FFE135] text-black rounded-xl text-sm font-black hover:bg-[#FFD700] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
             >
-                {isDeploying ? (
+                {isSaving ? (
                     <>
                         <Loader2 size={16} className="animate-spin" />
-                        Deploying Contract...
+                        Saving Draft...
                     </>
                 ) : (
                     <>
                         <Code2 size={16} />
-                        Deploy {tokenType} Contract
+                        Save {tokenType} Draft
                     </>
                 )}
             </button>

@@ -120,11 +120,12 @@ const SHARE_ALLOWED_TYPES = new Set(['image/jpeg', 'image/png', 'image/gif', 'im
 const SHARE_MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
 
 registerRoute(
-    '/_share-target',
+    '/share-target',
     async ({ request }) => {
         try {
             const formData = await request.formData();
-            const files = formData.getAll('files');
+            // Must match public/manifest.json share_target.params.files[].name.
+            const files = formData.getAll('media');
             const title = formData.get('title');
             const text = formData.get('text');
             const url = formData.get('url');

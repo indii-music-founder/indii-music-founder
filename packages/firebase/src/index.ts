@@ -195,6 +195,7 @@ export { sendEmail } from './email/sendEmail';
 
 // Growth Intelligence Engine — Platform Analytics OAuth (Spotify, TikTok, Instagram)
 export { analyticsExchangeToken, analyticsFinalizeInstagramConnection, analyticsGetConnectionStatus, analyticsRefreshToken, analyticsRevokeToken } from './analytics/platformTokenExchange';
+export { syncPlatformStats } from './functions/social-stats-sync';
 
 // Growth Intelligence Engine — Autonomous Marketing Swarm (ClickHouse read path)
 export { marketingGetCampaignMetrics } from './marketing/campaignMetricsCallable';

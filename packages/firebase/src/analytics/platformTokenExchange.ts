@@ -48,6 +48,15 @@ const tokenPath = (uid: string, platform: string) =>
 const pendingInstagramIntentPath = (uid: string, intentId: string) =>
     admin.firestore().collection('users').doc(uid).collection('serverSocialConnectionIntents').doc(intentId);
 const PENDING_INSTAGRAM_INTENT_TTL_MS = 10 * 60 * 1000;
+const ANALYTICS_PLATFORMS = ['spotify', 'tiktok', 'instagram'] as const;
+type AnalyticsPlatform = typeof ANALYTICS_PLATFORMS[number];
+
+function parseAnalyticsPlatform(value: unknown): AnalyticsPlatform {
+    if (typeof value === 'string' && ANALYTICS_PLATFORMS.includes(value as AnalyticsPlatform)) {
+        return value as AnalyticsPlatform;
+    }
+    throw new HttpsError('invalid-argument', 'platform must be spotify, tiktok, or instagram.');
+}
 
 // ── Helper: make authenticated assertion ─────────────────────────────────────
 function assertAuth(request: CallableRequest): string {
@@ -164,19 +173,30 @@ export const analyticsGetConnectionStatus = onCall(
     async (request) => {
         validateAppCheckV2(request);
         const uid = assertAuth(request);
-        const platform = (request.data as { platform?: unknown } | undefined)?.platform;
-        if (platform !== 'instagram') {
-            throw new HttpsError('invalid-argument', 'Only Instagram connection status is available from this endpoint.');
-        }
+        const platform = parseAnalyticsPlatform((request.data as { platform?: unknown } | undefined)?.platform);
         const snapshot = await tokenPath(uid, platform).get();
-        if (!snapshot.exists) return { connected: false };
+        if (!snapshot.exists) {
+            return { platform, connected: false, authorized: false, liveSyncOk: false, cacheOnly: false };
+        }
         const token = snapshot.data() as StoredToken;
         const expiresAt = typeof token.expiresAt === 'number' ? token.expiresAt : undefined;
         if (!token.accessToken || !expiresAt || expiresAt <= Date.now()) {
-            return { connected: false, ...(expiresAt ? { expiresAt } : {}) };
+            return {
+                platform,
+                connected: false,
+                authorized: false,
+                liveSyncOk: false,
+                cacheOnly: false,
+                reason: token.accessToken ? 'authorization_expired' : 'missing_access_token',
+                ...(expiresAt ? { expiresAt } : {}),
+            };
         }
         return {
+            platform,
             connected: true,
+            authorized: true,
+            liveSyncOk: false,
+            cacheOnly: false,
             expiresAt,
             ...(typeof token.igUserId === 'string' ? { igUserId: token.igUserId } : {}),
             ...(typeof token.facebookPageId === 'string' ? { facebookPageId: token.facebookPageId } : {}),
@@ -194,10 +214,7 @@ export const analyticsRefreshToken = onCall(
     async (request) => {
         validateAppCheckV2(request);
         const uid = assertAuth(request);
-        const { platform } = (request.data ?? {}) as { platform: string };
-        if (!platform) {
-            throw new HttpsError("invalid-argument", "platform is required.");
-        }
+        const platform = parseAnalyticsPlatform((request.data as { platform?: unknown } | undefined)?.platform);
 
         const snap = await tokenPath(uid, platform).get();
         if (!snap.exists) {
@@ -234,7 +251,7 @@ export const analyticsRefreshToken = onCall(
                 'Instagram Graph access requires reconnecting before the Facebook token expires.',
             );
         } else {
-            throw new HttpsError("invalid-argument", `Unsupported platform: ${platform}`);
+            throw new HttpsError('invalid-argument', 'Unsupported analytics platform.');
         }
 
         await storeToken(uid, platform, {
@@ -257,10 +274,7 @@ export const analyticsRevokeToken = onCall(
     async (request) => {
         validateAppCheckV2(request);
         const uid = assertAuth(request);
-        const { platform } = (request.data ?? {}) as { platform: string };
-        if (!platform) {
-            throw new HttpsError("invalid-argument", "platform is required.");
-        }
+        const platform = parseAnalyticsPlatform((request.data as { platform?: unknown } | undefined)?.platform);
 
         // Best-effort revocation at the platform's API
         const snap = await tokenPath(uid, platform).get();

@@ -23,8 +23,7 @@
  * Firestore token path: users/{uid}/analyticsTokens/tiktok
  */
 
-import { db, functions as firebaseFunctions } from '@/services/firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { functions as firebaseFunctions } from '@/services/firebase';
 import { httpsCallable } from 'firebase/functions';
 import { auth } from '@/services/firebase';
 import { logger } from '@/utils/logger';
@@ -34,16 +33,6 @@ import type { PlatformData, StreamDataPoint } from './types';
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const TIKTOK_BASE = 'https://open.tiktokapis.com/v2';
-const TOKEN_COLLECTION = (uid: string) =>
-    doc(db, 'users', uid, 'analyticsTokens', 'tiktok');
-
-// ── TikTok API response types ─────────────────────────────────────────────────
-
-interface TikTokStoredToken {
-    accessToken: string;
-    expiresAt: number;
-    openId: string;
-}
 
 interface TikTokVideoListResponse {
     data: {
@@ -165,10 +154,11 @@ export class TikTokAnalyticsService {
         const uid = auth.currentUser?.uid;
         if (!uid) return false;
         try {
-            const snap = await getDoc(TOKEN_COLLECTION(uid));
-            if (!snap.exists()) return false;
-            const token = snap.data() as TikTokStoredToken;
-            return !!token.accessToken && token.expiresAt > Date.now();
+            const statusFn = httpsCallable<unknown, { connected?: boolean }>(
+                firebaseFunctions, 'analyticsGetConnectionStatus'
+            );
+            const result = await statusFn({ platform: 'tiktok' });
+            return result.data.connected === true;
         } catch (err: unknown) {
             logger.error('[TikTokAnalyticsService] Failed to check connection:', err);
             Sentry.captureException(err);
@@ -316,21 +306,12 @@ export class TikTokAnalyticsService {
         const uid = auth.currentUser?.uid;
         if (!uid) throw new Error('Not authenticated.');
 
-        const snap = await getDoc(TOKEN_COLLECTION(uid));
-        if (!snap.exists()) throw new Error('TikTok not connected.');
-
-        const stored = snap.data() as TikTokStoredToken;
-
-        // Refresh if expiring within 5 minutes
-        if (!stored.expiresAt || stored.expiresAt < Date.now() + 5 * 60 * 1000) {
-            const refreshFn = httpsCallable<unknown, { ok: boolean; accessToken: string; expiresAt: number }>(
-                firebaseFunctions, 'analyticsRefreshToken'
-            );
-            const result = await refreshFn({ platform: 'tiktok' });
-            return result.data.accessToken;
-        }
-
-        return stored.accessToken;
+        const refreshFn = httpsCallable<unknown, { ok: boolean; accessToken: string; expiresAt: number }>(
+            firebaseFunctions, 'analyticsRefreshToken'
+        );
+        const result = await refreshFn({ platform: 'tiktok' });
+        if (!result.data.accessToken) throw new Error('TikTok not connected.');
+        return result.data.accessToken;
     }
 
     private async _fetch<T>(url: string, token: string): Promise<T> {

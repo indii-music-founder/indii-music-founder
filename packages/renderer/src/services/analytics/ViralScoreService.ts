@@ -1,14 +1,14 @@
 /**
  * ViralScoreService — Music Growth Intelligence Engine
  *
- * Implements the viral score formula defined in the indii Growth Intelligence spec.
+ * Implements a transparent engagement heuristic defined by indii.
  *
  * indii Growth Protocol v2.0 — Save Rate is the DOMINANT KPI.
  * Updated weights (v2.0): 0.45*save_rate + 0.20*completion_rate + 0.15*repeat_listener_ratio
  *                       + 0.10*playlist_velocity + 0.10*share_rate
  *
- * GUARDRAIL: If save rate drops below 5%, the campaign is causing algorithmic damage
- * and a pause command is dispatched immediately.
+ * This rubric is not a provider forecast and cannot by itself authorize spend or
+ * campaign mutations.
  */
 
 import type {
@@ -133,7 +133,16 @@ export class ViralScoreService {
         const label = this._getLabel(score);
         const trend = this._computeTrend(history);
 
-        return { score, label, trend, breakdown };
+        return {
+            score,
+            label,
+            trend,
+            breakdown,
+            method: 'weighted_engagement_heuristic',
+            confidence: 'low',
+            predictive: false,
+            sampleDays: history.length,
+        };
     }
 
     /**
@@ -141,7 +150,7 @@ export class ViralScoreService {
      * Signals: 1.0 = stable, 1.5 = accelerating, 2.0 = potential breakout
      */
     detectMomentumSignal(momentumRatio: number): { label: string; color: string } {
-        if (momentumRatio >= 2.0) return { label: 'Potential Breakout', color: 'text-yellow-400' };
+        if (momentumRatio >= 2.0) return { label: 'Strong Momentum', color: 'text-yellow-400' };
         if (momentumRatio >= 1.5) return { label: 'Accelerating', color: 'text-emerald-400' };
         if (momentumRatio >= 1.0) return { label: 'Stable Interest', color: 'text-blue-400' };
         return { label: 'Declining', color: 'text-red-400' };
@@ -157,7 +166,7 @@ export class ViralScoreService {
      * indii Growth Protocol v2.0 GUARDRAIL:
      * - Save Rate ≥ 8%  →  HEALTHY (strong algorithmic lift)
      * - Save Rate 5-8%  →  WARNING (below optimal, needs creative refresh)
-     * - Save Rate < 5%  →  CRITICAL + AUTO-PAUSE (causing algorithmic damage)
+     * - Save Rate < 5%  →  REVIEW RECOMMENDED (heuristic floor, no automatic mutation)
      *
      * Returns an action recommendation that the indii Conductor or Marketing
      * Agent should execute immediately.
@@ -165,7 +174,7 @@ export class ViralScoreService {
     evaluateSaveRateHealth(saveRate: number): {
         status: 'healthy' | 'warning' | 'critical';
         message: string;
-        action: 'continue' | 'refresh_creatives' | 'pause_campaign';
+        action: 'continue' | 'refresh_creatives' | 'review_pause';
     } {
         if (saveRate >= 0.08) {
             return {
@@ -183,12 +192,10 @@ export class ViralScoreService {
             };
         }
 
-        // CRITICAL: Below 5% save rate = algorithmic damage
         return {
             status: 'critical',
-            message: `CRITICAL: Save rate ${(saveRate * 100).toFixed(1)}% is below the 5% floor. This campaign is causing algorithmic damage. ` +
-                `IMMEDIATE ACTION: Pause this ad set to prevent further score tapering. Do NOT resume until creatives are refreshed and audience is retargeted.`,
-            action: 'pause_campaign',
+            message: `Save rate ${(saveRate * 100).toFixed(1)}% is below indii's configured 5% heuristic floor. Review provider-attributed conversion data, attribution windows, sample size, and campaign goals before deciding whether to pause.`,
+            action: 'review_pause',
         };
     }
 
@@ -211,7 +218,7 @@ export class ViralScoreService {
     }
 
     private _getLabel(score: number): BreakoutProbability {
-        if (score >= 80) return 'Breakout!';
+        if (score >= 80) return 'Strong Signal';
         if (score >= 60) return 'High';
         if (score >= 35) return 'Moderate';
         return 'Low';

@@ -160,7 +160,24 @@ describe('FinanceTools', () => {
             // Net = 4000
             expect(result.data.projections.net_to_rights_holder.month_1).toBeCloseTo(4000);
 
-            expect(result.data.message).toContain('Estimated annual savings on manager fees');
+            expect(result.data.message).toContain('Rough revenue estimate');
+            expect(result.data.estimateType).toBe('rough_estimate');
+            expect(result.data.confidenceLevel).toBe('low');
+            expect(result.data.confidenceSource).toContain('No distributor statement history');
+            expect(result.data.assumptions).toContain('The manager-fee comparison is hypothetical at 20%; it is not verified money saved.');
+        });
+
+        it('rejects impossible stream and rights-split inputs', async () => {
+            await expect(FinanceTools.forecast_revenue({
+                currentStreams: -1,
+                platform: 'Spotify',
+                rightsHolderSplit: 100,
+            })).resolves.toEqual(expect.objectContaining({ success: false }));
+            await expect(FinanceTools.forecast_revenue({
+                currentStreams: 100,
+                platform: 'Spotify',
+                rightsHolderSplit: 101,
+            })).resolves.toEqual(expect.objectContaining({ success: false }));
         });
 
         it('should handle split percentages correctly', async () => {

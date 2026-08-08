@@ -10,18 +10,13 @@ const mockQuery = vi.fn();
 const mockWhere = vi.fn();
 
 vi.mock('firebase/firestore', () => ({
-    serverTimestamp: vi.fn(),
     getFirestore: vi.fn(),
     collection: (db: any, col: string) => mockCollection(col),
     addDoc: (ref: any, data: any) => mockAddDoc(ref, data),
     getDocs: (q: any) => mockGetDocs(q),
     query: (ref: any, ...args: any[]) => mockQuery(ref, ...args),
     where: (field: string, op: string, val: any) => mockWhere(field, op, val),
-    Timestamp: {
-        now: () => ({
-            serverTimestamp: vi.fn(), toISOString: () => new Date().toISOString()
-        })
-    }
+    serverTimestamp: vi.fn(() => ({ serverTimestamp: true })),
 }));
 
 // Mock the db export from firebase service
@@ -63,20 +58,31 @@ describe('SmartContractService', () => {
         });
     });
 
-    it('should require a wallet provider before deploying a split contract', async () => {
-        await expect(smartContractService.deploySplitContract({
+    it('should save an explicitly unverified owner-scoped split contract draft', async () => {
+        const result = await smartContractService.saveSplitContractDraft({
             isrc: 'US-XYZ-26-00001',
+            tokenName: 'Night Shift Rights',
+            tokenSymbol: 'NSR',
+            tokenType: 'ERC-1155',
             payees: [
-                { walletAddress: '0xA', percentage: 50, role: 'Artist' },
-                { walletAddress: '0xB', percentage: 50, role: 'Label' }
+                { walletAddress: `0x${'a'.repeat(40)}`, percentage: 50, role: 'Artist' },
+                { walletAddress: `0x${'b'.repeat(40)}`, percentage: 50, role: 'Label' }
             ]
-        })).rejects.toThrow('No wallet provider available');
-        expect(mockAddDoc).not.toHaveBeenCalled();
+        });
+        expect(result).toBe('mock-doc-id');
+        expect(mockAddDoc).toHaveBeenCalledWith(undefined, expect.objectContaining({
+            userId: 'test-user',
+            status: 'draft_unverified',
+            tokenName: 'Night Shift Rights',
+        }));
     });
 
     it('should throw error for invalid split percentages', async () => {
-        await expect(smartContractService.deploySplitContract({
+        await expect(smartContractService.saveSplitContractDraft({
             isrc: 'US-FAIL',
+            tokenName: 'Invalid Split',
+            tokenSymbol: 'BAD',
+            tokenType: 'ERC-721',
             payees: [
                 { walletAddress: '0xA', percentage: 50, role: 'Artist' },
                 { walletAddress: '0xB', percentage: 40, role: 'Label' } // Total 90
