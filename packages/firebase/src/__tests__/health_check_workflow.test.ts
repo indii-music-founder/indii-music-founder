@@ -51,3 +51,25 @@ describe('Health Check workflow clean-install contract', () => {
     );
   });
 });
+
+describe('Deploy workflow staging gate contract', () => {
+  it('fails closed when the preview cannot deploy or serve the app', () => {
+    const workflow = readFileSync(join(repoRoot, '.github/workflows/deploy.yml'), 'utf8');
+
+    expect(workflow).toContain(
+      '::error::Firebase Hosting storage quota blocked the staging deploy.',
+    );
+    expect(workflow).toContain("STAGING_HTTP_STATUS=$(curl -sS -o /dev/null -w '%{http_code}'");
+    expect(workflow).toContain('::error::Staging URL did not become reachable: ${STAGING_URL}');
+    expect(workflow).not.toContain(
+      'Staging deploy skipped — production deploy unaffected.',
+    );
+  });
+
+  it('requires successful staging E2E before production deploy starts', () => {
+    const workflow = readFileSync(join(repoRoot, '.github/workflows/deploy.yml'), 'utf8');
+
+    expect(workflow).toContain('needs: [deploy-staging, e2e-staging, rules-tests]');
+    expect(workflow).toContain("needs.e2e-staging.result == 'success'");
+  });
+});
