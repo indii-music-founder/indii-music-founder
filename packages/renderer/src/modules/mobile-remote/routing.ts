@@ -34,6 +34,24 @@ export function isMobileRemotePath(pathname: string): boolean {
     return (pathname.replace(/\/+$/, '') || '/') === MOBILE_REMOTE_PATH;
 }
 
+const MOBILE_REMOTE_BYPASS_PATHS = new Set([
+    '/privacy',
+    '/legal/privacy',
+    '/terms',
+    '/legal/terms',
+    '/tax-form-upload',
+    '/login',
+    '/signin',
+    '/signup',
+    '/register',
+]);
+
+export function isMobileRemoteBypassPath(pathname: string): boolean {
+    const normalizedPath = pathname.replace(/\/+$/, '') || '/';
+    return MOBILE_REMOTE_BYPASS_PATHS.has(normalizedPath)
+        || /^\/auth\/[^/]+\/callback$/.test(normalizedPath);
+}
+
 export function buildMobileRemoteUrl(search = '', hash = ''): string {
     const normalizedSearch = search && !search.startsWith('?') ? `?${search}` : search;
     const normalizedHash = hash && !hash.startsWith('#') ? `#${hash}` : hash;
@@ -56,6 +74,10 @@ export function shouldUseMobileRemoteSurface(input: {
 
     // Explicit /mobile-remote route always opens the Controller surface
     if (isMobileRemotePath(input.pathname)) return true;
+
+    // Public, authentication, and provider callback routes must reach App.tsx's
+    // route branches on every viewport. Device routing only applies to Studio paths.
+    if (isMobileRemoteBypassPath(input.pathname)) return false;
 
     // Mobile phones and tablets (specifically iPad) open the Remote Control surface.
     // Desktop / computer browsers loading app.indii.music or any web domain load the regular Studio app.

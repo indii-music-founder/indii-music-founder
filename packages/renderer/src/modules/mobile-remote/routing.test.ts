@@ -86,4 +86,26 @@ describe('remote surface device and executor boundaries', () => {
             isRemoteDevice: true,
         })).toBe(false);
     });
+
+    it.each([
+        '/privacy',
+        '/privacy/',
+        '/legal/privacy',
+        '/terms',
+        '/legal/terms',
+        '/tax-form-upload',
+        '/login',
+        '/signin',
+        '/signup',
+        '/register',
+        '/auth/instagram/callback',
+        '/auth/spotify/callback',
+    ])('keeps the public or authentication route %s out of the Controller on phones', pathname => {
+        expect(shouldUseMobileRemoteSurface({
+            hostname: 'app.indii.music',
+            pathname,
+            isElectron: false,
+            isRemoteDevice: true,
+        })).toBe(false);
+    });
 });

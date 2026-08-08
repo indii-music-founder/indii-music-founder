@@ -30,6 +30,7 @@ import {
     isRemoteSurfaceDevice,
     isStudioExecutorSurface,
     isMobileRemoteHost,
+    isMobileRemoteBypassPath,
     isMobileRemotePath,
     shouldUseMobileRemoteSurface,
 } from '@/modules/mobile-remote/routing';
@@ -140,6 +141,7 @@ export default function App() {
 
     const mobile = useMobile();
     const isElectron = typeof window !== 'undefined' && !!window.electronAPI;
+    const isMobileRemoteBypassRoute = isMobileRemoteBypassPath(location.pathname);
     const shouldUseRemoteSurface = shouldUseMobileRemoteSurface({
         hostname: typeof window === 'undefined' ? '' : window.location.hostname,
         pathname: location.pathname,
@@ -174,13 +176,9 @@ export default function App() {
         [location.pathname],
     );
 
-    // URL sync must not rewrite public or controller routes back to a persisted module.
+    // URL sync must not rewrite public, auth, callback, or Controller routes.
     useURLSync({
-        disabled:
-            shouldUseRemoteSurface ||
-            !!publicLegalPage ||
-            isInstagramOAuthCallback ||
-            isTaxFormUploadPage,
+        disabled: shouldUseRemoteSurface || isMobileRemoteBypassRoute,
     });
 
     // Determine if current module should show chrome (sidebar, command bar, etc.)
