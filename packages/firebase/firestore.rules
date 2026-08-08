@@ -2,6 +2,12 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // Pre-save data model: presaveCampaigns/{campaignId} is owned by ownerId;
+    // fan submissions live at presaveCampaigns/{campaignId}/leads/{leadId} and
+    // repeat submissions overwrite the same leadId. Callable functions using
+    // the Admin SDK are the only writers. Campaign owners may read their own
+    // campaign and leads; public campaign projection is callable-only.
+
     // =========================================================================
     // Helper Functions
     // =========================================================================
@@ -171,6 +177,118 @@ service cloud.firestore {
     // Validate string field
     function isValidString(field, minLen, maxLen) {
       return field is string && field.size() >= minLen && field.size() <= maxLen;
+    }
+
+    function isValidPreSaveLinks(links) {
+      return links is map &&
+        links.keys().hasOnly(['spotify', 'appleMusic', 'amazonMusic']) &&
+        (
+          links.get('spotify', '') != '' ||
+          links.get('appleMusic', '') != '' ||
+          links.get('amazonMusic', '') != ''
+        ) &&
+        (
+          links.get('spotify', '') == '' ||
+          (
+            isValidString(links.spotify, 1, 2048) &&
+            links.spotify.matches('^https://([A-Za-z0-9-]+[.])?spotify[.]com(/.*)?$')
+          )
+        ) &&
+        (
+          links.get('appleMusic', '') == '' ||
+          (
+            isValidString(links.appleMusic, 1, 2048) &&
+            links.appleMusic.matches('^https://music[.]apple[.]com(/.*)?$')
+          )
+        ) &&
+        (
+          links.get('amazonMusic', '') == '' ||
+          (
+            isValidString(links.amazonMusic, 1, 2048) &&
+            links.amazonMusic.matches('^https://([A-Za-z0-9-]+[.])?music[.]amazon[.]com(/.*)?$')
+          )
+        );
+    }
+
+    function isValidPreSaveCampaign(data) {
+      return data is map &&
+        data.keys().hasOnly([
+          'ownerId',
+          'title',
+          'releaseDate',
+          'coverArtUrl',
+          'links',
+          'captureEmails',
+          'capturePhones',
+          'themeColor',
+          'status',
+          'leadCount',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        data.keys().hasAll([
+          'ownerId',
+          'title',
+          'releaseDate',
+          'coverArtUrl',
+          'links',
+          'captureEmails',
+          'capturePhones',
+          'themeColor',
+          'status',
+          'leadCount',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        isValidString(data.ownerId, 1, 128) &&
+        isValidString(data.title, 1, 160) &&
+        data.releaseDate is timestamp &&
+        data.coverArtUrl is string && data.coverArtUrl.size() <= 2048 &&
+        (data.coverArtUrl == '' || data.coverArtUrl.matches('^https://.+$')) &&
+        isValidPreSaveLinks(data.links) &&
+        data.captureEmails is bool &&
+        data.capturePhones is bool &&
+        data.themeColor is string && data.themeColor.matches('^#[0-9A-Fa-f]{6}$') &&
+        data.status in ['active', 'expired'] &&
+        data.leadCount is int && data.leadCount >= 0 &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidPreSaveLead(data, campaignId, leadId) {
+      return data is map &&
+        data.keys().hasOnly([
+          'leadId',
+          'campaignId',
+          'ownerId',
+          'dsp',
+          'email',
+          'phone',
+          'optInMarketing',
+          'fbclid',
+          'collectedAt'
+        ]) &&
+        data.keys().hasAll([
+          'leadId',
+          'campaignId',
+          'ownerId',
+          'dsp',
+          'optInMarketing',
+          'collectedAt'
+        ]) &&
+        data.leadId == leadId &&
+        data.campaignId == campaignId &&
+        isValidString(data.ownerId, 1, 128) &&
+        data.dsp in ['spotify', 'appleMusic', 'amazonMusic'] &&
+        (!('email' in data) || isValidString(data.email, 3, 320)) &&
+        (!('phone' in data) || isValidString(data.phone, 5, 32)) &&
+        (!('fbclid' in data) || isValidString(data.fbclid, 1, 512)) &&
+        data.optInMarketing is bool &&
+        (
+          (!('email' in data) && !('phone' in data)) ||
+          data.optInMarketing == true
+        ) &&
+        data.collectedAt is timestamp;
     }
 
     function isValidRemoteRelayMetadata(metadata) {
@@ -2066,6 +2184,29 @@ service cloud.firestore {
     // artist's fan activity. Server-only, both directions.
     match /conversionEventOutbox/{eventId} {
       allow read, write: if false;
+    }
+
+    // Durable pre-save campaigns and fan leads. Public access always travels
+    // through callable functions so the returned campaign is a safe projection
+    // and every lead submission receives App Check and Arcjet protection.
+    match /presaveCampaigns/{campaignId} {
+      allow read: if isAuthenticated() && resource.data.ownerId == request.auth.uid;
+      allow create: if isValidPreSaveCampaign(request.resource.data) && false;
+      allow update: if isValidPreSaveCampaign(request.resource.data) &&
+        request.resource.data.ownerId == resource.data.ownerId &&
+        request.resource.data.createdAt == resource.data.createdAt &&
+        false;
+      allow delete: if false;
+
+      match /leads/{leadId} {
+        allow read: if isAuthenticated() && resource.data.ownerId == request.auth.uid;
+        allow create: if isValidPreSaveLead(request.resource.data, campaignId, leadId) && false;
+        allow update: if isValidPreSaveLead(request.resource.data, campaignId, leadId) &&
+          request.resource.data.ownerId == resource.data.ownerId &&
+          request.resource.data.collectedAt == resource.data.collectedAt &&
+          false;
+        allow delete: if false;
+      }
     }
 
     // =========================================================================

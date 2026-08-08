@@ -2148,6 +2148,105 @@ describe('Firestore Security Rules', () => {
     });
 
     // ──────────────────────────────────────────────────────────────────────
+    // PRE-SAVE CAMPAIGNS: callable-only writes, owner-only reads
+    // ──────────────────────────────────────────────────────────────────────
+
+    describe('presaveCampaigns/{campaignId}', () => {
+        const campaignId = 'campaign_12345678';
+        const leadId = 'lead_12345678';
+        const campaign = {
+            ownerId: ALICE_UID,
+            title: 'Midnight Release',
+            releaseDate: Timestamp.fromMillis(1_800_000_000_000),
+            coverArtUrl: 'https://cdn.indii.music/cover.jpg',
+            links: { spotify: 'https://open.spotify.com/album/123' },
+            captureEmails: true,
+            capturePhones: false,
+            themeColor: '#7259ff',
+            status: 'active',
+            leadCount: 1,
+            createdAt: Timestamp.fromMillis(1_700_000_000_000),
+            updatedAt: Timestamp.fromMillis(1_700_000_000_000),
+        };
+        const lead = {
+            leadId,
+            campaignId,
+            ownerId: ALICE_UID,
+            dsp: 'spotify',
+            email: 'fan@example.com',
+            optInMarketing: true,
+            collectedAt: Timestamp.fromMillis(1_700_000_000_000),
+        };
+
+        beforeEach(async () => {
+            if (requireEmulator()) return;
+            await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                await setDoc(doc(ctx.firestore(), 'presaveCampaigns', campaignId), campaign);
+                await setDoc(doc(
+                    ctx.firestore(),
+                    'presaveCampaigns',
+                    campaignId,
+                    'leads',
+                    leadId,
+                ), lead);
+            });
+        });
+
+        it('allows the owner to read their campaign and leads', async () => {
+            if (requireEmulator()) return;
+            const db = verifiedCtx(ALICE_UID).firestore();
+            await assertSucceeds(getDoc(doc(db, 'presaveCampaigns', campaignId)));
+            await assertSucceeds(getDoc(doc(db, 'presaveCampaigns', campaignId, 'leads', leadId)));
+        });
+
+        it('denies public, anonymous, and cross-account reads', async () => {
+            if (requireEmulator()) return;
+            await assertFails(getDoc(doc(unauthCtx().firestore(), 'presaveCampaigns', campaignId)));
+            await assertFails(getDoc(doc(anonCtx().firestore(), 'presaveCampaigns', campaignId)));
+            await assertFails(getDoc(doc(verifiedCtx(BOB_UID).firestore(), 'presaveCampaigns', campaignId)));
+            await assertFails(getDoc(doc(
+                verifiedCtx(BOB_UID).firestore(),
+                'presaveCampaigns',
+                campaignId,
+                'leads',
+                leadId,
+            )));
+        });
+
+        it('denies campaign creation, ownership changes, and deletion by every client', async () => {
+            if (requireEmulator()) return;
+            const ownerDb = verifiedCtx(ALICE_UID).firestore();
+            await assertFails(setDoc(doc(ownerDb, 'presaveCampaigns', 'campaign_87654321'), campaign));
+            await assertFails(updateDoc(doc(ownerDb, 'presaveCampaigns', campaignId), { ownerId: BOB_UID }));
+            await assertFails(deleteDoc(doc(ownerDb, 'presaveCampaigns', campaignId)));
+        });
+
+        it('denies forged, polluted, and destructive lead mutations by every client', async () => {
+            if (requireEmulator()) return;
+            const ownerDb = verifiedCtx(ALICE_UID).firestore();
+            const newLead = doc(ownerDb, 'presaveCampaigns', campaignId, 'leads', 'lead_87654321');
+            await assertFails(setDoc(newLead, { ...lead, leadId: 'lead_87654321' }));
+            await assertFails(setDoc(newLead, {
+                ...lead,
+                leadId: 'lead_87654321',
+                ownerId: BOB_UID,
+                administrativeOverride: true,
+            }));
+            await assertFails(updateDoc(
+                doc(ownerDb, 'presaveCampaigns', campaignId, 'leads', leadId),
+                { email: 'stolen@example.com' },
+            ));
+            await assertFails(deleteDoc(doc(
+                ownerDb,
+                'presaveCampaigns',
+                campaignId,
+                'leads',
+                leadId,
+            )));
+        });
+    });
+
+    // ──────────────────────────────────────────────────────────────────────
     // DENY-ALL: arbitrary collection access denied
     // ──────────────────────────────────────────────────────────────────────
 

@@ -7,36 +7,36 @@ weight changes anywhere in this diagram.
 
 ```mermaid
 flowchart TD
-    U[User sets/adjusts fader<br/>0-100 per axis] --> FS[(Firestore<br/>personaFaders/uid/personaId)]
+    U["User sets or adjusts a fader from 0 to 100 per axis"] --> FS[("Firestore personaFaders/uid/personaId")]
 
-    Q[User question to a persona] --> SUB[Substance call<br/>non-personalized, frozen]
-    SUB -->|responseSchema JSON| V["Verdict object<br/>{verdict, risk_level, caveats[], escalate}"]
+    Q["User question to a persona"] --> SUB["Substance call with frozen non-personalized behavior"]
+    SUB -->|"responseSchema JSON"| V["Verdict object with verdict, risk level, caveats, and escalation"]
 
-    FS --> COMP[PersonaPromptCompiler<br/>faders -> calibrated language<br/>never raw numbers]
-    PERSONA[Persona archetype prompt<br/>Manager / Contract Reader / A&R / etc.] --> CACHE[(CachedContent<br/>systemInstruction, per persona<br/>shared across all users)]
+    FS --> COMP["PersonaPromptCompiler maps faders to calibrated language, never raw numbers"]
+    PERSONA["Persona archetype prompt for Manager, Contract Reader, A and R, and others"] --> CACHE[("CachedContent system instruction shared per persona")]
 
-    COMP --> STYLE[Style call<br/>renders V in compiled voice]
+    COMP --> STYLE["Style call renders the verdict in the compiled voice"]
     CACHE --> STYLE
     V --> STYLE
-    STYLE --> R[Response to user]
+    STYLE --> R["Response to user"]
 
-    R --> IMP[Implicit signals<br/>copied? acted-on? re-asked? abandoned?]
-    R --> RATE[Explicit rating<br/>thumbs/stars]
-    IMP --> FB[(AgentFeedbackEvent)]
+    R --> IMP["Implicit signals such as copied, acted on, re-asked, or abandoned"]
+    R --> RATE["Explicit thumbs or stars rating"]
+    IMP --> FB[("AgentFeedbackEvent")]
     RATE --> FB
-    FB -->|style only, never substance| FS
+    FB -->|"style only, never substance"| FS
 
-    R -.-> MEAS[PersonaMeasurement<br/>embed response, score vs<br/>human anchor texts per band]
-    MEAS -->|setPosition vs measuredPosition| TEL[(Telemetry)]
+    R -.-> MEAS["PersonaMeasurement embeds the response and scores it against human anchors"]
+    MEAS -->|"set position versus measured position"| TEL[("Telemetry")]
 
-    CANARY[Frozen canary suite<br/>sycophancy probes, style-invariance,<br/>disclaimer retention, off-domain alignment] -.->|gates every prompt-version promotion| COMP
+    CANARY["Frozen canary suite for sycophancy, style invariance, disclaimers, and off-domain alignment"] -.->|"gates every prompt-version promotion"| COMP
 
     style V fill:#1e3a5f,color:#fff
     style FB fill:#5f1e1e,color:#fff
     style CANARY fill:#3f5f1e,color:#fff
 ```
 
-## What this enforces structurally
+## Transition Breakdown
 
 - **Substance call and style call are separate API calls.** The style call
   never receives the raw user question — only the already-computed verdict

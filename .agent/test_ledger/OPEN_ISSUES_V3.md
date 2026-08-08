@@ -126,13 +126,18 @@
 ### ISSUE-1127: Pre-save builder exposes a shareable campaign URL without publishing a page or storing leads
 
 - **Re-ticketed from:** ISSUE-844 (2026-07-21 housecleaning; original status was: `⏳ BACKLOG — consolidated`)
-- **Status:** ⏳ BACKLOG — consolidated
+- **Status:** ✅ FIXED (2026-08-08 — durable callable-backed publication, hosted public route, consented lead storage, deterministic conversion outbox, and owner-only rules)
 - **Severity:** 🟠 HIGH
 - **Module:** Marketing / Pre-save campaigns
-- **Evidence:** `PreSaveCampaignBuilder` derives a public `indii.vip/presave/{slug}` URL from local input (`PreSaveCampaignBuilder.tsx:35-37`), displays DSP pre-save buttons regardless of whether links are entered (`:195-200`), shows a QR placeholder (`:220-225`), and only supports copy/share actions (`:42-70`, `:231-245`). `PreSaveCampaignService.createCampaign()` only logs and returns `ps_${Date.now()}` while Firestore persistence is commented out (`PreSaveCampaignService.ts:41-49`); `recordLead()` also only logs with persistence commented out (`:55-60`).
+- **Original evidence:** `PreSaveCampaignBuilder` derived an unresolved `indii.vip/presave/{slug}` URL locally and exposed Copy/Share before publication. `PreSaveCampaignService.createCampaign()` and `recordLead()` only logged while their Firestore persistence was commented out.
 - **Impact:** A founder can share a URL that may not resolve to a hosted landing page, and fan email/phone collection can be lost because no published campaign or lead storage is created.
-- **Fix:** Add an explicit publish flow that writes a campaign document, provisions/validates the public route, generates a real QR code, validates required DSP links, and stores consented leads server-side.
-- **Acceptance:** Copy/share is disabled until a campaign has a persisted ID, routable URL, real QR payload, and lead-capture backend; submitted test leads appear in the campaign lead collection with consent metadata.
+- **Fix:** `PreSaveCampaignBuilder` now requires an explicit successful publish before showing the canonical `https://app.indii.music/presave/{campaignId}` URL, real QR encoding, Copy, or Share. `createPreSaveCampaign` validates official HTTPS DSP domains and writes `presaveCampaigns/{campaignId}`. `App.tsx` hosts the public landing page before the auth gate, including a mobile-remote bypass. `presaveRegister` applies App Check and fail-closed Arcjet protection, validates campaign/contact/consent state, transactionally writes `leads/{leadId}`, deduplicates `leadCount`, and awaits a deterministic conversion-outbox write before allowing the DSP redirect. Firestore Rules deny all client writes and allow only the campaign owner to read campaign and lead records.
+- **Acceptance evidence:**
+  1. **No fabricated sharing:** builder regression proves Copy, Share, and QR are absent until the callable returns a persisted campaign ID; persistence failure keeps all three locked.
+  2. **Routable hosted page:** renderer routing regression covers `/presave/{campaignId}` as a public mobile bypass, and landing-page tests prove public load/unavailable behavior.
+  3. **Durable lead and conversion:** backend regressions prove the consented lead shape, new-lead-only counter increment, deterministic retry identity, awaited outbox result, and non-throwing Firestore failure response.
+  4. **Protected data:** Firestore emulator suite proves owner reads and rejects public, anonymous, cross-account, forged, schema-polluted, update, and delete attempts.
+  5. **Verification:** focused Vitest passed 42/42; Firebase, Firebase-test, and renderer TypeScript checks passed; scoped ESLint passed; Firestore emulator rules passed 190/190. Production deployment remains deferred solely by the known Firebase billing condition, per founder direction; code-completion acceptance is satisfied.
 
 ---
 

@@ -202,6 +202,7 @@ export { marketingGetCampaignMetrics } from './marketing/campaignMetricsCallable
 export { smartLinkRedirect } from './marketing/smartLink';
 export { flushConversionEvents } from './marketing/flushConversionEvents';
 export { presaveRegister } from './marketing/presaveRegister';
+export { createPreSaveCampaign, getPreSaveCampaign } from './marketing/presaveCampaigns';
 export { shopifyWebhook } from './marketing/shopifyWebhook';
 
 // Storage Maintenance (Scheduled — orphan cleanup, quota tracking, archival flagging, temp cleanup)

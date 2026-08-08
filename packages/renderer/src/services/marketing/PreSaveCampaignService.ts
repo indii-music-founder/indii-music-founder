@@ -1,84 +1,113 @@
 /**
- * PreSaveCampaignService.ts
- * 
- * Manages Pre-Save landing pages and fan lead collection.
- * Fulfills PRODUCTION_200 item #144.
+ * Durable pre-save campaign and fan-lead client.
+ *
+ * All writes go through Cloud Functions. Firestore Rules intentionally deny
+ * direct client writes so a forged browser request cannot manufacture
+ * conversions or expose fan contact data.
  */
 
+import { httpsCallable } from 'firebase/functions';
+import { functions } from '@/services/firebase';
 import { logger } from '@/utils/logger';
+
+export type PreSaveDsp = 'spotify' | 'appleMusic' | 'amazonMusic';
 
 export interface PreSavePlatformLinks {
     spotify?: string;
     appleMusic?: string;
     amazonMusic?: string;
-    tidal?: string;
-    deezer?: string;
 }
 
 export interface PreSaveCampaign {
     id: string;
     title: string;
-    releaseDate: number; // UTC timestamp
+    releaseDate: number;
     coverArtUrl: string;
     links: PreSavePlatformLinks;
     captureEmails: boolean;
     capturePhones: boolean;
     themeColor: string;
-    status: 'active' | 'scheduled' | 'expired';
+    status: 'active' | 'expired';
 }
 
-export interface PreSaveLead {
+export type NewPreSaveCampaign = Omit<PreSaveCampaign, 'id' | 'status'>;
+
+export interface PreSaveLeadInput {
+    leadId: string;
+    dsp: PreSaveDsp;
     email?: string;
     phone?: string;
-    collectedAt: number;
     optInMarketing: boolean;
+    fbclid?: string;
 }
 
+export type PreSaveRegisterResponse =
+    | { presaved: true; campaignId: string; leadId: string }
+    | {
+        presaved: false;
+        reason: 'INVALID_INPUT' | 'CAMPAIGN_NOT_FOUND' | 'CAMPAIGN_UNAVAILABLE' | 'FIRESTORE_ERROR';
+        message: string;
+    };
+
 export class PreSaveCampaignService {
-    /**
-     * Creates a new pre-save campaign for an upcoming release.
-     */
-    async createCampaign(campaign: Omit<PreSaveCampaign, 'id' | 'status'>): Promise<string> {
-        const id = `ps_${Date.now()}`;
-
-        logger.info(`[PreSaveService] Creating pre-save campaign: ${campaign.title} (ID: ${id})`);
-
-        // In production, this would persist to Firestore
-        // await db.collection('presave_campaigns').doc(id).set({ ...campaign, status: 'active' });
-
-        return id;
+    async createCampaign(campaign: NewPreSaveCampaign, campaignId?: string): Promise<string> {
+        const create = httpsCallable<
+            NewPreSaveCampaign & { campaignId?: string },
+            { campaignId: string }
+        >(functions, 'createPreSaveCampaign');
+        const result = await create({ ...campaign, ...(campaignId ? { campaignId } : {}) });
+        if (!/^[A-Za-z0-9_-]{8,128}$/.test(result.data?.campaignId ?? '')) {
+            throw new Error('Campaign persistence returned no valid campaign ID.');
+        }
+        logger.info('[PreSaveService] Campaign persisted', { campaignId: result.data.campaignId });
+        return result.data.campaignId;
     }
 
-    /**
-     * Records a fan lead (Email/Phone) for a specific campaign.
-     */
-    async recordLead(campaignId: string, lead: Omit<PreSaveLead, 'collectedAt'>): Promise<void> {
-        logger.info(`[PreSaveService] Lead collected for campaign ${campaignId}: ${lead.email || lead.phone}`);
-
-        // In production, this would persist to the campaign's lead sub-collection
-        // await db.collection('presave_campaigns').doc(campaignId).collection('leads').add({ ...lead, collectedAt: Date.now() });
+    async getCampaign(campaignId: string): Promise<PreSaveCampaign> {
+        const getCampaign = httpsCallable<{ campaignId: string }, PreSaveCampaign>(
+            functions,
+            'getPreSaveCampaign',
+        );
+        const result = await getCampaign({ campaignId });
+        return result.data;
     }
 
-    /**
-     * Returns the campaign public URL.
-     */
+    async recordLead(
+        campaignId: string,
+        lead: PreSaveLeadInput,
+    ): Promise<PreSaveRegisterResponse> {
+        try {
+            const register = httpsCallable<
+                PreSaveLeadInput & { campaignId: string },
+                PreSaveRegisterResponse
+            >(functions, 'presaveRegister');
+            const result = await register({ campaignId, ...lead });
+            return result.data;
+        } catch (error) {
+            logger.error('[PreSaveService] Lead submission failed', {
+                campaignId,
+                error: error instanceof Error ? error.message : String(error),
+            });
+            return {
+                presaved: false,
+                reason: 'FIRESTORE_ERROR',
+                message: 'Your pre-save could not be saved. Please try again.',
+            };
+        }
+    }
+
     getCampaignUrl(campaignId: string): string {
-        const baseUrl = import.meta.env.VITE_PRESAVE_BASE_URL || 'https://indii.os/p';
-        return `${baseUrl}/${campaignId}`;
+        if (!/^[A-Za-z0-9_-]{8,128}$/.test(campaignId)) {
+            throw new Error('Campaign persistence returned an invalid campaign ID.');
+        }
+        return `https://app.indii.music/presave/${campaignId}`;
     }
 
-    /**
-     * Calculates time remaining until the release.
-     */
     getTimeRemaining(releaseDate: number): string {
-        const now = Date.now();
-        const diff = releaseDate - now;
-
+        const diff = releaseDate - Date.now();
         if (diff <= 0) return 'Released';
-
         const days = Math.floor(diff / (1000 * 60 * 60 * 24));
         const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-
         return `${days}d ${hours}h left`;
     }
 }

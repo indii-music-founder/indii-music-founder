@@ -50,7 +50,6 @@ interface ImportMetaEnv {
 
     // EPK / Press
     readonly VITE_EPK_BASE_URL?: string
-    readonly VITE_PRESAVE_BASE_URL?: string
 
     // Remotion — Cloud Run (GCP)
     readonly VITE_REMOTION_BUNDLE_PATH?: string

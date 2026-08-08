@@ -49,7 +49,8 @@ const MOBILE_REMOTE_BYPASS_PATHS = new Set([
 export function isMobileRemoteBypassPath(pathname: string): boolean {
     const normalizedPath = pathname.replace(/\/+$/, '') || '/';
     return MOBILE_REMOTE_BYPASS_PATHS.has(normalizedPath)
-        || /^\/auth\/[^/]+\/callback$/.test(normalizedPath);
+        || /^\/auth\/[^/]+\/callback$/.test(normalizedPath)
+        || /^\/presave\/[A-Za-z0-9_-]{8,128}$/.test(normalizedPath);
 }
 
 export function buildMobileRemoteUrl(search = '', hash = ''): string {
@@ -75,8 +76,9 @@ export function shouldUseMobileRemoteSurface(input: {
     // Explicit /mobile-remote route always opens the Controller surface
     if (isMobileRemotePath(input.pathname)) return true;
 
-    // Public, authentication, and provider callback routes must reach App.tsx's
-    // route branches on every viewport. Device routing only applies to Studio paths.
+    // Public, authentication, provider callback, and published pre-save routes
+    // must reach App.tsx's route branches on every viewport. Device routing only
+    // applies to Studio paths.
     if (isMobileRemoteBypassPath(input.pathname)) return false;
 
     // Mobile phones and tablets (specifically iPad) open the Remote Control surface.

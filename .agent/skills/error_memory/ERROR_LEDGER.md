@@ -1841,3 +1841,11 @@ committing.
 - FIX: Injected a mandatory `TRUTHFULNESS & TOOL IDENTITY (STRICT MANDATE)` protocol into `BaseAgent.ts` system prompt (`SUPERPOWER_PROMPT`). Strictly forbids attributing or conflating internal tools with third-party models (DALL-E 3, Sora, Midjourney, Runway, Pika) and mandates reporting authorized capabilities using exact registered tool names.
 - PREVENTION: Every agent system prompt inherits this non-negotiable truthfulness mandate. All dataset examples must reference native tool names without external model brand attribution.
 
+## 2026-08-08 — Share controls must be downstream of durable publication
+
+**SEVERITY:** High (artists could distribute a dead URL while fan contact data was silently discarded)
+
+- FILES: `packages/renderer/src/modules/marketing/components/PreSaveCampaignBuilder.tsx`, `packages/renderer/src/services/marketing/PreSaveCampaignService.ts`, `packages/firebase/src/marketing/presaveCampaigns.ts`, `packages/firebase/src/marketing/presaveRegister.ts`
+- BUG: The pre-save builder constructed a branded URL from local form state and exposed Copy/Share immediately, even though the hostname did not resolve and both campaign and lead persistence were commented out.
+- FIX: Make the backend-persisted campaign ID the sole capability that unlocks the hosted URL, QR, Copy, and Share. The public fan path now writes a consented deterministic lead and awaits its conversion outbox record before redirecting to the configured DSP.
+- PREVENTION: Any UI that exposes a shareable, downloadable, payable, or externally actionable artifact must receive its identifier from the durable backend operation that created the artifact. A local timestamp, slug, placeholder QR, log line, or optimistic state is never publication evidence.

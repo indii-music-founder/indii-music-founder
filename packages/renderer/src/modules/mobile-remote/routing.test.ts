@@ -100,6 +100,7 @@ describe('remote surface device and executor boundaries', () => {
         '/register',
         '/auth/instagram/callback',
         '/auth/spotify/callback',
+        '/presave/campaign-123',
     ])('keeps the public or authentication route %s out of the Controller on phones', pathname => {
         expect(shouldUseMobileRemoteSurface({
             hostname: 'app.indii.music',

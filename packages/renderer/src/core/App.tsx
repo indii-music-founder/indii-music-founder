@@ -42,6 +42,7 @@ const AppShell = lazy(() => import('./AppShell'));
 const BugReportDialog = lazy(() => import('@/modules/debug/BugReportDialog').then(m => ({ default: m.BugReportDialog })));
 const InstagramOAuthCallback = lazy(() => import('@/modules/analytics/components/InstagramOAuthCallback').then(m => ({ default: m.InstagramOAuthCallback })));
 const TaxFormUploadPage = lazy(() => import('@/modules/finance/pages/TaxFormUploadPage').then(m => ({ default: m.TaxFormUploadPage })));
+const PreSaveLandingPage = lazy(() => import('@/modules/marketing/components/PreSaveLandingPage'));
 const MobileRemote = lazy(() => import('@/modules/mobile-remote/MobileRemote'));
 
 function DevPortWarning() {
@@ -175,6 +176,10 @@ export default function App() {
         () => (location.pathname.replace(/\/+$/, '') || '/') === '/tax-form-upload',
         [location.pathname],
     );
+    const preSaveCampaignId = useMemo(() => {
+        const match = location.pathname.match(/^\/presave\/([A-Za-z0-9_-]{8,128})\/?$/);
+        return match?.[1] ?? null;
+    }, [location.pathname]);
 
     // URL sync must not rewrite public, auth, callback, or Controller routes.
     useURLSync({
@@ -229,6 +234,10 @@ export default function App() {
                 <PublicLegalPage type={publicLegalPage} />
             ) : isTaxFormUploadPage ? (
                 <Suspense fallback={<LoadingFallback />}><TaxFormUploadPage /></Suspense>
+            ) : preSaveCampaignId ? (
+                <Suspense fallback={<LoadingFallback />}>
+                    <PreSaveLandingPage campaignId={preSaveCampaignId} />
+                </Suspense>
             ) : authLoading ? (
                 <LoadingFallback />
             ) : !user ? (
