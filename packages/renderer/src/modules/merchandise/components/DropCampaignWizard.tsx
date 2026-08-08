@@ -7,6 +7,7 @@ import React, { useState, useEffect } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { X, ChevronRight, ChevronLeft, Zap, Clock, Users, CheckCircle2, Flame, Lock } from 'lucide-react';
 import { MerchProduct } from '../types';
+import { limitedDropService } from '@/services/commerce/LimitedDropService';
 
 interface DropCampaignWizardProps {
     isOpen: boolean;
@@ -64,6 +65,9 @@ function CountdownUnit({ value, label }: { value: number; label: string }) {
 export function DropCampaignWizard({ isOpen, onClose, products }: DropCampaignWizardProps) {
     const [step, setStep] = useState<Step>(1);
     const [submitted, setSubmitted] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [submitError, setSubmitError] = useState<string | null>(null);
+    const [savedDropId, setSavedDropId] = useState<string | null>(null);
     const [config, setConfig] = useState<DropConfig>({
         selectedProducts: [],
         dropName: '',
@@ -77,8 +81,24 @@ export function DropCampaignWizard({ isOpen, onClose, products }: DropCampaignWi
     const countdown = useCountdown(config.dropDate, config.dropTime);
 
     const handleSubmit = async () => {
-        await new Promise(r => setTimeout(r, 1500));
-        setSubmitted(true);
+        setIsSubmitting(true);
+        setSubmitError(null);
+        try {
+            const result = await limitedDropService.createDraft({
+                selectedProductIds: config.selectedProducts,
+                dropName: config.dropName,
+                dropDateTime: new Date(`${config.dropDate}T${config.dropTime}`),
+                presaleEnabled: config.presaleEnabled,
+                superfanOnly: config.superfanOnly,
+                countdownMessage: config.countdownMessage,
+            });
+            setSavedDropId(result.dropId);
+            setSubmitted(true);
+        } catch (error) {
+            setSubmitError(error instanceof Error ? error.message : 'The drop draft could not be saved.');
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     const toggleProduct = (id: string) => {
@@ -145,10 +165,11 @@ export function DropCampaignWizard({ isOpen, onClose, products }: DropCampaignWi
                                         <div className="w-16 h-16 rounded-full bg-[#FFE135]/20 border border-[#FFE135]/30 flex items-center justify-center">
                                             <CheckCircle2 size={28} className="text-[#FFE135]" />
                                         </div>
-                                        <h3 className="text-xl font-black text-white">Drop Scheduled!</h3>
+                                        <h3 className="text-xl font-black text-white">Drop Draft Saved</h3>
                                         <p className="text-sm text-neutral-400 text-center max-w-xs">
-                                            <span className="text-white font-bold">{config.dropName || 'Your drop'}</span> is live. Fans will be notified when the countdown hits zero.
+                                            <span className="text-white font-bold">{config.dropName || 'Your drop'}</span> is saved as a draft. It is not live, and fan notifications require a notification provider.
                                         </p>
+                                        {savedDropId && <p className="text-[10px] text-neutral-600">Draft ID: {savedDropId}</p>}
                                     </motion.div>
                                 ) : step === 1 ? (
                                     <motion.div key="step1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
@@ -184,6 +205,7 @@ export function DropCampaignWizard({ isOpen, onClose, products }: DropCampaignWi
                                                 <label className="text-[10px] text-neutral-500 uppercase tracking-wider font-bold mb-1 block">Drop Date</label>
                                                 <input
                                                     type="date"
+                                                    aria-label="Drop Date"
                                                     value={config.dropDate}
                                                     onChange={e => setConfig(prev => ({ ...prev, dropDate: e.target.value }))}
                                                     className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-[#FFE135]/40"
@@ -193,6 +215,7 @@ export function DropCampaignWizard({ isOpen, onClose, products }: DropCampaignWi
                                                 <label className="text-[10px] text-neutral-500 uppercase tracking-wider font-bold mb-1 block">Drop Time</label>
                                                 <input
                                                     type="time"
+                                                    aria-label="Drop Time"
                                                     value={config.dropTime}
                                                     onChange={e => setConfig(prev => ({ ...prev, dropTime: e.target.value }))}
                                                     className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-[#FFE135]/40"
@@ -247,6 +270,12 @@ export function DropCampaignWizard({ isOpen, onClose, products }: DropCampaignWi
                             </AnimatePresence>
                         </div>
 
+                        {!submitted && submitError && (
+                            <div role="alert" className="mx-6 mb-2 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-xs text-red-300">
+                                Drop draft was not saved: {submitError}
+                            </div>
+                        )}
+
                         {/* Footer */}
                         {!submitted && (
                             <div className="flex items-center justify-between px-6 py-4 border-t border-white/5">
@@ -268,9 +297,10 @@ export function DropCampaignWizard({ isOpen, onClose, products }: DropCampaignWi
                                 ) : (
                                     <button
                                         onClick={handleSubmit}
-                                        className="flex items-center gap-2 px-5 py-2 bg-[#FFE135] text-black rounded-lg text-xs font-bold hover:bg-[#FFD700] transition-all"
+                                        disabled={isSubmitting}
+                                        className="flex items-center gap-2 px-5 py-2 bg-[#FFE135] text-black rounded-lg text-xs font-bold hover:bg-[#FFD700] transition-all disabled:opacity-50"
                                     >
-                                        <Flame size={14} /> Launch Drop
+                                        <Flame size={14} /> {isSubmitting ? 'Saving Draft…' : 'Save Drop Draft'}
                                     </button>
                                 )}
                             </div>

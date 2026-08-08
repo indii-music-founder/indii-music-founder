@@ -4,6 +4,7 @@ import { logger } from '@/utils/logger';
 import type { AnyToolFunction } from '../types';
 import { getFineTunedModel } from '../fine-tuned-models';
 import { importWithRetry } from '@/utils/dynamicImport';
+import { getReleaseIsrc, releaseCatalogService } from '@/services/distribution/ReleaseCatalogService';
 
 export const Web3Tools = {
     /**
@@ -89,34 +90,30 @@ Return ONLY the complete Solidity source code, no markdown fences.`;
 
     /**
      * Looks up on-chain royalty attribution for an ISRC.
-     * Reads from Firestore `users/{uid}/proprietaryIngestionReleases` for any stored tx hashes.
+     * Reads the canonical top-level `proprietaryIngestionReleases` collection for stored tx hashes.
      * Falls back to a descriptive status when no chain record exists yet.
      */
     trace_blockchain_royalty: wrapTool('trace_blockchain_royalty', async (args: { isrc: string; totalRevenue: number }) => {
         try {
-            const { db, auth } = await importWithRetry(() => import('@/services/firebase'));
-            const { collection, query, where, getDocs } = await importWithRetry(() => import('firebase/firestore'));
-
-            const uid = auth.currentUser?.uid;
-            if (uid) {
-                const q = query(collection(db, 'users', uid, 'proprietaryIngestionReleases'), where('isrc', '==', args.isrc));
-                const snap = await getDocs(q);
-
-                if (!snap.empty) {
-                    const data = snap.docs[0]!.data();
-                    if (data.blockchainTxHash) {
+            const releases = await releaseCatalogService.listCurrentUserReleases();
+            const matchingRelease = releases.find(release => getReleaseIsrc(release.data) === args.isrc);
+            if (matchingRelease) {
+                    const data = matchingRelease.data;
+                    if (typeof data.blockchainTxHash === 'string' && data.blockchainTxHash) {
                         return toolSuccess({
                             isrc: args.isrc,
                             tracedRevenue: args.totalRevenue,
                             blockchainHash: data.blockchainTxHash,
-                            chain: data.chain || 'Polygon',
+                            chain: typeof data.chain === 'string' ? data.chain : 'Polygon',
                             status: 'Verified — on-chain record found',
-                        }, `On-chain royalty record found for ISRC ${args.isrc} on ${data.chain || 'Polygon'}.`);
+                        }, `On-chain royalty record found for ISRC ${args.isrc} on ${typeof data.chain === 'string' ? data.chain : 'Polygon'}.`);
                     }
-                }
             }
         } catch (e: unknown) {
-            logger.warn('[Web3Tools] Firestore ISRC lookup failed:', e);
+            logger.error('[Web3Tools] Firestore ISRC lookup failed:', e);
+            const message = e instanceof Error ? e.message : String(e);
+            const code = /sign in/i.test(message) ? 'AUTH_REQUIRED' : 'RELEASE_CATALOG_LOOKUP_FAILED';
+            return toolError(`Local release catalog lookup failed: ${message}`, code);
         }
 
         return toolSuccess({

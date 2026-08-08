@@ -826,6 +826,7 @@ jobs:
           npx tsc -b packages/shared
           mkdir -p packages/firebase/shared-pkg
           cp -r packages/shared/dist packages/shared/package.json packages/firebase/shared-pkg/
+          npm pkg set dependencies.@indii/shared='file:./shared-pkg' -w packages/firebase
           npm run build -w packages/firebase
           if [ ! -f packages/firebase/lib/index.js ]; then
             echo "::error::tsc reported success but packages/firebase/lib/index.js was not produced. Re-running with full diagnostics:"

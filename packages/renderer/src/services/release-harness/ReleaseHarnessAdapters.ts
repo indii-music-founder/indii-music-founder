@@ -4,7 +4,7 @@ import { audioIntelligence } from '@/services/audio/AudioIntelligenceService';
 import type { AudioIntelligenceProfile } from '@/services/audio/types';
 import type { ExtendedGoldenMetadata } from '@/services/metadata/types';
 import type { UserProfile } from '@/types/User';
-import type { ArtistOperatingModel, DistributionReadiness, ReleaseDna } from './types';
+import type { ArtistOperatingModel, DdexDeliveryAuthorityEvidence, DistributionReadiness, ReleaseDna } from './types';
 import { IdentifierService } from '@/services/identity/IdentifierService';
 
 export async function analyzeMasterForHarness(file?: File, profile?: AudioIntelligenceProfile): Promise<AudioIntelligenceProfile | undefined> {
@@ -119,9 +119,10 @@ export async function buildArtistOperatingModel(params: {
 export function buildDistributionReadiness(params: {
   metadata?: Partial<ExtendedGoldenMetadata>;
   selectedStores?: string[];
+  deliveryAuthority?: DdexDeliveryAuthorityEvidence;
 }): DistributionReadiness {
   const metadata = params.metadata ?? {};
-  const selectedStores = params.selectedStores ?? [];
+  const selectedStores = [...new Set((params.selectedStores ?? []).map(store => store.trim()).filter(Boolean))];
   const required: Array<[keyof ExtendedGoldenMetadata, string]> = [
     ['trackTitle', 'Track title'],
     ['artistName', 'Artist name'],
@@ -152,11 +153,20 @@ export function buildDistributionReadiness(params: {
     !metadata.catalogNumber ? 'catalogNumber' : undefined,
   ].filter((value): value is 'isrc' | 'upc' | 'iswc' | 'catalogNumber' => Boolean(value));
   const metadataComplete = missingFields.length === 0 && rightsWarnings.length === 0;
-  const ddexPackageReady = metadataComplete && Boolean(metadata.dpid) && missingIdentifiers.length === 0;
+  const { authorityBlockers, recipientReadiness } = evaluateDeliveryAuthority({
+    metadataDpid: metadata.dpid,
+    selectedStores,
+    evidence: params.deliveryAuthority,
+  });
+  const deliveryAuthorityReady = authorityBlockers.length === 0;
+  const ddexPackageReady = metadataComplete &&
+    missingIdentifiers.length === 0 &&
+    deliveryAuthorityReady;
 
   return {
     metadataComplete,
     ddexPackageReady,
+    deliveryAuthorityReady,
     identifiers: {
       isrc: metadata.isrc,
       upc: metadata.upc,
@@ -169,15 +179,75 @@ export function buildDistributionReadiness(params: {
       catalogNumber: metadata.catalogNumber,
       missing: missingIdentifiers,
     },
-    connectedStores: selectedStores,
-    blockedStores: metadataComplete ? [] : selectedStores,
+    connectedStores: recipientReadiness.filter(recipient => recipient.ready).map(recipient => recipient.store),
+    blockedStores: recipientReadiness.filter(recipient => !recipient.ready).map(recipient => recipient.store),
+    recipientReadiness,
     missingFields: [
       ...missingFields,
       ...missingIdentifiers.map(identifier => identifier.toUpperCase()),
+      ...(!metadata.dpid ? ['DPID'] : []),
     ],
     rightsWarnings,
-    authorityLevel: ddexPackageReady && selectedStores.length > 0 ? 'package_ready' : metadataComplete ? 'metadata_only' : 'metadata_only',
+    authorityBlockers,
+    authorityLevel: ddexPackageReady ? 'package_ready' : 'metadata_only',
   };
+}
+
+function evaluateDeliveryAuthority(params: {
+  metadataDpid?: string;
+  selectedStores: string[];
+  evidence?: DdexDeliveryAuthorityEvidence;
+}): Pick<DistributionReadiness, 'authorityBlockers' | 'recipientReadiness'> {
+  const blockers: string[] = [];
+  const sender = params.evidence?.sender;
+  const senderVerifiedAt = sender?.verifiedAt ? new Date(sender.verifiedAt) : undefined;
+
+  if (!params.metadataDpid) blockers.push('A sender DPID is missing from release metadata.');
+  if (!sender) {
+    blockers.push('Verified sender DPID and credential evidence is missing.');
+  } else {
+    if (!params.metadataDpid || sender.dpid !== params.metadataDpid) {
+      blockers.push('Verified sender DPID evidence does not match the release metadata DPID.');
+    }
+    if (sender.verificationStatus !== 'verified' || !senderVerifiedAt || !Number.isFinite(senderVerifiedAt.getTime()) || !sender.evidenceRef?.trim()) {
+      blockers.push('Sender DPID verification receipt is missing or unverified.');
+    }
+    if (sender.credentialStatus !== 'active') {
+      blockers.push('Sender delivery credentials are not active.');
+    }
+  }
+
+  if (params.selectedStores.length === 0) {
+    blockers.push('At least one recipient store must be selected.');
+  }
+
+  const recipientReadiness = params.selectedStores.map(store => {
+    const recipient = params.evidence?.recipients?.[store];
+    const recipientBlockers: string[] = [];
+    if (!recipient) {
+      recipientBlockers.push(`${store}: verified recipient delivery evidence is missing.`);
+    } else {
+      if (!recipient.systemIdentifier?.trim()) recipientBlockers.push(`${store}: recipient DPID is missing.`);
+      if (recipient.onboardingStatus !== 'verified') recipientBlockers.push(`${store}: recipient onboarding is not verified.`);
+      if (recipient.credentialStatus !== 'active') recipientBlockers.push(`${store}: recipient credentials are not active.`);
+      if (!recipient.feedProfileId?.trim()) recipientBlockers.push(`${store}: feed profile is missing.`);
+      const receiptDate = recipient.validationReceipt?.validatedAt
+        ? new Date(recipient.validationReceipt.validatedAt)
+        : undefined;
+      if (
+        recipient.validationReceipt?.status !== 'accepted' ||
+        !recipient.validationReceipt.receiptId?.trim() ||
+        !receiptDate ||
+        !Number.isFinite(receiptDate.getTime())
+      ) {
+        recipientBlockers.push(`${store}: accepted validation receipt is missing.`);
+      }
+    }
+    blockers.push(...recipientBlockers);
+    return { store, ready: recipientBlockers.length === 0, blockers: recipientBlockers };
+  });
+
+  return { authorityBlockers: blockers, recipientReadiness };
 }
 
 async function fetchCareerMemorySummaries(userId: string): Promise<string[]> {

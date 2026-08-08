@@ -919,6 +919,19 @@ service cloud.firestore {
         }
       }
 
+      // Organization access is security authority, not client preferences.
+      // Authenticated callables validate membership/ownership, bind App Check
+      // and Arcjet, then write these documents with the Admin SDK. Closing all
+      // direct client access prevents members from granting themselves modules
+      // or rewriting the permission audit trail.
+      match /accessPolicies/{userId} {
+        allow read, create, update, delete: if false;
+      }
+
+      match /accessAudit/{eventId} {
+        allow read, create, update, delete: if false;
+      }
+
     }
 
     match /entryCommands/{commandId} {
@@ -2212,30 +2225,44 @@ service cloud.firestore {
     // =========================================================================
     // Limited Drops (Merchandise / Limited-Time Campaigns)
     // =========================================================================
-    // Draft drops created by users. Admin SDK publishes them (status -> 'active').
-    // Only owner can read/update; deletion is audit-only (denied).
+    // Draft drops created by verified users. Publishing and notification work
+    // must travel through a future trusted backend; clients cannot manufacture
+    // live or notified states.
     match /limitedDrops/{dropId} {
       function isValidLimitedDrop() {
-        return request.resource.data.get('userId', '') == request.auth.uid &&
-          request.resource.data.get('selectedProductIds', []) is list &&
-          request.resource.data.get('selectedProductIds', []).size() >= 1 &&
-          request.resource.data.get('dropName', '') is string &&
-          request.resource.data.get('dropName', '').size() >= 1 &&
-          request.resource.data.get('dropName', '').size() <= 200 &&
-          request.resource.data.get('dropDateTime', '') is string &&
-          request.resource.data.get('status', '') == 'draft' &&
-          request.resource.data.get('countdownMessage', '') is string &&
-          request.resource.data.get('countdownMessage', '').size() <= 500;
+        let data = request.resource.data;
+        return data.keys().hasAll([
+            'userId', 'selectedProductIds', 'dropName', 'dropDateTime',
+            'presaleEnabled', 'superfanOnly', 'countdownMessage', 'status',
+            'notificationStatus', 'notificationProvider', 'createdAt', 'updatedAt'
+          ]) &&
+          data.keys().hasOnly([
+            'userId', 'selectedProductIds', 'dropName', 'dropDateTime',
+            'presaleEnabled', 'superfanOnly', 'countdownMessage', 'status',
+            'notificationStatus', 'notificationProvider', 'createdAt', 'updatedAt'
+          ]) &&
+          data.userId == request.auth.uid &&
+          data.selectedProductIds is list &&
+          data.selectedProductIds.size() >= 1 &&
+          data.selectedProductIds.size() <= 50 &&
+          data.dropName is string &&
+          data.dropName.size() >= 1 &&
+          data.dropName.size() <= 200 &&
+          data.dropDateTime is timestamp &&
+          data.dropDateTime > request.time &&
+          data.presaleEnabled is bool &&
+          data.superfanOnly is bool &&
+          data.status == 'draft' &&
+          data.notificationStatus == 'setup_required' &&
+          data.notificationProvider == 'none' &&
+          data.countdownMessage is string &&
+          data.countdownMessage.size() <= 500 &&
+          data.createdAt == request.time &&
+          data.updatedAt == request.time;
       }
       allow read: if isAuthenticated() && resource.data.get('userId', '') == request.auth.uid;
       allow create: if isAuthenticated() && isVerifiedUser() && isValidLimitedDrop();
-      allow update: if isAuthenticated() &&
-        resource.data.get('userId', '') == request.auth.uid &&
-        request.resource.data.get('userId', '') == resource.data.get('userId', '') &&
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(
-          ['status', 'publishedAt', 'notificationSentAt', 'countdownMessage']
-        );
-      allow delete: if false;
+      allow update, delete: if false;
     }
 
     // =========================================================================

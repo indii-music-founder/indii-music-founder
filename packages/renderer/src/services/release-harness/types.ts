@@ -22,6 +22,7 @@ export interface ReleaseHarnessInput {
   analyticsReports?: Record<string, unknown>;
   metadata?: Partial<ExtendedGoldenMetadata>;
   selectedStores?: string[];
+  deliveryAuthority?: DdexDeliveryAuthorityEvidence;
   releaseIntent?: {
     title?: string;
     releaseType?: 'single' | 'ep' | 'album';
@@ -29,6 +30,27 @@ export interface ReleaseHarnessInput {
     budgetRange?: BudgetRange;
     primaryGoal?: HarnessReleaseGoal;
   };
+}
+
+export interface DdexDeliveryAuthorityEvidence {
+  sender?: {
+    dpid: string;
+    verificationStatus: 'verified' | 'pending' | 'unverified';
+    credentialStatus: 'active' | 'missing' | 'expired';
+    verifiedAt?: string;
+    evidenceRef?: string;
+  };
+  recipients?: Record<string, {
+    systemIdentifier?: string;
+    onboardingStatus: 'verified' | 'pending' | 'missing';
+    credentialStatus: 'active' | 'missing' | 'expired';
+    feedProfileId?: string;
+    validationReceipt?: {
+      receiptId: string;
+      status: 'accepted' | 'rejected' | 'pending';
+      validatedAt: string;
+    };
+  }>;
 }
 
 export interface ReleaseDna {
@@ -87,6 +109,7 @@ export interface ArtistOperatingModel {
 export interface DistributionReadiness {
   metadataComplete: boolean;
   ddexPackageReady: boolean;
+  deliveryAuthorityReady: boolean;
   identifiers: {
     isrc?: string;
     upc?: string;
@@ -98,8 +121,14 @@ export interface DistributionReadiness {
   };
   connectedStores: string[];
   blockedStores: string[];
+  recipientReadiness: Array<{
+    store: string;
+    ready: boolean;
+    blockers: string[];
+  }>;
   missingFields: string[];
   rightsWarnings: string[];
+  authorityBlockers: string[];
   authorityLevel: 'metadata_only' | 'package_ready' | 'delivery_authorized';
 }
 

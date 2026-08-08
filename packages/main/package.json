@@ -8,7 +8,7 @@
     },
     "dependencies": {
         "@indii/shared": "*",
-        "@modelcontextprotocol/sdk": "^1.25.2",
+        "@modelcontextprotocol/sdk": "^1.30.0",
         "@ngrok/ngrok": "^1.7.0",
         "@remotion/renderer": "4.0.484",
         "bufferutil": "^4.1.0",

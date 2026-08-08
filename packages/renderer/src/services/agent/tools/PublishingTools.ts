@@ -2,6 +2,12 @@ import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
 import type { AnyToolFunction } from '../types';
 import { logger } from '@/utils/logger';
 import { importWithRetry } from '@/utils/dynamicImport';
+import {
+    getReleaseIsrc,
+    getReleaseTitle,
+    getReleaseWriters,
+    releaseCatalogService,
+} from '@/services/distribution/ReleaseCatalogService';
 
 const queryProDatabase = wrapTool('query_pro_database', async (args: {
     trackTitle: string;
@@ -11,34 +17,31 @@ const queryProDatabase = wrapTool('query_pro_database', async (args: {
     const pro = args.pro || 'ASCAP/BMI';
     const titleLower = args.trackTitle.toLowerCase().trim();
 
-    // 1. Search the user's own DDEX release catalog in Firestore for an existing registration
+    // Search the user's canonical local release catalog. This is not a live PRO
+    // repertory query and must never be described as verified registration.
     const existingRecords: Array<{ workId: string; registeredWriters: string[]; status: string; isrc?: string }> = [];
     try {
-        const { db, auth } = await importWithRetry(() => import('@/services/firebase'));
-        const { collection, query, where, getDocs } = await importWithRetry(() => import('firebase/firestore'));
-
-        const uid = auth.currentUser?.uid;
-        if (uid) {
-            const releasesRef = collection(db, 'users', uid, 'proprietaryIngestionReleases');
-            const q = query(releasesRef, where('trackTitle_lower', '>=', titleLower), where('trackTitle_lower', '<=', titleLower + '\uf8ff'));
-            const snap = await getDocs(q);
-
-            if (!snap.empty) {
-                snap.forEach(doc => {
-                    const data = doc.data();
-                    if (data.trackTitle?.toLowerCase().includes(titleLower) || titleLower.includes(data.trackTitle?.toLowerCase())) {
-                        existingRecords.push({
-                            workId: data.proWorkId || data.isrc || doc.id,
-                            registeredWriters: data.writers || args.writers || [],
-                            status: data.proStatus || 'Registered in indii catalog',
-                            isrc: data.isrc,
-                        });
-                    }
+        const releases = await releaseCatalogService.listCurrentUserReleases();
+        releases.forEach(release => {
+            const releaseTitle = getReleaseTitle(release.data)?.toLowerCase().trim();
+            if (releaseTitle && (releaseTitle.includes(titleLower) || titleLower.includes(releaseTitle))) {
+                const isrc = getReleaseIsrc(release.data);
+                const proWorkId = typeof release.data.proWorkId === 'string' ? release.data.proWorkId : undefined;
+                const proStatus = typeof release.data.proStatus === 'string' ? release.data.proStatus : undefined;
+                const releaseWriters = getReleaseWriters(release.data);
+                existingRecords.push({
+                    workId: proWorkId || isrc || release.id,
+                    registeredWriters: releaseWriters.length > 0 ? releaseWriters : args.writers || [],
+                    status: proStatus || 'PRO registration unverified',
+                    ...(isrc ? { isrc } : {}),
                 });
             }
-        }
+        });
     } catch (e: unknown) {
-        logger.warn('[PublishingTools] Firestore PRO lookup failed:', e);
+        logger.error('[PublishingTools] Local release catalog lookup failed:', e);
+        const message = e instanceof Error ? e.message : String(e);
+        const code = /sign in/i.test(message) ? 'AUTH_REQUIRED' : 'RELEASE_CATALOG_LOOKUP_FAILED';
+        return toolError(`Local release catalog lookup failed: ${message}`, code);
     }
 
     if (existingRecords.length > 0) {
@@ -51,8 +54,8 @@ const queryProDatabase = wrapTool('query_pro_database', async (args: {
         }, `Found ${existingRecords.length} existing catalog match(es) for "${args.trackTitle}". Verify at ${pro} before filing a new registration.`);
     }
 
-    // 2. No Firestore match - deterministically return "not found" (no coin flip).
-    // Real ASCAP/BMI API keys are required for live PRO catalog queries.
+    // No local match after a successful query. Real ASCAP/BMI API keys are
+    // required for any claim about the official repertory.
     return toolSuccess({
         matchFound: false,
         proQueried: pro,

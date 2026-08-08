@@ -2,10 +2,12 @@ import type { ExtendedGoldenMetadata } from '@/services/metadata/types';
 import type { HarnessCompiler, HarnessContext } from './HarnessCompiler';
 import { createHarnessRun, type HarnessRun } from './types';
 import { buildDistributionReadiness } from '../release-harness/ReleaseHarnessAdapters';
+import type { DdexDeliveryAuthorityEvidence } from '../release-harness/types';
 
 export interface DistributionDdexInput {
   metadata?: Partial<ExtendedGoldenMetadata>;
   selectedStores?: string[];
+  deliveryAuthority?: DdexDeliveryAuthorityEvidence;
   trackId?: string;
 }
 
@@ -21,6 +23,7 @@ export class DistributionDdexCompiler implements HarnessCompiler<DistributionDde
     const distributionReadiness = buildDistributionReadiness({
       metadata,
       selectedStores: input.selectedStores,
+      deliveryAuthority: input.deliveryAuthority,
     });
 
     return createHarnessRun<DistributionDdexHarnessOutput>({
@@ -37,7 +40,11 @@ export class DistributionDdexCompiler implements HarnessCompiler<DistributionDde
         value: distributionReadiness.ddexPackageReady ? 100 : distributionReadiness.metadataComplete ? 70 : 35,
         max: 100,
         status: distributionReadiness.ddexPackageReady ? 'good' : distributionReadiness.metadataComplete ? 'watch' : 'blocked',
-        rationale: distributionReadiness.ddexPackageReady ? 'Metadata, identifiers, and DPID are present.' : 'Release is missing metadata, identifiers, rights, or storefront readiness fields.',
+        rationale: distributionReadiness.ddexPackageReady
+          ? 'Metadata, identifiers, sender authority, recipient onboarding, credentials, feed profiles, and validation receipts are verified.'
+          : distributionReadiness.metadataComplete
+            ? 'Metadata is complete, but verified delivery-authority evidence is missing or incomplete.'
+            : 'Release metadata, identifiers, or rights fields are incomplete.',
       }],
       findings: [
         ...distributionReadiness.missingFields.map((field, index) => ({
@@ -56,6 +63,14 @@ export class DistributionDdexCompiler implements HarnessCompiler<DistributionDde
           detail: warning,
           confidence: 'high' as const,
         })),
+        ...distributionReadiness.authorityBlockers.map((blocker, index) => ({
+          id: `distribution_authority_blocker_${index}`,
+          domain: 'distribution_ddex' as const,
+          severity: 'high' as const,
+          title: 'Delivery authority not verified',
+          detail: blocker,
+          confidence: 'high' as const,
+        })),
       ],
       recommendations: [{
         id: 'complete_ddex_readiness',
@@ -64,20 +79,37 @@ export class DistributionDdexCompiler implements HarnessCompiler<DistributionDde
         title: distributionReadiness.ddexPackageReady ? 'Hold for user delivery approval' : 'Complete DDEX readiness blockers',
         detail: distributionReadiness.ddexPackageReady
           ? 'The package can be prepared, but delivery remains blocked until explicit user approval.'
-          : 'Resolve missing identifiers, metadata, rights, and storefront requirements before delivery.',
+          : 'Resolve missing identifiers, metadata, rights, sender authority, recipient onboarding, credentials, feed profiles, and validation receipts before delivery.',
         ownerAgentId: 'distribution',
         approvalRequired: true,
         nextAction: distributionReadiness.ddexPackageReady ? 'Ask user for delivery approval.' : 'Open release metadata and identifier checklist.',
       }],
       costLines: [],
       legalBasis: [],
-      evidenceRefs: [],
+      evidenceRefs: [
+        ...(input.deliveryAuthority?.sender?.evidenceRef ? [{
+          id: input.deliveryAuthority.sender.evidenceRef,
+          type: 'identifier' as const,
+          label: 'Verified sender DPID evidence',
+          value: input.deliveryAuthority.sender.dpid,
+        }] : []),
+        ...Object.entries(input.deliveryAuthority?.recipients ?? {}).flatMap(([store, recipient]) =>
+          recipient.validationReceipt?.receiptId ? [{
+            id: recipient.validationReceipt.receiptId,
+            type: 'document' as const,
+            label: `${store} validation receipt`,
+            value: recipient.validationReceipt.status,
+          }] : []
+        ),
+      ],
       agentBriefs: [{
         agentId: 'distribution',
         departmentId: 'distribution',
         brief: 'Prepare release delivery readiness, identifier checklist, territory/storefront blockers, and no-delivery approval gate.',
-        inputs: distributionReadiness.missingFields,
-        blockedBy: distributionReadiness.ddexPackageReady ? ['User delivery approval required'] : distributionReadiness.missingFields,
+        inputs: [...distributionReadiness.missingFields, ...distributionReadiness.authorityBlockers],
+        blockedBy: distributionReadiness.ddexPackageReady
+          ? ['User delivery approval required']
+          : [...distributionReadiness.missingFields, ...distributionReadiness.authorityBlockers],
       }, {
         agentId: 'legal',
         departmentId: 'legal',

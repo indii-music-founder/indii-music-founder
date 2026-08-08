@@ -3,18 +3,20 @@ import { render, screen, waitFor } from '@testing-library/react';
 import SecurityDashboard from './SecurityDashboard';
 
 describe('SecurityDashboard', () => {
-    it('renders all 4 panes', () => {
+    it('renders all 4 panes', async () => {
         render(<SecurityDashboard />);
         expect(screen.getByText('Security Center')).toBeDefined();
         expect(screen.getByText('Access Control')).toBeDefined();
         expect(screen.getByText('API Credentials')).toBeDefined();
         expect(screen.getByText('Audit Trail')).toBeDefined();
         expect(screen.getByText('Agent Encryption')).toBeDefined();
+        await waitFor(() => expect(screen.getByText(/Electron API not available/)).toBeDefined());
     });
 
-    it('shows a pending placeholder only for the pane with no backend yet (ISSUE-1306)', async () => {
+    it('renders the real organization access pane instead of a placeholder (ISSUE-1306)', async () => {
         render(<SecurityDashboard />);
-        expect(screen.getByText(/Access Matrix Pending/)).toBeDefined();
+        expect(screen.queryByText(/Access Matrix Pending/)).toBeNull();
+        expect(screen.getByText(/Select an organization to view its permission matrix/)).toBeDefined();
         expect(screen.getByText(/Loading audit logs.../)).toBeDefined();
         // Settle ApiCredentialsPane's async fetch so it doesn't warn after this test exits.
         await waitFor(() => expect(screen.getByText(/Electron API not available/)).toBeDefined());

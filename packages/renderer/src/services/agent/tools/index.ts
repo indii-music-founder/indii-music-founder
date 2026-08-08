@@ -239,7 +239,7 @@ AVAILABLE TOOLS:
 88. mockup_merchandise(productType, designUrl, colorway) - Generate merchandise mockups.
 89. deploy_storefront_preview(products) - Deploy a storefront preview for fan review.
 90. recommend_merch_pricing(productType, cost, targetMargin) - Recommend merchandise pricing based on market data.
-91. create_limited_drop_campaign(productId, dropDate, quantity, notifyFans) - Create a limited drop campaign.
+91. create_limited_drop_campaign(dropName, productId or productIds, releaseDate, notifyFans?) - Save a limited-drop draft. Notification setup is reported separately and the tool never claims the drop is live.
 92. generate_smart_contract(type, parties, terms) - Generate a Web3 smart contract (ERC-721 / ERC-1155).
 93. trace_blockchain_royalty(tokenId, chain) - Trace on-chain royalty history for a token.
 94. generate_token_gated_preview(assetId, tokenContract) - Generate a token-gated content preview URL.

@@ -3,6 +3,7 @@ import { Shield, Key, Activity, Lock } from 'lucide-react';
 import { VisualVerificationsPane } from './VisualVerificationsPane';
 import { AgentEncryptionPane } from './AgentEncryptionPane';
 import { ApiCredentialsPane } from './ApiCredentialsPane';
+import { AccessControlPane } from './AccessControlPane';
 
 export default function SecurityDashboard() {
     return (
@@ -37,10 +38,7 @@ export default function SecurityDashboard() {
                         <p className="text-sm text-gray-400 mb-6">
                             Manage module permissions and access tiers for your organization.
                         </p>
-                        <div className="flex-1 flex flex-col items-center justify-center border-2 border-dashed border-white/10 rounded-xl text-gray-500 bg-white/[0.01]">
-                            <Lock size={32} className="mb-3 opacity-20" />
-                            <span className="font-bold uppercase tracking-widest text-[10px]">Access Matrix Pending</span>
-                        </div>
+                        <AccessControlPane />
                     </div>
 
                     {/* Pane 2: API Keys */}

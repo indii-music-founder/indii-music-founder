@@ -70,7 +70,7 @@ export function scoreStrategies(params: {
 }
 
 export function buildTimelineDraft(strategy: ReleaseStrategy, distribution: DistributionReadiness): HarnessTimelineItem[] {
-  const blocker = distribution.missingFields[0] ?? distribution.rightsWarnings[0];
+  const blocker = distribution.missingFields[0] ?? distribution.rightsWarnings[0] ?? distribution.authorityBlockers[0];
   return [
     {
       offsetDays: -28,
@@ -116,8 +116,8 @@ export function buildAgentBriefs(strategy: ReleaseStrategy, distribution: Distri
     {
       agentId: 'distribution',
       brief: `Prepare the release for ${strategy.name}. Treat DDEX/storefront package readiness as the source of truth.`,
-      inputs: [...distribution.missingFields, ...distribution.rightsWarnings],
-      blockedBy: distribution.ddexPackageReady ? undefined : [...distribution.missingFields, ...distribution.rightsWarnings],
+      inputs: [...distribution.missingFields, ...distribution.rightsWarnings, ...distribution.authorityBlockers],
+      blockedBy: distribution.ddexPackageReady ? undefined : [...distribution.missingFields, ...distribution.rightsWarnings, ...distribution.authorityBlockers],
     },
     {
       agentId: 'marketing',

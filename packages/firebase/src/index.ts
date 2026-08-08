@@ -102,6 +102,7 @@ export { getCapabilitySnapshot } from './functions/agent/getCapabilitySnapshot';
 // Security Functions
 export { persistFraudAlert } from './functions/security/persistFraudAlert';
 export { logAuditEvent } from './functions/security/logAuditEvent';
+export { getOrganizationAccessMatrix, updateOrganizationMemberAccess } from './functions/security/organizationAccess';
 export { registerAiContextCache, recordInstrumentUsage } from './functions/security/writeSharedOperationalData';
 
 // REST API Router

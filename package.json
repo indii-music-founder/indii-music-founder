@@ -199,7 +199,16 @@
     "zod": "3.25.76",
     "@genkit-ai/firebase": "1.26.0",
     "@genkit-ai/google-cloud": "1.26.0",
-    "fast-xml-parser": "^5.9.3",
+    "fast-xml-parser": "5.10.1",
+    "dompurify": "3.4.13",
+    "postcss": "8.5.26",
+    "@hono/node-server": "2.1.0",
+    "hono": "4.13.1",
+    "fast-uri": "3.1.5",
+    "ip-address": "10.4.0",
+    "js-yaml": "4.3.1",
+    "brace-expansion": "2.1.4",
+    "protobufjs": "7.6.5",
     "axios": "^1.19.0",
     "@types/react": "18.3.3",
     "@types/react-dom": "18.3.0",
@@ -208,7 +217,14 @@
     "uuid": "11.1.1",
     "ts-deepmerge": "8.0.0",
     "firebase-admin": "13.10.0",
-    "@opentelemetry/core": "^2.9.0"
+    "@opentelemetry/core": "^2.9.0",
+    "@opentelemetry/auto-instrumentations-node": "0.79.0",
+    "express@4.22.2": {
+      "body-parser": "1.20.6"
+    },
+    "express@5.2.1": {
+      "body-parser": "2.3.0"
+    }
   },
   "lint-staged": {
     "package.json": [
@@ -240,7 +256,7 @@
   },
   "dependencies": {
     "@google-cloud/storage": "^7.19.0",
-    "@modelcontextprotocol/sdk": "^1.25.2",
+    "@modelcontextprotocol/sdk": "^1.30.0",
     "@ngrok/ngrok": "^1.7.0",
     "@types/react": "18.3.3",
     "@types/react-dom": "18.3.0",
@@ -251,6 +267,7 @@
     "electron-store": "11.0.2",
     "electron-updater": "^6.8.9",
     "express": "4.22.2",
+    "fast-xml-parser": "5.10.1",
     "ffmpeg-static": "5.3.0",
     "ffprobe-static": "3.1.0",
     "firebase-admin": "13.10.0",

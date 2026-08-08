@@ -29,7 +29,7 @@ describe('Health Check workflow clean-install contract', () => {
     expect(workflow).toMatch(/node-version:\s*['"]24\.x['"]/);
   });
 
-  it('locks the Firebase deploy-packaged shared workspace dependency', () => {
+  it('keeps clean installs workspace-native and packages shared for Firebase deploys', () => {
     const lock = JSON.parse(readFileSync(join(repoRoot, 'package-lock.json'), 'utf8')) as {
       packages: Record<string, {
         dependencies?: Record<string, string>;
@@ -37,13 +37,17 @@ describe('Health Check workflow clean-install contract', () => {
         link?: boolean;
       }>;
     };
+    const deployWorkflow = readFileSync(join(repoRoot, '.github/workflows/deploy.yml'), 'utf8');
 
     expect(lock.packages['packages/firebase']?.dependencies?.['@indii/shared'])
-      .toBe('file:./shared-pkg');
-    expect(lock.packages['packages/firebase/node_modules/@indii/shared'])
-      .toEqual({ resolved: 'packages/firebase/shared-pkg', link: true });
-    expect(lock.packages['packages/firebase/shared-pkg']).toEqual(
-      expect.objectContaining({ name: '@indii/shared' })
+      .toBe('*');
+    expect(lock.packages['node_modules/@indii/shared'])
+      .toEqual({ resolved: 'packages/shared', link: true });
+    expect(deployWorkflow).toMatch(
+      /cp -r packages\/shared\/dist packages\/shared\/package\.json packages\/firebase\/shared-pkg\//,
+    );
+    expect(deployWorkflow).toMatch(
+      /npm pkg set dependencies\.@indii\/shared='file:\.\/shared-pkg' -w packages\/firebase/,
     );
   });
 });

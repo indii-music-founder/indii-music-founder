@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo } from 'react';
 import { MotionConfig } from 'motion/react';
 import { useShallow } from 'zustand/react/shallow';
 import { useStore } from './store';
@@ -57,6 +57,7 @@ import { AgentCanvasPanel } from './components/AgentCanvasPanel';
 import ChatOverlay from './components/ChatOverlay';
 import { importWithRetry } from '@/utils/dynamicImport';
 import { setSentryUser, clearSentryUser } from '@/services/observability/SentryService';
+import { OrganizationAccessProvider, useOrganizationAccess } from './context/OrganizationAccessContext';
 
 // ============================================================================
 // Lazy-loaded Module Components
@@ -285,6 +286,7 @@ function ModuleRenderer({
     const { user, setModule } = useStore(
         useShallow(s => ({ user: s.user, setModule: s.setModule }))
     );
+    const organizationAccess = useOrganizationAccess();
 
     const ModuleComponent = MODULE_COMPONENTS[moduleId];
 
@@ -296,6 +298,52 @@ function ModuleRenderer({
                 <div className="text-sm text-gray-500">The page <code className="text-dept-creative">/{moduleId}</code> doesn't exist.</div>
             </div>
         );
+    }
+
+    if (
+        organizationAccess.activeOrganizationId
+        && organizationAccess.isControlledModule(moduleId)
+    ) {
+        if (organizationAccess.status === 'loading' || organizationAccess.status === 'idle') {
+            return <LoadingFallback />;
+        }
+        if (organizationAccess.status === 'error') {
+            return (
+                <div className="flex flex-col items-center justify-center h-full gap-4 px-6 text-center text-gray-400">
+                    <div className="text-5xl">⚠️</div>
+                    <div className="text-xl font-semibold text-gray-200">Permissions unavailable</div>
+                    <p className="text-sm text-gray-500 max-w-md">
+                        Organization access could not be verified, so this module is blocked until verification succeeds.
+                    </p>
+                    <button
+                        type="button"
+                        onClick={() => void organizationAccess.refresh()}
+                        className="px-4 py-2 rounded-lg bg-white/10 hover:bg-white/15 text-sm text-white"
+                    >
+                        Retry verification
+                    </button>
+                </div>
+            );
+        }
+        if (!organizationAccess.canAccessModule(moduleId)) {
+            return (
+                <div className="flex flex-col items-center justify-center h-full gap-4 px-6 text-center text-gray-400">
+                    <div className="text-5xl">🔒</div>
+                    <div className="text-xl font-semibold text-gray-200">Organization access denied</div>
+                    <p className="text-sm text-gray-500 max-w-md">
+                        Your organization role does not grant access to {MODULE_DISPLAY_NAMES[moduleId] || moduleId}.
+                        Ask the organization owner to update your Access Control policy.
+                    </p>
+                    <button
+                        type="button"
+                        onClick={() => setModule('dashboard')}
+                        className="px-4 py-2 rounded-lg bg-white/10 hover:bg-white/15 text-sm text-white"
+                    >
+                        Return to Home
+                    </button>
+                </div>
+            );
+        }
     }
 
     const gatedModules = getGatedModuleIds();
@@ -518,13 +566,15 @@ export default function AppShell({ activeModule, activeShowChrome, isDesktop, is
                 <VoiceProvider>
                     <ThemeProvider>
                         <ToastProvider>
-                            <AppContent 
-                                currentModule={activeModule} 
-                                showChrome={activeShowChrome} 
-                                isDesktop={isDesktop} 
-                                isAnyPhone={isAnyPhone} 
-                                shortcutsModal={shortcutsModal} 
-                            />
+                            <OrganizationAccessProvider>
+                                <AppContent
+                                    currentModule={activeModule}
+                                    showChrome={activeShowChrome}
+                                    isDesktop={isDesktop}
+                                    isAnyPhone={isAnyPhone}
+                                    shortcutsModal={shortcutsModal}
+                                />
+                            </OrganizationAccessProvider>
                         </ToastProvider>
                     </ThemeProvider>
                 </VoiceProvider>

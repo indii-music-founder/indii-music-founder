@@ -105,7 +105,9 @@ describe('ReleaseHarnessService', () => {
     });
 
     expect(result.releaseDna.genreSignals).toContain('Electronic');
-    expect(result.distributionReadiness.ddexPackageReady).toBe(true);
+    expect(result.distributionReadiness.ddexPackageReady).toBe(false);
+    expect(result.distributionReadiness.authorityLevel).toBe('metadata_only');
+    expect(result.distributionReadiness.authorityBlockers).toContain('Verified sender DPID and credential evidence is missing.');
     // ISSUE-813: a caller-supplied ISWC string is an unverified claim, not
     // proof of CISAC/PRO registration, so this reports 'draft', not 'registered'.
     expect(result.distributionReadiness.identifiers.iswcStatus).toBe('draft');

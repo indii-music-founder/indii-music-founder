@@ -20,6 +20,7 @@ export class ReleaseHarnessService {
     const distributionReadiness = buildDistributionReadiness({
       metadata: input.metadata,
       selectedStores: input.selectedStores,
+      deliveryAuthority: input.deliveryAuthority,
     });
     const strategyAlternatives = scoreStrategies({
       releaseDna,
@@ -32,6 +33,7 @@ export class ReleaseHarnessService {
     const warnings = [
       ...distributionReadiness.missingFields.map(field => `Missing DDEX metadata: ${field}`),
       ...distributionReadiness.rightsWarnings,
+      ...distributionReadiness.authorityBlockers.map(blocker => `Delivery authority: ${blocker}`),
       ...(distributionReadiness.identifiers.missing.length
         ? [`Identifier assignment needed: ${distributionReadiness.identifiers.missing.map(id => id.toUpperCase()).join(', ')}`]
         : []),

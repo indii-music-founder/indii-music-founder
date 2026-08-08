@@ -6,6 +6,7 @@ import type { StoreState } from '@/core/store';
 import type { AgentMode } from '@/core/store/slices/agent';
 import { wrapTool, toolError } from '../utils/ToolUtils';
 import { importWithRetry } from '@/utils/dynamicImport';
+import { getReleaseDate, getReleaseTitle, releaseCatalogService } from '@/services/distribution/ReleaseCatalogService';
 
 // ============================================================================
 // Types for CoreTools
@@ -194,36 +195,17 @@ Each log entry: "[AgentId] concise 1-sentence message". No markdown.`;
         }> = [];
 
         try {
-            const { db, auth } = await importWithRetry(() => import('@/services/firebase'));
-            const { collection, query, where, getDocs, Timestamp } = await importWithRetry(() => import('firebase/firestore'));
+            const now = new Date();
+            const thirtyDaysOut = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+            const releases = await releaseCatalogService.listCurrentUserReleases();
 
-            const uid = auth.currentUser?.uid;
-            if (uid) {
-                const now = new Date();
-                const thirtyDaysOut = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
-
-                const releasesSnap = await getDocs(
-                    query(
-                        collection(db, 'users', uid, 'proprietaryIngestionReleases'),
-                        where('releaseDate', '>=', Timestamp.fromDate(now)),
-                        where('releaseDate', '<=', Timestamp.fromDate(thirtyDaysOut))
-                    )
-                );
-
-                releasesSnap.forEach(doc => {
-                    const release = doc.data();
-                    let releaseDate: Date;
-                    if (typeof (release.releaseDate as { toDate?: () => Date })?.toDate === 'function') {
-                        releaseDate = typeof (release.releaseDate as { toDate?: () => Date }).toDate === 'function' ? (release.releaseDate as { toDate?: () => Date }).toDate!() : new Date(release.releaseDate as string | number);
-                    } else if ((release.releaseDate as { seconds?: number })?.seconds !== undefined) {
-                        releaseDate = new Date((release.releaseDate as { seconds: number }).seconds * 1000);
-                    } else {
-                        releaseDate = new Date(release.releaseDate as unknown as string | number);
-                    }
+            releases.forEach(release => {
+                    const releaseDate = getReleaseDate(release.data);
+                    if (!releaseDate || releaseDate < now || releaseDate > thirtyDaysOut) return;
                     const daysUntil = Math.ceil(
                         (releaseDate.getTime() - now.getTime()) / (24 * 60 * 60 * 1000)
                     );
-                    const title = (release.title as string) || 'Your release';
+                    const title = getReleaseTitle(release.data) || 'Your release';
 
                     if (daysUntil <= 14) {
                         notifications.push({
@@ -231,7 +213,7 @@ Each log entry: "[AgentId] concise 1-sentence message". No markdown.`;
                             trigger: `${daysUntil} days until release`,
                             message: `"${title}" drops in ${daysUntil} days — schedule TikTok drafts and playlist pitching now.`,
                             action_required: 'Schedule Content',
-                            releaseId: doc.id,
+                            releaseId: release.id,
                         });
                     } else {
                         notifications.push({
@@ -239,13 +221,14 @@ Each log entry: "[AgentId] concise 1-sentence message". No markdown.`;
                             trigger: `${daysUntil} days until release`,
                             message: `"${title}" drops in ${daysUntil} days — launch your pre-save campaign.`,
                             action_required: 'Launch Pre-Save',
-                            releaseId: doc.id,
+                            releaseId: release.id,
                         });
                     }
-                });
-            }
-        } catch {
-            // Firestore unavailable — return empty notification set
+            });
+        } catch (error) {
+            const message = error instanceof Error ? error.message : String(error);
+            const code = /sign in/i.test(message) ? 'AUTH_REQUIRED' : 'RELEASE_CATALOG_LOOKUP_FAILED';
+            return toolError(`Upcoming release lookup failed: ${message}`, code);
         }
 
         return {

@@ -14,6 +14,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '@/lib/utils';
 import { useGatedModules } from '@/config/featureFlags';
 import { ProjectList } from './sidebar/ProjectList';
+import { useOrganizationAccess } from '@/core/context/OrganizationAccessContext';
 
 // Navigation debounce interval in ms — prevents Firestore b815 crash from rapid module switching
 const NAV_DEBOUNCE_MS = 150;
@@ -132,6 +133,7 @@ export default function Sidebar() {
     const { t } = useTranslation();
     const { isThrottled } = usePowerState();
     const { isGodMode } = useGodMode();
+    const { canAccessModule } = useOrganizationAccess();
 
     // UI state for collapsible sections
     const [sectionsOpen, setSectionsOpen] = useState({
@@ -197,9 +199,12 @@ export default function Sidebar() {
 
     // Pre-launch feature gating — filter out modules that are behind disabled flags
     const gatedModules = useGatedModules();
-    const visibleManagerItems = managerItems.filter(item => !gatedModules.has(item.id));
-    const visibleDepartmentItems = departmentItems.filter(item => !gatedModules.has(item.id));
-    const visibleToolItems = toolItems.filter(item => !gatedModules.has(item.id));
+    const visibleManagerItems = managerItems.filter(item =>
+        !gatedModules.has(item.id) && canAccessModule(item.id));
+    const visibleDepartmentItems = departmentItems.filter(item =>
+        !gatedModules.has(item.id) && canAccessModule(item.id));
+    const visibleToolItems = toolItems.filter(item =>
+        !gatedModules.has(item.id) && canAccessModule(item.id));
 
     return (
         <motion.nav

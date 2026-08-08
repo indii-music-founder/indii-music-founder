@@ -35,6 +35,7 @@ import {
     setDoc,
     updateDoc,
     deleteDoc,
+    serverTimestamp,
     Timestamp,
 } from 'firebase/firestore';
 import { readFileSync } from 'fs';
@@ -463,6 +464,41 @@ describe('Firestore Security Rules', () => {
             if (requireEmulator()) return;
             const db = verifiedCtx(ALICE_UID).firestore();
             await assertSucceeds(updateDoc(doc(db, 'organizations', ORG_ID), { name: 'Updated Name' }));
+        });
+
+        it('denies all direct client access to access policies and their audit trail', async () => {
+            if (requireEmulator()) return;
+            await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                await setDoc(doc(ctx.firestore(), 'organizations', ORG_ID, 'accessPolicies', BOB_UID), {
+                    orgId: ORG_ID,
+                    userId: BOB_UID,
+                    role: 'member',
+                    allowedModules: ['files'],
+                });
+                await setDoc(doc(ctx.firestore(), 'organizations', ORG_ID, 'accessAudit', 'event-1'), {
+                    action: 'organization_access_updated',
+                    actorUserId: ALICE_UID,
+                    targetUserId: BOB_UID,
+                });
+            });
+
+            for (const db of [
+                verifiedCtx(ALICE_UID).firestore(),
+                verifiedCtx(BOB_UID).firestore(),
+                unauthCtx().firestore(),
+            ]) {
+                const policyRef = doc(db, 'organizations', ORG_ID, 'accessPolicies', BOB_UID);
+                const auditRef = doc(db, 'organizations', ORG_ID, 'accessAudit', 'event-1');
+                await assertFails(getDoc(policyRef));
+                await assertFails(setDoc(policyRef, {
+                    orgId: ORG_ID,
+                    userId: BOB_UID,
+                    role: 'owner',
+                    allowedModules: ['security'],
+                }));
+                await assertFails(getDoc(auditRef));
+                await assertFails(deleteDoc(auditRef));
+            }
         });
 
         it('delete always denied (allow delete: if false)', async () => {
@@ -2243,6 +2279,82 @@ describe('Firestore Security Rules', () => {
                 'leads',
                 leadId,
             )));
+        });
+    });
+
+    // ──────────────────────────────────────────────────────────────────────
+    // LIMITED DROPS: top-level owner drafts only, no fabricated live state
+    // ──────────────────────────────────────────────────────────────────────
+
+    describe('limitedDrops/{dropId}', () => {
+        const draft = {
+            userId: ALICE_UID,
+            selectedProductIds: ['shirt-1'],
+            dropName: 'Night Shift',
+            dropDateTime: Timestamp.fromMillis(Date.now() + 86_400_000),
+            presaleEnabled: false,
+            superfanOnly: false,
+            countdownMessage: 'Coming soon',
+            status: 'draft',
+            notificationStatus: 'setup_required',
+            notificationProvider: 'none',
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+        };
+
+        it('allows a verified owner to create and read a canonical top-level draft', async () => {
+            if (requireEmulator()) return;
+            const db = verifiedCtx(ALICE_UID).firestore();
+            const ref = doc(db, 'limitedDrops', 'drop-1');
+            await assertSucceeds(setDoc(ref, draft));
+            await assertSucceeds(getDoc(ref));
+        });
+
+        it('denies the obsolete nested path and cross-account reads', async () => {
+            if (requireEmulator()) return;
+            const ownerDb = verifiedCtx(ALICE_UID).firestore();
+            await assertFails(setDoc(doc(ownerDb, 'users', ALICE_UID, 'limitedDrops', 'drop-1'), draft));
+
+            await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                await setDoc(doc(ctx.firestore(), 'limitedDrops', 'drop-1'), {
+                    ...draft,
+                    createdAt: Timestamp.now(),
+                    updatedAt: Timestamp.now(),
+                });
+            });
+            await assertFails(getDoc(doc(verifiedCtx(BOB_UID).firestore(), 'limitedDrops', 'drop-1')));
+        });
+
+        it('denies forged live, notified, polluted, and wrong-owner drafts', async () => {
+            if (requireEmulator()) return;
+            const db = verifiedCtx(ALICE_UID).firestore();
+            await assertFails(setDoc(doc(db, 'limitedDrops', 'live-drop'), { ...draft, status: 'active' }));
+            await assertFails(setDoc(doc(db, 'limitedDrops', 'notified-drop'), {
+                ...draft,
+                notificationStatus: 'sent',
+            }));
+            await assertFails(setDoc(doc(db, 'limitedDrops', 'polluted-drop'), {
+                ...draft,
+                administrativeOverride: true,
+            }));
+            await assertFails(setDoc(doc(db, 'limitedDrops', 'stolen-drop'), {
+                ...draft,
+                userId: BOB_UID,
+            }));
+        });
+
+        it('denies client updates and deletion, including by the owner', async () => {
+            if (requireEmulator()) return;
+            await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                await setDoc(doc(ctx.firestore(), 'limitedDrops', 'drop-1'), {
+                    ...draft,
+                    createdAt: Timestamp.now(),
+                    updatedAt: Timestamp.now(),
+                });
+            });
+            const ref = doc(verifiedCtx(ALICE_UID).firestore(), 'limitedDrops', 'drop-1');
+            await assertFails(updateDoc(ref, { countdownMessage: 'Changed' }));
+            await assertFails(deleteDoc(ref));
         });
     });
 

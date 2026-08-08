@@ -10,6 +10,7 @@ import { type ModuleId } from '@/core/constants';
 import { motion, AnimatePresence, PanInfo } from 'motion/react';
 import { useMobile } from '@/hooks/useMobile';
 import { QuickCapture } from '@/modules/capture/QuickCapture';
+import { useOrganizationAccess } from '@/core/context/OrganizationAccessContext';
 
 /**
  * MobileTabBar — Persistent iOS-style bottom tab bar for phone-class viewports.
@@ -80,6 +81,7 @@ const MORE_SECTIONS: { title: string; items: NavItem[] }[] = [
 
 export const MobileTabBar: React.FC = () => {
     const { isAnyPhone } = useMobile();
+    const { canAccessModule } = useOrganizationAccess();
     const { currentModule, setModule, isAgentOpen } = useStore(
         useShallow(state => ({
             currentModule: state.currentModule,
@@ -92,6 +94,14 @@ export const MobileTabBar: React.FC = () => {
 
     // Only render on phone-class viewports
     if (!isAnyPhone) return null;
+
+    const visibleTabs = TABS.filter(tab => tab.id === 'more' || canAccessModule(tab.id));
+    const visibleMoreSections = MORE_SECTIONS
+        .map(section => ({
+            ...section,
+            items: section.items.filter(item => canAccessModule(item.id)),
+        }))
+        .filter(section => section.items.length > 0);
 
     const handleTabPress = (tab: TabItem) => {
         haptic('light');
@@ -162,7 +172,7 @@ export const MobileTabBar: React.FC = () => {
                 aria-label="Main navigation"
             >
                 <div className="flex items-center justify-around h-[56px] max-w-lg mx-auto px-2">
-                    {TABS.map((tab) => {
+                    {visibleTabs.map((tab) => {
                         const isActive = tab.id !== 'more' && currentModule === tab.id;
                         const colors = tab.id !== 'more' ? getColorForModule(tab.id as ModuleId) : null;
 
@@ -261,7 +271,7 @@ export const MobileTabBar: React.FC = () => {
 
                             {/* Scrollable Navigation */}
                             <div className="flex-1 overflow-y-auto custom-scrollbar px-4 py-3 space-y-5">
-                                {MORE_SECTIONS.map((section) => (
+                            {visibleMoreSections.map((section) => (
                                     <div key={section.title}>
                                         <h3 className="px-2 text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">
                                             {section.title}

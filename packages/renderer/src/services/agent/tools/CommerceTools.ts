@@ -3,6 +3,7 @@ import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntell
 import { logger } from '@/utils/logger';
 import type { AnyToolFunction } from '../types';
 import { importWithRetry } from '@/utils/dynamicImport';
+import { limitedDropService } from '@/services/commerce/LimitedDropService';
 
 export const CommerceTools = {
     mockup_merchandise: wrapTool('mockup_merchandise', async (args: { productType: string; designIdea: string }) => {
@@ -83,37 +84,45 @@ export const CommerceTools = {
         }, `Pricing recommendation generated for ${args.productType}. Base Cost: $${args.baseCost}. Recommended retail: $${recommendedPrice.toFixed(2)}.`);
     }),
 
-    create_limited_drop_campaign: wrapTool('create_limited_drop_campaign', async (args: { dropName: string; totalItems: number; releaseDate: string }) => {
+    create_limited_drop_campaign: wrapTool('create_limited_drop_campaign', async (args: {
+        dropName: string;
+        releaseDate?: string;
+        dropDate?: string;
+        productIds?: string[];
+        productId?: string;
+        presaleEnabled?: boolean;
+        superfanOnly?: boolean;
+        countdownMessage?: string;
+        notifyFans?: boolean;
+    }) => {
         try {
-            const { db, auth } = await importWithRetry(() => import('@/services/firebase'));
-            const { collection, addDoc, serverTimestamp } = await importWithRetry(() => import('firebase/firestore'));
-            const uid = auth.currentUser?.uid;
-            if (!uid) {
-                return toolError('User must be authenticated to create a limited drop.', 'AUTH_REQUIRED');
-            }
-
-            const docRef = await addDoc(collection(db, 'users', uid, 'limitedDrops'), {
+            const productIds = [...new Set([
+                ...(args.productIds ?? []),
+                ...(args.productId ? [args.productId] : []),
+            ])];
+            const dateInput = args.releaseDate ?? args.dropDate ?? '';
+            const result = await limitedDropService.createDraft({
+                selectedProductIds: productIds,
                 dropName: args.dropName,
-                totalItems: args.totalItems,
-                releaseDate: args.releaseDate,
-                status: 'scheduled',
-                presaleLocked: false,
-                notificationsQueued: false,
-                createdAt: serverTimestamp(),
+                dropDateTime: new Date(dateInput),
+                presaleEnabled: args.presaleEnabled ?? false,
+                superfanOnly: args.superfanOnly ?? false,
+                countdownMessage: args.countdownMessage ?? '',
             });
 
             return toolSuccess({
-                dropId: docRef.id,
+                dropId: result.dropId,
                 dropName: args.dropName,
-                totalItems: args.totalItems,
-                releaseDate: args.releaseDate,
-                status: 'scheduled',
-                presaleLocked: false,
-                notificationsQueued: false
-            }, `Limited drop campaign "${args.dropName}" saved for ${args.releaseDate}. Presale locking and notifications require their provider backends.`);
+                productIds,
+                dropDateTime: dateInput,
+                status: result.status,
+                notificationStatus: result.notificationStatus,
+                notificationRequested: args.notifyFans === true,
+            }, `Limited drop "${args.dropName}" was saved as a draft. It is not live; fan notifications require a configured notification provider.`);
         } catch (error: unknown) {
             const msg = error instanceof Error ? error.message : String(error);
-            return toolError(`Failed to create limited drop: ${msg}`, 'LIMITED_DROP_CREATE_FAILED');
+            const code = /sign in/i.test(msg) ? 'AUTH_REQUIRED' : 'LIMITED_DROP_CREATE_FAILED';
+            return toolError(`Failed to save limited-drop draft: ${msg}`, code);
         }
     })
 } satisfies Record<string, AnyToolFunction>;
