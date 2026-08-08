@@ -14,6 +14,29 @@ interface NexusLog {
   status: string;
 }
 
+const asString = (v: unknown): string => (typeof v === 'string' ? v : '');
+
+/** Narrow an untrusted `/api/dns/status` body. Unknown shapes become "unverified". */
+const parseDnsStatus = (body: unknown): DNSStatus => {
+  const rec = (body ?? {}) as Record<string, unknown>;
+  return {
+    domain: asString(rec.domain) || 'indii.music',
+    spf: asString(rec.spf) || 'unverified',
+    dkim: asString(rec.dkim) || 'unverified',
+    dmarc: asString(rec.dmarc) || 'unverified',
+  };
+};
+
+/** Narrow an untrusted `/api/nexus/logs` body. Malformed entries are dropped. */
+const parseLogs = (body: unknown): NexusLog[] => {
+  const raw = (body as { logs?: unknown } | null)?.logs;
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .filter((e): e is Record<string, unknown> => typeof e === 'object' && e !== null)
+    .map((e) => ({ time: asString(e.time), msg: asString(e.msg), status: asString(e.status) }))
+    .filter((e) => e.msg !== '');
+};
+
 const getAdminToken = (): string | null => {
   try {
     return localStorage.getItem('indii_admin_token');
@@ -34,19 +57,32 @@ export const NexusMonitor: React.FC = () => {
     try {
       const token = getAdminToken();
       const headers: HeadersInit = token ? { Authorization: `Bearer ${token}` } : {};
-      
-      // Fetch DNS status
-      const dnsRes = await fetch('/api/dns/status', { headers });
-      if (!dnsRes.ok) throw new Error(`DNS API returned status ${dnsRes.status}`);
-      const dnsData = await dnsRes.json();
-      setDns(dnsData);
 
-      // Fetch Nexus logs
-      const logsRes = await fetch('/api/nexus/logs', { headers });
+      // Both reads are independent — issue them together rather than serially.
+      // allSettled (not all) so a second-to-fail request can never surface as an
+      // unhandled rejection after the first one has already thrown.
+      const [dnsSettled, logsSettled] = await Promise.allSettled([
+        fetch('/api/dns/status', { headers }),
+        fetch('/api/nexus/logs', { headers }),
+      ]);
+      if (dnsSettled.status === 'rejected') throw dnsSettled.reason;
+      if (logsSettled.status === 'rejected') throw logsSettled.reason;
+      const dnsRes = dnsSettled.value;
+      const logsRes = logsSettled.value;
+
+      if (dnsRes.status === 401 || dnsRes.status === 403 || logsRes.status === 401 || logsRes.status === 403) {
+        throw new Error(
+          'Admin authentication required — store a valid @indii.music Firebase ID token under localStorage key "indii_admin_token".'
+        );
+      }
+      if (!dnsRes.ok) throw new Error(`DNS API returned status ${dnsRes.status}`);
       if (!logsRes.ok) throw new Error(`Logs API returned status ${logsRes.status}`);
-      const logsData = await logsRes.json();
-      setLogs(logsData.logs || []);
+
+      setDns(parseDnsStatus(await dnsRes.json()));
+      setLogs(parseLogs(await logsRes.json()));
     } catch (err) {
+      setDns(null);
+      setLogs([]);
       setError(err instanceof Error ? err.message : 'Failed to query system status');
     } finally {
       setLoading(false);
@@ -60,6 +96,17 @@ export const NexusMonitor: React.FC = () => {
     };
     init();
   }, [fetchNexusData]);
+
+  // Health badge is DERIVED, never asserted: it reflects the three records we
+  // actually resolved. Unknown while loading, red on error, amber on any
+  // unverified record.
+  const health: { tone: string; dot: string; label: string } = loading
+    ? { tone: 'text-white/40', dot: 'bg-white/30', label: 'Checking…' }
+    : error
+      ? { tone: 'text-red-400', dot: 'bg-red-500', label: 'Status unavailable' }
+      : dns && dns.spf === 'verified' && dns.dkim === 'verified' && dns.dmarc === 'verified'
+        ? { tone: 'text-green-500', dot: 'bg-green-500', label: 'All records verified' }
+        : { tone: 'text-orange-400', dot: 'bg-orange-500', label: 'Records unverified' };
 
   return (
     <div className="space-y-6">
@@ -80,8 +127,8 @@ export const NexusMonitor: React.FC = () => {
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           </button>
-          <div className="w-3 h-3 rounded-full bg-green-500 animate-pulse shadow-[0_0_10px_rgba(34,197,94,0.4)]" />
-          <span className="text-sm font-bold text-green-500">All Systems Nominal</span>
+          <div className={`w-3 h-3 rounded-full ${health.dot} ${loading ? 'animate-pulse' : ''}`} />
+          <span className={`text-sm font-bold ${health.tone}`}>{health.label}</span>
         </div>
       </div>
 

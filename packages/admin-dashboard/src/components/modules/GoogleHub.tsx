@@ -39,6 +39,62 @@ interface DriveFile {
   modifiedTime: string;
 }
 
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
+
+const asString = (value: unknown): string => (typeof value === 'string' ? value : '');
+
+const requireArrayField = (
+  body: unknown,
+  field: 'messages' | 'events' | 'files',
+  label: string
+): Record<string, unknown>[] => {
+  const value = isRecord(body) ? body[field] : undefined;
+  if (!Array.isArray(value)) throw new Error(`${label} response was invalid`);
+  return value.filter(isRecord);
+};
+
+const parseWorkspaceAuthorization = (body: unknown): boolean => {
+  if (!isRecord(body) || typeof body.authorized !== 'boolean') {
+    throw new Error('Workspace status response was invalid');
+  }
+  return body.authorized;
+};
+
+const parseEmails = (body: unknown): Email[] =>
+  requireArrayField(body, 'messages', 'Gmail')
+    .map((message) => ({
+      id: asString(message.id),
+      from: asString(message.from),
+      subject: asString(message.subject),
+      snippet: asString(message.snippet),
+      date: asString(message.date),
+      isAiDraft: message.isAiDraft === true,
+    }))
+    .filter((message) => message.id !== '');
+
+const parseEvents = (body: unknown): CalendarEvent[] =>
+  requireArrayField(body, 'events', 'Calendar')
+    .map((event) => ({
+      id: asString(event.id),
+      title: asString(event.title),
+      start: asString(event.start),
+      end: asString(event.end),
+      description: asString(event.description),
+    }))
+    .filter((event) => event.id !== '');
+
+const parseFiles = (body: unknown): DriveFile[] =>
+  requireArrayField(body, 'files', 'Drive')
+    .map((file) => ({
+      id: asString(file.id),
+      name: asString(file.name),
+      mimeType: asString(file.mimeType),
+      size: asString(file.size),
+      modifiedTime: asString(file.modifiedTime),
+    }))
+    .filter((file) => file.id !== '');
+
 const getAdminToken = (): string | null => {
   try {
     return localStorage.getItem('indii_admin_token');
@@ -50,6 +106,10 @@ const getAdminToken = (): string | null => {
 export const GoogleHub: React.FC = () => {
   const [authorized, setAuthorized] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
+  // Distinct from `authorized`: false means the status check itself failed, so
+  // we genuinely do not know whether a Workspace is linked. Never render the
+  // "Not Linked" prompt on an unknown — that would be an assertion we can't back.
+  const [linkStatusKnown, setLinkStatusKnown] = useState(false);
   const [activeSubTab, setActiveSubTab] = useState<'gmail' | 'calendar' | 'drive'>('gmail');
   
   // Data States
@@ -59,6 +119,7 @@ export const GoogleHub: React.FC = () => {
   
   // Loading & Error States
   const [loadingData, setLoadingData] = useState(false);
+  const [dataUnavailable, setDataUnavailable] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
   // Modals & Forms
@@ -87,12 +148,26 @@ export const GoogleHub: React.FC = () => {
       const res = await fetch('/api/google/status', {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
-      if (res.ok) {
-        const data = await res.json();
-        setAuthorized(data.authorized);
+      if (!res.ok) {
+        // A failed status check is NOT the same as "not linked" — surface it,
+        // otherwise a broken backend renders as a connect prompt and the
+        // operator reconnects an account that was never disconnected.
+        throw new Error(
+          res.status === 401 || res.status === 403
+            ? 'Admin authentication required to read Workspace link status.'
+            : `Workspace status check returned ${res.status}`
+        );
       }
+      setAuthorized(parseWorkspaceAuthorization(await res.json()));
+      setLinkStatusKnown(true);
+      setDataUnavailable(false);
+      setError(null);
     } catch (err) {
       console.error('Failed to fetch auth status:', err);
+      setAuthorized(false);
+      setLinkStatusKnown(false);
+      setDataUnavailable(false);
+      setError(err instanceof Error ? err.message : 'Could not determine Workspace link status');
     } finally {
       setCheckingAuth(false);
     }
@@ -106,50 +181,81 @@ export const GoogleHub: React.FC = () => {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       if (res.ok) {
-        const { url } = await res.json();
-        window.location.href = url;
+        const body: unknown = await res.json();
+        const url = isRecord(body) ? asString(body.url) : '';
+        if (!url || new URL(url).protocol !== 'https:') {
+          throw new Error('OAuth endpoint returned an invalid redirect URL');
+        }
+        window.location.assign(url);
       } else {
         setError('Failed to generate OAuth redirect URL');
       }
-    } catch {
-      setError('Connection failure starting OAuth consent flow');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Connection failure starting OAuth consent flow');
     }
   };
 
   // Fetch relevant Workspace data depending on active tab
   const fetchTabData = useCallback(async () => {
+    // Nothing to fetch until the Workspace is actually linked — the connect
+    // prompt is what renders in that case.
+    if (!authorized) return;
+
     setLoadingData(true);
+    setDataUnavailable(false);
     setError(null);
     const token = getAdminToken();
+    const endpoint = {
+      gmail: { url: '/api/google/gmail/list', label: 'Gmail' },
+      calendar: { url: '/api/google/calendar/events', label: 'Calendar' },
+      drive: { url: '/api/google/drive/files', label: 'Drive' },
+    }[activeSubTab];
+
     try {
-      if (activeSubTab === 'gmail') {
-        const res = await fetch('/api/google/gmail/list', {
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
-        });
-        if (!res.ok) throw new Error(`Gmail API returned ${res.status}`);
-        const data = await res.json();
-        setEmails(data.messages || []);
-      } else if (activeSubTab === 'calendar') {
-        const res = await fetch('/api/google/calendar/events', {
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
-        });
-        if (!res.ok) throw new Error(`Calendar API returned ${res.status}`);
-        const data = await res.json();
-        setEvents(data.events || []);
-      } else if (activeSubTab === 'drive') {
-        const res = await fetch('/api/google/drive/files', {
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
-        });
-        if (!res.ok) throw new Error(`Drive API returned ${res.status}`);
-        const data = await res.json();
-        setFiles(data.files || []);
+      const res = await fetch(endpoint.url, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+
+      // 412 = the OAuth token went away between the status check and this read.
+      // Fall back to the connect prompt rather than reporting it as an error.
+      if (res.status === 412) {
+        setAuthorized(false);
+        setLinkStatusKnown(true);
+        setSelectedEmail(null);
+        setEmails([]);
+        setEvents([]);
+        setFiles([]);
+        setDataUnavailable(false);
+        setError(null);
+        return;
       }
+      if (res.status === 401 || res.status === 403) {
+        throw new Error(
+          'Admin authentication required — store a valid @indii.music Firebase ID token under localStorage key "indii_admin_token".'
+        );
+      }
+      if (!res.ok) throw new Error(`${endpoint.label} API returned ${res.status}`);
+
+      const data: unknown = await res.json();
+      if (activeSubTab === 'gmail') setEmails(parseEmails(data));
+      else if (activeSubTab === 'calendar') setEvents(parseEvents(data));
+      else setFiles(parseFiles(data));
+      setDataUnavailable(false);
     } catch (err) {
+      if (activeSubTab === 'gmail') {
+        setEmails([]);
+        setSelectedEmail(null);
+      } else if (activeSubTab === 'calendar') {
+        setEvents([]);
+      } else {
+        setFiles([]);
+      }
+      setDataUnavailable(true);
       setError(err instanceof Error ? err.message : 'API communications failure');
     } finally {
       setLoadingData(false);
     }
-  }, [activeSubTab]);
+  }, [activeSubTab, authorized]);
 
   useEffect(() => {
     const init = async () => {
@@ -193,8 +299,14 @@ export const GoogleHub: React.FC = () => {
         setComposeBody('');
         fetchTabData();
       } else {
-        const data = await res.json();
-        setError(data.error || 'Failed to dispatch email');
+        if (res.status === 412) {
+          setShowComposeModal(false);
+          setAuthorized(false);
+          setLinkStatusKnown(true);
+          return;
+        }
+        const data: unknown = await res.json();
+        setError(isRecord(data) && typeof data.error === 'string' ? data.error : 'Failed to dispatch email');
       }
     } catch {
       setError('Failed to transmit outbound mail');
@@ -229,8 +341,14 @@ export const GoogleHub: React.FC = () => {
         setEventDesc('');
         fetchTabData();
       } else {
-        const data = await res.json();
-        setError(data.error || 'Failed to insert calendar event');
+        if (res.status === 412) {
+          setShowEventModal(false);
+          setAuthorized(false);
+          setLinkStatusKnown(true);
+          return;
+        }
+        const data: unknown = await res.json();
+        setError(isRecord(data) && typeof data.error === 'string' ? data.error : 'Failed to insert calendar event');
       }
     } catch {
       setError('Calendar write request failed');
@@ -262,8 +380,14 @@ export const GoogleHub: React.FC = () => {
         setUploadContent('');
         fetchTabData();
       } else {
-        const data = await res.json();
-        setError(data.error || 'Upload rejected by Drive service');
+        if (res.status === 412) {
+          setShowUploadModal(false);
+          setAuthorized(false);
+          setLinkStatusKnown(true);
+          return;
+        }
+        const data: unknown = await res.json();
+        setError(isRecord(data) && typeof data.error === 'string' ? data.error : 'Upload rejected by Drive service');
       }
     } catch {
       setError('File upload failed');
@@ -290,7 +414,12 @@ export const GoogleHub: React.FC = () => {
           <p className="text-sm text-white/40 mt-1">Direct integration with indii.music corporate Workspace resources.</p>
         </div>
         <div className="flex items-center gap-4">
-          {authorized ? (
+          {!linkStatusKnown ? (
+            <div className="flex items-center gap-2.5 px-4 py-2 bg-orange-500/10 border border-orange-500/20 rounded-xl">
+              <div className="w-2 h-2 rounded-full bg-orange-400" />
+              <span className="text-xs font-bold text-orange-400">Status unknown</span>
+            </div>
+          ) : authorized ? (
             <div className="flex items-center gap-2.5 px-4 py-2 bg-cyan-500/10 border border-cyan-500/20 rounded-xl">
               <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
               <span className="text-xs font-bold text-cyan-400">Workspace Connected</span>
@@ -353,7 +482,23 @@ export const GoogleHub: React.FC = () => {
           </div>
         )}
 
-        {!authorized ? (
+        {!linkStatusKnown ? (
+          <div className="flex flex-col items-center justify-center text-center py-16 min-h-[300px]">
+            <AlertTriangle className="w-12 h-12 text-orange-400/40 mb-4" />
+            <p className="text-white/85 font-semibold text-base">Workspace link status unavailable</p>
+            <p className="text-white/40 text-xs mt-2 max-w-md leading-relaxed">
+              The backend could not be reached to check whether a Google Workspace account is
+              connected. This is not the same as being disconnected — nothing has been unlinked.
+            </p>
+            <button
+              onClick={checkAuthStatus}
+              className="mt-6 px-5 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 text-white font-bold text-xs rounded-xl transition-all flex items-center gap-2 cursor-pointer"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+              Retry status check
+            </button>
+          </div>
+        ) : !authorized ? (
           <div className="flex flex-col items-center justify-center text-center py-16 min-h-[300px]">
             <Globe className="w-12 h-12 text-cyan-400/30 mb-4" />
             <p className="text-white/85 font-semibold text-base">Google Workspace Not Linked</p>
@@ -366,6 +511,22 @@ export const GoogleHub: React.FC = () => {
             >
               <ExternalLink className="w-3.5 h-3.5" />
               Link Workspace Account
+            </button>
+          </div>
+        ) : dataUnavailable ? (
+          <div className="flex flex-col items-center justify-center text-center py-16 min-h-[300px]">
+            <AlertTriangle className="w-12 h-12 text-red-400/40 mb-4" />
+            <p className="text-white/85 font-semibold text-base">Workspace data unavailable</p>
+            <p className="text-white/40 text-xs mt-2 max-w-md leading-relaxed">
+              The selected Workspace service did not return a valid result. No empty-state claim is
+              being made until the request succeeds.
+            </p>
+            <button
+              onClick={fetchTabData}
+              className="mt-6 px-5 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 text-white font-bold text-xs rounded-xl transition-all flex items-center gap-2 cursor-pointer"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+              Retry data request
             </button>
           </div>
         ) : (

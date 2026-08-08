@@ -99,7 +99,7 @@
     "@electron/rebuild": "^4.0.4",
     "@eslint/js": "9.39.1",
     "@playwright/test": "^1.58.2",
-    "@vitest/coverage-v8": "^4.1.8",
+    "@vitest/coverage-v8": "^4.1.10",
     "axe-core": "4.11.1",
     "dotenv": "^17.2.3",
     "electron": "^41.10.4",
@@ -121,7 +121,7 @@
     "typescript": "^5.8.2",
     "typescript-eslint": "8.48.0",
     "utf-8-validate": "^5.0.2",
-    "vitest": "^4.1.8"
+    "vitest": "^4.1.10"
   },
   "optionalDependencies": {
     "@esbuild/linux-x64": "0.25.12",
@@ -207,7 +207,16 @@
     "fast-uri": "3.1.5",
     "ip-address": "10.4.0",
     "js-yaml": "4.3.1",
+    "minimatch@10.2.5": {
+      "brace-expansion": "5.0.9"
+    },
     "brace-expansion": "2.1.4",
+    "body-parser": "1.20.6",
+    "re2": "1.26.1",
+    "tar": "7.5.22",
+    "node-gyp": {
+      "undici": "6.28.0"
+    },
     "protobufjs": "7.6.5",
     "axios": "^1.19.0",
     "@types/react": "18.3.3",

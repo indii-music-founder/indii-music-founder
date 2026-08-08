@@ -16,9 +16,13 @@ show real zeros until real activity exists.
 |--------|--------|
 | **Token Usage** | `user_usage_stats` Firestore collection (written by `TokenUsageService.trackUsage`). Cost by model, spend by user, projected economics. |
 | **Founders Portal** | `founders` Firestore collection (written by `activateFounderPass`). Live seat count (X of 11) + roster. |
+| **Inbox & Messaging** | `messages` Firestore collection through the authenticated admin API. |
+| **Google Workspace Hub** | Stored Google OAuth credentials plus the live Gmail, Calendar, and Drive APIs. |
+| **DDEX Deliveries** | `deliveries` Firestore collection. Every count is derived from the latest API result. |
+| **Nexus System Monitor** | Live DNS TXT resolution plus the `system_events` Firestore collection. |
 
-Mock-only modules (Email Manager, DDEX Tracker, Nexus Monitor) are intentionally
-hidden until wired to real sources.
+Backend failures are rendered as unavailable/error states; they are never converted
+into fabricated metrics, false-green health, or honest-looking empty collections.
 
 ## Running it locally
 

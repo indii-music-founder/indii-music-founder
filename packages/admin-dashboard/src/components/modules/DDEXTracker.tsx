@@ -10,6 +10,25 @@ interface Delivery {
   type: string;
 }
 
+const asString = (v: unknown): string => (typeof v === 'string' ? v : '');
+
+/** Narrow an untrusted `/api/deliveries/list` body. Malformed rows are dropped. */
+const parseDeliveries = (body: unknown): Delivery[] => {
+  const raw = (body as { deliveries?: unknown } | null)?.deliveries;
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .filter((d): d is Record<string, unknown> => typeof d === 'object' && d !== null)
+    .map((d) => ({
+      releaseId: asString(d.releaseId) || asString(d.id),
+      title: asString(d.title),
+      dst: asString(d.dst),
+      status: asString(d.status),
+      time: asString(d.time),
+      type: asString(d.type),
+    }))
+    .filter((d) => d.releaseId !== '');
+};
+
 const getAdminToken = (): string | null => {
   try {
     return localStorage.getItem('indii_admin_token');
@@ -31,10 +50,15 @@ export const DDEXTracker: React.FC = () => {
       const res = await fetch('/api/deliveries/list', {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
+      if (res.status === 401 || res.status === 403) {
+        throw new Error(
+          'Admin authentication required — store a valid @indii.music Firebase ID token under localStorage key "indii_admin_token".'
+        );
+      }
       if (!res.ok) throw new Error(`Deliveries returned status ${res.status}`);
-      const data = await res.json();
-      setDeliveries(data.deliveries || []);
+      setDeliveries(parseDeliveries(await res.json()));
     } catch (err) {
+      setDeliveries([]);
       setError(err instanceof Error ? err.message : 'API failure fetching deliveries');
     } finally {
       setLoading(false);
@@ -49,10 +73,31 @@ export const DDEXTracker: React.FC = () => {
     init();
   }, [fetchDeliveries]);
 
-  const totalDelivered = deliveries.filter(d => d.status === 'Delivered').length;
-  const failureRate = deliveries.length > 0 
-    ? `${((deliveries.filter(d => d.status === 'Failed').length / deliveries.length) * 100).toFixed(2)}%`
-    : '0.00%';
+  // Single O(N) pass — every figure below is derived from the fetched queue.
+  const stats = deliveries.reduce(
+    (acc, d) => {
+      if (d.status === 'Delivered') acc.delivered += 1;
+      else if (d.status === 'Failed') acc.failed += 1;
+      else if (d.status === 'Processing') {
+        acc.processing += 1;
+        if (d.type) acc.inFlightFormats.add(d.type);
+      }
+      if (d.dst) acc.destinations.add(d.dst);
+      return acc;
+    },
+    {
+      delivered: 0,
+      failed: 0,
+      processing: 0,
+      destinations: new Set<string>(),
+      inFlightFormats: new Set<string>(),
+    }
+  );
+  const completedDeliveries = stats.delivered + stats.failed;
+  const failureRate =
+    completedDeliveries > 0
+      ? `${((stats.failed / completedDeliveries) * 100).toFixed(2)}%`
+      : '—';
 
   return (
     <div className="space-y-6">
@@ -67,12 +112,12 @@ export const DDEXTracker: React.FC = () => {
         </div>
         <div className="flex items-center gap-4">
           <div className="px-4 py-2 bg-white/5 rounded-xl border border-white/10">
-            <p className="text-[10px] text-white/40 uppercase tracking-widest font-bold">Session Deliveries</p>
-            <p className="text-lg font-bold text-white">{totalDelivered}</p>
+            <p className="text-[10px] text-white/40 uppercase tracking-widest font-bold">Delivered</p>
+            <p className="text-lg font-bold text-white">{stats.delivered}</p>
           </div>
           <div className="px-4 py-2 bg-white/5 rounded-xl border border-white/10">
             <p className="text-[10px] text-white/40 uppercase tracking-widest font-bold">Failure Rate</p>
-            <p className={`text-lg font-bold ${deliveries.filter(d => d.status === 'Failed').length > 0 ? 'text-red-400' : 'text-green-400'}`}>
+            <p className={`text-lg font-bold ${stats.failed > 0 ? 'text-red-400' : 'text-white/50'}`}>
               {failureRate}
             </p>
           </div>
@@ -93,13 +138,17 @@ export const DDEXTracker: React.FC = () => {
               <HardDrive className="w-5 h-5 text-white/60" />
             </div>
             <div>
-              <h4 className="text-lg font-bold tracking-tight">Active Endpoints</h4>
-              <p className="text-xs text-white/40">Registered DSP FTP servers</p>
+              <h4 className="text-lg font-bold tracking-tight">DSP Destinations</h4>
+              <p className="text-xs text-white/40">Distinct endpoints in the current queue</p>
             </div>
           </div>
           <div className="flex items-baseline gap-2 relative z-10">
-            <span className="text-3xl font-bold">48</span>
-            <span className="text-xs text-green-400 font-bold">+2 this week</span>
+            <span className="text-3xl font-bold">{stats.destinations.size}</span>
+            <span className="text-xs text-white/40 font-bold">
+              {deliveries.length === 0
+                ? 'no recent deliveries'
+                : `across ${deliveries.length} recent deliver${deliveries.length === 1 ? 'y' : 'ies'}`}
+            </span>
           </div>
         </div>
 
@@ -109,13 +158,19 @@ export const DDEXTracker: React.FC = () => {
               <Share2 className="w-5 h-5 text-white/60" />
             </div>
             <div>
-              <h4 className="text-lg font-bold tracking-tight">XML Validator</h4>
-              <p className="text-xs text-white/40">ERN 4.2 / 4.3 Compliance</p>
+              <h4 className="text-lg font-bold tracking-tight">In Flight</h4>
+              <p className="text-xs text-white/40">Deliveries still processing</p>
             </div>
           </div>
           <div className="flex items-baseline gap-2 relative z-10">
-            <span className="text-3xl font-bold text-green-500">100%</span>
-            <span className="text-xs text-white/40 font-bold">passing schema validation</span>
+            <span className={`text-3xl font-bold ${stats.processing > 0 ? 'text-blue-400' : ''}`}>
+              {stats.processing}
+            </span>
+            <span className="text-xs text-white/40 font-bold">
+              {stats.inFlightFormats.size > 0
+                ? `${stats.inFlightFormats.size} ERN format${stats.inFlightFormats.size === 1 ? '' : 's'} in flight`
+                : 'nothing in flight'}
+            </span>
           </div>
         </div>
       </div>
@@ -151,8 +206,8 @@ export const DDEXTracker: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
-                {deliveries.map((delivery, i) => (
-                  <tr key={i} className="hover:bg-white/[0.02] transition-colors">
+                {deliveries.map((delivery) => (
+                  <tr key={delivery.releaseId} className="hover:bg-white/[0.02] transition-colors">
                     <td className="px-6 py-4">
                       <span className="font-mono text-xs text-white/60">{delivery.releaseId}</span>
                     </td>
@@ -173,7 +228,8 @@ export const DDEXTracker: React.FC = () => {
                         <span className={`text-xs font-bold ${
                           delivery.status === 'Delivered' ? 'text-green-500' : 
                           delivery.status === 'Processing' ? 'text-blue-500 animate-pulse' : 
-                          'text-red-500'
+                          delivery.status === 'Failed' ? 'text-red-500' :
+                          'text-white/50'
                         }`}>
                           {delivery.status}
                         </span>
@@ -192,4 +248,3 @@ export const DDEXTracker: React.FC = () => {
     </div>
   );
 };
-
