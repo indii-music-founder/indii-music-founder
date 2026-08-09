@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { PlatformData, StreamDataPoint } from './types';
+import type { PlatformData } from './types';
 
 const spotifyPlatform: PlatformData = {
     platform: 'spotify',
@@ -8,17 +8,6 @@ const spotifyPlatform: PlatformData = {
     saves: 100,
     completionRate: 0.5,
 };
-
-const spotifyHistory: StreamDataPoint[] = [{
-    date: '2026-07-01',
-    streams: 50,
-    saves: 5,
-    completions: 40,
-    uniqueListeners: 35,
-    shares: 2,
-    newFollowers: 1,
-    playlistAdditions: 1,
-}];
 
 const spotifyServiceMock = vi.hoisted(() => ({
     isConnected: vi.fn(),
@@ -50,13 +39,21 @@ const appleMusicServiceMock = vi.hoisted(() => ({
     buildPlatformData: vi.fn(),
 }));
 
+const releaseCatalogServiceMock = vi.hoisted(() => ({
+    listCurrentUserReleases: vi.fn(),
+}));
+
 vi.mock('./SpotifyService', () => ({ spotifyService: spotifyServiceMock }));
 vi.mock('./YouTubeAnalyticsService', () => ({ youTubeAnalyticsService: youtubeServiceMock }));
 vi.mock('./TikTokAnalyticsService', () => ({ tikTokAnalyticsService: tiktokServiceMock }));
 vi.mock('./InstagramAnalyticsService', () => ({ instagramAnalyticsService: instagramServiceMock }));
 vi.mock('./AppleMusicService', () => ({ appleMusicService: appleMusicServiceMock }));
+vi.mock('@/services/distribution/ReleaseCatalogService', async (importOriginal) => {
+    const original = await importOriginal<typeof import('@/services/distribution/ReleaseCatalogService')>();
+    return { ...original, releaseCatalogService: releaseCatalogServiceMock };
+});
 
-describe('PlatformDataService Apple Music handling', () => {
+describe('PlatformDataService attribution boundaries', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         spotifyServiceMock.isConnected.mockResolvedValue(true);
@@ -81,25 +78,53 @@ describe('PlatformDataService Apple Music handling', () => {
                 },
             ],
         });
-        spotifyServiceMock.buildStreamHistory.mockResolvedValue(spotifyHistory);
+        spotifyServiceMock.buildStreamHistory.mockResolvedValue([]);
 
         youtubeServiceMock.isConnected.mockResolvedValue(false);
         tiktokServiceMock.isConnected.mockResolvedValue(false);
         instagramServiceMock.isConnected.mockResolvedValue(false);
         appleMusicServiceMock.isConnected.mockResolvedValue(true);
+        releaseCatalogServiceMock.listCurrentUserReleases.mockResolvedValue([
+            {
+                id: 'release-1',
+                data: {
+                    metadata: {
+                        trackTitle: 'Owned Track',
+                        artistName: 'Owned Artist',
+                        genre: 'Soul',
+                        releaseDate: '2026-01-01',
+                    },
+                    assets: { coverArtUrl: 'https://example.com/owned-cover.jpg' },
+                },
+            },
+        ]);
     });
 
-    it('omits Apple Music when it is connected but real analytics are unavailable', async () => {
+    it('does not fabricate Spotify artist metrics or a zero-filled history', async () => {
         appleMusicServiceMock.buildPlatformData.mockResolvedValue(null);
         const { PlatformDataService } = await import('./PlatformDataService');
 
         const catalogue = await new PlatformDataService().buildCatalogue();
 
-        expect(catalogue[0]?.platforms.map(platform => platform.platform)).toEqual(['spotify']);
-        expect(catalogue[0]?.totalStreams).toBe(1000);
+        expect(catalogue[0]?.platforms.map(platform => platform.platform)).toEqual(['spotify', 'apple_music']);
+        expect(catalogue[0]).toMatchObject({
+            trackId: 'release-1',
+            trackName: 'Owned Track',
+            artistName: 'Owned Artist',
+            releaseDate: '2026-01-01',
+            totalStreams: 0,
+            history: [],
+            regions: [],
+        });
+        expect(catalogue[0]?.platforms[0]).toMatchObject({
+            streams: 0,
+            saves: 0,
+            completionRate: 0,
+            metricsUnavailable: true,
+        });
     });
 
-    it('includes Apple Music only when real partner platform data is returned', async () => {
+    it('does not allocate artist-level Apple Music data across unrelated Spotify tracks', async () => {
         appleMusicServiceMock.buildPlatformData.mockResolvedValue({
             platform: 'apple_music',
             streams: 100,
@@ -111,14 +136,14 @@ describe('PlatformDataService Apple Music handling', () => {
 
         const catalogue = await new PlatformDataService().buildCatalogue();
 
-        const firstTrackAppleMusic = catalogue[0]?.platforms.find(platform => platform.platform === 'apple_music');
-        expect(firstTrackAppleMusic).toMatchObject({
-            platform: 'apple_music',
-            streams: 80,
-            saves: 8,
-            completionRate: 0.75,
-            isSynthetic: true,
-            syntheticLabel: 'Estimated from account metrics',
+        expect(catalogue[0]?.platforms.find(platform => platform.platform === 'apple_music')).toMatchObject({
+            streams: 0,
+            saves: 0,
+            completionRate: 0,
+            metricsUnavailable: true,
         });
+        expect(catalogue.reduce((sum, track) => sum + track.totalStreams, 0)).toBe(0);
+        expect(appleMusicServiceMock.buildPlatformData).not.toHaveBeenCalled();
+        expect(spotifyServiceMock.buildPlatformData).not.toHaveBeenCalled();
     });
 });

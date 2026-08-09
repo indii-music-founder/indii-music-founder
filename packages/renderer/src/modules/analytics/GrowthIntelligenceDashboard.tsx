@@ -1,8 +1,9 @@
 /**
  * GrowthIntelligenceDashboard — Music Growth Intelligence Engine
  *
- * Production analytics dashboard powered by real platform data:
- *  - Spotify Web API (top tracks, audio features, recently played)
+ * Analytics dashboard powered by connected platform data with explicit source
+ * limitations:
+ *  - Spotify Web API (public track and artist popularity only; no artist stream counts)
  *  - YouTube Analytics API (views, watch time, subscribers, geography)
  *  - TikTok Display API (video views, engagement)
  *  - Instagram Graph API (Reels plays, reach, impressions)
@@ -67,7 +68,7 @@ function NoPlatformsState({ onConnected }: { onConnected: () => void }) {
                     <h2 className="text-xl font-bold text-white mb-2">Connect Your Platforms</h2>
                     <p className="text-sm text-slate-400 max-w-md mx-auto">
                         Link your streaming and social accounts to see engagement heuristics,
-                        observed growth patterns, and clearly labeled track estimates.
+                        observed growth patterns, and explicit provider-data limitations.
                     </p>
                 </div>
                 <PlatformConnector onConnectionChange={onConnected} />
@@ -86,8 +87,10 @@ export default function GrowthIntelligenceDashboard() {
         setAnalyticsSelectedTrackId,
         analyticsReports,
         setAnalyticsReport,
+        clearAnalyticsReports,
         analyticsAlerts,
         addAnalyticsAlerts,
+        clearAnalyticsAlerts,
         dismissAnalyticsAlert,
         analyticsLoading,
         setAnalyticsLoading,
@@ -98,8 +101,10 @@ export default function GrowthIntelligenceDashboard() {
         setAnalyticsSelectedTrackId: s.setAnalyticsSelectedTrackId,
         analyticsReports: s.analyticsReports,
         setAnalyticsReport: s.setAnalyticsReport,
+        clearAnalyticsReports: s.clearAnalyticsReports,
         analyticsAlerts: s.analyticsAlerts,
         addAnalyticsAlerts: s.addAnalyticsAlerts,
+        clearAnalyticsAlerts: s.clearAnalyticsAlerts,
         dismissAnalyticsAlert: s.dismissAnalyticsAlert,
         analyticsLoading: s.analyticsLoading,
         setAnalyticsLoading: s.setAnalyticsLoading,
@@ -117,6 +122,9 @@ export default function GrowthIntelligenceDashboard() {
     const loadReports = useCallback(async () => {
         setAnalyticsLoading(true);
         setLoadError(null);
+        clearAnalyticsReports();
+        clearAnalyticsAlerts();
+        setAnalyticsSelectedTrackId(null);
         try {
             // Check connections first
             const anyConnected = await platformDataService.hasAnyConnection();
@@ -126,7 +134,6 @@ export default function GrowthIntelligenceDashboard() {
 
             const tracks = await platformDataService.buildCatalogue();
             if (tracks.length === 0) {
-                setHasConnections(false);
                 return;
             }
 
@@ -134,7 +141,7 @@ export default function GrowthIntelligenceDashboard() {
             reports.forEach(r => setAnalyticsReport(r.track.trackId, r));
             addAnalyticsAlerts(reports.flatMap(r => r.alerts));
 
-            if (!analyticsSelectedTrackId && reports.length > 0) {
+            if (reports.length > 0) {
                 setAnalyticsSelectedTrackId(reports[0]!.track.trackId);
             }
             setAnalyticsLastRefresh(Date.now());
@@ -144,8 +151,9 @@ export default function GrowthIntelligenceDashboard() {
             setAnalyticsLoading(false);
         }
     }, [
-        setAnalyticsLoading, setAnalyticsReport, addAnalyticsAlerts,
-        analyticsSelectedTrackId, setAnalyticsSelectedTrackId, setAnalyticsLastRefresh,
+        setAnalyticsLoading, setAnalyticsReport, clearAnalyticsReports,
+        addAnalyticsAlerts, clearAnalyticsAlerts, setAnalyticsSelectedTrackId,
+        setAnalyticsLastRefresh,
     ]);
 
     useEffect(() => {
@@ -203,7 +211,7 @@ export default function GrowthIntelligenceDashboard() {
                         </div>
                         <div>
                             <h1 className="text-base font-bold text-white">Growth Intelligence</h1>
-                            <p className="text-xs text-slate-400">Engagement heuristics · Pattern detection · Low-confidence estimates</p>
+                            <p className="text-xs text-slate-400">Engagement heuristics · Pattern detection · Provider-data limitations</p>
                         </div>
                     </div>
                 </div>
@@ -225,7 +233,7 @@ export default function GrowthIntelligenceDashboard() {
                     <div>
                         <h1 className="text-base font-bold text-white">Growth Intelligence</h1>
                         <p className="text-xs text-slate-400">
-                            Engagement heuristics · Pattern detection · Low-confidence estimates
+                            Engagement heuristics · Pattern detection · Provider-data limitations
                         </p>
                     </div>
                 </div>
@@ -317,7 +325,11 @@ export default function GrowthIntelligenceDashboard() {
                             <div className="text-center">
                                 <Brain size={40} className="mx-auto mb-3 opacity-30" />
                                 <p className="text-sm">
-                                    {analyticsLoading ? 'Fetching platform data…' : 'Select a track to view analytics'}
+                                    {analyticsLoading
+                                        ? 'Fetching platform data…'
+                                        : allReports.length === 0
+                                            ? 'No owner-scoped releases are available for track analytics.'
+                                            : 'Select a track to view analytics'}
                                 </p>
                             </div>
                         </div>
@@ -407,8 +419,12 @@ export default function GrowthIntelligenceDashboard() {
                                                     </p>
                                                 </div>
                                                 <div className="bg-slate-800/50 border border-white/8 rounded-xl p-3">
-                                                    <p className="text-lg font-bold text-white">{selectedReport.track.creatorCount.toLocaleString('en-US')}</p>
-                                                    <p className="text-xs text-slate-400">Creators Using Audio</p>
+                                                    <p className="text-lg font-bold text-white">
+                                                        {selectedReport.track.platforms.every(platform => platform.metricsUnavailable === true)
+                                                            ? '—'
+                                                            : selectedReport.track.creatorCount.toLocaleString('en-US')}
+                                                    </p>
+                                                    <p className="text-xs text-slate-400">Provider-Reported Creators</p>
                                                 </div>
                                             </div>
                                         </div>
@@ -418,6 +434,8 @@ export default function GrowthIntelligenceDashboard() {
                                         <MetricsGrid
                                             metrics={selectedReport.metrics}
                                             totalStreams={selectedReport.track.totalStreams}
+                                            modeled={selectedReport.track.platforms.some(platform => platform.isSynthetic)}
+                                            unavailable={selectedReport.track.platforms.every(platform => platform.metricsUnavailable === true)}
                                         />
                                     </div>
                                 </div>
@@ -442,20 +460,34 @@ export default function GrowthIntelligenceDashboard() {
                                         {selectedReport.track.platforms.map(p => {
                                             const labels: Record<string, string> = {
                                                 spotify: 'Spotify', apple_music: 'Apple Music',
-                                                tiktok: 'TikTok', youtube_shorts: 'YouTube',
+                                                tiktok: 'TikTok', youtube: 'YouTube', youtube_shorts: 'YouTube Shorts',
                                                 instagram_reels: 'Instagram Reels',
                                             };
                                             return (
                                                 <div key={p.platform} className="bg-slate-800/50 border border-white/8 rounded-xl p-3">
-                                                    <p className="text-sm font-semibold text-white mb-2">{labels[p.platform] ?? p.platform}</p>
+                                                    <div className="mb-2 flex items-center justify-between gap-2">
+                                                        <p className="text-sm font-semibold text-white">{labels[p.platform] ?? p.platform}</p>
+                                                        {p.isSynthetic && (
+                                                            <span className="rounded-full border border-amber-500/20 bg-amber-500/10 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-amber-300">
+                                                                Modeled
+                                                            </span>
+                                                        )}
+                                                        {p.metricsUnavailable && (
+                                                            <span className="rounded-full border border-slate-500/20 bg-slate-500/10 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-slate-300">
+                                                                Unavailable
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                     <div className="grid grid-cols-2 gap-2 text-xs">
                                                         <div>
-                                                            <p className="text-slate-500">Streams / Views</p>
-                                                            <p className="text-white font-medium">{p.streams.toLocaleString('en-US')}</p>
+                                                            <p className="text-slate-500">Plays / Views</p>
+                                                            <p className="text-white font-medium">{p.metricsUnavailable ? '—' : `${p.isSynthetic ? '≈ ' : ''}${p.streams.toLocaleString('en-US')}`}</p>
                                                         </div>
                                                         <div>
                                                             <p className="text-slate-500">Completion</p>
-                                                            <p className="text-white font-medium">{(p.completionRate * 100).toFixed(0)}%</p>
+                                                            <p className="text-white font-medium">
+                                                                {p.metricsUnavailable || (p.isSynthetic && p.completionRate === 0) ? 'Unavailable' : `${(p.completionRate * 100).toFixed(0)}%`}
+                                                            </p>
                                                         </div>
                                                         {p.creatorCount !== undefined && p.creatorCount > 0 && (
                                                             <div>
@@ -464,6 +496,16 @@ export default function GrowthIntelligenceDashboard() {
                                                             </div>
                                                         )}
                                                     </div>
+                                                    {p.isSynthetic && (
+                                                        <p className="mt-3 text-[10px] leading-relaxed text-amber-300/80">
+                                                            {p.syntheticLabel ?? 'Modeled estimate; not provider-reported track data.'}
+                                                        </p>
+                                                    )}
+                                                    {p.metricsUnavailable && (
+                                                        <p className="mt-3 text-[10px] leading-relaxed text-slate-500">
+                                                            {p.sourceLabel ?? 'Track-level performance metrics are unavailable.'}
+                                                        </p>
+                                                    )}
                                                 </div>
                                             );
                                         })}
@@ -485,12 +527,12 @@ export default function GrowthIntelligenceDashboard() {
                                     {selectedReport.track.regions.length === 0 ? (
                                         <div className="text-center py-8 text-slate-500 text-sm">
                                             <Globe size={28} className="mx-auto mb-2 opacity-30" />
-                                            <p>Connect YouTube to unlock geographic breakdown data.</p>
+                                            <p>Track-level geographic data is unavailable from the connected sources.</p>
                                             <button
                                                 onClick={() => setShowConnector(true)}
                                                 className="mt-3 text-xs text-emerald-400 hover:text-emerald-300 underline"
                                             >
-                                                Connect YouTube Analytics
+                                                Review connected sources
                                             </button>
                                         </div>
                                     ) : (

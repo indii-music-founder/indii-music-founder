@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Send, Loader2, Sparkles, X, Copy, Trash2 } from 'lucide-react';
 import { knowledgeBaseService, KnowledgeDoc } from '../services/KnowledgeBaseService';
 import { useStore } from '@/core/store';
@@ -36,14 +36,14 @@ export const KnowledgeChat: React.FC<KnowledgeChatProps> = ({ isOpen, onClose, a
     const namespace = activeDoc ? `knowledge-advisor-${activeDoc.id}` : 'knowledge-advisor-global';
     const knowledgeSession = Object.values(sessions).find(s => s.namespace === namespace);
     
-    const messages = knowledgeSession?.messages.length ? knowledgeSession.messages : [
+    const messages = useMemo(() => knowledgeSession?.messages.length ? knowledgeSession.messages : [
         {
             id: 'welcome',
             role: 'model' as const,
             text: "Hello! I'm your Neural Knowledge Assistant. Ask me anything about your documents.",
             timestamp: Date.now()
         }
-    ];
+    ], [knowledgeSession]);
 
     useEffect(() => {
         if (scrollRef.current) {
@@ -104,9 +104,13 @@ export const KnowledgeChat: React.FC<KnowledgeChatProps> = ({ isOpen, onClose, a
         }
     };
 
-    const handleCopy = (content: string) => {
-        navigator.clipboard.writeText(content);
-        // Toast could be added here if context is available
+    const handleCopy = async (content: string) => {
+        try {
+            await navigator.clipboard.writeText(content);
+        } catch {
+            // Clipboard access can be denied outside a secure context. Keep the
+            // chat usable and let the browser preserve its native permission UX.
+        }
     };
 
     const clearChat = () => {
@@ -136,10 +140,10 @@ export const KnowledgeChat: React.FC<KnowledgeChatProps> = ({ isOpen, onClose, a
                     </div>
                 </div>
                 <div className="flex items-center gap-1">
-                    <button onClick={clearChat} title="Clear Chat" className="p-2 hover:bg-red-500/10 rounded-lg text-gray-500 hover:text-red-400 transition-colors">
+                    <button type="button" onClick={clearChat} aria-label="Clear chat" title="Clear Chat" className="p-2 hover:bg-red-500/10 rounded-lg text-gray-500 hover:text-red-400 transition-colors">
                         <Trash2 size={16} />
                     </button>
-                    <button onClick={onClose} className="p-2 hover:bg-gray-800 rounded-lg text-gray-500 hover:text-white transition-colors">
+                    <button type="button" onClick={onClose} aria-label="Close knowledge chat" className="p-2 hover:bg-gray-800 rounded-lg text-gray-500 hover:text-white transition-colors">
                         <X size={18} />
                     </button>
                 </div>
@@ -156,8 +160,10 @@ export const KnowledgeChat: React.FC<KnowledgeChatProps> = ({ isOpen, onClose, a
                             {msg.text}
                             {msg.role === 'model' && (
                                 <button
-                                    onClick={() => handleCopy(msg.text)}
-                                    className="absolute -right-10 top-0 p-1.5 opacity-0 group-hover:opacity-100 hover:bg-gray-800 rounded text-gray-500 hover:text-[#FFE135] transition-all"
+                                    type="button"
+                                    onClick={() => void handleCopy(msg.text)}
+                                    aria-label="Copy assistant response"
+                                    className="absolute right-1 top-1 p-1.5 opacity-100 md:-right-10 md:top-0 md:opacity-0 md:group-hover:opacity-100 focus-visible:opacity-100 hover:bg-gray-800 rounded text-gray-500 hover:text-[#FFE135] transition-all"
                                     title="Copy to clipboard"
                                 >
                                     <Copy size={14} />
@@ -191,6 +197,7 @@ export const KnowledgeChat: React.FC<KnowledgeChatProps> = ({ isOpen, onClose, a
                     <div className="flex flex-wrap gap-2 mb-4">
                         {SUGGESTED_QUESTIONS.map((q, i) => (
                             <button
+                                type="button"
                                 key={i}
                                 onClick={() => handleSend(q)}
                                 className="text-[10px] px-3 py-1.5 bg-gray-800/50 hover:bg-[#FFE135]/10 border border-gray-700 hover:border-[#FFE135]/30 text-gray-400 hover:text-[#FFE135] rounded-full transition-all duration-300"
@@ -211,6 +218,7 @@ export const KnowledgeChat: React.FC<KnowledgeChatProps> = ({ isOpen, onClose, a
                         className="w-full bg-[#161b22] border border-gray-700 group-focus-within:border-[#FFE135]/40 text-white rounded-2xl pl-5 pr-14 py-4 focus:outline-none focus:ring-4 focus:ring-[#FFE135]/5 transition-all placeholder-gray-600 shadow-inner"
                     />
                     <button
+                        type="button"
                         onClick={() => handleSend()}
                         disabled={!input.trim() || isTyping}
                         aria-label="Send Message"

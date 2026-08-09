@@ -150,27 +150,41 @@ describe('WorkspaceSyncService', () => {
         expect(result).toBeNull();
     });
 
-    it('should handle pull errors gracefully', async () => {
+    it('propagates pull errors so callers cannot confuse an outage with a missing snapshot', async () => {
         const { getDoc } = await import('firebase/firestore');
 
         vi.mocked(getDoc).mockRejectedValueOnce(new Error('Network error'));
 
-        const result = await workspaceSyncService.pullSnapshot();
-
-        expect(result).toBeNull();
+        await expect(workspaceSyncService.pullSnapshot()).rejects.toThrow('Network error');
     });
 
-    it('should skip push when not authenticated', async () => {
+    it('propagates push errors so callers do not mark unsaved state as synchronized', async () => {
+        const { setDoc } = await import('firebase/firestore');
+        vi.mocked(setDoc).mockRejectedValueOnce(new Error('Write denied'));
+
+        await expect(workspaceSyncService.pushSnapshot(mockSnapshot)).rejects.toThrow('Write denied');
+    });
+
+    it('rejects push when not authenticated', async () => {
         const { setDoc } = await import('firebase/firestore');
         const { getRealAuthenticatedUserId } = await import('@/utils/authGuards');
 
         // Mock unauthenticated state
         vi.mocked(getRealAuthenticatedUserId).mockReturnValueOnce(null);
 
-        await workspaceSyncService.pushSnapshot(mockSnapshot);
+        await expect(workspaceSyncService.pushSnapshot(mockSnapshot)).rejects.toThrow('authenticated user');
 
         // setDoc should not be called
         expect(setDoc).not.toHaveBeenCalled();
+    });
+
+    it('rejects pull when not authenticated', async () => {
+        const { getDoc } = await import('firebase/firestore');
+        const { getRealAuthenticatedUserId } = await import('@/utils/authGuards');
+        vi.mocked(getRealAuthenticatedUserId).mockReturnValueOnce(null);
+
+        await expect(workspaceSyncService.pullSnapshot()).rejects.toThrow('authenticated user');
+        expect(getDoc).not.toHaveBeenCalled();
     });
 
     it('should check authentication status', async () => {

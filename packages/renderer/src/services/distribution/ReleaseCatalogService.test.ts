@@ -23,7 +23,10 @@ vi.mock('firebase/firestore', () => ({
 }));
 
 import {
+    getReleaseArtist,
+    getReleaseCoverUrl,
     getReleaseDate,
+    getReleaseGenre,
     getReleaseIsrc,
     getReleaseTitle,
     getReleaseWriters,
@@ -73,5 +76,8 @@ describe('ReleaseCatalogService', () => {
         expect(getReleaseDate(data)?.toISOString()).toBe('2026-09-01T00:00:00.000Z');
         expect(getReleaseWriters(data)).toEqual(['A. Writer']);
         expect(getReleaseTitle({ title: 'Legacy Root Title' })).toBe('Legacy Root Title');
+        expect(getReleaseArtist({ metadata: { artistName: 'The Artist' } })).toBe('The Artist');
+        expect(getReleaseGenre({ genre: 'Soul' })).toBe('Soul');
+        expect(getReleaseCoverUrl({ assets: { coverArtUrl: 'https://example.com/cover.jpg' } })).toBe('https://example.com/cover.jpg');
     });
 });

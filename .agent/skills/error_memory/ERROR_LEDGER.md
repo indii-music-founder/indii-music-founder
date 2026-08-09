@@ -1915,3 +1915,51 @@ committing.
 - BUG: Several services attached anonymous abort/browser/metrics/message listeners, and lazy push initialization could attach after the caller had already unsubscribed.
 - FIX: Use stable named handlers, settlement cleanup, singleton initialization where appropriate, and a cancellation flag across lazy initialization boundaries.
 - PREVENTION: Every listener registration needs an owner and a tested teardown path. Tests must include cleanup-before-resolution, timeout, success, and failure orderings—not only the normal settled path.
+
+## 2026-08-08 — Viewport width does not prove that primary actions are reachable
+
+**SEVERITY:** High (short phone landscape and enlarged-content users could lose authentication or modal controls)
+
+- BUG: Responsive behavior was reasoned about by width alone. Fixed-height shells, non-scrolling panels, hover-only actions, and unconstrained drawers left controls outside the visible or keyboard-reachable area.
+- FIX: Use dynamic viewport height, bounded internal scrolling, static responsive classes, visible touch actions, and focus containment with Escape dismissal.
+- PREVENTION: Test width and height independently. Every primary action must remain visible or scrollable at short landscape dimensions, and every modal/drawer must retain keyboard containment and teardown.
+
+## 2026-08-08 — A failed cloud read cannot authorize a local overwrite
+
+**SEVERITY:** Critical (stale local state could replace a newer workspace)
+
+- BUG: Workspace sync collapsed unauthenticated, denied, offline, and missing-document reads into `null`, then marked hydration complete and enabled writes. Hydration also survived account changes.
+- FIX: Propagate authentication and persistence failures, scope hydration to the active UID, pause writes until a successful pull, retain pending local changes, and advance write evidence only after the backend confirms persistence.
+- PREVENTION: Model `missing`, `unavailable`, and `loaded` as distinct states. A retry limit may stop network churn, but it must never convert an unknown remote state into permission to overwrite it.
+
+## 2026-08-08 — Provider authorization does not establish artist-track attribution
+
+**SEVERITY:** Critical (personal listening and account totals were displayed as an artist's release performance)
+
+- BUG: A connected account supplied identity, but the app treated listener top tracks as the owner's catalogue and distributed channel/account metrics across them. Adjacent engagement fields were renamed to saves, completions, and growth.
+- FIX: Anchor track identity in owner-scoped releases and expose only provider fields with matching semantics and granularity. Unsupported attribution, history, and comparisons remain unavailable.
+- PREVENTION: For every metric, preserve subject, scope, time window, unit, and provider definition. Never allocate a broader total to narrower entities without a provider-supplied join and never rename a nearby engagement field to fill a UI slot.
+
+## 2026-08-08 — Legal planning completion is not filing or readiness authority
+
+**SEVERITY:** Critical (static visa copy could influence travel and work-authorization decisions)
+
+- BUG: A generic checklist combined hard-coded legal requirements and processing expectations with a “Tour Ready” completion state, without knowing the traveler, destination, itinerary, filing, or government outcome.
+- FIX: Restrict the feature to a planning organizer, remove jurisdiction-specific conclusions, discard legacy readiness state, and require official-source and qualified-counsel verification.
+- PREVENTION: Legal, tax, immigration, and compliance status requires an authoritative receipt or qualified review. Checkbox completion may describe organization progress only.
+
+## 2026-08-08 — Local progress and a durable draft are not external completion
+
+**SEVERITY:** Critical (users could trust uploads, indexing, and purchase links that did not exist)
+
+- BUG: Timers, log lines, locally constructed files, and Firestore draft IDs were converted into upload success, RAG indexing, active commerce state, and public URLs.
+- FIX: Require a real persistence adapter before showing upload progress; remove nonexistent indexing; store incomplete artifacts as unpublished drafts with explicit missing capabilities and no URL.
+- PREVENTION: Status must name the operation actually confirmed. Publication, indexing, checkout, payment, fulfillment, and durability each require their own verifiable receipt and cannot be inferred from an earlier local step.
+
+## 2026-08-08 — Period comparisons and account transitions must preserve population identity
+
+**SEVERITY:** High (financial change and post-switch dashboard state could describe the wrong account or denominator)
+
+- BUG: Current revenue combined three collections while the previous period queried one, and failed refreshes could retain values loaded for the previous UID.
+- FIX: Compare the same source set across both periods, clear owner-scoped state before initial/account-switch loads, and render signed-out and failed states explicitly.
+- PREVENTION: Comparative metrics require identical populations, filters, currencies, and time semantics. Any owner identity change invalidates all previously loaded owner-scoped state before the next request begins.

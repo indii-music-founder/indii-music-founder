@@ -1,6 +1,5 @@
 import React from 'react';
 import { useMobile } from '@/hooks/useMobile';
-import { useResponsiveLayout } from '@/providers/ResponsiveLayoutProvider';
 import { cn } from '@/lib/utils';
 
 interface MobileAdaptiveLayoutProps {
@@ -27,14 +26,12 @@ export const MobileAdaptiveLayout: React.FC<MobileAdaptiveLayoutProps> = ({
   showOnlyOn,
 }) => {
   const mobile = useMobile();
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const layout = useResponsiveLayout();
 
   // Determine visibility
   const isHidden =
-    hideOnPhone ||
-    hideOnTablet ||
-    hideOnDesktop ||
+    (hideOnPhone === true && mobile.isAnyPhone) ||
+    (hideOnTablet === true && mobile.isTablet) ||
+    (hideOnDesktop === true && mobile.isDesktop) ||
     (showOnlyOn === 'phone' && !mobile.isAnyPhone) ||
     (showOnlyOn === 'tablet' && mobile.deviceType !== 'tablet') ||
     (showOnlyOn === 'desktop' && !mobile.isDesktop);
@@ -124,13 +121,34 @@ export const ResponsiveGrid: React.FC<ResponsiveGridProps> = ({
 }) => {
   const mobile = useMobile();
 
+  // Tailwind cannot discover runtime-built class names such as
+  // `grid-cols-${count}`. Keep the complete allowlist literal so every
+  // supported column class is emitted in production builds.
+  const columnClass = (count: number | undefined): string => {
+    const classes: Record<number, string> = {
+      1: 'grid-cols-1',
+      2: 'grid-cols-2',
+      3: 'grid-cols-3',
+      4: 'grid-cols-4',
+      5: 'grid-cols-5',
+      6: 'grid-cols-6',
+      7: 'grid-cols-7',
+      8: 'grid-cols-8',
+      9: 'grid-cols-9',
+      10: 'grid-cols-10',
+      11: 'grid-cols-11',
+      12: 'grid-cols-12',
+    };
+    return classes[count ?? 1] ?? 'grid-cols-1';
+  };
+
   let colClass = 'grid-cols-1';
   if (mobile.isPhone) {
-    colClass = `grid-cols-${cols.phone}`;
+    colClass = columnClass(cols.phone);
   } else if (mobile.isTablet) {
-    colClass = `grid-cols-${cols.tablet}`;
+    colClass = columnClass(cols.tablet);
   } else {
-    colClass = `grid-cols-${cols.desktop}`;
+    colClass = columnClass(cols.desktop);
   }
 
   return (

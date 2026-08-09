@@ -149,6 +149,26 @@ describe('RevenueService (Production Logic)', () => {
         expect(dates).toEqual(['2024-01-01', '2024-01-03', '2024-01-05']);
     });
 
+    it('compares the same revenue sources across current and previous periods', async () => {
+        const snapshot = (data: Record<string, unknown>) => ({
+            docs: [{ data: () => data }],
+            empty: false,
+        });
+
+        mocks.getDocs
+            .mockResolvedValueOnce(snapshot({ amount: 100 }))
+            .mockResolvedValueOnce(snapshot({ amount: 100 }))
+            .mockResolvedValueOnce(snapshot({ netRevenue: 200 }))
+            .mockResolvedValueOnce(snapshot({ totalAmount: 300 }))
+            .mockResolvedValueOnce(snapshot({ netRevenue: 200 }))
+            .mockResolvedValueOnce(snapshot({ totalAmount: 300 }));
+
+        const stats = await revenueService.getUserRevenueStats('user-123', '30d');
+
+        expect(stats.totalRevenue).toBe(600);
+        expect(stats.revenueChange).toBe(0);
+    });
+
     // ISSUE-1275: trendScore / productionVelocity were hardcoded to 0 and never
     // assigned, and funnelData was three zeroes — so the merch dashboard's gauges
     // showed a permanent fake "no data" state regardless of real activity.

@@ -4,7 +4,7 @@ import { db } from '@/services/firebase';
 import { collection, getDocs, limit, query } from 'firebase/firestore';
 import { wcpInstance } from '@/services/agent/WebSocketControlPlane';
 
-type HealthStatus = 'checking' | 'healthy' | 'degraded' | 'down';
+type HealthStatus = 'checking' | 'healthy' | 'degraded' | 'down' | 'unavailable';
 
 interface ServiceHealth {
     name: string;
@@ -22,6 +22,7 @@ const STATUS_CONFIG: Record<HealthStatus, {
     healthy: { icon: CheckCircle2, color: 'text-emerald-400', label: 'Healthy' },
     degraded: { icon: AlertCircle, color: 'text-yellow-400', label: 'Degraded' },
     down: { icon: XCircle, color: 'text-red-400', label: 'Down' },
+    unavailable: { icon: AlertCircle, color: 'text-slate-500', label: 'Unavailable' },
 };
 
 async function checkFirestore(): Promise<ServiceHealth> {
@@ -50,7 +51,8 @@ function checkWCP(): ServiceHealth {
 async function checkGeminiAPI(): Promise<ServiceHealth> {
     return {
         name: 'Firebase AI',
-        status: 'healthy',
+        status: 'unavailable',
+        error: 'No authenticated provider probe is implemented; health is not verified.',
     };
 }
 
@@ -99,7 +101,9 @@ export const HealthPanel: React.FC = () => {
         ? 'down'
         : services.some(s => s.status === 'degraded' || s.status === 'checking')
             ? 'degraded'
-            : 'healthy';
+            : services.some(s => s.status === 'unavailable')
+                ? 'unavailable'
+                : 'healthy';
 
     const OverallIcon = STATUS_CONFIG[overallStatus].icon;
 
@@ -109,6 +113,7 @@ export const HealthPanel: React.FC = () => {
             <div className={`flex items-center gap-2 px-3 py-2 rounded-lg border ${
                 overallStatus === 'healthy' ? 'border-emerald-800/50 bg-emerald-950/30' :
                 overallStatus === 'degraded' ? 'border-yellow-800/50 bg-yellow-950/30' :
+                overallStatus === 'unavailable' ? 'border-slate-700/50 bg-slate-900/30' :
                 'border-red-800/50 bg-red-950/30'
             }`}>
                 <OverallIcon size={16} className={STATUS_CONFIG[overallStatus].color} />

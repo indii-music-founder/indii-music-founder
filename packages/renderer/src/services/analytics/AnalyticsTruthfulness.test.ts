@@ -89,4 +89,42 @@ describe('analytics truth boundaries', () => {
         expect(health.message).toContain('before deciding whether to pause');
         expect(health.message).not.toContain('algorithmic damage');
     });
+
+    it('ignores creator and cross-platform signals that were synthetically attributed', () => {
+        const source = track(Array.from({ length: 7 }, (_, index) => point(index + 1, 100 + index * 50)));
+        source.creatorCount = 10_000;
+        source.platforms = [
+            {
+                platform: 'tiktok',
+                streams: 50_000,
+                saves: 5_000,
+                completionRate: 0.8,
+                creatorCount: 10_000,
+                isSynthetic: true,
+            },
+        ];
+        const metrics = viralScoreService.computeMetrics(source);
+
+        const patterns = growthPatternService.detectPatterns(source, metrics);
+        const alerts = growthPatternService.generateAlerts(source, metrics, 0);
+
+        expect(patterns.map(pattern => pattern.name)).not.toContain('creator_cascade');
+        expect(patterns.map(pattern => pattern.name)).not.toContain('cross_platform_feedback_loop');
+        expect(alerts.map(alert => alert.type)).not.toContain('creator_trend_detected');
+    });
+
+    it('describes popularity bands as internal comparisons, not placement eligibility', () => {
+        const source = track([]);
+        const metrics = viralScoreService.computeMetrics(source);
+        const alerts = growthPatternService.generateAlerts(source, metrics, 0, {
+            trackPopularity: 40,
+            artistPopularity: 20,
+            previousTrackPopularity: 39,
+            fetchedAt: '2026-08-08T00:00:00.000Z',
+        });
+        const milestone = alerts.find(alert => alert.type === 'popularity_milestone_reached');
+
+        expect(milestone?.message).toContain('internal 40-point comparison band');
+        expect(milestone?.message).toContain('no placement eligibility is implied');
+    });
 });

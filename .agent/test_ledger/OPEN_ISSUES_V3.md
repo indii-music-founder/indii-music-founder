@@ -1563,3 +1563,69 @@ All seven T1 sub-items built, tested against real (not mocked-away) verification
 - **Verification:** The full flowchart registry validator and the canonical `npm run ci` command pass.
 
 ---
+
+### ISSUE-1341: Compact-height layouts could hide controls or expose device-inappropriate UI
+
+- **Status:** ✅ FIXED (2026-08-08)
+- **Severity:** 🟠 HIGH
+- **Module:** Responsive layout / authentication / modal / mobile navigation / Knowledge chat
+- **Evidence:** Responsive visibility flags hid content on every device when any flag was set, runtime-generated Tailwind grid classes were absent from compiled CSS, and short phone landscape layouts could place login or modal actions below an unscrollable boundary. The mobile More drawer had no focus containment, and chat copy controls depended on hover.
+- **Resolution:** Device visibility now applies only to the named device class; grid classes are statically enumerable; login and modal surfaces scroll within `dvh`; the mobile drawer traps focus and closes on Escape; chat copy actions are visible and tappable without hover.
+- **Verification:** Focused component tests pass, and a visible Chromium run at 667×375 kept the sign-up submit action fully reachable with no console errors. Phone-class `/login`, `/privacy`, `/terms`, and `/tax-form-upload` remained on their intended routes.
+
+---
+
+### ISSUE-1342: Workspace sync could overwrite cloud state after failed hydration or an account switch
+
+- **Status:** ✅ FIXED (2026-08-08)
+- **Severity:** 🔴 CRITICAL
+- **Module:** Workspace synchronization
+- **Evidence:** An unauthenticated or failed Firestore pull returned the same `null` used for a genuinely missing snapshot. The hook then marked itself hydrated and enabled debounced writes, so stale local state could become authoritative. Hydration was process-wide rather than user-scoped, and pushes were not awaited before marking their timestamp.
+- **Resolution:** Authentication and Firestore errors now propagate. Pushes remain paused until the active UID has completed a successful pull, hydration state resets on account change, retries are bounded and resume on reconnect, pending changes are retained, and a push timestamp advances only after the write succeeds.
+- **Verification:** Eleven focused sync regressions pass, including unauthenticated and Firestore read/write failures; monorepo TypeScript passes.
+
+---
+
+### ISSUE-1343: Analytics relabeled listener, channel, and engagement data as artist-track performance
+
+- **Status:** ✅ FIXED (2026-08-08)
+- **Severity:** 🔴 CRITICAL
+- **Module:** Growth Intelligence / Spotify / YouTube / TikTok / Instagram / Apple Music
+- **Evidence:** The signed-in listener's Spotify top tracks became the artist catalogue, while YouTube channel and TikTok/Instagram account totals were allocated across those tracks. Likes and shares were relabeled as saves, completion was inferred from arbitrary duration assumptions, lifetime totals were assigned to upload dates, and neighboring geography ranks were presented as growth.
+- **Resolution:** Owner-scoped proprietary releases are now the only track catalogue. Unsupported track attribution remains explicitly unavailable; no account totals are prorated. Provider services retain only metrics their APIs actually report, unavailable history/geography remains empty or nullable, synthetic signals cannot trigger patterns, and popularity bands no longer imply editorial or algorithmic placement authority.
+- **Verification:** Ten analytics truth/attribution/provider boundary tests pass, and the affected dashboards render unavailable states instead of numeric zeroes or estimates.
+
+---
+
+### ISSUE-1344: Financial and health dashboards converted missing or incomparable evidence into status
+
+- **Status:** ✅ FIXED (2026-08-08)
+- **Severity:** 🟠 HIGH
+- **Module:** Publishing earnings / customizable analytics / operational health
+- **Evidence:** Revenue by platform and territory was allocated by fixed industry shares, market-penetration bubbles were fabricated, and Firebase AI appeared healthy without a probe. The 30-day revenue delta combined three current sources but compared them with only the prior generic-revenue collection. A failed account-switch refresh could leave the previous account's values visible.
+- **Resolution:** Unsupported publishing breakdowns remain empty and are labeled unavailable; market-penetration claims were removed; unprobed AI health is unavailable. Period deltas compare the same three source populations, initial/account-switch loads clear prior values, failures are visible, and signed-out users do not receive a zero-valued account dashboard.
+- **Verification:** Thirteen focused health, publishing, dashboard-account-boundary, and revenue-comparison tests pass; lint and TypeScript pass.
+
+---
+
+### ISSUE-1345: Visa planning UI presented static guidance as current legal readiness
+
+- **Status:** ✅ FIXED (2026-08-08)
+- **Severity:** 🔴 CRITICAL
+- **Module:** Touring / visa planning
+- **Evidence:** Hard-coded visa categories, document requirements, processing expectations, and AI-generated recommendations could be checked off into a “Tour Ready” outcome without jurisdiction, nationality, itinerary, counsel, filing, or government evidence.
+- **Resolution:** The surface is now a generic planning organizer, removes prescriptive legal claims and processing promises, labels completion “Planning Complete · Verification Pending,” and explicitly requires qualified counsel and official sources. Legacy locally stored readiness claims are discarded during migration.
+- **Verification:** Focused migration and copy-boundary tests pass; renderer TypeScript passes.
+
+---
+
+### ISSUE-1346: Selection, draft persistence, and placeholders were reported as completed external operations
+
+- **Status:** ✅ FIXED (2026-08-08)
+- **Severity:** 🔴 CRITICAL
+- **Module:** Shared file picker / agent Wiki / artifact drops / identifier fallbacks
+- **Evidence:** Selecting a file started a timed progress animation and success callback without any persistence adapter. Wiki writes logged a RAG vector-store sync after only constructing a browser `File`. Artifact drops were stored as `active` and returned an invented public purchase URL despite having no publication, checkout, inventory, accepted license, payment, or fulfillment path. Two public identifiers fell back to `Math.random()`.
+- **Resolution:** Selection-only callers never enter upload state; the legacy progress path requires an explicit adapter and cleans up timers. Wiki errors propagate and the fake RAG step is removed. Artifact drops persist as `draft_unpublished` with no URL and explicit capability flags. Public identifier fallbacks use cryptographically secure random bytes.
+- **Verification:** Nineteen focused file-picker, Wiki, and artifact regressions pass, including fail-closed reads and no fabricated progress or live-commerce result.
+
+---

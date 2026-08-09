@@ -54,7 +54,7 @@ export function Modal({ isOpen, onClose, titleId, children, maxWidth = 'max-w-2x
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm overscroll-contain"
+                    className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto p-4 bg-black/70 backdrop-blur-sm overscroll-contain sm:items-center"
                     onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
                 >
                     <motion.div
@@ -63,7 +63,7 @@ export function Modal({ isOpen, onClose, titleId, children, maxWidth = 'max-w-2x
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.95, y: 20 }}
                         transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-                        className={`w-full ${maxWidth} bg-slate-900 border border-white/10 rounded-2xl shadow-2xl overflow-hidden ${className}`}
+                        className={`my-auto max-h-[calc(100dvh-2rem)] w-full ${maxWidth} overflow-x-hidden overflow-y-auto overscroll-contain rounded-2xl border border-white/10 bg-slate-900 shadow-2xl ${className}`}
                     >
                         {children}
                     </motion.div>

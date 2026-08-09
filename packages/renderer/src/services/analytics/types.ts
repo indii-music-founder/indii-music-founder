@@ -6,6 +6,7 @@ export type Platform =
     | 'spotify'
     | 'apple_music'
     | 'tiktok'
+    | 'youtube'
     | 'youtube_shorts'
     | 'instagram_reels';
 
@@ -51,7 +52,11 @@ export interface PlatformData {
     completionRate: number; // 0-1
     creatorCount?: number;
     isSynthetic?: boolean;
-    syntheticLabel?: string;  // TikTok / Reels creators using audio
+    syntheticLabel?: string;
+    metricsUnavailable?: boolean;
+    savesUnavailable?: boolean;
+    completionUnavailable?: boolean;
+    sourceLabel?: string;
 }
 
 export interface RegionData {
@@ -59,7 +64,8 @@ export interface RegionData {
     country: string;
     flag: string;
     streams: number;
-    growthRate: number; // percentage change week-over-week
+    /** Percentage change week-over-week when comparable provider periods exist. */
+    growthRate: number | null;
 }
 
 export interface TrackAnalytics {
@@ -186,23 +192,24 @@ export interface PopularityScores {
 }
 
 /**
- * Popularity score milestones that trigger major Spotify algorithmic boosts.
- * Crossing these thresholds unlocks Discover Weekly, Radio, and Autoplay placements.
+ * Internal reporting bands for Spotify's public popularity score. Spotify does
+ * not publish placement thresholds, so these bands must never be presented as
+ * eligibility or algorithmic-placement guarantees.
  */
 export interface PopularityMilestone {
     threshold: number;              // 20, 30, 40, 50, 60, 70
     label: string;                  // Human-readable label
-    algorithmicEffect: string;      // What unlocks at this threshold
+    reviewNote: string;
 }
 
 /**
  * The defined milestones for the indii Growth Protocol.
  */
 export const POPULARITY_MILESTONES: PopularityMilestone[] = [
-    { threshold: 20, label: 'Emerging', algorithmicEffect: 'Eligible for algorithmic playlist consideration and Radio seeding.' },
-    { threshold: 30, label: 'Rising', algorithmicEffect: 'Discover Weekly inclusion begins. Autoplay candidate in related artist sessions.' },
-    { threshold: 40, label: 'Momentum', algorithmicEffect: 'Increased Radio rotation. Daily Mix inclusion. Release Radar boost.' },
-    { threshold: 50, label: 'Breakout', algorithmicEffect: 'Editorial playlist consideration. Top-of-genre algorithmic placements.' },
-    { threshold: 60, label: 'Mainstream', algorithmicEffect: 'Cross-genre algorithmic exposure. High-traffic editorial playlist eligible.' },
-    { threshold: 70, label: 'Major', algorithmicEffect: 'Maximum algorithmic amplification. Featured artist recommendations.' },
+    { threshold: 20, label: 'Band 20', reviewNote: 'Internal comparison band only; no placement eligibility is implied.' },
+    { threshold: 30, label: 'Band 30', reviewNote: 'Internal comparison band only; no placement eligibility is implied.' },
+    { threshold: 40, label: 'Band 40', reviewNote: 'Internal comparison band only; no placement eligibility is implied.' },
+    { threshold: 50, label: 'Band 50', reviewNote: 'Internal comparison band only; no placement eligibility is implied.' },
+    { threshold: 60, label: 'Band 60', reviewNote: 'Internal comparison band only; no placement eligibility is implied.' },
+    { threshold: 70, label: 'Band 70', reviewNote: 'Internal comparison band only; no placement eligibility is implied.' },
 ];

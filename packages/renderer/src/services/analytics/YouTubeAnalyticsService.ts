@@ -408,21 +408,15 @@ export class YouTubeAnalyticsService {
         const dailyAnalytics = await this.getChannelDailyAnalytics(channelId);
 
         const totalViews = dailyAnalytics.reduce((s, d) => s + d.views, 0);
-        const totalWatchMinutes = dailyAnalytics.reduce((s, d) => s + d.watchMinutes, 0);
-        const totalLikes = dailyAnalytics.reduce((s, d) => s + d.likes, 0);
-
-        // Estimate completion rate from watch time / (views * avg video duration)
-        // Without per-video data we approximate from channel's average video length
-        const avgVideoMinutes = 4; // typical music video length
-        const completionRate = totalViews > 0
-            ? Math.min(totalWatchMinutes / (totalViews * avgVideoMinutes), 1)
-            : 0;
 
         return {
-            platform: 'youtube_shorts',
+            platform: 'youtube',
             streams: totalViews,
-            saves: totalLikes, // likes ≈ saves in YouTube context
-            completionRate,
+            saves: 0,
+            completionRate: 0,
+            savesUnavailable: true,
+            completionUnavailable: true,
+            sourceLabel: 'Views are provider-reported channel activity; saves and completion rate are not supplied by this query.',
         };
     }
 
@@ -443,7 +437,7 @@ export class YouTubeAnalyticsService {
             history.push({
                 date: dateStr,
                 streams: day?.views ?? 0,
-                saves: day?.likes ?? 0,
+                saves: 0,
                 completions: 0, // requires per-video audience retention data
                 uniqueListeners: 0, // not exposed by YT Analytics
                 shares: 0,
@@ -459,8 +453,6 @@ export class YouTubeAnalyticsService {
      */
     async buildRegionData(channelId: string): Promise<RegionData[]> {
         const geo = await this.getGeographicBreakdown(channelId);
-        const totalViews = geo.reduce((s, g) => s + g.views, 0);
-
         const countryMeta: Record<string, { region: string; flag: string }> = {
             US: { region: 'North America', flag: '🇺🇸' },
             GB: { region: 'Europe',        flag: '🇬🇧' },
@@ -478,19 +470,17 @@ export class YouTubeAnalyticsService {
             ES: { region: 'Europe',        flag: '🇪🇸' },
         };
 
-        return geo.slice(0, 8).map((g, i) => {
+        return geo.slice(0, 8).map((g) => {
             const meta = countryMeta[g.country] ?? { region: 'Other', flag: '🌍' };
-            const prevShare = i > 0 ? geo[i - 1]!.views / totalViews : g.views / totalViews;
-            const currShare = g.views / totalViews;
-            // Approximate week-over-week growth (not directly available from this endpoint)
-            const growthRate = ((currShare - prevShare) / Math.max(prevShare, 0.001)) * 100;
 
             return {
                 region: meta.region,
                 country: g.country,
                 flag: meta.flag,
                 streams: g.views,
-                growthRate: Math.round(growthRate * 10) / 10,
+                // This endpoint supplies one period. Ranked neighbors are not
+                // previous time periods, so no growth claim can be derived.
+                growthRate: null,
             };
         });
     }

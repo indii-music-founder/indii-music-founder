@@ -23,6 +23,7 @@ import {
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { motion, AnimatePresence } from 'motion/react';
 import { getColorForModule } from '@/core/theme/moduleColors';
+import { logger } from '@/utils/logger';
 
 export const CustomizableAnalyticsDashboard: React.FC = () => {
     const userId = useStore(s => s.user?.uid);
@@ -41,15 +42,40 @@ export const CustomizableAnalyticsDashboard: React.FC = () => {
 
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
+    const [loadError, setLoadError] = useState<string | null>(null);
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [, setIsRefreshing] = useState(false);
-    const [, setIsRealData] = useState(false);
 
     // Load real database data
     const loadRealData = async (isManualRefresh = false) => {
-        if (!userId) return;
-        if (isManualRefresh) setRefreshing(true);
-        else setLoading(true);
+        if (!userId) {
+            setCurrentTier('free');
+            setTierLimits(null);
+            setDailyUsage(null);
+            setRevenueStats(null);
+            setEarningsSummary(null);
+            setExpenses([]);
+            setFinanceSummary(null);
+            setCatalogue([]);
+            setLoadError(null);
+            setLoading(false);
+            setRefreshing(false);
+            return;
+        }
+        setLoadError(null);
+        if (isManualRefresh) {
+            setRefreshing(true);
+        } else {
+            setCurrentTier('free');
+            setTierLimits(null);
+            setDailyUsage(null);
+            setRevenueStats(null);
+            setEarningsSummary(null);
+            setExpenses([]);
+            setFinanceSummary(null);
+            setCatalogue([]);
+            setLoading(true);
+        }
 
         try {
             // 1. Quota limits and membership tier
@@ -62,7 +88,7 @@ export const CustomizableAnalyticsDashboard: React.FC = () => {
             const usageObj = await MembershipService.getDailyUsage(userId);
             setDailyUsage(usageObj);
 
-            // 3. actual Stripe-based billing ledgers (earnings, expenses, payouts)
+            // 3. Owner-scoped Firestore revenue, earnings, expense, and payout records
             const stats = await revenueService.getUserRevenueStats(userId, '30d');
             setRevenueStats(stats);
 
@@ -78,12 +104,9 @@ export const CustomizableAnalyticsDashboard: React.FC = () => {
             const tracks = await platformDataService.buildCatalogue();
             setCatalogue(tracks);
 
-            // Detect if Firestore/Stripe databases actually have data or if they are blank (new user / sandbox)
-            const hasData = (stats?.totalRevenue > 0) || (expenseList.length > 0) || (usageObj.imagesGenerated > 0) || (tracks.length > 0);
-            setIsRealData(hasData);
-
-        } catch (_error) {
-            console.error('Analytics dashboard refresh failed:', _error);
+        } catch (error: unknown) {
+            logger.error('[CustomizableAnalyticsDashboard] Refresh failed:', error);
+            setLoadError(error instanceof Error ? error.message : 'Dashboard data could not be loaded.');
         } finally {
             setLoading(false);
             setRefreshing(false);
@@ -107,8 +130,19 @@ export const CustomizableAnalyticsDashboard: React.FC = () => {
     const netProfit = totalEarnings - totalExpenses;
 
     const totalStreams = catalogue.reduce((sum, t) => sum + t.totalStreams, 0);
+    const hasModeledActivity = catalogue.some(track => track.platforms.some(platform => platform.isSynthetic));
+    const allTrackActivityUnavailable = catalogue.length > 0
+        && catalogue.every(track => track.platforms.every(platform => platform.metricsUnavailable === true));
 
     const moduleColor = getColorForModule('analytics');
+
+    if (!userId && !loading) {
+        return (
+            <div className="flex min-h-64 items-center justify-center rounded-xl border border-white/5 bg-[#090d13] p-6 text-center text-sm text-slate-400">
+                Sign in to load your owner-scoped analytics and financial records.
+            </div>
+        );
+    }
 
     return (
         <div className="p-6 bg-[#090d13] text-slate-100 min-h-screen rounded-xl border border-white/5 shadow-2xl relative overflow-hidden">
@@ -128,7 +162,7 @@ export const CustomizableAnalyticsDashboard: React.FC = () => {
                                 Customizable Dashboard
                             </h2>
                             <p className="text-xs text-slate-400 mt-1">
-                                Comprehensive real-time analysis across Stripe financial ledger, user usage quotas, and database systems.
+                                Latest available owner-scoped financial records, usage quotas, and provider analytics.
                             </p>
                         </div>
                     </div>
@@ -141,7 +175,7 @@ export const CustomizableAnalyticsDashboard: React.FC = () => {
                         className="flex items-center gap-2 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs font-semibold rounded-lg border border-white/10 text-slate-300 hover:text-white transition-all disabled:opacity-50"
                     >
                         <RefreshCw size={12} className={refreshing ? 'animate-spin' : ''} />
-                        Sync Real DB
+                        Refresh Data
                     </button>
                     <div className={`flex items-center gap-1.5 px-3 py-1 ${moduleColor.bg} border ${moduleColor.border} rounded-lg text-[11px] font-bold ${moduleColor.text}`}>
                         <Sparkles size={11} className={moduleColor.text} />
@@ -153,10 +187,16 @@ export const CustomizableAnalyticsDashboard: React.FC = () => {
             {loading ? (
                 <div className="h-64 flex flex-col items-center justify-center text-slate-500 gap-3">
                     <Zap size={32} className={`${moduleColor.text} animate-bounce`} />
-                    <p className="text-xs font-mono">Quarrying Firestore & Stripe metrics...</p>
+                    <p className="text-xs font-mono">Loading owner-scoped records...</p>
                 </div>
             ) : (
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 relative z-10">
+                <>
+                    {loadError && (
+                        <div role="alert" className="relative z-10 mb-4 rounded-xl border border-red-500/20 bg-red-500/10 p-3 text-xs text-red-300">
+                            Refresh failed: {loadError}. Existing values may be stale; signed-out or account-switched values are cleared.
+                        </div>
+                    )}
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 relative z-10">
 
                     {/* ────────────────────────────────────────────────────────
                         1. Financial Performance Ledger Widget (Stripe Data)
@@ -166,9 +206,9 @@ export const CustomizableAnalyticsDashboard: React.FC = () => {
                             <div>
                                 <h3 className="font-semibold text-white font-mono text-sm flex items-center gap-2">
                                     <Coins size={16} className={moduleColor.text} />
-                                    Stripe Financial Performance
+                                    Recorded Financial Performance
                                 </h3>
-                                <p className="text-[10px] text-slate-400 mt-0.5">Real earnings, expenses, and ledger payouts</p>
+                                <p className="text-[10px] text-slate-400 mt-0.5">Owner-scoped revenue, expense, and payout records</p>
                             </div>
                             <span className={`text-[10px] uppercase font-mono px-2 py-0.5 rounded ${moduleColor.bg} border ${moduleColor.border} ${moduleColor.text}`}>
                                 30-Day Period
@@ -431,10 +471,14 @@ export const CustomizableAnalyticsDashboard: React.FC = () => {
                                     <Activity size={16} className={moduleColor.text} />
                                     Cross-Platform Streaming Analytics
                                 </h3>
-                                <p className="text-[10px] text-slate-400 mt-0.5">Aggregated metrics from Spotify, YouTube, TikTok</p>
+                                <p className="text-[10px] text-slate-400 mt-0.5">
+                                    Connected-source activity; unsupported track metrics remain unavailable
+                                </p>
                             </div>
                             <span className={`text-[10px] uppercase font-mono px-2 py-0.5 rounded ${moduleColor.bg} border ${moduleColor.border} ${moduleColor.text}`}>
-                                {totalStreams.toLocaleString('en-US')} Total Streams
+                                {allTrackActivityUnavailable
+                                    ? 'Track Performance Unavailable'
+                                    : `${hasModeledActivity ? '≈ ' : ''}${totalStreams.toLocaleString('en-US')} ${hasModeledActivity ? 'Modeled Plays / Views' : 'Provider-Reported Streams'}`}
                             </span>
                         </div>
 
@@ -457,12 +501,24 @@ export const CustomizableAnalyticsDashboard: React.FC = () => {
                                         </div>
                                         <div className="flex justify-between items-end border-t border-white/5 pt-3 mt-3">
                                             <div className="flex flex-col">
-                                                <span className="text-[10px] text-slate-500 uppercase font-mono">Streams</span>
-                                                <span className="text-sm font-bold text-emerald-400 font-mono">{track.totalStreams.toLocaleString('en-US')}</span>
+                                                <span className="text-[10px] text-slate-500 uppercase font-mono">
+                                                    {track.platforms.every(platform => platform.metricsUnavailable === true)
+                                                        ? 'Track Plays / Views'
+                                                        : track.platforms.some(platform => platform.isSynthetic) ? 'Modeled Plays / Views' : 'Streams'}
+                                                </span>
+                                                <span className="text-sm font-bold text-emerald-400 font-mono">
+                                                    {track.platforms.every(platform => platform.metricsUnavailable === true)
+                                                        ? 'Unavailable'
+                                                        : `${track.platforms.some(platform => platform.isSynthetic) ? '≈ ' : ''}${track.totalStreams.toLocaleString('en-US')}`}
+                                                </span>
                                             </div>
                                             <div className="flex flex-col text-right">
                                                 <span className="text-[10px] text-slate-500 uppercase font-mono">Creators</span>
-                                                <span className="text-sm font-bold text-indigo-400 font-mono">{track.creatorCount.toLocaleString('en-US')}</span>
+                                                <span className="text-sm font-bold text-indigo-400 font-mono">
+                                                    {track.platforms.every(platform => platform.metricsUnavailable === true)
+                                                        ? '—'
+                                                        : track.creatorCount.toLocaleString('en-US')}
+                                                </span>
                                             </div>
                                         </div>
                                     </div>
@@ -476,7 +532,8 @@ export const CustomizableAnalyticsDashboard: React.FC = () => {
                         )}
                     </div>
 
-                </div>
+                    </div>
+                </>
             )}
         </div>
     );

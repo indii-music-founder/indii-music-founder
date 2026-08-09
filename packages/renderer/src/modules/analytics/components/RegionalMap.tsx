@@ -15,7 +15,8 @@ export const RegionalMap: React.FC<RegionalMapProps> = ({ regions, totalStreams 
         <div className="space-y-2">
             {sorted.map((region, i) => {
                 const share = totalStreams > 0 ? region.streams / totalStreams : 0;
-                const isGrowing = region.growthRate > 0;
+                const hasGrowth = region.growthRate !== null;
+                const isGrowing = (region.growthRate ?? 0) > 0;
 
                 return (
                     <motion.div
@@ -29,14 +30,20 @@ export const RegionalMap: React.FC<RegionalMapProps> = ({ regions, totalStreams 
                         <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between mb-1">
                                 <span className="text-xs text-slate-300 font-medium truncate">{region.country}</span>
-                                <div className="flex items-center gap-1 shrink-0 ml-2">
-                                    {isGrowing
-                                        ? <TrendingUp size={10} className="text-emerald-400" />
-                                        : <TrendingDown size={10} className="text-red-400" />
-                                    }
-                                    <span className={`text-xs font-semibold ${isGrowing ? 'text-emerald-400' : 'text-red-400'}`}>
-                                        {isGrowing ? '+' : ''}{region.growthRate.toFixed(0)}%
-                                    </span>
+                                <div className="flex shrink-0 items-center gap-1 ml-2">
+                                    {hasGrowth ? (
+                                        <>
+                                            {isGrowing
+                                                ? <TrendingUp size={10} className="text-emerald-400" />
+                                                : <TrendingDown size={10} className="text-red-400" />
+                                            }
+                                            <span className={`text-xs font-semibold ${isGrowing ? 'text-emerald-400' : 'text-red-400'}`}>
+                                                {isGrowing ? '+' : ''}{region.growthRate?.toFixed(0)}%
+                                            </span>
+                                        </>
+                                    ) : (
+                                        <span className="text-[10px] font-medium text-slate-500">Trend unavailable</span>
+                                    )}
                                 </div>
                             </div>
                             <div className="flex items-center gap-2">

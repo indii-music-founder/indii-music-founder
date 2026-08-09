@@ -1,5 +1,5 @@
 /**
- * GrowthPattingestionNotificationService — Detects viral growth patterns in streaming data.
+ * GrowthPatternService — Detects growth patterns in available analytics data.
  *
  * Each detector analyzes the 30-day stream history and cross-platform signals
  * to identify which growth archetype best describes the track's trajectory.
@@ -24,42 +24,42 @@ import { v4 as uuidv4 } from 'uuid';
 const PATTERN_META: Record<GrowthPatternName, { label: string; description: string; icon: string }> = {
     slow_burn_growth: {
         label: 'Slow Burn Growth',
-        description: 'Gradual week-over-week expansion before a major inflection point.',
+        description: 'Gradual week-over-week expansion in the available sample.',
         icon: '🕯️',
     },
     '72_hour_spike': {
         label: '72-Hour Spike',
-        description: 'Sharp release-day spike followed by stabilization — algorithm testing signal.',
+        description: 'Sharp early-window activity change followed by stabilization in the available sample.',
         icon: '⚡',
     },
     creator_cascade: {
         label: 'Creator Cascade',
-        description: 'Audio adoption spreading from micro-creators to major influencers.',
+        description: 'Provider-reported creator usage is above the internal review threshold.',
         icon: '🌊',
     },
     regional_spark: {
         label: 'Regional Spark',
-        description: 'Breakout originating in a concentrated geographic region.',
+        description: 'The available activity is concentrated in one region with a comparable-period increase.',
         icon: '📍',
     },
     playlist_ladder: {
         label: 'Playlist Ladder',
-        description: 'Track climbing from user-generated playlists to algorithmic and editorial placement.',
+        description: 'Playlist-addition activity is above the internal review threshold; placement type is unknown.',
         icon: '📋',
     },
     algorithm_cluster_expansion: {
         label: 'Algorithm Cluster Expansion',
-        description: 'Song spreading from a tight core fanbase to broader listener clusters via recommendations.',
+        description: 'Internal engagement heuristic; provider recommendation attribution is not verified.',
         icon: '🤖',
     },
     weekend_amplification: {
         label: 'Weekend Amplification',
-        description: 'Consistent streaming spikes on Friday–Sunday indicating high social discovery.',
+        description: 'The available sample shows higher average activity from Friday through Sunday.',
         icon: '📅',
     },
     cross_platform_feedback_loop: {
         label: 'Cross-Platform Feedback Loop',
-        description: 'Social platform virality (TikTok/Reels) directly amplifying streaming numbers.',
+        description: 'Provider-reported social activity and track velocity are elevated in the same sample; causation is not established.',
         icon: '🔄',
     },
 };
@@ -126,7 +126,7 @@ export class GrowthPatternService {
                 id: uuidv4(),
                 type: 'rapid_velocity_growth' as AlertType,
                 title: 'Rapid Velocity Detected',
-                message: `Streams growing at ${(metrics.velocity * 100 - 100).toFixed(0)}% day-over-day. Submit to editorial playlists immediately.`,
+                message: `Observed activity changed by ${(metrics.velocity * 100 - 100).toFixed(0)}% day-over-day in the available sample. Verify source coverage and attribution before making campaign decisions.`,
                 severity: 'warning',
                 timestamp: now,
                 trackId: track.trackId,
@@ -135,12 +135,15 @@ export class GrowthPatternService {
         }
 
         // Alert 3: Creator adoption spike (> 500 creators)
-        if (track.creatorCount >= 500) {
+        const verifiedCreatorCount = track.platforms
+            .filter(platform => platform.isSynthetic !== true)
+            .reduce((sum, platform) => sum + (platform.creatorCount ?? 0), 0);
+        if (verifiedCreatorCount >= 500) {
             alerts.push({
                 id: uuidv4(),
                 type: 'creator_trend_detected' as AlertType,
                 title: 'Creator Trend Detected',
-                message: `${track.creatorCount.toLocaleString('en-US')} creators are using "${track.trackName}" as audio. Peak social exposure window is now.`,
+                message: `${verifiedCreatorCount.toLocaleString('en-US')} provider-reported creators are using "${track.trackName}" as audio. Review freshness and attribution before acting.`,
                 severity: 'warning',
                 timestamp: now,
                 trackId: track.trackId,
@@ -163,8 +166,8 @@ export class GrowthPatternService {
                             id: uuidv4(),
                             type: 'popularity_milestone_reached' as AlertType,
                             title: `Popularity ${milestone.label}: Score ${milestone.threshold}+`,
-                            message: `"${track.trackName}" crossed the ${milestone.threshold}-point popularity threshold! ${milestone.algorithmicEffect}`,
-                            severity: milestone.threshold >= 50 ? 'critical' : 'warning',
+                            message: `"${track.trackName}" crossed indii's internal ${milestone.threshold}-point comparison band. ${milestone.reviewNote}`,
+                            severity: 'warning',
                             timestamp: now,
                             trackId: track.trackId,
                             trackName: track.trackName,
@@ -179,7 +182,7 @@ export class GrowthPatternService {
                         id: uuidv4(),
                         type: 'popularity_score_tapering' as AlertType,
                         title: 'Popularity Score Tapering',
-                        message: `"${track.trackName}" popularity dropped ${Math.abs(delta)} points (${previousTrackPopularity} → ${trackPopularity}). Increase ad spend or organic push to prevent further decline.`,
+                        message: `"${track.trackName}" popularity dropped ${Math.abs(delta)} points (${previousTrackPopularity} → ${trackPopularity}). Review source freshness and campaign context; this score alone does not authorize spend changes.`,
                         severity: 'warning',
                         timestamp: now,
                         trackId: track.trackId,
@@ -194,8 +197,8 @@ export class GrowthPatternService {
 
     /**
      * indii Growth Protocol: Check if the 72-hour spike pattern was detected
-     * and generate an auto-dispatch alert to the Marketing Agent to sustain
-     * ad spend and prevent score tapering.
+     * and generate a review-only alert. The heuristic cannot dispatch work or
+     * authorize ad spend.
      *
      * This should be called after `detectPatterns()` returns results.
      */
@@ -209,11 +212,10 @@ export class GrowthPatternService {
         return {
             id: uuidv4(),
             type: 'spike_72h_sustain_needed' as AlertType,
-            title: '72-Hour Spike Detected — Sustain Required',
+            title: '72-Hour Activity Pattern — Review Required',
             message: `"${track.trackName}" triggered the 72-hour spike pattern (confidence: ${(spikePattern.confidence * 100).toFixed(0)}%). ` +
-                `DISPATCH TO MARKETING AGENT: Sustain ad spend at minimum viable floor for the next 7 days to prevent popularity score tapering. ` +
-                `Do NOT cut spend abruptly — taper gradually while monitoring daily velocity.`,
-            severity: 'critical',
+                `Verify the source window and campaign attribution before deciding whether any marketing change is appropriate. No spend action has been dispatched.`,
+            severity: 'warning',
             timestamp: new Date().toISOString(),
             trackId: track.trackId,
             trackName: track.trackName,
@@ -273,8 +275,8 @@ export class GrowthPatternService {
     }
 
     private _detectCreatorCascade(track: TrackAnalytics): DetectedPattern | null {
-        const tiktok = track.platforms.find(p => p.platform === 'tiktok');
-        const reels = track.platforms.find(p => p.platform === 'instagram_reels');
+        const tiktok = track.platforms.find(p => p.platform === 'tiktok' && p.isSynthetic !== true);
+        const reels = track.platforms.find(p => p.platform === 'instagram_reels' && p.isSynthetic !== true);
         const totalCreators = (tiktok?.creatorCount ?? 0) + (reels?.creatorCount ?? 0);
 
         if (totalCreators >= 200) {
@@ -291,7 +293,7 @@ export class GrowthPatternService {
         const topShare = total > 0 ? top.streams / total : 0;
 
         // One region dominates AND is growing fast
-        if (topShare >= 0.45 && top.growthRate >= 25) {
+        if (top.growthRate !== null && topShare >= 0.45 && top.growthRate >= 25) {
             const confidence = Math.min(0.90, 0.5 + topShare * 0.6 + top.growthRate / 200);
             return this._build('regional_spark', confidence);
         }
@@ -329,10 +331,13 @@ export class GrowthPatternService {
 
     private _detectCrossPlatformFeedback(track: TrackAnalytics, metrics: ComputedMetrics): DetectedPattern | null {
         const socialPlatforms = track.platforms.filter(p =>
-            ['tiktok', 'youtube_shorts', 'instagram_reels'].includes(p.platform)
+            p.isSynthetic !== true
+            && ['tiktok', 'youtube', 'youtube_shorts', 'instagram_reels'].includes(p.platform)
         );
         const socialStreams = socialPlatforms.reduce((s, p) => s + p.streams, 0);
-        const totalStreams = track.platforms.reduce((s, p) => s + p.streams, 0);
+        const totalStreams = track.platforms
+            .filter(platform => platform.isSynthetic !== true)
+            .reduce((s, p) => s + p.streams, 0);
         const socialShare = totalStreams > 0 ? socialStreams / totalStreams : 0;
 
         if (socialShare >= 0.25 && metrics.velocity >= 1.3) {

@@ -16,37 +16,14 @@ const DEFAULT_PERIOD = (() => {
     };
 })();
 
-// Industry-average DSP revenue share (2024 IFPI Global Music Report)
-const DSP_SHARES = [
-    { label: 'Spotify',        pct: 31 },
-    { label: 'Apple Music',    pct: 15 },
-    { label: 'Amazon Music',   pct: 13 },
-    { label: 'YouTube Music',  pct:  8 },
-    { label: 'Tidal',          pct:  2 },
-    { label: 'Other DSPs',     pct: 31 },
-];
-
-// Top streaming territories by revenue share (2024 IFPI)
-const TERRITORY_SHARES = [
-    { label: 'United States',  pct: 38 },
-    { label: 'United Kingdom', pct:  8 },
-    { label: 'Germany',        pct:  6 },
-    { label: 'Japan',          pct:  5 },
-    { label: 'France',         pct:  4 },
-    { label: 'Australia',      pct:  3 },
-    { label: 'Canada',         pct:  3 },
-    { label: 'Brazil',         pct:  3 },
-    { label: 'South Korea',    pct:  2 },
-    { label: 'Rest of World',  pct: 28 },
-];
-
 export const EarningsDashboard: React.FC = () => {
     const period = DEFAULT_PERIOD;
     const moduleColor = getColorForModule('publishing');
 
     const { earnings, loading } = useEarnings(period);
 
-    // Use real byPlatform from Firestore when available; fall back to industry-average estimates
+    // Never allocate a user's revenue using industry market share. Missing
+    // provider detail remains unavailable.
     const platformBreakdown = useMemo(() => {
         if (!earnings?.totalNetRevenue) return [];
         if (earnings.byPlatform && earnings.byPlatform.length > 0) {
@@ -56,16 +33,10 @@ export const EarningsDashboard: React.FC = () => {
                 percentage: Math.round((p.revenue / earnings.totalNetRevenue) * 100),
             }));
         }
-        // Derive from industry-average market share (labeled as estimates)
-        const net = earnings.totalNetRevenue;
-        return DSP_SHARES.map(d => ({
-            label: `${d.label} (Est.)`,
-            revenue: Math.round((net * d.pct) / 100 * 100) / 100,
-            percentage: d.pct,
-        }));
+        return [];
     }, [earnings]);
 
-    // Use real byTerritory when available; fall back to industry-average territory estimates
+    // Territory detail also stays unavailable until it exists in the ledger.
     const territoryBreakdown = useMemo(() => {
         if (!earnings?.totalNetRevenue) return [];
         if (earnings.byTerritory && earnings.byTerritory.length > 0) {
@@ -75,12 +46,7 @@ export const EarningsDashboard: React.FC = () => {
                 percentage: Math.round((t.revenue / earnings.totalNetRevenue) * 100),
             }));
         }
-        const net = earnings.totalNetRevenue;
-        return TERRITORY_SHARES.map(t => ({
-            label: `${t.label} (Est.)`,
-            revenue: Math.round((net * t.pct) / 100 * 100) / 100,
-            percentage: t.pct,
-        }));
+        return [];
     }, [earnings]);
 
     return (
@@ -119,7 +85,7 @@ export const EarningsDashboard: React.FC = () => {
                             <div className="flex items-center justify-between p-3 bg-gray-900/40 rounded-xl border border-gray-800/50">
                                 <div className="flex items-center gap-2">
                                     <DollarSign size={14} className={moduleColor.text} />
-                                    <span className="text-sm text-gray-400 font-medium">Estimated Unprocessed</span>
+                                    <span className="text-sm text-gray-400 font-medium">Gross Minus Net</span>
                                 </div>
                                 <span className="text-sm font-bold text-white tracking-tight">${(earnings.totalGrossRevenue - earnings.totalNetRevenue).toFixed(2)}</span>
                             </div>
@@ -165,4 +131,3 @@ export const EarningsDashboard: React.FC = () => {
         </div>
     );
 };
-

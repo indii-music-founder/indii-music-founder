@@ -356,8 +356,10 @@ export class InstagramAnalyticsService {
                 platform: 'instagram_reels',
                 streams: 0,
                 saves: 0,
-                completionRate: 0.5,
+                completionRate: 0,
                 creatorCount: 0,
+                completionUnavailable: true,
+                sourceLabel: 'No Reels were returned; completion and audio-creator usage are unavailable.',
             };
         }
 
@@ -368,35 +370,22 @@ export class InstagramAnalyticsService {
 
         let totalPlays  = 0;
         let totalSaves  = 0;
-        let totalShares = 0;
-        let successCount = 0;
 
         for (const result of insightsResults) {
             if (result.status === 'fulfilled') {
                 totalPlays  += result.value.plays;
-                totalSaves  += result.value.saved + result.value.shares;
-                // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                totalShares += result.value.shares;
-                // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                successCount++;
+                totalSaves  += result.value.saved;
             }
         }
-
-        // Completion rate: Instagram Reels plays / impressions ratio approximates completion
-        const totalImpressions = insightsResults
-            .filter(r => r.status === 'fulfilled')
-            .reduce((s, r) => s + ((r as PromiseFulfilledResult<{ plays: number; impressions: number }>).value.impressions ?? 0), 0);
-
-        const completionRate = totalImpressions > 0
-            ? Math.min(totalPlays / totalImpressions, 1)
-            : 0.6;
 
         return {
             platform: 'instagram_reels',
             streams: totalPlays,
             saves: totalSaves,
-            completionRate,
+            completionRate: 0,
             creatorCount: 0, // Reels Audio API (restricted beta) required for creator usage count
+            completionUnavailable: true,
+            sourceLabel: 'Plays and saves are provider-reported Reel metrics; completion and audio-creator usage are unavailable.',
         };
     }
 

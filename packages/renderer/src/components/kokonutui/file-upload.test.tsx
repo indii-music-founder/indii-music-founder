@@ -51,7 +51,7 @@ describe('FileUpload', () => {
     });
 
     it('displays progress bar with correct ARIA attributes', async () => {
-        render(<FileUpload uploadDelay={500} />); // Slow down upload to capture state
+        render(<FileUpload uploadDelay={500} onUploadSuccess={vi.fn()} />); // Explicit adapter enables progress feedback
 
         const fileInput = screen.getByLabelText('File input');
         const file = new File(['test'], 'test.png', { type: 'image/png' });
@@ -66,8 +66,21 @@ describe('FileUpload', () => {
         expect(progressBar).toHaveAttribute('aria-valuenow');
     });
 
+    it('reports selection without fabricating upload progress', () => {
+        const onFilesSelected = vi.fn();
+        render(<FileUpload onFilesSelected={onFilesSelected} uploadDelay={1000} />);
+
+        const file = new File(['content'], 'selected.png', { type: 'image/png' });
+        fireEvent.change(screen.getByLabelText('File input'), {
+            target: { files: [file] },
+        });
+
+        expect(onFilesSelected).toHaveBeenCalledWith([file]);
+        expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+    });
+
     it('cancel button has accessible name', async () => {
-        render(<FileUpload uploadDelay={500} />);
+        render(<FileUpload uploadDelay={500} onUploadSuccess={vi.fn()} />);
 
         const fileInput = screen.getByLabelText('File input');
         const file = new File(['test'], 'test.png', { type: 'image/png' });
@@ -96,7 +109,7 @@ describe('FileUpload', () => {
     it('displays progress bar with role="progressbar" during upload', async () => {
         // Use fake timers to control upload progress
         vi.useFakeTimers();
-        render(<FileUpload uploadDelay={1000} />);
+        render(<FileUpload uploadDelay={1000} onUploadSuccess={vi.fn()} />);
 
         const file = new File(['content'], 'test.png', { type: 'image/png' });
         const fileInput = screen.getByLabelText('File input');
@@ -110,13 +123,15 @@ describe('FileUpload', () => {
         expect(progressBar).toHaveAttribute('aria-valuemin', '0');
         expect(progressBar).toHaveAttribute('aria-valuemax', '100');
 
-        vi.runOnlyPendingTimers();
+        act(() => {
+            vi.runOnlyPendingTimers();
+        });
         vi.useRealTimers();
     });
 
     it('cancel button has aria-label', async () => {
         vi.useFakeTimers();
-        render(<FileUpload uploadDelay={1000} />);
+        render(<FileUpload uploadDelay={1000} onUploadSuccess={vi.fn()} />);
 
         const file = new File(['content'], 'test.png', { type: 'image/png' });
         const fileInput = screen.getByLabelText('File input');

@@ -135,24 +135,23 @@ class WorkspaceSyncService {
     async pushSnapshot(snapshot: WorkspaceSnapshot): Promise<void> {
         const ref = getWorkspaceRef();
         if (!ref) {
-            logger.warn('[WorkspaceSync] No auth — cannot push snapshot');
-            return;
+            throw new Error('Workspace sync requires an authenticated user.');
         }
 
-        const doc: WorkspaceDoc = {
+        const appVersion = import.meta.env.VITE_APP_VERSION?.trim();
+        const workspaceDoc: WorkspaceDoc = {
             snapshot: stripUndefinedDeep(snapshot),
             updatedAt: serverTimestamp(),
             deviceId: getDeviceId(),
-            appVersion: typeof window !== 'undefined' && (window as any).__APP_VERSION__
-                ? (window as any).__APP_VERSION__
-                : '1.55.3',
+            ...(appVersion ? { appVersion } : {}),
         };
 
         try {
-            await setDoc(ref, doc, { merge: true });
+            await setDoc(ref, workspaceDoc, { merge: true });
             logger.info('[WorkspaceSync] 💾 Snapshot pushed successfully');
         } catch (error) {
             logger.error('[WorkspaceSync] Push failed:', error);
+            throw error;
         }
     }
 
@@ -163,8 +162,7 @@ class WorkspaceSyncService {
     async pullSnapshot(): Promise<WorkspaceDoc | null> {
         const ref = getWorkspaceRef();
         if (!ref) {
-            logger.warn('[WorkspaceSync] No auth — cannot pull snapshot');
-            return null;
+            throw new Error('Workspace sync requires an authenticated user.');
         }
 
         try {
@@ -179,7 +177,7 @@ class WorkspaceSyncService {
             return data as WorkspaceDoc;
         } catch (error) {
             logger.error('[WorkspaceSync] Pull failed:', error);
-            return null;
+            throw error;
         }
     }
 

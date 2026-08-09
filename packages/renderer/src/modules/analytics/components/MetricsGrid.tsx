@@ -7,6 +7,8 @@ import { getColorForModule } from '@/core/theme/moduleColors';
 interface MetricsGridProps {
     metrics: ComputedMetrics;
     totalStreams: number;
+    modeled?: boolean;
+    unavailable?: boolean;
 }
 
 interface MetricCardProps {
@@ -52,59 +54,63 @@ function fmtPct(val: number) { return `${(val * 100).toFixed(1)}%`; }
 function fmtNum(val: number) { return val >= 1000000 ? `${(val / 1000000).toFixed(1)}M` : val >= 1000 ? `${(val / 1000).toFixed(1)}K` : `${val}`; }
 function fmtRatio(val: number) { return `${val.toFixed(2)}x`; }
 
-export const MetricsGrid: React.FC<MetricsGridProps> = ({ metrics, totalStreams }) => {
+export const MetricsGrid: React.FC<MetricsGridProps> = ({ metrics, totalStreams, modeled = false, unavailable = false }) => {
     const cards: MetricCardProps[] = [
         {
-            label: 'Total Streams',
-            value: fmtNum(totalStreams),
-            subtitle: `Velocity ${(metrics.velocity * 100 - 100).toFixed(0)}% day/day`,
+            label: unavailable ? 'Track Plays / Views' : modeled ? 'Modeled Plays / Views' : 'Provider-Reported Streams',
+            value: unavailable ? '—' : `${modeled ? '≈ ' : ''}${fmtNum(totalStreams)}`,
+            subtitle: unavailable
+                ? 'Unavailable from the connected source'
+                : modeled
+                ? 'Popularity/account allocation; not a royalty statement'
+                : `Velocity ${(metrics.velocity * 100 - 100).toFixed(0)}% day/day`,
             icon: BarChart2,
-            trend: metrics.velocity >= 1.05 ? 'up' : metrics.velocity <= 0.95 ? 'down' : 'neutral',
+            trend: unavailable ? 'neutral' : metrics.velocity >= 1.05 ? 'up' : metrics.velocity <= 0.95 ? 'down' : 'neutral',
             color: 'bg-blue-500/20',
             delay: 0,
         },
         {
             label: 'Save Rate',
-            value: fmtPct(metrics.saveRate),
-            subtitle: metrics.saveRate >= 0.08 ? 'Above avg (>8%)' : 'Below avg (<8%)',
+            value: unavailable ? '—' : fmtPct(metrics.saveRate),
+            subtitle: unavailable ? 'Unavailable from the connected source' : metrics.saveRate >= 0.08 ? 'Above avg (>8%)' : 'Below avg (<8%)',
             icon: Heart,
-            trend: metrics.saveRate >= 0.06 ? 'up' : 'down',
+            trend: unavailable ? 'neutral' : metrics.saveRate >= 0.06 ? 'up' : 'down',
             color: 'bg-pink-500/20',
             delay: 0.05,
         },
         {
             label: 'Completion Rate',
-            value: fmtPct(metrics.completionRate),
-            subtitle: 'Full-play ratio',
+            value: unavailable ? '—' : fmtPct(metrics.completionRate),
+            subtitle: unavailable ? 'Unavailable from the connected source' : 'Full-play ratio',
             icon: Music,
-            trend: metrics.completionRate >= 0.6 ? 'up' : metrics.completionRate <= 0.4 ? 'down' : 'neutral',
+            trend: unavailable ? 'neutral' : metrics.completionRate >= 0.6 ? 'up' : metrics.completionRate <= 0.4 ? 'down' : 'neutral',
             color: 'bg-violet-500/20',
             delay: 0.1,
         },
         {
             label: 'Repeat Listeners',
-            value: fmtRatio(metrics.repeatListenerRatio),
-            subtitle: 'Streams per unique listener',
+            value: unavailable ? '—' : fmtRatio(metrics.repeatListenerRatio),
+            subtitle: unavailable ? 'Unavailable from the connected source' : 'Streams per unique listener',
             icon: Users,
-            trend: metrics.repeatListenerRatio >= 1.5 ? 'up' : 'neutral',
+            trend: unavailable ? 'neutral' : metrics.repeatListenerRatio >= 1.5 ? 'up' : 'neutral',
             color: 'bg-emerald-500/20',
             delay: 0.15,
         },
         {
             label: 'Playlist Velocity',
-            value: `${metrics.playlistVelocity.toFixed(1)}/day`,
-            subtitle: '7-day avg new adds',
+            value: unavailable ? '—' : `${metrics.playlistVelocity.toFixed(1)}/day`,
+            subtitle: unavailable ? 'Unavailable from the connected source' : '7-day avg new adds',
             icon: TrendingUp,
-            trend: metrics.playlistVelocity >= 5 ? 'up' : metrics.playlistVelocity <= 0.5 ? 'down' : 'neutral',
+            trend: unavailable ? 'neutral' : metrics.playlistVelocity >= 5 ? 'up' : metrics.playlistVelocity <= 0.5 ? 'down' : 'neutral',
             color: 'bg-amber-500/20',
             delay: 0.2,
         },
         {
             label: 'Share Rate',
-            value: fmtPct(metrics.shareRate),
-            subtitle: 'Viral spread potential',
+            value: unavailable ? '—' : fmtPct(metrics.shareRate),
+            subtitle: unavailable ? 'Unavailable from the connected source' : 'Share rate',
             icon: Share2,
-            trend: metrics.shareRate >= 0.02 ? 'up' : 'neutral',
+            trend: unavailable ? 'neutral' : metrics.shareRate >= 0.02 ? 'up' : 'neutral',
             color: getColorForModule('analytics').bg.replace('/10', '/20'),
             delay: 0.25,
         },

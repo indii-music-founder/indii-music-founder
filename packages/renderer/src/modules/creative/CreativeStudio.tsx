@@ -30,6 +30,7 @@ import {
     type PlpVariantResult,
 } from './plpBatch';
 import { buildDistributorContext, validateImageForDistributor } from '@/services/onboarding/DistributorContext';
+import { secureRandomAlphanumeric } from '@/utils/crypto-random';
 
 import CreativeClipboard from './components/CreativeClipboard';
 import OmniWorkflow from './video/OmniWorkflow';
@@ -374,7 +375,7 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
                         const plpProjectId = currentProjectId;
                         const batchId = typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
                             ? crypto.randomUUID()
-                            : `plp_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+                            : `plp_${Date.now()}_${secureRandomAlphanumeric(16)}`;
                         const initialBatch = createPlpBatch(batchId, plpProjectId, pendingPrompt);
                         plpBatchRef.current = initialBatch;
                         setPlpBatch(initialBatch);

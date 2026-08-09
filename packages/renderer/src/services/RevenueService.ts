@@ -79,11 +79,34 @@ export class RevenueService {
         where('createdAt', '<', startTimestamp)
       );
 
-      const [snapshotCurrent, snapshotPrevious, snapshotEarnings, snapshotMerch] = await Promise.all([
+      const qPreviousEarnings = query(
+        earningsRef,
+        where('userId', '==', userId),
+        where('createdAt', '>=', previousStartTimestamp),
+        where('createdAt', '<', startTimestamp)
+      );
+
+      const qPreviousMerch = query(
+        merchRef,
+        where('userId', '==', userId),
+        where('createdAt', '>=', previousStartTimestamp),
+        where('createdAt', '<', startTimestamp)
+      );
+
+      const [
+        snapshotCurrent,
+        snapshotPrevious,
+        snapshotEarnings,
+        snapshotMerch,
+        snapshotPreviousEarnings,
+        snapshotPreviousMerch,
+      ] = await Promise.all([
         getDocs(qCurrent),
         getDocs(qPrevious),
         getDocs(qEarnings),
-        getDocs(qMerch)
+        getDocs(qMerch),
+        getDocs(qPreviousEarnings),
+        getDocs(qPreviousMerch),
       ]);
 
       // Process Data
@@ -167,21 +190,24 @@ export class RevenueService {
       let previousUnits = 0;
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const processPrevious = (snapshot: any) => {
+      const processPrevious = (snapshot: any, type: 'revenue' | 'earnings' | 'merch') => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         snapshot.docs.forEach((doc: any) => {
           const data = doc.data();
           if (!data) return;
-          const amount = (typeof data.amount === 'number') ? data.amount : 0;
+          const amount = type === 'earnings'
+            ? (typeof data.netRevenue === 'number' ? data.netRevenue : 0)
+            : type === 'merch'
+              ? (typeof data.totalAmount === 'number' ? data.totalAmount : 0)
+              : (typeof data.amount === 'number' ? data.amount : 0);
           previousRevenue += amount;
-          previousUnits += 1;
+          if (type === 'revenue') previousUnits += 1;
         });
       };
 
-      processPrevious(snapshotPrevious);
-      // For simplicity, we're only comparing 'revenue' collection for change, 
-      // but in a production app you'd compare all three for the previous period too.
-      // However, to keep this manageable and consistent with existing logic:
+      processPrevious(snapshotPrevious, 'revenue');
+      processPrevious(snapshotPreviousEarnings, 'earnings');
+      processPrevious(snapshotPreviousMerch, 'merch');
 
 
       const revenueChange = previousRevenue === 0

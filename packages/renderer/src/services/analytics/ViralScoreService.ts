@@ -163,13 +163,13 @@ export class ViralScoreService {
     /**
      * Evaluate the health of a campaign's save rate.
      *
-     * indii Growth Protocol v2.0 GUARDRAIL:
-     * - Save Rate ≥ 8%  →  HEALTHY (strong algorithmic lift)
-     * - Save Rate 5-8%  →  WARNING (below optimal, needs creative refresh)
+     * Internal review bands:
+     * - Save Rate ≥ 8%  →  HEALTHY relative to the configured heuristic
+     * - Save Rate 5-8%  →  WARNING (below the configured target)
      * - Save Rate < 5%  →  REVIEW RECOMMENDED (heuristic floor, no automatic mutation)
      *
-     * Returns an action recommendation that the indii Conductor or Marketing
-     * Agent should execute immediately.
+     * These bands are not provider benchmarks and do not establish causation or
+     * authorize a campaign mutation.
      */
     evaluateSaveRateHealth(saveRate: number): {
         status: 'healthy' | 'warning' | 'critical';
@@ -179,7 +179,7 @@ export class ViralScoreService {
         if (saveRate >= 0.08) {
             return {
                 status: 'healthy',
-                message: `Save rate ${(saveRate * 100).toFixed(1)}% is above the 8% threshold. Strong algorithmic growth signal.`,
+                message: `Save rate ${(saveRate * 100).toFixed(1)}% is above indii's configured 8% review threshold. Verify provider attribution, sample size, and campaign goals before acting.`,
                 action: 'continue',
             };
         }
@@ -187,7 +187,7 @@ export class ViralScoreService {
         if (saveRate >= 0.05) {
             return {
                 status: 'warning',
-                message: `Save rate ${(saveRate * 100).toFixed(1)}% is below the 8% target but above the 5% safety floor. Refresh ad creatives and tighten audience targeting.`,
+                message: `Save rate ${(saveRate * 100).toFixed(1)}% is between indii's configured 5% and 8% review thresholds. Review source attribution and creative performance before changing a campaign.`,
                 action: 'refresh_creatives',
             };
         }

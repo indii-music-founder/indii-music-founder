@@ -235,7 +235,7 @@ AVAILABLE TOOLS:
 85. format_screenplay(storyOutline, genre) - Format a screenplay from an outline.
 86. analyze_script_structure(scriptText) - Analyze script structure and pacing.
 --- COMMERCE & WEB3 ---
-87. create_artifact_drop(assetId, dropType, price, quantity) - Create a independent artifact drop (NFT or limited edition).
+87. create_artifact_drop(title, description, priceUsd, artworkUrl, audioUrl?, licenseType) - Save an unpublished artifact-drop draft. No purchase URL, accepted license, inventory, payment, or fulfillment is created.
 88. mockup_merchandise(productType, designUrl, colorway) - Generate merchandise mockups.
 89. deploy_storefront_preview(campaignName, items, shippingAllowedCountries?, automaticTax?, idempotencyKey?) - Create an itemized Stripe checkout preview from priced SKU/title/currency/quantity/stock/tax/shipping/fulfillment data. This does not deploy a public storefront or fulfillment system.
 90. recommend_merch_pricing(productType, cost, targetMargin) - Recommend merchandise pricing based on market data.

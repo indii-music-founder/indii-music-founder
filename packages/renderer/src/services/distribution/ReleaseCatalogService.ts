@@ -20,7 +20,22 @@ function firstString(...values: unknown[]): string | undefined {
 
 export function getReleaseTitle(data: Record<string, unknown>): string | undefined {
     const metadata = asRecord(data.metadata);
-    return firstString(metadata.trackTitle, data.trackTitle, data.title);
+    return firstString(metadata.releaseTitle, metadata.trackTitle, data.releaseTitle, data.trackTitle, data.title);
+}
+
+export function getReleaseArtist(data: Record<string, unknown>): string | undefined {
+    const metadata = asRecord(data.metadata);
+    return firstString(metadata.artistName, data.artistName, data.artist);
+}
+
+export function getReleaseGenre(data: Record<string, unknown>): string | undefined {
+    const metadata = asRecord(data.metadata);
+    return firstString(metadata.genre, data.genre);
+}
+
+export function getReleaseCoverUrl(data: Record<string, unknown>): string | undefined {
+    const assets = asRecord(data.assets);
+    return firstString(assets.coverArtUrl, data.coverArtUrl, data.coverUrl);
 }
 
 export function getReleaseIsrc(data: Record<string, unknown>): string | undefined {

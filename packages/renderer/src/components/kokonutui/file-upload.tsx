@@ -37,7 +37,10 @@ interface FileUploadProps {
   maxFileSize?: number;
   currentFile?: File | null;
   onFileRemove?: () => void;
-  /** Duration in milliseconds for the upload simulation. Defaults to 2000ms (2s), 0 for no simulation */
+  /**
+   * Optional legacy visual-feedback delay for callers that provide a real
+   * onUploadSuccess adapter. Selection-only callers never enter upload state.
+   */
   uploadDelay?: number;
   validateFile?: (file: File) => FileError | null;
   className?: string;
@@ -244,14 +247,14 @@ const UploadingAnimation = ({ progress }: { progress: number }) => (
 );
 
 export default function FileUpload({
-  onUploadSuccess = (file: File) => { logger.debug(`[FileUpload] Default onUploadSuccess called for file: ${file.name}`); },
+  onUploadSuccess,
   onUploadError = (err: FileError) => { logger.warn(`[FileUpload] Default onUploadError called:`, err); },
   onFilesSelected = (files: File[]) => { logger.debug(`[FileUpload] Default onFilesSelected called with ${files.length} files`); },
   acceptedFileTypes = [],
   maxFileSize = DEFAULT_MAX_FILE_SIZE,
   currentFile: initialFile = null,
   onFileRemove = () => { logger.debug('[FileUpload] Default onFileRemove called'); },
-  uploadDelay = 2000,
+  uploadDelay = 0,
   validateFile = () => null,
   className,
   multiple = false,
@@ -263,11 +266,15 @@ export default function FileUpload({
   const [error, setError] = useState<FileError | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const uploadIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const errorTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(
     () => () => {
       if (uploadIntervalRef.current) {
         clearInterval(uploadIntervalRef.current);
+      }
+      if (errorTimerRef.current) {
+        clearTimeout(errorTimerRef.current);
       }
     },
     []
@@ -318,9 +325,13 @@ export default function FileUpload({
       setStatus("error");
       onUploadError?.(error);
 
-      setTimeout(() => {
+      if (errorTimerRef.current) {
+        clearTimeout(errorTimerRef.current);
+      }
+      errorTimerRef.current = setTimeout(() => {
         setError(null);
         setStatus("idle");
+        errorTimerRef.current = null;
       }, 3000);
     },
     [onUploadError]
@@ -401,16 +412,23 @@ export default function FileUpload({
       onFilesSelected?.(selectedFiles);
 
       if (immediate) {
-        selectedFiles.forEach(f => onUploadSuccess(f));
+        if (onUploadSuccess) selectedFiles.forEach(f => onUploadSuccess(f));
         return;
       }
 
       if (!multiple) {
         const selectedFile = selectedFiles[0]!;
-        setFile(selectedFile);
-        setStatus("uploading");
-        setProgress(0);
-        simulateUpload(selectedFile);
+        if (onUploadSuccess && uploadDelay > 0) {
+          setFile(selectedFile);
+          setStatus("uploading");
+          setProgress(0);
+          simulateUpload(selectedFile);
+        } else {
+          // This component is a file picker unless a caller explicitly supplies
+          // a persistence callback. Do not animate or report a fictitious upload.
+          setFile(null);
+          setStatus("idle");
+        }
       }
     },
     [
@@ -422,6 +440,7 @@ export default function FileUpload({
       onFilesSelected,
       immediate,
       onUploadSuccess,
+      uploadDelay,
       multiple
     ]
   );

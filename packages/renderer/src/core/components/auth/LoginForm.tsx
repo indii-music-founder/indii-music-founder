@@ -223,7 +223,7 @@ export default function LoginForm() {
 
 
     return (
-        <div className="flex flex-col items-center justify-center h-screen w-screen bg-black text-white relative overflow-hidden">
+        <div className="relative flex min-h-[100dvh] w-full flex-col items-center overflow-x-hidden overflow-y-auto bg-black px-4 py-4 text-white sm:py-8">
             {/* Background Aesthetics */}
             <div className="absolute inset-0 bg-linear-to-br from-green-900/20 via-black to-blue-900/20 pointer-events-none" />
             <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-green-600/10 blur-[120px] rounded-full animate-pulse" />
@@ -232,13 +232,13 @@ export default function LoginForm() {
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="relative z-10 w-full max-w-md p-8 bg-white/5 border border-white/10 rounded-3xl backdrop-blur-2xl shadow-[0_0_80px_rgba(0,0,0,0.5)]"
+                className="relative z-10 my-auto w-full max-w-md rounded-3xl border border-white/10 bg-white/5 p-5 shadow-[0_0_80px_rgba(0,0,0,0.5)] backdrop-blur-2xl sm:p-8"
             >
-                <div className="text-center mb-8">
+                <div className="mb-6 text-center sm:mb-8">
                     <motion.h1
                         initial={{ scale: 0.9 }}
                         animate={{ scale: 1 }}
-                        className="text-5xl font-black mb-2 tracking-tighter"
+                        className="mb-2 text-4xl font-black tracking-tighter sm:text-5xl"
                     >
                         indii<span className="text-dept-creative">.music</span>
                     </motion.h1>

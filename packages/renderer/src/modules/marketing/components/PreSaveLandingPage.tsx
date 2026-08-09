@@ -5,6 +5,7 @@ import {
     type PreSaveCampaign,
     type PreSaveDsp,
 } from '@/services/marketing/PreSaveCampaignService';
+import { secureRandomAlphanumeric } from '@/utils/crypto-random';
 
 const DSP_LABELS: Record<PreSaveDsp, string> = {
     spotify: 'Spotify',
@@ -16,7 +17,7 @@ function createLeadId(): string {
     if (typeof globalThis.crypto?.randomUUID === 'function') {
         return globalThis.crypto.randomUUID();
     }
-    return `lead-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`;
+    return `lead-${Date.now().toString(36)}-${secureRandomAlphanumeric(16)}`;
 }
 
 export function PreSaveLandingPage({

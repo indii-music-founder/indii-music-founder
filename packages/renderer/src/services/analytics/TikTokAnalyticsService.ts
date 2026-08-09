@@ -75,12 +75,6 @@ interface TikTokUserInfoResponse {
     error: { code: string; message: string };
 }
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-function toDateStr(date: Date): string {
-    return date.toISOString().split('T')[0]!;
-}
-
 // ─────────────────────────────────────────────────────────────────────────────
 // TikTokAnalyticsService
 // ─────────────────────────────────────────────────────────────────────────────
@@ -235,69 +229,36 @@ export class TikTokAnalyticsService {
                 platform: 'tiktok',
                 streams: 0,
                 saves: 0,
-                completionRate: 0.5, // TikTok default completion is generally high
+                completionRate: 0,
                 creatorCount: 0,
+                savesUnavailable: true,
+                completionUnavailable: true,
+                sourceLabel: 'No videos were returned; completion, saves, and audio-creator usage are unavailable.',
             };
         }
 
         const totalViews  = videos.reduce((s, v) => s + v.view_count, 0);
-        const totalLikes  = videos.reduce((s, v) => s + v.like_count, 0);
-        const totalShares = videos.reduce((s, v) => s + v.share_count, 0);
-
-        // TikTok short videos have high completion rates (~65-80%)
-        // We estimate based on the like/view ratio (higher engagement = higher completion)
-        const avgLikeRate = totalViews > 0 ? totalLikes / totalViews : 0;
-        const completionRate = 0.55 + Math.min(avgLikeRate * 2, 0.30); // 55%-85%
 
         return {
             platform: 'tiktok',
             streams: totalViews,
-            saves: totalLikes + totalShares, // likes + saves ≈ saves in TikTok context
-            completionRate,
+            saves: 0,
+            completionRate: 0,
             creatorCount: 0, // Requires Research API access (partner program)
+            savesUnavailable: true,
+            completionUnavailable: true,
+            sourceLabel: 'Views are provider-reported account video totals; saves, completion, and audio-creator usage are unavailable.',
         };
     }
 
     /**
-     * Build a 30-day stream history from TikTok video upload timeline.
-     * Groups video views by the day the video was created (approximation —
-     * TikTok Display API does not provide daily view breakdowns per video).
+     * TikTok Display API returns current lifetime totals by video, not daily
+     * activity. Upload dates cannot be relabeled as the dates those views
+     * occurred, so no history is emitted.
      */
     async buildStreamHistory(): Promise<StreamDataPoint[]> {
-        const videos = await this.getVideoList(50);
-
-        // Group videos by creation date
-        const byDate = new Map<string, { views: number; likes: number; shares: number }>();
-        for (const video of videos) {
-            const dateStr = toDateStr(new Date(video.create_time * 1000));
-            const existing = byDate.get(dateStr) ?? { views: 0, likes: 0, shares: 0 };
-            byDate.set(dateStr, {
-                views:  existing.views  + video.view_count,
-                likes:  existing.likes  + video.like_count,
-                shares: existing.shares + video.share_count,
-            });
-        }
-
-        const history: StreamDataPoint[] = [];
-        for (let i = 29; i >= 0; i--) {
-            const date = new Date();
-            date.setDate(date.getDate() - i);
-            const dateStr = toDateStr(date);
-            const day = byDate.get(dateStr);
-
-            history.push({
-                date: dateStr,
-                streams: day?.views ?? 0,
-                saves: day?.likes ?? 0,
-                completions: 0,
-                uniqueListeners: 0,
-                shares: day?.shares ?? 0,
-                newFollowers: 0,
-                playlistAdditions: 0,
-            });
-        }
-
-        return history;
+        logger.info('[TikTokAnalyticsService] Daily view history is unavailable through the Display API.');
+        return [];
     }
 
     // ── Internal ──────────────────────────────────────────────────────────────

@@ -16,6 +16,7 @@ export interface AnalyticsSlice {
     // All active alerts (deduplicated)
     analyticsAlerts: BreakoutAlert[];
     addAnalyticsAlerts: (alerts: BreakoutAlert[]) => void;
+    clearAnalyticsAlerts: () => void;
     dismissAnalyticsAlert: (alertId: string) => void;
 
     // Loading state
@@ -71,6 +72,7 @@ export const createAnalyticsSlice: StateCreator<AnalyticsSlice> = (set) => ({
             const newAlerts = alerts.filter(a => !existingIds.has(a.id));
             return { analyticsAlerts: [...newAlerts, ...state.analyticsAlerts].slice(0, 50) };
         }),
+    clearAnalyticsAlerts: () => set({ analyticsAlerts: [] }),
     dismissAnalyticsAlert: (alertId) =>
         set(state => ({ analyticsAlerts: state.analyticsAlerts.filter(a => a.id !== alertId) })),
 

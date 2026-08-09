@@ -11,6 +11,8 @@ import { motion, AnimatePresence, PanInfo } from 'motion/react';
 import { useMobile } from '@/hooks/useMobile';
 import { QuickCapture } from '@/modules/capture/QuickCapture';
 import { useOrganizationAccess } from '@/core/context/OrganizationAccessContext';
+import { useFocusTrap } from '@/hooks/useFocusTrap';
+import { useGlobalShortcut } from '@/hooks/useGlobalShortcut';
 
 /**
  * MobileTabBar — Persistent iOS-style bottom tab bar for phone-class viewports.
@@ -91,6 +93,14 @@ export const MobileTabBar: React.FC = () => {
     );
     const [isMoreOpen, setIsMoreOpen] = useState(false);
     const [isQuickCaptureOpen, setIsQuickCaptureOpen] = useState(false);
+    const moreDrawerRef = useFocusTrap(isMoreOpen);
+
+    useGlobalShortcut({
+        id: 'mobile-more-drawer-escape',
+        key: 'Escape',
+        priority: 'modal',
+        handler: () => setIsMoreOpen(false),
+    }, [], isMoreOpen);
 
     // Only render on phone-class viewports
     if (!isAnyPhone) return null;
@@ -235,6 +245,7 @@ export const MobileTabBar: React.FC = () => {
 
                         {/* Drawer Content */}
                         <motion.div
+                            ref={moreDrawerRef}
                             role="dialog"
                             aria-modal="true"
                             aria-label="All modules"

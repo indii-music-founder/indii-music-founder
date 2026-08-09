@@ -6,8 +6,8 @@ import { importWithRetry } from '@/utils/dynamicImport';
 
 export const AutonomousTools = {
     /**
-     * Creates an "Independent Artifact Drop" - a high-value purchase link for assets.
-     * Packages artwork, audio, and a generated license into a single commercial artifact.
+     * Saves an unverified artifact-drop draft. Publication, checkout, inventory,
+     * fulfillment, and license acceptance are separate capabilities.
      */
     create_artifact_drop: wrapTool('create_artifact_drop', async (args: { 
         title: string,
@@ -39,7 +39,7 @@ export const AutonomousTools = {
                 artworkUrl: args.artworkUrl,
                 audioUrl: args.audioUrl,
                 licenseType: args.licenseType,
-                status: 'active',
+                status: 'draft_unpublished',
                 createdAt: serverTimestamp(),
                 updatedAt: serverTimestamp(),
                 salesCount: 0,
@@ -47,13 +47,15 @@ export const AutonomousTools = {
             };
 
             const docRef = await addDoc(collection(db, 'marketplace_drops'), dropData);
-            const dropUrl = `https://indii.music/drop/${docRef.id}`;
 
             return toolSuccess({
                 dropId: docRef.id,
-                url: dropUrl,
-                message: `Artifact Drop "${args.title}" created successfully!`
-            }, `Your Independent Artifact is LIVE. Purchase Link: ${dropUrl}`);
+                status: 'draft_unpublished',
+                publicationUrl: null,
+                checkoutConfigured: false,
+                fulfillmentConfigured: false,
+                message: `Artifact drop draft "${args.title}" was saved for review.`
+            }, `Artifact drop draft "${args.title}" was saved. It is not live and has no purchase URL, accepted license, inventory, payment, or fulfillment workflow.`);
 
         } catch (error: unknown) {
             const message = error instanceof Error ? error.message : 'Unknown error';

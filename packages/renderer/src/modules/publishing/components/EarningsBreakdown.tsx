@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Smartphone, Music, MapPin, TrendingUp, DollarSign } from 'lucide-react';
+import { Smartphone, Music, MapPin, DollarSign } from 'lucide-react';
 
 interface EarningsBreakdownItem {
     label: string;
@@ -97,27 +97,16 @@ export const EarningsBreakdown: React.FC<EarningsBreakdownProps> = ({
                         ) : (
                             <div className="flex flex-col items-center justify-center py-12 opacity-50">
                                 <DollarSign size={32} className="text-gray-700 mb-2" />
-                                <p className="text-xs font-bold text-gray-600 uppercase tracking-widest">No track data available</p>
+                                <p className="text-xs font-bold text-gray-600 uppercase tracking-widest">No provider breakdown available</p>
                             </div>
                         )}
                     </motion.div>
                 </AnimatePresence>
             </div>
 
-            {/* Total Indicator */}
-            <div className="mt-8 pt-6 border-t border-gray-800 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                    <TrendingUp size={16} className="text-blue-400" />
-                    <span className="text-xs font-bold text-gray-500 uppercase tracking-tighter">Market Penetration</span>
-                </div>
-                <div className="flex -space-x-2">
-                    {[1, 2, 3, 4].map(i => (
-                        <div key={i} className="w-6 h-6 rounded-full border-2 border-[#121212] bg-gray-800 flex items-center justify-center text-[8px] font-bold text-gray-500">
-                            {i}
-                        </div>
-                    ))}
-                </div>
-            </div>
+            <p className="mt-8 border-t border-gray-800 pt-4 text-[10px] leading-relaxed text-gray-600">
+                Breakdowns appear only when the royalty ledger includes provider-attributed platform, territory, or track data.
+            </p>
         </div>
     );
 };

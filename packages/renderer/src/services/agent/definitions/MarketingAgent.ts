@@ -134,7 +134,7 @@ export const MarketingAgent: AgentConfig = {
             },
             {
                 name: "create_artifact_drop",
-                description: "Creates an 'Independent Artifact Drop' - a high-value purchase link for creative assets. Packages artwork, audio, and a generated license into a single commercial artifact.",
+                description: "Saves an unverified artifact-drop draft for review. Does not publish a purchase link, accept a license, configure inventory, collect payment, or arrange fulfillment.",
                 parameters: {
                     type: "OBJECT",
                     properties: {

@@ -30,7 +30,7 @@ export class WikiStorageAdapter {
             return doc as WikiDocument | null;
         } catch (e) {
             logger.warn(`[WikiStorageAdapter] Failed to read doc ${docId}:`, e);
-            return null;
+            throw e;
         }
     }
 
@@ -43,13 +43,11 @@ export class WikiStorageAdapter {
             return await service.list();
         } catch (e) {
             logger.warn(`[WikiStorageAdapter] Failed to list wiki docs for user ${userId}:`, e);
-            return [];
+            throw e;
         }
     }
 
-    /**
-     * Store and index a compiled Wiki document.
-     */
+    /** Store a compiled Wiki document in Firestore. */
     async writeWikiDoc(userId: string, docId: string, updates: Partial<WikiDocument>): Promise<void> {
         const service = this.getService(userId);
         const existing = await this.readWikiDoc(userId, docId);
@@ -77,26 +75,6 @@ export class WikiStorageAdapter {
             };
             await service.set(docId, newDoc);
             logger.info(`[WikiStorageAdapter] Created new Wiki Doc: ${docId}`);
-        }
-
-        // Optional: Sync to Gemini File API if we want it fully indexed in the RAG
-        await this.syncToGemini(userId, docId, updates.content || existing?.content || '');
-    }
-
-    /**
-     * Creates a temporary File object text and uploads to Gemini Retrieval Service
-     */
-    private async syncToGemini(userId: string, docId: string, content: string): Promise<void> {
-        try {
-            // Note: In browser environments, we represent this as a File to send to the backend
-            const blob = new Blob([content], { type: 'text/markdown' });
-            const _file = new File([blob], `${docId}.md`, { type: 'text/markdown' });
-
-            // Wait, we bypass processForKnowledgeBase and use the actual Service if integrated
-            // For now, this is a placeholder. RAG integration can run via HTTP APIs or Firebase Functions.
-            logger.debug(`[WikiStorageAdapter] Synced ${docId}.md to RAG Vector Store.`);
-        } catch (e) {
-            logger.error(`[WikiStorageAdapter] Gemini Sync failed for ${docId}:`, e);
         }
     }
 }
