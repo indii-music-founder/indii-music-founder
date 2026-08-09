@@ -98,6 +98,7 @@ export { workflowOrchestrator } from './functions/agent/workflowOrchestrator';
 export { manageSemanticMemory } from './functions/agent/manageSemanticMemory';
 export { agentLoopCron } from './functions/agent/agentLoopCron';
 export { getCapabilitySnapshot } from './functions/agent/getCapabilitySnapshot';
+export { recordPersonaResponseMeasurement } from './functions/persona/recordPersonaResponseMeasurement';
 
 // Security Functions
 export { persistFraudAlert } from './functions/security/persistFraudAlert';

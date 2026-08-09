@@ -18,8 +18,17 @@
 
 import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import type { Schema } from '@/shared/types/ai.dto';
+import { logger } from '@/utils/logger';
 import { compilePersonaPrompt } from './PersonaPromptCompiler';
-import type { PersonaFaderValues } from '@indii/shared';
+import { assignAndResolve } from './PersonaControlGroup';
+import { recordSignal } from './PersonaInteractionRecorder';
+import { recordPersonaResponseMeasurement } from './PersonaMeasurementRecorder';
+import type {
+    PersonaFaderValues,
+    PersonaId,
+    PersonaMeasurementRequest,
+    PersonaSignalType,
+} from '@indii/shared';
 
 export type PersonaRiskLevel = 'low' | 'medium' | 'high';
 
@@ -28,6 +37,31 @@ export interface PersonaVerdict {
     riskLevel: PersonaRiskLevel;
     caveats: string[];
     escalate: boolean;
+}
+
+export interface PersonaResponseResult {
+    verdict: PersonaVerdict;
+    styledResponse: string;
+}
+
+export interface PersonaResponseTracking {
+    responseId: string;
+    isControlGroup: boolean;
+    effectiveFaderValues: PersonaFaderValues;
+    measurementRecorded: Promise<boolean>;
+    recordInteraction: (signalType: PersonaSignalType) => Promise<void>;
+}
+
+export interface InstrumentedPersonaResponseResult extends PersonaResponseResult {
+    tracking: PersonaResponseTracking;
+}
+
+export interface PersonaResponseRuntimeContext {
+    personaId: PersonaId;
+    responseId: string;
+    randomSource?: () => number;
+    measurementRecorder?: (request: PersonaMeasurementRequest) => Promise<unknown>;
+    interactionRecorder?: typeof recordSignal;
 }
 
 const VERDICT_SCHEMA: Schema = {
@@ -109,17 +143,75 @@ export async function renderInStyle(
 }
 
 /**
- * Full pipeline: substance then style. Exposed for convenience; callers who
- * need to reuse one verdict across multiple style renders (e.g. the T1.3
- * canary check, or re-rendering after a fader change without re-asking the
- * question) should call getVerdict() and renderInStyle() separately instead.
+ * Full pipeline: substance then style. The original three-argument contract
+ * remains the uninstrumented T1 path. Supplying a runtime context activates
+ * the late-T1 control assignment, measurement, and response-bound implicit
+ * feedback recorder. Callers who need to reuse one verdict across multiple
+ * style renders should call getVerdict() and renderInStyle() separately.
  */
-export async function getPersonaResponse(
+export function getPersonaResponse(
     question: string,
     personaContext: string,
     faderValues: PersonaFaderValues
-): Promise<{ verdict: PersonaVerdict; styledResponse: string }> {
+): Promise<PersonaResponseResult>;
+export function getPersonaResponse(
+    question: string,
+    personaContext: string,
+    faderValues: PersonaFaderValues,
+    runtime: PersonaResponseRuntimeContext
+): Promise<InstrumentedPersonaResponseResult>;
+export async function getPersonaResponse(
+    question: string,
+    personaContext: string,
+    faderValues: PersonaFaderValues,
+    runtime: PersonaResponseRuntimeContext | undefined = undefined
+): Promise<PersonaResponseResult | InstrumentedPersonaResponseResult> {
     const verdict = await getVerdict(question, personaContext);
-    const styledResponse = await renderInStyle(verdict, faderValues);
-    return { verdict, styledResponse };
+
+    // Preserve the original three-argument T1 contract exactly. The runtime
+    // context is the explicit opt-in boundary for randomized assignment and
+    // correlated telemetry; existing callers continue to render the supplied
+    // faders without a silent behavioral change.
+    if (!runtime) {
+        const styledResponse = await renderInStyle(verdict, faderValues);
+        return { verdict, styledResponse };
+    }
+
+    // Assignment occurs only after the non-personalized verdict is fixed, so
+    // neither the control flag nor either fader set can reach getVerdict().
+    const assignment = assignAndResolve(faderValues, runtime.randomSource);
+    const styledResponse = await renderInStyle(verdict, assignment.effectiveFaderValues);
+    const measurementRecorder = runtime.measurementRecorder ?? recordPersonaResponseMeasurement;
+    const measurementRecorded = measurementRecorder({
+        personaId: runtime.personaId,
+        responseId: runtime.responseId,
+        responseText: styledResponse,
+        setPositions: assignment.effectiveFaderValues,
+        isControlGroup: assignment.isControlGroup,
+    }).then(() => true).catch(() => {
+        // Measurement is observational. An unavailable telemetry backend must
+        // never discard a valid verdict/response that has already completed.
+        logger.warn('[PersonaResponseService] Persona measurement could not be recorded.', {
+            personaId: runtime.personaId,
+            isControlGroup: assignment.isControlGroup,
+        });
+        return false;
+    });
+
+    const interactionRecorder = runtime.interactionRecorder ?? recordSignal;
+    return {
+        verdict,
+        styledResponse,
+        tracking: {
+            responseId: runtime.responseId,
+            isControlGroup: assignment.isControlGroup,
+            effectiveFaderValues: assignment.effectiveFaderValues,
+            measurementRecorded,
+            recordInteraction: (signalType) => interactionRecorder(
+                runtime.personaId,
+                runtime.responseId,
+                signalType,
+            ),
+        },
+    };
 }

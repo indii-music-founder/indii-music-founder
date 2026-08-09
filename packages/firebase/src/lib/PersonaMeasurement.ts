@@ -289,6 +289,11 @@ export interface AxisMeasurement {
     confidence: number;
 }
 
+export interface PersonaMeasurementCorrelation {
+    userId: string;
+    responseId: string;
+}
+
 /**
  * Measure where a real response actually lands on one axis, by comparing
  * its embedding against every band's anchor set and picking the closest.
@@ -368,7 +373,8 @@ export async function measureAllAxes(
 export async function recordMeasurement(
     personaId: string,
     measurement: AxisMeasurement,
-    isControlGroup: boolean
+    isControlGroup: boolean,
+    correlation: PersonaMeasurementCorrelation | undefined = undefined
 ): Promise<void> {
     await admin.firestore().collection('personaMeasurements').add({
         personaId,
@@ -378,6 +384,10 @@ export async function recordMeasurement(
         measuredBand: measurement.measuredBand,
         confidence: measurement.confidence,
         isControlGroup,
+        ...(correlation ? {
+            userId: correlation.userId,
+            responseId: correlation.responseId,
+        } : {}),
         recordedAt: admin.firestore.FieldValue.serverTimestamp(),
     });
 }

@@ -166,6 +166,27 @@ describe('PersonaMeasurement', () => {
                 expect.objectContaining({ isControlGroup: true })
             );
         });
+
+        it('adds response correlation without changing the existing three-argument contract', async () => {
+            await recordMeasurement(
+                'manager',
+                {
+                    axis: 'brevity',
+                    setPosition: 50,
+                    measuredPosition: 50,
+                    measuredBand: 2,
+                    confidence: 0.2,
+                },
+                false,
+                { userId: 'user-1', responseId: 'resp-1' },
+            );
+
+            expect(recordMeasurement.length).toBe(3);
+            expect(mocks.mockAdd).toHaveBeenCalledWith(expect.objectContaining({
+                userId: 'user-1',
+                responseId: 'resp-1',
+            }));
+        });
     });
 
     // ── Style/substance isolation: this module measures OUTPUT, has no

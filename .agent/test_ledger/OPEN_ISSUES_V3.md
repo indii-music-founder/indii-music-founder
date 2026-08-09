@@ -1706,3 +1706,15 @@ All seven T1 sub-items built, tested against real (not mocked-away) verification
 - **Verification:** Focused toolbar/search regression passes; renderer TypeScript and production build pass.
 
 ---
+
+### ISSUE-1354: [Evolas] Independently-built T1 control, measurement, and feedback modules were absent from the response pipeline
+
+- **Status:** ✅ FIXED (2026-08-09)
+- **Severity:** 🟠 HIGH
+- **Module:** Persona response runtime / backend measurement telemetry
+- **Evidence:** `getPersonaResponse()` rendered the caller-supplied faders directly. `assignAndResolve()`, backend-only `measureAllAxes()`/`recordMeasurement()`, and the implicit `recordSignal()` channel existed only as independently tested modules; no response execution correlated the served faders, control assignment, measurements, and later user actions under one response ID.
+- **Resolution:** The original three-argument T1 contract remains byte-for-byte compatible. An additive runtime context activates assignment only after the substance verdict is fixed, renders the assigned control/treatment faders, starts authenticated backend measurement with the same response ID and control tag, and returns a response-bound recorder for all five implicit signals. Measurement failure is reported on the tracking handle but cannot discard the completed response. The callable validates a closed request shape, requires Auth and App Check, rate-limits before embedding, and stores only measured positions plus correlation metadata—not response text.
+- **Runtime path:** `getPersonaResponse(question, personaContext, userFaders, runtime)` → `getVerdict()` → `assignAndResolve()` → `renderInStyle(effectiveFaderValues)` → `PersonaMeasurementRecorder` → authenticated `recordPersonaResponseMeasurement` callable → `measureAllAxes()` → `recordMeasurement(..., isControlGroup, { userId, responseId })`; the returned `tracking.recordInteraction(signalType)` → `PersonaInteractionRecorder.recordSignal(personaId, responseId, signalType)` → `users/{uid}/personaInteractionSignals`.
+- **Verification:** All 87 Evolas-focused tests pass, including control/treatment style input, verdict invariance, legacy contract, telemetry failure, callable ingress, response correlation, and all five implicit signals. Full suite: 990 files / 6,190 tests passed (23 files / 52 tests skipped by existing conditions). Full monorepo TypeScript passes; the repository lint/security gate passes with 0 errors (152 standing warnings outside this change); Studio and Firebase production builds pass.
+
+---
