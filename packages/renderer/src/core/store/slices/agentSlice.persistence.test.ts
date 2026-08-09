@@ -280,4 +280,39 @@ describe('AgentSlice Persistence (The Amnesia Check)', () => {
             }),
         ]);
     });
+
+    it('recovers and persists a streaming child message left by a previous page runtime', async () => {
+        const store = useStore.getState();
+        const sessionId = store.activeSessionId!;
+
+        await store.loadSessions();
+        expect(messageSubscribers).toHaveLength(1);
+
+        const interruptedSnapshot: AgentMessage[] = [{
+            id: 'interrupted-response',
+            role: 'model',
+            text: 'Partial response',
+            timestamp: 1,
+            isStreaming: true,
+        }];
+        messageSubscribers[0]!(interruptedSnapshot);
+        messageSubscribers[0]!(interruptedSnapshot);
+
+        expect(useStore.getState().agentHistory).toEqual([
+            expect.objectContaining({
+                id: 'interrupted-response',
+                isStreaming: false,
+                text: 'Partial response\n\n*(Generation interrupted by page reload)*',
+            }),
+        ]);
+        await vi.waitFor(() => expect(mockUpdateMessage).toHaveBeenCalledWith(
+            sessionId,
+            'interrupted-response',
+            {
+                text: 'Partial response\n\n*(Generation interrupted by page reload)*',
+                isStreaming: false,
+            }
+        ));
+        expect(mockUpdateMessage).toHaveBeenCalledTimes(1);
+    });
 });

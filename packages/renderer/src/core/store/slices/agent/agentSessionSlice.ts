@@ -4,8 +4,11 @@ import type { SessionPageCursor } from '@/services/agent/SessionService';
 
 let agentSessionsUnsubscribe: (() => void) | null = null;
 let agentMessagesUnsubscribe: (() => void) | null = null;
+const agentSessionRuntimeStartedAt = Date.now();
 const pendingMessageIds = new Map<string, Set<string>>();
 const messageWriteChains = new Map<string, Promise<void>>();
+const recoveredInterruptedMessageIds = new Set<string>();
+const INTERRUPTED_GENERATION_MARKER = '*(Generation interrupted by page reload)*';
 
 function messageWriteKey(sessionId: string, messageId: string): string {
     return `${sessionId}:${messageId}`;
@@ -84,6 +87,41 @@ function mergePendingMessages(
 
     return [...synchronizedMessages, ...optimisticMessages]
         .sort((a, b) => a.timestamp - b.timestamp);
+}
+
+function recoverInterruptedMessages(
+    sessionId: string,
+    messages: AgentMessage[]
+): AgentMessage[] {
+    return messages.map(message => {
+        const recoveryKey = messageWriteKey(sessionId, message.id);
+        if (!message.isStreaming) {
+            recoveredInterruptedMessageIds.delete(recoveryKey);
+            return message;
+        }
+        if (message.timestamp >= agentSessionRuntimeStartedAt) {
+            return message;
+        }
+
+        const text = message.text.includes(INTERRUPTED_GENERATION_MARKER)
+            ? message.text
+            : `${message.text}${message.text ? '\n\n' : ''}${INTERRUPTED_GENERATION_MARKER}`;
+        const recoveredMessage = { ...message, text, isStreaming: false };
+
+        if (!recoveredInterruptedMessageIds.has(recoveryKey)) {
+            recoveredInterruptedMessageIds.add(recoveryKey);
+            enqueueMessageWrite(
+                sessionId,
+                message.id,
+                () => import('@/services/agent/SessionService').then(({ sessionService }) =>
+                    sessionService.updateMessage(sessionId, message.id, { text, isStreaming: false })
+                ),
+                `recover interrupted message ${message.id}`
+            );
+        }
+
+        return recoveredMessage;
+    });
 }
 
 export type MessageSource = 'desktop' | 'mobile-remote' | 'background' | 'api' | 'boardroom';
@@ -191,10 +229,11 @@ export function buildAgentSessionState(
                     const synchronizedMessages = session.messageStorage === 'subcollection'
                         ? messages
                         : (messages.length > 0 ? messages : session.messages);
+                    const recoveredMessages = recoverInterruptedMessages(sessionId, synchronizedMessages);
                     const nextMessages = mergePendingMessages(
                         sessionId,
                         session.messages,
-                        synchronizedMessages
+                        recoveredMessages
                     );
                     return {
                         sessions: { ...state.sessions, [sessionId]: { ...session, messages: nextMessages } },
