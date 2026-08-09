@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { PromptArea } from './PromptArea';
 
@@ -14,6 +14,7 @@ vi.mock('@/services/agent/AgentService', () => ({
 
 vi.mock('@/services/agent/registry', () => ({
   agentRegistry: {
+    get: (id: string) => ({ id, name: id === 'generalist' ? 'indii Conductor' : id, category: 'manager' }),
     getAll: () => [
       { id: 'manager', name: 'Manager', category: 'manager' },
       { id: 'creative', name: 'Creative', category: 'department' }
@@ -51,6 +52,12 @@ vi.mock('@/core/store', () => ({
     setCommandBarInput: mockSetCommandBarInput,
     commandBarAttachments: [],
     setCommandBarAttachments: mockSetCommandBarAttachments,
+    conversationMode: 'direct',
+    activeDepartmentId: null,
+    directTargetAgentId: 'generalist',
+    setConversationMode: vi.fn(),
+    setActiveDepartmentId: vi.fn(),
+    setDirectTargetAgentId: vi.fn(),
   }),
 }));
 
@@ -135,5 +142,15 @@ describe('PromptArea Accessibility', () => {
     // Based on actual component output, label is "Message indii Conductor..."
     const textarea = screen.getByRole('textbox', { name: /message indii conductor/i });
     expect(textarea).toBeInTheDocument();
+  });
+
+  it('opens the reachable hierarchical mode picker from the visible control', () => {
+    render(<PromptArea />);
+
+    fireEvent.click(screen.getByRole('button', { name: /change agent mode/i }));
+
+    expect(screen.getByTestId('agent-mode-boardroom')).toBeInTheDocument();
+    expect(screen.getByTestId('agent-mode-department')).toBeInTheDocument();
+    expect(screen.getByTestId('agent-mode-direct')).toBeInTheDocument();
   });
 });

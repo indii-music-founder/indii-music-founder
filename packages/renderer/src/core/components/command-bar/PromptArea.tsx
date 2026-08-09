@@ -43,8 +43,11 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
     const [showModePicker, setShowModePicker] = useState(false);
     const modeButtonRef = useRef<HTMLButtonElement>(null);
     const [modeButtonRect, setModeButtonRect] = useState<DOMRect | null>(null);
-    const modePickerPosition = modeButtonRect && typeof window !== 'undefined'
-        ? getModePickerPosition(modeButtonRect, {
+    const modePickerPosition = typeof window !== 'undefined'
+        ? getModePickerPosition(modeButtonRect ?? {
+            top: window.innerHeight - 44,
+            right: window.innerWidth - 12,
+        }, {
             width: window.innerWidth,
             height: window.innerHeight,
         })
