@@ -91,6 +91,15 @@ function formatCurrency(amount: number): string {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(amount);
 }
 
+/**
+ * Dashboard documents and aggregate queries are owner-scoped by Firebase Auth.
+ * Wait for the live auth listener before subscribing so persisted store state
+ * cannot issue a stale or pre-auth request that never retries.
+ */
+function useAuthenticatedUserId(): string | undefined {
+    return useStore((state) => state.authLoading ? undefined : state.user?.uid);
+}
+
 /* ── Components ─────────────────────────────────────────────────── */
 
 // eslint-disable-next-line react-refresh/only-export-components
@@ -151,7 +160,7 @@ function CircularProgress({ percentage, size = 80, strokeWidth = 8, color = "cur
 
 // eslint-disable-next-line react-refresh/only-export-components
 function StreamsTodayWidget() {
-    const userId = useStore(useShallow((s) => s.userProfile?.id));
+    const userId = useAuthenticatedUserId();
     const [streamsData, setStreamsData] = useState<DashboardStreamsStats | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -235,7 +244,7 @@ function StreamsTodayWidget() {
 
 // eslint-disable-next-line react-refresh/only-export-components
 function RevenueMTDWidget() {
-    const userId = useStore(useShallow((s) => s.userProfile?.id));
+    const userId = useAuthenticatedUserId();
     const [revenueData, setRevenueData] = useState<DashboardRevenueStats | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -301,7 +310,7 @@ function RevenueMTDWidget() {
 
 // eslint-disable-next-line react-refresh/only-export-components
 function NextReleaseWidget() {
-    const userId = useStore(useShallow((s) => s.userProfile?.id));
+    const userId = useAuthenticatedUserId();
     const [release, setRelease] = useState<DashboardNextRelease | null | undefined>(undefined);
     const [now, setNow] = useState<number>(() => Date.now());
 
@@ -403,7 +412,7 @@ function NextReleaseWidget() {
 
 // eslint-disable-next-line react-refresh/only-export-components
 function TopTrackWidget() {
-    const userId = useStore(useShallow((s) => s.userProfile?.id));
+    const userId = useAuthenticatedUserId();
     const [track, setTrack] = useState<DashboardTopTrack | null | undefined>(undefined);
 
     useEffect(() => {
@@ -475,7 +484,7 @@ function TopTrackWidget() {
 
 // eslint-disable-next-line react-refresh/only-export-components
 function AgentActivityWidget() {
-    const userId = useStore(useShallow((s) => s.userProfile?.id));
+    const userId = useAuthenticatedUserId();
     const [activity, setActivity] = useState<DashboardAgentActivity | null>(null);
 
     useEffect(() => {
@@ -546,7 +555,7 @@ function AgentActivityWidget() {
 
 // eslint-disable-next-line react-refresh/only-export-components
 function AudienceGrowthWidget() {
-    const userId = useStore(useShallow((s) => s.userProfile?.id));
+    const userId = useAuthenticatedUserId();
     const [data, setData] = useState<DashboardAudienceStats | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -613,7 +622,7 @@ function AudienceGrowthWidget() {
 
 // eslint-disable-next-line react-refresh/only-export-components
 function ActiveCampaignsWidget() {
-    const userId = useStore(useShallow((s) => s.userProfile?.id));
+    const userId = useAuthenticatedUserId();
     const [data, setData] = useState<DashboardActiveCampaigns | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -679,7 +688,7 @@ function ActiveCampaignsWidget() {
 
 // eslint-disable-next-line react-refresh/only-export-components
 function PendingTasksWidget() {
-    const userId = useStore(useShallow((s) => s.userProfile?.id));
+    const userId = useAuthenticatedUserId();
     const [data, setData] = useState<DashboardPendingTasks | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -738,7 +747,7 @@ function PendingTasksWidget() {
 
 // eslint-disable-next-line react-refresh/only-export-components
 function SocialEngagementWidget() {
-    const userId = useStore(useShallow((s) => s.userProfile?.id));
+    const userId = useAuthenticatedUserId();
     const [data, setData] = useState<DashboardSocialEngagement | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -790,7 +799,7 @@ function SocialEngagementWidget() {
 
 // eslint-disable-next-line react-refresh/only-export-components
 function BrandIdentityWidget() {
-    const userId = useStore(useShallow((s) => s.userProfile?.id));
+    const userId = useAuthenticatedUserId();
     const [data, setData] = useState<DashboardBrandIdentity | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -853,7 +862,7 @@ function BrandIdentityWidget() {
 
 // eslint-disable-next-line react-refresh/only-export-components
 function MerchSalesWidget() {
-    const userId = useStore(useShallow((s) => s.userProfile?.id));
+    const userId = useAuthenticatedUserId();
     const [data, setData] = useState<DashboardMerchSales | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -908,7 +917,7 @@ function MerchSalesWidget() {
 
 // eslint-disable-next-line react-refresh/only-export-components
 function TourStatusWidget() {
-    const userId = useStore(useShallow((s) => s.userProfile?.id));
+    const userId = useAuthenticatedUserId();
     const [data, setData] = useState<DashboardTourStatus | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -976,7 +985,7 @@ function RevenueAggregatedWidget() {
     // Revenue rules are scoped to Firebase Auth, not a mutable/stale profile
     // document. A cached profile from another account must never choose the
     // owner for this query during account-boundary hydration.
-    const userId = useStore(useShallow((s) => s.user?.uid));
+    const userId = useAuthenticatedUserId();
     const setModule = useStore(useShallow((s) => s.setModule));
     const [stats, setStats] = useState<RevenueStats | null>(null);
     const [isLoading, setIsLoading] = useState(true);

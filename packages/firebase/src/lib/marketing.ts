@@ -322,7 +322,9 @@ export const executeCampaign = onCall(
             success: true,
             posts: queueResult.queuedPosts,
             status: queueResult.status,
-            message: queueResult.createdCount === 0
+            message: queueResult.status === 'FAILED'
+                ? "Campaign delivery has terminal failures. Review the failed posts before retrying."
+                : queueResult.createdCount === 0
                 ? "Existing campaign queue confirmed; no duplicate posts were created."
                 : `Campaign queue confirmed with ${queueResult.createdCount} new post${queueResult.createdCount === 1 ? '' : 's'}.`,
         };
@@ -340,6 +342,18 @@ export const dispatchSocialPost = onCall(
 
         const { mediaUrl, platform, caption } = (request.data ?? {}) as Record<string, unknown>;
         const normalizedPlatform = normalizeDispatchPlatform(platform);
+        if (normalizedPlatform === 'tiktok') {
+            throw new HttpsError(
+                'failed-precondition',
+                'TikTok posting is not production-enabled: creator consent, video.publish OAuth, and publish-status verification are not connected.',
+            );
+        }
+        if (normalizedPlatform === 'youtube') {
+            throw new HttpsError(
+                'failed-precondition',
+                'YouTube posting is not production-enabled: a youtube.upload OAuth connection is not connected.',
+            );
+        }
         console.info(`[SocialPost] Queueing ${normalizedPlatform}: ${mediaUrl}`);
 
         const docRef = await admin.firestore().collection('scheduledPosts').add({

@@ -16,6 +16,7 @@ interface CampaignCardProps {
 const CampaignCard: React.FC<CampaignCardProps> = ({ campaign, onSelect }) => {
     const isActive = campaign.status === CampaignStatus.EXECUTING;
     const isDone = campaign.status === CampaignStatus.DONE;
+    const isFailed = campaign.status === CampaignStatus.FAILED;
 
     // Calculate progress based on posts done vs total posts
     const completedPosts = (campaign.posts || []).filter(p => p.status === CampaignStatus.DONE).length;
@@ -103,9 +104,10 @@ const CampaignCard: React.FC<CampaignCardProps> = ({ campaign, onSelect }) => {
                     <div className="flex items-center gap-2 text-xs text-gray-500">
                         <span className={`px-2 py-0.5 rounded-full border ${isActive ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' :
                             isDone ? 'bg-blue-500/10 border-blue-500/20 text-blue-400' :
+                                isFailed ? 'bg-red-500/10 border-red-500/20 text-red-400' :
                                 'bg-gray-800 border-gray-700'
                             }`}>
-                            {isActive ? 'Active' : isDone ? 'Completed' : 'Pending'}
+                            {isActive ? 'Queued' : isDone ? 'Completed' : isFailed ? 'Failed' : 'Pending'}
                         </span>
                         <span>{new Date(campaign.startDate).toLocaleDateString('en-US')}</span>
                     </div>

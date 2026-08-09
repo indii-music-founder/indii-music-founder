@@ -117,6 +117,7 @@ vi.mock('firebase-functions/params', () => ({
 
 import {
     campaignQueueDocumentId,
+    dispatchSocialPost,
     executeCampaign,
     normalizeDispatchPlatform,
 } from './marketing';
@@ -132,6 +133,10 @@ type Callable = (request: {
 }>;
 
 const executeCampaignCallable = executeCampaign as unknown as Callable;
+const dispatchSocialPostCallable = dispatchSocialPost as unknown as (request: {
+    data?: Record<string, unknown>;
+    auth?: { uid: string };
+}) => Promise<Record<string, unknown>>;
 
 function validCampaign(overrides: Record<string, unknown> = {}) {
     return {
@@ -241,6 +246,36 @@ describe('executeCampaign queue contract (structural)', () => {
         expect(adminMocks.txSet).not.toHaveBeenCalled();
         expect(second.posts[0].postId).toBe(first.posts[0].postId);
         expect(second.message).toMatch(/no duplicate posts/i);
+    });
+
+    it('returns an explicit terminal-failure message for an exhausted existing queue', async () => {
+        adminMocks.queueData.set('failed-queue-id', {
+            userId: 'artist-uid',
+            campaignId: 'campaign-1',
+            campaignPostId: 'post-1',
+            platform: 'twitter',
+            text: 'Persisted campaign copy',
+            mediaUrl: 'https://cdn.indii.music/cover.jpg',
+            scheduledAt: { toDate: () => new Date('2026-08-11T12:00:00.000Z') },
+            status: 'failed',
+            source: 'campaign_manager',
+            retryCount: 3,
+            deliveryError: 'OAuth access was revoked',
+        });
+
+        const result = await executeCampaignCallable({
+            auth: { uid: 'artist-uid' },
+            data: { campaignId: 'campaign-1' },
+        });
+
+        expect(result).toMatchObject({
+            status: 'FAILED',
+            posts: [expect.objectContaining({
+                status: 'FAILED',
+                errorMessage: 'OAuth access was revoked',
+            })],
+        });
+        expect(result.message).toMatch(/terminal failures/i);
     });
 
     it('adopts a matching legacy random-ID queue record instead of duplicating a pre-fix side effect', async () => {
@@ -367,5 +402,25 @@ describe('normalizeDispatchPlatform (ISSUE-820)', () => {
 
     it('still rejects a genuinely unsupported platform', () => {
         expect(() => normalizeDispatchPlatform('mastodon')).toThrow(/not wired for native delivery/);
+    });
+});
+
+describe('dispatchSocialPost production capability boundary', () => {
+    beforeEach(() => vi.clearAllMocks());
+
+    it.each([
+        ['tiktok', /TikTok posting is not production-enabled/i],
+        ['youtube_shorts', /YouTube posting is not production-enabled/i],
+    ])('rejects %s before claiming an external post was queued', async (platform, message) => {
+        await expect(dispatchSocialPostCallable({
+            auth: { uid: 'artist-uid' },
+            data: {
+                platform,
+                mediaUrl: 'https://cdn.indii.music/video.mp4',
+                caption: 'Release announcement',
+            },
+        })).rejects.toThrow(message);
+
+        expect(adminMocks.add).not.toHaveBeenCalled();
     });
 });

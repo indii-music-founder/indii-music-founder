@@ -93,7 +93,11 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({
                 posts: responseData.posts as ScheduledPost[],
                 status: responseData.status as CampaignStatus,
             });
-            toast.success(responseData.message);
+            if (responseData.status === CampaignStatus.FAILED) {
+                toast.error(responseData.message);
+            } else {
+                toast.success(responseData.message);
+            }
 
         } catch (error: unknown) {
             logger.error("Campaign Execution Failed:", error);

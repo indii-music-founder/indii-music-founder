@@ -50,6 +50,7 @@ const CampaignDetail: React.FC<CampaignDetailProps> = ({ campaign, onBack, onExe
                                 data-testid="campaign-status-badge"
                                 className={`px-2 py-0.5 text-xs font-semibold rounded-full border ${campaign.status === CampaignStatus.EXECUTING ? 'bg-green-500/10 border-green-500/20 text-green-400' :
                                     campaign.status === CampaignStatus.DONE ? 'bg-blue-500/10 border-blue-500/20 text-blue-400' :
+                                        campaign.status === CampaignStatus.FAILED ? 'bg-red-500/10 border-red-500/20 text-red-400' :
                                         'bg-gray-800 border-gray-700 text-gray-400'
                                     }`}>
                                 {campaign.status}
@@ -204,6 +205,11 @@ const TimelineView = ({ posts, onEdit }: { posts: ScheduledPost[], onEdit: (p: S
                             {post.imageAsset.title && (
                                 <p className="text-xs text-gray-500 italic">Asset: {post.imageAsset.title}</p>
                             )}
+                            {post.errorMessage && (
+                                <p role="alert" className="text-xs text-red-300 bg-red-500/10 border border-red-500/20 rounded-lg p-2">
+                                    {post.errorMessage}
+                                </p>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -222,17 +228,17 @@ const GridView = ({ posts, onEdit }: { posts: ScheduledPost[], onEdit: (p: Sched
             <div key={post.id} className="group bg-gray-900/30 border border-white/5 rounded-2xl p-4 hover:border-gray-700 transition-all hover:shadow-xl hover:shadow-black/50 flex flex-col">
                 <div className="flex justify-between items-start mb-3">
                     <span className="text-sm font-semibold text-gray-400">Day {post.day}</span>
-                    <button onClick={() => onEdit(post)} className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 hover:bg-gray-800 rounded-lg text-gray-400 hover:text-white">
-                        <MoreVerticalIcon size={16} />
-                    </button>
+                    <div className="flex items-center gap-2">
+                        <StatusBadge status={post.status} compact />
+                        <button aria-label="Edit post" onClick={() => onEdit(post)} className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 hover:bg-gray-800 rounded-lg text-gray-400 hover:text-white">
+                            <MoreVerticalIcon size={16} />
+                        </button>
+                    </div>
                 </div>
 
                 {post.imageAsset.imageUrl ? (
                     <div className="aspect-square w-full bg-gray-900 rounded-xl mb-3 overflow-hidden relative">
                         <img src={post.imageAsset.imageUrl} alt="" className="w-full h-full object-cover" />
-                        <div className="absolute top-2 right-2">
-                            <StatusBadge status={post.status} compact />
-                        </div>
                     </div>
                 ) : (
                     <div className="aspect-square w-full bg-gray-800/50 rounded-xl mb-3 flex items-center justify-center text-gray-600 border border-gray-800 border-dashed">
@@ -246,6 +252,11 @@ const GridView = ({ posts, onEdit }: { posts: ScheduledPost[], onEdit: (p: Sched
                         {post.platform}
                     </div>
                     <p className="text-xs text-gray-400 line-clamp-2">{post.copy}</p>
+                    {post.errorMessage && (
+                        <p role="alert" className="mt-2 text-xs text-red-300 line-clamp-3">
+                            {post.errorMessage}
+                        </p>
+                    )}
                 </div>
             </div>
         ))}

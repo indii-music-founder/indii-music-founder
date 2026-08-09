@@ -102,4 +102,16 @@ describe('CampaignCard', () => {
         render(<CampaignCard campaign={mockCampaign} onSelect={mockOnSelect} />);
         expect(screen.queryByRole('button', { name: /More options/i })).not.toBeInTheDocument();
     });
+
+    it('shows a failed campaign as failed instead of pending', () => {
+        render(
+            <CampaignCard
+                campaign={{ ...mockCampaign, status: CampaignStatus.FAILED }}
+                onSelect={mockOnSelect}
+            />
+        );
+
+        expect(screen.getByText('Failed')).toHaveClass('text-red-400');
+        expect(screen.queryByText('Pending')).not.toBeInTheDocument();
+    });
 });

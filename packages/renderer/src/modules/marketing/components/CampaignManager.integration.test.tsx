@@ -161,6 +161,38 @@ describe('CampaignManager structural callable boundary', () => {
         expect(mockToast.success).not.toHaveBeenCalled();
     }, 15000);
 
+    it('shows a terminal queue response as an error instead of success', async () => {
+        const onSelectCampaign = vi.fn();
+        mockHttpsCallable.mockResolvedValue({
+            data: {
+                success: true,
+                message: 'Campaign delivery has terminal failures. Review the failed posts before retrying.',
+                posts: [{ ...mockCampaign.posts[0], status: CampaignStatus.FAILED }],
+                status: CampaignStatus.FAILED,
+            },
+        });
+
+        render(
+            <CampaignManager
+                campaigns={[mockCampaign]}
+                selectedCampaign={mockCampaign}
+                onSelectCampaign={onSelectCampaign}
+                onUpdateCampaign={vi.fn(async () => undefined)}
+                onCreateNew={vi.fn()}
+            />
+        );
+
+        fireEvent.click(screen.getByRole('button', { name: /execute/i }));
+
+        await waitFor(() => {
+            expect(mockToast.error).toHaveBeenCalledWith(expect.stringMatching(/terminal failures/i));
+        });
+        expect(mockToast.success).not.toHaveBeenCalled();
+        expect(onSelectCampaign).toHaveBeenCalledWith(expect.objectContaining({
+            status: CampaignStatus.FAILED,
+        }));
+    });
+
     it('reports both failures when the callable and failure-state persistence fail', async () => {
         const onUpdateCampaign = vi.fn()
             .mockResolvedValueOnce(undefined)
