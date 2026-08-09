@@ -11,6 +11,9 @@ import { ResendEmailService } from '@/services/email/ResendEmailService';
 import { TechnicalRiderGenerator } from './TechnicalRiderGenerator';
 import { VisaChecklist } from './VisaChecklist';
 import { logger } from '@/utils/logger';
+import { formatTouringDate } from '../itinerary';
+
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 interface TourBookTabProps {
     itinerary: Itinerary | null;
@@ -33,10 +36,10 @@ export const TourBookTab: React.FC<TourBookTabProps> = ({ itinerary, onUpdateSto
         setSendingEmailFor(stop.id || null);
         try {
             // Get venue contact (promoter) from stop contacts
-            const promoterContact = stop.contacts?.find(c => c.role === 'Promoter');
-            if (!promoterContact?.phone && !promoterContact?.name) {
-                error('Add Promoter contact information before sending advance email');
-                setSendingEmailFor(null);
+            const promoterContact = stop.contacts?.find(c => c.role.trim().toLowerCase() === 'promoter');
+            const promoterEmail = promoterContact?.email?.trim() ?? '';
+            if (!EMAIL_PATTERN.test(promoterEmail)) {
+                error('Add a valid Promoter email in the day sheet before sending');
                 return;
             }
 
@@ -50,11 +53,12 @@ export const TourBookTab: React.FC<TourBookTabProps> = ({ itinerary, onUpdateSto
                 ?.map(c => `${c.role}: ${c.name} ${c.phone ? `(${c.phone})` : ''}`)
                 .join('\n') || 'No contacts provided';
 
+            const formattedDate = formatTouringDate(stop.date);
             const body = `
 Technical Rider & Day Sheet Information
 
 Venue: ${stop.venue}
-Date: ${new Date(stop.date).toLocaleDateString()}
+Date: ${formattedDate}
 City: ${stop.city}
 
 SCHEDULE (Run of Show):
@@ -71,14 +75,19 @@ Please confirm receipt of this information.
             `.trim();
 
             // Send via ResendEmailService
-            await ResendEmailService.send({
-                to: promoterContact?.name || 'venue@example.com', // ISSUE-705: use actual contact email when available
-                subject: `Advance Information - ${stop.venue} on ${new Date(stop.date).toLocaleDateString()}`,
+            const result = await ResendEmailService.send({
+                to: promoterEmail,
+                subject: `Advance Information - ${stop.venue} on ${formattedDate}`,
                 html: body.replace(/\n/g, '<br />'),
                 text: body
             });
 
-            success(`Advance email sent to ${promoterContact?.name || stop.venue}`);
+            if (!result.success) {
+                error(result.error || 'Email provider did not accept the advance email');
+                return;
+            }
+
+            success(`Advance email sent to ${promoterEmail}`);
             logger.info('Advance email sent for stop:', stop.city);
         } catch (err) {
             logger.error('Failed to send advance email:', err);
@@ -191,7 +200,7 @@ function DaySheetsList({
                                     <div className="flex items-center gap-3">
                                         <Calendar size={16} className="text-blue-400" />
                                         <CardTitle className="text-lg text-white">
-                                            {new Date(stop.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                                            {formatTouringDate(stop.date, { weekday: 'short', month: 'short', day: 'numeric' })}
                                         </CardTitle>
                                     </div>
                                     <div className="flex items-center gap-2 mt-2 ml-7 text-gray-400">

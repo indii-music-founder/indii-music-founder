@@ -1,19 +1,14 @@
 import { useTranslation } from 'react-i18next';
 import React, { useState } from 'react';
-import { X, Clock, User, Phone, Save, Plus, Trash2, Calendar, DollarSign } from 'lucide-react';
+import { X, Clock, User, Phone, Mail, Save, Plus, Trash2, Calendar, DollarSign } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import type { ItineraryStop } from '../types';
+import type { ItineraryContact, ItineraryStop } from '../types';
+import { formatTouringDate } from '../itinerary';
 
 
 interface ScheduleItem {
     time: string;
     event: string;
-}
-
-interface Contact {
-    role: string;
-    name: string;
-    phone: string;
 }
 
 interface Settlement {
@@ -44,10 +39,10 @@ export const DaySheetModal: React.FC<DaySheetModalProps> = ({ isOpen, stop, onCl
         { time: '23:00', event: 'Curfew' },
     ]);
 
-    const [contacts, setContacts] = useState<Contact[]>(stop.contacts ?? [
-        { role: 'Promoter', name: '', phone: '' },
-        { role: 'Venue Rep', name: '', phone: '' },
-        { role: 'Sound Guy', name: '', phone: '' },
+    const [contacts, setContacts] = useState<ItineraryContact[]>(stop.contacts ?? [
+        { role: 'Promoter', name: '', phone: '', email: '' },
+        { role: 'Venue Rep', name: '', phone: '', email: '' },
+        { role: 'Sound Guy', name: '', phone: '', email: '' },
     ]);
 
     const [settlement, setSettlement] = useState<Settlement>({
@@ -63,7 +58,7 @@ export const DaySheetModal: React.FC<DaySheetModalProps> = ({ isOpen, stop, onCl
         setSchedule(newSchedule);
     };
 
-    const handleContactChange = (index: number, field: keyof Contact, value: string) => {
+    const handleContactChange = (index: number, field: keyof ItineraryContact, value: string) => {
         const newContacts = [...contacts];
         newContacts[index] = { ...newContacts[index]!, [field]: value };
         setContacts(newContacts);
@@ -112,7 +107,7 @@ export const DaySheetModal: React.FC<DaySheetModalProps> = ({ isOpen, stop, onCl
                                 <span className="text-blue-500/50">::</span> Day Sheet <span className="text-blue-500/50">::</span> {stop.city}
                             </h2>
                             <p className="text-xs text-gray-500 font-mono uppercase tracking-[0.3em] font-bold mt-1">
-                                {new Date(stop.date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })} <span className="text-gray-700">|</span> {stop.venue}
+                                {formatTouringDate(stop.date, { weekday: 'long', month: 'long', day: 'numeric' })} <span className="text-gray-700">|</span> {stop.venue}
                             </p>
                         </div>
                     </div>
@@ -181,7 +176,7 @@ export const DaySheetModal: React.FC<DaySheetModalProps> = ({ isOpen, stop, onCl
                                 <User size={14} /> Intelligence
                             </h3>
                             <button
-                                onClick={() => setContacts([...contacts, { role: '', name: '', phone: '' }])}
+                                onClick={() => setContacts([...contacts, { role: '', name: '', phone: '', email: '' }])}
                                 className="text-[10px] font-bold text-gray-500 hover:text-green-400 uppercase tracking-widest flex items-center gap-2 transition-colors group"
                             >
                                 <Plus size={12} className="group-hover:rotate-90 transition-transform" /> Add Contact
@@ -228,6 +223,19 @@ export const DaySheetModal: React.FC<DaySheetModalProps> = ({ isOpen, stop, onCl
                                             >
                                                 <Trash2 size={16} />
                                             </button>
+                                        </div>
+                                        <div className="flex items-center gap-3">
+                                            <div className="p-2 bg-green-500/5 rounded-lg">
+                                                <Mail size={14} className="text-green-500/60" />
+                                            </div>
+                                            <input
+                                                type="email"
+                                                className="flex-1 bg-transparent text-sm font-mono text-gray-500 outline-none placeholder:text-gray-800"
+                                                placeholder="contact@example.com"
+                                                value={contact.email ?? ''}
+                                                onChange={(e) => handleContactChange(i, 'email', e.target.value)}
+                                                aria-label={`${contact.role || 'Contact'} email`}
+                                            />
                                         </div>
                                     </motion.div>
                                 ))}

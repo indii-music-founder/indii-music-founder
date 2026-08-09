@@ -6,6 +6,7 @@ import { MapPin, Calendar, Truck, Plus, Trash2, Save, X, AlertTriangle, CheckCir
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Itinerary, ItineraryStop, LogisticsReport } from '../types';
+import { formatTouringDate } from '../itinerary';
 import { TourMap } from './TourMap';
 
 interface PlanningTabProps {
@@ -245,7 +246,7 @@ export const PlanningTab: React.FC<PlanningTabProps> = ({
                                             className="hover:bg-white/5 transition-colors cursor-pointer group"
                                             onClick={() => setSelectedStop(stop)}
                                         >
-                                            <td className="p-4 text-white font-bold">{new Date(stop.date).toLocaleDateString('en-US')}</td>
+                                            <td className="p-4 text-white font-bold">{formatTouringDate(stop.date)}</td>
                                             <td className="p-4">{stop.city}</td>
                                             <td className="p-4 text-blue-400 group-hover:text-blue-300 transition-colors">{stop.venue || "TBD"}</td>
                                             <td className="p-4">

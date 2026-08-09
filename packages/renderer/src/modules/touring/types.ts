@@ -38,7 +38,7 @@ export interface ItineraryStop {
     };
     // Day sheet data (set via DaySheetModal)
     schedule?: Array<{ time: string; event: string }>;
-    contacts?: Array<{ role: string; name: string; phone: string }>;
+    contacts?: ItineraryContact[];
     // Settlement data for finance reconciliation (ISSUE-705 Job 4)
     guarantee?: number;
     door_count?: number;
@@ -47,6 +47,13 @@ export interface ItineraryStop {
     // Booking handoff contract (ISSUE-705 Job 6)
     bookingId?: string; // Link to Booking Agent's deal record
     deal_type?: 'guarantee' | 'door_split' | 'promoter_profit' | 'unknown'; // Must match agent/types.ts
+}
+
+export interface ItineraryContact {
+    role: string;
+    name: string;
+    phone: string;
+    email?: string;
 }
 
 export interface Itinerary {
