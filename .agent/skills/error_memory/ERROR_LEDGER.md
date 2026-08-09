@@ -1,3 +1,11 @@
+## 2026-08-09 Queue Success Requires One Authoritative, Idempotent State Transition
+
+**SEVERITY:** Critical (a campaign could create real scheduled social posts while its visible state write failed, then create duplicates when the user retried)
+
+- **BUG:** `CampaignManager` fired both campaign-state writes without awaiting them, called the real `executeCampaign` backend even if the first write failed, and displayed a success toast even if the final state never persisted. The callable trusted client-supplied post content and used independent random-ID `add()` writes, so a partial failure or ambiguous retry could leave some posts queued, no correlated campaign state, and duplicate external delivery work.
+- **FIX:** Persist the current campaign before invoking the callable; source posts from the authenticated user's owned campaign on the server; create deterministic queue records and the exact visible campaign state in one Firestore transaction; adopt matching legacy queue records; reject stale, conflicting, or duplicate queue state; validate the callable response before displaying success; and await/report every failure-state write.
+- **PREVENTION:** A user-visible queue action needs one server-owned correlation key and one authoritative transaction covering the durable work item plus its visible status. Client payloads may identify an owned record but must not redefine its persisted work. Retry safety must include pre-fix/legacy records, and a success toast must be downstream of the exact persisted response the UI displays.
+
 ## 2026-08-09 Agent Tool Declarations Are Runtime Contracts, Not Marketing Copy
 
 **SEVERITY:** High (a real specialist chat advertised Maps operations the implementation always rejected, and named browser actions the Electron bridge did not implement)

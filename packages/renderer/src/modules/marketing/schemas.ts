@@ -43,9 +43,15 @@ export const MarketingStatsSchema = z.object({
 });
 
 export const CampaignExecutionRequestSchema = z.object({
-    campaignId: z.string().uuid().or(z.string()), // Allow UUID or Firestore ID
-    posts: z.array(ScheduledPostSchema),
+    campaignId: z.string().trim().min(1).max(200).regex(/^[^/]+$/, 'Invalid campaign ID'),
     dryRun: z.boolean().optional().default(false),
+}).strict();
+
+export const CampaignExecutionResponseSchema = z.object({
+    success: z.literal(true),
+    posts: z.array(ScheduledPostSchema),
+    status: CampaignStatusSchema,
+    message: z.string().min(1),
 });
 
 export type ImageAsset = z.infer<typeof ImageAssetSchema>;
@@ -53,3 +59,4 @@ export type ScheduledPost = z.infer<typeof ScheduledPostSchema>;
 export type CampaignAsset = z.infer<typeof CampaignAssetSchema>;
 export type MarketingStats = z.infer<typeof MarketingStatsSchema>;
 export type CampaignExecutionRequest = z.infer<typeof CampaignExecutionRequestSchema>;
+export type CampaignExecutionResponse = z.infer<typeof CampaignExecutionResponseSchema>;

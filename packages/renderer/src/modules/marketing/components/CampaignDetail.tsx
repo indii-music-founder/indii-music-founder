@@ -87,14 +87,16 @@ const CampaignDetail: React.FC<CampaignDetailProps> = ({ campaign, onBack, onExe
 
                         <button
                             onClick={onExecute}
-                            disabled={isExecuting || campaign.status === CampaignStatus.DONE}
+                            disabled={isExecuting || campaign.status === CampaignStatus.DONE || campaign.status === CampaignStatus.EXECUTING}
                             className={`flex items-center gap-2 px-6 py-2.5 font-bold rounded-xl transition-all shadow-lg shadow-green-900/20 ${isExecuting ? 'bg-green-900/50 text-green-200 cursor-wait' :
-                                campaign.status === CampaignStatus.DONE ? 'bg-gray-800 text-gray-400 cursor-not-allowed' :
+                                campaign.status === CampaignStatus.DONE || campaign.status === CampaignStatus.EXECUTING ? 'bg-gray-800 text-gray-400 cursor-not-allowed' :
                                     'bg-linear-to-r from-green-600 to-pink-600 hover:from-green-500 hover:to-pink-500 text-white'
                                 }`}
                         >
                             {isExecuting ? (
                                 <>Processing...</>
+                            ) : campaign.status === CampaignStatus.EXECUTING ? (
+                                <>Queued for Delivery</>
                             ) : (
                                 <><PlayIcon size={18} className="fill-current" /> Execute Campaign</>
                             )}

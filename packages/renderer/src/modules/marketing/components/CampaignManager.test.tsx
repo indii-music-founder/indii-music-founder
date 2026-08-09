@@ -158,7 +158,14 @@ describe('CampaignManager', () => {
     it('executes campaign when execute button is clicked', async () => {
         // Update mock to succeed
         const { httpsCallable } = await import('firebase/functions');
-        (httpsCallable as import("vitest").Mock).mockReturnValue(() => Promise.resolve({ data: { success: true, posts: mockCampaign.posts, message: "Success" } }));
+        (httpsCallable as import("vitest").Mock).mockReturnValue(() => Promise.resolve({
+            data: {
+                success: true,
+                posts: mockCampaign.posts.map(post => ({ ...post, status: CampaignStatus.EXECUTING, postId: 'queue-p1' })),
+                status: CampaignStatus.EXECUTING,
+                message: "Campaign queue confirmed.",
+            },
+        }));
 
         render(<CampaignManager {...defaultProps} selectedCampaign={mockCampaign} />);
 
@@ -167,16 +174,18 @@ describe('CampaignManager', () => {
             fireEvent.click(screen.getByText('Execute Campaign'));
         });
 
-        // Expect optimistic update
+        // The latest campaign state must persist before the callable runs.
         expect(mockOnUpdateCampaign).toHaveBeenCalledWith(expect.objectContaining({
             status: CampaignStatus.EXECUTING
         }));
 
-        // Wait for final update to EXECUTING
+        // The callable owns the atomic queue + campaign write, so the client
+        // applies its confirmed result locally without a second write.
         await vi.waitFor(() => {
-            expect(mockOnUpdateCampaign).toHaveBeenCalledTimes(2);
-            expect(mockOnUpdateCampaign).toHaveBeenLastCalledWith(expect.objectContaining({
-                status: CampaignStatus.EXECUTING
+            expect(mockOnUpdateCampaign).toHaveBeenCalledTimes(1);
+            expect(mockOnSelectCampaign).toHaveBeenCalledWith(expect.objectContaining({
+                status: CampaignStatus.EXECUTING,
+                posts: expect.arrayContaining([expect.objectContaining({ postId: 'queue-p1' })]),
             }));
         });
     });

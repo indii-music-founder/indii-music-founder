@@ -55,22 +55,64 @@ const mockCampaign: CampaignAsset = {
     ]
 };
 
-describe('CampaignManager Integration', () => {
+describe('CampaignManager structural callable boundary', () => {
     beforeEach(() => {
         vi.clearAllMocks();
     });
 
-    it('calls executeCampaign cloud function with correct payload when "Execute" is clicked', async () => {
+    // Structural regression coverage only. This suite does not authenticate a
+    // genuine user or prove a deployed social-delivery path.
+    it('persists first, sends only the campaign ID, then applies the server-persisted queue result', async () => {
         const onUpdateCampaign = vi.fn(async () => undefined);
+        const onSelectCampaign = vi.fn();
+        const queuedPosts = mockCampaign.posts.map(post => ({
+            ...post,
+            status: CampaignStatus.EXECUTING,
+            postId: 'queue-post-1',
+            scheduledTime: '2026-08-10T12:00:00.000Z',
+        }));
 
-        // Mock successful response from backend
         mockHttpsCallable.mockResolvedValue({
             data: {
                 success: true,
-                message: 'Dry run execution complete.',
-                posts: mockCampaign.posts.map(p => ({ ...p, status: 'DONE' }))
-            }
+                message: 'Campaign queue confirmed.',
+                posts: queuedPosts,
+                status: CampaignStatus.EXECUTING,
+            },
         });
+
+        render(
+            <CampaignManager
+                campaigns={[mockCampaign]}
+                selectedCampaign={mockCampaign}
+                onSelectCampaign={onSelectCampaign}
+                onUpdateCampaign={onUpdateCampaign}
+                onCreateNew={vi.fn()}
+            />
+        );
+
+        const executeBtn = screen.getByRole('button', { name: /execute/i });
+        fireEvent.click(executeBtn);
+
+        await waitFor(() => {
+            expect(mockHttpsCallable).toHaveBeenCalledWith({
+                campaignId: 'campaign-123',
+                dryRun: false,
+            });
+            expect(mockToast.success).toHaveBeenCalledWith('Campaign queue confirmed.');
+        }, { timeout: 10000 });
+
+        expect(onUpdateCampaign).toHaveBeenCalledTimes(1);
+        expect(onUpdateCampaign).toHaveBeenCalledWith(expect.objectContaining({ status: CampaignStatus.EXECUTING }));
+        expect(onUpdateCampaign.mock.invocationCallOrder[0]).toBeLessThan(mockHttpsCallable.mock.invocationCallOrder[0]);
+        expect(onSelectCampaign).toHaveBeenCalledWith(expect.objectContaining({
+            status: CampaignStatus.EXECUTING,
+            posts: expect.arrayContaining([expect.objectContaining({ postId: 'queue-post-1' })]),
+        }));
+    }, 15000);
+
+    it('does not invoke the backend or report success when the pre-queue persistence write fails', async () => {
+        const onUpdateCampaign = vi.fn().mockRejectedValue(new Error('Firestore denied'));
 
         render(
             <CampaignManager
@@ -82,30 +124,16 @@ describe('CampaignManager Integration', () => {
             />
         );
 
-        const executeBtn = screen.getByRole('button', { name: /execute/i });
-        fireEvent.click(executeBtn);
+        fireEvent.click(screen.getByRole('button', { name: /execute/i }));
 
-        // Verify Backend Call with loose matching for flexibility
         await waitFor(() => {
-            expect(mockHttpsCallable).toHaveBeenCalledWith(expect.objectContaining({
-                campaignId: 'campaign-123',
-                posts: expect.arrayContaining([
-                    expect.objectContaining({ id: 'post-1' })
-                ]),
-                dryRun: expect.any(Boolean)
-            }));
-        }, { timeout: 10000 });
+            expect(mockToast.error).toHaveBeenCalledWith(expect.stringContaining('was not queued'));
+        });
+        expect(mockHttpsCallable).not.toHaveBeenCalled();
+        expect(mockToast.success).not.toHaveBeenCalled();
+    });
 
-        // Verify State Update + toast (inside waitFor to prevent async race — CodeRabbit PR #1707)
-        await waitFor(() => {
-            expect(onUpdateCampaign).toHaveBeenCalledWith(expect.objectContaining({
-                status: CampaignStatus.EXECUTING
-            }));
-            expect(mockToast.success).toHaveBeenCalled();
-        }, { timeout: 10000 });
-    }, 15000);
-
-    it('handles backend errors gracefully', async () => {
+    it('persists a retryable failure and never reports success when the callable fails', async () => {
         const onUpdateCampaign = vi.fn(async () => undefined);
 
         mockHttpsCallable.mockRejectedValue(new Error('Validation Failed'));
@@ -123,12 +151,38 @@ describe('CampaignManager Integration', () => {
         const executeBtn = screen.getByRole('button', { name: /execute/i });
         fireEvent.click(executeBtn);
 
-        // Verify error state + toast (inside waitFor — CodeRabbit PR #1707)
         await waitFor(() => {
             expect(onUpdateCampaign).toHaveBeenCalledWith(expect.objectContaining({
                 status: CampaignStatus.FAILED
             }));
             expect(mockToast.error).toHaveBeenCalledWith(expect.stringContaining('Validation Failed'));
         }, { timeout: 10000 });
+        expect(onUpdateCampaign).toHaveBeenCalledTimes(2);
+        expect(mockToast.success).not.toHaveBeenCalled();
+    }, 15000);
+
+    it('reports both failures when the callable and failure-state persistence fail', async () => {
+        const onUpdateCampaign = vi.fn()
+            .mockResolvedValueOnce(undefined)
+            .mockRejectedValueOnce(new Error('Firestore denied'));
+        mockHttpsCallable.mockRejectedValue(new Error('Callable timed out'));
+
+        render(
+            <CampaignManager
+                campaigns={[mockCampaign]}
+                selectedCampaign={mockCampaign}
+                onSelectCampaign={vi.fn()}
+                onUpdateCampaign={onUpdateCampaign}
+                onCreateNew={vi.fn()}
+            />
+        );
+
+        fireEvent.click(screen.getByRole('button', { name: /execute/i }));
+
+        await waitFor(() => {
+            expect(mockToast.error).toHaveBeenCalledWith(expect.stringMatching(/could not be saved; refresh before retrying/i));
+        });
+        expect(onUpdateCampaign).toHaveBeenCalledTimes(2);
+        expect(mockToast.success).not.toHaveBeenCalled();
     }, 15000);
 });

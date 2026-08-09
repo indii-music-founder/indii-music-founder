@@ -7,7 +7,11 @@ import IntelligenceImageBatchModal from './IntelligenceImageBatchModal';
 import { useToast } from '@/core/context/ToastContext';
 import { functions } from '@/services/firebase';
 import { httpsCallable } from 'firebase/functions';
-import { CampaignExecutionRequest } from '../schemas';
+import {
+    CampaignExecutionRequest,
+    CampaignExecutionResponse,
+    CampaignExecutionResponseSchema,
+} from '../schemas';
 import { logger } from '@/utils/logger';
 
 interface CampaignManagerProps {
@@ -35,9 +39,18 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({
     const handleExecute = async () => {
         if (!selectedCampaign) return;
 
-        // Optimistic check
         if (selectedCampaign.status === CampaignStatus.DONE) {
             toast.info("Campaign is already completed.");
+            return;
+        }
+
+        if (selectedCampaign.status === CampaignStatus.EXECUTING) {
+            toast.info("Campaign is already queued for delivery.");
+            return;
+        }
+
+        if (!selectedCampaign.id) {
+            toast.error("Save this campaign before queuing it for delivery.");
             return;
         }
 
@@ -49,44 +62,53 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({
         setIsExecuting(true);
         toast.info("Initializing campaign execution sequence...");
 
-        // Optimistically update status to EXECUTING. onUpdateCampaign already
-        // surfaces its own error toast on a failed persist; swallow the
-        // rejection here so it doesn't also become an unhandled-rejection.
         const executingState = { ...selectedCampaign, status: CampaignStatus.EXECUTING };
-        onUpdateCampaign(executingState).catch(() => {});
 
         try {
-            // REAL PRODUCTION BINDING
-            // We map to our Zod-validated schema structure
+            // Persist the exact campaign content before asking the backend to
+            // source it. A failed save must stop external queue creation.
+            await onUpdateCampaign(executingState);
+        } catch (error: unknown) {
+            logger.error("Campaign execution state could not be persisted:", error);
+            toast.error("Campaign was not queued because its latest state could not be saved.");
+            setIsExecuting(false);
+            return;
+        }
+
+        try {
             const payload: CampaignExecutionRequest = {
-                campaignId: selectedCampaign.id || 'unknown',
-                posts: selectedCampaign.posts,
-                dryRun: false // Always attempt real execution, backend handles safety
+                campaignId: selectedCampaign.id,
+                dryRun: false,
             };
 
-            const executeCampaign = httpsCallable<CampaignExecutionRequest, { posts: ScheduledPost[]; success: boolean; message: string }>(functions, 'executeCampaign');
+            const executeCampaign = httpsCallable<CampaignExecutionRequest, CampaignExecutionResponse>(functions, 'executeCampaign');
             const result = await executeCampaign(payload);
-            const responseData = result.data;
+            const responseData = CampaignExecutionResponseSchema.parse(result.data);
 
-            if (responseData.success && responseData.posts) {
-                onUpdateCampaign({
-                    ...selectedCampaign,
-                    posts: responseData.posts,
-                    status: CampaignStatus.EXECUTING
-                }).catch(() => {});
-                toast.success(responseData.message || "Campaign queued for scheduled delivery.");
-            } else {
-                throw new Error(responseData.message || "Execution returned failure status.");
-            }
+            // The callable atomically persists these exact posts and status
+            // with the queue. Update selected UI state without issuing a
+            // second, fallible client write over the server-owned result.
+            onSelectCampaign({
+                ...selectedCampaign,
+                posts: responseData.posts as ScheduledPost[],
+                status: responseData.status as CampaignStatus,
+            });
+            toast.success(responseData.message);
 
         } catch (error: unknown) {
             logger.error("Campaign Execution Failed:", error);
 
-            // Revert status or set to FAILED
-            onUpdateCampaign({ ...selectedCampaign, status: CampaignStatus.FAILED }).catch(() => {});
-
             const errorMsg = error instanceof Error ? error.message : "Unknown error";
-            toast.error(`Execution failed: ${errorMsg}`);
+            try {
+                // A callable transport error can be ambiguous. Mark the UI as
+                // retryable; the backend's deterministic queue IDs make a
+                // retry safe if the first request actually committed.
+                await onUpdateCampaign({ ...selectedCampaign, status: CampaignStatus.FAILED });
+                toast.error(`Execution could not be confirmed: ${errorMsg}. Retry is safe and will not duplicate queued posts.`);
+            } catch (persistenceError: unknown) {
+                logger.error("Campaign failure state could not be persisted:", persistenceError);
+                toast.error(`Execution could not be confirmed: ${errorMsg}. The failure status also could not be saved; refresh before retrying.`);
+            }
         } finally {
             setIsExecuting(false);
         }
