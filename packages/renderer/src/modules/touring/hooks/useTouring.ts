@@ -68,46 +68,42 @@ export const useTouring = () => {
     }, [userProfile?.id]);
 
     const updateItineraryStop = async (index: number, stop: ItineraryStop) => {
-        if (!currentItinerary || !currentItinerary.id) return;
+        if (!currentItinerary?.id) {
+            throw new Error('A persisted itinerary is required before updating a stop.');
+        }
+        if (index < 0 || index >= currentItinerary.stops.length) {
+            throw new Error('The itinerary stop index is out of range.');
+        }
 
         const updatedStops = [...currentItinerary.stops];
         updatedStops[index] = stop;
-
-        const updatedItinerary = { ...currentItinerary, stops: updatedStops };
-        setCurrentItinerary(updatedItinerary); // Optimistic update
-
-        try {
-            await TouringService.updateItinerary(currentItinerary.id, { stops: updatedStops });
-        } catch (error: unknown) {
-            logger.error("Failed to update itinerary", error);
-            toast.error("Failed to save changes");
-            // Optionally revert logical state here if needed
-        }
+        await TouringService.updateItinerary(currentItinerary.id, { stops: updatedStops });
     };
 
     const saveItinerary = async (itinerary: Omit<Itinerary, 'id' | 'userId'>) => {
-        if (!userProfile?.id) return;
-        try {
-            await TouringService.saveItinerary({
-                ...itinerary,
-                userId: userProfile.id
-            });
-            toast.success("Itinerary saved");
-        } catch (error: unknown) {
-            logger.error("Failed to save itinerary", error);
-            toast.error("Failed to save itinerary");
+        if (!userProfile?.id || userProfile.id === 'pending') {
+            throw new Error('An authenticated user profile is required to save an itinerary.');
         }
+        await TouringService.saveItinerary({
+            ...itinerary,
+            userId: userProfile.id
+        });
     };
 
 
     const saveEmergencyContact = async (contact: { id?: string; name: string; phone: string; relationship: string }) => {
-        if (!userProfile?.id) return;
+        if (!userProfile?.id || userProfile.id === 'pending') {
+            const error = new Error('An authenticated user profile is required to save an emergency contact.');
+            toast.error("Failed to save emergency contact");
+            throw error;
+        }
         try {
             await TouringService.saveEmergencyContact(userProfile.id, contact);
             toast.success("Emergency contact saved");
         } catch (error: unknown) {
             logger.error("Failed to save emergency contact", error);
             toast.error("Failed to save emergency contact");
+            throw error;
         }
     };
 
@@ -118,6 +114,7 @@ export const useTouring = () => {
         } catch (error: unknown) {
             logger.error("Failed to delete emergency contact", error);
             toast.error("Failed to delete emergency contact");
+            throw error;
         }
     };
 

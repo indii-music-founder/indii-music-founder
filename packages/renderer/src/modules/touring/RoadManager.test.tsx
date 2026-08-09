@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import RoadManager from './RoadManager';
@@ -258,5 +258,53 @@ describe('RoadManager', () => {
                 expect.objectContaining({ id: 'stop-2', city: 'Milwaukee' }),
             ],
         }));
+    });
+
+    it('reverts the optimistic day-sheet edit when persistence fails', async () => {
+        const originalItinerary = {
+            id: 'itinerary-123',
+            userId: 'test-user',
+            tourName: 'Test Tour',
+            stops: [
+                { id: 'stop-1', date: '2023-10-01', city: 'Detroit', venue: 'Club A', activity: 'Show', notes: '' },
+            ],
+            totalDistance: 'Not calculated',
+        };
+        const setCurrentItinerary = vi.fn();
+        setupTouringMock({
+            currentItinerary: originalItinerary,
+            setCurrentItinerary,
+            updateItineraryStop: vi.fn().mockRejectedValue(new Error('Firestore unavailable')),
+        });
+        render(<RoadManager />);
+
+        fireEvent.click(screen.getByText('Edit'));
+        fireEvent.change(screen.getByLabelText('City'), { target: { value: 'Chicago' } });
+        fireEvent.click(screen.getByText('Save Changes'));
+
+        await waitFor(() => expect(mocks.toast.error).toHaveBeenCalledWith('Failed to update stop'));
+        expect(setCurrentItinerary).toHaveBeenCalledTimes(2);
+        expect(setCurrentItinerary).toHaveBeenNthCalledWith(1, expect.objectContaining({
+            stops: [expect.objectContaining({ city: 'Chicago' })],
+        }));
+        expect(setCurrentItinerary).toHaveBeenNthCalledWith(2, originalItinerary);
+        expect(mocks.toast.success).not.toHaveBeenCalledWith('Day sheet updated');
+    });
+
+    it('keeps the emergency-contact form open when persistence fails', async () => {
+        const saveEmergencyContact = vi.fn().mockRejectedValue(new Error('Firestore unavailable'));
+        setupTouringMock({ saveEmergencyContact });
+        render(<RoadManager />);
+
+        fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+        const form = screen.getByText('New Emergency Contact').closest('form');
+        expect(form).not.toBeNull();
+        const [nameInput, phoneInput] = within(form!).getAllByRole('textbox');
+        fireEvent.change(nameInput!, { target: { value: 'Tour manager' } });
+        fireEvent.change(phoneInput!, { target: { value: '555-0100' } });
+        fireEvent.click(within(form!).getByRole('button', { name: 'Save' }));
+
+        await waitFor(() => expect(saveEmergencyContact).toHaveBeenCalled());
+        expect(screen.getByText('New Emergency Contact')).toBeInTheDocument();
     });
 });

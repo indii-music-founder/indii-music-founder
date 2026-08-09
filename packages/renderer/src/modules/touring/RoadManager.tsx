@@ -110,14 +110,17 @@ function EmergencyContactsPanel({ contacts, onSave, onDelete }: EmergencyContact
         e.preventDefault();
         if (!name.trim() || !phone.trim() || !relationship.trim()) return;
 
-        await onSave({
-            id: editingContact?.id,
-            name: name.trim(),
-            phone: phone.trim(),
-            relationship: relationship.trim()
-        });
-
-        setIsOpen(false);
+        try {
+            await onSave({
+                id: editingContact?.id,
+                name: name.trim(),
+                phone: phone.trim(),
+                relationship: relationship.trim()
+            });
+            setIsOpen(false);
+        } catch {
+            // The persistence hook reports the failure; keep the form open for retry.
+        }
     };
 
     return (
@@ -248,7 +251,9 @@ function EmergencyContactsPanel({ contacts, onSave, onDelete }: EmergencyContact
                                     <Edit2 size={11} />
                                 </button>
                                 <button
-                                    onClick={() => onDelete(contact.id)}
+                                    onClick={() => {
+                                        void onDelete(contact.id).catch(() => undefined);
+                                    }}
                                     className="p-1 text-gray-600 hover:text-red-400 hover:bg-red-500/10 rounded transition-all opacity-0 group-hover:opacity-100 focus:opacity-100 focus-visible:opacity-100 outline-none cursor-pointer"
                                     title="Delete contact"
                                 >
@@ -470,6 +475,7 @@ const RoadManager: React.FC = () => {
             await updateItineraryStop(stopIndex, updatedStop);
             toast.success("Day sheet updated");
         } catch (err: unknown) {
+            setCurrentItinerary(itinerary);
             logger.error("Failed to update stop", err);
             toast.error("Failed to update stop");
         }
