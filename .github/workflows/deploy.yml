@@ -256,7 +256,13 @@ jobs:
           VITE_INGESTION_CONTACT_PHONE: +1-844-INDII-01
 
       - name: Build studio app
-        run: npm run build:studio
+        run: |
+          set -euo pipefail
+          if [ -z "${VITE_SPOTIFY_CLIENT_ID:-}" ] || [ -z "${VITE_TIKTOK_CLIENT_KEY:-}" ]; then
+            echo "::error::Spotify and TikTok public OAuth identifiers must be configured before deploying Studio."
+            exit 1
+          fi
+          npm run build:studio
         env:
           NODE_OPTIONS: "--max-old-space-size=4096"
           NODE_ENV: production
@@ -271,6 +277,8 @@ jobs:
           VITE_FIREBASE_APP_CHECK_KEY: ${{ secrets.VITE_FIREBASE_APP_CHECK_KEY }}
           VITE_GOOGLE_MAPS_API_KEY: ${{ secrets.VITE_GOOGLE_MAPS_API_KEY }}
           VITE_YOUTUBE_API_KEY: ${{ secrets.VITE_YOUTUBE_API_KEY }}
+          VITE_SPOTIFY_CLIENT_ID: ${{ secrets.SPOTIFY_CLIENT_ID }}
+          VITE_TIKTOK_CLIENT_KEY: ${{ secrets.TIKTOK_CLIENT_KEY }}
           VITE_ENABLE_GOOGLE_MAPS: "true"
           VITE_USE_FINE_TUNED_AGENTS: "true"
           VITE_INGESTION_SYSTEM_IDENTIFIER: indii-studio

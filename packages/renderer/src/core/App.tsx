@@ -39,10 +39,12 @@ import '@/core/i18n'; // Initialize i18next — must run before any component re
 import { AppInitializationProvider } from '@/providers/AppInitializationProvider';
 import { AuthInitializationProvider } from '@/providers/AppInitializationProvider';
 import { featureFlags } from '@/config/featureFlags';
+import { getPlatformOAuthCallbackProvider } from '@/modules/analytics/components/platformOAuthCallbackRoute';
 
 const AppShell = lazy(() => import('./AppShell'));
 const BugReportDialog = lazy(() => import('@/modules/debug/BugReportDialog').then(m => ({ default: m.BugReportDialog })));
 const InstagramOAuthCallback = lazy(() => import('@/modules/analytics/components/InstagramOAuthCallback').then(m => ({ default: m.InstagramOAuthCallback })));
+const PlatformOAuthCallback = lazy(() => import('@/modules/analytics/components/PlatformOAuthCallback').then(m => ({ default: m.PlatformOAuthCallback })));
 const TaxFormUploadPage = lazy(() => import('@/modules/finance/pages/TaxFormUploadPage').then(m => ({ default: m.TaxFormUploadPage })));
 const PreSaveLandingPage = lazy(() => import('@/modules/marketing/components/PreSaveLandingPage'));
 const MobileRemote = lazy(() => import('@/modules/mobile-remote/MobileRemote'));
@@ -151,6 +153,10 @@ function StudioApplication({ mobile }: { mobile: ReturnType<typeof useMobile> })
         () => (location.pathname.replace(/\/+$/, '') || '/') === '/auth/instagram/callback',
         [location.pathname],
     );
+    const platformOAuthCallbackProvider = useMemo(
+        () => getPlatformOAuthCallbackProvider(location.pathname),
+        [location.pathname],
+    );
     // URL sync must not rewrite public, auth, callback, or Controller routes.
     useURLSync({
         disabled: isMobileRemoteBypassRoute,
@@ -167,6 +173,10 @@ function StudioApplication({ mobile }: { mobile: ReturnType<typeof useMobile> })
 
     const signedInContent = isInstagramOAuthCallback ? (
                 <Suspense fallback={<LoadingFallback />}><InstagramOAuthCallback /></Suspense>
+            ) : platformOAuthCallbackProvider ? (
+                <Suspense fallback={<LoadingFallback />}>
+                    <PlatformOAuthCallback provider={platformOAuthCallbackProvider} />
+                </Suspense>
             ) : (
                 <Suspense fallback={<LoadingFallback />}>
                     <AppShell

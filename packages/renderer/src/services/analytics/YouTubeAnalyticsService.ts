@@ -192,10 +192,7 @@ export class YouTubeAnalyticsService {
      * Check if the user has connected YouTube (has Google token with YT scopes).
      */
     async isConnected(): Promise<boolean> {
-        const user = auth.currentUser;
-        if (!user) return false;
-        // User is a Google user if their provider includes google.com
-        return user.providerData.some(p => p.providerId === 'google.com');
+        return this.hasActiveToken();
     }
 
     /**
