@@ -192,15 +192,18 @@ describe('CommandBar', () => {
 
     it('renders the mode picker button correctly', () => {
         render(<CommandBar />);
-        const button = document.querySelector('button[aria-label="Change Agent Mode"]');
+        const button = screen.getByRole('button', { name: 'Change Agent Mode' });
         expect(button).toBeInTheDocument();
     });
 
     it('opens the mode picker when clicked', () => {
         render(<CommandBar />);
-        const button = document.querySelector('button[aria-label="Change Agent Mode"]') as HTMLElement;
-        expect(button).toBeInTheDocument();
+        const button = screen.getByRole('button', { name: 'Change Agent Mode' });
+        const disclosure = button.closest('details');
+
+        expect(disclosure).not.toHaveAttribute('open');
         fireEvent.click(button);
+        expect(disclosure).toHaveAttribute('open');
     });
 
     it('switches module and opens agent window when a manager is selected', () => {
@@ -237,7 +240,7 @@ describe('CommandBar', () => {
         render(<CommandBar />);
 
         // The mode toggle button renders with the correct label
-        const activeBtn = document.querySelector('button[aria-label="Change Agent Mode"]');
+        const activeBtn = screen.getByRole('button', { name: 'Change Agent Mode' });
         expect(activeBtn).toBeInTheDocument();
 
         // Verify indii-mode placeholder

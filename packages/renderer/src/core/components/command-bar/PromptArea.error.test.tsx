@@ -21,6 +21,7 @@ vi.mock('@/services/agent/AgentService', () => ({
 vi.mock('@/services/agent/registry', () => ({
   agentRegistry: {
     getAll: () => [],
+    get: () => undefined,
   },
 }));
 
