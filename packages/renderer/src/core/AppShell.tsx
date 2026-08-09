@@ -16,7 +16,6 @@ import { MobileHeader } from './components/MobileHeader';
 
 import { ApprovalModal } from './components/ApprovalModal';
 import CostWarningModal from './components/CostWarningModal';
-import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { AlertDialog } from '@/components/ui/AlertDialog';
 import { PromptDialog } from '@/components/ui/PromptDialog';
 import { CampaignConfigDialog } from '@/components/ui/CampaignConfigDialog';
@@ -543,7 +542,6 @@ function AppContent({ currentModule, showChrome, isDesktop, isAnyPhone, shortcut
                     </ErrorBoundary>
                 )}
 
-                <ConfirmDialog />
                 <AlertDialog />
                 <PromptDialog />
                 <CampaignConfigDialog />

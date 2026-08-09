@@ -34,8 +34,8 @@ const createZeroMerchStats = (): MerchStats => ({
 });
 
 export const useMerchandise = () => {
-    const { userProfile } = useStore(useShallow(state => ({
-        userProfile: state.userProfile
+    const { authenticatedUserId } = useStore(useShallow(state => ({
+        authenticatedUserId: state.user?.uid
     })));
     const [products, setProducts] = useState<MerchProduct[]>([]);
     const [catalog, setCatalog] = useState<CatalogProduct[]>([]);
@@ -89,7 +89,7 @@ export const useMerchandise = () => {
 
     // Subscribe to user's products
     useEffect(() => {
-        if (!userProfile?.id) {
+        if (!authenticatedUserId) {
             setProducts([]);
             setIsProductsLoading(false);
             return;
@@ -100,7 +100,7 @@ export const useMerchandise = () => {
 
         let initialLoadComplete = false;
 
-        const unsubscribe = MerchandiseService.subscribeToProducts(userProfile.id, (data) => {
+        const unsubscribe = MerchandiseService.subscribeToProducts(authenticatedUserId, (data) => {
             initialLoadComplete = true;
             setProducts(data);
             setIsProductsLoading(false);
@@ -126,11 +126,11 @@ export const useMerchandise = () => {
             unsubscribe();
             clearTimeout(safetyTimer);
         };
-    }, [userProfile?.id]);
+    }, [authenticatedUserId]);
 
     // Fetch Revenue Stats and Compute Top Sellers
     useEffect(() => {
-        if (!userProfile?.id) {
+        if (!authenticatedUserId) {
             setIsProductsLoading(false);
             setIsStatsLoading(false);
             return;
@@ -147,7 +147,7 @@ export const useMerchandise = () => {
             try {
                 // Race stats against a timeout
                 const revenueStats = await Promise.race([
-                    revenueService.getUserRevenueStats(userProfile.id, '30d'),
+                    revenueService.getUserRevenueStats(authenticatedUserId, '30d'),
                     timeoutPromise
                 ]) as Record<string, unknown>; // Cast as we know the shape if it wins
 
@@ -186,7 +186,7 @@ export const useMerchandise = () => {
 
         fetchStats();
 
-    }, [userProfile?.id, isProductsLoading, products]);
+    }, [authenticatedUserId, isProductsLoading, products]);
 
     const standardProducts = useMemo(() => products.filter(p => p.category === 'standard'), [products]);
     const proProducts = useMemo(() => products.filter(p => p.category === 'pro'), [products]);
@@ -196,9 +196,9 @@ export const useMerchandise = () => {
         price?: string;
         image?: string;
     }) => {
-        if (!userProfile?.id) throw new Error('User not authenticated');
-        return MerchandiseService.createFromCatalog(catalogId, userProfile.id, customizations);
-    }, [userProfile?.id]);
+        if (!authenticatedUserId) throw new Error('User not authenticated');
+        return MerchandiseService.createFromCatalog(catalogId, authenticatedUserId, customizations);
+    }, [authenticatedUserId]);
 
     const loading = isProductsLoading || isCatalogLoading || isStatsLoading;
 

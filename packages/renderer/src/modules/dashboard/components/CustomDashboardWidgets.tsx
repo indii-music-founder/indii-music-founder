@@ -973,7 +973,10 @@ export const WIDGET_RENDERERS: Record<WidgetType, () => React.ReactElement> = {
 
 // eslint-disable-next-line react-refresh/only-export-components
 function RevenueAggregatedWidget() {
-    const userId = useStore(useShallow((s) => s.userProfile?.id));
+    // Revenue rules are scoped to Firebase Auth, not a mutable/stale profile
+    // document. A cached profile from another account must never choose the
+    // owner for this query during account-boundary hydration.
+    const userId = useStore(useShallow((s) => s.user?.uid));
     const setModule = useStore(useShallow((s) => s.setModule));
     const [stats, setStats] = useState<RevenueStats | null>(null);
     const [isLoading, setIsLoading] = useState(true);

@@ -40,6 +40,7 @@ import { AppInitializationProvider } from '@/providers/AppInitializationProvider
 import { AuthInitializationProvider } from '@/providers/AppInitializationProvider';
 import { featureFlags } from '@/config/featureFlags';
 import { getPlatformOAuthCallbackProvider } from '@/modules/analytics/components/platformOAuthCallbackRoute';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 
 const AppShell = lazy(() => import('./AppShell'));
 const BugReportDialog = lazy(() => import('@/modules/debug/BugReportDialog').then(m => ({ default: m.BugReportDialog })));
@@ -192,6 +193,13 @@ function StudioApplication({ mobile }: { mobile: ReturnType<typeof useMobile> })
 
     return (
         <AuthInitializationProvider>
+            {/*
+             * Workspace sync can request confirmation from this component's
+             * effect before the lazy AppShell has mounted. Keep the one
+             * callable Root at this stable authenticated-surface boundary so
+             * every ConfirmDialog.call() has a live Root on the first effect.
+             */}
+            <ConfirmDialog />
             {authLoading || !user ? (
                 authLoading ? <LoadingFallback /> : <UnauthenticatedApp />
             ) : (

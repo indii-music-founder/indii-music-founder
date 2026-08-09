@@ -33,7 +33,10 @@ vi.mock('@/core/store', () => ({
 describe('useMerchandise', () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        mockUseStore.mockReturnValue({ userProfile: { id: 'test-user-id' } });
+        mockUseStore.mockReturnValue({
+            user: { uid: 'test-user-id' },
+            userProfile: { id: 'test-user-id' },
+        });
         // Default revenue mock
         vi.mocked(revenueService.getUserRevenueStats).mockResolvedValue({
             sources: { merch: 100 },
@@ -143,5 +146,31 @@ describe('useMerchandise', () => {
         expect(result.current.stats.totalRevenue).toBe(0);
         expect(result.current.stats.unitsSold).toBe(0);
         expect(result.current.topSellingProducts).toEqual([]);
+    });
+
+    it('uses the authenticated UID for revenue even when cached profile identity is stale', async () => {
+        mockUseStore.mockReturnValue({
+            user: { uid: 'authenticated-user-id' },
+            userProfile: { id: 'stale-profile-id' },
+        });
+        vi.mocked(MerchandiseService.getCatalog).mockResolvedValue([]);
+        vi.mocked(MerchandiseService.subscribeToProducts).mockImplementation((_userId, callback) => {
+            callback([]);
+            return () => { };
+        });
+
+        renderHook(() => useMerchandise());
+
+        await waitFor(() => {
+            expect(revenueService.getUserRevenueStats).toHaveBeenCalledWith(
+                'authenticated-user-id',
+                '30d',
+            );
+        });
+        expect(MerchandiseService.subscribeToProducts).toHaveBeenCalledWith(
+            'authenticated-user-id',
+            expect.any(Function),
+            expect.any(Function),
+        );
     });
 });

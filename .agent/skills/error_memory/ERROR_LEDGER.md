@@ -1,3 +1,11 @@
+## 2026-08-09 Production Boot Effects Need Their Imperative UI Roots Before Lazy Shells
+
+**SEVERITY:** High (a real signed-in production session failed workspace rehydration, left a conflict dialog blocking the Studio, and issued an account-mismatched revenue query)
+
+- **BUG:** `useWorkspaceSync` ran from `StudioApplication`, but the sole `ConfirmDialog` callable Root lived inside the lazy `AppShell`. The parent effect could call before that Root mounted and throw `No <Root> found!`. Separately, the home revenue widget used mutable `userProfile.id` during account hydration instead of the authenticated UID, and the production revenue fan-out included compound queries with no declared `userId + createdAt` indexes.
+- **FIX:** Mount the single confirmation Root at the stable `StudioApplication` boundary before authenticated effects can run; derive revenue ownership from `state.user.uid`; and declare the exact composite indexes for revenue, earnings, and manufacture requests.
+- **PREVENTION:** An imperative UI call made by an application-lifetime effect must have its one Root mounted outside lazy or conditional feature shells. Security-rule ownership must come from the authenticated identity boundary, never cached presentation state, and every production compound query must have its index checked into the deployed index manifest.
+
 ## 2026-08-09 Queue Success Requires One Authoritative, Idempotent State Transition
 
 **SEVERITY:** Critical (a campaign could create real scheduled social posts while its visible state write failed, then create duplicates when the user retried)
