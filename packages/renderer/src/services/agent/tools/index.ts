@@ -242,7 +242,7 @@ AVAILABLE TOOLS:
 91. create_limited_drop_campaign(dropName, productId or productIds, releaseDate, notifyFans?) - Save a limited-drop draft. Notification setup is reported separately and the tool never claims the drop is live.
 92. generate_smart_contract(type, parties, terms) - Generate a Web3 smart contract (ERC-721 / ERC-1155).
 93. trace_blockchain_royalty(tokenId, chain) - Trace on-chain royalty history for a token.
-94. generate_token_gated_preview(assetId, tokenContract) - Generate a token-gated content preview URL.
+94. generate_token_gated_preview(assetId, tokenContract) - Check token-gated preview availability (currently unavailable until verification and protected delivery are deployed).
 --- ANALYTICS & BROWSER ---
 95. execute_bigquery_query(sql, projectId) - Execute a BigQuery SQL query for revenue analytics.
 96. get_table_schema(dataset, table) - Get BigQuery table schema.

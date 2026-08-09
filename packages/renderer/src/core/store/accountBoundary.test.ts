@@ -49,6 +49,17 @@ describe('account-bound root store', () => {
         })).toEqual(persisted);
     });
 
+    it('rejects stale or fabricated module IDs from shared browser persistence', () => {
+        expect(sanitizePersistedAppState({
+            currentModule: 'video',
+            isSidebarOpen: true,
+            conversationMode: 'direct',
+        })).toEqual({
+            isSidebarOpen: true,
+            conversationMode: 'direct',
+        });
+    });
+
     it('atomically replaces private slices while preserving the new identity and UI preferences', () => {
         const abortController = new AbortController();
         const resolveApproval = vi.fn();

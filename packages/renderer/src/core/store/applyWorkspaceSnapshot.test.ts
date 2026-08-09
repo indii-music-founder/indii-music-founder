@@ -52,4 +52,17 @@ describe('applyWorkspaceSnapshot', () => {
 
         unsubscribe();
     });
+
+    it('ignores invalid module and conversation values from cloud snapshots', async () => {
+        const { useStore, applyWorkspaceSnapshot } = await import('@/core/store');
+        useStore.setState({ currentModule: 'dashboard', conversationMode: 'direct' }, false);
+
+        applyWorkspaceSnapshot({
+            currentModule: 'removed-module',
+            conversationMode: 'fabricated-mode',
+        } as never);
+
+        expect(useStore.getState().currentModule).toBe('dashboard');
+        expect(useStore.getState().conversationMode).toBe('direct');
+    });
 });

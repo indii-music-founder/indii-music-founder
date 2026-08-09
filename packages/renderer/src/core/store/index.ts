@@ -40,7 +40,7 @@ export type { AgentSwarmSlice, AgentActionLog, CampaignMetrics } from './slices/
 import { useLivingPlanSlice } from './slices/livingPlanSlice';
 import type { LivingPlan } from '@/services/agent/LivingPlanService';
 import type { WorkspaceSnapshot } from '@/services/sync/WorkspaceSyncService';
-import type { ModuleId } from '@/core/constants';
+import { isValidModule, type ModuleId } from '@/core/constants';
 import type { ConversationMode } from '@/core/store/slices/agent/agentUISlice';
 
 export type { AgentMessage, AgentThought } from './slices/agent';
@@ -104,7 +104,9 @@ export function sanitizePersistedAppState(value: unknown): Partial<SafePersisted
     const candidate = value as Partial<SafePersistedAppState>;
     const safe: Partial<SafePersistedAppState> = {};
     if (typeof candidate.isSidebarOpen === 'boolean') safe.isSidebarOpen = candidate.isSidebarOpen;
-    if (typeof candidate.currentModule === 'string') safe.currentModule = candidate.currentModule;
+    if (typeof candidate.currentModule === 'string' && isValidModule(candidate.currentModule)) {
+        safe.currentModule = candidate.currentModule;
+    }
     if (candidate.conversationMode === 'direct' || candidate.conversationMode === 'boardroom') {
         safe.conversationMode = candidate.conversationMode;
     }
@@ -261,10 +263,10 @@ export function applyWorkspaceSnapshot(snapshot: Partial<WorkspaceSnapshot>): vo
     if (snapshot.referencedAssets !== undefined) {
         rootUpdates.referencedAssets = snapshot.referencedAssets;
     }
-    if (snapshot.currentModule !== undefined) {
+    if (snapshot.currentModule !== undefined && isValidModule(snapshot.currentModule)) {
         rootUpdates.currentModule = snapshot.currentModule;
     }
-    if (snapshot.conversationMode !== undefined) {
+    if (snapshot.conversationMode === 'direct' || snapshot.conversationMode === 'boardroom') {
         rootUpdates.conversationMode = snapshot.conversationMode;
     }
     if (snapshot.notes !== undefined) {

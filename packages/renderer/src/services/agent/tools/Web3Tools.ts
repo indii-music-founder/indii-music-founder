@@ -125,8 +125,8 @@ Return ONLY the complete Solidity source code, no markdown fences.`;
     }),
 
     /**
-     * Generates a token-gated preview URL for a track.
-     * Stores the gate configuration in Firestore and returns the canonical preview URL.
+     * Token gating needs a verification service and protected media delivery.
+     * Neither is deployed, so never mint a share URL or claim a gate is active.
      */
     generate_token_gated_preview: wrapTool('generate_token_gated_preview', async (args: { trackTitle: string; tokenContractAddress: string }) => {
         // Validate the address looks like an Ethereum address
@@ -134,31 +134,10 @@ Return ONLY the complete Solidity source code, no markdown fences.`;
             return toolError('tokenContractAddress must be a valid Ethereum address (0x + 40 hex chars).', 'INVALID_ADDRESS');
         }
 
-        const slug = args.trackTitle.replace(/[^a-z0-9]+/gi, '-').toLowerCase();
-        const previewUrl = `https://app.indii.music/preview/${slug}?gate=${args.tokenContractAddress}`;
-
-        try {
-            const { db, auth } = await importWithRetry(() => import('@/services/firebase'));
-            const { doc, setDoc, serverTimestamp } = await importWithRetry(() => import('firebase/firestore'));
-            const uid = auth.currentUser?.uid;
-            if (uid) {
-                await setDoc(doc(db, 'users', uid, 'tokenGates', args.tokenContractAddress), {
-                    trackTitle: args.trackTitle,
-                    contractAddress: args.tokenContractAddress,
-                    previewUrl,
-                    createdAt: serverTimestamp(),
-                });
-            }
-        } catch (e: unknown) {
-            logger.warn('[Web3Tools] Could not persist token gate:', e);
-        }
-
-        return toolSuccess({
-            trackTitle: args.trackTitle,
-            gateAddress: args.tokenContractAddress,
-            previewUrl,
-            status: 'Active',
-        }, `Token-gated preview active for "${args.trackTitle}". Share: ${previewUrl}`);
+        return toolError(
+            `Token-gated previews are unavailable for "${args.trackTitle}". Contract ownership verification and protected media delivery are not deployed, so no share URL was created.`,
+            'NOT_IMPLEMENTED'
+        );
     }),
 } satisfies Record<string, AnyToolFunction>;
 

@@ -282,6 +282,13 @@ function ModuleRenderer({
         const segments = location.pathname.split('/').filter(Boolean);
         return segments.length > 1 ? segments[1] : undefined;
     }, [location.pathname]);
+    const isVideoCreativeRoute = useMemo(() => {
+        const segments = location.pathname.split('/').filter(Boolean);
+        return (
+            ['video', 'video-producer', 'video-studio'].includes(segments[0] ?? '')
+            || (segments[0] === 'creative' && segments[1] === 'video')
+        );
+    }, [location.pathname]);
 
     const { user, setModule } = useStore(
         useShallow(s => ({ user: s.user, setModule: s.setModule }))
@@ -374,7 +381,7 @@ function ModuleRenderer({
     }
 
     if (moduleId === 'creative') {
-        return <ModuleComponent initialMode="image" />;
+        return <ModuleComponent initialMode={isVideoCreativeRoute ? 'video' : 'image'} />;
     }
 
     return <ModuleComponent />;

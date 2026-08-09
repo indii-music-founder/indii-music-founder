@@ -121,6 +121,7 @@ type FlagListener = () => void;
 class FeatureFlagService {
     private flags: Map<string, boolean> = new Map();
     private initialized = false;
+    private initializationPromise: Promise<void> | null = null;
     private version = 0; // Incremented on every flag change for React subscriptions
     private listeners: Set<FlagListener> = new Set();
 
@@ -135,9 +136,18 @@ class FeatureFlagService {
      * Initialize from Firebase Remote Config.
      * Call once at app startup after Firebase is initialized.
      */
-    async initialize(): Promise<void> {
-        if (this.initialized) return;
+    initialize(): Promise<void> {
+        if (this.initialized) return Promise.resolve();
 
+        if (this.initializationPromise) return this.initializationPromise;
+
+        this.initializationPromise = this.loadRemoteFlags().finally(() => {
+            this.initializationPromise = null;
+        });
+        return this.initializationPromise;
+    }
+
+    private async loadRemoteFlags(): Promise<void> {
         try {
             const { getRemoteConfig, fetchAndActivate, getBoolean } = await import('firebase/remote-config');
             const { app } = await import('@/services/firebase');

@@ -790,6 +790,37 @@ service cloud.firestore {
         allow read, create, update, delete: if isOwner(userId);
       }
 
+      match /graphExecutions/{executionId} {
+        function isValidGraphExecution(data) {
+          return data.keys().hasOnly([
+              'graphId', 'executionId', 'nodeStates', 'status', 'graph',
+              'metadata', 'updatedAt'
+            ]) &&
+            data.keys().hasAll([
+              'graphId', 'executionId', 'nodeStates', 'status', 'updatedAt'
+            ]) &&
+            data.graphId is string &&
+            data.graphId.size() >= 1 &&
+            data.graphId.size() <= 128 &&
+            data.executionId == executionId &&
+            data.nodeStates is map &&
+            data.nodeStates.size() <= 100 &&
+            data.status in [
+              'PLANNED', 'EXECUTING', 'AWAITING_HUMAN',
+              'AWAITING_EVALUATION', 'COMPLETED', 'FAILED', 'CANCELLED'
+            ] &&
+            (!('graph' in data) || (data.graph is map && data.graph.size() <= 20)) &&
+            (!('metadata' in data) || (data.metadata is map && data.metadata.size() <= 50)) &&
+            data.updatedAt is timestamp;
+        }
+        allow read, delete: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidGraphExecution(request.resource.data);
+        allow update: if isOwner(userId) &&
+          request.resource.data.graphId == resource.data.graphId &&
+          request.resource.data.executionId == resource.data.executionId &&
+          isValidGraphExecution(request.resource.data);
+      }
+
       match /screenwriterDrafts/{draftId} {
         allow read: if isOwner(userId);
         allow create, update: if isOwner(userId) &&
@@ -850,6 +881,18 @@ service cloud.firestore {
       // ── Owner-scoped subcollections (2026-05-28: latent 403 fixes — see docs/architecture/FIRESTORE_RULES_403_AUDIT.md) ──
       match /agent_audit/{auditId} { allow read, write: if isOwner(userId); }
       match /agent_dispatch_queue/{taskId} { allow read, write: if isOwner(userId); }
+      match /agent_queue/{queueId} {
+        function isValidAgentQueue(data) {
+          return queueId == 'queue' &&
+            data.keys().hasOnly(['tasks', 'savedAt']) &&
+            data.keys().hasAll(['tasks', 'savedAt']) &&
+            data.tasks is list &&
+            data.tasks.size() <= 100 &&
+            data.savedAt is timestamp;
+        }
+        allow read, delete: if isOwner(userId);
+        allow create, update: if isOwner(userId) && isValidAgentQueue(request.resource.data);
+      }
       match /browserHistory/{entryId} { allow read, write: if isOwner(userId); }
       match /computerSessions/{sessionId} { allow read, write: if isOwner(userId); }
       match /contacts/{contactId} { allow read, write: if isOwner(userId); }
@@ -864,6 +907,52 @@ service cloud.firestore {
       match /pod_orders/{orderId} { allow read, write: if isOwner(userId); }
       match /press_releases/{prId} { allow read, write: if isOwner(userId); }
       match /publishingCatalog/{compositionId} { allow read, write: if isOwner(userId); }
+      match /proSubmissionDrafts/{draftId} {
+        function isValidProSubmissionDraft(data) {
+          return data.keys().hasOnly([
+              'workTitle', 'writers', 'publisher', 'society', 'status',
+              'createdAt', 'updatedAt'
+            ]) &&
+            data.keys().hasAll([
+              'workTitle', 'writers', 'publisher', 'society', 'status',
+              'createdAt', 'updatedAt'
+            ]) &&
+            data.workTitle is string &&
+            data.workTitle.size() >= 1 &&
+            data.workTitle.size() <= 300 &&
+            data.writers is list &&
+            data.writers.size() >= 1 &&
+            data.writers.size() <= 50 &&
+            data.society is string &&
+            data.society.size() >= 2 &&
+            data.society.size() <= 80 &&
+            data.status == 'requires_manual_submission' &&
+            (
+              data.publisher == null ||
+              (
+                data.publisher is map &&
+                data.publisher.keys().hasOnly(['name', 'ipi', 'split']) &&
+                data.publisher.keys().hasAll(['name', 'split']) &&
+                data.publisher.name is string &&
+                data.publisher.name.size() >= 1 &&
+                data.publisher.name.size() <= 200 &&
+                (!('ipi' in data.publisher) || (
+                  data.publisher.ipi is string &&
+                  data.publisher.ipi.size() <= 40
+                )) &&
+                data.publisher.split is number &&
+                data.publisher.split >= 0 &&
+                data.publisher.split <= 100
+              )
+            ) &&
+            data.createdAt == request.time &&
+            data.updatedAt == request.time;
+        }
+
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidProSubmissionDraft(request.resource.data);
+        allow update, delete: if false;
+      }
       match /tasks/{taskId} { allow read, write: if isOwner(userId); }
       match /tool_approvals/{approvalId} { allow read, write: if isOwner(userId); }
       match /aop/{docId} { allow read, write: if isOwner(userId); }
@@ -2446,16 +2535,6 @@ service cloud.firestore {
       allow read: if isAuthenticated() && resource.data.get('userId', '') == request.auth.uid;
       allow create: if isAuthenticated() && isVerifiedUser() && isValidLimitedDrop();
       allow update, delete: if false;
-    }
-
-    // =========================================================================
-    // Tax Form Submission Requests (Finance/Tokens)
-    // =========================================================================
-    // Single-use token-based links for collaborators to submit tax forms without auth.
-    // Token is 64-char hex. Once consumedAt is set (by backend), reuse is denied.
-    match /taxFormRequests/{token} {
-      allow read: if request.query.limit <= 1 && token.size() == 64;
-      allow create, update, delete: if false; // Callable/Admin SDK only
     }
 
     // =========================================================================

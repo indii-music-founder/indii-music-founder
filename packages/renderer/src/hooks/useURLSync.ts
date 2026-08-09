@@ -9,6 +9,22 @@ interface URLSyncOptions {
 }
 
 const PUBLIC_ROUTE_SEGMENTS = new Set(['privacy', 'terms', 'legal']);
+const VIDEO_ROUTE_SEGMENTS = new Set(['video', 'video-producer', 'video-studio']);
+
+const ROUTE_ALIASES: Record<string, string> = {
+    'controller': 'mobile-remote',
+    'remote': 'mobile-remote',
+    'social-media': 'social',
+    'socials': 'social',
+    'video': 'creative',
+    'video-producer': 'creative',
+    'video-studio': 'creative',
+    'creative-director': 'creative',
+};
+
+function resolvePathModule(pathSegment: string): string {
+    return ROUTE_ALIASES[pathSegment] ?? pathSegment;
+}
 
 export function useURLSync(options: URLSyncOptions = {}) {
     const { currentModule, setModule, authLoading } = useStore(
@@ -25,6 +41,7 @@ export function useURLSync(options: URLSyncOptions = {}) {
     // Without this, deep links like /mobile-remote get overridden by the
     // store's previously-saved module (e.g. 'creative') on first render.
     const hasInitializedFromURL = useRef(false);
+    const pendingPathModule = useRef<string | null>(null);
 
     // 1. URL -> Store (Deep Link / Back Button)
     // GUARD: Do not sync URL -> store until auth has fully resolved.
@@ -40,24 +57,13 @@ export function useURLSync(options: URLSyncOptions = {}) {
             hasInitializedFromURL.current = false;
             return;
         }
-        let targetModule = pathSegments[0] || 'dashboard';
-
-        // Route aliases: friendly URLs that map to module IDs
-        const ROUTE_ALIASES: Record<string, string> = {
-            'controller': 'mobile-remote',
-            'remote': 'mobile-remote',
-            'social-media': 'social',
-            'socials': 'social',
-            'video-producer': 'video',
-            'video-studio': 'video',
-            'creative-director': 'creative',
-        };
-        if (ROUTE_ALIASES[targetModule]) {
-            targetModule = ROUTE_ALIASES[targetModule] ?? targetModule;
-        }
+        const targetModule = resolvePathModule(pathSegments[0] || 'dashboard');
 
         if (targetModule !== currentModule && isValidModule(targetModule)) {
+            pendingPathModule.current = targetModule;
             setModule(targetModule);
+        } else {
+            pendingPathModule.current = null;
         }
 
         // Mark initialization complete after first run
@@ -74,7 +80,26 @@ export function useURLSync(options: URLSyncOptions = {}) {
 
         const pathSegments = location.pathname.split('/').filter(Boolean);
         if (PUBLIC_ROUTE_SEGMENTS.has(pathSegments[0] || '')) return;
-        const currentPathModule = pathSegments[0] || 'dashboard';
+        const pathSegment = pathSegments[0] || 'dashboard';
+        const currentPathModule = resolvePathModule(pathSegment);
+
+        // URL -> Store owns valid deep links and Back/Forward navigation. Do
+        // not let the stale store value rewrite the route in the same effect
+        // cycle before Zustand publishes the new module.
+        if (
+            pendingPathModule.current === currentPathModule
+            && currentModule !== currentPathModule
+        ) return;
+        if (pendingPathModule.current === currentModule) {
+            pendingPathModule.current = null;
+        }
+
+        // Preserve legacy video deep links while converging on one canonical
+        // route. Video is a mode of CreativeStudio, not a standalone module.
+        if (currentModule === 'creative' && VIDEO_ROUTE_SEGMENTS.has(pathSegment)) {
+            navigate('/creative/video', { replace: true });
+            return;
+        }
 
         if (currentModule !== currentPathModule) {
             navigate(currentModule === 'dashboard' ? '/' : `/${currentModule}`);

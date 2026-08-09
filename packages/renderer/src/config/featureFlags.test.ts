@@ -11,6 +11,8 @@ vi.mock('@/core/logger/Logger', () => ({
     },
 }));
 
+vi.mock('@/services/firebase', () => ({ app: {} }));
+
 // We re-import for each test to get a fresh FeatureFlagService instance.
 // The module-level singleton is created at import time with defaults loaded.
 
@@ -51,6 +53,27 @@ describe('FeatureFlagService', () => {
 
         it('returns false for unknown flags', () => {
             expect(featureFlags.isEnabled('nonexistent_flag')).toBe(false);
+        });
+    });
+
+    describe('initialize', () => {
+        it('deduplicates concurrent Remote Config startup', async () => {
+            let resolveLoad: (() => void) | undefined;
+            const loadRemoteFlags = vi.spyOn(
+                featureFlags as unknown as { loadRemoteFlags: () => Promise<void> },
+                'loadRemoteFlags'
+            ).mockImplementationOnce(
+                () => new Promise<void>(resolve => { resolveLoad = resolve; })
+            );
+
+            const first = featureFlags.initialize();
+            const second = featureFlags.initialize();
+
+            expect(loadRemoteFlags).toHaveBeenCalledTimes(1);
+            resolveLoad?.();
+            await Promise.all([first, second]);
+
+            expect(loadRemoteFlags).toHaveBeenCalledTimes(1);
         });
     });
 

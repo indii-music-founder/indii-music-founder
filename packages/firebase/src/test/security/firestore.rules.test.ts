@@ -37,6 +37,10 @@ import {
     deleteDoc,
     serverTimestamp,
     Timestamp,
+    collection,
+    getDocs,
+    limit,
+    query,
 } from 'firebase/firestore';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
@@ -274,6 +278,167 @@ describe('Firestore Security Rules', () => {
             const db = verifiedCtx(BOB_UID).firestore();
             await assertFails(getDoc(doc(db, 'users', ALICE_UID, 'entitlements', 'current')));
             await assertFails(setDoc(doc(db, 'users', ALICE_UID, 'entitlementAudit', 'forged'), entitlement));
+        });
+    });
+
+    describe('taxFormRequests/{token}', () => {
+        const token = 'a'.repeat(64);
+        const requestData = {
+            userId: ALICE_UID,
+            collaboratorId: 'collaborator-1',
+            email: 'collaborator@example.com',
+            expiresAt: Timestamp.fromMillis(Date.now() + 60_000),
+            consumedAt: null,
+        };
+
+        beforeEach(async () => {
+            if (requireEmulator()) return;
+            await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                await setDoc(doc(ctx.firestore(), 'taxFormRequests', token), requestData);
+            });
+        });
+
+        it('denies unauthenticated token reads and collection probing', async () => {
+            if (requireEmulator()) return;
+            const db = unauthCtx().firestore();
+            await assertFails(getDoc(doc(db, 'taxFormRequests', token)));
+            await assertFails(getDocs(query(collection(db, 'taxFormRequests'), limit(1))));
+        });
+
+        it('denies all direct client writes, including by the owning artist', async () => {
+            if (requireEmulator()) return;
+            const db = verifiedCtx(ALICE_UID).firestore();
+            await assertFails(setDoc(doc(db, 'taxFormRequests', 'b'.repeat(64)), requestData));
+            await assertFails(updateDoc(doc(db, 'taxFormRequests', token), { consumedAt: Timestamp.now() }));
+            await assertFails(deleteDoc(doc(db, 'taxFormRequests', token)));
+        });
+    });
+
+    describe('users/{userId}/proSubmissionDrafts/{draftId}', () => {
+        const validDraft = {
+            workTitle: 'Midnight Drive',
+            writers: [{ name: 'Alice Writer', role: 'composer', split: 100 }],
+            publisher: null,
+            society: 'ASCAP',
+            status: 'requires_manual_submission',
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+        };
+
+        it('allows a verified owner to create and read a bounded manual-submission draft', async () => {
+            if (requireEmulator()) return;
+            const db = verifiedCtx(ALICE_UID).firestore();
+            const ref = doc(db, 'users', ALICE_UID, 'proSubmissionDrafts', 'draft-1');
+            await assertSucceeds(setDoc(ref, validDraft));
+            await assertSucceeds(getDoc(ref));
+        });
+
+        it('rejects cross-owner writes, schema pollution, and oversized draft data', async () => {
+            if (requireEmulator()) return;
+            const alice = verifiedCtx(ALICE_UID).firestore();
+            const bob = verifiedCtx(BOB_UID).firestore();
+            await assertFails(setDoc(
+                doc(bob, 'users', ALICE_UID, 'proSubmissionDrafts', 'forged'),
+                validDraft,
+            ));
+            await assertFails(setDoc(
+                doc(alice, 'users', ALICE_UID, 'proSubmissionDrafts', 'polluted'),
+                { ...validDraft, privileged: true },
+            ));
+            await assertFails(setDoc(
+                doc(alice, 'users', ALICE_UID, 'proSubmissionDrafts', 'oversized'),
+                { ...validDraft, workTitle: 'x'.repeat(301) },
+            ));
+        });
+
+        it('keeps manual-submission drafts immutable from the client', async () => {
+            if (requireEmulator()) return;
+            await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                await setDoc(
+                    doc(ctx.firestore(), 'users', ALICE_UID, 'proSubmissionDrafts', 'draft-1'),
+                    { ...validDraft, createdAt: Timestamp.now(), updatedAt: Timestamp.now() },
+                );
+            });
+            const db = verifiedCtx(ALICE_UID).firestore();
+            const ref = doc(db, 'users', ALICE_UID, 'proSubmissionDrafts', 'draft-1');
+            await assertFails(updateDoc(ref, { status: 'submitted' }));
+            await assertFails(deleteDoc(ref));
+        });
+    });
+
+    describe('users/{userId}/agent_queue/{queueId}', () => {
+        const queue = {
+            tasks: [{ id: 'task-1', status: 'pending', prompt: 'Prepare release assets' }],
+            savedAt: serverTimestamp(),
+        };
+
+        it('allows only the owner to persist, resume, and clear the bounded queue', async () => {
+            if (requireEmulator()) return;
+            const alice = verifiedCtx(ALICE_UID).firestore();
+            const bob = verifiedCtx(BOB_UID).firestore();
+            const ref = doc(alice, 'users', ALICE_UID, 'agent_queue', 'queue');
+            await assertSucceeds(setDoc(ref, queue));
+            await assertSucceeds(getDoc(ref));
+            await assertFails(getDoc(doc(bob, 'users', ALICE_UID, 'agent_queue', 'queue')));
+            await assertSucceeds(deleteDoc(ref));
+        });
+
+        it('rejects arbitrary queue IDs, extra fields, and unbounded task arrays', async () => {
+            if (requireEmulator()) return;
+            const db = verifiedCtx(ALICE_UID).firestore();
+            await assertFails(setDoc(doc(db, 'users', ALICE_UID, 'agent_queue', 'other'), queue));
+            await assertFails(setDoc(
+                doc(db, 'users', ALICE_UID, 'agent_queue', 'queue'),
+                { ...queue, privileged: true },
+            ));
+            await assertFails(setDoc(
+                doc(db, 'users', ALICE_UID, 'agent_queue', 'queue'),
+                { ...queue, tasks: Array.from({ length: 101 }, (_, id) => ({ id })) },
+            ));
+        });
+    });
+
+    describe('users/{userId}/graphExecutions/{executionId}', () => {
+        const execution = {
+            graphId: 'release-graph',
+            executionId: 'execution-1',
+            nodeStates: { prepare: { status: 'PLANNED' } },
+            status: 'PLANNED',
+            graph: { id: 'release-graph', nodes: [], edges: [] },
+            updatedAt: serverTimestamp(),
+        };
+
+        it('allows owner lifecycle updates and reads for a valid graph execution', async () => {
+            if (requireEmulator()) return;
+            const db = verifiedCtx(ALICE_UID).firestore();
+            const ref = doc(db, 'users', ALICE_UID, 'graphExecutions', 'execution-1');
+            await assertSucceeds(setDoc(ref, execution));
+            await assertSucceeds(updateDoc(ref, {
+                status: 'EXECUTING',
+                'nodeStates.prepare.status': 'EXECUTING_GENERATION',
+                updatedAt: serverTimestamp(),
+            }));
+            await assertSucceeds(getDoc(ref));
+        });
+
+        it('rejects cross-owner access, identity rewrites, and oversized node maps', async () => {
+            if (requireEmulator()) return;
+            const alice = verifiedCtx(ALICE_UID).firestore();
+            const bob = verifiedCtx(BOB_UID).firestore();
+            const ref = doc(alice, 'users', ALICE_UID, 'graphExecutions', 'execution-1');
+            await assertSucceeds(setDoc(ref, execution));
+            await assertFails(getDoc(doc(bob, 'users', ALICE_UID, 'graphExecutions', 'execution-1')));
+            await assertFails(updateDoc(ref, { executionId: 'forged', updatedAt: serverTimestamp() }));
+            await assertFails(setDoc(
+                doc(alice, 'users', ALICE_UID, 'graphExecutions', 'execution-2'),
+                {
+                    ...execution,
+                    executionId: 'execution-2',
+                    nodeStates: Object.fromEntries(
+                        Array.from({ length: 101 }, (_, id) => [`node-${id}`, { status: 'PLANNED' }]),
+                    ),
+                },
+            ));
         });
     });
 

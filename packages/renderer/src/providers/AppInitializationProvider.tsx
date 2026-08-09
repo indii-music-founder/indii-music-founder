@@ -5,38 +5,21 @@ import { useAuthHealth } from '@/hooks/useAuthHealth';
 import { logger } from '@/utils/logger';
 
 /**
- * AppInitializationProvider — Core Application Lifecycle Orchestrator
- *
- * This provider extracts the heavy initialization logic from App.tsx, handling:
- * - Firebase Auth listeners
- * - User profile loading
- * - Application data hydration (Projects, History)
- * - Background services (Proactive, AssetObserver, MemoryEngine, Handoff)
- * - Push notification listeners
- * - Electron-specific sync (Update channels)
+ * Auth-only bootstrap for signed-out Studio routes. Public pages and the
+ * standalone Controller intentionally do not mount authenticated Studio
+ * initialization or its account-owned background services.
  */
-export const AppInitializationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const { initializeAuthListener, loadUserProfile, user, authLoading, userProfile, initializeHistory, loadProjects, loadNotesFromCloud, currentOrganizationId } = useStore(
+export const AuthInitializationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+    const { initializeAuthListener, user } = useStore(
         useShallow(state => ({
             initializeAuthListener: state.initializeAuthListener,
-            loadUserProfile: state.loadUserProfile,
             user: state.user,
-            authLoading: state.authLoading,
-            userProfile: state.userProfile,
-            initializeHistory: state.initializeHistory,
-            loadProjects: state.loadProjects,
-            loadNotesFromCloud: state.loadNotesFromCloud,
-            currentOrganizationId: state.currentOrganizationId
         }))
     );
     const previousAccountIdRef = useRef<string | null | undefined>(undefined);
-    const cleanedAccountIdRef = useRef<string | null | undefined>(undefined);
-    const [isAccountBoundaryReady, setIsAccountBoundaryReady] = useState(false);
-    const [accountBoundaryError, setAccountBoundaryError] = useState(false);
-    const [accountBoundaryAttempt, setAccountBoundaryAttempt] = useState(0);
 
-    // Clear every account-owned slice before the browser can paint a different
-    // identity. Passive effects below may then hydrate only that account's data.
+    // The auth shell owns the synchronous in-memory identity boundary so it
+    // remains active while the signed-in Studio initializer mounts/unmounts.
     useLayoutEffect(() => {
         const accountId = user?.uid ?? null;
         if (previousAccountIdRef.current === accountId) return;
@@ -48,9 +31,56 @@ export const AppInitializationProvider: React.FC<{ children: React.ReactNode }> 
         if (hadEstablishedAccount) {
             void import('@/services/email/EmailService')
                 .then(({ EmailService }) => EmailService.clearSession())
-                .catch(err => logger.error('[AppInit] Failed to clear email session cache:', err));
+                .catch(err => logger.error('[AuthInit] Failed to clear email session cache:', err));
+        }
+
+        // Signed-out users must be able to reach authentication even if a
+        // browser cache refuses cleanup. A subsequent authenticated Studio
+        // mount still enforces the same boundary fail-closed before rendering.
+        if (!accountId) {
+            void import('@/services/auth/AccountBoundaryCleanup')
+                .then(({ enforceAccountBoundaryCleanup }) => enforceAccountBoundaryCleanup(null))
+                .catch(err => logger.error('[AuthInit] Signed-out cache cleanup failed:', err));
         }
     }, [user]);
+
+    useEffect(() => {
+        const unsubscribe = initializeAuthListener();
+        return () => unsubscribe();
+    }, [initializeAuthListener]);
+
+    useAuthHealth();
+    return <>{children}</>;
+};
+
+/**
+ * AppInitializationProvider — Core Application Lifecycle Orchestrator
+ *
+ * This provider extracts the heavy initialization logic from App.tsx, handling:
+ * - Firebase Auth listeners
+ * - User profile loading
+ * - Application data hydration (Projects, History)
+ * - Background services (Proactive, AssetObserver, MemoryEngine, Handoff)
+ * - Push notification listeners
+ * - Electron-specific sync (Update channels)
+ */
+export const AppInitializationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+    const { loadUserProfile, user, authLoading, userProfile, initializeHistory, loadProjects, loadNotesFromCloud, currentOrganizationId } = useStore(
+        useShallow(state => ({
+            loadUserProfile: state.loadUserProfile,
+            user: state.user,
+            authLoading: state.authLoading,
+            userProfile: state.userProfile,
+            initializeHistory: state.initializeHistory,
+            loadProjects: state.loadProjects,
+            loadNotesFromCloud: state.loadNotesFromCloud,
+            currentOrganizationId: state.currentOrganizationId
+        }))
+    );
+    const cleanedAccountIdRef = useRef<string | null | undefined>(undefined);
+    const [isAccountBoundaryReady, setIsAccountBoundaryReady] = useState(false);
+    const [accountBoundaryError, setAccountBoundaryError] = useState(false);
+    const [accountBoundaryAttempt, setAccountBoundaryAttempt] = useState(0);
 
     useLayoutEffect(() => {
         if (authLoading) return;
@@ -81,25 +111,14 @@ export const AppInitializationProvider: React.FC<{ children: React.ReactNode }> 
         };
     }, [accountBoundaryAttempt, authLoading, user]);
 
-    // 1. Initialize Auth Listener (Firebase)
-    useEffect(() => {
-        const unsubscribe = initializeAuthListener();
-        return () => {
-            unsubscribe();
-        };
-    }, [initializeAuthListener]);
-
-    // Auth session health: periodically refreshes the ID token
-    useAuthHealth();
-
-    // 2. Load User Profile when User is Authenticated (skip for anonymous/demo)
+    // 1. Load User Profile when User is Authenticated (skip for anonymous/demo)
     useEffect(() => {
         if (isAccountBoundaryReady && user?.uid && !user.isAnonymous && user.uid !== 'demo') {
             loadUserProfile(user.uid);
         }
     }, [isAccountBoundaryReady, user, loadUserProfile]);
 
-    // 3. Load Application Data (Projects, History) when Profile is ready (skip for anonymous/demo)
+    // 2. Load Application Data (Projects, History) when Profile is ready (skip for anonymous/demo)
     useEffect(() => {
         if (isAccountBoundaryReady && user && !user.isAnonymous && user.uid !== 'demo') {
             let isMounted = true;
@@ -176,7 +195,7 @@ export const AppInitializationProvider: React.FC<{ children: React.ReactNode }> 
         }
     }, [isAccountBoundaryReady, user, currentOrganizationId, initializeHistory, loadProjects, loadNotesFromCloud]);
 
-    // 4. Electron-specific synchronization
+    // 3. Electron-specific synchronization
     useEffect(() => {
         if (isAccountBoundaryReady && userProfile?.preferences && window.electronAPI?.updater?.setChannel) {
             const channel = userProfile.preferences.updateChannel || 'stable';

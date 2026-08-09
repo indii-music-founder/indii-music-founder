@@ -73,6 +73,7 @@ vi.mock('@/modules/finance/hooks/useSubscription', () => ({
 
 // Mock feature flags — useGatedModules returns empty Set (all modules visible) in tests
 vi.mock('@/config/featureFlags', () => ({
+    featureFlags: { initialize: vi.fn().mockResolvedValue(undefined) },
     useGatedModules: vi.fn(() => new Set<string>()),
     isFeatureEnabled: vi.fn(() => true),
     getGatedModuleIds: vi.fn(() => new Set<string>()),

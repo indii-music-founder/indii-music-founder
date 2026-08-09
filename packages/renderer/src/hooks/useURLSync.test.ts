@@ -46,10 +46,10 @@ describe('useURLSync', () => {
     });
 
     it('updates URL when store changes (Navigation)', () => {
-        mocks.currentModule.value = 'finance';
-        mocks.location.pathname = '/'; // Mismatch
+        const { rerender } = renderHook(() => useURLSync());
 
-        renderHook(() => useURLSync());
+        mocks.currentModule.value = 'finance';
+        rerender();
 
         expect(mocks.navigate).toHaveBeenCalledWith('/finance');
     });
@@ -69,5 +69,24 @@ describe('useURLSync', () => {
         renderHook(() => useURLSync());
 
         expect(mocks.setModule).not.toHaveBeenCalled();
+    });
+
+    it('maps legacy video deep links to the Creative Studio module without rewriting them first', () => {
+        mocks.location.pathname = '/video-studio';
+
+        renderHook(() => useURLSync());
+
+        expect(mocks.setModule).toHaveBeenCalledWith('creative');
+        expect(mocks.navigate).not.toHaveBeenCalled();
+    });
+
+    it('canonicalizes a resolved legacy video route while preserving video mode', () => {
+        mocks.location.pathname = '/video-producer';
+        mocks.currentModule.value = 'creative';
+
+        renderHook(() => useURLSync());
+
+        expect(mocks.setModule).not.toHaveBeenCalled();
+        expect(mocks.navigate).toHaveBeenCalledWith('/creative/video', { replace: true });
     });
 });

@@ -37,6 +37,8 @@ import {
 import { MobileRemoteProviders } from '@/modules/mobile-remote/MobileRemoteProviders';
 import '@/core/i18n'; // Initialize i18next — must run before any component renders
 import { AppInitializationProvider } from '@/providers/AppInitializationProvider';
+import { AuthInitializationProvider } from '@/providers/AppInitializationProvider';
+import { featureFlags } from '@/config/featureFlags';
 
 const AppShell = lazy(() => import('./AppShell'));
 const BugReportDialog = lazy(() => import('@/modules/debug/BugReportDialog').then(m => ({ default: m.BugReportDialog })));
@@ -102,7 +104,7 @@ function UnauthenticatedApp() {
     );
 }
 
-export default function App() {
+function StudioApplication({ mobile }: { mobile: ReturnType<typeof useMobile> }) {
     const location = useLocation();
     const { currentModule, user, authLoading } = useStore(
         useShallow(state => ({
@@ -111,10 +113,6 @@ export default function App() {
             authLoading: state.authLoading,
         }))
     );
-
-    // Defer non-critical startup work to avoid blocking FCP
-    useEffect(() => { cleanupLocalStorage(); }, []);
-    useEffect(() => { flushFounderFunnelQueue(); }, []);
 
     const shortcutsModal = useGlobalShortcutsModal();
 
@@ -140,50 +138,22 @@ export default function App() {
         });
     }, [userId]);
 
-    const mobile = useMobile();
-    const isElectron = typeof window !== 'undefined' && !!window.electronAPI;
     const isMobileRemoteBypassRoute = isMobileRemoteBypassPath(location.pathname);
-    const shouldUseRemoteSurface = shouldUseMobileRemoteSurface({
-        hostname: typeof window === 'undefined' ? '' : window.location.hostname,
-        pathname: location.pathname,
-        isElectron,
-        isRemoteDevice: isRemoteSurfaceDevice(mobile),
-    });
     const { isAnyPhone } = mobile;
-    const isStudioExecutor = isStudioExecutorSurface(currentModule, shouldUseRemoteSurface);
+    const isStudioExecutor = isStudioExecutorSurface(currentModule, false);
 
     // Remote Relay: only the actual Studio surface may publish presence or
     // consume Studio-owned work. Controller pages can only produce commands.
     useRemoteCommandListener(isStudioExecutor);
 
     // ISSUE-1164: distinct tab/home-screen icon for the mobile-remote Controller surface.
-    useSurfaceIcon(shouldUseRemoteSurface);
-
-    const publicLegalPage = useMemo(() => {
-        const path = location.pathname.replace(/\/+$/, '') || '/';
-        if (path === '/privacy' || path === '/legal/privacy') return 'privacy';
-        if (path === '/terms' || path === '/legal/terms') return 'terms';
-        return null;
-    }, [location.pathname]);
     const isInstagramOAuthCallback = useMemo(
         () => (location.pathname.replace(/\/+$/, '') || '/') === '/auth/instagram/callback',
         [location.pathname],
     );
-    // Public, unauthenticated collaborator tax-form upload (ISSUE-1118 Phase 2).
-    // The collaborator has no indii account, so this route must bypass the
-    // login gate entirely — same treatment as publicLegalPage above.
-    const isTaxFormUploadPage = useMemo(
-        () => (location.pathname.replace(/\/+$/, '') || '/') === '/tax-form-upload',
-        [location.pathname],
-    );
-    const preSaveCampaignId = useMemo(() => {
-        const match = location.pathname.match(/^\/presave\/([A-Za-z0-9_-]{8,128})\/?$/);
-        return match?.[1] ?? null;
-    }, [location.pathname]);
-
     // URL sync must not rewrite public, auth, callback, or Controller routes.
     useURLSync({
-        disabled: shouldUseRemoteSurface || isMobileRemoteBypassRoute,
+        disabled: isMobileRemoteBypassRoute,
     });
 
     // Determine if current module should show chrome (sidebar, command bar, etc.)
@@ -194,6 +164,73 @@ export default function App() {
 
     // SSR-safe media query for desktop detection
     const isDesktop = useMediaQuery('(min-width: 768px)');
+
+    const signedInContent = isInstagramOAuthCallback ? (
+                <Suspense fallback={<LoadingFallback />}><InstagramOAuthCallback /></Suspense>
+            ) : (
+                <Suspense fallback={<LoadingFallback />}>
+                    <AppShell
+                        activeModule={currentModule}
+                        activeShowChrome={showChrome}
+                        isDesktop={isDesktop}
+                        isAnyPhone={isAnyPhone}
+                        shortcutsModal={shortcutsModal}
+                    />
+                    <BugReportDialog />
+                </Suspense>
+            );
+
+    return (
+        <AuthInitializationProvider>
+            {authLoading || !user ? (
+                authLoading ? <LoadingFallback /> : <UnauthenticatedApp />
+            ) : (
+                <AppInitializationProvider>{signedInContent}</AppInitializationProvider>
+            )}
+            {import.meta.env.DEV && <DevPortWarning />}
+        </AuthInitializationProvider>
+    );
+}
+
+/**
+ * Surface router. Public pages and the standalone Controller stop here so
+ * they never mount authenticated Studio listeners, account hydration, or
+ * background agents.
+ */
+export default function App() {
+    const location = useLocation();
+    const mobile = useMobile();
+    const isElectron = typeof window !== 'undefined' && !!window.electronAPI;
+    const shouldUseRemoteSurface = shouldUseMobileRemoteSurface({
+        hostname: typeof window === 'undefined' ? '' : window.location.hostname,
+        pathname: location.pathname,
+        isElectron,
+        isRemoteDevice: isRemoteSurfaceDevice(mobile),
+    });
+
+    const publicLegalPage = useMemo(() => {
+        const path = location.pathname.replace(/\/+$/, '') || '/';
+        if (path === '/privacy' || path === '/legal/privacy') return 'privacy';
+        if (path === '/terms' || path === '/legal/terms') return 'terms';
+        return null;
+    }, [location.pathname]);
+    const isTaxFormUploadPage = useMemo(
+        () => (location.pathname.replace(/\/+$/, '') || '/') === '/tax-form-upload',
+        [location.pathname],
+    );
+    const preSaveCampaignId = useMemo(() => {
+        const match = location.pathname.match(/^\/presave\/([A-Za-z0-9_-]{8,128})\/?$/);
+        return match?.[1] ?? null;
+    }, [location.pathname]);
+
+    // Defer non-critical startup work to avoid blocking first content. Remote
+    // Config is deliberately initialized on every surface so kill switches
+    // and rollout gates are not stuck at build-time defaults.
+    useEffect(() => { cleanupLocalStorage(); }, []);
+    useEffect(() => { flushFounderFunnelQueue(); }, []);
+    useEffect(() => { void featureFlags.initialize(); }, []);
+
+    useSurfaceIcon(shouldUseRemoteSurface);
 
     // The public app subdomain is the canonical Controller surface. Preserve
     // the one-time handoff query while moving legacy/mobile Studio URLs there.
@@ -214,49 +251,31 @@ export default function App() {
         }
     }, [shouldUseRemoteSurface, isElectron, location.pathname]);
 
-    // Remote auto-route: phones and touch-capable tablets use the remote shell instead of studio chrome.
-    useEffect(() => {
-        if (shouldUseRemoteSurface && currentModule !== 'mobile-remote') {
-            useStore.getState().setModule('mobile-remote');
-        }
-    }, [shouldUseRemoteSurface, currentModule]);
-
-    const activeModule = shouldUseRemoteSurface ? 'mobile-remote' : currentModule;
-    const activeShowChrome = shouldUseRemoteSurface ? false : showChrome;
+    let surface: React.ReactNode;
+    if (shouldUseRemoteSurface) {
+        surface = (
+            <MobileRemoteProviders>
+                <Suspense fallback={<LoadingFallback />}><MobileRemote /></Suspense>
+            </MobileRemoteProviders>
+        );
+    } else if (publicLegalPage) {
+        surface = <PublicLegalPage type={publicLegalPage} />;
+    } else if (isTaxFormUploadPage) {
+        surface = <Suspense fallback={<LoadingFallback />}><TaxFormUploadPage /></Suspense>;
+    } else if (preSaveCampaignId) {
+        surface = (
+            <Suspense fallback={<LoadingFallback />}>
+                <PreSaveLandingPage campaignId={preSaveCampaignId} />
+            </Suspense>
+        );
+    } else {
+        surface = <StudioApplication mobile={mobile} />;
+    }
 
     return (
-        <AppInitializationProvider>
-            {shouldUseRemoteSurface ? (
-                <MobileRemoteProviders>
-                    <Suspense fallback={<LoadingFallback />}><MobileRemote /></Suspense>
-                </MobileRemoteProviders>
-            ) : publicLegalPage ? (
-                <PublicLegalPage type={publicLegalPage} />
-            ) : isTaxFormUploadPage ? (
-                <Suspense fallback={<LoadingFallback />}><TaxFormUploadPage /></Suspense>
-            ) : preSaveCampaignId ? (
-                <Suspense fallback={<LoadingFallback />}>
-                    <PreSaveLandingPage campaignId={preSaveCampaignId} />
-                </Suspense>
-            ) : authLoading ? (
-                <LoadingFallback />
-            ) : !user ? (
-                <UnauthenticatedApp />
-            ) : isInstagramOAuthCallback ? (
-                <Suspense fallback={<LoadingFallback />}><InstagramOAuthCallback /></Suspense>
-            ) : (
-                <Suspense fallback={<LoadingFallback />}>
-                    <AppShell
-                        activeModule={activeModule}
-                        activeShowChrome={activeShowChrome}
-                        isDesktop={isDesktop}
-                        isAnyPhone={isAnyPhone}
-                        shortcutsModal={shortcutsModal}
-                    />
-                    <BugReportDialog />
-                </Suspense>
-            )}
-            {import.meta.env.DEV && <DevPortWarning />}
-        </AppInitializationProvider>
+        <>
+            {surface}
+            {import.meta.env.DEV && shouldUseRemoteSurface && <DevPortWarning />}
+        </>
     );
 }

@@ -87,4 +87,16 @@ describe('release-backed agent tools', () => {
         expect(calendarResult.data.newNotifications).toBe(1);
         expect(calendarResult.data.notifications[0].releaseId).toBe('release-1');
     });
+
+    it('never fabricates an active token-gated preview or share URL', async () => {
+        const result = await Web3Tools.generate_token_gated_preview({
+            trackTitle: 'Night Shift',
+            tokenContractAddress: '0x1234567890abcdef1234567890abcdef12345678',
+        });
+
+        expect(result.success).toBe(false);
+        expect(result.metadata?.errorCode).toBe('NOT_IMPLEMENTED');
+        expect(result.data?.previewUrl).toBeUndefined();
+        expect(result.message).toMatch(/no share URL was created/i);
+    });
 });
