@@ -42,9 +42,10 @@ export const RoadAgent: AgentConfig = {
             credential_vault: UniversalTools.credential_vault,
             generate_visa_checklist: RoadTools.generate_visa_checklist,
             draft_tour_itinerary: RoadTools.draft_tour_itinerary,
+            log_live_setlist_for_pro: RoadTools.log_live_setlist_for_pro,
         } as Record<string, import('@/services/agent/types').AnyToolFunction>;
     },
-    authorizedTools: ['list_domain_records', 'plan_tour_route', 'estimate_tour_budget', 'create_project', 'search_knowledge', 'search_places', 'get_place_details', 'get_distance_matrix', 'generate_social_post', 'browser_tool', 'credential_vault', 'generate_visa_checklist', 'draft_tour_itinerary'],
+    authorizedTools: ['list_domain_records', 'plan_tour_route', 'estimate_tour_budget', 'create_project', 'search_knowledge', 'search_places', 'get_place_details', 'get_distance_matrix', 'generate_social_post', 'browser_tool', 'credential_vault', 'generate_visa_checklist', 'draft_tour_itinerary', 'log_live_setlist_for_pro'],
     tools: [{
         functionDeclarations: [
             ...roadRetrievalDeclarations,
@@ -195,6 +196,19 @@ export const RoadAgent: AgentConfig = {
                         cities: { type: "ARRAY", items: { type: "STRING" }, description: "List of cities to visit." }
                     },
                     required: ["tour_name", "start_date", "end_date", "cities"]
+                }
+            },
+            {
+                name: "log_live_setlist_for_pro",
+                description: "Save an authenticated user's live-performance setlist as an account draft for manual PRO filing. This does not submit to a PRO or calculate royalties.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        venue: { type: "STRING", description: "Venue where the performance occurred." },
+                        date: { type: "STRING", description: "Performance date in YYYY-MM-DD format." },
+                        tracks: { type: "ARRAY", items: { type: "STRING" }, description: "Performed track titles." }
+                    },
+                    required: ["venue", "date", "tracks"]
                 }
             }
         ]

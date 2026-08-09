@@ -1740,6 +1740,42 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    // User-entered live-performance setlists are preparation drafts only.
+    // Client writes cannot claim a filed state or carry calculated royalties.
+    match /users/{userId}/setlists/{setlistId} {
+      function isValidSetlistDraft() {
+        let data = request.resource.data;
+        return data.keys().hasOnly([
+            'userId', 'venue', 'date', 'city', 'attendance', 'songs',
+            'category', 'status', 'createdAt', 'updatedAt'
+          ])
+          && data.keys().hasAll([
+            'userId', 'venue', 'date', 'city', 'attendance', 'songs',
+            'category', 'status', 'createdAt', 'updatedAt'
+          ])
+          && data.userId == userId
+          && isValidString(data.venue, 1, 300)
+          && isValidString(data.date, 10, 10)
+          && data.date.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+          && isValidString(data.city, 0, 200)
+          && data.attendance is int
+          && data.attendance >= 0
+          && data.attendance <= 1000000
+          && data.songs is list
+          && data.songs.size() >= 1
+          && data.songs.size() <= 200
+          && data.category in ['original', 'dj', 'cover', 'unclassified']
+          && data.status == 'draft_requires_manual_filing'
+          && data.createdAt == request.time
+          && data.updatedAt == request.time;
+      }
+
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidSetlistDraft();
+      allow update: if false;
+      allow delete: if isOwner(userId);
+    }
+
     // Evolas fader values (docs/EVOLAS_BUILD_PLAN.md, non-negotiable #1):
     // this document may only ever contain style-rendering knobs. It has no
     // field capable of carrying a substance/verdict override, by schema.

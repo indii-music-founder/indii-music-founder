@@ -64,6 +64,18 @@ describe('RoadAgent', () => {
         expect(RoadAgent.category).toBe('department');
     });
 
+    it('declares and authorizes the persisted setlist-draft tool for real Road chat', () => {
+        const declarations = RoadAgent.tools[0]?.functionDeclarations ?? [];
+        expect(RoadAgent.authorizedTools).toContain('log_live_setlist_for_pro');
+        expect(Object.keys(RoadAgent.functions ?? {})).toContain('log_live_setlist_for_pro');
+        expect(declarations.find(tool => tool.name === 'log_live_setlist_for_pro')).toEqual(
+            expect.objectContaining({
+                description: expect.stringContaining('does not submit to a PRO'),
+                parameters: expect.objectContaining({ required: ['venue', 'date', 'tracks'] }),
+            }),
+        );
+    });
+
     describe('plan_tour_route', () => {
         it('should call generateStructuredData and return success response', async () => {
             const args = {

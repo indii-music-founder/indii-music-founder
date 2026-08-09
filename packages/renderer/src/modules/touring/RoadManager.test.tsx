@@ -131,7 +131,19 @@ describe('RoadManager', () => {
         expect(screen.getByText('Tour Parameters')).toBeInTheDocument();
         expect(screen.getByLabelText('Route Waypoints')).toBeInTheDocument();
         expect(screen.getByText('Route Map & Nearby Services')).toBeInTheDocument();
+        expect(screen.getByText('Performance Setlist Drafts')).toBeInTheDocument();
+        expect(screen.queryByText('Analytics & Streams')).not.toBeInTheDocument();
         expect(screen.queryByText('ONLINE')).not.toBeInTheDocument();
+    });
+
+    it('opens the real setlist-draft panel from the Insights production entrypoint', async () => {
+        render(<RoadManager />);
+        fireEvent.click(screen.getByText('Insights').closest('button') as HTMLButtonElement);
+
+        expect(await screen.findByText('Performance Setlists')).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Save Setlist Draft' })).toBeInTheDocument();
+        expect(screen.getByText('Draft only — not filed with a PRO')).toBeInTheDocument();
+        expect(screen.queryByText(/PRO Royalty Tracker|Estimated Royalties|Estimated Payout/)).not.toBeInTheDocument();
     });
 
     it('adds and removes locations', async () => {

@@ -1,63 +1,49 @@
 import { useTranslation } from 'react-i18next';
 import React, { useState, useEffect, useRef } from 'react';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { Music, Plus, Trash2, Download, BarChart3, DollarSign, Users, Calendar, Disc, Sparkles, AlertCircle, FileText, Check } from 'lucide-react';
+import { Music, Plus, Trash2, Download, BarChart3, Users, Calendar, Disc, Sparkles, AlertCircle } from 'lucide-react';
 import { secureRandomAlphanumeric } from '@/utils/crypto-random';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { useToast } from '@/core/context/ToastContext';
 import { logger } from '@/utils/logger';
-import { db } from '@/services/firebase';
-import { collection, doc, deleteDoc, onSnapshot, query, orderBy, setDoc } from 'firebase/firestore';
+import { auth } from '@/services/firebase';
+import {
+    setlistDraftService,
+    type SetlistCategory,
+    type SetlistDraft,
+    type SetlistTrackDraft,
+    type SetlistTrackType,
+} from '@/services/touring/SetlistDraftService';
 
 /* ================================================================== */
-/*  Setlist Analytics — Live Performance Logger & PRO Royalty Tracker  */
+/*  Setlist drafts — user-entered performance records for manual filing  */
 /* ================================================================== */
 
-// EDUCATIONAL MODEL ONLY — Real royalties depend on: venue PRO licensing, actual PRO rates, work registrations, membership proof
-const PRO_RATE_PER_SONG = 0.12; // Simplified example: $0.12 per song per attendee
-
-export type SetlistCategory = 'original' | 'dj' | 'cover';
-export type TrackType = 'original' | 'remix' | 'cover' | 'other';
-
-export interface Song {
-    id: string;
-    title: string;
-    originalArtist?: string;
-    type: TrackType;
-}
-
-export interface Performance {
-    id: string;
-    venue: string;
-    date: string;
-    city: string;
-    attendance: number;
-    songs: Song[];
-    category: SetlistCategory;
-    createdAt?: string;
-}
+type FormSetlistCategory = Exclude<SetlistCategory, 'unclassified'>;
+type Song = Omit<SetlistTrackDraft, 'originalArtist'> & { originalArtist?: string };
+type TrackType = SetlistTrackType;
+type Performance = SetlistDraft;
 
 const CATEGORY_PRESETS = [
     {
-        id: 'original' as SetlistCategory,
+        id: 'original' as FormSetlistCategory,
         label: 'Original Set',
         icon: Sparkles,
-        description: 'Bands & Solo Acts playing original songs. Royalties depend on venue licensing & PRO membership (see assumptions).',
+        description: 'Record the original works performed. Verify work registrations and filing requirements with your PRO.',
         color: 'text-emerald-400 border-emerald-500/20 bg-emerald-500/5 hover:border-emerald-500/40'
     },
     {
-        id: 'dj' as SetlistCategory,
+        id: 'dj' as FormSetlistCategory,
         label: 'DJ Set / Mix',
         icon: Disc,
         description: 'Electronic acts mixing originals, remixes/edits, and other artist tracks.',
         color: 'text-violet-400 border-violet-500/20 bg-violet-500/5 hover:border-violet-500/40'
     },
     {
-        id: 'cover' as SetlistCategory,
+        id: 'cover' as FormSetlistCategory,
         label: 'Cover / Tribute Set',
         icon: Music,
-        description: 'Live performance of covers. Royalties pay original authors (venue must be PRO-licensed).',
+        description: 'Record cover titles and original writers for your own filing preparation.',
         color: 'text-amber-400 border-amber-500/20 bg-amber-500/5 hover:border-amber-500/40'
     }
 ] as const;
@@ -66,49 +52,17 @@ function generateId() {
     return secureRandomAlphanumeric(7);
 }
 
-// Calculate royalties based on specific category rules
-function calcSingleSongRoyalty(type: TrackType, category: SetlistCategory, attendance: number): number {
-    if (category === 'original') {
-        return attendance * PRO_RATE_PER_SONG;
-    }
-    
-    if (category === 'dj') {
-        if (type === 'original') return attendance * PRO_RATE_PER_SONG;
-        if (type === 'remix') return attendance * PRO_RATE_PER_SONG * 0.5; // 50% split for custom edits
-        return 0; // Other artist tracks earn crowd energy, not direct royalty to the DJ
-    }
-    
-    if (category === 'cover') {
-        if (type === 'original') return attendance * PRO_RATE_PER_SONG;
-        return 0; // Cover songs pay the original writer, not the performing cover band
-    }
-    
-    return 0;
-}
-
-function calcTotalRoyalty(songs: Song[], category: SetlistCategory, attendance: number): number {
-    return songs.reduce((sum, s) => sum + calcSingleSongRoyalty(s.type, category, attendance), 0);
-}
-
-// Calculate the total ASCAP/BMI payout generated for original songwriters (used for cover bands educational visualization)
-function calcGrossSongwriterRoyalties(songs: Song[], category: SetlistCategory, attendance: number): number {
-    if (category === 'cover') {
-        // All songs (even covers) generate royalties for their respective writers
-        return songs.length * attendance * PRO_RATE_PER_SONG;
-    }
-    return calcTotalRoyalty(songs, category, attendance);
-}
-
 export function SetlistAnalytics() {
     const { t } = useTranslation();
     const { userProfile } = useStore(useShallow(state => ({ userProfile: state.userProfile })));
     const toast = useToast();
     const [performances, setPerformances] = useState<Performance[]>([]);
     const [loading, setLoading] = useState(true);
+    const [loadError, setLoadError] = useState<string | null>(null);
     const hasInitializedRef = useRef(false);
 
     // Form state for new performance
-    const [category, setCategory] = useState<SetlistCategory>('original');
+    const [category, setCategory] = useState<FormSetlistCategory>('original');
     const [venue, setVenue] = useState('');
     const [date, setDate] = useState('');
     const [city, setCity] = useState('');
@@ -119,7 +73,7 @@ export function SetlistAnalytics() {
     useEffect(() => {
         if (userProfile && !hasInitializedRef.current) {
             hasInitializedRef.current = true;
-            let defaultCat: SetlistCategory = 'original';
+            let defaultCat: FormSetlistCategory = 'original';
             
             const bio = userProfile.bio?.toLowerCase() || '';
             const desc = userProfile.brandKit?.brandDescription?.toLowerCase() || '';
@@ -141,59 +95,37 @@ export function SetlistAnalytics() {
         }
     }, [userProfile]);
 
-    // Firestore Integration: Load setlists in real-time
+    // Load the authenticated user's saved drafts in real time.
     useEffect(() => {
-        const userId = userProfile?.uid || userProfile?.id;
+        const userId = auth.currentUser?.uid;
         if (!userId || userId === 'pending') {
             // eslint-disable-next-line react-hooks/set-state-in-effect
             setLoading(false);
+            setLoadError(null);
             return;
         }
 
         try {
-            const setlistsRef = collection(db, `users/${userId}/setlists`);
-            const q = query(setlistsRef, orderBy('createdAt', 'desc'));
-            
-            const unsubscribe = onSnapshot(q, (snapshot) => {
-                const loaded: Performance[] = [];
-                snapshot.forEach((docSnap) => {
-                    const data = docSnap.data();
-                    loaded.push({
-                        id: docSnap.id,
-                        venue: data.venue || '',
-                        date: data.date || '',
-                        city: data.city || '',
-                        attendance: Number(data.attendance || 0),
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                        songs: (data.songs || []).map((s: any, idx: number) => ({
-                            id: s.id || `s-${idx}`,
-                            title: s.title || s.name || '',
-                            originalArtist: s.originalArtist || '',
-                            type: s.type || 'original'
-                        })),
-                        category: data.category || 'original',
-                        createdAt: data.createdAt
-                    });
-                });
-                setPerformances(loaded);
-                 
+            const unsubscribe = setlistDraftService.subscribe(userId, (drafts) => {
+                setPerformances(drafts);
+                setLoadError(null);
                 setLoading(false);
             }, (error) => {
                 logger.error('[SetlistAnalytics] Firestore subscription failed:', error);
-                 
+                setLoadError('Saved setlist drafts could not be loaded.');
                 setLoading(false);
             });
 
             return () => unsubscribe();
         } catch (err) {
             logger.error('[SetlistAnalytics] Failed to setup Firestore connection:', err);
-             
+            setLoadError('Saved setlist drafts could not be loaded.');
             setLoading(false);
         }
     }, [userProfile]);
 
     // Reset song input models dynamically when category changes
-    const handleCategoryChange = (newCat: SetlistCategory) => {
+    const handleCategoryChange = (newCat: FormSetlistCategory) => {
         setCategory(newCat);
         setSongs([{ 
             id: generateId(), 
@@ -227,43 +159,29 @@ export function SetlistAnalytics() {
         const filledSongs = songs.filter(s => s.title.trim());
         if (!venue.trim() || !date || !city.trim() || !attendance || filledSongs.length === 0) return;
 
-        const perf: Performance = {
-            id: generateId(),
-            venue: venue.trim(),
-            date,
-            city: city.trim(),
-            attendance: parseInt(attendance, 10),
-            songs: filledSongs,
-            category,
-            createdAt: new Date().toISOString()
-        };
-
-        const userId = userProfile?.uid || userProfile?.id;
+        const userId = auth.currentUser?.uid;
         if (userId && userId !== 'pending') {
             try {
-                // Save to Firestore
-                await setDoc(doc(db, `users/${userId}/setlists`, perf.id), {
-                    venue: perf.venue,
-                    date: perf.date,
-                    city: perf.city,
-                    attendance: perf.attendance,
-                    category: perf.category,
-                    songs: perf.songs.map(s => ({
-                        id: s.id,
-                        title: s.title,
-                        originalArtist: s.originalArtist || '',
-                        type: s.type
+                await setlistDraftService.create({
+                    userId,
+                    venue: venue.trim(),
+                    date,
+                    city: city.trim(),
+                    attendance: parseInt(attendance, 10),
+                    category,
+                    songs: filledSongs.map(song => ({
+                        ...song,
+                        originalArtist: song.originalArtist || '',
                     })),
-                    createdAt: perf.createdAt
                 });
-                toast.success("Setlist saved & synced with cloud");
+                toast.success("Setlist draft saved");
             } catch (err) {
                 logger.error('[SetlistAnalytics] Failed to save setlist:', err);
-                toast.error("Failed to sync setlist to cloud. Setlist was not saved.");
+                toast.error("Setlist draft was not saved.");
                 return;
             }
         } else {
-            toast.error("Sign in to save setlists.");
+            toast.error("Sign in to save setlist drafts.");
             return;
         }
 
@@ -276,30 +194,28 @@ export function SetlistAnalytics() {
     };
 
     const handleDeletePerformance = async (id: string) => {
-        const userId = userProfile?.uid || userProfile?.id;
+        const userId = auth.currentUser?.uid;
         if (userId && userId !== 'pending') {
             try {
-                await deleteDoc(doc(db, `users/${userId}/setlists`, id));
-                toast.success("Setlist removed from cloud");
+                await setlistDraftService.delete(userId, id);
+                toast.success("Setlist draft deleted");
             } catch (err) {
                 logger.error('[SetlistAnalytics] Failed to delete setlist:', err);
-                toast.error("Failed to delete setlist");
+                toast.error("Failed to delete setlist draft");
             }
         } else {
-            setPerformances(prev => prev.filter(p => p.id !== id));
-            toast.success("Setlist removed");
+            toast.error("Sign in to delete setlist drafts.");
         }
     };
 
-    const totalRoyalties = performances.reduce((sum, p) => sum + calcTotalRoyalty(p.songs, p.category, p.attendance), 0);
-    const totalGrossSongwriterRoyalties = performances.reduce((sum, p) => sum + calcGrossSongwriterRoyalties(p.songs, p.category, p.attendance), 0);
     const totalShows = performances.length;
     const totalSongs = performances.reduce((sum, p) => sum + p.songs.length, 0);
+    const totalAttendance = performances.reduce((sum, performance) => sum + performance.attendance, 0);
 
     const handleExportCSV = () => {
         if (performances.length === 0) return;
         const rows = [
-            ['Venue', 'Date', 'City', 'Attendance', 'Artist Category', 'Songs Played', 'Song Titles', 'Original Artists', 'Track Types', 'Estimated Payout'],
+            ['Venue', 'Date', 'City', 'Attendance', 'Artist Category', 'Songs Played', 'Song Titles', 'Original Artists', 'Track Types', 'Filing Status'],
             ...performances.map(p => [
                 p.venue,
                 p.date,
@@ -308,9 +224,9 @@ export function SetlistAnalytics() {
                 p.category.toUpperCase(),
                 p.songs.length.toString(),
                 p.songs.map(s => s.title).join('; '),
-                p.songs.map(s => s.originalArtist || 'Original Artist').join('; '),
+                p.songs.map(s => s.originalArtist || '').join('; '),
                 p.songs.map(s => s.type.toUpperCase()).join('; '),
-                `$${calcTotalRoyalty(p.songs, p.category, p.attendance).toFixed(2)}`,
+                'Draft - not submitted',
             ]),
         ];
         const csv = rows.map(r => r.map(cell => `"${cell.replace(/"/g, '""')}"`).join(',')).join('\n');
@@ -318,10 +234,10 @@ export function SetlistAnalytics() {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `indii-setlist-pro-payout-${new Date().toISOString().split('T')[0]}.csv`;
+        a.download = `indii-setlist-drafts-${new Date().toISOString().split('T')[0]}.csv`;
         a.click();
         URL.revokeObjectURL(url);
-        toast.success("Setlist data exported successfully!");
+        toast.success("Setlist draft CSV exported");
     };
 
     const inputClass = 'w-full bg-white/[0.03] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:border-yellow-500/50 transition-all font-mono';
@@ -338,8 +254,8 @@ export function SetlistAnalytics() {
                         <Music size={20} className="text-yellow-400" />
                     </div>
                     <div>
-                        <h2 className="text-lg font-black text-white uppercase tracking-tight italic">Setlist Analytics</h2>
-                        <p className="text-[10px] text-gray-500 font-mono uppercase tracking-widest mt-0.5">Live Performance Logger & PRO Royalty Tracker</p>
+                        <h2 className="text-lg font-black text-white uppercase tracking-tight italic">Performance Setlists</h2>
+                        <p className="text-[10px] text-gray-500 font-mono uppercase tracking-widest mt-0.5">Performance log & manual-filing drafts</p>
                     </div>
                 </div>
                 {performances.length > 0 && (
@@ -348,7 +264,7 @@ export function SetlistAnalytics() {
                         className="flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-[#FFE135] hover:bg-[#FFE135]/90 text-black font-black text-xs transition-all duration-200 border border-[#FFE135]/20 shadow-lg shadow-[#FFE135]/10"
                     >
                         <Download size={13} strokeWidth={3} />
-                        Export CSV (for manual PRO filing)
+                        Export Draft CSV
                     </button>
                 )}
             </div>
@@ -396,9 +312,9 @@ export function SetlistAnalytics() {
                         { label: 'Total Logged Shows', value: totalShows.toString(), icon: Calendar, color: 'text-yellow-400 bg-yellow-500/5 border-yellow-500/10' },
                         { label: 'Total Songs Played', value: totalSongs.toString(), icon: Music, color: 'text-sky-400 bg-sky-500/5 border-sky-500/10' },
                         {
-                            label: category === 'cover' ? 'Estimated Payout (educational)' : 'Estimated Royalties (educational)',
-                            value: `$${(category === 'cover' ? totalGrossSongwriterRoyalties : totalRoyalties).toFixed(2)}`,
-                            icon: DollarSign,
+                            label: 'Recorded Attendance',
+                            value: totalAttendance.toLocaleString('en-US'),
+                            icon: Users,
                             color: 'text-emerald-400 bg-emerald-500/5 border-emerald-500/10'
                         },
                     ].map((stat, idx) => (
@@ -537,56 +453,20 @@ export function SetlistAnalytics() {
                         </div>
                     </div>
 
-                    {/* Royalty Preview Box */}
-                    {attendance && songs.filter(s => s.title.trim()).length > 0 && (
-                        <div className="p-3.5 rounded-xl bg-emerald-500/5 border border-emerald-500/10 space-y-1">
-                            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest font-mono">
-                                {category === 'cover' ? 'Estimated Payout generated for Songwriters' : 'Estimated Payout to you'}
-                            </p>
-                            
-                            {category === 'cover' ? (
-                                <>
-                                    <p className="text-xl font-black text-amber-400">
-                                        ${calcGrossSongwriterRoyalties(songs.filter(s => s.title.trim()), category, parseInt(attendance, 10)).toFixed(2)}
-                                    </p>
-                                    <p className="text-[9px] text-gray-500 leading-normal">
-                                        This performance generates royalties paid to the original authors. Your direct performer payout is <strong>$0.00</strong>.
-                                    </p>
-                                </>
-                            ) : (
-                                <>
-                                    <p className="text-xl font-black text-emerald-400">
-                                        ${calcTotalRoyalty(songs.filter(s => s.title.trim()), category, parseInt(attendance, 10)).toFixed(2)}
-                                    </p>
-                                    <div className="text-[9px] text-gray-500 space-y-0.5 leading-normal">
-                                        <p>
-                                            {songs.filter(s => s.title.trim()).length} tracks played to {parseInt(attendance, 10).toLocaleString('en-US')} attendees.
-                                        </p>
-                                        {category === 'dj' && (
-                                            <p className="text-[8px] text-gray-600">
-                                                (Originals credit 100%, remixes/edits credit 50%, other artist tracks credit 0% to performer)
-                                            </p>
-                                        )}
-                                    </div>
-                                </>
-                            )}
-                        </div>
-                    )}
-
                     <button
                         onClick={handleSubmit}
                         disabled={!isFormValid}
                         className="w-full py-3 bg-[#FFE135] hover:bg-[#FFE135]/90 text-black font-black text-xs uppercase tracking-widest rounded-xl transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-2"
                     >
                         <BarChart3 size={14} strokeWidth={2.5} />
-                        Submit Setlist
+                        Save Setlist Draft
                     </button>
                 </div>
 
                 {/* Submitted Setlists Column */}
                 <div className="lg:col-span-5 bg-white/[0.02] border border-white/5 rounded-xl p-4 flex flex-col min-h-[400px]">
                     <div className="flex items-center justify-between border-b border-white/5 pb-2.5 mb-3">
-                        <h3 className="text-xs font-bold text-gray-300 uppercase tracking-widest">Submitted Setlists</h3>
+                        <h3 className="text-xs font-bold text-gray-300 uppercase tracking-widest">Saved Setlist Drafts</h3>
                         {performances.length > 0 && (
                             <span className="text-[9px] text-gray-500 font-mono font-bold bg-white/5 px-2 py-0.5 rounded-full">
                                 {performances.length} logged
@@ -599,6 +479,12 @@ export function SetlistAnalytics() {
                             <div className="w-6 h-6 border-2 border-yellow-500 border-t-transparent rounded-full animate-spin" />
                             <p className="text-xs text-gray-600 uppercase tracking-widest animate-pulse font-mono">Syncing setlists...</p>
                         </div>
+                    ) : loadError ? (
+                        <div className="flex-1 flex flex-col items-center justify-center gap-2 py-16 text-center" role="alert">
+                            <AlertCircle size={22} className="text-red-400" />
+                            <p className="text-sm font-bold text-red-300">{loadError}</p>
+                            <p className="text-xs text-gray-600">Your unsaved form data remains available.</p>
+                        </div>
                     ) : performances.length === 0 ? (
                         <div className="flex-1 flex flex-col items-center justify-center gap-3 py-16 text-center">
                             <div className="w-12 h-12 rounded-2xl bg-white/[0.02] border border-white/5 flex items-center justify-center shadow-inner">
@@ -606,16 +492,12 @@ export function SetlistAnalytics() {
                             </div>
                             <div>
                                 <p className="text-sm font-bold text-gray-500">No performances logged</p>
-                                <p className="text-xs text-gray-600 mt-1">Log your first show to track PRO royalties</p>
+                                <p className="text-xs text-gray-600 mt-1">Log your first show to prepare a filing draft</p>
                             </div>
                         </div>
                     ) : (
                         <div className="space-y-3 overflow-y-auto max-h-[560px] pr-1">
-                            {performances.map(p => {
-                                const directRoyalty = calcTotalRoyalty(p.songs, p.category, p.attendance);
-                                const songwriterRoyalty = calcGrossSongwriterRoyalties(p.songs, p.category, p.attendance);
-                                
-                                return (
+                            {performances.map(p => (
                                     <div key={p.id} className="bg-black/30 border border-white/5 rounded-xl p-3.5 space-y-3 hover:border-white/10 transition-colors relative overflow-hidden group">
                                         <div className="flex items-start justify-between">
                                             <div>
@@ -626,7 +508,7 @@ export function SetlistAnalytics() {
                                                             ? 'text-violet-400 bg-violet-400/5 border-violet-400/10'
                                                             : (p.category === 'cover' ? 'text-amber-400 bg-amber-400/5 border-amber-400/10' : 'text-emerald-400 bg-emerald-400/5 border-emerald-400/10')
                                                     }`}>
-                                                        {p.category === 'dj' ? 'DJ Mix' : (p.category === 'cover' ? 'Cover Set' : 'Original Set')}
+                                                        {p.category === 'dj' ? 'DJ Mix' : (p.category === 'cover' ? 'Cover Set' : (p.category === 'original' ? 'Original Set' : 'Unclassified'))}
                                                     </span>
                                                 </div>
                                                 <p className="text-[10px] text-gray-500 font-mono mt-1">
@@ -635,9 +517,7 @@ export function SetlistAnalytics() {
                                             </div>
                                             <div className="flex items-center gap-1">
                                                 <div className="text-right">
-                                                    <p className={`text-sm font-black ${p.category === 'cover' ? 'text-amber-400' : 'text-emerald-400'}`}>
-                                                        ${(p.category === 'cover' ? songwriterRoyalty : directRoyalty).toFixed(2)}
-                                                    </p>
+                                                    <p className="text-[9px] text-yellow-400 font-bold uppercase tracking-wider">Draft · Not submitted</p>
                                                     <p className="text-[9px] text-gray-600 font-mono">{p.attendance.toLocaleString('en-US')} attendees</p>
                                                 </div>
                                                 <button onClick={() => handleDeletePerformance(p.id)} className="text-gray-600 hover:text-red-400 p-1 rounded-md hover:bg-red-500/10 transition-all opacity-0 group-hover:opacity-100 ml-1">
@@ -665,20 +545,18 @@ export function SetlistAnalytics() {
                                             ))}
                                         </div>
                                     </div>
-                                );
-                            })}
+                                ))}
                         </div>
                     )}
                 </div>
             </div>
 
-            {/* Educational Info Note */}
-            <div className="flex items-start gap-3 p-4 rounded-xl bg-blue-500/5 border border-blue-500/10 animate-pulse">
+            <div className="flex items-start gap-3 p-4 rounded-xl bg-blue-500/5 border border-blue-500/10">
                 <AlertCircle size={15} className="text-blue-400 flex-shrink-0 mt-0.5" />
                 <div className="space-y-1">
-                    <h4 className="text-[11px] font-bold text-blue-300 uppercase tracking-widest font-mono">ASCAP & BMI Live Performance Credit Guidelines</h4>
+                    <h4 className="text-[11px] font-bold text-blue-300 uppercase tracking-widest font-mono">Draft only — not filed with a PRO</h4>
                     <p className="text-[10px] text-blue-300/60 leading-relaxed font-mono">
-                        ASCAP OnStage and BMI Live allow musicians to earn royalties when they play live shows at licensed venues. To claim credit, you must submit complete setlists specifying original composers. cover songs generate royalties directly to their original songwriters rather than the performing act. Rates are calculated using average licensed PRO venue estimates.
+                        indii stores the performance details you enter and can export a preparation CSV. It does not submit setlists, verify venue eligibility or work ownership, or calculate royalties. Confirm required work IDs, writers, account proof, deadlines, and filing steps directly with your PRO.
                     </p>
                 </div>
             </div>

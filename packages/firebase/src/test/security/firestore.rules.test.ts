@@ -366,6 +366,87 @@ describe('Firestore Security Rules', () => {
         });
     });
 
+    describe('users/{userId}/setlists/{setlistId}', () => {
+        const validDraft = {
+            userId: ALICE_UID,
+            venue: 'Test Venue',
+            date: '2026-08-09',
+            city: 'Detroit',
+            attendance: 250,
+            songs: [{ id: 'song-1', title: 'Test Song', originalArtist: '', type: 'original' }],
+            category: 'original',
+            status: 'draft_requires_manual_filing',
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+        };
+
+        it('allows the owner to create, read, and delete a bounded draft', async () => {
+            if (requireEmulator()) return;
+            const db = verifiedCtx(ALICE_UID).firestore();
+            const ref = doc(db, 'users', ALICE_UID, 'setlists', 'draft-1');
+            await assertSucceeds(setDoc(ref, validDraft));
+            await assertSucceeds(getDoc(ref));
+            await assertSucceeds(deleteDoc(ref));
+        });
+
+        it('rejects cross-owner writes, forged ownership, and schema pollution', async () => {
+            if (requireEmulator()) return;
+            const alice = verifiedCtx(ALICE_UID).firestore();
+            const bob = verifiedCtx(BOB_UID).firestore();
+            const ownedRef = doc(alice, 'users', ALICE_UID, 'setlists', 'owned-draft');
+            await assertSucceeds(setDoc(ownedRef, validDraft));
+            await assertFails(getDoc(doc(bob, 'users', ALICE_UID, 'setlists', 'owned-draft')));
+            await assertFails(deleteDoc(doc(bob, 'users', ALICE_UID, 'setlists', 'owned-draft')));
+            await assertFails(setDoc(doc(bob, 'users', ALICE_UID, 'setlists', 'forged'), validDraft));
+            await assertFails(setDoc(
+                doc(alice, 'users', ALICE_UID, 'setlists', 'wrong-owner'),
+                { ...validDraft, userId: BOB_UID },
+            ));
+            await assertFails(setDoc(
+                doc(alice, 'users', ALICE_UID, 'setlists', 'polluted'),
+                { ...validDraft, estimatedRoyalty: 1000 },
+            ));
+        });
+
+        it('rejects unauthenticated and anonymous access', async () => {
+            if (requireEmulator()) return;
+            const refPath = ['users', ALICE_UID, 'setlists', 'draft-1'] as const;
+            await assertFails(getDoc(doc(unauthCtx().firestore(), ...refPath)));
+            await assertFails(setDoc(doc(anonCtx().firestore(), ...refPath), validDraft));
+        });
+
+        it('rejects oversized or invalid drafts and all client updates', async () => {
+            if (requireEmulator()) return;
+            const db = verifiedCtx(ALICE_UID).firestore();
+            await assertFails(setDoc(
+                doc(db, 'users', ALICE_UID, 'setlists', 'oversized'),
+                { ...validDraft, venue: 'x'.repeat(301) },
+            ));
+            await assertFails(setDoc(
+                doc(db, 'users', ALICE_UID, 'setlists', 'bad-status'),
+                { ...validDraft, status: 'submitted' },
+            ));
+            await assertFails(setDoc(
+                doc(db, 'users', ALICE_UID, 'setlists', 'empty-songs'),
+                { ...validDraft, songs: [] },
+            ));
+            await assertFails(setDoc(
+                doc(db, 'users', ALICE_UID, 'setlists', 'client-timestamp'),
+                { ...validDraft, createdAt: Timestamp.now(), updatedAt: Timestamp.now() },
+            ));
+            await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                await setDoc(
+                    doc(ctx.firestore(), 'users', ALICE_UID, 'setlists', 'draft-1'),
+                    { ...validDraft, createdAt: Timestamp.now(), updatedAt: Timestamp.now() },
+                );
+            });
+            await assertFails(updateDoc(
+                doc(db, 'users', ALICE_UID, 'setlists', 'draft-1'),
+                { status: 'submitted' },
+            ));
+        });
+    });
+
     describe('users/{userId}/agent_queue/{queueId}', () => {
         const queue = {
             tasks: [{ id: 'task-1', status: 'pending', prompt: 'Prepare release assets' }],

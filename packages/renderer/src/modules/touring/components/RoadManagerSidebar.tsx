@@ -14,7 +14,7 @@ export const RoadManagerSidebar: React.FC<RoadManagerSidebarProps> = ({ activeTa
         { id: 'plan', label: 'Plan', icon: Map, description: 'Route & Optimization' },
         { id: 'tour-book', label: 'Tour Book', icon: BookOpen, description: 'Day Sheets & Tech Rider' },
         { id: 'on-the-road', label: 'On the Road', icon: Truck, description: 'Route Map & Nearby Services' },
-        { id: 'insights', label: 'Insights', icon: ListMusic, description: 'Analytics & Streams' },
+        { id: 'insights', label: 'Insights', icon: ListMusic, description: 'Performance Setlist Drafts' },
     ];
 
     return (

@@ -3,12 +3,13 @@ import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntell
 import { MapsTools } from './MapsTools';
 import { z } from 'zod';
 import { zodToJsonSchema } from 'zod-to-json-schema';
-import { wrapTool, toolSuccess } from '../utils/ToolUtils';
+import { wrapTool, toolError, toolSuccess } from '../utils/ToolUtils';
 import type { AnyToolFunction } from '../types';
-import { db, auth } from '@/services/firebase';
+import { auth, db } from '@/services/firebase';
 import { collection, doc, setDoc } from 'firebase/firestore';
 import { logger } from '@/utils/logger';
 import { importWithRetry } from '@/utils/dynamicImport';
+import { setlistDraftService } from '@/services/touring/SetlistDraftService';
 
 /**
  * Road Manager Tools
@@ -328,26 +329,33 @@ export const RoadTools = {
     }),
 
     log_live_setlist_for_pro: wrapTool('log_live_setlist_for_pro', async (args: { venue: string; date: string; tracks: string[] }) => {
-        // Item 138: Save setlist as a local draft for manual PRO filing (not auto-submitted)
-        const setlistId = `SET-${Date.now().toString(36).toUpperCase()}`;
         const userId = auth.currentUser?.uid;
+        if (!userId) {
+            return toolError('Sign in before saving a setlist draft.', 'AUTH_REQUIRED');
+        }
 
-        if (userId) {
-            try {
-                await setDoc(doc(collection(db, `users/${userId}/setlists`)), {
-                    setlistId,
-                    venue: args.venue,
-                    date: args.date,
-                    tracks: args.tracks,
-                    submissionStatus: 'draft_requires_manual_filing',
-                    // Manual filing required: user must contact PRO directly with work IDs and membership/account proof
-                    requiresManualAction: ['Select work IDs/IPIs', 'Choose target PRO', 'Provide account/membership proof', 'File manually via PRO portal'],
-                    createdAt: new Date().toISOString()
-                });
-                logger.info(`[RoadTools] Setlist ${setlistId} saved as draft for manual PRO filing.`);
-            } catch (e: unknown) {
-                logger.warn('[RoadTools] Failed to save setlist:', e);
-            }
+        if (!args.venue?.trim() || !/^\d{4}-\d{2}-\d{2}$/.test(args.date) || !args.tracks?.length) {
+            return toolError('Venue, a YYYY-MM-DD date, and at least one track are required.', 'INVALID_SETLIST_DRAFT');
+        }
+
+        let setlistId: string;
+        try {
+            setlistId = await setlistDraftService.create({
+                userId,
+                venue: args.venue,
+                date: args.date,
+                city: '',
+                attendance: 0,
+                category: 'unclassified',
+                songs: args.tracks.map((title, index) => ({
+                    id: `track-${index + 1}`,
+                    title,
+                    originalArtist: '',
+                    type: 'other',
+                })),
+            });
+        } catch {
+            return toolError('Setlist draft could not be saved.', 'PERSISTENCE_ERROR');
         }
 
         return toolSuccess({
@@ -357,8 +365,8 @@ export const RoadTools = {
             tracksLogged: args.tracks.length,
             tracks: args.tracks,
             submissionStatus: 'draft (manual filing required)',
-            note: userId ? 'Setlist saved locally as a draft. Manual PRO filing required: contact ASCAP/BMI/SESAC directly with work IDs and proof of authorship.' : 'Sign in to save setlist data.'
-        }, `Live setlist saved as a local draft for ${args.venue} on ${args.date} (${args.tracks.length} tracks). Note: Setlists are not automatically submitted to PROs. To claim royalties, you must manually file with your chosen PRO using work IDs and membership proof.`);
+            note: 'Setlist saved to your account as a draft. It was not submitted to a PRO and no royalty amount was calculated.'
+        }, `Setlist saved as a manual-filing draft for ${args.venue} on ${args.date} (${args.tracks.length} tracks). It was not submitted to a PRO.`);
     })
 } satisfies Record<string, AnyToolFunction>;
 
