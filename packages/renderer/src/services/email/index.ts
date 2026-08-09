@@ -22,4 +22,5 @@ export type {
     SendEmailResult,
     EmailProviderInterface,
     OAuthTokens,
+    OAuthExchangeResult,
 } from './types';

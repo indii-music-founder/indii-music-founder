@@ -4,6 +4,7 @@ import { useToast } from '@/core/context/ToastContext';
 import { Expense } from '@/services/finance/FinanceService';
 import { motion, AnimatePresence } from 'motion/react';
 import { logger } from '@/utils/logger';
+import { useModalAccessibility } from '@/hooks/useModalAccessibility';
 
 interface ExpenseManualEntryModalProps {
     onClose: () => void;
@@ -11,6 +12,7 @@ interface ExpenseManualEntryModalProps {
 }
 
 export const ExpenseManualEntryModal: React.FC<ExpenseManualEntryModalProps> = ({ onClose, onAdd }) => {
+    const dialogRef = useModalAccessibility(true, onClose);
     const [manualForm, setManualForm] = useState<Partial<Expense>>({
         date: new Date().toISOString().split('T')[0],
         category: 'Equipment',
@@ -43,7 +45,7 @@ export const ExpenseManualEntryModal: React.FC<ExpenseManualEntryModalProps> = (
 
     return (
         <AnimatePresence>
-            <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-xl flex items-center justify-center p-4">
+            <div ref={dialogRef} role="dialog" aria-modal="true" aria-label="Add an expense" className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-xl flex items-center justify-center p-4">
                 <motion.div
                     initial={{ opacity: 0, scale: 0.9, y: 20 }}
                     animate={{ opacity: 1, scale: 1, y: 0 }}

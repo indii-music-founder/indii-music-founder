@@ -20,6 +20,7 @@ import type {
     ComposeEmailData,
     SendEmailResult,
     OAuthTokens,
+    OAuthExchangeResult,
     EmailAddress,
     EmailAttachment,
 } from './types';
@@ -93,7 +94,7 @@ export class OutlookProvider implements EmailProviderInterface {
         this.clientId = import.meta.env.VITE_MICROSOFT_CLIENT_ID || '';
     }
 
-    getAuthUrl(): string {
+    getAuthUrl(state: string): string {
         const params = new URLSearchParams({
             client_id: this.clientId,
             response_type: 'code',
@@ -101,27 +102,28 @@ export class OutlookProvider implements EmailProviderInterface {
             scope: OUTLOOK_SCOPES.join(' '),
             response_mode: 'query',
             prompt: 'consent',
+            state,
         });
         return `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?${params.toString()}`;
     }
 
-    async exchangeCode(code: string): Promise<OAuthTokens> {
+    async exchangeCode(code: string, redirectUri: string): Promise<OAuthExchangeResult> {
         const exchangeTokens = httpsCallable<
-            { code: string; provider: string },
-            OAuthTokens
+            { code: string; provider: string; redirectUri: string },
+            OAuthExchangeResult
         >(functions, 'emailExchangeToken');
 
-        const result = await exchangeTokens({ code, provider: 'outlook' });
+        const result = await exchangeTokens({ code, provider: 'outlook', redirectUri });
         return result.data;
     }
 
-    async refreshAccessToken(refreshToken: string): Promise<OAuthTokens> {
+    async refreshAccessToken(): Promise<OAuthTokens> {
         const refreshFn = httpsCallable<
-            { refreshToken: string; provider: string },
+            { provider: string },
             OAuthTokens
         >(functions, 'emailRefreshToken');
 
-        const result = await refreshFn({ refreshToken, provider: 'outlook' });
+        const result = await refreshFn({ provider: 'outlook' });
         return result.data;
     }
 

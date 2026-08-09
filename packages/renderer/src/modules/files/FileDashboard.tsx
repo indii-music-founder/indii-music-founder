@@ -9,6 +9,7 @@ import FilePreview from './FilePreview';
 import { NavItem } from './components/NavItem';
 import { DetailRow } from './components/DetailRow';
 import { FileTree } from './components/FileTree';
+import { normalizeExternalHttpUrl } from '@/utils/safeExternalUrl';
 
 export default function FileDashboard() {
     const { fileNodes, currentProjectId, selectedFileNodeId, setSelectedFileNode, deleteNode } = useStore(useShallow(state => ({
@@ -46,13 +47,15 @@ export default function FileDashboard() {
     };
 
     const openFileUrl = (url?: string) => {
-        if (url) window.open(url, '_blank', 'noopener');
+        const safeUrl = normalizeExternalHttpUrl(url);
+        if (safeUrl) window.open(safeUrl, '_blank', 'noopener,noreferrer');
     };
 
     const downloadFileUrl = (url?: string, name?: string) => {
-        if (!url) return;
+        const safeUrl = normalizeExternalHttpUrl(url);
+        if (!safeUrl) return;
         const a = document.createElement('a');
-        a.href = url;
+        a.href = safeUrl;
         a.download = name || 'file';
         a.rel = 'noopener';
         a.click();

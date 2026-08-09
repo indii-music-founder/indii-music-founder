@@ -15,9 +15,9 @@
  */
 
 import { logger } from '@/utils/logger';
-import * as Sentry from '@sentry/react';
-import { auth, db } from '@/services/firebase';
-import { doc, getDoc, setDoc, deleteDoc, onSnapshot, collection, Unsubscribe } from 'firebase/firestore';
+import { auth, db, functions } from '@/services/firebase';
+import { doc, getDoc, setDoc, onSnapshot, collection, Unsubscribe } from 'firebase/firestore';
+import { httpsCallable } from 'firebase/functions';
 import { GmailProvider } from './GmailProvider';
 import { OutlookProvider } from './OutlookProvider';
 import type {
@@ -30,6 +30,11 @@ import type {
     SendEmailResult,
     EmailProviderInterface,
 } from './types';
+import {
+    beginAccountBoundOAuthSession,
+    clearAccountBoundOAuthSession,
+    requireAccountBoundOAuthSession,
+} from '@/services/auth/AccountBoundOAuthSession';
 
 // ---------------------------------------------------------------------------
 // Token Cache (in-memory only — never persisted client-side)
@@ -37,9 +42,9 @@ import type {
 
 interface TokenCacheEntry {
     accessToken: string;
-    refreshToken: string;
     expiresAt: number;
     provider: EmailProvider;
+    ownerUid: string;
 }
 
 const tokenCache = new Map<string, TokenCacheEntry>();
@@ -60,6 +65,28 @@ const providers: Record<EmailProvider, EmailProviderInterface> = {
 class EmailServiceImpl {
     private syncSubscriptions = new Map<string, Unsubscribe>();
     private messageCache = new Map<string, EmailMessage[]>();
+    private cacheOwnerUid: string | null = null;
+
+    private ensureCacheOwner(): string {
+        const uid = auth.currentUser?.uid;
+        if (!uid) {
+            this.clearSession();
+            throw new Error('User not authenticated');
+        }
+        if (this.cacheOwnerUid !== uid) {
+            this.clearSession();
+            this.cacheOwnerUid = uid;
+        }
+        return uid;
+    }
+
+    clearSession(): void {
+        tokenCache.clear();
+        this.messageCache.clear();
+        for (const unsubscribe of this.syncSubscriptions.values()) unsubscribe();
+        this.syncSubscriptions.clear();
+        this.cacheOwnerUid = null;
+    }
 
     // -----------------------------------------------------------------------
     // OAuth Flow
@@ -70,8 +97,14 @@ class EmailServiceImpl {
      * Opens a popup window for the user to grant access.
      */
     async connectAccount(provider: EmailProvider): Promise<void> {
+        if (window.location.protocol !== 'http:' && window.location.protocol !== 'https:') {
+            window.open('https://app.indii.music', '_blank', 'noopener,noreferrer');
+            throw new Error('Connect email at app.indii.music in your browser. The desktop app will sync the connection afterward.');
+        }
+        const initiatingUid = this.ensureCacheOwner();
         const providerImpl = providers[provider];
-        const authUrl = providerImpl.getAuthUrl();
+        const oauthSession = beginAccountBoundOAuthSession(provider, initiatingUid);
+        const authUrl = providerImpl.getAuthUrl(oauthSession.state);
 
         // Open popup for OAuth
         const popup = window.open(
@@ -86,21 +119,31 @@ class EmailServiceImpl {
 
         // Listen for the callback
         return new Promise<void>((resolve, reject) => {
+            let settled = false;
+            const finish = (error?: Error) => {
+                if (settled) return;
+                settled = true;
+                clearInterval(interval);
+                clearTimeout(timeoutId);
+                if (error) reject(error);
+                else resolve();
+            };
             const interval = setInterval(() => {
                 try {
                     if (popup.closed) {
-                        clearInterval(interval);
                         // Check if we got a token (the callback would have stored it)
                         const userId = auth.currentUser?.uid;
-                        if (userId) {
+                        if (userId === initiatingUid) {
                             const accountDoc = doc(db, 'users', userId, 'emailAccounts', provider);
                             getDoc(accountDoc).then(snap => {
                                 if (snap.exists() && snap.data()?.isConnected) {
-                                    resolve();
+                                    finish();
                                 } else {
-                                    reject(new Error('Connection was cancelled or failed'));
+                                    finish(new Error('Connection was cancelled or failed'));
                                 }
-                            });
+                            }).catch(error => finish(error instanceof Error ? error : new Error('Connection status check failed')));
+                        } else {
+                            finish(new Error('The signed-in account changed during authorization.'));
                         }
                         return;
                     }
@@ -108,17 +151,23 @@ class EmailServiceImpl {
                     // Check if popup has navigated to our callback URL
                     const popupUrl = popup.location?.href;
                     if (popupUrl?.includes('/auth/') && popupUrl?.includes('code=')) {
-                        clearInterval(interval);
                         const url = new URL(popupUrl);
                         const code = url.searchParams.get('code');
+                        const returnedState = url.searchParams.get('state') ?? '';
                         popup.close();
 
                         if (code) {
-                            this.handleAuthCallback(provider, code)
-                                .then(resolve)
-                                .catch(reject);
+                            try {
+                                requireAccountBoundOAuthSession(provider, returnedState, auth.currentUser?.uid);
+                            } catch (error) {
+                                finish(error instanceof Error ? error : new Error('OAuth state validation failed'));
+                                return;
+                            }
+                            this.handleAuthCallback(provider, code, initiatingUid)
+                                .then(() => finish())
+                                .catch(error => finish(error instanceof Error ? error : new Error('Account connection failed')));
                         } else {
-                            reject(new Error('No auth code received'));
+                            finish(new Error('No auth code received'));
                         }
                     }
                 } catch {
@@ -127,10 +176,9 @@ class EmailServiceImpl {
             }, 500);
 
             // Timeout after 5 minutes
-            setTimeout(() => {
-                clearInterval(interval);
+            const timeoutId = setTimeout(() => {
                 if (!popup.closed) popup.close();
-                reject(new Error('Authentication timed out'));
+                finish(new Error('Authentication timed out'));
             }, 5 * 60 * 1000);
         });
     }
@@ -138,89 +186,53 @@ class EmailServiceImpl {
     /**
      * Handle the OAuth callback — exchange code for tokens and store account.
      */
-    async handleAuthCallback(provider: EmailProvider, code: string): Promise<void> {
+    async handleAuthCallback(provider: EmailProvider, code: string, initiatingUid: string): Promise<void> {
         const userId = auth.currentUser?.uid;
-        if (!userId) throw new Error('User not authenticated');
+        if (!userId || userId !== initiatingUid) {
+            throw new Error('The signed-in account changed during authorization.');
+        }
 
         const providerImpl = providers[provider];
-        const tokens = await providerImpl.exchangeCode(code);
+        const redirectUri = `${window.location.origin}/auth/${provider}/callback`;
+        const tokens = await providerImpl.exchangeCode(code, redirectUri);
+        if (auth.currentUser?.uid !== initiatingUid) {
+            throw new Error('The signed-in account changed during authorization.');
+        }
+        if (tokens.account.provider !== provider || !tokens.account.email || !tokens.account.isConnected) {
+            throw new Error(`The ${provider} account could not be verified.`);
+        }
 
         // Cache the access token in memory
         tokenCache.set(provider, {
             accessToken: tokens.accessToken,
-            refreshToken: tokens.refreshToken,
             expiresAt: tokens.expiresAt,
             provider,
+            ownerUid: userId,
         });
+        this.cacheOwnerUid = userId;
 
-        // Fetch basic profile info to get the email address
-        let email = '';
-        let displayName = '';
-        let avatarUrl = '';
+        clearAccountBoundOAuthSession(provider);
 
-        if (provider === 'gmail') {
-            try {
-                const profileRes = await fetch('https://www.googleapis.com/gmail/v1/users/me/profile', {
-                    headers: { Authorization: `Bearer ${tokens.accessToken}` },
-                });
-                const profile = await profileRes.json();
-                email = profile.emailAddress || '';
-            } catch (err: unknown) {
-                logger.error('[EmailService] Failed to fetch Gmail profile:', err);
-                Sentry.captureException(err);
-                email = auth.currentUser?.email || '';
-            }
-            displayName = auth.currentUser?.displayName || email;
-            avatarUrl = auth.currentUser?.photoURL || '';
-        } else if (provider === 'outlook') {
-            try {
-                const profileRes = await fetch('https://graph.microsoft.com/v1.0/me', {
-                    headers: { Authorization: `Bearer ${tokens.accessToken}` },
-                });
-                const profile = await profileRes.json();
-                email = profile.mail || profile.userPrincipalName || '';
-                displayName = profile.displayName || email;
-            } catch (err: unknown) {
-                logger.error('[EmailService] Failed to fetch Outlook profile:', err);
-                Sentry.captureException(err);
-                email = '';
-            }
-        }
-
-        // Store account metadata in Firestore
-        const account: EmailAccount = {
-            id: provider,
-            provider,
-            email,
-            displayName,
-            avatarUrl,
-            isConnected: true,
-            lastSyncAt: null,
-        };
-
-        await setDoc(
-            doc(db, 'users', userId, 'emailAccounts', provider),
-            account,
-            { merge: true }
-        );
-
-        logger.info(`[EmailService] Connected ${provider} account: ${email}`);
+        logger.info(`[EmailService] Connected ${provider} account: ${tokens.account.email}`);
     }
 
     /**
      * Disconnect an email account.
      */
     async disconnectAccount(provider: EmailProvider): Promise<void> {
-        const userId = auth.currentUser?.uid;
-        if (!userId) return;
+        this.ensureCacheOwner();
 
-        // Clear tokens
+        // The refresh credential and connection record are backend-owned. A
+        // direct client delete is denied by Firestore rules and would leave the
+        // durable refresh token active.
+        const revokeToken = httpsCallable<{ provider: EmailProvider }, { success: boolean }>(
+            functions,
+            'emailRevokeToken',
+        );
+        const result = await revokeToken({ provider });
+        if (!result.data.success) throw new Error(`Failed to revoke the ${provider} connection.`);
+
         tokenCache.delete(provider);
-
-        // Remove from Firestore
-        await deleteDoc(doc(db, 'users', userId, 'emailAccounts', provider));
-
-        // Clear cached messages
         this.messageCache.delete(provider);
 
         // Cancel sync subscription
@@ -241,29 +253,28 @@ class EmailServiceImpl {
      * Get a valid access token for a provider, refreshing if needed.
      */
     private async getAccessToken(provider: EmailProvider): Promise<string> {
+        const userId = this.ensureCacheOwner();
         const cached = tokenCache.get(provider);
 
-        if (cached && cached.expiresAt > Date.now() + 60_000) {
+        if (cached && cached.ownerUid === userId && cached.expiresAt > Date.now() + 60_000) {
             // Token is valid for at least 1 more minute
             return cached.accessToken;
         }
 
         // Token expired or not cached — refresh via Cloud Function
-        if (cached?.refreshToken) {
+        {
             const providerImpl = providers[provider];
-            const newTokens = await providerImpl.refreshAccessToken(cached.refreshToken);
+            const newTokens = await providerImpl.refreshAccessToken();
 
             tokenCache.set(provider, {
                 accessToken: newTokens.accessToken,
-                refreshToken: newTokens.refreshToken || cached.refreshToken,
                 expiresAt: newTokens.expiresAt,
                 provider,
+                ownerUid: userId,
             });
 
             return newTokens.accessToken;
         }
-
-        throw new Error(`No credentials for ${provider}. Please connect your account.`);
     }
 
     // -----------------------------------------------------------------------
@@ -355,8 +366,7 @@ class EmailServiceImpl {
      * Get all connected email accounts for the current user.
      */
     async getConnectedAccounts(): Promise<EmailAccount[]> {
-        const userId = auth.currentUser?.uid;
-        if (!userId) return [];
+        const userId = this.ensureCacheOwner();
 
         const accountsRef = collection(db, 'users', userId, 'emailAccounts');
         const snap = await import('firebase/firestore').then(m => m.getDocs(accountsRef));
@@ -372,8 +382,12 @@ class EmailServiceImpl {
     subscribeToAccounts(
         callback: (accounts: EmailAccount[]) => void
     ): Unsubscribe | null {
-        const userId = auth.currentUser?.uid;
-        if (!userId) return null;
+        let userId: string;
+        try {
+            userId = this.ensureCacheOwner();
+        } catch {
+            return null;
+        }
 
         const accountsRef = collection(db, 'users', userId, 'emailAccounts');
         return onSnapshot(accountsRef, (snap) => {
@@ -388,6 +402,11 @@ class EmailServiceImpl {
      * Get cached messages (from last fetch, not a new API call).
      */
     getCachedMessages(provider: EmailProvider): EmailMessage[] {
+        try {
+            this.ensureCacheOwner();
+        } catch {
+            return [];
+        }
         return this.messageCache.get(provider) || [];
     }
 
@@ -395,6 +414,11 @@ class EmailServiceImpl {
      * Get all cached messages across all providers, sorted by date.
      */
     getAllCachedMessages(): EmailMessage[] {
+        try {
+            this.ensureCacheOwner();
+        } catch {
+            return [];
+        }
         const all: EmailMessage[] = [];
         for (const messages of this.messageCache.values()) {
             all.push(...messages);

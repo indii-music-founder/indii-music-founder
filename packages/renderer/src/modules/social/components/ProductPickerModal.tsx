@@ -9,6 +9,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { logger } from '@/utils/logger';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { motion, AnimatePresence } from 'motion/react';
+import { useModalAccessibility } from '@/hooks/useModalAccessibility';
 
 interface ProductPickerModalProps {
   onClose: () => void;
@@ -21,6 +22,7 @@ export const ProductPickerModal: React.FC<ProductPickerModalProps> = ({
   onSelect, 
   selectedId 
 }) => {
+  const dialogRef = useModalAccessibility(true, onClose);
     const { t } = useTranslation();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -53,7 +55,7 @@ export const ProductPickerModal: React.FC<ProductPickerModalProps> = ({
   });
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 overflow-hidden">
+    <div ref={dialogRef} role="dialog" aria-modal="true" aria-label="Choose a product" className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 overflow-hidden">
       <motion.div 
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}

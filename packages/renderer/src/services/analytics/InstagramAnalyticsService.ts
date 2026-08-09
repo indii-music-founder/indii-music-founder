@@ -32,6 +32,11 @@ import { auth } from '@/services/firebase';
 import type { PlatformData, StreamDataPoint } from './types';
 import * as Sentry from '@sentry/react';
 import { logger } from '@/utils/logger';
+import {
+    beginAccountBoundOAuthSession,
+    clearAccountBoundOAuthSession,
+    requireAccountBoundOAuthSession,
+} from '@/services/auth/AccountBoundOAuthSession';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -132,8 +137,10 @@ export class InstagramAnalyticsService {
             throw new Error('VITE_META_APP_ID is not configured. Add it to your .env file.');
         }
 
-        const state = crypto.randomUUID();
-        sessionStorage.setItem('instagram_oauth_state', state);
+        const ownerUid = auth.currentUser?.uid;
+        if (!ownerUid) throw new Error('Sign in before connecting Instagram.');
+        const { state } = beginAccountBoundOAuthSession('instagram', ownerUid);
+        sessionStorage.removeItem('instagram_oauth_state');
 
         const scopes = [
             'instagram_basic',
@@ -159,10 +166,7 @@ export class InstagramAnalyticsService {
      * The code is exchanged for a token via the `analyticsExchangeToken` Cloud Function.
      */
     async beginCallback(code: string, state: string): Promise<InstagramCallbackResult> {
-        const storedState = sessionStorage.getItem('instagram_oauth_state');
-        if (state !== storedState) {
-            throw new Error('OAuth state mismatch — possible CSRF attack.');
-        }
+        requireAccountBoundOAuthSession('instagram', state, auth.currentUser?.uid);
 
         const exchangeFn = httpsCallable<unknown, InstagramExchangeResponse>(
             firebaseFunctions, 'analyticsExchangeToken'
@@ -174,12 +178,12 @@ export class InstagramAnalyticsService {
             redirectUri: this.redirectUri,
         });
         const data = response.data;
+        clearAccountBoundOAuthSession('instagram');
         if (data.ok && data.requiresPageSelection === true && isPageSelectionResponse(data)) {
             return { kind: 'page_selection_required', intentId: data.intentId, pages: data.pages };
         }
         if (!data.ok) throw new Error('Instagram connection was not accepted. Reconnect and try again.');
 
-        sessionStorage.removeItem('instagram_oauth_state');
         return { kind: 'connected' };
     }
 
@@ -190,7 +194,7 @@ export class InstagramAnalyticsService {
         );
         const response = await finalizeFn({ intentId, facebookPageId });
         if (!response.data.ok) throw new Error('Instagram Page selection was not accepted. Reconnect and try again.');
-        sessionStorage.removeItem('instagram_oauth_state');
+        clearAccountBoundOAuthSession('instagram');
     }
 
     /** Compatibility wrapper for existing callers that do not support Page choice. */
@@ -207,6 +211,7 @@ export class InstagramAnalyticsService {
     async disconnect(): Promise<void> {
         const revokeFn = httpsCallable(firebaseFunctions, 'analyticsRevokeToken');
         await revokeFn({ platform: 'instagram' });
+        clearAccountBoundOAuthSession('instagram');
     }
 
     /**

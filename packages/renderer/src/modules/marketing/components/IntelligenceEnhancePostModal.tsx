@@ -11,6 +11,7 @@ import {
 import { useToast } from "@/core/context/ToastContext";
 import { CampaignIntelligence } from "@/services/marketing/CampaignIntelligenceService";
 import { ScheduledPost, PostEnhancement, EnhancementType } from "../types";
+import { useModalAccessibility } from '@/hooks/useModalAccessibility';
 interface IntelligenceEnhancePostModalProps {
   post: ScheduledPost;
   onClose: () => void;
@@ -50,6 +51,7 @@ export default function IntelligenceEnhancePostModal({
   onApply,
 }: IntelligenceEnhancePostModalProps) {
   const toast = useToast();
+  const dialogRef = useModalAccessibility(true, onClose);
 
   // State
   const [enhancementType, setEnhancementType] =
@@ -111,7 +113,7 @@ export default function IntelligenceEnhancePostModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div ref={dialogRef} role="dialog" aria-modal="true" aria-label="Enhance social post" className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
       <div className="bg-[#161b22] border border-gray-800 rounded-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-800">

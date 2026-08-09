@@ -9,6 +9,7 @@ import { ContractStatus } from '@/modules/legal/types';
 import { useToast } from '@/core/context/ToastContext';
 import { logger } from '@/utils/logger';
 import { cn } from '@/lib/utils';
+import { useModalAccessibility } from '@/hooks/useModalAccessibility';
 
 /* ================================================================== */
 /*  My Contracts — Live contract list with PDF export & management      */
@@ -28,6 +29,7 @@ export function MyContracts({ onNewContract }: MyContractsProps) {
     const [sendingId, setSendingId] = useState<string | null>(null);
     const [emailDialog, setEmailDialog] = useState<{ contract: LegalContract; recipientEmail: string; message: string } | null>(null);
     const emailInputRef = useRef<HTMLInputElement>(null);
+    const emailDialogRef = useModalAccessibility(Boolean(emailDialog), () => setEmailDialog(null));
 
     // Load contracts on mount
     const loadContracts = useCallback(async () => {
@@ -351,8 +353,10 @@ export function MyContracts({ onNewContract }: MyContractsProps) {
             {emailDialog && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
                     <div
+                        ref={emailDialogRef}
                         className="bg-[#1a1a2e] border border-white/10 rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-4 animate-in zoom-in-95 fade-in duration-200"
                         role="dialog"
+                        aria-modal="true"
                         aria-label="Send Contract via Email"
                     >
                         {/* Header */}

@@ -144,7 +144,7 @@ describe('security/index.ts', () => {
         });
 
         describe('Permission Handlers', () => {
-            it('should block permission requests by default', () => {
+            it('should block permission requests from untrusted contents', () => {
                 const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
                 configureSecurity(mockSession as unknown as Session);
 
@@ -159,7 +159,21 @@ describe('security/index.ts', () => {
                 consoleWarnSpy.mockRestore();
             });
 
-            it('should block permission checks', () => {
+            it('should allow device permissions for the packaged Studio renderer', () => {
+                configureSecurity(mockSession as unknown as Session);
+
+                const requestHandler = mockSession.setPermissionRequestHandler.mock.calls[0][0];
+                const checkHandler = mockSession.setPermissionCheckHandler.mock.calls[0][0];
+                const callback = vi.fn();
+                const studioContents = { getURL: () => 'file:///Applications/indii/index.html' };
+
+                requestHandler(studioContents, 'media', callback);
+
+                expect(callback).toHaveBeenCalledWith(true);
+                expect(checkHandler(studioContents, 'geolocation')).toBe(true);
+            });
+
+            it('should block permission checks from untrusted contents', () => {
                 const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
                 configureSecurity(mockSession as unknown as Session);
 
@@ -261,28 +275,21 @@ describe('security/index.ts', () => {
 });
 
 describe('coverage test for allowed permission', () => {
-    it('should allow permission if in allowedPermissions', () => {
-        // Just mocking the bare minimum to hit the line
+    it('should allow permission for a localhost Studio renderer during development', () => {
         const mockSession = {
             webRequest: { onHeadersReceived: vi.fn(), onBeforeSendHeaders: vi.fn() },
             setPermissionRequestHandler: vi.fn(),
             setPermissionCheckHandler: vi.fn(),
             setCertificateVerifyProc: vi.fn()
         };
+        Object.defineProperty(app, 'isPackaged', { value: false, configurable: true });
         configureSecurity(mockSession as unknown as Session);
 
-        // This is a bit of a hack since allowedPermissions is empty, we can't test the true branch without modifying the source.
         const handler = mockSession.setPermissionRequestHandler.mock.calls[0][0];
         const callback = vi.fn();
 
-        // Let's stub Array.prototype.includes temporarily just to get coverage
-        const originalIncludes = Array.prototype.includes;
-        Array.prototype.includes = vi.fn().mockReturnValue(true) as any;
-
-        handler(null, 'dummy_permission', callback);
+        handler({ getURL: () => 'http://localhost:4243/creative' }, 'camera', callback);
 
         expect(callback).toHaveBeenCalledWith(true);
-
-        Array.prototype.includes = originalIncludes;
     });
 });

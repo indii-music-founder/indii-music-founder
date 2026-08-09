@@ -36,6 +36,7 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '@/lib/utils';
 import { getRemoteConnectionPhase } from './RemoteConnectionState';
+import { useModalAccessibility } from '@/hooks/useModalAccessibility';
 
 // Helper for haptic feedback
 // eslint-disable-next-line react-refresh/only-export-components
@@ -79,23 +80,7 @@ const TRANSIENT_HEARTBEAT_GRACE_MS = 10_000;
 // ─── Pairing Help ────────────────────────────────────────────────────────────
 
 function PairingModal({ onClose }: { onClose: () => void }) {
-  const closeButtonRef = useRef<HTMLButtonElement>(null);
-
-  useEffect(() => {
-    closeButtonRef.current?.focus();
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        event.preventDefault();
-        onClose();
-      }
-    };
-
-    document.addEventListener('keydown', handleKeyDown);
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [onClose]);
+  const dialogRef = useModalAccessibility(true, onClose);
 
   return (
     <motion.div
@@ -105,6 +90,7 @@ function PairingModal({ onClose }: { onClose: () => void }) {
       className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/90 backdrop-blur-2xl p-6"
     >
       <motion.div
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby="mobile-remote-pairing-title"
@@ -123,7 +109,6 @@ function PairingModal({ onClose }: { onClose: () => void }) {
           Open the desktop Studio, then go to Settings → Mobile Remote and scan its pairing code. Controller pages cannot create Studio pairing codes.
         </p>
         <button
-          ref={closeButtonRef}
           onClick={onClose}
           className="w-full h-12 flex items-center justify-center rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-white text-base font-semibold transition-all active:scale-[0.98] cursor-pointer"
           style={{ minHeight: '44px' }}

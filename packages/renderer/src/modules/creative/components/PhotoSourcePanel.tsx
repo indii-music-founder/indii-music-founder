@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useCallback, useEffect, useState, useRef } from 'react';
 import { Camera, Upload, X, Check, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useToast } from '@/core/context/ToastContext';
@@ -10,40 +10,62 @@ interface PhotoSourcePanelProps {
 }
 
 export const PhotoSourcePanel: React.FC<PhotoSourcePanelProps> = ({ onCapture, onClose }) => {
-    const [stream, setStream] = useState<MediaStream | null>(null);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const [capturedImage, setCapturedImage] = useState<{ mimeType: string; data: string } | null>(null);
     const [isCameraActive, setIsCameraActive] = useState(false);
     const videoRef = useRef<HTMLVideoElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const streamRef = useRef<MediaStream | null>(null);
+    const cameraRequestRef = useRef(0);
+    const mountedRef = useRef(true);
     const toast = useToast();
 
+    const stopCamera = useCallback(() => {
+        cameraRequestRef.current += 1;
+        streamRef.current?.getTracks().forEach(track => track.stop());
+        streamRef.current = null;
+        if (videoRef.current) videoRef.current.srcObject = null;
+        if (mountedRef.current) setIsCameraActive(false);
+    }, []);
+
     const startCamera = async () => {
+        stopCamera();
+        const requestId = cameraRequestRef.current;
         try {
             const mediaStream = await navigator.mediaDevices.getUserMedia({ 
                 video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } } 
             });
-            setStream(mediaStream);
-            if (videoRef.current) {
-                videoRef.current.srcObject = mediaStream;
+            if (!mountedRef.current || requestId !== cameraRequestRef.current) {
+                mediaStream.getTracks().forEach(track => track.stop());
+                return;
             }
+            streamRef.current = mediaStream;
             setIsCameraActive(true);
             setPreviewUrl(null);
             setCapturedImage(null);
         } catch (err) {
+            if (!mountedRef.current || requestId !== cameraRequestRef.current) return;
             toast.error('Failed to access camera. Please check permissions.');
             Logger.error('PhotoSourcePanel', 'Camera error', err);
         }
     };
 
-    const stopCamera = () => {
-        if (stream) {
-            stream.getTracks().forEach(track => track.stop());
-            setStream(null);
+    useEffect(() => {
+        if (isCameraActive && videoRef.current && streamRef.current) {
+            videoRef.current.srcObject = streamRef.current;
         }
-        setIsCameraActive(false);
-    };
+    }, [isCameraActive]);
+
+    useEffect(() => {
+        mountedRef.current = true;
+        return () => {
+            mountedRef.current = false;
+            cameraRequestRef.current += 1;
+            streamRef.current?.getTracks().forEach(track => track.stop());
+            streamRef.current = null;
+        };
+    }, []);
 
     const capturePhoto = () => {
         if (videoRef.current && canvasRef.current) {
@@ -70,6 +92,7 @@ export const PhotoSourcePanel: React.FC<PhotoSourcePanelProps> = ({ onCapture, o
     const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
+            stopCamera();
             const reader = new FileReader();
             reader.onloadend = () => {
                 const dataUrl = reader.result as string;
@@ -79,7 +102,6 @@ export const PhotoSourcePanel: React.FC<PhotoSourcePanelProps> = ({ onCapture, o
                     mimeType: file.type || 'image/jpeg',
                     data: dataUrl.split(',')[1] || ''
                 });
-                setIsCameraActive(false);
             };
             reader.readAsDataURL(file);
         }
@@ -97,7 +119,7 @@ export const PhotoSourcePanel: React.FC<PhotoSourcePanelProps> = ({ onCapture, o
             <div className="flex justify-between items-center mb-2">
                 <h3 className="text-sm font-bold text-white uppercase tracking-wider">Add Photo Ingredient</h3>
                 {onClose && (
-                    <button onClick={onClose} className="text-gray-500 hover:text-white transition-colors">
+                    <button onClick={() => { stopCamera(); onClose(); }} className="text-gray-500 hover:text-white transition-colors">
                         <X size={20} />
                     </button>
                 )}

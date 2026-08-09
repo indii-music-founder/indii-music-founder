@@ -3,6 +3,21 @@ import log from 'electron-log';
 
 const FIREBASE_DESKTOP_REFERRER = 'https://indii.music/';
 
+const STUDIO_DEVICE_PERMISSIONS = new Set(['camera', 'microphone', 'media', 'geolocation']);
+
+function isTrustedStudioRenderer(webContents: Electron.WebContents | null): boolean {
+    if (!webContents) return false;
+
+    try {
+        const rendererUrl = new URL(webContents.getURL());
+        if (app.isPackaged) return rendererUrl.protocol === 'file:';
+        return rendererUrl.protocol === 'http:'
+            && (rendererUrl.hostname === 'localhost' || rendererUrl.hostname === '127.0.0.1');
+    } catch {
+        return false;
+    }
+}
+
 // Item 375: Audit session cookies on startup for security flags
 export async function auditSessionCookies(): Promise<void> {
     try {
@@ -42,7 +57,7 @@ export function configureSecurity(session: Session) {
 
         const connectSrc = isDev
             ? "* ws: http: https:"
-            : "'self' https://apis.google.com https://*.googleapis.com https://*.firebaseio.com https://*.firebaseapp.com https://us-central1-indii-music-founder.cloudfunctions.net https://essentia.upf.edu https://cdn.jsdelivr.net https://storage.googleapis.com";
+            : "'self' https://apis.google.com https://*.googleapis.com https://*.firebaseio.com https://*.firebaseapp.com https://us-central1-indii-music-founder.cloudfunctions.net https://essentia.upf.edu https://cdn.jsdelivr.net https://storage.googleapis.com https://api.frankfurter.dev https://api.spotify.com https://graph.facebook.com https://open.tiktokapis.com https://graph.microsoft.com https://api.believemusic.com https://api.onerpm.com https://api.tunecore.com https://api.unitedmasters.com";
 
         const mediaSrc = isDev
             ? "*"
@@ -71,10 +86,11 @@ export function configureSecurity(session: Session) {
         });
     });
 
-    // 2. Permission Lockdown
-    session.setPermissionRequestHandler((_webContents, permission, callback) => {
-        const allowedPermissions: string[] = [];
-        if (allowedPermissions.includes(permission)) {
+    // 2. Permission Lockdown. Device access is available only to the packaged
+    // Studio renderer (or its localhost development renderer), never to an
+    // arbitrary webContents sharing the session.
+    session.setPermissionRequestHandler((webContents, permission, callback) => {
+        if (STUDIO_DEVICE_PERMISSIONS.has(permission) && isTrustedStudioRenderer(webContents)) {
             callback(true);
         } else {
             console.warn(`[Security] Blocked permission request: ${permission}`);
@@ -82,10 +98,12 @@ export function configureSecurity(session: Session) {
         }
     });
 
-    // 3. Block Permission Checks
-    session.setPermissionCheckHandler((_webContents, permission) => {
-        console.warn(`[Security] Blocked permission check: ${permission}`);
-        return false;
+    // 3. Apply the same trust decision to synchronous permission checks.
+    session.setPermissionCheckHandler((webContents, permission) => {
+        const allowed = STUDIO_DEVICE_PERMISSIONS.has(permission)
+            && isTrustedStudioRenderer(webContents);
+        if (!allowed) console.warn(`[Security] Blocked permission check: ${permission}`);
+        return allowed;
     });
 
     // 4. Certificate Verification

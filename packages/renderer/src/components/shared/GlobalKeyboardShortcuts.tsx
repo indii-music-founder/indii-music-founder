@@ -3,6 +3,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { X, Keyboard, Command } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useStore } from '@/core/store';
+import { useModalAccessibility } from '@/hooks/useModalAccessibility';
 
 interface ShortcutGroup {
     title: string;
@@ -54,6 +55,7 @@ const GLOBAL_SHORTCUT_GROUPS: ShortcutGroup[] = [
 ];
 
 export function GlobalKeyboardShortcuts({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+    const dialogRef = useModalAccessibility(isOpen, onClose);
     if (!isOpen) return null;
 
     return (
@@ -62,6 +64,10 @@ export function GlobalKeyboardShortcuts({ isOpen, onClose }: { isOpen: boolean; 
             onClick={onClose}
         >
             <div
+                ref={dialogRef}
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="global-shortcuts-title"
                 className="w-full max-w-lg bg-neutral-900 rounded-2xl border border-white/10 shadow-2xl overflow-hidden"
                 onClick={e => e.stopPropagation()}
             >
@@ -72,12 +78,13 @@ export function GlobalKeyboardShortcuts({ isOpen, onClose }: { isOpen: boolean; 
                             <Keyboard size={18} />
                         </div>
                         <div>
-                            <h2 className="text-sm font-bold text-white">Keyboard Shortcuts</h2>
+                            <h2 id="global-shortcuts-title" className="text-sm font-bold text-white">Keyboard Shortcuts</h2>
                             <p className="text-xs text-neutral-400">All available shortcuts across indii.music</p>
                         </div>
                     </div>
                     <button
                         onClick={onClose}
+                        aria-label="Close keyboard shortcuts"
                         className="p-2 text-neutral-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
                     >
                         <X size={18} />

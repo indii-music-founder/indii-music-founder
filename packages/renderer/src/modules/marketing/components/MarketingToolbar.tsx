@@ -5,14 +5,16 @@ interface MarketingToolbarProps {
     title?: string;
     onAction?: () => void;
     actionLabel?: string;
-    onGeoBounty?: () => void;
+    searchValue?: string;
+    onSearchChange?: (value: string) => void;
 }
 
 export const MarketingToolbar: React.FC<MarketingToolbarProps> = ({
     title = "Campaign Dashboard",
     onAction,
     actionLabel = "New Campaign",
-    onGeoBounty
+    searchValue = '',
+    onSearchChange,
 }) => {
     return (
         <div className="h-16 border-b border-white/5 bg-background/20 backdrop-blur-md flex items-center justify-between px-6 flex-shrink-0 z-10">
@@ -27,6 +29,9 @@ export const MarketingToolbar: React.FC<MarketingToolbarProps> = ({
                     <input
                         type="text"
                         placeholder="Search campaigns..."
+                        value={searchValue}
+                        onChange={event => onSearchChange?.(event.target.value)}
+                        aria-label="Search campaigns"
                         className="bg-background/20 border border-white/10 rounded-lg pl-9 pr-4 py-1.5 text-sm text-gray-300 focus:outline-none focus:border-dept-marketing/50 focus:ring-1 focus:ring-dept-marketing/50 w-64 transition-all"
                     />
                     <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-50">
@@ -38,15 +43,6 @@ export const MarketingToolbar: React.FC<MarketingToolbarProps> = ({
 
             {/* Right: Actions */}
             <div className="flex items-center gap-3">
-                {onGeoBounty && (
-                    <button
-                        onClick={onGeoBounty}
-                        className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold px-4 py-2 rounded-lg shadow-lg transition-all ml-2"
-                    >
-                        New Geo-Bounty
-                    </button>
-                )}
-
                 {onAction && (
                     <button
                         onClick={onAction}

@@ -25,6 +25,7 @@ import type {
     ComposeEmailData,
     SendEmailResult,
     OAuthTokens,
+    OAuthExchangeResult,
     EmailAddress,
     EmailAttachment,
 } from './types';
@@ -140,7 +141,7 @@ export class GmailProvider implements EmailProviderInterface {
         this.clientId = import.meta.env.VITE_GOOGLE_OAUTH_CLIENT_ID || '';
     }
 
-    getAuthUrl(): string {
+    getAuthUrl(state: string): string {
         // GIS uses a popup flow, not a redirect URL
         // This returns the client-side auth initiation URL
         const params = new URLSearchParams({
@@ -151,28 +152,29 @@ export class GmailProvider implements EmailProviderInterface {
             access_type: 'offline',
             prompt: 'consent',
             include_granted_scopes: 'true',
+            state,
         });
         return `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
     }
 
-    async exchangeCode(code: string): Promise<OAuthTokens> {
+    async exchangeCode(code: string, redirectUri: string): Promise<OAuthExchangeResult> {
         // Exchange happens server-side via Cloud Function for security
         const exchangeTokens = httpsCallable<
-            { code: string; provider: string },
-            OAuthTokens
+            { code: string; provider: string; redirectUri: string },
+            OAuthExchangeResult
         >(functions, 'emailExchangeToken');
 
-        const result = await exchangeTokens({ code, provider: 'gmail' });
+        const result = await exchangeTokens({ code, provider: 'gmail', redirectUri });
         return result.data;
     }
 
-    async refreshAccessToken(refreshToken: string): Promise<OAuthTokens> {
+    async refreshAccessToken(): Promise<OAuthTokens> {
         const refreshFn = httpsCallable<
-            { refreshToken: string; provider: string },
+            { provider: string },
             OAuthTokens
         >(functions, 'emailRefreshToken');
 
-        const result = await refreshFn({ refreshToken, provider: 'gmail' });
+        const result = await refreshFn({ provider: 'gmail' });
         return result.data;
     }
 

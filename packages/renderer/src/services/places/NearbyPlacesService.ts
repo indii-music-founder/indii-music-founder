@@ -58,5 +58,5 @@ export function navigateToPlace(place: NearbyPlace): void {
     if (place.placeId) {
         params.set('destination_place_id', place.placeId);
     }
-    window.open(`https://www.google.com/maps/dir/?${params.toString()}`, '_blank');
+    window.open(`https://www.google.com/maps/dir/?${params.toString()}`, '_blank', 'noopener,noreferrer');
 }

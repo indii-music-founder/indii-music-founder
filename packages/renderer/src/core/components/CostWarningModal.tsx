@@ -3,10 +3,16 @@ import { motion, AnimatePresence } from 'motion/react';
 import { AlertTriangle, DollarSign } from 'lucide-react';
 import { useStore } from '../store';
 import { Button } from '@/components/ui/button';
+import { useModalAccessibility } from '@/hooks/useModalAccessibility';
 
 export default function CostWarningModal() {
     const pendingCostWarning = useStore((state) => state.pendingCostWarning);
     const setPendingCostWarning = useStore((state) => state.setPendingCostWarning);
+    const cancelPendingWarning = () => {
+        pendingCostWarning?.resolve(false);
+        setPendingCostWarning(null);
+    };
+    const dialogRef = useModalAccessibility(Boolean(pendingCostWarning), cancelPendingWarning);
 
     if (!pendingCostWarning) return null;
 
@@ -24,7 +30,13 @@ export default function CostWarningModal() {
 
     return (
         <AnimatePresence>
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+            <div
+                ref={dialogRef}
+                role="alertdialog"
+                aria-modal="true"
+                aria-labelledby="cost-warning-title"
+                className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+            >
                 <motion.div
                     initial={{ opacity: 0, scale: 0.95, y: 10 }}
                     animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -37,7 +49,7 @@ export default function CostWarningModal() {
                                 <AlertTriangle className="w-8 h-8 text-yellow-500" />
                             </div>
                             <div>
-                                <h2 className="text-xl font-semibold text-white">
+                                <h2 id="cost-warning-title" className="text-xl font-semibold text-white">
                                     {isUnsavedChanges ? 'Unsaved Changes' : 'High Cost Operation'}
                                 </h2>
                                 <p className="text-sm text-zinc-400">

@@ -34,6 +34,14 @@ class A2ARouter {
   private streamGenerators = new Map<string, AsyncIterable<MessageEnvelope>>();
   private streamSenders = new Map<string, string>();
   private routerInitialized = false;
+  private accountGeneration = 0;
+
+  resetAccountBoundary(): void {
+    this.accountGeneration += 1;
+    this.streamGenerators.clear();
+    this.streamSenders.clear();
+    this.routerInitialized = false;
+  }
 
   /**
    * Ensure the router has initialized its own keypair (MY_AGENT_ID).
@@ -179,6 +187,7 @@ class A2ARouter {
     localCtx: RouterCallContext | undefined,
     _senderId: string
   ): Promise<unknown> {
+    const accountGeneration = this.accountGeneration;
     const targetAgentId = params?.targetAgentId as string;
     const task = params?.task as string;
     // The REAL calling agent (e.g. 'generalist'), NOT the crypto reply channel.
@@ -224,7 +233,7 @@ class A2ARouter {
         if (requiresApproval) {
           approved = false;
           let checks = 0;
-          while (!approved && checks < 300) { // 5-minute timeout window matching execution limits
+          while (!approved && checks < 300 && accountGeneration === this.accountGeneration) { // 5-minute timeout window matching execution limits
             await new Promise(r => setTimeout(r, 1000));
             const msg = useStore.getState().a2aMessages.find(m => m.id === msgId);
             if (msg?.approved) {
@@ -240,6 +249,10 @@ class A2ARouter {
 
     if (!approved) {
       throw new Error(`Task handoff from ${sourceAgentId} to ${targetAgentId} timed out or was rejected by user.`);
+    }
+
+    if (accountGeneration !== this.accountGeneration) {
+      throw new Error('Authenticated account changed during agent handoff.');
     }
 
     const result = await localCtx.runAgent(targetAgentId, task, localCtx.parentContext, localCtx.traceId);

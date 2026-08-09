@@ -12,6 +12,7 @@ import type { BrandAsset } from '@/types/User';
 import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
 import { db, functions } from '@/services/firebase';
+import { useModalAccessibility } from '@/hooks/useModalAccessibility';
 
 interface PipelineStep {
     id: string;
@@ -34,6 +35,7 @@ interface Props {
 }
 
 export const SubmitReleaseModal: React.FC<Props> = ({ open, onClose, onSubmitted }) => {
+    const dialogRef = useModalAccessibility(open, onClose);
     const { success: toastSuccess, error: toastError } = useToast();
     const { userProfile, generatedHistory } = useStore(useShallow(state => ({
         userProfile: state.userProfile,
@@ -261,18 +263,19 @@ export const SubmitReleaseModal: React.FC<Props> = ({ open, onClose, onSubmitted
     if (!open) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm" data-testid="metadata-modal">
+        <div ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="submit-release-title" className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm" data-testid="metadata-modal">
             <div className="relative w-full max-w-xl mx-4 bg-[#0e0e0e] border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
                 {/* Header */}
                 <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
                     <div>
-                        <h2 className="text-lg font-black text-white uppercase tracking-tighter italic">Submit Release</h2>
+                        <h2 id="submit-release-title" className="text-lg font-black text-white uppercase tracking-tighter italic">Submit Release</h2>
                         <p className="text-[10px] text-gray-500 font-bold tracking-widest uppercase mt-0.5">
                             QC → ISRC → DDEX → DSP Delivery
                         </p>
                     </div>
                     <button
                         onClick={handleClose}
+                        aria-label="Close release submission"
                         disabled={submitting}
                         className="p-2 rounded-lg text-gray-500 hover:text-white hover:bg-white/5 transition-colors disabled:opacity-30"
                     >

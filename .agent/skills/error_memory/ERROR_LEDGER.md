@@ -1963,3 +1963,35 @@ committing.
 - BUG: Current revenue combined three collections while the previous period queried one, and failed refreshes could retain values loaded for the previous UID.
 - FIX: Compare the same source set across both periods, clear owner-scoped state before initial/account-switch loads, and render signed-out and failed states explicitly.
 - PREVENTION: Comparative metrics require identical populations, filters, currencies, and time semantics. Any owner identity change invalidates all previously loaded owner-scoped state before the next request begins.
+
+## 2026-08-08 — A browser profile is not an account boundary
+
+**SEVERITY:** Critical (one Firebase identity could inherit another identity's private workspace and durable approvals)
+
+- BUG: Global Zustand persistence, local/session storage, IndexedDB, singleton caches, Firestore listeners, agent queues, encryption identities, and permanent tool approvals survived logout or account switching. Replacing store state first also destroyed unsubscribe handles before they could run.
+- FIX: Persist only account-neutral presentation preferences; unsubscribe and abort before replacement; serialize cleanup; generation-guard late completions; clear owner-scoped databases and singleton state; delay new-account hydration until cleanup finishes.
+- PREVENTION: Inventory every state layer at an identity boundary. Teardown must happen before handles are discarded, cleanup transitions must be serialized, and every async completion that writes owner state must prove the initiating UID is still active.
+
+## 2026-08-08 — OAuth success requires state, owner, redirect, provider, and revocation evidence
+
+**SEVERITY:** Critical (callbacks and long-lived credentials could be accepted under the wrong browser account or reported connected without a verified mailbox)
+
+- BUG: OAuth state and PKCE material were global or absent, the email redirect differed between browser and backend, refresh tokens crossed the renderer boundary, provider-profile failures still produced connected records, and disconnect deleted the wrong layer.
+- FIX: Bind authorization state to provider+UID+TTL, validate exact redirect origins, keep refresh credentials backend-only, verify the provider account before an atomic token/account commit, and revoke through the authenticated backend.
+- PREVENTION: “Connected” is a compound receipt: valid anti-CSRF state, unchanged initiating owner, exact registered redirect, successful provider identity lookup, durable server-held credential, and a working revocation path. Missing any one must fail closed.
+
+## 2026-08-08 — Security policy must be tested against the capabilities it governs
+
+**SEVERITY:** High (correct feature code was unreachable because browser and Electron policy denied it first)
+
+- BUG: Permissions Policy denied Studio camera, microphone, and geolocation while CSP omitted the API origins the renderer called; Electron's permission handler independently rejected all device access.
+- FIX: Allow only required same-origin device features on Studio, retain denial on the landing site, enumerate integration origins, and restrict Electron grants to the trusted main renderer.
+- PREVENTION: Every browser/device integration needs a policy regression alongside its code test. A successful unit test below CSP, Permissions Policy, CORS, COOP/COEP, or Electron permission gates does not prove reachability.
+
+## 2026-08-08 — Account cleanup is a transaction, not a collection of fire-and-forget clears
+
+**SEVERITY:** Critical (rapid A→B→C transitions could let the older cleanup finish last and rebind the wrong owner)
+
+- BUG: Concurrent identity cleanup passes raced across IndexedDB and dynamic service imports; an older pass could write its owner marker or approval namespace after a newer transition.
+- FIX: Serialize cleanup transitions and hold new-account hydration until the ordered pass completes.
+- PREVENTION: Boundary cleanup needs one ordered queue or generation protocol covering both destructive clears and final owner binding. Testing only a single A→B transition misses the most dangerous ordering failure.

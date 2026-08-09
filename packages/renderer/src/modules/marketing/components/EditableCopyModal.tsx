@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { ScheduledPost } from '../types';
+import { useModalAccessibility } from '@/hooks/useModalAccessibility';
 interface EditableCopyModalProps {
     post: ScheduledPost;
     onClose: () => void;
@@ -8,6 +9,7 @@ interface EditableCopyModalProps {
 }
 
 const EditableCopyModal: React.FC<EditableCopyModalProps> = ({ post, onClose, onSave }) => {
+    const dialogRef = useModalAccessibility(true, onClose);
     const [content, setContent] = useState(post.copy);
 
     useEffect(() => {
@@ -19,11 +21,11 @@ const EditableCopyModal: React.FC<EditableCopyModalProps> = ({ post, onClose, on
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+        <div ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="edit-copy-title" className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
             <div className="bg-gray-900 border border-gray-800 rounded-2xl w-full max-w-2xl shadow-2xl flex flex-col max-h-[90vh]">
                 <div className="flex items-center justify-between p-6 border-b border-gray-800">
-                    <h3 className="text-xl font-bold text-white">Edit Post for Day {post.day}</h3>
-                    <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors">
+                    <h3 id="edit-copy-title" className="text-xl font-bold text-white">Edit Post for Day {post.day}</h3>
+                    <button onClick={onClose} aria-label="Close post editor" className="text-gray-400 hover:text-white transition-colors">
                         <X size={24} />
                     </button>
                 </div>

@@ -29,6 +29,11 @@ import { auth } from '@/services/firebase';
 import { logger } from '@/utils/logger';
 import * as Sentry from '@sentry/react';
 import type { PlatformData, StreamDataPoint } from './types';
+import {
+    beginAccountBoundOAuthSession,
+    clearAccountBoundOAuthSession,
+    requireAccountBoundOAuthSession,
+} from '@/services/auth/AccountBoundOAuthSession';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -97,8 +102,10 @@ export class TikTokAnalyticsService {
             throw new Error('VITE_TIKTOK_CLIENT_KEY is not configured. Add it to your .env file.');
         }
 
-        const state = crypto.randomUUID();
-        sessionStorage.setItem('tiktok_oauth_state', state);
+        const ownerUid = auth.currentUser?.uid;
+        if (!ownerUid) throw new Error('Sign in before connecting TikTok.');
+        const { state } = beginAccountBoundOAuthSession('tiktok', ownerUid);
+        sessionStorage.removeItem('tiktok_oauth_state');
 
         const params = new URLSearchParams({
             client_key: clientKey,
@@ -115,10 +122,7 @@ export class TikTokAnalyticsService {
      * Handle the OAuth callback — exchange code for tokens via Cloud Function.
      */
     async handleCallback(code: string, state: string): Promise<void> {
-        const storedState = sessionStorage.getItem('tiktok_oauth_state');
-        if (state !== storedState) {
-            throw new Error('OAuth state mismatch — possible CSRF attack.');
-        }
+        requireAccountBoundOAuthSession('tiktok', state, auth.currentUser?.uid);
 
         const exchangeFn = httpsCallable<unknown, { ok: boolean }>(
             firebaseFunctions, 'analyticsExchangeToken'
@@ -130,7 +134,7 @@ export class TikTokAnalyticsService {
             redirectUri: this.redirectUri,
         });
 
-        sessionStorage.removeItem('tiktok_oauth_state');
+        clearAccountBoundOAuthSession('tiktok');
     }
 
     /**
@@ -139,6 +143,7 @@ export class TikTokAnalyticsService {
     async disconnect(): Promise<void> {
         const revokeFn = httpsCallable(firebaseFunctions, 'analyticsRevokeToken');
         await revokeFn({ platform: 'tiktok' });
+        clearAccountBoundOAuthSession('tiktok');
     }
 
     /**

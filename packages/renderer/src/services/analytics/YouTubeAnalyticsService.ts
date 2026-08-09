@@ -37,6 +37,18 @@ const REQUIRED_SCOPES = [
     'https://www.googleapis.com/auth/yt-analytics.readonly',
 ];
 
+function youtubeTokenKeys(uid: string): { token: string; expiry: string } {
+    return {
+        token: `yt_google_access_token:${uid}`,
+        expiry: `yt_google_token_expiry:${uid}`,
+    };
+}
+
+function clearLegacyYouTubeToken(): void {
+    sessionStorage.removeItem('yt_google_access_token');
+    sessionStorage.removeItem('yt_google_token_expiry');
+}
+
 // ── YouTube API response types ────────────────────────────────────────────────
 
 interface YTChannelListResponse {
@@ -132,8 +144,10 @@ export class YouTubeAnalyticsService {
 
         // Strategy: attempt to get token from stored credential; if missing
         // or expired, trigger reauth with required scopes.
-        const stored = sessionStorage.getItem('yt_google_access_token');
-        const expiry = sessionStorage.getItem('yt_google_token_expiry');
+        clearLegacyYouTubeToken();
+        const keys = youtubeTokenKeys(user.uid);
+        const stored = sessionStorage.getItem(keys.token);
+        const expiry = sessionStorage.getItem(keys.expiry);
 
         if (stored && expiry && Date.now() < parseInt(expiry) - 60_000) {
             return stored;
@@ -167,8 +181,9 @@ export class YouTubeAnalyticsService {
         }
 
         // Store for this session (access tokens typically last 1 hour)
-        sessionStorage.setItem('yt_google_access_token', token);
-        sessionStorage.setItem('yt_google_token_expiry', String(Date.now() + 3600 * 1000));
+        const keys = youtubeTokenKeys(user.uid);
+        sessionStorage.setItem(keys.token, token);
+        sessionStorage.setItem(keys.expiry, String(Date.now() + 3600 * 1000));
 
         return token;
     }
@@ -187,8 +202,12 @@ export class YouTubeAnalyticsService {
      * Check if we have an active YouTube token (with scopes) in this session.
      */
     hasActiveToken(): boolean {
-        const stored = sessionStorage.getItem('yt_google_access_token');
-        const expiry = sessionStorage.getItem('yt_google_token_expiry');
+        const uid = auth.currentUser?.uid;
+        if (!uid) return false;
+        clearLegacyYouTubeToken();
+        const keys = youtubeTokenKeys(uid);
+        const stored = sessionStorage.getItem(keys.token);
+        const expiry = sessionStorage.getItem(keys.expiry);
         return !!(stored && expiry && Date.now() < parseInt(expiry) - 60_000);
     }
 
@@ -196,8 +215,13 @@ export class YouTubeAnalyticsService {
      * Clear YouTube session token (disconnect for this session).
      */
     disconnect(): void {
-        sessionStorage.removeItem('yt_google_access_token');
-        sessionStorage.removeItem('yt_google_token_expiry');
+        const uid = auth.currentUser?.uid;
+        if (uid) {
+            const keys = youtubeTokenKeys(uid);
+            sessionStorage.removeItem(keys.token);
+            sessionStorage.removeItem(keys.expiry);
+        }
+        clearLegacyYouTubeToken();
     }
 
     // ── Channel info ──────────────────────────────────────────────────────────
@@ -495,7 +519,7 @@ export class YouTubeAnalyticsService {
 
         if (res.status === 401) {
             // Clear cached token so next call retriggers reauth
-            sessionStorage.removeItem('yt_google_access_token');
+            this.disconnect();
             throw new Error('YouTube token expired — please reconnect.');
         }
         if (res.status === 403) {

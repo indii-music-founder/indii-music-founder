@@ -325,3 +325,7 @@ export function getMediaCacheManager(): MediaCacheManager {
   }
   return mediaCacheManager;
 }
+
+export async function clearInitializedMediaCache(): Promise<void> {
+  if (mediaCacheManager) await mediaCacheManager.clearCache();
+}

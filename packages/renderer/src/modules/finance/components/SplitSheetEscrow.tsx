@@ -4,6 +4,7 @@ import { getFunctions, httpsCallable } from 'firebase/functions';
 import { onSnapshot, collection, query, where, getFirestore } from 'firebase/firestore';
 import { useStore } from '@/core/store';
 import { logger } from '@/utils/logger';
+import { normalizeExternalHttpUrl } from '@/utils/safeExternalUrl';
 
 /* ================================================================== */
 /*  Split Sheet Escrow — Collaborative Funds Release Tool              */
@@ -143,10 +144,13 @@ export function SplitSheetEscrow() {
                 collaborators,
                 totalEscrowAmount: escrowAmount || undefined,
             });
-            setExportUrl(result.data.url);
-            window.open(result.data.url, '_blank');
+            const exportUrl = normalizeExternalHttpUrl(result.data.url);
+            if (!exportUrl) throw new Error('The export service returned an invalid download URL.');
+            setExportUrl(exportUrl);
+            window.open(exportUrl, '_blank', 'noopener,noreferrer');
         } catch (err: unknown) {
             logger.error('[SplitSheetEscrow] Export failed:', err);
+            setReleaseError(err instanceof Error ? err.message : 'Split sheet export failed.');
         } finally {
             setExporting(false);
         }

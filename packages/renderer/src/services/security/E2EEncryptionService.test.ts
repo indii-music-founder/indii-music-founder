@@ -83,4 +83,18 @@ describe('E2EEncryptionService — Signature & Authenticity (ISSUE-1260)', () =>
       e2eRecipient.decryptMessage(envelope, 'recipient-agent')
     ).rejects.toThrow('Message expired or invalid timestamp');
   });
+
+  it('clears encryption and signature identities at an account boundary', () => {
+    expect(e2eSender.getDiagnostics().localAgentIds).toContain('sender-agent');
+    expect(e2eSender.getDiagnostics().registeredPeerIds).toContain('recipient-agent');
+
+    e2eSender.clearKeys();
+
+    expect(e2eSender.getDiagnostics()).toEqual({
+      localAgentIds: [],
+      registeredPeerIds: [],
+      peersWithVerifiedSigning: [],
+      activeSessionCount: 0,
+    });
+  });
 });

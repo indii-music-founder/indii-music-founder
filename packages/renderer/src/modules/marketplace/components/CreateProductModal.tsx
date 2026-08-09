@@ -6,6 +6,7 @@ import { ProductType, StemLabel } from '@/services/marketplace/types';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { logger } from '@/utils/logger';
+import { useModalAccessibility } from '@/hooks/useModalAccessibility';
 
 interface CreateProductModalProps {
     onClose: () => void;
@@ -20,6 +21,7 @@ const STEM_SLOTS: { label: StemLabel; display: string; hint: string }[] = [
 ];
 
 export default function CreateProductModal({ onClose, onProductCreated }: CreateProductModalProps) {
+    const dialogRef = useModalAccessibility(true, onClose);
     const toast = useToast();
     const currentUser = useStore(useShallow((state) => state.userProfile));
 
@@ -114,6 +116,7 @@ export default function CreateProductModal({ onClose, onProductCreated }: Create
 
     return (
         <div
+            ref={dialogRef}
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
             role="dialog"
             aria-modal="true"

@@ -37,6 +37,17 @@ function queueAssetForSync(id: string, blob: Blob): void {
     // Asset ${id} queued for sync (${syncQueue.size} items in queue)
 }
 
+export async function clearAccountBoundRepositoryState(): Promise<void> {
+    syncQueue.clear();
+    const dbLocal = await initDB();
+    const storeNames = [STORE_NAME, WORKFLOWS_STORE, PROFILE_STORE, CANVAS_STORE]
+        .filter(storeName => dbLocal.objectStoreNames.contains(storeName));
+    if (storeNames.length === 0) return;
+    const transaction = dbLocal.transaction(storeNames, 'readwrite');
+    await Promise.all(storeNames.map(storeName => transaction.objectStore(storeName).clear()));
+    await transaction.done;
+}
+
 /**
  * Process the sync queue - call this when online connectivity is restored
  */

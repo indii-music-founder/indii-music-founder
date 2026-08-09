@@ -94,6 +94,13 @@ export class AgentService {
         }
     }
 
+    clearAccountBoundary(): void {
+        this.responseCache.clear();
+        this.syncDebounceTimeouts.forEach(timeout => clearTimeout(timeout));
+        this.syncDebounceTimeouts.clear();
+        this.isProcessing = false;
+    }
+
     /**
      * Pre-warm critical agents. Call this on app startup for better first-message latency.
      */

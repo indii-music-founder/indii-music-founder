@@ -6,6 +6,7 @@ import { ScheduledPost, CampaignStatus, ImageAsset } from '../types';
 import { SOCIAL_TOOLS } from '../tools';
 import BrandAssetsDrawer from '../../creative/components/BrandAssetsDrawer';
 import { ScheduledPostSchema } from '../schemas';
+import { useModalAccessibility } from '@/hooks/useModalAccessibility';
 
 const PLATFORM_LIMITS = {
     Twitter: 280,
@@ -19,6 +20,7 @@ interface CreatePostModalProps {
 }
 
 export default function CreatePostModal({ onClose, onSave, initialScheduledDate }: CreatePostModalProps) {
+    const dialogRef = useModalAccessibility(true, onClose);
     const { t } = useTranslation();
     const toast = useToast();
     const [platform, setPlatform] = useState<'Twitter' | 'Instagram'>('Twitter');
@@ -114,6 +116,7 @@ export default function CreatePostModal({ onClose, onSave, initialScheduledDate 
 
     return (
         <div
+            ref={dialogRef}
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
             role="dialog"
             aria-modal="true"

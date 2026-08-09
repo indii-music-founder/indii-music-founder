@@ -1,5 +1,5 @@
 
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import { describe, it, expect, vi } from 'vitest';
 import App from '../core/App';
@@ -64,6 +64,7 @@ vi.mock('../core/store', () => {
 
     return {
         useStore: useStoreMock,
+        resetStoreForAccountBoundary: vi.fn(),
     };
 });
 
@@ -149,7 +150,7 @@ describe('Router Context Verification', () => {
 
             // The app mounted and produced DOM. Whether the lazy Dashboard has
             // resolved yet is a Suspense-timing detail, not this contract.
-            expect(container).not.toBeEmptyDOMElement();
+            await waitFor(() => expect(container).not.toBeEmptyDOMElement());
 
             // The actual contract: no router-context violation at mount.
             const routerErrors = consoleError.mock.calls

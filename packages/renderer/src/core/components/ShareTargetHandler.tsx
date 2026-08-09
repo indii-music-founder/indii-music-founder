@@ -5,6 +5,9 @@ import { Loader2, Share2, FileIcon, ImageIcon, Music, X } from 'lucide-react';
 import { useStore } from '../store';
 import { useShallow } from 'zustand/react/shallow';
 import { logger } from '@/utils/logger';
+import { normalizeExternalHttpUrl } from '@/utils/safeExternalUrl';
+import { useFocusTrap } from '@/hooks/useFocusTrap';
+import { useGlobalShortcut } from '@/hooks/useGlobalShortcut';
 
 interface SharedItem {
     id?: number;
@@ -35,8 +38,8 @@ export function ShareTargetHandler() {
 
     const [isProcessing, setIsProcessing] = useState(false);
     const [sharedItem, setSharedItem] = useState<SharedItem | null>(null);
-
     const isShareAction = searchParams.get('action') === 'share-target';
+    const dialogRef = useFocusTrap(isShareAction);
 
     useEffect(() => {
         if (!isShareAction) return;
@@ -83,13 +86,22 @@ export function ShareTargetHandler() {
         setSharedItem(null);
     };
 
+    useGlobalShortcut({
+        id: 'share-target-dismiss',
+        key: 'Escape',
+        priority: 'modal',
+        ignoreInput: true,
+        handler: () => { void handleDismiss(); },
+    }, [sharedItem, searchParams], isShareAction);
+
     const handleOpenInConductor = async () => {
         if (!sharedItem) return;
 
+        const safeUrl = normalizeExternalHttpUrl(sharedItem.url);
         const sharedText = [
             sharedItem.title ? `Title: ${sharedItem.title}` : '',
             sharedItem.text ?? '',
-            sharedItem.url ?? '',
+            safeUrl ?? '',
         ].filter(Boolean).join('\n');
         const prompt = sharedText
             ? `Review this shared content:\n${sharedText}`
@@ -102,14 +114,21 @@ export function ShareTargetHandler() {
     };
 
     if (!isShareAction || (!isProcessing && !sharedItem)) return null;
+    const safeSharedUrl = normalizeExternalHttpUrl(sharedItem?.url);
 
     return (
         <div className="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className="bg-[#1a1a1a] border border-white/10 rounded-xl shadow-2xl max-w-md w-full overflow-hidden">
+            <div
+                ref={dialogRef}
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="share-target-title"
+                className="bg-[#1a1a1a] border border-white/10 rounded-xl shadow-2xl max-w-md w-full overflow-hidden"
+            >
                 <div className="p-4 border-b border-white/5 flex items-center justify-between">
                     <div className="flex items-center gap-2 text-white">
                         <Share2 size={18} className="text-dept-marketing" />
-                        <h3 className="font-semibold text-sm">Incoming Share</h3>
+                        <h3 id="share-target-title" className="font-semibold text-sm">Incoming Share</h3>
                     </div>
                     <button onClick={handleDismiss} className="text-gray-400 hover:text-white">
                         <X size={18} />
@@ -132,9 +151,9 @@ export function ShareTargetHandler() {
                                 {sharedItem.text && (
                                     <p className="text-sm text-gray-400 mb-2">{sharedItem.text}</p>
                                 )}
-                                {sharedItem.url && (
-                                    <a href={sharedItem.url} target="_blank" rel="noreferrer" className="text-xs text-blue-400 underline block mb-2 truncate">
-                                        {sharedItem.url}
+                                {safeSharedUrl && (
+                                    <a href={safeSharedUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-400 underline block mb-2 truncate">
+                                        {safeSharedUrl}
                                     </a>
                                 )}
 

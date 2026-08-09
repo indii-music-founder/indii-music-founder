@@ -471,7 +471,9 @@ export class E2EEncryptionService {
    */
   clearKeys(): void {
     this.keyPairs.clear();
+    this.signingKeyPairs.clear();
     this.publicKeyRegistry.clear();
+    this.signingPublicKeyRegistry.clear();
     this.sessionKeys.clear();
     this.log('All keys cleared');
   }

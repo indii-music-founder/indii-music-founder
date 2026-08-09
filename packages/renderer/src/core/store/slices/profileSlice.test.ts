@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { createProfileSlice, ProfileSlice } from './profileSlice';
+import { clearProfileSubscriptionForAccountBoundary, createProfileSlice, ProfileSlice } from './profileSlice';
 import { createStore } from 'zustand';
 import { saveProfileToStorage, getProfileFromStorage } from '@/services/storage/repository';
 import { UserProfile } from '@/modules/workflow/types';
@@ -123,5 +123,21 @@ describe('ProfileSlice Persistence', () => {
         expect(getProfileFromStorage).toHaveBeenCalledWith('test-uid');
         expect(useStore.getState().userProfile).toEqual(expectedDefault);
         expect(saveProfileToStorage).toHaveBeenCalledWith(expectedDefault);
+    });
+
+    it('discards an in-flight profile load after an account boundary', async () => {
+        let resolveProfile!: (profile: UserProfile) => void;
+        vi.mocked(getProfileFromStorage).mockReturnValue(new Promise(resolve => {
+            resolveProfile = resolve;
+        }));
+        const initialProfile = useStore.getState().userProfile;
+
+        const pendingLoad = useStore.getState().loadUserProfile('account-a');
+        await Promise.resolve();
+        clearProfileSubscriptionForAccountBoundary();
+        resolveProfile(mockProfile);
+        await pendingLoad;
+
+        expect(useStore.getState().userProfile).toBe(initialProfile);
     });
 });

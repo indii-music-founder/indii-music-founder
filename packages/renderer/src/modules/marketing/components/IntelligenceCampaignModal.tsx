@@ -11,7 +11,7 @@ import {
     CampaignTone,
     Platform
 } from '../types';
-import { useGlobalShortcut } from '@/hooks/useGlobalShortcut';
+import { useModalAccessibility } from '@/hooks/useModalAccessibility';
 
 interface IntelligenceCampaignModalProps {
     onClose: () => void;
@@ -39,6 +39,7 @@ const PLATFORMS: { id: Platform; label: string; icon: string }[] = [
 
 export default function IntelligenceCampaignModal({ onClose, onSave }: IntelligenceCampaignModalProps) {
     const toast = useToast();
+    const dialogRef = useModalAccessibility(true, onClose);
 
     // Form state
     const [topic, setTopic] = useState('');
@@ -58,14 +59,6 @@ export default function IntelligenceCampaignModal({ onClose, onSave }: Intellige
         tomorrow.setDate(tomorrow.getDate() + 1);
         return tomorrow.toISOString().split('T')[0];
     });
-
-    // Handle Escape key
-    useGlobalShortcut({
-        id: 'ai-campaign-modal-escape',
-        key: 'Escape',
-        priority: 'modal',
-        handler: () => onClose()
-    }, [onClose]);
 
     const togglePlatform = (platform: Platform) => {
         setSelectedPlatforms(prev =>
@@ -134,6 +127,7 @@ export default function IntelligenceCampaignModal({ onClose, onSave }: Intellige
 
     return (
         <div
+            ref={dialogRef}
             className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[200] flex items-center justify-center p-4"
             role="dialog"
             aria-modal="true"

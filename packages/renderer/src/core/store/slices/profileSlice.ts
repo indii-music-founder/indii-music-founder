@@ -7,6 +7,13 @@ import { auth } from '@/services/firebase';
 import { isAnonymousOrDemoUser, isDemoUserId } from '@/utils/authGuards';
 
 let globalProfileUnsubscribe: (() => void) | null = null;
+let profileBoundaryGeneration = 0;
+
+export function clearProfileSubscriptionForAccountBoundary(): void {
+    profileBoundaryGeneration += 1;
+    globalProfileUnsubscribe?.();
+    globalProfileUnsubscribe = null;
+}
 
 export interface Organization {
     id: string;
@@ -122,11 +129,14 @@ export const createProfileSlice: StateCreator<ProfileSlice> = (set, get) => ({
             logger.debug('[Profile] Skipping load — no real UID yet.');
             return;
         }
+        const loadGeneration = profileBoundaryGeneration;
+        const isCurrentLoad = () => loadGeneration === profileBoundaryGeneration;
 
         // Guard: In E2E tests, if a user profile is already seeded with matching uid,
         // do not load/overwrite it to avoid race conditions with offline/mock fallback loading.
         const currentProfile = get().userProfile;
         const { isTestHarnessRuntime } = await import('@/utils/e2eMode');
+        if (!isCurrentLoad()) return;
         if (currentProfile && currentProfile.uid === uid && currentProfile.displayName && isTestHarnessRuntime()) {
             logger.info('[Profile] Skipping loadUserProfile — profile already seeded in E2E runtime.');
             return;
@@ -142,6 +152,7 @@ export const createProfileSlice: StateCreator<ProfileSlice> = (set, get) => ({
         try {
             // Try to get from Firestore first (via Service/Repo) 
             const profile = await getProfileFromStorage(uid);
+            if (!isCurrentLoad()) return;
 
             // --- Fetch Organizations (Fix for Permission Errors) ---
             try {
@@ -151,6 +162,7 @@ export const createProfileSlice: StateCreator<ProfileSlice> = (set, get) => ({
                 const orgsRef = collection(db, 'organizations');
                 const q = query(orgsRef, where('members', 'array-contains', uid));
                 const orgSnap = await getDocs(q);
+                if (!isCurrentLoad()) return;
 
                 const userOrgs: Organization[] = [];
                 orgSnap.forEach((doc) => {
@@ -197,6 +209,8 @@ export const createProfileSlice: StateCreator<ProfileSlice> = (set, get) => ({
             }
             // -----------------------------------------------------
 
+            if (!isCurrentLoad()) return;
+
             if (profile) {
                 logger.info('[Profile] Loaded profile for:', uid);
                 // A profile is presentation state only. Founder and paid access
@@ -208,12 +222,14 @@ export const createProfileSlice: StateCreator<ProfileSlice> = (set, get) => ({
                 const newProfile = { ...DEFAULT_USER_PROFILE, id: uid, uid: uid };
                 set({ userProfile: newProfile });
                 await saveProfileToStorage(newProfile);
+                if (!isCurrentLoad()) return;
             }
 
             // Set up real-time listener for the user profile using SubscriptionManager
             try {
                 const { db } = await import('@/services/firebase');
                 const { doc, onSnapshot } = await import('firebase/firestore');
+                if (!isCurrentLoad()) return;
 
                 const userRef = doc(db, 'users', uid);
                 
@@ -223,6 +239,7 @@ export const createProfileSlice: StateCreator<ProfileSlice> = (set, get) => ({
                 }
 
                 const unsubscribe = onSnapshot(userRef, (docSnap) => {
+                    if (!isCurrentLoad()) return;
                     if (docSnap.exists()) {
                         const cloudProfile = docSnap.data() as UserProfile;
                         
@@ -248,7 +265,7 @@ export const createProfileSlice: StateCreator<ProfileSlice> = (set, get) => ({
                         set({ userProfile: cloudProfile });
                     }
                 }, (error) => {
-                    logger.error('[Profile] Real-time listener error:', error);
+                    if (isCurrentLoad()) logger.error('[Profile] Real-time listener error:', error);
                 });
 
                 globalProfileUnsubscribe = unsubscribe;
@@ -261,10 +278,7 @@ export const createProfileSlice: StateCreator<ProfileSlice> = (set, get) => ({
     },
     logout: async () => {
         try {
-            if (globalProfileUnsubscribe) {
-                globalProfileUnsubscribe();
-                globalProfileUnsubscribe = null;
-            }
+            clearProfileSubscriptionForAccountBoundary();
             const { useStore } = await import('@/core/store');
             useStore.getState().clearAllSubscriptions();
         } catch (err: unknown) {

@@ -1,6 +1,7 @@
 import { useStore } from '../store';
 import { useShallow } from 'zustand/react/shallow';
 import { AlertTriangle, Check, X } from 'lucide-react';
+import { useModalAccessibility } from '@/hooks/useModalAccessibility';
 
 const TYPE_CONFIG: Record<string, { icon: React.ReactNode; color: string; label: string }> = {
     'social-post': { icon: <AlertTriangle className="w-5 h-5" />, color: 'text-blue-400', label: 'Social Media Post' },
@@ -16,6 +17,7 @@ export function ApprovalModal() {
         pendingApproval: state.pendingApproval,
         resolveApproval: state.resolveApproval,
     })));
+    const dialogRef = useModalAccessibility(Boolean(pendingApproval), () => resolveApproval(false));
 
     if (!pendingApproval) return null;
 
@@ -30,7 +32,13 @@ export function ApprovalModal() {
     };
 
     return (
-        <div className="fixed inset-0 z-[100010] flex items-center justify-center bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
+        <div
+            ref={dialogRef}
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="agent-approval-title"
+            className="fixed inset-0 z-[100010] flex items-center justify-center bg-black/70 backdrop-blur-sm animate-in fade-in duration-200"
+        >
             <div className="bg-gray-900 border border-gray-700 rounded-xl shadow-2xl max-w-lg w-full mx-4 overflow-hidden animate-in zoom-in-95 duration-200">
                 {/* Header */}
                 <div className="px-6 py-4 border-b border-gray-700 flex items-center gap-3">
@@ -38,7 +46,7 @@ export function ApprovalModal() {
                         {config.icon}
                     </div>
                     <div>
-                        <h2 className="text-lg font-semibold text-white">Agent Approval Required</h2>
+                        <h2 id="agent-approval-title" className="text-lg font-semibold text-white">Agent Approval Required</h2>
                         <p className="text-sm text-gray-400">{config.label}</p>
                     </div>
                 </div>

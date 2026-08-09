@@ -8,6 +8,7 @@
 import React, { useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { AlertTriangle, Clock, Zap, X, Check, Loader2 } from 'lucide-react';
+import { useModalAccessibility } from '@/hooks/useModalAccessibility';
 
 interface ApprovalRequest {
   instrumentId: string;
@@ -24,6 +25,7 @@ interface InstrumentApprovalModalProps {
 }
 
 export const InstrumentApprovalModal: React.FC<InstrumentApprovalModalProps> = ({ request, closing }) => {
+  const dialogRef = useModalAccessibility(true, request.onDeny);
   const handleApprove = () => {
     request.onApprove();
   };
@@ -34,6 +36,10 @@ export const InstrumentApprovalModal: React.FC<InstrumentApprovalModalProps> = (
 
   return (
     <motion.div
+      ref={dialogRef}
+      role="alertdialog"
+      aria-modal="true"
+      aria-labelledby="instrument-approval-title"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
@@ -53,7 +59,7 @@ export const InstrumentApprovalModal: React.FC<InstrumentApprovalModalProps> = (
                 <AlertTriangle className="text-yellow-500" size={24} />
               </div>
               <div>
-                <h3 className="text-xl font-bold text-white mb-1">
+                <h3 id="instrument-approval-title" className="text-xl font-bold text-white mb-1">
                   Approval Required
                 </h3>
                 <p className="text-gray-400 text-sm">

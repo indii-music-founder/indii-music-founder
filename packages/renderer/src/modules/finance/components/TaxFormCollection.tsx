@@ -4,6 +4,7 @@ import { FileText, Upload, Mail, Lock, CheckCircle, Clock, AlertCircle, Download
 import { TaxFormService, type TaxCollaborator, type TaxFormStatus } from '@/services/finance/TaxFormService';
 import { AddTaxCollaboratorDialog } from '@/components/ui/AddTaxCollaboratorDialog';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { normalizeExternalHttpUrl } from '@/utils/safeExternalUrl';
 
 /* ================================================================== */
 /*  Item 155 — Automated W-9/W-8BEN Collection (ISSUE-1118)           */
@@ -74,7 +75,9 @@ export function TaxFormCollection() {
     async function handleDownload(storagePath: string) {
         try {
             const url = await TaxFormService.getDownloadUrl(storagePath);
-            window.open(url, '_blank', 'noopener,noreferrer');
+            const safeUrl = normalizeExternalHttpUrl(url);
+            if (!safeUrl) throw new Error('The download service returned an invalid URL.');
+            window.open(safeUrl, '_blank', 'noopener,noreferrer');
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to fetch download link.');
         }

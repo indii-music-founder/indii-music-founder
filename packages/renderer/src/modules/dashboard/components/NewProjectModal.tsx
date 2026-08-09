@@ -5,6 +5,7 @@ import { Loader2 } from "lucide-react";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { logger } from '@/utils/logger';
+import { useModalAccessibility } from '@/hooks/useModalAccessibility';
 
 export type NewProjectType = "creative" | "music" | "marketing" | "legal";
 
@@ -32,6 +33,7 @@ const NewProjectModal = createCallable<NewProjectModalProps, string | null>(({
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const onClose = () => call.end(null);
+  const dialogRef = useModalAccessibility(true, onClose);
 
   const handleCreate = async () => {
     if (!name.trim()) return;
@@ -54,6 +56,7 @@ const NewProjectModal = createCallable<NewProjectModalProps, string | null>(({
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
       <motion.div
+        ref={dialogRef}
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         className="glass-panel rounded-2xl p-6 w-full max-w-md shadow-2xl relative"

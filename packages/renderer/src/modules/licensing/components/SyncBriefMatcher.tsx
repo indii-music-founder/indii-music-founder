@@ -12,6 +12,7 @@ import { licensingService } from '@/services/licensing/LicensingService';
 import type { SyncBrief, SyncCatalogTrack as CatalogTrack, SyncMood as Mood } from '@/services/licensing/LicensingService';
 import { syncLicensingClearanceService } from '@/services/licensing/SyncLicensingClearanceService';
 import { auth } from '@/services/firebase';
+import { useModalAccessibility } from '@/hooks/useModalAccessibility';
 
 function matchScore(brief: SyncBrief, track: CatalogTrack): number {
     // BPM fit: 1.0 if in range, decays outside
@@ -64,6 +65,7 @@ interface ClearanceUploadModalProps {
 type UploadStatus = 'idle' | 'uploading' | 'done' | 'error';
 
 function ClearanceUploadModal({ brief, track, onClose, onUploaded }: ClearanceUploadModalProps) {
+    const dialogRef = useModalAccessibility(true, onClose);
     const [files, setFiles] = useState<File[]>([]);
     const [status, setStatus] = useState<UploadStatus>('idle');
     const [error, setError] = useState('');
@@ -114,6 +116,7 @@ function ClearanceUploadModal({ brief, track, onClose, onUploaded }: ClearanceUp
 
     return (
         <div
+            ref={dialogRef}
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
             role="dialog"
             aria-modal="true"

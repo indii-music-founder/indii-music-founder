@@ -39,6 +39,18 @@ export class A2AClient {
   private startGate: Promise<void> = Promise.resolve();
   private lastRequestStartedAt = 0;
 
+  resetAccountBoundary(): void {
+    this.isInitialized = false;
+    this.keyExchangeDone = false;
+    this.cachedCards = [];
+    this.transport = null;
+    this.breaker = { isTripped: false, tripTime: 0, cooldown: 30000 };
+    this.waitingResolvers.splice(0).forEach(resolve => resolve());
+    this.startGate = Promise.resolve();
+    this.lastRequestStartedAt = 0;
+    invalidateA2AConfig();
+  }
+
   private async acquireBackpressure(label: string): Promise<() => void> {
     while (this.activeRequests >= A2A_MAX_CONCURRENT) {
       await new Promise<void>(resolve => this.waitingResolvers.push(resolve));

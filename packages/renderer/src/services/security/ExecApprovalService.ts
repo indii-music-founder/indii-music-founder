@@ -93,9 +93,20 @@ class ExecApprovalService {
   private permanentApprovals: Map<string, ApprovalEntry> = new Map();
   private sessionApprovals: Map<string, ApprovalEntry> = new Map();
   private pendingCallbacks: Map<string, (approved: boolean, scope: ApprovalScope) => void> = new Map();
+  private ownerUid: string | null = null;
 
   constructor() {
-    this._loadPermanentApprovals();
+    this._seedDefaults();
+  }
+
+  bindAccount(uid: string | null): void {
+    if (this.ownerUid === uid) return;
+    this.pendingCallbacks.forEach(callback => callback(false, 'once'));
+    this.pendingCallbacks.clear();
+    this.permanentApprovals.clear();
+    this.sessionApprovals.clear();
+    this.ownerUid = uid;
+    if (uid) this._loadPermanentApprovals();
     this._seedDefaults();
   }
 
@@ -254,8 +265,9 @@ class ExecApprovalService {
   }
 
   private _loadPermanentApprovals(): void {
+    if (!this.ownerUid) return;
     try {
-      const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
+      const raw = localStorage.getItem(`${LOCAL_STORAGE_KEY}:${this.ownerUid}`);
       if (!raw) return;
       const entries: ApprovalEntry[] = JSON.parse(raw);
       for (const entry of entries) {
@@ -267,13 +279,14 @@ class ExecApprovalService {
   }
 
   private _savePermanentApprovals(): void {
+    if (!this.ownerUid) return;
     try {
       const entries = [...this.permanentApprovals.values()];
-      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(entries));
+      localStorage.setItem(`${LOCAL_STORAGE_KEY}:${this.ownerUid}`, JSON.stringify(entries));
 
       // Also sync to Electron userData via IPC if available
       if (typeof window !== 'undefined' && window.electronAPI?.agent?.saveHistory) {
-        window.electronAPI.agent.saveHistory('exec-approvals', entries).catch(() => {
+        window.electronAPI.agent.saveHistory(`exec-approvals-${this.ownerUid}`, entries).catch(() => {
           // Non-critical: localStorage is the source of truth
         });
       }

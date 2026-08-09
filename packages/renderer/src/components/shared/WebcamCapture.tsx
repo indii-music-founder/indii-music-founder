@@ -1,6 +1,7 @@
 import React, { useRef, useState, useCallback } from 'react';
 import { Camera, RefreshCw, Check, Loader2, X } from 'lucide-react';
 import { logger } from '@/utils/logger';
+import { useModalAccessibility } from '@/hooks/useModalAccessibility';
 
 interface WebcamCaptureProps {
     onCapture: (blob: Blob) => void;
@@ -8,15 +9,26 @@ interface WebcamCaptureProps {
 }
 
 export default function WebcamCapture({ onCapture, onClose }: WebcamCaptureProps) {
+    const dialogRef = useModalAccessibility(true, onClose);
     const videoRef = useRef<HTMLVideoElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const [stream, setStream] = useState<MediaStream | null>(null);
+    const streamRef = useRef<MediaStream | null>(null);
+    const cameraRequestRef = useRef(0);
+    const mountedRef = useRef(false);
     const [capturedImage, setCapturedImage] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [isInitializing, setIsInitializing] = useState(true);
 
+    const stopCamera = useCallback(() => {
+        cameraRequestRef.current += 1;
+        streamRef.current?.getTracks().forEach(track => track.stop());
+        streamRef.current = null;
+        if (videoRef.current) videoRef.current.srcObject = null;
+    }, []);
+
     const startCamera = useCallback(async () => {
+        stopCamera();
+        const requestId = cameraRequestRef.current;
         setIsInitializing(true);
         setError(null);
         try {
@@ -24,27 +36,33 @@ export default function WebcamCapture({ onCapture, onClose }: WebcamCaptureProps
                 video: { facingMode: 'user' },
                 audio: false
             });
-            setStream(mediaStream);
+            if (!mountedRef.current || requestId !== cameraRequestRef.current) {
+                mediaStream.getTracks().forEach(track => track.stop());
+                return;
+            }
+            streamRef.current = mediaStream;
             if (videoRef.current) {
                 videoRef.current.srcObject = mediaStream;
             }
         } catch (err: unknown) {
+            if (!mountedRef.current || requestId !== cameraRequestRef.current) return;
             logger.error("Error accessing camera:", err);
             setError("Could not access camera. Please check permissions.");
         } finally {
-            setIsInitializing(false);
+            if (mountedRef.current && requestId === cameraRequestRef.current) {
+                setIsInitializing(false);
+            }
         }
-    }, []);
-
-    const streamRef = useRef<MediaStream | null>(null);
+    }, [stopCamera]);
 
     React.useEffect(() => {
-        startCamera();
-        const currentStreamRef = streamRef;
+        mountedRef.current = true;
+        void startCamera();
         return () => {
-            currentStreamRef.current?.getTracks().forEach(track => track.stop());
+            mountedRef.current = false;
+            stopCamera();
         };
-    }, [startCamera]);
+    }, [startCamera, stopCamera]);
 
     const handleCapture = () => {
         if (videoRef.current && canvasRef.current) {
@@ -59,12 +77,14 @@ export default function WebcamCapture({ onCapture, onClose }: WebcamCaptureProps
 
                 const dataUrl = canvas.toDataURL('image/png');
                 setCapturedImage(dataUrl);
+                stopCamera();
             }
         }
     };
 
     const handleRetake = () => {
         setCapturedImage(null);
+        void startCamera();
     };
 
     const handleConfirm = () => {
@@ -79,6 +99,7 @@ export default function WebcamCapture({ onCapture, onClose }: WebcamCaptureProps
 
     return (
         <div
+            ref={dialogRef}
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
             role="dialog"
             aria-modal="true"

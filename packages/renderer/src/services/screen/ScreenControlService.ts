@@ -1,4 +1,5 @@
 import { logger } from '@/utils/logger';
+import { normalizeExternalHttpUrl } from '@/utils/safeExternalUrl';
 
 // Type definitions for Window Management API
 interface ScreenDetails {
@@ -61,6 +62,11 @@ class ScreenControlService {
         const targetScreen = screens[screenIndex] || screens.find(s => !s.isPrimary) || screens[0];
 
         if (targetScreen) {
+            const safeContentUrl = normalizeExternalHttpUrl(contentUrl, window.location.origin);
+            if (!safeContentUrl) {
+                logger.error('Projector window rejected a non-HTTP content URL.');
+                return;
+            }
             const options = {
                 left: targetScreen.left,
                 top: targetScreen.top,
@@ -82,7 +88,7 @@ class ScreenControlService {
             // we might want opener access. However, assuming safe default for now.
             // If projector needs to communicate back, we can remove 'noopener'.
             // For now, adding noreferrer to prevent leaking referrers.
-            window.open(contentUrl, '_blank', `${features},noreferrer`);
+            window.open(safeContentUrl, '_blank', `${features},noopener,noreferrer`);
         }
     }
 }

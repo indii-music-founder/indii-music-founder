@@ -157,6 +157,18 @@ class EventLoggerService {
     };
   }
 
+  clear(): void {
+    this.buffer = [];
+    this.sessionIndex.clear();
+    if (typeof window === 'undefined') return;
+    const keys: string[] = [];
+    for (let index = 0; index < localStorage.length; index += 1) {
+      const key = localStorage.key(index);
+      if (key?.startsWith('indii_events_')) keys.push(key);
+    }
+    keys.forEach(key => localStorage.removeItem(key));
+  }
+
   // ─── Private ─────────────────────────────────────────────────────────────
 
   private _indexBySession(record: EventRecord): void {

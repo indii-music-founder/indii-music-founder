@@ -5,7 +5,7 @@ import { MarketingService } from '@/services/marketing/MarketingService';
 import { CampaignStatus } from '../types';
 import { useToast } from '@/core/context/ToastContext';
 import { cn } from '@/lib/utils';
-import { useGlobalShortcut } from '@/hooks/useGlobalShortcut';
+import { useModalAccessibility } from '@/hooks/useModalAccessibility';
 
 interface Props {
     onClose: () => void;
@@ -13,6 +13,7 @@ interface Props {
 }
 
 export default function CreateCampaignModal({ onClose, onSave }: Props) {
+    const dialogRef = useModalAccessibility(true, onClose);
     const toast = useToast();
     const [isLoading, setIsLoading] = useState(false);
     const [title, setTitle] = useState('');
@@ -28,14 +29,6 @@ export default function CreateCampaignModal({ onClose, onSave }: Props) {
     // Refs for focus management
     const titleRef = useRef<HTMLInputElement>(null);
     const startDateRef = useRef<HTMLInputElement>(null);
-
-    // UX: Close on Escape key
-    useGlobalShortcut({
-        id: 'create-campaign-modal-escape',
-        key: 'Escape',
-        priority: 'modal',
-        handler: () => onClose()
-    }, [onClose]);
 
     // Close on backdrop click
     const handleBackdropClick = (e: React.MouseEvent) => {
@@ -104,6 +97,7 @@ export default function CreateCampaignModal({ onClose, onSave }: Props) {
 
     return (
         <div
+            ref={dialogRef}
             className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[1000]"
             onClick={handleBackdropClick}
             role="dialog"

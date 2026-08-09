@@ -21,6 +21,11 @@ import { httpsCallable } from 'firebase/functions';
 import { auth } from '@/services/firebase';
 import * as Sentry from '@sentry/react';
 import { logger } from '@/utils/logger';
+import {
+    beginAccountBoundOAuthSession,
+    clearAccountBoundOAuthSession,
+    requireAccountBoundOAuthSession,
+} from '@/services/auth/AccountBoundOAuthSession';
 
 // ── PKCE helpers ──────────────────────────────────────────────────────────────
 
@@ -91,10 +96,11 @@ export class SpotifyService {
 
         const verifier = await generateCodeVerifier();
         const challenge = await generateCodeChallenge(verifier);
-        const state = crypto.randomUUID();
-
-        sessionStorage.setItem('spotify_pkce_verifier', verifier);
-        sessionStorage.setItem('spotify_oauth_state', state);
+        const ownerUid = auth.currentUser?.uid;
+        if (!ownerUid) throw new Error('Sign in before connecting Spotify.');
+        const { state } = beginAccountBoundOAuthSession('spotify', ownerUid, { codeVerifier: verifier });
+        sessionStorage.removeItem('spotify_pkce_verifier');
+        sessionStorage.removeItem('spotify_oauth_state');
 
         const params = new URLSearchParams({
             client_id: SPOTIFY_CLIENT_ID,
@@ -114,12 +120,8 @@ export class SpotifyService {
      * Call this when the app loads at /auth/spotify/callback.
      */
     async handleCallback(code: string, state: string): Promise<void> {
-        const storedState = sessionStorage.getItem('spotify_oauth_state');
-        const verifier = sessionStorage.getItem('spotify_pkce_verifier');
-
-        if (state !== storedState) {
-            throw new Error('OAuth state mismatch — possible CSRF attack.');
-        }
+        const session = requireAccountBoundOAuthSession('spotify', state, auth.currentUser?.uid);
+        const verifier = session.codeVerifier;
         if (!verifier) {
             throw new Error('PKCE verifier not found in session storage.');
         }
@@ -135,8 +137,7 @@ export class SpotifyService {
             codeVerifier: verifier,
         });
 
-        sessionStorage.removeItem('spotify_pkce_verifier');
-        sessionStorage.removeItem('spotify_oauth_state');
+        clearAccountBoundOAuthSession('spotify');
     }
 
     /**
@@ -145,6 +146,7 @@ export class SpotifyService {
     async disconnect(): Promise<void> {
         const revokeFn = httpsCallable(firebaseFunctions, 'analyticsRevokeToken');
         await revokeFn({ platform: 'spotify' });
+        clearAccountBoundOAuthSession('spotify');
     }
 
     /**

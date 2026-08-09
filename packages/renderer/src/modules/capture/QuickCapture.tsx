@@ -55,13 +55,19 @@ export const QuickCapture: React.FC<QuickCaptureProps> = ({ isOpen, onClose }) =
 
     // Grab GPS when opened
     useEffect(() => {
-        if (isOpen) {
-            FieldContactService.getCurrentLocation().then((loc) => {
+        if (!isOpen) return undefined;
+        let cancelled = false;
+        void FieldContactService.getCurrentLocation().then((loc) => {
+            if (!cancelled) {
                 setCaptureLocation(loc);
                 setContextString(FieldContactService.buildContextString(loc));
-            });
-            setTimeout(() => nameInputRef.current?.focus(), 300);
-        }
+            }
+        });
+        const focusTimer = setTimeout(() => nameInputRef.current?.focus(), 300);
+        return () => {
+            cancelled = true;
+            clearTimeout(focusTimer);
+        };
     }, [isOpen]);
 
     // Voice-to-text: apply transcript to the target field

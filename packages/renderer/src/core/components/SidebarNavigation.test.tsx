@@ -23,6 +23,7 @@ Object.defineProperty(window, 'matchMedia', {
 // Mock the store
 vi.mock('../store', () => ({
     useStore: vi.fn(),
+    resetStoreForAccountBoundary: vi.fn(),
 }));
 
 // Mock ToastContext

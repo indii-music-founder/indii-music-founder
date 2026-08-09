@@ -1,7 +1,6 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import CampaignManager from './CampaignManager';
 import CreateCampaignModal from './CreateCampaignModal';
-import GeoBountyDeployerModal from './GeoBountyDeployerModal';
 import { MarketingSidebar } from './MarketingSidebar';
 import { MarketingToolbar } from './MarketingToolbar';
 import IntelligenceCampaignModal from './IntelligenceCampaignModal';
@@ -48,10 +47,18 @@ const CampaignDashboard: React.FC = () => {
 
     const [selectedCampaign, setSelectedCampaign] = useState<CampaignAsset | null>(null);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-    const [isGeoBountyModalOpen, setIsGeoBountyModalOpen] = useState(false);
-    const [deployedBounty, setDeployedBounty] = useState<string | null>(null);
     const [isAIModalOpen, setIsAIModalOpen] = useState(false);
     const [activeTab, setActiveTab] = useState('campaigns');
+    const [campaignSearch, setCampaignSearch] = useState('');
+    const visibleCampaigns = useMemo(() => {
+        const query = campaignSearch.trim().toLowerCase();
+        if (!query) return campaigns;
+        return campaigns.filter(campaign =>
+            campaign.title.toLowerCase().includes(query)
+            || campaign.description?.toLowerCase().includes(query)
+            || campaign.posts.some(post => post.platform.toLowerCase().includes(query))
+        );
+    }, [campaignSearch, campaigns]);
 
     /**
      * ISSUE-949: previously only called setSelectedCampaign — image batch
@@ -120,11 +127,6 @@ const CampaignDashboard: React.FC = () => {
         setIsCreateModalOpen(true);
     }, []);
 
-    const handleDeployBounty = useCallback((location: string, _desc: string) => {
-        setIsGeoBountyModalOpen(false);
-        setDeployedBounty(location);
-    }, []);
-
     const handleAIGenerate = useCallback(() => {
         setIsAIModalOpen(true);
     }, []);
@@ -173,11 +175,6 @@ const CampaignDashboard: React.FC = () => {
 
                 {/* ── CENTER — Campaign Workspace ────────────────────── */}
                 <div className="flex-1 flex flex-col min-w-0 bg-background relative">
-                    {deployedBounty && (
-                        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 bg-blue-500/90 text-white px-4 py-2 rounded-full font-semibold shadow-lg text-sm">
-                            Mission Active: {deployedBounty}
-                        </div>
-                    )}
                     <div className="px-4 md:px-6 pt-4">
                         <div className="rounded-[28px] border border-dept-marketing/20 bg-linear-to-r from-dept-marketing/10 via-white/[0.03] to-transparent p-5 md:p-6 shadow-[0_16px_40px_rgba(0,0,0,0.18)]">
                             <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
@@ -198,7 +195,8 @@ const CampaignDashboard: React.FC = () => {
                     <MarketingToolbar
                         onAction={handleCreateNew}
                         actionLabel="New Campaign"
-                        onGeoBounty={() => setIsGeoBountyModalOpen(true)}
+                        searchValue={campaignSearch}
+                        onSearchChange={setCampaignSearch}
                     />
 
                     <div className="flex-1 overflow-hidden relative">
@@ -214,7 +212,7 @@ const CampaignDashboard: React.FC = () => {
                                 </div>
                             ) : (
                                 <CampaignManager
-                                    campaigns={campaigns}
+                                    campaigns={visibleCampaigns}
                                     selectedCampaign={selectedCampaign}
                                     onSelectCampaign={setSelectedCampaign}
                                     onUpdateCampaign={handleUpdateCampaign}
@@ -277,12 +275,6 @@ const CampaignDashboard: React.FC = () => {
                     />
                 )}
 
-                {isGeoBountyModalOpen && (
-                    <GeoBountyDeployerModal
-                        onClose={() => setIsGeoBountyModalOpen(false)}
-                        onDeploy={handleDeployBounty}
-                    />
-                )}
             </div>
         </ModuleErrorBoundary>
     );

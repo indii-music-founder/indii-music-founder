@@ -125,6 +125,12 @@ function compactCallablePayload<T extends Record<string, unknown>>(payload: T): 
     ) as T;
 }
 
+function requireSameAuthenticatedAccount(expectedUid: string): void {
+    if (auth.currentUser?.uid !== expectedUid) {
+        throw new Error('The authenticated account changed while generation was running. The result was not attached.');
+    }
+}
+
 export function useDirectGeneration() {
     const {
         studioControls,
@@ -192,7 +198,13 @@ export function useDirectGeneration() {
             if (job.status === 'completed' || job.status === 'failed') return;
 
             const jobRef = doc(db, 'creative_jobs', job.id);
+            const subscriberUid = auth.currentUser?.uid;
             const unsub = onSnapshot(jobRef, async (snapshot) => {
+                if (!subscriberUid || auth.currentUser?.uid !== subscriberUid) {
+                    unsubsRef.current[job.id]?.();
+                    delete unsubsRef.current[job.id];
+                    return;
+                }
                 if (!snapshot.exists()) return;
                 const data = snapshot.data();
 
@@ -212,6 +224,7 @@ export function useDirectGeneration() {
                 if (data.status === 'completed' && data.resultUri) {
                     try {
                         const finalUrl = await resolveStorageUrl(data.resultUri);
+                        requireSameAuthenticatedAccount(subscriberUid);
 
                         // ISSUE-913: Use the projectId from the job data (captured at submission time).
                         // This ensures generations file into the correct project even if user switched projects.
@@ -359,6 +372,8 @@ export function useDirectGeneration() {
                 referenceUris: referenceUris?.length ? referenceUris : referenceUri ? [referenceUri] : undefined,
             }));
 
+            requireSameAuthenticatedAccount(userId);
+
             if (generationResults.length > 0) {
                 const finalItems: HistoryItem[] = generationResults.map(result => ({
                         id: result.id,
@@ -474,6 +489,8 @@ export function useDirectGeneration() {
             inputManifest,
         });
 
+        requireSameAuthenticatedAccount(userId);
+
         if (results && results.length > 0) {
             setActiveJobs(prev => [
                 ...prev,
@@ -502,6 +519,8 @@ export function useDirectGeneration() {
 
         try {
             if (isFirebaseE2EMockEnabled()) {
+                const mockOwnerUid = auth.currentUser?.uid;
+                if (!mockOwnerUid) throw new Error('User must be authenticated to generate media.');
                 const mockJobId = `mock-job-${Date.now()}`;
                 const mockItem: HistoryItem = {
                     id: mockJobId,
@@ -516,6 +535,7 @@ export function useDirectGeneration() {
                 };
                 
                 await new Promise(resolve => setTimeout(resolve, 1000));
+                requireSameAuthenticatedAccount(mockOwnerUid);
                 
                 addToHistory(mockItem);
                 if (mode === 'image') {

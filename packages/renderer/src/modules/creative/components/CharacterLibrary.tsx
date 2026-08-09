@@ -6,6 +6,7 @@ import { useToast } from '@/core/context/ToastContext';
 import { logger } from '@/utils/logger';
 import { BrandAsset } from '@/types/User';
 import { DEFAULT_PROJECT_ID } from '@/core/constants';
+import { useModalAccessibility } from '@/hooks/useModalAccessibility';
 
 /** Maximum file size for character reference images: 10MB */
 const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024;
@@ -62,6 +63,8 @@ export const CharacterLibrary: React.FC = () => {
     const [editingNameId, setEditingNameId] = useState<string | null>(null);
     const [showAddOptions, setShowAddOptions] = useState(false);
     const nameInputRef = useRef<HTMLInputElement>(null);
+    const previewDialogRef = useModalAccessibility(previewIndex !== null, () => setPreviewIndex(null));
+    const allCharactersDialogRef = useModalAccessibility(showAllGrid, () => setShowAllGrid(false));
 
     const validateReferenceDimensions = useCallback(async (dataUrl: string, sourceLabel: string) => {
         try {
@@ -569,6 +572,7 @@ export const CharacterLibrary: React.FC = () => {
             {/* Character Preview Lightbox (Single) */}
             {previewIndex !== null && characterReferences[previewIndex] && (
                 <div
+                    ref={previewDialogRef}
                     className="fixed inset-0 z-[9999] bg-black/90 backdrop-blur-xl flex items-center justify-center p-8"
                     onClick={() => setPreviewIndex(null)}
                     data-testid="character-preview-modal"
@@ -632,6 +636,7 @@ export const CharacterLibrary: React.FC = () => {
             {/* All Characters Grid Modal */}
             {showAllGrid && (
                 <div
+                    ref={allCharactersDialogRef}
                     className="fixed inset-0 z-[9999] bg-black/90 backdrop-blur-xl flex items-center justify-center p-8"
                     onClick={() => setShowAllGrid(false)}
                     data-testid="all-characters-modal"

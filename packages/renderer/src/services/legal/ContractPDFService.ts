@@ -57,7 +57,7 @@ export class ContractPDFService {
         const doc = ContractPDFService.generate(options);
         const blob = doc.output('blob');
         const url = URL.createObjectURL(blob);
-        window.open(url, '_blank');
+        window.open(url, '_blank', 'noopener,noreferrer');
         // Revoke after 60s to free memory
         setTimeout(() => URL.revokeObjectURL(url), 60_000);
         logger.info(`[ContractPDF] Preview opened for: ${options.title}`);

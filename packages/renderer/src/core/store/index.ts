@@ -3,7 +3,7 @@ import { create } from 'zustand';
 import { AppSlice, createAppSlice } from './slices/appSlice';
 export type { AppSlice } from './slices/appSlice';
 export { createAppSlice };
-import { ProfileSlice, createProfileSlice } from './slices/profileSlice';
+import { ProfileSlice, clearProfileSubscriptionForAccountBoundary, createProfileSlice } from './slices/profileSlice';
 import { AgentSlice, createAgentSlice } from './slices/agent';
 import { CreativeSlice, createCreativeSlice } from './slices/creative';
 export type { CanvasImage, ShotItem, DesignVersion } from './slices/creative';
@@ -80,6 +80,37 @@ export interface StoreState extends
     NotesSlice,
     AgentSwarmSlice { }
 
+type SafePersistedAppState = Pick<
+    StoreState,
+    'isSidebarOpen' | 'currentModule' | 'conversationMode'
+>;
+
+/**
+ * Browser persistence is shared by every Firebase account using this browser
+ * profile. Keep it limited to account-neutral presentation preferences. User
+ * profiles, notes, conversations, referenced assets, and creative drafts are
+ * authoritative in account-scoped storage and must never hydrate globally.
+ */
+export function selectSafePersistedAppState(state: StoreState): SafePersistedAppState {
+    return {
+        isSidebarOpen: state.isSidebarOpen,
+        currentModule: state.currentModule,
+        conversationMode: state.conversationMode,
+    };
+}
+
+export function sanitizePersistedAppState(value: unknown): Partial<SafePersistedAppState> {
+    if (!value || typeof value !== 'object') return {};
+    const candidate = value as Partial<SafePersistedAppState>;
+    const safe: Partial<SafePersistedAppState> = {};
+    if (typeof candidate.isSidebarOpen === 'boolean') safe.isSidebarOpen = candidate.isSidebarOpen;
+    if (typeof candidate.currentModule === 'string') safe.currentModule = candidate.currentModule;
+    if (candidate.conversationMode === 'direct' || candidate.conversationMode === 'boardroom') {
+        safe.conversationMode = candidate.conversationMode;
+    }
+    return safe;
+}
+
 
 import { OrganizationService } from '@/services/OrganizationService';
 
@@ -124,34 +155,52 @@ export const useStore = create<StoreState>()(
                 ...createAgentSwarmSlice(...a),
             };
 
-            // Phase 3.6: Bridge store state to OrganizationService for synchronous access
-            OrganizationService.setStore({ getState: () => store });
-
             return store;
         },
         {
             name: 'indii-app-storage',
             storage: createJSONStorage(() => SecureZustandStorage),
-            partialize: (state) => ({
-                isSidebarOpen: state.isSidebarOpen,
-                // Add currentModule if we want to remember the last tab
-                currentModule: state.currentModule,
-                conversationMode: state.conversationMode,
-                userProfile: state.userProfile,
-                // ISSUE-007: Persist boardroom chat history to survive HMR/soft reloads in dev
-                boardroomMessages: state.agentHistory,
-                notes: state.notes,
-                selectedNoteId: state.selectedNoteId,
-                // ISSUE-006: Session persistence for draft prompts
-                ...(state.isSessionPersistent ? { creativePrompt: state.creativePrompt } : {})
-                // failedVariationBatch is deliberately NOT persisted: it carries raw
-                // base64 image data that can exceed the localStorage quota and break
-                // persistence of everything else. Store residency (in-memory) is what
-                // keeps it alive across canvas unmounts.
+            version: 2,
+            partialize: selectSafePersistedAppState,
+            migrate: (persistedState) => sanitizePersistedAppState(persistedState),
+            merge: (persistedState, currentState) => ({
+                ...currentState,
+                ...sanitizePersistedAppState(persistedState),
             }),
         }
     )
 );
+
+// Bridge the live Zustand store, not the construction-time object snapshot.
+// Organization scope changes must be visible to every subsequent query.
+OrganizationService.setStore(useStore);
+
+/**
+ * Atomically remove account-owned in-memory state before a new identity is
+ * allowed to render. Replacing from Zustand's initial state also covers new
+ * slices added later, avoiding a fragile hand-maintained list of private data.
+ */
+export function resetStoreForAccountBoundary(user: StoreState['user']): void {
+    const current = useStore.getState();
+    const initial = useStore.getInitialState();
+    current.agentAbortController?.abort('Authenticated account changed');
+    current.pendingApproval?.resolve(false);
+    clearProfileSubscriptionForAccountBoundary();
+    current.clearAllSubscriptions();
+    useStore.setState({
+        ...initial,
+        user,
+        authLoading: current.authLoading,
+        authError: current.authError,
+        isSignUpMode: current.isSignUpMode,
+        passwordResetSent: current.passwordResetSent,
+        isSidebarOpen: current.isSidebarOpen,
+        currentModule: current.currentModule,
+        conversationMode: current.conversationMode,
+    }, true);
+
+    useLivingPlanSlice.setState(useLivingPlanSlice.getInitialState(), true);
+}
 
 // Centralized event-driven context publisher to synchronize boardroom referenced assets
 useStore.subscribe((state, prevState) => {

@@ -8,6 +8,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import { X, ChevronRight, ChevronLeft, Zap, Clock, Users, CheckCircle2, Flame, Lock } from 'lucide-react';
 import { MerchProduct } from '../types';
 import { limitedDropService } from '@/services/commerce/LimitedDropService';
+import { useModalAccessibility } from '@/hooks/useModalAccessibility';
 
 interface DropCampaignWizardProps {
     isOpen: boolean;
@@ -63,6 +64,7 @@ function CountdownUnit({ value, label }: { value: number; label: string }) {
 }
 
 export function DropCampaignWizard({ isOpen, onClose, products }: DropCampaignWizardProps) {
+    const dialogRef = useModalAccessibility(isOpen, onClose);
     const [step, setStep] = useState<Step>(1);
     const [submitted, setSubmitted] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -114,6 +116,10 @@ export function DropCampaignWizard({ isOpen, onClose, products }: DropCampaignWi
         <AnimatePresence>
             {isOpen && (
                 <motion.div
+                    ref={dialogRef}
+                    role="dialog"
+                    aria-modal="true"
+                    aria-label="Create limited drop draft"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}

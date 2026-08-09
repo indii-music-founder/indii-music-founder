@@ -4,6 +4,7 @@ import { useToast } from '@/core/context/ToastContext';
 import { CampaignIntelligence } from '@/services/marketing/CampaignIntelligenceService';
 import { CampaignAsset, ScheduledPost, BatchImageProgress } from '../types';
 import { logger } from '@/utils/logger';
+import { useModalAccessibility } from '@/hooks/useModalAccessibility';
 
 interface IntelligenceImageBatchModalProps {
     campaign: CampaignAsset;
@@ -20,6 +21,7 @@ interface PostImageState {
 }
 
 export default function IntelligenceImageBatchModal({ campaign, onClose, onComplete }: IntelligenceImageBatchModalProps) {
+    const dialogRef = useModalAccessibility(true, onClose);
     const toast = useToast();
 
     // State
@@ -193,6 +195,7 @@ export default function IntelligenceImageBatchModal({ campaign, onClose, onCompl
 
     return (
         <div
+            ref={dialogRef}
             className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[200] flex items-center justify-center p-4"
             role="dialog"
             aria-modal="true"

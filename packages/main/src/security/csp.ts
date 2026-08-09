@@ -49,6 +49,17 @@ const ALLOWED_ORIGINS = {
         'wss://*.firebaseio.com',
         'wss://*.googleapis.com',
     ],
+    integrations: [
+        'https://api.frankfurter.dev',
+        'https://api.spotify.com',
+        'https://graph.facebook.com',
+        'https://open.tiktokapis.com',
+        'https://graph.microsoft.com',
+        'https://api.believemusic.com',
+        'https://api.onerpm.com',
+        'https://api.tunecore.com',
+        'https://api.unitedmasters.com',
+    ],
 };
 
 // ============================================================================
@@ -110,6 +121,7 @@ function buildCSPDirectives(isDevelopment: boolean): CSPDirectives {
             "'self'",
             ...ALLOWED_ORIGINS.google,
             ...ALLOWED_ORIGINS.websocket,
+            ...ALLOWED_ORIGINS.integrations,
             ...(isDevelopment ? ['ws://localhost:*', 'http://localhost:*'] : []),
         ],
 
@@ -173,14 +185,16 @@ export function applyCSP(): void {
                 'X-Frame-Options': ['SAMEORIGIN'],
                 // Referrer policy
                 'Referrer-Policy': ['strict-origin-when-cross-origin'],
-                // Permissions policy (disable dangerous features)
+                // Device APIs are used by Studio capture and road-mode tools.
+                // Electron's permission handler still restricts these grants to
+                // the trusted main renderer.
                 'Permissions-Policy': [
                     'accelerometer=()',
-                    'camera=()',
-                    'geolocation=()',
+                    'camera=(self)',
+                    'geolocation=(self)',
                     'gyroscope=()',
                     'magnetometer=()',
-                    'microphone=()',
+                    'microphone=(self)',
                     'payment=()',
                     'usb=()',
                 ].join(', '),

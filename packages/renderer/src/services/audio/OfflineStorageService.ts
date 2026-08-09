@@ -119,6 +119,11 @@ export class OfflineStorageService {
             throw error;
         }
     }
+
+    async clear(): Promise<void> {
+        const db = await this.dbPromise;
+        await db.clear(STORE_NAME);
+    }
 }
 
 export const offlineStorageService = new OfflineStorageService();

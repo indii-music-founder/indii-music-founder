@@ -1629,3 +1629,80 @@ All seven T1 sub-items built, tested against real (not mocked-away) verification
 - **Verification:** Nineteen focused file-picker, Wiki, and artifact regressions pass, including fail-closed reads and no fabricated progress or live-commerce result.
 
 ---
+
+### ISSUE-1347: Browser and singleton state survived Firebase identity changes
+
+- **Status:** ✅ FIXED (2026-08-08)
+- **Severity:** 🔴 CRITICAL
+- **Module:** Root Zustand store / IndexedDB / agent services / Firestore listeners
+- **Evidence:** The global persistence blob contained profiles, notes, prompts, and conversations. Account switches replaced state before invoking unsubscribe handles, in-flight profile loads could finish under a later identity, and singleton queues, approvals, encryption keys, caches, and A2A/WebSocket work retained the previous owner.
+- **Resolution:** Persist only account-neutral UI preferences; atomically abort work and unsubscribe before resetting the store; generation-guard profile and creative completions; serialize account-boundary cleanup; purge owner-scoped browser databases/storage and reset initialized services before the new account hydrates.
+- **Verification:** Account boundary, stale profile load, cleanup ordering, WebSocket queue, OAuth session, repository/cache, and encryption-key regressions pass; monorepo TypeScript and production build pass.
+
+---
+
+### ISSUE-1348: Email and social OAuth callbacks were not bound to the initiating account
+
+- **Status:** ✅ FIXED (2026-08-08)
+- **Severity:** 🔴 CRITICAL
+- **Module:** Gmail / Outlook / Spotify / Instagram / TikTok / YouTube authorization
+- **Evidence:** OAuth state was absent or not owner-bound, PKCE and access-token caches were global, email refresh tokens crossed the renderer boundary, disconnect attempted a rules-denied client delete, and the backend exchanged codes against the obsolete `studio.indii.music` redirect while the client authorized against its current origin.
+- **Resolution:** Introduced provider+UID+state+TTL sessions, owner-keyed tokens, server-only refresh credentials, backend revocation, exact redirect validation, and backend provider-profile verification plus atomic token/account persistence. Packaged desktop directs initial email authorization to the canonical browser app instead of opening an impossible `file:` callback.
+- **Verification:** OAuth state/owner/expiry, redirect allowlist, provider verification, exchange metadata, and backend revocation regressions pass; Firebase and renderer TypeScript pass.
+
+---
+
+### ISSUE-1349: Production browser and Electron policy blocked Studio device and integration features
+
+- **Status:** ✅ FIXED (2026-08-08)
+- **Severity:** 🟠 HIGH
+- **Module:** Firebase Hosting headers / Electron session security
+- **Evidence:** Studio headers denied camera and geolocation globally and denied the microphone under `/creative`. CSP omitted the direct API origins used by email, social analytics, currency, and distributor adapters. Electron independently denied all media and geolocation requests.
+- **Resolution:** Allow camera, microphone, and geolocation only to `self` on the Studio target while keeping the landing target denied. Add only named renderer integration origins. Electron grants device permissions solely to its trusted packaged `file:` renderer or localhost development renderer.
+- **Verification:** Hosting-policy and Electron permission/CSP regressions pass; `firebase.json` parses; production Studio build passes.
+
+---
+
+### ISSUE-1350: Camera and location work outlived the UI that requested it
+
+- **Status:** ✅ FIXED (2026-08-08)
+- **Severity:** 🟠 HIGH
+- **Module:** Webcam capture / creative photo source / field-contact quick capture
+- **Evidence:** Webcam cleanup watched a ref that was never assigned, the creative photo panel assigned `srcObject` before its video existed and did not stop on unmount, and a late geolocation/focus callback could update a closed sheet.
+- **Resolution:** Media streams now have explicit request generations, late grants are immediately stopped, preview capture/unmount closes active tracks, video attachment occurs after mount, and GPS/focus callbacks are cancelled with their sheet.
+- **Verification:** Three focused media lifecycle regressions pass, including permission resolution after unmount; renderer TypeScript passes.
+
+---
+
+### ISSUE-1351: Modal focus and global shortcut teardown were not uniquely owned
+
+- **Status:** ✅ FIXED (2026-08-08)
+- **Severity:** 🟠 HIGH
+- **Module:** Focus trap / keyboard orchestrator / custom dialogs
+- **Evidence:** Inactive focus traps still registered Tab handling, semantically identical shortcut IDs could unregister each other, and many custom overlays lacked dialog semantics, Escape dismissal, focus entry, and focus return.
+- **Resolution:** Focus traps receive stable unique registrations and activate only while open; keyboard cleanup removes the exact registration; a shared modal accessibility hook now supplies containment, Escape handling, semantics, and focus restoration across the affected overlays.
+- **Verification:** Focus/keyboard regression passes and affected modal components typecheck/build cleanly.
+
+---
+
+### ISSUE-1352: Share-target and external-navigation seams trusted stale or unsafe browser input
+
+- **Status:** ✅ FIXED (2026-08-08)
+- **Severity:** 🟠 HIGH
+- **Module:** Service worker / PWA Share Target / URL-opening services
+- **Evidence:** Account-independent share inbox and media caches could survive identity changes, share input had no aggregate bounds, push parsing assumed JSON, Firebase Storage responses were cacheable, and several model/service-supplied URLs reached new windows without scheme validation or opener isolation.
+- **Resolution:** Bound share sizes/types/text/URL schemes, consume handled records, clear owner transitions, use NetworkOnly for Storage and remove the legacy cache, parse push payloads defensively, and normalize external navigation to HTTP(S) with `noopener,noreferrer`.
+- **Verification:** Share/OAuth/account-cleanup and URL normalization regressions pass; production build passes.
+
+---
+
+### ISSUE-1353: Marketing still exposed an unimplemented deployment action and inert search
+
+- **Status:** ✅ FIXED (2026-08-08)
+- **Severity:** 🟡 MEDIUM
+- **Module:** Campaign Dashboard
+- **Evidence:** Geo-bounty submission only closed a modal and displayed “Mission Active,” while campaign search accepted text without filtering anything.
+- **Resolution:** Removed the fabricated geo-bounty deployment surface and connected controlled search to campaign title, description, and platform fields.
+- **Verification:** Focused toolbar/search regression passes; renderer TypeScript and production build pass.
+
+---

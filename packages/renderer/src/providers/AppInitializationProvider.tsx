@@ -1,6 +1,6 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import { useStore } from '@/core/store';
+import { resetStoreForAccountBoundary, useStore } from '@/core/store';
 import { useAuthHealth } from '@/hooks/useAuthHealth';
 import { logger } from '@/utils/logger';
 
@@ -16,11 +16,12 @@ import { logger } from '@/utils/logger';
  * - Electron-specific sync (Update channels)
  */
 export const AppInitializationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const { initializeAuthListener, loadUserProfile, user, userProfile, initializeHistory, loadProjects, loadNotesFromCloud, currentOrganizationId } = useStore(
+    const { initializeAuthListener, loadUserProfile, user, authLoading, userProfile, initializeHistory, loadProjects, loadNotesFromCloud, currentOrganizationId } = useStore(
         useShallow(state => ({
             initializeAuthListener: state.initializeAuthListener,
             loadUserProfile: state.loadUserProfile,
             user: state.user,
+            authLoading: state.authLoading,
             userProfile: state.userProfile,
             initializeHistory: state.initializeHistory,
             loadProjects: state.loadProjects,
@@ -28,6 +29,57 @@ export const AppInitializationProvider: React.FC<{ children: React.ReactNode }> 
             currentOrganizationId: state.currentOrganizationId
         }))
     );
+    const previousAccountIdRef = useRef<string | null | undefined>(undefined);
+    const cleanedAccountIdRef = useRef<string | null | undefined>(undefined);
+    const [isAccountBoundaryReady, setIsAccountBoundaryReady] = useState(false);
+    const [accountBoundaryError, setAccountBoundaryError] = useState(false);
+    const [accountBoundaryAttempt, setAccountBoundaryAttempt] = useState(0);
+
+    // Clear every account-owned slice before the browser can paint a different
+    // identity. Passive effects below may then hydrate only that account's data.
+    useLayoutEffect(() => {
+        const accountId = user?.uid ?? null;
+        if (previousAccountIdRef.current === accountId) return;
+
+        const hadEstablishedAccount = previousAccountIdRef.current !== undefined;
+        previousAccountIdRef.current = accountId;
+        resetStoreForAccountBoundary(user ?? null);
+
+        if (hadEstablishedAccount) {
+            void import('@/services/email/EmailService')
+                .then(({ EmailService }) => EmailService.clearSession())
+                .catch(err => logger.error('[AppInit] Failed to clear email session cache:', err));
+        }
+    }, [user]);
+
+    useLayoutEffect(() => {
+        if (authLoading) return;
+        const accountId = user?.uid ?? null;
+        if (cleanedAccountIdRef.current === accountId) {
+            setIsAccountBoundaryReady(true);
+            return;
+        }
+
+        let cancelled = false;
+        setIsAccountBoundaryReady(false);
+        setAccountBoundaryError(false);
+        void import('@/services/auth/AccountBoundaryCleanup')
+            .then(({ enforceAccountBoundaryCleanup }) => enforceAccountBoundaryCleanup(accountId))
+            .then(() => {
+                if (!cancelled) {
+                    cleanedAccountIdRef.current = accountId;
+                    setIsAccountBoundaryReady(true);
+                }
+            })
+            .catch(err => {
+                logger.error('[AppInit] Failed to enforce account cache boundary:', err);
+                if (!cancelled) setAccountBoundaryError(true);
+            });
+
+        return () => {
+            cancelled = true;
+        };
+    }, [accountBoundaryAttempt, authLoading, user]);
 
     // 1. Initialize Auth Listener (Firebase)
     useEffect(() => {
@@ -42,14 +94,14 @@ export const AppInitializationProvider: React.FC<{ children: React.ReactNode }> 
 
     // 2. Load User Profile when User is Authenticated (skip for anonymous/demo)
     useEffect(() => {
-        if (user?.uid && !user.isAnonymous && user.uid !== 'demo') {
+        if (isAccountBoundaryReady && user?.uid && !user.isAnonymous && user.uid !== 'demo') {
             loadUserProfile(user.uid);
         }
-    }, [user, loadUserProfile]);
+    }, [isAccountBoundaryReady, user, loadUserProfile]);
 
     // 3. Load Application Data (Projects, History) when Profile is ready (skip for anonymous/demo)
     useEffect(() => {
-        if (user && !user.isAnonymous && user.uid !== 'demo') {
+        if (isAccountBoundaryReady && user && !user.isAnonymous && user.uid !== 'demo') {
             let isMounted = true;
 
             // ISSUE-772: rescope legacy 'org-default' docs to 'personal' BEFORE the
@@ -122,16 +174,36 @@ export const AppInitializationProvider: React.FC<{ children: React.ReactNode }> 
                 }).catch(() => { /* module already unloaded */ });
             };
         }
-    }, [user, currentOrganizationId, initializeHistory, loadProjects, loadNotesFromCloud]);
+    }, [isAccountBoundaryReady, user, currentOrganizationId, initializeHistory, loadProjects, loadNotesFromCloud]);
 
     // 4. Electron-specific synchronization
     useEffect(() => {
-        if (userProfile?.preferences && window.electronAPI?.updater?.setChannel) {
+        if (isAccountBoundaryReady && userProfile?.preferences && window.electronAPI?.updater?.setChannel) {
             const channel = userProfile.preferences.updateChannel || 'stable';
             window.electronAPI.updater.setChannel(channel);
             logger.debug('[AppInit] Synced update channel to Electron:', channel);
         }
-    }, [userProfile]);
+    }, [isAccountBoundaryReady, userProfile]);
 
-    return <>{children}</>;
+    if (accountBoundaryError) {
+        return (
+            <main className="min-h-screen bg-[#08090b] text-white flex items-center justify-center p-6">
+                <section role="alert" className="w-full max-w-md rounded-2xl border border-red-500/30 bg-red-500/10 p-6 text-center">
+                    <h1 className="text-xl font-semibold">Secure session cleanup failed</h1>
+                    <p className="mt-3 text-sm text-gray-300">
+                        Studio kept your workspace locked because private data from the previous session could not be cleared.
+                    </p>
+                    <button
+                        type="button"
+                        className="mt-5 rounded-lg bg-white px-4 py-2 text-sm font-semibold text-black"
+                        onClick={() => setAccountBoundaryAttempt(attempt => attempt + 1)}
+                    >
+                        Retry secure cleanup
+                    </button>
+                </section>
+            </main>
+        );
+    }
+
+    return isAccountBoundaryReady ? <>{children}</> : null;
 };

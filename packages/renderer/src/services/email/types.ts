@@ -123,10 +123,13 @@ export interface EmailSyncResult {
 
 export interface OAuthTokens {
     accessToken: string;
-    refreshToken: string;
     expiresAt: number; // Unix timestamp ms
     scope: string;
     provider: EmailProvider;
+}
+
+export interface OAuthExchangeResult extends OAuthTokens {
+    account: EmailAccount;
 }
 
 export interface OAuthConfig {
@@ -143,13 +146,13 @@ export interface EmailProviderInterface {
     readonly provider: EmailProvider;
 
     /** Initiate OAuth flow and return the auth URL */
-    getAuthUrl(): string;
+    getAuthUrl(state: string): string;
 
     /** Exchange auth code for tokens */
-    exchangeCode(code: string): Promise<OAuthTokens>;
+    exchangeCode(code: string, redirectUri: string): Promise<OAuthExchangeResult>;
 
     /** Refresh an expired access token */
-    refreshAccessToken(refreshToken: string): Promise<OAuthTokens>;
+    refreshAccessToken(): Promise<OAuthTokens>;
 
     /** Fetch messages from the provider */
     fetchMessages(accessToken: string, options?: EmailSyncOptions): Promise<EmailSyncResult>;

@@ -6,6 +6,7 @@ import { ImageGeneration } from '@/services/image/ImageGenerationService';
 import { X, Image as ImageIcon, Sparkles, Loader2, Search } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
 import CreativeGallery from '../../components/CreativeGallery';
+import { useModalAccessibility } from '@/hooks/useModalAccessibility';
 
 interface FrameSelectionModalProps {
     isOpen: boolean;
@@ -15,6 +16,7 @@ interface FrameSelectionModalProps {
 }
 
 export default function FrameSelectionModal({ isOpen, onClose, onSelect, target }: FrameSelectionModalProps) {
+    const dialogRef = useModalAccessibility(isOpen, onClose);
     const { currentProjectId, addToHistory } = useStore(
         useShallow(state => ({
             currentProjectId: state.currentProjectId,
@@ -82,16 +84,22 @@ export default function FrameSelectionModal({ isOpen, onClose, onSelect, target 
 
     return createPortal(
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="w-[800px] max-w-[90vw] h-[600px] max-h-[90vh] bg-[#1a1a1a] border border-gray-700 rounded-2xl shadow-2xl flex flex-col overflow-hidden">
+            <div
+                ref={dialogRef}
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="frame-selection-title"
+                className="w-[800px] max-w-[90vw] h-[600px] max-h-[90vh] bg-[#1a1a1a] border border-gray-700 rounded-2xl shadow-2xl flex flex-col overflow-hidden"
+            >
                 {/* Header */}
                 <div className="flex items-center justify-between p-4 border-b border-gray-800">
-                    <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                    <h2 id="frame-selection-title" className="text-lg font-bold text-white flex items-center gap-2">
                         {getTitle()}
                         <span className="text-xs font-normal text-gray-500 bg-gray-800 px-2 py-0.5 rounded-full">
                             {getSubtitle()}
                         </span>
                     </h2>
-                    <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors">
+                    <button onClick={onClose} aria-label="Close frame selection" className="text-gray-400 hover:text-white transition-colors">
                         <X size={20} />
                     </button>
                 </div>

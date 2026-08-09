@@ -18,6 +18,77 @@ interface TokenResult {
     scope: string;
 }
 
+interface EmailAccountRecord {
+    id: EmailProvider;
+    provider: EmailProvider;
+    email: string;
+    displayName: string;
+    avatarUrl: string;
+    isConnected: true;
+    lastSyncAt: null;
+}
+
+type EmailProvider = 'gmail' | 'outlook';
+
+function parseEmailProvider(value: unknown): EmailProvider {
+    if (value === 'gmail' || value === 'outlook') return value;
+    throw new HttpsError('invalid-argument', 'Provider must be gmail or outlook.');
+}
+
+export async function verifyProviderAccount(
+    provider: EmailProvider,
+    accessToken: string,
+    authClaims: Record<string, unknown>,
+): Promise<EmailAccountRecord> {
+    if (provider === 'gmail') {
+        const response = await fetch('https://www.googleapis.com/gmail/v1/users/me/profile', {
+            headers: { Authorization: `Bearer ${accessToken}` },
+        });
+        if (!response.ok) throw new Error(`Gmail profile verification failed (${response.status}).`);
+        const profile = await response.json() as { emailAddress?: unknown };
+        const email = typeof profile.emailAddress === 'string' ? profile.emailAddress.trim() : '';
+        if (!email) throw new Error('Gmail did not return an account email address.');
+        const firebaseEmail = typeof authClaims.email === 'string' ? authClaims.email : '';
+        const sameFirebaseIdentity = firebaseEmail.toLowerCase() === email.toLowerCase();
+        return {
+            id: provider,
+            provider,
+            email,
+            displayName: sameFirebaseIdentity && typeof authClaims.name === 'string' ? authClaims.name : email,
+            avatarUrl: sameFirebaseIdentity && typeof authClaims.picture === 'string' ? authClaims.picture : '',
+            isConnected: true,
+            lastSyncAt: null,
+        };
+    }
+
+    const response = await fetch('https://graph.microsoft.com/v1.0/me', {
+        headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    if (!response.ok) throw new Error(`Outlook profile verification failed (${response.status}).`);
+    const profile = await response.json() as {
+        mail?: unknown;
+        userPrincipalName?: unknown;
+        displayName?: unknown;
+    };
+    const email = typeof profile.mail === 'string' && profile.mail.trim()
+        ? profile.mail.trim()
+        : typeof profile.userPrincipalName === 'string'
+            ? profile.userPrincipalName.trim()
+            : '';
+    if (!email) throw new Error('Outlook did not return an account email address.');
+    return {
+        id: provider,
+        provider,
+        email,
+        displayName: typeof profile.displayName === 'string' && profile.displayName.trim()
+            ? profile.displayName.trim()
+            : email,
+        avatarUrl: '',
+        isConnected: true,
+        lastSyncAt: null,
+    };
+}
+
 
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import * as admin from "firebase-admin";
@@ -37,13 +108,53 @@ const microsoftClientId = defineSecret("MICROSOFT_CLIENT_ID");
 const microsoftClientSecret = defineSecret("MICROSOFT_CLIENT_SECRET");
 
 // ---------------------------------------------------------------------------
-// Helper: Get redirect URI based on provider
+// Helper: validate the exact redirect URI used to mint the authorization code
 // ---------------------------------------------------------------------------
 
-function getRedirectUri(provider: string): string {
-    // In production, these should come from environment config
-    const baseUrl = process.env.APP_URL || 'https://studio.indii.music';
-    return `${baseUrl}/auth/${provider}/callback`;
+export function resolveEmailOAuthRedirectUri(
+    provider: EmailProvider,
+    requestedRedirectUri: unknown,
+): string {
+    if (typeof requestedRedirectUri !== 'string') {
+        throw new HttpsError('invalid-argument', 'Missing OAuth redirect URI.');
+    }
+
+    let requested: URL;
+    try {
+        requested = new URL(requestedRedirectUri);
+    } catch {
+        throw new HttpsError('invalid-argument', 'OAuth redirect URI is invalid.');
+    }
+
+    const expectedPath = `/auth/${provider}/callback`;
+    if (requested.pathname !== expectedPath || requested.search || requested.hash || requested.username || requested.password) {
+        throw new HttpsError('invalid-argument', 'OAuth redirect URI does not match the provider callback.');
+    }
+
+    const allowedOrigins = new Set(['https://app.indii.music']);
+    const configuredAppUrl = process.env.APP_URL;
+    if (configuredAppUrl) {
+        try {
+            const configured = new URL(configuredAppUrl);
+            if (configured.protocol === 'https:' && configured.pathname === '/' && !configured.search && !configured.hash) {
+                allowedOrigins.add(configured.origin);
+            }
+        } catch {
+            console.warn('[EmailToken] Ignoring invalid APP_URL configuration.');
+        }
+    }
+
+    if (process.env.FUNCTIONS_EMULATOR === 'true'
+        && requested.protocol === 'http:'
+        && (requested.hostname === 'localhost' || requested.hostname === '127.0.0.1')) {
+        return `${requested.origin}${expectedPath}`;
+    }
+
+    if (!allowedOrigins.has(requested.origin)) {
+        throw new HttpsError('invalid-argument', 'OAuth redirect URI is not an authorized Studio origin.');
+    }
+
+    return `${requested.origin}${expectedPath}`;
 }
 
 // ---------------------------------------------------------------------------
@@ -63,10 +174,16 @@ export const emailExchangeToken = onCall(
             throw new HttpsError("unauthenticated", "User must be authenticated.");
         }
 
-        const { code, provider } = (request.data ?? {}) as { code?: string; refreshToken?: string; provider?: string };
-        if (!code || !provider) {
+        const { code, redirectUri: requestedRedirectUri } = (request.data ?? {}) as {
+            code?: string;
+            provider?: unknown;
+            redirectUri?: unknown;
+        };
+        if (!code) {
             throw new HttpsError("invalid-argument", "Missing code or provider.");
         }
+        const provider = parseEmailProvider((request.data as { provider?: unknown } | undefined)?.provider);
+        const redirectUri = resolveEmailOAuthRedirectUri(provider, requestedRedirectUri);
 
         const userId = request.auth.uid;
 
@@ -77,26 +194,32 @@ export const emailExchangeToken = onCall(
             let tokens: TokenResult;
 
             if (provider === 'gmail') {
-                tokens = await exchangeGmailCode(code);
+                tokens = await exchangeGmailCode(code, redirectUri);
             } else if (provider === 'outlook') {
-                tokens = await exchangeOutlookCode(code);
+                tokens = await exchangeOutlookCode(code, redirectUri);
             } else {
                 throw new HttpsError("invalid-argument", `Unknown provider: ${provider}`);
             }
 
             // Store refresh token securely in Firestore (never sent to client)
-            await admin.firestore()
-                .collection('users')
-                .doc(userId)
-                .collection('emailTokens')
-                .doc(provider)
-                .set({
-                    refreshToken: tokens.refreshToken,
-                    scope: tokens.scope,
-                    provider,
-                    createdAt: admin.firestore.FieldValue.serverTimestamp(),
-                    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-                });
+            if (!tokens.refreshToken) {
+                throw new HttpsError('failed-precondition', 'The provider did not issue a refresh token. Reconnect and approve offline access.');
+            }
+            const account = await verifyProviderAccount(provider, tokens.accessToken, request.auth.token);
+            const firestore = admin.firestore();
+            const userRef = firestore.collection('users').doc(userId);
+            const tokenRef = userRef.collection('emailTokens').doc(provider);
+            const accountRef = userRef.collection('emailAccounts').doc(provider);
+            const batch = firestore.batch();
+            batch.set(tokenRef, {
+                refreshToken: tokens.refreshToken,
+                scope: tokens.scope,
+                provider,
+                createdAt: admin.firestore.FieldValue.serverTimestamp(),
+                updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            });
+            batch.set(accountRef, account, { merge: true });
+            await batch.commit();
 
             console.log(`[EmailToken] Stored ${provider} tokens for user ${userId}`);
 
@@ -106,9 +229,7 @@ export const emailExchangeToken = onCall(
                 expiresAt: Date.now() + (tokens.expiresIn * 1000),
                 scope: tokens.scope,
                 provider,
-                // We also return the refresh token once for the client-side cache
-                // It will be used for immediate refresh calls but never persisted client-side
-                refreshToken: tokens.refreshToken,
+                account,
             };
 
         } catch (error: unknown) {
@@ -140,10 +261,7 @@ export const emailRefreshToken = onCall(
             throw new HttpsError("unauthenticated", "User must be authenticated.");
         }
 
-        const { refreshToken, provider } = (request.data ?? {}) as { code?: string; refreshToken?: string; provider?: string };
-        if (!provider) {
-            throw new HttpsError("invalid-argument", "Missing provider.");
-        }
+        const provider = parseEmailProvider((request.data as { provider?: unknown } | undefined)?.provider);
 
         const userId = request.auth.uid;
 
@@ -151,21 +269,19 @@ export const emailRefreshToken = onCall(
         await enforceRateLimit(userId, "emailRefreshToken", TOKEN_RATE_LIMIT);
 
         try {
-            // Use provided refresh token or fall back to stored one
-            let actualRefreshToken = refreshToken;
-            if (!actualRefreshToken) {
-                const tokenDoc = await admin.firestore()
-                    .collection('users')
-                    .doc(userId)
-                    .collection('emailTokens')
-                    .doc(provider)
-                    .get();
+            // Refresh credentials remain server-owned. Never accept a client-
+            // supplied refresh token and never return one to the browser.
+            const tokenDoc = await admin.firestore()
+                .collection('users')
+                .doc(userId)
+                .collection('emailTokens')
+                .doc(provider)
+                .get();
 
-                if (!tokenDoc.exists) {
-                    throw new Error('No stored refresh token. Please reconnect your account.');
-                }
-            actualRefreshToken = tokenDoc.data()?.refreshToken;
+            if (!tokenDoc.exists) {
+                throw new HttpsError('not-found', 'No stored refresh token. Please reconnect your account.');
             }
+            const actualRefreshToken = tokenDoc.data()?.refreshToken as string | undefined;
 
             if (!actualRefreshToken) {
                 throw new HttpsError("not-found", "Refresh token was not found for this provider.");
@@ -196,7 +312,6 @@ export const emailRefreshToken = onCall(
 
             return {
                 accessToken: tokens.accessToken,
-                refreshToken: tokens.refreshToken || actualRefreshToken,
                 expiresAt: Date.now() + (tokens.expiresIn * 1000),
                 scope: tokens.scope || '',
                 provider,
@@ -231,10 +346,7 @@ export const emailRevokeToken = onCall(
             throw new HttpsError("unauthenticated", "User must be authenticated.");
         }
 
-        const { provider } = (request.data ?? {}) as { code?: string; refreshToken?: string; provider?: string };
-        if (!provider) {
-            throw new HttpsError("invalid-argument", "Missing provider.");
-        }
+        const provider = parseEmailProvider((request.data as { provider?: unknown } | undefined)?.provider);
         const userId = request.auth.uid;
 
         try {
@@ -252,12 +364,18 @@ export const emailRevokeToken = onCall(
 
                 // Revoke with provider
                 if (provider === 'gmail' && refreshToken) {
-                    await fetch(`https://oauth2.googleapis.com/revoke?token=${refreshToken}`, {
+                    const revokeResponse = await fetch('https://oauth2.googleapis.com/revoke', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: new URLSearchParams({ token: refreshToken }),
                     });
+                    if (!revokeResponse.ok) {
+                        throw new HttpsError('unavailable', 'Google did not accept the token revocation. Try again.');
+                    }
                 }
-                // For Outlook, token revocation is handled by MSAL logout
+                // Microsoft does not expose a comparable refresh-token revoke
+                // endpoint here. Deleting the server-held credential prevents
+                // this app from refreshing it again.
 
                 // Delete stored token
                 await tokenRef.delete();
@@ -275,6 +393,7 @@ export const emailRevokeToken = onCall(
             return { success: true };
 
         } catch (error: unknown) {
+            if (error instanceof HttpsError) throw error;
             const err = error as Error;
             console.error(`[EmailToken] Revoke failed for ${provider}:`, err);
             throw new HttpsError("internal", `Token revocation failed: ${err.message}`);
@@ -285,7 +404,7 @@ export const emailRevokeToken = onCall(
 // Gmail Token Helpers
 // ---------------------------------------------------------------------------
 
-async function exchangeGmailCode(code: string): Promise<TokenResult> {
+async function exchangeGmailCode(code: string, redirectUri: string): Promise<TokenResult> {
     const clientId = googleOAuthClientId.value();
     const clientSecret = googleOAuthClientSecret.value();
 
@@ -296,7 +415,7 @@ async function exchangeGmailCode(code: string): Promise<TokenResult> {
             code,
             client_id: clientId,
             client_secret: clientSecret,
-            redirect_uri: getRedirectUri('gmail'),
+            redirect_uri: redirectUri,
             grant_type: 'authorization_code',
         }).toString(),
     });
@@ -348,7 +467,7 @@ async function refreshGmailToken(refreshToken: string): Promise<TokenResult> {
 // Outlook Token Helpers
 // ---------------------------------------------------------------------------
 
-async function exchangeOutlookCode(code: string): Promise<TokenResult> {
+async function exchangeOutlookCode(code: string, redirectUri: string): Promise<TokenResult> {
     const clientId = microsoftClientId.value();
     const clientSecret = microsoftClientSecret.value();
 
@@ -359,7 +478,7 @@ async function exchangeOutlookCode(code: string): Promise<TokenResult> {
             code,
             client_id: clientId,
             client_secret: clientSecret,
-            redirect_uri: getRedirectUri('outlook'),
+            redirect_uri: redirectUri,
             grant_type: 'authorization_code',
         }).toString(),
     });

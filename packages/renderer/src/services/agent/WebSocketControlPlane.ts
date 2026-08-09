@@ -66,6 +66,8 @@ class WebSocketControlPlane {
   private listeners: Map<string, Set<(msg: WCPMessage) => void>> = new Map();
   private heartbeatTimer: ReturnType<typeof setInterval> | null = null;
   private reconnectAttempts = 0;
+  private reconnectEnabled = false;
+  private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private readonly maxReconnects = 5;
   private readonly heartbeatIntervalMs = 20_000;
 
@@ -75,6 +77,7 @@ class WebSocketControlPlane {
     if (this.state === 'connected' || this.state === 'connecting') return;
 
     this.state = 'connecting';
+    this.reconnectEnabled = true;
     logger.info('[WCP] Connecting to', url);
 
     try {
@@ -109,15 +112,39 @@ class WebSocketControlPlane {
       this._stopHeartbeat();
       this.state = 'disconnected';
       logger.info('[WCP] Disconnected');
-      this._scheduleReconnect(url);
+      if (this.reconnectEnabled) this._scheduleReconnect(url);
     };
   }
 
   disconnect(): void {
+    this.reconnectEnabled = false;
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
     this._stopHeartbeat();
-    this.ws?.close();
+    const socket = this.ws;
     this.ws = null;
+    if (socket) {
+      socket.onopen = null;
+      socket.onmessage = null;
+      socket.onerror = null;
+      socket.onclose = null;
+      socket.close();
+    }
     this.state = 'disconnected';
+  }
+
+  clearAccountBoundary(): void {
+    this.disconnect();
+    const boundaryError = new Error('Authenticated account changed');
+    this.commandQueues.forEach(queue => queue.splice(0).forEach(entry => entry.reject(boundaryError)));
+    this.pendingAcks.forEach(pending => pending.reject(boundaryError));
+    this.commandQueues.clear();
+    this.pendingAcks.clear();
+    this.sessionLocks.clear();
+    this.processingSet.clear();
+    this.listeners.clear();
   }
 
   get connectionState(): WCPConnectionState {
@@ -317,7 +344,10 @@ class WebSocketControlPlane {
     const delay = Math.min(1000 * 2 ** this.reconnectAttempts, 30_000);
     this.reconnectAttempts++;
     logger.info(`[WCP] Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts})`);
-    setTimeout(() => this.connect(url), delay);
+    this.reconnectTimer = setTimeout(() => {
+      this.reconnectTimer = null;
+      if (this.reconnectEnabled) this.connect(url);
+    }, delay);
   }
 
   private _defaultUrl(): string {

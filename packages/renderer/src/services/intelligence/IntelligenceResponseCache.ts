@@ -161,6 +161,7 @@ export class IntelligenceResponseCache {
 
     async clear(): Promise<void> {
         if (typeof window === 'undefined') return;
+        this.l1Cache.clear();
         const db = await this.dbPromise;
         await db.clear(STORE_NAME);
     }

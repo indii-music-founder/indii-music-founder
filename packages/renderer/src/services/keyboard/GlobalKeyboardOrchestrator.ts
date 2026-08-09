@@ -61,7 +61,10 @@ class KeyboardOrchestrator {
         this.listeners.sort((a, b) => PRIORITY_LEVELS[b.priority || 'normal'] - PRIORITY_LEVELS[a.priority || 'normal']);
         
         return () => {
-            this.unregister(options.id);
+            // Registrations may intentionally share an id (for example two
+            // mounted dialog instances). Remove only this exact listener;
+            // deleting by id would silently disable the remaining instance.
+            this.listeners = this.listeners.filter(listener => listener !== options);
         };
     }
 

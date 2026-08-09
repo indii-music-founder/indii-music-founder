@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useLayoutEffect, useRef, useCallback, useId } from 'react';
 import { useGlobalShortcut } from '@/hooks/useGlobalShortcut';
 
 /**
@@ -33,7 +33,13 @@ const FOCUSABLE_SELECTORS = [
 
 export function useFocusTrap(isActive: boolean = true) {
     const containerRef = useRef<HTMLDivElement>(null);
-    const previousFocusRef = useRef<HTMLElement | null>(null);
+    // Capture the trigger during render. React's autoFocus runs before layout
+    // effects, so waiting until the effect can mistake an input inside the new
+    // dialog for the element that should receive focus when it closes.
+    const previousFocusRef = useRef<HTMLElement | null>(
+        typeof document !== 'undefined' ? document.activeElement as HTMLElement : null,
+    );
+    const trapId = useId();
 
     const getFocusableElements = useCallback((): HTMLElement[] => {
         if (!containerRef.current) return [];
@@ -41,7 +47,7 @@ export function useFocusTrap(isActive: boolean = true) {
     }, []);
 
     useGlobalShortcut({
-        id: 'focus-trap-tab',
+        id: `focus-trap-tab-${trapId}`,
         key: 'Tab',
         ignoreInput: true, // Needs to run even when focus is in an input
         priority: 'modal',
@@ -66,21 +72,24 @@ export function useFocusTrap(isActive: boolean = true) {
                 }
             }
         }
-    }, [isActive, getFocusableElements]);
+    }, [trapId, getFocusableElements], isActive);
 
-    useEffect(() => {
+    useLayoutEffect(() => {
         if (!isActive || !containerRef.current) return;
 
-        // Save the currently focused element to restore later
-        previousFocusRef.current = document.activeElement as HTMLElement;
+        const activeElement = document.activeElement as HTMLElement | null;
+        const alreadyFocusedInside = !!activeElement && containerRef.current.contains(activeElement);
+
+        // When no descendant used autoFocus, the current element is the real
+        // trigger and should be restored on close.
+        if (!alreadyFocusedInside) {
+            previousFocusRef.current = activeElement;
+        }
 
         // Focus the first focusable element inside the trap
         const focusable = getFocusableElements();
-        if (focusable.length > 0) {
-            // Delay to ensure DOM is ready after render
-            requestAnimationFrame(() => {
-                focusable[0]!.focus();
-            });
+        if (!alreadyFocusedInside && focusable.length > 0) {
+            focusable[0]!.focus();
         }
 
         return () => {

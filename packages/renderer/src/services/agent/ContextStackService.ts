@@ -428,6 +428,10 @@ export function getContextStackService(): ContextStackService {
   return contextStackService;
 }
 
+export function clearContextStackServiceIfInitialized(): void {
+  contextStackService?.clear();
+}
+
 // ============================================================================
 // Phase 2: ContextStackServiceImpl — ContextFrame-based stack
 // ============================================================================

@@ -6,6 +6,7 @@ import { PublicistService } from '@/services/publicist/PublicistService';
 import { useToast } from '@/core/context/ToastContext';
 import { Contact } from '../types';
 import { logger } from '@/utils/logger';
+import { useModalAccessibility } from '@/hooks/useModalAccessibility';
 
 interface CreateContactModalProps {
     isOpen: boolean;
@@ -14,6 +15,7 @@ interface CreateContactModalProps {
 }
 
 export const CreateContactModal: React.FC<CreateContactModalProps> = ({ isOpen, onClose, userId }) => {
+    const dialogRef = useModalAccessibility(isOpen, onClose);
     const { t } = useTranslation();
     const [name, setName] = useState('');
     const [outlet, setOutlet] = useState('');
@@ -66,6 +68,7 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({ isOpen, 
             {isOpen && (
                 <>
                     <motion.div
+                        ref={dialogRef}
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}

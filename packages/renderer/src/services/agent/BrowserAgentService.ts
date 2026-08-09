@@ -23,6 +23,7 @@ import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { logger } from '@/utils/logger';
 import { secureRandomHex } from '@/utils/crypto-random';
 import { importWithRetry } from '@/utils/dynamicImport';
+import { normalizeExternalHttpUrl } from '@/utils/safeExternalUrl';
 
 // ─── Types ──────────────────────────────────────────────────────
 
@@ -477,7 +478,9 @@ Respond with a JSON object describing your next action. Use one of these types:
                 logger.info(`[BrowserAgent] Navigate to: ${action.url}`);
                 // In web mode, open in a new tab for safety (never navigate the current app)
                 if (typeof window !== 'undefined') {
-                    window.open(action.url, '_blank', 'noopener,noreferrer');
+                    const safeUrl = normalizeExternalHttpUrl(action.url);
+                    if (!safeUrl) throw new Error('Browser agent rejected a non-HTTP navigation URL.');
+                    window.open(safeUrl, '_blank', 'noopener,noreferrer');
                 }
                 break;
             }
