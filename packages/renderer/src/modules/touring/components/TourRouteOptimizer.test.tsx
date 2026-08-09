@@ -32,38 +32,6 @@ vi.mock('../hooks/useTouring', () => ({
     }),
 }));
 
-vi.mock('@/services/firebase', () => ({
-    functions: {},
-}));
-
-vi.mock('firebase/functions', () => ({
-    httpsCallable: vi.fn(() => vi.fn(async () => ({
-        data: {
-            tourName: 'Route Draft',
-            totalDistanceMiles: 314,
-            estimatedBudget: 12000,
-            stops: [
-                {
-                    date: '2026-07-03',
-                    city: 'New York',
-                    venue: 'MSG',
-                    activity: 'Show',
-                    notes: '',
-                    type: 'Show',
-                },
-                {
-                    date: '2026-07-04',
-                    city: 'Chicago',
-                    venue: 'Aragon Ballroom',
-                    activity: 'Show',
-                    notes: '',
-                    type: 'Show',
-                },
-            ],
-        },
-    }))),
-}));
-
 vi.mock('motion/react', () => ({
     motion: {
         div: ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) => <div {...filterDomProps(props)}>{children}</div>,
@@ -91,37 +59,63 @@ vi.mock('./TourMap', () => ({
 describe('TourRouteOptimizer', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        mockSaveItinerary.mockResolvedValue(undefined);
     });
 
-    it('builds an itinerary from the selected route and saves it', async () => {
+    it('saves a geography-only route draft without invented business data', async () => {
         render(<TourRouteOptimizer />);
 
-        fireEvent.click(screen.getByRole('button', { name: /new york 1\.4m/i }));
-        fireEvent.click(screen.getByRole('button', { name: /chicago 890k/i }));
+        expect(screen.getByText(/does not include audience, venue, ticket-price, or revenue data/i)).toBeInTheDocument();
+        expect(screen.queryByText('Reach')).not.toBeInTheDocument();
+        expect(screen.queryByText('Est. Revenue')).not.toBeInTheDocument();
+        expect(screen.queryByText(/Spotify/i)).not.toBeInTheDocument();
+
+        fireEvent.click(screen.getByRole('button', { name: /new york ny/i }));
+        fireEvent.click(screen.getByRole('button', { name: /chicago il/i }));
         fireEvent.click(screen.getByRole('button', { name: /optimize route/i }));
         expect(screen.getByTestId('tour-map')).toBeInTheDocument();
-        fireEvent.click(screen.getByRole('button', { name: /build itinerary from route/i }));
+        fireEvent.click(screen.getByRole('button', { name: /save route draft/i }));
 
         await waitFor(() => {
             expect(mockSaveItinerary).toHaveBeenCalledTimes(1);
         });
 
         expect(mockSaveItinerary).toHaveBeenCalledWith(expect.objectContaining({
-            tourName: 'Route Draft',
-            totalDistance: '314 miles',
-            estimatedBudget: '12000',
+            tourName: 'Route draft: New York to Chicago',
+            totalDistance: expect.stringMatching(/^\d+ miles straight-line$/),
             stops: expect.arrayContaining([
                 expect.objectContaining({
                     id: expect.any(String),
-                    city: 'New York',
+                    city: 'New York, NY',
+                    venue: '',
+                    activity: 'Planning stop',
+                    type: 'Planning',
                 }),
                 expect.objectContaining({
                     id: expect.any(String),
-                    city: 'Chicago',
+                    city: 'Chicago, IL',
+                    venue: '',
+                    activity: 'Planning stop',
+                    type: 'Planning',
                 }),
             ]),
         }));
+        expect(mockSaveItinerary.mock.calls[0]?.[0]).not.toHaveProperty('estimatedBudget');
 
-        expect(mockSuccess).toHaveBeenCalledWith('Route itinerary saved');
+        expect(mockSuccess).toHaveBeenCalledWith('Route draft saved');
+    });
+
+    it('does not report success when route persistence fails', async () => {
+        mockSaveItinerary.mockRejectedValueOnce(new Error('Firestore unavailable'));
+        render(<TourRouteOptimizer />);
+
+        fireEvent.click(screen.getByRole('button', { name: /new york ny/i }));
+        fireEvent.click(screen.getByRole('button', { name: /chicago il/i }));
+        fireEvent.click(screen.getByRole('button', { name: /save route draft/i }));
+
+        await waitFor(() => {
+            expect(mockError).toHaveBeenCalledWith('Failed to save route draft');
+        });
+        expect(mockSuccess).not.toHaveBeenCalled();
     });
 });

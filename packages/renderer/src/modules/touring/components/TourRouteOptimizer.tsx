@@ -1,13 +1,10 @@
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { MapPin, Music2, Plus, X, ArrowRight, Zap, Users, Clock, Route, HelpCircle, Info, BookOpen } from 'lucide-react';
+import { MapPin, Plus, X, Zap, Route, Info, BookOpen } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Modal } from '@/components/ui/Modal';
 import { useToast } from '@/core/context/ToastContext';
 import { useTouring } from '../hooks/useTouring';
-import { functions } from '@/services/firebase';
-import { httpsCallable } from 'firebase/functions';
 import { createTouringStopId } from '../itinerary';
 import { TourMap } from './TourMap';
 
@@ -17,60 +14,56 @@ interface City {
     state: string;
     lat: number;
     lng: number;
-    listeners: number; // modeled monthly streaming reach in region
-    avgTicketPrice: number;
-    venues: number;
 }
 
-// Top 45 US touring markets — real coordinates, population-calibrated reach
-// estimates, market-rate avg ticket prices, and rough venue counts.
-// Listener figures use metro-population × ~0.35 streaming penetration × genre index.
+// Reference city centers for geographic route sketches. Audience, venue,
+// ticket-price, and revenue data must come from an authorized live source.
 const CITY_POOL: City[] = [
-    { id: 'nyc', name: 'New York', state: 'NY', lat: 40.7128, lng: -74.0060, listeners: 1420000, avgTicketPrice: 48, venues: 312 },
-    { id: 'la', name: 'Los Angeles', state: 'CA', lat: 34.0522, lng: -118.2437, listeners: 1280000, avgTicketPrice: 45, venues: 287 },
-    { id: 'chi', name: 'Chicago', state: 'IL', lat: 41.8781, lng: -87.6298, listeners: 890000, avgTicketPrice: 38, venues: 196 },
-    { id: 'hou', name: 'Houston', state: 'TX', lat: 29.7604, lng: -95.3698, listeners: 740000, avgTicketPrice: 34, venues: 158 },
-    { id: 'phx', name: 'Phoenix', state: 'AZ', lat: 33.4484, lng: -112.0740, listeners: 620000, avgTicketPrice: 32, venues: 124 },
-    { id: 'phi', name: 'Philadelphia', state: 'PA', lat: 39.9526, lng: -75.1652, listeners: 580000, avgTicketPrice: 36, venues: 141 },
-    { id: 'sa', name: 'San Antonio', state: 'TX', lat: 29.4241, lng: -98.4936, listeners: 480000, avgTicketPrice: 29, venues: 98 },
-    { id: 'sd', name: 'San Diego', state: 'CA', lat: 32.7157, lng: -117.1611, listeners: 510000, avgTicketPrice: 35, venues: 112 },
-    { id: 'dal', name: 'Dallas', state: 'TX', lat: 32.7767, lng: -96.7970, listeners: 670000, avgTicketPrice: 36, venues: 163 },
-    { id: 'sj', name: 'San Jose', state: 'CA', lat: 37.3382, lng: -121.8863, listeners: 520000, avgTicketPrice: 42, venues: 89 },
-    { id: 'aus', name: 'Austin', state: 'TX', lat: 30.2672, lng: -97.7431, listeners: 590000, avgTicketPrice: 38, venues: 247 },
-    { id: 'jax', name: 'Jacksonville', state: 'FL', lat: 30.3322, lng: -81.6557, listeners: 340000, avgTicketPrice: 27, venues: 72 },
-    { id: 'sf', name: 'San Francisco', state: 'CA', lat: 37.7749, lng: -122.4194, listeners: 780000, avgTicketPrice: 46, venues: 183 },
-    { id: 'col', name: 'Columbus', state: 'OH', lat: 39.9612, lng: -82.9988, listeners: 390000, avgTicketPrice: 29, venues: 95 },
-    { id: 'ind', name: 'Indianapolis', state: 'IN', lat: 39.7684, lng: -86.1581, listeners: 360000, avgTicketPrice: 28, venues: 86 },
-    { id: 'sea', name: 'Seattle', state: 'WA', lat: 47.6062, lng: -122.3321, listeners: 640000, avgTicketPrice: 41, venues: 157 },
-    { id: 'den', name: 'Denver', state: 'CO', lat: 39.7392, lng: -104.9903, listeners: 560000, avgTicketPrice: 38, venues: 143 },
-    { id: 'dc', name: 'Washington', state: 'DC', lat: 38.9072, lng: -77.0369, listeners: 680000, avgTicketPrice: 42, venues: 162 },
-    { id: 'nas', name: 'Nashville', state: 'TN', lat: 36.1627, lng: -86.7816, listeners: 520000, avgTicketPrice: 36, venues: 198 },
-    { id: 'ok', name: 'Oklahoma City', state: 'OK', lat: 35.4676, lng: -97.5164, listeners: 280000, avgTicketPrice: 26, venues: 64 },
-    { id: 'elp', name: 'El Paso', state: 'TX', lat: 31.7619, lng: -106.4850, listeners: 210000, avgTicketPrice: 22, venues: 42 },
-    { id: 'bos', name: 'Boston', state: 'MA', lat: 42.3601, lng: -71.0589, listeners: 690000, avgTicketPrice: 44, venues: 168 },
-    { id: 'por', name: 'Portland', state: 'OR', lat: 45.5051, lng: -122.6750, listeners: 480000, avgTicketPrice: 35, venues: 128 },
-    { id: 'mem', name: 'Memphis', state: 'TN', lat: 35.1495, lng: -90.0490, listeners: 310000, avgTicketPrice: 26, venues: 88 },
-    { id: 'det', name: 'Detroit', state: 'MI', lat: 42.3314, lng: -83.0458, listeners: 440000, avgTicketPrice: 31, venues: 104 },
-    { id: 'lv', name: 'Las Vegas', state: 'NV', lat: 36.1699, lng: -115.1398, listeners: 420000, avgTicketPrice: 52, venues: 218 },
-    { id: 'lou', name: 'Louisville', state: 'KY', lat: 38.2527, lng: -85.7585, listeners: 290000, avgTicketPrice: 27, venues: 73 },
-    { id: 'bal', name: 'Baltimore', state: 'MD', lat: 39.2904, lng: -76.6122, listeners: 360000, avgTicketPrice: 31, venues: 89 },
-    { id: 'mil', name: 'Milwaukee', state: 'WI', lat: 43.0389, lng: -87.9065, listeners: 280000, avgTicketPrice: 27, venues: 78 },
-    { id: 'alb', name: 'Albuquerque', state: 'NM', lat: 35.0844, lng: -106.6504, listeners: 220000, avgTicketPrice: 24, venues: 52 },
-    { id: 'tuc', name: 'Tucson', state: 'AZ', lat: 32.2226, lng: -110.9747, listeners: 200000, avgTicketPrice: 23, venues: 48 },
-    { id: 'fre', name: 'Fresno', state: 'CA', lat: 36.7378, lng: -119.7871, listeners: 180000, avgTicketPrice: 22, venues: 37 },
-    { id: 'sac', name: 'Sacramento', state: 'CA', lat: 38.5816, lng: -121.4944, listeners: 390000, avgTicketPrice: 32, venues: 96 },
-    { id: 'mia', name: 'Miami', state: 'FL', lat: 25.7617, lng: -80.1918, listeners: 620000, avgTicketPrice: 43, venues: 147 },
-    { id: 'ral', name: 'Raleigh', state: 'NC', lat: 35.7796, lng: -78.6382, listeners: 380000, avgTicketPrice: 31, venues: 94 },
-    { id: 'omh', name: 'Omaha', state: 'NE', lat: 41.2565, lng: -95.9345, listeners: 200000, avgTicketPrice: 25, venues: 56 },
-    { id: 'cle', name: 'Cleveland', state: 'OH', lat: 41.4993, lng: -81.6944, listeners: 320000, avgTicketPrice: 28, venues: 84 },
-    { id: 'min', name: 'Minneapolis', state: 'MN', lat: 44.9778, lng: -93.2650, listeners: 490000, avgTicketPrice: 35, venues: 122 },
-    { id: 'atl', name: 'Atlanta', state: 'GA', lat: 33.7490, lng: -84.3880, listeners: 730000, avgTicketPrice: 40, venues: 182 },
-    { id: 'no', name: 'New Orleans', state: 'LA', lat: 29.9511, lng: -90.0715, listeners: 340000, avgTicketPrice: 33, venues: 167 },
-    { id: 'tam', name: 'Tampa', state: 'FL', lat: 27.9506, lng: -82.4572, listeners: 400000, avgTicketPrice: 32, venues: 98 },
-    { id: 'pit', name: 'Pittsburgh', state: 'PA', lat: 40.4406, lng: -79.9959, listeners: 320000, avgTicketPrice: 29, venues: 86 },
-    { id: 'slc', name: 'Salt Lake City', state: 'UT', lat: 40.7608, lng: -111.8910, listeners: 290000, avgTicketPrice: 30, venues: 71 },
-    { id: 'cha', name: 'Charlotte', state: 'NC', lat: 35.2271, lng: -80.8431, listeners: 440000, avgTicketPrice: 33, venues: 107 },
-    { id: 'kan', name: 'Kansas City', state: 'MO', lat: 39.0997, lng: -94.5786, listeners: 340000, avgTicketPrice: 30, venues: 91 },
+    { id: 'nyc', name: 'New York', state: 'NY', lat: 40.7128, lng: -74.0060 },
+    { id: 'la', name: 'Los Angeles', state: 'CA', lat: 34.0522, lng: -118.2437 },
+    { id: 'chi', name: 'Chicago', state: 'IL', lat: 41.8781, lng: -87.6298 },
+    { id: 'hou', name: 'Houston', state: 'TX', lat: 29.7604, lng: -95.3698 },
+    { id: 'phx', name: 'Phoenix', state: 'AZ', lat: 33.4484, lng: -112.0740 },
+    { id: 'phi', name: 'Philadelphia', state: 'PA', lat: 39.9526, lng: -75.1652 },
+    { id: 'sa', name: 'San Antonio', state: 'TX', lat: 29.4241, lng: -98.4936 },
+    { id: 'sd', name: 'San Diego', state: 'CA', lat: 32.7157, lng: -117.1611 },
+    { id: 'dal', name: 'Dallas', state: 'TX', lat: 32.7767, lng: -96.7970 },
+    { id: 'sj', name: 'San Jose', state: 'CA', lat: 37.3382, lng: -121.8863 },
+    { id: 'aus', name: 'Austin', state: 'TX', lat: 30.2672, lng: -97.7431 },
+    { id: 'jax', name: 'Jacksonville', state: 'FL', lat: 30.3322, lng: -81.6557 },
+    { id: 'sf', name: 'San Francisco', state: 'CA', lat: 37.7749, lng: -122.4194 },
+    { id: 'col', name: 'Columbus', state: 'OH', lat: 39.9612, lng: -82.9988 },
+    { id: 'ind', name: 'Indianapolis', state: 'IN', lat: 39.7684, lng: -86.1581 },
+    { id: 'sea', name: 'Seattle', state: 'WA', lat: 47.6062, lng: -122.3321 },
+    { id: 'den', name: 'Denver', state: 'CO', lat: 39.7392, lng: -104.9903 },
+    { id: 'dc', name: 'Washington', state: 'DC', lat: 38.9072, lng: -77.0369 },
+    { id: 'nas', name: 'Nashville', state: 'TN', lat: 36.1627, lng: -86.7816 },
+    { id: 'ok', name: 'Oklahoma City', state: 'OK', lat: 35.4676, lng: -97.5164 },
+    { id: 'elp', name: 'El Paso', state: 'TX', lat: 31.7619, lng: -106.4850 },
+    { id: 'bos', name: 'Boston', state: 'MA', lat: 42.3601, lng: -71.0589 },
+    { id: 'por', name: 'Portland', state: 'OR', lat: 45.5051, lng: -122.6750 },
+    { id: 'mem', name: 'Memphis', state: 'TN', lat: 35.1495, lng: -90.0490 },
+    { id: 'det', name: 'Detroit', state: 'MI', lat: 42.3314, lng: -83.0458 },
+    { id: 'lv', name: 'Las Vegas', state: 'NV', lat: 36.1699, lng: -115.1398 },
+    { id: 'lou', name: 'Louisville', state: 'KY', lat: 38.2527, lng: -85.7585 },
+    { id: 'bal', name: 'Baltimore', state: 'MD', lat: 39.2904, lng: -76.6122 },
+    { id: 'mil', name: 'Milwaukee', state: 'WI', lat: 43.0389, lng: -87.9065 },
+    { id: 'alb', name: 'Albuquerque', state: 'NM', lat: 35.0844, lng: -106.6504 },
+    { id: 'tuc', name: 'Tucson', state: 'AZ', lat: 32.2226, lng: -110.9747 },
+    { id: 'fre', name: 'Fresno', state: 'CA', lat: 36.7378, lng: -119.7871 },
+    { id: 'sac', name: 'Sacramento', state: 'CA', lat: 38.5816, lng: -121.4944 },
+    { id: 'mia', name: 'Miami', state: 'FL', lat: 25.7617, lng: -80.1918 },
+    { id: 'ral', name: 'Raleigh', state: 'NC', lat: 35.7796, lng: -78.6382 },
+    { id: 'omh', name: 'Omaha', state: 'NE', lat: 41.2565, lng: -95.9345 },
+    { id: 'cle', name: 'Cleveland', state: 'OH', lat: 41.4993, lng: -81.6944 },
+    { id: 'min', name: 'Minneapolis', state: 'MN', lat: 44.9778, lng: -93.2650 },
+    { id: 'atl', name: 'Atlanta', state: 'GA', lat: 33.7490, lng: -84.3880 },
+    { id: 'no', name: 'New Orleans', state: 'LA', lat: 29.9511, lng: -90.0715 },
+    { id: 'tam', name: 'Tampa', state: 'FL', lat: 27.9506, lng: -82.4572 },
+    { id: 'pit', name: 'Pittsburgh', state: 'PA', lat: 40.4406, lng: -79.9959 },
+    { id: 'slc', name: 'Salt Lake City', state: 'UT', lat: 40.7608, lng: -111.8910 },
+    { id: 'cha', name: 'Charlotte', state: 'NC', lat: 35.2271, lng: -80.8431 },
+    { id: 'kan', name: 'Kansas City', state: 'MO', lat: 39.0997, lng: -94.5786 },
 ];
 
 function haversine(a: City, b: City): number {
@@ -87,33 +80,24 @@ function optimizeRoute(cities: City[]): City[] {
     const route: City[] = [unvisited.splice(0, 1)[0]!];
     while (unvisited.length > 0) {
         const last = route[route.length - 1]!;
-        // Score = distance penalized, listener-weighted
+        // Greedy nearest-neighbor over city-center distance. This is a route
+        // sketch, not a road-distance or globally optimal TSP calculation.
         let bestIdx = 0;
-        let bestScore = Infinity;
+        let bestDistance = Infinity;
         unvisited.forEach((city, i) => {
             const dist = haversine(last, city);
-            const listenerBonus = 1 - city.listeners / 1500000; // closer to 0 → more listeners
-            const score = dist * (0.7 + 0.3 * listenerBonus);
-            if (score < bestScore) { bestScore = score; bestIdx = i; }
+            if (dist < bestDistance) { bestDistance = dist; bestIdx = i; }
         });
         route.push(unvisited.splice(bestIdx, 1)[0]!);
     }
     return route;
 }
 
-function driveHours(dist: number): string {
-    const h = Math.round(dist / 55); // avg 55 mph
-    if (h < 1) return '< 1 hr';
-    return `${h} hr${h !== 1 ? 's' : ''}`;
-}
-
-function formatListeners(n: number): string {
-    if (n >= 1000000) return `${(n / 1000000).toFixed(1)}M`;
-    return `${Math.round(n / 1000)}K`;
-}
-
-function toIsoDate(date: Date): string {
-    return date.toISOString().slice(0, 10);
+function toDateOnly(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
 }
 
 function addDays(date: Date, days: number): Date {
@@ -126,7 +110,7 @@ export function TourRouteOptimizer() {
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
     const [optimized, setOptimized] = useState(false);
     const [isGuideOpen, setIsGuideOpen] = useState(false);
-    const [isBuildingItinerary, setIsBuildingItinerary] = useState(false);
+    const [isSavingRouteDraft, setIsSavingRouteDraft] = useState(false);
     const toast = useToast();
     const { saveItinerary } = useTouring();
 
@@ -141,63 +125,34 @@ export function TourRouteOptimizer() {
         return Math.round(d);
     }, [route]);
 
-    const totalListeners = route.reduce((s, c) => s + c.listeners, 0);
-    const estimatedRevenue = route.reduce((s, c) => s + c.avgTicketPrice * Math.round(c.listeners * 0.002), 0);
-    const buildStartDate = toIsoDate(new Date());
-    const buildEndDate = toIsoDate(addDays(new Date(), Math.max(route.length - 1, 0)));
+    const handleSaveRouteDraft = async () => {
+        if (route.length < 2 || isSavingRouteDraft) return;
 
-    const handleBuildItinerary = async () => {
-        if (route.length < 2 || isBuildingItinerary) return;
-
-        setIsBuildingItinerary(true);
+        setIsSavingRouteDraft(true);
         try {
-            const generateItinerary = httpsCallable(functions, 'generateItinerary');
-            const locations = route.map(city => `${city.name}, ${city.state}`);
-            const response = await generateItinerary({
-                locations,
-                dates: {
-                    start: buildStartDate,
-                    end: buildEndDate,
-                },
-            });
-
-            const rawResult = response.data as {
-                tourName?: string;
-                stops?: Array<Partial<{ date: string; city: string; venue: string; activity: string; notes: string; type: string; distance: number }>>;
-                totalDistanceMiles?: number;
-                estimatedBudget?: number | string;
-            };
-
-            const mappedStops = (rawResult.stops?.length ? rawResult.stops : route.map((city, idx) => ({
-                date: toIsoDate(addDays(new Date(), idx)),
-                city: city.name,
-                venue: `${city.name} Venue`,
-                activity: idx === 0 ? 'Travel' : 'Show',
-                notes: '',
-                type: idx === 0 ? 'Travel' : 'Show',
-            }))).map(stop => ({
+            const draftStartDate = new Date();
+            const mappedStops = route.map((city, idx) => ({
                 id: createTouringStopId(),
-                date: stop.date || buildStartDate,
-                city: stop.city || '',
-                venue: stop.venue || '',
-                activity: stop.activity || '',
-                notes: stop.notes || '',
-                type: stop.type || 'Show',
-                distance: stop.distance,
+                date: toDateOnly(addDays(draftStartDate, idx)),
+                city: `${city.name}, ${city.state}`,
+                venue: '',
+                activity: 'Planning stop',
+                notes: 'Venue, schedule, and road routing not set.',
+                type: 'Planning',
+                coordinates: { lat: city.lat, lng: city.lng },
             }));
 
             await saveItinerary({
-                tourName: rawResult.tourName || `Route plan: ${route[0]?.name} to ${route[route.length - 1]?.name}`,
+                tourName: `Route draft: ${route[0]?.name} to ${route[route.length - 1]?.name}`,
                 stops: mappedStops,
-                totalDistance: rawResult.totalDistanceMiles ? `${rawResult.totalDistanceMiles} miles` : `${totalDistance} miles`,
-                estimatedBudget: rawResult.estimatedBudget != null ? String(rawResult.estimatedBudget) : undefined,
+                totalDistance: `${totalDistance} miles straight-line`,
             });
 
-            toast.success('Route itinerary saved');
+            toast.success('Route draft saved');
         } catch {
-            toast.error('Failed to build itinerary from this route');
+            toast.error('Failed to save route draft');
         } finally {
-            setIsBuildingItinerary(false);
+            setIsSavingRouteDraft(false);
         }
     };
 
@@ -223,8 +178,8 @@ export function TourRouteOptimizer() {
                                 </h4>
                             </TooltipTrigger>
                             <TooltipContent side="right" className="bg-neutral-900 border border-white/10 text-white rounded-xl shadow-xl p-3 max-w-xs leading-relaxed">
-                                <p className="font-bold text-[#FFE135] mb-1">Regional Fan Database</p>
-                                <p className="text-neutral-400 text-[10px]">Select markets to build your tour legs. The database features 45 calibrated touring regions across the U.S., populated with geographical coordinates, average ticket prices, and modeled monthly streaming reach.</p>
+                                <p className="font-bold text-[#FFE135] mb-1">City Reference List</p>
+                                <p className="text-neutral-400 text-[10px]">Select city centers to sketch a geographic tour leg. This list contains coordinates only; it does not include audience, venue, ticket-price, or revenue data.</p>
                             </TooltipContent>
                         </Tooltip>
                     </div>
@@ -238,10 +193,7 @@ export function TourRouteOptimizer() {
                             >
                                 <div>
                                     <div className="text-xs font-bold text-neutral-300 group-hover:text-white">{city.name}</div>
-                                    <div className="flex items-center gap-1 text-[9px] text-neutral-600 mt-0.5">
-                                        <Users size={8} />
-                                        <span>{formatListeners(city.listeners)}</span>
-                                    </div>
+                                    <div className="text-[9px] text-neutral-600 mt-0.5">{city.state}</div>
                                 </div>
                                 <Plus size={12} className="text-neutral-600 group-hover:text-[#FFE135]" />
                             </button>
@@ -257,37 +209,9 @@ export function TourRouteOptimizer() {
                         <span className="text-white font-bold">{route.length}</span>
                     </div>
                     <div className="flex justify-between">
-                        <span className="text-neutral-600">Distance</span>
+                        <span className="text-neutral-600">Straight-line distance</span>
                         <span className="text-white font-bold">{totalDistance.toLocaleString('en-US')} mi</span>
                     </div>
-
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <div className="flex justify-between cursor-help hover:bg-white/[0.02] p-1 -mx-1 rounded transition-colors">
-                                <span className="text-neutral-600 flex items-center gap-1">Reach <Info size={10} className="opacity-55" /></span>
-                                <span className="text-white font-bold">{formatListeners(totalListeners)}</span>
-                            </div>
-                        </TooltipTrigger>
-                        <TooltipContent side="right" className="bg-neutral-900 border border-white/10 text-white rounded-xl shadow-xl p-3 max-w-xs leading-relaxed">
-                            <p className="font-bold text-[#FFE135] mb-0.5">Total Fan Reach</p>
-                            <p className="text-neutral-400 text-[10px]">The sum of modeled regional monthly streaming reach in the metropolitan statistical areas of your chosen stops. High reach represents a stronger potential base of local ticket buyers.</p>
-                        </TooltipContent>
-                    </Tooltip>
-
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <div className="flex justify-between cursor-help hover:bg-white/[0.02] p-1 -mx-1 rounded transition-colors">
-                                <span className="text-neutral-600 flex items-center gap-1">Est. Revenue <Info size={10} className="opacity-55" /></span>
-                                <span className="text-[#FFE135] font-bold">${(estimatedRevenue / 1000).toFixed(0)}K</span>
-                            </div>
-                        </TooltipTrigger>
-                        <TooltipContent side="right" className="bg-neutral-900 border border-white/10 text-white rounded-xl shadow-xl p-3 max-w-xs leading-relaxed">
-                            <p className="font-bold text-[#FFE135] mb-0.5">Estimated Ticket Revenue</p>
-                            <p className="text-neutral-400 text-[10px] mb-1">Estimated gross sales modeled by converting regional Spotify listener density into ticket buyers:</p>
-                            <p className="text-[#FFE135] font-mono text-[9px] bg-black/40 p-1.5 rounded">Avg Ticket Price × (0.2% of Metro Listeners)</p>
-                            <p className="text-neutral-500 text-[9px] mt-1 italic">This conversion benchmark is standard for artists with highly active streaming engagement.</p>
-                        </TooltipContent>
-                    </Tooltip>
                 </div>
 
             {/* Right — route display */}
@@ -305,7 +229,7 @@ export function TourRouteOptimizer() {
                             </button>
                         </div>
                         <p className="text-[10px] text-neutral-500 mt-0.5">
-                            {optimized ? 'Geo-optimized by listener density' : 'Add cities and optimize'}
+                            {optimized ? 'Ordered by nearest city-center distance' : 'Add cities and optimize'}
                         </p>
                     </div>
                     <Tooltip>
@@ -321,20 +245,20 @@ export function TourRouteOptimizer() {
                             </div>
                         </TooltipTrigger>
                         <TooltipContent side="bottom" align="end" className="bg-neutral-900 border border-white/10 text-white rounded-xl shadow-xl p-3 max-w-xs leading-relaxed">
-                            <p className="font-bold text-[#FFE135] mb-0.5">Audience-Weighted Optimization</p>
-                            <p className="text-neutral-400 text-[10px]">Executes a greedy nearest-neighbor algorithm that sorts your tour routing. It calculates optimal legs based on Haversine distance, with a **weighting index** that draws routes closer to cities with higher Spotify listener concentrations.</p>
+                            <p className="font-bold text-[#FFE135] mb-0.5">Geographic Route Sketch</p>
+                            <p className="text-neutral-400 text-[10px]">Orders selected city centers with a greedy nearest-neighbor Haversine calculation. It is a heuristic—not road routing, drive-time analysis, or a guarantee of the shortest possible tour.</p>
                         </TooltipContent>
                     </Tooltip>
                 </div>
 
                 <div className="flex justify-end">
                     <button
-                        onClick={handleBuildItinerary}
-                        disabled={route.length < 2 || isBuildingItinerary}
+                        onClick={handleSaveRouteDraft}
+                        disabled={route.length < 2 || isSavingRouteDraft}
                         className="flex items-center gap-2 px-4 py-2 rounded-xl border border-white/10 bg-white/[0.03] text-white text-xs font-black uppercase tracking-widest hover:bg-white/[0.06] hover:border-white/20 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
                     >
                         <Plus size={13} />
-                        {isBuildingItinerary ? 'Saving Itinerary...' : 'Build Itinerary from Route'}
+                        {isSavingRouteDraft ? 'Saving Route Draft...' : 'Save Route Draft'}
                     </button>
                 </div>
 
@@ -365,7 +289,7 @@ export function TourRouteOptimizer() {
                         </div>
                         <div>
                             <p className="text-sm font-semibold text-neutral-300">No cities selected</p>
-                            <p className="text-xs text-neutral-600 mt-1">Pick cities from the left panel — the optimizer will calculate the geo-efficient route by listener density.</p>
+                            <p className="text-xs text-neutral-600 mt-1">Pick cities from the left panel to create a nearest-neighbor geographic route sketch.</p>
                         </div>
                     </div>
                 ) : (
@@ -374,8 +298,6 @@ export function TourRouteOptimizer() {
                             {route.map((city, idx) => {
                                 const nextCity = route[idx + 1];
                                 const dist = nextCity ? Math.round(haversine(city, nextCity)) : null;
-                                const maxListeners = Math.max(...route.map(c => c.listeners));
-                                const barPct = Math.round((city.listeners / maxListeners) * 100);
                                 return (
                                     <div key={city.id}>
                                         <motion.div
@@ -396,35 +318,10 @@ export function TourRouteOptimizer() {
                                                 <div className="flex items-center gap-2 mb-1">
                                                     <span className="text-sm font-bold text-white">{city.name}</span>
                                                     <span className="text-[10px] text-neutral-500">{city.state}</span>
-                                                    <span className="text-[9px] text-neutral-700">· {city.venues} venues</span>
                                                 </div>
-                                                {/* Listener density bar */}
-                                                <Tooltip>
-                                                    <TooltipTrigger asChild>
-                                                        <div className="flex items-center gap-2 cursor-help py-0.5">
-                                                            <Music2 size={9} className="text-neutral-600 flex-shrink-0" />
-                                                            <div className="flex-1 h-1 bg-white/5 rounded-full overflow-hidden">
-                                                                <div
-                                                                    className="h-full bg-[#FFE135] rounded-full"
-                                                                    style={{ width: `${barPct}%` }}
-                                                                />
-                                                            </div>
-                                                            <span className="text-[9px] text-neutral-500 font-mono flex-shrink-0 hover:text-[#FFE135] transition-colors">
-                                                                {formatListeners(city.listeners)}
-                                                            </span>
-                                                        </div>
-                                                    </TooltipTrigger>
-                                                    <TooltipContent side="top" className="bg-neutral-900 border border-white/10 text-white rounded-xl shadow-xl p-3 max-w-xs leading-relaxed">
-                                                        <p className="font-bold text-[#FFE135] mb-0.5">{city.name} Audience Density</p>
-                                                        <p className="text-neutral-400 text-[10px]">{formatListeners(city.listeners)} modeled monthly streaming reach in the metro region. Representing {barPct}% of the top market density size in your current list.</p>
-                                                    </TooltipContent>
-                                                </Tooltip>
-                                            </div>
-
-                                            {/* Avg ticket */}
-                                            <div className="text-right flex-shrink-0">
-                                                <div className="text-xs font-bold text-[#FFE135]">${city.avgTicketPrice}</div>
-                                                <div className="text-[9px] text-neutral-600">avg ticket</div>
+                                                <div className="text-[9px] text-neutral-600 font-mono">
+                                                    {city.lat.toFixed(4)}, {city.lng.toFixed(4)}
+                                                </div>
                                             </div>
 
                                             {/* Remove */}
@@ -442,10 +339,7 @@ export function TourRouteOptimizer() {
                                                 <div className="flex-1 h-px bg-white/5" />
                                                 <div className="flex items-center gap-1.5 text-[9px] text-neutral-600">
                                                     <Route size={9} />
-                                                    <span>{dist.toLocaleString('en-US')} mi</span>
-                                                    <ArrowRight size={9} />
-                                                    <Clock size={9} />
-                                                    <span>{driveHours(dist)}</span>
+                                                    <span>{dist.toLocaleString('en-US')} mi straight-line</span>
                                                 </div>
                                                 <div className="flex-1 h-px bg-white/5" />
                                             </div>
@@ -472,19 +366,19 @@ export function TourRouteOptimizer() {
             </div>
             <div className="p-6 space-y-4 text-xs text-neutral-400 leading-relaxed font-mono">
                 <p>
-                    Welcome to the <span className="text-[#FFE135] font-bold">indii Route Optimizer</span>. This tool is designed to help touring artists plan high-revenue, geo-efficient tour legs by analyzing listener densities.
+                    The <span className="text-[#FFE135] font-bold">indii Route Optimizer</span> creates a geographic draft from selected U.S. city centers. It does not contain audience, venue, ticketing, or revenue intelligence.
                 </p>
                 <div>
                     <h4 className="text-white font-bold mb-1 uppercase tracking-wide text-[10px]">1. Pick Your Markets</h4>
-                    <p>Select target cities from the left panel. Each city displays its Spotify monthly listener count (calibrated with regional streaming indexes) and average venue counts.</p>
+                    <p>Select target city centers from the left panel. Use your own authorized analytics and venue research when deciding which markets belong on the tour.</p>
                 </div>
                 <div>
-                    <h4 className="text-white font-bold mb-1 uppercase tracking-wide text-[10px]">2. Weigh Your Audience</h4>
-                    <p>When you click <span className="text-[#FFE135] font-bold">Optimize Route</span>, the system runs an audience-weighted nearest-neighbor TSP algorithm. Instead of purely sorting by driving distance, it biases routing towards cities with higher listener densities to maximize potential sales.</p>
+                    <h4 className="text-white font-bold mb-1 uppercase tracking-wide text-[10px]">2. Sketch the Order</h4>
+                    <p><span className="text-[#FFE135] font-bold">Optimize Route</span> applies a greedy nearest-neighbor calculation to straight-line distances between city centers. It does not account for roads, borders, traffic, rest rules, or guarantee a globally shortest route.</p>
                 </div>
                 <div>
-                    <h4 className="text-white font-bold mb-1 uppercase tracking-wide text-[10px]">3. Analyze Revenue Projections</h4>
-                    <p>The Summary Panel projects estimated gross ticket sales based on standard conversion models (average ticket price × 0.2% listener-to-ticket conversion rate) to help forecast touring feasibility.</p>
+                    <h4 className="text-white font-bold mb-1 uppercase tracking-wide text-[10px]">3. Build and Review</h4>
+                    <p>Save Route Draft stores the selected order with provisional daily dates and blank venues. Review every date, venue, road leg, budget, and contact before using it operationally.</p>
                 </div>
             </div>
         </Modal>
