@@ -6,7 +6,7 @@ import { agentFirebaseConnector } from '@/services/agent/AgentFirebaseConnector'
 import { ContextPipeline, PipelineContext } from './components/ContextPipeline';
 import { AgentOrchestrator } from './components/AgentOrchestrator';
 import { AgentExecutor } from './components/AgentExecutor';
-import { AgentContext, type BoardroomDispatchTask } from './types';
+import { AgentContext, type AgentResponse, type BoardroomDispatchTask } from './types';
 import { agentRegistry } from './registry';
 import { livingPlanService } from './LivingPlanService';
 
@@ -19,6 +19,14 @@ import { agentGraphStateService } from './orchestration/AgentGraphStateService';
 import { AgentGraph } from './types';
 import { moduleImportCache } from './ModuleImportCache';
 import { importWithRetry } from '@/utils/dynamicImport';
+import {
+    finalizePersonaAgentResponse,
+    type PersonaAgentResponseFinalizer,
+} from '@/services/persona/PersonaAgentResponseService';
+import {
+    PERSONA_RESPONSE_METADATA_KEY,
+    getPersonaResponseMetadata,
+} from '@/services/persona/PersonaResponseMetadata';
 
 /**
  * AgentService is the primary entry point for agent-related operations.
@@ -74,7 +82,9 @@ export class AgentService {
     }
 
 
-    constructor() {
+    constructor(
+        private readonly personaResponseFinalizer: PersonaAgentResponseFinalizer = finalizePersonaAgentResponse,
+    ) {
         // Components initialized. Agents are auto-registered in AgentRegistry singleton.
         this.contextPipeline = new ContextPipeline();
         this.orchestrator = new AgentOrchestrator();
@@ -94,11 +104,78 @@ export class AgentService {
         }
     }
 
+    private async applyCompletedResponse(
+        agentId: string,
+        question: string,
+        responseId: string,
+        response: AgentResponse,
+        updateAgentMessage: (id: string, updates: Partial<AgentMessage>) => void,
+        getCurrentMessage: () => AgentMessage | undefined,
+        additionalUpdates: Partial<AgentMessage> = {},
+    ): Promise<string> {
+        const finalized = await this.personaResponseFinalizer({
+            agentId,
+            question,
+            responseId,
+            response,
+        });
+
+        const currentMetadata = getCurrentMessage()?.metadata;
+        const initialUpdate: Partial<AgentMessage> = {
+            ...additionalUpdates,
+            text: finalized.text,
+            thoughtSignature: response.thoughtSignature,
+            ...(finalized.tracking ? {
+                metadata: {
+                    ...(currentMetadata || {}),
+                    [PERSONA_RESPONSE_METADATA_KEY]: finalized.tracking,
+                },
+            } : {}),
+        };
+        updateAgentMessage(responseId, initialUpdate);
+
+        if (finalized.tracking && finalized.measurementRecorded) {
+            void finalized.measurementRecorded.then((recorded) => {
+                const latestMessage = getCurrentMessage();
+                const latestTracking = getPersonaResponseMetadata(latestMessage?.metadata);
+                if (latestTracking?.responseId !== responseId) return;
+
+                updateAgentMessage(responseId, {
+                    metadata: {
+                        ...(latestMessage?.metadata || {}),
+                        [PERSONA_RESPONSE_METADATA_KEY]: {
+                            ...latestTracking,
+                            measurementStatus: recorded ? 'recorded' : 'failed',
+                        },
+                    },
+                });
+            }).catch((error) => {
+                logger.warn('[AgentService] Persona measurement status could not be persisted.', {
+                    agentId,
+                    reason: error instanceof Error ? error.name : 'unknown',
+                });
+            });
+        }
+
+        return finalized.text;
+    }
+
     clearAccountBoundary(): void {
         this.responseCache.clear();
         this.syncDebounceTimeouts.forEach(timeout => clearTimeout(timeout));
         this.syncDebounceTimeouts.clear();
         this.isProcessing = false;
+    }
+
+    private shouldCacheCompletedResponse(
+        isGenerationRequest: boolean,
+        message: AgentMessage | undefined,
+    ): boolean {
+        return Boolean(
+            !isGenerationRequest &&
+            message?.text &&
+            !getPersonaResponseMetadata(message.metadata),
+        );
     }
 
     /**
@@ -272,14 +349,12 @@ export class AgentService {
                             : (currentState.agentHistory as AgentMessage[]).find(m => m.id === responseId);
 
                         // After success, populate cache if not a generation request
-                        if (!isGenerationRequest) {
-                            if (resultMsg && resultMsg.text) {
-                                this.responseCache.set(cacheKey, {
-                                    text: resultMsg.text,
-                                    thoughts: resultMsg.thoughts || [],
-                                    agentId: resultMsg.agentId || 'generalist'
-                                });
-                            }
+                        if (this.shouldCacheCompletedResponse(isGenerationRequest, resultMsg)) {
+                            this.responseCache.set(cacheKey, {
+                                text: resultMsg!.text,
+                                thoughts: resultMsg!.thoughts || [],
+                                agentId: resultMsg!.agentId || 'generalist'
+                            });
                         }
 
                         // Trigger Autorater for feedback and fine-tuning registration
@@ -484,10 +559,14 @@ export class AgentService {
             }, signal, undefined, attachments);
 
             if (result && result.text) {
-                updateAgentMessage(responseId, {
-                    text: result.text,
-                    thoughtSignature: result.thoughtSignature
-                });
+                await this.applyCompletedResponse(
+                    targetAgentId,
+                    text,
+                    responseId,
+                    result,
+                    updateAgentMessage,
+                    () => useStore.getState().agentHistory.find((message: AgentMessage) => message.id === responseId),
+                );
             } else {
                 updateAgentMessage(responseId, {
                     thoughtSignature: result?.thoughtSignature
@@ -583,16 +662,20 @@ export class AgentService {
         }, signal, undefined, attachments);
 
         if (result && result.text) {
-            updateAgentMessage(responseId, {
-                text: result.text,
-                thoughtSignature: result.thoughtSignature
-            });
+            const completedText = await this.applyCompletedResponse(
+                agentId,
+                text,
+                responseId,
+                result,
+                updateAgentMessage,
+                () => useStore.getState().agentHistory.find((message: AgentMessage) => message.id === responseId),
+            );
 
             // Tier 2: Index model response
-            if (state.currentProjectId && state.activeSessionId && result.text.length > 20) {
+            if (state.currentProjectId && state.activeSessionId && completedText.length > 20) {
                 const { alwaysOnMemoryEngine } = await importWithRetry(() => import('./memory/AlwaysOnMemoryEngine'));
                 alwaysOnMemoryEngine.ingest(
-                    result.text,
+                    completedText,
                     'agent_output',
                     'context'
                 ).catch(err => logger.warn('[AgentService] Failed to index agent response:', err));
@@ -663,10 +746,14 @@ export class AgentService {
         }, signal, undefined, attachments);
 
         if (result && result.text) {
-            updateAgentMessage(responseId, {
-                text: result.text,
-                thoughtSignature: result.thoughtSignature
-            });
+            await this.applyCompletedResponse(
+                forcedAgentId,
+                text,
+                responseId,
+                result,
+                updateAgentMessage,
+                () => useStore.getState().agentHistory.find((message: AgentMessage) => message.id === responseId),
+            );
         } else {
             updateAgentMessage(responseId, {
                 thoughtSignature: result?.thoughtSignature
@@ -991,12 +1078,20 @@ export class AgentService {
                     }
 
                     if (result && result.text) {
-                        useStore.getState().updateAgentMessage(resId, {
-                            text: result.text,
-                            thoughtSignature: result.thoughtSignature,
-                            ...(planId ? { planId } : {}),
-                            isStreaming: false
-                        });
+                        const completedText = await this.applyCompletedResponse(
+                            agentId,
+                            task.rawUserUtterance,
+                            resId,
+                            result,
+                            (id, updates) => useStore.getState().updateAgentMessage(id, updates),
+                            () => useStore.getState().agentHistory.find((message: AgentMessage) => message.id === resId),
+                            {
+                                ...(planId ? { planId } : {}),
+                                isStreaming: false,
+                            },
+                        );
+
+                        result.text = completedText;
                     } else {
                         if (currentStreamedText.length > 0) {
                             useStore.getState().updateAgentMessage(resId, {
@@ -1249,20 +1344,34 @@ The user will see this plan and can approve it to start execution.`;
                 }
             }
 
-            // Final update
+            // Final update. A generated Living Plan is tool-backed and must
+            // remain byte-identical; ordinary direct chat enters the same
+            // Manager persona finalizer as AgentExecutor-backed chat.
             const cleanText = accumulatedText.replace(/```json\s*(\{[\s\S]*?"livingPlan"[\s\S]*?\})\s*```/g, '').trim();
-
-            updateAgentMessage(responseId, {
-                text: cleanText || 'No response generated.',
-                planId,
-                thoughts: [{
+            const finalText = cleanText || 'No response generated.';
+            const thoughts: AgentThought[] = [{
                     id: crypto.randomUUID(),
                     text: planId ? 'Drafted execution plan' : 'Analyzed Context',
                     timestamp: Date.now(),
                     type: planId ? 'logic' : 'logic',
                     toolName: 'Agent Core'
-                }]
-            });
+                }];
+            await this.applyCompletedResponse(
+                'generalist',
+                text,
+                responseId,
+                {
+                    text: finalText,
+                    toolCalls: planId ? [{
+                        name: 'propose_plan',
+                        args: {},
+                        result: { success: true, data: { planId } },
+                    }] : [],
+                },
+                updateAgentMessage,
+                () => useStore.getState().agentHistory.find((message: AgentMessage) => message.id === responseId),
+                { planId, thoughts },
+            );
         } catch (err: unknown) {
             const errorMessage = err instanceof Error ? err.message : String(err);
             updateAgentMessage(responseId, {

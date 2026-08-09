@@ -31,6 +31,7 @@ import {
 } from 'lucide-react';
 import { PromptArea } from '@/core/components/command-bar/PromptArea';
 import { ThoughtChain } from '@/core/components/chat/ThoughtChain';
+import { PersonaResponseActions } from '@/core/components/chat/PersonaResponseActions';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import ReactMarkdown from 'react-markdown';
@@ -199,6 +200,9 @@ export function BoardroomConversationPanel({ messages }: BoardroomConversationPa
                         const identity = resolveAgentVisualIdentity(msg.agentId);
                         const isUser = msg.role === 'user';
                         const AgentIcon = AGENT_ICONS[identity.iconKey];
+                        const displayText = sanitizeBoardroomMessage(
+                            msg.text || (msg as { content?: string }).content || '',
+                        );
 
                         return (
                             <motion.div
@@ -271,7 +275,7 @@ export function BoardroomConversationPanel({ messages }: BoardroomConversationPa
                                                 pre: ({ node, ...props }) => (
                                                     <pre {...props} className="p-3 my-2 rounded-lg bg-black/40 border border-white/10 overflow-x-auto text-xs font-mono text-white/90 max-w-full whitespace-pre-wrap break-all" />
                                                 ),
-                                                code: ({ node, inline, className, children, ...props }: any) => (
+                                                code: ({ node: _node, inline, className, children, ...props }: React.ComponentPropsWithoutRef<'code'> & { node?: unknown; inline?: boolean }) => (
                                                     inline ? (
                                                         <code {...props} className="px-1.5 py-0.5 rounded bg-white/10 text-indigo-300 font-mono text-xs break-all">
                                                             {children}
@@ -289,7 +293,7 @@ export function BoardroomConversationPanel({ messages }: BoardroomConversationPa
                                                 )
                                             }}
                                         >
-                                             {sanitizeBoardroomMessage(msg.text || (msg as { content?: string }).content || '')}
+                                             {displayText}
                                         </ReactMarkdown>
                                     </div>
 
@@ -303,6 +307,9 @@ export function BoardroomConversationPanel({ messages }: BoardroomConversationPa
                                             />
                                             <span className="text-[10px] text-white/20">typing...</span>
                                         </div>
+                                    )}
+                                    {!isUser && !msg.isStreaming && (
+                                        <PersonaResponseActions text={displayText} metadata={msg.metadata} />
                                     )}
                                 </div>
                             </motion.div>

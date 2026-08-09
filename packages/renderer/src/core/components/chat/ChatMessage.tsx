@@ -44,6 +44,7 @@ import { ThoughtChain } from './ThoughtChain';
 import { JsonViewer } from './JsonViewer';
 import { ImageRenderer, ToolImageOutput, ToolDocumentOutput, ToolFeedbackOutput } from './ToolOutputRenderer';
 import { CodeBlock } from './CodeBlock';
+import { PersonaResponseActions } from './PersonaResponseActions';
 
 import { safeJsonParse } from '@/services/utils/json';
 import { PlanCard } from './PlanCard';
@@ -593,7 +594,10 @@ export const MessageItem = memo(({ msg, avatarUrl, variant = 'default' }: Messag
 
                 {/* Agent Grading / Feedback */}
                 {msg.role === 'model' && !msg.isStreaming && (
-                    <MessageRating messageId={msg.id} currentRating={msg.rating} />
+                    <>
+                        <PersonaResponseActions text={cleanText || msg.text} metadata={msg.metadata} />
+                        <MessageRating messageId={msg.id} currentRating={msg.rating} />
+                    </>
                 )}
 
                 {/* Mobile Remote Source Badge */}

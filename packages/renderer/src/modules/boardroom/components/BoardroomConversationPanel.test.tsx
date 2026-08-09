@@ -103,6 +103,36 @@ describe('BoardroomConversationPanel', () => {
         expect(screen.getByText('1 message')).toBeInTheDocument();
     });
 
+    it('renders the implicit-feedback action for the exact tracked Boardroom response', () => {
+        const messages = [{
+            id: 'msg-persona',
+            role: 'model' as const,
+            text: 'Tracked Boardroom advice',
+            timestamp: Date.now(),
+            agentId: 'finance',
+            isStreaming: false,
+            metadata: {
+                personaResponse: {
+                    personaId: 'businessManager',
+                    responseId: 'msg-persona',
+                    isControlGroup: false,
+                    effectiveFaderValues: {
+                        riskTolerance: 50,
+                        brevity: 50,
+                        directness: 50,
+                        formality: 50,
+                        reasoningTransparency: 50,
+                    },
+                    measurementStatus: 'recorded',
+                },
+            },
+        }];
+
+        render(<BoardroomConversationPanel messages={messages} />);
+
+        expect(screen.getByRole('button', { name: 'Copy response' })).toBeInTheDocument();
+    });
+
     it('renders "Discussion" header label', () => {
         const messages = [
             { id: 'msg-1', role: 'model' as const, text: 'Test', timestamp: Date.now(), agentId: 'marketing' },

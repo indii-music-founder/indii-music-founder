@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { AgentContext } from './types';
 import { AgentService } from './AgentService';
+import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 
 interface CapturedExecution {
     agentId: string;
@@ -63,7 +64,12 @@ vi.mock('./registry', () => {
         name: names[agentId] ?? agentId,
         execute: vi.fn(async (task: string, context: AgentContext) => {
             capturedExecutions.push({ agentId, context, task });
-            return { text: `${agentId} response`, toolCalls: [] };
+            return {
+                text: task.includes('tool-backed') ? `${agentId} tool response` : `${agentId} response`,
+                toolCalls: task.includes('tool-backed')
+                    ? [{ name: 'test_tool', args: {}, result: 'completed' }]
+                    : [],
+            };
         }),
     });
     return {
@@ -106,7 +112,8 @@ describe('AgentService Boardroom capability intent dispatch', () => {
                 if (message) Object.assign(message, update);
             }),
         };
-        const service = new AgentService();
+        const finalizer = vi.fn(async ({ response }) => ({ text: response.text }));
+        const service = new AgentService(finalizer);
         (
             service as unknown as {
                 getStore: () => Promise<{ getState: () => typeof state }>;
@@ -153,5 +160,297 @@ describe('AgentService Boardroom capability intent dispatch', () => {
         expect(capturedExecutions[3]?.task).toContain(
             '(PRIOR CONTEXT):\n\n[GENERALIST]: generalist response\n[MARKETING]: marketing response\n[LEGAL]: legal response',
         );
+        expect(finalizer.mock.calls.map(([input]) => input.agentId)).toEqual([
+            'generalist',
+            'marketing',
+            'legal',
+            'finance',
+        ]);
+    });
+
+    it('finalizes a real direct specialist response with response-bound Evolas metadata', async () => {
+        const messages = [{
+            id: 'response-direct',
+            role: 'model',
+            text: '',
+            timestamp: Date.now(),
+            metadata: { existing: 'preserved' },
+        }];
+        const state = {
+            conversationMode: 'direct',
+            directTargetAgentId: 'legal',
+            activeAgentProvider: 'agents',
+            agentHistory: messages,
+            updateAgentMessage: vi.fn((id: string, update: Record<string, unknown>) => {
+                const message = messages.find(entry => entry.id === id);
+                if (message) Object.assign(message, update);
+            }),
+        };
+        const finalizer = vi.fn(async ({ responseId }: { responseId: string }) => ({
+            text: 'Contract Reader styled response',
+            tracking: {
+                personaId: 'contractReader' as const,
+                responseId,
+                isControlGroup: false,
+                effectiveFaderValues: {
+                    riskTolerance: 10,
+                    brevity: 20,
+                    directness: 30,
+                    formality: 40,
+                    reasoningTransparency: 50,
+                },
+                measurementStatus: 'recorded' as const,
+            },
+        }));
+        const service = new AgentService(finalizer);
+        (
+            service as unknown as {
+                getStore: () => Promise<{ getState: () => typeof state }>;
+            }
+        ).getStore = vi.fn(async () => ({ getState: () => state }));
+
+        await (
+            service as unknown as {
+                executeFlow: (
+                    text: string,
+                    attachments: undefined,
+                    context: AgentContext,
+                    responseId: string,
+                ) => Promise<void>;
+            }
+        ).executeFlow('Should I sign this agreement?', undefined, {}, 'response-direct');
+
+        expect(finalizer).toHaveBeenCalledWith(expect.objectContaining({
+            agentId: 'legal',
+            question: 'Should I sign this agreement?',
+            responseId: 'response-direct',
+            response: expect.objectContaining({ text: 'legal response' }),
+        }));
+        expect(messages[0]).toMatchObject({
+            text: 'Contract Reader styled response',
+            metadata: {
+                existing: 'preserved',
+                personaResponse: {
+                    personaId: 'contractReader',
+                    responseId: 'response-direct',
+                    isControlGroup: false,
+                },
+            },
+        });
+    });
+
+    it('finalizes a department-head response through the same production seam', async () => {
+        const messages = [{ id: 'response-department', role: 'model', text: '', timestamp: Date.now() }];
+        const state = {
+            conversationMode: 'department',
+            activeDepartmentId: 'finance',
+            agentHistory: messages,
+            updateAgentMessage: vi.fn((id: string, update: Record<string, unknown>) => {
+                const message = messages.find(entry => entry.id === id);
+                if (message) Object.assign(message, update);
+            }),
+        };
+        const finalizer = vi.fn(async ({ response }: { response: { text: string } }) => ({ text: `styled ${response.text}` }));
+        const service = new AgentService(finalizer);
+        (service as unknown as { getStore: () => Promise<{ getState: () => typeof state }> }).getStore =
+            vi.fn(async () => ({ getState: () => state }));
+
+        await (service as unknown as {
+            executeFlow: (text: string, attachments: undefined, context: AgentContext, responseId: string) => Promise<void>;
+        }).executeFlow('Review my budget.', undefined, {}, 'response-department');
+
+        expect(finalizer).toHaveBeenCalledWith(expect.objectContaining({
+            agentId: 'finance',
+            question: 'Review my budget.',
+            responseId: 'response-department',
+        }));
+        expect(messages[0]?.text).toBe('styled finance response');
+    });
+
+    it('finalizes an orchestrated single-specialist response through the same production seam', async () => {
+        const messages = [{ id: 'response-orchestrated', role: 'model', text: '', timestamp: Date.now() }];
+        const state = {
+            conversationMode: 'focus',
+            activeSessionId: null,
+            currentProjectId: null,
+            agentHistory: messages,
+            updateAgentMessage: vi.fn((id: string, update: Record<string, unknown>) => {
+                const message = messages.find(entry => entry.id === id);
+                if (message) Object.assign(message, update);
+            }),
+        };
+        const finalizer = vi.fn(async ({ response }: { response: { text: string } }) => ({ text: `styled ${response.text}` }));
+        const service = new AgentService(finalizer);
+        (service as unknown as { getStore: () => Promise<{ getState: () => typeof state }> }).getStore =
+            vi.fn(async () => ({ getState: () => state }));
+        (service as unknown as { orchestrator: { determineOrchestrationPath: ReturnType<typeof vi.fn> } }).orchestrator = {
+            determineOrchestrationPath: vi.fn().mockResolvedValue({
+                type: 'single',
+                agentId: 'publicist',
+                reasoning: 'Press question',
+            }),
+        };
+
+        await (service as unknown as {
+            executeFlow: (text: string, attachments: undefined, context: AgentContext, responseId: string) => Promise<void>;
+        }).executeFlow('Draft my press angle.', undefined, {}, 'response-orchestrated');
+
+        expect(finalizer).toHaveBeenCalledWith(expect.objectContaining({
+            agentId: 'publicist',
+            question: 'Draft my press angle.',
+            responseId: 'response-orchestrated',
+        }));
+        expect(messages[0]?.text).toBe('styled publicist response');
+    });
+
+    it('persists a failed telemetry status without discarding the displayed response', async () => {
+        const messages = [{ id: 'response-telemetry', role: 'model', text: '', timestamp: Date.now() }];
+        const state = {
+            conversationMode: 'direct',
+            directTargetAgentId: 'legal',
+            activeAgentProvider: 'agents',
+            agentHistory: messages,
+            updateAgentMessage: vi.fn((id: string, update: Record<string, unknown>) => {
+                const message = messages.find(entry => entry.id === id);
+                if (message) Object.assign(message, update);
+            }),
+        };
+        const finalizer = vi.fn(async ({ responseId }: { responseId: string }) => ({
+            text: 'Displayed despite telemetry failure',
+            tracking: {
+                personaId: 'contractReader' as const,
+                responseId,
+                isControlGroup: true,
+                effectiveFaderValues: {
+                    riskTolerance: 50,
+                    brevity: 50,
+                    directness: 50,
+                    formality: 50,
+                    reasoningTransparency: 50,
+                },
+                measurementStatus: 'pending' as const,
+            },
+            measurementRecorded: Promise.resolve(false),
+        }));
+        const service = new AgentService(finalizer);
+        (service as unknown as { getStore: () => Promise<{ getState: () => typeof state }> }).getStore =
+            vi.fn(async () => ({ getState: () => state }));
+
+        await (service as unknown as {
+            executeFlow: (text: string, attachments: undefined, context: AgentContext, responseId: string) => Promise<void>;
+        }).executeFlow('Review this.', undefined, {}, 'response-telemetry');
+        await vi.waitFor(() => {
+            expect(messages[0]).toMatchObject({
+                text: 'Displayed despite telemetry failure',
+                metadata: {
+                    personaResponse: {
+                        responseId: 'response-telemetry',
+                        isControlGroup: true,
+                        measurementStatus: 'failed',
+                    },
+                },
+            });
+        });
+    });
+
+    it('refuses to cache a personalized response whose assignment is bound to one response ID', () => {
+        const service = new AgentService(async ({ response }) => ({ text: response.text }));
+        const shouldCache = (service as unknown as {
+            shouldCacheCompletedResponse: (isGeneration: boolean, message: Record<string, unknown>) => boolean;
+        }).shouldCacheCompletedResponse.bind(service);
+
+        expect(shouldCache(false, {
+            id: 'response-cache',
+            role: 'model',
+            text: 'Personalized response',
+            timestamp: Date.now(),
+            metadata: {
+                personaResponse: {
+                    personaId: 'manager',
+                    responseId: 'response-cache',
+                    isControlGroup: false,
+                    effectiveFaderValues: {
+                        riskTolerance: 50,
+                        brevity: 50,
+                        directness: 50,
+                        formality: 50,
+                        reasoningTransparency: 50,
+                    },
+                    measurementStatus: 'recorded',
+                },
+            },
+        })).toBe(false);
+        expect(shouldCache(false, {
+            id: 'ordinary-cache',
+            role: 'model',
+            text: 'Ordinary response',
+            timestamp: Date.now(),
+        })).toBe(true);
+    });
+
+    it('sends a tool-backed specialist result through the production finalizer without altering artifacts', async () => {
+        const messages = [{ id: 'response-tool', role: 'model', text: '', timestamp: Date.now() }];
+        const state = {
+            conversationMode: 'direct',
+            directTargetAgentId: 'legal',
+            activeAgentProvider: 'agents',
+            agentHistory: messages,
+            updateAgentMessage: vi.fn((id: string, update: Record<string, unknown>) => {
+                const message = messages.find(entry => entry.id === id);
+                if (message) Object.assign(message, update);
+            }),
+        };
+        const service = new AgentService();
+        (service as unknown as { getStore: () => Promise<{ getState: () => typeof state }> }).getStore =
+            vi.fn(async () => ({ getState: () => state }));
+
+        await (service as unknown as {
+            executeFlow: (text: string, attachments: undefined, context: AgentContext, responseId: string) => Promise<void>;
+        }).executeFlow('tool-backed request', undefined, {}, 'response-tool');
+
+        expect(messages[0]).toMatchObject({
+            text: 'legal tool response',
+        });
+        expect(messages[0]).not.toHaveProperty('metadata.personaResponse');
+    });
+
+    it('finalizes the provider-backed direct chat path used by the generalist', async () => {
+        const messages = [{ id: 'response-provider', role: 'model', text: '', timestamp: Date.now() }];
+        const state = {
+            conversationMode: 'direct',
+            directTargetAgentId: 'generalist',
+            activeAgentProvider: 'direct',
+            agentHistory: messages,
+            isKnowledgeBaseEnabled: false,
+            updateAgentMessage: vi.fn((id: string, update: Record<string, unknown>) => {
+                const message = messages.find(entry => entry.id === id);
+                if (message) Object.assign(message, update);
+            }),
+        };
+        const stream = new ReadableStream({
+            start(controller) {
+                controller.enqueue({ text: () => 'Provider response' });
+                controller.close();
+            },
+        });
+        vi.mocked(AutonomousIntelligence.generateContentStream).mockResolvedValue({ stream } as never);
+        const finalizer = vi.fn(async ({ response }: { response: { text: string } }) => ({
+            text: `styled ${response.text}`,
+        }));
+        const service = new AgentService(finalizer);
+        (service as unknown as { getStore: () => Promise<{ getState: () => typeof state }> }).getStore =
+            vi.fn(async () => ({ getState: () => state }));
+
+        await (service as unknown as {
+            executeFlow: (text: string, attachments: undefined, context: AgentContext, responseId: string) => Promise<void>;
+        }).executeFlow('Help me prioritize.', undefined, {}, 'response-provider');
+
+        expect(finalizer).toHaveBeenCalledWith(expect.objectContaining({
+            agentId: 'generalist',
+            question: 'Help me prioritize.',
+            responseId: 'response-provider',
+            response: expect.objectContaining({ text: 'Provider response', toolCalls: [] }),
+        }));
+        expect(messages[0]?.text).toBe('styled Provider response');
     });
 });
