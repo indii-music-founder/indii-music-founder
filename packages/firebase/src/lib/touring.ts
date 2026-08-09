@@ -3,62 +3,50 @@ import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { z } from "zod";
 import { Client } from "@googlemaps/google-maps-services-js";
 import { googleMapsApiKey } from "../config/secrets";
-import { getVertexAIClient } from "./vertexClient";
-
-/**
- * Helper for Vertex AI calls. Credentials come from the function runtime's
- * Application Default Credentials, never a Gemini Developer API key.
- */
-async function generateWithGemini(prompt: string, schema = false): Promise<Record<string, unknown> | string> {
-    const modelId = "gemini-2.5-pro";
-    const response = await getVertexAIClient().models.generateContent({
-        model: modelId,
-        contents: [{ role: "user", parts: [{ text: prompt }] }],
-        config: schema ? { responseMimeType: "application/json" } : undefined,
-    });
-    const text = response.text;
-    if (!text) throw new Error("No content returned from Gemini");
-
-    try {
-        if (!schema) return text;
-        // Clean up markdown code blocks if present
-        let jsonStr = text;
-        const match = text.match(/```json\s*([\s\S]*?)\s*```/);
-        if (match) {
-            jsonStr = match[1];
-        } else {
-            const startIdx = text.indexOf('{');
-            const endIdx = text.lastIndexOf('}');
-            if (startIdx !== -1 && endIdx !== -1 && endIdx > startIdx) {
-                jsonStr = text.substring(startIdx, endIdx + 1);
-            }
-        }
-        return JSON.parse(jsonStr.trim()) as Record<string, unknown>;
-    } catch (_e) {
-        console.error("Failed to parse JSON from Gemini:", text);
-        throw new Error("Invalid JSON response from AI");
-    }
-}
 
 // ----------------------------------------------------------------------------
 // Validation Schemas
 // ----------------------------------------------------------------------------
 
+const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+function isValidDateOnly(value: string): boolean {
+    if (!DATE_ONLY_PATTERN.test(value)) return false;
+    const [year, month, day] = value.split('-').map(Number);
+    const parsed = new Date(Date.UTC(year, month - 1, day));
+    return parsed.getUTCFullYear() === year
+        && parsed.getUTCMonth() === month - 1
+        && parsed.getUTCDate() === day;
+}
+
+const DateOnlySchema = z.string()
+    .regex(DATE_ONLY_PATTERN, "Date must use YYYY-MM-DD")
+    .refine(isValidDateOnly, "Date must be a valid calendar date");
+
 const ItineraryRequestSchema = z.object({
-    locations: z.array(z.string()).min(1),
+    locations: z.array(z.string().trim().min(1).max(120)).min(1).max(50),
     dates: z.object({
-        start: z.string(),
-        end: z.string()
-    })
+        start: DateOnlySchema,
+        end: DateOnlySchema
+    }).strict()
+}).strict().superRefine(({ dates }, context) => {
+    if (dates.start > dates.end) {
+        context.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ['dates', 'end'],
+            message: "End date must be on or after start date",
+        });
+    }
 });
 
-const LogisticsCheckSchema = z.object({
+const ScheduleCheckSchema = z.object({
     itinerary: z.object({
         stops: z.array(z.object({
-            city: z.string(),
-            date: z.string(),
-            venue: z.string().optional()
-        }))
+            city: z.string().trim().min(1).max(120),
+            date: DateOnlySchema,
+            venue: z.string().max(200).optional()
+        })).min(1).max(200)
     })
 });
 
@@ -67,6 +55,123 @@ const FindPlacesSchema = z.object({
     type: z.string().optional().default('gas_station'),
     radius: z.number().optional().default(5000) // meters
 });
+
+export interface RouteDraft {
+    status: 'route_draft';
+    authority: 'user_inputs_only';
+    stops: Array<{
+        city: string;
+        date: string;
+        venue: '';
+        activity: 'Planning';
+        type: 'Planning';
+        notes: '';
+    }>;
+    limitations: string[];
+}
+
+export interface ScheduleReview {
+    scope: 'schedule_only';
+    hasConflicts: boolean;
+    issues: string[];
+    suggestions: string[];
+    summary: string;
+    limitations: string[];
+}
+
+function parseDateOnlyUtc(value: string): Date {
+    const [year, month, day] = value.split('-').map(Number);
+    return new Date(Date.UTC(year, month - 1, day));
+}
+
+function formatDateOnlyUtc(value: Date): string {
+    return [
+        value.getUTCFullYear(),
+        String(value.getUTCMonth() + 1).padStart(2, '0'),
+        String(value.getUTCDate()).padStart(2, '0'),
+    ].join('-');
+}
+
+/** Builds a draft from user inputs without inventing route or venue facts. */
+export function compileRouteDraft(input: unknown): RouteDraft {
+    const { locations, dates } = ItineraryRequestSchema.parse(input);
+    const start = parseDateOnlyUtc(dates.start);
+    const durationDays = Math.round((parseDateOnlyUtc(dates.end).getTime() - start.getTime()) / DAY_MS);
+    const stops = locations.map((city, index) => {
+        const dayOffset = locations.length === 1
+            ? 0
+            : Math.round((index * durationDays) / (locations.length - 1));
+        return {
+            city,
+            date: formatDateOnlyUtc(new Date(start.getTime() + dayOffset * DAY_MS)),
+            venue: '' as const,
+            activity: 'Planning' as const,
+            type: 'Planning' as const,
+            notes: '' as const,
+        };
+    });
+
+    return {
+        status: 'route_draft',
+        authority: 'user_inputs_only',
+        stops,
+        limitations: [
+            'Waypoints remain in the order entered by the user.',
+            'Road routing, distance, drive time, traffic, venue availability, and budget are not calculated.',
+        ],
+    };
+}
+
+/** Reviews saved dates only; it is not an operational-feasibility verdict. */
+export function reviewSchedule(input: unknown): ScheduleReview {
+    const { itinerary } = ScheduleCheckSchema.parse(input);
+    const issues: string[] = [];
+    let hasDateOrderConflict = false;
+    let hasSameDayCityConflict = false;
+
+    itinerary.stops.forEach((stop, index) => {
+        const previous = itinerary.stops[index - 1];
+        if (previous && stop.date < previous.date) {
+            hasDateOrderConflict = true;
+            issues.push(`Stop ${index + 1} (${stop.city}) is dated before stop ${index} (${previous.city}).`);
+        }
+    });
+
+    const citiesByDate = new Map<string, Map<string, string>>();
+    itinerary.stops.forEach((stop) => {
+        const cities = citiesByDate.get(stop.date) ?? new Map<string, string>();
+        cities.set(stop.city.toLowerCase(), stop.city);
+        citiesByDate.set(stop.date, cities);
+    });
+    citiesByDate.forEach((cities, date) => {
+        if (cities.size > 1) {
+            hasSameDayCityConflict = true;
+            issues.push(`${date} contains stops in multiple cities: ${Array.from(cities.values()).join(', ')}.`);
+        }
+    });
+
+    const suggestions: string[] = [];
+    if (hasDateOrderConflict) {
+        suggestions.push('Reorder the stops or correct their dates so the schedule is chronological.');
+    }
+    if (hasSameDayCityConflict) {
+        suggestions.push('Confirm same-day multi-city plans or assign the stops to different dates.');
+    }
+
+    return {
+        scope: 'schedule_only',
+        hasConflicts: issues.length > 0,
+        issues,
+        suggestions,
+        summary: issues.length > 0
+            ? `${issues.length} schedule conflict${issues.length === 1 ? '' : 's'} found within the limited check scope.`
+            : 'No date-order or same-day multi-city conflicts were found within the limited check scope.',
+        limitations: [
+            'This check covers date order and same-day multi-city conflicts only.',
+            'Road distance, drive time, traffic, venue availability, staffing, and operational feasibility are not verified.',
+        ],
+    };
+}
 
 // ----------------------------------------------------------------------------
 // Cloud Functions
@@ -82,40 +187,7 @@ export const generateItinerary = onCall(
             throw new HttpsError("invalid-argument", validation.error.message);
         }
 
-        const { locations, dates } = validation.data;
-
-        // Use AI to generate a sensible itinerary order and details
-        const prompt = `
-        You are an expert Tour Manager. Create a logical tour itinerary.
-
-        Inputs:
-        - Locations to visit: ${locations.join(", ")}
-        - Start Date: ${dates.start}
-        - End Date: ${dates.end}
-
-        Requirements:
-        1. Order the locations logically to minimize travel time.
-        2. Assign dates to each stop.
-        3. Suggest a realistic venue for a band/artist in each city.
-        4. Include "Travel Day" if distances are long.
-        5. Set both "activity" and "type" fields to the same action value (e.g. "Show", "Travel", "Day Off").
-
-        Return JSON format:
-        {
-            "stops": [
-                { "city": "City, State", "date": "YYYY-MM-DD", "venue": "Venue Name", "activity": "Show", "type": "Show" }
-            ],
-            "totalDistanceMiles": number,
-            "estimatedDurationDays": number
-        }
-        `;
-
-        try {
-            const itinerary = await generateWithGemini(prompt, true);
-            return itinerary;
-        } catch (error: unknown) {
-            throw new HttpsError("internal", (error as Error).message);
-        }
+        return compileRouteDraft(validation.data);
     },
 );
 
@@ -124,37 +196,12 @@ export const checkLogistics = onCall(
     async (request) => {
         if (!request.auth) throw new HttpsError("unauthenticated", "Auth required");
 
-        const validation = LogisticsCheckSchema.safeParse(request.data);
+        const validation = ScheduleCheckSchema.safeParse(request.data);
         if (!validation.success) {
             throw new HttpsError("invalid-argument", validation.error.message);
         }
 
-        const { itinerary } = validation.data;
-
-        // Use AI to analyze the schedule for feasibility
-        const prompt = `
-        Analyze this tour itinerary for logistical feasibility.
-        Itinerary: ${JSON.stringify(itinerary)}
-
-        Check for:
-        1. Unrealistic drive times between consecutive dates.
-        2. Missing travel days for long distances (> 400 miles).
-        3. Routing efficiency issues.
-
-        Return JSON:
-        {
-            "isFeasible": boolean,
-            "issues": string[],     // List specific problems (e.g. "Drive from A to B is 10 hours, but dates are consecutive")
-            "suggestions": string[] // actionable fixes
-        }
-        `;
-
-        try {
-            const report = await generateWithGemini(prompt, true);
-            return report;
-        } catch (error: unknown) {
-            throw new HttpsError("internal", (error as Error).message);
-        }
+        return reviewSchedule(validation.data);
     },
 );
 

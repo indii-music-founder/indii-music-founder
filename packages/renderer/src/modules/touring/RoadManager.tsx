@@ -10,7 +10,7 @@ import { PlanningTab } from './components/PlanningTab';
 import { OnTheRoadTab } from './components/OnTheRoadTab';
 import { TourBookTab } from './components/TourBookTab';
 import { useTouring } from './hooks/useTouring';
-import { Itinerary, ItineraryStop, NearbyPlace, LogisticsReport, EmergencyContact } from './types';
+import { Itinerary, ItineraryStop, NearbyPlace, ScheduleReview, EmergencyContact } from './types';
 
 import { RoadMode } from './components/RoadMode';
 import { useMobile } from '@/hooks/useMobile';
@@ -27,6 +27,59 @@ interface EmergencyContactsPanelProps {
     contacts: EmergencyContact[];
     onSave: (contact: { id?: string; name: string; phone: string; relationship: string }) => Promise<void>;
     onDelete: (id: string) => Promise<void>;
+}
+
+interface RouteDraftResponse {
+    status: 'route_draft';
+    authority: 'user_inputs_only';
+    stops: Array<{
+        city: string;
+        date: string;
+        venue: '';
+        activity: 'Planning';
+        type: 'Planning';
+        notes: '';
+    }>;
+    limitations: string[];
+}
+
+const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+
+function isStringArray(value: unknown): value is string[] {
+    return Array.isArray(value) && value.every(item => typeof item === 'string');
+}
+
+function isRouteDraftResponse(value: unknown): value is RouteDraftResponse {
+    if (!value || typeof value !== 'object') return false;
+    const draft = value as Record<string, unknown>;
+    return draft.status === 'route_draft'
+        && draft.authority === 'user_inputs_only'
+        && isStringArray(draft.limitations)
+        && Array.isArray(draft.stops)
+        && draft.stops.length > 0
+        && draft.stops.every((stop) => {
+            if (!stop || typeof stop !== 'object') return false;
+            const candidate = stop as Record<string, unknown>;
+            return typeof candidate.city === 'string'
+                && candidate.city.length > 0
+                && typeof candidate.date === 'string'
+                && DATE_ONLY_PATTERN.test(candidate.date)
+                && candidate.venue === ''
+                && candidate.activity === 'Planning'
+                && candidate.type === 'Planning'
+                && candidate.notes === '';
+        });
+}
+
+function isScheduleReview(value: unknown): value is ScheduleReview {
+    if (!value || typeof value !== 'object') return false;
+    const review = value as Record<string, unknown>;
+    return review.scope === 'schedule_only'
+        && typeof review.hasConflicts === 'boolean'
+        && isStringArray(review.issues)
+        && isStringArray(review.suggestions)
+        && typeof review.summary === 'string'
+        && isStringArray(review.limitations);
 }
 
 function EmergencyContactsPanel({ contacts, onSave, onDelete }: EmergencyContactsPanelProps) {
@@ -221,8 +274,6 @@ const RoadManager: React.FC = () => {
         emergencyContacts,
         saveEmergencyContact,
         deleteEmergencyContact,
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        loading: touringLoading
     } = useTouring();
     const pendingTouringHandoff = useStore(state => state.pendingHandoffs.touring);
 
@@ -231,7 +282,7 @@ const RoadManager: React.FC = () => {
     const [newLocation, setNewLocation] = useState('');
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
-    const [isGenerating, setIsGenerating] = useState(false);
+    const [isSavingRouteDraft, setIsSavingRouteDraft] = useState(false);
 
     // Feature Tabs
     const [activeTab, setActiveTab] = useState<TouringTab>('plan');
@@ -244,9 +295,8 @@ const RoadManager: React.FC = () => {
         }
     }, [activeTab, pendingTouringHandoff]);
 
-    // Logistics State
-    const [isCheckingLogistics, setIsCheckingLogistics] = useState(false);
-    const [logisticsReport, setLogisticsReport] = useState<LogisticsReport | null>(null);
+    const [isCheckingSchedule, setIsCheckingSchedule] = useState(false);
+    const [scheduleReview, setScheduleReview] = useState<ScheduleReview | null>(null);
 
     // On the Road State
     const [currentLocation, setCurrentLocation] = useState('');
@@ -289,64 +339,77 @@ const RoadManager: React.FC = () => {
         setLocations(locations.filter((_, i) => i !== index));
     };
 
-    const handleGenerateItinerary = async () => {
+    const handleSaveRouteDraft = async () => {
         if (locations.length === 0 || !startDate || !endDate) {
             toast.error("Please provide locations and dates.");
             return;
         }
+        if (startDate > endDate) {
+            toast.error("End date must be on or after the start date.");
+            return;
+        }
 
-        setIsGenerating(true);
-        // setItinerary(null); // Managed by hook now
-        setLogisticsReport(null);
+        setIsSavingRouteDraft(true);
+        setScheduleReview(null);
 
         try {
-            const generateItinerary = httpsCallable(functions, 'generateItinerary');
-            const response = await generateItinerary({ locations, dates: { start: startDate, end: endDate } });
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const rawResult = response.data as any;
+            const compileRouteDraft = httpsCallable(functions, 'generateItinerary');
+            const response = await compileRouteDraft({ locations, dates: { start: startDate, end: endDate } });
+            if (!isRouteDraftResponse(response.data)) {
+                throw new Error('Route draft service returned an unsupported response');
+            }
+            const draftMatchesInputs = response.data.stops.length === locations.length
+                && response.data.stops.every((stop, index) => (
+                    stop.city === locations[index]
+                    && stop.date >= startDate
+                    && stop.date <= endDate
+                ));
+            if (!draftMatchesInputs) {
+                throw new Error('Route draft service changed the submitted waypoints or date range');
+            }
 
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const mappedStops: ItineraryStop[] = (rawResult.stops || []).map((stop: any) => ({
+            const mappedStops: ItineraryStop[] = response.data.stops.map((stop) => ({
                 id: createTouringStopId(),
-                city: stop.city || '',
-                date: stop.date || '',
-                venue: stop.venue || '',
-                activity: stop.activity || '',
-                type: stop.type || 'Travel',
-                notes: stop.notes || '',
+                city: stop.city,
+                date: stop.date,
+                venue: stop.venue,
+                activity: stop.activity,
+                type: stop.type,
+                notes: stop.notes,
             }));
 
             await saveItinerary({
                 stops: mappedStops,
-                totalDistance: rawResult.totalDistanceMiles ? `${rawResult.totalDistanceMiles} miles` : '0 miles',
-                estimatedBudget: rawResult.estimatedBudget != null ? String(rawResult.estimatedBudget) : undefined,
-                tourName: `Tour ${startDate} - ${locations[0]}`
+                totalDistance: 'Not calculated',
+                tourName: `Route draft ${startDate} - ${locations[0]}`
             });
 
-            toast.success("Itinerary generated and saved");
+            toast.success("Route draft saved");
         } catch (error: unknown) {
-            logger.error("Itinerary Generation Failed:", error);
-            toast.error("Failed to generate itinerary");
+            logger.error("Route Draft Save Failed:", error);
+            toast.error("Failed to save route draft");
         } finally {
-            setIsGenerating(false);
+            setIsSavingRouteDraft(false);
         }
     };
 
-    const handleCheckLogistics = async () => {
+    const handleCheckSchedule = async () => {
         if (!itinerary) return;
 
-        setIsCheckingLogistics(true);
+        setIsCheckingSchedule(true);
         try {
-            const checkLogistics = httpsCallable(functions, 'checkLogistics');
-            const response = await checkLogistics({ itinerary });
-            const result = response.data as LogisticsReport;
-            setLogisticsReport(result);
-            toast.success("Logistics check complete");
+            const checkSchedule = httpsCallable(functions, 'checkLogistics');
+            const response = await checkSchedule({ itinerary });
+            if (!isScheduleReview(response.data)) {
+                throw new Error('Schedule check service returned an unsupported response');
+            }
+            setScheduleReview(response.data);
+            toast.success("Schedule check complete");
         } catch (error: unknown) {
-            logger.error("Logistics Check Failed:", error);
-            toast.error("Failed to check logistics");
+            logger.error("Schedule Check Failed:", error);
+            toast.error("Failed to check schedule");
         } finally {
-            setIsCheckingLogistics(false);
+            setIsCheckingSchedule(false);
         }
     };
 
@@ -443,12 +506,12 @@ const RoadManager: React.FC = () => {
                                                 setNewLocation={setNewLocation}
                                                 handleAddLocation={handleAddLocation}
                                                 handleRemoveLocation={handleRemoveLocation}
-                                                handleGenerateItinerary={handleGenerateItinerary}
-                                                isGenerating={isGenerating}
+                                                handleSaveRouteDraft={handleSaveRouteDraft}
+                                                isSavingRouteDraft={isSavingRouteDraft}
                                                 itinerary={itinerary}
-                                                handleCheckLogistics={handleCheckLogistics}
-                                                isCheckingLogistics={isCheckingLogistics}
-                                                logisticsReport={logisticsReport}
+                                                handleCheckSchedule={handleCheckSchedule}
+                                                isCheckingSchedule={isCheckingSchedule}
+                                                scheduleReview={scheduleReview}
                                                 onUpdateStop={handleUpdateStop}
                                             />
                                         </div>

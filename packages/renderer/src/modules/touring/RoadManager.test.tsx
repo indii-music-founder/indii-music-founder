@@ -1,18 +1,23 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import RoadManager from './RoadManager';
 import { useTouring } from './hooks/useTouring';
 
-// Mock Toast
-vi.mock('@/core/context/ToastContext', () => ({
-    useToast: () => ({
-        success: vi.fn(),
+const mocks = vi.hoisted(() => ({
+    toast: { success: vi.fn(), error: vi.fn(), info: vi.fn() },
+    compileRouteDraft: vi.fn(),
+    checkSchedule: vi.fn(),
+    findPlaces: vi.fn(),
+    logger: {
         error: vi.fn(),
+        warn: vi.fn(),
         info: vi.fn(),
-    }),
+        debug: vi.fn(),
+    },
 }));
 
-// Mock Firebase Functions
+vi.mock('@/core/context/ToastContext', () => ({ useToast: () => mocks.toast }));
 vi.mock('@/services/firebase', () => ({
     functions: {},
     auth: { currentUser: { uid: 'test-user' } },
@@ -23,280 +28,235 @@ vi.mock('@/services/firebase', () => ({
     messaging: {},
     appCheck: {},
     functionsWest1: { region: vi.fn(() => ({ httpsCallable: vi.fn() })) },
-    getFirebaseAI: vi.fn(() => ({}))
+    getFirebaseAI: vi.fn(() => ({})),
 }));
-
-// Mock useTouring hook
-vi.mock('./hooks/useTouring', () => ({
-    useTouring: vi.fn(),
+vi.mock('./hooks/useTouring', () => ({ useTouring: vi.fn() }));
+vi.mock('./components/TourMap', () => ({ TourMap: () => <div data-testid="tour-map" /> }));
+vi.mock('./components/TourRouteOptimizer', () => ({
+    TourRouteOptimizer: () => <div data-testid="tour-route-optimizer" />,
 }));
-
-// Mock Zustand store
+vi.mock('@/utils/logger', () => ({ logger: mocks.logger }));
 vi.mock('@/core/store', () => ({
-    useStore: vi.fn((selector) => selector({
+    useStore: vi.fn((selector: (state: {
+        pendingHandoffs: { touring: null };
+        setModule: ReturnType<typeof vi.fn>;
+        currentProjectId: string;
+    }) => unknown) => selector({
         pendingHandoffs: { touring: null },
         setModule: vi.fn(),
         currentProjectId: 'test-project',
     })),
 }));
+vi.mock('firebase/functions', () => ({
+    getFunctions: vi.fn(() => ({})),
+    httpsCallable: (_functionsInstance: unknown, name: string) => {
+        if (name === 'generateItinerary') return mocks.compileRouteDraft;
+        if (name === 'checkLogistics') return mocks.checkSchedule;
+        if (name === 'findPlaces') return mocks.findPlaces;
+        throw new Error(`Unexpected callable: ${name}`);
+    },
+}));
 
-const setupTouringMock = (overrides: any = {}) => {
-    const defaultValues = {
+type TouringHookResult = ReturnType<typeof useTouring>;
+
+function setupTouringMock(overrides: Partial<TouringHookResult> = {}) {
+    const defaults: TouringHookResult = {
         itineraries: [],
         currentItinerary: null,
         setCurrentItinerary: vi.fn(),
         saveItinerary: vi.fn().mockResolvedValue(undefined),
-        updateItineraryStop: vi.fn(),
-        vehicleStats: {
-            userId: 'test-user',
-            milesDriven: 100,
-            fuelLevelPercent: 75,
-            tankSizeGallons: 20,
-            mpg: 15,
-            gasPricePerGallon: 4.00
-        },
-        saveVehicleStats: vi.fn().mockResolvedValue(undefined),
+        updateItineraryStop: vi.fn().mockResolvedValue(undefined),
         emergencyContacts: [],
         saveEmergencyContact: vi.fn().mockResolvedValue(undefined),
         deleteEmergencyContact: vi.fn().mockResolvedValue(undefined),
-        pendingHandoffs: {},
         loading: false,
     };
-    vi.mocked(useTouring).mockReturnValue({ ...defaultValues, ...overrides } as any);
-};
+    vi.mocked(useTouring).mockReturnValue({ ...defaults, ...overrides });
+}
 
-vi.mock('firebase/functions', () => ({
-    getFunctions: vi.fn(() => ({})),
-    httpsCallable: (functionsInstance: unknown, name: string) => {
-        console.log(`Mock httpsCallable called for: ${name}`);
-        return vi.fn().mockImplementation(async (data) => {
-            console.log(`Mock function executed for ${name} with data:`, data);
-            if (name === 'generateItinerary') {
-                return {
-                    data: {
-                        tourName: 'Test Tour',
-                        stops: [
-                            {
-                                date: '2023-10-01',
-                                city: 'New York',
-                                venue: 'MSG',
-                                activity: 'Show',
-                                notes: 'Sold out'
-                            }
-                        ],
-                        totalDistance: '1000 km',
-                        estimatedBudget: '$50000'
-                    }
-                };
-            }
-            if (name === 'checkLogistics') {
-                return {
-                    data: {
-                        isFeasible: true,
-                        issues: [],
-                        suggestions: ['Looks good']
-                    }
-                };
-            }
-            return { data: {} };
-        });
-    },
-}));
+function enterRoute() {
+    fireEvent.change(screen.getByLabelText('Start Date'), { target: { value: '2023-10-01' } });
+    fireEvent.change(screen.getByLabelText('End Date'), { target: { value: '2023-10-10' } });
+    fireEvent.change(screen.getByLabelText('Route Waypoints'), { target: { value: 'New York' } });
+    fireEvent.click(screen.getByLabelText('Add location'));
+}
+
+function getEnabledSaveDraftButton(): HTMLButtonElement {
+    const button = screen.getAllByRole('button', { name: 'Save Route Draft' })
+        .find(candidate => !candidate.hasAttribute('disabled'));
+    expect(button).toBeDefined();
+    return button as HTMLButtonElement;
+}
 
 describe('RoadManager', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        mocks.compileRouteDraft.mockResolvedValue({
+            data: {
+                status: 'route_draft',
+                authority: 'user_inputs_only',
+                stops: [{
+                    date: '2023-10-01',
+                    city: 'New York',
+                    venue: '',
+                    activity: 'Planning',
+                    type: 'Planning',
+                    notes: '',
+                }],
+                limitations: [
+                    'Waypoints remain in the order entered by the user.',
+                    'Road routing, distance, drive time, traffic, venue availability, and budget are not calculated.',
+                ],
+            },
+        });
+        mocks.checkSchedule.mockResolvedValue({
+            data: {
+                scope: 'schedule_only',
+                hasConflicts: false,
+                issues: [],
+                suggestions: [],
+                summary: 'No date-order or same-day multi-city conflicts were found within the limited check scope.',
+                limitations: [
+                    'This check covers date order and same-day multi-city conflicts only.',
+                    'Road distance, drive time, traffic, venue availability, staffing, and operational feasibility are not verified.',
+                ],
+            },
+        });
+        mocks.findPlaces.mockResolvedValue({ data: { places: [] } });
         setupTouringMock();
     });
 
-    it('renders input fields', () => {
+    it('renders route inputs', () => {
         render(<RoadManager />);
         expect(screen.getByText('Tour Parameters')).toBeInTheDocument();
         expect(screen.getByLabelText('Route Waypoints')).toBeInTheDocument();
     });
 
-    it('allows adding and removing locations', async () => {
+    it('adds and removes locations', async () => {
         render(<RoadManager />);
-        const input = screen.getByLabelText('Route Waypoints');
-        const addButton = screen.getByLabelText('Add location');
+        fireEvent.change(screen.getByLabelText('Route Waypoints'), { target: { value: 'New York' } });
+        fireEvent.click(screen.getByLabelText('Add location'));
+        fireEvent.click(screen.getByLabelText('Remove New York'));
+        await waitFor(() => expect(screen.queryByLabelText('Remove New York')).not.toBeInTheDocument());
+    });
 
-        fireEvent.change(input, { target: { value: 'New York' } });
-        fireEvent.click(addButton);
-
-        expect(screen.getByLabelText('Remove New York')).toBeInTheDocument();
-
-        // Remove location
-        const removeButton = screen.getByLabelText('Remove New York');
-        fireEvent.click(removeButton);
-
-        await waitFor(() => {
-            expect(screen.queryByLabelText('Remove New York')).not.toBeInTheDocument();
+    it('parses comma-separated waypoints while retaining state abbreviations', () => {
+        render(<RoadManager />);
+        fireEvent.change(screen.getByLabelText('Route Waypoints'), {
+            target: { value: 'Austin, TX, Orlando, Knoxville' },
         });
-    });
-
-    it('parses and splits comma-separated waypoint list', async () => {
-        render(<RoadManager />);
-        const input = screen.getByLabelText('Route Waypoints');
-        const addButton = screen.getByLabelText('Add location');
-
-        fireEvent.change(input, { target: { value: 'detroit, orlando, knoxville' } });
-        fireEvent.click(addButton);
-
-        expect(screen.getByText('detroit')).toBeInTheDocument();
-        expect(screen.getByText('orlando')).toBeInTheDocument();
-        expect(screen.getByText('knoxville')).toBeInTheDocument();
-    });
-
-    it('retains city and state abbreviation as a single waypoint', async () => {
-        render(<RoadManager />);
-        const input = screen.getByLabelText('Route Waypoints');
-        const addButton = screen.getByLabelText('Add location');
-
-        fireEvent.change(input, { target: { value: 'Austin, TX' } });
-        fireEvent.click(addButton);
-
+        fireEvent.click(screen.getByLabelText('Add location'));
         expect(screen.getByText('Austin, TX')).toBeInTheDocument();
+        expect(screen.getByText('Orlando')).toBeInTheDocument();
+        expect(screen.getByText('Knoxville')).toBeInTheDocument();
     });
 
-    it('generates itinerary when inputs are valid', async () => {
+    it('persists only the honest route-draft contract', async () => {
+        const saveItinerary = vi.fn().mockResolvedValue(undefined);
+        setupTouringMock({ saveItinerary });
+        render(<RoadManager />);
+        enterRoute();
+        fireEvent.click(getEnabledSaveDraftButton());
+
+        await waitFor(() => expect(saveItinerary).toHaveBeenCalledWith({
+            stops: [expect.objectContaining({
+                city: 'New York',
+                date: '2023-10-01',
+                venue: '',
+                activity: 'Planning',
+                type: 'Planning',
+                notes: '',
+            })],
+            totalDistance: 'Not calculated',
+            tourName: 'Route draft 2023-10-01 - New York',
+        }));
+        expect(mocks.toast.success).toHaveBeenCalledWith('Route draft saved');
+    });
+
+    it('does not report success when persistence fails', async () => {
+        setupTouringMock({ saveItinerary: vi.fn().mockRejectedValue(new Error('Firestore unavailable')) });
+        render(<RoadManager />);
+        enterRoute();
+        fireEvent.click(getEnabledSaveDraftButton());
+
+        await waitFor(() => expect(mocks.toast.error).toHaveBeenCalledWith('Failed to save route draft'));
+        expect(mocks.toast.success).not.toHaveBeenCalledWith('Route draft saved');
+    });
+
+    it('rejects a route response that changes submitted waypoints', async () => {
+        const saveItinerary = vi.fn().mockResolvedValue(undefined);
+        setupTouringMock({ saveItinerary });
+        mocks.compileRouteDraft.mockResolvedValueOnce({ data: {
+            status: 'route_draft',
+            authority: 'user_inputs_only',
+            stops: [{
+                city: 'Boston', date: '2023-10-01', venue: '',
+                activity: 'Planning', type: 'Planning', notes: '',
+            }],
+            limitations: ['No external facts were checked.'],
+        } });
+        render(<RoadManager />);
+        enterRoute();
+        fireEvent.click(getEnabledSaveDraftButton());
+
+        await waitFor(() => expect(mocks.toast.error).toHaveBeenCalledWith('Failed to save route draft'));
+        expect(saveItinerary).not.toHaveBeenCalled();
+    });
+
+    it('presents a limited schedule check without a logistics-verification claim', async () => {
+        setupTouringMock({ currentItinerary: {
+            id: 'itinerary-1',
+            userId: 'test-user',
+            tourName: 'Test Tour',
+            stops: [{
+                id: 'stop-1', date: '2023-10-01', city: 'New York', venue: 'MSG',
+                activity: 'Show', type: 'Show', notes: '', distance: 50,
+            }],
+            totalDistance: '50 miles',
+        } });
         render(<RoadManager />);
 
-        // Setup mock return
-        const saveItineraryMock = vi.fn().mockResolvedValue(undefined);
-        setupTouringMock({ saveItinerary: saveItineraryMock });
+        expect(screen.getByText('Route Draft')).toBeInTheDocument();
+        expect(screen.getByText(/Checks date order and same-day multi-city conflicts only/)).toBeInTheDocument();
+        fireEvent.click(screen.getByRole('button', { name: 'Check Schedule' }));
 
-        const startDateInput = screen.getByLabelText('Start Date');
-        const endDateInput = screen.getByLabelText('End Date');
-
-        fireEvent.change(startDateInput, { target: { value: '2023-10-01' } });
-        fireEvent.change(endDateInput, { target: { value: '2023-10-10' } });
-
-        // Add location
-        const locationInput = screen.getByLabelText('Route Waypoints');
-        fireEvent.change(locationInput, { target: { value: 'New York' } });
-        fireEvent.keyDown(locationInput, { key: 'Enter', code: 'Enter' });
-
-        // Wait for location to appear
-        await waitFor(() => {
-            expect(screen.getByLabelText('Remove New York')).toBeInTheDocument();
-        });
-
-        const generateButton = screen.getByText('Initialize Route');
-        expect(generateButton).not.toBeDisabled();
-
-        fireEvent.click(generateButton);
-
-        // Check for loading state
-        expect(screen.getByText('Calculating Route...')).toBeInTheDocument();
-
-        await waitFor(() => {
-            expect(saveItineraryMock).toHaveBeenCalled();
-        }, { timeout: 3000 });
+        await waitFor(() => expect(screen.getByText('Schedule Checked')).toBeInTheDocument());
+        expect(screen.getByText(/operational feasibility are not verified/)).toBeInTheDocument();
+        expect(screen.queryByText(/Logistics Verified/)).not.toBeInTheDocument();
     });
 
-    it('checks logistics after generating itinerary', async () => {
-        // Pre-load an itinerary into the hook mock to simulate state where logistics can be checked
-        setupTouringMock({
-            currentItinerary: {
-                id: '123',
-                tourName: 'Test Tour',
-                stops: [
-                    {
-                        date: '2023-10-01',
-                        city: 'New York',
-                        venue: 'MSG',
-                        type: 'Show',
-                        distance: 50
-                    }
-                ],
-                totalDistance: '1000 km',
-                estimatedBudget: '$50'
-            }
-        });
-
-        render(<RoadManager />);
-
-        // Wait for itinerary to be rendered
-        await waitFor(() => {
-            expect(screen.getByText('Generated Itinerary')).toBeInTheDocument();
-        });
-
-        const checkButton = screen.getByText('Run Logistics Check');
-        fireEvent.click(checkButton);
-
-        // Since checkLogistics calls a cloud function which we have verified mocks for,
-        // we mainly check the button state change or resulting toast/UI update.
-        // In the mock implementation of RoadManager (not shown in full here but inferred), 
-        // it updates state based on the report.
-
-        await waitFor(() => {
-            expect(screen.getByText('Logistics Verified')).toBeInTheDocument();
-        });
-    });
-
-    it('updates the selected same-day stop by stable id instead of the first matching date', async () => {
-        const setCurrentItineraryMock = vi.fn();
-        const updateItineraryStopMock = vi.fn().mockResolvedValue(undefined);
-
+    it('updates a same-day stop by stable id instead of the first matching date', async () => {
+        const setCurrentItinerary = vi.fn();
+        const updateItineraryStop = vi.fn().mockResolvedValue(undefined);
         setupTouringMock({
             currentItinerary: {
                 id: 'itinerary-123',
+                userId: 'test-user',
                 tourName: 'Test Tour',
                 stops: [
-                    {
-                        id: 'stop-1',
-                        date: '2023-10-01',
-                        city: 'Detroit',
-                        venue: 'Club A',
-                        activity: 'Travel',
-                        notes: ''
-                    },
-                    {
-                        id: 'stop-2',
-                        date: '2023-10-01',
-                        city: 'Chicago',
-                        venue: 'Club B',
-                        activity: 'Show',
-                        notes: ''
-                    }
+                    { id: 'stop-1', date: '2023-10-01', city: 'Detroit', venue: 'Club A', activity: 'Travel', notes: '' },
+                    { id: 'stop-2', date: '2023-10-01', city: 'Chicago', venue: 'Club B', activity: 'Show', notes: '' },
                 ],
                 totalDistance: '300 miles',
-                estimatedBudget: '$50'
             },
-            setCurrentItinerary: setCurrentItineraryMock,
-            updateItineraryStop: updateItineraryStopMock,
+            setCurrentItinerary,
+            updateItineraryStop,
         });
-
         render(<RoadManager />);
 
-        await waitFor(() => {
-            expect(screen.getByText('Generated Itinerary')).toBeInTheDocument();
-        });
-
-        const editButtons = screen.getAllByText('Edit');
-        fireEvent.click(editButtons[1]!);
-
+        fireEvent.click(screen.getAllByText('Edit')[1]!);
         fireEvent.change(screen.getByLabelText('City'), { target: { value: 'Milwaukee' } });
         fireEvent.click(screen.getByText('Save Changes'));
 
-        await waitFor(() => {
-            expect(updateItineraryStopMock).toHaveBeenCalledWith(
-                1,
-                expect.objectContaining({
-                    id: 'stop-2',
-                    date: '2023-10-01',
-                    city: 'Milwaukee',
-                })
-            );
-        });
-
-        expect(setCurrentItineraryMock).toHaveBeenCalledWith(
-            expect.objectContaining({
-                stops: [
-                    expect.objectContaining({ id: 'stop-1', city: 'Detroit' }),
-                    expect.objectContaining({ id: 'stop-2', city: 'Milwaukee' }),
-                ]
-            })
-        );
+        await waitFor(() => expect(updateItineraryStop).toHaveBeenCalledWith(
+            1,
+            expect.objectContaining({ id: 'stop-2', city: 'Milwaukee' }),
+        ));
+        expect(setCurrentItinerary).toHaveBeenCalledWith(expect.objectContaining({
+            stops: [
+                expect.objectContaining({ id: 'stop-1', city: 'Detroit' }),
+                expect.objectContaining({ id: 'stop-2', city: 'Milwaukee' }),
+            ],
+        }));
     });
 });

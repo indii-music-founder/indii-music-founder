@@ -1,11 +1,10 @@
 import { useTranslation } from 'react-i18next';
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { MapPin, Calendar, Truck, Plus, Trash2, Save, X, AlertTriangle, CheckCircle2, Loader2 } from 'lucide-react';
+import { MapPin, Calendar, Plus, Trash2, Save, X, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Itinerary, ItineraryStop, LogisticsReport } from '../types';
+import { Itinerary, ItineraryStop, ScheduleReview } from '../types';
 import { formatTouringDate } from '../itinerary';
 import { TourMap } from './TourMap';
 
@@ -19,12 +18,12 @@ interface PlanningTabProps {
     setNewLocation: (location: string) => void;
     handleAddLocation: () => void;
     handleRemoveLocation: (index: number) => void;
-    handleGenerateItinerary: () => void;
-    isGenerating: boolean;
+    handleSaveRouteDraft: () => void;
+    isSavingRouteDraft: boolean;
     itinerary: Itinerary | null;
-    handleCheckLogistics: () => void;
-    isCheckingLogistics: boolean;
-    logisticsReport: LogisticsReport | null;
+    handleCheckSchedule: () => void;
+    isCheckingSchedule: boolean;
+    scheduleReview: ScheduleReview | null;
     onUpdateStop: (stop: ItineraryStop) => void;
 }
 
@@ -39,19 +38,19 @@ export const PlanningTab: React.FC<PlanningTabProps> = ({
     setNewLocation,
     handleAddLocation,
     handleRemoveLocation,
-    handleGenerateItinerary,
-    isGenerating,
+    handleSaveRouteDraft,
+    isSavingRouteDraft,
     itinerary,
-    handleCheckLogistics,
-    isCheckingLogistics,
-    logisticsReport,
+    handleCheckSchedule,
+    isCheckingSchedule,
+    scheduleReview,
     onUpdateStop
 }) => {
     const { t } = useTranslation();
     const [selectedStop, setSelectedStop] = useState<ItineraryStop | null>(null);
 
 
-    const hasLogisticsIssue = logisticsReport && !logisticsReport.isFeasible;
+    const hasScheduleConflict = scheduleReview?.hasConflicts === true;
 
     return (
         <div className="h-full flex flex-col gap-6 @container">
@@ -155,14 +154,17 @@ export const PlanningTab: React.FC<PlanningTabProps> = ({
 
                         <div className="mt-auto pt-4 border-t border-gray-800">
                             <Button
-                                onClick={handleGenerateItinerary}
-                                disabled={isGenerating || locations.length === 0 || !startDate || !endDate}
+                                onClick={handleSaveRouteDraft}
+                                disabled={isSavingRouteDraft || locations.length === 0 || !startDate || !endDate}
                                 className="w-full bg-yellow-500 hover:bg-yellow-400 text-black font-bold uppercase tracking-widest text-xs py-6 shadow-[0_0_20px_rgba(234,179,8,0.2)] hover:shadow-[0_0_30px_rgba(234,179,8,0.4)]"
-                                isLoading={isGenerating}
+                                isLoading={isSavingRouteDraft}
                             >
-                                {!isGenerating && <Truck size={16} className="mr-2" />}
-                                {isGenerating ? "Calculating Route..." : "Initialize Route"}
+                                {!isSavingRouteDraft && <Save size={16} className="mr-2" />}
+                                {isSavingRouteDraft ? "Saving Route Draft..." : "Save Route Draft"}
                             </Button>
+                            <p className="mt-2 text-[10px] leading-relaxed text-gray-500">
+                                Saves the waypoints in the order entered. Road routing, distance, drive time, venue availability, and budget are not calculated.
+                            </p>
                         </div>
                     </CardContent>
                 </Card>
@@ -192,39 +194,61 @@ export const PlanningTab: React.FC<PlanningTabProps> = ({
                 </div>
             </div>
 
-            {/* Bottom Area: Itinerary Data & Logistics */}
+            {/* Bottom Area: Route draft and schedule-only review */}
             {itinerary && (
                 <Card className="flex-1 bg-[#161b22] border-gray-800 shadow-2xl flex flex-col min-h-[400px]">
-                    <CardHeader className="flex flex-row items-center justify-between pb-4">
+                    <CardHeader className="flex flex-col gap-4 pb-4 @2xl:flex-row @2xl:items-start @2xl:justify-between">
                         <div>
                             <CardTitle className="text-xl font-bold text-white flex items-center gap-2">
                                 <Calendar className="text-blue-500" size={20} />
-                                Generated Itinerary
+                                Route Draft
                             </CardTitle>
                             <p className="text-xs text-gray-500 font-mono uppercase tracking-wider mt-1">
                                 {itinerary.tourName}
                             </p>
                         </div>
-                        <Button
-                            onClick={handleCheckLogistics}
-                            disabled={isCheckingLogistics}
-                            variant={hasLogisticsIssue ? "destructive" : "default"}
-                            className={`text-xs font-bold uppercase tracking-widest gap-2 ${!hasLogisticsIssue && logisticsReport?.isFeasible ? 'bg-green-500/20 text-green-500 border border-green-500/50 hover:bg-green-500/30' : ''
-                                }`}
-                            isLoading={isCheckingLogistics}
-                        >
-                            {!isCheckingLogistics && (hasLogisticsIssue ? <AlertTriangle size={14} /> : logisticsReport?.isFeasible ? <CheckCircle2 size={14} /> : <Truck size={14} />)}
-                            {isCheckingLogistics
-                                ? "Analyzing..."
-                                : hasLogisticsIssue
-                                    ? "Logistics Issues Found"
-                                    : logisticsReport?.isFeasible
-                                        ? "Logistics Verified"
-                                        : "Run Logistics Check"}
-                        </Button>
+                        <div className="flex max-w-md flex-col items-start gap-2 text-left @2xl:items-end @2xl:text-right">
+                            <Button
+                                onClick={handleCheckSchedule}
+                                disabled={isCheckingSchedule}
+                                variant={hasScheduleConflict ? "destructive" : "default"}
+                                className={`text-xs font-bold uppercase tracking-widest gap-2 ${scheduleReview && !hasScheduleConflict ? 'bg-green-500/20 text-green-500 border border-green-500/50 hover:bg-green-500/30' : ''
+                                    }`}
+                                isLoading={isCheckingSchedule}
+                            >
+                                {!isCheckingSchedule && (hasScheduleConflict ? <AlertTriangle size={14} /> : scheduleReview ? <CheckCircle2 size={14} /> : <Calendar size={14} />)}
+                                {isCheckingSchedule
+                                    ? "Checking Schedule..."
+                                    : hasScheduleConflict
+                                        ? "Schedule Conflicts Found"
+                                        : scheduleReview
+                                            ? "Schedule Checked"
+                                            : "Check Schedule"}
+                            </Button>
+                            <p className="text-[10px] leading-relaxed text-gray-500">
+                                Checks date order and same-day multi-city conflicts only. It does not verify road distance, drive time, traffic, or venue availability.
+                            </p>
+                        </div>
                     </CardHeader>
 
                     <CardContent className="flex-1 p-0 overflow-hidden flex flex-col">
+
+                        {scheduleReview && (
+                            <div className={`mx-4 mb-4 rounded-lg border p-3 text-xs ${hasScheduleConflict
+                                ? 'border-red-500/30 bg-red-500/5 text-red-200'
+                                : 'border-green-500/20 bg-green-500/5 text-gray-300'
+                                }`}>
+                                <p className="font-semibold">{scheduleReview.summary}</p>
+                                {scheduleReview.issues.length > 0 && (
+                                    <ul className="mt-2 list-disc space-y-1 pl-4">
+                                        {scheduleReview.issues.map((issue, index) => <li key={`${issue}-${index}`}>{issue}</li>)}
+                                    </ul>
+                                )}
+                                <p className="mt-2 text-[10px] leading-relaxed text-gray-500">
+                                    {scheduleReview.limitations.join(' ')}
+                                </p>
+                            </div>
+                        )}
 
                         {/* Itinerary Data Table */}
                         <div className="flex-1 overflow-auto rounded-lg border border-gray-800 bg-bg-dark custom-scrollbar">
@@ -235,7 +259,7 @@ export const PlanningTab: React.FC<PlanningTabProps> = ({
                                         <th className="p-4 font-semibold">City</th>
                                         <th className="p-4 font-semibold">Venue</th>
                                         <th className="p-4 font-semibold">Activity</th>
-                                        <th className="p-4 font-semibold">Est. Drive</th>
+                                        <th className="p-4 font-semibold">Road Distance</th>
                                         <th className="p-4 font-semibold text-right">Actions</th>
                                     </tr>
                                 </thead>
@@ -258,7 +282,7 @@ export const PlanningTab: React.FC<PlanningTabProps> = ({
                                                 </span>
                                             </td>
                                             <td className="p-4 text-gray-500">
-                                                {stop.distance ? `${stop.distance} mi` : '--'}
+                                                {stop.distance != null ? `${stop.distance} mi` : 'Not checked'}
                                             </td>
                                             <td className="p-4 text-right">
                                                 <button
@@ -295,7 +319,7 @@ export const PlanningTab: React.FC<PlanningTabProps> = ({
                             <div className="flex justify-between items-center mb-6">
                                 <h3 className="text-xl font-bold text-white flex items-center gap-2">
                                     <MapPin className="text-yellow-500" size={20} />
-                                    Edit Logistics
+                                    Edit Route Stop
                                 </h3>
                                 <button
                                     onClick={() => setSelectedStop(null)}
@@ -367,8 +391,6 @@ export const PlanningTab: React.FC<PlanningTabProps> = ({
                 )}
             </AnimatePresence>
 
-            {/* Loader Component Helper */}
-            {/* Loader2 provided by lucide-react */}
         </div>
     );
 };

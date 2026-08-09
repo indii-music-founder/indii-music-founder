@@ -117,12 +117,15 @@ export interface NearbyPlace {
     };
 }
 
-// Logistics feasibility report returned by the Autonomous logistics check
-export interface LogisticsReport {
-    isFeasible: boolean;
+// Date-only review returned by the schedule check. This is not a routing or
+// operational-feasibility verdict.
+export interface ScheduleReview {
+    scope: 'schedule_only';
+    hasConflicts: boolean;
     issues: string[];
     suggestions: string[];
-    summary?: string;
+    summary: string;
+    limitations: string[];
 }
 
 export interface EmergencyContact {
