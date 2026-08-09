@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
-import { useToast } from '@/core/context/ToastContext';
 import * as Sentry from '@sentry/react';
 import { financeService, Expense } from '@/services/finance/FinanceService';
 import { safeUnsubscribe } from '@/utils/safeUnsubscribe';
@@ -19,8 +18,6 @@ export function useFinance() {
     // the field could never change from null — any earnings-subscription failure
     // was structurally invisible to the UI.
     const [earningsError, setEarningsError] = useState<string | null>(null);
-
-    const toast = useToast();
 
     // Expenses State
     const [expenses, setExpenses] = useState<Expense[]>([]);
@@ -103,16 +100,15 @@ export function useFinance() {
             const newExpense = await financeService.addExpense(expenseData);
             // Replace temporary with actual from server (or rely on subscription)
             setExpenses(prev => prev.map(e => e.id === tempId ? newExpense : e));
-            return true;
+            return newExpense;
         } catch (e: unknown) {
             logger.error("Operation failed:", e);
             Sentry.captureException(e);
-            toast.error("Failed to add expense.");
             // Rollback optimistic update
             setExpenses(prev => prev.filter(e => e.id !== tempId));
-            return false;
+            throw e;
         }
-    }, [toast]);
+    }, []);
 
     return {
         // Earnings

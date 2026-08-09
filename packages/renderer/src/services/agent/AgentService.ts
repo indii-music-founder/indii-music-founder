@@ -112,6 +112,7 @@ export class AgentService {
         updateAgentMessage: (id: string, updates: Partial<AgentMessage>) => void,
         getCurrentMessage: () => AgentMessage | undefined,
         additionalUpdates: Partial<AgentMessage> = {},
+        onMeasurementSettled?: (message: AgentMessage) => void,
     ): Promise<string> {
         const finalized = await this.personaResponseFinalizer({
             agentId,
@@ -149,6 +150,9 @@ export class AgentService {
                         },
                     },
                 });
+
+                const settledMessage = getCurrentMessage();
+                if (settledMessage) onMeasurementSettled?.(settledMessage);
             }).catch((error) => {
                 logger.warn('[AgentService] Persona measurement status could not be persisted.', {
                     agentId,
@@ -1088,6 +1092,11 @@ export class AgentService {
                             {
                                 ...(planId ? { planId } : {}),
                                 isStreaming: false,
+                            },
+                            (message) => {
+                                agentFirebaseConnector.syncMessage(message).catch(err =>
+                                    logger.error(`[AgentService] Swarm measurement sync failed for ${resId}:`, err)
+                                );
                             },
                         );
 

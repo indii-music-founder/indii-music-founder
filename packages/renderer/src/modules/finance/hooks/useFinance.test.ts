@@ -134,12 +134,33 @@ describe('useFinance', () => {
         const { result } = renderHook(() => useFinance());
 
         await act(async () => {
-            const success = await result.current.actions.addExpense(newExpenseInput);
-            expect(success).toBe(true);
+            const savedExpense = await result.current.actions.addExpense(newExpenseInput);
+            expect(savedExpense).toEqual(expectedExpense);
         });
 
         expect(financeService.addExpense).toHaveBeenCalledWith(newExpenseInput);
 
+    });
+
+    it('rolls back and rejects when expense persistence fails', async () => {
+        const newExpenseInput = {
+            amount: 50,
+            vendor: 'Test',
+            userId: 'user-123',
+            category: 'Travel',
+            date: '2026-08-09',
+            description: 'Test expense'
+        };
+        const persistenceError = new Error('Firestore unavailable');
+        vi.mocked(financeService.addExpense).mockRejectedValueOnce(persistenceError);
+        vi.mocked(financeService.subscribeToEarnings).mockReturnValue(() => { });
+        vi.mocked(financeService.subscribeToExpenses).mockReturnValue(() => { });
+        const { result } = renderHook(() => useFinance());
+
+        await act(async () => {
+            await expect(result.current.actions.addExpense(newExpenseInput)).rejects.toBe(persistenceError);
+        });
+        expect(result.current.expenses).toEqual([]);
     });
 
     // ISSUE-1278: subscription errors were only logged. The consumer was never

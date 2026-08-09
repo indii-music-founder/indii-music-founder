@@ -8,8 +8,8 @@ import type { MileageTripInput } from '@/services/finance/FinanceCompiler';
 export function itineraryToMileageTrips(
   itinerary: Itinerary,
   userId: string,
-  tourId?: string,
-  mileageRate: number = 0.67
+  mileageRate: number,
+  tourId?: string
 ): MileageTripInput[] {
   if (!itinerary.stops || itinerary.stops.length === 0) {
     return [];
@@ -23,24 +23,22 @@ export function itineraryToMileageTrips(
       mileageRate,
       purpose: `${stop.city} - ${stop.venue || 'Tour stop'}`,
       tourId,
-      reimbursable: true,
+      reimbursable: false,
       notes: `Leg ${index + 1} of ${itinerary.tourName}`,
     }));
 }
 
 /**
- * Calculate total miles from itinerary.
- * Parses the stored string format (e.g., "1250 miles")
+ * Total only explicit, recorded leg distances. The human-readable
+ * totalDistance field can describe estimates or straight-line drafts and is
+ * therefore not financial or odometer evidence.
  */
 export function getTotalMilesFromItinerary(itinerary: Itinerary | null): number {
-  if (!itinerary?.totalDistance) return 0;
-  const match = itinerary.totalDistance.match(/(\d+)/);
-  return match ? parseInt(match[1], 10) : 0;
-}
-
-/**
- * Calculate total mileage cost at standard IRS rate.
- */
-export function calculateMileageCost(miles: number, mileageRate: number = 0.67): number {
-  return Math.round(miles * mileageRate * 100) / 100;
+  if (!itinerary?.stops.length) return 0;
+  const total = itinerary.stops.reduce((miles, stop) => (
+    typeof stop.distance === 'number' && Number.isFinite(stop.distance) && stop.distance > 0
+      ? miles + stop.distance
+      : miles
+  ), 0);
+  return Math.round(total * 100) / 100;
 }

@@ -126,7 +126,11 @@ export const ExpenseTracker: React.FC = React.memo(() => {
     }, [userProfile?.id, toast, addExpense]);
 
     const handleAddExpense = useCallback(async (data: Partial<Expense>) => {
-        if (!userProfile?.id) return;
+        if (!userProfile?.id || userProfile.id === 'pending') {
+            const error = new Error('An authenticated user profile is required to add an expense.');
+            toast.error('Sign in before adding an expense.');
+            throw error;
+        }
 
         const expenseData = {
             userId: userProfile.id as string,
@@ -137,8 +141,13 @@ export const ExpenseTracker: React.FC = React.memo(() => {
             description: data.description || 'Manual Entry',
         };
 
-        await addExpense(expenseData);
-        toast.success("Expense added manually.");
+        try {
+            await addExpense(expenseData);
+            toast.success("Expense added manually.");
+        } catch (error) {
+            toast.error('Failed to add expense.');
+            throw error;
+        }
     }, [userProfile?.id, addExpense, toast]);
 
     const handleFilesSelected = useCallback((acceptedFiles: File[]) => {

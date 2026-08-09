@@ -1,19 +1,22 @@
 import { useTranslation } from 'react-i18next';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 
 import { motion } from 'motion/react';
 import { Navigation, Fuel, Clock, Crosshair, TrendingUp, Receipt } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Itinerary, ItineraryStop, NearbyPlace, FuelLogistics } from '../types';
-import { getTotalMilesFromItinerary, calculateMileageCost } from '../milesTracking';
+import { Itinerary, NearbyPlace, FuelLogistics } from '../types';
+import { getTotalMilesFromItinerary } from '../milesTracking';
 import { ExpenseManualEntryModal } from '@/modules/finance/components/ExpenseManualEntryModal';
-import { Expense } from '@/services/finance/FinanceService';
+import type { Expense } from '@/services/finance/FinanceService';
 import { financeService } from '@/services/finance/FinanceService';
+import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
+import { useToast } from '@/core/context/ToastContext';
 
 import { TourMap } from './TourMap';
 import { logger } from '@/utils/logger';
+import { findNextItineraryStop, formatTouringDate, toTouringDateOnly } from '../itinerary';
 
 interface OnTheRoadTabProps {
     currentLocation: string;
@@ -38,17 +41,18 @@ export const OnTheRoadTab: React.FC<OnTheRoadTabProps> = ({
     itinerary
 }) => {
     const { t } = useTranslation();
-    const [isLoggingMiles, setIsLoggingMiles] = useState(false);
     const [showExpenseModal, setShowExpenseModal] = useState(false);
+    const { userProfile } = useStore(useShallow(state => ({ userProfile: state.userProfile })));
+    const toast = useToast();
 
-    // Find next stop logic
-    const today = new Date();
-    const nextStop = itinerary?.stops.find((s: ItineraryStop) => new Date(s.date) >= today) || itinerary?.stops[0];
+    const nextStop = findNextItineraryStop(itinerary);
     const totalMiles = getTotalMilesFromItinerary(itinerary);
-    const mileageCost = calculateMileageCost(totalMiles);
 
     const handleLocateMe = () => {
-        if (!navigator.geolocation) return;
+        if (!navigator.geolocation) {
+            toast.error('Location access is unavailable in this browser.');
+            return;
+        }
 
         navigator.geolocation.getCurrentPosition(
             (position) => {
@@ -58,27 +62,38 @@ export const OnTheRoadTab: React.FC<OnTheRoadTabProps> = ({
             },
             (error) => {
                 logger.error("Geolocation failed:", error);
+                toast.error('Unable to read your current location.');
             }
         );
     };
 
     const handleQuickExpense = async (expenseData: Partial<Expense>) => {
-        // Pre-fill with Travel category and current stop location
-        const expenseWithDefaults: Partial<Expense> = {
-            ...expenseData,
+        if (!userProfile?.id || userProfile.id === 'pending') {
+            const error = new Error('An authenticated user profile is required to add an expense.');
+            toast.error('Sign in before adding an expense.');
+            throw error;
+        }
+
+        const expenseWithDefaults: Omit<Expense, 'id' | 'createdAt'> = {
+            userId: userProfile.id,
+            vendor: expenseData.vendor?.trim() || 'Unknown Vendor',
+            amount: Number(expenseData.amount),
+            date: expenseData.date || toTouringDateOnly(new Date()),
             category: 'Travel',
             description: expenseData.description || `Expense at ${nextStop?.city || 'on tour'}`
         };
 
         try {
             await financeService.addExpense(expenseWithDefaults);
-            logger.info('Quick expense logged:', expenseWithDefaults);
+            toast.success('Travel expense added.');
         } catch (error) {
             logger.error('Failed to log quick expense:', error);
+            toast.error('Failed to add travel expense.');
+            throw error;
         }
     };
 
-    const range = fuelLogistics?.currentRangeMiles ?? 200;
+    const range = fuelLogistics?.currentRangeMiles;
 
     return (
         <div className="flex flex-col gap-6 h-full">
@@ -90,8 +105,8 @@ export const OnTheRoadTab: React.FC<OnTheRoadTabProps> = ({
                     <Card className="bg-[#161b22] border-gray-800 shadow-2xl flex flex-col justify-between overflow-hidden relative group">
                     <div className="absolute top-0 right-0 p-4 opacity-50 group-hover:opacity-100 transition-opacity z-10">
                         <div className="flex items-center gap-2">
-                            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                            <span className="text-[10px] text-green-500 font-mono uppercase tracking-widest">Route View</span>
+                            <div className="w-2 h-2 rounded-full bg-blue-500" />
+                            <span className="text-[10px] text-blue-400 font-mono uppercase tracking-widest">Route View</span>
                         </div>
                     </div>
 
@@ -112,17 +127,17 @@ export const OnTheRoadTab: React.FC<OnTheRoadTabProps> = ({
                                     <div className="text-sm text-blue-400 font-mono">{nextStop.venue || "Venue TBD"}</div>
                                     <div className="mt-3 flex items-center gap-2 text-xs text-gray-400 font-mono">
                                         <Clock size={12} />
-                                        <span>ETA: {new Date(nextStop.date).toLocaleDateString('en-US')} @ 16:00</span>
+                                        <span>Scheduled: {formatTouringDate(nextStop.date)}</span>
                                     </div>
                                 </div>
                             ) : (
-                                <div className="text-gray-600 italic text-sm">No itinerary active.</div>
+                                <div className="text-gray-600 italic text-sm">No upcoming stop.</div>
                             )}
                         </div>
 
                         <div className="grid grid-cols-1 gap-4">
                             <div className="bg-bg-dark p-3 rounded-lg border border-gray-800 text-center">
-                                <div className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-1">Distance Rem.</div>
+                                <div className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-1">Recorded Leg Distance</div>
                                 <div className="text-2xl font-mono text-white">{nextStop?.distance !== undefined ? nextStop.distance : '--'} <span className="text-xs text-gray-600">MI</span></div>
                             </div>
                         </div>
@@ -135,24 +150,16 @@ export const OnTheRoadTab: React.FC<OnTheRoadTabProps> = ({
                             <CardHeader>
                                 <CardTitle className="text-lg font-bold text-white flex items-center gap-2 mb-1">
                                     <TrendingUp className="text-amber-500" size={20} />
-                                    Miles This Tour
+                                    Recorded Leg Miles
                                 </CardTitle>
-                                <p className="text-xs text-gray-500 font-mono uppercase tracking-wider">Tax Deductible</p>
+                                <p className="text-xs text-gray-500 font-mono uppercase tracking-wider">Recorded itinerary legs</p>
                             </CardHeader>
 
                             <CardContent className="flex-1 flex flex-col justify-center gap-4">
                                 <div className="bg-bg-dark p-4 rounded-lg border border-gray-800">
                                     <div className="text-3xl font-mono text-white font-bold">{totalMiles.toLocaleString()} <span className="text-xs text-gray-600">mi</span></div>
-                                    <div className="text-sm text-amber-400 font-mono mt-2">≈ ${mileageCost.toFixed(2)} @ IRS rate</div>
+                                    <div className="text-sm text-gray-500 font-mono mt-2">No tax or reimbursement status assigned</div>
                                 </div>
-
-                                <Button
-                                    onClick={() => setIsLoggingMiles(!isLoggingMiles)}
-                                    disabled={isLoggingMiles}
-                                    className="bg-amber-600 hover:bg-amber-700 w-full"
-                                >
-                                    {isLoggingMiles ? 'Logging to Finance...' : 'Log to Finance'}
-                                </Button>
                             </CardContent>
                         </Card>
                     )}
@@ -182,16 +189,11 @@ export const OnTheRoadTab: React.FC<OnTheRoadTabProps> = ({
                     />
                     <div className="absolute inset-x-0 bottom-0 bg-linear-to-t from-black/90 to-transparent p-4 flex justify-between items-end backdrop-blur-sm">
                         <div>
-                            <h3 className="text-white font-bold text-sm">Live Route Tracking</h3>
-                            <p className="text-xs text-blue-400 font-mono">Satellite Uplink Active</p>
+                            <h3 className="text-white font-bold text-sm">Route Map</h3>
+                            <p className="text-xs text-gray-400 font-mono">Location is shown only after you enter or share it</p>
                         </div>
-                        <div className="flex gap-2">
-                            <div className="px-2 py-1 bg-blue-500/20 text-blue-400 border border-blue-500/30 rounded text-[10px] font-mono font-bold uppercase">
-                                GPS: Locked
-                            </div>
-                            <div className="px-2 py-1 bg-green-500/20 text-green-400 border border-green-500/30 rounded text-[10px] font-mono font-bold uppercase">
-                                Traffic: Clear
-                            </div>
+                        <div className="px-2 py-1 bg-blue-500/20 text-blue-400 border border-blue-500/30 rounded text-[10px] font-mono font-bold uppercase">
+                            {currentLocation ? 'Location set' : 'Location not set'}
                         </div>
                     </div>
                 </Card>

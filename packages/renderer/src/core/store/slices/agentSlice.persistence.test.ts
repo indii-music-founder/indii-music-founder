@@ -104,6 +104,43 @@ describe('AgentSlice Persistence (The Amnesia Check)', () => {
         );
     });
 
+    it('persists response metadata only after append and in measurement order', async () => {
+        const store = useStore.getState();
+        const sessionId = store.activeSessionId;
+        let resolveAppend: (() => void) | undefined;
+        mockAppendMessage.mockImplementationOnce(() => new Promise<void>(resolve => {
+            resolveAppend = resolve;
+        }));
+
+        store.addAgentMessage({
+            id: 'persona-response',
+            role: 'model',
+            text: '',
+            timestamp: Date.now(),
+        });
+        store.updateAgentMessage('persona-response', {
+            text: 'Styled response',
+            metadata: { personaResponse: { responseId: 'persona-response', measurementStatus: 'pending' } },
+        });
+        store.updateAgentMessage('persona-response', {
+            metadata: { personaResponse: { responseId: 'persona-response', measurementStatus: 'recorded' } },
+        });
+
+        await vi.waitFor(() => expect(mockAppendMessage).toHaveBeenCalledTimes(1));
+        expect(mockUpdateMessage).not.toHaveBeenCalled();
+
+        resolveAppend?.();
+        await vi.waitFor(() => expect(mockUpdateMessage).toHaveBeenCalledTimes(2));
+        expect(mockUpdateMessage.mock.calls).toEqual([
+            [sessionId, 'persona-response', expect.objectContaining({
+                metadata: { personaResponse: expect.objectContaining({ measurementStatus: 'pending' }) },
+            })],
+            [sessionId, 'persona-response', expect.objectContaining({
+                metadata: { personaResponse: expect.objectContaining({ measurementStatus: 'recorded' }) },
+            })],
+        ]);
+    });
+
     it('should persist cleared history to SessionService', async () => {
         const store = useStore.getState();
         const sessionId = store.activeSessionId;

@@ -5,6 +5,55 @@ import type { SessionPageCursor } from '@/services/agent/SessionService';
 let agentSessionsUnsubscribe: (() => void) | null = null;
 let agentMessagesUnsubscribe: (() => void) | null = null;
 const pendingMessageIds = new Map<string, Set<string>>();
+const messageWriteChains = new Map<string, Promise<void>>();
+
+function messageWriteKey(sessionId: string, messageId: string): string {
+    return `${sessionId}:${messageId}`;
+}
+
+async function persistMessageWrite(
+    operation: () => Promise<void>,
+    label: string,
+): Promise<void> {
+    for (let attempt = 1; attempt <= 3; attempt += 1) {
+        try {
+            await operation();
+            return;
+        } catch (error) {
+            if (attempt === 3) {
+                logger.error(`[AgentSlice] ${label} failed after 3 attempts:`, error);
+                return;
+            }
+
+            logger.warn(`[AgentSlice] ${label} attempt ${attempt} failed, retrying...`, error);
+            await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+        }
+    }
+}
+
+/**
+ * Firestore creates and updates for one response must commit in UI order.
+ * Otherwise a fast final/telemetry update can beat the initial blank append
+ * and either fail or be overwritten by the stale initial document.
+ */
+function enqueueMessageWrite(
+    sessionId: string,
+    messageId: string,
+    operation: () => Promise<void>,
+    label: string,
+): void {
+    const key = messageWriteKey(sessionId, messageId);
+    const previous = messageWriteChains.get(key) ?? Promise.resolve();
+    const next = previous
+        .catch(() => undefined)
+        .then(() => persistMessageWrite(operation, label))
+        .finally(() => {
+            if (messageWriteChains.get(key) === next) {
+                messageWriteChains.delete(key);
+            }
+        });
+    messageWriteChains.set(key, next);
+}
 
 function markMessagePending(sessionId: string, messageId: string): void {
     const pending = pendingMessageIds.get(sessionId) ?? new Set<string>();
@@ -340,25 +389,15 @@ export function buildAgentSessionState(
             };
             markMessagePending(currentSessionId, msg.id);
 
-            // Persist the updated session messages with retry logic
-            const persistSession = async (attempt = 1) => {
-                try {
-                    const { sessionService } = await import('@/services/agent/SessionService');
-                    if (isNewSession) {
-                        await sessionService.createSession(currentSession);
-                        subscribeToActiveMessages(currentSessionId);
-                    }
-                    await sessionService.appendMessage(currentSessionId, msg);
-                } catch (e) {
-                    if (attempt < 3) {
-                        logger.warn(`[AgentSlice] Persistence attempt ${attempt} failed, retrying...`, e);
-                        setTimeout(() => persistSession(attempt + 1), 1000 * attempt);
-                    } else {
-                        logger.error('[AgentSlice] Session persistence failed after 3 attempts:', e);
-                    }
+            // Serialize the append ahead of every later update for this response.
+            enqueueMessageWrite(currentSessionId, msg.id, async () => {
+                const { sessionService } = await import('@/services/agent/SessionService');
+                if (isNewSession) {
+                    await sessionService.createSession(currentSession);
+                    subscribeToActiveMessages(currentSessionId);
                 }
-            };
-            persistSession();
+                await sessionService.appendMessage(currentSessionId, msg);
+            }, 'Session persistence');
 
             return {
                 sessions: { ...sessions, [currentSessionId]: updatedSession },
@@ -375,23 +414,21 @@ export function buildAgentSessionState(
                 msg.id === id ? { ...msg, ...updates } : msg
             );
 
-            // Persist the updated messages with retry logic
-            const persistUpdate = async (attempt = 1) => {
-                try {
-                    const { sessionService } = await import('@/services/agent/SessionService');
-                    if (state.activeSessionId) {
-                        await sessionService.updateMessage(state.activeSessionId, id, updates);
-                    }
-                } catch (e) {
-                    if (attempt < 3) {
-                        logger.warn(`[AgentSlice] Message update attempt ${attempt} failed, retrying...`, e);
-                        setTimeout(() => persistUpdate(attempt + 1), 1000 * attempt);
-                    } else {
-                        logger.error('[AgentSlice] Message update failed after 3 attempts:', e);
-                    }
-                }
+            const sessionId = state.activeSessionId;
+            const persistUpdate = async () => {
+                const { sessionService } = await import('@/services/agent/SessionService');
+                await sessionService.updateMessage(sessionId, id, updates);
             };
-            persistUpdate();
+
+            // Metadata carries response/assignment correlation and must follow
+            // the initial append and earlier metadata transitions exactly.
+            // Streaming text-only updates stay concurrent to avoid building a
+            // token-by-token persistence backlog.
+            if ('metadata' in updates) {
+                enqueueMessageWrite(sessionId, id, persistUpdate, 'Message metadata update');
+            } else {
+                void persistMessageWrite(persistUpdate, 'Message update');
+            }
 
             return {
                 sessions: {
@@ -417,21 +454,10 @@ export function buildAgentSessionState(
             };
             markMessagePending(sessionId, msg.id);
 
-            // Persist with retry logic
-            const persistMessage = async (attempt = 1) => {
-                try {
-                    const { sessionService } = await import('@/services/agent/SessionService');
-                    await sessionService.appendMessage(sessionId, msg);
-                } catch (e) {
-                    if (attempt < 3) {
-                        logger.warn(`[AgentSlice] Add message attempt ${attempt} failed, retrying...`, e);
-                        setTimeout(() => persistMessage(attempt + 1), 1000 * attempt);
-                    } else {
-                        logger.error('[AgentSlice] Add message failed after 3 attempts:', e);
-                    }
-                }
-            };
-            persistMessage();
+            enqueueMessageWrite(sessionId, msg.id, async () => {
+                const { sessionService } = await import('@/services/agent/SessionService');
+                await sessionService.appendMessage(sessionId, msg);
+            }, 'Add message');
 
             const update: Partial<AgentSessionSlice> = {
                 sessions: { ...state.sessions, [sessionId]: updatedSession }

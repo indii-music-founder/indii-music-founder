@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { AgentContext } from './types';
 import { AgentService } from './AgentService';
+import { agentFirebaseConnector } from './AgentFirebaseConnector';
 import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 
 interface CapturedExecution {
@@ -350,6 +351,58 @@ describe('AgentService Boardroom capability intent dispatch', () => {
                     },
                 },
             });
+        });
+    });
+
+    it('resyncs a Boardroom response after its measurement status settles', async () => {
+        const messages = [{ id: 'response-boardroom-measurement', role: 'model', text: '', timestamp: Date.now() }];
+        const state = {
+            conversationMode: 'boardroom',
+            activeAgents: ['legal'],
+            referencedAssets: [],
+            agentHistory: messages,
+            addAgentMessage: vi.fn(message => messages.push(message)),
+            updateAgentMessage: vi.fn((id: string, update: Record<string, unknown>) => {
+                const message = messages.find(entry => entry.id === id);
+                if (message) Object.assign(message, update);
+            }),
+        };
+        const finalizer = vi.fn(async ({ responseId }: { responseId: string }) => ({
+            text: 'Boardroom styled response',
+            tracking: {
+                personaId: 'contractReader' as const,
+                responseId,
+                isControlGroup: false,
+                effectiveFaderValues: {
+                    riskTolerance: 10,
+                    brevity: 20,
+                    directness: 30,
+                    formality: 40,
+                    reasoningTransparency: 50,
+                },
+                measurementStatus: 'pending' as const,
+            },
+            measurementRecorded: Promise.resolve(true),
+        }));
+        const service = new AgentService(finalizer);
+        (service as unknown as { getStore: () => Promise<{ getState: () => typeof state }> }).getStore =
+            vi.fn(async () => ({ getState: () => state }));
+
+        await (service as unknown as {
+            executeFlow: (text: string, attachments: undefined, context: AgentContext, responseId: string) => Promise<void>;
+        }).executeFlow('Review this in the Boardroom.', undefined, {}, 'response-boardroom-measurement');
+
+        await vi.waitFor(() => {
+            expect(agentFirebaseConnector.syncMessage).toHaveBeenCalledWith(expect.objectContaining({
+                id: 'response-boardroom-measurement',
+                text: 'Boardroom styled response',
+                metadata: {
+                    personaResponse: expect.objectContaining({
+                        responseId: 'response-boardroom-measurement',
+                        measurementStatus: 'recorded',
+                    }),
+                },
+            }));
         });
     });
 

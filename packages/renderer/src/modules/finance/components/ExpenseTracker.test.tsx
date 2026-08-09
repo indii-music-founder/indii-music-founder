@@ -71,6 +71,7 @@ describe('ExpenseTracker', () => {
   });
 
   it('opens manual entry modal and submits expense', async () => {
+    mockAddExpense.mockResolvedValue({ id: 'expense-1' });
     render(<ExpenseTracker />);
 
     // Open modal
@@ -104,5 +105,24 @@ describe('ExpenseTracker', () => {
       // But with mocked AnimatePresence, it should unmount.
       expect(screen.queryByText('Manual Ledger Entry')).not.toBeInTheDocument();
     });
+  });
+
+  it('keeps manual expense data open when persistence fails', async () => {
+    mockAddExpense.mockRejectedValueOnce(new Error('Firestore unavailable'));
+    render(<ExpenseTracker />);
+
+    fireEvent.click(screen.getByText('Add Manual'));
+    fireEvent.change(screen.getByPlaceholderText('e.g. Sweetwater'), {
+      target: { value: 'Test Vendor' }
+    });
+    fireEvent.change(screen.getByPlaceholderText('0.00'), {
+      target: { value: '100' }
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm Ledger Entry' }));
+
+    await waitFor(() => expect(mockAddExpense).toHaveBeenCalled());
+    expect(screen.getByText('Manual Ledger Entry')).toBeInTheDocument();
+    expect(mockToast.error).toHaveBeenCalledWith('Failed to add expense.');
+    expect(mockToast.success).not.toHaveBeenCalledWith('Expense added manually.');
   });
 });
