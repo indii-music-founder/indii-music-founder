@@ -9,10 +9,15 @@
     }
   }
 
-  if (
-    window.location.hostname.endsWith("web.app") ||
-    window.location.hostname.endsWith("firebaseapp.com")
-  ) {
+  const productionFirebaseHosts = new Set([
+    "indii-music-studio.web.app",
+    "indii-music-studio.firebaseapp.com",
+  ]);
+
+  // Canonicalize only the live Firebase aliases. Preview-channel hosts also
+  // end in web.app; redirecting those prevents staging from ever serving the
+  // freshly deployed build or exercising its real public routes.
+  if (productionFirebaseHosts.has(window.location.hostname)) {
     window.location.replace(
       `https://indii.music${window.location.pathname}${window.location.search}${window.location.hash}`,
     );
