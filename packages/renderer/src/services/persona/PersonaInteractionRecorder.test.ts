@@ -18,6 +18,7 @@ vi.mock('@/services/firebase', () => ({
 import { auth } from '@/services/firebase';
 import {
     recordSignal,
+    recordSignalWithResult,
     recordCopied,
     recordActedOn,
     recordReAsked,
@@ -42,9 +43,27 @@ describe('PersonaInteractionRecorder', () => {
         );
     });
 
+    it('returns a persistence receipt only after the owner-scoped write resolves', async () => {
+        await expect(recordSignalWithResult('manager', 'resp-receipt', 'copied')).resolves.toBe('recorded');
+
+        expect(mockAddDoc).toHaveBeenCalledWith(
+            'collection-ref',
+            expect.objectContaining({ responseId: 'resp-receipt' }),
+        );
+    });
+
     it('is a silent no-op when no user is signed in (nothing to attribute the signal to)', async () => {
         (auth as unknown as { currentUser: { uid: string } | null }).currentUser = null;
         await expect(recordSignal('manager', 'resp-1', 'copied')).resolves.toBeUndefined();
+        expect(mockAddDoc).not.toHaveBeenCalled();
+    });
+
+    it('reports an unauthenticated skip without changing the original no-op contract', async () => {
+        (auth as unknown as { currentUser: { uid: string } | null }).currentUser = null;
+
+        await expect(recordSignalWithResult('manager', 'resp-1', 'copied')).resolves.toBe(
+            'skipped-unauthenticated',
+        );
         expect(mockAddDoc).not.toHaveBeenCalled();
     });
 

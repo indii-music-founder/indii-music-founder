@@ -19,6 +19,8 @@ import { isValidPersonaInteractionSignal } from '@indii/shared';
 
 export class PersonaInteractionRecorderError extends Error {}
 
+export type PersonaInteractionRecordResult = 'recorded' | 'skipped-unauthenticated';
+
 /**
  * Record one implicit interaction signal. Fire-and-forget by design from
  * the caller's perspective — callers should not block a user-facing action
@@ -31,9 +33,22 @@ export async function recordSignal(
     responseId: string,
     signalType: PersonaSignalType
 ): Promise<void> {
+    await recordSignalWithResult(personaId, responseId, signalType);
+}
+
+/**
+ * Record a signal and report whether Firestore accepted it. This keeps the
+ * original fire-and-forget contract above intact while allowing a real user
+ * action to surface an honest persistence acknowledgement.
+ */
+export async function recordSignalWithResult(
+    personaId: string,
+    responseId: string,
+    signalType: PersonaSignalType
+): Promise<PersonaInteractionRecordResult> {
     const uid = auth.currentUser?.uid;
     if (!uid) {
-        return; // No signed-in user — nothing to attribute this to.
+        return 'skipped-unauthenticated';
     }
 
     const signal: PersonaInteractionSignal = {
@@ -50,6 +65,7 @@ export async function recordSignal(
     }
 
     await addDoc(collection(db, 'users', uid, 'personaInteractionSignals'), signal);
+    return 'recorded';
 }
 
 export const recordCopied = (personaId: string, responseId: string): Promise<void> =>
