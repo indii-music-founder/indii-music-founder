@@ -147,7 +147,12 @@ describe('PromptArea Accessibility', () => {
   it('opens the reachable hierarchical mode picker from the visible control', () => {
     render(<PromptArea />);
 
-    fireEvent.click(screen.getByRole('button', { name: /change agent mode/i }));
+    const modeControl = screen.getByRole('button', { name: /change agent mode/i });
+    const disclosure = modeControl.closest('details');
+
+    expect(disclosure).not.toHaveAttribute('open');
+    fireEvent.click(modeControl);
+    expect(disclosure).toHaveAttribute('open');
 
     expect(screen.getByTestId('agent-mode-boardroom')).toBeInTheDocument();
     expect(screen.getByTestId('agent-mode-department')).toBeInTheDocument();

@@ -1,5 +1,4 @@
 import React, { useState, useRef, useMemo, useCallback, memo, useEffect, type MutableRefObject } from 'react';
-import { createPortal } from 'react-dom';
 import { ArrowRight, Paperclip, Mic, ChevronUp, PanelTopClose, PanelTopOpen, Database, Square } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
 import { agentService } from '@/services/agent/AgentService';
@@ -26,7 +25,6 @@ import { logger } from '@/utils/logger';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { IndiiFavicon } from '@/components/shared/IndiiFavicon';
 import { AgentModePicker } from '@/components/AgentModePicker';
-import { getModePickerPosition } from './modePickerPosition';
 
 interface PromptAreaProps {
     className?: string;
@@ -40,25 +38,6 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
 
     const [isListening, setIsListening] = useState(false);
     const [isDragging, setIsDragging] = useState(false);
-    const [showModePicker, setShowModePicker] = useState(false);
-    const modeButtonRef = useRef<HTMLButtonElement>(null);
-    const [modeButtonRect, setModeButtonRect] = useState<DOMRect | null>(null);
-    const modePickerPosition = typeof window !== 'undefined'
-        ? getModePickerPosition(modeButtonRect ?? {
-            top: window.innerHeight - 44,
-            right: window.innerWidth - 12,
-        }, {
-            width: window.innerWidth,
-            height: window.innerHeight,
-        })
-        : null;
-
-    const handleToggleModePicker = useCallback(() => {
-        if (!showModePicker && modeButtonRef.current) {
-            setModeButtonRect(modeButtonRef.current.getBoundingClientRect());
-        }
-        setShowModePicker(prev => !prev);
-    }, [showModePicker]);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const _cameraInputRef = useRef<HTMLInputElement>(null);
 
@@ -504,12 +483,11 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                         {/* Dock Position Toggle — removed entirely. Position is now locked to right in boardroom mode. */}
 
                         {/* Hierarchical Agent Mode Picker */}
-                        <div className="relative">
-                            <button
-                                ref={modeButtonRef}
-                                onClick={handleToggleModePicker}
+                        <details className="relative group">
+                            <summary
+                                role="button"
                                 className={cn(
-                                    "rounded-lg transition-all border flex items-center justify-center overflow-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+                                    "list-none [&::-webkit-details-marker]:hidden rounded-lg transition-all border flex items-center justify-center overflow-hidden cursor-pointer focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
                                     isDocked ? "size-7" : "size-8",
                                     modePickerButtonClasses
                                 )}
@@ -517,37 +495,17 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                                 title={`Mode: ${conversationMode}`}
                             >
                                 <IndiiFavicon size={isDocked ? 14 : 18} />
-                            </button>
+                            </summary>
 
-                            <AnimatePresence>
-                                {showModePicker && modePickerPosition && typeof document !== 'undefined' && (createPortal(
-                                    <div className="fixed inset-0 z-9999">
-                                        <motion.div 
-                                            initial={{ opacity: 0 }}
-                                            animate={{ opacity: 1 }}
-                                            exit={{ opacity: 0 }}
-                                            className="absolute inset-0 bg-transparent" 
-                                            onClick={() => setShowModePicker(false)} 
-                                            onWheel={(e) => e.stopPropagation()}
-                                            onTouchStart={(e) => e.stopPropagation()}
-                                        />
-                                        <motion.div
-                                            initial={{ opacity: 0, scale: 0.95, y: 10 }}
-                                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                                            exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                                            className="absolute origin-bottom-right"
-                                            style={modePickerPosition}
-                                            onWheel={(e) => e.stopPropagation()}
-                                            onTouchStart={(e) => e.stopPropagation()}
-                                            onMouseDown={(e) => e.stopPropagation()}
-                                        >
-                                            <AgentModePicker className="w-80 shadow-float border-white/10" />
-                                        </motion.div>
-                                    </div>,
-                                    document.body
-                                ) as any)}
-                            </AnimatePresence>
-                        </div>
+                            <div
+                                className="fixed z-[9999] right-3 bottom-16 max-h-[calc(100vh-5rem)] max-w-[calc(100vw-1.5rem)] overflow-y-auto origin-bottom-right"
+                                onWheel={(e) => e.stopPropagation()}
+                                onTouchStart={(e) => e.stopPropagation()}
+                                onMouseDown={(e) => e.stopPropagation()}
+                            >
+                                <AgentModePicker className="w-80 max-w-full shadow-float border-white/10" />
+                            </div>
+                        </details>
 
                         {/* Collapse/Detach controls — hidden in boardroom (locked to right, always expanded) */}
                         {!isDocked && !isMobile && !isBoardroom && (
