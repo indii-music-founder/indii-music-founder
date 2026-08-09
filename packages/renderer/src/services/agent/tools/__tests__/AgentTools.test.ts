@@ -94,17 +94,15 @@ describe('Agent Tools Validation', () => {
     });
 
     describe('RoadTools', () => {
-        it('plan_tour_route handles valid JSON response', async () => {
-            vi.mocked(AutonomousIntelligence.generateStructuredData).mockResolvedValue({
-                route: ["NY", "NJ"],
-                totalDistance: "100 miles",
-                estimatedDuration: "2 hours",
-                legs: [{ from: "NY", to: "NJ", distance: "100 miles", driveTime: "2 hours" }]
-            } as unknown as Awaited<ReturnType<typeof AutonomousIntelligence.generateStructuredData>>);
-
+        it('plan_tour_route preserves entered waypoints without fabricating route calculations', async () => {
             const result = await RoadTools.plan_tour_route({ locations: ["NY", "NJ"] });
             expect(result.data.route).toContain("NY");
-            expect(result.data.totalDistance).toBe("100 miles");
+            expect(result.data.totalDistance).toBe("Not calculated");
+            expect(result.data.estimatedDuration).toBe("Not calculated");
+            expect(result.data.legs).toEqual([
+                { from: 'NY', to: 'NJ', distance: 'Not calculated', driveTime: 'Not calculated' },
+            ]);
+            expect(AutonomousIntelligence.generateStructuredData).not.toHaveBeenCalled();
         });
     });
 
