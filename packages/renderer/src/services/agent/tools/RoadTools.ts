@@ -1,15 +1,13 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Service with dynamic external data */
 import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import { MapsTools } from './MapsTools';
 import { z } from 'zod';
 import { zodToJsonSchema } from 'zod-to-json-schema';
 import { wrapTool, toolError, toolSuccess } from '../utils/ToolUtils';
 import type { AnyToolFunction } from '../types';
-import { auth, db } from '@/services/firebase';
-import { collection, doc, setDoc } from 'firebase/firestore';
-import { logger } from '@/utils/logger';
-import { importWithRetry } from '@/utils/dynamicImport';
+import { auth, functions } from '@/services/firebase';
+import { httpsCallable } from 'firebase/functions';
 import { setlistDraftService } from '@/services/touring/SetlistDraftService';
+import { TouringService } from '@/services/touring/TouringService';
 
 /**
  * Road Manager Tools
@@ -18,34 +16,41 @@ import { setlistDraftService } from '@/services/touring/SetlistDraftService';
 
 // --- Validation Schemas ---
 
-const TourRouteSchema = z.object({
-    route: z.array(z.string()),
-    totalDistance: z.string(),
-    estimatedDuration: z.string(),
-    legs: z.array(z.object({
-        from: z.string(),
-        to: z.string(),
-        distance: z.string(),
-        driveTime: z.string()
-    }))
-});
+const DateOnlySchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine(value => {
+    const [year, month, day] = value.split('-').map(Number);
+    const parsed = new Date(Date.UTC(year, month - 1, day));
+    return parsed.getUTCFullYear() === year
+        && parsed.getUTCMonth() === month - 1
+        && parsed.getUTCDate() === day;
+}, 'Date must be a valid calendar date');
 
-const ItinerarySchema = z.object({
-    tourName: z.string(),
-    schedule: z.array(z.object({
-        day: z.number(),
+const RouteDraftResponseSchema = z.object({
+    status: z.literal('route_draft'),
+    authority: z.literal('user_inputs_only'),
+    stops: z.array(z.object({
         city: z.string(),
-        venue: z.string(),
-        activity: z.string()
-    }))
+        date: DateOnlySchema,
+        venue: z.literal(''),
+        activity: z.literal('Planning'),
+        type: z.literal('Planning'),
+        notes: z.literal(''),
+    })).min(1),
+    limitations: z.array(z.string()).min(1),
 });
 
-const OptimizedRouteSchema = z.object({
-    optimizedRoute: z.array(z.string()),
-    reasoning: z.string(),
-    factors: z.array(z.string()),
-    estimatedReach: z.string()
-});
+interface RouteDraftResponse {
+    status: 'route_draft';
+    authority: 'user_inputs_only';
+    stops: Array<{
+        city: string;
+        date: string;
+        venue: '';
+        activity: 'Planning';
+        type: 'Planning';
+        notes: '';
+    }>;
+    limitations: string[];
+}
 
 const TechnicalRiderSchema = z.object({
     artistName: z.string(),
@@ -67,34 +72,47 @@ const TechnicalRiderSchema = z.object({
 
 export const RoadTools = {
     plan_tour_route: wrapTool('plan_tour_route', async ({ locations, start_location, end_location, stops, timeframe }: { locations?: string[], start_location?: string, end_location?: string, stops?: string[], timeframe?: string }) => {
-        const stopsList = locations || (stops && start_location && end_location ? [start_location, ...stops, end_location] : []);
-        const context = timeframe ? `Timeframe: ${timeframe}` : '';
-        const schema = zodToJsonSchema(TourRouteSchema);
-
-        const prompt = `
-        You are a Logistics Engine. Calculate the driving route for the following tour stops.
-        Stops/Cities: ${stopsList.join(', ')}.
-        ${context}
-
-        CRITICAL INSTRUCTIONS:
-        1. Optimize the route order for the shortest total drive time.
-        2. Provide specific "legs" with realistic driving distances (miles/km) and times (hours/mins).
-        3. Do NOT just list the cities; calculate the connections.
-        `;
-
-        const data = await AutonomousIntelligence.generateStructuredData(
-            [{ text: prompt }],
-            schema as Record<string, unknown>
+        const rawStops = locations ?? (
+            start_location && end_location
+                ? [start_location, ...(stops ?? []), end_location]
+                : []
         );
+        const route = z.array(z.string().trim().min(1).max(120)).min(2).max(50).parse(rawStops);
+        const legs = route.slice(0, -1).map((from, index) => ({
+            from,
+            to: route[index + 1],
+            distance: 'Not calculated',
+            driveTime: 'Not calculated',
+        }));
 
-        const validated = TourRouteSchema.parse(data);
-        return toolSuccess(validated, `Route planned with ${validated.legs.length} legs.`);
+        return toolSuccess({
+            status: 'route_draft',
+            authority: 'user_inputs_only',
+            route,
+            timeframe: timeframe || null,
+            totalDistance: 'Not calculated',
+            estimatedDuration: 'Not calculated',
+            legs,
+            limitations: [
+                'Waypoints remain in the order entered by the user.',
+                'Road routing, distance, drive time, traffic, venue availability, and audience reach are not calculated.',
+            ],
+        }, `Route draft created with ${legs.length} leg${legs.length === 1 ? '' : 's'}; routing and drive times are not verified.`);
     }),
 
     estimate_tour_budget: wrapTool('estimate_tour_budget', async ({ days, crew, crew_size, duration_days, accommodation_level }: { days?: number, crew?: number, crew_size?: number, duration_days?: number, accommodation_level?: string }) => {
-        const d = days || duration_days || 1;
-        const c = crew || crew_size || 1;
-        const level = (accommodation_level || 'standard').toLowerCase();
+        const inputs = z.object({
+            days: z.number().int().min(1).max(365),
+            crew: z.number().int().min(1).max(500),
+            level: z.enum(['budget', 'standard', 'luxury']),
+        }).parse({
+            days: days ?? duration_days,
+            crew: crew ?? crew_size,
+            level: (accommodation_level ?? 'standard').toLowerCase(),
+        });
+        const d = inputs.days;
+        const c = inputs.crew;
+        const level = inputs.level;
 
         // Deterministic Rates (USD)
         const rates = {
@@ -103,7 +121,7 @@ export const RoadTools = {
             luxury: { hotel: 500, per_diem: 100, transport: 300 }
         };
 
-        const rate = rates[level as keyof typeof rates] || rates.standard;
+        const rate = rates[level];
 
         // Math Calculations
         const lodgingCost = rate.hotel * c * d;
@@ -119,6 +137,8 @@ export const RoadTools = {
         const total = subtotal + contingency;
 
         const result = {
+            status: 'planning_estimate',
+            currency: 'USD',
             totalBudget: total,
             breakdown: {
                 lodging: lodgingCost,
@@ -126,139 +146,110 @@ export const RoadTools = {
                 transport: transportCost,
                 crew_costs: crewWages,
                 contingency: contingency
-            }
+            },
+            assumptions: {
+                hotelPerPersonPerDay: rate.hotel,
+                perDiemPerPersonPerDay: rate.per_diem,
+                transportPerVehiclePerDay: rate.transport,
+                crewWagePerPersonPerDay: 250,
+                peoplePerVehicle: 5,
+                contingencyPercent: 10,
+            },
+            limitations: [
+                'This is a planning estimate from fixed default assumptions, not vendor quotes or booked costs.',
+                'Fuel, tolls, taxes, insurance, equipment, flights, and market-specific pricing are not included unless represented by the listed defaults.',
+            ],
+            persisted: false,
         };
 
-        const userId = auth.currentUser?.uid;
-        if (userId) {
-            try {
-                const { serverTimestamp } = await importWithRetry(() => import('firebase/firestore'));
-                await setDoc(doc(collection(db, `users/${userId}/tour_budgets`)), {
-                    ...result,
-                    days: d,
-                    crew: c,
-                    level,
-                    createdAt: serverTimestamp()
-                });
-            } catch (e: unknown) {
-                logger.warn('[RoadTools] Failed to persist budget:', e);
-            }
-        }
-
-        return toolSuccess(result, `Tour budget calculated for ${d} days and ${c} crew at ${level} level.`);
+        return toolSuccess(result, `Planning estimate calculated for ${d} days and ${c} crew at the ${level} assumption level; no quote or booking was created.`);
     }),
 
-    draft_tour_itinerary: wrapTool('draft_tour_itinerary', async ({ route, city, date, venue, show_time }: { route?: any, city?: string, date?: string, venue?: string, show_time?: string }) => {
-        const promptInfo = city ?
-            `Create a Day Sheet for ${city} on ${date} at ${venue}, show time ${show_time}.` :
-            `Create a tour itinerary based on this route info: ${JSON.stringify(route)}`;
-
-        const fullPrompt = `You are a Road Manager. ${promptInfo}`;
-        const schema = zodToJsonSchema(ItinerarySchema);
-
-        const data = await AutonomousIntelligence.generateStructuredData(
-            [{ text: fullPrompt }],
-            schema as Record<string, unknown>
-        );
-
-        const validated = ItinerarySchema.parse(data);
-
+    draft_tour_itinerary: wrapTool('draft_tour_itinerary', async ({ tour_name, start_date, end_date, cities }: { tour_name: string, start_date: string, end_date: string, cities: string[] }) => {
         const userId = auth.currentUser?.uid;
-        if (userId) {
-            try {
-                const { serverTimestamp } = await importWithRetry(() => import('firebase/firestore'));
-                await setDoc(doc(collection(db, `users/${userId}/itineraries`)), {
-                    ...validated,
-                    createdAt: serverTimestamp()
-                });
-            } catch (e: unknown) {
-                logger.warn('[RoadTools] Failed to persist itinerary:', e);
-            }
+        if (!userId) {
+            return toolError('Sign in before saving a route draft.', 'AUTH_REQUIRED');
         }
 
-        return toolSuccess(validated, `Itinerary generated for ${validated.tourName}.`);
-    }),
+        const validatedInput = z.object({
+            tour_name: z.string().trim().min(1).max(200),
+            start_date: DateOnlySchema,
+            end_date: DateOnlySchema,
+            cities: z.array(z.string().trim().min(1).max(120)).min(1).max(50),
+        }).refine(input => input.start_date <= input.end_date, {
+            path: ['end_date'],
+            message: 'End date must be on or after start date',
+        }).parse({ tour_name, start_date, end_date, cities });
 
-    book_logistics: wrapTool('book_logistics', async ({ item, date }: { item: string, date: string }) => {
-        const referenceId = `BK-${Date.now().toString(36).toUpperCase()}`;
-        const userId = auth.currentUser?.uid;
-
-        // Persist logistics request to Firestore
-        if (userId) {
-            try {
-                await setDoc(doc(collection(db, `users/${userId}/logistics_requests`)), {
-                    item,
-                    date,
-                    referenceId,
-                    status: 'pending',
-                    createdAt: new Date().toISOString()
-                });
-            } catch (e: unknown) {
-                logger.warn('[RoadTools] Failed to persist logistics request:', e);
-            }
+        const compileRouteDraft = httpsCallable(functions, 'generateItinerary');
+        const response = await compileRouteDraft({
+            locations: validatedInput.cities,
+            dates: { start: validatedInput.start_date, end: validatedInput.end_date },
+        });
+        const draft = RouteDraftResponseSchema.parse(response.data) as RouteDraftResponse;
+        const matchesInput = draft.stops.length === validatedInput.cities.length
+            && draft.stops.every((stop, index) => (
+                stop.city === validatedInput.cities[index]
+                && stop.date >= validatedInput.start_date
+                && stop.date <= validatedInput.end_date
+            ));
+        if (!matchesInput) {
+            return toolError('Route draft service changed the submitted cities or date range.', 'UNTRUSTED_ROUTE_DRAFT');
         }
+
+        await TouringService.saveItinerary({
+            userId,
+            tourName: validatedInput.tour_name,
+            stops: draft.stops,
+            totalDistance: 'Not calculated',
+        });
 
         return toolSuccess({
-            status: "pending",
-            item,
-            date,
-            referenceId,
-            note: 'Logistics request submitted — awaiting provider confirmation.'
-        }, `Logistics request submitted for ${item} on ${date}.`);
+            ...draft,
+            tourName: validatedInput.tour_name,
+            totalDistance: 'Not calculated',
+            persisted: true,
+        }, `Route draft saved for ${validatedInput.tour_name}; routing, distance, drive time, and venue availability are not verified.`);
     }),
+
+    book_logistics: wrapTool('book_logistics', async () => toolError(
+        'No logistics provider or booking integration is connected. Nothing was submitted or booked.',
+        'LOGISTICS_PROVIDER_UNAVAILABLE',
+    )),
 
     ...MapsTools,
 
     optimize_tour_route: wrapTool('optimize_tour_route', async (args: { venues: string[] }) => {
-        // Item 131: Use Gemini to generate density-optimized routes
-        const schema = zodToJsonSchema(OptimizedRouteSchema);
-        const prompt = `
-        You are a Tour Routing Optimizer for an independent music artist.
-        Given the following list of venues/cities, optimize the order for maximum audience impact 
-        and minimum travel time. Consider:
-        1. Geographic proximity (minimize drive time between stops)
-        2. Market size (major cities may draw larger crowds)
-        3. Regional music scene density (college towns, music hubs)
-        4. Day-of-week optimization (weekends for smaller markets, weekdays for major cities)
-
-        Venues: ${args.venues.join(', ')}
-
-        Respond with the optimized route order, reasoning for changes, factors considered, 
-        and estimated audience reach.
-        `;
-
-        const data = await AutonomousIntelligence.generateStructuredData(
-            [{ text: prompt }],
-            schema as Record<string, unknown>
+        void args;
+        return toolError(
+            'Verified route optimization is unavailable because the Maps distance provider is disabled. No route order or audience reach was generated.',
+            'ROUTE_PROVIDER_UNAVAILABLE',
         );
-
-        const validated = OptimizedRouteSchema.parse(data);
-
-        return toolSuccess({
-            inputVenues: args.venues,
-            optimizedRoute: validated.optimizedRoute,
-            reasoning: validated.reasoning,
-            factors: validated.factors,
-            estimatedReach: validated.estimatedReach
-        }, `Tour route optimized for ${args.venues.length} venues based on listener density and drive time analysis.`);
     }),
 
     generate_technical_rider: wrapTool('generate_technical_rider', async (args: { artistName: string; stageSetup: string; audioRequirements: string }) => {
+        const validatedInput = z.object({
+            artistName: z.string().trim().min(1).max(200),
+            stageSetup: z.string().trim().min(1).max(4_000),
+            audioRequirements: z.string().trim().min(1).max(4_000),
+        }).parse(args);
+
         // Item 132: Use Gemini to generate structured rider with stage plot
         const riderId = `RIDER-${Date.now().toString(36).toUpperCase()}`;
         const schema = zodToJsonSchema(TechnicalRiderSchema);
 
         const prompt = `
-        You are a professional tour production manager. Generate a complete technical rider 
-        and stage plot for the following artist:
+        You are helping prepare an unverified technical-rider draft for human review.
+        Draft a proposed rider and stage plot for the following artist without claiming
+        that any venue, engineer, crew member, or artist has approved it:
 
-        Artist: ${args.artistName}
-        Stage Setup: ${args.stageSetup}
-        Audio Requirements: ${args.audioRequirements}
+        Artist: ${validatedInput.artistName}
+        Stage Setup: ${validatedInput.stageSetup}
+        Audio Requirements: ${validatedInput.audioRequirements}
 
         Include:
         1. Full stage plot description with positions
-        2. Complete input list (channel, instrument, mic/DI, notes)
+        2. Proposed input list (channel, instrument, mic/DI, notes)
         3. Monitor mix requirements
         4. Power requirements (amps, circuits)
         5. Any backline that should be provided by venue
@@ -271,25 +262,16 @@ export const RoadTools = {
 
         const validated = TechnicalRiderSchema.parse(data);
 
-        // Persist to Firestore for later PDF export
-        const userId = auth.currentUser?.uid;
-        if (userId) {
-            try {
-                await setDoc(doc(collection(db, `users/${userId}/technical_riders`)), {
-                    ...validated,
-                    riderId,
-                    createdAt: new Date().toISOString()
-                });
-            } catch (e: unknown) {
-                logger.warn('[RoadTools] Failed to persist technical rider:', e);
-            }
-        }
-
         return toolSuccess({
             ...validated,
             riderId,
-            status: 'Complete — ready for PDF export from the Legal module.'
-        }, `Technical rider generated for ${args.artistName} (Ref: ${riderId}). Includes stage plot, ${validated.inputList.length}-channel input list, and power requirements.`);
+            status: 'draft_requires_review',
+            persisted: false,
+            limitations: [
+                'This AI-generated draft has not been approved by the artist, crew, venue, or engineer.',
+                'No PDF was created and no venue received this rider.',
+            ],
+        }, `Technical rider draft generated for ${validatedInput.artistName} (Ref: ${riderId}); it was not saved, exported, approved, or sent.`);
     }),
 
     generate_visa_checklist: wrapTool('generate_visa_checklist', async (args: {
@@ -298,34 +280,33 @@ export const RoadTools = {
         crewSize?: number;
         timelineDays: number;
     }) => {
-        const crewSize = Math.max(1, args.crewSize || 1);
-        const urgency = args.timelineDays < 45 ? 'urgent' : args.timelineDays < 90 ? 'standard' : 'early';
-        const destination = args.tourDestination.toLowerCase();
-        const likelyVisa = destination.includes('united states') || destination === 'us' || destination === 'usa'
-            ? 'P-1/P-2 artist visa review'
-            : destination.includes('uk') || destination.includes('united kingdom')
-                ? 'Temporary Creative Worker route review'
-                : 'Local performance/work authorization review';
+        const validated = z.object({
+            artistCitizenship: z.string().trim().min(2).max(120),
+            tourDestination: z.string().trim().min(2).max(120),
+            crewSize: z.number().int().min(1).max(500).default(1),
+            timelineDays: z.number().int().min(0).max(3650),
+        }).parse({ ...args, crewSize: args.crewSize ?? 1 });
 
         return toolSuccess({
             checklistId: `visa-${Date.now().toString(36)}`,
-            artistCitizenship: args.artistCitizenship,
-            tourDestination: args.tourDestination,
-            crewSize,
-            timelineDays: args.timelineDays,
-            urgency,
-            likelyVisa,
-            documents: [
+            status: 'unverified_planning_checklist',
+            artistCitizenship: validated.artistCitizenship,
+            tourDestination: validated.tourDestination,
+            crewSize: validated.crewSize,
+            timelineDays: validated.timelineDays,
+            possibleDocumentsToConfirm: [
                 'Passport scans for all traveling personnel',
                 'Confirmed itinerary and venue contracts',
                 'Artist biography and press proof',
                 'Letters of invitation or engagement',
                 'Crew role list and payment responsibilities',
             ],
-            nextStep: urgency === 'urgent'
-                ? 'Escalate to immigration counsel immediately before announcing dates.'
-                : 'Collect documents and confirm destination-specific filing route.',
-        }, `Visa checklist generated for ${crewSize} traveler(s) from ${args.artistCitizenship} to ${args.tourDestination}.`);
+            nextStep: 'Confirm the current work-authorization route, eligibility, deadlines, fees, and required evidence with the destination government and qualified immigration counsel.',
+            limitations: [
+                'No immigration route, eligibility, urgency, filing deadline, or approval likelihood was determined.',
+                'Requirements can depend on nationality, work type, compensation, travel history, and current law.',
+            ],
+        }, `Unverified travel-document planning checklist created for ${validated.crewSize} traveler(s); no visa route or eligibility determination was made.`);
     }),
 
     log_live_setlist_for_pro: wrapTool('log_live_setlist_for_pro', async (args: { venue: string; date: string; tracks: string[] }) => {
@@ -334,20 +315,25 @@ export const RoadTools = {
             return toolError('Sign in before saving a setlist draft.', 'AUTH_REQUIRED');
         }
 
-        if (!args.venue?.trim() || !/^\d{4}-\d{2}-\d{2}$/.test(args.date) || !args.tracks?.length) {
-            return toolError('Venue, a YYYY-MM-DD date, and at least one track are required.', 'INVALID_SETLIST_DRAFT');
+        const validatedInput = z.object({
+            venue: z.string().trim().min(1).max(300),
+            date: DateOnlySchema,
+            tracks: z.array(z.string().trim().min(1).max(300)).min(1).max(200),
+        }).safeParse(args);
+        if (!validatedInput.success) {
+            return toolError('A venue, valid calendar date in YYYY-MM-DD format, and 1-200 named tracks are required.', 'INVALID_SETLIST_DRAFT');
         }
 
         let setlistId: string;
         try {
             setlistId = await setlistDraftService.create({
                 userId,
-                venue: args.venue,
-                date: args.date,
+                venue: validatedInput.data.venue,
+                date: validatedInput.data.date,
                 city: '',
                 attendance: 0,
                 category: 'unclassified',
-                songs: args.tracks.map((title, index) => ({
+                songs: validatedInput.data.tracks.map((title, index) => ({
                     id: `track-${index + 1}`,
                     title,
                     originalArtist: '',
@@ -360,13 +346,13 @@ export const RoadTools = {
 
         return toolSuccess({
             setlistId,
-            venue: args.venue,
-            date: args.date,
-            tracksLogged: args.tracks.length,
-            tracks: args.tracks,
+            venue: validatedInput.data.venue,
+            date: validatedInput.data.date,
+            tracksLogged: validatedInput.data.tracks.length,
+            tracks: validatedInput.data.tracks,
             submissionStatus: 'draft (manual filing required)',
             note: 'Setlist saved to your account as a draft. It was not submitted to a PRO and no royalty amount was calculated.'
-        }, `Setlist saved as a manual-filing draft for ${args.venue} on ${args.date} (${args.tracks.length} tracks). It was not submitted to a PRO.`);
+        }, `Setlist saved as a manual-filing draft for ${validatedInput.data.venue} on ${validatedInput.data.date} (${validatedInput.data.tracks.length} tracks). It was not submitted to a PRO.`);
     })
 } satisfies Record<string, AnyToolFunction>;
 

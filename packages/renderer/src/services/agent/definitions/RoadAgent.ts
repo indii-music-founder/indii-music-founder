@@ -41,17 +41,18 @@ export const RoadAgent: AgentConfig = {
             browser_tool: UniversalTools.browser_tool,
             credential_vault: UniversalTools.credential_vault,
             generate_visa_checklist: RoadTools.generate_visa_checklist,
+            generate_technical_rider: RoadTools.generate_technical_rider,
             draft_tour_itinerary: RoadTools.draft_tour_itinerary,
             log_live_setlist_for_pro: RoadTools.log_live_setlist_for_pro,
         } as Record<string, import('@/services/agent/types').AnyToolFunction>;
     },
-    authorizedTools: ['list_domain_records', 'plan_tour_route', 'estimate_tour_budget', 'create_project', 'search_knowledge', 'search_places', 'get_place_details', 'get_distance_matrix', 'generate_social_post', 'browser_tool', 'credential_vault', 'generate_visa_checklist', 'draft_tour_itinerary', 'log_live_setlist_for_pro'],
+    authorizedTools: ['list_domain_records', 'plan_tour_route', 'estimate_tour_budget', 'create_project', 'search_knowledge', 'search_places', 'get_place_details', 'get_distance_matrix', 'generate_social_post', 'browser_tool', 'credential_vault', 'generate_visa_checklist', 'generate_technical_rider', 'draft_tour_itinerary', 'log_live_setlist_for_pro'],
     tools: [{
         functionDeclarations: [
             ...roadRetrievalDeclarations,
             {
                 name: "plan_tour_route",
-                description: "Plan an optimized route for a tour.",
+                description: "Create an ordered route draft from user-entered waypoints. Does not optimize routing or calculate distance, drive time, traffic, or audience reach.",
                 parameters: {
                     type: "OBJECT",
                     properties: {
@@ -64,7 +65,7 @@ export const RoadAgent: AgentConfig = {
             },
             {
                 name: "estimate_tour_budget",
-                description: "Calculate estimated budget for a tour.",
+                description: "Calculate a non-persisted planning estimate from disclosed fixed defaults. Does not obtain quotes, book services, or verify market prices.",
                 parameters: {
                     type: "OBJECT",
                     properties: {
@@ -99,7 +100,7 @@ export const RoadAgent: AgentConfig = {
             },
             {
                 name: "search_places",
-                description: "Search for real-world places (venues, hotels, stores) using Google Maps.",
+                description: "Unavailable until the secured Maps backend is connected. Calling this tool returns an explicit unavailable error and performs no search.",
                 parameters: {
                     type: "OBJECT",
                     properties: {
@@ -111,7 +112,7 @@ export const RoadAgent: AgentConfig = {
             },
             {
                 name: "get_place_details",
-                description: "Get details (address, phone, rating) for a specific place by ID.",
+                description: "Unavailable until the secured Maps backend is connected. Calling this tool returns an explicit unavailable error and no place details.",
                 parameters: {
                     type: "OBJECT",
                     properties: {
@@ -122,7 +123,7 @@ export const RoadAgent: AgentConfig = {
             },
             {
                 name: "get_distance_matrix",
-                description: "Calculate driving distance and time between locations.",
+                description: "Unavailable until the secured Maps backend is connected. Calling this tool returns an explicit unavailable error and no distance or drive time.",
                 parameters: {
                     type: "OBJECT",
                     properties: {
@@ -146,14 +147,14 @@ export const RoadAgent: AgentConfig = {
             },
             {
                 name: "browser_tool",
-                description: "Use a web browser for navigation, traffic checks, or venue research.",
+                description: "Use the Electron browser bridge for manual web research when the bridge is available. This does not verify routing, traffic, venue availability, contact, or booking.",
                 parameters: {
                     type: "OBJECT",
                     properties: {
-                        action: { type: "STRING", description: "Action: open, click, type, get_dom, screenshot" },
-                        url: { type: "STRING", description: "URL to open" },
-                        selector: { type: "STRING" },
-                        text: { type: "STRING" }
+                        action: { type: "STRING", enum: ["navigate", "extract", "capture", "click", "type", "scroll", "wait"], description: "Browser bridge operation." },
+                        url: { type: "STRING", description: "Required for navigate or extract." },
+                        selector: { type: "STRING", description: "Required for click, type, scroll, or wait." },
+                        text: { type: "STRING", description: "Optional text for a type operation." }
                     },
                     required: ["action"]
                 }
@@ -172,7 +173,7 @@ export const RoadAgent: AgentConfig = {
             },
             {
                 name: "generate_visa_checklist",
-                description: "Generates an automated documentation tracker for international touring requirements (e.g., P2 visas for US, Tier 5 for UK).",
+                description: "Create an unverified travel-document planning checklist. Does not determine a visa route, eligibility, deadline, urgency, or approval likelihood.",
                 parameters: {
                     type: "OBJECT",
                     properties: {
@@ -185,8 +186,21 @@ export const RoadAgent: AgentConfig = {
                 }
             },
             {
+                name: "generate_technical_rider",
+                description: "Generate an unsaved, unapproved technical-rider draft for human review. Does not create a PDF or send, approve, or export the rider.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        artistName: { type: "STRING", description: "Artist or act name." },
+                        stageSetup: { type: "STRING", description: "User-provided stage and performer setup." },
+                        audioRequirements: { type: "STRING", description: "User-provided audio requirements and preferences." }
+                    },
+                    required: ["artistName", "stageSetup", "audioRequirements"]
+                }
+            },
+            {
                 name: "draft_tour_itinerary",
-                description: "Generate a detailed day-by-day tour itinerary including travel, load-in, soundcheck, and show times.",
+                description: "Create and save an authenticated user's route draft from user-entered cities and a date range. Does not calculate routing, drive times, traffic, venues, or show-day operations.",
                 parameters: {
                     type: "OBJECT",
                     properties: {

@@ -1,3 +1,11 @@
+## 2026-08-09 Agent Tool Declarations Are Runtime Contracts, Not Marketing Copy
+
+**SEVERITY:** High (a real specialist chat advertised Maps operations the implementation always rejected, and named browser actions the Electron bridge did not implement)
+
+- **BUG:** `RoadAgent` declared live place search, place details, and distance calculation while `MapsTools` intentionally failed closed. Its `browser_tool` schema advertised `open`, `get_dom`, and `screenshot`, but `UniversalTools.browser_tool` accepts `navigate`, `extract`, `capture`, `click`, `type`, `scroll`, and `wait`. A technical-rider implementation also existed only in the global registry, so isolated tool tests could pass without a real Road chat ever being able to invoke it.
+- **FIX:** Trace each specialist capability through the registered agent config. Make declaration names, argument shapes, authorization, implementation, and provider availability agree; wire useful draft-only behavior into the specialist path and describe unavailable operations as unavailable.
+- **PREVENTION:** For every agent tool claim, verify the complete chain `production agent registry -> declared function -> authorizedTools -> functions implementation -> backend/persistence`. A function in `TOOL_REGISTRY` or a passing direct tool test is not reachability evidence. Add a config-level regression that asserts the exact declared/authorized/executable contract and external-authority limitations.
+
 ## 2026-08-06 A Shared FIFO `mockResolvedValueOnce()` Queue Desyncs the Moment It's Keyed by Call Order Instead of Callable Name
 
 **SEVERITY:** High (blocked `main`'s `Deploy to Firebase Hosting` pipeline — `unit-tests (1)` shard failing on every push since the commit that introduced it)

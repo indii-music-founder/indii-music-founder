@@ -76,8 +76,37 @@ describe('RoadAgent', () => {
         );
     });
 
+    it('declares only browser operations implemented by the Electron bridge', () => {
+        const declaration = RoadAgent.tools[0]?.functionDeclarations
+            .find(tool => tool.name === 'browser_tool');
+        expect(declaration?.parameters.properties.action.enum).toEqual([
+            'navigate', 'extract', 'capture', 'click', 'type', 'scroll', 'wait',
+        ]);
+        expect(declaration?.description).toContain('does not verify routing');
+    });
+
+    it('labels disabled Maps operations as unavailable at the declared Road chat boundary', () => {
+        const declarations = RoadAgent.tools[0]?.functionDeclarations ?? [];
+        for (const name of ['search_places', 'get_place_details', 'get_distance_matrix']) {
+            expect(declarations.find(tool => tool.name === name)?.description).toContain('Unavailable');
+        }
+    });
+
+    it('declares and authorizes the unapproved technical-rider draft on real Road chat', () => {
+        const declaration = RoadAgent.tools[0]?.functionDeclarations
+            .find(tool => tool.name === 'generate_technical_rider');
+        expect(RoadAgent.authorizedTools).toContain('generate_technical_rider');
+        expect(Object.keys(RoadAgent.functions ?? {})).toContain('generate_technical_rider');
+        expect(declaration).toEqual(expect.objectContaining({
+            description: expect.stringContaining('unsaved, unapproved'),
+            parameters: expect.objectContaining({
+                required: ['artistName', 'stageSetup', 'audioRequirements'],
+            }),
+        }));
+    });
+
     describe('plan_tour_route', () => {
-        it('should call generateStructuredData and return success response', async () => {
+        it('creates an ordered route draft without model-generated distances', async () => {
             const args = {
                 start_location: 'New York',
                 end_location: 'Los Angeles',
@@ -87,21 +116,16 @@ describe('RoadAgent', () => {
             const result = await RoadAgent.functions!.plan_tour_route(args);
             expect(result.success).toBe(true);
             expect(result.data?.legs.length).toBe(3);
-            expect(AutonomousIntelligence.generateStructuredData).toHaveBeenCalled();
+            expect(result.data?.route).toEqual(['New York', 'Chicago', 'Denver', 'Los Angeles']);
+            expect(result.data?.totalDistance).toBe('Not calculated');
+            expect(result.data?.estimatedDuration).toBe('Not calculated');
+            expect(AutonomousIntelligence.generateStructuredData).not.toHaveBeenCalled();
         });
 
-        it('should handle errors gracefully', async () => {
-            vi.mocked(AutonomousIntelligence.generateStructuredData).mockRejectedValueOnce(new Error('Generation failed'));
-            
-            const args = {
-                start_location: 'New York',
-                end_location: 'Los Angeles',
-                stops: []
-            };
-
-            const result = await RoadAgent.functions!.plan_tour_route(args);
+        it('rejects an incomplete route rather than inventing stops', async () => {
+            const result = await RoadAgent.functions!.plan_tour_route({ locations: [] });
             expect(result.success).toBe(false);
-            expect(result.error).toBe('Generation failed');
+            expect(result.metadata?.errorCode).toBe('TOOL_EXECUTION_ERROR');
         });
     });
 
@@ -119,33 +143,17 @@ describe('RoadAgent', () => {
     });
 
     describe('draft_tour_itinerary', () => {
-        it('should call generateStructuredData and return itinerary', async () => {
-            const args = {
-                tour_name: 'Summer Rock Tour',
-                start_date: '2026-07-01',
-                end_date: '2026-07-02',
-                cities: ['Detroit']
-            };
-
-            const result = await RoadAgent.functions!.draft_tour_itinerary(args);
-            expect(result.success).toBe(true);
-            expect(result.data?.tourName).toBe('Summer Rock Tour');
-            expect(AutonomousIntelligence.generateStructuredData).toHaveBeenCalled();
-        });
-
-        it('should handle errors gracefully', async () => {
-            vi.mocked(AutonomousIntelligence.generateStructuredData).mockRejectedValueOnce(new Error('Itinerary error'));
-
-            const args = {
-                tour_name: 'Summer Rock Tour',
-                start_date: '2026-07-01',
-                end_date: '2026-07-02',
-                cities: ['Detroit']
-            };
-
-            const result = await RoadAgent.functions!.draft_tour_itinerary(args);
-            expect(result.success).toBe(false);
-            expect(result.error).toBe('Itinerary error');
+        it('keeps the declared, authorized, and executable arguments aligned', () => {
+            const declaration = RoadAgent.tools[0]?.functionDeclarations
+                .find(tool => tool.name === 'draft_tour_itinerary');
+            expect(RoadAgent.authorizedTools).toContain('draft_tour_itinerary');
+            expect(Object.keys(RoadAgent.functions ?? {})).toContain('draft_tour_itinerary');
+            expect(declaration).toEqual(expect.objectContaining({
+                description: expect.stringContaining('Does not calculate routing'),
+                parameters: expect.objectContaining({
+                    required: ['tour_name', 'start_date', 'end_date', 'cities'],
+                }),
+            }));
         });
     });
 

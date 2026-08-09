@@ -15,6 +15,13 @@ import { logger } from '@/utils/logger';
 
 export const SetlistCategorySchema = z.enum(['original', 'dj', 'cover', 'unclassified']);
 export const SetlistTrackTypeSchema = z.enum(['original', 'remix', 'cover', 'other']);
+const SetlistDateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine(value => {
+    const [year, month, day] = value.split('-').map(Number);
+    const parsed = new Date(Date.UTC(year, month - 1, day));
+    return parsed.getUTCFullYear() === year
+        && parsed.getUTCMonth() === month - 1
+        && parsed.getUTCDate() === day;
+}, 'Date must be a valid calendar date');
 
 export const SetlistTrackDraftSchema = z.object({
     id: z.string().min(1).max(80),
@@ -26,7 +33,7 @@ export const SetlistTrackDraftSchema = z.object({
 export const SetlistDraftInputSchema = z.object({
     userId: z.string().min(1).max(128),
     venue: z.string().trim().min(1).max(300),
-    date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    date: SetlistDateSchema,
     city: z.string().trim().max(200).default(''),
     attendance: z.number().int().min(0).max(1_000_000).default(0),
     songs: z.array(SetlistTrackDraftSchema).min(1).max(200),

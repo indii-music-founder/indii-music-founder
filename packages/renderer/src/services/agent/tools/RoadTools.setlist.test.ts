@@ -69,4 +69,23 @@ describe('RoadTools log_live_setlist_for_pro', () => {
         expect(result.metadata?.errorCode).toBe('AUTH_REQUIRED');
         expect(mocks.createDraft).not.toHaveBeenCalled();
     });
+
+    it('rejects impossible calendar dates and blank track titles before persistence', async () => {
+        const invalidDate = await RoadTools.log_live_setlist_for_pro({
+            venue: 'Test Venue',
+            date: '2099-99-99',
+            tracks: ['Song One'],
+        });
+        const blankTrack = await RoadTools.log_live_setlist_for_pro({
+            venue: 'Test Venue',
+            date: '2099-08-09',
+            tracks: ['   '],
+        });
+
+        expect(invalidDate.success).toBe(false);
+        expect(invalidDate.metadata?.errorCode).toBe('INVALID_SETLIST_DRAFT');
+        expect(blankTrack.success).toBe(false);
+        expect(blankTrack.metadata?.errorCode).toBe('INVALID_SETLIST_DRAFT');
+        expect(mocks.createDraft).not.toHaveBeenCalled();
+    });
 });
