@@ -1,5 +1,5 @@
 import React from 'react';
-import { Map, Truck, ChevronRight, ListMusic, Settings, BookOpen, type LucideIcon } from 'lucide-react';
+import { Map, Truck, ChevronRight, ListMusic, BookOpen, type LucideIcon } from 'lucide-react';
 import { motion } from 'motion/react';
 
 export type TouringTab = 'plan' | 'tour-book' | 'on-the-road' | 'insights';
@@ -13,7 +13,7 @@ export const RoadManagerSidebar: React.FC<RoadManagerSidebarProps> = ({ activeTa
     const navItems: { id: TouringTab; label: string; icon: LucideIcon; description: string }[] = [
         { id: 'plan', label: 'Plan', icon: Map, description: 'Route & Optimization' },
         { id: 'tour-book', label: 'Tour Book', icon: BookOpen, description: 'Day Sheets & Tech Rider' },
-        { id: 'on-the-road', label: 'On the Road', icon: Truck, description: 'Live GPS & Logistics' },
+        { id: 'on-the-road', label: 'On the Road', icon: Truck, description: 'Route Map & Nearby Services' },
         { id: 'insights', label: 'Insights', icon: ListMusic, description: 'Analytics & Streams' },
     ];
 
@@ -78,18 +78,6 @@ export const RoadManagerSidebar: React.FC<RoadManagerSidebarProps> = ({ activeTa
                     );
                 })}
             </nav>
-
-            {/* Bottom Status / User Info could go here */}
-            <div className="p-4 border-t border-gray-800/50">
-                <div className="bg-gray-900/50 rounded-lg p-3 border border-gray-800 flex items-center gap-3">
-                    <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]" />
-                    <div className="flex-1">
-                        <div className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">System Status</div>
-                        <div className="text-xs text-white font-mono">ONLINE</div>
-                    </div>
-                    <Settings size={14} className="text-gray-600 transition-colors" />
-                </div>
-            </div>
         </div>
     );
 };

@@ -130,6 +130,8 @@ describe('RoadManager', () => {
         render(<RoadManager />);
         expect(screen.getByText('Tour Parameters')).toBeInTheDocument();
         expect(screen.getByLabelText('Route Waypoints')).toBeInTheDocument();
+        expect(screen.getByText('Route Map & Nearby Services')).toBeInTheDocument();
+        expect(screen.queryByText('ONLINE')).not.toBeInTheDocument();
     });
 
     it('adds and removes locations', async () => {
