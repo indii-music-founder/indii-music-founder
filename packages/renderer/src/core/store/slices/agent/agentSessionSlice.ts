@@ -582,9 +582,27 @@ export function buildAgentSessionState(
                     hasDoneInitialCleanup = true;
 
                     set(state => {
-                        // Merge remote sessions with local unpersisted sessions (don't replace, merge)
-                        // This prevents locally-created conversations from being lost when subscription fires
-                        const mergedSessions = { ...state.sessions, ...sessionMap };
+                        // Session-list documents do not carry the authoritative message
+                        // stream once a session has migrated to child documents. Preserve
+                        // the active local view until subscribeToMessages supplies its next
+                        // snapshot; replacing it with the parent document's stale/empty
+                        // `messages` array makes in-flight responses and their correlation
+                        // metadata disappear from the UI.
+                        const mergedSessions = { ...state.sessions };
+                        Object.entries(sessionMap).forEach(([sessionId, remoteSession]) => {
+                            const localSession = state.sessions[sessionId];
+                            const usesMessageSubcollection =
+                                remoteSession.messageStorage === 'subcollection' ||
+                                localSession?.messageStorage === 'subcollection';
+
+                            mergedSessions[sessionId] = {
+                                ...localSession,
+                                ...remoteSession,
+                                ...(usesMessageSubcollection && localSession
+                                    ? { messages: localSession.messages }
+                                    : {}),
+                            };
+                        });
 
                         // If we already have an active session, keep it, otherwise set latest
                         let activeId = state.activeSessionId;

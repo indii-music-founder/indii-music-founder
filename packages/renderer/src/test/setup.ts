@@ -391,12 +391,15 @@ vi.mock('firebase/firestore', () => {
         enableNetwork: vi.fn(() => Promise.resolve()),
         persistentLocalCache: vi.fn(() => ({})),
         persistentMultipleTabManager: vi.fn(() => ({})),
-        runTransaction: vi.fn((cb) => cb({
-            get: vi.fn(() => Promise.resolve({ exists: () => true, data: () => ({}), id: 'mock-doc-id' })),
-            set: vi.fn(),
-            update: vi.fn(),
-            delete: vi.fn()
-        })),
+        runTransaction: vi.fn((dbOrCallback, maybeCallback) => {
+            const callback = typeof maybeCallback === 'function' ? maybeCallback : dbOrCallback;
+            return callback({
+                get: vi.fn(() => Promise.resolve({ exists: () => true, data: () => ({}), id: 'mock-doc-id' })),
+                set: vi.fn(),
+                update: vi.fn(),
+                delete: vi.fn()
+            });
+        }),
         writeBatch: vi.fn(() => ({
             set: vi.fn(),
             update: vi.fn(),

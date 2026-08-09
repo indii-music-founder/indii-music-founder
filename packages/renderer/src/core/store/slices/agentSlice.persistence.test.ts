@@ -1,8 +1,9 @@
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { createStore } from 'zustand';
+import type { AgentMessage, ConversationSession } from './agent';
 
 // Mock must be defined before imports that use it
-const { mockUpdateSession, mockAppendMessage, mockUpdateMessage, mockClearMessages, mockSubscribeToMessages, messageSubscribers, mockCreateSession, mockDeleteSession, mockGetSessionsForUser } = vi.hoisted(() => ({
+const { mockUpdateSession, mockAppendMessage, mockUpdateMessage, mockClearMessages, mockSubscribeToMessages, messageSubscribers, mockSubscribeToSessions, sessionSubscribers, mockCreateSession, mockDeleteSession, mockGetSessionsForUser } = vi.hoisted(() => ({
     mockUpdateSession: vi.fn().mockResolvedValue(undefined),
     mockAppendMessage: vi.fn().mockResolvedValue(undefined),
     mockUpdateMessage: vi.fn().mockResolvedValue(undefined),
@@ -10,6 +11,11 @@ const { mockUpdateSession, mockAppendMessage, mockUpdateMessage, mockClearMessag
     messageSubscribers: [] as Array<(messages: AgentMessage[]) => void>,
     mockSubscribeToMessages: vi.fn((_id: string, onUpdate: (messages: AgentMessage[]) => void) => {
         messageSubscribers.push(onUpdate);
+        return () => {};
+    }),
+    sessionSubscribers: [] as Array<(sessions: ConversationSession[]) => void>,
+    mockSubscribeToSessions: vi.fn((onUpdate: (sessions: ConversationSession[]) => void) => {
+        sessionSubscribers.push(onUpdate);
         return () => {};
     }),
     mockGetSessionsForUser: vi.fn().mockResolvedValue([]),
@@ -23,6 +29,7 @@ vi.mock('@/services/agent/SessionService', () => ({
         appendMessage: mockAppendMessage,
         updateMessage: mockUpdateMessage,
         clearMessages: mockClearMessages,
+        subscribeToSessions: mockSubscribeToSessions,
         subscribeToMessages: mockSubscribeToMessages,
         getSessionsForUser: mockGetSessionsForUser,
         createSession: mockCreateSession,
@@ -31,7 +38,6 @@ vi.mock('@/services/agent/SessionService', () => ({
 }));
 
 import { createAgentSlice, AgentSlice } from './agent';
-import type { AgentMessage } from './agent';
 import { sessionService } from '@/services/agent/SessionService';
 
 describe('AgentSlice Persistence (The Amnesia Check)', () => {
@@ -40,6 +46,7 @@ describe('AgentSlice Persistence (The Amnesia Check)', () => {
     beforeEach(async () => {
         vi.clearAllMocks();
         messageSubscribers.length = 0;
+        sessionSubscribers.length = 0;
         // Create a fresh store for each test
         useStore = createStore<AgentSlice>((...a) => createAgentSlice(...a));
 
@@ -209,6 +216,68 @@ describe('AgentSlice Persistence (The Amnesia Check)', () => {
         expect(useStore.getState().agentHistory.map(message => message.id)).toEqual([
             'workflow-user',
             'workflow-intake',
+        ]);
+    });
+
+    it('keeps displayed subcollection messages and response metadata during a session-list refresh', async () => {
+        const store = useStore.getState();
+        const sessionId = store.activeSessionId!;
+        const displayedResponse: AgentMessage = {
+            id: 'response-live',
+            role: 'model',
+            text: 'Displayed Evolas response',
+            timestamp: 20,
+            metadata: {
+                personaResponse: {
+                    personaId: 'manager',
+                    responseId: 'response-live',
+                    isControlGroup: false,
+                    effectiveFaderValues: {
+                        warmth: 50,
+                        directness: 50,
+                        detail: 50,
+                        formality: 50,
+                        reasoningTransparency: 50,
+                    },
+                    measurementStatus: 'pending',
+                },
+            },
+        };
+        useStore.setState((state: AgentSlice) => ({
+            sessions: {
+                ...state.sessions,
+                [sessionId]: {
+                    ...state.sessions[sessionId]!,
+                    messages: [displayedResponse],
+                },
+            },
+            agentHistory: [displayedResponse],
+        }));
+
+        await store.loadSessions();
+        expect(sessionSubscribers).toHaveLength(1);
+
+        sessionSubscribers[0]!([{
+            id: sessionId,
+            title: 'Test Session',
+            createdAt: 1,
+            updatedAt: 21,
+            messages: [],
+            participants: ['agent-1'],
+            messageStorage: 'subcollection',
+        }]);
+
+        expect(useStore.getState().agentHistory).toEqual([
+            expect.objectContaining({
+                id: 'response-live',
+                text: 'Displayed Evolas response',
+                metadata: {
+                    personaResponse: expect.objectContaining({
+                        responseId: 'response-live',
+                        measurementStatus: 'pending',
+                    }),
+                },
+            }),
         ]);
     });
 });
