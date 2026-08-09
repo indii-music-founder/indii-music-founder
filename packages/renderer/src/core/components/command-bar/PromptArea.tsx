@@ -26,6 +26,7 @@ import { logger } from '@/utils/logger';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { IndiiFavicon } from '@/components/shared/IndiiFavicon';
 import { AgentModePicker } from '@/components/AgentModePicker';
+import { getModePickerPosition } from './modePickerPosition';
 
 interface PromptAreaProps {
     className?: string;
@@ -42,6 +43,12 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
     const [showModePicker, setShowModePicker] = useState(false);
     const modeButtonRef = useRef<HTMLButtonElement>(null);
     const [modeButtonRect, setModeButtonRect] = useState<DOMRect | null>(null);
+    const modePickerPosition = modeButtonRect && typeof window !== 'undefined'
+        ? getModePickerPosition(modeButtonRect, {
+            width: window.innerWidth,
+            height: window.innerHeight,
+        })
+        : null;
 
     const handleToggleModePicker = useCallback(() => {
         if (!showModePicker && modeButtonRef.current) {
@@ -510,7 +517,7 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                             </button>
 
                             <AnimatePresence>
-                                {showModePicker && modeButtonRect && typeof document !== 'undefined' && (createPortal(
+                                {showModePicker && modePickerPosition && typeof document !== 'undefined' && (createPortal(
                                     <div className="fixed inset-0 z-9999">
                                         <motion.div 
                                             initial={{ opacity: 0 }}
@@ -526,10 +533,7 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                                             animate={{ opacity: 1, scale: 1, y: 0 }}
                                             exit={{ opacity: 0, scale: 0.95, y: 10 }}
                                             className="absolute origin-bottom-right"
-                                            style={{ 
-                                                bottom: window.innerHeight - modeButtonRect.top + 12,
-                                                right: window.innerWidth - modeButtonRect.right,
-                                            }}
+                                            style={modePickerPosition}
                                             onWheel={(e) => e.stopPropagation()}
                                             onTouchStart={(e) => e.stopPropagation()}
                                             onMouseDown={(e) => e.stopPropagation()}
