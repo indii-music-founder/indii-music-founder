@@ -36,8 +36,7 @@ import { initializeAuth, browserLocalPersistence, browserSessionPersistence, ind
 import { firebaseConfig, env } from '@/config/env';
 
 import { getFunctions, connectFunctionsEmulator, httpsCallable } from 'firebase/functions';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { initializeAppCheck, ReCaptchaV3Provider, ReCaptchaEnterpriseProvider } from 'firebase/app-check';
+import { initializeAppCheck, ReCaptchaV3Provider, ReCaptchaEnterpriseProvider, CustomProvider } from 'firebase/app-check';
 import { getRemoteConfig } from 'firebase/remote-config';
 import { INTELLIGENCE_MODELS } from '@/core/config/intelligence-models';
 import { getE2EMockUser, isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
@@ -400,24 +399,18 @@ if (typeof window !== 'undefined') {
 
     // Logic:
     // 1. Must have a key.
-    // 2. CRITICAL: Always skip App Check in Electron (DEV or PROD) because:
-    //    - ReCaptcha Enterprise requires a web origin (Electron is not a web origin)
-    //    - Electron has empty/missing Referer headers which Firebase blocks
-    //    - Firestore/Storage Security Rules enforce authorization without App Check
+    // 2. Electron uses a CustomProvider backed by a Cloud Function since ReCaptcha requires a web origin.
     // 3. CRITICAL: In DEV mode with Functions emulator, skip App Check entirely to avoid Installations API blocking.
-    const skipAppCheckInElectron = isElectron;
     const skipAppCheckInEmulator = env.DEV && (
         env.VITE_USE_FUNCTIONS_EMULATOR === 'true' ||
         isLocalhostDev
     );
-    const shouldInitAppCheck = !skipAppCheckInElectron && !skipAppCheckInEmulator && !!env.appCheckKey;
+    const shouldInitAppCheck = !skipAppCheckInEmulator && !!env.appCheckKey;
 
-    if (skipAppCheckInElectron) {
-        logger.info('[App Check] Skipped in Electron (native app, empty Referer headers). Auth/Firestore Security Rules enforce authorization.');
-    } else if (skipAppCheckInEmulator) {
+    if (skipAppCheckInEmulator) {
         logger.info('[App Check] Skipped in emulator mode (dev: true, emulator: true). Auth/Firestore will work without App Check validation.');
     } else if (shouldInitAppCheck) {
-        if (env.DEV && isLocalhostDev) {
+        if (env.DEV && isLocalhostDev && !isElectron) {
             Logger.warn(TAG,
                 '[indii][AppCheck] Running on localhost without a debug token.\n' +
                 'Google Maps and other protected services will fail until you:\n' +
@@ -427,11 +420,30 @@ if (typeof window !== 'undefined') {
         }
 
         try {
+            const provider = isElectron
+              ? new CustomProvider({
+                  getToken: async () => {
+                      if (!auth.currentUser) {
+                          logger.warn('[App Check] Cannot mint token: User not authenticated yet.');
+                          throw new Error('User not authenticated');
+                      }
+                      try {
+                          const mintFn = httpsCallable<{appId: string}, {token: string, expireTimeMillis: number}>(functions, 'mintElectronAppCheckToken');
+                          const result = await mintFn({ appId: firebaseConfig.appId });
+                          return result.data;
+                      } catch (err) {
+                          logger.error('[App Check] Failed to mint custom token:', err);
+                          throw err;
+                      }
+                  }
+              })
+              : new ReCaptchaEnterpriseProvider(env.appCheckKey!);
+
             appCheck = initializeAppCheck(app, {
-                provider: new ReCaptchaEnterpriseProvider(env.appCheckKey!),
+                provider,
                 isTokenAutoRefreshEnabled: true
             });
-            logger.info('[App Check] Initialized successfully');
+            logger.info(isElectron ? '[App Check] Initialized custom provider for Electron' : '[App Check] Initialized successfully');
         } catch (e: unknown) {
             // CRITICAL: Do NOT re-throw here. A failed App Check must not crash
             // the entire app (killing React before it mounts). Firestore/Storage
