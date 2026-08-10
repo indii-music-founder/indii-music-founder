@@ -36,7 +36,9 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '@/lib/utils';
 import { getRemoteConnectionPhase } from './RemoteConnectionState';
+import { isRemoteSurfaceDevice } from './routing';
 import { useModalAccessibility } from '@/hooks/useModalAccessibility';
+import { useMobile } from '@/hooks/useMobile';
 
 // Helper for haptic feedback
 // eslint-disable-next-line react-refresh/only-export-components
@@ -133,6 +135,8 @@ function TabFallback() {
 // ─── Main Component ──────────────────────────────────────────────────────────
 
 export default function MobileRemote() {
+  const mobile = useMobile();
+  const looksLikeRemoteDevice = isRemoteSurfaceDevice(mobile);
   const [isPaired, setIsPaired] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<'idle' | 'pairing' | 'connected' | 'error'>(() =>
     remoteRelayService.isAuthenticated() ? 'pairing' : 'idle'
@@ -852,6 +856,18 @@ export default function MobileRemote() {
               <p className="mt-12 text-[#48484a] text-xs font-bold uppercase tracking-[0.2em]">
                 Remote Protocol v1
               </p>
+
+              {!looksLikeRemoteDevice && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    window.location.href = '/';
+                  }}
+                  className="mt-4 text-xs font-medium text-[#8e8e93] underline underline-offset-4 hover:text-white transition-colors cursor-pointer"
+                >
+                  Not on your phone? Continue to indii Studio
+                </button>
+              )}
             </motion.div>
           ) : (
             <motion.div
