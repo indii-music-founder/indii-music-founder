@@ -11,6 +11,8 @@ import {
   Play,
 } from 'lucide-react';
 import { useAuth } from './components/auth/AuthProvider';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { db } from './lib/firebase';
 import { getStudioPreviewUrl, getStudioUrl } from './lib/auth';
 import { flushFounderFunnelQueue, trackFounderFunnelEvent } from './lib/founderFunnel';
 import { isFounderPreviewEnabled } from './lib/previewAccess';
@@ -72,8 +74,11 @@ export default function Home({ founder = true }: { founder?: boolean }) {
   const { user, loading } = useAuth();
   const { scrollYProgress } = useScroll();
   const previewEnabled = isFounderPreviewEnabled();
-  const previewHref = previewEnabled ? getStudioPreviewUrl() : '#preview-status';
+  const previewHref = previewEnabled ? getStudioPreviewUrl() : '#waitlist';
   const hasTrackedFounderView = useRef(false);
+  const [waitlistEmail, setWaitlistEmail] = useState('');
+  const [waitlistStatus, setWaitlistStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [waitlistMessage, setWaitlistMessage] = useState('');
   const [isThesisOpen, setIsThesisOpen] = useState(() => {
     if (typeof window === 'undefined') return false;
     const { hostname, search, hash } = window.location;
@@ -101,6 +106,27 @@ export default function Home({ founder = true }: { founder?: boolean }) {
       );
     }
   }, [founder, user]);
+
+  const handleWaitlistSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!waitlistEmail || !db) return;
+    setWaitlistStatus('loading');
+    setWaitlistMessage('');
+    try {
+      await addDoc(collection(db, 'waitlist'), {
+        email: waitlistEmail,
+        createdAt: serverTimestamp(),
+        source: 'landing_page'
+      });
+      setWaitlistStatus('success');
+      setWaitlistMessage("You're on the list. We'll be in touch.");
+      setWaitlistEmail('');
+    } catch (err) {
+      console.error('Waitlist error:', err);
+      setWaitlistStatus('error');
+      setWaitlistMessage("Something went wrong. Please try again later.");
+    }
+  };
 
   useEffect(() => {
     const schemaScript = document.createElement('script');
@@ -149,8 +175,8 @@ export default function Home({ founder = true }: { founder?: boolean }) {
       'founder_preview_cta_clicked',
       {
         location,
-        target: previewEnabled ? 'studio' : 'coming_soon',
-        label: previewEnabled ? 'Enter Founder Preview' : 'Preview coming soon',
+        target: previewEnabled ? 'studio' : 'waitlist',
+        label: previewEnabled ? 'Enter Founder Preview' : 'Join Waitlist',
       },
       {
         userId: user?.uid ?? null,
@@ -242,7 +268,7 @@ export default function Home({ founder = true }: { founder?: boolean }) {
                   : user
                     ? 'Resume session'
                     : 'Enter preview'
-                : 'Preview coming soon'}
+                : 'Join Waitlist'}
             </span>
             <ArrowRight size={13} className="transition-transform group-hover:translate-x-1" />
           </a>
@@ -388,7 +414,7 @@ export default function Home({ founder = true }: { founder?: boolean }) {
                       ? founder
                         ? 'Enter Founder Preview'
                         : 'Enter indii.music'
-                      : 'Preview coming soon'}
+                      : 'Join Waitlist'}
                     <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" />
                   </a>
                   {founder && (
@@ -432,28 +458,50 @@ export default function Home({ founder = true }: { founder?: boolean }) {
 
       {!previewEnabled && (
         <section
-          id="preview-status"
+          id="waitlist"
           className="relative z-20 scroll-mt-[72px] border-y border-amber-400/20 bg-[#080602]"
-          aria-labelledby="preview-status-title"
+          aria-labelledby="waitlist-title"
         >
           <div className="mx-auto grid max-w-[1500px] gap-8 px-5 py-12 md:grid-cols-[0.48fr_1fr_0.36fr] md:items-center md:px-10 md:py-14">
             <div className="flex items-center gap-3 font-mono text-[9px] uppercase tracking-[0.23em] text-amber-400">
               <span className="h-2 w-2 rounded-full bg-amber-400 shadow-[0_0_18px_rgba(245,158,11,0.8)]" />
-              Preview status / private
+              Waitlist open
             </div>
             <div>
               <h2
-                id="preview-status-title"
+                id="waitlist-title"
                 className="text-3xl font-black tracking-[-0.045em] text-white md:text-4xl"
               >
-                The preview stays private for now.
+                Join the founder waitlist.
               </h2>
               <p className="mt-3 max-w-2xl text-sm leading-relaxed text-white/45 md:text-base">
-                We are preparing the Founder preview before opening product access. You can explore the thesis and the working system here; the application itself is not open to the public yet.
+                We are preparing the Founder preview before opening product access. You can explore the thesis and the working system here. Join the list to get notified when spots open up.
               </p>
             </div>
-            <div className="font-mono text-[10px] uppercase tracking-[0.24em] text-white/30 md:text-right">
-              Opening soon
+            <div className="md:text-right">
+              <form onSubmit={handleWaitlistSubmit} className="flex w-full flex-col gap-3 sm:flex-row md:justify-end">
+                <input
+                  type="email"
+                  placeholder="Enter your email"
+                  required
+                  value={waitlistEmail}
+                  onChange={(e) => setWaitlistEmail(e.target.value)}
+                  disabled={waitlistStatus === 'loading' || waitlistStatus === 'success'}
+                  className="w-full rounded-md border border-white/20 bg-white/5 px-4 py-2.5 text-sm text-white placeholder-white/40 outline-none transition-colors focus:border-amber-400 focus:bg-white/10 sm:max-w-[240px]"
+                />
+                <button
+                  type="submit"
+                  disabled={waitlistStatus === 'loading' || waitlistStatus === 'success'}
+                  className="group inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md bg-amber-400 px-6 py-2.5 text-sm font-bold text-black transition-all hover:bg-amber-300 disabled:opacity-50 disabled:hover:bg-amber-400"
+                >
+                  {waitlistStatus === 'loading' ? 'Joining...' : waitlistStatus === 'success' ? 'Joined' : 'Join Waitlist'}
+                </button>
+              </form>
+              {waitlistMessage && (
+                <p className={`mt-3 text-xs ${waitlistStatus === 'success' ? 'text-amber-400' : 'text-red-400'}`}>
+                  {waitlistMessage}
+                </p>
+              )}
             </div>
           </div>
         </section>
