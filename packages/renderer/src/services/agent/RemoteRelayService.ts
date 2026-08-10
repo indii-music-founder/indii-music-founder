@@ -784,24 +784,19 @@ class RemoteRelayService {
     }
 
     /**
-     * Mark a command as processing (desktop side).
-     */
-    async markCommandProcessing(commandId: string): Promise<void> {
-        if (commandId.startsWith('p2p-')) return;
-        const uid = getUserId();
-        if (!uid) return;
-        await updateDoc(doc(db, 'users', uid, 'remote-relay-commands', commandId), {
-            status: 'processing',
-        });
-    }
-
-    /**
      * Mark a command as completed (desktop side).
      */
     async markCommandCompleted(commandId: string): Promise<void> {
-        if (commandId.startsWith('p2p-')) return;
-        const { studioExecutorLeaseService } = await import('./StudioExecutorLeaseService');
-        await studioExecutorLeaseService.completeCommand(commandId);
+        const uid = getUserId();
+        if (!uid || commandId.startsWith('p2p-')) return;
+
+        try {
+            if (isFirebaseE2EMockEnabled()) return;
+            const { studioExecutorLeaseService } = await import('./StudioExecutorLeaseService');
+            await studioExecutorLeaseService.completeCommand(commandId);
+        } catch (error) {
+            logger.error('[RemoteRelay] markCommandCompleted failed:', error);
+        }
     }
 
     /**
