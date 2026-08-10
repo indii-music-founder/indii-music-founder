@@ -39,7 +39,18 @@ export function normalizeVideoModelTier(model?: string): 'lite' | 'fast' | 'pro'
     if (model === 'lite' || model === 'fast' || model === 'pro') return model;
     const tier = VIDEO_MODEL_TIERS[model as keyof typeof VIDEO_MODEL_TIERS];
     if (tier) return tier;
-    throw new Error(`Unsupported video model "${model}". Choose an approved GA Veo model.`);
+    if (model.includes('lite')) return 'lite';
+    if (model.includes('pro')) return 'pro';
+    return 'fast';
+}
+
+/** Normalize arbitrary canvas/UI aspect ratios to Veo-supported video aspect ratios (16:9 or 9:16). */
+export function normalizeVideoAspectRatio(aspectRatio?: string): '16:9' | '9:16' {
+    if (!aspectRatio) return '16:9';
+    if (aspectRatio === '9:16' || aspectRatio === '3:4' || aspectRatio === '2:3' || aspectRatio === '4:5' || aspectRatio === '9:21' || aspectRatio === '10:16') {
+        return '9:16';
+    }
+    return '16:9';
 }
 
 
@@ -287,8 +298,10 @@ export class VideoGenerationService {
                 maskFrameUri: options.maskFrameUri,
                 maskTrackUri: options.maskTrackUri,
                 frameRange: options.frameRange,
-                referenceUris: referenceUris && referenceUris.length > 0 ? referenceUris : undefined,
-                aspectRatio: options.aspectRatio,
+                referenceUris: referenceUris && referenceUris.length > 0
+                    ? referenceUris.filter(uri => typeof uri === 'string' && uri.startsWith('gs://'))
+                    : undefined,
+                aspectRatio: normalizeVideoAspectRatio(options.aspectRatio),
                 model: modelTier,
                 resolution: options.resolution,
                 durationSeconds: clampedDuration,

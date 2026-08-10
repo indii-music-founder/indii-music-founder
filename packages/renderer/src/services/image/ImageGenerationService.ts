@@ -27,6 +27,17 @@ import { fetchAsBase64 } from '@/services/storage/safeStorageFetch';
 export type NanoBananaTier = 'legacy' | 'lite' | 'fast' | 'pro';
 
 /**
+ * Normalizes model names/IDs into the gateway tier enum ('lite' | 'fast' | 'pro' | 'legacy').
+ */
+export function normalizeImageModelTier(model?: string): 'lite' | 'fast' | 'pro' | 'legacy' {
+    if (!model) return 'fast';
+    if (model === 'lite' || model === 'fast' || model === 'pro' || model === 'legacy') return model;
+    if (model.includes('pro') || model.includes('ultra')) return 'pro';
+    if (model.includes('legacy') || model.includes('imagen-3')) return 'legacy';
+    return 'fast';
+}
+
+/**
  * Full image generation options.
  * All fields are passed through to the Cloud Function without stripping.
  */
@@ -437,16 +448,18 @@ export class ImageGenerationService {
                     .filter((uri, index, all) => all.indexOf(uri) === index)
                     .slice(0, 14);
             }
-            const referenceUri = referenceUris?.[0];
+            // Filter referenceUris to ensure only valid gs:// URIs are sent
+            const validGsReferenceUris = (referenceUris ?? []).filter(uri => typeof uri === 'string' && uri.startsWith('gs://'));
+            const referenceUri = validGsReferenceUris?.[0];
 
             const payload: Record<string, unknown> = {
                 prompt: fullPrompt,
                 aspectRatio,
                 count,
-                model: options.model || 'fast',
+                model: normalizeImageModelTier(options.model),
                 imageSize,
                 referenceUri,
-                referenceUris,
+                referenceUris: validGsReferenceUris.length > 0 ? validGsReferenceUris : undefined,
                 costReservationId: costCheck.operationId,
                 // Gemini 3 advanced config
                 thinkingLevel: options.thinkingLevel,
