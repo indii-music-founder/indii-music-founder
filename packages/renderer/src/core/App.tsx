@@ -255,13 +255,6 @@ export default function App() {
     useEffect(() => {
         if (!shouldUseRemoteSurface || isElectron || typeof window === 'undefined') return;
 
-        // A viewport that hasn't finished laying out yet can report 0x0, which
-        // satisfies every "max-width" media query and misclassifies a desktop
-        // browser as a phone. Real devices are never 0x0. Skip this one-time,
-        // hard `location.replace` redirect until the window has a real size,
-        // rather than stranding a desktop visitor on the Controller surface.
-        if (window.innerWidth === 0 || window.innerHeight === 0) return;
-
         const hostname = window.location.hostname;
         const isLocal =
             hostname === 'localhost' ||
@@ -269,10 +262,30 @@ export default function App() {
             hostname.endsWith('.local');
         if (isLocal) return;
 
-        if (!isMobileRemoteHost(hostname) || !isMobileRemotePath(window.location.pathname)) {
-            window.location.replace(
-                buildMobileRemoteUrl(window.location.search, window.location.hash)
-            );
+        const tryRedirect = () => {
+            // A viewport that hasn't finished laying out yet can report 0x0, which
+            // satisfies every "max-width" media query and misclassifies a desktop
+            // browser as a phone. Real devices are never 0x0. Skip this one-time,
+            // hard `location.replace` redirect until the window has a real size,
+            // rather than stranding a desktop visitor on the Controller surface.
+            if (window.innerWidth === 0 || window.innerHeight === 0) return false;
+
+            if (!isMobileRemoteHost(hostname) || !isMobileRemotePath(window.location.pathname)) {
+                window.location.replace(
+                    buildMobileRemoteUrl(window.location.search, window.location.hash)
+                );
+            }
+            return true;
+        };
+
+        if (!tryRedirect()) {
+            const onResize = () => {
+                if (tryRedirect()) {
+                    window.removeEventListener('resize', onResize);
+                }
+            };
+            window.addEventListener('resize', onResize);
+            return () => window.removeEventListener('resize', onResize);
         }
     }, [shouldUseRemoteSurface, isElectron, location.pathname]);
 
