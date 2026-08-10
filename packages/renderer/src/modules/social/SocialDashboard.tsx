@@ -7,6 +7,8 @@ import { SocialStats, ScheduledPost } from '@/services/social/types';
 import type { ScheduledPost as ModalPost } from './types';
 import { useSocial } from './hooks/useSocial';
 import SocialFeed from './components/SocialFeed';
+import { InstagramHealthCard } from './components/InstagramHealthCard';
+import { InstagramInbox } from './components/InstagramInbox';
 import { logger } from '@/utils/logger';
 import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
 
@@ -149,6 +151,9 @@ export default function SocialDashboard() {
                     {/* Content */}
                     <div className="flex-1 overflow-y-auto custom-scrollbar">
                         <div className="p-4 md:p-6 space-y-6">
+                            {/* Instagram Health Audit Card */}
+                            <InstagramHealthCard onConnectClick={() => setIsAccountWizardOpen(true)} />
+
                             {/* Calendar */}
                             <div className="rounded-xl bg-white/[0.02] border border-white/5 overflow-hidden">
                                 <div className="p-4 border-b border-white/5 flex items-center justify-between">
@@ -180,6 +185,9 @@ export default function SocialDashboard() {
 
                             {/* Social Feed */}
                             <SocialFeed />
+
+                            {/* Instagram Inbox & Comment Automation */}
+                            <InstagramInbox />
                         </div>
                     </div>
                 </div>

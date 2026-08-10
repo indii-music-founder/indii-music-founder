@@ -204,6 +204,80 @@ export const analyticsGetConnectionStatus = onCall(
         };
     });
 
+/** Thorough connection health audit for Instagram connection & scope inspection. */
+export const auditInstagramConnectionCallable = onCall(
+    { enforceAppCheck: false, secrets: ALL_SECRETS, timeoutSeconds: 15, memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1 },
+    async (request) => {
+        validateAppCheckV2(request);
+        const uid = assertAuth(request);
+        const snapshot = await tokenPath(uid, 'instagram').get();
+        if (!snapshot.exists) {
+            return {
+                status: 'RECONNECT_REQUIRED',
+                connected: false,
+                permissions: [],
+                missingPermissions: [
+                    'instagram_basic',
+                    'instagram_content_publish',
+                    'instagram_manage_comments',
+                    'instagram_manage_messages',
+                    'pages_show_list',
+                    'pages_read_engagement',
+                ],
+                lastCheckedAt: Date.now(),
+            };
+        }
+        const token = snapshot.data() as StoredToken;
+        const expiresAt = typeof token.expiresAt === 'number' ? token.expiresAt : undefined;
+        const isExpired = !!expiresAt && expiresAt <= Date.now();
+
+        const requiredScopes = [
+            'instagram_basic',
+            'instagram_content_publish',
+            'instagram_manage_comments',
+            'instagram_manage_messages',
+            'pages_show_list',
+            'pages_read_engagement',
+        ];
+
+        let activePermissions: string[] = Array.isArray(token.permissions) ? (token.permissions as string[]) : [];
+
+        if (token.accessToken && !isExpired && activePermissions.length === 0) {
+            try {
+                const res = await fetch(`https://graph.facebook.com/v23.0/me/permissions?access_token=${encodeURIComponent(token.accessToken)}`);
+                if (res.ok) {
+                    const body = await res.json() as { data?: Array<{ permission?: string; status?: string }> };
+                    activePermissions = (body.data ?? [])
+                        .filter(p => p.status === 'granted' && p.permission)
+                        .map(p => p.permission!);
+                    // Update stored permissions array
+                    await tokenPath(uid, 'instagram').set({ permissions: activePermissions }, { merge: true });
+                }
+            } catch (e) {
+                logger.warn('[auditInstagramConnectionCallable] Permission check failed:', e);
+            }
+        }
+
+        const missingPermissions = requiredScopes.filter(scope => !activePermissions.includes(scope));
+
+        let status: 'HEALTHY' | 'RECONNECT_REQUIRED' | 'MISSING_PERMISSIONS' | 'EXPIRED' = 'HEALTHY';
+        if (isExpired) status = 'EXPIRED';
+        else if (missingPermissions.length > 0 && activePermissions.length > 0) status = 'MISSING_PERMISSIONS';
+        else if (!token.accessToken) status = 'RECONNECT_REQUIRED';
+
+        return {
+            status,
+            connected: status === 'HEALTHY' || status === 'MISSING_PERMISSIONS',
+            igUserId: typeof token.igUserId === 'string' ? token.igUserId : undefined,
+            facebookPageId: typeof token.facebookPageId === 'string' ? token.facebookPageId : undefined,
+            instagramUsername: typeof token.instagramUsername === 'string' ? token.instagramUsername : undefined,
+            permissions: activePermissions,
+            missingPermissions,
+            expiresAt,
+            lastCheckedAt: Date.now(),
+        };
+    });
+
 // ─────────────────────────────────────────────────────────────────────────────
 // analyticsRefreshToken
 // Refresh an expired access token using the stored refresh token.

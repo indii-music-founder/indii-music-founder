@@ -26,7 +26,9 @@ interface ScheduledPostDoc {
     platform: SocialPlatform;
     text?: string;
     mediaUrl?: string;
-    mediaType?: 'video' | 'image';
+    mediaType?: 'video' | 'image' | 'reel' | 'story' | 'carousel';
+    carouselUrls?: string[];
+    shareToFeed?: boolean;
     hashtags?: string[];
     title?: string;
     description?: string;
@@ -98,30 +100,111 @@ async function deliverToTwitter(token: PlatformToken, text: string): Promise<{ s
     }
 }
 
+async function waitForInstagramContainerReady(
+    base: string,
+    containerId: string,
+    accessToken: string,
+    maxWaitMs = 60000,
+): Promise<{ ready: boolean; error?: string }> {
+    const startTime = Date.now();
+    while (Date.now() - startTime < maxWaitMs) {
+        try {
+            const res = await fetch(`${base}/${containerId}?fields=status_code,status&access_token=${encodeURIComponent(accessToken)}`, {
+                signal: AbortSignal.timeout(10000),
+            });
+            if (res.ok) {
+                const data = await res.json() as { status_code?: string; status?: string };
+                if (data.status_code === 'FINISHED') return { ready: true };
+                if (data.status_code === 'ERROR' || data.status_code === 'EXPIRED') {
+                    return { ready: false, error: `Container failed with status: ${data.status_code}` };
+                }
+            }
+        } catch (e) {
+            logger.warn(`[waitForInstagramContainerReady] Polling container ${containerId} warning:`, e);
+        }
+        await new Promise(r => setTimeout(r, 4000));
+    }
+    return { ready: false, error: 'Container processing timed out on Instagram' };
+}
+
 async function deliverToInstagram(token: PlatformToken, post: ScheduledPostDoc): Promise<{ success: boolean; postId?: string; error?: string }> {
     if (!token.igUserId) return { success: false, error: 'Missing Instagram user ID' };
-    const base = 'https://graph.facebook.com/v20.0';
+    const base = 'https://graph.facebook.com/v23.0';
     const caption = [post.text, post.hashtags?.map(h => `#${h.replace('#', '')}`).join(' ')].filter(Boolean).join('\n\n');
 
     try {
-        const params = new URLSearchParams({ access_token: token.accessToken, caption });
-        if (post.mediaType === 'video' && post.mediaUrl) {
-            params.set('media_type', 'REELS');
-            params.set('video_url', post.mediaUrl);
-        } else if (post.mediaUrl) {
-            params.set('image_url', post.mediaUrl);
+        let containerId: string | undefined;
+
+        if (post.mediaType === 'carousel' && Array.isArray(post.carouselUrls) && post.carouselUrls.length > 0) {
+            // Create child item containers
+            const childIds: string[] = [];
+            for (const url of post.carouselUrls) {
+                const childParams = new URLSearchParams({
+                    access_token: token.accessToken,
+                    image_url: url,
+                    is_carousel_item: 'true',
+                });
+                const childRes = await fetch(`${base}/${token.igUserId}/media?${childParams}`, { method: 'POST', signal: AbortSignal.timeout(30000) });
+                if (!childRes.ok) return { success: false, error: `IG carousel child item failed: ${childRes.status}` };
+                const childData = await childRes.json() as { id?: string };
+                if (childData.id) childIds.push(childData.id);
+            }
+            if (childIds.length === 0) return { success: false, error: 'No valid child containers created for Instagram carousel' };
+
+            const carouselParams = new URLSearchParams({
+                access_token: token.accessToken,
+                media_type: 'CAROUSEL',
+                children: childIds.join(','),
+                caption,
+            });
+            const carouselRes = await fetch(`${base}/${token.igUserId}/media?${carouselParams}`, { method: 'POST', signal: AbortSignal.timeout(30000) });
+            if (!carouselRes.ok) return { success: false, error: `IG carousel parent failed: ${carouselRes.status}` };
+            const carouselData = await carouselRes.json() as { id?: string };
+            containerId = carouselData.id;
+        } else {
+            const params = new URLSearchParams({ access_token: token.accessToken });
+            if (post.mediaType === 'story') {
+                params.set('media_type', 'STORIES');
+                if (post.mediaUrl?.match(/\.(mp4|mov)$/i)) {
+                    params.set('video_url', post.mediaUrl);
+                } else if (post.mediaUrl) {
+                    params.set('image_url', post.mediaUrl);
+                }
+            } else if ((post.mediaType === 'reel' || post.mediaType === 'video') && post.mediaUrl) {
+                params.set('media_type', 'REELS');
+                params.set('video_url', post.mediaUrl);
+                params.set('caption', caption);
+                if (post.shareToFeed !== false) {
+                    params.set('share_to_feed', 'true');
+                }
+            } else if (post.mediaUrl) {
+                params.set('image_url', post.mediaUrl);
+                params.set('caption', caption);
+            } else {
+                return { success: false, error: 'Instagram posts require image_url or video_url media' };
+            }
+
+            const createRes = await fetch(`${base}/${token.igUserId}/media?${params}`, { method: 'POST', signal: AbortSignal.timeout(30000) });
+            if (!createRes.ok) return { success: false, error: `IG container ${createRes.status}` };
+            const { id } = await createRes.json() as { id?: string };
+            containerId = id;
         }
 
-        const createRes = await fetch(`${base}/${token.igUserId}/media?${params}`, { method: 'POST', signal: AbortSignal.timeout(30000) });
-        if (!createRes.ok) return { success: false, error: `IG container ${createRes.status}` };
-        const { id } = await createRes.json() as { id?: string };
-        if (!validDeliveredPostId(id)) {
+        if (!validDeliveredPostId(containerId)) {
             return { success: false, error: 'Instagram created no publishable media container ID' };
+        }
+
+        // Poll container readiness for videos/reels/carousels
+        if (post.mediaType === 'video' || post.mediaType === 'reel' || post.mediaType === 'carousel') {
+            const statusCheck = await waitForInstagramContainerReady(base, containerId, token.accessToken);
+            if (!statusCheck.ready) {
+                return { success: false, error: statusCheck.error || 'Instagram media container processing failed' };
+            }
         }
 
         const publishRes = await fetch(`${base}/${token.igUserId}/media_publish`, {
             method: 'POST',
-            body: new URLSearchParams({ creation_id: id, access_token: token.accessToken }),
+            body: new URLSearchParams({ creation_id: containerId, access_token: token.accessToken }),
             signal: AbortSignal.timeout(15000),
         });
         if (!publishRes.ok) return { success: false, error: `IG publish ${publishRes.status}` };

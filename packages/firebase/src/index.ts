@@ -91,6 +91,7 @@ export { setGodMode } from './functions/admin/setGodMode';
 // Auth Handoff Functions (Item 518: Cross-device secure auth)
 export { createHandoffCode, redeemHandoffCode } from './functions/auth/handoff';
 export { provisionVerifiedFreeEntitlement } from './functions/auth/entitlements';
+export { mintElectronAppCheckToken } from './functions/auth/mintElectronAppCheckToken';
 
 // Agent Functions (Bug Reporting)
 export { reportBugFn } from './functions/agent/reportBugFn';
@@ -195,7 +196,8 @@ export { emailExchangeToken, emailRefreshToken, emailRevokeToken } from './email
 export { sendEmail } from './email/sendEmail';
 
 // Growth Intelligence Engine — Platform Analytics OAuth (Spotify, TikTok, Instagram)
-export { analyticsExchangeToken, analyticsFinalizeInstagramConnection, analyticsGetConnectionStatus, analyticsRefreshToken, analyticsRevokeToken } from './analytics/platformTokenExchange';
+export { analyticsExchangeToken, analyticsFinalizeInstagramConnection, analyticsGetConnectionStatus, analyticsRefreshToken, analyticsRevokeToken, auditInstagramConnectionCallable } from './analytics/platformTokenExchange';
+export { sendInstagramMessageCallable, replyInstagramCommentCallable, getInstagramMediaCommentsCallable } from './social/instagramMessaging';
 export { syncPlatformStats } from './functions/social-stats-sync';
 
 // Growth Intelligence Engine — Autonomous Marketing Swarm (ClickHouse read path)

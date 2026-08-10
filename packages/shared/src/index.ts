@@ -19,6 +19,7 @@ export * from './schemas/conversionEvent.js';
 
 
 
+export * from './types/social.js';
 export * from './types/ai.dto.js';
 export * from './types/errors.js';
 export * from './types/founderFunnel.js';
