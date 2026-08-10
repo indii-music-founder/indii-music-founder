@@ -1162,31 +1162,44 @@ export const generateImageV3 = onCall({ ...creativeGatewayCallableOptions, timeo
     const thoughtSummaries: string[] = [];
 
     for (let imageIndex = 0; imageIndex < count; imageIndex += 1) {
-      let image: { data: string; mimeType: string };
+      let image: { data: string; mimeType: string } | undefined;
+
+      let usedInteractions = false;
 
       if (imageAi.interactions) {
-        const interaction = await imageAi.interactions.create({
-          model: modelId,
-          input: interactionInput,
-          response_modalities: responseFormat === 'image_and_text' ? ['text', 'image'] : ['image'],
-          generation_config: {
-            image_config: {
-              aspect_ratio: aspectRatio,
-              ...(normalizedImageSize ? { image_size: normalizedImageSize } : {}),
-            },
-            ...(normalizedThinkingLevel && model === 'fast'
-              ? { thinking_level: normalizedThinkingLevel }
-              : {}),
-            ...(includeThoughts ? { thinking_summaries: 'auto' } : {}),
-          },
-          ...(googleSearchTool ? { tools: googleSearchTool } : {}),
-        });
-        image = extractInteractionImage(interaction);
-        const metadata = extractInteractionMetadata(interaction);
-        if (metadata.textNarration) narrationParts.push(metadata.textNarration);
-        if (metadata.thoughtSummary) thoughtSummaries.push(metadata.thoughtSummary);
-      } else {
-        console.log('[generateImageV3] ai.interactions is undefined (Vertex AI mode). Falling back to models.generateContent...');
+        try {
+            const interaction = await imageAi.interactions.create({
+              model: modelId,
+              input: interactionInput,
+              response_modalities: responseFormat === 'image_and_text' ? ['text', 'image'] : ['image'],
+              generation_config: {
+                image_config: {
+                  aspect_ratio: aspectRatio,
+                  ...(normalizedImageSize ? { image_size: normalizedImageSize } : {}),
+                },
+                ...(normalizedThinkingLevel && model === 'fast'
+                  ? { thinking_level: normalizedThinkingLevel }
+                  : {}),
+                ...(includeThoughts ? { thinking_summaries: 'auto' } : {}),
+              },
+              ...(googleSearchTool ? { tools: googleSearchTool } : {}),
+            });
+            image = extractInteractionImage(interaction);
+            const metadata = extractInteractionMetadata(interaction);
+            if (metadata.textNarration) narrationParts.push(metadata.textNarration);
+            if (metadata.thoughtSummary) thoughtSummaries.push(metadata.thoughtSummary);
+            usedInteractions = true;
+        } catch (e: any) {
+            if (e?.message?.includes('Unsupported model interaction')) {
+                console.log(`[generateImageV3] interactions.create unsupported for ${modelId}, falling back to models.generateContent`);
+            } else {
+                throw e;
+            }
+        }
+      } 
+      
+      if (!usedInteractions) {
+        console.log('[generateImageV3] Falling back to models.generateContent...');
         const thinkingConfig = {
           ...(normalizedThinkingLevel && model === 'fast'
             ? { thinkingLevel: normalizedThinkingLevel.charAt(0).toUpperCase() + normalizedThinkingLevel.slice(1) }
@@ -1234,7 +1247,9 @@ export const generateImageV3 = onCall({ ...creativeGatewayCallableOptions, timeo
         if (textNarration) narrationParts.push(textNarration);
         if (thoughtSummary) thoughtSummaries.push(thoughtSummary);
       }
-
+      if (!image) {
+        throw new Error('Image generation failed to produce output.');
+      }
       generatedImages.push(image);
     }
 
