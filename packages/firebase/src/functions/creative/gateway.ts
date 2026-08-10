@@ -725,6 +725,8 @@ function toGatewayError(error: unknown, context: string): HttpsError {
   ].filter(Boolean).join(' ');
   const lower = combined.toLowerCase();
 
+  console.error(`[Gateway Debug] Raw Error Details for ${context}:`, { error, combined });
+
   let code: GatewayErrorCode = 'internal';
   let publicMessage = 'The generation service could not complete this request. Please try again.';
 
@@ -735,13 +737,14 @@ function toGatewayError(error: unknown, context: string): HttpsError {
   ) {
     code = 'resource-exhausted';
     publicMessage = 'The Vertex AI billing quota for this project is unavailable. Please try again later.';
-  } else if (status === 400 || lower.includes('invalid') || lower.includes('bad request') || lower.includes('safety') || lower.includes('policy') || lower.includes('blocked') || lower.includes('unsupported') || lower.includes('not supported')) {
+  }
+  else if (status === 401 || status === 403 || lower.includes('invalid_grant') || lower.includes('api key') || lower.includes('permission') || lower.includes('auth')) {
+    code = 'permission-denied';
+    publicMessage = 'The generation service is not currently authorized for this request. If developing locally, run: gcloud auth application-default login';
+  }
+  else if (status === 400 || lower.includes('invalid') || lower.includes('bad request') || lower.includes('safety') || lower.includes('policy') || lower.includes('blocked') || lower.includes('unsupported') || lower.includes('not supported')) {
     code = 'invalid-argument';
     publicMessage = 'The generation request was rejected. Review the inputs and try again.';
-  }
-  else if (status === 401 || status === 403 || lower.includes('api key') || lower.includes('permission') || lower.includes('auth')) {
-    code = 'permission-denied';
-    publicMessage = 'The generation service is not currently authorized for this request.';
   }
   else if (status === 404 || lower.includes('not found') || lower.includes('not available')) {
     code = 'failed-precondition';
