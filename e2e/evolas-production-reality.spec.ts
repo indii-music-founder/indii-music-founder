@@ -86,7 +86,10 @@ async function signInThroughVisibleUi(page: Page): Promise<void> {
   if (await emailInput.isVisible({ timeout: 10_000 }).catch(() => false)) {
     await emailInput.fill(productionCredentials!.email);
     await page.getByLabel("password").fill(productionCredentials!.password);
-    await page.getByRole("button", { name: "Sign In", exact: true }).click();
+    await page
+      .locator("form")
+      .getByRole("button", { name: "Sign In", exact: true })
+      .click();
   }
 
   await expect(
@@ -348,7 +351,9 @@ test.describe("@live Evolas unauthenticated production boundary", () => {
 
       await expect(page.getByLabel("email")).toBeVisible({ timeout: 30_000 });
       await expect(
-        page.getByRole("button", { name: "Sign In", exact: true }),
+        page
+          .locator("form")
+          .getByRole("button", { name: "Sign In", exact: true }),
       ).toBeVisible();
       await expect(page.getByTestId("main-prompt-input")).toHaveCount(0);
     } finally {
