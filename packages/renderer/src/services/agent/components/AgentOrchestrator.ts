@@ -278,9 +278,28 @@ export class AgentOrchestrator {
         graph?: AgentGraph;
         reasoning: string;
     }> {
+        if (!auth.currentUser?.uid) {
+            throw new Error('User must be authenticated to determine an orchestration path.');
+        }
+
+        // Reject or sanitize before the complexity model sees any user input.
+        // These checks stay outside the fallback catch so blocked input can
+        // never be retried through another model path.
+        const validation = InputSanitizer.validate(userQuery);
+        if (!validation.valid) {
+            logger.warn('[indii:Orchestrator] Invalid orchestration query:', validation.error);
+            throw new Error(`Invalid request: ${validation.error}`);
+        }
+        const security = InputSanitizer.securityCheck(userQuery);
+        if (security.shouldBlock) {
+            logger.warn('[indii:Orchestrator] Orchestration input blocked:', security.analysis.detectedPatterns);
+            throw new Error('Request blocked by security filter.');
+        }
+        const sanitizedQuery = InputSanitizer.sanitize(userQuery);
+
         // 1. Check for complexity using a fast thinking model
         const complexityPrompt = `
-        Analyze this request for complexity: "${userQuery}"
+        Analyze this request for complexity: "${sanitizedQuery}"
         
         Is this a:
         - "SIMPLE" request (one clear goal, one agent)?
@@ -300,23 +319,23 @@ export class AgentOrchestrator {
 
             if (decision.type === 'COMPLEX') {
                 logger.info('[AgentOrchestrator] Complex request detected, decomposing into dynamic graph.');
-                const graph = await graphDecompositionService.decompose(userQuery, context);
+                const graph = await graphDecompositionService.decompose(sanitizedQuery, context);
                 return { type: 'graph', graph, reasoning: decision.reasoning };
             }
 
             if (decision.type === 'PARALLEL') {
                 logger.info('[AgentOrchestrator] Parallel request detected, fanning out.');
-                const subtasks = await this.determineFanOut(context, userQuery);
+                const subtasks = await this.determineFanOut(context, sanitizedQuery);
                 return { type: 'parallel', subtasks, reasoning: decision.reasoning };
             }
 
             // Default to single agent
-            const agentId = await this.determineAgent(context, userQuery);
+            const agentId = await this.determineAgent(context, sanitizedQuery);
             return { type: 'single', agentId, reasoning: decision.reasoning };
 
         } catch (error) {
             logger.warn('[AgentOrchestrator] Path determination failed, falling back to single agent.', error);
-            const agentId = await this.determineAgent(context, userQuery);
+            const agentId = await this.determineAgent(context, sanitizedQuery);
             return { type: 'single', agentId, reasoning: 'Fallback due to orchestration error' };
         }
     }

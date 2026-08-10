@@ -2,7 +2,7 @@ import React from 'react';
 import { useStore } from '@/core/store';
 import { DEPARTMENTS } from '@/services/agent/departments';
 import { VALID_AGENT_IDS } from '@/services/agent/types';
-type ConversationMode = 'direct' | 'department' | 'boardroom';
+import type { ConversationMode } from '@/core/store/slices/agent/agentUISlice';
 import { motion, AnimatePresence } from 'motion/react';
 import { Users, User, LayoutGrid, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -10,12 +10,13 @@ import { useShallow } from 'zustand/react/shallow';
 import { agentRegistry } from '@/services/agent/registry';
 
 /**
- * AgentModePicker — Three-mode hybrid hierarchical agent selector.
- * Allows switching between Boardroom (All Heads), Department (Vertical Swarm),
- * and Direct (Solo Agent) modes.
+ * AgentModePicker — Hybrid hierarchical agent selector.
+ * Allows automatic orchestration or an explicit Boardroom, Department, or
+ * Direct execution contract.
  */
 interface AgentModePickerProps {
     className?: string;
+    allowAutomaticRouting?: boolean;
     mode?: ConversationMode;
     onModeChange?: (mode: ConversationMode) => void;
     departmentId?: string | null;
@@ -26,6 +27,7 @@ interface AgentModePickerProps {
 
 export function AgentModePicker({ 
     className,
+    allowAutomaticRouting = true,
     mode: controlledMode,
     onModeChange,
     departmentId: controlledDeptId,
@@ -51,11 +53,12 @@ export function AgentModePicker({
     const setActiveDepartmentId = onDepartmentChange ?? store.setActiveDepartmentId;
     const setDirectTargetAgentId = onAgentChange ?? store.setDirectTargetAgentId;
 
-    const modes = [
+    const modes = ([
+        { id: 'orchestrated', label: 'Auto', icon: LayoutGrid, desc: 'Automatic routing' },
         { id: 'boardroom', label: 'Boardroom', icon: LayoutGrid, desc: 'Multi-dept swarm' },
         { id: 'department', label: 'Department', icon: Users, desc: 'Single dept swarm' },
         { id: 'direct', label: 'Direct', icon: User, desc: 'Solo agent chat' },
-    ] as const;
+    ] as const).filter(mode => allowAutomaticRouting || mode.id !== 'orchestrated');
 
     return (
         <div className={cn("flex flex-col gap-3 p-1 rounded-2xl bg-black/40 border border-white/5 backdrop-blur-xl shadow-2xl", className)}>
@@ -203,6 +206,21 @@ export function AgentModePicker({
                         <div className="text-[11px] font-bold text-white/80 mb-1">Boardroom Active</div>
                         <p className="text-[10px] text-white/40 max-w-[180px] mx-auto leading-relaxed">
                             Full swarm mode. 21 department heads collaborate freely on your project.
+                        </p>
+                    </motion.div>
+                )}
+
+                {conversationMode === 'orchestrated' && (
+                    <motion.div
+                        key="orchestrated-info"
+                        initial={{ opacity: 0, y: 5 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -5 }}
+                        className="px-3 py-4 text-center"
+                    >
+                        <div className="text-[11px] font-bold text-white/80 mb-1">Automatic Routing Active</div>
+                        <p className="text-[10px] text-white/40 max-w-[220px] mx-auto leading-relaxed">
+                            The Conductor selects one specialist or a coordinated plan from your request.
                         </p>
                     </motion.div>
                 )}

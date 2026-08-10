@@ -29,11 +29,18 @@ describe('AgentModePicker', () => {
     });
 
     describe('mode segmented switch', () => {
-        it('renders all three mode buttons (boardroom, department, direct)', () => {
+        it('renders all four mode buttons (auto, boardroom, department, direct)', () => {
             render(<AgentModePicker mode="direct" />);
+            expect(screen.getByTestId('agent-mode-orchestrated')).toBeInTheDocument();
             expect(screen.getByTestId('agent-mode-boardroom')).toBeInTheDocument();
             expect(screen.getByTestId('agent-mode-department')).toBeInTheDocument();
             expect(screen.getByTestId('agent-mode-direct')).toBeInTheDocument();
+        });
+
+        it('can hide Auto when a transport cannot carry the routing contract', () => {
+            render(<AgentModePicker mode="boardroom" allowAutomaticRouting={false} />);
+            expect(screen.queryByTestId('agent-mode-orchestrated')).not.toBeInTheDocument();
+            expect(screen.getByTestId('agent-mode-boardroom')).toBeInTheDocument();
         });
 
         it('marks the active mode via data-active and aria-pressed', () => {
@@ -52,6 +59,9 @@ describe('AgentModePicker', () => {
 
             fireEvent.click(screen.getByTestId('agent-mode-department'));
             expect(onModeChange).toHaveBeenLastCalledWith('department');
+
+            fireEvent.click(screen.getByTestId('agent-mode-orchestrated'));
+            expect(onModeChange).toHaveBeenLastCalledWith('orchestrated');
 
             fireEvent.click(screen.getByTestId('agent-mode-boardroom'));
             expect(onModeChange).toHaveBeenLastCalledWith('boardroom');
@@ -84,6 +94,13 @@ describe('AgentModePicker', () => {
             // Direct mode's "Select Agent" header should NOT be present
             expect(screen.queryByText(/select agent/i)).not.toBeInTheDocument();
             expect(screen.queryByText(/select department/i)).not.toBeInTheDocument();
+        });
+
+        it('shows automatic routing status in Auto mode', () => {
+            render(<AgentModePicker mode="orchestrated" />);
+            expect(screen.getByText(/automatic routing active/i)).toBeInTheDocument();
+            expect(screen.getByText(/conductor selects one specialist/i)).toBeInTheDocument();
+            expect(screen.queryByText(/select agent/i)).not.toBeInTheDocument();
         });
     });
 

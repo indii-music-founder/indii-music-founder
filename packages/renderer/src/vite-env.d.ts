@@ -64,6 +64,7 @@ interface ImportMetaEnv {
 
     // App
     readonly VITE_APP_VERSION?: string
+    readonly VITE_BUILD_SHA?: string
     readonly VITE_SKIP_ONBOARDING?: string
     readonly VITE_EXPOSE_INTERNALS?: string
     readonly VITE_E2E?: string

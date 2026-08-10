@@ -126,7 +126,7 @@ interface ModuleProps {
     [key: string]: unknown;
 }
 
-const MODULE_COMPONENTS: Partial<Record<ModuleId, React.LazyExoticComponent<React.ComponentType<ModuleProps>>>> = {
+const MODULE_COMPONENTS: Record<ModuleId, React.LazyExoticComponent<React.ComponentType<ModuleProps>>> = {
     'dashboard': Dashboard,
     'creative': CreativeStudio,
     'legal': LegalDashboard,
@@ -422,7 +422,11 @@ function AppContent({ currentModule, showChrome, isDesktop, isAnyPhone, shortcut
     }, []);
 
     return (
-        <div className="flex h-screen w-screen bg-background text-foreground overflow-hidden" data-testid="app-container">
+        <div
+            className="flex h-screen w-screen bg-background text-foreground overflow-hidden"
+            data-testid="app-container"
+            data-build-sha={import.meta.env.VITE_BUILD_SHA ?? 'development'}
+        >
             <BusinessActivityTracker userId={userId} currentModule={currentModule} />
             <GlobalDropZone>
                 <ShareTargetHandler />

@@ -38,10 +38,19 @@ describe('PersonaResponseActions', () => {
                         isControlGroup: false,
                         effectiveFaderValues: PERSONA_FADER_DEFAULT,
                         measurementStatus: 'recorded',
+                        faderSource: 'absent-default',
                     },
                 }}
             />,
         );
+
+        const receipt = screen.getByTestId('persona-response-actions');
+        expect(receipt).toHaveAttribute('data-persona-id', 'manager');
+        expect(receipt).toHaveAttribute('data-response-id', 'response-copy');
+        expect(receipt).toHaveAttribute('data-control-group', 'false');
+        expect(receipt).toHaveAttribute('data-measurement-status', 'recorded');
+        expect(receipt).toHaveAttribute('data-fader-source', 'absent-default');
+        expect(JSON.parse(receipt.getAttribute('data-effective-faders') ?? '{}')).toEqual(PERSONA_FADER_DEFAULT);
 
         fireEvent.click(screen.getByRole('button', { name: 'Copy response' }));
 

@@ -524,6 +524,7 @@ export default function AgentChat({ onSendCommand: _onSendCommand, isPaired }: A
                         <div className="p-2">
                             <AgentModePicker 
                                 className="border-none bg-transparent"
+                                allowAutomaticRouting={false}
                                 mode={selectedMode}
                                 onModeChange={setSelectedMode}
                                 departmentId={selectedDept}

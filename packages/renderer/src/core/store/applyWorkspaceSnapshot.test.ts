@@ -65,4 +65,13 @@ describe('applyWorkspaceSnapshot', () => {
         expect(useStore.getState().currentModule).toBe('dashboard');
         expect(useStore.getState().conversationMode).toBe('direct');
     });
+
+    it('restores the explicit automatic routing mode from a workspace snapshot', async () => {
+        const { useStore, applyWorkspaceSnapshot } = await import('@/core/store');
+        useStore.setState({ conversationMode: 'direct' }, false);
+
+        applyWorkspaceSnapshot({ conversationMode: 'orchestrated' });
+
+        expect(useStore.getState().conversationMode).toBe('orchestrated');
+    });
 });

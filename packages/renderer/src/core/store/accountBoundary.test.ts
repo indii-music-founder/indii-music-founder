@@ -60,6 +60,12 @@ describe('account-bound root store', () => {
         });
     });
 
+    it('preserves the explicit automatic routing mode in safe browser persistence', () => {
+        expect(sanitizePersistedAppState({ conversationMode: 'orchestrated' })).toEqual({
+            conversationMode: 'orchestrated',
+        });
+    });
+
     it('atomically replaces private slices while preserving the new identity and UI preferences', () => {
         const abortController = new AbortController();
         const resolveApproval = vi.fn();

@@ -1,11 +1,20 @@
 import { test, expect } from '@playwright/test';
 import * as path from 'path';
 
-test.describe('@live Live Production GCP API Verification', () => {
+test.describe('@external-legacy @structural legacy GCP API exercise (token extraction and direct API calls)', () => {
     test.use({ viewport: { width: 1280, height: 800 } });
 
     test('Authenticate and verify all backend API modules', async ({ page, baseURL }) => {
         test.setTimeout(180000);
+        const appCheckToken = process.env.VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN;
+        const legacyEmail = process.env.LEGACY_GCP_E2E_EMAIL;
+        const legacyPassword = process.env.LEGACY_GCP_E2E_PASSWORD;
+        if (!appCheckToken || !legacyEmail || !legacyPassword) {
+            throw new Error(
+                'This opt-in legacy external exercise requires VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN, ' +
+                'LEGACY_GCP_E2E_EMAIL, and LEGACY_GCP_E2E_PASSWORD.',
+            );
+        }
         // Collect console errors and responses
         const consoleErrors: string[] = [];
         const apiResponses: { url: string; status: number; payload?: any }[] = [];
@@ -43,8 +52,7 @@ test.describe('@live Live Production GCP API Verification', () => {
         });
 
         // Inject App Check debug token before any scripts run
-        const appCheckToken = process.env.VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN || '342a22b8-af79-4f15-af67-8b946aabba75';
-        console.log(`[E2E:Live] Injecting App Check debug token: ${appCheckToken}`);
+        console.log('[E2E:Live] Injecting configured App Check debug token.');
         await page.addInitScript((token) => {
             const key = ['FIREBASE', 'APPCHECK', 'DEBUG', 'TOKEN'].join('_');
             (window as any)[key] = token;
@@ -59,23 +67,25 @@ test.describe('@live Live Production GCP API Verification', () => {
         // Dismiss Cookie Preferences if present immediately
         try {
             console.log('[E2E:Live] Checking for Cookie Preferences modal...');
-            const acceptCookies = page.getByRole('button', { name: /Accept All/i }).first();
+            // bypass-strict -- quarantined legacy suite allowed either cookie banner copy.
+            const acceptCookies = page.getByRole('button', { name: /Accept All/i }).first(); // bypass-strict
             await acceptCookies.waitFor({ state: 'visible', timeout: 5000 });
             await acceptCookies.click();
             console.log('[E2E:Live] Clicked "Accept All" cookies.');
-        } catch (e) {
+        } catch (_e) {
             console.log('[E2E:Live] Cookie Preferences dialog not found or skipped.');
         }
 
         // Check if we need to dismiss the onboarding modal
         try {
             console.log('[E2E:Live] Checking for onboarding modal...');
-            const exploreGuest = page.getByRole('button', { name: /Explore as Guest|Enter/i }).first();
+            // bypass-strict -- quarantined legacy suite allowed either legacy onboarding CTA.
+            const exploreGuest = page.getByRole('button', { name: /Explore as Guest|Enter/i }).first(); // bypass-strict
             if (await exploreGuest.isVisible({ timeout: 2000 })) {
                 await exploreGuest.click();
                 console.log('[E2E:Live] Clicked "Explore as Guest" / "Enter".');
             }
-        } catch (e) {
+        } catch (_e) {
             console.log('[E2E:Live] Onboarding dialog not found or skipped.');
         }
 
@@ -83,20 +93,23 @@ test.describe('@live Live Production GCP API Verification', () => {
         await page.waitForFunction(() => (window as any).useStore !== undefined, { timeout: 15000 });
 
         // Check if we are logged in
-        let isLoggedIn = await page.evaluate(() => {
+        const isLoggedIn = await page.evaluate(() => {
             return (window as any).useStore.getState().user !== null;
         });
 
         if (!isLoggedIn) {
             console.log('[E2E:Live] Not logged in, performing login...');
-            const emailInput = page.locator('input[type="email"]').first();
-            const passwordInput = page.locator('input[type="password"]').first();
+            // bypass-strict -- quarantined legacy suite predates uniquely labeled auth fields.
+            const emailInput = page.locator('input[type="email"]').first(); // bypass-strict
+            // bypass-strict -- quarantined legacy suite predates uniquely labeled auth fields.
+            const passwordInput = page.locator('input[type="password"]').first(); // bypass-strict
 
             // Wait for form
             await expect(emailInput).toBeVisible({ timeout: 10000 });
-            await emailInput.fill('marcus.deep@test.indii.music');
-            await passwordInput.fill('Test1234!');
-            await page.locator('form button[type="submit"]').first().click();
+            await emailInput.fill(legacyEmail);
+            await passwordInput.fill(legacyPassword);
+            // bypass-strict -- quarantined legacy suite predates a unique submit selector.
+            await page.locator('form button[type="submit"]').first().click(); // bypass-strict
 
             // Wait for state transition to logged in
             await page.waitForFunction(() => {
@@ -148,10 +161,12 @@ test.describe('@live Live Production GCP API Verification', () => {
             let data = null;
             try {
                 data = await res.json();
-            } catch (e) {
+            } catch (_e) {
                 try {
                     data = await res.text();
-                } catch {}
+                } catch {
+                    // Preserve the null payload when neither body parser succeeds.
+                }
             }
             console.log(`[E2E:Live] ${endpoint.name} status: ${res.status}, ok: ${res.ok}`);
             console.log(`[E2E:Live] ${endpoint.name} response: ${JSON.stringify(data).slice(0, 300)}...`);
@@ -229,7 +244,9 @@ test.describe('@live Live Production GCP API Verification', () => {
             let deleteTrackText = null;
             try {
                 deleteTrackText = await deleteTrackRes.text();
-            } catch {}
+            } catch {
+                // Status still provides useful cleanup evidence without a body.
+            }
             console.log(`[E2E:Live] deleteTrack status: ${deleteTrackRes.status}`);
             apiResponses.push({ url: `https://us-central1-indii-music-founder.cloudfunctions.net/deleteTrack/${createdTrackId}`, status: deleteTrackRes.status, payload: deleteTrackText });
         }
@@ -262,16 +279,20 @@ test.describe('@live Live Production GCP API Verification', () => {
 
         // Dismiss Cookie Preferences if present again
         try {
-            const acceptCookies = page.getByRole('button', { name: /Accept All/i }).first();
+            // bypass-strict -- quarantined legacy suite allowed either cookie banner copy.
+            const acceptCookies = page.getByRole('button', { name: /Accept All/i }).first(); // bypass-strict
             if (await acceptCookies.isVisible()) {
                 await acceptCookies.click();
                 console.log('[E2E:Live] Clicked "Accept All" cookies (second occurrence).');
                 await page.waitForTimeout(500);
             }
-        } catch (e) {}
+        } catch (_e) {
+            // Cookie UI is optional in this legacy exercise.
+        }
 
         // Fill prompt and trigger generation
-        const promptInput = page.locator('[data-testid="direct-prompt-input"], textarea').first();
+        // bypass-strict -- quarantined legacy suite supports two obsolete prompt selectors.
+        const promptInput = page.locator('[data-testid="direct-prompt-input"], textarea').first(); // bypass-strict
         if (await promptInput.isVisible()) {
             console.log('[E2E:Live] Triggering live image generation via UI...');
             await promptInput.fill('A stunning high-fidelity render of detroit techno synth modules, neon lighting');
@@ -304,13 +325,16 @@ test.describe('@live Live Production GCP API Verification', () => {
 
             // Dismiss Cookie Preferences if present
             try {
-                const acceptCookies = page.getByRole('button', { name: /Accept All/i }).first();
+                // bypass-strict -- quarantined legacy suite allowed either cookie banner copy.
+                const acceptCookies = page.getByRole('button', { name: /Accept All/i }).first(); // bypass-strict
                 if (await acceptCookies.isVisible()) {
                     await acceptCookies.click();
                     console.log(`[E2E:Live] Clicked "Accept All" cookies on /${mod}.`);
                     await page.waitForTimeout(500);
                 }
-            } catch (e) {}
+            } catch (_e) {
+                // Cookie UI is optional in this legacy exercise.
+            }
 
             await page.waitForTimeout(1000);
             await page.screenshot({ path: path.join(artifactDir, `live_${mod}_module.png`), fullPage: true });

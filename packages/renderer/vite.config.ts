@@ -99,6 +99,11 @@ const apiFallbackPlugin = (): Plugin => ({
 
 export default defineConfig({
     root: __dirname,
+    define: {
+        'import.meta.env.VITE_BUILD_SHA': JSON.stringify(
+            process.env.GITHUB_SHA || process.env.VITE_BUILD_SHA || 'development',
+        ),
+    },
     envDir: repoRoot,
     envPrefix: [
         'VITE_E2E',

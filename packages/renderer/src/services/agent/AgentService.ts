@@ -495,7 +495,9 @@ export class AgentService {
         const { updateAgentMessage } = state;
         const conversationMode = state.conversationMode;
         
-        context.conversationMode = conversationMode;
+        // Auto is a UI routing mode, not an agent-to-agent communication
+        // permission. Concrete execution paths assign their existing T1 mode.
+        context.conversationMode = conversationMode === 'orchestrated' ? undefined : conversationMode;
         context.runAgent = this.runAgent.bind(this);
 
         // 0. Dispatch by Mode — MUST be checked FIRST.
@@ -528,8 +530,8 @@ export class AgentService {
                 await this.handleDirectChatFlow(text, attachments, context, responseId);
                 return;
             }
-            
-            // For targeted specialists, bypass orchestration and execute directly via their executor!
+
+            // Direct mode always means one explicitly selected agent.
             logger.debug(`[AgentService] Executing direct specialist agent: ${targetAgentId}`);
             updateAgentMessage(responseId, { agentId: targetAgentId });
             
@@ -579,9 +581,15 @@ export class AgentService {
             return;
         }
 
+        if (conversationMode === 'orchestrated') {
+            logger.debug('[AgentService] Routing visible Auto mode through orchestration');
+        }
+
         // 1. Resolve Orchestration Path
         let orchestration;
-        if (forcedAgentId) {
+        // Auto always performs real routing. Module-aligned command bars may
+        // still provide a legacy forced target, which must not bypass it.
+        if (forcedAgentId && conversationMode !== 'orchestrated') {
             orchestration = { type: 'single' as const, agentId: forcedAgentId, reasoning: 'Forced by user' };
         } else {
             orchestration = await this.orchestrator.determineOrchestrationPath(context, text);
@@ -603,9 +611,10 @@ export class AgentService {
         // Default: Single Agent Execution
         const agentId = orchestration.agentId || 'generalist';
         updateAgentMessage(responseId, { agentId });
+        const singleAgentContext: AgentContext = { ...context, conversationMode: 'direct' };
 
         let currentStreamedText = '';
-        const result = await this.executor.execute(agentId, text, context as PipelineContext, (event) => {
+        const result = await this.executor.execute(agentId, text, singleAgentContext as PipelineContext, (event) => {
             if (event.type === 'token') {
                 currentStreamedText += event.content;
                 updateAgentMessage(responseId, { text: currentStreamedText });

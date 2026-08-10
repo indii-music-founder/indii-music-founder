@@ -1,0 +1,74 @@
+name: Evolas Production Reality
+
+on:
+  workflow_dispatch:
+    inputs:
+      production_sha:
+        description: Exact deployed 40-character commit SHA to verify
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  production-reality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+
+    steps:
+      - name: Validate requested SHA
+        env:
+          PRODUCTION_SHA: ${{ inputs.production_sha }}
+        run: |
+          if ! printf '%s' "$PRODUCTION_SHA" | grep -Eq '^[0-9a-f]{40}$'; then
+            echo "::error::production_sha must be an exact 40-character commit SHA."
+            exit 1
+          fi
+
+      - name: Checkout exact production SHA
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.production_sha }}
+
+      - name: Prove checkout identity
+        env:
+          PRODUCTION_SHA: ${{ inputs.production_sha }}
+        run: test "$(git rev-parse HEAD)" = "$PRODUCTION_SHA"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22.x
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Inventory application production-reality claims
+        run: npm run test:production-reality:inventory -- --json > production-reality-inventory.json
+
+      - name: Run genuine Evolas production boundary
+        env:
+          PLAYWRIGHT_BASE_URL: https://indii.music
+          PRODUCTION_SHA: ${{ inputs.production_sha }}
+          AUDITOR_EMAIL: ${{ secrets.AUDITOR_EMAIL }}
+          AUDITOR_PASSWORD: ${{ secrets.AUDITOR_PASSWORD }}
+          EVOLAS_CONTROL_MAX_ATTEMPTS: 12
+          EVOLAS_TELEMETRY_MAX_ATTEMPTS: 3
+        run: npm run test:e2e:evolas:production
+
+      - name: Upload production-reality evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: evolas-production-reality-${{ inputs.production_sha }}
+          path: |
+            production-reality-inventory.json
+            playwright-report/
+            test-results/
+          if-no-files-found: warn
+          retention-days: 7

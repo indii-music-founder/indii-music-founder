@@ -7,11 +7,12 @@ import {
 } from '@indii/shared';
 import { auth, db } from '@/services/firebase';
 import { logger } from '@/utils/logger';
+import type { PersonaFaderResolution } from './PersonaFaderResolution';
 
 export class PersonaFaderRepositoryError extends Error {}
 
-/** Resolve the signed-in user's saved faders, or population defaults when unset. */
-export async function loadPersonaFaderValues(personaId: PersonaId): Promise<PersonaFaderValues> {
+/** Resolve values plus their genuine persisted/default source for runtime verification. */
+export async function resolvePersonaFaderValues(personaId: PersonaId): Promise<PersonaFaderResolution> {
     const uid = auth.currentUser?.uid;
     if (!uid) {
         throw new PersonaFaderRepositoryError('Persona faders require an authenticated user.');
@@ -19,7 +20,7 @@ export async function loadPersonaFaderValues(personaId: PersonaId): Promise<Pers
 
     const snapshot = await getDoc(doc(db, 'users', uid, 'personaFaders', personaId));
     if (!snapshot.exists()) {
-        return { ...PERSONA_FADER_DEFAULT };
+        return { values: { ...PERSONA_FADER_DEFAULT }, source: 'absent-default' };
     }
 
     const data = snapshot.data();
@@ -27,8 +28,13 @@ export async function loadPersonaFaderValues(personaId: PersonaId): Promise<Pers
         logger.warn('[PersonaFaderRepository] Saved faders were invalid; using validated population defaults.', {
             personaId,
         });
-        return { ...PERSONA_FADER_DEFAULT };
+        return { values: { ...PERSONA_FADER_DEFAULT }, source: 'invalid-default' };
     }
 
-    return { ...data.values };
+    return { values: { ...data.values }, source: 'saved' };
+}
+
+/** Resolve the signed-in user's saved faders, or population defaults when unset. */
+export async function loadPersonaFaderValues(personaId: PersonaId): Promise<PersonaFaderValues> {
+    return (await resolvePersonaFaderValues(personaId)).values;
 }

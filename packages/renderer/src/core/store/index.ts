@@ -41,7 +41,10 @@ import { useLivingPlanSlice } from './slices/livingPlanSlice';
 import type { LivingPlan } from '@/services/agent/LivingPlanService';
 import type { WorkspaceSnapshot } from '@/services/sync/WorkspaceSyncService';
 import { isValidModule, type ModuleId } from '@/core/constants';
-import type { ConversationMode } from '@/core/store/slices/agent/agentUISlice';
+import {
+    isConversationMode,
+    type ConversationMode,
+} from '@/core/store/slices/agent/agentUISlice';
 
 export type { AgentMessage, AgentThought } from './slices/agent';
 
@@ -107,7 +110,7 @@ export function sanitizePersistedAppState(value: unknown): Partial<SafePersisted
     if (typeof candidate.currentModule === 'string' && isValidModule(candidate.currentModule)) {
         safe.currentModule = candidate.currentModule;
     }
-    if (candidate.conversationMode === 'direct' || candidate.conversationMode === 'boardroom') {
+    if (isConversationMode(candidate.conversationMode)) {
         safe.conversationMode = candidate.conversationMode;
     }
     return safe;
@@ -266,7 +269,7 @@ export function applyWorkspaceSnapshot(snapshot: Partial<WorkspaceSnapshot>): vo
     if (snapshot.currentModule !== undefined && isValidModule(snapshot.currentModule)) {
         rootUpdates.currentModule = snapshot.currentModule;
     }
-    if (snapshot.conversationMode === 'direct' || snapshot.conversationMode === 'boardroom') {
+    if (isConversationMode(snapshot.conversationMode)) {
         rootUpdates.conversationMode = snapshot.conversationMode;
     }
     if (snapshot.notes !== undefined) {

@@ -47,7 +47,7 @@ export class ContextResolver {
             brandKit,
             activeModule: currentModule,
             chatHistory: conversationMode === 'boardroom' ? state.agentHistory || [] : state.agentHistory || [],
-            conversationMode,
+            conversationMode: conversationMode === 'orchestrated' ? undefined : conversationMode,
             seatedAgents: activeAgents,
             distributor,
             whiskState: state.whiskState

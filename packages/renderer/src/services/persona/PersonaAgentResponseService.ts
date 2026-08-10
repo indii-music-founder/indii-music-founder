@@ -1,7 +1,7 @@
 import type { AgentResponse } from '@/services/agent/types';
 import { logger } from '@/utils/logger';
 import type { PersonaId } from '@indii/shared';
-import { loadPersonaFaderValues } from './PersonaFaderRepository';
+import { loadPersonaFaderValues, resolvePersonaFaderValues } from './PersonaFaderRepository';
 import {
     getPersonaResponse,
     type InstrumentedPersonaResponseResult,
@@ -51,11 +51,13 @@ export type PersonaAgentResponseFinalizer = (
 
 interface PersonaAgentResponseDependencies {
     loadFaders: typeof loadPersonaFaderValues;
+    resolveFaders?: typeof resolvePersonaFaderValues;
     getResponse: typeof getPersonaResponse;
 }
 
 const DEFAULT_DEPENDENCIES: PersonaAgentResponseDependencies = {
     loadFaders: loadPersonaFaderValues,
+    resolveFaders: resolvePersonaFaderValues,
     getResponse: getPersonaResponse,
 };
 
@@ -84,7 +86,10 @@ export async function finalizePersonaAgentResponse(
     }
 
     try {
-        const faderValues = await dependencies.loadFaders(personaId);
+        const faderResolution = dependencies.resolveFaders
+            ? await dependencies.resolveFaders(personaId)
+            : { values: await dependencies.loadFaders(personaId), source: undefined };
+        const faderValues = faderResolution.values;
         const result = await dependencies.getResponse(
             buildSubstanceInput(input.question, input.response.text),
             PERSONA_SUBSTANCE_CONTEXT[personaId],
@@ -103,6 +108,7 @@ export async function finalizePersonaAgentResponse(
                 isControlGroup: result.tracking.isControlGroup,
                 effectiveFaderValues: result.tracking.effectiveFaderValues,
                 measurementStatus: 'pending',
+                ...(faderResolution.source ? { faderSource: faderResolution.source } : {}),
             },
             measurementRecorded: result.tracking.measurementRecorded,
         };

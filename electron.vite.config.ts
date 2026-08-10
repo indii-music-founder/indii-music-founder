@@ -167,6 +167,11 @@ export default defineConfig({
     // ── Renderer Process (DOM / React) ──────────────────────────────────────
     renderer: {
         root: resolve(__dirname, 'packages/renderer'),
+        define: {
+            'import.meta.env.VITE_BUILD_SHA': JSON.stringify(
+                process.env.GITHUB_SHA || process.env.VITE_BUILD_SHA || 'development',
+            ),
+        },
         envPrefix: [
             'VITE_E2E',
             'VITE_FIREBASE_',

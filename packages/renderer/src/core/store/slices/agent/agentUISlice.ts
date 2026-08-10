@@ -5,16 +5,22 @@ import { EMPTY_ENTRY_COMMAND_STATE } from '@/services/commands/EntryCommandRegis
 export type AgentMode = 'assistant' | 'autonomous' | 'creative' | 'research';
 
 /**
- * ConversationMode — three-mode hybrid hierarchical agent system.
+ * ConversationMode — user-selected routing and hierarchical execution mode.
  *
+ * - 'orchestrated' : Conductor chooses a path; each concrete agent execution
+ *                    receives one of the established T1 communication modes
  * - 'direct'     : User ↔ one agent (no delegation)
  * - 'department' : User ↔ head; head ↔ own workers; cross-dept blocked
  * - 'boardroom'  : User ↔ seated heads; heads ↔ each other; workers cannot be seated
  *
- * Default is 'boardroom' to preserve existing behavior. The picker UI is added
- * in Phase 2; until then this state is set programmatically.
+ * Default remains 'direct'.
  */
-export type ConversationMode = 'direct' | 'department' | 'boardroom';
+export const CONVERSATION_MODES = ['direct', 'department', 'boardroom', 'orchestrated'] as const;
+export type ConversationMode = typeof CONVERSATION_MODES[number];
+
+export function isConversationMode(value: unknown): value is ConversationMode {
+    return typeof value === 'string' && (CONVERSATION_MODES as readonly string[]).includes(value);
+}
 
 export interface ApprovalRequest {
     id: string;

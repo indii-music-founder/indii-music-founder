@@ -271,7 +271,7 @@ describe('AgentService Boardroom capability intent dispatch', () => {
     it('finalizes an orchestrated single-specialist response through the same production seam', async () => {
         const messages = [{ id: 'response-orchestrated', role: 'model', text: '', timestamp: Date.now() }];
         const state = {
-            conversationMode: 'focus',
+            conversationMode: 'orchestrated',
             activeSessionId: null,
             currentProjectId: null,
             agentHistory: messages,
@@ -293,14 +293,34 @@ describe('AgentService Boardroom capability intent dispatch', () => {
         };
 
         await (service as unknown as {
-            executeFlow: (text: string, attachments: undefined, context: AgentContext, responseId: string) => Promise<void>;
-        }).executeFlow('Draft my press angle.', undefined, {}, 'response-orchestrated');
+            executeFlow: (
+                text: string,
+                attachments: undefined,
+                context: AgentContext,
+                responseId: string,
+                forcedAgentId?: string,
+            ) => Promise<void>;
+        }).executeFlow('Draft my press angle.', undefined, {}, 'response-orchestrated', 'legal');
+
+        expect((service as unknown as {
+            orchestrator: { determineOrchestrationPath: ReturnType<typeof vi.fn> };
+        }).orchestrator.determineOrchestrationPath).toHaveBeenCalledWith(
+            expect.any(Object),
+            'Draft my press angle.',
+        );
 
         expect(finalizer).toHaveBeenCalledWith(expect.objectContaining({
             agentId: 'publicist',
             question: 'Draft my press angle.',
             responseId: 'response-orchestrated',
         }));
+        expect(capturedExecutions).toEqual([
+            expect.objectContaining({
+                agentId: 'publicist',
+                task: 'Draft my press angle.',
+                context: expect.objectContaining({ conversationMode: 'direct' }),
+            }),
+        ]);
         expect(messages[0]?.text).toBe('styled publicist response');
     });
 

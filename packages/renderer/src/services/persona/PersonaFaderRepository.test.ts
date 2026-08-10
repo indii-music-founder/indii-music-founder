@@ -15,6 +15,7 @@ vi.mock('@/services/firebase', () => ({
 
 import {
     loadPersonaFaderValues,
+    resolvePersonaFaderValues,
 } from './PersonaFaderRepository';
 
 describe('PersonaFaderRepository', () => {
@@ -43,10 +44,10 @@ describe('PersonaFaderRepository', () => {
     it('uses population defaults only when the user has no saved document', async () => {
         testMocks.getDoc.mockResolvedValue({ exists: () => false });
 
-        const result = await loadPersonaFaderValues('manager');
+        const resolution = await resolvePersonaFaderValues('manager');
 
-        expect(result).toEqual(PERSONA_FADER_DEFAULT);
-        expect(result).not.toBe(PERSONA_FADER_DEFAULT);
+        expect(resolution).toEqual({ values: PERSONA_FADER_DEFAULT, source: 'absent-default' });
+        expect(resolution.values).not.toBe(PERSONA_FADER_DEFAULT);
     });
 
     it('uses validated population defaults for an invalid saved document', async () => {
@@ -55,7 +56,10 @@ describe('PersonaFaderRepository', () => {
             data: () => ({ personaId: 'manager', values: { brevity: 75 } }),
         });
 
-        await expect(loadPersonaFaderValues('manager')).resolves.toEqual(PERSONA_FADER_DEFAULT);
+        await expect(resolvePersonaFaderValues('manager')).resolves.toEqual({
+            values: PERSONA_FADER_DEFAULT,
+            source: 'invalid-default',
+        });
     });
 
     it('rejects unauthenticated access before touching Firestore', async () => {

@@ -97,7 +97,16 @@ export const PersonaResponseActions = memo(({ text, metadata }: PersonaResponseA
     if (signalStatus === 'not-recorded') signalLabel = 'Feedback not recorded';
 
     return (
-        <div className="mt-2 flex items-center gap-2">
+        <div
+            className="mt-2 flex items-center gap-2"
+            data-testid="persona-response-actions"
+            data-persona-id={tracking.personaId}
+            data-response-id={tracking.responseId}
+            data-control-group={String(tracking.isControlGroup)}
+            data-measurement-status={tracking.measurementStatus}
+            data-fader-source={tracking.faderSource ?? 'unknown'}
+            data-effective-faders={JSON.stringify(tracking.effectiveFaderValues)}
+        >
             <button
                 type="button"
                 onClick={handleCopy}
