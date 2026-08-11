@@ -132,7 +132,7 @@ export function OrganizationAccessProvider({ children }: { children: ReactNode }
         const updated = await OrganizationAccessService.updateMember({
             orgId: activeOrganizationId,
             ...input,
-        });
+        } as UpdateOrganizationAccessInput);
         setMatrix(current => current ? {
             ...current,
             members: current.members.map(member => member.userId === updated.userId ? updated : member),

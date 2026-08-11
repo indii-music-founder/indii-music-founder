@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import Sidebar from './Sidebar';
 import { useStore } from '../store';
@@ -42,20 +42,22 @@ describe('Sidebar', () => {
         });
     });
 
-    it('starts navigation sections closed and opens them on request', () => {
+    it('starts navigation sections open and closes them on request', async () => {
         render(<Sidebar />);
 
         const managerSection = screen.getByTestId('manager-section');
         const managerToggle = screen.getByRole('button', { name: "Manager's Office" });
 
-        expect(managerToggle).toHaveAttribute('aria-expanded', 'false');
-        expect(screen.queryByText('Brand Manager')).not.toBeInTheDocument();
+        expect(managerToggle).toHaveAttribute('aria-expanded', 'true');
+        const brandManagerBtn = screen.getByText('Brand Manager');
+        expect(managerSection.contains(brandManagerBtn)).toBe(true);
 
         fireEvent.click(managerToggle);
-        const brandManagerBtn = screen.getByText('Brand Manager');
 
-        expect(managerToggle).toHaveAttribute('aria-expanded', 'true');
-        expect(managerSection.contains(brandManagerBtn)).toBe(true);
+        expect(managerToggle).toHaveAttribute('aria-expanded', 'false');
+        await waitFor(() => {
+            expect(screen.queryByText('Brand Manager')).not.toBeInTheDocument();
+        });
     });
 
     it('Brand Manager button is clickable', () => {

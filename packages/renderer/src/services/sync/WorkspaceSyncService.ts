@@ -133,6 +133,8 @@ class WorkspaceSyncService {
      * Writes to users/{uid}/workspace/current with merge: true to avoid clobbering other fields.
      */
     async pushSnapshot(snapshot: WorkspaceSnapshot): Promise<void> {
+        if (isFirebaseE2EMockEnabled()) return;
+        
         const ref = getWorkspaceRef();
         if (!ref) {
             throw new Error('Workspace sync requires an authenticated user.');
@@ -160,6 +162,8 @@ class WorkspaceSyncService {
      * Returns null if no snapshot exists or if fetch fails.
      */
     async pullSnapshot(): Promise<WorkspaceDoc | null> {
+        if (isFirebaseE2EMockEnabled()) return null;
+        
         const ref = getWorkspaceRef();
         if (!ref) {
             throw new Error('Workspace sync requires an authenticated user.');

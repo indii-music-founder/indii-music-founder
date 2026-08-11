@@ -137,9 +137,9 @@ export default function Sidebar() {
 
     // UI state for collapsible sections
     const [sectionsOpen, setSectionsOpen] = useState({
-        managers: false,
-        departments: false,
-        tools: false,
+        managers: true,
+        departments: true,
+        tools: true,
     });
 
     // Select specific state slices with shallow comparison to prevent unnecessary re-renders on unrelated store updates

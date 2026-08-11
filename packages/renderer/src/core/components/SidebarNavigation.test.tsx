@@ -146,32 +146,33 @@ describe('Sidebar Navigation Integration', () => {
         mockedUseStore.getState = vi.fn().mockReturnValue(storeState);
     });
 
-    it('starts sidebar sections closed and reveals their items when opened', () => {
+    it('starts sidebar sections open and reveals their items', async () => {
         render(
             <MemoryRouter>
                 <Sidebar />
             </MemoryRouter>
         );
 
-        expect(screen.queryByText('Brand Manager')).not.toBeInTheDocument();
-        expect(screen.queryByText('Marketing Department')).not.toBeInTheDocument();
-        expect(screen.queryByText('Notes')).not.toBeInTheDocument();
+        expect(screen.getByText('Brand Manager')).toBeInTheDocument();
+        expect(screen.getByText('Marketing Department')).toBeInTheDocument();
+        expect(screen.getByText('Notes')).toBeInTheDocument();
 
         fireEvent.click(screen.getByRole('button', { name: "Manager's Office" }));
         fireEvent.click(screen.getByRole('button', { name: 'Departments' }));
         fireEvent.click(screen.getByRole('button', { name: 'Tools' }));
 
-        expect(screen.getByText('Brand Manager')).toBeInTheDocument();
-        expect(screen.getByText('Road/tour')).toBeInTheDocument();
-        expect(screen.getByText('Campaign Manager')).toBeInTheDocument();
-        expect(screen.getByText('Publicist')).toBeInTheDocument();
-        expect(screen.getByText('Marketing Department')).toBeInTheDocument();
-        expect(screen.getByText('Social Media Department')).toBeInTheDocument();
-        expect(screen.getByText('Legal Department')).toBeInTheDocument();
-        expect(screen.getByText('Publishing Department')).toBeInTheDocument();
-        expect(screen.getByText('Finance Department')).toBeInTheDocument();
-        expect(screen.getByText('Licensing Department')).toBeInTheDocument();
-        expect(screen.getByText('Notes')).toBeInTheDocument();
+        await waitFor(() => {
+            expect(screen.queryByText('Brand Manager')).not.toBeInTheDocument();
+            expect(screen.queryByText('Marketing Department')).not.toBeInTheDocument();
+            expect(screen.queryByText('Campaign Manager')).not.toBeInTheDocument();
+            expect(screen.queryByText('Publicist')).not.toBeInTheDocument();
+            expect(screen.queryByText('Social Media Department')).not.toBeInTheDocument();
+            expect(screen.queryByText('Legal Department')).not.toBeInTheDocument();
+            expect(screen.queryByText('Publishing Department')).not.toBeInTheDocument();
+            expect(screen.queryByText('Finance Department')).not.toBeInTheDocument();
+            expect(screen.queryByText('Licensing Department')).not.toBeInTheDocument();
+            expect(screen.queryByText('Notes')).not.toBeInTheDocument();
+        });
     });
 
     it('calls setModule when a sidebar item is clicked', () => {
