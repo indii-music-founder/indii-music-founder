@@ -57,6 +57,7 @@ import { BillingTools } from './BillingTools';
 import { EmailTools } from './EmailTools';
 import { McpTools } from './McpTools';
 import { RemoteSupportTools } from './RemoteSupportTools';
+import { TrashTools } from './TrashTools';
 import { AnyToolFunction } from '../types';
 
 export const TOOL_REGISTRY: Record<string, AnyToolFunction> = {
@@ -127,6 +128,7 @@ export const TOOL_REGISTRY: Record<string, AnyToolFunction> = {
     ...EmailTools,
     ...McpTools,
     ...RemoteSupportTools,
+    ...TrashTools,
 };
 
 

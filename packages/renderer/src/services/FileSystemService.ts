@@ -8,10 +8,7 @@ import {
     addDoc,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     updateDoc,
-    deleteDoc,
-    doc,
-    orderBy,
-    writeBatch
+    orderBy
 } from 'firebase/firestore';
 import { db } from './firebase';
 import { FirestoreService } from './FirestoreService';
@@ -36,6 +33,7 @@ export interface FileNode {
     };
     createdAt: number;
     updatedAt: number;
+    isTrashed?: boolean;
 }
 
 export class FileSystemService extends FirestoreService<FileNode> {
@@ -113,36 +111,19 @@ export class FileSystemService extends FirestoreService<FileNode> {
 
     async deleteNode(id: string): Promise<void> {
         try {
-            const docRef = doc(db, this.collectionPath, id);
-            await deleteDoc(docRef);
+            const { trashService } = await import('./trash/TrashService');
+            await trashService.moveToTrash(
+                { type: 'file_nodes', targetId: id },
+                { actor: 'user', reason: 'User requested node deletion' }
+            );
         } catch (error: unknown) {
-            logger.error('Error deleting node:', error);
-            events.emit('SYSTEM_ALERT', { level: 'error', message: 'Failed to delete item' });
+            logger.error('Error moving node to trash:', error);
+            events.emit('SYSTEM_ALERT', { level: 'error', message: 'Failed to move item to trash' });
             throw error;
         }
     }
 
-    /**
-     * Efficiently deletes multiple nodes in batches (limit 500 per batch)
-     */
-    async batchDelete(ids: string[]): Promise<void> {
-        if (ids.length === 0) return;
-
-        const CHUNK_SIZE = 500;
-        for (let i = 0; i < ids.length; i += CHUNK_SIZE) {
-            const chunk = ids.slice(i, i + CHUNK_SIZE);
-            const batch = writeBatch(db);
-
-            chunk.forEach(id => {
-                const docRef = doc(db, this.collectionPath, id);
-                batch.delete(docRef);
-            });
-
-            await batch.commit();
-        }
-    }
-
-    // Helper to delete recursively
+    // Helper to move a folder tree to Trash recursively
     async deleteFolderRecursive(folderId: string, allNodes: FileNode[]): Promise<void> {
         // Optimization: Build adjacency list for O(N) traversal instead of O(N^2)
         const childrenMap = new Map<string, FileNode[]>();
@@ -173,11 +154,18 @@ export class FileSystemService extends FirestoreService<FileNode> {
         }
 
         try {
-            await this.batchDelete(Array.from(idsToDelete));
-            events.emit('SYSTEM_ALERT', { level: 'success', message: `Deleted ${idsToDelete.size} items` });
+            const { trashService } = await import('./trash/TrashService');
+            // Children first keeps the tree navigable if any individual move fails.
+            for (const id of Array.from(idsToDelete).reverse()) {
+                await trashService.moveToTrash(
+                    { type: 'file_nodes', targetId: id },
+                    { actor: 'user', reason: 'User moved a file or folder tree to Trash' }
+                );
+            }
+            events.emit('SYSTEM_ALERT', { level: 'success', message: `Moved ${idsToDelete.size} items to Trash` });
         } catch (error: unknown) {
-            logger.error('Error batch deleting nodes:', error);
-            events.emit('SYSTEM_ALERT', { level: 'error', message: 'Failed to delete folder contents' });
+            logger.error('Error moving folder tree to trash:', error);
+            events.emit('SYSTEM_ALERT', { level: 'error', message: 'Failed to move all folder contents to Trash' });
             throw error;
         }
     }

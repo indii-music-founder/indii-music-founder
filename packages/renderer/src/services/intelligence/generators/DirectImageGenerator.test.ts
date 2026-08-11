@@ -19,7 +19,7 @@ describe('generateImageDirectly', () => {
 
         await expect(generateImageDirectly({
             prompt: 'A record cover',
-            model: 'gemini-3-pro-image-preview',
+            model: 'gemini-3-pro-image',
             numberOfImages: 1,
         })).resolves.toEqual(['https://storage.example/preview.png']);
 

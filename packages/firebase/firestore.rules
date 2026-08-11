@@ -505,6 +505,56 @@ service cloud.firestore {
       // Users cannot delete their profile (admin action only)
       allow delete: if false;
 
+      // ── Trash Manifests & Purge Intents ─────────────────────────
+      match /trashItems/{trashId} {
+        function validTrashManifest(data) {
+          return data.keys().hasOnly([
+              'id', 'userId', 'projectId', 'type', 'targetId', 'name',
+              'originalLocation', 'mimeType', 'sizeBytes', 'provenance',
+              'state', 'idempotencyKey', 'restoreData', 'deviceInfo',
+              'legalHold', 'hasEntries', 'trashedAt', 'updatedAt'
+            ]) &&
+            data.keys().hasAll([
+              'id', 'userId', 'type', 'targetId', 'name', 'originalLocation',
+              'provenance', 'state', 'idempotencyKey', 'restoreData',
+              'legalHold', 'hasEntries', 'trashedAt', 'updatedAt'
+            ]) &&
+            data.id == trashId &&
+            data.userId == userId &&
+            data.type in ['file_nodes', 'history', 'brand_assets', 'knowledge_docs', 'local_files'] &&
+            data.targetId is string && data.targetId.size() > 0 && data.targetId.size() <= 2048 &&
+            data.name is string && data.name.size() > 0 && data.name.size() <= 512 &&
+            data.originalLocation is string && data.originalLocation.size() > 0 && data.originalLocation.size() <= 2048 &&
+            data.provenance is map &&
+            data.provenance.keys().hasOnly(['actor', 'agentId', 'reason']) &&
+            data.provenance.actor in ['user', 'agent'] &&
+            data.restoreData is map &&
+            data.legalHold is map &&
+            data.hasEntries is bool &&
+            data.state == 'trashed' &&
+            data.idempotencyKey is string && data.idempotencyKey.size() <= 4096 &&
+            data.trashedAt is string && data.updatedAt is string;
+        }
+
+        allow read: if isOwner(userId);
+        // Clients may create only schema-bound manifests. In particular, they
+        // cannot provide quarantinePath; Storage deletion authority stays server-side.
+        allow create: if isOwner(userId) && validTrashManifest(request.resource.data);
+        allow update: if isOwner(userId) &&
+          resource.data.userId == userId &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['state', 'restoredAt', 'updatedAt']) &&
+          resource.data.state == 'trashed' &&
+          request.resource.data.state == 'restored' &&
+          request.resource.data.restoredAt is string &&
+          request.resource.data.updatedAt is string;
+        allow delete: if false; // Purge is server-executable only via Admin SDK
+      }
+
+      match /purgeIntents/{intentId} {
+        allow read: if isOwner(userId);
+        allow write, delete: if false;
+      }
+
       // ── User Stats (Dashboard Analytics) ──────────────────────────
       match /stats/{statId} {
         allow read: if isOwner(userId) || (isGuest() && userId == 'founder-demo-uid');
@@ -1506,9 +1556,8 @@ service cloud.firestore {
       // Users can update their own history
       allow update: if isVerifiedUser() && ownerUpdateIsValid('userId');
       
-      // Users can delete their own history
-      allow delete: if (isVerifiedUser() &&
-        ('userId' in resource.data && resource.data.get('userId', null) == request.auth.uid)) || (isGuest() && ('userId' in resource.data && resource.data.get('userId', null) == 'founder-demo-uid'));
+      // Permanent deletion is server-only after the user-confirmed Trash flow.
+      allow delete: if false;
     }
 
     match /design_versions/{versionId} {
@@ -2411,7 +2460,8 @@ service cloud.firestore {
     // Missing Root Collections (For Services extending FirestoreService)
     // =========================================================================
     match /file_nodes/{docId} {
-      allow read, delete: if isAuthenticated() && resource.data.get('userId', null) == request.auth.uid;
+      allow read: if isAuthenticated() && resource.data.get('userId', null) == request.auth.uid;
+      allow delete: if false;
       allow create: if isVerifiedUser() && ownerCreateIsValid('userId');
       allow update: if isVerifiedUser() && ownerUpdateIsValid('userId');
     }

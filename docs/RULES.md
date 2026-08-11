@@ -36,7 +36,7 @@
 
 - **Complex Reasoning:** `gemini-3-pro-preview`
 - **Fast Tasks:** `gemini-3-flash-preview`
-- **Image Generation:** `gemini-3-pro-image-preview`
+- **Image Generation:** `gemini-3-pro-image`
 - **Video Generation:** `veo-3.1-generate-preview`
 - **TTS:** `gemini-3.1-flash-tts-preview`
 

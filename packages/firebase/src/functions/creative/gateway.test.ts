@@ -330,20 +330,18 @@ describe('creative gateway generateImageV3', () => {
         model: 'fast',
         imageSize: '2K',
         thinkingLevel: 'minimal',
-        useGoogleSearch: true,
         costReservationId: 'image-op-1',
       },
     });
 
     expect(mockInteractionsCreate).toHaveBeenCalledWith(expect.objectContaining({
-      model: 'gemini-2.5-flash-image',
+      model: 'gemini-3.1-flash-image',
       input: [{ type: 'text', text: 'Dogs having fun' }],
       response_modalities: ['image'],
       generation_config: expect.objectContaining({
         image_config: expect.objectContaining({ aspect_ratio: '16:9', image_size: '2K' }),
         thinking_level: 'minimal',
       }),
-      tools: [{ type: 'google_search', search_types: ['web_search'] }],
     }));
     expect(mockSave).toHaveBeenCalledWith(Buffer.from('image-bytes'), expect.objectContaining({ contentType: 'image/png' }));
     expect(result).toEqual(expect.objectContaining({
@@ -354,6 +352,21 @@ describe('creative gateway generateImageV3', () => {
       userId: 'user-123',
       operationId: 'image-op-1',
       outcome: 'SETTLED',
+    });
+  });
+
+  it('rejects search grounding requests when using fast image model', async () => {
+    await expect(callGenerateImage({
+      auth: { uid: 'user-123' },
+      data: {
+        prompt: 'Grounded fast image request',
+        model: 'fast',
+        useGoogleSearch: true,
+        costReservationId: 'image-fast-grounding-test',
+      },
+    })).rejects.toMatchObject({
+      code: 'failed-precondition',
+      message: 'Search grounding is not supported on the Fast image generation model. Switch to Pro tier for search grounding.',
     });
   });
 
@@ -375,7 +388,7 @@ describe('creative gateway generateImageV3', () => {
       data: {
         prompt: 'Three grounded campaign concepts',
         aspectRatio: '1:1',
-        model: 'fast',
+        model: 'pro',
         imageSize: '1K',
         count: 3,
         thinkingLevel: 'minimal',
@@ -395,10 +408,9 @@ describe('creative gateway generateImageV3', () => {
     expect(mockInteractionsCreate).toHaveBeenCalledWith(expect.objectContaining({
       response_modalities: ['text', 'image'],
       generation_config: expect.objectContaining({
-        thinking_level: 'minimal',
         thinking_summaries: 'auto',
       }),
-      tools: [{ type: 'google_search', search_types: ['web_search', 'image_search'] }],
+      tools: [{ type: 'google_search', search_types: ['web_search'] }],
     }));
     expect(mockSave).toHaveBeenCalledTimes(3);
     expect(result.resultUris).toHaveLength(3);
@@ -461,7 +473,7 @@ describe('creative gateway generateImageV3', () => {
     });
 
     expect(mockInteractionsCreate).toHaveBeenCalledWith(expect.objectContaining({
-      model: 'gemini-3-pro-image-preview',
+      model: 'gemini-3-pro-image',
       input: [
         { type: 'text', text: 'Dogs having fun' },
         { type: 'image', mime_type: 'image/png', data: Buffer.from('reference-bytes').toString('base64') },

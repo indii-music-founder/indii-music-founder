@@ -56,7 +56,7 @@ export interface CortexEntityProfile {
 
 /** Render directives produced from a retrieved entity profile. */
 export interface RenderDirectives {
-    /** Composite prompt for gemini-3-pro-image-preview */
+    /** Composite prompt for gemini-3-pro-image */
     imagePrompt: string;
     /** Composite prompt for veo-3.1-generate-001 */
     veoPrompt: string;

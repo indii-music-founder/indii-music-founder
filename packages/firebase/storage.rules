@@ -57,15 +57,28 @@ service firebase.storage {
     // USER-SPECIFIC STORAGE (Private)
     // ========================================
 
-    // Users can only access their own storage
-    match /users/{userId}/{allPaths=**} {
+    // Trash Quarantine Vault: Owner-readable, client create/update/delete DENIED. Managed via backend Cloud Functions.
+    match /users/{userId}/trash/{allPaths=**} {
       allow read: if isAuthenticated() && request.auth.uid == userId;
-      allow delete: if isAuthenticated() && request.auth.uid == userId;
-      // Create/update: authenticated owner, under 500MB, valid media type.
+      allow write, delete: if false;
+    }
+
+    // Ephemeral / Cache paths: Client cleanup privileges allowed
+    match /users/{userId}/tmp/{allPaths=**} {
+      allow read, write, delete: if isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Users general storage: Delete denied for clients (route through Trash).
+    // topLevel exclusion is required because overlapping Storage matches are ORed.
+    match /users/{userId}/{topLevel}/{allPaths=**} {
+      allow read: if isAuthenticated() && request.auth.uid == userId;
       allow create, update: if isAuthenticated() &&
                               request.auth.uid == userId &&
+                              topLevel != 'trash' &&
+                              topLevel != 'tmp' &&
                               isUnderSizeLimit(500) &&
                               isAllowedMediaType();
+      allow delete: if false; // Direct deletion blocked; must route through Trash
     }
 
     // Content-addressed source masters: the authenticated owner can create a

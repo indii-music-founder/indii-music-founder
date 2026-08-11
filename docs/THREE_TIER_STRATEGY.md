@@ -1104,7 +1104,7 @@ export class ImageGenerationInstrument implements Instrument {
     },
 
     computeType: 'cloud',
-    preferredModel: 'gemini-3-pro-image-preview'
+    preferredModel: 'gemini-3-pro-image'
   };
 
   inputs = [

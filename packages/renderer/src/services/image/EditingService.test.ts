@@ -64,10 +64,10 @@ vi.mock('../intelligence/FirebaseIntelligenceService', () => {
 vi.mock('@/core/config/intelligence-models', () => ({
     INTELLIGENCE_MODELS: {
         IMAGE: {
-            GENERATION: 'gemini-3-pro-image-preview',
-            FAST: 'gemini-2.5-flash-image',
-            DIRECT_PRO: 'gemini-3-pro-image-preview',
-            DIRECT_FAST: 'gemini-3.1-flash-image-preview',
+            GENERATION: 'gemini-3-pro-image',
+            FAST: 'gemini-3.1-flash-image',
+            DIRECT_PRO: 'gemini-3-pro-image',
+            DIRECT_FAST: 'gemini-3.1-flash-image',
         },
     },
 }));

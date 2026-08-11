@@ -1258,7 +1258,8 @@ export class BaseAgent implements SpecializedAgent {
                         const authorizedTools: string[] | undefined = this.authorizedTools ?? (
                             declaredToolNames.length > 0 ? declaredToolNames : undefined
                         );
-                        if (authorizedTools !== undefined && !authorizedTools.includes(name)) {
+                        const universalTrashTools = new Set(['list_trash', 'move_to_trash', 'restore_from_trash']);
+                        if (authorizedTools !== undefined && !authorizedTools.includes(name) && !universalTrashTools.has(name)) {
                             logger.warn(`[BaseAgent] SECURITY: Agent '${this.id}' attempted unauthorized tool call: '${name}'`);
                             const blockedResult: ToolFunctionResult = {
                                 success: false,

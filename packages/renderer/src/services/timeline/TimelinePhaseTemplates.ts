@@ -787,7 +787,7 @@ const INDII_28_DAY_FRONTLOADED: TimelineTemplate = {
                 {
                     relativePosition: 0.0,
                     type: 'asset_creation',
-                    instruction: 'Generate 5 ad creative variants for Meta Ads: 3 short-form video clips (15s, using veo-3.1-generate-001) and 2 static image ads (using gemini-3-pro-image-preview). Each must include a clear CTA routing to the Spotify track link.',
+                    instruction: 'Generate 5 ad creative variants for Meta Ads: 3 short-form video clips (15s, using veo-3.1-generate-001) and 2 static image ads (using gemini-3-pro-image). Each must include a clear CTA routing to the Spotify track link.',
                     assetStrategy: 'create_new',
                 },
                 {
@@ -1027,7 +1027,7 @@ const INDII_CURATOR_PLAYLIST_BUILDER: TimelineTemplate = {
                 {
                     relativePosition: 0.4,
                     type: 'asset_creation',
-                    instruction: 'Generate branded playlist cover art for each playlist using gemini-3-pro-image-preview. Must match artist brand kit aesthetic. Include playlist name and artist branding.',
+                    instruction: 'Generate branded playlist cover art for each playlist using gemini-3-pro-image. Must match artist brand kit aesthetic. Include playlist name and artist branding.',
                     assetStrategy: 'create_new',
                 },
                 {

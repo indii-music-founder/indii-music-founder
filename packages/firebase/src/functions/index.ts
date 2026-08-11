@@ -32,3 +32,6 @@ export { syncPlatformStats } from './social-stats-sync';
 
 // Ingestion Pipeline
 export * from './ingestion';
+
+// Universal Trash Purge & Intent Gateway
+export * from './trash/trashFunctions';

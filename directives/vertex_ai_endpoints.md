@@ -58,16 +58,16 @@ Use for: checking generated text against sources; returns factuality confidence 
 
 ### Video Generation (Veo)
 ```
-POST https://{region}-aiplatform.googleapis.com/v1/projects/{project-id}/locations/{region}/publishers/google/models/{veo-model}:generateVideos
+POST https://{region}-aiplatform.googleapis.com/v1/projects/{project-id}/locations/{region}/publishers/google/models/{veo-model}:predictLongRunning
 ```
-Model: `veo-3.1-generate-preview`
+Model: `veo-3.1-generate-001` (Location: `us-central1`)
 Use for: Cinema Worldbuilder, indii Director, music video generation.
 
-### Image Generation (Imagen)
+### Image Generation (Nano Banana)
 ```
-POST https://{region}-aiplatform.googleapis.com/v1/projects/{project-id}/locations/{region}/publishers/google/models/{imagen-model}:predict
+POST https://{region}-aiplatform.googleapis.com/v1/projects/{project-id}/locations/{region}/publishers/google/models/{image-model}:generateContent
 ```
-Model: `gemini-3-pro-image-preview`
+Models: `gemini-3-pro-image`, `gemini-3.1-flash-image` (Location: `global`)
 Use for: album art, promotional assets, creative studio.
 
 ---
@@ -90,12 +90,12 @@ Use for: real-time streaming from deployed Vertex agents to the UI (preferred ov
 
 ## indii-Specific Notes
 
-| Endpoint | indii usage |
-|---|---|
-| `generateContent` / `streamGenerateContent` | AI agents, chat, creative tools |
-| `batchPredictionJobs` | Overnight audio analysis, bulk royalty processing |
-| `augmentPrompt` / `retrieveContexts` | RAG over artist catalog/contracts |
-| `generateVideos` (Veo) | Cinema Worldbuilder, indii Director |
-| `reasoningEngines` (REST + WSS) | A2A swarm agents deployed on Vertex |
+| Endpoint | indii usage | Default Location |
+|---|---|---|
+| `generateContent` (Text) | AI agents, chat | `global` |
+| `generateContent` (Image) | Creative studio image gen | `global` |
+| `predictLongRunning` (Veo Video) | Video generation | `us-central1` |
+| `generateContent` (Omni) | Conversational media editing | `global` |
+| `batchPredictionJobs` | Overnight audio analysis | `global` |
 
-> ⚠️ **Always use `global` endpoint for preview models.** Per the AI Model Policy, never route `gemini-3-*-preview` or `veo-3.1-generate-preview` through regional endpoints — use `global` as the region.
+> ⚠️ **Routing Policy:** Gemini text and image models route through `global`. Veo 3.1 video models route through `us-central1`. Always respect each model's official lifecycle and model card requirements.

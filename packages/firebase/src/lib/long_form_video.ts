@@ -234,7 +234,7 @@ export const generateLongFormVideoFn = (inngestClient: Inngest, _legacyUnusedPro
                     const projectId = await auth.getProjectId();
                     const accessToken = await client.getAccessToken();
 
-                    const location = process.env.VERTEX_VIDEO_LOCATION || process.env.VERTEX_LOCATION || 'us-central1';
+                    const location = process.env.VERTEX_VIDEO_LOCATION || 'us-central1';
                     const triggerEndpoint = `${getVertexAIBaseUrl(location)}/v1beta/projects/${projectId}/locations/${location}/publishers/google/models/${modelId}:predictLongRunning`;
 
                     // Validate startImage format (Base64 vs Data URL)
@@ -317,7 +317,7 @@ export const generateLongFormVideoFn = (inngestClient: Inngest, _legacyUnusedPro
                         const client = await auth.getClient();
                         const accessToken = await client.getAccessToken();
 
-                        const location = process.env.VERTEX_VIDEO_LOCATION || process.env.VERTEX_LOCATION || 'us-central1';
+                        const location = process.env.VERTEX_VIDEO_LOCATION || 'us-central1';
                         const statusResponse = await fetch(
                             `${getVertexAIBaseUrl(location)}/v1beta/${operationName}`,
                             {
@@ -399,7 +399,7 @@ export const generateLongFormVideoFn = (inngestClient: Inngest, _legacyUnusedPro
                                     const transcoder = new TranscoderServiceClient();
                                     try {
                                         const projectId = await auth.getProjectId();
-                                        const location = process.env.VERTEX_VIDEO_LOCATION || process.env.VERTEX_LOCATION || 'us-central1';
+                                        const location = process.env.VERTEX_VIDEO_LOCATION || 'us-central1';
                                         const bucket = admin.storage().bucket();
                                         const outputUri = `gs://${bucket.name}/frames/${userId}/${segmentId}/`;
 
@@ -595,7 +595,7 @@ export const stitchVideoFn = (inngestClient: Inngest) => inngestClient.createFun
         const transcoder = new TranscoderServiceClient();
         try {
             const projectId = admin.app().options.projectId;
-            const location = process.env.VERTEX_VIDEO_LOCATION || process.env.VERTEX_LOCATION || 'us-central1';
+            const location = process.env.VERTEX_VIDEO_LOCATION || 'us-central1';
             const bucket = admin.storage().bucket();
             const outputDir = `gs://${bucket.name}/generated/${userId}/long-form/${jobId}/output/`;
 

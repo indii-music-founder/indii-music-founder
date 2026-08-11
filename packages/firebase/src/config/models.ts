@@ -6,16 +6,16 @@
  * 
  * Nano Banana Model Tiers:
  *   LEGACY  → gemini-2.5-flash-image       (OG, high-volume / low-latency)
- *   FAST    → gemini-3.1-flash-image-preview (Nano Banana 2, speed + quality)
- *   PRO     → gemini-3-pro-image-preview     (Nano Banana Pro, highest fidelity)
+ *   FAST    → gemini-3.1-flash-image       (Nano Banana 2, GA model)
+ *   PRO     → gemini-3-pro-image           (Nano Banana Pro, GA model)
  */
 
 export const FUNCTION_INTELLIGENCE_MODELS = {
     IMAGE: {
         /** Nano Banana Pro — highest quality, 4K, advanced thinking */
-        GENERATION: 'gemini-3-pro-image-preview',
-        /** Nano Banana — fast + quality, grounding */
-        FAST: 'gemini-2.5-flash-image',
+        GENERATION: 'gemini-3-pro-image',
+        /** Nano Banana 2 — fast + quality, 4K */
+        FAST: 'gemini-3.1-flash-image',
         /** Nano Banana OG — legacy, high-volume / low-latency */
         LEGACY: 'gemini-2.5-flash-image',
     },
@@ -47,13 +47,13 @@ export const FUNCTION_INTELLIGENCE_MODELS = {
  * When Google ships model updates, change THIS object and everything adapts.
  */
 export const NANO_BANANA_CAPABILITIES = {
-    'gemini-3-pro-image-preview': {
+    'gemini-3-pro-image': {
         tier: 'pro' as const,
         displayName: 'Nano Banana Pro',
         maxResolution: '4K',
         supportedResolutions: ['1K', '2K', '4K'] as const,
         supportedAspectRatios: ['1:1', '2:3', '3:2', '3:4', '4:3', '4:5', '5:4', '9:16', '16:9', '21:9'] as const,
-        maxReferenceImages: 11,
+        maxReferenceImages: 14,
         supportsThinkingControl: false,
         supportsGoogleSearch: true,
         supportsImageSearch: false,
@@ -61,33 +61,33 @@ export const NANO_BANANA_CAPABILITIES = {
         supportsInterleaved: true,
         defaultThinking: 'always_on',
     },
-    'gemini-2.5-flash-image': {
-        tier: 'fast' as const,
-        displayName: 'Nano Banana',
-        maxResolution: '1K',
-        supportedResolutions: ['512', '1K', '2K', '4K'] as const,
-        supportedAspectRatios: ['1:1', '1:4', '1:8', '2:3', '3:2', '3:4', '4:1', '4:3', '4:5', '5:4', '8:1', '9:16', '16:9', '21:9'] as const,
-        maxReferenceImages: 14,
-        supportsThinkingControl: true,
-        supportsGoogleSearch: true,
-        supportsImageSearch: true,
-        supportsCandidateCount: true,
-        supportsInterleaved: true,
-        defaultThinking: 'minimal',
-    },
-    'gemini-3.1-flash-image-preview': {
+    'gemini-3.1-flash-image': {
         tier: 'fast' as const,
         displayName: 'Nano Banana 2',
         maxResolution: '4K',
         supportedResolutions: ['512', '1K', '2K', '4K'] as const,
         supportedAspectRatios: ['1:1', '1:4', '1:8', '2:3', '3:2', '3:4', '4:1', '4:3', '4:5', '5:4', '8:1', '9:16', '16:9', '21:9'] as const,
-        maxReferenceImages: 14,
-        supportsThinkingControl: true,
-        supportsGoogleSearch: true,
-        supportsImageSearch: true,
-        supportsCandidateCount: true,
+        maxReferenceImages: 14, // 10 objects + 4 characters
+        supportsThinkingControl: true, // minimal / high
+        supportsGoogleSearch: false,
+        supportsImageSearch: false,
+        supportsCandidateCount: false,
         supportsInterleaved: true,
         defaultThinking: 'minimal',
+    },
+    'gemini-2.5-flash-image': {
+        tier: 'legacy' as const,
+        displayName: 'Nano Banana',
+        maxResolution: '1K',
+        supportedResolutions: ['512', '1K'] as const,
+        supportedAspectRatios: ['1:1', '2:3', '3:2', '3:4', '4:3', '4:5', '5:4', '9:16', '16:9'] as const,
+        maxReferenceImages: 0,
+        supportsThinkingControl: false,
+        supportsGoogleSearch: false,
+        supportsImageSearch: false,
+        supportsCandidateCount: true,
+        supportsInterleaved: true,
+        defaultThinking: 'none',
     },
 } as const;
 

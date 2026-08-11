@@ -35,19 +35,20 @@ adopted it as a formal brand pillar for their generative vision strategy.
 | Model | Internal Designation | Architecture | Released | Primary Optimization |
 |:---|:---|:---|:---|:---|
 | **Nano Banana** (v1) | `gemini-2.5-flash-preview-image` | Gemini 2.5 Flash | Aug 2025 | Speed, low-latency, rapid prototyping |
-| **Nano Banana Pro** | `gemini-3-pro-image-preview` | Gemini 3 Pro | Nov 2025 | Maximum quality, advanced reasoning, studio-grade control |
-| **Nano Banana 2** | `gemini-3.1-flash-image-preview` | Gemini 3.1 Flash | Feb 2026 | Speed + quality, high-volume production, precise instruction following |
+| **Nano Banana Pro** | `gemini-3-pro-image` | Gemini 3 Pro | Nov 2025 | Maximum quality, advanced reasoning, studio-grade control |
+| **Nano Banana Fast** | `gemini-3.1-flash-image` | Gemini 3 Flash | Dec 2025 | Ultra-fast generation, real-time interactive edits |
+| **Nano Banana Lite (Legacy)** | `gemini-2.5-flash-image` | Gemini 2.5 Flash | Jun 2025 | Fallback legacy tier |
 
-### indii Model Constants
+## 2. Config & Import Standardization
+
+Model constants are strictly defined in `packages/renderer/src/core/config/intelligence-models.ts` and `packages/firebase/src/config/models.ts`:
 
 ```typescript
-// packages/renderer/src/core/config/ai-models.ts
-export const AI_MODELS = {
-  IMAGE: {
-    FAST: 'gemini-3.1-flash-image-preview',   // Nano Banana 2
-    PRO: 'gemini-3-pro-image-preview',         // Nano Banana Pro
-  }
-};
+export const NANO_BANANA_MODELS = {
+    PRO: 'gemini-3-pro-image',         // Nano Banana Pro
+    FAST: 'gemini-3.1-flash-image',       // Nano Banana Fast
+    LEGACY: 'gemini-2.5-flash-image',    // Legacy Fallback
+} as const;
 ```
 
 ### Key Architectural Difference

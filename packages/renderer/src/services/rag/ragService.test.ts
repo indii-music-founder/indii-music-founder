@@ -35,8 +35,8 @@ vi.mock('@/core/config/intelligence-models', () => ({
     APPROVED_MODELS: {
         TEXT_AGENT: 'gemini-3.1-pro-preview',
         TEXT_FAST: 'gemini-3.1-pro-preview',
-        IMAGE_GEN: 'gemini-3-pro-image-preview',
-        IMAGE_FAST: 'gemini-3-pro-image-preview',
+        IMAGE_GEN: 'gemini-3-pro-image',
+        IMAGE_FAST: 'gemini-3-pro-image',
         AUDIO_PRO: 'gemini-3.1-pro-preview',
         AUDIO_FLASH: 'gemini-3.1-pro-preview',
         VIDEO_GEN: 'veo-3.1-generate-preview',

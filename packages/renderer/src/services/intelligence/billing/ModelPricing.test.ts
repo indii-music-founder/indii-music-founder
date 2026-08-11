@@ -44,16 +44,17 @@ describe('ModelPricing', () => {
 
     describe('estimateCostUsd — image models', () => {
         it('charges per image plus prompt-token cost', () => {
-            // gemini-3-pro-image-preview: $0.12/image + $1.25/1M prompt tokens
-            const cost = estimateCostUsd('gemini-3-pro-image-preview', {
+            // gemini-3-pro-image: $0.12/image + $1.25/1M prompt tokens
+            const cost = estimateCostUsd('gemini-3-pro-image', {
                 images: 2,
-                inputTokens: 1_000_000
+                inputTokens: 10000,
             });
-            expect(cost).toBeCloseTo(2 * 0.12 + 1.25, 6);
+            // 2 * 0.12 + (10000 * 1.25 / 1M) = 0.24 + 0.0125 = 0.2525
+            expect(cost).toBeCloseTo(0.2525, 4);
         });
 
-        it('charges only per-image when no prompt tokens given', () => {
-            const cost = estimateCostUsd('gemini-3.1-flash-image-preview', { images: 3 });
+        it('should estimate image generation for flash tier', () => {
+            const cost = estimateCostUsd('gemini-3.1-flash-image', { images: 3 });
             expect(cost).toBeCloseTo(3 * 0.039, 6);
         });
     });

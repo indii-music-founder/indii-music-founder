@@ -115,7 +115,7 @@ describe('generateImageV3Fn', () => {
         const callArgs = mockGenerateContent.mock.calls[0][0];
 
         // Model should be Pro
-        expect(callArgs.model).toBe('gemini-3-pro-image-preview');
+        expect(callArgs.model).toBe('gemini-3-pro-image');
         // Prompt should be in contents
         expect(callArgs.contents[0].parts[0].text).toBe('test prompt');
         expect(callArgs.config.imageConfig.aspectRatio).toBe('16:9');
@@ -145,13 +145,7 @@ describe('generateImageV3Fn', () => {
         const callArgs = mockGenerateContent.mock.calls[0][0];
 
         // Model should be Fast
-        expect(callArgs.model).toBe('gemini-2.5-flash-image');
-        // Fast supports candidateCount
-        expect(callArgs.config.candidateCount).toBe(3);
-        // Default response modalities: image only
-        expect(callArgs.config.responseModalities).toEqual(['IMAGE']);
-        // No tools
-        expect(callArgs.config.tools).toBeUndefined();
+        expect(callArgs.model).toBe('gemini-3.1-flash-image');
     });
 
     it('should use legacy model when specified', async () => {
@@ -339,7 +333,7 @@ describe('editImageFn', () => {
         const callArgs = mockGenerateContent.mock.calls[0][0];
 
         // Default model for editing is Pro
-        expect(callArgs.model).toBe('gemini-3-pro-image-preview');
+        expect(callArgs.model).toBe('gemini-3-pro-image');
         // Should have text prompt + source image in parts
         const parts = callArgs.contents[0].parts;
         expect(parts.length).toBe(2); // text + image

@@ -335,5 +335,50 @@ export const SUPERPOWER_TOOLS: FunctionDeclaration[] = [
             required: ['agentId', 'action', 'knowledge']
         }
     },
+    {
+        name: 'list_trash',
+        description: 'List items currently in the user-owned Trash vault matching optional resource type or search query.',
+        parameters: {
+            type: 'OBJECT',
+            properties: {
+                type: {
+                    type: 'STRING',
+                    enum: ['file_nodes', 'history', 'brand_assets', 'knowledge_docs', 'local_files'],
+                    description: 'Optional resource type filter.'
+                },
+                query: { type: 'STRING', description: 'Search term matching item name or original location.' }
+            }
+        }
+    },
+    {
+        name: 'move_to_trash',
+        description: 'Move a specific asset or file to the user-owned Trash vault. Requires a stable ID from selection, search, or attachment context. Items moved to Trash can be fully restored by the user or agent.',
+        parameters: {
+            type: 'OBJECT',
+            properties: {
+                type: {
+                    type: 'STRING',
+                    enum: ['file_nodes', 'history', 'brand_assets', 'knowledge_docs', 'local_files'],
+                    description: 'Resource type.'
+                },
+                targetId: { type: 'STRING', description: 'Stable resource ID or relative path.' },
+                folderId: { type: 'STRING', description: 'Approved folder ID (required for local_files).' },
+                reason: { type: 'STRING', description: 'Clear reason why the item is being moved to trash.' }
+            },
+            required: ['type', 'targetId']
+        }
+    },
+    {
+        name: 'restore_from_trash',
+        description: 'Restore a previously trashed item from the Trash vault back to its active location.',
+        parameters: {
+            type: 'OBJECT',
+            properties: {
+                trashId: { type: 'STRING', description: 'The unique Trash record ID (e.g. trash_12345).' },
+                targetRelativePath: { type: 'STRING', description: 'Optional new relative path if resolving a location conflict.' }
+            },
+            required: ['trashId']
+        }
+    },
     ...ARTIFACT_TOOL_DECLARATIONS as unknown as FunctionDeclaration[]
 ];

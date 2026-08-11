@@ -4,7 +4,7 @@ Status: production deploy in progress from commit `7eea799ee` (`fix: move vertex
 
 What changed:
 - Backend Vertex client now treats `global`, `us`, and `eu` as valid multi-region locations while using the unprefixed `aiplatform.googleapis.com` host.
-- Image generation now defaults to `VERTEX_IMAGE_LOCATION=us`.
+- Image generation now defaults to `VERTEX_IMAGE_LOCATION=global`.
 - Video generation, long-form video, and tuning utilities now use backend-only `VERTEX_*` envs and the same host normalization.
 - Frontend config no longer treats `VITE_VERTEX_*` as production routing inputs.
 

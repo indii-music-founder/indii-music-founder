@@ -91,7 +91,7 @@ The project uses GitHub Actions for automated deployments on merge to `main`.
 - `GEMINI_API_KEY` - backend Gemini key synced to Secret Manager
 - `VERTEX_PROJECT_ID` - backend Vertex project ID override (optional)
 - `VERTEX_LOCATION` - backend default Vertex location (optional)
-- `VERTEX_IMAGE_LOCATION` - backend image model location (optional, defaults to `us`)
+- `VERTEX_IMAGE_LOCATION` - backend image model location (optional, defaults to `global`)
 - `VERTEX_VIDEO_LOCATION` - backend video model location (optional)
 
 ## Troubleshooting

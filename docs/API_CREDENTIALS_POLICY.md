@@ -87,7 +87,7 @@ VITE_MEM0_API_KEY=<Mem0 Memory API Key>
 GEMINI_API_KEY=<Gemini Developer API Key>
 VERTEX_PROJECT_ID=indii-music-founder
 VERTEX_LOCATION=global
-VERTEX_IMAGE_LOCATION=us
+VERTEX_IMAGE_LOCATION=global
 VERTEX_VIDEO_LOCATION=us-central1
 ```
 
@@ -167,7 +167,7 @@ The following secrets must be maintained in **GitHub Repo Settings > Secrets and
 | `GEMINI_API_KEY` | `Gemini Developer API key` (Secret Manager sync) |
 | `VERTEX_PROJECT_ID` | `indii-music-founder` |
 | `VERTEX_LOCATION` | `global` |
-| `VERTEX_IMAGE_LOCATION` | `us` |
+| `VERTEX_IMAGE_LOCATION` | `global` |
 | `VERTEX_VIDEO_LOCATION` | `us-central1` |
 
 > [!WARNING]

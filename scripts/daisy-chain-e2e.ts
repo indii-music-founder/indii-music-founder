@@ -32,7 +32,7 @@ const OUTPUT_DIR = path.resolve(process.cwd(), 'scripts', 'daisy-chain-output');
 fs.mkdirSync(OUTPUT_DIR, { recursive: true });
 
 // Approved models per user rules
-const IMAGE_MODEL = 'gemini-3-pro-image-preview';
+const IMAGE_MODEL = 'gemini-3-pro-image';
 const VIDEO_MODEL = 'veo-3.1-generate-001';
 
 function log(emoji: string, msg: string) {

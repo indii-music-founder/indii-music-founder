@@ -1177,7 +1177,7 @@ export class CanvasOperationsService {
     /**
      * Workflow A: Visual Prompting
      * Returns a flattened image containing both the original content and the user's colorful highlights.
-     * Best for gemini-3-pro-image-preview.
+     * Best for gemini-3-pro-image.
      */
     async prepareVisualPrompt(): Promise<{ mimeType: string, data: string } | null> {
         if (!this.canvas) return null;

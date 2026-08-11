@@ -70,7 +70,7 @@ export interface AudioSemanticData {
         oneLiner: string;   // "A crushing industrial anthem for the digital age."
     };
     targetPrompts: {
-        image: string;      // Optimized for gemini-3-pro-image-preview
+        image: string;      // Optimized for gemini-3-pro-image
         veo: string;        // Optimized for veo-3.1-generate-001
     };
 }

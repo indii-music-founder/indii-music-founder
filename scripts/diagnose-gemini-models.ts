@@ -60,12 +60,12 @@ async function listModels() {
         });
 
         // Specifically check for our target
-        const target = geminiModels.find((m: any) => m.name.includes('gemini-3-pro-image-preview'));
+        const target = geminiModels.find((m: any) => m.name.includes('gemini-3-pro-image'));
         if (target) {
-            console.log("\n🎉 TARGET ACQUIRED: gemini-3-pro-image-preview is available!");
-            console.log("Full Name:", target.name);
+            console.log("\n🎉 TARGET ACQUIRED: gemini-3-pro-image is available!");
+            console.log("Details:", target);
         } else {
-            console.error("\n❌ TARGET MISSING: gemini-3-pro-image-preview was NOT found in this list.");
+            console.error("\n❌ TARGET MISSING: gemini-3-pro-image was NOT found in this list.");
         }
 
     } catch (error) {

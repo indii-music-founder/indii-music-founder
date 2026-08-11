@@ -11,12 +11,9 @@ dotenv.config();
  * Verification Script for Gemini 3 Pro Image Generation
  *
  * Tests:
- * 1. Model accessibility (gemini-3-pro-image-preview)
- * 2. Google Search Grounding (Tool)
- * 3. Image Config (AspectRatio, 4K)
- * 4. InlineData response format
- *
- * Updated to use the new @google/genai SDK (GA)
+ * 1. Model accessibility (gemini-3-pro-image)
+ * 2. Response format handling (image bytes extraction)
+ * 3. End-to-end output saving
  */
 async function verifyGeminiImageGen() {
     const apiKey = process.env.VITE_API_KEY || process.env.GOOGLE_GENAI_API_KEY || process.env.GEMINI_API_KEY;

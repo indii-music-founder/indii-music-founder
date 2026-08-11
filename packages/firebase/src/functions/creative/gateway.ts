@@ -102,11 +102,11 @@ function isInlineImageMimeType(value: string): value is InlineImageMimeType {
 function getMediaVertexLocation(kind: MediaKind): string {
   switch (kind) {
     case 'image':
-      return process.env.VERTEX_IMAGE_LOCATION || process.env.VERTEX_MEDIA_LOCATION || 'us';
+      return process.env.VERTEX_IMAGE_LOCATION || 'global';
     case 'video':
-      return process.env.VERTEX_VIDEO_LOCATION || process.env.VERTEX_MEDIA_LOCATION || process.env.VERTEX_LOCATION || 'us-central1';
+      return process.env.VERTEX_VIDEO_LOCATION || 'us-central1';
     case 'audio':
-      return process.env.VERTEX_AUDIO_LOCATION || process.env.VERTEX_MEDIA_LOCATION || process.env.VERTEX_LOCATION || 'global';
+      return process.env.VERTEX_AUDIO_LOCATION || 'global';
   }
 }
 
@@ -131,11 +131,12 @@ function getAiClient(kind: MediaKind): GoogleGenAI {
 
 /**
  * Omni Remix is allowed to use only the same ADC-authenticated Vertex client
- * as every other creative capability. There is intentionally no Gemini
- * Developer API client, API-key fallback, or browser-owned provider route.
+ * as every other creative capability. Uses its own location (default global)
+ * and does not inherit the Veo location.
  */
 function getOmniAiClient(): GoogleGenAI {
-  return getVertexAIClient(undefined, getMediaVertexLocation('video'));
+  const location = process.env.VERTEX_OMNI_LOCATION || 'global';
+  return getVertexAIClient(undefined, location);
 }
 
 // Defer firestore and storage initialization until first use (for test compatibility)
@@ -1146,11 +1147,15 @@ export const generateImageV3 = onCall({ ...creativeGatewayCallableOptions, timeo
         data: ref.data,
       })),
     ];
-    const searchTypes: Array<'web_search' | 'image_search' | 'enterprise_web_search'> =
-      model === 'fast' && useImageSearch
-        ? ['web_search', 'image_search']
-        : ['web_search'];
-    const googleSearchTool = useGoogleSearch || useGrounding
+    if ((useGoogleSearch || useGrounding || useImageSearch) && model === 'fast') {
+      throw new HttpsError(
+        'failed-precondition',
+        'Search grounding is not supported on the Fast image generation model. Switch to Pro tier for search grounding.'
+      );
+    }
+
+    const searchTypes: Array<'web_search' | 'image_search' | 'enterprise_web_search'> = ['web_search'];
+    const googleSearchTool = (useGoogleSearch || useGrounding) && model === 'pro'
       ? [{
           type: 'google_search' as const,
           search_types: searchTypes,
@@ -1166,12 +1171,9 @@ export const generateImageV3 = onCall({ ...creativeGatewayCallableOptions, timeo
 
       let usedInteractions = false;
 
-      let interactionError: Error | undefined;
-
       if (imageAi.interactions) {
-        let interaction: unknown;
         try {
-            interaction = await imageAi.interactions.create({
+            const interaction = await imageAi.interactions.create({
               model: modelId,
               input: interactionInput,
               response_modalities: responseFormat === 'image_and_text' ? ['text', 'image'] : ['image'],
@@ -1187,35 +1189,30 @@ export const generateImageV3 = onCall({ ...creativeGatewayCallableOptions, timeo
               },
               ...(googleSearchTool ? { tools: googleSearchTool } : {}),
             });
-            usedInteractions = true;
-        } catch (e: any) {
-            interactionError = e;
-            const errMessage = String(e?.message || e || '').toLowerCase();
-            const isUnsupportedOrNotFound = e?.status === 404 || errMessage.includes('unsupported model interaction') || errMessage.includes('404') || errMessage.includes('not found') || errMessage.includes('not available') || errMessage.includes('is not supported');
-            if (isUnsupportedOrNotFound) {
-                console.log(`[generateImageV3] interactions.create unavailable for ${modelId} (${errMessage}), falling back to models.generateContent`);
-            } else {
-                throw e;
-            }
-        }
-
-        if (usedInteractions && interaction) {
             image = extractInteractionImage(interaction);
             const metadata = extractInteractionMetadata(interaction);
             if (metadata.textNarration) narrationParts.push(metadata.textNarration);
             if (metadata.thoughtSummary) thoughtSummaries.push(metadata.thoughtSummary);
+            usedInteractions = true;
+        } catch (e: any) {
+            if (e?.message?.includes('Unsupported model interaction')) {
+                console.log(`[generateImageV3] interactions.create unsupported for ${modelId}, falling back to models.generateContent`);
+            } else {
+                throw e;
+            }
         }
       } 
       
       if (!usedInteractions) {
-        console.log(`[generateImageV3] Executing models.generateContent with model=${modelId}...`);
+        console.log('[generateImageV3] Falling back to models.generateContent...');
         const thinkingConfig = {
           ...(normalizedThinkingLevel && model === 'fast'
             ? { thinkingLevel: normalizedThinkingLevel.charAt(0).toUpperCase() + normalizedThinkingLevel.slice(1) }
             : {}),
           ...(includeThoughts ? { includeThoughts: true } : {}),
         };
-        const generateContentData = {
+        const response = await imageAi.models.generateContent({
+          model: modelId,
           contents: interactionInput,
           config: {
             responseModalities: responseFormat === 'image_and_text' ? ['TEXT', 'IMAGE'] : ['IMAGE'],
@@ -1226,38 +1223,7 @@ export const generateImageV3 = onCall({ ...creativeGatewayCallableOptions, timeo
             ...(Object.keys(thinkingConfig).length > 0 ? { thinkingConfig } : {}),
             ...(googleSearchTool ? { tools: googleSearchTool } : {}),
           }
-        };
-
-        let response: unknown;
-        try {
-          response = await imageAi.models.generateContent({
-            model: modelId,
-            ...generateContentData,
-          });
-        } catch (genError: any) {
-          const genErrStr = String(genError?.message || genError || '').toLowerCase();
-          const isNotFound = genError?.status === 404 || genErrStr.includes('404') || genErrStr.includes('not found') || genErrStr.includes('not available');
-          if (isNotFound && modelId !== IMAGE_MODEL_IDS.legacy) {
-            console.warn(`[generateImageV3] Model ${modelId} unavailable, retrying with fallback model ${IMAGE_MODEL_IDS.legacy}`);
-            try {
-              response = await imageAi.models.generateContent({
-                model: IMAGE_MODEL_IDS.legacy,
-                ...generateContentData,
-              });
-            } catch {
-              throw interactionError || genError;
-            }
-          } else {
-            throw interactionError || genError;
-          }
-        }
-
-        if (!response || typeof response !== 'object') {
-          if (interactionError) {
-            throw interactionError;
-          }
-          throw new Error(`Model ${modelId} is not available.`);
-        }
+        });
 
         const candidates = (response as GeminiContentResponse).candidates;
         if (!candidates || candidates.length === 0) {
@@ -1404,6 +1370,15 @@ export const generateVideoV3 = onCall({ ...creativeGatewayCallableOptions, timeo
     throw new HttpsError(
       'invalid-argument',
       `Video generation only supports 16:9 or 9:16 aspect ratios. "${aspectRatio}" is not supported by the video model.`
+    );
+  }
+
+  const isLiteModel = resolveVideoModel(model) === VIDEO_MODEL_IDS.lite;
+  const hasReferenceImages = (referenceUris && referenceUris.length > 0) || !!referenceUri;
+  if (isLiteModel && hasReferenceImages) {
+    throw new HttpsError(
+      'failed-precondition',
+      'Reference images are not supported with the Veo Lite model tier. Use Fast or Pro tier for reference image support.'
     );
   }
 

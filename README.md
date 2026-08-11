@@ -573,7 +573,7 @@ All AI interactions follow a strict model policy. Manual model string hardcoding
 |------|-------|---------------|
 | Complex Reasoning | `gemini-3-pro-preview` | HIGH |
 | Fast Routing | `gemini-3-flash-preview` | MEDIUM |
-| Image Generation | `gemini-3-pro-image-preview` | — |
+| Image Generation | `gemini-3-pro-image` | — |
 | Video Generation | `veo-3.1-generate-preview` | — |
 | Text-to-Speech | `gemini-3.1-flash-tts-preview` | — |
 
@@ -623,7 +623,7 @@ cp .env.example .env
 |----------|---------|
 | `VERTEX_PROJECT_ID` | Backend Vertex AI project override |
 | `VERTEX_LOCATION` | Backend default Vertex AI location |
-| `VERTEX_IMAGE_LOCATION` | Backend image model location, defaults to `us` |
+| `VERTEX_IMAGE_LOCATION` | Backend image model location, defaults to `global` |
 | `VERTEX_VIDEO_LOCATION` | Backend video model location |
 | `VITE_GOOGLE_MAPS_API_KEY` | Google Maps |
 | `VITE_SKIP_ONBOARDING` | Skip onboarding in dev |

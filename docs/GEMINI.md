@@ -12,7 +12,7 @@ All AI interactions must adhere to the [Model Usage Policy](file:///Volumes/X%20
 | :--- | :--- | :--- |
 | **Complex Reasoning** | `gemini-3-pro-preview` | `HIGH` |
 | **Fast Routing** | `gemini-3-flash-preview` | `MEDIUM` |
-| **Image Synth** | `gemini-3-pro-image-preview` | N/A |
+| **Image Synth** | `gemini-3-pro-image` | N/A |
 | **Video Synth** | `veo-3.1-generate-preview` | N/A |
 | **Audio/TTS** | `gemini-3.1-flash-tts-preview` | N/A |
 

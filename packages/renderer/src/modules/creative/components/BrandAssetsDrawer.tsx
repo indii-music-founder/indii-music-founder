@@ -202,24 +202,13 @@ export default function BrandAssetsDrawer({ onClose, onSelect }: BrandAssetsDraw
         const currentKit = userProfile?.brandKit || { brandAssets: [], referenceImages: [] };
 
         try {
-            // Extract storage path from URL (gs://... URLs need to be converted to paths)
-            let storagePath: string | null = null;
-            if (asset.url.startsWith('gs://')) {
-                const match = asset.url.match(/gs:\/\/[^/]+\/(.*)/);
-                storagePath = match ? match[1] : null;
-            }
-
-            // Step 1: Delete from Storage first (before profile update, so orphaning is less likely)
-            let storageDeleteError: string | null = null;
-            if (storagePath) {
-                try {
-                    await StorageService.deleteFile(storagePath);
-                } catch (storageErr) {
-                    storageDeleteError = `Storage deletion failed: ${storageErr instanceof Error ? storageErr.message : String(storageErr)}`;
-                    logger.warn(`[BrandAssets] Failed to delete storage file ${storagePath}:`, storageErr);
-                    // Note: We continue to remove from profile, but will report the issue to user
-                }
-            }
+            // Step 1: Move to Trash Service. A failed Trash write must stop the
+            // profile mutation or the user would lose the only restore handle.
+            const { trashService } = await import('@/services/trash/TrashService');
+            await trashService.moveToTrash(
+                { type: 'brand_assets', targetId: asset.id || asset.url },
+                { actor: 'user', reason: 'User removed brand asset' }
+            );
 
             // Step 2: Remove from profile (use identity comparison, not just URL, to avoid removing unintended duplicates)
             // For now, we still use URL matching since BrandAsset doesn't have stable IDs
@@ -232,11 +221,7 @@ export default function BrandAssetsDrawer({ onClose, onSelect }: BrandAssetsDraw
                 await updateBrandKit({ brandAssets: newLogos });
             }
 
-            if (storageDeleteError) {
-                toast.warning(`Asset removed from profile, but ${storageDeleteError}`);
-            } else {
-                toast.success("Asset removed");
-            }
+            toast.success("Asset moved to trash");
         } catch (error: unknown) {
             const err = error as { message?: string };
             logger.error("[BrandAssets] Delete failed:", error);

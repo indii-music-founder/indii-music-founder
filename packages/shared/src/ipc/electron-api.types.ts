@@ -287,6 +287,29 @@ export interface ApprovedAssetMetadata {
     modifiedAt: number;
 }
 
+export interface ElectronTrashAPI {
+    move: (req: { approvedFolderId: string; dirPath: string; relativePath: string; trashId: string }) => Promise<{
+        success: boolean;
+        trashId: string;
+        relativePath: string;
+        name: string;
+        sizeBytes: number;
+        isDirectory: boolean;
+    }>;
+    restore: (req: { dirPath: string; trashId: string; relativePath: string; targetRelativePath?: string }) => Promise<{
+        success: boolean;
+        restoredPath?: string;
+        conflict?: boolean;
+        error?: string;
+    }>;
+    purge: (req: { dirPath: string; trashId: string }) => Promise<{
+        success: boolean;
+        purgedTrashId?: string;
+        cancelled?: boolean;
+        message?: string;
+    }>;
+}
+
 // ── Root ElectronAPI Interface ─────────────────────────────────────────────
 
 export interface ElectronAPI {
@@ -317,6 +340,7 @@ export interface ElectronAPI {
     daw: ElectronDawAPI;
     distribution: ElectronDistributionAPI;
     remote: ElectronRemoteAPI;
+    trash?: ElectronTrashAPI;
     /**
      * Optional: only present in builds where the Sonic Bridge preload block is
      * exposed. Callers must feature-detect (`window.electronAPI?.sonicBridge`)

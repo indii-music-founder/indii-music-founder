@@ -229,7 +229,7 @@ describe('Image and Content Generation Functions', () => {
             expect(mocks.createInteraction).toHaveBeenCalledTimes(2);
             expect(mocks.createInteraction).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    model: 'gemini-3.1-flash-image-preview',
+                    model: 'gemini-3.1-flash-image',
                     input: [{ type: 'text', text: 'a beautiful cat' }],
                     response_modalities: ['image'],
                     generation_config: expect.objectContaining({

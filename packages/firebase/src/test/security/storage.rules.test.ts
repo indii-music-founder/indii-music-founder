@@ -95,6 +95,47 @@ describe('immutable canonical masters', () => {
     });
 });
 
+describe('user Trash quarantine', () => {
+    let testEnv: RulesTestEnvironment;
+
+    beforeAll(async () => {
+        testEnv = await initializeTestEnvironment({
+            projectId: `${PROJECT_ID}-trash`,
+            storage: {
+                host: STORAGE_EMULATOR_HOST,
+                port: STORAGE_EMULATOR_PORT,
+                rules: readFileSync(resolve(__dirname, '../../../storage.rules'), 'utf8'),
+            },
+        });
+    });
+
+    afterAll(async () => {
+        await testEnv?.cleanup();
+    });
+
+    function ownerStorage() {
+        return testEnv.authenticatedContext(OWNER_ID, {
+            email: 'owner@example.com',
+            firebase: { sign_in_provider: 'password' },
+        }).storage();
+    }
+
+    it('prevents client writes to quarantine despite the general owner match', async () => {
+        const payload = ref(ownerStorage(), `users/${OWNER_ID}/trash/trash_safe_1/payload.png`);
+        await assertFails(uploadBytes(payload, new Uint8Array([1, 2, 3]), { contentType: 'image/png' }));
+    });
+
+    it('keeps normal uploads and explicit temporary cleanup working', async () => {
+        const normal = ref(ownerStorage(), `users/${OWNER_ID}/brand_assets/logo.png`);
+        await assertSucceeds(uploadBytes(normal, new Uint8Array([1]), { contentType: 'image/png' }));
+        await assertFails(deleteObject(normal));
+
+        const temporary = ref(ownerStorage(), `users/${OWNER_ID}/tmp/capture.png`);
+        await assertSucceeds(uploadBytes(temporary, new Uint8Array([1]), { contentType: 'image/png' }));
+        await assertSucceeds(deleteObject(temporary));
+    });
+});
+
 describe('immutable canonical cover art', () => {
     let testEnv: RulesTestEnvironment;
 

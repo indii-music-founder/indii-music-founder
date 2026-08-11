@@ -15,6 +15,80 @@ export interface ApprovedAssetMetadata {
 
 const MAX_APPROVED_ASSET_RESULTS = 500;
 const MAX_APPROVED_ASSET_DEPTH = 8;
+const TRASH_ID_PATTERN = /^trash_[A-Za-z0-9_-]{1,120}$/;
+
+function isWithinRoot(root: string, candidate: string): boolean {
+    return candidate === root || candidate.startsWith(`${root}${path.sep}`);
+}
+
+function assertValidTrashId(trashId: unknown): asserts trashId is string {
+    if (typeof trashId !== 'string' || !TRASH_ID_PATTERN.test(trashId)) {
+        throw new Error('Security Violation: Invalid trash identifier.');
+    }
+}
+
+function assertSafeRelativePath(relativePath: unknown, label: string): asserts relativePath is string {
+    if (
+        typeof relativePath !== 'string' ||
+        relativePath.length === 0 ||
+        relativePath.includes('\0') ||
+        path.isAbsolute(relativePath)
+    ) {
+        throw new Error(`Security Violation: Invalid ${label}.`);
+    }
+    const segments = relativePath.split(/[\\/]+/);
+    if (segments.includes('.indii-trash')) {
+        throw new Error(`Security Violation: ${label} cannot address the Trash vault.`);
+    }
+}
+
+async function resolveApprovedRoot(dirPath: string): Promise<string> {
+    if (!accessControlService.verifyAccess(dirPath)) {
+        throw new Error('Access denied. Folder is not an authorized approved folder.');
+    }
+    return fs.realpath(dirPath);
+}
+
+async function resolveTrashVault(root: string, trashId: string, mustExist: boolean): Promise<string> {
+    assertValidTrashId(trashId);
+    const expectedTrashRoot = path.resolve(root, '.indii-trash');
+    const expectedVault = path.resolve(expectedTrashRoot, trashId);
+    if (!isWithinRoot(expectedTrashRoot, expectedVault) || expectedVault === expectedTrashRoot) {
+        throw new Error('Security Violation: Invalid trash vault path.');
+    }
+
+    if (mustExist) {
+        const realVault = await fs.realpath(expectedVault);
+        if (realVault !== expectedVault || !isWithinRoot(expectedTrashRoot, realVault)) {
+            throw new Error('Security Violation: Trash vault resolved outside its approved location.');
+        }
+    }
+    return expectedVault;
+}
+
+async function ensureSafeParent(root: string, targetPath: string): Promise<void> {
+    const parent = path.dirname(targetPath);
+    const relativeParent = path.relative(root, parent);
+    let current = root;
+    for (const segment of relativeParent.split(path.sep).filter(Boolean)) {
+        current = path.join(current, segment);
+        try {
+            const stats = await fs.lstat(current);
+            if (stats.isSymbolicLink()) {
+                throw new Error('Security Violation: Restore path contains a symbolic link.');
+            }
+        } catch (error: unknown) {
+            const code = error && typeof error === 'object' && 'code' in error ? error.code : undefined;
+            if (code === 'ENOENT') break;
+            throw error;
+        }
+    }
+    await fs.mkdir(parent, { recursive: true });
+    const realParent = await fs.realpath(parent);
+    if (!isWithinRoot(root, realParent)) {
+        throw new Error('Security Violation: Restore parent resolved outside approved folder.');
+    }
+}
 
 export function registerSystemHandlers() {
     ipcMain.handle('get-platform', (event) => {
@@ -136,7 +210,7 @@ export function registerSystemHandlers() {
             if (depth > MAX_APPROVED_ASSET_DEPTH || assets.length >= maxResults) return;
             const entries = await fs.readdir(currentPath, { withFileTypes: true });
             for (const entry of entries) {
-                if (assets.length >= maxResults || entry.isSymbolicLink()) continue;
+                if (assets.length >= maxResults || entry.isSymbolicLink() || entry.name === '.indii-trash' || entry.name.startsWith('.indii-trash')) continue;
                 const fullPath = path.join(currentPath, entry.name);
                 if (entry.isDirectory()) {
                     await scan(fullPath, depth + 1);
@@ -160,6 +234,139 @@ export function registerSystemHandlers() {
 
         await scan(root, 0);
         return assets;
+    });
+
+    ipcMain.handle('trash:move', async (event, req: { approvedFolderId: string; dirPath: string; relativePath: string; trashId: string }) => {
+        validateSender(event);
+        assertSafeRelativePath(req.relativePath, 'trash source path');
+        const root = await resolveApprovedRoot(req.dirPath);
+        const requestedPath = path.resolve(root, req.relativePath);
+
+        // Security check: path traversal and boundary check
+        if (!isWithinRoot(root, requestedPath) || requestedPath === root) {
+            throw new Error('Security Violation: Path traversal or unauthorized target path.');
+        }
+
+        const lstat = await fs.lstat(requestedPath);
+        if (lstat.isSymbolicLink()) {
+            throw new Error('Security Violation: Symbolic links cannot be moved to trash.');
+        }
+        const fullPath = await fs.realpath(requestedPath);
+        if (!isWithinRoot(root, fullPath) || fullPath === root) {
+            throw new Error('Security Violation: Trash source resolved outside approved folder.');
+        }
+
+        const trashVault = await resolveTrashVault(root, req.trashId, false);
+        await fs.mkdir(trashVault, { recursive: true });
+        const realTrashVault = await fs.realpath(trashVault);
+        if (realTrashVault !== trashVault) {
+            throw new Error('Security Violation: Trash vault contains a symbolic link.');
+        }
+
+        const filename = path.basename(fullPath);
+        const destPath = path.join(trashVault, filename);
+
+        try {
+            await fs.lstat(destPath);
+            throw new Error('Trash conflict: An item with this trash identifier already exists.');
+        } catch (error: unknown) {
+            const code = error && typeof error === 'object' && 'code' in error ? error.code : undefined;
+            if (code !== 'ENOENT') throw error;
+        }
+
+        // Atomic rename into vault inside approved root (same volume)
+        await fs.rename(fullPath, destPath);
+
+        return {
+            success: true,
+            trashId: req.trashId,
+            relativePath: req.relativePath,
+            name: filename,
+            sizeBytes: lstat.size,
+            isDirectory: lstat.isDirectory()
+        };
+    });
+
+    ipcMain.handle('trash:restore', async (event, req: { dirPath: string; trashId: string; relativePath: string; targetRelativePath?: string }) => {
+        validateSender(event);
+        assertSafeRelativePath(req.relativePath, 'original relative path');
+        const targetRel = req.targetRelativePath || req.relativePath;
+        assertSafeRelativePath(targetRel, 'restore target path');
+        const root = await resolveApprovedRoot(req.dirPath);
+        const targetPath = path.resolve(root, targetRel);
+
+        if (!isWithinRoot(root, targetPath) || targetPath === root) {
+            throw new Error('Security Violation: Restore target path is outside approved folder.');
+        }
+
+        const trashVault = await resolveTrashVault(root, req.trashId, true);
+        const filename = path.basename(req.relativePath);
+        const srcPath = path.join(trashVault, filename);
+        const realSource = await fs.realpath(srcPath);
+        if (!isWithinRoot(trashVault, realSource)) {
+            throw new Error('Security Violation: Restore source resolved outside Trash vault.');
+        }
+
+        // Check if destination file/folder already exists
+        try {
+            await fs.access(targetPath);
+            return {
+                success: false,
+                conflict: true,
+                error: `Restore conflict: Destination '${targetRel}' already exists.`
+            };
+        } catch (error: unknown) {
+            const code = error && typeof error === 'object' && 'code' in error ? error.code : undefined;
+            if (code !== 'ENOENT') throw error;
+        }
+
+        // Ensure parent directory of target exists
+        await ensureSafeParent(root, targetPath);
+
+        // Atomic rename from vault to target path
+        await fs.rename(srcPath, targetPath);
+
+        // Clean up empty trash vault folder if empty
+        await fs.rm(trashVault, { recursive: true, force: true }).catch(() => {});
+
+        return { success: true, restoredPath: targetRel };
+    });
+
+    ipcMain.handle('trash:purge', async (event, req: { dirPath: string; trashId: string }) => {
+        validateSender(event);
+        const root = await resolveApprovedRoot(req.dirPath);
+        const trashVault = await resolveTrashVault(root, req.trashId, false);
+        try {
+            const realVault = await fs.realpath(trashVault);
+            if (realVault !== trashVault) {
+                throw new Error('Security Violation: Trash vault resolved outside its approved location.');
+            }
+        } catch (error: unknown) {
+            const code = error && typeof error === 'object' && 'code' in error ? error.code : undefined;
+            if (code !== 'ENOENT') throw error;
+            // A prior confirmed purge may have removed the payload before its
+            // cloud manifest was acknowledged. Re-confirming safely completes it.
+        }
+
+        // Mandatory native dialog confirmation in main process — CANNOT be bypassed by IPC
+        const win = BrowserWindow.fromWebContents(event.sender);
+        const options = {
+            type: 'warning' as const,
+            buttons: ['Cancel', 'Delete Permanently'],
+            defaultId: 0,
+            cancelId: 0,
+            title: 'Confirm Permanent Deletion',
+            message: 'Are you sure you want to permanently delete this local trashed item?',
+            detail: 'This action is irreversible and will permanently remove the file from your storage.',
+        };
+        const choice = win ? await dialog.showMessageBox(win, options) : await dialog.showMessageBox(options);
+
+        if (choice.response !== 1) {
+            return { success: false, cancelled: true, message: 'Purge cancelled by user in native confirmation dialog.' };
+        }
+
+        await fs.rm(trashVault, { recursive: true, force: true });
+        return { success: true, purgedTrashId: req.trashId };
     });
 
     ipcMain.handle('system:get-gpu-info', async (event) => {

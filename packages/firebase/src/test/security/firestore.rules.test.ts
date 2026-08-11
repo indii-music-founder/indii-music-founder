@@ -2877,6 +2877,48 @@ describe('Firestore Security Rules', () => {
         });
     });
 
+    describe('users/{userId}/trashItems/{trashId}', () => {
+        const manifest = {
+            id: 'trash_safe_1',
+            userId: ALICE_UID,
+            type: 'history',
+            targetId: 'history-1',
+            name: 'Draft artwork',
+            originalLocation: 'history/history-1',
+            provenance: { actor: 'user', reason: 'User removed item' },
+            state: 'trashed',
+            idempotencyKey: 'hist_history-1',
+            restoreData: { userId: ALICE_UID },
+            legalHold: { isLocked: false },
+            hasEntries: false,
+            trashedAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+        };
+
+        it('allows an owner schema-bound manifest but denies storage authority and deletion', async () => {
+            if (requireEmulator()) return;
+            const ownerRef = doc(verifiedCtx(ALICE_UID).firestore(), 'users', ALICE_UID, 'trashItems', manifest.id);
+            await assertSucceeds(setDoc(ownerRef, manifest));
+            await assertFails(updateDoc(ownerRef, { quarantinePath: `users/${ALICE_UID}/trash/${manifest.id}/payload` }));
+            await assertFails(deleteDoc(ownerRef));
+        });
+
+        it('permits only the owner restore transition and rejects forged ownership', async () => {
+            if (requireEmulator()) return;
+            const ownerRef = doc(verifiedCtx(ALICE_UID).firestore(), 'users', ALICE_UID, 'trashItems', manifest.id);
+            await assertSucceeds(setDoc(ownerRef, manifest));
+            await assertSucceeds(updateDoc(ownerRef, {
+                state: 'restored',
+                restoredAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+            }));
+            await assertFails(setDoc(
+                doc(verifiedCtx(BOB_UID).firestore(), 'users', ALICE_UID, 'trashItems', 'trash_forged_1'),
+                { ...manifest, id: 'trash_forged_1' },
+            ));
+        });
+    });
+
     // ──────────────────────────────────────────────────────────────────────
     // DENY-ALL: arbitrary collection access denied
     // ──────────────────────────────────────────────────────────────────────

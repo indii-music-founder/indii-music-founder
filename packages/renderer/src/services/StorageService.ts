@@ -249,25 +249,15 @@ class StorageServiceImpl extends FirestoreService<HistoryDocument> {
     }
 
     /**
-     * Deletes an item from both Firestore and Firebase Storage.
-     * @param id The ID of the item to remove.
+     * Reversibly moves an item to Trash.
+     * @param id The ID of the history item.
      */
     async removeItem(id: string): Promise<void> {
-        // 1. Get the item first to check if it has a Storage URL
-        const item = await this.get(id);
-
-        if (item) {
-            // 2. If it has a standard storage URL (not a data URI or placeholder), delete from Storage
-            if (item.storageUri) {
-                await this.deleteFile(item.storageUri);
-            } else if (item.url && item.url.includes('firebasestorage.googleapis.com')) {
-                // Extract path from URL or assume standard path
-                await this.deleteFile(`generated/${id}`);
-            }
-        }
-
-        // 3. Delete from Firestore
-        await this.delete(id);
+        const { trashService } = await import('./trash/TrashService');
+        await trashService.moveToTrash(
+            { type: 'history', targetId: id },
+            { actor: 'user', reason: 'User requested creative history removal' }
+        );
     }
 
     async loadHistory(limitCount = 50): Promise<HistoryItem[]> {

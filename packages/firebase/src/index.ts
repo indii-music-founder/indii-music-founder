@@ -2185,3 +2185,6 @@ export {
 export { createKnowledgeUpload, finalizeKnowledgeUpload, deleteKnowledgeDocument } from './functions/knowledge/upload';
 export { indexKnowledgeDocumentWorker } from './functions/knowledge/indexWorker';
 export { queryKnowledgeBase } from './functions/knowledge/query';
+
+// Universal reversible Trash purge gateway
+export { createPurgeIntent, purgeTrashItems } from './functions/trash/trashFunctions';

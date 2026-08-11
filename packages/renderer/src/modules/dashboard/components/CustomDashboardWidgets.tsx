@@ -1096,8 +1096,8 @@ function CostEstimatorWidget() {
             // @ts-expect-error model pricing type indexing
             (MODEL_PRICING[modelId].output || 0) / 1000000;
 
-        if (tier === 'pro') return count * TOKENS_PER_IMAGE * perTokenCost('gemini-3-pro-image-preview');
-        if (tier === 'fast') return count * TOKENS_PER_IMAGE * perTokenCost('gemini-3.1-flash-image-preview');
+        if (tier === 'pro') return count * TOKENS_PER_IMAGE * perTokenCost('gemini-3-pro-image');
+        if (tier === 'fast') return count * TOKENS_PER_IMAGE * perTokenCost('gemini-3.1-flash-image');
         return count * TOKENS_PER_IMAGE * perTokenCost('imagen-4.0-fast-generate-001'); // fallback lite equivalent
     })();
 

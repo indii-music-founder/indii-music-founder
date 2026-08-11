@@ -229,50 +229,41 @@ export const deleteKnowledgeDocument = onCall({ enforceAppCheck: true }, async (
     throw new HttpsError('permission-denied', 'Cannot access documents owned by another user.');
   }
 
-  // Mark as deleting
-  await docRef.update({
-    state: 'deleting',
-    updatedAt: new Date().toISOString(),
+  // Mark as trashed and paused indexing
+  const now = new Date().toISOString();
+  // Update the source and create its manifest atomically so a failed write can
+  // never hide the document without leaving a restorable Trash record.
+  const trashId = `trash_${Date.now()}_${documentId.slice(0, 6)}`;
+  const trashRef = admin.firestore().collection('users').doc(uid).collection('trashItems').doc(trashId);
+  const batch = admin.firestore().batch();
+  batch.update(docRef, {
+    state: 'failed',
+    isTrashed: true,
+    isIndexed: false,
+    updatedAt: now,
   });
+  batch.set(trashRef, {
+    id: trashId,
+    userId: uid,
+    type: 'knowledge_docs',
+    targetId: documentId,
+    name: docData.title,
+    originalLocation: `ragDocuments/${documentId}`,
+    mimeType: docData.mimeType,
+    sizeBytes: docData.byteSize,
+    provenance: {
+      actor: 'user',
+      reason: 'Moved knowledge document to trash'
+    },
+    state: 'trashed',
+    idempotencyKey: `kd_${documentId}`,
+    restoreData: { ...docData },
+    legalHold: { isLocked: false },
+    hasEntries: false,
+    trashedAt: now,
+    updatedAt: now,
+  });
+  await batch.commit();
 
-  try {
-    // 1. Delete all associated chunks
-    const chunksRef = admin.firestore().collection('users').doc(uid).collection('ragChunks');
-    const chunksQuery = chunksRef.where('documentId', '==', documentId);
-    
-    // Quick batch delete for chunks
-    const chunksSnap = await chunksQuery.get();
-    if (!chunksSnap.empty) {
-      const batch = admin.firestore().batch();
-      chunksSnap.docs.forEach(doc => {
-        batch.delete(doc.ref);
-      });
-      await batch.commit();
-    }
-
-    // 2. Delete file from Cloud Storage
-    if (docData.storagePath) {
-      const bucket = admin.storage().bucket();
-      const file = bucket.file(docData.storagePath);
-      const [exists] = await file.exists();
-      if (exists) {
-        await file.delete();
-      }
-    }
-
-    // 3. Delete the document record itself
-    await docRef.delete();
-
-    return { success: true, documentId };
-  } catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : String(err);
-    console.error(`Failed to delete document ${documentId}:`, err);
-    await docRef.update({
-      state: 'failed',
-      failureCode: 'deletion-failed',
-      failureReason: errorMsg,
-      updatedAt: new Date().toISOString(),
-    });
-    throw new HttpsError('internal', `Failed to delete document: ${errorMsg}`);
-  }
+  return { success: true, documentId, trashId };
 });

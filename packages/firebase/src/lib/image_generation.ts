@@ -107,7 +107,7 @@ export class GeminiImageService {
     private getClient(): GoogleGenAI {
         if (!this.client) {
             // Always use Vertex AI + ADC (no API key required)
-            const location = process.env.VERTEX_IMAGE_LOCATION || process.env.VERTEX_MEDIA_LOCATION || 'us';
+            const location = process.env.VERTEX_IMAGE_LOCATION || 'global';
             this.client = getVertexAIClient(undefined, location);
             console.log(`[GeminiImageService] Initialized with Vertex AI (ADC auth)`);
         }
@@ -117,7 +117,7 @@ export class GeminiImageService {
     /**
      * Resolves a NanoBananaTier to its corresponding model ID string.
      * @param tier - The tier to resolve.
-     * @returns The model ID string (e.g., 'gemini-3.1-flash-image-preview').
+     * @returns The model ID string (e.g., 'gemini-3.1-flash-image').
      */
     private resolveModelId(tier: NanoBananaTier | undefined | null): string {
         switch (tier) {

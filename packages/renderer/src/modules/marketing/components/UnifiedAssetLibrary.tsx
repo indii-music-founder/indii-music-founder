@@ -103,9 +103,12 @@ export default function UnifiedAssetLibrary({
     const handleDelete = async (assetId: string, index: number) => {
         const asset = currentAssets[index]!;
 
-        if (asset.id && userId) {
-            const path = `users/${userId}/${storagePath}/${asset.id}`;
-            await StorageService.deleteFile(path);
+        if (userId) {
+            const { trashService } = await import('@/services/trash/TrashService');
+            await trashService.moveToTrash(
+                { type: 'brand_assets', targetId: asset.id || asset.url },
+                { actor: 'user', reason: 'User moved asset to trash' }
+            );
         }
 
         const updatedAssets = currentAssets.filter((_, i) => i !== index);

@@ -211,6 +211,7 @@ export interface BoardroomDispatchTask {
 }
 
 export interface AgentContext {
+    agentId?: string;
     userId?: string;
     orgId?: string;
     projectId?: string;

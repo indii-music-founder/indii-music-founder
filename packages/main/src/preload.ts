@@ -326,5 +326,15 @@ contextBridge.exposeInMainWorld('electronAPI', {
             ipcRenderer.on('menu:save-triggered', handler);
             return () => ipcRenderer.removeListener('menu:save-triggered', handler);
         }
+    },
+
+    // Safe Local Trash
+    trash: {
+        move: (req: { approvedFolderId: string; dirPath: string; relativePath: string; trashId: string }) =>
+            ipcRenderer.invoke('trash:move', req),
+        restore: (req: { dirPath: string; trashId: string; relativePath: string; targetRelativePath?: string }) =>
+            ipcRenderer.invoke('trash:restore', req),
+        purge: (req: { dirPath: string; trashId: string }) =>
+            ipcRenderer.invoke('trash:purge', req),
     }
 });

@@ -45,6 +45,9 @@ export const TOOL_RISK_REGISTRY: Record<string, ToolRiskMetadata> = {
     captains_log_read: { riskTier: 'read', permissionTier: 'builtin', requiresApproval: false, description: 'Read operational logs from Layer 4' },
     list_tasks: { riskTier: 'read', permissionTier: 'builtin', requiresApproval: false, description: 'List project tasks' },
     audit_architecture: { riskTier: 'read', permissionTier: 'builtin', requiresApproval: false, description: 'Map the agent ecosystem and capabilities' },
+    list_trash: { riskTier: 'read', permissionTier: 'builtin', requiresApproval: false, description: 'List items in the user-owned Trash vault' },
+    move_to_trash: { riskTier: 'write', permissionTier: 'core', requiresApproval: true, description: 'Reversibly move an asset or file to the user-owned Trash vault' },
+    restore_from_trash: { riskTier: 'write', permissionTier: 'core', requiresApproval: false, description: 'Restore an item from the Trash vault' },
 
     // Security (read)
     check_api_status: { riskTier: 'read', permissionTier: 'builtin', requiresApproval: false, description: 'Read-only operation' },

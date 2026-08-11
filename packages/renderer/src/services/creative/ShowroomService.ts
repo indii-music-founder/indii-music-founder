@@ -58,7 +58,7 @@ export class ShowroomService {
 
         const results = await ImageGeneration.generateImages({
             prompt,
-            model: 'pro', // Nano Banana Pro (gemini-3-pro-image-preview)
+            model: 'pro', // Nano Banana Pro (gemini-3-pro-image)
             sourceImages: [{
                 mimeType: assetData.mimeType,
                 data: assetData.data

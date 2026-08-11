@@ -29,24 +29,24 @@ vi.mock('@/config/env', () => ({
 // Mock Autonomous models config
 vi.mock('@/core/config/intelligence-models', () => ({
     APPROVED_MODELS: {
-        TEXT_AGENT: 'gemini-3.1-pro-preview',
-        TEXT_FAST: 'gemini-3.1-pro-preview',
-        IMAGE_GEN: 'gemini-3-pro-image-preview',
-        VIDEO_GEN: 'veo-3.1-generate-preview'
+        TEXT_AGENT: 'gemini-3.1-pro',
+        TEXT_FAST: 'gemini-3.1-flash',
+        IMAGE_GEN: 'gemini-3-pro-image',
+        VIDEO_GEN: 'veo-3.1-generate-001'
     },
     INTELLIGENCE_MODELS: {
-        TEXT: { AGENT: 'gemini-3.1-pro-preview', FAST: 'gemini-3.1-pro-preview' },
-        VIDEO: { GENERATION: 'veo-3.1-generate-preview', EDIT: 'veo-3.1-generate-preview' }
+        TEXT: { AGENT: 'gemini-3.1-pro', FAST: 'gemini-3.1-flash' },
+        VIDEO: { GENERATION: 'veo-3.1-generate-001', EDIT: 'veo-3.1-generate-001' }
     },
     INTELLIGENCE_CONFIG: {
         THINKING: { HIGH: { thinkingConfig: { thinkingLevel: 'HIGH' } } }
     },
-    IMAGE_FAST: 'gemini-3-pro-image-preview',
-    AUDIO_PRO: 'gemini-3.1-pro-preview',
-    AUDIO_FLASH: 'gemini-3.1-pro-preview',
-    VIDEO_GEN: 'veo-3.1-generate-preview',
-    BROWSER_AGENT: 'gemini-3.1-pro-preview',
-    EMBEDDING_DEFAULT: 'gemini-embedding-001',
+    IMAGE_FAST: 'gemini-3-pro-image',
+    AUDIO_PRO: 'gemini-3.1-pro',
+    AUDIO_FLASH: 'gemini-3-flash',
+    VIDEO_GEN: 'veo-3.1-generate-001',
+    BROWSER_AGENT: 'gemini-3.1-pro',
+    EMBEDDING_DEFAULT: 'text-embedding-004',
     validateModels: () => { },
     ModelIdSchema: { parse: (v: string) => v }
 }));

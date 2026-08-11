@@ -82,6 +82,61 @@ class DesktopFileIndexService {
         }));
         return matches.flat().sort((a, b) => b.modifiedAt - a.modifiedAt).slice(0, Math.min(maxResults, 100));
     }
+
+    async moveToTrash(folderId: string, relativePath: string, trashId: string) {
+        const userId = auth.currentUser?.uid;
+        if (!userId) throw new Error('Sign in before moving local assets to trash.');
+        const electron = window.electronAPI as ElectronAPI | undefined;
+        if (!electron?.trash?.move) {
+            throw new Error('Local file trash operations are only supported in the Studio desktop application.');
+        }
+        const folders = await this.listApprovedFolders();
+        const folder = folders.find(f => f.id === folderId);
+        if (!folder) throw new Error(`Approved folder '${folderId}' not found.`);
+
+        return await electron.trash.move({
+            approvedFolderId: folderId,
+            dirPath: folder.path,
+            relativePath,
+            trashId,
+        });
+    }
+
+    async restoreFromTrash(folderId: string, trashId: string, relativePath: string, targetRelativePath?: string) {
+        const userId = auth.currentUser?.uid;
+        if (!userId) throw new Error('Sign in before restoring local assets from trash.');
+        const electron = window.electronAPI as ElectronAPI | undefined;
+        if (!electron?.trash?.restore) {
+            throw new Error('Local file trash operations are only supported in the Studio desktop application.');
+        }
+        const folders = await this.listApprovedFolders();
+        const folder = folders.find(f => f.id === folderId);
+        if (!folder) throw new Error(`Approved folder '${folderId}' not found.`);
+
+        return await electron.trash.restore({
+            dirPath: folder.path,
+            trashId,
+            relativePath,
+            targetRelativePath,
+        });
+    }
+
+    async purgeFromTrash(folderId: string, trashId: string) {
+        const userId = auth.currentUser?.uid;
+        if (!userId) throw new Error('Sign in before purging local assets from trash.');
+        const electron = window.electronAPI as ElectronAPI | undefined;
+        if (!electron?.trash?.purge) {
+            throw new Error('Local file trash operations are only supported in the Studio desktop application.');
+        }
+        const folders = await this.listApprovedFolders();
+        const folder = folders.find(f => f.id === folderId);
+        if (!folder) throw new Error(`Approved folder '${folderId}' not found.`);
+
+        return await electron.trash.purge({
+            dirPath: folder.path,
+            trashId,
+        });
+    }
 }
 
 export const desktopFileIndexService = new DesktopFileIndexService();

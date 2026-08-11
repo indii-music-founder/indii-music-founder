@@ -14,7 +14,7 @@ const envSchema = z.object({
   VITE_USE_VERTEX: z.enum(["true", "false"]).default("false"),
   VERTEX_PROJECT_ID: z.string().optional(),
   VERTEX_LOCATION: z.string().default("global"),
-  VERTEX_IMAGE_LOCATION: z.string().default("us").optional(),
+  VERTEX_IMAGE_LOCATION: z.string().default("global").optional(),
   VERTEX_VIDEO_LOCATION: z.string().default("us-central1").optional(),
   GCLOUD_PROJECT: z.string().optional(),
 

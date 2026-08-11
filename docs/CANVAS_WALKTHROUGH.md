@@ -23,7 +23,7 @@ The Creative Canvas is a powerful workspace for editing and refining generated i
 
 ### **High Fidelity (Pro) vs High Speed (Flash)**
 - Next to the Refine button, there is a **Star** icon. 
-- **Toggled On (High Fidelity):** Uses `gemini-3-pro-image-preview` for complex, high-quality edits.
+- **Toggled On (High Fidelity):** Uses `gemini-3-pro-image` for complex, high-quality edits.
 - **Toggled Off (High Speed):** Uses a faster model (`gemini-3-flash-preview`) for quick adjustments.
 
 ### **Animate & Create Last Frame**
