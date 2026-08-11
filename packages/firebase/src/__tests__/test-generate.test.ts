@@ -25,6 +25,28 @@ beforeAll(() => {
             name: 'indii-music-founder.appspot.com'
         })
     } as any);
+
+    const mockDoc = {
+        set: vi.fn().mockResolvedValue(undefined),
+        get: vi.fn().mockResolvedValue({
+            exists: true,
+            data: () => ({
+                userId: 'user-123',
+                status: 'APPROVED',
+                type: 'image',
+                amount: 10,
+                estimatedCost: 10
+            })
+        }),
+        update: vi.fn().mockResolvedValue(undefined),
+    };
+    
+    vi.spyOn(admin, 'firestore').mockReturnValue({
+        collection: () => ({
+            doc: () => mockDoc,
+            add: vi.fn().mockResolvedValue({ id: 'mock-doc-id' }),
+        })
+    } as any);
 });
 
 const testEnv = firebaseFunctionsTest({ projectId: 'indii-music-founder' });
