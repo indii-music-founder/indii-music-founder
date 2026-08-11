@@ -34,6 +34,7 @@ import { secureRandomAlphanumeric } from '@/utils/crypto-random';
 
 import CreativeClipboard from './components/CreativeClipboard';
 import OmniWorkflow from './video/OmniWorkflow';
+import CanvasModePicker from './components/CanvasModePicker';
 import PlpBatchStatus from './components/PlpBatchStatus';
 import { AdaptiveWorkspace } from '@/components/layout/AdaptiveWorkspace';
 
@@ -639,6 +640,9 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
                                 </div>
                             )}
                         </div>
+
+                        {/* Floating Mode Picker */}
+                        <CanvasModePicker />
 
                         {/* Mode overlays only exist while a visible overlay mode is active.
                             Leaving an empty pointer-enabled layer mounted here blocks the

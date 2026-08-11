@@ -69,9 +69,9 @@ export function CanvasViewport({
 
             {/* Floating Interaction Status */}
             {isMagicFillMode && (
-                <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-blue-950/80 border border-blue-500/40 text-blue-300 px-3 py-1 rounded-full text-xs font-semibold backdrop-blur-md flex items-center gap-2 shadow-lg z-30 pointer-events-none">
-                    <Wand2 size={12} className="text-blue-400 animate-pulse" />
-                    <span>Magic Edit Mode: <strong className="text-white">{activeColor.name}</strong></span>
+                <div className="absolute top-6 left-1/2 -translate-x-1/2 bg-blue-600/20 border border-blue-500/50 text-blue-400 px-4 py-1 rounded-full text-xs font-bold backdrop-blur-md flex items-center gap-2">
+                    <Wand2 size={12} />
+                    Magic Edit Mode: {activeColor.name}
                 </div>
             )}
 
