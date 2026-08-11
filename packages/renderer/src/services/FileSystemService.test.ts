@@ -2,8 +2,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { fileSystemService, FileNode } from './FileSystemService';
 import { trashService } from './trash/TrashService';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { deleteDoc, doc, writeBatch } from 'firebase/firestore';
 
 // Mock Firebase Firestore
 vi.mock('firebase/firestore', () => {
@@ -56,23 +54,13 @@ describe('FileSystemService Performance', () => {
         vi.clearAllMocks();
     });
 
-    it('deleteFolderRecursive performs batched deletes (optimized)', async () => {
+    it('deleteFolderRecursive routes every node through reversible Trash', async () => {
         const mockNodes: FileNode[] = [
             { id: 'folder1', parentId: null, type: 'folder', name: 'Root', projectId: 'p1', userId: 'u1', createdAt: 0, updatedAt: 0 },
             { id: 'file1', parentId: 'folder1', type: 'file', name: 'File 1', projectId: 'p1', userId: 'u1', createdAt: 0, updatedAt: 0 },
             { id: 'folder2', parentId: 'folder1', type: 'folder', name: 'Subfolder', projectId: 'p1', userId: 'u1', createdAt: 0, updatedAt: 0 },
             { id: 'file2', parentId: 'folder2', type: 'file', name: 'File 2', projectId: 'p1', userId: 'u1', createdAt: 0, updatedAt: 0 }
         ];
-
-        // Setup spy for batch delete
-        const batchDeleteSpy = vi.fn();
-        const batchCommitSpy = vi.fn().mockResolvedValue(undefined);
-        vi.mocked(writeBatch).mockReturnValue({
-            delete: batchDeleteSpy,
-            commit: batchCommitSpy,
-            set: vi.fn(),
-            update: vi.fn()
-        } as unknown as import('firebase/firestore').WriteBatch);
 
         const mockMoveToTrash = vi.fn().mockResolvedValue({ id: 'trash-1' });
         vi.spyOn(trashService, 'moveToTrash').mockImplementation(mockMoveToTrash);

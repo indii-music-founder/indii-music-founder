@@ -111,11 +111,9 @@ describe('MemoryTools', () => {
     });
 
     describe('delete_user_memory', () => {
-        it('should delete specified memory', async () => {
-            const result = await MemoryTools.delete_user_memory({ memoryId: 'mem-1' });
-
-            expect(result.success).toBe(true);
-            expect(alwaysOnMemoryEngine.deleteMemory).toHaveBeenCalledWith('mem-1');
+        it('is not exposed to agents as a permanent deletion tool', () => {
+            expect('delete_user_memory' in MemoryTools).toBe(false);
+            expect(alwaysOnMemoryEngine.deleteMemory).not.toHaveBeenCalled();
         });
     });
 });

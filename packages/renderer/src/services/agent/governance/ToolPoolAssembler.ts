@@ -87,7 +87,7 @@ export class ToolPoolAssembler {
             }
 
             // System-level destruction tools only allowed for admin/devops/generalist
-            if (name === 'rotate_credentials' || name === 'delete_user_memory') {
+            if (name === 'rotate_credentials') {
                 return ['admin', 'devops', 'generalist'].includes(context.agentId);
             }
 

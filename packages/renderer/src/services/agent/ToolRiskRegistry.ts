@@ -240,7 +240,6 @@ export const TOOL_RISK_REGISTRY: Record<string, ToolRiskMetadata> = {
 
     // Memory (destructive)
     deactivate_user_memory: { riskTier: 'destructive', permissionTier: 'plugin', requiresApproval: true, description: 'Destructive operation requiring explicit user approval' },
-    delete_user_memory: { riskTier: 'destructive', permissionTier: 'plugin', requiresApproval: true, description: 'Destructive operation requiring explicit user approval' },
 
     // Commerce & Web3 (destructive — financial/blockchain impact)
     create_artifact_drop: { riskTier: 'destructive', permissionTier: 'plugin', requiresApproval: true, description: 'Destructive operation requiring explicit user approval' },

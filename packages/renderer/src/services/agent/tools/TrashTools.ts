@@ -8,7 +8,18 @@ export const TrashTools = {
             ? undefined
             : TrashTargetSchema.shape.type.parse(args.type);
         const items = await trashService.listTrash({ type, searchQuery: args.query });
-        return toolSuccess({ items, count: items.length }, `Found ${items.length} item(s) in Trash.`);
+        const summaries = items.map(item => ({
+            id: item.id,
+            type: item.type,
+            name: item.name,
+            originalLocation: item.originalLocation,
+            projectId: item.projectId,
+            trashedAt: item.trashedAt,
+            provenance: item.provenance,
+            deviceAvailable: item.deviceInfo?.isAvailable,
+            retentionLocked: item.legalHold.isLocked,
+        }));
+        return toolSuccess({ items: summaries, count: summaries.length }, `Found ${summaries.length} item(s) in Trash.`);
     }),
 
     move_to_trash: wrapTool('move_to_trash', async (args: {

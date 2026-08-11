@@ -2919,6 +2919,41 @@ describe('Firestore Security Rules', () => {
         });
     });
 
+    describe('users/{userId}/ragDocuments/{documentId} Trash transitions', () => {
+        beforeEach(async () => {
+            if (requireEmulator()) return;
+            await testEnv.withSecurityRulesDisabled(async ctx => {
+                await setDoc(doc(ctx.firestore(), 'users', ALICE_UID, 'ragDocuments', 'rag-1'), {
+                    uid: ALICE_UID,
+                    title: 'Private notes',
+                    state: 'ready',
+                    isIndexed: true,
+                    updatedAt: new Date().toISOString(),
+                });
+            });
+        });
+
+        it('allows only reversible owner Trash transitions and denies direct deletion', async () => {
+            if (requireEmulator()) return;
+            const ownerRef = doc(verifiedCtx(ALICE_UID).firestore(), 'users', ALICE_UID, 'ragDocuments', 'rag-1');
+            await assertSucceeds(updateDoc(ownerRef, {
+                isTrashed: true,
+                isIndexed: false,
+                state: 'failed',
+                trashedAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+            }));
+            await assertSucceeds(updateDoc(ownerRef, {
+                isTrashed: false,
+                state: 'ready',
+                restoredAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+            }));
+            await assertFails(deleteDoc(ownerRef));
+            await assertFails(updateDoc(ownerRef, { title: 'Tampered title' }));
+        });
+    });
+
     // ──────────────────────────────────────────────────────────────────────
     // DENY-ALL: arbitrary collection access denied
     // ──────────────────────────────────────────────────────────────────────

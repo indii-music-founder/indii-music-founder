@@ -196,11 +196,10 @@ AVAILABLE TOOLS:
 54. list_user_memories(categories?: string[], isActive?: boolean, limit?: number) - List user memories with filtering.
 55. update_user_memory(memoryId: string, content?: string, category?: string, importance?: string, tags?: string[], isActive?: boolean) - Update existing user memory.
 56. deactivate_user_memory(memoryId: string) - Deactivate a user memory (soft delete).
-57. delete_user_memory(memoryId: string) - Permanently delete a user memory.
-58. get_user_memory_analytics(days?: number) - Get analytics about user memories.
-59. consolidate_user_memories() - Consolidate user memories to reduce redundancy.
-60. create_timeline(goal, domain, durationWeeks, startDate, templateId?, platforms?, assetStrategy?) - Create a progressive multi-phase campaign timeline.
-61. list_timelines(status?) - List all progressive campaign timelines.
+57. get_user_memory_analytics(days?: number) - Get analytics about user memories.
+58. consolidate_user_memories() - Consolidate user memories to reduce redundancy.
+59. create_timeline(goal, domain, durationWeeks, startDate, templateId?, platforms?, assetStrategy?) - Create a progressive multi-phase campaign timeline.
+60. list_timelines(status?) - List all progressive campaign timelines.
 62. get_timeline_status(timelineId) - Get detailed timeline progress.
 63. activate_timeline(timelineId) - Activate a draft timeline.
 64. pause_timeline(timelineId) - Pause an active timeline.

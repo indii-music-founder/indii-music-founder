@@ -8,6 +8,8 @@ import {
     query,
     where,
     orderBy,
+    writeBatch,
+    type DocumentReference,
 } from 'firebase/firestore';
 import { auth, db } from '@/services/firebase';
 import {
@@ -18,6 +20,20 @@ import {
     TrashItemSchema,
 } from '@indii/shared';
 import { desktopFileIndexService } from '@/services/agent/DesktopFileIndexService';
+
+function pruneUndefined<T>(value: T): T {
+    if (Array.isArray(value)) {
+        return value.map(item => pruneUndefined(item)) as T;
+    }
+    if (value === null || typeof value !== 'object' || Object.getPrototypeOf(value) !== Object.prototype) {
+        return value;
+    }
+    return Object.fromEntries(
+        Object.entries(value as Record<string, unknown>)
+            .filter(([, item]) => item !== undefined)
+            .map(([key, item]) => [key, pruneUndefined(item)])
+    ) as T;
+}
 
 export interface TrashAdapter {
     type: TrashResourceType;
@@ -30,8 +46,8 @@ export interface TrashAdapter {
         lockReason?: string;
         restoreData: Record<string, unknown>;
     }>;
-    trash(trashId: string, target: TrashTarget, provenance: TrashProvenance): Promise<TrashItem>;
-    restore(item: TrashItem, options?: { targetRelativePath?: string }): Promise<void>;
+    trash(trashId: string, target: TrashTarget, provenance: TrashProvenance, manifestRef?: DocumentReference): Promise<TrashItem>;
+    restore(item: TrashItem, options?: { targetRelativePath?: string }, manifestRef?: DocumentReference): Promise<void>;
 }
 
 export class FileNodeTrashAdapter implements TrashAdapter {
@@ -45,6 +61,7 @@ export class FileNodeTrashAdapter implements TrashAdapter {
         if (!snap.exists()) throw new Error(`FileNode '${target.targetId}' not found`);
         const data = snap.data();
         if (data.userId !== userId) throw new Error('Cannot trash a file node owned by another user.');
+        if (data.isTrashed) throw new Error(`FileNode '${target.targetId}' is already in Trash.`);
         if (data.isRetentionLocked) {
             return {
                 name: data.name || 'Untitled File',
@@ -65,7 +82,7 @@ export class FileNodeTrashAdapter implements TrashAdapter {
         };
     }
 
-    async trash(trashId: string, target: TrashTarget, provenance: TrashProvenance): Promise<TrashItem> {
+    async trash(trashId: string, target: TrashTarget, provenance: TrashProvenance, manifestRef?: DocumentReference): Promise<TrashItem> {
         const userId = auth.currentUser?.uid;
         if (!userId) throw new Error('Unauthenticated');
         const details = await this.inspect(target);
@@ -74,8 +91,6 @@ export class FileNodeTrashAdapter implements TrashAdapter {
         }
 
         const nodeRef = doc(db, 'file_nodes', target.targetId);
-        await updateDoc(nodeRef, { isTrashed: true, trashedAt: new Date().toISOString() });
-
         const item: TrashItem = {
             id: trashId,
             userId,
@@ -96,10 +111,19 @@ export class FileNodeTrashAdapter implements TrashAdapter {
             updatedAt: new Date().toISOString(),
         };
 
+        const sourceUpdate = { isTrashed: true, trashedAt: new Date().toISOString() };
+        if (manifestRef) {
+            const batch = writeBatch(db);
+            batch.update(nodeRef, sourceUpdate);
+            batch.set(manifestRef, pruneUndefined(item));
+            await batch.commit();
+        } else {
+            await updateDoc(nodeRef, sourceUpdate);
+        }
         return item;
     }
 
-    async restore(item: TrashItem): Promise<void> {
+    async restore(item: TrashItem, _options?: { targetRelativePath?: string }, manifestRef?: DocumentReference): Promise<void> {
         const userId = auth.currentUser?.uid;
         if (!userId) throw new Error('Unauthenticated');
         const nodeRef = doc(db, 'file_nodes', item.targetId);
@@ -107,14 +131,28 @@ export class FileNodeTrashAdapter implements TrashAdapter {
         if (snap.exists() && !snap.data().isTrashed) {
             throw new Error(`Restore conflict: FileNode '${item.name}' already exists in active view.`);
         }
-        if (snap.exists()) {
-            await updateDoc(nodeRef, { isTrashed: false, restoredAt: new Date().toISOString() });
+        const now = new Date().toISOString();
+        const sourceUpdate = { isTrashed: false, restoredAt: now };
+        if (snap.exists() && manifestRef) {
+            const batch = writeBatch(db);
+            batch.update(nodeRef, sourceUpdate);
+            batch.update(manifestRef, { state: 'restored', restoredAt: now, updatedAt: now });
+            await batch.commit();
+        } else if (snap.exists()) {
+            await updateDoc(nodeRef, sourceUpdate);
         } else {
-            await setDoc(nodeRef, {
+            const restoredData = {
                 ...item.restoreData,
-                isTrashed: false,
-                restoredAt: new Date().toISOString(),
-            });
+                ...sourceUpdate,
+            };
+            if (manifestRef) {
+                const batch = writeBatch(db);
+                batch.set(nodeRef, restoredData);
+                batch.update(manifestRef, { state: 'restored', restoredAt: now, updatedAt: now });
+                await batch.commit();
+            } else {
+                await setDoc(nodeRef, restoredData);
+            }
         }
     }
 }
@@ -130,6 +168,7 @@ export class HistoryTrashAdapter implements TrashAdapter {
         if (!snap.exists()) throw new Error(`History item '${target.targetId}' not found`);
         const data = snap.data();
         if (data.userId !== userId) throw new Error('Cannot trash history owned by another user.');
+        if (data.isTrashed) throw new Error(`History item '${target.targetId}' is already in Trash.`);
         return {
             name: data.title || data.prompt || `History Output ${target.targetId.slice(0, 6)}`,
             originalLocation: `history/${target.targetId}`,
@@ -138,16 +177,15 @@ export class HistoryTrashAdapter implements TrashAdapter {
         };
     }
 
-    async trash(trashId: string, target: TrashTarget, provenance: TrashProvenance): Promise<TrashItem> {
+    async trash(trashId: string, target: TrashTarget, provenance: TrashProvenance, manifestRef?: DocumentReference): Promise<TrashItem> {
         const userId = auth.currentUser?.uid;
         if (!userId) throw new Error('Unauthenticated');
         const details = await this.inspect(target);
         const ref = doc(db, 'history', target.targetId);
-        await updateDoc(ref, { isTrashed: true, trashedAt: new Date().toISOString() });
-
-        return {
+        const item: TrashItem = {
             id: trashId,
             userId,
+            projectId: (details.restoreData.projectId as string) || undefined,
             type: 'history',
             targetId: target.targetId,
             name: details.name,
@@ -162,13 +200,31 @@ export class HistoryTrashAdapter implements TrashAdapter {
             trashedAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
         };
+        const sourceUpdate = { isTrashed: true, trashedAt: item.trashedAt };
+        if (manifestRef) {
+            const batch = writeBatch(db);
+            batch.update(ref, sourceUpdate);
+            batch.set(manifestRef, pruneUndefined(item));
+            await batch.commit();
+        } else {
+            await updateDoc(ref, sourceUpdate);
+        }
+        return item;
     }
 
-    async restore(item: TrashItem): Promise<void> {
+    async restore(item: TrashItem, _options?: { targetRelativePath?: string }, manifestRef?: DocumentReference): Promise<void> {
         const userId = auth.currentUser?.uid;
         if (!userId) throw new Error('Unauthenticated');
         const ref = doc(db, 'history', item.targetId);
-        await updateDoc(ref, { isTrashed: false, restoredAt: new Date().toISOString() });
+        const now = new Date().toISOString();
+        if (manifestRef) {
+            const batch = writeBatch(db);
+            batch.update(ref, { isTrashed: false, restoredAt: now });
+            batch.update(manifestRef, { state: 'restored', restoredAt: now, updatedAt: now });
+            await batch.commit();
+        } else {
+            await updateDoc(ref, { isTrashed: false, restoredAt: now });
+        }
     }
 }
 
@@ -200,7 +256,7 @@ export class BrandAssetTrashAdapter implements TrashAdapter {
         throw new Error(`Brand asset '${target.targetId}' not found`);
     }
 
-    async trash(trashId: string, target: TrashTarget, provenance: TrashProvenance): Promise<TrashItem> {
+    async trash(trashId: string, target: TrashTarget, provenance: TrashProvenance, manifestRef?: DocumentReference): Promise<TrashItem> {
         const userId = auth.currentUser?.uid;
         if (!userId) throw new Error('Unauthenticated');
         const details = await this.inspect(target);
@@ -211,11 +267,10 @@ export class BrandAssetTrashAdapter implements TrashAdapter {
         const asset = details.restoreData.asset as Record<string, unknown>;
         const currentAssets = ((profileSnap.data().brandKit?.[collectionName] || []) as Array<Record<string, unknown>>);
         const nextAssets = currentAssets.filter(candidate => candidate.id !== asset.id && candidate.url !== asset.url);
-        await updateDoc(profileRef, { [`brandKit.${collectionName}`]: nextAssets });
-
-        return {
+        const item: TrashItem = {
             id: trashId,
             userId,
+            projectId: ((details.restoreData.asset as Record<string, unknown>)?.projectId as string) || undefined,
             type: 'brand_assets',
             targetId: target.targetId,
             name: details.name,
@@ -229,9 +284,18 @@ export class BrandAssetTrashAdapter implements TrashAdapter {
             trashedAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
         };
+        if (manifestRef) {
+            const batch = writeBatch(db);
+            batch.update(profileRef, { [`brandKit.${collectionName}`]: nextAssets });
+            batch.set(manifestRef, pruneUndefined(item));
+            await batch.commit();
+        } else {
+            await updateDoc(profileRef, { [`brandKit.${collectionName}`]: nextAssets });
+        }
+        return item;
     }
 
-    async restore(item: TrashItem): Promise<void> {
+    async restore(item: TrashItem, _options?: { targetRelativePath?: string }, manifestRef?: DocumentReference): Promise<void> {
         const userId = auth.currentUser?.uid;
         if (!userId) throw new Error('Unauthenticated');
         const profileRef = doc(db, 'users', userId);
@@ -244,7 +308,13 @@ export class BrandAssetTrashAdapter implements TrashAdapter {
         }
         const currentAssets = ((profileSnap.data().brandKit?.[collectionName] || []) as Array<Record<string, unknown>>);
         const conflict = currentAssets.some(candidate => candidate.id === asset.id || candidate.url === asset.url);
-        if (!conflict) {
+        const now = new Date().toISOString();
+        if (manifestRef) {
+            const batch = writeBatch(db);
+            if (!conflict) batch.update(profileRef, { [`brandKit.${collectionName}`]: [...currentAssets, asset] });
+            batch.update(manifestRef, { state: 'restored', restoredAt: now, updatedAt: now });
+            await batch.commit();
+        } else if (!conflict) {
             await updateDoc(profileRef, { [`brandKit.${collectionName}`]: [...currentAssets, asset] });
         }
     }
@@ -261,6 +331,7 @@ export class KnowledgeTrashAdapter implements TrashAdapter {
         if (!snap.exists()) throw new Error(`Knowledge document '${target.targetId}' not found`);
         const data = snap.data();
         if (data.uid !== userId) throw new Error('Cannot trash a knowledge document owned by another user.');
+        if (data.isTrashed) throw new Error(`Knowledge document '${target.targetId}' is already in Trash.`);
         return {
             name: data.title || data.filename || 'Knowledge Doc',
             originalLocation: `ragDocuments/${target.targetId}`,
@@ -268,16 +339,15 @@ export class KnowledgeTrashAdapter implements TrashAdapter {
         };
     }
 
-    async trash(trashId: string, target: TrashTarget, provenance: TrashProvenance): Promise<TrashItem> {
+    async trash(trashId: string, target: TrashTarget, provenance: TrashProvenance, manifestRef?: DocumentReference): Promise<TrashItem> {
         const userId = auth.currentUser?.uid;
         if (!userId) throw new Error('Unauthenticated');
         const details = await this.inspect(target);
         const ref = doc(db, 'users', userId, 'ragDocuments', target.targetId);
-        await updateDoc(ref, { isTrashed: true, isIndexed: false, trashedAt: new Date().toISOString(), updatedAt: new Date().toISOString() });
-
-        return {
+        const item: TrashItem = {
             id: trashId,
             userId,
+            projectId: (details.restoreData.projectId as string) || undefined,
             type: 'knowledge_docs',
             targetId: target.targetId,
             name: details.name,
@@ -291,18 +361,37 @@ export class KnowledgeTrashAdapter implements TrashAdapter {
             trashedAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
         };
+        const sourceUpdate = { isTrashed: true, isIndexed: false, state: 'failed', trashedAt: item.trashedAt, updatedAt: item.updatedAt };
+        if (manifestRef) {
+            const batch = writeBatch(db);
+            batch.update(ref, sourceUpdate);
+            batch.set(manifestRef, pruneUndefined(item));
+            await batch.commit();
+        } else {
+            await updateDoc(ref, sourceUpdate);
+        }
+        return item;
     }
 
-    async restore(item: TrashItem): Promise<void> {
+    async restore(item: TrashItem, _options?: { targetRelativePath?: string }, manifestRef?: DocumentReference): Promise<void> {
         const userId = auth.currentUser?.uid;
         if (!userId) throw new Error('Unauthenticated');
         const ref = doc(db, 'users', userId, 'ragDocuments', item.targetId);
-        await updateDoc(ref, {
+        const now = new Date().toISOString();
+        const sourceUpdate = {
             isTrashed: false,
             state: item.restoreData.state || 'ready',
-            restoredAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-        });
+            restoredAt: now,
+            updatedAt: now,
+        };
+        if (manifestRef) {
+            const batch = writeBatch(db);
+            batch.update(ref, sourceUpdate);
+            batch.update(manifestRef, { state: 'restored', restoredAt: now, updatedAt: now });
+            await batch.commit();
+        } else {
+            await updateDoc(ref, sourceUpdate);
+        }
     }
 }
 
@@ -397,7 +486,7 @@ export class TrashService {
             items = items.filter(item => item.type === filters.type);
         }
         if (filters?.projectId) {
-            items = items.filter(item => item.projectId === filters.projectId);
+            items = items.filter(item => !item.projectId || item.projectId === filters.projectId);
         }
         if (filters?.searchQuery) {
             const q = filters.searchQuery.toLowerCase();
@@ -418,13 +507,17 @@ export class TrashService {
         if (!adapter) throw new Error(`No trash adapter registered for type '${target.type}'`);
 
         const trashId = `trash_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-        const trashItem = await adapter.trash(trashId, target, provenance);
-        if (projectId) trashItem.projectId = projectId;
-
-        // Persist manifest to users/{uid}/trashItems/{trashId}
         const docRef = doc(db, 'users', userId, 'trashItems', trashId);
+        const isLocalFile = target.type === 'local_files';
+        const trashItem = await adapter.trash(trashId, target, provenance, isLocalFile ? undefined : docRef);
+        if (projectId && isLocalFile) trashItem.projectId = projectId;
+
+        // Cloud adapters commit their source mutation and manifest atomically.
+        // Local filesystem moves use compensation because IPC and Firestore
+        // cannot participate in one transaction.
+        if (!isLocalFile) return trashItem;
         try {
-            await setDoc(docRef, trashItem);
+            await setDoc(docRef, pruneUndefined(trashItem));
         } catch (manifestError: unknown) {
             try {
                 await adapter.restore(trashItem);
@@ -453,6 +546,12 @@ export class TrashService {
         const adapter = this.adapters.get(item.type);
         if (!adapter) throw new Error(`No trash adapter registered for type '${item.type}'`);
 
+        const isLocalFile = item.type === 'local_files';
+        if (!isLocalFile) {
+            await adapter.restore(item, options, docRef);
+            return;
+        }
+
         await adapter.restore(item, options);
         try {
             await updateDoc(docRef, {
@@ -462,7 +561,11 @@ export class TrashService {
             });
         } catch (manifestError: unknown) {
             try {
-                await adapter.trash(item.id, { type: item.type, targetId: item.targetId, folderId: item.deviceInfo?.approvedFolderId }, item.provenance);
+                await adapter.trash(item.id, {
+                    type: item.type,
+                    targetId: options?.targetRelativePath || item.targetId,
+                    folderId: item.deviceInfo?.approvedFolderId,
+                }, item.provenance);
             } catch (rollbackError: unknown) {
                 const manifestMessage = manifestError instanceof Error ? manifestError.message : String(manifestError);
                 const rollbackMessage = rollbackError instanceof Error ? rollbackError.message : String(rollbackError);

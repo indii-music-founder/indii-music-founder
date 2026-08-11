@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { TrashService, FileNodeTrashAdapter, LocalFileTrashAdapter } from '../TrashService';
+import { TrashService, FileNodeTrashAdapter } from '../TrashService';
 import { TrashTarget, TrashProvenance } from '@indii/shared';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, writeBatch } from 'firebase/firestore';
 import { desktopFileIndexService } from '@/services/agent/DesktopFileIndexService';
 
 vi.mock('@/services/firebase', () => ({
@@ -20,6 +20,11 @@ vi.mock('firebase/firestore', () => ({
     where: vi.fn(),
     orderBy: vi.fn(),
     serverTimestamp: vi.fn(),
+    writeBatch: vi.fn(() => ({
+        update: vi.fn(),
+        set: vi.fn(),
+        commit: vi.fn(() => Promise.resolve()),
+    })),
 }));
 
 vi.mock('@/services/agent/DesktopFileIndexService', () => ({
@@ -98,6 +103,31 @@ describe('TrashService & Adapters', () => {
         const adapter = new FileNodeTrashAdapter();
         await expect(adapter.inspect({ type: 'file_nodes', targetId: 'fn_1' })).resolves.toMatchObject({ name: 'mix.wav' });
         expect(doc).toHaveBeenCalledWith({}, 'file_nodes', 'fn_1');
+    });
+
+    it('atomically commits a cloud source mutation with its Trash manifest', async () => {
+        vi.mocked(getDoc).mockResolvedValueOnce({
+            exists: () => true,
+            data: () => ({ userId: 'usr_test_123', name: 'mix.wav', projectId: 'project-1' }),
+        } as never);
+        await trashService.moveToTrash(
+            { type: 'file_nodes', targetId: 'fn_2' },
+            { actor: 'user', reason: 'remove draft' },
+        );
+        expect(writeBatch).toHaveBeenCalledTimes(1);
+        expect(setDoc).not.toHaveBeenCalled();
+    });
+
+    it('does not create duplicate manifests for a source already in Trash', async () => {
+        vi.mocked(getDoc).mockResolvedValueOnce({
+            exists: () => true,
+            data: () => ({ userId: 'usr_test_123', name: 'mix.wav', isTrashed: true }),
+        } as never);
+        await expect(trashService.moveToTrash(
+            { type: 'file_nodes', targetId: 'fn_trashed' },
+            { actor: 'agent', agentId: 'generalist' },
+        )).rejects.toThrow('already in Trash');
+        expect(writeBatch).not.toHaveBeenCalled();
     });
 
     it('rolls a local move back when the cloud manifest cannot be persisted', async () => {

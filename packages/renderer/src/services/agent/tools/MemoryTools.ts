@@ -148,16 +148,6 @@ export const MemoryTools = {
         }
     }),
 
-    delete_user_memory: wrapTool('delete_user_memory', async (args: { memoryId: string }) => {
-        try {
-            await alwaysOnMemoryEngine.deleteMemory(args.memoryId);
-            return toolSuccess({ memoryId: args.memoryId }, `Memory deleted.`);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        } catch (error: any) {
-            return toolError(`Failed to delete memory: ${error.message}`, 'DELETE_ERROR');
-        }
-    }),
-
     consolidate_user_memories: wrapTool('consolidate_user_memories', async () => {
         try {
             const result = await alwaysOnMemoryEngine.consolidateNow();

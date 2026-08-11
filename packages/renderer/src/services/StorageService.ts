@@ -19,6 +19,7 @@ interface HistoryDocument extends Omit<HistoryItem, 'timestamp'> {
     orgId: string;
     updatedAt?: Timestamp;
     createdAt?: Timestamp;
+    isTrashed?: boolean;
 }
 
 class StorageServiceImpl extends FirestoreService<HistoryDocument> {
@@ -281,7 +282,7 @@ class StorageServiceImpl extends FirestoreService<HistoryDocument> {
             }
 
             try {
-                return (await this.query(constraints)).map(doc => this.mapDocumentToItem(doc));
+                return (await this.query(constraints)).filter(doc => !doc.isTrashed).map(doc => this.mapDocumentToItem(doc));
             } catch (e: unknown) {
                 const error = e as { code?: string; message?: string };
                 if (error.code !== 'failed-precondition' && !error.message?.includes('index')) {
@@ -301,7 +302,7 @@ class StorageServiceImpl extends FirestoreService<HistoryDocument> {
                         return timeB - timeA;
                     }
                 );
-                return results.map(doc => this.mapDocumentToItem(doc));
+                return results.filter(doc => !doc.isTrashed).map(doc => this.mapDocumentToItem(doc));
             }
         };
 
@@ -376,7 +377,7 @@ class StorageServiceImpl extends FirestoreService<HistoryDocument> {
         }
 
         const makeSnapshotHandler = (scope: 'org' | 'personal') => (snapshot: QuerySnapshot<DocumentData>) => {
-            snapshots[scope] = snapshot.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => {
+            snapshots[scope] = snapshot.docs.filter((doc: QueryDocumentSnapshot<DocumentData>) => !doc.data().isTrashed).map((doc: QueryDocumentSnapshot<DocumentData>) => {
                 const data = doc.data() as HistoryDocument;
                 return this.mapDocumentToItem({ ...data, id: doc.id });
             });

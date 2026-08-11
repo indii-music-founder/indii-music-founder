@@ -10,7 +10,6 @@ import {
     updateDoc,
     orderBy
 } from 'firebase/firestore';
-import { db } from './firebase';
 import { FirestoreService } from './FirestoreService';
 import { events } from '@/core/events';
 import { logger } from '@/utils/logger';
@@ -61,7 +60,7 @@ export class FileSystemService extends FirestoreService<FileNode> {
             return snapshot.docs.map(doc => ({
                 id: doc.id,
                 ...doc.data()
-            } as FileNode));
+            } as FileNode)).filter(node => !node.isTrashed);
         } catch (error: unknown) {
             // Fallback for missing index error
             if (error && typeof error === 'object' && 'code' in error && error.code === 'failed-precondition') {
@@ -71,7 +70,7 @@ export class FileSystemService extends FirestoreService<FileNode> {
                 return snapshot.docs.map(doc => ({
                     id: doc.id,
                     ...doc.data()
-                } as FileNode)).sort((a, b) => a.createdAt - b.createdAt);
+                } as FileNode)).filter(node => !node.isTrashed).sort((a, b) => a.createdAt - b.createdAt);
             }
             logger.error('Error fetching project nodes:', error);
             events.emit('SYSTEM_ALERT', { level: 'error', message: 'Failed to load project files' });

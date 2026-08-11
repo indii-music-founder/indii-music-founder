@@ -228,6 +228,9 @@ export const deleteKnowledgeDocument = onCall({ enforceAppCheck: true }, async (
   if (docData.uid !== uid) {
     throw new HttpsError('permission-denied', 'Cannot access documents owned by another user.');
   }
+  if ((docData as KnowledgeDocument & { isTrashed?: boolean }).isTrashed) {
+    throw new HttpsError('already-exists', 'Knowledge document is already in Trash.');
+  }
 
   // Mark as trashed and paused indexing
   const now = new Date().toISOString();

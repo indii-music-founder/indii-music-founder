@@ -51,5 +51,6 @@ describe('Agent Trash Security & Tool Policy Compliance', () => {
         expect(TOOL_REGISTRY.restore_from_trash).toBeTypeOf('function');
         expect(TOOL_REGISTRY.purge_trash).toBeUndefined();
         expect(TOOL_REGISTRY.empty_trash).toBeUndefined();
+        expect(TOOL_REGISTRY.delete_user_memory).toBeUndefined();
     });
 });

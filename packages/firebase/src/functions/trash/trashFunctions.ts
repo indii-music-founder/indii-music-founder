@@ -20,8 +20,10 @@ interface PurgeRequest {
 interface TrashManifest {
     type: TrashResourceType;
     targetId: string;
+    state?: string;
     quarantinePath?: string;
     restoreData?: Record<string, unknown>;
+    legalHold?: { isLocked?: boolean; reason?: string };
 }
 
 function parseTrashIds(value: unknown): string[] {
@@ -49,6 +51,11 @@ function sameIds(left: unknown, right: string[]): boolean {
 
 function storagePathFromReference(value: unknown, bucketName: string): string | null {
     if (typeof value !== 'string' || value.length === 0) return null;
+    if (!value.includes('://')) {
+        if (value.includes(':')) return null; // data:, blob:, and other non-Storage URI schemes
+        const normalized = value.replace(/^\/+/, '');
+        return normalized.split('/').includes('..') ? null : normalized;
+    }
     if (value.startsWith('gs://')) {
         const withoutScheme = value.slice(5);
         const slash = withoutScheme.indexOf('/');
@@ -206,6 +213,15 @@ export const purgeTrashItems = onCall({ enforceAppCheck: true }, async (request:
             if (!['file_nodes', 'history', 'brand_assets', 'knowledge_docs', 'local_files'].includes(manifest.type)) {
                 throw new HttpsError('failed-precondition', 'Trash record has an unsupported resource type.');
             }
+            if (typeof manifest.targetId !== 'string' || manifest.targetId.length === 0 || manifest.targetId.length > 2048) {
+                throw new HttpsError('failed-precondition', 'Trash record has an invalid target identifier.');
+            }
+            if (manifest.state !== 'trashed') {
+                throw new HttpsError('failed-precondition', 'Only items currently in Trash can be purged.');
+            }
+            if (manifest.legalHold?.isLocked) {
+                throw new HttpsError('failed-precondition', manifest.legalHold.reason || 'This Trash item is retention locked.');
+            }
 
             let sourceRef: admin.firestore.DocumentReference | undefined;
             if (manifest.type === 'file_nodes') sourceRef = db.collection('file_nodes').doc(manifest.targetId);
@@ -217,6 +233,9 @@ export const purgeTrashItems = onCall({ enforceAppCheck: true }, async (request:
             if (sourceData) {
                 const owner = manifest.type === 'knowledge_docs' ? sourceData.uid : sourceData.userId;
                 if (owner !== uid) throw new HttpsError('permission-denied', 'Trash source is not owned by the authenticated user.');
+                if (sourceData.isRetentionLocked === true) {
+                    throw new HttpsError('failed-precondition', 'The source is retention locked and cannot be purged.');
+                }
             }
 
             const storagePaths = collectStoragePaths(manifest, sourceData, uid, trashId, bucket.name);

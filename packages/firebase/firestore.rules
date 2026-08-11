@@ -586,8 +586,22 @@ service cloud.firestore {
       // and indexing receipts are owned by userId. Chunks, receipts, and query logs
       // are created/managed strictly server-side by authenticated Cloud Functions.
       match /ragDocuments/{documentId} {
-        allow read, delete: if isOwner(userId);
-        allow create, update: if false;
+        allow read: if isOwner(userId);
+        allow delete: if false;
+        allow create: if false;
+        allow update: if isOwner(userId) &&
+          resource.data.uid == userId && request.resource.data.uid == userId &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'isTrashed', 'isIndexed', 'state', 'trashedAt', 'restoredAt', 'updatedAt'
+          ]) && (
+            (resource.data.get('isTrashed', false) == false &&
+             request.resource.data.isTrashed == true &&
+             request.resource.data.isIndexed == false &&
+             request.resource.data.state == 'failed') ||
+            (resource.data.get('isTrashed', false) == true &&
+             request.resource.data.isTrashed == false &&
+             request.resource.data.state in ['ready', 'failed', 'queued'])
+          );
       }
 
       match /ragChunks/{chunkId} {
