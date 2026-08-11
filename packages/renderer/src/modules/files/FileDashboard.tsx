@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { motion, AnimatePresence } from 'motion/react';
@@ -16,11 +16,9 @@ import {
     Clock,
     Trash2,
     Download,
-    ExternalLink,
     X,
     RotateCcw,
     ShieldAlert,
-    AlertTriangle,
     Bot,
     User as UserIcon,
     HardDrive,
@@ -37,14 +35,15 @@ import { FileTree } from './components/FileTree';
 import { normalizeExternalHttpUrl } from '@/utils/safeExternalUrl';
 import { trashService } from '@/services/trash/TrashService';
 import { TrashItem, TrashResourceType } from '@indii/shared';
-import { auth, functions } from '@/services/firebase';
-import { httpsCallable } from 'firebase/functions';
+import { auth } from '@/services/firebase';
 import {
     EmailAuthProvider,
     GoogleAuthProvider,
     reauthenticateWithCredential,
     reauthenticateWithPopup,
 } from 'firebase/auth';
+
+type TrashSourceFilter = 'all' | 'user' | 'agent';
 
 export default function FileDashboard() {
     const { fileNodes, currentProjectId, selectedFileNodeId, setSelectedFileNode } = useStore(
@@ -60,7 +59,7 @@ export default function FileDashboard() {
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
     const [searchQuery, setSearchQuery] = useState('');
     const [filterType, setFilterType] = useState<TrashResourceType | 'all'>('all');
-    const [sourceFilter, setSourceFilter] = useState<'all' | 'user' | 'agent'>('all');
+    const [sourceFilter, setSourceFilter] = useState<TrashSourceFilter>('all');
 
     // Trash state
     const [trashItems, setTrashItems] = useState<TrashItem[]>([]);
@@ -74,13 +73,7 @@ export default function FileDashboard() {
     const [purgeStatusMessage, setPurgeStatusMessage] = useState<string | null>(null);
     const [isPurging, setIsPurging] = useState(false);
 
-    useEffect(() => {
-        if (activeTab === 'trash') {
-            loadTrashItems();
-        }
-    }, [activeTab, filterType, currentProjectId]);
-
-    const loadTrashItems = async () => {
+    const loadTrashItems = useCallback(async () => {
         setIsLoadingTrash(true);
         try {
             const items = await trashService.listTrash({
@@ -93,7 +86,13 @@ export default function FileDashboard() {
         } finally {
             setIsLoadingTrash(false);
         }
-    };
+    }, [currentProjectId, filterType]);
+
+    useEffect(() => {
+        if (activeTab === 'trash') {
+            void loadTrashItems();
+        }
+    }, [activeTab, loadTrashItems]);
 
     // Filter active nodes
     const displayActiveNodes = fileNodes.filter((node: FileNode) => {
@@ -130,11 +129,6 @@ export default function FileDashboard() {
             default:
                 return <File className={className} />;
         }
-    };
-
-    const openFileUrl = (url?: string) => {
-        const safeUrl = normalizeExternalHttpUrl(url);
-        if (safeUrl) window.open(safeUrl, '_blank', 'noopener,noreferrer');
     };
 
     const downloadFileUrl = (url?: string, name?: string) => {
@@ -262,22 +256,12 @@ export default function FileDashboard() {
         const serverPurgeIds = [...cloudItems.map(item => item.id), ...confirmedLocalIds];
         if (serverPurgeIds.length > 0) {
             try {
-                const createIntent = httpsCallable(functions, 'createPurgeIntent');
-                const intentRes = (await createIntent({
-                    trashIds: serverPurgeIds,
-                    confirmation: 'DELETE',
-                })) as { data: { intentToken: string } };
-
-                const executePurge = httpsCallable(functions, 'purgeTrashItems');
-                const purgeRes = (await executePurge({
-                    trashIds: serverPurgeIds,
-                    intentToken: intentRes.data.intentToken,
-                })) as { data: { success: boolean; purgedIds: string[]; failedIds: Array<{ id: string; error: string }> } };
+                const purgeResult = await trashService.permanentlyPurge(serverPurgeIds);
 
                 const cloudIdSet = new Set(cloudItems.map(item => item.id));
-                cloudPurgedCount = purgeRes.data.purgedIds.filter(id => cloudIdSet.has(id)).length;
-                if (purgeRes.data.failedIds.length > 0) {
-                    errors.push(...purgeRes.data.failedIds.map(f => `${f.id}: ${f.error}`));
+                cloudPurgedCount = purgeResult.purgedIds.filter(id => cloudIdSet.has(id)).length;
+                if (purgeResult.failedIds.length > 0) {
+                    errors.push(...purgeResult.failedIds.map(f => `${f.id}: ${f.error}`));
                 }
             } catch (err: unknown) {
                 const message = err instanceof Error ? err.message : String(err);
@@ -428,7 +412,7 @@ export default function FileDashboard() {
                                 <span className="text-xs text-gray-400">Provenance:</span>
                                 <select
                                     value={sourceFilter}
-                                    onChange={e => setSourceFilter(e.target.value as any)}
+                                    onChange={e => setSourceFilter(e.target.value as TrashSourceFilter)}
                                     className="bg-black/30 border border-white/10 rounded-md text-xs text-gray-200 px-2 py-1 focus:outline-none"
                                 >
                                     <option value="all">All Sources</option>
@@ -538,7 +522,12 @@ export default function FileDashboard() {
                         )
                     ) : (
                         /* TRASH VIEW */
-                        displayTrashItems.length === 0 ? (
+                        isLoadingTrash ? (
+                            <div className="h-full flex flex-col items-center justify-center text-gray-500" role="status">
+                                <Trash2 size={32} className="mb-4 animate-pulse opacity-30" />
+                                <p>Loading Trash items...</p>
+                            </div>
+                        ) : displayTrashItems.length === 0 ? (
                             <div className="h-full flex flex-col items-center justify-center text-gray-500">
                                 <div className="w-24 h-24 rounded-full bg-white/5 flex items-center justify-center mb-6">
                                     <Trash2 size={32} className="opacity-20" />

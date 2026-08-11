@@ -1,9 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import {
+    CreateTrashPurgeIntentResponseSchema,
     TrashTargetSchema,
     TrashItemSchema,
     LocalTrashMoveRequestSchema,
-    TrashPurgeIntentSchema
+    TrashPurgeIntentSchema,
+    TrashPurgeRequestSchema,
+    TrashPurgeResultSchema,
 } from './trash';
 
 describe('Trash Shared Schemas', () => {
@@ -75,5 +78,22 @@ describe('Trash Shared Schemas', () => {
         };
         const parsed = TrashPurgeIntentSchema.parse(intent);
         expect(parsed.trashIds).toHaveLength(2);
+    });
+
+    it('validates purge requests and trusted backend receipts', () => {
+        expect(TrashPurgeRequestSchema.parse({ trashIds: ['trash_001'] })).toEqual({ trashIds: ['trash_001'] });
+        expect(() => TrashPurgeRequestSchema.parse({ trashIds: ['trash_001', 'trash_001'] })).toThrow(
+            'Trash IDs must be unique'
+        );
+        expect(CreateTrashPurgeIntentResponseSchema.parse({
+            success: true,
+            intentToken: 'intent_0123456789abcdef0123456789abcdef',
+            expiresAt: Date.now() + 300_000,
+        }).success).toBe(true);
+        expect(TrashPurgeResultSchema.parse({
+            success: false,
+            purgedIds: [],
+            failedIds: [{ id: 'trash_001', error: 'Retention lock active' }],
+        }).failedIds).toHaveLength(1);
     });
 });

@@ -100,6 +100,36 @@ export const TrashPurgeIntentSchema = z.object({
 });
 export type TrashPurgeIntent = z.infer<typeof TrashPurgeIntentSchema>;
 
+export const TrashIdSchema = z.string().regex(
+    /^trash_[A-Za-z0-9_-]{1,120}$/,
+    'Trash ID must use the canonical trash_<id> format'
+);
+
+export const TrashPurgeRequestSchema = z.object({
+    trashIds: z.array(TrashIdSchema).min(1).max(100).refine(
+        trashIds => new Set(trashIds).size === trashIds.length,
+        'Trash IDs must be unique'
+    ),
+});
+export type TrashPurgeRequest = z.infer<typeof TrashPurgeRequestSchema>;
+
+export const CreateTrashPurgeIntentResponseSchema = z.object({
+    success: z.literal(true),
+    intentToken: z.string().regex(/^intent_[a-f0-9]{32}$/),
+    expiresAt: z.number().int().positive(),
+});
+export type CreateTrashPurgeIntentResponse = z.infer<typeof CreateTrashPurgeIntentResponseSchema>;
+
+export const TrashPurgeResultSchema = z.object({
+    success: z.boolean(),
+    purgedIds: z.array(TrashIdSchema),
+    failedIds: z.array(z.object({
+        id: TrashIdSchema,
+        error: z.string().min(1),
+    })),
+});
+export type TrashPurgeResult = z.infer<typeof TrashPurgeResultSchema>;
+
 // IPC contract types for Electron safe local trash
 export const LocalTrashMoveRequestSchema = z.object({
     approvedFolderId: z.string(),

@@ -7,6 +7,7 @@ import type {
 import { httpsCallable } from 'firebase/functions';
 
 import { functions } from '@/services/firebase';
+import { logger } from '@/utils/logger';
 
 export type {
     OrganizationAccessMatrix,
@@ -20,16 +21,23 @@ import { isFirebaseE2EMockEnabled, getE2EMockUser } from '@/utils/e2eMode';
 
 class OrganizationAccessServiceImpl {
     async getMatrix(orgId: string): Promise<OrganizationAccessMatrix> {
-        console.log('[DEBUG] getMatrix called for org:', orgId, 'isFirebaseE2EMockEnabled:', isFirebaseE2EMockEnabled());
+        logger.debug('[OrganizationAccessService] Loading access matrix.', {
+            orgId,
+            isFirebaseE2EMockEnabled: isFirebaseE2EMockEnabled(),
+        });
         if (isFirebaseE2EMockEnabled()) {
-            console.log('[DEBUG] E2E mode enabled! Returning mock matrix.');
+            logger.debug('[OrganizationAccessService] Returning the explicit E2E access matrix.');
+            const mockUser = getE2EMockUser<{ uid: string }>();
+            if (!mockUser) {
+                throw new Error('E2E access matrix requested without an E2E user.');
+            }
             return {
                 orgId,
                 canManage: true,
-                viewerUserId: getE2EMockUser<any>().uid,
+                viewerUserId: mockUser.uid,
                 members: [
                     {
-                        userId: getE2EMockUser<any>().uid,
+                        userId: mockUser.uid,
                         displayName: 'E2E Mock User',
                         email: 'test@indii.com',
                         role: 'owner',

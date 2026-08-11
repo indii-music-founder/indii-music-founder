@@ -2027,3 +2027,11 @@ committing.
 - BUG: Concurrent identity cleanup passes raced across IndexedDB and dynamic service imports; an older pass could write its owner marker or approval namespace after a newer transition.
 - FIX: Serialize cleanup transitions and hold new-account hydration until the ordered pass completes.
 - PREVENTION: Boundary cleanup needs one ordered queue or generation protocol covering both destructive clears and final owner binding. Testing only a single A→B transition misses the most dangerous ordering failure.
+
+## 2026-08-11 — Diagnostic logging must use the governed logger and preserve typed test boundaries
+
+**SEVERITY:** Low (unstructured browser output and an unchecked E2E-user assumption)
+
+- BUG: `OrganizationAccessService` wrote unconditional debug messages through `console.log` and repeatedly cast the explicit E2E user to `any`, then dereferenced it without proving that the harness supplied a user.
+- FIX: Route diagnostics through `logger.debug`, read the E2E user once with a minimal `{ uid: string }` contract, and fail explicitly when the E2E flag is enabled without a matching test user.
+- PREVENTION: Production services must use the governed logger, and test-only branches still require narrow types and explicit missing-fixture behavior. A harness flag is not proof that every fixture exists.

@@ -11,11 +11,16 @@ import {
     writeBatch,
     type DocumentReference,
 } from 'firebase/firestore';
-import { auth, db } from '@/services/firebase';
+import { auth, db, functions } from '@/services/firebase';
+import { httpsCallable } from 'firebase/functions';
 import {
+    CreateTrashPurgeIntentResponseSchema,
     TrashItem,
     TrashTarget,
     TrashProvenance,
+    TrashPurgeRequestSchema,
+    TrashPurgeResult,
+    TrashPurgeResultSchema,
     TrashResourceType,
     TrashItemSchema,
 } from '@indii/shared';
@@ -573,6 +578,29 @@ export class TrashService {
             }
             throw manifestError;
         }
+    }
+
+    async permanentlyPurge(trashIds: string[]): Promise<TrashPurgeResult> {
+        const request = TrashPurgeRequestSchema.parse({ trashIds });
+        const createIntent = httpsCallable<
+            { trashIds: string[]; confirmation: 'DELETE' },
+            unknown
+        >(functions, 'createPurgeIntent');
+        const intentResult = await createIntent({
+            trashIds: request.trashIds,
+            confirmation: 'DELETE',
+        });
+        const intent = CreateTrashPurgeIntentResponseSchema.parse(intentResult.data);
+
+        const executePurge = httpsCallable<
+            { trashIds: string[]; intentToken: string },
+            unknown
+        >(functions, 'purgeTrashItems');
+        const purgeResult = await executePurge({
+            trashIds: request.trashIds,
+            intentToken: intent.intentToken,
+        });
+        return TrashPurgeResultSchema.parse(purgeResult.data);
     }
 }
 

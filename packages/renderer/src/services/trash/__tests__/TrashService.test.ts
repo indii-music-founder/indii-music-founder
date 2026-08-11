@@ -2,11 +2,24 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { TrashService, FileNodeTrashAdapter } from '../TrashService';
 import { TrashTarget, TrashProvenance } from '@indii/shared';
 import { doc, getDoc, setDoc, writeBatch } from 'firebase/firestore';
+import { httpsCallable } from 'firebase/functions';
 import { desktopFileIndexService } from '@/services/agent/DesktopFileIndexService';
 
 vi.mock('@/services/firebase', () => ({
     auth: { currentUser: { uid: 'usr_test_123' } },
     db: {},
+    functions: {},
+}));
+
+const createIntentMock = vi.fn();
+const executePurgeMock = vi.fn();
+
+vi.mock('firebase/functions', () => ({
+    httpsCallable: vi.fn((_functions, name: string) => {
+        if (name === 'createPurgeIntent') return createIntentMock;
+        if (name === 'purgeTrashItems') return executePurgeMock;
+        throw new Error(`Unexpected callable: ${name}`);
+    }),
 }));
 
 vi.mock('firebase/firestore', () => ({
@@ -52,6 +65,20 @@ describe('TrashService & Adapters', () => {
     beforeEach(() => {
         trashService = new TrashService();
         vi.clearAllMocks();
+        createIntentMock.mockResolvedValue({
+            data: {
+                success: true,
+                intentToken: 'intent_0123456789abcdef0123456789abcdef',
+                expiresAt: Date.now() + 300_000,
+            },
+        });
+        executePurgeMock.mockResolvedValue({
+            data: {
+                success: true,
+                purgedIds: ['trash_001'],
+                failedIds: [],
+            },
+        });
     });
 
     it('successfully handles LocalFileTrashAdapter move to trash', async () => {
@@ -138,5 +165,29 @@ describe('TrashService & Adapters', () => {
             folderId: 'folder_root_1',
         }, { actor: 'user' })).rejects.toThrow('offline write failed');
         expect(desktopFileIndexService.restoreFromTrash).toHaveBeenCalledTimes(1);
+    });
+
+    it('validates purge requests and callable responses behind the service boundary', async () => {
+        await expect(trashService.permanentlyPurge(['trash_001'])).resolves.toEqual({
+            success: true,
+            purgedIds: ['trash_001'],
+            failedIds: [],
+        });
+        expect(httpsCallable).toHaveBeenCalledWith({}, 'createPurgeIntent');
+        expect(createIntentMock).toHaveBeenCalledWith({
+            trashIds: ['trash_001'],
+            confirmation: 'DELETE',
+        });
+        expect(executePurgeMock).toHaveBeenCalledWith({
+            trashIds: ['trash_001'],
+            intentToken: 'intent_0123456789abcdef0123456789abcdef',
+        });
+    });
+
+    it('rejects malformed trash IDs before invoking a purge callable', async () => {
+        await expect(trashService.permanentlyPurge(['../outside'])).rejects.toThrow(
+            'Trash ID must use the canonical trash_<id> format'
+        );
+        expect(httpsCallable).not.toHaveBeenCalled();
     });
 });
