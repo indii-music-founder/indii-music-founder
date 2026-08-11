@@ -2574,6 +2574,18 @@ service cloud.firestore {
     }
 
     // =========================================================================
+    // Waitlist
+    // =========================================================================
+    match /waitlist/{docId} {
+      allow create: if request.resource.data.keys().hasAll(['email', 'createdAt', 'source']) &&
+                    request.resource.data.email is string &&
+                    request.resource.data.email.size() > 3 &&
+                    request.resource.data.createdAt == request.time &&
+                    request.resource.data.source == 'landing_page';
+      allow read, update, delete: if false;
+    }
+
+    // =========================================================================
     // Deny all other access by default
     // =========================================================================
     match /{document=**} {

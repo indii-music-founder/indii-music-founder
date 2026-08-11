@@ -8,7 +8,7 @@ import { onCall, HttpsError } from 'firebase-functions/v2/https';
  * and calls this function to obtain a valid App Check token.
  */
 export const mintElectronAppCheckToken = onCall(
-  { region: 'us-central1', enforceAppCheck: false, memory: '512MiB', cpu: 'gcf_gen1', concurrency: 10 },
+  { region: 'us-central1', enforceAppCheck: false },
   async (request) => {
     if (!request.auth) {
       throw new HttpsError('unauthenticated', 'User must be authenticated to mint an App Check token.');
