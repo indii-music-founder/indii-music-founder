@@ -64,7 +64,7 @@ artifact exists; it does **not** replace counsel's review of legal sufficiency.
 
 | Asset ID | Asset / location | Rights posture & evidence | Value rationale / review state |
 |---|---|---|---|
-| IP-PLATFORM-001 | indii source code, tests, technical documentation, and workflows in this repository | `owned` claim documented in [IP assignment](../IP_ASSIGNMENT.md) and [AI authorship disclosure](../AI_AUTHORSHIP_DISCLOSURE.md); third-party dependencies require separate licence review | Core product and replacement-cost asset. **Needs founder evidence:** retain executed founder/contributor assignment and current dependency licence report. |
+| IP-PLATFORM-001 | indii source code, tests, technical documentation, and workflows in this repository | `owned` claim documented in [IP assignment](IP_ASSIGNMENT.md) and [AI authorship disclosure](../AI_AUTHORSHIP_DISCLOSURE.md); third-party dependencies require separate licence review | Core product and replacement-cost asset. **Needs founder evidence:** retain executed founder/contributor assignment and current dependency licence report. |
 | IP-PLATFORM-002 | Canonical audio ingestion, DSP/Gemini analysis, DDEX packaging, and provenance implementation | Platform software; current technical evidence includes source, tests, and release/issue records. It does **not** establish ownership of any artist audio processed by it. | Strategic workflow asset. **Verified technically / needs counsel evidence** for any patent/trade-secret strategy. |
 | IP-PLATFORM-003 | Immutable delivery-asset provenance: owner-scoped content-addressed audio and cover-art objects, byte/hash/format inspection, private desktop staging, Creative Studio provider/model capture, and DDEX package-resource binding | Platform software. Evidence: `MasterAudioService`, `CanonicalCoverArtService`, `SubmitReleaseModal`, Electron staging services, `ingestion_build.py`, and their focused renderer/main/Python/Storage-emulator tests. The record distinguishes provider/model evidence captured at creation from `not_recorded`; it does not infer a provider version or title from bytes. Customer masters and cover art remain customer-controlled unless a written transfer says otherwise. | Reduces release-integrity and manual-reconciliation risk; supports a defensible workflow/replacement-cost narrative, not an asserted patent or independent valuation. **Verified technically / needs chain-of-title and trade-secret review.** |
 | IP-BRAND-001 | `indii`/`indii.music` names, logos, visual system, domains, and brand files under `docs/assets/` | `unknown` until domain registrar record, design source/assignment, and trademark search/filing evidence are linked | Brand and go-to-market asset. **Needs founder evidence.** |
@@ -118,9 +118,9 @@ record before declaring the issue complete:
 
 ## Diligence and valuation use
 
-Use this register with the [valuation thesis](00_VALUATION_THESIS.md),
-[legal/compliance materials](10_LEGAL_COMPLIANCE.md), and [chain-of-title
-materials](../IP_ASSIGNMENT.md). A valuation must separate:
+Use this register with the [valuation thesis](../data-room/00_VALUATION_THESIS.md),
+[legal/compliance materials](../data-room/10_LEGAL_COMPLIANCE.md), and [chain-of-title
+materials](IP_ASSIGNMENT.md). A valuation must separate:
 
 - transferable platform IP;
 - licensed or vendor-dependent capability;

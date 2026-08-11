@@ -223,7 +223,7 @@ These are tracked per-track/per-artist in the app, not here — indii's job is t
 The platform's code, brand, operational know-how, datasets, and customer music
 rights are different asset classes. Do not treat an uploaded master, a generated
 image, a model output, or a repository commit as company-owned IP without
-evidence. The living record is [the IP asset register](data-room/13_IP_ASSET_REGISTER.md).
+evidence. The living record is [the IP asset register](ip/13_IP_ASSET_REGISTER.md).
 
 - [ ] File or locate the executed founder IP assignment and every contractor or
   contributor assignment; store the documents in the controlled legal evidence
@@ -276,7 +276,7 @@ materials should contain only a redacted reference, date, and owner.
   acknowledgements. Never add customer catalog to platform-IP value without an
   executed, rights-specific transfer.
 - [ ] **Room-ready index:** a one-page mapping from each material asset ID in
-  `docs/data-room/13_IP_ASSET_REGISTER.md` to its redacted evidence reference,
+  `docs/ip/13_IP_ASSET_REGISTER.md` to its redacted evidence reference,
   restriction, review state, and the person accountable for the next proof.
 - [ ] **Answer rehearsal:** be able to state, for each material asset: what it
   is; who controls it; what supports that statement today; why it matters; what

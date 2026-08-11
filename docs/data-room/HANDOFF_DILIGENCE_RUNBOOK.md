@@ -295,7 +295,7 @@ in `docs/data-room/10_LEGAL/`.>
 ## Implications for Diligence
 
 - Acquisition target = <one of: New Detroit Music LLC | indii LLC | a NewCo>
-- IP assignment chain (see IP_ASSIGNMENT.md): <how it flows to the target>
+- IP assignment chain (see `docs/ip/IP_ASSIGNMENT.md`): <how it flows to the target>
 - DSP commercial agreements signed under: <which entity name>
 - Stripe / Firebase / GCP accounts owned by: <which entity>
 ```
@@ -312,13 +312,13 @@ in `docs/data-room/10_LEGAL/`.>
 
 **Files to create:**
 
-- `tmp-fix/docs/IP_ASSIGNMENT.md`
+- `tmp-fix/docs/ip/IP_ASSIGNMENT.md`
 - `tmp-fix/CONTRIBUTORS.md`
 - `tmp-fix/docs/AI_AUTHORSHIP_DISCLOSURE.md`
 
 **Templates below.** Fill in only what you can derive verbatim from this runbook. Everything else is `<TBD by William>` for him to complete with counsel.
 
-**Template for `docs/IP_ASSIGNMENT.md`:**
+**Template for `docs/ip/IP_ASSIGNMENT.md`:**
 
 ```markdown
 # IP Assignment Record
@@ -800,7 +800,7 @@ tmp-fix/docs/data-room/
 ├── 00_VALUATION_THESIS.md          # Copy from session valuation
 ├── 01_ARCHITECTURE.md              # Symlink or copy from docs/ARCHITECTURE.md
 ├── 02_ENTITY_STRUCTURE.md          # From A.3
-├── 03_IP_ASSIGNMENT.md             # From A.4
+├── ../ip/IP_ASSIGNMENT.md          # From A.4
 ├── 04_AI_AUTHORSHIP_DISCLOSURE.md  # From A.4
 ├── 05_KNOWN_GAPS.md                # From A.2
 ├── 06_INDEPENDENT_REVIEW.pdf       # From B (placeholder until reviewer delivers)

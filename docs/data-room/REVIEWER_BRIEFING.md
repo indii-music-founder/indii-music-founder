@@ -89,7 +89,7 @@ Python/TypeScript scripts in `execution/` handle API interactions, data processi
 - Google Jules: 874 commits (20.5%, properly licensed)
 - GitHub Actions: 56 commits (1.3%, automation)
 
-**No Conflicting Claims:** All AI-generated code is owned by the project owner per provider terms. No GPL/AGPL contamination. See `docs/IP_ASSIGNMENT.md` and `docs/AI_AUTHORSHIP_DISCLOSURE.md`.
+**No Conflicting Claims:** All AI-generated code is owned by the project owner per provider terms. No GPL/AGPL contamination. See `docs/ip/IP_ASSIGNMENT.md` and `docs/AI_AUTHORSHIP_DISCLOSURE.md`.
 
 ---
 
@@ -199,7 +199,7 @@ You must explicitly sign off on these 12 gates in your report. See `docs/data-ro
 
 **Reference (as needed):**
 - `docs/KNOWN_GAPS.md` — Documented stubs/deferred work
-- `docs/IP_ASSIGNMENT.md` — IP ownership chain
+- `docs/ip/IP_ASSIGNMENT.md` — IP ownership chain
 - `docs/AI_AUTHORSHIP_DISCLOSURE.md` — AI code licensing
 - `final_test_output.txt` — Test baseline (2,158 pass, 9 skip, 0 fail)
 

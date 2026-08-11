@@ -15,7 +15,7 @@ docs/data-room/
 ├── 00_VALUATION_THESIS.md              # Independent valuation (this session's output)
 ├── 01_ARCHITECTURE.md                  # System overview, 3-layer, agent fleet
 ├── 02_ENTITY_STRUCTURE.md              # Entity ownership (New Detroit Music LLC)
-├── 03_IP_ASSIGNMENT.md                 # Clean chain of title to New Detroit Music LLC
+├── ../ip/IP_ASSIGNMENT.md              # Clean chain of title to New Detroit Music LLC
 ├── 04_AI_AUTHORSHIP_DISCLOSURE.md      # AI code licensing (Anthropic, Google)
 ├── 05_KNOWN_GAPS.md                    # Honest stub inventory (tax forms, blockchain)
 ├── 06_INDEPENDENT_REVIEW.pdf           # [FUTURE] Third-party engineering report
@@ -25,7 +25,7 @@ docs/data-room/
 ├── 10_LEGAL/                           # Stripe TOS, GCP TOS, Anthropic/Google terms
 ├── 11_RETENTION_TERM_SHEET.md          # William's draft package
 ├── 12_SUCCESSION_PLAN.md               # Successor candidate(s) & transition
-├── 13_IP_ASSET_REGISTER.md              # Living IP, provenance, restrictions, and value-evidence register
+├── ../ip/13_IP_ASSET_REGISTER.md        # Living IP, provenance, restrictions, and value-evidence register
 ├── INDEPENDENT_REVIEW_SCOPE.md         # Scope for external reviewer
 ├── REVIEWER_CANDIDATES.md              # Reviewer selection options
 ├── REVIEWER_BRIEFING.md                # Day-1 briefing for reviewer
@@ -76,7 +76,7 @@ docs/data-room/
 
 ---
 
-### 03_IP_ASSIGNMENT.md ✅
+### ../ip/IP_ASSIGNMENT.md ✅
 
 **Status:** Committed 2026-04-26 (commit `8d3543ed`)  
 **Content:** Chain of title from all contributors (William, Claude, Google Jules) to New Detroit Music LLC
@@ -205,7 +205,7 @@ docs/data-room/
 
 ---
 
-### 13_IP_ASSET_REGISTER.md ✅
+### ../ip/13_IP_ASSET_REGISTER.md ✅
 
 **Status:** Created 2026-07-20
 **Content:** Living, evidence-backed inventory of platform IP, brand assets,
@@ -274,9 +274,9 @@ Use this as your entry point:
 
 - [ ] Read REVIEWER_BRIEFING.md (15 min) — understand the thesis
 - [ ] Read 02_ENTITY_STRUCTURE.md — confirm ownership
-- [ ] Read 03_IP_ASSIGNMENT.md — confirm clean title
+- [ ] Read ../ip/IP_ASSIGNMENT.md — confirm clean title
 - [ ] Read 04_AI_AUTHORSHIP_DISCLOSURE.md — confirm no licensing conflicts
-- [ ] Read 13_IP_ASSET_REGISTER.md — distinguish owned, licensed, customer-controlled, and unverified assets
+- [ ] Read ../ip/13_IP_ASSET_REGISTER.md — distinguish owned, licensed, customer-controlled, and unverified assets
 - [ ] Read 05_KNOWN_GAPS.md — understand deferred work
 - [ ] Read 01_ARCHITECTURE.md — understand system design
 - [ ] Read INDEPENDENT_REVIEW_SCOPE.md — see what external reviewer checked

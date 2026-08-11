@@ -15,7 +15,7 @@ indii operates under three primary third-party agreements:
 2. **GCP/Firebase Terms of Service** — Hosts backend infrastructure; project owned by William Roberts (transitional, requires update for acquisition)
 3. **Anthropic/Google AI Licensing** — Fine-tuned models and AI-generated code licensed per provider terms (disclosed in `AI_AUTHORSHIP_DISCLOSURE.md`)
 
-**No material IP conflicts identified.** All code, models, and data owned by New Detroit Music LLC per assignment agreements documented in `IP_ASSIGNMENT.md`.
+**No material IP conflicts identified.** All code, models, and data owned by New Detroit Music LLC per assignment agreements documented in `docs/ip/IP_ASSIGNMENT.md`.
 
 ---
 
@@ -357,7 +357,7 @@ William Roberts (Founder/Author)
 
 | Document | Status | Location | Covers |
 |----------|--------|----------|--------|
-| IP_ASSIGNMENT.md | ✅ Complete | docs/ | Code, models, data from all contributors |
+| IP_ASSIGNMENT.md | ✅ Complete | docs/ip/ | Code, models, data from all contributors |
 | AI_AUTHORSHIP_DISCLOSURE.md | ✅ Complete | docs/ | Claude + Google Jules attribution |
 | CONTRIBUTORS.md | ✅ Complete | root | Public contributor list |
 | No formal IP agreement with contributors | ⚠️ Gap | — | William sole human author; AI contributors assigned per provider terms |

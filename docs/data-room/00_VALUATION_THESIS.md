@@ -163,7 +163,7 @@ indii is a **music distribution and artist tooling platform** anchored on three 
 | **Blockchain suite disabled** | Minor | Design complete but not shipped; low priority (compliance risk) | Post-acquisition if needed |
 | **Entity name mismatch** | Major | Proprietary Ingestion ID (DPID) is "New Detroit Music LLC" but codebase says "indii LLC" — resolved in ENTITY_STRUCTURE.md | Complete before LOI |
 | **God-mode hardcoded email** | Critical | Replaced with Firebase custom claim (setGodMode Cloud Function) | ✅ Complete |
-| **No IP assignment docs** | Critical | Created IP_ASSIGNMENT.md, AI_AUTHORSHIP_DISCLOSURE.md, CONTRIBUTORS.md | ✅ Complete |
+| **No IP assignment docs** | Critical | Created `docs/ip/IP_ASSIGNMENT.md`, `docs/AI_AUTHORSHIP_DISCLOSURE.md`, and `CONTRIBUTORS.md` | ✅ Complete |
 | **No successor named** | Major | William to name candidate before LOI | Due before LOI |
 | **DSP commercial agreements** | Major | Onboarding status documented; formal commercial terms held separately by William | Known by William |
 

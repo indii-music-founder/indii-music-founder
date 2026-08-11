@@ -1,6 +1,7 @@
 # Intellectual Property Assignment
 
 **Status:** Clean chain of title to New Detroit Music LLC
+**Canonical location:** `docs/ip/IP_ASSIGNMENT.md`
 
 ---
 
