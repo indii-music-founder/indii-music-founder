@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { ShieldAlert, ShieldCheck, ArrowRight, RefreshCw, Lock, Zap } from 'lucide-react';
+import { ShieldAlert, ShieldCheck, ArrowRight, RefreshCw, Zap } from 'lucide-react';
 
 const legacyPillars = [
   {
@@ -114,6 +114,9 @@ export default function LegacyComparison() {
           </h3>
           <p className="mx-auto mt-3 max-w-2xl text-sm leading-relaxed text-white/60 sm:text-base">
             You just need one unified workspace where distribution, artwork, rights, campaigns, and finances work together under your direct command.
+            <span className="mt-4 block text-lg font-black text-amber-400 sm:text-xl">
+              YOU need <span className="indii-name">indii.music</span>.
+            </span>
           </p>
           <a
             href="#studio-preview"

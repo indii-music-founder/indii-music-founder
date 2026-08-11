@@ -2,7 +2,7 @@
 
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence, useAnimationFrame, useMotionValue } from 'framer-motion';
-import { Volume2, VolumeX, X, Play, Pause, Info, ArrowRight, RotateCcw } from 'lucide-react';
+import { Volume2, VolumeX, X, Play, Pause, Info, ArrowRight, RotateCcw, Download } from 'lucide-react';
 import { getStudioUrl } from '../lib/auth';
 
 interface ThesisCrawlProps {
@@ -19,6 +19,8 @@ const THESIS_SOUNDTRACK_SOURCES = [
   '/audio/indii-thesis-theme.m4a',
   '/audio/indii-thesis-theme.wav',
 ];
+const THESIS_PDF_PATH = '/downloads/the-indii-thesis.pdf';
+const THESIS_PDF_FILENAME = 'The-indii-Thesis.pdf';
 
 export default function ThesisCrawl({ isOpen, onClose }: ThesisCrawlProps) {
   const [isPlaying, setIsPlaying] = useState(true);
@@ -380,6 +382,16 @@ export default function ThesisCrawl({ isOpen, onClose }: ThesisCrawlProps) {
               >
                 {audioEnabled ? <Volume2 size={16} className="text-amber-400 animate-pulse" /> : <VolumeX size={16} />}
               </button>
+
+              <a
+                href={THESIS_PDF_PATH}
+                download={THESIS_PDF_FILENAME}
+                aria-label="Download the indii thesis as a PDF"
+                className="flex h-10 items-center justify-center gap-2 rounded-full border border-white/10 bg-black/40 px-3 font-mono text-[9px] font-bold uppercase tracking-[0.16em] text-gray-400 backdrop-blur-md transition-all hover:border-amber-500/40 hover:bg-black/80 hover:text-amber-400 sm:px-4"
+              >
+                <Download size={15} />
+                <span className="hidden sm:inline">Download PDF</span>
+              </a>
               
               {introStep === 2 && !isComplete && (
                 <div className="flex items-center gap-2 bg-black/40 border border-white/10 rounded-full p-1 backdrop-blur-md">
@@ -478,18 +490,25 @@ export default function ThesisCrawl({ isOpen, onClose }: ThesisCrawlProps) {
                       textShadow: '0 2px 16px rgba(0,0,0,0.95), 0 0 20px rgba(245,158,11,0.16)',
                     }}
                   >
-                  {/* Thesis Title */}
-                  <div className="space-y-10">
-                    <h1 className="text-7xl md:text-9xl lg:text-[10rem] font-black font-sans uppercase tracking-[0.08em] text-transparent bg-clip-text bg-gradient-to-b from-amber-200 via-amber-400 to-amber-600 drop-shadow-[0_0_32px_rgba(245,158,11,0.42)]">
-                      The <span className="indii-name">indii</span> Thesis
+                  {/* Thesis Title — uses the founder presentation's flat editorial system. */}
+                  <header className="mx-auto w-full max-w-5xl border-y border-white/15 py-12 text-left font-sans [text-shadow:none] md:py-16">
+                    <div className="flex items-center justify-between gap-8 font-mono text-[10px] font-medium uppercase tracking-[0.24em] md:text-xs">
+                      <span className="text-amber-400">Founder thesis / 01</span>
+                      <span className="text-right text-white/35">Detroit / 2026</span>
+                    </div>
+
+                    <h1 className="mt-12 text-[4.4rem] font-black leading-[0.8] tracking-[-0.07em] text-white sm:text-[6rem] md:text-[8.5rem] lg:text-[10rem]">
+                      The <span className="indii-name">indii</span>
+                      <span className="block text-amber-400">thesis.</span>
                     </h1>
-                    <p className="text-amber-500/80 font-mono text-3xl md:text-4xl lg:text-5xl tracking-widest uppercase">
-                      Episode I: Everything to Everybody
-                    </p>
-                    <p className="text-amber-500/50 font-mono text-xl md:text-3xl tracking-[0.25em] uppercase mt-8">
-                      <span className="wiil-name">wiil</span>, Founder — June 2026
-                    </p>
-                  </div>
+
+                    <div className="mt-12 grid gap-4 border-t border-white/12 pt-6 font-mono text-[10px] font-medium uppercase leading-relaxed tracking-[0.2em] md:grid-cols-[1fr_auto] md:text-xs">
+                      <p className="text-white/65">Everything to everybody</p>
+                      <p className="text-white/35">
+                        <span className="wiil-name">wiil</span>, Founder
+                      </p>
+                    </div>
+                  </header>
 
                   {/* Intro section */}
                   <div className="space-y-8 text-justify">
