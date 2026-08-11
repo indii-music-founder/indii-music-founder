@@ -62,10 +62,10 @@
 ### ISSUE-1123: Video editor export has no completed cloud artifact path and local export overwrites a fixed temp path
 
 - **Re-ticketed from:** ISSUE-809 (2026-07-21 housecleaning; original status was: `⏳ BACKLOG — consolidated`)
-- **Status:** ⏳ BACKLOG — consolidated
+- **Status:** ✅ FIXED (2026-08-11)
 - **Severity:** 🟠 HIGH
 - **Module:** Creative Suite / Video editor
-- **Evidence:** `useVideoEditor.ts:117-125` calls `renderVideo`, then only toasts “Cloud render started successfully!” if it gets a `renderId`/`success`; it does not poll, store a job, fetch the final URL, or add the rendered asset to history. Local export uses a hardcoded output path (`/tmp/video.mp4` or `C:\\video.mp4`) at `:144-160`, so repeated exports overwrite the same location and never ask the user for a destination.
+- **Evidence:** `useVideoEditor.ts` uses `RenderService` for cloud exports with progress tracking, receipt completion verification, and auto-saving the rendered asset URL to `generatedHistory`. Local exports prompt the user for output directory via `electronAPI.selectDirectory()`, construct unique `video_${timestamp}.mp4` output locations, and save to `generatedHistory`.
 - **Impact:** Cloud export can leave the user with no downloadable artifact. Local export can overwrite previous renders and may fail access checks.
 - **Fix:** Add render-job lifecycle state, polling/subscription, completed asset persistence, user-selected save destination, and unique filenames.
 - **Acceptance:** Cloud render fixture ends with a gallery asset/download URL; local render prompts for or safely creates a unique output path.
@@ -92,10 +92,10 @@
 ### ISSUE-1125: Credential storage falls back to localStorage and raw Firestore fields
 
 - **Re-ticketed from:** ISSUE-840 (2026-07-21 housecleaning; original status was: `⏳ BACKLOG — consolidated`)
-- **Status:** ⏳ BACKLOG — consolidated
+- **Status:** ✅ FIXED (2026-08-11)
 - **Severity:** 🔴 HIGH (secret handling)
 - **Module:** Security / Credential storage
-- **Evidence:** `UniversalTools.credential_vault()` claims shared credential operations should fail closed when no real bridge exists (`UniversalTools.ts:5-10`), but if `window.electronAPI?.credentials` is unavailable it stores/retrieves arbitrary credentials in `localStorage` under `indii_vault_${service}` (`:78-99`). `PODCredentialService.saveCredential()` stores provider API keys directly as Firestore fields under `users/{uid}/integrations/pod_credentials` and only comments that KMS encryption should be considered (`PODCredentialService.ts:32-40`, `:61-66`).
+- **Evidence:** `UniversalTools.credential_vault` and `PODCredentialService` both fail closed with `CREDENTIAL_STORAGE_UNAVAILABLE` when `window.electronAPI.credentials` is unavailable. No `localStorage` fallback exists in `UniversalTools.ts`, and `PODCredentialService` never writes API keys to Firestore documents.
 - **Impact:** Production secrets can be written to browser storage or client-readable Firestore documents instead of OS secure storage / server-side secret management.
 - **Fix:** Remove localStorage credential fallback from production builds. Route all provider credentials through Electron safeStorage/keychain or server-side secret storage with encryption, least-privilege access, and redacted reads.
 - **Acceptance:** Web/renderer credential save attempts fail closed unless an approved secure credential backend is available; no API key is returned to the renderer after storage.
