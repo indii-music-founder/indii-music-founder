@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { writeFile } from 'node:fs/promises';
 
 const mockInteractionsCreate = vi.fn();
@@ -184,7 +184,16 @@ vi.mock('./getMediaDuration', () => ({
   probeDurationSeconds: mockProbeDurationSeconds,
 }));
 
-import { classifyMediaFinishFailure, generateAudioV3, generateImageV3, generateOmniRemixV3, generateVideoV3, type VideoGenerationJobRecord } from './gateway';
+import {
+  classifyMediaFinishFailure,
+  generateAudioV3,
+  generateImageV3,
+  generateOmniRemixV3,
+  generateVideoV3,
+  getMediaVertexLocation,
+  getOmniVertexLocation,
+  type VideoGenerationJobRecord,
+} from './gateway';
 
 /**
  * `VideoGenerationJobRecord` is `VideoJobDocument & {...}`, and `VideoJobDocument`
@@ -251,6 +260,38 @@ beforeEach(() => {
   mockEntitlementTierToBudgetTier.mockReturnValue('free');
   mockArcjetPolicyForEntitlement.mockReturnValue('verified-free');
   mockArcjetProtect.mockResolvedValue({ allowed: true });
+});
+
+afterEach(() => {
+  vi.unstubAllEnvs();
+});
+
+describe('creative gateway media routing policy', () => {
+  it('does not let generic Vertex location variables reroute media models', () => {
+    vi.stubEnv('VERTEX_LOCATION', 'europe-west4');
+    vi.stubEnv('VERTEX_MEDIA_LOCATION', 'us');
+    vi.stubEnv('VERTEX_IMAGE_LOCATION', '');
+    vi.stubEnv('VERTEX_VIDEO_LOCATION', '');
+    vi.stubEnv('VERTEX_AUDIO_LOCATION', '');
+    vi.stubEnv('VERTEX_OMNI_LOCATION', '');
+
+    expect(getMediaVertexLocation('image')).toBe('global');
+    expect(getMediaVertexLocation('video')).toBe('us-central1');
+    expect(getMediaVertexLocation('audio')).toBe('global');
+    expect(getOmniVertexLocation()).toBe('global');
+  });
+
+  it('honors only the media-specific location override for each route', () => {
+    vi.stubEnv('VERTEX_IMAGE_LOCATION', 'global');
+    vi.stubEnv('VERTEX_VIDEO_LOCATION', 'us-central1');
+    vi.stubEnv('VERTEX_AUDIO_LOCATION', 'us-east1');
+    vi.stubEnv('VERTEX_OMNI_LOCATION', 'global');
+
+    expect(getMediaVertexLocation('image')).toBe('global');
+    expect(getMediaVertexLocation('video')).toBe('us-central1');
+    expect(getMediaVertexLocation('audio')).toBe('us-east1');
+    expect(getOmniVertexLocation()).toBe('global');
+  });
 });
 
 describe('creative gateway generateImageV3', () => {
@@ -370,6 +411,22 @@ describe('creative gateway generateImageV3', () => {
     });
   });
 
+  it('rejects unsupported image-search grounding on the pro image model', async () => {
+    await expect(callGenerateImage({
+      auth: { uid: 'user-123' },
+      data: {
+        prompt: 'Image-search grounded pro request',
+        model: 'pro',
+        useImageSearch: true,
+        costReservationId: 'image-pro-image-search-test',
+      },
+    })).rejects.toMatchObject({
+      code: 'failed-precondition',
+      message: 'Image Search grounding is not supported by the current image generation models.',
+    });
+    expect(mockInteractionsCreate).not.toHaveBeenCalled();
+  });
+
   it('ISSUE-777: honors batch, text response, and thought-summary settings end to end', async () => {
     mockInteractionsCreate.mockResolvedValue({
       outputs: [
@@ -395,7 +452,6 @@ describe('creative gateway generateImageV3', () => {
         includeThoughts: true,
         responseFormat: 'image_and_text',
         useGoogleSearch: true,
-        useImageSearch: true,
         costReservationId: 'image-op-batch',
       },
     }) as {

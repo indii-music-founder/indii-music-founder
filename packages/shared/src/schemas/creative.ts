@@ -11,7 +11,10 @@ export const GenerateImageSchema = BaseMediaRequestSchema.extend({
     /** Server-issued, owner-bound cost hold. Browser estimates are never authority. */
     costReservationId: z.string().trim().min(1).max(256),
     sessionId: z.string().optional(),
-    aspectRatio: z.enum(['1:1', '16:9', '9:16', '3:4', '4:3']).default('1:1'),
+    aspectRatio: z.enum([
+        '1:1', '1:4', '1:8', '2:3', '3:2', '3:4', '4:1', '4:3',
+        '4:5', '5:4', '8:1', '9:16', '16:9', '21:9', '9:21',
+    ]).default('1:1'),
     model: z.enum(['lite', 'fast', 'pro', 'legacy']).default('fast'),
     imageSize: z.enum(['512', '0.5K', '1K', '2K', '4K', '1k', '2k', '4k']).optional(),
     count: z.number().int().min(1).max(4).default(1),

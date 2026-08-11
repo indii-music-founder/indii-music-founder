@@ -373,7 +373,7 @@ Negative: "no blurry parts, no extra limbs, no watermarks, no independent-photo 
 ```typescript
 interface NanoBananaGenerationConfig {
   // Model selection
-  model: 'gemini-3.1-flash-image-preview' | 'gemini-3-pro-image-preview';
+  model: 'gemini-3.1-flash-image' | 'gemini-3-pro-image';
 
   // Generation config
   generationConfig: {
@@ -542,7 +542,7 @@ safetySettings: [
 - [Google Cloud: Bringing NB2 to Enterprise](https://cloud.google.com/blog/products/ai-machine-learning/bringing-nano-banana-2-to-enterprise)
 - [Gemini API Docs: Image Generation](https://ai.google.dev/gemini-api/docs/image-generation)
 - [Gemini API Docs: Gemini 3 Developer Guide](https://ai.google.dev/gemini-api/docs/gemini-3)
-- [Gemini 3.1 Flash Image Preview](https://ai.google.dev/gemini-api/docs/models/gemini-3.1-flash-image-preview)
+- [Gemini 3.1 Flash Image](https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/gemini/3-1-flash-image)
 - [Google AI Studio: Gemini 3.1 Flash Image](https://aistudio.google.com/models/gemini-3-1-flash-image)
 - [Dev.to: Getting the Most Out of NB2](https://dev.to/googleai/getting-the-most-out-of-nano-banana-2-502k)
 - [Apiyi: NB2 Developer Docs](https://help.apiyi.com/en/nano-banana-2-developer-docs-api-guide-en.html)

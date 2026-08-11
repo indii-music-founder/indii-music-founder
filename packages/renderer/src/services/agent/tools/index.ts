@@ -268,7 +268,7 @@ AVAILABLE TOOLS:
 --- FEEDBACK ---
 112. report_bug(title: string, description: string, stepsToReproduce?: string, expectedBehavior?: string, actualBehavior?: string, severity?: string, module?: string, errorMessage?: string) - Report a bug or issue. Use when user describes something broken, crashing, or not working.
 113. request_feature(title: string, description: string, useCase?: string, priority?: string, category?: string, module?: string) - Capture a feature request or product idea. Use when user suggests new functionality, improvements, or says "it would be cool if...".
-114. edit_image_with_annotations(imageId: string, annotations: object[], colorPrompts?: object) - Edit an image using spatial annotations (circles) and color-coded instructions.
+114. edit_image_with_annotations(imageId: string, imageUrl: string, annotations: object[], colorPrompts?: object, maskData?: string) - Edit an image using spatial annotations (circles), a source URL/data URI, color-coded instructions, and an optional PNG mask.
 115. edit_document_with_annotations(documentId: string, annotations: object[], globalInstruction?: string) - Edit a document (PDF/Text) using specific area highlights or sticky notes with instructions.
 --- BILLING & COST CONTROL ---
 116. check_budget_status() - Check current daily/monthly budget remaining and test mode status. REQUIRED before expensive operations.

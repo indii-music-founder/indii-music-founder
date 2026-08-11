@@ -157,7 +157,6 @@ export class GeminiImageService {
         useGrounding?: boolean | null;
     }, modelId: string): Record<string, unknown> {
         const capabilities = NANO_BANANA_CAPABILITIES[modelId as keyof typeof NANO_BANANA_CAPABILITIES];
-        const isPro = capabilities?.tier === "pro";
 
         // Response modalities
         const wantsText = data.responseFormat === "image_and_text";
@@ -196,21 +195,20 @@ export class GeminiImageService {
         // Grounding tools — use `tools` array (NOT deprecated `groundingConfig`)
         const effectiveUseSearch = data.useGoogleSearch || data.useGrounding;
         let tools: Record<string, unknown>[] | undefined;
+        if (data.useImageSearch) {
+            throw new HttpsError(
+                "failed-precondition",
+                "Image Search grounding is not supported by the current image generation models."
+            );
+        }
+        if (effectiveUseSearch && !capabilities?.supportsGoogleSearch) {
+            throw new HttpsError(
+                "failed-precondition",
+                "Search grounding is not supported on this image generation model. Switch to Pro tier for search grounding."
+            );
+        }
         if (effectiveUseSearch) {
-            if (data.useImageSearch && !isPro) {
-                // Image Search: Flash only. Build searchTypes with both web + image.
-                tools = [{
-                    googleSearch: {
-                        searchTypes: {
-                            webSearch: {},
-                            imageSearch: {},
-                        },
-                    },
-                }];
-            } else {
-                // Standard Google Search grounding
-                tools = [{ googleSearch: {} }];
-            }
+            tools = [{ googleSearch: {} }];
         }
 
         // Assemble config
@@ -222,8 +220,9 @@ export class GeminiImageService {
             config.personGeneration = data.personGeneration;
         }
 
-        // Pro only supports 1 candidate
-        if (!isPro && data.count && data.count > 1) {
+        // Only legacy models support candidateCount. Current GA image models
+        // require one candidate per provider request.
+        if (capabilities?.supportsCandidateCount && data.count && data.count > 1) {
             config.candidateCount = data.count;
         }
 
@@ -425,6 +424,9 @@ export class GeminiImageService {
      * @throws {HttpsError} Structured error for the client.
      */
     private handleApiError(error: unknown, context: string): never {
+        if (error instanceof HttpsError) {
+            throw error;
+        }
         const err = error as Error & { status?: number };
         console.error(`[GeminiImageService:${context}] Error:`, err);
 

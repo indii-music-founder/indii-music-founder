@@ -52,7 +52,7 @@ export const NANO_BANANA_CAPABILITIES = {
         displayName: 'Nano Banana Pro',
         maxResolution: '4K',
         supportedResolutions: ['1K', '2K', '4K'] as const,
-        supportedAspectRatios: ['1:1', '2:3', '3:2', '3:4', '4:3', '4:5', '5:4', '9:16', '16:9', '21:9'] as const,
+        supportedAspectRatios: ['1:1', '1:4', '1:8', '2:3', '3:2', '3:4', '4:1', '4:3', '4:5', '5:4', '8:1', '9:16', '16:9', '21:9', '9:21'] as const,
         maxReferenceImages: 14,
         supportsThinkingControl: false,
         supportsGoogleSearch: true,
@@ -66,7 +66,7 @@ export const NANO_BANANA_CAPABILITIES = {
         displayName: 'Nano Banana 2',
         maxResolution: '4K',
         supportedResolutions: ['512', '1K', '2K', '4K'] as const,
-        supportedAspectRatios: ['1:1', '1:4', '1:8', '2:3', '3:2', '3:4', '4:1', '4:3', '4:5', '5:4', '8:1', '9:16', '16:9', '21:9'] as const,
+        supportedAspectRatios: ['1:1', '1:4', '1:8', '2:3', '3:2', '3:4', '4:1', '4:3', '4:5', '5:4', '8:1', '9:16', '16:9', '21:9', '9:21'] as const,
         maxReferenceImages: 14, // 10 objects + 4 characters
         supportsThinkingControl: true, // minimal / high
         supportsGoogleSearch: false,

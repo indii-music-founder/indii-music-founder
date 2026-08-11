@@ -13,13 +13,13 @@ import { z } from "zod";
 // ============================================================================
 
 /**
- * All 14 aspect ratios supported by Gemini 3.1 Flash Image.
- * Pro supports a subset (10): excludes 1:4, 4:1, 1:8, 8:1.
+ * All 15 aspect ratios supported by the GA Gemini image models.
+ * Fast and Pro support the same set.
  * Legacy supports a subset (9): excludes 1:4, 4:1, 1:8, 8:1, 21:9.
  */
 const AspectRatioEnum = z.enum([
     "1:1", "1:4", "1:8", "2:3", "3:2", "3:4",
-    "4:1", "4:3", "4:5", "5:4", "8:1", "9:16", "16:9", "21:9"
+    "4:1", "4:3", "4:5", "5:4", "8:1", "9:16", "16:9", "21:9", "9:21"
 ]);
 
 /**

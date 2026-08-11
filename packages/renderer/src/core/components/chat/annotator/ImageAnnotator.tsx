@@ -158,6 +158,22 @@ export const ImageAnnotator: React.FC<ImageAnnotatorProps> = ({ imageUrl, imageI
     const handleApply = async () => {
         setIsSubmitting(true);
         try {
+            const maskCanvas = document.createElement('canvas');
+            maskCanvas.width = imageSize.width;
+            maskCanvas.height = imageSize.height;
+            const maskContext = maskCanvas.getContext('2d');
+            if (!maskContext || maskCanvas.width === 0 || maskCanvas.height === 0) {
+                throw new Error('Unable to create an annotation mask for this image.');
+            }
+            maskContext.fillStyle = '#000000';
+            maskContext.fillRect(0, 0, maskCanvas.width, maskCanvas.height);
+            maskContext.fillStyle = '#ffffff';
+            for (const annotation of annotations) {
+                maskContext.beginPath();
+                maskContext.arc(annotation.cx, annotation.cy, annotation.r, 0, 2 * Math.PI);
+                maskContext.fill();
+            }
+
             // Build the prompt structure
             const redRegions = annotations.filter(a => a.color === '#ef4444');
             const blueRegions = annotations.filter(a => a.color === '#3b82f6');
@@ -165,6 +181,8 @@ export const ImageAnnotator: React.FC<ImageAnnotatorProps> = ({ imageUrl, imageI
 
             const payload = {
                 imageId,
+                imageUrl,
+                maskData: maskCanvas.toDataURL('image/png'),
                 annotations: annotations.map(a => ({
                     color: COLORS.find(c => c.hex === a.color)?.name || 'unknown',
                     cx: Math.round(a.cx),
@@ -190,7 +208,7 @@ export const ImageAnnotator: React.FC<ImageAnnotatorProps> = ({ imageUrl, imageI
     };
 
     return (
-        <div className="flex flex-col gap-4 p-4 bg-gray-900 rounded-lg border border-white/10 mt-2">
+        <div data-testid="inline-annotator" className="flex flex-col gap-4 p-4 bg-gray-900 rounded-lg border border-white/10 mt-2">
             <div className="flex items-center justify-between">
                 <h3 className="text-sm font-bold text-white flex items-center gap-2">
                     <span className="text-dept-creative">✏️</span> Inline Annotator

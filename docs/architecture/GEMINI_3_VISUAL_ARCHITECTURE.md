@@ -12,8 +12,8 @@ The following table delineates the Gemini 3 visual tiering, emphasizing context 
 
 | Model ID | Primary Use Case | Context Window (In/Out) | Knowledge Cutoff | Technical Performance Characteristics |
 | :--- | :--- | :--- | :--- | :--- |
-| **Nano Banana 2** (`gemini-3.1-flash-image-preview`) | High-volume efficiency & rapid agentic iteration. | 128k / 32k | January 2025 | Optimized for speed and low-latency workflows. Supports Grounding for Images. |
-| **Nano Banana Pro** (`gemini-3-pro-image-preview`) | Professional asset production & complex reasoning. | 65k / 32k | January 2025 | Superior instruction following and text rendering. Higher fidelity in detail preservation. |
+| **Nano Banana 2** (`gemini-3.1-flash-image`) | High-volume efficiency & rapid agentic iteration. | 128k / 32k | May 2026 | Optimized for speed and low-latency workflows. Grounding is not supported. |
+| **Nano Banana Pro** (`gemini-3-pro-image`) | Professional asset production & complex reasoning. | 65k / 32k | May 2026 | Superior instruction following, text rendering, and Google Search grounding. |
 | **Gemini 2.5 Flash Image** | Legacy/Standard high-speed tasks. | 1M / 8k | Pre-2025 | Designed for maximum efficiency without advanced Gemini 3 reasoning layers. |
 
 **Pricing and Tokenization Infrastructure**

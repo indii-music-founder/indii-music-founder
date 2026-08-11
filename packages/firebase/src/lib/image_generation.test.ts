@@ -146,6 +146,8 @@ describe('generateImageV3Fn', () => {
 
         // Model should be Fast
         expect(callArgs.model).toBe('gemini-3.1-flash-image');
+        // GA Fast accepts exactly one candidate per provider request.
+        expect(callArgs.config.candidateCount).toBeUndefined();
     });
 
     it('should use legacy model when specified', async () => {
@@ -232,7 +234,7 @@ describe('generateImageV3Fn', () => {
         expect(result.thoughtSignature).toBe('abc123');
     });
 
-    it('should handle Flash + Image Search grounding', async () => {
+    it('should reject Flash + Image Search grounding before calling Vertex', async () => {
         const data: any = {
             prompt: 'test with image search',
             model: 'fast',
@@ -241,21 +243,14 @@ describe('generateImageV3Fn', () => {
         };
 
         const context = { auth: { uid: 'test-user-id' } };
-        await wrapped({ ...context, data });
-
-        const callArgs = mockGenerateContent.mock.calls[0][0];
-        expect(callArgs.config.tools).toEqual([{
-            googleSearch: {
-                searchTypes: {
-                    webSearch: {},
-                    imageSearch: {},
-                },
-            },
-        }]);
+        await expect(wrapped({ ...context, data })).rejects.toMatchObject({
+            code: 'failed-precondition',
+        });
+        expect(mockGenerateContent).not.toHaveBeenCalled();
     });
 
-    it('should support all 14 aspect ratios for fast tier', async () => {
-        const allRatios = ['1:1', '1:4', '1:8', '2:3', '3:2', '3:4', '4:1', '4:3', '4:5', '5:4', '8:1', '9:16', '16:9', '21:9'];
+    it('should support all 15 aspect ratios for fast tier', async () => {
+        const allRatios = ['1:1', '1:4', '1:8', '2:3', '3:2', '3:4', '4:1', '4:3', '4:5', '5:4', '8:1', '9:16', '16:9', '21:9', '9:21'];
 
         for (const ratio of allRatios) {
             mockGenerateContent.mockClear();
@@ -283,11 +278,10 @@ describe('generateImageV3Fn', () => {
         await expect(wrapped({ ...context, data })).rejects.toThrow(/Validation/);
     });
 
-    it('should handle backward-compatible legacy fields', async () => {
+    it('should preserve the deprecated thinking field for fast requests', async () => {
         const data: any = {
             prompt: 'legacy call',
             thinking: true, // Deprecated field
-            useGrounding: true, // Deprecated field
             model: 'fast',
         };
 
@@ -297,8 +291,35 @@ describe('generateImageV3Fn', () => {
         const callArgs = mockGenerateContent.mock.calls[0][0];
         // `thinking: true` should map to thinkingLevel "high" via compat logic
         expect(callArgs.config.thinkingConfig.thinkingLevel).toBe('High');
-        // `useGrounding: true` should enable googleSearch tool
+        expect(callArgs.config.tools).toBeUndefined();
+    });
+
+    it('should preserve the deprecated grounding alias only for Pro', async () => {
+        const data: any = {
+            prompt: 'legacy grounded call',
+            useGrounding: true,
+            model: 'pro',
+        };
+
+        const context = { auth: { uid: 'test-user-id' } };
+        await wrapped({ ...context, data });
+
+        const callArgs = mockGenerateContent.mock.calls[0][0];
         expect(callArgs.config.tools).toEqual([{ googleSearch: {} }]);
+    });
+
+    it('should reject the deprecated grounding alias on Fast before calling Vertex', async () => {
+        const data: any = {
+            prompt: 'unsupported legacy grounded call',
+            useGrounding: true,
+            model: 'fast',
+        };
+
+        const context = { auth: { uid: 'test-user-id' } };
+        await expect(wrapped({ ...context, data })).rejects.toMatchObject({
+            code: 'failed-precondition',
+        });
+        expect(mockGenerateContent).not.toHaveBeenCalled();
     });
 });
 
@@ -381,6 +402,22 @@ describe('editImageFn', () => {
         const data: any = { image: 'test', prompt: 'test' };
         const context = {};
         await expect(wrapped({ ...context, data })).rejects.toThrow(/authenticated/);
+    });
+
+    it('should reject grounding on Fast edits before calling Vertex', async () => {
+        const data: any = {
+            image: 'source-base64',
+            imageMimeType: 'image/png',
+            prompt: 'ground this edit',
+            model: 'fast',
+            useGoogleSearch: true,
+        };
+
+        const context = { auth: { uid: 'test-user-id' } };
+        await expect(wrapped({ ...context, data })).rejects.toMatchObject({
+            code: 'failed-precondition',
+        });
+        expect(mockGenerateContent).not.toHaveBeenCalled();
     });
 
     it('should surface a friendly error when Gemini returns no editable image', async () => {

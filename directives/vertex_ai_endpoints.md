@@ -4,7 +4,7 @@
 
 ## Variables
 Replace these in every endpoint:
-- `{region}` → e.g., `us-central1` or `global` (use `global` for all preview models per AI model policy)
+- `{region}` → e.g., `us-central1` or `global` (use the model-specific location documented below; image and Omni use `global`, while Veo uses `us-central1`)
 - `{project-id}` → `indii-music-founder`
 - `{model}` → e.g., `gemini-3-pro-preview`, `gemini-3-flash-preview` (see `@/core/config/ai-models`)
 

@@ -101,8 +101,13 @@ test.describe('Image Annotation Flow', () => {
         const canvas = drawableArea.locator('canvas').first();
         await expect(canvas).toBeAttached({ timeout: 10000 });
         
-        // Simulate drawing by triggering the E2E helper (bypassing complex canvas/React Synthetic Event pointer drag issues in playwright)
-        await page.getByTestId('e2e-force-annotation').evaluate(node => (node as HTMLElement).click());
+        // Draw through the same pointer path a customer uses.
+        const box = await drawableArea.boundingBox();
+        expect(box).not.toBeNull();
+        await page.mouse.move(box!.x + box!.width * 0.25, box!.y + box!.height * 0.5);
+        await page.mouse.down();
+        await page.mouse.move(box!.x + box!.width * 0.55, box!.y + box!.height * 0.5, { steps: 5 });
+        await page.mouse.up();
 
         // 8. The text input for the red annotation should appear
         const redInput = page.locator('input[placeholder*="red regions"]');

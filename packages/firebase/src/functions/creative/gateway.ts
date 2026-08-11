@@ -37,7 +37,7 @@ import {
   type VideoGenerationReferenceImage,
 } from "@google/genai";
 
-type MediaKind = 'image' | 'video' | 'audio';
+export type MediaKind = 'image' | 'video' | 'audio';
 type GatewayErrorCode = 'invalid-argument' | 'permission-denied' | 'failed-precondition' | 'not-found' | 'resource-exhausted' | 'deadline-exceeded' | 'unavailable' | 'internal';
 
 interface GeminiInlineData {
@@ -99,7 +99,7 @@ function isInlineImageMimeType(value: string): value is InlineImageMimeType {
   return (INLINE_IMAGE_MIME_TYPES as readonly string[]).includes(value);
 }
 
-function getMediaVertexLocation(kind: MediaKind): string {
+export function getMediaVertexLocation(kind: MediaKind): string {
   switch (kind) {
     case 'image':
       return process.env.VERTEX_IMAGE_LOCATION || 'global';
@@ -108,6 +108,10 @@ function getMediaVertexLocation(kind: MediaKind): string {
     case 'audio':
       return process.env.VERTEX_AUDIO_LOCATION || 'global';
   }
+}
+
+export function getOmniVertexLocation(): string {
+  return process.env.VERTEX_OMNI_LOCATION || 'global';
 }
 
 /**
@@ -135,8 +139,7 @@ function getAiClient(kind: MediaKind): GoogleGenAI {
  * and does not inherit the Veo location.
  */
 function getOmniAiClient(): GoogleGenAI {
-  const location = process.env.VERTEX_OMNI_LOCATION || 'global';
-  return getVertexAIClient(undefined, location);
+  return getVertexAIClient(undefined, getOmniVertexLocation());
 }
 
 // Defer firestore and storage initialization until first use (for test compatibility)
@@ -1147,7 +1150,13 @@ export const generateImageV3 = onCall({ ...creativeGatewayCallableOptions, timeo
         data: ref.data,
       })),
     ];
-    if ((useGoogleSearch || useGrounding || useImageSearch) && model === 'fast') {
+    if (useImageSearch) {
+      throw new HttpsError(
+        'failed-precondition',
+        'Image Search grounding is not supported by the current image generation models.'
+      );
+    }
+    if ((useGoogleSearch || useGrounding) && model === 'fast') {
       throw new HttpsError(
         'failed-precondition',
         'Search grounding is not supported on the Fast image generation model. Switch to Pro tier for search grounding.'

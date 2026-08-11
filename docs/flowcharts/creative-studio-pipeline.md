@@ -33,7 +33,7 @@ graph TD
 
     %% AI & Storage Infrastructure
     subgraph GCP ["Google Cloud Platform"]
-        VertexImage["Vertex AI (`gemini-3-pro-image-preview`)"]
+        VertexImage["Vertex AI (`gemini-3-pro-image`)"]
         CloudStorage["Firebase Cloud Storage (`gs://`)"]
         Firestore["Firestore Database (`assets` collection)"]
     end
@@ -87,6 +87,6 @@ graph TD
 2. **Canvas State Sync:** Any interaction with the visual canvas is handled by the **Canvas Interaction Engine** (a wrapper around `Fabric.js`), which syncs the exact layer, position, and filter data with the `FabricState`. This is persisted globally in the **Zustand `creativeSlice`** so it survives route changes.
 3. **Trigger Generation:** When a new image is requested (e.g., text-to-image or outpainting), the **ImageGenerationService** on the client bundles the prompt, style preferences, and any base64 reference images, dispatching a secure HTTPS Callable request to the backend.
 4. **Backend Security Gate:** The **`generateImage`** Cloud Function executes. Before reaching Vertex AI, it hits the **Quota & Tier Verification** logic, checking the user's Firestore document. If a Free tier user requests an 8K generation or exceeds their 50/day limit, the function rejects immediately (preventing the "Thundering Herd" API cost issue).
-5. **AI Execution:** The verified payload is sent to **Vertex AI** using the `gemini-3-pro-image-preview` model. 
+5. **AI Execution:** The verified payload is sent to **Vertex AI** using the `gemini-3-pro-image` model.
 6. **Storage & Persistence:** Vertex AI returns the raw image buffer. The Cloud Function securely uploads this buffer to **Firebase Cloud Storage**, retrieves the URL, and writes a metadata record to the **Firestore** `assets` collection for historical tracking.
 7. **Workspace Integration:** The Cloud Function returns the final asset data to the client's **ImageService**. The **AssetService** fetches the image and seamlessly injects it back into the **CanvasEngine**, updating the user's **Showroom** instantly without page reloads.

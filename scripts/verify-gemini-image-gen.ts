@@ -1,8 +1,8 @@
 
-import { GoogleGenAI } from '@google/genai';
 import * as dotenv from 'dotenv';
 import fs from 'fs';
 import path from 'path';
+import { getVertexAIClient } from '../packages/firebase/src/lib/vertexClient';
 
 // Load environment variables
 dotenv.config();
@@ -16,15 +16,14 @@ dotenv.config();
  * 3. End-to-end output saving
  */
 async function verifyGeminiImageGen() {
-    const apiKey = process.env.VITE_API_KEY || process.env.GOOGLE_GENAI_API_KEY || process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-        console.error('❌ No API KEY found in .env (VITE_API_KEY, GOOGLE_GENAI_API_KEY, or GEMINI_API_KEY)');
-        process.exit(1);
-    }
-
     console.log('🎨 Initializing Gemini 3 Pro Image Verification...');
 
-    const genAI = new GoogleGenAI({ apiKey });
+    // Match production: Vertex AI with Application Default Credentials on the
+    // image-specific global endpoint. Never use a browser or Developer API key.
+    const genAI = getVertexAIClient(
+        process.env.VERTEX_PROJECT_ID || process.env.GOOGLE_CLOUD_PROJECT,
+        process.env.VERTEX_IMAGE_LOCATION || 'global',
+    );
 
     const prompt = "A futuristic city floating in the clouds, detailed, 4k, golden hour";
 
@@ -34,10 +33,15 @@ async function verifyGeminiImageGen() {
 
     try {
         const result = await genAI.models.generateContent({
-            model: 'gemini-3-pro-image-preview',
+            model: 'gemini-3-pro-image',
             contents: [{ role: 'user', parts: [{ text: prompt }] }],
             config: {
                 responseModalities: ["IMAGE"],
+                imageConfig: {
+                    aspectRatio: '16:9',
+                    imageSize: '4K',
+                },
+                tools: [{ googleSearch: {} }],
                 safetySettings: [
                     {
                         category: 'HARM_CATEGORY_HARASSMENT',

@@ -7,8 +7,8 @@ from google.genai import types
 
 # --- Configuration ---
 PROJECT_ID = os.environ.get("GOOGLE_CLOUD_PROJECT", "indii-music-founder")
-LOCATION = "us-central1"
-MODEL_ID = "gemini-3-pro-image-preview"
+LOCATION = os.environ.get("VERTEX_IMAGE_LOCATION", "global")
+MODEL_ID = os.environ.get("GEMINI_IMAGE_MODEL", "gemini-3-pro-image")
 
 # Initialize the Gen AI Client for Vertex AI
 client = genai.Client(

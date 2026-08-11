@@ -18,6 +18,21 @@ describe('GenerateImageSchema', () => {
         expect(GenerateImageSchema.safeParse({ ...request, costReservationId: '   ' }).success).toBe(false);
         expect(GenerateImageSchema.safeParse({ ...request, costReservationId: 'x'.repeat(257) }).success).toBe(false);
     });
+
+    it('accepts the full GA Gemini image aspect-ratio set', () => {
+        const aspectRatios = [
+            '1:1', '1:4', '1:8', '2:3', '3:2', '3:4', '4:1', '4:3',
+            '4:5', '5:4', '8:1', '9:16', '16:9', '21:9', '9:21',
+        ];
+
+        for (const aspectRatio of aspectRatios) {
+            expect(GenerateImageSchema.safeParse({
+                prompt: 'Generate cover art',
+                aspectRatio,
+                costReservationId: 'image-aspect-ratio-test',
+            }).success).toBe(true);
+        }
+    });
 });
 
 describe('GenerateVideoSchema', () => {

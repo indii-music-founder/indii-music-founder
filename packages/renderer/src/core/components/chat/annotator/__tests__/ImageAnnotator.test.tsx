@@ -1,14 +1,16 @@
-import { render, screen, fireEvent } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { ImageAnnotator } from '../ImageAnnotator';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { AgentService } from '@/services/agent/AgentService';
+
+const mocks = vi.hoisted(() => ({
+    dispatchToolCall: vi.fn()
+}));
 
 // Mock AgentService
 vi.mock('@/services/agent/AgentService', () => ({
-    AgentService: vi.fn().mockImplementation(() => ({
-        dispatchToolCall: vi.fn().mockResolvedValue({ success: true })
-    }))
+    AgentService: vi.fn(function AgentServiceMock() {
+        return { dispatchToolCall: mocks.dispatchToolCall };
+    })
 }));
 
 // Mock uuid
@@ -36,6 +38,20 @@ describe('ImageAnnotator', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
+        mocks.dispatchToolCall.mockResolvedValue({ success: true });
+        vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
+            clearRect: vi.fn(),
+            beginPath: vi.fn(),
+            arc: vi.fn(),
+            stroke: vi.fn(),
+            fillRect: vi.fn(),
+            fill: vi.fn()
+        } as never);
+        vi.spyOn(HTMLCanvasElement.prototype, 'toDataURL').mockReturnValue('data:image/png;base64,bWFzaw==');
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
     });
 
     it('renders color swatches and toolbar', () => {
@@ -72,5 +88,52 @@ describe('ImageAnnotator', () => {
         
         // No crash
         expect(screen.getByText(/Apply Edits/i)).toBeInTheDocument();
+    });
+
+    it('sends the source image with drawn annotations to the editing tool', async () => {
+        render(<ImageAnnotator {...defaultProps} />);
+
+        const image = screen.getByAltText('Annotation target');
+        Object.defineProperties(image, {
+            naturalWidth: { configurable: true, value: 100 },
+            naturalHeight: { configurable: true, value: 100 }
+        });
+        fireEvent.load(image);
+
+        const canvas = document.querySelector('canvas');
+        expect(canvas).not.toBeNull();
+        vi.spyOn(canvas!, 'getBoundingClientRect').mockReturnValue({
+            left: 0,
+            top: 0,
+            width: 100,
+            height: 100,
+            right: 100,
+            bottom: 100,
+            x: 0,
+            y: 0,
+            toJSON: () => ({})
+        });
+
+        const drawingSurface = image.parentElement!;
+        fireEvent.mouseDown(drawingSurface, { clientX: 10, clientY: 10 });
+        fireEvent.mouseMove(drawingSurface, { clientX: 30, clientY: 10 });
+        fireEvent.mouseUp(drawingSurface);
+
+        const redInput = await screen.findByPlaceholderText('Prompt for red regions...');
+        fireEvent.change(redInput, { target: { value: 'make this region blue' } });
+        fireEvent.click(screen.getByRole('button', { name: /Apply Edits/i }));
+
+        await waitFor(() => expect(mocks.dispatchToolCall).toHaveBeenCalledWith(
+            'generalist',
+            'edit_image_with_annotations',
+            expect.objectContaining({
+                imageId: 'test-image-id',
+                imageUrl: 'https://example.com/test.jpg',
+                maskData: 'data:image/png;base64,bWFzaw==',
+                annotations: [{ color: 'red', cx: 10, cy: 10, r: 20 }],
+                colorPrompts: expect.objectContaining({ red: 'make this region blue' })
+            }),
+            'orig-msg-id'
+        ));
     });
 });
