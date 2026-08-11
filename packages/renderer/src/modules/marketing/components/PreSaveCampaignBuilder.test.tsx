@@ -10,6 +10,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock('@/services/marketing/PreSaveCampaignService', () => ({
     preSaveCampaignService: {
         createCampaign: mocks.createCampaign,
+        listCampaigns: vi.fn().mockResolvedValue([]),
         getCampaignUrl: (campaignId: string) => `https://app.indii.music/presave/${campaignId}`,
     },
 }));
@@ -87,5 +88,33 @@ describe('PreSaveCampaignBuilder', () => {
 
         expect(await screen.findByText(/Campaign was not published/i)).toBeInTheDocument();
         expect(screen.queryByRole('button', { name: /^Share$/i })).not.toBeInTheDocument();
+    });
+
+    it('renders listed smart links and switches to edit mode when requested', async () => {
+        const { preSaveCampaignService } = await import('@/services/marketing/PreSaveCampaignService');
+        vi.mocked(preSaveCampaignService.listCampaigns).mockResolvedValueOnce([
+            {
+                id: 'campaign-456',
+                title: 'Solar Echoes',
+                releaseDate: new Date('2026-10-15T00:00:00').getTime(),
+                coverArtUrl: 'https://cdn.indii.music/solar.jpg',
+                links: { spotify: 'https://open.spotify.com/album/solar' },
+                captureEmails: true,
+                capturePhones: false,
+                themeColor: '#22c55e',
+                status: 'active',
+                leadCount: 42,
+                createdAt: Date.now(),
+            },
+        ]);
+
+        render(<PreSaveCampaignBuilder />);
+
+        expect(await screen.findByText('Solar Echoes')).toBeInTheDocument();
+        expect(screen.getByText('42 presaves')).toBeInTheDocument();
+
+        fireEvent.click(screen.getByRole('button', { name: /Edit/i }));
+
+        expect(await screen.findByDisplayValue('Solar Echoes')).toBeInTheDocument();
     });
 });

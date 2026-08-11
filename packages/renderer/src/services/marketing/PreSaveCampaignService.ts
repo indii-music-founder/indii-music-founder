@@ -72,6 +72,22 @@ export class PreSaveCampaignService {
         return result.data;
     }
 
+    async listCampaigns(): Promise<Array<PreSaveCampaign & { leadCount: number; createdAt: number }>> {
+        try {
+            const list = httpsCallable<
+                Record<string, never>,
+                { campaigns: Array<PreSaveCampaign & { leadCount: number; createdAt: number }> }
+            >(functions, 'listPreSaveCampaigns');
+            const result = await list({});
+            return result.data?.campaigns ?? [];
+        } catch (error) {
+            logger.error('[PreSaveService] Failed to list campaigns', {
+                error: error instanceof Error ? error.message : String(error),
+            });
+            return [];
+        }
+    }
+
     async recordLead(
         campaignId: string,
         lead: PreSaveLeadInput,

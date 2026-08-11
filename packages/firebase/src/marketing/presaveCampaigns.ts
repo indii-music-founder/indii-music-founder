@@ -265,3 +265,63 @@ export const getPreSaveCampaign = onCall(
     return getPublicPreSaveCampaign(campaignId);
   },
 );
+
+export async function listUserPreSaveCampaigns(
+  ownerId: string,
+  firestore: admin.firestore.Firestore = admin.firestore(),
+): Promise<Array<PublicPreSaveCampaign & { leadCount: number; createdAt: number }>> {
+  if (!ownerId || ownerId.length < 1 || ownerId.length > 128) {
+    throw new HttpsError('invalid-argument', 'Owner ID is invalid.');
+  }
+  const snapshot = await firestore
+    .collection(PRE_SAVE_CAMPAIGNS_COLLECTION)
+    .where('ownerId', '==', ownerId)
+    .get();
+
+  const results: Array<PublicPreSaveCampaign & { leadCount: number; createdAt: number }> = [];
+  for (const doc of snapshot.docs) {
+    const campaign = parseStoredCampaign(doc.data());
+    if (campaign && campaign.status === 'active') {
+      const createdAtMillis = timestampToMillis(doc.data().createdAt) ?? Date.now();
+      results.push({
+        id: doc.id,
+        title: campaign.title,
+        releaseDate: campaign.releaseDate.toMillis(),
+        coverArtUrl: campaign.coverArtUrl,
+        links: campaign.links,
+        captureEmails: campaign.captureEmails,
+        capturePhones: campaign.capturePhones,
+        themeColor: campaign.themeColor,
+        status: 'active',
+        leadCount: campaign.leadCount,
+        createdAt: createdAtMillis,
+      });
+    }
+  }
+  return results.sort((a, b) => b.createdAt - a.createdAt);
+}
+
+export const listPreSaveCampaigns = onCall(
+  {
+    region: 'us-central1',
+    memory: '512MiB',
+    enforceAppCheck: true,
+    secrets: [arcjetKey],
+    cors: publicOrigins,
+  },
+  async (request) => {
+    validateAppCheckV2(request);
+    const ownerId = request.auth?.uid;
+    if (!ownerId) throw new HttpsError('unauthenticated', 'Sign in to list campaigns.');
+
+    const protection = await protectAnonymousSignupRequest(
+      request.rawRequest,
+      `presave-list-${ownerId.slice(0, 24)}`,
+      'allow-low-risk-read',
+    );
+    throwForProtection(protection);
+    const campaigns = await listUserPreSaveCampaigns(ownerId);
+    return { campaigns };
+  },
+);
+
