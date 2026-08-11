@@ -1,173 +1,80 @@
 ---
 name: go
-description: Universal recursive execution loop for indii. Reviews progress, re-evaluates strategy, and drives task completion to verified, shipping state. Invoke as /go or @go.md at any point during a session.
+description: Recursive execution motor for an active indii objective. Use when the user invokes /go or @go, asks to continue autonomously, wants a blocker driven to resolution, or needs the current task carried from implementation through proportional verification and delivery. It works in coherent verification units, preserves the direct-main policy, and never creates checkpoint or micro-fix commits.
 ---
 
-# @go — Recursive Execution Loop (v2)
+# Go
 
-## Purpose
+Drive the current objective to an evidence-backed terminal state. The active user request outranks stale task files, old checkpoints, and legacy ledgers.
 
-A self-reflective execution engine that prevents getting stuck, ensures all user prompts are acknowledged, and drives tasks from start to verified completion. Use this when you want the agent to keep moving autonomously.
+## 1. Reconstruct current state
 
-## When to Invoke
+Before changing anything:
 
-- After a work order or `implementation_plan.md` is approved and you want hands-free execution
-- When the agent has lost track of the broader goal
-- When multiple tasks are in flight and you want a checkpoint
-- At the start of a new session to resume prior context
+- state the active objective and definition of done;
+- inspect the current diff, branch, `origin/main` relationship, and relevant handoff;
+- separate current-task files from unrelated dirty files;
+- identify completed, active, blocked, and unverified acceptance criteria;
+- read `.agent/workflows/branch-safety.md` before code, git, CI, or push actions;
+- use `/skill-skill` when a specialized capability or multi-tool chain is likely.
 
----
+Never overwrite, stage, stash, commit, or attribute unrelated work.
 
-## Step 1 — Context & Scan (MANDATORY, always run first)
+## 2. Choose one coherent verification unit
 
-```bash
-# Always run these immediately — in parallel
-view_file(".agent/artifacts/task.md")      # Preferred ledger — fall back to root task.md ONLY if it matches the current goal (Stale Ledger Guard)
-git status && git log -n 3 --oneline       # Clean working state?
+A unit may contain several tightly coupled edits when they share one contract and one proof surface. Do not force one line, one file, or one micro-task per cycle.
+
+For the unit:
+
+1. State the expected behavior and failure signal.
+2. Reproduce or add a test when behavior is objectively testable.
+3. Implement the smallest complete mechanism.
+4. Verify affected callers, schemas, shared literals, and state transitions.
+5. Run the narrowest decisive checks, escalating with fan-out and risk.
+6. Apply `/better` only to the bounded files when a real quality opportunity remains.
+7. Update a diagram or durable ledger only when the unit produced verified, reusable state that belongs there.
+
+Keep related work uncommitted until the complete task is ready for its one coherent delivery.
+
+## 3. Blocker and strike handling
+
+Classify the blocker before acting:
+
+- **Code/test:** reproduce, diagnose, fix the logged cause, add regression evidence.
+- **Architecture:** inspect dependencies and contracts; use `zoom-out` or a relevant diagram when relationships are genuinely hard to reason about linearly.
+- **Tool unavailable:** choose a Certified fallback from the catalog.
+- **Authentication:** use the official sign-in or authorization flow; never switch identities or harvest credentials.
+- **External authority/material cost/destructive action:** pause and name the exact permission required.
+- **Unrelated dirty state:** isolate by scope and continue only when safe.
+
+After two failed attempts with the same mechanism, stop that approach, add instrumentation or a deterministic reproducer, and make an architectural pivot. Do not lower acceptance criteria.
+
+## 4. Evidence and authenticity
+
+- Tests prove only the contract they exercise.
+- UI proof uses an approved available browser capability and follows `.agent/REAL_USER_AUTHENTICITY.md`.
+- Mock, emulator, local-real, and production-real results remain distinct.
+- Never say a partner, customer, deployment, billing path, or provider accepted something without genuine external evidence.
+
+## 5. Completion and delivery
+
+When every acceptance criterion has decisive evidence:
+
+1. Re-read the bounded diff and run proportional final checks.
+2. Invoke the canonical `/end` workflow for repository closure.
+3. Let `/ci-validate` perform observational validation; repairs return here and address only logged in-scope causes.
+4. If repository delivery is part of the active request, create one coherent commit on `main`, push only with `git push origin HEAD:main`, and inspect CI for the exact SHA.
+
+Do not create WIP, checkpoint, per-iteration, or speculative repair commits.
+
+## Progress update
+
+Report only meaningful state changes:
+
+```text
+OBJECTIVE: <active objective>
+UNIT: <coherent work unit>
+STATE: <completed | active | blocked | verifying>
+EVIDENCE: <decisive result or missing proof>
+NEXT: <next action inside current authority>
 ```
-
-Also scan for **work order documents** (the source of truth for what to build):
-
-```bash
-ls docs/PRODUCTION_WORK_ORDER*.md          # Phase 1 + Phase 2 work orders
-view_file("implementation_plan.md")        # If one exists
-```
-
-Also **re-read ALL user prompts** in the current session and verify:
-
-- Was each one acknowledged?
-- Was each one implemented?
-- Was each one verified?
-
----
-
-## Step 2 — State Snapshot
-
-Output this block before taking any action:
-
-```markdown
-### State Snapshot
-- **Goal:** [One-line summary of what we're trying to accomplish]
-- **Status:** [X% complete / N of M tasks done]
-- **Last Completed:** [Most recent checked-off item]
-- **Next Action:** [Exact WO + specific sub-task + target file]
-- **Blockers:** [Any issues, or "None"]
-- **Session Clock:** [How long in this session / estimated remaining]
-- **Uncommitted Changes:** [Yes/No — if Yes, commit before new work]
-```
-
----
-
-## Step 3 — Re-evaluation Logic
-
-Apply these rules before executing:
-
-| Situation | Action |
-|-----------|--------|
-| Same fix failing | **Strike Ladder** (shared with /middle, /issue, /better): Strike 2 = pivot — re-diagnose from scratch, add logging, prove root cause, propose a fundamentally different approach. Strike 3 = STOP and escalate to the user with a detailed blocker |
-| Strategy in plan is wrong | Update `implementation_plan.md` or work order immediately before continuing |
-| User prompt not yet addressed | Address it NOW before moving to next task |
-| Uncommitted changes from prior task | **COMMIT first** — never start new work with a dirty tree |
-| UI change was made | **Visual verify** — use browser subagent to screenshot before/after |
-
-### Error Memory Check (MANDATORY before debugging)
-
-Before attempting ANY fix, check the error ledger:
-
-```bash
-view_file(".agent/skills/error_memory/ERROR_LEDGER.md")  # Search for matching pattern
-mcp_mem0_search-memories(query="<error message>", userId="indii-errors")
-```
-
-If a match is found, apply the documented fix. If this is a new error, document it after solving.
-
----
-
-## Step 4 — Execution Loop
-
-1. **Select ONE task** from `task.md` or the active work order
-   - Priority: **Blockers > Dependencies > CEO Priority > Document Order**
-   - If a task has sub-tasks, complete ALL sub-tasks before marking the parent done
-2. **Execute** — write code, update configs, run verification
-3. **Verify immediately:**
-   - Code change → `npm run typecheck` (must pass before moving on)
-   - UI change → browser subagent screenshot
-   - Service change → run relevant unit test file
-4. **Mark** `[x]` in `task.md` immediately upon completion
-5. **IP & asset register gate:** Before declaring a material task complete, assess whether it created or materially changed platform IP, brand/creative material, model configuration, datasets, customer-controlled content, or a third-party licence dependency. Update `docs/data-room/13_IP_ASSET_REGISTER.md`, or explicitly record why no material asset was created. Put any human/counsel/counterparty/registration prerequisite in `docs/RELEASE_CHECKLIST.md`.
-6. **Commit cadence:** Commit after each completed WO item (not each line change)
-   - Message format: `feat(wo-N): brief description`
-   - Example: `feat(wo-1): gate shell modules behind dev flag`
-7. **Recurse** — if tasks remain, loop back to Step 2
-
-### Dependency Detection
-
-Before starting a task, check:
-
-- Does this task modify files that another pending task also modifies?
-- Does this task depend on another task's output?
-- If yes to either → resolve the dependency first or batch them
-
----
-
-## Step 5 — The Gauntlet (Final Verification)
-
-Only when ALL tasks in `task.md` are `[x]`:
-
-```bash
-npm run typecheck   # Must: 0 errors
-npm run lint        # Must: 0 errors (warnings acceptable)
-npm run build       # Must: successful
-npm test -- --run   # Must: all pass
-git status          # Must: clean (or intentional changes staged)
-```
-
-Also verify:
-
-- No `TODO` or `FIXME` left in modified files
-- No `console.log` debug statements left in production code
-- All user prompts from this session addressed
-- If UI was changed: final browser subagent walkthrough
-
-### Visual Gauntlet (if UI work was done)
-
-```
-browser_subagent: Navigate to localhost:4242, visit each modified module,
-take screenshots, verify no visual regressions or placeholder text visible
-```
-
----
-
-## Step 6 — Completion Signal
-
-Only after all tasks done AND Gauntlet passed:
-
-> *"✅ All tasks complete. Gauntlet passed. Ready for your next directive, BOSSMAN."*
-
-Include a completion summary:
-
-```markdown
-### Completion Summary
-- **Tasks completed:** N of M
-- **Commits made:** [list of commit hashes + messages]
-- **Files modified:** N files across M modules
-- **Tests:** All passing (N specs)
-- **Build:** Clean (bundle size: X MB)
-- **Visual verification:** [Screenshot link if applicable]
-```
-
----
-
-## Session Persistence
-
-If the session is about to end (context getting long, user closing):
-
-1. Update `task.md` with current state — every `[x]`, `[/]`, and `[ ]` must be accurate
-2. Commit all work in progress with message: `wip(wo-N): [what was in progress]`
-3. Leave a note at the top of `task.md`:
-
-```markdown
-<!-- RESUME POINT: WO-N, sub-task Y. Next action: [specific next step]. -->
-```
-
-This lets the next session's `/go` invocation pick up exactly where we left off.

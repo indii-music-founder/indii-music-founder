@@ -24,6 +24,14 @@ else
   echo "✅ API System Integrity check passed."
 fi
 
+echo "--> Step 0.75: Capability Catalog and Routing Policy Check"
+if ! npm run validate:capabilities; then
+  echo "❌ Capability catalog validation failed."
+  fail=1
+else
+  echo "✅ Capability catalog validation passed."
+fi
+
 echo "--> Step 1: Duplicate Identifier Check in appSlice.ts"
 if [ -f packages/renderer/src/core/store/slices/appSlice.ts ]; then
   duplicates=$(grep -rn "^  _last\|^  _cached\|^  current\|^  is" packages/renderer/src/core/store/slices/appSlice.ts | sort | uniq -d)
@@ -79,4 +87,3 @@ else
   echo "✅ All CI checks passed successfully! Ready to push."
   exit 0
 fi
-

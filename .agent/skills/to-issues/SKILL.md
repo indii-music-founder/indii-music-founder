@@ -1,6 +1,6 @@
 ---
 name: to-issues
-description: Break a plan, spec, or PRD into independently-grabbable issues on the project issue tracker using tracer-bullet vertical slices. Use when user wants to convert a plan into issues, create implementation tickets, or break down work into issues.
+description: Break a plan, spec, or PRD into dependency-ordered tracer-bullet issue drafts. Use when the user wants implementation tickets, vertical slices, or a plan converted into issues. Draft locally and get the breakdown right first; publish only when the user explicitly requests issue creation on the named tracker and official authentication is available.
 ---
 
 # To Issues
@@ -49,11 +49,11 @@ Ask the user:
 
 Iterate until the user approves the breakdown.
 
-### 5. Publish the issues to the issue tracker
+### 5. Prepare issue drafts
 
-For each approved slice, publish a new issue to the issue tracker. Use the issue body template below. These issues are considered ready for AFK agents, so publish them with the correct triage label unless instructed otherwise.
+For each approved slice, prepare a title, body, dependencies, and proposed labels using the template below. Do not call the issue tracker yet.
 
-Publish issues in dependency order (blockers first) so you can reference real issue identifiers in the "Blocked by" field.
+If the user explicitly asks to publish, use the official authenticated connector or CLI, create issues in dependency order, and read back each real identifier before referencing it from dependents. Missing or expired credentials require the official authorization flow. Never close or modify a parent issue unless the user separately requests that write.
 
 <issue-template>
 ## Parent

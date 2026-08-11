@@ -2,9 +2,11 @@
 name: agentic-harness-architect
 version: 1.0.0
 description: |
-  Reference implementation guide for the Agentic Harness Architect skill.
-  Contains primitive definitions, scoring rubrics, architectural patterns,
-  and concrete code examples for each of the 12 production-grade primitives.
+  Design, review, or implement production-grade AI agent harnesses using 12
+  primitives for tools, authority, isolation, state, approvals, observability,
+  evaluation, and recovery. Use when building an agent runtime, tool gateway,
+  approval system, autonomous workflow, MCP harness, or assessing whether an
+  existing agent architecture is safe and production-ready.
 ---
 
 # Agentic Harness Architect — Reference Implementation

@@ -1,4 +1,9 @@
-# Hooks Skill v1.0
+---
+name: hooks
+description: Audit, diagnose, design, or implement hooks across Claude Code lifecycle hooks, React hooks, Firebase triggers, background jobs, webhooks, and Git hooks. Use when hooks are missing, broken, duplicated, unsafe, slow, leaking resources, or need review. Default to an inventory and recommendations; change hooks only when the user requested implementation for the named layer.
+---
+
+# Hooks
 
 > Full-spectrum hooks management for indii. Discovers, audits, evaluates,
 > recommends, and implements hooks across every layer of the stack.
@@ -35,9 +40,9 @@ This skill covers **all hook layers** in indii:
 
 ## Protocol
 
-### Phase 1: Discovery (run ALL in parallel)
+### Phase 1: Discovery
 
-Simultaneously collect:
+Collect independently where the current host supports safe concurrency:
 
 1. **Agent hooks** — Read `.claude/settings.json`, list every event + command + timeout
 2. **Script hooks** — Glob `.claude/scripts/**` and read each file
@@ -133,14 +138,14 @@ For each recommendation, provide:
 
 ### Phase 5: Implement (execute on request)
 
-When the user confirms a recommendation, implement it immediately:
+When the user requests or confirms a recommendation, implement only that bounded change:
 
 #### Agent Hook Changes
 - Edit `.claude/settings.json` following the merge pattern (never replace, always merge)
 - Create/modify scripts in `.claude/scripts/`
 - Validate with: `jq -e '.hooks.<EVENT>[]' .claude/settings.json`
-- Pipe-test the command before committing
-- Commit + push
+- Pipe-test the command before delivery
+- Keep the change inside the parent task's coherent commit; this skill does not stage, commit, or push independently
 
 #### React Hook Changes
 - Create/modify in `packages/renderer/src/hooks/` or the appropriate module's `hooks/` directory

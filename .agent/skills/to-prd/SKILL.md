@@ -1,6 +1,6 @@
 ---
 name: to-prd
-description: Turn the current conversation context into a PRD and publish it to the project issue tracker. Use when user wants to create a PRD from the current context.
+description: Turn the current conversation and verified project context into a product requirements document. Use when the user asks for a PRD, product spec, requirements synthesis, or a formal feature brief. Produce a local draft by default; publish to an issue tracker only when the user explicitly requests that named external write and official authentication is available.
 ---
 
 This skill takes the current conversation context and codebase understanding and produces a PRD. Do NOT interview the user — just synthesize what you already know.
@@ -17,7 +17,9 @@ A deep module (as opposed to a shallow module) is one which encapsulates a lot o
 
 Check with the user that these modules match their expectations. Check with the user which modules they want tests written for.
 
-3. Write the PRD using the template below, then publish it to the project issue tracker. Apply the `ready-for-agent` triage label - no need for additional triage.
+3. Write the PRD using the template below. Save or return the draft in the location requested by the user.
+
+4. Publish only when the user explicitly asks to publish to the named issue tracker. Before publishing, show the exact title/body/labels, use the official authenticated connector or CLI, and read back the created identifier. Missing or expired credentials require the official authorization flow. Drafting never implies publishing authority.
 
 <prd-template>
 

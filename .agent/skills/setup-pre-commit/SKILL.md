@@ -78,11 +78,9 @@ Only create if no Prettier config exists. Use these defaults:
 - [ ] `prettier` config exists
 - [ ] Run `npx lint-staged` to verify it works
 
-### 8. Commit
+### 8. Hand off to the repository delivery workflow
 
-Stage all changed/created files and commit with message: `Add pre-commit hooks (husky + lint-staged + prettier)`
-
-This will run through the new pre-commit hooks — a good smoke test that everything works.
+Keep the hook files inside the parent task's coherent change. Re-read the diff and use the repository's current delivery procedure; this skill does not stage or commit independently. A later task commit is a useful smoke test only after the direct hook checks above pass.
 
 ## Notes
 

@@ -1,40 +1,15 @@
 ---
-description: Autonomous Visual QA Workflow for Antigravity
+description: Host-neutral visual QA workflow. Routes to the owned auto_qa skill, requires an approved available browser capability, and preserves honest structural/simulated/local-real/production-real evidence boundaries.
 ---
 
-# Auto QA Workflow
+# /auto_qa — Visual QA
 
-This workflow allows Antigravity to autonomously test the application and report back to INDEX via `AGENT_BRIDGE.md`.
+Read `.agent/skills/auto_qa/SKILL.md` completely and follow it.
 
-## Steps
+Before live-user, browser end-to-end, release-acceptance, demo-readiness, production, or free-tier validation, read `.agent/REAL_USER_AUTHENTICITY.md`. Confirm the exact environment, genuine account/session, entitlement state, intended path, cost boundary, and approved browser capability.
 
-1. **Check Bridge Status**
-    Read `AGENT_BRIDGE.md`.
-    - If Status is `QA_IN_PROGRESS` or `QA_PASSED`, abort (don't duplicate work).
-    - If Status is `BUILD_COMPLETE` or `PROTOCOL_INIT`, proceed.
+Do not depend on `AGENT_BRIDGE.md`, a fixed localhost port, one browser provider, injected authentication, mocks, seeded data, or fabricated service responses. If real state is unavailable, report the strongest honest structural or simulated evidence and the missing official prerequisite.
 
-2. **Update Bridge Limit**
-    Write to `AGENT_BRIDGE.md`:
-    - Set `STATUS: QA_IN_PROGRESS`.
+Output a bounded report with environment, evidence level, path, decisive DOM/screenshot/console evidence, actions intentionally not taken, and PASS/PARTIAL/FAIL verdict.
 
-3. **Launch Visual Test**
-    // turbo
-    Use `browser_subagent` to:
-    - Open `http://localhost:4242`.
-    - Navigate to `/workflow`.
-    - Check for "undefined" text or red warning icons.
-    - Check browser console for errors.
-    - Screenshot the result.
-
-4. **Analyze & Report**
-    Based on the browser findings:
-    - If errors found -> Write `STATUS: QA_FAILED` and populate `[NEEDS]` section.
-    - If clean -> Write `STATUS: QA_PASSED`.
-
-5. **Signal Handoff**
-    Add a log entry: "QA Cycle Complete. Waiting for INDEX."
-
-## Usage
-
-Run directly when INDEX signals a build is ready, or use via trigger.
 > **Mainline delivery gate:** Before any code, git, CI, push, or optional branch action, read and obey [`branch-safety.md`](branch-safety.md). Direct-to-`main` is mandatory unless the user explicitly requests a branch.

@@ -1,124 +1,60 @@
 ---
 name: auto_qa
-description: Autonomous Visual QA for indii. Uses the browser subagent to visually inspect the live app at localhost:4242, capture screenshots, and report results back via AGENT_BRIDGE.md for INDEX to read. Triggered when a build completes or when INDEX signals BUILD_COMPLETE.
+description: Evidence-driven visual QA for indii using an approved browser capability that is actually available in the current host. Use after UI changes, for responsive or interaction checks, or when the user asks for screenshots, DOM evidence, console inspection, or a real signed-in UI walkthrough. Do not use as a substitute for unit tests, and never claim live-user proof from mocks or injected authentication.
 ---
 
-# @auto_qa — Autonomous Visual QA
+# Auto QA
 
-## Purpose
+Verify the visible product surface without inventing state. The output is an environment-bound QA report, not a general claim that production works.
 
-Perform eyes-on validation of the running application without human intervention. The browser subagent navigates the UI, checks for visual regressions, console errors, and broken states, then writes a structured report to `AGENT_BRIDGE.md` for INDEX to consume.
+## Preconditions
 
-## When to Invoke
+1. Read `.agent/REAL_USER_AUTHENTICITY.md` before any live-user, end-to-end, production, demo-readiness, or release-acceptance claim.
+2. Confirm the exact URL, build type, account/session, plan or entitlement state, and feature path.
+3. Use an approved browser capability exposed by the current host. Do not hard-code one provider.
+4. If official authentication is missing or expired, stop and present the official sign-in flow.
+5. Do not use seeded product data, injected auth, fabricated responses, artificial entitlements, or a mocked build as real-user evidence.
 
-- INDEX signals `STATUS: BUILD_COMPLETE` in `AGENT_BRIDGE.md`
-- After a major feature deployment
-- As part of CI validation before pushing to `main`
-- When `/go` Gauntlet is not sufficient (UI-only bugs)
+## Select the proof level
 
----
+| Level | Allowed evidence | Honest claim |
+| --- | --- | --- |
+| Structural | Component/unit tests or static render | The UI contract renders structurally. |
+| Simulated | Explicit mock/emulator path | The simulated path behaves as asserted. |
+| Local-real | Local build with genuine signed-in account and real persisted data | The exercised local path worked for that account and build. |
+| Production-real | Production build, genuine account, real provider path | The exercised production path worked at the recorded time. |
 
-## Step 1 — Bridge Status Check
+Never promote one level into another.
 
-```bash
-cat AGENT_BRIDGE.md | grep STATUS
-```
+## Workflow
 
-| Bridge Status | Action |
-|--------------|--------|
-| `QA_IN_PROGRESS` | **Abort** — don't duplicate a running QA session |
-| `QA_PASSED` | **Abort** — already validated |
-| `BUILD_COMPLETE` | **Proceed** |
-| `PROTOCOL_INIT` | **Proceed** |
+1. Start or locate the intended environment and record its URL.
+2. Inspect the DOM before clicking. Prefer stable roles, labels, test IDs, and visible text.
+3. Exercise only the task's bounded path. Avoid paid, destructive, publishing, or irreversible controls unless explicitly authorized.
+4. Inspect relevant console and network failures when the browser capability exposes them.
+5. Capture screenshots at the state that proves the acceptance criterion; do not collect ornamental screenshots.
+6. Re-check the DOM after each material action rather than relying on timing sleeps.
+7. Clean up only resources created by this QA run. Never delete user data to reset the environment.
 
----
+## Failure behavior
 
-## Step 2 — Set Bridge to In-Progress
+- Retry a flaky interaction at most twice after re-reading the DOM and environment state.
+- If the required feature state is absent, report it as unavailable rather than injecting it.
+- If the action would incur material cost or write externally, stop before the action and name the authority required.
+- If browser tooling is unavailable, fall back to structural tests and label the evidence boundary.
 
-Update `AGENT_BRIDGE.md`:
-
-```
-STATUS: QA_IN_PROGRESS
-QA_STARTED: [timestamp]
-```
-
----
-
-## Step 3 — Launch Visual Tests
-
-Use `browser_subagent` to navigate and inspect:
-
-### Core Modules to Test
-
-```
-1. Dashboard    → http://localhost:4242/
-2. Creative     → http://localhost:4242/creative
-3. Video        → http://localhost:4242/video
-4. Social       → http://localhost:4242/social
-5. Distribution → http://localhost:4242/distribution
-6. Finance      → http://localhost:4242/finance
-7. Workflow     → http://localhost:4242/workflow
-8. Agent        → http://localhost:4242/agent
-```
-
-### What to Check on Each Page
-
-- [ ] No "undefined" or "[object Object]" in rendered text
-- [ ] No red error banners or broken states
-- [ ] Console: no 403/401/404/500 errors
-- [ ] Console: no `Cannot read properties of undefined` crashes
-- [ ] Loading spinners resolve (not stuck indefinitely)
-- [ ] Primary CTA buttons are visible and not disabled unexpectedly
-
-### Screenshot Protocol
-
-Capture one screenshot per module. Name format: `qa_[module]_[pass|fail]_[timestamp].png`
-
----
-
-## Step 4 — Analyze & Write Report
-
-Based on findings, write to `AGENT_BRIDGE.md`:
-
-**If PASS:**
+## Report
 
 ```markdown
-STATUS: QA_PASSED
-QA_COMPLETED: [timestamp]
-MODULES_TESTED: Dashboard, Creative, Video, Social, Distribution, Finance, Workflow, Agent
-ISSUES_FOUND: None
-```
-
-**If FAIL:**
-
-```markdown
-STATUS: QA_FAILED
-QA_COMPLETED: [timestamp]
-ISSUES_FOUND:
-- [Module] - [Description of issue] - [Screenshot path]
-- [Module] - [Console error text]
-NEEDS:
-- [Fix description]
-```
-
----
-
-## Step 5 — Signal Handoff
-
-Add to `AGENT_BRIDGE.md`:
-
-```
-LOG: QA Cycle complete @ [timestamp]. Waiting for INDEX directive.
-```
-
-If failures found → immediately begin fixing. If clean → wait.
-
----
-
-## Key Config
-
-```
-Dev Server URL:  http://localhost:4242
-Bridge File:     AGENT_BRIDGE.md (project root)
-Screenshot Dir:  .agent/artifacts/qa_screenshots/
+# Visual QA
+- Environment/build:
+- Authentication/account class:
+- Evidence level:
+- Path exercised:
+- Passed:
+- Failed or unavailable:
+- Console/network evidence:
+- Screenshots/DOM evidence:
+- Actions intentionally not taken:
+- Final verdict: PASS | PARTIAL | FAIL
 ```

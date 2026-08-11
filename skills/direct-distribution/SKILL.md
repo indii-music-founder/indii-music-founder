@@ -1,93 +1,68 @@
-# Skill: Direct Distribution Engine (Industrial V3)
-
-**A proprietary, AI-first infrastructure designed to disrupt white-label incumbents (SonoSuite, LabelGrid, Eveara).**
-
-## ✅ Implementation Status
-
-| Phase | Name | Status | UI Component |
-| :--- | :--- | :--- | :--- |
-| 1 | Metal Layer | ✅ Complete | `PythonBridge`, `package_itmsp.py`, `ddex_generator.py` |
-| 2 | Brain Layer | ✅ Complete | `QCPanel.tsx`, `qc_validator.py`, `content_id_csv_generator.py` |
-| 3 | Authority Layer | ✅ Complete | `AuthorityPanel.tsx`, `isrc_manager.py` |
-| 4 | Bank Layer | ✅ Complete | `BankPanel.tsx`, `tax_withholding_engine.py`, `waterfall_payout.py` |
-| 5 | Keys (Merlin/MLC) | ✅ Complete | `KeysPanel.tsx`, `keys_manager.py` |
-| 6 | Transmission | ✅ Complete | `DeliveryService.ts`, `SFTPTransporter.ts` |
-
+---
+name: direct-distribution
+description: Evidence-controlled product skill for indii's Direct Distribution Engine: package generation, DDEX/ingestion metadata, QC, ISRC authority, tax/royalty calculations, keys/readiness, and transport. Use when designing, auditing, documenting, or implementing direct distribution. Keep repository implementation, automated tests, sandbox transport, production operation, and external partner/registry acceptance as separate states.
 ---
 
-## 🏗️ Phase 1: Metal Layer (Direct Infrastructure Disruption)
+# Direct Distribution Engine
 
-* **Strategy**: bypass the "marketing shell" model by building direct delivery pipes.
-* **Protocol**: DDEX ERN 4.3 (XML Standard).
-* **Transmission**: IBM Aspera FASP (Port 33001) for stable high-volume ingestion.
-* **Direct-to-DSP**: Use Transporter CLI for Apple Music `.itmsp` packaging, removing reliance on re-branded SaaS providers.
+This is a covenant document: verify every path and status at the current SHA before relying on it. Never convert implemented code or sandbox tests into a claim that Apple, Spotify, Merlin, MLC, an ISRC agency, a tax authority, or another partner has accepted indii.
 
-## 🧠 Phase 2: Brain Layer (AI Forensics & QC)
+## Capability status at 2026-08-11
 
-* **Metadata AI**: Automated enforcement of style guides (Apple/Spotify).
-* **Audio Forensics**: `audio_forensics.py` detects upsampled low-bitrate fraud.
-* **TIN Match Forensics**: Programmatic verification of Tax Identification Numbers to prevent "TIN Match Fail" status on DSP platforms.
-* **UI**: `QCPanel.tsx` provides interactive metadata validation and YouTube Content ID CSV generation.
+| Layer | Repository evidence | Current claim boundary |
+| --- | --- | --- |
+| Local execution | `packages/main/src/utils/python-bridge.ts`, `packages/main/src/utils/AgentSupervisor.ts` | Implemented local subprocess bridge; production packaging remains separately verified. |
+| Package/ingestion generation | `execution/distribution/package_itmsp.py`, `ingestion_build.py`, `ingestion_generator.py`, `xsd_validator.py` | Implemented generators and validators; do not cite the removed `ddex_generator.py`. |
+| QC and Content ID | `execution/distribution/qc_validator.py`, `content_id_csv_generator.py`, `packages/renderer/src/modules/distribution/components/QCPanel.tsx` | Implemented repository surface; provider ingestion acceptance is external evidence. |
+| Authority identifiers | `execution/distribution/isrc_manager.py`, `packages/renderer/src/modules/distribution/components/AuthorityPanel.tsx` | Local identifier management exists; issuer/manager status and registry recognition require external proof. |
+| Tax and waterfall | `execution/distribution/tax_withholding_engine.py`, `execution/finance/waterfall_payout.py`, `packages/renderer/src/modules/distribution/components/BankPanel.tsx` | Calculation/code paths exist; legal/tax compliance and real payouts require professional and live evidence. |
+| Keys/readiness | `execution/distribution/keys_manager.py`, `packages/renderer/src/modules/distribution/components/KeysPanel.tsx` | Readiness artifacts exist; Merlin/MLC membership or connection is not implied. |
+| Transport | `packages/renderer/src/services/distribution/DeliveryService.ts`, `BatchDeliveryService.ts`, `transport/SFTPTransporter.ts`, plus main-process distribution handlers | Transport mechanisms exist; successful sandbox or test transport is not partner production delivery. |
 
-## 🛡️ Phase 3: Authority Layer (Issuer Status)
+## Routing modes
 
-* **Identity**: Functioning as an **ISRC Manager** and **GS1 Prefix owner**.
-* **Registry**: `isrc_manager.py` maintains the permanent "license plate" records for assets.
-* **Exclusivity**: AI-driven Content ID filter to ensure sound recording exclusivity.
-* **UI**: `AuthorityPanel.tsx` provides ISRC/UPC generation and DDEX XML output.
+### Audit or explain
 
-## 🏦 Phase 4: Bank Layer (Digital Compliance & Clearinghouse)
+Read the relevant code, tests, directives, and current issue ledger. Report each claim as:
 
-* **Digital Compliance Officer**: Automated W-8BEN/W-9 selection and ingestion flow.
-* **TIN Logic**: Digital matching of TINs against residency records.
-* **Certification Block**: Mandatory digital signature under penalties of perjury for tax treaty claims.
-* **Waterfall Engine**: Advanced royalty splits (`Gross -> Indii Fee -> Recoup -> Splits`) via `waterfall_payout.py`.
-* **UI**: `BankPanel.tsx` provides tax calculation simulation and withholding visualization.
+- **Implemented** — current repository mechanism exists.
+- **Structurally verified** — automated test or local validator passes.
+- **Sandbox verified** — genuine sandbox endpoint accepted the exercised payload.
+- **Production verified** — production endpoint accepted and durable status was observed.
+- **Externally recognized** — partner, registry, authority, or contract evidence exists.
+- **Unknown/stale** — evidence is absent or out of date.
 
-## 🔑 Phase 5: Keys (Initiated)
+### Implement
 
-* **Merlin Readiness**: Automated compliance checks via `keys_manager.py`.
-* **MLC Bridge**: BWARM CSV generation (The MLC Standard) implemented.
-* **External Connections**: Future direct API integrations (Merlin/MLC).
+Use the active issue/acceptance contract and preserve:
 
-## 🛰️ Phase 6: Transmission (Active Delivery)
+- artist/account ownership and least privilege;
+- immutable source/provenance and deterministic identifiers;
+- schema/XSD validation before transport;
+- idempotency keys, retry boundaries, acknowledgements, and terminal failure states;
+- integer-safe money math and explicit currency/rounding policy;
+- auditable tax inputs without making legal or tax promises;
+- separate approval for partner delivery, publishing, payout, or other external writes.
 
-* **Gateway**: Secure SFTP transmission via Electron IPC bridges.
-* **Orchestration**: `DeliveryService.ts` handles package staging, validation, and multi-threaded upload.
-* **Security**: Path-containment and symlink resolution in `electron/handlers/sftp.ts`.
-* **Reliability**: Automated retry logic and connection pooling via `SFTPTransporter.ts`.
+### Deliver or validate externally
 
-## 🛠️ Execution Toolbox
+Read `.agent/REAL_USER_AUTHENTICITY.md`. Require official credentials, the exact target, a non-destructive or explicitly authorized payload, cost awareness, and observable acknowledgement. If authorization is missing or expired, stop and provide the official sign-in flow.
 
-| Script | Function | Category |
-| :--- | :--- | :--- |
-| `ddex_generator.py` | Industrial XML generation | Metal |
-| `package_itmsp.py` | Apple Music Store Package | Metal |
-| `audio_forensics.py` | Spectral fraud detection | Brain |
-| `qc_validator.py` | DSP style guide enforcement | Brain |
-| `content_id_csv_generator.py` | YouTube CID bulk metadata | Brain |
-| `isrc_manager.py` | Release identity persistence | Authority |
-| `tax_withholding_engine.py` | Digital tax officer (W-8/W-9/TIN) | Bank |
-| `waterfall_payout.py` | Multi-party industrial settlement | Bank |
-| `keys_manager.py` | BWARM/Merlin Compliance | Keys |
-| `DeliveryService.ts` | Multi-threaded package delivery | Transmission |
-| `SFTPTransporter.ts` | SFTP connection pooling | Transmission |
+## Verification map
 
-## 🖥️ UI Components
+Use the narrow tests associated with the changed layer, then escalate with fan-out. Relevant evidence includes:
 
-All panels are accessible via the **Distribution Dashboard** (`/distribution`):
+- Python unit/integration tests under `execution/distribution/`;
+- main-process distribution security and integration tests under `packages/main/src/handlers/`;
+- renderer distribution component/service tests;
+- typecheck/lint and affected builds;
+- schema/XSD validation against the exact generated package;
+- genuine sandbox/production acknowledgement only when that external validation is authorized.
 
-* **Distributors Tab**: Platform connection management
-* **Bank Layer Tab**: Tax compliance simulation
-* **Authority Tab**: ISRC/UPC/DDEX generation
-* **Brain (QC) Tab**: Metadata validation & Content ID
-* **Keys Tab**: Merlin Readiness & BWARM Generation
-* **Active Releases Tab**: Real-time delivery tracking and transmission monitor
+## Failure behavior
 
-## 🔌 Electron Integration
-
-All Python scripts and network protocols are executed via the Electron main process:
-
-* IPC handlers in `electron/handlers/distribution.ts` and `electron/handlers/sftp.ts`
-* Preload bridge in `electron/preload.ts`
-* Type definitions in `src/types/electron.d.ts`
+- Never retry a non-idempotent delivery blindly.
+- Preserve provider acknowledgements and correlation IDs without exposing credentials.
+- Do not mark delivery complete from a queued state.
+- Do not rewrite credentials or partner configuration to make a test pass.
+- After repeated failure, stop the mechanism, retain the package/evidence, and report the exact external or code prerequisite.

@@ -1,5 +1,5 @@
 ---
-description: The master manifest of all approved, global /commands for the agent swarm.
+description: Human-facing index of indii slash workflows. The generated capability catalog owns health, authority, availability, and automatic-selection state.
 ---
 
 > [!IMPORTANT]
@@ -7,9 +7,9 @@ description: The master manifest of all approved, global /commands for the agent
 > You MUST ONLY log issues in `.agent/test_ledger/OPEN_ISSUES_V3.md`. Do NOT create new or standalone markdown files (like BROWSER_ISSUES.md or issue-specific files) for issues.
 
 
-# WIIL-Skill: The Master Command Manifest
+# WIIL-Skill: Human Command Index
 
-This document serves as the single source of truth for all active, approved `/commands` and workflows available to the agent swarm. If a command is not listed here, it is considered deprecated or obsolete.
+This document keeps the command surface understandable to humans. `.agent/capabilities/catalog.json` is the generated machine-readable source for capability health, authority, availability, hashes, prerequisites, fallbacks, and automatic-selection state. A command listed here is not automatically selectable when the catalog marks it Quarantined or Deprecated.
 
 ## The Core Pipeline
 
@@ -17,28 +17,28 @@ These five commands form the backbone of the agent's development workflow.
 
 ### `/start` — The Genesis Workflow
 - **Purpose:** Initializes a new session, feature, or prompt.
-- **Actions:** Scans environment, checks handoff states (via `/opp`), asks clarifying questions, and maps macro-level architecture (via `/flowchart`).
+- **Actions:** Classifies request mode/profile/authority, reconciles relevant state, selects a healthy toolchain via `/skill-skill`, and defines observable completion. `/opp`, health checks, and diagrams are proportional rather than automatic.
 - **When to use:** At the very beginning of any task.
 
 ### `/proceed` — The Resume & Audit Gate
 - **Purpose:** Resumes an active task and runs a comprehensive compliance check before editing code.
-- **Actions:** Syncs handoff checkpoints, reviews git diff, runs checks for Anti-Laziness, security keys, model constants, and CSS alignment.
+- **Actions:** Reconciles the current request, actual diff/mainline state, handoff trust, authority, prerequisites, and the first unverified acceptance criterion before editing.
 - **When to use:** Whenever the user says "continue", or when resuming work after an interruption.
 
 ### `/middle` — The Execution Engine
 - **Purpose:** Drives the iterative coding and building process.
-- **Actions:** Reads `task.md`, executes the recursive build loop (via `/go`), resolves blockers using the Error Ledger, and maps technical state logic (via `/flowchart`).
+- **Actions:** Executes the certified toolchain in coherent verification units via `/go`, validates cross-boundary contracts, and uses error memory or diagrams only when relevant.
 - **When to use:** During the active development phase of a task.
 
 ### `/end` — The Closing Protocol
 - **Purpose:** Wraps up a session leaving a pristine repository.
-- **Actions:** Summarizes learnings, updates checkpoints, finalizes architecture flowcharts, and runs the entire testing and verification gauntlet (via `/ci-validate`).
+- **Actions:** Reconciles acceptance evidence, updates only relevant durable artifacts, runs observational `/ci-validate`, and delivers one coherent direct-main commit with exact-SHA CI when authorized.
 - **When to use:** When the task is complete and ready to be merged or handed off.
 
 ### `/skill-skill` — The Intelligent Skill Router
-- **Purpose:** Dynamic search and decision gate that selects and matches the perfect tool, skill, or workflow for any goal.
-- **Actions:** Evaluates active context, checks available manifests (WIIL-skill) and skills inventory, and outputs prioritized routing recommendations.
-- **When to use:** At any point during a session when you need guidance, have architectural questions, or need to decide on the next workflow.
+- **Purpose:** Canonical capability planner that selects the minimal sufficient healthy toolchain for any goal.
+- **Actions:** Classifies intent and authority, reads the generated catalog, overlays tools actually available in the current host, checks prerequisites/fallbacks, and executes inside existing authority.
+- **When to use:** At any point when routing is ambiguous, specialized tools are likely, a preferred tool is unavailable, or several capabilities must be sequenced safely.
 
 ---
 
@@ -52,63 +52,63 @@ These commands are called by the Core Pipeline or can be invoked directly as nee
 
 ### `/opp` — Operator Persona Activation
 - **Purpose:** Comprehensive environment audit and handoff state check.
-- **When to use:** Used automatically by `/start`. Can be run manually if the agent loses context.
+- **When to use:** Use selectively when the handoff/environment context is stale or missing; `/start` does not require the full scan for every T0/T1 task.
 
 ### `/go` — Recursive Execution Loop
 - **Purpose:** Universal recursive execution loop for task continuation and unsticking blocked agents.
 - **When to use:** Used automatically by `/middle`. Can be invoked directly to force the agent to push through a blocker.
 
 ### `/get-git` — Git Repository Sync & Monitor
-- **Purpose:** Checks local repository state, fetches origin, pulls/rebases changes, validates ahead commits using typecheck/Vitest, and manages background scheduling cron.
-- **When to use:** Run at start, middle, or manually to keep commits organized and pushed cleanly.
+- **Purpose:** Legacy combined sync/scheduling/delivery workflow. It is quarantined in the capability catalog until its responsibilities are separated.
+- **When to use:** Do not auto-select. Use `branch-safety.md` for mainline state, `/end` for delivery, and `/away` for exact-SHA monitoring.
 
 ### `/c` — Continuous Coordination Engine
-- **Purpose:** Acts as the continuous supervisor, maintaining system flow by running git sync cycles, committing workspace changes, and triggering issue resolution autonomously.
-- **When to use:** Used to put the agent into a persistent background monitor mode while the user steps away.
+- **Purpose:** Legacy persistent supervisor. Quarantined because it combines unrelated mutation, issue, and delivery authority.
+- **When to use:** Do not auto-select; redesign the workflow before reuse.
 
 ### `/away` — Autonomous Main CI Monitor
 - **Purpose:** Monitors the exact CI run for the latest direct `main` push, fixes logged root causes one coherent commit at a time, and stops when `main` is green.
 - **When to use:** When the user steps away and wants the agent to drive the current `main` delivery across the finish line.
 
 ### `/ci-validate` — Pre-Push CI Validation
-- **Purpose:** Comprehensive pre-push CI validation with commit consolidation to prevent bloat.
+- **Purpose:** Observational local validation plus exact-SHA remote delivery proof. It does not fix, commit, push, or rewrite secrets.
 - **When to use:** Used automatically by `/end`. Must be run before any push to `main`.
 
 ### `/flowchart` — Dynamic Architecture & Flow Visualizer
 - **Purpose:** Dynamic flowchart and visual diagram engine using Mermaid.
-- **When to use:** Used automatically by `/start`, `/middle`, and `/end`. Can be invoked anytime to map out complex architecture. Always saves to `docs/flowcharts/`.
+- **When to use:** When state, ownership, hierarchy, or multi-step flow is materially clearer as a diagram. Save only when the task calls for a durable repository artifact.
 
 ### `/db-sync` — Security Rules & Schema Auditor
 - **Purpose:** Scans codebase changes against firestore.rules and storage.rules to audit access privileges and prevent security leaks.
 - **When to use:** Used automatically in `/middle` when schemas shift, or manually before checking in rule modifications.
 
-### `/auto-fix` — Auto-Fix Sentry & CodeRabbit
-- **Purpose:** Automatically fetch and fix Sentry issues and CodeRabbit PR comments.
-- **When to use:** Used automatically within `/ci-validate`.
+### `/auto-fix` — Legacy External Auto-Fix (Quarantined)
+- **Purpose:** Historical combined Sentry/CodeRabbit/fix/delivery workflow. The catalog blocks automatic selection because its authority is too broad.
+- **When to use:** Quarantined pending separation of credential, external-issue, fix, and delivery authority. Never auto-run inside `/ci-validate`.
 
-### `/hunter` — Full-Spectrum Bug Hunter
-- **Purpose:** Surfaces security, data integrity, performance, and correctness issues across the stack.
-- **When to use:** Used automatically within `/ci-validate`.
+### `/hunter` — Legacy Slash Hunter (Quarantined)
+- **Purpose:** Historical broad auto-fix workflow. Use the contract-controlled owned `hunter` skill instead.
+- **When to use:** Use the owned `hunter` skill for an explicitly bounded broad audit/fix request. The legacy slash workflow is quarantined and never auto-runs inside `/ci-validate`.
 
-### `/issue-sweep` — End-to-End Issue Sweep
-- **Purpose:** Full closed-loop cycle of fixing all CodeRabbit/Sentry issues, validating, and generating tests.
-- **When to use:** Run after any significant block of work or when focusing on stabilization.
+### `/issue-sweep` — Legacy External Issue Sweep (Quarantined)
+- **Purpose:** Historical cross-service issue/fix/test sweep whose credential, ledger, and mutation scope is too broad.
+- **When to use:** Do not auto-select; replace with a named, bounded issue or authenticated connector task.
 
 ### `/better` — Universal Improvement Engine
 - **Purpose:** Audits, elevates, and polishes whatever you're currently working on. Checks style alignment, performance, and formatting.
 - **When to use:** Can be invoked manually anytime. In the automated pipeline it runs in exactly two places: per-task inside `/go` (Step 5, scoped to the files just modified) and once in `/end` before `/ci-validate`. No other workflow auto-invokes it — chained auto-polish passes were removed to stop redundant triple-audits of the same files.
 
-### `/finish` — Unfinished Work Sweep
-- **Purpose:** Scours the repo for TODOs, stubs, placeholders, and AI slop using a subagent swarm, then logs all findings to `.agent/test_ledger/OPEN_ISSUES_V3.md` for `/issue` to fix.
-- **When to use:** Periodically, or before a release seal, to flush out half-finished work.
+### `/finish` — Legacy Unfinished Work Sweep (Quarantined)
+- **Purpose:** Historical sweep that converts broad pattern matches into permanent ledger mutations.
+- **When to use:** Use a bounded read-only audit instead until the workflow is re-certified.
 
-### `/devex-review` — Developer Experience Audit
-- **Purpose:** Comprehensive Developer Experience audit to ensure coding environment, aliases, and dependencies are optimized.
-- **When to use:** Run periodically to keep DX (Developer Experience) at 10/10.
+### `/devex-review` — Legacy Developer Experience Audit (Quarantined)
+- **Purpose:** Historical audit that also auto-fixes, moves, or deletes files.
+- **When to use:** Do not auto-select until observation and implementation modes are separated.
 
-### `/factory` — Automated Test & Fix Loop
-- **Purpose:** Spins up test orchestrators, fix agents, and CI publishers to run overnight systems, auto-patch bugs, and deploy.
-- **When to use:** For completely autonomous overnight quality loops.
+### `/factory` — Legacy Overnight Loop (Quarantined)
+- **Purpose:** Historical test/fix/deploy loop whose mutation, credential, and deployment boundaries are not narrow enough for automatic routing.
+- **When to use:** Do not auto-select. Redesign it as bounded monitoring and logged-cause repair before re-certification.
 
 ### `/test` — Context-Aware Test Runner
 - **Purpose:** Automatically identify and run relevant tests based on current modified files.
@@ -129,11 +129,11 @@ These commands are called by the Core Pipeline or can be invoked directly as nee
 These skills reside inside `.agent/skills/` and are actively used by the agent swarm for design, architectural planning, and feature mapping.
 
 ### `/to-prd` — Product Requirement Document (PRD) Generator
-- **Purpose:** Compiles current conversation, goals, and technical boundaries into a formal PRD.
+- **Purpose:** Compiles current conversation, goals, evidence, and technical boundaries into a local PRD draft; publishing requires a separate explicit external-write request.
 - **When to use:** At the very beginning of a feature design process.
 
-### `/to-issues` — vertical-Slice Ticketer
-- **Purpose:** Breaks down complex implementation plans or PRDs into vertical-slice issue tickets that agents can grab.
+### `/to-issues` — Vertical-Slice Ticketer
+- **Purpose:** Breaks plans or PRDs into dependency-ordered issue drafts; tracker publication requires a separate explicit external-write request.
 - **When to use:** After generating an implementation plan to create actionable TODOs.
 
 ### `/grill-me` — Architect Interviewer
@@ -152,7 +152,7 @@ These skills reside inside `.agent/skills/` and are actively used by the agent s
 
 ## External & Vendored Skill Registries
 
-Beyond `.agent/skills/`, three additional skill registries exist. They are part of the active suite — the "not listed = deprecated" rule does NOT apply to their contents.
+Beyond `.agent/skills/`, three additional skill registries exist. The generated catalog records repository-visible entries and treats host/user-global entries as runtime overlays.
 
 ### `.agents/skills/` — Vendored Third-Party Skills (READ-ONLY)
 - **What:** Upstream skills installed from GitHub (`firebase/agent-skills`, `arcjet/skills`) and pinned by `skills-lock.json` (source + content hash per skill).
@@ -172,25 +172,25 @@ Beyond `.agent/skills/`, three additional skill registries exist. They are part 
 
 ## Testing & Quality Assurance Commands
 
-### `/mega` — Mega Stress Test Orchestrator
-- **Purpose:** Master orchestrator for Mega Stress Tests (V1–V7+). Cycles through test plans on a loop.
-- **When to use:** For continuous, multi-hour gauntlets simulating sustained real-user abuse.
+### `/mega` — Legacy Mega Stress Test Orchestrator (Quarantined)
+- **Purpose:** Historical indefinite live sweep tied to stale ledgers and environment assumptions.
+- **When to use:** Do not auto-select; use a bounded authenticated visual QA plan until re-certified.
 
-### `/mega-test` — Single Mega Test Plan
-- **Purpose:** Executes a specific version of the Mega Stress Test Plan using the browser subagent.
-- **When to use:** When testing a specific, numbered routine from the Mega suite.
+### `/mega-test` — Legacy Single Mega Test Plan (Quarantined)
+- **Purpose:** Historical per-item live test tied to stale ledgers and technology snapshots.
+- **When to use:** Do not auto-select until its registry, authenticity, cost, and evidence contracts are current.
 
 ### `/real` — Adaptive Real-Life Testing
 - **Purpose:** Adaptive real-life testing workflow acting as a real user with real assets.
 - **When to use:** To realistically exhaust the system until completion or failure.
 
 ### `/auto_qa` — Autonomous Visual QA
-- **Purpose:** Uses the browser subagent to visually inspect the live app, capture screenshots, and report results.
+- **Purpose:** Uses an approved available browser capability to inspect the exact environment, capture decisive screenshots/DOM evidence, and report the honest proof level.
 - **When to use:** Triggered when a build completes or when visual verification is needed.
 
-### `/issue` — The Fix Agent
-- **Purpose:** Scans `.agent/test_ledger/OPEN_ISSUES_V3.md` for unresolved issues logged by test agents, diagnoses, and fixes them.
-- **When to use:** The counterpart to the test agents. Runs surgically to clear the issue backlog.
+### `/issue` — Legacy Fix Agent (Quarantined)
+- **Purpose:** Historical combined ledger triage/fix/sync workflow with contradictory test requirements.
+- **When to use:** Use `diagnose` plus `/middle` for an explicitly named issue until the workflow is re-certified.
 
 ---
 

@@ -19,7 +19,7 @@ description: >
 
 # /mega-test — Per-Menu-Item Multi-Dimensional Stress Test
 
-> **Purpose:** Test ONE left-menu item end-to-end against the live running application using the browser subagent, across 12 critical dimensions, plus its scoped unit/E2E/connection test surface.
+> **Purpose:** Test ONE left-menu item end-to-end against the live running application using an approved browser capability available in the current host, across 12 critical dimensions, plus its scoped unit/E2E/connection test surface.
 > **The unit of work is a menu item, NOT a version number.** `/mega-test road-manager`, not `/mega-test v5`.
 > **Mode:** STRICTLY OBSERVATIONAL — no code modifications, no source reading. EVER.
 > **Output:** Per-target pass/fail report + all new issues → `.agent/test_ledger/OPEN_ISSUES_V2.md`
@@ -33,7 +33,7 @@ You are a **multi-dimensional test executor**, not an engineer. For the target m
 You DO:
 - Resolve the user's target to a registry entry (manager / department / tool / project)
 - Run the scoped test surface via `python3 execution/run_department_test.py <target>`
-- Open the browser subagent and navigate the live app to that exact module
+- Open the approved browser capability and navigate the live app to that exact module
 - Validate real outputs (images, videos, PDFs) end-to-end
 - Screenshot every meaningful state, error toast, and failure
 - Report PASS, PARTIAL, or FAIL per routine with dimensional scores
@@ -180,7 +180,7 @@ curl -s -o /dev/null -w "%{http_code}" http://localhost:4242
 If not 200, ask the user to start the dev server (`npm run dev:web`).
 
 ### Step 5 — Console Baseline
-Open the browser subagent, navigate to `http://localhost:4242`. Record ALL console messages on initial load as the BASELINE. Any new console errors when you open the target module = new findings.
+Open the approved browser capability and navigate to the exact environment selected for this run. Record relevant console messages on initial load as the BASELINE. Any new console errors when you open the target module are findings.
 
 ### Step 6 — Read Flowchart Index
 Scan `docs/flowcharts/` for invariants touching this target (its module + every module it connects to).
@@ -198,7 +198,7 @@ Scan `docs/flowcharts/` for invariants touching this target (its module + every 
 6. **Record** — append to the running report with dimensional scores.
 7. **Log issues** — if FAIL or PARTIAL, append to `.agent/test_ledger/OPEN_ISSUES_V2.md`.
 
-### 4.2 Browser Subagent Usage Rules
+### 4.2 Browser Capability Usage Rules
 When calling `browser_subagent`:
 - Provide the target name and the exact scenario as task context.
 - Specify the exact PASS condition.

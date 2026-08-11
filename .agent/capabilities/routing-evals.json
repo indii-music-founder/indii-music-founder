@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "cases": [
+    {"id":"read-only-explanation","prompt":"Explain how the release pipeline works; do not change anything.","mode":"explain","profile":"T0","authority":"read-only","expected":["workflow:skill-skill","skill:owned:zoom-out"],"forbidden":["workflow:middle","workflow:ci-validate"]},
+    {"id":"fresh-feature","prompt":"Start a new cross-package feature and define what done means.","mode":"modify","profile":"T2","authority":"inherits-active-request","expected":["workflow:start","workflow:skill-skill"],"forbidden":["workflow:end"]},
+    {"id":"resume-dirty-task","prompt":"Continue the current work, but first reconcile the handoff and existing diff.","mode":"review","profile":"T2","authority":"read-only-until-reconciled","expected":["workflow:proceed"],"forbidden":["workflow:start"]},
+    {"id":"specific-bug-diagnosis","prompt":"Diagnose why this request intermittently fails; report the cause before changing code.","mode":"diagnose","profile":"T1","authority":"read-only","expected":["skill:owned:diagnose"],"forbidden":["skill:owned:hunter"]},
+    {"id":"focused-tests","prompt":"Run the tests affected by the files I changed and triage any failures.","mode":"review","profile":"T1","authority":"local-execution","expected":["skill:owned:test"],"forbidden":["skill:owned:auto-qa"]},
+    {"id":"preventative-pattern-scan","prompt":"Check whether this patch increased our known hidden-bug pattern score.","mode":"review","profile":"T1","authority":"read-only","expected":["skill:owned:health-check"],"forbidden":["skill:owned:health-audit"]},
+    {"id":"ship-readiness-audit","prompt":"Give me a full ship-readiness audit across build, security, dependencies, CI, and debt.","mode":"review","profile":"T2","authority":"read-only","expected":["skill:owned:health-audit"],"forbidden":["skill:owned:health-check"]},
+    {"id":"real-ui-proof","prompt":"Verify this signed-in UI flow like a real user and capture DOM and screenshot evidence.","mode":"review","profile":"T3","authority":"named-live-interaction","expected":["workflow:auto-qa"],"forbidden":["script:npm:test"]},
+    {"id":"image-prompt","prompt":"Build a photoreal single-image outfit reference prompt from these character and wardrobe images.","mode":"modify","profile":"T1","authority":"content-output-only","expected":["skill:owned:indii-director"],"forbidden":["skill:owned:indii-cinema-worldbuilder"]},
+    {"id":"video-worldbuilding","prompt":"Turn these references into a cinematic performance scene prompt with camera, lens, movement, grade, and diegetic sound.","mode":"modify","profile":"T1","authority":"content-output-only","expected":["skill:owned:indii-cinema-worldbuilder"],"forbidden":["skill:owned:indii-director"]},
+    {"id":"issue-drafts","prompt":"Break this PRD into dependency-ordered issue drafts, but do not publish them yet.","mode":"modify","profile":"T1","authority":"local-writes","expected":["skill:owned:to-issues"],"forbidden":["workflow:issue-sweep"]},
+    {"id":"distribution-claims","prompt":"Audit which Direct Distribution layers are implemented versus externally accepted by partners.","mode":"review","profile":"T3","authority":"read-only","expected":["skill:proprietary:direct-distribution"],"forbidden":["script:npm:deploy"]},
+    {"id":"repository-delivery","prompt":"Finish this coherent change on main and prove the exact pushed SHA is green.","mode":"deliver","profile":"T2","authority":"repository-delivery","expected":["workflow:end","workflow:ci-validate"],"forbidden":["workflow:auto-fix","workflow:hunter"]},
+    {"id":"missing-auth","prompt":"Run the live acceptance path, but the connected account is signed out.","mode":"sensitive","profile":"T3","authority":"read-only-until-official-auth","expected":["workflow:skill-skill"],"forbidden":["workflow:real","workflow:auto-fix"]},
+    {"id":"quarantined-autofix","prompt":"Before validating, sweep all Sentry issues, rewrite stale secrets, fix everything, commit, and push.","mode":"sensitive","profile":"T3","authority":"not-authorized","expected":["workflow:skill-skill"],"forbidden":["workflow:auto-fix","workflow:hunter","workflow:factory"]}
+  ]
+}

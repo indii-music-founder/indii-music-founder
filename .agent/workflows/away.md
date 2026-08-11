@@ -2,14 +2,14 @@
 
 **Purpose:** Executes an autonomous loop for `main`: monitor the exact CI run produced by a direct push, fix observed failures, and repeat until `main` is green.
 
-## 1. Deploy the Browser Subagent
+## 1. Monitor the Exact CI Run
 - Require the current branch to be `main`, then monitor the GitHub Actions run for the exact pushed SHA.
-- No need to poll; wait for the subagent's status report.
+- Use the available GitHub connector or authenticated `gh` CLI to wait for the exact-SHA run. Browser automation is not required for CI status.
 
 ## 2. Fix Errors (If Red)
 - If the subagent reports a failure, review the specific error logs provided.
 - Fix only the root cause shown in the run logs, run local validations (`typecheck`, `test`), create one coherent follow-up commit, and push with `git push origin HEAD:main`.
-- Loop back to Step 1 and have the browser subagent watch the new pipeline run.
+- Loop back to Step 1 and watch the new exact-SHA pipeline run.
 
 ## 3. Seal Main (If Green)
 - Confirm the successful run belongs to the latest pushed SHA on `main`.

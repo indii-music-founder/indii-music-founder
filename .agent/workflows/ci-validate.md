@@ -1,271 +1,122 @@
 ---
-description: Comprehensive pre-push CI validation with commit consolidation to prevent bloat. Auto-fix issues, run full bug scan, consolidate excessive commits, then execute all 4 test shards locally.
+description: Observational repository delivery gate. Validates the coherent task scope, runs proportional local checks and the unified CI gauntlet, then binds remote acceptance to the exact pushed SHA. It never performs speculative fixes, rewrites secrets, or creates validation commits.
 ---
 
-# /ci-validate — Pre-Push CI Validation (Enhanced)
+# /ci-validate — Delivery Proof Gate
 
-// turbo-all
+`/ci-validate` is strict because it is a validator. Its first pass is reproducible and non-mutating. Failures return to `/middle`; repairs address only logged in-scope causes and invalidate the checks they affect.
 
-Integrated five-phase validation before any push to `main`:
+## 0. Preconditions
 
-0. **Checkpoint & Commit Audit Phase** — Validate distributed agent checkpoints + detect commit bloat
-1. **Auto-Fix Phase** — Fix Sentry issues + CodeRabbit comments
-2. **Hunter Phase** — Full-spectrum bug/security scan
-3. **CI Phase** — Run all 4 shards + typecheck + lint
-4. **Final Verification** — Typecheck, build, tests all pass
-
-Prevents commit bloat cascades, checkpoint conflicts, and multi-hour CI debugging sessions.
-
-**Note:** Even if you forget `/opp`, this workflow validates the checkpoint system upfront.
-
----
-
-## Step 0 — Checkpoint & Commit Audit (CRITICAL)
-
-### 0.1 — Distributed Checkpoint Validation
-
-**Verify the distributed agent checkpoint system is being used correctly:**
-
-```bash
-# Check if checkpoints directory exists and has agent files
-if [ ! -d ".agent/checkpoints" ]; then
-  echo "ERROR: .agent/checkpoints directory missing. Run migration per HANDOFF_STRATEGY.md"
-  exit 1
-fi
-
-# List all agent checkpoints
-echo "=== Agent Checkpoints ==="
-ls -lh .agent/checkpoints/*.md 2>/dev/null || echo "WARNING: No agent checkpoints found"
-
-# HANDOFF_STATE.md is the canonical session handoff (auto-written by the Stop hook
-# and read at session bootstrap per CLAUDE.md). Per-agent checkpoints in
-# .agent/checkpoints/ supplement it for parallel-agent work. Only fail on conflicts:
-if grep -q "^<<<<<<< HEAD" .agent/HANDOFF_STATE.md 2>/dev/null; then
-  echo "ERROR: .agent/HANDOFF_STATE.md has unresolved merge conflicts — resolve before validating"
-  echo "See: .agent/HANDOFF_STRATEGY.md for the distributed checkpoint protocol"
-  exit 1
-fi
-```
-
-**IF checkpoint validation fails:**
-
-- Missing `checkpoints/` directory → Create it: `mkdir -p .agent/checkpoints && touch .agent/checkpoints/.gitkeep`
-- Merge conflicts in `HANDOFF_STATE.md` → Resolve them before proceeding (it is the canonical handoff, not deprecated)
-- No agent checkpoints found → Fine for solo sessions; for parallel-agent work, ensure agents write `.agent/checkpoints/{agent-id}.md` on session end
-
-### 0.2 — Mainline and Single-Commit Audit
-
-**Require the direct-to-main delivery lane:**
+Read [`branch-safety.md`](branch-safety.md), then record:
 
 ```bash
 git fetch origin
 test "$(git branch --show-current)" = "main"
-read -r BEHIND AHEAD <<EOF
-$(git rev-list --left-right --count origin/main...HEAD)
-EOF
-test "$BEHIND" -eq 0
-test "$AHEAD" -le 1
-```
-
-**IF local `main` is behind, divergent, or more than one commit ahead:**
-
-Stop. Do not push and do not rewrite `main`. Synchronize safely, separate unrelated work, and return to exactly one coherent validated commit ahead of `origin/main`.
-
-**Forbidden recovery actions:**
-
-- Creating a feature/fix/checkpoint branch unless the user explicitly requested it
-- Interactive rebasing or squashing `main`
-- Force-pushing `main`
-- Adding another checkpoint or save-state commit
-
-**After the audit, verify the one pending commit:**
-
-```bash
+git rev-list --left-right --count origin/main...HEAD
+git status --short
 git log origin/main..HEAD --oneline
-git diff --stat origin/main...HEAD
 ```
 
----
+Require:
 
-## Step 1 — Run Auto-Fix (From `.agent/workflows/auto-fix.md`)
+- current `main` and zero commits behind `origin/main`;
+- at most one coherent unpublished task commit;
+- a worktree that is clean for this objective;
+- unrelated dirty files listed and excluded;
+- no unresolved conflict markers;
+- the exact tree/SHA being validated identified.
 
-Before running deeper validation, clean up known fixable issues. The agent MUST automatically execute the `/auto-fix` protocol:
+Do not branch, rebase, squash, stash, stage, commit, or push during the local validation phase.
 
-1. Fetch active Sentry issues and apply fixes.
-2. Fetch GitHub PR comments from CodeRabbit and apply fixes.
-3. Run `npm run typecheck && npm run lint` to verify stability.
-4. Commit if any fixes were made.
+## 1. Policy and artifact integrity
 
-*Note for agent: read and follow `.agent/workflows/auto-fix.md` inline here.*
+Run:
 
----
-
-## Step 2 — Run Hunter Phase (From `.agent/workflows/hunter.md`)
-
-After auto-fixes, run the full-spectrum bug hunt. This covers:
-
-- **Phase 1: Big Game** — Security vectors (XSS, hardcoded secrets, process.env), memory leaks, loading state traps, swallowed errors, HTTP error codes, vendor chunk conflicts, impure render functions
-- **Phase 2: Small Game** — Store/state logic, race conditions, finance rounding, AI service limits, locale issues
-- **Phase 3: Verify** — Typecheck, vitest, build, Cloud Functions, Firestore rules
-
-*Note for agent: execute the full Hunter workflow from `.agent/workflows/hunter.md` inline here. Do NOT skip phases. Auto-fix all findings, verify, and commit.*
-
----
-
-## Step 2.5 — CI/CD Pipeline Safety Audit (CRITICAL)
-
-Before pushing, you MUST verify that the GitHub Actions Secrets perfectly match the active project configuration. "The Illusion of the Surface Fix" means that clean local code can still deploy to a suspended/ghost project if the CI pipeline injects stale secrets.
-
-**Check the secrets:**
 ```bash
-export GH_TOKEN=$(cat .env | grep GITHUB_CLI_PAT | cut -d '=' -f2)
-gh secret list
+git diff --check
+npm run validate:capabilities
+node scripts/validate-flowcharts.js
+node scripts/verify-api-system-integrity.js
 ```
 
-**Verify these critical keys:**
-- `VITE_FIREBASE_PROJECT_ID`
-- `VITE_VERTEX_PROJECT_ID` 
+Use the checks relevant to the changed files. A generated catalog must be current before `/skill-skill` or capability-policy changes can pass.
 
-If any secret belongs to an old/suspended project (e.g., `indii-v-1-1`), you MUST overwrite it using `gh secret set <KEY> -b "<VALUE>"` before proceeding to Step 3.
+## 2. Proportional verification matrix
 
----
+| Change | Required local evidence |
+| --- | --- |
+| Markdown/instructions | Source re-read, link/path check, focused diff, capability/policy validator when normative rules changed. |
+| Localized code logic | Targeted tests plus relevant typecheck/lint. |
+| Shared schema/API/state | Targeted tests, dependent typecheck, build/integration checks. |
+| Dependency/lock/runtime | Manifest-lock integrity, dependency drift, relevant build/tests, security/runtime review. |
+| UI | Structural tests plus approved available browser evidence when the real state is reachable. |
+| Live/production claim | Genuine credentials and real path under `.agent/REAL_USER_AUTHENTICITY.md`. |
+| Repository delivery | All relevant checks plus the unified `npm run ci` gauntlet. |
 
-## Step 3 — Run Unified CI Validation Script
+For a repository delivery, run at minimum:
 
 ```bash
+npm run typecheck
+npm run lint
 npm run ci
 ```
 
-**Unified CI Steps:**
-0. **API System Integrity Check:** Executes `node scripts/verify-api-system-integrity.js` to strictly enforce legacy API bans and purge ghost duplicate tests.
-1. **Duplicate Identifier Check:** Scans `appSlice.ts` for duplicate identifiers.
-2. **Missing Electron Mocks Check:** Ensures all main-process tests correctly mock Electron via `vi.mock('electron')`.
-3. **TypeScript Typecheck:** Executes `npm run typecheck` across all workspace targets.
-4. **Flowchart Syntax & Sanity Check:** Executes `node scripts/validate-flowcharts.js` to ensure all architectural flowcharts under `docs/flowcharts/` contain valid headers, Mermaid blocks, transition breakdowns, and safe syntax.
-5. **Sharded Unit Tests:** Runs all unit test suites in parallel across 4 sharded runners (`shard=1/4` to `4/4`).
+Add affected builds and integration suites when public contracts, packaging, runtime boundaries, or cross-workspace behavior changed. Record intentional skips and their reasons.
 
-If the script fails, **the agent MUST analyze the output and fix the code** before completing the workflow.
+## 3. Failure behavior
 
----
+On any failure:
 
-## Step 3.5 — Run Local GitHub Actions Validation (Optional)
+1. preserve the command, exit code, and first decisive root-cause output;
+2. stop the validation verdict;
+3. return to `/middle` or `diagnose` for a bounded repair;
+4. do not invoke broad `/auto-fix` or legacy `/hunter` sweeps automatically;
+5. do not change unrelated files, create extra commits, weaken tests, or guess at the cause;
+6. rerun every check invalidated by the repair.
 
-If you have `act` installed, you can simulate the GitHub Actions CI pipeline locally to catch configuration errors or pipeline failures before pushing:
+Known exceptions are evidence, not folklore. An ignored flake or warning needs a signature, owner, reproducer, last-confirmed date, and expiry. Similar-looking historical output does not excuse a current failed job.
 
-```bash
-act -W .github/workflows/build.yml
+## 4. Credential and secret boundary
+
+- Use `gh auth status` to inspect GitHub authentication.
+- Missing or expired authorization requires the official `gh auth login` flow.
+- Never read a PAT from `.env`, export tokens through shell construction, switch accounts, infer a secret value, or overwrite repository secrets during validation.
+- A secret change requires an explicit target, trusted source value, and separate user authority.
+
+## 5. Local verdict and delivery handoff
+
+When local checks pass, emit a local verdict. `/end` owns explicit staging, full staged-diff review, the one coherent commit, and `git push origin HEAD:main`.
+
+Any edit after the local verdict invalidates the affected verdict and requires rerun.
+
+## 6. Exact-SHA remote proof
+
+After the parent workflow pushes:
+
+1. record `git rev-parse HEAD`;
+2. locate the GitHub Actions run whose `headSha` exactly matches it;
+3. wait for the final conclusion;
+4. inspect actual logs/annotations for failed jobs;
+5. return logged root causes to `/middle` and repeat the bounded delivery cycle;
+6. require the successor exact SHA to be green.
+
+Do not substitute an older green run, local tests, or a deployment URL for exact-SHA CI.
+
+## Evidence manifest
+
+Return this in the task report or CI job summary without modifying the validated tree:
+
+```json
+{
+  "sha": "<validated sha or tree>",
+  "treeState": "<clean|clean-for-objective>",
+  "commands": [{"command":"<cmd>","exitCode":0,"summary":"<counts/result>"}],
+  "skipped": [{"check":"<name>","reason":"<reason>"}],
+  "remoteCiUrl": "<url-or-null>",
+  "remoteConclusion": "<success|failure|not-pushed>",
+  "verdict": "PASS|FAIL|PARTIAL"
+}
 ```
 
-This ensures the CI environment will succeed without needing to push trial commits.
-
-
----
-
-## Step 4 — Check the Error Ledger (If failures occur)
-
-If `npm run ci` reveals failures, read the known patterns to find solutions:
-
-```bash
-cat .agent/skills/error_memory/ERROR_LEDGER.md | head -60
-```
-
-Read the known patterns. If your change touches a service with dynamic imports, a component with aria-labels, or any of the Hunter categories, those patterns apply.
-
----
-
-## Step 5 — CI Debug Cheatsheet (when a shard fails on CI but not locally)
-
-```text
-# 1. Find the failing job ID
-curl -sL -H "Accept: application/vnd.github+json" \
-  "https://api.github.com/repos/indii-music-founder/indii-music-founder/actions/runs/{RUN_ID}/jobs?per_page=20" \
-  | python3 -c "import sys,json; [print('FAIL', j['name'], j['id']) for j in json.load(sys.stdin)['jobs'] if j['conclusion']=='failure']"
-
-# 2. Get annotations (the real error, not the phantom git/gitleaks warning)
-curl -sL -H "Accept: application/vnd.github+json" \
-  "https://api.github.com/repos/indii-music-founder/indii-music-founder/check-runs/{JOB_ID}/annotations" \
-  | python3 -c "import sys,json; [print(a['annotation_level'], a['path'], a['start_line'], a['message'][:300]) for a in json.load(sys.stdin)]"
-
-# 3. IGNORE annotations where message contains 'git' and path='.github' — those are phantom
-# 4. The real failure is in the 'Process completed with exit code 1' annotation's line number
-#    which maps to the test reporter output in the CI log
-```
-
----
-
-## Known False Alarms (do NOT investigate these)
-
-| Symptom | Why it's a false alarm |
-| --- | --- |
-| `git exit code 128` annotation on unit-test job | Phantom annotation from gitleaks in a prior build job. Not related to your tests. |
-| `window.getComputedStyle` not implemented | Expected JSDOM noise. All component tests emit this. Not a failure. |
-| `localstorage-file was provided without a valid path` | Electron keytar warning in test env. Harmless. |
-| `Real-time sync failed / Fetch failed` | Expected stderr from mocked services. Not a failure. |
-| `Keeper_Persistence.test.ts > should persist... expected vi.fn() to be called at least once` | Shard-ordering isolation flakiness. Passes immediately when run alone (`npm test -- --run Keeper_Persistence`). Pre-existing, not caused by your changes. |
-| `test: FAILURE` shown for an older `main` SHA | Stale status is not evidence about the current delivery. Match the run's `headSha` to the exact pushed SHA and require that run to succeed. |
-
----
-
-## Multi-Agent Parallel Work Protocol
-
-**When working with multiple agents simultaneously (Claude Code + Antigravity agents):**
-
-1. **Establish Commit Discipline:** Each agent commits atomically (one feature = one commit, not one per micro-fix)
-2. **Use Main Only:** All agents share current `main`; a branch exists only when the user explicitly requests one
-3. **Coordinate One Commit:** Before `/ci-validate`, combine the current task into one coherent local commit without rewriting published `main`
-4. **Avoid Churn Cycles:** If the same file is being fixed repeatedly, stop and let one agent fix it end-to-end
-5. **CI as Checkpoint:** `/ci-validate` should run cleanly FIRST TIME after consolidation. If you're running it 3+ times to fix the same issue, the parallel work strategy needs adjustment
-
-**Root Cause of 2-Day CI Debug Cycles:**
-
-- Multiple agents each commit fixes (10+ commits)
-- CI fails on commit #5, but you don't know which one
-- You ask Agent A to fix, Agent A makes 5 more commits
-- Agent B (in Antigravity) also makes 5 commits to "fix" the same thing
-- Now there are 20+ commits and 3 contradictory fixes applied
-- CI still fails because the root cause was commit #2, but it's buried
-
-**SOLUTION:** Commit consolidation in Step 0 prevents this. Always run it.
-
----
-
-## Checkpoint Validation Checklist
-
-**Run this before pushing to ensure no conflicts occur:**
-
-```bash
-# Quick validation (can be run without full /ci-validate)
-bash << 'VALIDATE'
-echo "=== Checkpoint System Validation ==="
-
-# 1. Check directory exists
-[ -d ".agent/checkpoints" ] && echo "✓ Checkpoints directory exists" || echo "✗ Missing .agent/checkpoints"
-
-# 2. Check for recent agent checkpoints
-RECENT=$(find .agent/checkpoints -name "*.md" -mtime -1 2>/dev/null | wc -l)
-echo "✓ Recent agent checkpoints: $RECENT"
-
-# 3. Check for merge conflicts in the handoff file
-if grep -q "<<<<<<< HEAD" .agent/HANDOFF_STATE.md 2>/dev/null; then
-  echo "✗ CONFLICT in HANDOFF_STATE.md — resolve before pushing"
-else
-  echo "✓ No conflicts in HANDOFF_STATE.md"
-fi
-
-# 4. Check commit count
-COMMITS=$(git rev-list --count main..HEAD)
-if [ "$COMMITS" -gt 10 ]; then
-  echo "⚠ WARNING: $COMMITS commits ahead of main (recommend consolidation)"
-else
-  echo "✓ Commit count acceptable ($COMMITS)"
-fi
-
-VALIDATE
-```
-
-If any checks fail:
-
-- **Missing directory** → Create: `mkdir -p .agent/checkpoints && touch .agent/checkpoints/.gitkeep`
-- **Merge conflict** → Resolve using distributed checkpoint protocol in `.agent/HANDOFF_STRATEGY.md`
-- **Too many commits** → Run Step 0.2 consolidation before proceeding
 > **Mainline delivery gate:** Before any code, git, CI, push, or optional branch action, read and obey [`branch-safety.md`](branch-safety.md). Direct-to-`main` is mandatory unless the user explicitly requests a branch.

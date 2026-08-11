@@ -1,77 +1,58 @@
 ---
-description: Finalization and verification workflow. Generates closing notes, updates architecture diagrams, and runs /ci-validate for a clean repository state.
+description: Flagship closure workflow. Reconciles every promised acceptance criterion, runs proportional final proof and observational /ci-validate, delivers one coherent main commit when authorized, and verifies exact-SHA CI without post-gate edits.
 ---
 
-# /end — The Closing Protocol
+# /end — Closure
 
-**Activates the intelligent wrap-up, documentation, and verification sequence.**
+## 1. Reconcile the promise
 
-This command is run when the feature or task is deemed complete. It ensures everything is documented, cleanly tested, and the repository is pristine before ending the session.
+List every acceptance criterion and classify it as proved, partial, blocked, or out of scope. Tie each proved item to decisive test output, DOM/external state, or an inspected artifact. Do not require raw output in the prose report when the exact tool log already preserves it; quote raw output when requested or needed to disambiguate a claim.
 
-## 1. Smart Finalization
-- Review the initial user prompt and compare it against the completed work in the active task ledger. Prefer the current user objective/thread goal first, then `.agent/artifacts/task.md`, and use root `task.md` only if it clearly matches the current goal.
-- **Stale Ledger Guard:** If a task file describes unrelated old work, do not use it as completion evidence. State that it is stale and verify against current user intent plus current worktree evidence.
-- Verify that *everything* promised has been delivered.
-- Ensure there are no leftover `TODO` or `FIXME` comments related to this session's work.
-- **Strict Issue Validation:** Do not mark issues fixed based only on broad validation. For each issue, list explicit acceptance criteria and show evidence for each one. If any criterion is not proven, mark the issue PARTIAL or OPEN. For dependency work, npm audit and npm ls must both be clean for the dependencies being claimed fixed. For release/download work, local artifacts are not enough; prove upload path and Founder download authorization. Do not add placeholder records to permanent covenant/source-of-truth files.
-- **Proof of Verification:** You are forbidden from stating "it works" or "I have verified this" without pasting the raw terminal output, test results, or explicit browser DOM state that proves it. If you cannot provide the raw output, the task is incomplete.
+## 2. Inspect scope and state
 
-## 2. Pattern Health Verification (via `/health`)
-Before finalizing, verify patterns didn't get worse:
-- Run pattern detector again to get final risk score
-- **Compare to baseline:** Did score improve, stay same, or worsen?
-  - ✅ Improved or same: Continue to closing process
-  - ❌ Worsened: STOP, identify what patterns you added, fix them first
-- **Update ledger:** If you discovered new patterns, add to `.agent/test_ledger/GENERATION_FAILURES.md`
-- **Report delta:** "Baseline 100 → Final 95 (-5 improvement)"
+Read [`branch-safety.md`](branch-safety.md). Re-read the complete bounded diff, run `git diff --check`, inspect `git status --short`, and report unrelated dirty files without staging, stashing, committing, or attributing them.
 
-## 2.1 Dependency Version Drift Check (MANDATORY)
-Catch package.json/package-lock.json/node_modules disagreements before they cause a silent CI or runtime failure (discovered 2026-07-03 via a `firebase-admin@14.1.0` nested copy shadowing the declared `13.10.0`, which broke `tsc` with cryptic namespace-export errors two steps downstream in the Cloud Functions deploy):
-- Run: `npm run check:dep-drift` (wraps `scripts/check-dep-version-drift.cjs`)
-- This checks every workspace member's declared dependency ranges against what's actually resolved in `node_modules` (nested copy if present, else root-hoisted) — flagging real manifest violations, not ordinary npm dedup (a package legitimately getting its own nested copy because a transitive constraint differs is NOT a violation).
-- **If violations are found:**
-  - Decide per-violation which side is stale: if the installed/locked version is intentional (e.g. a root `overrides` entry, or newer tooling already verified working), update the declared `package.json` range to match reality.
-  - If the declared range is intentional and the install is stale, run a scoped `npm install <dep>@<range>` for that workspace and regenerate the lockfile with `npm install --package-lock-only`.
-  - Never silently downgrade or upgrade a runtime dependency without checking its usage pattern first (e.g. grep for the imported API surface) — a dev-tooling version gap (eslint, typescript) is lower risk than a runtime dependency gap (uuid, firebase-admin) that 30+ files call directly.
-- Re-run `npm run check:dep-drift` after any fix — it must report clean before proceeding to the gauntlet.
+No placeholders, debug residue, secrets, generated junk, or unintended files may remain in the task scope.
 
-## 2.5 Commit & Push One Coherent Mainline Change (MANDATORY)
-Ensure the current task is delivered through `main` **before** closing:
-- **Check status:** `git status --short`
-- **Require main:** `test "$(git branch --show-current)" = "main"` unless the user explicitly requested a branch
-- **Commit task scope once:** Commit only the current task's related files with one conventional message; do not create checkpoint commits
-- **Push to GitHub:** `git push origin HEAD:main`
-- **Verify remote:** Confirm commits arrived on GitHub (no "ahead of origin")
-- **Verify CI:** Inspect the workflow run for the exact pushed SHA and continue root-cause fixes until green
+## 3. Finish relevant artifacts only
 
-## 3. Standardized Closing Process
-Execute the formal note-taking and checkpointing process:
-- **Documentation:** Generate a summary of the session's learnings, key decisions made, bugs fixed, and pattern improvements. Update `.agent/skills/error_memory/ERROR_LEDGER.md` with any new patterns discovered.
-- **Pattern Report:** Include delta: "Risk score improved from X to Y" or "Added Z new patterns to watch"
-- **Checkpoints:** Update the agent's distributed checkpoint in `.agent/checkpoints/` with the final state of the work so the next session can pick up cleanly.
-- **Session Checkpoint Script:** Execute `bash .claude/scripts/checkpoint.sh` only to write the ignored local handoff snapshot. The script must never stage, commit, or push.
+- Run `/better` once on the final bounded diff if a meaningful quality pass remains.
+- Update flowcharts only when the implementation changed relevant state, ownership, or sequence.
+- Update checkpoints only with current reusable handoff state.
+- Update issue/error ledgers only with verified unique facts; never self-verify external acceptance.
+- Run dependency drift/integrity checks only when manifests, locks, runtime packages, or dependency behavior changed.
 
-## 4. Final Architecture Update (via `/flowchart`)
-If any architecture, state flow, or logic shifted during the execution phase:
-- Invoke the **`/flowchart`** command for a final pass to update or generate the definitive diagrams for what was built.
-- **Save Requirement:** Update the relevant markdown files inside `docs/flowcharts/` as part of the formal closing notes.
+## 4. Run proportional final proof
 
-## 5. Final Polish Pass (via `/better`)
-Run the session's single final `/better` pass now — BEFORE the CI gauntlet, never after it (polishing after validation would invalidate the validation):
-- Scope it to the files touched this session (`git diff --name-only main...HEAD` plus uncommitted changes).
-- Audit from every angle (Performance, DevEx, Architecture) and elevate to Platinum Quality Standards.
-- Apply any micro-refactors, then let the gauntlet below verify them.
+Use the verification matrix in [`ci-validate.md`](ci-validate.md). For repository delivery, run the full observational `/ci-validate` local gate. A failure returns to `/middle`; fix only the logged in-scope cause and rerun the invalidated checks.
 
-## 6. Resource Cleanup & The Gauntlet (via `/ci-validate`)
-Signal "we're done" and leave a perfectly clean repository and environment:
-- **Resource Cleanup (MANDATORY):** Before finalizing the session, list all background tasks and subagents. You MUST explicitly terminate any running background tasks (using `manage_task` with action `kill`) and all active subagents (using `manage_subagents` with action `kill_all`) to prevent leaking processes or orphaned CPU/memory resource usage.
-- **Uncommitted Workspace Changes Alert (MANDATORY):** You must run a `git status` check at the start of `/end`. If any dirty or untracked files remain in the workspace, you MUST list them prominently in your final session report under a dedicated `### ⚠️ Uncommitted Workspace Changes / Pre-existing Dirty Files` header, explaining which session they belong to and prompting the user for instructions.
-- **Clean Repository Definition:** In a multi-agent environment, define "clean repository" as either "fully clean" or "clean for this objective." If there are unrelated dirty files in the worktree, you MUST explicitly list them for the user or intentionally stash/commit them before proceeding.
-- **Anti-Hallucination Audit:** Before running the final CI sequence, you MUST run a `grep` scan for `MOCK`, `TODO`, and `stub` across all files you touched during this session. If any mocks or stubs exist in the critical path, you are expressly forbidden from stating the feature is "fully implemented". You must state: "Scaffolding Complete. Mocks remain."
-- Invoke the **`/ci-validate`** command.
-- This will run the auto-fix phase, the hunter bug scan, commit consolidation, and all testing shards.
-- **Do not exit this phase until the CI script passes flawlessly.**
-- **Push Commit to GitHub (MANDATORY):** Once local validation passes, run `git push origin HEAD:main`, then inspect the exact remote CI run and fix its logged root cause until `main` is green.
+## 5. Deliver when authorized
 
-> **No post-gauntlet edits:** The push is the last action. Do not run `/better` or any other code-modifying workflow after `/ci-validate` passes — any change after the gauntlet means the gauntlet must run again.
+When the tree is clean for this objective and local validation passes:
+
+1. stage only explicitly listed task files;
+2. inspect the complete staged diff;
+3. create one conventional task commit on `main`;
+4. push only with `git push origin HEAD:main`;
+5. locate the remote CI run for that exact SHA;
+6. wait for its final result and inspect actual failed logs if red;
+7. repair only logged root causes through `/middle` until the successor SHA is green.
+
+Missing GitHub credentials require the official `gh auth login` flow. Never harvest a PAT from `.env` or switch identities.
+
+## 6. No post-gate edits
+
+Any edit after a validation gate invalidates that gate. Do not modify code, docs, ledgers, checkpoints, or generated catalogs after the final pass without rerunning the relevant checks.
+
+## Closeout report
+
+```text
+ACCEPTANCE: <criterion → evidence>
+VALIDATION: <commands and verdict>
+TREE: <clean | clean for objective + unrelated files>
+DELIVERY: <not requested | local commit | exact SHA + CI URL>
+AUTHENTICITY: <structural | simulated | local-real | production-real>
+REMAINING: <none or exact blocker>
+```
+
 > **Mainline delivery gate:** Before any code, git, CI, push, or optional branch action, read and obey [`branch-safety.md`](branch-safety.md). Direct-to-`main` is mandatory unless the user explicitly requests a branch.

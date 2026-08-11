@@ -1,232 +1,105 @@
 ---
 name: health-audit
-version: 1.1.2
-description: |
-  Full-spectrum engineering health audit for indii. Scans build health,
-  tests, module completeness, service layer, agent fleet, security posture,
-  dependencies, CI/CD, and tech debt. Produces a ship readiness report
-  with prioritized action items. Self-upgrading: appends new scan
-  dimensions discovered during runs.
-  Use when asked to "audit the code", "health check", "ship readiness",
-  "what's the state of the codebase", or "what needs to get finished".
+version: 2.0.0
+description: Full repository engineering health and ship-readiness audit for indii. Use when the user asks for overall codebase health, readiness to ship, unfinished systems, security posture, dependency health, CI health, or prioritized technical risk across multiple packages. Do not use for a quick hidden-pattern delta (use health-check) or one known bug (use diagnose).
 ---
 
-# indii Health Audit
+# Health Audit
 
-Comprehensive engineering health and ship readiness audit. Run from the
-project root. Produces an artifact report with prioritized action items.
+Produce a current, evidence-backed readiness report. Default to read-only: this skill identifies and prioritizes work but does not silently turn the audit into a repository-wide fix campaign.
 
-## Preamble
+## 1. Bound the audit
 
-```bash
-cd "$(git rev-parse --show-toplevel 2>/dev/null)"
-echo "PROJECT: $(basename $(pwd))"
-echo "BRANCH: $(git branch --show-current)"
-echo "HEAD: $(git rev-parse --short HEAD)"
-echo "VERSION: $(cat VERSION 2>/dev/null || cat package.json | python3 -c 'import sys,json;print(json.load(sys.stdin).get(\"version\",\"unknown\"))' 2>/dev/null || echo unknown)"
-```
+Record:
 
-## Scan Dimensions
+- current `main`/`HEAD` and worktree state;
+- included packages and readiness target;
+- available credentials and external systems;
+- checks that would incur cost, write externally, or require production access;
+- pre-existing dirty files that cannot be attributed to the audit.
 
-Run all scans in parallel where possible. Each scan outputs structured
-data that feeds the final report.
+## 2. Evidence dimensions
 
-### 1. Build Health
+Run independent read-only checks in safe parallel groups where possible.
+
+### Build and static policy
 
 ```bash
-echo "=== TYPECHECK ==="
-npx tsc --noEmit 2>&1 | tail -5
-echo "EXIT: $?"
-```
-
-### 2. Lint Health
-
-```bash
-echo "=== LINT ==="
-npx eslint . --ext .ts,.tsx 2>&1 | tail -5
-echo "EXIT: $?"
-```
-
-### 3. Test Health
-
-```bash
-echo "=== TESTS ==="
-npx vitest run --reporter=verbose 2>&1 | tail -30
-```
-
-Classify failures as in-branch vs pre-existing vs external (non-app files).
-
-### 4. Module Completeness
-
-```bash
-echo "=== MODULES ==="
-for dir in packages/renderer/src/modules/*/; do
-  mod=$(basename "$dir")
-  count=$(find "$dir" -name "*.tsx" -o -name "*.ts" | wc -l | tr -d ' ')
-  lines=$(find "$dir" -name "*.tsx" -o -name "*.ts" | xargs wc -l 2>/dev/null | tail -1 | awk '{print $1}')
-  if [ "$count" -le 2 ]; then status="STUB"; else status="OK"; fi
-  echo "$mod: $count files, $lines lines [$status]"
-done
-```
-
-### 5. Service Layer
-
-```bash
-echo "=== SERVICES ==="
-for dir in packages/renderer/src/services/*/; do
-  svc=$(basename "$dir")
-  count=$(find "$dir" -name "*.ts" | wc -l | tr -d ' ')
-  echo "$svc: $count files"
-done
-echo "Total exports: $(grep -rn '^export ' packages/renderer/src/services/ --include='*.ts' 2>/dev/null | wc -l | tr -d ' ')"
-```
-
-### 6. Agent Fleet
-
-```bash
-echo "=== AGENTS ==="
-for dir in agents/*/; do
-  agent=$(basename "$dir")
-  # Accept prompt.md OR AGENTS.md as valid agent definition files
-  has_prompt=$(( [ -f "$dir/prompt.md" ] || [ -f "$dir/AGENTS.md" ] ) && echo "Y" || echo "N")
-  echo "$agent: prompt=$has_prompt"
-done
-echo "=== TRAINING DATA ==="
-find docs/agent-training -name "*.jsonl" 2>/dev/null | while read f; do
-  count=$(wc -l < "$f" | tr -d ' ')
-  echo "$(basename $f): $count examples"
-done | sort -t: -k2 -rn
-```
-
-### 7. Security
-
-```bash
-echo "=== SECURITY ==="
-# Hardcoded secrets
-grep -rn "sk-\|sk_live\|sk_test\|ghp_\|AIza" packages/renderer/src/ --include="*.ts" --include="*.tsx" 2>/dev/null | grep -v ".test." | grep -v "MOCK_KEY\|process.env\|import.meta.env\|example\|placeholder\|REDACTED\|FAKE"
-# Console leaks
-echo "Console statements: $(grep -rn 'console\.\(log\|warn\|error\)' packages/renderer/src/ --include='*.ts' --include='*.tsx' 2>/dev/null | grep -v '.test.' | wc -l | tr -d ' ')"
-# Localhost refs
-grep -rn "localhost:" packages/renderer/src/ --include="*.ts" --include="*.tsx" 2>/dev/null | grep -v ".test." | grep -v node_modules | head -10
-```
-
-### 8. Dependencies
-
-```bash
-echo "=== DEPS ==="
-npm audit --json 2>/dev/null | python3 -c "
-import sys,json
-d=json.load(sys.stdin)
-meta=d.get('metadata',{})
-vulns=meta.get('vulnerabilities',{})
-print(f'critical: {vulns.get(\"critical\",0)}')
-print(f'high: {vulns.get(\"high\",0)}')
-print(f'moderate: {vulns.get(\"moderate\",0)}')
-print(f'low: {vulns.get(\"low\",0)}')
-" 2>/dev/null || echo "audit unavailable"
-npm outdated 2>/dev/null | head -15
-```
-
-### 9. CI/CD
-
-```bash
-echo "=== CI/CD ==="
-ls .github/workflows/ 2>/dev/null
-gh run list --workflow=deploy.yml --limit=3 2>/dev/null || echo "gh unavailable"
-```
-
-### 10. Tech Debt
-
-```bash
-echo "=== TECH DEBT ==="
-echo "TODOs: $(grep -rn 'TODO\|FIXME\|HACK\|XXX' packages/renderer/src/ --include='*.ts' --include='*.tsx' 2>/dev/null | wc -l | tr -d ' ')"
-echo "Zombie code: $(grep -rn '^// import\|^// const\|^// export' packages/renderer/src/ --include='*.ts' --include='*.tsx' 2>/dev/null | wc -l | tr -d ' ')"
-```
-
-### 11. Anti-AI Slop
-
-```bash
-echo "=== ANTI-AI SLOP ==="
-echo "Placeholders: $(grep -rn '\.\.\. rest of code\|\.\.\. implementations here\|TODO.*implement' packages/renderer/src/ --include='*.ts' --include='*.tsx' 2>/dev/null | wc -l | tr -d ' ')"
-echo "Boilerplate: $(grep -rn 'Here is the.*code\|As an AI' packages/renderer/src/ --include='*.ts' --include='*.tsx' 2>/dev/null | wc -l | tr -d ' ')"
-```
-
-### 12. Repository-Native Quality Gates
-
-Run the repository's own architecture and workspace checks. Generic TypeScript,
-lint, and unit-test scans do not cover these boundaries.
-
-```bash
-echo "=== REPOSITORY GATES ==="
-node scripts/check-test-quality.js
-npm run security:frontend-api-boundary
+npm run typecheck
+npm run lint
 npm run check:dep-drift
-npm run build:ci
-npm run build:firebase
-npm run build:landing
-npm run build:mcp
+npm run validate:capabilities
 ```
 
-Treat a health command that discovers tests but skips all of them as a failed
-readiness signal even when the process exits with status 0.
+### Tests and integration
 
-### 13. Workspace Package Coverage
-
-Root `package.json` declares npm workspaces. Dimensions 1, 2, and 12 only
-exercise a subset of them (`shared`, `main`, `renderer`, `firebase` via
-typecheck; `mcp-server-local`/`mcp-server-harness` via `build:mcp`;
-`landing` via `build:landing`). Any workspace not covered by one of those
-is invisible to every other dimension. Discover and build the gap:
+Select proportionally:
 
 ```bash
-echo "=== WORKSPACE COVERAGE ==="
-python3 -c "import json;print(json.load(open('package.json')).get('workspaces',[]))"
-# For each workspace NOT already covered by build:ci / build:firebase /
-# build:landing / build:mcp, build it directly and record pass/fail:
-npm run build -w packages/<uncovered-workspace-name>
+npm test -- --run
+npm run test:integration:ci
 ```
 
-Discovered 2026-08-05: `packages/admin-dashboard` and `packages/sdk` had
-zero coverage anywhere in the audit. `admin-dashboard` built clean.
-`sdk` failed — a ~3.5-month-old ESM/CommonJS mismatch in
-`packages/sdk/scripts/build-cjs.js` that had never been caught because
-no dimension ever ran its build. Treat any workspace directory under
-`packages/*` that doesn't appear in another dimension's command as a
-coverage gap worth building ad hoc, every run — new workspaces get added
-to `package.json` without necessarily being wired into `build:*` scripts.
+Record skipped suites and why. Test fixtures and mocked providers prove structure, not live acceptance.
 
-## Report Generation
+### Repository architecture and completeness
 
-After all scans complete, produce a markdown artifact at:
+- inspect package/module entry points and public contracts;
+- find TODOs, placeholders, dead paths, duplicate implementations, and stale status documents;
+- distinguish intentionally planned modules from incomplete shipped surfaces;
+- verify current paths before reporting missing components.
 
+### Security and data integrity
+
+- run repository security guards and rules tests;
+- search for secret-shaped values by filename and line only; never print matched values;
+- review authentication, authorization, ownership, path containment, deletion, idempotency, and financial state boundaries;
+- never load tokens from `.env` or change repository/CI secrets during an audit.
+
+### Dependencies and runtime health
+
+- run the repository's dependency integrity/drift checks;
+- use `npm audit` only as one signal and inspect reachability before ranking a vulnerability;
+- record outdated dependencies without upgrading them unless upgrades are explicitly in scope.
+
+### CI/CD and external health
+
+- inspect exact-SHA CI when a relevant pushed SHA exists and official GitHub authentication works;
+- if authentication is missing, stop that dimension and provide the official authorization flow;
+- do not replace remote evidence with a local green claim;
+- Sentry, production analytics, billing, partner delivery, and registry acceptance require their real authenticated sources.
+
+## 3. Classify evidence
+
+Use these labels:
+
+- **Verified current:** reproduced at the audited SHA.
+- **Historical:** supported only by older artifacts or runs.
+- **Structural:** code, typecheck, unit, mock, or emulator evidence.
+- **External verified:** genuine service or production evidence.
+- **Unknown:** proof was unavailable.
+
+## 4. Prioritize
+
+Rank findings by user/data impact, reachability, likelihood, recoverability, and dependency fan-out. Do not equate a large grep count with high severity.
+
+## 5. Output
+
+```markdown
+# Engineering Health Audit
+- SHA and scope:
+- Evidence date/environment:
+- Overall verdict: READY | CONDITIONAL | NOT READY | UNKNOWN
+
+## Dimension scorecard
+| Dimension | Evidence | Status | Key risk |
+
+## Confirmed blockers
+## Important non-blocking risks
+## Historical or unverified claims
+## Recommended order of work
+## Checks skipped and prerequisites
+## Unrelated dirty state
 ```
-{artifact_dir}/indii_health_report.md
-```
 
-The report MUST include:
-
-1. **Executive Summary** — table with grades per dimension
-2. **Per-dimension details** — raw data + analysis
-3. **Prioritized Action Items** — P0 (must fix), P1 (should fix), P2 (nice to have)
-4. **Ship Readiness Verdict** — clear yes/no/conditional with rationale
-
-## Self-Upgrade Protocol
-
-After each audit run, check if any NEW scan dimension was discovered
-during the session (e.g., a new config file type found, a new test
-framework detected, a new deployment target identified). If so:
-
-1. Append the new scan to this SKILL.md under `## Scan Dimensions`
-2. Increment the version patch number in the frontmatter
-3. Log the upgrade:
-
-```bash
-echo "SKILL_UPGRADE: health-audit v$(date +%Y%m%d) added dimension: {NAME}" >> ~/.gstack/analytics/skill-upgrades.jsonl
-```
-
-This makes the skill learn from every run.
-
-## Usage
-
-Invoke with `/health-audit` or when asked about codebase health,
-ship readiness, or "what needs to get finished."
+If the user asks to implement fixes after the audit, route confirmed items into bounded `/middle` or `diagnose` work. Keep the audit report separate from proof that those fixes shipped.
