@@ -1,6 +1,7 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { fileSystemService, FileNode } from './FileSystemService';
+import { trashService } from './trash/TrashService';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { deleteDoc, doc, writeBatch } from 'firebase/firestore';
 
@@ -18,7 +19,10 @@ vi.mock('firebase/firestore', () => {
         query: vi.fn(),
         where: vi.fn(),
         orderBy: vi.fn(),
-        getDoc: vi.fn(),
+        getDoc: vi.fn(async () => ({
+            exists: () => true,
+            data: () => ({ name: 'Test Item', userId: 'u1', type: 'file' }),
+        })),
         setDoc: vi.fn(),
         onSnapshot: vi.fn(),
         writeBatch: vi.fn(() => ({
@@ -42,7 +46,9 @@ vi.mock('firebase/firestore', () => {
 // Mock dependencies
 vi.mock('./firebase', () => ({
     serverTimestamp: vi.fn(),
-    db: {}
+    db: {},
+    auth: { currentUser: { uid: 'u1' } },
+    functions: {},
 }));
 
 describe('FileSystemService Performance', () => {
@@ -68,18 +74,12 @@ describe('FileSystemService Performance', () => {
             update: vi.fn()
         } as unknown as import('firebase/firestore').WriteBatch);
 
+        const mockMoveToTrash = vi.fn().mockResolvedValue({ id: 'trash-1' });
+        vi.spyOn(trashService, 'moveToTrash').mockImplementation(mockMoveToTrash);
+
         await fileSystemService.deleteFolderRecursive('folder1', mockNodes);
 
-        // Expect NO deleteDoc calls (replaced by batch)
-        expect(deleteDoc).not.toHaveBeenCalled();
-
-        // Expect 1 batch created
-        expect(writeBatch).toHaveBeenCalledTimes(1);
-
-        // Expect 4 delete operations in that batch (all unique nodes)
-        expect(batchDeleteSpy).toHaveBeenCalledTimes(4);
-
-        // Expect commit
-        expect(batchCommitSpy).toHaveBeenCalledTimes(1);
+        // Expect moveToTrash called for each item in the tree (4 items)
+        expect(mockMoveToTrash).toHaveBeenCalledTimes(4);
     });
 });
