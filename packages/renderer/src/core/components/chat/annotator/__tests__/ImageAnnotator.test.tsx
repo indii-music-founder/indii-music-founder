@@ -36,6 +36,34 @@ describe('ImageAnnotator', () => {
         agentId: 'generalist'
     };
 
+    const drawRedCircle = () => {
+        const image = screen.getByAltText('Annotation target');
+        Object.defineProperties(image, {
+            naturalWidth: { configurable: true, value: 100 },
+            naturalHeight: { configurable: true, value: 100 }
+        });
+        fireEvent.load(image);
+
+        const canvas = document.querySelector('canvas');
+        expect(canvas).not.toBeNull();
+        vi.spyOn(canvas!, 'getBoundingClientRect').mockReturnValue({
+            left: 0,
+            top: 0,
+            width: 100,
+            height: 100,
+            right: 100,
+            bottom: 100,
+            x: 0,
+            y: 0,
+            toJSON: () => ({})
+        });
+
+        const drawingSurface = image.parentElement!;
+        fireEvent.mouseDown(drawingSurface, { clientX: 10, clientY: 10 });
+        fireEvent.mouseMove(drawingSurface, { clientX: 30, clientY: 10 });
+        fireEvent.mouseUp(drawingSurface);
+    };
+
     beforeEach(() => {
         vi.clearAllMocks();
         mocks.dispatchToolCall.mockResolvedValue({ success: true });
@@ -90,34 +118,21 @@ describe('ImageAnnotator', () => {
         expect(screen.getByText(/Apply Edits/i)).toBeInTheDocument();
     });
 
+    it('requires instructions for every annotation color before enabling Apply', async () => {
+        render(<ImageAnnotator {...defaultProps} />);
+        drawRedCircle();
+
+        const applyButton = screen.getByRole('button', { name: /Apply Edits/i });
+        expect(applyButton).toBeDisabled();
+
+        const redInput = await screen.findByPlaceholderText('Prompt for red regions...');
+        fireEvent.change(redInput, { target: { value: 'make this region blue' } });
+        expect(applyButton).toBeEnabled();
+    });
+
     it('sends the source image with drawn annotations to the editing tool', async () => {
         render(<ImageAnnotator {...defaultProps} />);
-
-        const image = screen.getByAltText('Annotation target');
-        Object.defineProperties(image, {
-            naturalWidth: { configurable: true, value: 100 },
-            naturalHeight: { configurable: true, value: 100 }
-        });
-        fireEvent.load(image);
-
-        const canvas = document.querySelector('canvas');
-        expect(canvas).not.toBeNull();
-        vi.spyOn(canvas!, 'getBoundingClientRect').mockReturnValue({
-            left: 0,
-            top: 0,
-            width: 100,
-            height: 100,
-            right: 100,
-            bottom: 100,
-            x: 0,
-            y: 0,
-            toJSON: () => ({})
-        });
-
-        const drawingSurface = image.parentElement!;
-        fireEvent.mouseDown(drawingSurface, { clientX: 10, clientY: 10 });
-        fireEvent.mouseMove(drawingSurface, { clientX: 30, clientY: 10 });
-        fireEvent.mouseUp(drawingSurface);
+        drawRedCircle();
 
         const redInput = await screen.findByPlaceholderText('Prompt for red regions...');
         fireEvent.change(redInput, { target: { value: 'make this region blue' } });
@@ -135,5 +150,19 @@ describe('ImageAnnotator', () => {
             }),
             'orig-msg-id'
         ));
+    });
+
+    it('shows an actionable error when annotation dispatch fails', async () => {
+        mocks.dispatchToolCall.mockRejectedValueOnce(new Error('Creative edit is temporarily unavailable.'));
+        render(<ImageAnnotator {...defaultProps} />);
+        drawRedCircle();
+
+        fireEvent.change(await screen.findByPlaceholderText('Prompt for red regions...'), {
+            target: { value: 'make this region blue' }
+        });
+        fireEvent.click(screen.getByRole('button', { name: /Apply Edits/i }));
+
+        expect(await screen.findByRole('alert')).toHaveTextContent('Creative edit is temporarily unavailable.');
+        expect(screen.getByRole('button', { name: /Apply Edits/i })).toBeEnabled();
     });
 });

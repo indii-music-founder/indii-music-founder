@@ -1611,6 +1611,13 @@ The user will see this plan and can approve it to start execution.`;
             if (TOOL_REGISTRY[toolName]) {
                 // Execute the tool
                 const result = await TOOL_REGISTRY[toolName](args);
+                const resultAsRecord = result as unknown as Record<string, unknown>;
+                if (typeof resultAsRecord?.toolError === 'string') {
+                    const details = typeof resultAsRecord.details === 'string'
+                        ? resultAsRecord.details
+                        : resultAsRecord.toolError;
+                    throw new Error(details);
+                }
                 
                 const currentMsg = isBoardroomMode 
                     ? state.agentHistory.find(m => m.id === responseId)
@@ -1631,10 +1638,9 @@ The user will see this plan and can approve it to start execution.`;
                     });
 
                     // For image-editing tools, surface the result as a new message so history is preserved
-                    const resultAsAny = result as unknown as Record<string, unknown>;
-                    if (toolName === 'edit_image_with_annotations' && resultAsAny?.urls && Array.isArray(resultAsAny.urls) && resultAsAny.urls.length > 0) {
+                    if (toolName === 'edit_image_with_annotations' && resultAsRecord?.urls && Array.isArray(resultAsRecord.urls) && resultAsRecord.urls.length > 0) {
                         // Re-use the generate_image wire format so it renders naturally as image output
-                        const imageMessage = `[Tool: generate_image]\n${JSON.stringify({ urls: resultAsAny.urls, prompt: args.colorPrompts })}\n[End Tool generate_image]`;
+                        const imageMessage = `[Tool: generate_image]\n${JSON.stringify({ urls: resultAsRecord.urls, prompt: args.colorPrompts })}\n[End Tool generate_image]`;
                         await this.sendMessage(imageMessage, undefined, agentId, { source: 'desktop' });
                     }
                 }
@@ -1648,7 +1654,8 @@ The user will see this plan and can approve it to start execution.`;
         } catch (error) {
             logger.error(`[AgentService] Tool dispatch failed:`, error);
             const errObj = error instanceof Error ? error : new Error(String(error));
-            this.addSystemMessage(`❌ **Tool Execution Error:** ${errObj.message}`);
+            await this.addSystemMessage(`❌ **Tool Execution Error:** ${errObj.message}`);
+            throw errObj;
         }
     }
 

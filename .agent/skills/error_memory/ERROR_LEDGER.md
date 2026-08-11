@@ -2035,3 +2035,11 @@ committing.
 - BUG: `OrganizationAccessService` wrote unconditional debug messages through `console.log` and repeatedly cast the explicit E2E user to `any`, then dereferenced it without proving that the harness supplied a user.
 - FIX: Route diagnostics through `logger.debug`, read the E2E user once with a minimal `{ uid: string }` contract, and fail explicitly when the E2E flag is enabled without a matching test user.
 - PREVENTION: Production services must use the governed logger, and test-only branches still require narrow types and explicit missing-fixture behavior. A harness flag is not proof that every fixture exists.
+
+## 2026-08-11 — A resolved tool dispatch is not proof that the tool succeeded
+
+**SEVERITY:** High (interactive image edits could fail while the UI reported no error and the agent recorded “Action complete”)
+
+- BUG: `AgentService.dispatchToolCall()` treated every resolved tool result as success, including structured `{ toolError, details }` responses, then swallowed thrown failures after writing a system message. `ImageAnnotator` therefore had no failure signal to show the user.
+- FIX: Convert structured tool errors into exceptions, await the system-history error write, rethrow to the interactive caller, preserve the user's annotations, and render an inline retryable alert. Require a bounded, valid annotation payload and a non-empty instruction for every used color before invoking the edit backend.
+- PREVENTION: UI-to-tool adapters need a typed success/failure contract across every layer. A fulfilled Promise means only that execution returned; callers must inspect the result contract, propagate failure, and test both the system-history receipt and the visible recovery state.

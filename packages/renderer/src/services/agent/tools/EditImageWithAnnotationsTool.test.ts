@@ -93,4 +93,44 @@ describe('EditImageWithAnnotationsTool', () => {
         expect(mocks.editImage).not.toHaveBeenCalled();
         expect(result.details).toBe('At least one spatial annotation is required.');
     });
+
+    it('rejects annotations with unsupported colors or invalid geometry', async () => {
+        const invalidColor = await EditImageWithAnnotationsTool.execute({
+            ...annotationArgs,
+            annotations: [{ color: 'green', cx: 10, cy: 20, r: 8 }],
+            colorPrompts: { green: 'change this area' },
+            imageData: 'data:image/png;base64,AQID'
+        });
+        const invalidRadius = await EditImageWithAnnotationsTool.execute({
+            ...annotationArgs,
+            annotations: [{ color: 'red', cx: 10, cy: 20, r: 0 }],
+            imageData: 'data:image/png;base64,AQID'
+        });
+
+        expect(invalidColor.details).toBe('Annotation 1 must use red, blue, or yellow.');
+        expect(invalidRadius.details).toBe('Annotation 1 must have finite, non-negative coordinates and a positive radius.');
+        expect(mocks.editImage).not.toHaveBeenCalled();
+    });
+
+    it('requires a non-empty prompt for every used annotation color', async () => {
+        const result = await EditImageWithAnnotationsTool.execute({
+            ...annotationArgs,
+            colorPrompts: { red: '   ' },
+            imageData: 'data:image/png;base64,AQID'
+        });
+
+        expect(result.details).toBe('Add edit instructions for the red annotation regions.');
+        expect(mocks.editImage).not.toHaveBeenCalled();
+    });
+
+    it('accepts only an inline PNG for the annotation mask', async () => {
+        const result = await EditImageWithAnnotationsTool.execute({
+            ...annotationArgs,
+            imageData: 'data:image/png;base64,AQID',
+            maskData: 'https://cdn.example.com/mask.png'
+        });
+
+        expect(result.details).toBe('Annotation masks must be PNG data URIs.');
+        expect(mocks.editImage).not.toHaveBeenCalled();
+    });
 });

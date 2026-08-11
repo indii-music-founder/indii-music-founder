@@ -38,6 +38,16 @@
 - **Test Coverage:** `e2e/creative-generation.integration.test.ts` → "video generation: no base64 URIs"
 - **Lesson:** API contracts are strict. Backend validation is the source of truth; test against it.
 
+### 2026-08-11 | Annotation Tool Failure Reported as Completion
+- **Error:** Image annotation returned no edited image, but direct dispatch recorded “Action complete” and the annotator showed no error.
+- **Surface:** Inline Annotator on a generated chat image.
+- **Root Cause:** `AgentService.dispatchToolCall()` treated a fulfilled `{ toolError, details }` result as success and swallowed thrown failures after writing a system message.
+- **Impact:** Provider, configuration, validation, and network failures were invisible at the interactive annotation surface.
+- **Reproduction:** Return a structured error from `edit_image_with_annotations` and select **Apply Edits**.
+- **Fix:** Reject structured tool errors through the direct-dispatch Promise, validate annotations and instructions before the provider call, and render the retained error in an inline alert.
+- **Test Coverage:** `AgentService.torture.test.ts`, `EditImageWithAnnotationsTool.test.ts`, and `ImageAnnotator.test.tsx` cover propagation, validation, visible recovery, and retained retry state.
+- **Lesson:** Promise fulfillment is a transport fact, not a success receipt. Interactive tool adapters must inspect the result contract and propagate failure to the initiating UI.
+
 ---
 
 ## OPEN Failures
@@ -137,4 +147,4 @@ Add to `.github/workflows/deploy.yml`:
 - **Maintained by:** Whoever last modified `packages/renderer/src/services/image/` or `**/VideoGeneration**`
 - **Review Cycle:** Weekly (look for new patterns)
 
-Last update: 2026-06-30 12:40 UTC
+Last update: 2026-08-11

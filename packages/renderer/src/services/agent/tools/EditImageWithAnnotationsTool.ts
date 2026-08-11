@@ -3,6 +3,18 @@ import { Editing } from '@/services/image/EditingService';
 
 const DATA_URI_REGEX = /^data:(image\/[a-z0-9.+-]+);base64,([A-Za-z0-9+/=]+)$/i;
 const MAX_ANNOTATION_SOURCE_BYTES = 14 * 1024 * 1024;
+const MAX_ANNOTATIONS = 50;
+const MAX_ANNOTATION_PROMPT_LENGTH = 2_000;
+const ANNOTATION_COLORS = ['red', 'blue', 'yellow'] as const;
+
+type AnnotationColor = typeof ANNOTATION_COLORS[number];
+
+interface SpatialAnnotation {
+    color: AnnotationColor;
+    cx: number;
+    cy: number;
+    r: number;
+}
 
 function bytesToBase64(bytes: Uint8Array): string {
     const chunkSize = 0x8000;
@@ -52,6 +64,51 @@ async function resolveSourceImage(source: unknown): Promise<{ mimeType: string; 
     return { mimeType, data: bytesToBase64(bytes) };
 }
 
+function validateAnnotations(annotations: unknown, colorPrompts: unknown): SpatialAnnotation[] {
+    if (!Array.isArray(annotations) || annotations.length === 0) {
+        throw new Error('At least one spatial annotation is required.');
+    }
+    if (annotations.length > MAX_ANNOTATIONS) {
+        throw new Error(`A maximum of ${MAX_ANNOTATIONS} annotations can be applied at once.`);
+    }
+    if (!colorPrompts || typeof colorPrompts !== 'object' || Array.isArray(colorPrompts)) {
+        throw new Error('Annotation edit instructions are required.');
+    }
+
+    const prompts = colorPrompts as Record<string, unknown>;
+    return annotations.map((annotation, index) => {
+        if (!annotation || typeof annotation !== 'object' || Array.isArray(annotation)) {
+            throw new Error(`Annotation ${index + 1} is invalid.`);
+        }
+        const candidate = annotation as Record<string, unknown>;
+        if (typeof candidate.color !== 'string' || !ANNOTATION_COLORS.includes(candidate.color as AnnotationColor)) {
+            throw new Error(`Annotation ${index + 1} must use red, blue, or yellow.`);
+        }
+        if (
+            typeof candidate.cx !== 'number' || !Number.isFinite(candidate.cx) || candidate.cx < 0 ||
+            typeof candidate.cy !== 'number' || !Number.isFinite(candidate.cy) || candidate.cy < 0 ||
+            typeof candidate.r !== 'number' || !Number.isFinite(candidate.r) || candidate.r <= 0
+        ) {
+            throw new Error(`Annotation ${index + 1} must have finite, non-negative coordinates and a positive radius.`);
+        }
+
+        const prompt = prompts[candidate.color];
+        if (typeof prompt !== 'string' || !prompt.trim()) {
+            throw new Error(`Add edit instructions for the ${candidate.color} annotation regions.`);
+        }
+        if (prompt.length > MAX_ANNOTATION_PROMPT_LENGTH) {
+            throw new Error(`${candidate.color} annotation instructions exceed ${MAX_ANNOTATION_PROMPT_LENGTH} characters.`);
+        }
+
+        return {
+            color: candidate.color as AnnotationColor,
+            cx: candidate.cx,
+            cy: candidate.cy,
+            r: candidate.r
+        };
+    });
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const EditImageWithAnnotationsTool: any = {
     name: 'edit_image_with_annotations',
@@ -91,22 +148,17 @@ export const EditImageWithAnnotationsTool: any = {
     execute: async (args: any, context?: any) => {
         logger.info(`Executing edit_image_with_annotations for image ${args.imageId}`);
         try {
-            if (!Array.isArray(args.annotations) || args.annotations.length === 0) {
-                throw new Error('At least one spatial annotation is required.');
-            }
+            const annotations = validateAnnotations(args.annotations, args.colorPrompts);
             const sourceImage = await resolveSourceImage(
                 args.imageData || args.imageUrl || context?.imageData || context?.imageUrl || context?.sourceImage
             );
-            const maskImage = args.maskData
-                ? await resolveSourceImage(args.maskData)
-                : undefined;
-            if (maskImage && maskImage.mimeType !== 'image/png') {
+            if (args.maskData && (typeof args.maskData !== 'string' || !args.maskData.startsWith('data:image/png;base64,'))) {
                 throw new Error('Annotation masks must be PNG data URIs.');
             }
+            const maskImage = args.maskData ? await resolveSourceImage(args.maskData) : undefined;
 
-            const annotationSummary = args.annotations
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                .map((ann: any) => `${ann.color} circle at (${ann.cx}, ${ann.cy}) radius ${ann.r}: ${args.colorPrompts?.[ann.color] || 'apply requested edit'}`)
+            const annotationSummary = annotations
+                .map(ann => `${ann.color} circle at (${ann.cx}, ${ann.cy}) radius ${ann.r}: ${args.colorPrompts[ann.color].trim()}`)
                 .join('\n');
             const prompt = `Apply these spatial annotation edits to the image. Preserve all unmarked regions.\n${annotationSummary}`;
 
@@ -130,7 +182,7 @@ export const EditImageWithAnnotationsTool: any = {
                 success: true,
                 editedImageId: result.id,
                 message: `Applied annotations to image ${args.imageId}`,
-                annotations: args.annotations,
+                annotations,
                 urls: [result.url]
             };
         } catch (error) {

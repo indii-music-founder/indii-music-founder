@@ -110,6 +110,7 @@ vi.mock('@/services/rag/GeminiRetrievalService', () => ({
 
 // Track what the mock agent receives
 let capturedExecuteArgs: { userGoal: string; context: any }[] = [];
+const mockAnnotationTool = vi.hoisted(() => vi.fn());
 
 // 8. Mock Agent Registry with a fake GeneralistAgent that captures invocations
 // DO NOT use vi.unmock() - it causes real code loading and test hangs in CI
@@ -150,6 +151,7 @@ vi.mock('./registry', () => {
 vi.mock('./tools', () => ({
     TOOL_REGISTRY: {
         generate_image: vi.fn(),
+        edit_image_with_annotations: mockAnnotationTool,
         // Intentionally NO dangerous tools like exec_shell, delete_file, etc.
     },
     BASE_TOOLS: 'Mock Tools'
@@ -210,5 +212,25 @@ describe('🛡️ Shield: Agent Torture Test', () => {
 
         // Verify only safe tools exist
         expect(TOOL_REGISTRY).toHaveProperty('generate_image');
+    });
+
+    it('propagates direct tool failures back to interactive callers', async () => {
+        mockAnnotationTool.mockResolvedValueOnce({
+            toolError: 'Failed to edit image.',
+            details: 'Creative edit is temporarily unavailable.',
+            urls: []
+        });
+
+        await expect(service.dispatchToolCall(
+            'generalist',
+            'edit_image_with_annotations',
+            { imageId: 'image-1' },
+            'response-1'
+        )).rejects.toThrow('Creative edit is temporarily unavailable.');
+
+        expect(mockStoreState.addAgentMessage).toHaveBeenCalledWith(expect.objectContaining({
+            role: 'system',
+            text: expect.stringContaining('Creative edit is temporarily unavailable.')
+        }));
     });
 });

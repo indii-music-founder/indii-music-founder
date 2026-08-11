@@ -1,6 +1,4 @@
 import React, { useState, useRef, useEffect } from 'react';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { useStore } from '@/core/store';
 import { AgentService } from '@/services/agent/AgentService';
 import { Logger } from '@/core/logger/Logger';
 import { Eraser, Trash2, CheckCircle2 } from 'lucide-react';
@@ -25,16 +23,19 @@ const COLORS = [
     { name: 'red', hex: '#ef4444' },
     { name: 'blue', hex: '#3b82f6' },
     { name: 'yellow', hex: '#eab308' }
-];
+] as const;
+
+type AnnotationColorName = typeof COLORS[number]['name'];
 
 export const ImageAnnotator: React.FC<ImageAnnotatorProps> = ({ imageUrl, imageId, originalMessageId, agentId }) => {
     const [annotations, setAnnotations] = useState<Annotation[]>([]);
     const [activeTool, setActiveTool] = useState<string>('#ef4444'); // default red
-    const [prompts, setPrompts] = useState<{ [color: string]: string }>({ red: '', blue: '', yellow: '' });
+    const [prompts, setPrompts] = useState<Record<AnnotationColorName, string>>({ red: '', blue: '', yellow: '' });
     const [isDrawing, setIsDrawing] = useState(false);
     const [currentCircle, setCurrentCircle] = useState<Annotation | null>(null);
     const [imageSize, setImageSize] = useState({ width: 0, height: 0 });
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
@@ -155,7 +156,21 @@ export const ImageAnnotator: React.FC<ImageAnnotatorProps> = ({ imageUrl, imageI
         setCurrentCircle(null);
     };
 
+    const incompletePromptColors = COLORS.filter(({ name, hex }) =>
+        annotations.some(annotation => annotation.color === hex) && !prompts[name].trim()
+    );
+
     const handleApply = async () => {
+        if (annotations.length === 0) {
+            setErrorMessage('Draw at least one annotation circle before applying edits.');
+            return;
+        }
+        if (incompletePromptColors.length > 0) {
+            setErrorMessage(`Add edit instructions for the ${incompletePromptColors.map(({ name }) => name).join(', ')} annotation regions.`);
+            return;
+        }
+
+        setErrorMessage(null);
         setIsSubmitting(true);
         try {
             const maskCanvas = document.createElement('canvas');
@@ -202,6 +217,7 @@ export const ImageAnnotator: React.FC<ImageAnnotatorProps> = ({ imageUrl, imageI
 
         } catch (error) {
             Logger.error('ImageAnnotator', 'Failed to submit annotations', error);
+            setErrorMessage(error instanceof Error ? error.message : 'Unable to apply these annotations. Please try again.');
         } finally {
             setIsSubmitting(false);
         }
@@ -218,6 +234,7 @@ export const ImageAnnotator: React.FC<ImageAnnotatorProps> = ({ imageUrl, imageI
                         <button
                             key={c.hex}
                             onClick={() => setActiveTool(c.hex)}
+                            aria-label={`Use ${c.name} annotation color`}
                             className={`w-6 h-6 rounded-full transition-transform ${activeTool === c.hex ? 'scale-125 ring-2 ring-white' : ''}`}
                             style={{ backgroundColor: c.hex }}
                             title={c.name}
@@ -232,7 +249,10 @@ export const ImageAnnotator: React.FC<ImageAnnotatorProps> = ({ imageUrl, imageI
                         <Eraser size={16} />
                     </button>
                     <button
-                        onClick={() => setAnnotations([])}
+                        onClick={() => {
+                            setAnnotations([]);
+                            setErrorMessage(null);
+                        }}
                         className="p-1.5 rounded text-gray-400 hover:text-red-400 transition-colors"
                         title="Clear All"
                     >
@@ -280,7 +300,10 @@ export const ImageAnnotator: React.FC<ImageAnnotatorProps> = ({ imageUrl, imageI
                                 type="text"
                                 placeholder={hasAnnotations ? `Prompt for ${c.name} regions...` : `Draw ${c.name} circles to enable`}
                                 value={prompts[c.name]}
-                                onChange={(e) => setPrompts({ ...prompts, [c.name]: e.target.value })}
+                                onChange={(e) => {
+                                    setPrompts({ ...prompts, [c.name]: e.target.value });
+                                    setErrorMessage(null);
+                                }}
                                 disabled={!hasAnnotations}
                                 className="flex-1 bg-black/50 border border-white/10 rounded px-3 py-1.5 text-sm text-white focus:outline-none focus:border-dept-creative disabled:cursor-not-allowed"
                             />
@@ -289,9 +312,15 @@ export const ImageAnnotator: React.FC<ImageAnnotatorProps> = ({ imageUrl, imageI
                 })}
             </div>
 
+            {errorMessage && (
+                <p role="alert" className="text-sm text-red-300">
+                    {errorMessage}
+                </p>
+            )}
+
             <button
                 onClick={handleApply}
-                disabled={isSubmitting || annotations.length === 0}
+                disabled={isSubmitting || annotations.length === 0 || incompletePromptColors.length > 0}
                 className="flex items-center justify-center gap-2 w-full py-2 bg-dept-creative hover:bg-dept-creative/80 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded font-bold transition-colors"
             >
                 {isSubmitting ? (
