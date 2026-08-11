@@ -336,7 +336,7 @@ describe('creative gateway generateImageV3', () => {
     });
 
     expect(mockInteractionsCreate).toHaveBeenCalledWith(expect.objectContaining({
-      model: 'gemini-3.1-flash-image-preview',
+      model: 'gemini-2.5-flash-image',
       input: [{ type: 'text', text: 'Dogs having fun' }],
       response_modalities: ['image'],
       generation_config: expect.objectContaining({

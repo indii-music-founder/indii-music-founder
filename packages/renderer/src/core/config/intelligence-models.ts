@@ -14,10 +14,10 @@ export const APPROVED_MODELS = {
     TEXT_FAST: 'gemini-3-flash-preview',          // Fast tasks — per MODEL_POLICY.md
     TEXT_LITE: 'gemini-3.1-flash-lite',           // Budget tier — per MODEL_POLICY.md
     IMAGE_GEN: 'gemini-3-pro-image-preview',      // Native image gen via responseModalities
-    IMAGE_FAST: 'gemini-3.1-flash-image-preview', // Nano Banana 2 — fast image gen
+    IMAGE_FAST: 'gemini-2.5-flash-image', // Nano Banana — fast image gen
     // Direct mode — bleeding-edge preview models for client-side SDK calls
     DIRECT_PRO: 'gemini-3-pro-image-preview',     // Nano Banana Pro — highest quality, 4K, 14 ref images
-    DIRECT_FAST: 'gemini-3.1-flash-image-preview', // Nano Banana 2 — fast + Pro quality
+    DIRECT_FAST: 'gemini-2.5-flash-image',        // Nano Banana — fast image gen
     // Imagen 4 specifically for backwards compatibility and fallback options
     IMAGEN_ULTRA: 'imagen-4.0-ultra-generate-001',
     IMAGEN_PRO: 'imagen-4.0-generate-001',

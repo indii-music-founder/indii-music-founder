@@ -1166,9 +1166,12 @@ export const generateImageV3 = onCall({ ...creativeGatewayCallableOptions, timeo
 
       let usedInteractions = false;
 
+      let interactionError: Error | undefined;
+
       if (imageAi.interactions) {
+        let interaction: unknown;
         try {
-            const interaction = await imageAi.interactions.create({
+            interaction = await imageAi.interactions.create({
               model: modelId,
               input: interactionInput,
               response_modalities: responseFormat === 'image_and_text' ? ['text', 'image'] : ['image'],
@@ -1184,30 +1187,35 @@ export const generateImageV3 = onCall({ ...creativeGatewayCallableOptions, timeo
               },
               ...(googleSearchTool ? { tools: googleSearchTool } : {}),
             });
-            image = extractInteractionImage(interaction);
-            const metadata = extractInteractionMetadata(interaction);
-            if (metadata.textNarration) narrationParts.push(metadata.textNarration);
-            if (metadata.thoughtSummary) thoughtSummaries.push(metadata.thoughtSummary);
             usedInteractions = true;
         } catch (e: any) {
-            if (e?.message?.includes('Unsupported model interaction')) {
-                console.log(`[generateImageV3] interactions.create unsupported for ${modelId}, falling back to models.generateContent`);
+            interactionError = e;
+            const errMessage = String(e?.message || e || '').toLowerCase();
+            const isUnsupportedOrNotFound = e?.status === 404 || errMessage.includes('unsupported model interaction') || errMessage.includes('404') || errMessage.includes('not found') || errMessage.includes('not available') || errMessage.includes('is not supported');
+            if (isUnsupportedOrNotFound) {
+                console.log(`[generateImageV3] interactions.create unavailable for ${modelId} (${errMessage}), falling back to models.generateContent`);
             } else {
                 throw e;
             }
         }
+
+        if (usedInteractions && interaction) {
+            image = extractInteractionImage(interaction);
+            const metadata = extractInteractionMetadata(interaction);
+            if (metadata.textNarration) narrationParts.push(metadata.textNarration);
+            if (metadata.thoughtSummary) thoughtSummaries.push(metadata.thoughtSummary);
+        }
       } 
       
       if (!usedInteractions) {
-        console.log('[generateImageV3] Falling back to models.generateContent...');
+        console.log(`[generateImageV3] Executing models.generateContent with model=${modelId}...`);
         const thinkingConfig = {
           ...(normalizedThinkingLevel && model === 'fast'
             ? { thinkingLevel: normalizedThinkingLevel.charAt(0).toUpperCase() + normalizedThinkingLevel.slice(1) }
             : {}),
           ...(includeThoughts ? { includeThoughts: true } : {}),
         };
-        const response = await imageAi.models.generateContent({
-          model: modelId,
+        const generateContentData = {
           contents: interactionInput,
           config: {
             responseModalities: responseFormat === 'image_and_text' ? ['TEXT', 'IMAGE'] : ['IMAGE'],
@@ -1218,7 +1226,38 @@ export const generateImageV3 = onCall({ ...creativeGatewayCallableOptions, timeo
             ...(Object.keys(thinkingConfig).length > 0 ? { thinkingConfig } : {}),
             ...(googleSearchTool ? { tools: googleSearchTool } : {}),
           }
-        });
+        };
+
+        let response: unknown;
+        try {
+          response = await imageAi.models.generateContent({
+            model: modelId,
+            ...generateContentData,
+          });
+        } catch (genError: any) {
+          const genErrStr = String(genError?.message || genError || '').toLowerCase();
+          const isNotFound = genError?.status === 404 || genErrStr.includes('404') || genErrStr.includes('not found') || genErrStr.includes('not available');
+          if (isNotFound && modelId !== IMAGE_MODEL_IDS.legacy) {
+            console.warn(`[generateImageV3] Model ${modelId} unavailable, retrying with fallback model ${IMAGE_MODEL_IDS.legacy}`);
+            try {
+              response = await imageAi.models.generateContent({
+                model: IMAGE_MODEL_IDS.legacy,
+                ...generateContentData,
+              });
+            } catch {
+              throw interactionError || genError;
+            }
+          } else {
+            throw interactionError || genError;
+          }
+        }
+
+        if (!response || typeof response !== 'object') {
+          if (interactionError) {
+            throw interactionError;
+          }
+          throw new Error(`Model ${modelId} is not available.`);
+        }
 
         const candidates = (response as GeminiContentResponse).candidates;
         if (!candidates || candidates.length === 0) {
