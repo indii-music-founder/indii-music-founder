@@ -13,6 +13,7 @@ import { useToast } from '@/core/context/ToastContext';
 import BrandAssetsDrawer from './BrandAssetsDrawer';
 import HistoryDrawer from './HistoryDrawer';
 import AgentCapabilityRegistry from './AgentCapabilityRegistry';
+import CanvasModePicker from './CanvasModePicker';
 
 interface CreativeNavbarProps extends React.HTMLAttributes<HTMLDivElement> { }
 
@@ -51,7 +52,7 @@ export default function CreativeNavbar(props: CreativeNavbarProps) {
             {/* Single Compact Header Row */}
             <div className="flex items-center justify-between px-3 md:px-4 py-2 h-12 gap-2">
                 {/* Left: Branding & Tabs */}
-                <div className="flex items-center gap-2 md:gap-3 min-w-0 flex-1">
+                <div className="flex items-center gap-2 md:gap-3 shrink-0">
                     <div className="flex items-center gap-2 text-gray-400 shrink-0">
                         {generationMode === 'video' ? (
                             <Video size={15} className="text-blue-400" />
@@ -66,7 +67,12 @@ export default function CreativeNavbar(props: CreativeNavbarProps) {
                     <div className="h-3.5 w-px bg-white/8 mx-0.5" />
                 </div>
 
-                <div className="hidden md:flex items-center gap-1.5 shrink-0 overflow-hidden max-w-[40%] justify-end">
+                {/* Center: Studio Mode Selector Pill */}
+                <div className="flex-1 flex justify-center items-center px-2">
+                    <CanvasModePicker />
+                </div>
+
+                <div className="hidden md:flex items-center gap-1.5 shrink-0 overflow-hidden max-w-[45%] justify-end">
                     <div className="flex items-center bg-white/4 p-0.5 rounded-lg border border-white/6">
                         <button
                             onClick={togglePromptBuilder}

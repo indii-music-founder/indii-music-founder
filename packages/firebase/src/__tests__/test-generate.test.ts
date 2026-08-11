@@ -1,4 +1,4 @@
-import { describe, expect, it, vi, beforeAll } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { generateImageV3 } from '../functions/creative/gateway.js';
 import firebaseFunctionsTest from 'firebase-functions-test';
 import * as admin from 'firebase-admin';
@@ -14,8 +14,38 @@ if (!getApps().length) {
     });
 }
 
-beforeAll(() => {
-    vi.spyOn(admin, 'storage').mockReturnValue({
+const mockDoc = {
+    set: vi.fn().mockResolvedValue(undefined),
+    get: vi.fn().mockResolvedValue({
+        exists: true,
+        data: () => ({
+            userId: 'user-123',
+            status: 'APPROVED',
+            type: 'image',
+            amount: 10,
+            estimatedCost: 10
+        })
+    }),
+    update: vi.fn().mockResolvedValue(undefined),
+};
+
+vi.mock('firebase-admin', async (importOriginal) => {
+    const actual: any = await importOriginal();
+    
+    const firestoreMock = Object.assign(vi.fn().mockReturnValue({
+        collection: () => ({
+            doc: (id: any) => ({
+                ...mockDoc,
+                id: id || 'mock-id'
+            }),
+            add: vi.fn().mockResolvedValue({ id: 'mock-doc-id' }),
+        })
+    }), {
+        Timestamp: actual.firestore?.Timestamp || { fromMillis: (ms: number) => ({ toMillis: () => ms }) },
+        FieldValue: actual.firestore?.FieldValue || {}
+    });
+
+    const storageMock = Object.assign(vi.fn().mockReturnValue({
         bucket: () => ({
             file: () => ({
                 save: vi.fn().mockResolvedValue(undefined),
@@ -24,29 +54,13 @@ beforeAll(() => {
             }),
             name: 'indii-music-founder.appspot.com'
         })
-    } as any);
-
-    const mockDoc = {
-        set: vi.fn().mockResolvedValue(undefined),
-        get: vi.fn().mockResolvedValue({
-            exists: true,
-            data: () => ({
-                userId: 'user-123',
-                status: 'APPROVED',
-                type: 'image',
-                amount: 10,
-                estimatedCost: 10
-            })
-        }),
-        update: vi.fn().mockResolvedValue(undefined),
-    };
+    }), actual.storage);
     
-    vi.spyOn(admin, 'firestore').mockReturnValue({
-        collection: () => ({
-            doc: () => mockDoc,
-            add: vi.fn().mockResolvedValue({ id: 'mock-doc-id' }),
-        })
-    } as any);
+    return {
+        ...actual,
+        firestore: firestoreMock,
+        storage: storageMock,
+    };
 });
 
 const testEnv = firebaseFunctionsTest({ projectId: 'indii-music-founder' });

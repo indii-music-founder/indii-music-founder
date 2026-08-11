@@ -1147,12 +1147,14 @@ export default function VideoWorkflow() {
                     }`}>
                         <div className="flex-1 flex flex-col gap-2 relative">
                             {useVideoEditorStore.getState().inputAudio && (
-                                <div className="absolute -top-8 left-1/2 -translate-x-1/2 flex items-center gap-2 px-3 py-1 bg-green-500/90 backdrop-blur-md rounded-full border border-green-400/50 shadow-lg shadow-green-500/20 animate-in fade-in zoom-in duration-300">
-                                    <Music className="w-3 h-3 text-white animate-pulse" />
-                                    <span className="text-[10px] font-bold text-white uppercase tracking-tighter">Custom Audio Attached</span>
+                                <div className="self-center flex items-center gap-2 px-3 py-1 bg-green-500/20 backdrop-blur-md rounded-full border border-green-400/40 text-green-300 shadow-md animate-in fade-in zoom-in duration-200">
+                                    <Music className="w-3 h-3 text-green-400 animate-pulse" />
+                                    <span className="text-[10px] font-bold uppercase tracking-wider">Custom Audio Attached</span>
                                     <button
                                         onClick={() => useVideoEditorStore.getState().setInputAudio(null)}
-                                        className="ml-1 hover:text-red-200 transition-colors"
+                                        className="ml-1 text-gray-400 hover:text-red-400 transition-colors"
+                                        title="Remove Custom Audio"
+                                        aria-label="Remove Custom Audio"
                                     >
                                         <Trash2 className="w-3 h-3" />
                                     </button>
