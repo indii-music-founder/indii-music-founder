@@ -50,12 +50,18 @@ describe('assertUserOwnsStoragePath', () => {
         expect(() => assertUserOwnsStoragePath('users/u1/generated_images/a.png', 'u1')).not.toThrow();
     });
 
+    it('allows Creative Edit objects and masks under the user\'s vault prefix', () => {
+        expect(() => assertUserOwnsStoragePath('users/u1/vault/objects/source.png', 'u1')).not.toThrow();
+        expect(() => assertUserOwnsStoragePath('users/u1/vault/masks/edit-mask.png', 'u1')).not.toThrow();
+    });
+
     it('allows a path under the user\'s videos prefix', () => {
         expect(() => assertUserOwnsStoragePath('videos/u1/job123.mp4', 'u1')).not.toThrow();
     });
 
     it('rejects a path scoped to a different user', () => {
         expect(() => assertUserOwnsStoragePath('creative/someone-else/video/a.mp4', 'u1')).toThrow('outside the authenticated user scope');
+        expect(() => assertUserOwnsStoragePath('users/someone-else/vault/masks/edit-mask.png', 'u1')).toThrow('outside the authenticated user scope');
     });
 
     it('rejects a path with no recognized prefix at all', () => {

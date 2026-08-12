@@ -62,6 +62,7 @@ export function assertUserOwnsStoragePath(path: string, userId: string): void {
     `creative/${userId}/`,
     `users/${userId}/assets/`,
     `users/${userId}/generated_images/`,
+    `users/${userId}/vault/`,
     `videos/${userId}/`,
   ];
 
