@@ -175,6 +175,8 @@ describe('CreativeNavbar', () => {
         );
         expect(screen.getByText('Studio')).toBeInTheDocument();
         expect(screen.getByText('ONLINE')).toBeInTheDocument();
+        expect(screen.getByTestId('canvas-mode-picker')).toBeInTheDocument();
+        expect(screen.getByTestId('canvas-mode-picker')).not.toHaveClass('absolute');
     });
 
     it('opens and closes brand assets drawer', () => {

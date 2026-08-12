@@ -13,6 +13,7 @@ import { useToast } from '@/core/context/ToastContext';
 import BrandAssetsDrawer from './BrandAssetsDrawer';
 import HistoryDrawer from './HistoryDrawer';
 import AgentCapabilityRegistry from './AgentCapabilityRegistry';
+import CanvasModePicker from './CanvasModePicker';
 
 interface CreativeNavbarProps extends React.HTMLAttributes<HTMLDivElement> { }
 
@@ -65,6 +66,8 @@ export default function CreativeNavbar(props: CreativeNavbarProps) {
 
                     <div className="h-3.5 w-px bg-white/8 mx-0.5" />
                 </div>
+
+                <CanvasModePicker />
 
                 <div className="hidden md:flex items-center gap-1.5 shrink-0 overflow-hidden max-w-[40%] justify-end">
                     <div className="flex items-center bg-white/4 p-0.5 rounded-lg border border-white/6">

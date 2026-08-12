@@ -18,7 +18,10 @@ export default function CanvasModePicker() {
     };
 
     return (
-        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[100] flex items-center bg-black/60 backdrop-blur-md rounded-full border border-white/10 p-1 shadow-2xl">
+        <div
+            className="flex shrink-0 items-center rounded-full border border-white/10 bg-black/60 p-1 shadow-lg backdrop-blur-md"
+            data-testid="canvas-mode-picker"
+        >
             {MODES.map((mode) => {
                 const isActive = viewMode === mode.id;
                 const Icon = mode.icon;
