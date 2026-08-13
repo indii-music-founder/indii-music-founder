@@ -22,6 +22,8 @@ import { getColorForModule } from '@/core/theme/moduleColors';
 import { SectionHeader } from './SettingsShared';
 import { StorageService } from '@/services/StorageService';
 
+const MAX_BIO_LENGTH = 280;
+
 const ProfileSection: React.FC = () => {
     const { t } = useTranslation();
     const { user, userProfile, setUserProfile } = useStore(useShallow((s: StoreState) => ({
@@ -43,6 +45,10 @@ const ProfileSection: React.FC = () => {
 
     const handleSave = async () => {
         if (!user || !dirty) return;
+        if (bio.length > MAX_BIO_LENGTH) {
+            showToast(`Bio must be ${MAX_BIO_LENGTH} characters or fewer`, 'error');
+            return;
+        }
         setSaving(true);
         try {
             // Update Firebase Auth profile
@@ -155,11 +161,16 @@ const ProfileSection: React.FC = () => {
                     <textarea
                         value={bio}
                         onChange={(e) => { setBio(e.target.value); setDirty(true); }}
+                        maxLength={MAX_BIO_LENGTH}
+                        aria-invalid={bio.length > MAX_BIO_LENGTH}
                         rows={3}
                         className={`w-full bg-slate-800/60 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:${getColorForModule('settings').border} transition-all resize-none`}
                         placeholder={t('settings.hints.bio_desc')}
                     />
-                    <p className="text-xs text-slate-600 mt-1">{t('settings.profile.characters', { count: bio.length })}</p>
+                    <p className={`text-xs mt-1 ${bio.length > MAX_BIO_LENGTH ? 'text-red-400' : 'text-slate-600'}`}>
+                        {bio.length}/{MAX_BIO_LENGTH} characters
+                        {bio.length > MAX_BIO_LENGTH ? ' — shorten your existing bio before saving' : ''}
+                    </p>
                 </div>
 
                 <div>
@@ -177,7 +188,7 @@ const ProfileSection: React.FC = () => {
                     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="flex gap-3 pt-2">
                         <button
                             onClick={handleSave}
-                            disabled={saving}
+                            disabled={saving || bio.length > MAX_BIO_LENGTH}
                             className={`flex items-center gap-2 ${getColorForModule('settings').bg.replace('/10', '')} hover:opacity-90 text-black px-4 py-2 rounded-xl text-sm font-medium transition-colors disabled:opacity-50`}
                         >
                             {saving ? <RefreshCw size={14} className="animate-spin" /> : <Save size={14} />}

@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 import { triggerHaptic } from '../MobileRemote';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { logger } from '@/utils/logger';
+import { useStore } from '@/core/store';
 
 /**
  * ISSUE-987: candidates in priority order — WebKit/Safari commonly can't
@@ -195,7 +196,6 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
             return;
         }
 
-        if (!isPaired) return;
         triggerHaptic([50, 100]);
 
         try {
@@ -292,7 +292,7 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
     };
 
     const handlePinDrop = () => {
-        if (!isPaired || isDispatching) return;
+        if (isDispatching) return;
         triggerHaptic(50);
         setGeoError(null);
         
@@ -318,15 +318,21 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
                         confirmText: 'Send Pin',
                     });
                     if (!confirmed) return;
-                    await remoteRelayService.dispatchTask({
-                        type: 'venue_log',
-                        payload: {
-                            lat: latitude,
-                            lng: longitude,
-                            accuracyMeters: accuracy,
-                            capturedAt: new Date(position.timestamp).toISOString(),
-                        }
-                    });
+                    const capturedAt = new Date(position.timestamp).toISOString();
+                    if (isPaired) {
+                        await remoteRelayService.dispatchTask({
+                            type: 'venue_log',
+                            payload: { lat: latitude, lng: longitude, accuracyMeters: accuracy, capturedAt }
+                        });
+                    } else {
+                        useStore.getState().addNote({
+                            title: `Venue pin — ${new Date(position.timestamp).toLocaleString()}`,
+                            content: `Latitude ${latitude}, longitude ${longitude}${Number.isFinite(accuracy) ? ` (±${Math.round(accuracy)} m)` : ''}\nCaptured ${capturedAt}`,
+                            attachments: [],
+                            tags: ['venue', 'mobile-capture'],
+                        });
+                        toast.success('Venue pin saved directly to Notes.');
+                    }
                     triggerHaptic([50, 50, 50]);
                 } catch (error) {
                     logger.error('[QuickCapture] Failed to dispatch pin:', error);
@@ -358,15 +364,22 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
     const handleTextSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         const noteText = momentText.trim();
-        if (!noteText || !isPaired || isDispatching) return;
+        if (!noteText || isDispatching) return;
         
         setIsDispatching(true);
         triggerHaptic(50);
         try {
-            await remoteRelayService.dispatchTask({
-                type: 'live_moment',
-                payload: { noteText }
-            });
+            if (isPaired) {
+                await remoteRelayService.dispatchTask({ type: 'live_moment', payload: { noteText } });
+            } else {
+                useStore.getState().addNote({
+                    title: `Live moment — ${new Date().toLocaleString()}`,
+                    content: noteText,
+                    attachments: [],
+                    tags: ['mobile-capture'],
+                });
+                toast.success('Live moment saved directly to Notes.');
+            }
             setMomentText('');
             triggerHaptic([50, 50, 50]);
         } catch (error) {
@@ -378,7 +391,6 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
     };
 
     const handleDispatchMedia = async () => {
-        if (!isPaired) return;
         setIsDispatching(true);
         triggerHaptic(50);
         let uploadedPath: string | null = null;
@@ -389,7 +401,8 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
             const userId = auth.currentUser?.uid;
             if (!userId) throw new Error("User not authenticated");
 
-            let taskId: string;
+            let taskId: string | null = null;
+            let downloadUrl: string | null = null;
             if (capturedAudioBlob) {
                 // ISSUE-987: name the upload from the blob's real mimeType
                 // instead of assuming .webm — Safari/WebKit commonly record
@@ -398,46 +411,53 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
                 const extension = audioExtensionForMimeType(capturedAudioBlob.type);
                 const filename = `voice_memo_${Date.now()}.${extension}`;
                 const path = `users/${userId}/voice_memos/${filename}`;
-                const downloadUrl = await StorageService.uploadFile(capturedAudioBlob, path);
+                downloadUrl = await StorageService.uploadFile(capturedAudioBlob, path);
                 uploadedPath = path;
-
-                taskId = await remoteRelayService.dispatchTask({
-                    type: 'voice_memo',
-                    payload: { audioUrl: downloadUrl }
-                });
-                dispatchAccepted = true;
+                if (isPaired) {
+                    taskId = await remoteRelayService.dispatchTask({ type: 'voice_memo', payload: { audioUrl: downloadUrl } });
+                    dispatchAccepted = true;
+                }
             } else if (capturedImageBlob) {
                 const file = capturedImageBlob.file;
                 const filename = `photo_${Date.now()}.${file.name.split('.').pop() || 'jpg'}`;
                 const path = `users/${userId}/assets/captured_media/${filename}`;
-                const downloadUrl = await StorageService.uploadFile(file, path);
+                downloadUrl = await StorageService.uploadFile(file, path);
                 uploadedPath = path;
-
-                taskId = await remoteRelayService.dispatchTask({
-                    type: capturedImageBlob.type === 'document' ? 'document_scan' : 'media_capture',
-                    payload: { imageUrl: downloadUrl }
-                });
-                dispatchAccepted = true;
+                if (isPaired) {
+                    taskId = await remoteRelayService.dispatchTask({
+                        type: capturedImageBlob.type === 'document' ? 'document_scan' : 'media_capture',
+                        payload: { imageUrl: downloadUrl }
+                    });
+                    dispatchAccepted = true;
+                }
             } else if (capturedVideoBlob) {
                 const filename = `video_${Date.now()}.${capturedVideoBlob.name.split('.').pop() || 'mp4'}`;
                 const path = `users/${userId}/assets/captured_media/${filename}`;
-                const downloadUrl = await StorageService.uploadFile(capturedVideoBlob, path);
+                downloadUrl = await StorageService.uploadFile(capturedVideoBlob, path);
                 uploadedPath = path;
-
-                taskId = await remoteRelayService.dispatchTask({
-                    type: 'media_capture',
-                    payload: { videoUrl: downloadUrl }
-                });
-                dispatchAccepted = true;
+                if (isPaired) {
+                    taskId = await remoteRelayService.dispatchTask({ type: 'media_capture', payload: { videoUrl: downloadUrl } });
+                    dispatchAccepted = true;
+                }
             } else {
                 return;
             }
 
-            // ISSUE-983: don't clear the capture until the desktop confirms a
-            // note actually exists — queue acceptance alone is not success.
-            const outcome = await waitForDispatchConfirmation(taskId);
-            if (outcome.status === 'failed') {
-                throw new Error(outcome.error?.message || 'Failed to save to Notes');
+            if (isPaired && taskId) {
+                // ISSUE-983: don't clear the capture until the desktop confirms a
+                // note actually exists — queue acceptance alone is not success.
+                const outcome = await waitForDispatchConfirmation(taskId);
+                if (outcome.status === 'failed') {
+                    throw new Error(outcome.error?.message || 'Failed to save to Notes');
+                }
+            } else {
+                useStore.getState().addNote({
+                    title: `Mobile capture — ${new Date().toLocaleString()}`,
+                    content: reviewKind ? `Captured ${reviewKind} from mobile web.` : 'Captured from mobile web.',
+                    attachments: downloadUrl ? [downloadUrl] : [],
+                    tags: ['mobile-capture'],
+                });
+                toast.success('Capture saved directly to Notes.');
             }
 
             clearCapture();
@@ -485,7 +505,7 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
                     <motion.button
                         whileTap={(isPaired || isRecording) ? { scale: 0.9 } : undefined}
                         onClick={handleMicTap}
-                        disabled={!isRecording && (!isPaired || isDispatching)}
+                        disabled={!isRecording && isDispatching}
                         aria-pressed={isRecording}
                         aria-label={isRecording ? 'Stop recording' : 'Start recording a voice memo'}
                         className={cn(
@@ -493,7 +513,7 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
                             isRecording
                                 ? "bg-[#2E2EFE] border-[#2E2EFE] text-[#F0F0F0]"
                                 : "bg-[#030303] border-white/10 text-[#F0F0F0] hover:border-[#2E2EFE]/50",
-                            !isPaired && !isRecording && "opacity-50 grayscale cursor-not-allowed"
+                            !isPaired && !isRecording && "border-blue-500/30"
                         )}
                     >
                         <Mic className={cn("w-10 h-10", isRecording && "animate-pulse")} />
@@ -507,7 +527,7 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
                 <div className="grid grid-cols-4 gap-4 w-full max-w-sm">
                     <button
                         onClick={() => docInputRef.current?.click()}
-                        disabled={!isPaired || isDispatching || isRecording || isFinalizingRecording}
+                        disabled={isDispatching || isRecording || isFinalizingRecording}
                         className="flex flex-col items-center gap-2 p-3 rounded-2xl border border-white/10 bg-[#1c1c1e] text-[#8e8e93] hover:text-[#F0F0F0] hover:bg-white/10 transition-colors disabled:opacity-50"
                     >
                         <FileText className="w-6 h-6" />
@@ -517,7 +537,7 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
 
                     <button
                         onClick={() => photoInputRef.current?.click()}
-                        disabled={!isPaired || isDispatching || isRecording || isFinalizingRecording}
+                        disabled={isDispatching || isRecording || isFinalizingRecording}
                         className="flex flex-col items-center gap-2 p-3 rounded-2xl border border-white/10 bg-[#1c1c1e] text-[#8e8e93] hover:text-[#F0F0F0] hover:bg-white/10 transition-colors disabled:opacity-50"
                     >
                         <ImageIcon className="w-6 h-6" />
@@ -527,7 +547,7 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
 
                     <button
                         onClick={() => videoInputRef.current?.click()}
-                        disabled={!isPaired || isDispatching || isRecording || isFinalizingRecording}
+                        disabled={isDispatching || isRecording || isFinalizingRecording}
                         className="flex flex-col items-center gap-2 p-3 rounded-2xl border border-white/10 bg-[#1c1c1e] text-[#8e8e93] hover:text-[#F0F0F0] hover:bg-white/10 transition-colors disabled:opacity-50"
                     >
                         <Video className="w-6 h-6" />
@@ -537,7 +557,7 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
 
                     <button
                         onClick={handlePinDrop}
-                        disabled={!isPaired || isDispatching || isRecording || isFinalizingRecording || !hasGeolocation}
+                        disabled={isDispatching || isRecording || isFinalizingRecording || !hasGeolocation}
                         className="flex flex-col items-center gap-2 p-3 rounded-2xl border border-white/10 bg-[#1c1c1e] text-[#8e8e93] hover:text-[#F0F0F0] hover:bg-white/10 transition-colors disabled:opacity-50"
                     >
                         <MapPin className="w-6 h-6" />
@@ -567,12 +587,13 @@ export default function QuickCaptureView({ isPaired }: { isPaired: boolean }) {
                             value={momentText}
                             onChange={(e) => setMomentText(e.target.value)}
                             placeholder="Capture a live moment..."
-                            disabled={!isPaired || isDispatching || isRecording || isFinalizingRecording}
+                            disabled={isDispatching || isRecording || isFinalizingRecording}
                             className="w-full bg-[#1c1c1e] border border-white/10 rounded-[20px] py-4 pl-12 pr-14 text-sm text-[#F0F0F0] placeholder:text-[#8e8e93] focus:outline-none focus:border-[#2E2EFE]/50 transition-colors"
                         />
                         <button
                             type="submit"
-                            disabled={!momentText.trim() || !isPaired || isDispatching}
+                            aria-label="Save live moment"
+                            disabled={!momentText.trim() || isDispatching}
                             className="absolute right-2 w-10 h-10 rounded-xl flex items-center justify-center bg-[#2E2EFE] text-white disabled:opacity-50 disabled:bg-white/10 transition-all hover:bg-[#2E2EFE]/80"
                         >
                             {isDispatching ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}

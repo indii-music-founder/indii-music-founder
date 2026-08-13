@@ -57,7 +57,7 @@ export const ModuleAmbientBackground = () => {
 
     return (
         <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
-            <AnimatePresence mode="wait">
+            <AnimatePresence mode="sync">
                 <motion.div
                     key={currentModule}
                     initial={{ opacity: 0, scale: 1.05, filter: 'blur(10px)' }}
@@ -85,35 +85,23 @@ export const ModuleAmbientBackground = () => {
                         />
                     )}
 
-                    {/* Department Identity Watermark */}
-                    <motion.div
-                        initial={{ opacity: 0, x: 20 }}
-                        animate={{ opacity: 0.15, x: 0 }}
-                        transition={{ delay: 1, duration: 1.5 }}
-                        className="absolute bottom-12 right-12 flex flex-col items-end select-none"
-                    >
-                        <span
-                            className="text-[10px] tracking-[0.4em] uppercase font-bold"
-                            style={{ color: theme.accent }}
-                        >
-                            indii.music OFFICE
-                        </span>
-                        <span
-                            className="text-4xl font-display tracking-tighter mt-1"
-                            style={{
-                                color: theme.accent,
-                                textShadow: `0 0 20px ${theme.accent}44`
-                            }}
-                        >
-                            {theme.officeName}
-                        </span>
-                    </motion.div>
-
                     {/* Subtle vignette for focus */}
                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(0,0,0,0.5)_100%)] pointer-events-none" />
                 </motion.div>
             </AnimatePresence>
+            {/* Keep department identity synchronous with navigation. Background
+                crossfades must never leave the previous office name on screen. */}
+            <div className="absolute bottom-12 right-12 flex flex-col items-end select-none opacity-[0.15]">
+                <span className="text-[10px] tracking-[0.4em] uppercase font-bold" style={{ color: theme.accent }}>
+                    indii.music OFFICE
+                </span>
+                <span
+                    className="text-4xl font-display tracking-tighter mt-1"
+                    style={{ color: theme.accent, textShadow: `0 0 20px ${theme.accent}44` }}
+                >
+                    {theme.officeName}
+                </span>
+            </div>
         </div>
     );
 };
-

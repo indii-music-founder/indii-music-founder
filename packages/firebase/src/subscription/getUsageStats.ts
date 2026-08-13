@@ -45,7 +45,7 @@ export const getUsageStats = onCall({ enforceAppCheck: false /* true */ }, async
     // Calculate usage
     let imagesGenerated = 0;
     let videoDurationSeconds = 0;
-    let aiChatTokensUsed = 0;
+    let ledgerChatTokensUsed = 0;
     let storageUsedBytes = 0;
 
     usageSnapshot.forEach(doc => {
@@ -58,7 +58,7 @@ export const getUsageStats = onCall({ enforceAppCheck: false /* true */ }, async
           videoDurationSeconds += record.amount;
           break;
         case 'chat_tokens':
-          aiChatTokensUsed += record.amount;
+          ledgerChatTokensUsed += record.amount;
           break;
         case 'storage':
           storageUsedBytes += record.amount;
@@ -76,6 +76,30 @@ export const getUsageStats = onCall({ enforceAppCheck: false /* true */ }, async
           break;
       }
     });
+
+    // AI calls are metered by the model gateway in daily user_usage_stats
+    // documents. The legacy subscription ledger may also contain chat records;
+    // use the larger verified total so the UI cannot report zero after real chat.
+    const startDate = new Date(periodStart).toISOString().slice(0, 10);
+    const endDate = new Date(periodEnd).toISOString().slice(0, 10);
+    const dailyUsageSnapshot = await db.collection('user_usage_stats')
+      .where('userId', '==', userId)
+      .where('date', '>=', startDate)
+      .where('date', '<=', endDate)
+      .get();
+    let gatewayChatTokensUsed = 0;
+    dailyUsageSnapshot.forEach(doc => {
+      gatewayChatTokensUsed += Number(doc.data().tokensUsed) || 0;
+    });
+    const aiChatTokensUsed = Math.max(ledgerChatTokensUsed, gatewayChatTokensUsed);
+
+    // Storage is a current capacity measurement, not cumulative upload traffic.
+    // Prefer the daily bucket scan and retain ledger usage only until the first
+    // scan is available for an account.
+    const storageQuotaDoc = await db.collection('users').doc(userId).collection('usage').doc('storage').get();
+    if (storageQuotaDoc.exists) {
+      storageUsedBytes = Number(storageQuotaDoc.data()?.totalBytes) || 0;
+    }
 
     // Convert to appropriate units
     const videoDurationMinutes = videoDurationSeconds / 60;

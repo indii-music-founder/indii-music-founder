@@ -46,12 +46,13 @@ import {
 type TrashSourceFilter = 'all' | 'user' | 'agent';
 
 export default function FileDashboard() {
-    const { fileNodes, currentProjectId, selectedFileNodeId, setSelectedFileNode } = useStore(
+    const { fileNodes, currentProjectId, selectedFileNodeId, setSelectedFileNode, fetchFileNodes } = useStore(
         useShallow(state => ({
             fileNodes: state.fileNodes,
             currentProjectId: state.currentProjectId,
             selectedFileNodeId: state.selectedFileNodeId,
             setSelectedFileNode: state.setSelectedFileNode,
+            fetchFileNodes: state.fetchFileNodes,
         }))
     );
 
@@ -72,6 +73,13 @@ export default function FileDashboard() {
     const [purgePassword, setPurgePassword] = useState('');
     const [purgeStatusMessage, setPurgeStatusMessage] = useState<string | null>(null);
     const [isPurging, setIsPurging] = useState(false);
+
+    useEffect(() => {
+        setSelectedFileNode(null);
+        if (currentProjectId) {
+            void fetchFileNodes(currentProjectId);
+        }
+    }, [currentProjectId, fetchFileNodes, setSelectedFileNode]);
 
     const loadTrashItems = useCallback(async () => {
         setIsLoadingTrash(true);

@@ -127,6 +127,7 @@ class KnowledgeRetrievalService {
         try {
             const result = await queryKnowledgeBase({
                 query: queryText,
+                documentIdFilters: fileUri ? [fileUri] : undefined,
                 topK: 5,
                 minRelevance: 0.5
             });

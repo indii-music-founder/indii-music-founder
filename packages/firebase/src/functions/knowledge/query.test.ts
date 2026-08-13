@@ -4,8 +4,8 @@ const mocks = vi.hoisted(() => {
   const mockSet = vi.fn().mockResolvedValue(undefined);
   const mockGet = vi.fn();
   const mockGetDocs = vi.fn().mockResolvedValue({ docs: [] });
-  const mockWhere = vi.fn().mockReturnValue({ get: mockGetDocs });
   const mockFindNearest = vi.fn().mockReturnValue({ get: mockGet });
+  const mockWhere = vi.fn().mockReturnValue({ get: mockGetDocs, findNearest: mockFindNearest });
   const mockDoc = vi.fn().mockReturnValue({ set: mockSet });
   const mockSubCollection = vi.fn().mockReturnValue({
     findNearest: mockFindNearest,
@@ -139,5 +139,19 @@ describe('Knowledge Base Query Endpoint', () => {
     await expect(handler({ auth: null, data: { query: 'test' } })).rejects.toThrow(
       'User must be authenticated'
     );
+  });
+
+  it('limits a focused-document query to the selected document', async () => {
+    mocks.mockEmbedContent.mockResolvedValue({ embeddings: [{ values: new Array(768).fill(0.01) }] });
+    mocks.mockGet.mockResolvedValue({ docs: [] });
+
+    const handler = queryKnowledgeBase as any;
+    await handler({
+      auth: { uid: 'user-1' },
+      data: { query: 'summarize this', documentIdFilters: ['doc-1'] },
+    });
+
+    expect(mocks.mockWhere).toHaveBeenCalledWith('documentId', 'in', ['doc-1']);
+    expect(mocks.mockFindNearest).toHaveBeenCalled();
   });
 });

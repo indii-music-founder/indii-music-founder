@@ -99,6 +99,8 @@ class UsageTracker {
         ...record,
         timestamp: Date.now()
       });
+      const { subscriptionService } = await import('./SubscriptionService');
+      subscriptionService.clearCache(userId);
     } catch (error: unknown) {
       logger.error(`[UsageTracker] Error tracking usage (attempt ${attempt + 1}):`, error);
 

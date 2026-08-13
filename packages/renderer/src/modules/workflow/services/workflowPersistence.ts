@@ -1,81 +1,42 @@
-import { db } from '@/services/firebase';
-import { collection, addDoc, getDocs, doc, getDoc, query, where, updateDoc } from 'firebase/firestore';
+import { auth } from '@/services/firebase';
+import {
+    getAllWorkflowsFromStorage,
+    getWorkflowFromStorage,
+    saveWorkflowToStorage,
+} from '@/services/storage/repository';
 import { SavedWorkflow } from '../types';
-import { logger } from '@/utils/logger';
 
-const WORKFLOWS_COLLECTION = 'workflows';
-
-export const saveWorkflow = async (workflow: Omit<SavedWorkflow, 'id'> & { id?: string }, userId: string): Promise<string> => {
-    try {
-        const workflowData = {
-            ...workflow,
-            userId,
-            updatedAt: new Date().toISOString(),
-            // Ensure we don't save undefined values which Firestore dislikes
-            // Using JSON.parse(JSON.stringify()) is a common way to strip undefined
-            nodes: workflow.nodes.map(node => {
-                try {
-                    return JSON.parse(JSON.stringify(node));
-                } catch (e: unknown) {
-                    logger.error("Failed to serialize node", node, e);
-                    throw e;
-                }
-            }),
-            edges: workflow.edges.map(edge => {
-                try {
-                    return JSON.parse(JSON.stringify(edge));
-                } catch (e: unknown) {
-                    logger.error("Failed to serialize edge", edge, e);
-                    throw e;
-                }
-            })
-        };
-
-        if (workflow.id) {
-            // Update existing
-            const docRef = doc(db, WORKFLOWS_COLLECTION, workflow.id);
-            await updateDoc(docRef, workflowData);
-            return workflow.id;
-        } else {
-            // Create new
-            const docRef = await addDoc(collection(db, WORKFLOWS_COLLECTION), {
-                ...workflowData,
-                createdAt: new Date().toISOString()
-            });
-            return docRef.id;
-        }
-    } catch (error: unknown) {
-        logger.error("Error saving workflow:", error);
-        throw error;
+const assertCurrentUser = (userId: string) => {
+    if (!auth.currentUser || auth.currentUser.uid !== userId) {
+        throw new Error('Workflows require the current authenticated user.');
     }
+};
+
+export const saveWorkflow = async (
+    workflow: Omit<SavedWorkflow, 'id'> & { id?: string },
+    userId: string,
+): Promise<string> => {
+    assertCurrentUser(userId);
+    const id = workflow.id || crypto.randomUUID();
+    const now = new Date().toISOString();
+    const saved: SavedWorkflow = {
+        ...workflow,
+        id,
+        createdAt: workflow.createdAt || now,
+        updatedAt: now,
+        nodes: structuredClone(workflow.nodes),
+        edges: structuredClone(workflow.edges),
+    };
+    await saveWorkflowToStorage(saved as unknown as Record<string, unknown> & { id: string });
+    return id;
 };
 
 export const getUserWorkflows = async (userId: string): Promise<SavedWorkflow[]> => {
-    try {
-        const q = query(collection(db, WORKFLOWS_COLLECTION), where("userId", "==", userId));
-        const querySnapshot = await getDocs(q);
-        return querySnapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-        } as SavedWorkflow));
-    } catch (error: unknown) {
-        logger.error("Error getting user workflows:", error);
-        throw error;
-    }
+    assertCurrentUser(userId);
+    return await getAllWorkflowsFromStorage() as unknown as SavedWorkflow[];
 };
 
 export const loadWorkflow = async (workflowId: string): Promise<SavedWorkflow | null> => {
-    try {
-        const docRef = doc(db, WORKFLOWS_COLLECTION, workflowId);
-        const docSnap = await getDoc(docRef);
-
-        if (docSnap.exists()) {
-            return { id: docSnap.id, ...docSnap.data() } as SavedWorkflow;
-        } else {
-            return null;
-        }
-    } catch (error: unknown) {
-        logger.error("Error loading workflow:", error);
-        throw error;
-    }
+    const workflow = await getWorkflowFromStorage(workflowId);
+    return (workflow as unknown as SavedWorkflow | undefined) ?? null;
 };

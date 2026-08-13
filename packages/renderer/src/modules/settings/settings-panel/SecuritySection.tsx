@@ -176,7 +176,13 @@ const SecuritySection: React.FC = () => {
 
     const tierConfig = subscription ? getTierConfig(subscription.tier) : null;
     const isFallback = Boolean(subscription?.isFallback || usage?.isFallback);
-    const periodLabel = subscription?.cancelAtPeriodEnd ? 'Access ends' : 'Renews';
+    const isOneTimePlan = tierConfig?.billingPeriod === 'once';
+    const periodLabel = isOneTimePlan ? 'Access' : subscription?.cancelAtPeriodEnd ? 'Access ends' : 'Renews';
+    const formattedPrice = !tierConfig || tierConfig.price === 0
+        ? 'Free'
+        : tierConfig.billingPeriod === 'once'
+            ? `$${formatNumber(tierConfig.price)} one-time`
+            : `$${formatNumber(tierConfig.price)}/${tierConfig.billingPeriod === 'year' ? 'year' : 'month'}`;
 
     const handleLogout = async () => {
         try {
@@ -286,15 +292,21 @@ const SecuritySection: React.FC = () => {
                                 <div className="rounded-lg border border-slate-700/40 bg-slate-950/30 p-3">
                                     <p className="flex items-center gap-1 text-[10px] uppercase tracking-wider text-slate-500"><CreditCard size={11} /> Price</p>
                                     <p className="mt-1 text-base font-semibold text-white">
-                                        {tierConfig.price === 0 ? 'Free' : `$${tierConfig.price}/${tierConfig.billingPeriod === 'year' ? 'year' : 'month'}`}
+                                        {formattedPrice}
                                     </p>
                                     <p className="mt-1 text-[11px] text-slate-400">{tierConfig.description}</p>
                                 </div>
                                 <div className="rounded-lg border border-slate-700/40 bg-slate-950/30 p-3">
                                     <p className="flex items-center gap-1 text-[10px] uppercase tracking-wider text-slate-500"><CalendarDays size={11} /> {periodLabel}</p>
-                                    <p className="mt-1 text-base font-semibold text-white">{formatDate(subscription.currentPeriodEnd)}</p>
+                                    <p className="mt-1 text-base font-semibold text-white">
+                                        {isOneTimePlan ? 'No renewal required' : formatDate(subscription.currentPeriodEnd)}
+                                    </p>
                                     <p className="mt-1 text-[11px] text-slate-400">
-                                        {subscription.cancelAtPeriodEnd ? 'Cancellation scheduled' : `Current period began ${formatDate(subscription.currentPeriodStart)}`}
+                                        {isOneTimePlan
+                                            ? `Access granted ${formatDate(subscription.currentPeriodStart)}`
+                                            : subscription.cancelAtPeriodEnd
+                                                ? 'Cancellation scheduled'
+                                                : `Current period began ${formatDate(subscription.currentPeriodStart)}`}
                                     </p>
                                 </div>
                             </div>

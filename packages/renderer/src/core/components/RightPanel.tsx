@@ -486,7 +486,7 @@ export default function RightPanel() {
                         );
                     })}
 
-                    {generatedHistory.length > 0 && (
+                    {currentModule !== 'notes' && generatedHistory.length > 0 && (
                         <button
                             onClick={() => {
                                 acknowledgeCreationsAffordance();

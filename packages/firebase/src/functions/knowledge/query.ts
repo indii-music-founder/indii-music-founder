@@ -30,7 +30,7 @@ export const queryKnowledgeBase = onCall({ enforceAppCheck: true }, async (reque
 
   const uid = request.auth.uid;
   const startTimeMs = Date.now();
-  const { query, topK = 5 } = request.data || {};
+  const { query, topK = 5, documentIdFilters } = request.data || {};
 
   if (!query || typeof query !== 'string' || query.trim().length === 0) {
     throw new HttpsError('invalid-argument', 'Query string must not be empty.');
@@ -61,7 +61,10 @@ export const queryKnowledgeBase = onCall({ enforceAppCheck: true }, async (reque
   
   let vectorQuerySnap;
   try {
-    vectorQuerySnap = await chunksRef.findNearest('embedding', queryEmbedding, {
+    const filteredChunks = Array.isArray(documentIdFilters) && documentIdFilters.length > 0
+      ? chunksRef.where('documentId', 'in', documentIdFilters.slice(0, 30))
+      : chunksRef;
+    vectorQuerySnap = await filteredChunks.findNearest('embedding', queryEmbedding, {
       limit: k,
       distanceMeasure: 'COSINE',
     }).get();

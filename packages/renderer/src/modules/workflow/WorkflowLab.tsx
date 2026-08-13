@@ -315,13 +315,15 @@ export default function WorkflowLab() {
                 viewport
             );
             setCurrentWorkflowId(id);
+            setSaveStatus('saved');
+            setSavedWorkflows(await getUserWorkflows(currentUser.uid));
             toastSuccess('Workflow saved.');
         } catch (error: unknown) {
             logger.error("Failed to save workflow:", error);
+            setSaveStatus('unsaved');
             toastError(`Failed to save workflow: ${error instanceof Error ? error.message : 'Unknown error'}`);
         } finally {
             setIsSaving(false);
-            setSaveStatus('saved');
         }
     };
 

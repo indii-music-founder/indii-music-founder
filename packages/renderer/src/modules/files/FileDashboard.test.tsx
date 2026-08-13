@@ -36,6 +36,7 @@ describe('FileDashboard', () => {
             currentProjectId: 'proj-1',
             selectedFileNodeId: null,
             setSelectedFileNode: vi.fn(),
+            fetchFileNodes: vi.fn().mockResolvedValue(undefined),
         };
     });
 
@@ -56,6 +57,11 @@ describe('FileDashboard', () => {
         expect(screen.getByText('Recent')).toBeInTheDocument();
         expect(screen.getByText('Favorites')).toBeInTheDocument();
         expect(screen.getByText('Images')).toBeInTheDocument();
+    });
+
+    it('loads the selected project files when opened', () => {
+        render(<FileDashboard />);
+        expect(mockStore.fetchFileNodes).toHaveBeenCalledWith('proj-1');
     });
 });
 

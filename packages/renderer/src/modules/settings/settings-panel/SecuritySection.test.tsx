@@ -132,4 +132,16 @@ describe('SecuritySection plan and usage overview', () => {
         expect(clearCache).toHaveBeenCalledWith('owner-auth-123');
         expect(showToast).toHaveBeenCalledWith('Plan and usage synchronized', 'success');
     });
+
+    it('describes the Founder plan as a one-time purchase without a renewal date', async () => {
+        getSubscription.mockResolvedValueOnce({ ...subscription, tier: SubscriptionTier.FOUNDER });
+        getUsageStats.mockResolvedValueOnce({ ...usage, tier: SubscriptionTier.FOUNDER });
+
+        render(<SecuritySection />);
+
+        expect(await screen.findByText('$2,500 one-time')).toBeInTheDocument();
+        expect(screen.getByText('No renewal required')).toBeInTheDocument();
+        expect(screen.queryByText('$2500/month')).not.toBeInTheDocument();
+        expect(screen.queryByText('Renews')).not.toBeInTheDocument();
+    });
 });

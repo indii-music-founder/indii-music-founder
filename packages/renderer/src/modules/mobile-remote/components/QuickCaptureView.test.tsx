@@ -46,14 +46,20 @@ class FakeMediaRecorder {
     }
 }
 
-const { mockError, mockDispatchTask } = vi.hoisted(() => ({
+const { mockError, mockSuccess, mockDispatchTask, mockAddNote } = vi.hoisted(() => ({
     mockError: vi.fn(),
+    mockSuccess: vi.fn(),
     mockDispatchTask: vi.fn(),
+    mockAddNote: vi.fn(),
+}));
+
+vi.mock('@/core/store', () => ({
+    useStore: { getState: () => ({ addNote: mockAddNote }) },
 }));
 
 vi.mock('@/core/context/ToastContext', () => ({
     useToast: () => ({
-        success: vi.fn(),
+        success: mockSuccess,
         error: mockError,
         info: vi.fn(),
     }),
@@ -98,6 +104,22 @@ describe('QuickCaptureView', () => {
         expect(screen.getByRole('button', { name: /pin n\/a/i })).toBeDisabled();
         expect(screen.getByText('Location capture is unavailable in this browser.')).toBeInTheDocument();
         expect(mockError).not.toHaveBeenCalled();
+    });
+
+    it('saves a text capture directly to Notes when Studio is not paired', async () => {
+        render(<QuickCaptureView isPaired={false} />);
+
+        fireEvent.change(screen.getByPlaceholderText('Capture a live moment...'), {
+            target: { value: 'Met the promoter at the club entrance.' },
+        });
+        fireEvent.click(screen.getByRole('button', { name: 'Save live moment' }));
+
+        expect(mockDispatchTask).not.toHaveBeenCalled();
+        expect(mockAddNote).toHaveBeenCalledWith(expect.objectContaining({
+            content: 'Met the promoter at the club entrance.',
+            tags: ['mobile-capture'],
+        }));
+        expect(mockSuccess).toHaveBeenCalledWith('Live moment saved directly to Notes.');
     });
 });
 

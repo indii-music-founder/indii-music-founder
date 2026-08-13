@@ -7,6 +7,7 @@ import BrandAssetsDrawer from '../../creative/components/BrandAssetsDrawer';
 import { ImageAsset } from '../types';
 import { logger } from '@/utils/logger';
 import { useStore } from '@/core/store';
+import { createPortal } from 'react-dom';
 
 interface AccountCreationWizardProps {
     onClose: () => void;
@@ -330,9 +331,9 @@ export default function AccountCreationWizard({ onClose }: AccountCreationWizard
         </div>
     );
 
-    return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-            <div className="bg-[#161b22] border border-gray-800 rounded-xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col h-[90dvh] md:h-[600px] max-h-[600px]">
+    return createPortal(
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+            <div role="dialog" aria-modal="true" aria-label="Add social account" className="bg-[#161b22] border border-gray-800 rounded-xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col h-[90dvh] md:h-[600px] max-h-[600px]">
                 {/* Header */}
                 <div className="p-4 border-b border-gray-800 flex items-center justify-between bg-bg-dark">
                     <div className="flex items-center gap-2">
@@ -401,6 +402,7 @@ export default function AccountCreationWizard({ onClose }: AccountCreationWizard
                     }}
                 />
             )}
-        </div>
+        </div>,
+        document.body
     );
 }
