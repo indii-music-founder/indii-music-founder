@@ -14,11 +14,12 @@ interface ExpenseManualEntryModalProps {
 export const ExpenseManualEntryModal: React.FC<ExpenseManualEntryModalProps> = ({ onClose, onAdd }) => {
     const dialogRef = useModalAccessibility(true, onClose);
     const [manualForm, setManualForm] = useState<Partial<Expense>>({
-        date: new Date().toISOString().split('T')[0],
+        date: '',
         category: 'Equipment',
         vendor: '',
         amount: 0,
-        description: ''
+        description: '',
+        evidenceStatus: 'unverified'
     });
 
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -27,8 +28,14 @@ export const ExpenseManualEntryModal: React.FC<ExpenseManualEntryModalProps> = (
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (!manualForm.vendor || !manualForm.amount || manualForm.amount <= 0) {
-            toast.error("Valid Vendor and Amount are required.");
+        if (
+            !manualForm.vendor?.trim()
+            || !manualForm.amount
+            || manualForm.amount <= 0
+            || !manualForm.date?.match(/^\d{4}-\d{2}-\d{2}$/)
+            || !manualForm.paymentStatus
+        ) {
+            toast.error("Vendor, amount, date, and payment status are required.");
             return;
         }
 
@@ -86,9 +93,11 @@ export const ExpenseManualEntryModal: React.FC<ExpenseManualEntryModalProps> = (
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-1.5">
-                                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1">Date</label>
+                                    <label htmlFor="expense-date" className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1">Date</label>
                                     <input
+                                        id="expense-date"
                                         type="date"
+                                        required
                                         className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-sm text-white focus:border-teal-500 outline-none transition-all"
                                         value={manualForm.date || ''}
                                         onChange={e => setManualForm({ ...manualForm, date: e.target.value })}
@@ -105,6 +114,21 @@ export const ExpenseManualEntryModal: React.FC<ExpenseManualEntryModalProps> = (
                                         onChange={e => setManualForm({ ...manualForm, amount: parseFloat(e.target.value) })}
                                     />
                                 </div>
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1">Payment Status</label>
+                                <select
+                                    required
+                                    aria-label="Payment Status"
+                                    className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-sm text-white focus:border-teal-500 outline-none transition-all appearance-none cursor-pointer"
+                                    value={manualForm.paymentStatus || ''}
+                                    onChange={e => setManualForm({ ...manualForm, paymentStatus: e.target.value as Expense['paymentStatus'] })}
+                                >
+                                    <option value="" className="bg-[#1a1a1a]">Select paid or expected</option>
+                                    <option value="paid" className="bg-[#1a1a1a]">Paid — money already spent</option>
+                                    <option value="expected" className="bg-[#1a1a1a]">Expected — planned, not paid</option>
+                                </select>
                             </div>
 
                             <div className="space-y-1.5">
@@ -140,16 +164,16 @@ export const ExpenseManualEntryModal: React.FC<ExpenseManualEntryModalProps> = (
                         </div>
 
                         <div className="pt-2 flex flex-col gap-4">
-                            <div className="flex items-center gap-2 px-4 py-2 bg-emerald-500/5 border border-emerald-500/10 rounded-xl">
-                                <AlertCircle size={14} className="text-emerald-500" />
-                                <span className="text-[10px] text-emerald-400 font-medium tracking-tight">Validating balanced ledger entry...</span>
+                            <div className="flex items-center gap-2 px-4 py-2 bg-amber-500/5 border border-amber-500/10 rounded-xl">
+                                <AlertCircle size={14} className="text-amber-400" />
+                                <span className="text-[10px] text-amber-300 font-medium tracking-tight">Manual entries remain unverified until supporting evidence is reviewed.</span>
                             </div>
 
                             <motion.button
                                 whileHover={{ scale: 1.02 }}
                                 whileTap={{ scale: 0.98 }}
                                 type="submit"
-                                disabled={isSubmitting}
+                                disabled={isSubmitting || !manualForm.vendor?.trim() || !manualForm.amount || manualForm.amount <= 0 || !manualForm.date || !manualForm.paymentStatus}
                                 className="w-full bg-linear-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 text-white font-bold py-4 rounded-2xl transition-all shadow-lg shadow-teal-500/20 disabled:opacity-50"
                             >
                                 {isSubmitting ? 'Recording Transaction...' : 'Confirm Ledger Entry'}

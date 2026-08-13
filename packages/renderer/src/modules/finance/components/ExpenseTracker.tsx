@@ -1,8 +1,6 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import FileUpload from '@/components/kokonutui/file-upload';
 import { motion } from 'motion/react';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { DollarSign, Camera, Loader2, Plus } from 'lucide-react';
+import { AlertCircle, DollarSign, Loader2, Plus } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
 import { useFinance } from '../hooks/useFinance';
 import { Expense } from '@/services/finance/FinanceService';
@@ -10,13 +8,12 @@ import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { ExpenseItem } from './ExpenseItem';
 import { ExpenseManualEntryModal } from './ExpenseManualEntryModal';
-import { ReceiptScanResultSchema } from '@/modules/finance/schemas';
-import { logger } from '@/utils/logger';
+import { isPaidExpense } from '@/modules/finance/schemas';
 import { EmptyState } from '@/components/shared/EmptyState';
 
 export const ExpenseTracker: React.FC = React.memo(() => {
-    const { userProfile } = useStore(useShallow(state => ({
-        userProfile: state.userProfile
+    const { userId } = useStore(useShallow(state => ({
+        userId: state.user?.uid
     })));
     const {
         expenses,
@@ -24,17 +21,19 @@ export const ExpenseTracker: React.FC = React.memo(() => {
         actions: { addExpense }
     } = useFinance();
 
-    // UI State for analysis only
-    const [isAnalyzing, setIsAnalyzing] = useState(false);
-
     // Manual Entry State
     const [showManualEntry, setShowManualEntry] = useState(false);
 
     const toast = useToast();
 
     // ⚡ Bolt Optimization: Memoize total calculation to avoid O(N) on every keystroke
-    const totalSpend = useMemo(() => {
-        return expenses.reduce((a, b) => a + b.amount, 0).toFixed(2);
+    const expenseTotals = useMemo(() => {
+        return expenses.reduce((totals, expense) => {
+            if (isPaidExpense(expense)) totals.paid += expense.amount;
+            else if (expense.paymentStatus === 'expected') totals.expected += expense.amount;
+            else totals.unclassified += 1;
+            return totals;
+        }, { paid: 0, expected: 0, unclassified: 0 });
     }, [expenses]);
 
     // ⚡ Bolt Optimization: Memoize list rendering to avoid re-mapping on form updates
@@ -52,7 +51,7 @@ export const ExpenseTracker: React.FC = React.memo(() => {
                 <EmptyState
                     icon="document"
                     title="No expenses recorded"
-                    description="Note your costs and upload receipts to calculate tax deductions and track spending."
+                    description="Record paid and expected costs separately so forecasts never masquerade as spending."
                     action={{ label: 'Add Expense', onClick: () => setShowManualEntry(true) }}
                     compact
                 />
@@ -63,82 +62,28 @@ export const ExpenseTracker: React.FC = React.memo(() => {
         ));
     }, [expenses, isLoading]);
 
-    const processFile = useCallback(async (file: File) => {
-        if (!userProfile?.id) return;
-        setIsAnalyzing(true);
-
-        try {
-            const reader = new FileReader();
-            reader.onload = async () => {
-                try {
-                    const base64String = reader.result?.toString().split(',')[1];
-                    if (!base64String) {
-                        setIsAnalyzing(false);
-                        return;
-                    }
-
-                    const { financeService } = await import('@/services/finance/FinanceService');
-
-                    const resultJson = await financeService.analyzeReceipt(
-                        base64String,
-                        file.type
-                    );
-
-                    const jsonMatch = resultJson.data?.raw_data?.match(/\{[\s\S]*\}/);
-                    if (jsonMatch && userProfile?.id) {
-                        const rawData = JSON.parse(jsonMatch[0]);
-
-                        // Zod Validation for Autonomous Output
-                        const validation = ReceiptScanResultSchema.safeParse(rawData);
-                        if (!validation.success) {
-                            throw new Error("Invalid receipt format returned by AI.");
-                        }
-
-                        const data = validation.data;
-
-                        const expenseData = {
-                            userId: userProfile.id,
-                            vendor: data.vendor || 'Unknown Vendor',
-                            date: data.date || (new Date().toISOString().split('T')[0] ?? ''),
-                            amount: Number(data.amount) || 0,
-                            category: data.category || 'Other',
-                            description: data.description || '',
-                        };
-
-                        await addExpense(expenseData);
-                        toast.success(`Scanned receipt from ${expenseData.vendor}`);
-                    } else {
-                        toast.error("Could not read receipt data.");
-                    }
-                } catch (e: unknown) {
-                    logger.error("Receipt analysis error:", e);
-                    toast.error("Failed to analyze receipt.");
-                } finally {
-                    setIsAnalyzing(false);
-                }
-            };
-            reader.readAsDataURL(file);
-        } catch (e: unknown) {
-            logger.error("Operation failed:", e);
-            toast.error("Failed to read file.");
-            setIsAnalyzing(false);
-        }
-    }, [userProfile?.id, toast, addExpense]);
-
     const handleAddExpense = useCallback(async (data: Partial<Expense>) => {
-        if (!userProfile?.id || userProfile.id === 'pending') {
+        if (!userId) {
             const error = new Error('An authenticated user profile is required to add an expense.');
             toast.error('Sign in before adding an expense.');
             throw error;
         }
 
+        if (!data.date?.match(/^\d{4}-\d{2}-\d{2}$/) || !data.paymentStatus) {
+            const error = new Error('Expense date and payment status are required.');
+            toast.error(error.message);
+            throw error;
+        }
+
         const expenseData = {
-            userId: userProfile.id as string,
+            userId,
             vendor: data.vendor || 'Unknown Vendor',
-            date: data.date || (new Date().toISOString().split('T')[0] ?? ''),
+            date: data.date,
             amount: Number(data.amount),
             category: data.category || 'Other',
             description: data.description || 'Manual Entry',
+            paymentStatus: data.paymentStatus,
+            evidenceStatus: 'unverified' as const,
         };
 
         try {
@@ -148,11 +93,7 @@ export const ExpenseTracker: React.FC = React.memo(() => {
             toast.error('Failed to add expense.');
             throw error;
         }
-    }, [userProfile?.id, addExpense, toast]);
-
-    const handleFilesSelected = useCallback((acceptedFiles: File[]) => {
-        acceptedFiles.forEach(processFile);
-    }, [processFile]);
+    }, [userId, addExpense, toast]);
 
     return (
         <motion.div
@@ -168,7 +109,7 @@ export const ExpenseTracker: React.FC = React.memo(() => {
                         </div>
                         Expense Tracker
                     </h2>
-                    <p className="text-sm text-gray-400 mt-1 ml-10">Drag & drop receipts for Autonomous Analysis</p>
+                    <p className="text-sm text-gray-400 mt-1 ml-10">Paid, expected, and evidence status stay separate</p>
                 </div>
                 <div className="flex items-center gap-4">
                     <motion.button
@@ -180,9 +121,13 @@ export const ExpenseTracker: React.FC = React.memo(() => {
                         <Plus size={16} />
                         Add Manual
                     </motion.button>
-                    <div className="text-right px-4 py-2 bg-white/5 rounded-lg border border-white/5">
-                        <div className="text-2xl font-bold text-white">${totalSpend}</div>
-                        <div className="text-[10px] uppercase tracking-wider text-gray-500 font-medium">Total Spend</div>
+                    <div className="text-right px-3 py-2 bg-white/5 rounded-lg border border-white/5">
+                        <div className="text-xl font-bold text-white">${expenseTotals.paid.toFixed(2)}</div>
+                        <div className="text-[10px] uppercase tracking-wider text-gray-500 font-medium">Paid</div>
+                    </div>
+                    <div className="text-right px-3 py-2 bg-white/5 rounded-lg border border-white/5">
+                        <div className="text-xl font-bold text-amber-300">${expenseTotals.expected.toFixed(2)}</div>
+                        <div className="text-[10px] uppercase tracking-wider text-gray-500 font-medium">Expected</div>
                     </div>
                 </div>
             </div>
@@ -202,21 +147,14 @@ export const ExpenseTracker: React.FC = React.memo(() => {
 
                 {/* Drop Zone */}
                 <div className="w-full md:w-1/3 p-4 border-l border-white/10 bg-black/20 flex flex-col items-center justify-center">
-                    {isAnalyzing ? (
-                        <div className="flex flex-col items-center">
-                            <Loader2 className="animate-spin text-teal-500 mb-4" size={32} />
-                            <p className="text-teal-400 font-medium animate-pulse">Analyzing Receipt...</p>
-                            <p className="text-xs text-gray-500 mt-2">Extracting Vendor & Amount</p>
-                        </div>
-                    ) : (
-                        <FileUpload
-                            onFilesSelected={handleFilesSelected}
-                            acceptedFileTypes={['image/*']}
-                            multiple={true}
-                            immediate={true}
-                            className="w-full"
-                        />
-                    )}
+                    <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4 text-center">
+                        <AlertCircle className="mx-auto mb-3 text-amber-400" size={26} />
+                        <p className="text-sm font-semibold text-amber-200">Receipt upload unavailable</p>
+                        <p className="mt-2 text-xs leading-relaxed text-gray-400">Secure upload, extraction review, and durable evidence linking are not connected yet. Use manual entry; it will remain unverified.</p>
+                        {expenseTotals.unclassified > 0 && (
+                            <p className="mt-3 text-[10px] text-amber-300">{expenseTotals.unclassified} older record{expenseTotals.unclassified === 1 ? '' : 's'} need payment classification.</p>
+                        )}
+                    </div>
                 </div>
             </div>
         </motion.div>

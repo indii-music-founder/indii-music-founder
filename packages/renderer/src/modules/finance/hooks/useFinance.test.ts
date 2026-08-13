@@ -33,7 +33,7 @@ import { useToast } from '@/core/context/ToastContext';
 
 describe('useFinance', () => {
     const mockFetchEarnings = vi.fn();
-    const mockUserProfile = { id: 'user-123' };
+    const mockUser = { uid: 'user-123' };
     const mockFinanceState = {
         earningsSummary: null,
         loading: false,
@@ -57,7 +57,7 @@ describe('useFinance', () => {
         vi.mocked(useStore).mockReturnValue({
             finance: mockFinanceState,
             fetchEarnings: mockFetchEarnings,
-            userProfile: mockUserProfile,
+            user: mockUser,
         } as any);
 
         vi.mocked(useToast).mockReturnValue(mockToast);

@@ -2,7 +2,8 @@ import { describe, it, expect } from 'vitest';
 import {
     ExpenseCategorySchema,
     ExpenseSchema,
-    ReceiptScanResultSchema
+    ReceiptScanResultSchema,
+    sumPaidExpenses,
 } from './schemas';
 
 describe('Finance Schemas', () => {
@@ -23,6 +24,37 @@ describe('Finance Schemas', () => {
                  date: '2023-10-27',
              };
              expect(ExpenseSchema.parse(data).amount).toBe(100.50);
+        });
+
+        it('keeps payment and evidence states explicit when supplied', () => {
+             const result = ExpenseSchema.parse({
+                 userId: 'user1',
+                 vendor: 'AWS',
+                 amount: 100.50,
+                 category: 'Software / Plugins',
+                 date: '2023-10-27',
+                 paymentStatus: 'expected',
+                 evidenceStatus: 'unverified',
+             });
+
+             expect(result.paymentStatus).toBe('expected');
+             expect(result.evidenceStatus).toBe('unverified');
+        });
+
+        it('never counts expected or legacy unclassified records as money spent', () => {
+             const base = {
+                 userId: 'user1',
+                 vendor: 'Vendor',
+                 category: 'Equipment',
+                 date: '2026-10-10',
+                 evidenceStatus: 'unverified' as const,
+             };
+
+             expect(sumPaidExpenses([
+                 { ...base, amount: 100, paymentStatus: 'paid' },
+                 { ...base, amount: 85, paymentStatus: 'expected' },
+                 { ...base, amount: 20 },
+             ])).toBe(100);
         });
 
         it('should require positive amount', () => {

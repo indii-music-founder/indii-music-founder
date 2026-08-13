@@ -53,7 +53,7 @@ describe('ExpenseTracker', () => {
     vi.clearAllMocks();
     (useToast as unknown as import("vitest").Mock).mockReturnValue(mockToast);
     (useStore as unknown as import("vitest").Mock).mockReturnValue({
-      userProfile: { id: 'test-user' }
+      userId: 'test-user'
     });
     (useFinance as unknown as import("vitest").Mock).mockReturnValue({
       expenses: [],
@@ -87,6 +87,12 @@ describe('ExpenseTracker', () => {
     fireEvent.change(screen.getByPlaceholderText('0.00'), {
       target: { value: '100' }
     });
+    fireEvent.change(screen.getByLabelText('Payment Status'), {
+      target: { value: 'paid' }
+    });
+    fireEvent.change(screen.getByLabelText('Date'), {
+      target: { value: '2026-10-10' }
+    });
 
     // Submit - The button says "Confirm Ledger Entry"
     fireEvent.click(screen.getByRole('button', { name: 'Confirm Ledger Entry' }));
@@ -95,7 +101,10 @@ describe('ExpenseTracker', () => {
       expect(mockAddExpense).toHaveBeenCalledWith(expect.objectContaining({
         vendor: 'Test Vendor',
         amount: 100,
-        userId: 'test-user'
+        userId: 'test-user',
+        date: '2026-10-10',
+        paymentStatus: 'paid',
+        evidenceStatus: 'unverified'
       }));
     });
 
@@ -118,11 +127,34 @@ describe('ExpenseTracker', () => {
     fireEvent.change(screen.getByPlaceholderText('0.00'), {
       target: { value: '100' }
     });
+    fireEvent.change(screen.getByLabelText('Payment Status'), {
+      target: { value: 'expected' }
+    });
+    fireEvent.change(screen.getByLabelText('Date'), {
+      target: { value: '2026-10-10' }
+    });
     fireEvent.click(screen.getByRole('button', { name: 'Confirm Ledger Entry' }));
 
     await waitFor(() => expect(mockAddExpense).toHaveBeenCalled());
     expect(screen.getByText('Manual Ledger Entry')).toBeInTheDocument();
     expect(mockToast.error).toHaveBeenCalledWith('Failed to add expense.');
     expect(mockToast.success).not.toHaveBeenCalledWith('Expense added manually.');
+  });
+
+  it('does not enable submission until date and payment status are explicit', () => {
+    render(<ExpenseTracker />);
+    fireEvent.click(screen.getByText('Add Manual'));
+    fireEvent.change(screen.getByPlaceholderText('e.g. Sweetwater'), { target: { value: 'Test Vendor' } });
+    fireEvent.change(screen.getByPlaceholderText('0.00'), { target: { value: '100' } });
+
+    expect(screen.getByRole('button', { name: 'Confirm Ledger Entry' })).toBeDisabled();
+    expect(mockAddExpense).not.toHaveBeenCalled();
+  });
+
+  it('shows receipt ingestion as unavailable instead of pretending to analyze files', () => {
+    render(<ExpenseTracker />);
+
+    expect(screen.getByText('Receipt upload unavailable')).toBeInTheDocument();
+    expect(screen.queryByText('Analyzing Receipt...')).not.toBeInTheDocument();
   });
 });

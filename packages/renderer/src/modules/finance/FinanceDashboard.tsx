@@ -27,7 +27,7 @@ import {
     FileText, Activity, Shield, Camera, GitMerge, Loader2, Landmark, Sparkles
 } from 'lucide-react';
 import type { EarningsSummary } from '@/services/revenue/schema';
-import type { Expense } from './schemas';
+import { sumPaidExpenses, type Expense } from './schemas';
 
 /* ================================================================== */
 /*  Finance Dashboard — Three-Panel Layout                             */
@@ -288,7 +288,7 @@ interface QuickStatsPanelProps {
 
 function QuickStatsPanel({ earningsSummary, expenses, loading }: QuickStatsPanelProps) {
     const totalRevenue = earningsSummary?.totalGrossRevenue ?? 0;
-    const totalExpenses = expenses.reduce((sum, e) => sum + (e.amount || 0), 0);
+    const totalExpenses = sumPaidExpenses(expenses);
     const netIncome = totalRevenue - totalExpenses;
     const pendingCount = earningsSummary?.byPlatform?.filter(p => p.revenue === 0).length ?? 0;
 
@@ -373,7 +373,7 @@ function RecentTransactionsPanel({ earningsSummary, expenses, loading }: RecentT
         }
 
         // Add recent expenses as "outgoing" transactions
-        for (const expense of expenses.slice(0, 5)) {
+        for (const expense of expenses.filter(e => e.paymentStatus === 'paid').slice(0, 5)) {
             items.push({
                 label: expense.vendor || expense.category || 'Expense',
                 amount: `-${formatCurrency(expense.amount)}`,
@@ -427,7 +427,7 @@ function TaxSummaryPanel({ earningsSummary, expenses, loading }: TaxSummaryPanel
     // Compute estimated tax from real income data
     // Self-employment tax estimate: ~15.3% SE tax + ~12% income tax bracket estimate = ~27%
     const totalRevenue = earningsSummary?.totalGrossRevenue ?? 0;
-    const totalExpenses = expenses.reduce((sum, e) => sum + (e.amount || 0), 0);
+    const totalExpenses = sumPaidExpenses(expenses);
     const taxableIncome = Math.max(0, totalRevenue - totalExpenses);
     const estimatedTaxRate = 0.27; // Rough SE + income tax estimate
     const estimatedTax = Math.round(taxableIncome * estimatedTaxRate);
@@ -532,12 +532,13 @@ interface ExpenseBreakdownPanelProps {
 function ExpenseBreakdownPanel({ expenses, loading }: ExpenseBreakdownPanelProps) {
     // Group expenses by category from real data
     const breakdown = useMemo(() => {
-        if (expenses.length === 0) return [];
+        const paidExpenses = expenses.filter(expense => expense.paymentStatus === 'paid');
+        if (paidExpenses.length === 0) return [];
 
         const byCategory: Record<string, number> = {};
         let total = 0;
 
-        for (const expense of expenses) {
+        for (const expense of paidExpenses) {
             const cat = expense.category || 'Other';
             byCategory[cat] = (byCategory[cat] || 0) + expense.amount;
             total += expense.amount;
@@ -617,7 +618,7 @@ function AlertsPanel({ earningsSummary, expenses }: AlertsPanelProps) {
         }
 
         // Large expense alert
-        const largeExpenses = expenses.filter(e => e.amount >= 500);
+        const largeExpenses = expenses.filter(e => e.paymentStatus === 'paid' && e.amount >= 500);
         if (largeExpenses.length > 0) {
             result.push({
                 text: `${largeExpenses.length} large expense${largeExpenses.length > 1 ? 's' : ''} flagged ($500+)`,

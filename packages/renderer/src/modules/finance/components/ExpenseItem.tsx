@@ -1,5 +1,5 @@
 import React from 'react';
-import { CheckCircle, Receipt } from 'lucide-react';
+import { AlertCircle, CheckCircle, Clock3, Receipt } from 'lucide-react';
 import { Expense } from '@/services/finance/FinanceService';
 import { motion } from 'motion/react';
 
@@ -9,6 +9,12 @@ interface ExpenseItemProps {
 }
 
 export const ExpenseItem = React.memo(({ expense }: ExpenseItemProps) => {
+    const paymentStatus = expense.paymentStatus ?? 'unclassified';
+    const evidenceStatus = expense.evidenceStatus ?? 'unverified';
+    const paymentLabel = paymentStatus === 'paid' ? 'Paid' : paymentStatus === 'expected' ? 'Expected' : 'Payment status needed';
+    const evidenceLabel = evidenceStatus === 'verified' ? 'Verified evidence' : evidenceStatus === 'receipt_attached' ? 'Receipt attached' : 'Unverified';
+    const PaymentIcon = paymentStatus === 'paid' ? CheckCircle : paymentStatus === 'expected' ? Clock3 : AlertCircle;
+
     return (
         <motion.div
             initial={{ opacity: 0, x: -10 }}
@@ -27,11 +33,11 @@ export const ExpenseItem = React.memo(({ expense }: ExpenseItemProps) => {
             </div>
             <div className="flex flex-col items-end">
                 <div className="text-white font-mono font-bold text-lg">
-                    -${expense.amount.toFixed(2)}
+                    {paymentStatus === 'paid' ? '-' : ''}${expense.amount.toFixed(2)}
                 </div>
-                <div className="text-[10px] text-emerald-500 flex items-center gap-1">
-                    <CheckCircle size={10} />
-                    Verified
+                <div className={`text-[10px] flex items-center gap-1 ${paymentStatus === 'paid' ? 'text-emerald-400' : paymentStatus === 'expected' ? 'text-amber-300' : 'text-gray-400'}`}>
+                    <PaymentIcon size={10} />
+                    {paymentLabel} · {evidenceLabel}
                 </div>
             </div>
         </motion.div>

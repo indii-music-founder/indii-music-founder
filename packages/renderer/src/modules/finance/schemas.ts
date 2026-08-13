@@ -9,6 +9,9 @@ export const ExpenseCategorySchema = z.enum([
     'Other'
 ]);
 
+export const ExpensePaymentStatusSchema = z.enum(['paid', 'expected', 'unclassified']);
+export const ExpenseEvidenceStatusSchema = z.enum(['unverified', 'receipt_attached', 'verified']);
+
 export const ExpenseSchema = z.object({
     id: z.string().optional(),
     userId: z.string(),
@@ -17,6 +20,8 @@ export const ExpenseSchema = z.object({
     category: z.string().min(1, "Category is required"), // Can refine with Enum if strict
     date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be YYYY-MM-DD"),
     description: z.string().optional().default(''),
+    paymentStatus: ExpensePaymentStatusSchema.optional(),
+    evidenceStatus: ExpenseEvidenceStatusSchema.optional(),
     createdAt: z.any().optional()
 });
 
@@ -29,3 +34,8 @@ export const ReceiptScanResultSchema = z.object({
 });
 
 export type Expense = z.infer<typeof ExpenseSchema>;
+
+export const isPaidExpense = (expense: Expense) => expense.paymentStatus === 'paid';
+export const sumPaidExpenses = (expenses: Expense[]) => expenses
+    .filter(isPaidExpense)
+    .reduce((total, expense) => total + expense.amount, 0);

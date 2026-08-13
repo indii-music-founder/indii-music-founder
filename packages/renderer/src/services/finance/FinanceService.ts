@@ -112,7 +112,11 @@ export class FinanceService {
         throw new AppException(AppErrorCode.INVALID_ARGUMENT, `Invalid expense data: ${validation.error.message}`);
       }
 
-      const validExpense = validation.data;
+      const validExpense = {
+        ...validation.data,
+        paymentStatus: validation.data.paymentStatus ?? 'unclassified' as const,
+        evidenceStatus: validation.data.evidenceStatus ?? 'unverified' as const,
+      };
       const now = Timestamp.now();
 
       const docRef = await addDoc(collection(db, this.EXPENSES_COLLECTION), {

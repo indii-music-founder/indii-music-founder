@@ -8,8 +8,8 @@ import { type EarningsSummary as ValidatedEarningsSummary } from '@/services/rev
 import { logger } from '@/utils/logger';
 
 export function useFinance() {
-    const { userProfile } = useStore(useShallow(state => ({
-        userProfile: state.userProfile
+    const { user } = useStore(useShallow(state => ({
+        user: state.user
     })));
 
     const [earningsSummary, setEarningsSummary] = useState<ValidatedEarningsSummary | null>(null);
@@ -33,7 +33,7 @@ export function useFinance() {
 
     // Subscribe to Earnings
     useEffect(() => {
-        if (!userProfile?.id || userProfile.id === 'pending') {
+        if (!user?.uid) {
             // eslint-disable-next-line react-hooks/set-state-in-effect
             setEarningsLoading(false);
             return;
@@ -41,7 +41,7 @@ export function useFinance() {
 
         setEarningsLoading(true);
         setEarningsError(null);
-        const unsubscribe = financeService.subscribeToEarnings(userProfile.id, (data) => {
+        const unsubscribe = financeService.subscribeToEarnings(user.uid, (data) => {
             if (!isMountedRef.current) return;
             setEarningsSummary(data);
             setEarningsLoading(false);
@@ -58,11 +58,11 @@ export function useFinance() {
         });
 
         return () => safeUnsubscribe(unsubscribe);
-    }, [userProfile?.id]);
+    }, [user?.uid]);
 
     // Subscribe to Expenses
     useEffect(() => {
-        if (!userProfile?.id || userProfile.id === 'pending') {
+        if (!user?.uid) {
             // eslint-disable-next-line react-hooks/set-state-in-effect
             setExpensesLoading(false);
             return;
@@ -70,7 +70,7 @@ export function useFinance() {
 
         setExpensesLoading(true);
         setExpensesError(null);
-        const unsubscribe = financeService.subscribeToExpenses(userProfile.id, (data: Expense[]) => {
+        const unsubscribe = financeService.subscribeToExpenses(user.uid, (data: Expense[]) => {
             if (!isMountedRef.current) return;
             setExpenses(data);
             setExpensesLoading(false);
@@ -83,7 +83,7 @@ export function useFinance() {
         });
 
         return () => safeUnsubscribe(unsubscribe);
-    }, [userProfile?.id]);
+    }, [user?.uid]);
 
     const addExpense = useCallback(async (expenseData: Omit<Expense, 'id' | 'createdAt'>) => {
         const tempId = `temp-${Date.now()}`;

@@ -1,24 +1,21 @@
 import React, { useMemo } from 'react';
 import { Car, Clock, DollarSign, Guitar, PieChart, Shield } from 'lucide-react';
 import type { Expense } from '../schemas';
+import { isPaidExpense } from '../schemas';
 import { hiddenCostHarnessService } from '@/services/business-harness';
 
 export function HiddenCostHarnessPanel({ expenses }: { expenses: Expense[] }) {
   const costLines = useMemo(() => {
-    const expenseLines = expenses.slice(0, 20).map(expense => hiddenCostHarnessService.buildExpenseCostLine(expense));
-    const userId = expenses[0]?.userId;
-    const scenario = userId
-      ? hiddenCostHarnessService.buildGuitarStoreScenario({
-        userId,
-        equipmentCost: 14.99,
-        milesRoundTrip: 18,
-        driveMinutes: 42,
-        hourlyRate: 50,
-        mileageRate: 0.7,
-      })
-      : [];
-    return [...expenseLines, ...scenario];
+    return expenses.filter(isPaidExpense).slice(0, 20).map(expense => hiddenCostHarnessService.buildExpenseCostLine(expense));
   }, [expenses]);
+  const scenario = useMemo(() => hiddenCostHarnessService.buildGuitarStoreScenario({
+    userId: 'example-only',
+    equipmentCost: 14.99,
+    milesRoundTrip: 18,
+    driveMinutes: 42,
+    hourlyRate: 50,
+    mileageRate: 0.7,
+  }), []);
   const summary = useMemo(() => hiddenCostHarnessService.summarizeCostLines(costLines), [costLines]);
 
   return (
@@ -32,10 +29,10 @@ export function HiddenCostHarnessPanel({ expenses }: { expenses: Expense[] }) {
       <section className="rounded-xl bg-white/[0.02] border border-white/5 p-4">
         <div className="flex items-center gap-2 mb-4">
           <Guitar size={16} className="text-amber-300" />
-          <h3 className="text-sm font-bold text-white">Supply Run Example</h3>
+          <h3 className="text-sm font-bold text-white">Supply Run Example — excluded from your totals</h3>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          {costLines.slice(-3).map(line => (
+          {scenario.map(line => (
             <div key={line.id} className="rounded-lg bg-black/20 border border-white/5 p-3">
               <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-1">{line.costType.replaceAll('_', ' ')}</p>
               <p className="text-lg font-black text-white">${line.amount.toFixed(2)}</p>
@@ -51,7 +48,9 @@ export function HiddenCostHarnessPanel({ expenses }: { expenses: Expense[] }) {
           <h3 className="text-sm font-bold text-white">Harness Cost Lines</h3>
         </div>
         <div className="space-y-2">
-          {costLines.slice(0, 8).map(line => (
+          {costLines.length === 0 ? (
+            <p className="text-xs text-gray-500">No paid cost lines recorded. Expected and unclassified expenses are excluded.</p>
+          ) : costLines.slice(0, 8).map(line => (
             <div key={line.id} className="grid grid-cols-[1fr_auto_auto] gap-3 items-center rounded-lg bg-white/[0.02] px-3 py-2">
               <div className="min-w-0">
                 <p className="text-xs font-bold text-white truncate">{line.category}</p>
