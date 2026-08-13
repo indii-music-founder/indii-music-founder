@@ -16,8 +16,8 @@ const {
     clearCache: vi.fn(),
     storeState: {
         logout: vi.fn(),
-        user: { email: 'wiil@indii.music', emailVerified: true },
-        userProfile: { id: 'owner-123', preferences: {} },
+        user: { uid: 'owner-auth-123', email: 'wiil@indii.music', emailVerified: true },
+        userProfile: { id: 'stale-profile-id', preferences: {} },
         updatePreferences: vi.fn(),
     },
 }));
@@ -127,9 +127,9 @@ describe('SecuritySection plan and usage overview', () => {
 
         fireEvent.click(screen.getByRole('button', { name: 'Sync Plan & Usage' }));
 
-        await waitFor(() => expect(getSubscription).toHaveBeenLastCalledWith('owner-123', true));
-        expect(getUsageStats).toHaveBeenLastCalledWith('owner-123', true);
-        expect(clearCache).toHaveBeenCalledWith('owner-123');
+        await waitFor(() => expect(getSubscription).toHaveBeenLastCalledWith('owner-auth-123', true));
+        expect(getUsageStats).toHaveBeenLastCalledWith('owner-auth-123', true);
+        expect(clearCache).toHaveBeenCalledWith('owner-auth-123');
         expect(showToast).toHaveBeenCalledWith('Plan and usage synchronized', 'success');
     });
 });

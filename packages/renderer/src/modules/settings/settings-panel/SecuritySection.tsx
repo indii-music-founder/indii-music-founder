@@ -106,18 +106,19 @@ const SecuritySection: React.FC = () => {
     const moduleColor = getColorForModule('settings');
 
     const loadBilling = useCallback(async (forceRefresh = false) => {
-        if (!userProfile?.id || userProfile.id === 'pending') {
+        if (!user?.uid) {
             setBillingState('unavailable');
-            setBillingError('Your account profile is still loading.');
+            setBillingError('Your authenticated account is still loading.');
             return false;
         }
 
+        const billingUserId = user.uid;
         setBillingError(null);
         try {
-            if (forceRefresh) subscriptionService.clearCache(userProfile.id);
+            if (forceRefresh) subscriptionService.clearCache(billingUserId);
             const [nextSubscription, nextUsage] = await Promise.all([
-                subscriptionService.getSubscription(userProfile.id, forceRefresh),
-                subscriptionService.getUsageStats(userProfile.id, forceRefresh),
+                subscriptionService.getSubscription(billingUserId, forceRefresh),
+                subscriptionService.getUsageStats(billingUserId, forceRefresh),
             ]);
             setSubscription(nextSubscription);
             setUsage(nextUsage);
@@ -132,7 +133,7 @@ const SecuritySection: React.FC = () => {
             setBillingError(err instanceof Error ? err.message : 'Plan and usage data are unavailable.');
             return false;
         }
-    }, [userProfile?.id]);
+    }, [user?.uid]);
 
     useEffect(() => {
         void loadBilling();
@@ -157,8 +158,8 @@ const SecuritySection: React.FC = () => {
     };
 
     const handleSyncBilling = async () => {
-        if (!userProfile?.id || userProfile.id === 'pending') {
-            showToast('User profile not fully loaded yet', 'error');
+        if (!user?.uid) {
+            showToast('Authenticated account not fully loaded yet', 'error');
             return;
         }
         setSyncing(true);

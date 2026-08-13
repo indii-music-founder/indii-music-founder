@@ -92,11 +92,11 @@ export function useSubscription() {
     }, [fetchSubscriptionData]);
 
     const createCheckoutSession = useCallback(async (tier: SubscriptionTier) => {
-        if (!userProfile?.id) return;
+        if (!user?.uid) return;
 
         try {
             const result = await subscriptionService.createCheckoutSession({
-                userId: userProfile.id,
+                userId: user.uid,
                 tier: tier,
                 successUrl: window.location.origin + '/finance?session_id={CHECKOUT_SESSION_ID}',
                 cancelUrl: window.location.origin + '/finance'
@@ -109,7 +109,7 @@ export function useSubscription() {
             logger.error('[useSubscription] Checkout failed:', err);
             toast.error('Failed to start checkout. Please try again.');
         }
-    }, [userProfile?.id, toast]);
+    }, [user?.uid, toast]);
 
     const getPortalUrl = useCallback(async () => {
         try {
