@@ -20,6 +20,14 @@ const stub = vi.hoisted(() => {
 
     const makeDocRef = (path: string) => ({
         get: async (): Promise<StubDoc> => docs.get(path) ?? { exists: false, data: () => undefined },
+        create: async (payload: Record<string, unknown>) => {
+            if (docs.has(path)) throw new Error('already-exists');
+            docs.set(path, { exists: true, data: () => payload });
+        },
+        set: async (payload: Record<string, unknown>) => {
+            const previous = docs.get(path)?.data() ?? {};
+            docs.set(path, { exists: true, data: () => ({ ...previous, ...payload }) });
+        },
         collection: (name: string) => makeCollectionRef(`${path}/${name}`),
     });
 
@@ -51,7 +59,16 @@ vi.mock('firebase-functions/v2', () => ({
     logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn() },
 }));
 
-import { pauseAd, pushAdCreative, recordAgentAction } from './facebookAdsExecutor.js';
+import {
+    buildAdWriteId,
+    createAd,
+    createAdSet,
+    createCampaign,
+    getAdAccountId,
+    pauseAd,
+    pushAdCreative,
+    recordAgentAction,
+} from './facebookAdsExecutor.js';
 
 // ─── Fixtures ────────────────────────────────────────────────────────────────
 
@@ -274,7 +291,6 @@ describe('write-only contract', () => {
             'act_123/insights',
             'me/adaccounts',
             '778899/insights',
-            'act_123/ads',
         ];
 
         for (const endpoint of readEndpoints) {
@@ -298,5 +314,139 @@ describe('recordAgentAction', () => {
             message: 'published',
             status: 'success',
         })).resolves.toBeUndefined();
+    });
+});
+
+describe('createCampaign', () => {
+    it('creates a Meta campaign when active and returns campaignId', async () => {
+        const fetcher = vi.fn().mockResolvedValueOnce(okJson({ id: 'cmp-1001' }));
+
+        const result = await createCampaign(USER_ID, AD_ACCOUNT_ID, {
+            name: 'Summer Single Campaign',
+            objective: 'OUTCOMES',
+            dailyBudgetMinor: 5000,
+        }, fetcher);
+
+        expect(result).toEqual({ success: true, campaignId: 'cmp-1001' });
+        expect(String(fetcher.mock.calls[0][0])).toBe(`https://graph.facebook.com/v23.0/act_${AD_ACCOUNT_ID}/campaigns`);
+        expect(String(fetcher.mock.calls[0][1].body)).toContain('name=Summer+Single+Campaign');
+    });
+
+    it('refuses to create campaign while the swarm is halted', async () => {
+        setSwarmActive(false);
+        const fetcher = vi.fn();
+
+        const result = await createCampaign(USER_ID, AD_ACCOUNT_ID, {
+            name: 'Summer Single Campaign',
+            objective: 'OUTCOMES',
+        }, fetcher);
+
+        expect(result).toMatchObject({ success: false, code: 'SWARM_HALTED' });
+        expect(fetcher).not.toHaveBeenCalled();
+    });
+});
+
+describe('createAdSet', () => {
+    it('creates an AdSet with default OFFSITE_CONVERSIONS optimization goal', async () => {
+        const fetcher = vi.fn().mockResolvedValueOnce(okJson({ id: 'adset-2002' }));
+
+        const result = await createAdSet(USER_ID, AD_ACCOUNT_ID, {
+            name: 'US Fans — Spotify',
+            campaignId: 'cmp-1001',
+            dailyBudgetMinor: 2500,
+            targeting: { geo_locations: { countries: ['US'] } },
+        }, fetcher);
+
+        expect(result).toEqual({ success: true, adSetId: 'adset-2002' });
+        expect(String(fetcher.mock.calls[0][0])).toBe(`https://graph.facebook.com/v23.0/act_${AD_ACCOUNT_ID}/adsets`);
+        const body = String(fetcher.mock.calls[0][1].body);
+        expect(body).toContain('optimization_goal=OFFSITE_CONVERSIONS');
+        expect(body).toContain('campaign_id=cmp-1001');
+    });
+
+    it('refuses to create AdSet while the swarm is halted', async () => {
+        setSwarmActive(false);
+        const fetcher = vi.fn();
+
+        const result = await createAdSet(USER_ID, AD_ACCOUNT_ID, {
+            name: 'US Fans',
+            campaignId: 'cmp-1001',
+            dailyBudgetMinor: 2500,
+            targeting: {},
+        }, fetcher);
+
+        expect(result).toMatchObject({ success: false, code: 'SWARM_HALTED' });
+        expect(fetcher).not.toHaveBeenCalled();
+    });
+});
+
+describe('createAd', () => {
+    it('publishes a new Ad and records idempotency key', async () => {
+        const fetcher = vi.fn().mockResolvedValueOnce(okJson({ id: 'ad-3003' }));
+
+        const result = await createAd(USER_ID, AD_ACCOUNT_ID, {
+            name: 'Ad Variant A',
+            campaignId: 'cmp-1001',
+            adSetId: 'adset-2002',
+            creativeId: 'creative-555',
+        }, fetcher);
+
+        expect(result).toEqual({ success: true, adId: 'ad-3003' });
+        expect(String(fetcher.mock.calls[0][0])).toBe(`https://graph.facebook.com/v23.0/act_${AD_ACCOUNT_ID}/ads`);
+
+        const key = buildAdWriteId({ campaignId: 'cmp-1001', adSetId: 'adset-2002', creativeId: 'creative-555' });
+        expect(key).toBe('cmp-1001_adset-2002_creative-555');
+    });
+
+    it('skips duplicate Graph POST if ad write key already exists in Firestore', async () => {
+        const key = buildAdWriteId({ campaignId: 'cmp-1001', adSetId: 'adset-2002', creativeId: 'creative-555' });
+        docs.set(`users/${USER_ID}/marketingAdWrites/${key}`, {
+            exists: true,
+            data: () => ({ adId: 'ad-3003' }),
+        });
+
+        const fetcher = vi.fn();
+
+        const result = await createAd(USER_ID, AD_ACCOUNT_ID, {
+            name: 'Ad Variant A',
+            campaignId: 'cmp-1001',
+            adSetId: 'adset-2002',
+            creativeId: 'creative-555',
+        }, fetcher);
+
+        expect(result).toEqual({ success: true, adId: 'ad-3003', duplicated: true });
+        expect(fetcher).not.toHaveBeenCalled();
+    });
+
+    it('refuses to retry a pending write because Meta may already have accepted it', async () => {
+        const key = buildAdWriteId({ campaignId: 'cmp-1001', adSetId: 'adset-2002', creativeId: 'creative-555' });
+        docs.set(`users/${USER_ID}/marketingAdWrites/${key}`, {
+            exists: true,
+            data: () => ({ state: 'pending' }),
+        });
+        const fetcher = vi.fn();
+
+        const result = await createAd(USER_ID, AD_ACCOUNT_ID, {
+            name: 'Ad Variant A', campaignId: 'cmp-1001', adSetId: 'adset-2002', creativeId: 'creative-555',
+        }, fetcher);
+
+        expect(result).toMatchObject({ success: false, code: 'GRAPH_WRITE_FAILED' });
+        expect(fetcher).not.toHaveBeenCalled();
+    });
+});
+
+describe('getAdAccountId', () => {
+    it('returns adAccountId when configured on Meta platform token', async () => {
+        connectMeta({ adAccountId: 'act_999888' });
+
+        const adAccountId = await getAdAccountId(USER_ID);
+        expect(adAccountId).toBe('act_999888');
+    });
+
+    it('returns null when Meta account is not connected', async () => {
+        docs.delete(`users/${USER_ID}/analyticsTokens/instagram`);
+
+        const adAccountId = await getAdAccountId(USER_ID);
+        expect(adAccountId).toBeNull();
     });
 });

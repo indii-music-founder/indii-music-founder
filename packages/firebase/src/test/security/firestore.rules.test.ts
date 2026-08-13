@@ -281,6 +281,33 @@ describe('Firestore Security Rules', () => {
         });
     });
 
+    describe('users/{userId}/marketingAdWrites', () => {
+        const receipt = {
+            key: 'campaign-1_adset-1_creative-1',
+            userId: ALICE_UID,
+            adId: 'meta-ad-1',
+            state: 'completed',
+        };
+
+        beforeEach(async () => {
+            if (requireEmulator()) return;
+            await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                await setDoc(doc(ctx.firestore(), 'users', ALICE_UID, 'marketingAdWrites', receipt.key), receipt);
+            });
+        });
+
+        it('keeps paid-write receipts server-only, including from their owner', async () => {
+            if (requireEmulator()) return;
+            const db = verifiedCtx(ALICE_UID).firestore();
+            const receiptRef = doc(db, 'users', ALICE_UID, 'marketingAdWrites', receipt.key);
+
+            await assertFails(getDoc(receiptRef));
+            await assertFails(setDoc(doc(db, 'users', ALICE_UID, 'marketingAdWrites', 'forged'), receipt));
+            await assertFails(updateDoc(receiptRef, { state: 'completed' }));
+            await assertFails(deleteDoc(receiptRef));
+        });
+    });
+
     describe('taxFormRequests/{token}', () => {
         const token = 'a'.repeat(64);
         const requestData = {

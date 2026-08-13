@@ -1691,6 +1691,8 @@ export const restartGCEInstance = onCall(
 // ----------------------------------------------------------------------------
 // BigQuery Analytics
 // ----------------------------------------------------------------------------
+export { batchEventsScheduled, streamEventOnCreate } from './functions/analytics/bigquery-pipeline';
+
 
 /**
  * Execute BigQuery Query

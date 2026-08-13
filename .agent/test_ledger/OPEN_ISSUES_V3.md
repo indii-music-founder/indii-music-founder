@@ -660,6 +660,7 @@
 - **Status:** 🚧 BLOCKED / PLANNED — **Severity:** 🟠 HIGH (feature incomplete) — **Module:** `packages/firebase` + `services/marketing/AdAutomationService.ts`
 - **Decision (William, 2026-06-24):** PLP should be a _real, gated_ ad pipeline. **But William has no Meta Business account available right now**, so this is parked until he does. Do NOT start until the prerequisites below exist. The financial-safety frontend (confirmation gate + honest failure, ISSUE-495/497) is already merged (#200), so PLP is safe in the meantime — it generates variants and reports honestly that no campaign launched.
 - **What's missing:** the frontend (`AdAutomationService.ts`) calls four Firebase callables that **do not exist**: `createAdCampaign` (`:59`), `createAdSet` (`:83`), `createAd` (`:114`), `getAdInsights` (`:144`) — plus `pauseAdCampaign` (`:215`) used by the CPS kill-switch. They must be implemented in `packages/firebase/src` against the **Meta Marketing API** (Graph API).
+- **Safety repair (2026-08-13):** The executor now has fail-closed hierarchy-write primitives and owner-scoped, server-only ad-write receipts. Each ad first records a pending receipt; completed receipts replay their Meta ID, while an ambiguous pending receipt refuses a retry rather than risking duplicate spend. This is structural protection only: the renderer's callable surface and a real Meta Business/App Review authorization remain required before any live delivery claim.
 
 ---
 

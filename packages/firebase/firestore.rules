@@ -722,6 +722,13 @@ service cloud.firestore {
         allow write: if false;
       }
 
+      // Meta write receipts are created by the Admin SDK before a paid write
+      // and finalized with the provider receipt afterward. Client access would
+      // let an attacker suppress a real ad or manufacture a false success.
+      match /marketingAdWrites/{writeId} {
+        allow read, write: if false;
+      }
+
       // ── Memory Inbox (agent handshake requests) ──────────────────────────
       match /memoryInbox/{itemId} {
         // Only the owning user can read their inbox items

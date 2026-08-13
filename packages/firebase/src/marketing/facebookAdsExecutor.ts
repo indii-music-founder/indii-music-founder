@@ -48,6 +48,9 @@ const WRITE_ENDPOINT_ALLOWLIST: readonly RegExp[] = [
     /^act_\d+\/adimages$/,    // upload creative image, returns a hash
     /^act_\d+\/advideos$/,    // upload creative video
     /^act_\d+\/adcreatives$/, // assemble the creative object
+    /^act_\d+\/campaigns$/,   // create campaign
+    /^act_\d+\/adsets$/,      // create adset
+    /^act_\d+\/ads$/,         // create ad
     /^\d+$/,                  // POST /{ad-id} — status mutations (pause/resume)
 ] as const;
 
@@ -98,8 +101,50 @@ export interface AdCreativePayload {
     linkUrl: string;
 }
 
+export interface CampaignPayload {
+    /** Campaign name in Ads Manager. */
+    name: string;
+    /** Campaign objective (e.g. 'OUTCOMES'). */
+    objective: string;
+    status?: 'PAUSED' | 'ACTIVE';
+    dailyBudgetMinor?: number;
+    specialAdCategories?: string[];
+}
+
+export interface AdSetPayload {
+    /** AdSet name in Ads Manager. */
+    name: string;
+    campaignId: string;
+    dailyBudgetMinor: number;
+    targeting: Record<string, unknown>;
+    optimizationGoal?: string;
+    billingEvent?: string;
+    status?: 'PAUSED' | 'ACTIVE';
+}
+
+export interface AdPayload {
+    /** Ad name in Ads Manager. */
+    name: string;
+    campaignId: string;
+    adSetId: string;
+    creativeId: string;
+    status?: 'PAUSED' | 'ACTIVE';
+}
+
 export type PushAdCreativeResult =
     | { success: true; creativeId: string }
+    | { success: false; code: FacebookAdsErrorCode; error: string };
+
+export type CreateCampaignResult =
+    | { success: true; campaignId: string }
+    | { success: false; code: FacebookAdsErrorCode; error: string };
+
+export type CreateAdSetResult =
+    | { success: true; adSetId: string }
+    | { success: false; code: FacebookAdsErrorCode; error: string };
+
+export type CreateAdResult =
+    | { success: true; adId: string; duplicated?: boolean }
     | { success: false; code: FacebookAdsErrorCode; error: string };
 
 export type PauseAdResult =
@@ -493,5 +538,280 @@ export async function pauseAd(
         });
 
         return { success: false, ...failure };
+    }
+}
+
+/**
+ * Creates a Meta Campaign.
+ *
+ * Checks assertSwarmActive first to enforce the halt switch.
+ */
+export async function createCampaign(
+    userId: string,
+    adAccountId: string,
+    payload: CampaignPayload,
+    fetcher: GraphFetch = fetch,
+): Promise<CreateCampaignResult> {
+    try {
+        await assertSwarmActive(userId);
+        const { accessToken } = await loadMetaConnection(userId);
+
+        const params: Record<string, string> = {
+            name: payload.name,
+            objective: payload.objective,
+            status: payload.status ?? 'PAUSED',
+            special_ad_categories: JSON.stringify(payload.specialAdCategories ?? []),
+        };
+        if (typeof payload.dailyBudgetMinor === 'number' && payload.dailyBudgetMinor > 0) {
+            params.daily_budget = String(payload.dailyBudgetMinor);
+        }
+
+        const res = await graphWrite<{ id?: string }>(
+            `act_${adAccountId}/campaigns`,
+            accessToken,
+            params,
+            fetcher,
+        );
+
+        if (!res.id) {
+            throw new FacebookAdsExecutorError(
+                'GRAPH_WRITE_FAILED',
+                'Meta accepted campaign creation but returned no campaign ID.',
+            );
+        }
+
+        await recordAgentAction({
+            userId,
+            agentName: 'Media Buyer',
+            actionType: 'launched_ad',
+            message: `Created Meta campaign "${payload.name}" (${res.id}).`,
+            status: 'success',
+            metadata: { campaignId: res.id, adAccountId },
+        });
+
+        return { success: true, campaignId: res.id };
+    } catch (error) {
+        const failure = errorToResult(error);
+        logger.error('[facebookAdsExecutor] createCampaign failed', { userId, ...failure });
+
+        await recordAgentAction({
+            userId,
+            agentName: 'Media Buyer',
+            actionType: 'launched_ad',
+            message: `Failed to create campaign "${payload.name}": ${failure.error}`,
+            status: 'failed',
+            metadata: { adAccountId, code: failure.code },
+        });
+
+        return { success: false, ...failure };
+    }
+}
+
+/**
+ * Creates a Meta AdSet.
+ *
+ * Checks assertSwarmActive first and sets optimization_goal to an outcome
+ * from OPTIMIZABLE_EVENT_TYPES (defaulting to OFFSITE_CONVERSIONS).
+ */
+export async function createAdSet(
+    userId: string,
+    adAccountId: string,
+    payload: AdSetPayload,
+    fetcher: GraphFetch = fetch,
+): Promise<CreateAdSetResult> {
+    try {
+        await assertSwarmActive(userId);
+        const { accessToken, facebookPageId } = await loadMetaConnection(userId);
+
+        const params: Record<string, string> = {
+            name: payload.name,
+            campaign_id: payload.campaignId,
+            daily_budget: String(payload.dailyBudgetMinor),
+            targeting: JSON.stringify(payload.targeting),
+            optimization_goal: payload.optimizationGoal ?? 'OFFSITE_CONVERSIONS',
+            billing_event: payload.billingEvent ?? 'IMPRESSIONS',
+            status: payload.status ?? 'PAUSED',
+            promoted_object: JSON.stringify({ page_id: facebookPageId }),
+        };
+
+        const res = await graphWrite<{ id?: string }>(
+            `act_${adAccountId}/adsets`,
+            accessToken,
+            params,
+            fetcher,
+        );
+
+        if (!res.id) {
+            throw new FacebookAdsExecutorError(
+                'GRAPH_WRITE_FAILED',
+                'Meta accepted AdSet creation but returned no AdSet ID.',
+            );
+        }
+
+        await recordAgentAction({
+            userId,
+            agentName: 'Media Buyer',
+            actionType: 'launched_ad',
+            message: `Created Meta AdSet "${payload.name}" (${res.id}).`,
+            status: 'success',
+            metadata: { adSetId: res.id, campaignId: payload.campaignId, adAccountId },
+        });
+
+        return { success: true, adSetId: res.id };
+    } catch (error) {
+        const failure = errorToResult(error);
+        logger.error('[facebookAdsExecutor] createAdSet failed', { userId, ...failure });
+
+        await recordAgentAction({
+            userId,
+            agentName: 'Media Buyer',
+            actionType: 'launched_ad',
+            message: `Failed to create AdSet "${payload.name}": ${failure.error}`,
+            status: 'failed',
+            metadata: { adAccountId, code: failure.code },
+        });
+
+        return { success: false, ...failure };
+    }
+}
+
+/**
+ * Deterministic idempotency key per (campaignId, adSetId, creativeId).
+ */
+export function buildAdWriteId(parts: { campaignId: string; adSetId: string; creativeId: string }): string {
+    return `${parts.campaignId}_${parts.adSetId}_${parts.creativeId}`;
+}
+
+/**
+ * Creates a Meta Ad with durable Firestore idempotency protection.
+ *
+ * The claim is written before the Meta POST. If the process dies after Meta
+ * accepts the request but before the receipt is persisted, a retry is refused
+ * instead of issuing a second paid write. An operator must reconcile that
+ * ambiguous receipt against Meta before clearing the claim.
+ */
+export async function createAd(
+    userId: string,
+    adAccountId: string,
+    payload: AdPayload,
+    fetcher: GraphFetch = fetch,
+): Promise<CreateAdResult> {
+    try {
+        await assertSwarmActive(userId);
+
+        const key = buildAdWriteId({
+            campaignId: payload.campaignId,
+            adSetId: payload.adSetId,
+            creativeId: payload.creativeId,
+        });
+
+        // Keep receipts owner-scoped. A global deterministic ID would let two
+        // artists with matching provider IDs interfere with one another.
+        const writeDocRef = db()
+            .collection('users').doc(userId)
+            .collection('marketingAdWrites').doc(key);
+        try {
+            await writeDocRef.create({
+                key,
+                userId,
+                adAccountId,
+                campaignId: payload.campaignId,
+                adSetId: payload.adSetId,
+                creativeId: payload.creativeId,
+                state: 'pending',
+                createdAt: admin.firestore.FieldValue.serverTimestamp(),
+            });
+        } catch (_claimError) {
+            const existingWrite = await writeDocRef.get().catch(() => null);
+            const existingAdId = existingWrite?.exists ? existingWrite.data()?.adId : undefined;
+            if (typeof existingAdId === 'string' && existingAdId) {
+                logger.info('[facebookAdsExecutor] Skipping duplicate ad write', { key, adId: existingAdId });
+                return { success: true, adId: existingAdId, duplicated: true };
+            }
+            throw new FacebookAdsExecutorError(
+                'GRAPH_WRITE_FAILED',
+                'This ad write is already pending or could not be claimed. It was not retried to avoid duplicate spend.',
+            );
+        }
+
+        const { accessToken } = await loadMetaConnection(userId);
+
+        const params: Record<string, string> = {
+            name: payload.name,
+            adset_id: payload.adSetId,
+            creative: JSON.stringify({ creative_id: payload.creativeId }),
+            status: payload.status ?? 'PAUSED',
+        };
+
+        const res = await graphWrite<{ id?: string }>(
+            `act_${adAccountId}/ads`,
+            accessToken,
+            params,
+            fetcher,
+        );
+
+        if (!res.id) {
+            throw new FacebookAdsExecutorError(
+                'GRAPH_WRITE_FAILED',
+                'Meta accepted Ad creation but returned no Ad ID.',
+            );
+        }
+
+        // Persist the Meta receipt before reporting success. This intentionally
+        // is not best-effort: success without a receipt would make a retry
+        // capable of duplicating spend.
+        await writeDocRef.set({
+            adId: res.id,
+            state: 'completed',
+            completedAt: admin.firestore.FieldValue.serverTimestamp(),
+        }, { merge: true });
+
+        await recordAgentAction({
+            userId,
+            agentName: 'Media Buyer',
+            actionType: 'launched_ad',
+            message: `Created Meta Ad "${payload.name}" (${res.id}).`,
+            status: 'success',
+            metadata: { adId: res.id, adSetId: payload.adSetId, creativeId: payload.creativeId, adAccountId },
+        });
+
+        return { success: true, adId: res.id };
+    } catch (error) {
+        const failure = errorToResult(error);
+        logger.error('[facebookAdsExecutor] createAd failed', { userId, ...failure });
+
+        await recordAgentAction({
+            userId,
+            agentName: 'Media Buyer',
+            actionType: 'launched_ad',
+            message: `Failed to create Ad "${payload.name}": ${failure.error}`,
+            status: 'failed',
+            metadata: { adAccountId, code: failure.code },
+        });
+
+        return { success: false, ...failure };
+    }
+}
+
+/**
+ * Loads the user's stored adAccountId from Meta connection metadata.
+ */
+export async function getAdAccountId(userId: string): Promise<string | null> {
+    try {
+        const snapshot = await db()
+            .collection('users').doc(userId)
+            .collection('analyticsTokens').doc(META_PLATFORM_KEY)
+            .get();
+
+        if (!snapshot.exists) return null;
+        const data = snapshot.data() ?? {};
+        const adAccountId = typeof data.adAccountId === 'string'
+            ? data.adAccountId
+            : (typeof data.adsPixelId === 'string' ? data.adsPixelId : '');
+
+        return adAccountId || null;
+    } catch (error) {
+        logger.error('[facebookAdsExecutor] Failed to load adAccountId', { userId, error });
+        return null;
     }
 }
