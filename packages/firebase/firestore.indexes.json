@@ -1546,20 +1546,6 @@
         }
       ],
       "queryScope": "COLLECTION_GROUP"
-    },
-    {
-      "collectionGroup": "user_usage_stats",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "userId",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "date",
-          "order": "ASCENDING"
-        }
-      ]
     }
   ]
 }

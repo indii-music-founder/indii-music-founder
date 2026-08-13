@@ -86,6 +86,9 @@ export const getUsageStats = onCall({ enforceAppCheck: false /* true */ }, async
       .where('userId', '==', userId)
       .where('date', '>=', startDate)
       .where('date', '<=', endDate)
+      // Match the existing userId ASC/date DESC composite index instead of
+      // maintaining a duplicate ascending date index for this range query.
+      .orderBy('date', 'desc')
       .get();
     let gatewayChatTokensUsed = 0;
     dailyUsageSnapshot.forEach(doc => {
