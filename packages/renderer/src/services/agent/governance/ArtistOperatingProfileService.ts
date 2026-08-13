@@ -32,6 +32,44 @@ function getProfileDocRef(uid: string) {
     return doc(db, 'users', uid, 'aop', 'profile');
 }
 
+type StoredRecord = Record<string, unknown>;
+
+/** Firestore stores server timestamps as Timestamp objects, while the shared
+ * domain schema deliberately exposes an ISO string. Normalize only that storage
+ * boundary so strict schema validation still catches every other malformed field. */
+function normalizeStoredProfile(data: unknown): unknown {
+    if (!data || typeof data !== 'object' || Array.isArray(data)) return data;
+
+    const record = data as StoredRecord;
+    const storedUpdatedAt = record.updatedAt;
+    if (typeof storedUpdatedAt === 'string' || storedUpdatedAt === undefined) return record;
+    if (storedUpdatedAt === null) {
+        const { updatedAt: _pendingServerTimestamp, ...withoutPendingTimestamp } = record;
+        return withoutPendingTimestamp;
+    }
+
+    if (typeof storedUpdatedAt === 'object') {
+        const timestamp = storedUpdatedAt as {
+            toDate?: () => Date;
+            toMillis?: () => number;
+            seconds?: number;
+        };
+        const date = typeof timestamp.toDate === 'function'
+            ? timestamp.toDate()
+            : typeof timestamp.toMillis === 'function'
+                ? new Date(timestamp.toMillis())
+                : typeof timestamp.seconds === 'number'
+                    ? new Date(timestamp.seconds * 1000)
+                    : null;
+
+        if (date && !Number.isNaN(date.getTime())) {
+            return { ...record, updatedAt: date.toISOString() };
+        }
+    }
+
+    return record;
+}
+
 class ArtistOperatingProfileService {
     /**
      * Fail-closed: returns the default (opted-out) profile when unauthenticated,
@@ -47,7 +85,7 @@ class ArtistOperatingProfileService {
         try {
             const snap = await getDoc(getProfileDocRef(uid));
             if (!snap.exists()) return DEFAULT_ARTIST_OPERATING_PROFILE;
-            const parsed = ArtistOperatingProfileSchema.safeParse(snap.data());
+            const parsed = ArtistOperatingProfileSchema.safeParse(normalizeStoredProfile(snap.data()));
             if (!parsed.success) {
                 logger.warn('[ArtistOperatingProfileService] Stored profile failed schema validation, falling back to defaults', parsed.error);
                 return DEFAULT_ARTIST_OPERATING_PROFILE;
@@ -96,7 +134,10 @@ class ArtistOperatingProfileService {
                     callback(DEFAULT_ARTIST_OPERATING_PROFILE);
                     return;
                 }
-                const parsed = ArtistOperatingProfileSchema.safeParse(snap.data());
+                const parsed = ArtistOperatingProfileSchema.safeParse(normalizeStoredProfile(snap.data()));
+                if (!parsed.success) {
+                    logger.warn('[ArtistOperatingProfileService] Live profile failed schema validation, falling back to defaults', parsed.error);
+                }
                 callback(parsed.success ? parsed.data : DEFAULT_ARTIST_OPERATING_PROFILE);
             },
             (error) => {

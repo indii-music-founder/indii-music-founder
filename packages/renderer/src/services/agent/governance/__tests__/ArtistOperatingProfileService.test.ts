@@ -55,6 +55,40 @@ describe('ArtistOperatingProfileService', () => {
             expect(profile.permissions.autonomousComputerControl).toBe(true);
         });
 
+        it('normalizes a Firestore Timestamp instead of discarding the saved profile', async () => {
+            const stored = {
+                schemaVersion: 'artist-operating-profile.v1',
+                businessGoals: [],
+                creativeBoundaries: ['Never post without review'],
+                installedSoftware: [],
+                connectedServiceIds: [],
+                permissions: { autonomousComputerControl: false, allowDestructiveTools: false, preApprovedToolNames: [] },
+                updatedAt: { toDate: () => new Date('2026-08-13T12:34:56.000Z') },
+            };
+            mockGetDoc.mockResolvedValueOnce({ exists: () => true, data: () => stored });
+
+            const profile = await artistOperatingProfileService.getProfile();
+
+            expect(profile.creativeBoundaries).toEqual(['Never post without review']);
+            expect(profile.updatedAt).toBe('2026-08-13T12:34:56.000Z');
+        });
+
+        it('accepts a locally pending null server timestamp without losing saved fields', async () => {
+            mockGetDoc.mockResolvedValueOnce({
+                exists: () => true,
+                data: () => ({
+                    ...DEFAULT_ARTIST_OPERATING_PROFILE,
+                    creativeBoundaries: ['No AI voice cloning'],
+                    updatedAt: null,
+                }),
+            });
+
+            const profile = await artistOperatingProfileService.getProfile();
+
+            expect(profile.creativeBoundaries).toEqual(['No AI voice cloning']);
+            expect(profile.updatedAt).toBeUndefined();
+        });
+
         it('falls back to defaults (fail-closed) when the stored doc fails schema validation', async () => {
             mockGetDoc.mockResolvedValueOnce({ exists: () => true, data: () => ({ garbage: true }) });
             const profile = await artistOperatingProfileService.getProfile();
@@ -102,6 +136,28 @@ describe('ArtistOperatingProfileService', () => {
             mockOnSnapshot.mockReturnValueOnce(() => {});
             artistOperatingProfileService.onProfileChange(callback);
             expect(mockOnSnapshot).toHaveBeenCalled();
+        });
+
+        it('normalizes Firestore timestamps in live snapshots', () => {
+            const callback = vi.fn();
+            mockOnSnapshot.mockImplementationOnce((_ref, onNext) => {
+                onNext({
+                    exists: () => true,
+                    data: () => ({
+                        ...DEFAULT_ARTIST_OPERATING_PROFILE,
+                        creativeBoundaries: ['Keep drafts private'],
+                        updatedAt: { seconds: 1_786_599_600 },
+                    }),
+                });
+                return () => {};
+            });
+
+            artistOperatingProfileService.onProfileChange(callback);
+
+            expect(callback).toHaveBeenCalledWith(expect.objectContaining({
+                creativeBoundaries: ['Keep drafts private'],
+                updatedAt: new Date(1_786_599_600_000).toISOString(),
+            }));
         });
     });
 });
