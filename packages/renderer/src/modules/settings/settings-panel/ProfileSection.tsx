@@ -168,7 +168,7 @@ const ProfileSection: React.FC = () => {
                         placeholder={t('settings.hints.bio_desc')}
                     />
                     <p className={`text-xs mt-1 ${bio.length > MAX_BIO_LENGTH ? 'text-red-400' : 'text-slate-600'}`}>
-                        {bio.length}/{MAX_BIO_LENGTH} characters
+                        {t('settings.profile.characters', { count: bio.length })}
                         {bio.length > MAX_BIO_LENGTH ? ' — shorten your existing bio before saving' : ''}
                     </p>
                 </div>
