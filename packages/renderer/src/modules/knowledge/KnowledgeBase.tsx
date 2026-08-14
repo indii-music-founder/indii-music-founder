@@ -163,24 +163,27 @@ export default function KnowledgeBase() {
                                 {isChatOpen ? 'Neural Connection Active' : 'Initialize Neural Chat'}
                             </button>
                             <label
-                                htmlFor="knowledge-document-upload"
                                 aria-disabled={isUploading}
-                                className={`px-6 py-3 bg-[#FFE135]/10 border border-[#FFE135]/30 hover:bg-[#FFE135]/20 text-[#FFE135] font-bold rounded-2xl transition-all transform active:scale-95 flex items-center gap-2 ${isUploading ? 'opacity-50 cursor-not-allowed pointer-events-none' : 'cursor-pointer'}`}
+                                className={`relative overflow-hidden px-6 py-3 bg-[#FFE135]/10 border border-[#FFE135]/30 hover:bg-[#FFE135]/20 text-[#FFE135] font-bold rounded-2xl transition-all transform active:scale-95 flex items-center gap-2 ${isUploading ? 'opacity-50 cursor-not-allowed pointer-events-none' : 'cursor-pointer'}`}
                             >
                                 {isUploading ? <Loader2 className="animate-spin" size={20} /> : <Upload size={20} />}
                                 {isUploading ? 'Ingesting...' : 'Ingest Document'}
+                                <input
+                                    type="file"
+                                    id="knowledge-document-upload"
+                                    ref={fileInputRef}
+                                    aria-label="Upload knowledge documents"
+                                    className="absolute inset-0 size-full cursor-pointer opacity-0 file:cursor-pointer"
+                                    disabled={isUploading}
+                                    onChange={(e) => {
+                                        void handleFileUpload(e.target.files);
+                                        e.target.value = '';
+                                    }}
+                                    accept=".txt,.md,.json,.csv,.js,.ts,.tsx,.pdf"
+                                    multiple
+                                />
                             </label>
                         </div>
-                        <input
-                            type="file"
-                            id="knowledge-document-upload"
-                            ref={fileInputRef}
-                            className="sr-only"
-                            disabled={isUploading}
-                            onChange={(e) => handleFileUpload(e.target.files)}
-                            accept=".txt,.md,.json,.csv,.js,.ts,.tsx,.pdf"
-                            multiple
-                        />
                     </div>
 
                     {/* Search Bar */}

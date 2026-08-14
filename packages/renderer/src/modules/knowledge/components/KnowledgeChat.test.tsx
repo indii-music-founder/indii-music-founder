@@ -34,6 +34,7 @@ describe('👁️ Pixel: KnowledgeChat Stream Verification', () => {
     let testSessions: Record<string, any> = {};
 
     beforeEach(() => {
+        vi.useRealTimers();
         vi.clearAllMocks();
         testSessions = {};
         
@@ -164,6 +165,68 @@ describe('👁️ Pixel: KnowledgeChat Stream Verification', () => {
         await waitFor(() => {
              expect(screen.getByText('Summary')).toBeInTheDocument();
         });
+    });
+
+    it('submits through the form button and clears the draft immediately', async () => {
+        (knowledgeBaseService.chatStream as import("vitest").Mock).mockReturnValue((async function* () {
+            yield 'Grounded response';
+        })());
+
+        render(<KnowledgeChat {...defaultProps} />);
+
+        const input = screen.getByPlaceholderText(/Neural Analysis of/i);
+        fireEvent.change(input, { target: { value: 'Read the selected document' } });
+        fireEvent.click(screen.getByRole('button', { name: /send message/i }));
+
+        expect(input).toHaveValue('');
+        expect(knowledgeBaseService.chatStream).toHaveBeenCalledWith('Read the selected document', 'doc-1');
+        await waitFor(() => expect(screen.getByText('Grounded response')).toBeInTheDocument());
+    });
+
+    it('clears a global draft when focus changes to a selected document', () => {
+        const { rerender } = render(<KnowledgeChat {...defaultProps} activeDoc={null} />);
+        const globalInput = screen.getByPlaceholderText('Query Intelligence Base...');
+        fireEvent.change(globalInput, { target: { value: 'global-only draft' } });
+        expect(globalInput).toHaveValue('global-only draft');
+
+        rerender(<KnowledgeChat {...defaultProps} />);
+
+        expect(screen.getByPlaceholderText(/Neural Analysis of/i)).toHaveValue('');
+    });
+
+    it('turns an empty backend response into an explicit failure message', async () => {
+        (knowledgeBaseService.chatStream as import("vitest").Mock).mockReturnValue((async function* () {
+            yield* [] as string[];
+        })());
+
+        render(<KnowledgeChat {...defaultProps} />);
+        const input = screen.getByPlaceholderText(/Neural Analysis of/i);
+        fireEvent.change(input, { target: { value: 'Do not stall' } });
+        fireEvent.click(screen.getByRole('button', { name: /send message/i }));
+
+        await waitFor(() => {
+            expect(screen.getByText(/encountered an error processing your request/i)).toBeInTheDocument();
+        });
+    });
+
+    it('shows a bounded timeout instead of leaving Neural Chat spinning forever', async () => {
+        vi.useFakeTimers();
+        (knowledgeBaseService.chatStream as import("vitest").Mock).mockReturnValue((async function* () {
+            await new Promise<void>(() => undefined);
+            yield* [] as string[];
+        })());
+
+        render(<KnowledgeChat {...defaultProps} />);
+        const input = screen.getByPlaceholderText(/Neural Analysis of/i);
+        fireEvent.change(input, { target: { value: 'Bound this query' } });
+        fireEvent.click(screen.getByRole('button', { name: /send message/i }));
+
+        await act(async () => {
+            await vi.advanceTimersByTimeAsync(20_000);
+        });
+
+        expect(screen.getByText(/did not respond within 20 seconds/i)).toBeInTheDocument();
+        expect(screen.queryByText(/Initializing Neural Link/i)).not.toBeInTheDocument();
     });
 
     it('clears chat history', async () => {

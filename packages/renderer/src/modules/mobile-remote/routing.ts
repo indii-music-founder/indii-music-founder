@@ -11,7 +11,12 @@ export function isRemoteSurfaceDevice(
                      ((/iPad/i.test(navigator.userAgent)) || 
                       (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1));
 
-    return mobile.isAnyPhone || (mobile.isTablet && (mobile.isTouchDevice || isIpadUA)) || isIpadUA;
+    // Mac browser automation and some touch-capable laptops can expose
+    // `MacIntel` plus multiple touch points at a full desktop width. Treat the
+    // iPad compatibility signal as authoritative only inside the tablet
+    // breakpoint; otherwise a normal Studio reload can escape to the remote
+    // Controller and lose the authenticated host.
+    return mobile.isAnyPhone || (mobile.isTablet && (mobile.isTouchDevice || isIpadUA));
 }
 
 /**

@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
     buildMobileRemotePairingUrl,
     buildMobileRemoteUrl,
@@ -41,6 +41,10 @@ describe('mobile remote routing contract', () => {
 });
 
 describe('remote surface device and executor boundaries', () => {
+    afterEach(() => {
+        vi.unstubAllGlobals();
+    });
+
     it('routes phones and touch tablets to the Controller', () => {
         expect(isRemoteSurfaceDevice({
             isAnyPhone: true,
@@ -58,6 +62,25 @@ describe('remote surface device and executor boundaries', () => {
         expect(isStudioExecutorSurface('mobile-remote', false)).toBe(false);
         expect(isStudioExecutorSurface('dashboard', true)).toBe(false);
         expect(isStudioExecutorSurface('dashboard', false)).toBe(true);
+    });
+
+    it('does not misclassify a desktop-width Mac browser with touch points as an iPad', () => {
+        vi.stubGlobal('navigator', {
+            userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)',
+            platform: 'MacIntel',
+            maxTouchPoints: 5,
+        });
+
+        expect(isRemoteSurfaceDevice({
+            isAnyPhone: false,
+            isTablet: false,
+            isTouchDevice: true,
+        })).toBe(false);
+        expect(isRemoteSurfaceDevice({
+            isAnyPhone: false,
+            isTablet: true,
+            isTouchDevice: true,
+        })).toBe(true);
     });
 
     it('routes mobile/tablet devices to Controller and computer browsers to regular Studio app on app.indii.music', () => {

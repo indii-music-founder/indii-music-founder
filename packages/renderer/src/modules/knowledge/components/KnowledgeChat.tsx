@@ -18,6 +18,8 @@ const SUGGESTED_QUESTIONS = [
     "Is there any action required?"
 ];
 
+const KNOWLEDGE_QUERY_TIMEOUT_MS = 20_000;
+
 export const KnowledgeChat: React.FC<KnowledgeChatProps> = ({ isOpen, onClose, activeDoc }) => {
     const [input, setInput] = useState('');
     const [isTyping, setIsTyping] = useState(false);
@@ -51,6 +53,14 @@ export const KnowledgeChat: React.FC<KnowledgeChatProps> = ({ isOpen, onClose, a
         }
     }, [messages, streamingContent, isOpen]);
 
+    useEffect(() => {
+        // A query drafted for the global index must never silently carry into
+        // a selected-document chat (or vice versa).
+        setInput('');
+        setStreamingContent('');
+        setIsTyping(false);
+    }, [namespace]);
+
     const handleSend = async (text: string = input) => {
         const query = text.trim();
         if (!query || isTyping) return;
@@ -78,9 +88,34 @@ export const KnowledgeChat: React.FC<KnowledgeChatProps> = ({ isOpen, onClose, a
 
         try {
             let fullContent = '';
-            for await (const chunk of knowledgeBaseService.chatStream(query, activeDoc?.id)) {
-                fullContent += chunk;
-                setStreamingContent(fullContent);
+            let queryExpired = false;
+            const consumeStream = async () => {
+                for await (const chunk of knowledgeBaseService.chatStream(query, activeDoc?.id)) {
+                    if (queryExpired) return;
+                    fullContent += chunk;
+                    setStreamingContent(fullContent);
+                }
+            };
+            let timeoutId: ReturnType<typeof setTimeout> | undefined;
+            try {
+                await Promise.race([
+                    consumeStream(),
+                    new Promise<never>((_, reject) => {
+                        timeoutId = setTimeout(
+                            () => {
+                                queryExpired = true;
+                                reject(new Error('Knowledge query timed out'));
+                            },
+                            KNOWLEDGE_QUERY_TIMEOUT_MS,
+                        );
+                    }),
+                ]);
+            } finally {
+                if (timeoutId) clearTimeout(timeoutId);
+            }
+
+            if (!fullContent.trim()) {
+                throw new Error('Knowledge query returned an empty response');
             }
 
             const botMsg: AgentMessage = {
@@ -90,11 +125,14 @@ export const KnowledgeChat: React.FC<KnowledgeChatProps> = ({ isOpen, onClose, a
                 timestamp: Date.now()
             };
             addMessageToSession(activeSessionId, botMsg);
-        } catch (_error: unknown) {
+        } catch (error: unknown) {
+            const timedOut = error instanceof Error && error.message === 'Knowledge query timed out';
             const errorMsg: AgentMessage = {
                 id: Date.now().toString(),
                 role: 'model',
-                text: "I apologize, but I encountered an error processing your request.",
+                text: timedOut
+                    ? "The Knowledge Base did not respond within 20 seconds. Your documents were not changed. Please try again."
+                    : "I apologize, but I encountered an error processing your request.",
                 timestamp: Date.now(),
             };
             addMessageToSession(activeSessionId, errorMsg);
@@ -208,25 +246,29 @@ export const KnowledgeChat: React.FC<KnowledgeChatProps> = ({ isOpen, onClose, a
                     </div>
                 )}
 
-                <div className="relative group">
+                <form className="relative group" onSubmit={(event) => { event.preventDefault(); void handleSend(); }}>
                     <input
                         type="text"
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+                        onKeyDown={(event) => {
+                            if (event.key === 'Enter') {
+                                event.preventDefault();
+                                void handleSend();
+                            }
+                        }}
                         placeholder={activeDoc ? `Neural Analysis of "${activeDoc.title}"...` : "Query Intelligence Base..."}
                         className="w-full bg-[#161b22] border border-gray-700 group-focus-within:border-[#FFE135]/40 text-white rounded-2xl pl-5 pr-14 py-4 focus:outline-none focus:ring-4 focus:ring-[#FFE135]/5 transition-all placeholder-gray-600 shadow-inner"
                     />
                     <button
-                        type="button"
-                        onClick={() => handleSend()}
+                        type="submit"
                         disabled={!input.trim() || isTyping}
                         aria-label="Send Message"
                         className="absolute right-2.5 top-1/2 -translate-y-1/2 p-2.5 bg-[#FFE135] text-black hover:scale-105 active:scale-95 disabled:scale-100 rounded-xl disabled:bg-gray-800 disabled:text-gray-600 transition-all shadow-lg"
                     >
                         <Send size={18} />
                     </button>
-                </div>
+                </form>
             </div>
         </div>
     );

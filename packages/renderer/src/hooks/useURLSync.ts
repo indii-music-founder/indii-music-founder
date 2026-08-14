@@ -24,6 +24,7 @@ const ROUTE_ALIASES: Record<string, string> = {
     'video-producer': 'creative',
     'video-studio': 'creative',
     'creative-director': 'creative',
+    'knowledge-base': 'knowledge',
 };
 
 function resolvePathModule(pathSegment: string): string {

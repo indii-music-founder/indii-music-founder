@@ -75,24 +75,27 @@ export default function KnowledgePanel({ toggleRightPanel }: KnowledgePanelProps
             <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-6">
                 <div className="space-y-4 pt-2">
                     <label className="text-[10px] font-bold text-gray-500 tracking-wider">DOCUMENTS</label>
-                    <input
-                        ref={fileInputRef}
-                        type="file"
-                        className="sr-only"
-                        multiple
-                        accept=".pdf,.txt,.md,.doc,.docx,text/plain,text/markdown,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                        onChange={handleFilesSelected}
-                    />
-                    <motion.button
-                        whileHover={{ scale: isUploading ? 1 : 1.02 }}
-                        whileTap={{ scale: isUploading ? 1 : 0.98 }}
-                        onClick={() => fileInputRef.current?.click()}
-                        disabled={isUploading}
-                        className="w-full bg-linear-to-r from-violet-600 to-violet-500 hover:from-violet-500 hover:to-violet-400 disabled:cursor-not-allowed disabled:opacity-60 text-white py-3 rounded-xl font-semibold text-sm transition-all shadow-lg shadow-violet-900/20 flex items-center justify-center gap-2 border border-violet-400/20"
-                    >
-                        {isUploading ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
-                        {isUploading ? 'Indexing Document…' : 'Ingest Document'}
-                    </motion.button>
+                    <div className="relative overflow-hidden rounded-xl">
+                        <motion.div
+                            whileHover={{ scale: isUploading ? 1 : 1.02 }}
+                            whileTap={{ scale: isUploading ? 1 : 0.98 }}
+                            aria-hidden="true"
+                            className="w-full bg-linear-to-r from-violet-600 to-violet-500 text-white py-3 rounded-xl font-semibold text-sm transition-all shadow-lg shadow-violet-900/20 flex items-center justify-center gap-2 border border-violet-400/20"
+                        >
+                            {isUploading ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
+                            {isUploading ? 'Indexing Document…' : 'Ingest Document'}
+                        </motion.div>
+                        <input
+                            ref={fileInputRef}
+                            type="file"
+                            aria-label="Upload knowledge documents"
+                            className="absolute inset-0 size-full cursor-pointer opacity-0 file:cursor-pointer disabled:cursor-not-allowed"
+                            disabled={isUploading}
+                            multiple
+                            accept=".pdf,.txt,.md,.doc,.docx,text/plain,text/markdown,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                            onChange={handleFilesSelected}
+                        />
+                    </div>
                 </div>
 
                 <div className="space-y-3 pt-4 border-t border-white/10">

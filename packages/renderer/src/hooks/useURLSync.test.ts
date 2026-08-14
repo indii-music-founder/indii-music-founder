@@ -26,7 +26,7 @@ vi.mock('@/core/store', () => ({
 
 // Mock constants
 vi.mock('@/core/constants', () => ({
-    isValidModule: (m: string) => ['dashboard', 'creative', 'finance', 'legal'].includes(m)
+    isValidModule: (m: string) => ['dashboard', 'creative', 'finance', 'legal', 'knowledge'].includes(m)
 }));
 
 describe('useURLSync', () => {
@@ -51,6 +51,15 @@ describe('useURLSync', () => {
         renderHook(() => useURLSync());
 
         expect(mocks.setModule).toHaveBeenCalledWith('legal');
+    });
+
+    it('maps the public-facing /knowledge-base deep link to Knowledge Base', () => {
+        mocks.location.pathname = '/knowledge-base';
+
+        renderHook(() => useURLSync());
+
+        expect(mocks.setModule).toHaveBeenCalledWith('knowledge');
+        expect(mocks.setModule).not.toHaveBeenCalledWith('workflow');
     });
 
     it('updates URL when store changes (Navigation)', () => {
