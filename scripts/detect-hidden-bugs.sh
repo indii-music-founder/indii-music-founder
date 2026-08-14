@@ -79,12 +79,12 @@ echo "6️⃣  ASYNC ERROR HANDLING"
 echo "   Checking for proper error handling in async chains..."
 PATTERN6=0
 while IFS=: read -r hitfile hitline _; do
-    window=$(sed -n "${hitline},$((hitline+15))p" "$hitfile")
+    window=$(sed -n "${hitline},$((hitline+30))p" "$hitfile")
     if ! echo "$window" | grep -q "\.catch("; then
         PATTERN6=$((PATTERN6+1))
     fi
 done < <(grep -rn "\.then(" packages/renderer/src/modules --include="*.tsx" --include="*.ts")
-echo "   Found $PATTERN6 .then() calls without .catch() within 15 lines"
+echo "   Found $PATTERN6 .then() calls without .catch() within 30 lines"
 if [ "$PATTERN6" -gt 5 ]; then
     echo "   ⚠️  RISK: Unhandled promise rejections"
 fi

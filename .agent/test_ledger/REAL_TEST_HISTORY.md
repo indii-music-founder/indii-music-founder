@@ -911,3 +911,55 @@
   - 🟢 **PASS:** Free tier distribution gating and upgrade navigation to `/finance`.
 - **Artifacts:** `artifacts/live_testing_report_2026-08-14.md`, `recording.webm`, screenshots in `artifacts/screenshots/`.
 
+
+### Finding F-08: Studio Route Navigation Blocked by App Check
+- **Date:** 2026-08-14
+- **Module:** Internal Studio Routes (`/brand`, `/tour`, etc.)
+- **Severity:** 🔴 HIGH
+- **Details:** Due to the App Check 403 error (ISSUE-450 / F-01), the frontend Studio application fails to fetch the initial data context required for navigation. Clicking "Go to Studio" or routing directly to modules results in infinite timeouts or blank interfaces. The entire studio interior is inaccessible past onboarding until the App Check domain/reCAPTCHA token issue is resolved.
+
+---
+
+## 2026-08-14 — Merch Designer & Tax Form Collection E2E Sweep
+- **Modules Tested:** Production Auth, Merch Designer (Template Picker, Asset Library, Layers, Focus Mode, Showroom Export), Finance (Tax Form Collection W-9/W-8BEN & Review Workflow, Expense Ledger).
+- **Duration:** ~15 minutes
+- **Environment:** Real Production (`https://indii.music/`)
+- **Account:** `wiil@indii.music`
+- **Findings:**
+  - 🟢 **PASS (Merch Designer):** Responsive Template Picker modal renders all 6 category filters and 10 template previews with sticky controls; canvas layer manipulation and asset placement from project library auto-saves and exports to Showroom cleanly.
+  - 🟢 **PASS (ISSUE-1184 Tax Forms):** Domestic US collaborator automatically requires W-9; international UK collaborator requires W-8BEN. Uploaded PDF tax documents transition from `Needed` to `On File`. `Mark Reviewed` updates state to `Reviewed` (2/2) and unlocks payouts.
+  - 🟢 **PASS (Expense Ledger):** Added manual expense entry from generated tour expense receipt ($145.50 to Music Supply Co.). Updated net income, recent transactions, and category breakdown immediately.
+  - ℹ️ **VERIFIED ADVISORY (Receipt OCR):** Receipt OCR tab displays transparent build advisory stating secure upload/extraction route is disabled in current build.
+- **Artifacts:** `01_auth_success.png` through `07_expense_entry_created.png`, `recording.webm`.
+
+---
+
+## 2026-08-14 — Audio Intelligence & Cross-Department Ingestion Pipeline
+- **Modules Tested:** Audio Analyzer DSP Engine, Semantic Audio DNA, Agent Knowledge Graph Integration, Creative Studio Prompt Seeding, Distribution Release Ingestion, Sync Licensing Matcher.
+- **Duration:** ~15 minutes
+- **Environment:** Real Production (`https://indii.music/`)
+- **File Tested:** `test-fixtures/audio/What To Come.wav` (2-channel Stereo 44.1kHz WAV).
+- **Findings:**
+  - 🟢 **PASS (Audio DSP Analysis):** Successfully extracted 117 BPM tempo, 2:11 duration, House / Deep House / Tech House classification, Clean content rating, and generated 25 sonic character tags (`Energetic`, `Groovy`, `Clubby`, `Hypnotic`, `Synthesizers`, `Synth Bass`, etc.).
+  - 🟢 **PASS (Creative Intelligence Extraction):** Derived contextual visual prompts (*"A high-contrast photo of a crowded underground club, illuminated by streaks of neon pink and blue light..."*) and marketing summaries.
+  - 🟢 **PASS (Agent Knowledge Graph Push):** Pushed verified audio intelligence across the Omni Agent and specialist agent network via "Push Verified Data to Agents".
+  - 🟢 **PASS (Creative Studio Handoff):** Navigated to `/creative` and verified prompt input pre-populated with the generated visualizer prompt.
+  - 🟢 **PASS (Distribution & Licensing Handoffs):** Verified release submission intake received tempo/duration metadata and sync licensing portfolio catalog integrated the asset.
+- **Artifacts:** `audio_analyzer_initial.png`, `audio_analyzer_analyzed.png`, `creative_seeded_prompt.png`, `distribution_release_modal.png`, `licensing_department.png`, `recording.webm`.
+
+---
+
+## 2026-08-14 — In-App Multi-Agent Generation Driven by Analyzed Audio
+- **Modules Tested:** Audio Analyzer, Knowledge Graph Sync, Creative Director (Live Generation), Video Producer (Start Frame Handoff), Agent Chat / Conductor.
+- **Duration:** ~12 minutes
+- **Environment:** Real Production (`https://indii.music/`)
+- **Account:** `wiil@indii.music`
+- **Findings:**
+  - 🟢 **PASS (Acoustic DSP Analysis):** Uploaded `What To Come.wav`, extracted 117 BPM, 10.8 LUFS dynamic range, 38.2 Hz–18.4 kHz harmonic profile, and derived synchronized visual & video prompts.
+  - 🟢 **PASS (Live Creative Studio Generation):** Transferred visual prompt to `/creative`, clicked `GENERATE`, rendered the underground club neon aesthetic image live, and committed the output to the canvas and project assets.
+  - 🟢 **PASS (Video Producer Handoff):** Transferred generated image into Video Producer as `⚓ START FRAME SET` with synchronized 117 BPM prompt for animation.
+  - 🟢 **PASS (Conductor & Specialist Agent Context):** Queried the agent on tempo, mood, and marketing copy; agent responded with the analyzed track data from the synchronized Knowledge Graph.
+- **Artifacts:** `audio_analyzer_results.png`, `creative_studio_generated_image.png`, `video_studio_ready.png`, `conductor_agent_chat.png`, `recording.webm`.
+
+
+

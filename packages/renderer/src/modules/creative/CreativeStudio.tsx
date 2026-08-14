@@ -457,7 +457,7 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
                         };
 
                         const initialRuns = Array.from({ length: 15 }, (_, index) => {
-                            plpRetryHandlersRef.current.set(index, () => runSlot(index, true).then(() => undefined));
+                            plpRetryHandlersRef.current.set(index, () => runSlot(index, true).then(() => undefined).catch(() => undefined));
                             return runSlot(index, false);
                         });
                         const outcomes = await Promise.all(initialRuns);

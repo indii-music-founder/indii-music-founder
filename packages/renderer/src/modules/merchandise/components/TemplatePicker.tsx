@@ -59,38 +59,39 @@ export const TemplatePicker: React.FC<TemplatePickerProps> = ({
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="w-full max-w-4xl max-h-[85vh] bg-neutral-900 rounded-2xl border border-white/10 shadow-2xl flex flex-col overflow-hidden">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 md:p-6 animate-in fade-in duration-200">
+            <div className="w-full max-w-4xl h-[90vh] max-h-[850px] bg-neutral-900/95 rounded-2xl border border-white/10 shadow-2xl flex flex-col overflow-hidden backdrop-blur-xl">
                 {/* Header */}
-                <div className="flex items-center justify-between p-6 border-b border-white/10">
+                <div className="flex items-center justify-between px-6 py-5 border-b border-white/10 shrink-0">
                     <div className="flex items-center gap-3">
-                        <div className="p-2 bg-yellow-400/20 rounded-lg text-yellow-400">
-                            <LayoutTemplate size={20} />
+                        <div className="p-2.5 bg-[#FFE135]/15 text-[#FFE135] rounded-xl border border-[#FFE135]/20">
+                            <LayoutTemplate size={22} />
                         </div>
                         <div>
-                            <h2 className="text-lg font-bold text-white">Design Templates</h2>
-                            <p className="text-xs text-neutral-400">Start with a professionally designed template</p>
+                            <h2 className="text-lg font-bold text-white tracking-tight">Design Templates</h2>
+                            <p className="text-xs text-neutral-400">Start with a curated artist layout or customize from scratch</p>
                         </div>
                     </div>
                     <button
                         onClick={onClose}
                         className="p-2 text-neutral-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+                        aria-label="Close templates modal"
                     >
                         <X size={20} />
                     </button>
                 </div>
 
                 {/* Search & Filters */}
-                <div className="p-4 border-b border-white/5 space-y-4">
+                <div className="p-4 border-b border-white/5 space-y-3 shrink-0 bg-black/20">
                     {/* Search Input */}
                     <div className="relative">
-                        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" />
+                        <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-500" />
                         <input
                             type="text"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            placeholder="Search templates..."
-                            className="w-full pl-10 pr-4 py-2.5 bg-neutral-800 border border-white/10 rounded-lg text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-yellow-400/50"
+                            placeholder="Search by keyword, style, or product..."
+                            className="w-full pl-10 pr-4 py-2 bg-neutral-800/90 border border-white/10 rounded-xl text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-[#FFE135]/60 focus:ring-1 focus:ring-[#FFE135]/40 transition-all"
                         />
                     </div>
 
@@ -99,10 +100,10 @@ export const TemplatePicker: React.FC<TemplatePickerProps> = ({
                         <button
                             onClick={() => setSelectedCategory('all')}
                             className={cn(
-                                "px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all",
+                                "px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all",
                                 selectedCategory === 'all'
-                                    ? 'bg-yellow-400 text-black'
-                                    : 'bg-neutral-800 text-neutral-400 hover:text-white hover:bg-neutral-700'
+                                    ? 'bg-[#FFE135] text-black shadow-md shadow-[#FFE135]/20'
+                                    : 'bg-neutral-800/80 text-neutral-400 hover:text-white hover:bg-neutral-700'
                             )}
                         >
                             All Templates
@@ -112,30 +113,34 @@ export const TemplatePicker: React.FC<TemplatePickerProps> = ({
                                 key={cat.category}
                                 onClick={() => setSelectedCategory(cat.category)}
                                 className={cn(
-                                    "px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all flex items-center gap-1.5",
+                                    "px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5",
                                     selectedCategory === cat.category
-                                        ? 'bg-yellow-400 text-black'
-                                        : 'bg-neutral-800 text-neutral-400 hover:text-white hover:bg-neutral-700'
+                                        ? 'bg-[#FFE135] text-black shadow-md shadow-[#FFE135]/20'
+                                        : 'bg-neutral-800/80 text-neutral-400 hover:text-white hover:bg-neutral-700'
                                 )}
                             >
                                 {categoryIcons[cat.category]}
                                 {cat.label}
-                                <span className="opacity-60">({cat.count})</span>
+                                <span className={cn("text-[10px]", selectedCategory === cat.category ? "text-black/70" : "text-neutral-500")}>
+                                    ({cat.count})
+                                </span>
                             </button>
                         ))}
                     </div>
                 </div>
 
                 {/* Template Grid */}
-                <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
+                <div className="flex-1 overflow-y-auto p-4 md:p-6 custom-scrollbar min-h-0 bg-black/10">
                     {filteredTemplates.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center h-full text-center py-12">
-                            <LayoutTemplate size={48} className="text-neutral-700 mb-4" />
-                            <p className="text-neutral-400 mb-2">No templates found</p>
-                            <p className="text-sm text-neutral-600">Try a different search or category</p>
+                        <div className="flex flex-col items-center justify-center h-full text-center py-16">
+                            <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center mb-4 border border-white/10">
+                                <LayoutTemplate size={32} className="text-neutral-500" />
+                            </div>
+                            <p className="text-sm font-semibold text-neutral-300 mb-1">No matching templates found</p>
+                            <p className="text-xs text-neutral-500 max-w-xs">Try selecting a different category or clearing your search filters.</p>
                         </div>
                     ) : (
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                             {filteredTemplates.map(template => (
                                 <TemplateCard
                                     key={template.id}
@@ -148,15 +153,15 @@ export const TemplatePicker: React.FC<TemplatePickerProps> = ({
                 </div>
 
                 {/* Footer */}
-                <div className="p-4 border-t border-white/10 flex items-center justify-between">
-                    <p className="text-xs text-neutral-500">
-                        {filteredTemplates.length} template{filteredTemplates.length !== 1 ? 's' : ''} available
+                <div className="px-6 py-4 border-t border-white/10 flex items-center justify-between shrink-0 bg-neutral-900/90">
+                    <p className="text-xs font-medium text-neutral-400">
+                        Showing <span className="text-white font-bold">{filteredTemplates.length}</span> template{filteredTemplates.length !== 1 ? 's' : ''}
                     </p>
                     <button
                         onClick={onClose}
-                        className="px-4 py-2 text-sm font-medium text-neutral-400 hover:text-white transition-colors"
+                        className="px-4 py-2 text-xs font-bold text-neutral-300 hover:text-white hover:bg-white/5 border border-white/10 rounded-xl transition-all"
                     >
-                        Start from Scratch
+                        Start with Blank Canvas
                     </button>
                 </div>
             </div>
@@ -170,102 +175,113 @@ const TemplateCard: React.FC<{
     onSelect: () => void;
     key?: React.Key;
 }> = ({ template, onSelect }) => {
-    // Generate a preview based on template colors
-    const previewStyle = {
-        background: template.backgroundColor,
-        borderColor: template.colorPalette?.[1] || '#333'
-    };
-
     return (
         <button
             onClick={onSelect}
-            className="group relative bg-neutral-800 rounded-xl border border-white/5 overflow-hidden transition-all hover:border-yellow-400/50 hover:shadow-lg hover:shadow-yellow-400/10 focus:outline-none focus:ring-2 focus:ring-yellow-400/50 text-left"
+            className="group relative bg-neutral-850/80 rounded-2xl border border-white/10 overflow-hidden transition-all duration-300 hover:border-[#FFE135]/60 hover:shadow-xl hover:shadow-[#FFE135]/5 focus:outline-none focus:ring-2 focus:ring-[#FFE135]/50 text-left flex flex-col"
         >
             {/* Preview Area */}
             <div
-                className="aspect-square relative overflow-hidden"
-                style={previewStyle}
+                className="aspect-square w-full relative overflow-hidden flex items-center justify-center border-b border-white/5"
+                style={{
+                    background: template.backgroundColor || '#0a0a0a'
+                }}
             >
-                {/* Template Preview */}
-                <div className="absolute inset-4 flex flex-col items-center justify-center">
-                    {/* Simplified visual representation */}
-                    
-                    {template.elements.slice(0, 3).map((element, _i) => (
-                        <div
-                            key={element.id}
-                            className="rounded"
-                            style={{
-                                position: 'absolute',
-                                left: `${element.x}%`,
-                                top: `${element.y}%`,
-                                width: `${element.width}%`,
-                                height: `${element.height}%`,
-                                backgroundColor: element.type === 'placeholder'
-                                    ? 'rgba(255,255,255,0.1)'
-                                    : element.fill || 'transparent',
-                                opacity: element.opacity,
-                                border: element.type === 'placeholder' ? '1px dashed rgba(255,255,255,0.3)' : 'none'
-                            }}
-                        >
-                            {element.type === 'text' && (
-                                <div
-                                    className="truncate text-center"
-                                    style={{
-                                        color: element.fill || '#fff',
-                                        fontSize: '8px',
-                                        fontWeight: element.fontWeight || '400'
-                                    }}
-                                >
-                                    {element.content}
-                                </div>
-                            )}
-                        </div>
-                    ))}
+                {/* Subtle Grid / Texture for backdrop */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/20 pointer-events-none" />
+
+                {/* Structured Template Elements Preview */}
+                <div className="absolute inset-4 rounded-lg overflow-hidden border border-white/10 bg-white/[0.02]">
+                    {template.elements.slice(0, 4).map((element) => {
+                        const isText = element.type === 'text';
+                        const isPlaceholder = element.type === 'placeholder' || element.type === 'image';
+
+                        return (
+                            <div
+                                key={element.id}
+                                className={cn(
+                                    "rounded flex items-center justify-center p-1 overflow-hidden",
+                                    isPlaceholder && "border border-dashed border-white/30 bg-white/5"
+                                )}
+                                style={{
+                                    position: 'absolute',
+                                    left: `${element.x}%`,
+                                    top: `${element.y}%`,
+                                    width: `${element.width}%`,
+                                    height: `${element.height}%`,
+                                    backgroundColor: isPlaceholder ? 'rgba(255,255,255,0.06)' : (element.fill || 'transparent'),
+                                    opacity: element.opacity ?? 1
+                                }}
+                            >
+                                {isText && (
+                                    <span
+                                        className="font-bold tracking-wider leading-none text-center truncate select-none"
+                                        style={{
+                                            color: element.fill || '#ffffff',
+                                            fontSize: '9px',
+                                            fontFamily: element.fontFamily || 'sans-serif'
+                                        }}
+                                    >
+                                        {element.content || element.name}
+                                    </span>
+                                )}
+                                {isPlaceholder && (
+                                    <div className="flex flex-col items-center justify-center gap-0.5 opacity-60">
+                                        <ImageIcon size={12} className="text-white/60" />
+                                        <span className="text-[7px] text-white/50 uppercase tracking-widest font-mono">ART</span>
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })}
                 </div>
 
-                {/* Hover Overlay */}
-                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <span className="px-4 py-2 bg-yellow-400 text-black text-xs font-bold rounded-full">
+                {/* Hover Action Overlay */}
+                <div className="absolute inset-0 bg-black/70 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-all duration-200 flex items-center justify-center z-20">
+                    <span className="px-4 py-2 bg-[#FFE135] text-black text-xs font-black rounded-xl shadow-lg shadow-[#FFE135]/30 transform translate-y-2 group-hover:translate-y-0 transition-transform">
                         Use Template
                     </span>
                 </div>
 
-                {/* Category Badge */}
-                <div className="absolute top-2 left-2 px-2 py-1 bg-black/50 backdrop-blur-sm rounded-full flex items-center gap-1">
+                {/* Category Pill */}
+                <div className="absolute top-3 left-3 px-2 py-1 bg-black/70 backdrop-blur-md rounded-lg flex items-center gap-1.5 border border-white/10 z-10">
                     {categoryIcons[template.category]}
-                    <span className="text-[10px] text-white/80 capitalize">
+                    <span className="text-[10px] font-medium text-white/90 capitalize">
                         {template.category.replace('-', ' ')}
                     </span>
                 </div>
             </div>
 
-            {/* Info */}
-            <div className="p-3">
-                <h3 className="text-sm font-medium text-white truncate group-hover:text-yellow-400 transition-colors">
-                    {template.name}
-                </h3>
-                <p className="text-xs text-neutral-500 truncate mt-0.5">
-                    {template.description}
-                </p>
-
-                {/* Tags */}
-                <div className="flex flex-wrap gap-1 mt-2">
-                    {template.tags.slice(0, 3).map(tag => (
-                        <span
-                            key={tag}
-                            className="px-1.5 py-0.5 bg-neutral-700 rounded text-[10px] text-neutral-400"
-                        >
-                            {tag}
-                        </span>
-                    ))}
+            {/* Info Section */}
+            <div className="p-3.5 flex-1 flex flex-col justify-between bg-neutral-900/60">
+                <div>
+                    <h3 className="text-sm font-bold text-white truncate group-hover:text-[#FFE135] transition-colors">
+                        {template.name}
+                    </h3>
+                    <p className="text-xs text-neutral-400 line-clamp-2 mt-1 leading-relaxed">
+                        {template.description}
+                    </p>
                 </div>
 
-                {/* Recommended Products */}
-                {template.recommendedProducts && template.recommendedProducts.length > 0 && (
-                    <p className="text-[10px] text-neutral-600 mt-2">
-                        Best for: {template.recommendedProducts.slice(0, 2).join(', ')}
-                    </p>
-                )}
+                <div className="mt-3 pt-2.5 border-t border-white/5 flex items-center justify-between gap-2">
+                    {/* Tags */}
+                    <div className="flex flex-wrap gap-1 overflow-hidden max-h-5">
+                        {template.tags.slice(0, 2).map(tag => (
+                            <span
+                                key={tag}
+                                className="px-1.5 py-0.5 bg-neutral-800 border border-white/5 rounded text-[9px] font-mono text-neutral-400"
+                            >
+                                #{tag}
+                            </span>
+                        ))}
+                    </div>
+
+                    {template.recommendedProducts && template.recommendedProducts.length > 0 && (
+                        <span className="text-[9px] text-neutral-500 font-medium truncate shrink-0">
+                            {template.recommendedProducts[0]}
+                        </span>
+                    )}
+                </div>
             </div>
         </button>
     );

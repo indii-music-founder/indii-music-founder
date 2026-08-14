@@ -62,7 +62,7 @@ export const QuickCapture: React.FC<QuickCaptureProps> = ({ isOpen, onClose }) =
                 setCaptureLocation(loc);
                 setContextString(FieldContactService.buildContextString(loc));
             }
-        });
+        }).catch(() => { /* Location unavailable — capture continues without GPS context */ });
         const focusTimer = setTimeout(() => nameInputRef.current?.focus(), 300);
         return () => {
             cancelled = true;

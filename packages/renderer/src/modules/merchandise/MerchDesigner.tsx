@@ -16,7 +16,7 @@ import { KeyboardShortcuts, useKeyboardShortcutsHint } from './components/Keyboa
 import { DesignTemplate, templateService, TemplateFabricObject } from './templates/DesignTemplates';
 import { useCanvasHistory } from './hooks/useCanvasHistory';
 import { useAutoSave } from './hooks/useAutoSave';
-import { Undo, Redo, Download, Type, Monitor, LayoutTemplate, Sparkles, Bot, User as UserIcon, Save, AlignLeft, AlignCenter, AlignRight, AlignVerticalJustifyStart, AlignVerticalJustifyCenter, AlignVerticalJustifyEnd, FolderOpen, History, HelpCircle, Star } from 'lucide-react';
+import { Undo, Redo, Download, Type, Monitor, LayoutTemplate, Sparkles, Bot, User as UserIcon, Save, AlignLeft, AlignCenter, AlignRight, AlignVerticalJustifyStart, AlignVerticalJustifyCenter, AlignVerticalJustifyEnd, FolderOpen, History, HelpCircle, Star, Maximize2, Minimize2, PanelLeftClose, PanelLeft, PanelRightClose, PanelRight } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
 import { cn } from '@/lib/utils';
 import { logger } from '@/utils/logger';
@@ -78,6 +78,9 @@ export default function MerchDesigner() {
     const [showExportDialog, setShowExportDialog] = useState(false);
     const [showTemplates, setShowTemplates] = useState(false);
     const [showHistory, setShowHistory] = useState(false);
+    const [showLeftPanel, setShowLeftPanel] = useState(true);
+    const [showRightPanel, setShowRightPanel] = useState(true);
+    const [isFocusMode, setIsFocusMode] = useState(false);
 
     const toast = useToast();
 
@@ -601,7 +604,38 @@ export default function MerchDesigner() {
                         <span className="text-sm font-bold text-neutral-500"><span className="indii-name">indii</span>_STREETWEAR_V1</span>
 
                         {/* Actions */}
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2">
+                            {/* Panel Toggles */}
+                            <div className="hidden md:flex items-center gap-1 bg-black/40 p-1 rounded-lg border border-white/10">
+                                <IconButton
+                                    icon={showLeftPanel ? <PanelLeftClose size={15} /> : <PanelLeft size={15} />}
+                                    onClick={() => setShowLeftPanel(prev => !prev)}
+                                    title={showLeftPanel ? "Collapse Assets Panel" : "Expand Assets Panel"}
+                                />
+                                <IconButton
+                                    icon={isFocusMode ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
+                                    onClick={() => {
+                                        setIsFocusMode(prev => {
+                                            const next = !prev;
+                                            if (next) {
+                                                setShowLeftPanel(false);
+                                                setShowRightPanel(false);
+                                            } else {
+                                                setShowLeftPanel(true);
+                                                setShowRightPanel(true);
+                                            }
+                                            return next;
+                                        });
+                                    }}
+                                    title={isFocusMode ? "Exit Focus Canvas Mode" : "Focus Canvas Mode (Fullscreen)"}
+                                />
+                                <IconButton
+                                    icon={showRightPanel ? <PanelRightClose size={15} /> : <PanelRight size={15} />}
+                                    onClick={() => setShowRightPanel(prev => !prev)}
+                                    title={showRightPanel ? "Collapse Layers Panel" : "Expand Layers Panel"}
+                                />
+                            </div>
+
                             {/* Help Button */}
                             <IconButton
                                 icon={<HelpCircle size={16} />}
@@ -637,43 +671,45 @@ export default function MerchDesigner() {
                     </header>
 
                     {/* Main Workspace */}
-                    <div className="flex-1 grid grid-cols-1 lg:grid-cols-4 gap-6 min-h-0">
+                    <div className="flex-1 flex gap-6 min-h-0 relative">
                         {/* Left Panel - Assets */}
-                        <div className="flex flex-col overflow-hidden">
-                            {/* Tool Buttons */}
-                            <div className="flex gap-2 mb-4">
-                                <ToolButton
-                                    icon={<FolderOpen size={18} />}
-                                    label="Templates"
-                                    onClick={() => setShowTemplates(true)}
-                                />
-                                <ToolButton
-                                    icon={<Type size={18} />}
-                                    label="Text"
-                                    onClick={handleAddText}
-                                />
-                                <ToolButton
-                                    icon={<Star size={18} />}
-                                    label="Shape"
-                                    onClick={() => handleAddShape('star')}
-                                />
-                                <ToolButton
-                                    icon={<Sparkles size={18} />}
-                                    label="Autonomous"
-                                    onClick={() => setShowAutonomousDialog(true)}
+                        {showLeftPanel && (
+                            <div className="w-80 shrink-0 flex flex-col overflow-hidden animate-in slide-in-from-left duration-200">
+                                {/* Tool Buttons */}
+                                <div className="flex gap-2 mb-4">
+                                    <ToolButton
+                                        icon={<FolderOpen size={18} />}
+                                        label="Templates"
+                                        onClick={() => setShowTemplates(true)}
+                                    />
+                                    <ToolButton
+                                        icon={<Type size={18} />}
+                                        label="Text"
+                                        onClick={handleAddText}
+                                    />
+                                    <ToolButton
+                                        icon={<Star size={18} />}
+                                        label="Shape"
+                                        onClick={() => handleAddShape('star')}
+                                    />
+                                    <ToolButton
+                                        icon={<Sparkles size={18} />}
+                                        label="Autonomous"
+                                        onClick={() => setShowAutonomousDialog(true)}
+                                    />
+                                </div>
+
+                                {/* Asset Library */}
+                                <AssetLibrary
+                                    onAddAsset={handleAddAsset}
+                                    onGenerateAutonomous={() => setShowAutonomousDialog(true)}
                                 />
                             </div>
-
-                            {/* Asset Library */}
-                            <AssetLibrary
-                                onAddAsset={handleAddAsset}
-                                onGenerateAutonomous={() => setShowAutonomousDialog(true)}
-                            />
-                        </div>
+                        )}
 
                         {/* Center Canvas */}
                         <div
-                            className="lg:col-span-2 relative rounded-2xl border border-white/5 overflow-hidden"
+                            className="flex-1 relative rounded-2xl border border-white/5 overflow-hidden min-w-0"
                             onDragOver={handleDragOver}
                             onDrop={handleDrop}
                         >
@@ -700,16 +736,21 @@ export default function MerchDesigner() {
                         </div>
 
                         {/* Right Panel - Layers & Properties */}
-                        <LayersPanel
-                            layers={layers}
-                            selectedLayer={selectedLayer}
-                            onSelectLayer={handleSelectLayer}
-                            onToggleVisibility={handleToggleVisibility}
-                            onToggleLock={handleToggleLock}
-                            onDeleteLayer={handleDeleteLayer}
-                            onReorderLayer={handleReorderLayer}
-                            onUpdateProperty={handleUpdateProperty}
-                        />
+                        {showRightPanel && (
+                            <div className="w-80 shrink-0 flex flex-col overflow-hidden animate-in slide-in-from-right duration-200">
+                                <LayersPanel
+                                    layers={layers}
+                                    selectedLayer={selectedLayer}
+                                    onSelectLayer={handleSelectLayer}
+                                    onToggleVisibility={handleToggleVisibility}
+                                    onToggleLock={handleToggleLock}
+                                    onDeleteLayer={handleDeleteLayer}
+                                    onReorderLayer={handleReorderLayer}
+                                    onUpdateProperty={handleUpdateProperty}
+                                />
+                            </div>
+                        )}
+
 
                         {/* Autonomous Generation Dialog */}
                         <AutonomousGenerationDialog

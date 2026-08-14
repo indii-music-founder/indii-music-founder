@@ -399,7 +399,7 @@ export const VideoStage = React.memo<VideoStageProps>(({
                                             });
                                             logger.info('[VideoStage] Anchor frame set (start frame captured)');
                                         }
-                                    });
+                                    }).catch((err) => logger.error('[VideoStage] Anchor frame creation failed:', err));
                                 }}
                                 data-testid="set-anchor-btn"
                                 aria-label="Set as anchor frame for temporal inpaint (start frame)"
@@ -423,7 +423,7 @@ export const VideoStage = React.memo<VideoStageProps>(({
                                             });
                                             logger.info(`[VideoStage] End frame set (end frame captured, range: ${updatedMaskRange.startFrame}→${updatedMaskRange.endFrame})`);
                                         }
-                                    });
+                                    }).catch((err) => logger.error('[VideoStage] End frame creation failed:', err));
                                 }}
                                 data-testid="set-end-frame-btn"
                                 aria-label="Set as end frame for temporal inpaint"
@@ -451,7 +451,7 @@ export const VideoStage = React.memo<VideoStageProps>(({
                                             } as Partial<CreativeSlice['videoInputs']>);
                                             logger.info('[VideoStage] Mask frame set with temporal inpaint range');
                                         }
-                                    });
+                                    }).catch((err) => logger.error('[VideoStage] Mask frame creation failed:', err));
                                 }}
                                 data-testid="set-mask-frame-btn"
                                 aria-label="Set as mask frame for temporal inpaint (requires setting anchor and end frames first)"
