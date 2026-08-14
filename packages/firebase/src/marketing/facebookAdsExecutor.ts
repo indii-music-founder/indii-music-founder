@@ -805,9 +805,12 @@ export async function getAdAccountId(userId: string): Promise<string | null> {
 
         if (!snapshot.exists) return null;
         const data = snapshot.data() ?? {};
+        // A Pixel ID is not an ad-account ID. Treating it as one would send a
+        // paid write to an invalid Graph endpoint, so callers must complete
+        // the real ad-account selection during the Meta connection flow.
         const adAccountId = typeof data.adAccountId === 'string'
             ? data.adAccountId
-            : (typeof data.adsPixelId === 'string' ? data.adsPixelId : '');
+            : '';
 
         return adAccountId || null;
     } catch (error) {

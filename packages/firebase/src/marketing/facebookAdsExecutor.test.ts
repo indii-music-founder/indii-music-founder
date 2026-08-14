@@ -449,4 +449,12 @@ describe('getAdAccountId', () => {
         const adAccountId = await getAdAccountId(USER_ID);
         expect(adAccountId).toBeNull();
     });
+
+    it('refuses to treat a Meta Pixel ID as an ad-account ID', async () => {
+        connectMeta({ adsPixelId: 'pixel-123' });
+
+        const adAccountId = await getAdAccountId(USER_ID);
+
+        expect(adAccountId).toBeNull();
+    });
 });
