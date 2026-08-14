@@ -73,6 +73,13 @@ interface BoardroomConversationPanelProps {
     messages: AgentMessage[];
 }
 
+// Rich Boardroom messages can each mount Markdown controls, thought-chain
+// controls, and response actions. Rendering an account's entire lifetime
+// history at once produced thousands of interactive nodes and made ordinary
+// navigation unreliable. Keep recent context immediate and reveal history in
+// bounded batches when the user asks for it.
+export const BOARDROOM_MESSAGE_BATCH_SIZE = 75;
+
 /**
  * BoardroomConversationPanel — Persistent, scrollable conversation feed
  * for the Boardroom split-panel layout.
@@ -85,6 +92,7 @@ export function BoardroomConversationPanel({ messages }: BoardroomConversationPa
     const scrollRef = useRef<HTMLDivElement>(null);
     const shouldFollowRef = useRef(true);
     const previousMessageCountRef = useRef(0);
+    const [visibleMessageCount, setVisibleMessageCount] = React.useState(BOARDROOM_MESSAGE_BATCH_SIZE);
     const { showCognitiveLogicByDefault, activeAgents } = useStore(
         useShallow(state => ({
             showCognitiveLogicByDefault: state.userProfile?.preferences?.showCognitiveLogicByDefault ?? false,
@@ -96,6 +104,8 @@ export function BoardroomConversationPanel({ messages }: BoardroomConversationPa
     const latestMessageSignature = latestMessage
         ? `${latestMessage.id}:${latestMessage.text?.length || 0}:${latestMessage.isStreaming ? 1 : 0}:${latestMessage.thoughts?.length || 0}`
         : 'empty';
+    const firstVisibleMessageIndex = Math.max(0, messages.length - visibleMessageCount);
+    const visibleMessages = messages.slice(firstVisibleMessageIndex);
 
     // Start at the newest message and follow streaming updates while the user
     // remains near the bottom. Instant positioning avoids smooth-scroll jitter
@@ -195,8 +205,19 @@ export function BoardroomConversationPanel({ messages }: BoardroomConversationPa
                 onScroll={handleScroll}
                 className="flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar px-4 py-4 space-y-1 min-w-0"
             >
+                {firstVisibleMessageIndex > 0 && (
+                    <div className="flex justify-center pb-3">
+                        <button
+                            type="button"
+                            onClick={() => setVisibleMessageCount(count => count + BOARDROOM_MESSAGE_BATCH_SIZE)}
+                            className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-semibold text-white/60 transition-colors hover:bg-white/10 hover:text-white"
+                        >
+                            Show earlier messages ({firstVisibleMessageIndex} remaining)
+                        </button>
+                    </div>
+                )}
                 <AnimatePresence initial={false}>
-                    {messages.map((msg) => {
+                    {visibleMessages.map((msg) => {
                         const identity = resolveAgentVisualIdentity(msg.agentId);
                         const isUser = msg.role === 'user';
                         const AgentIcon = AGENT_ICONS[identity.iconKey];
@@ -207,6 +228,7 @@ export function BoardroomConversationPanel({ messages }: BoardroomConversationPa
                         return (
                             <motion.div
                                 key={msg.id}
+                                data-message-id={msg.id}
                                 data-agent-id={msg.agentId}
                                 data-agent-accent={isUser ? undefined : identity.accent}
                                 data-agent-icon={isUser ? undefined : identity.iconKey}

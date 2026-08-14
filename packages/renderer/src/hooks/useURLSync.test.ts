@@ -26,7 +26,7 @@ vi.mock('@/core/store', () => ({
 
 // Mock constants
 vi.mock('@/core/constants', () => ({
-    isValidModule: (m: string) => ['dashboard', 'creative', 'finance'].includes(m)
+    isValidModule: (m: string) => ['dashboard', 'creative', 'finance', 'legal'].includes(m)
 }));
 
 describe('useURLSync', () => {
@@ -43,6 +43,14 @@ describe('useURLSync', () => {
         renderHook(() => useURLSync());
 
         expect(mocks.setModule).toHaveBeenCalledWith('creative');
+    });
+
+    it('restores the Legal Department on a direct /legal reload', () => {
+        mocks.location.pathname = '/legal';
+
+        renderHook(() => useURLSync());
+
+        expect(mocks.setModule).toHaveBeenCalledWith('legal');
     });
 
     it('updates URL when store changes (Navigation)', () => {

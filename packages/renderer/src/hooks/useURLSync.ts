@@ -8,7 +8,11 @@ interface URLSyncOptions {
     disabled?: boolean;
 }
 
-const PUBLIC_ROUTE_SEGMENTS = new Set(['privacy', 'terms', 'legal']);
+// `/legal` is the signed-in Legal Department module. Public legal documents
+// (`/legal/privacy` and `/legal/terms`) are intercepted by App before the
+// authenticated Studio — and this hook — mounts, so excluding the entire
+// `legal` segment here breaks a direct reload of the department route.
+const PUBLIC_ROUTE_SEGMENTS = new Set(['privacy', 'terms']);
 const VIDEO_ROUTE_SEGMENTS = new Set(['video', 'video-producer', 'video-studio']);
 
 const ROUTE_ALIASES: Record<string, string> = {

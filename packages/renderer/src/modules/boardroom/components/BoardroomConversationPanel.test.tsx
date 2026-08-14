@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import React from 'react';
 
@@ -50,7 +50,10 @@ vi.mock('@/components/motion-primitives/text-effect', () => ({
 
 // ── Import Under Test ──────────────────────────────────────────────────────
 
-import { BoardroomConversationPanel } from './BoardroomConversationPanel';
+import {
+    BOARDROOM_MESSAGE_BATCH_SIZE,
+    BoardroomConversationPanel,
+} from './BoardroomConversationPanel';
 
 // ── Tests ──────────────────────────────────────────────────────────────────
 
@@ -101,6 +104,29 @@ describe('BoardroomConversationPanel', () => {
         ];
         render(<BoardroomConversationPanel messages={messages} />);
         expect(screen.getByText('1 message')).toBeInTheDocument();
+    });
+
+    it('bounds historical message rendering and reveals earlier messages in batches', () => {
+        const messages = Array.from(
+            { length: BOARDROOM_MESSAGE_BATCH_SIZE + 2 },
+            (_, index) => ({
+                id: `msg-${index}`,
+                role: 'model' as const,
+                text: `Message ${index}`,
+                timestamp: index,
+                agentId: 'marketing',
+            }),
+        );
+        const { container } = render(<BoardroomConversationPanel messages={messages} />);
+
+        expect(container.querySelectorAll('[data-message-id]')).toHaveLength(BOARDROOM_MESSAGE_BATCH_SIZE);
+        expect(screen.queryByText('Message 0')).not.toBeInTheDocument();
+        expect(screen.getByText(`${messages.length} messages`)).toBeInTheDocument();
+
+        fireEvent.click(screen.getByRole('button', { name: 'Show earlier messages (2 remaining)' }));
+
+        expect(container.querySelectorAll('[data-message-id]')).toHaveLength(messages.length);
+        expect(screen.getByText('Message 0')).toBeInTheDocument();
     });
 
     it('renders the implicit-feedback action for the exact tracked Boardroom response', () => {
