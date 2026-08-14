@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="800" viewBox="0 0 600 800">
+  <rect width="600" height="800" fill="#1e1e24"/>
+  <rect x="80" y="40" width="440" height="720" rx="4" fill="#fdfdfd" filter="drop-shadow(0px 10px 20px rgba(0,0,0,0.5))"/>
+  
+  <style>
+    .mono { font-family: 'Courier New', Courier, monospace; }
+    .bold { font-weight: bold; }
+    .center { text-anchor: middle; }
+    .right { text-anchor: end; }
+  </style>
+
+  <text x="300" y="90" class="mono bold center" font-size="24" fill="#007a3d">BP CONNECT #924</text>
+  <text x="300" y="115" class="mono center" font-size="13" fill="#333">3995 S STATE ST</text>
+  <text x="300" y="135" class="mono center" font-size="13" fill="#333">ANN ARBOR, MI 48108</text>
+
+  <line x1="100" y1="160" x2="500" y2="160" stroke="#666" stroke-dasharray="3,3"/>
+
+  <text x="110" y="190" class="mono" font-size="13">DATE: 10/24/2026</text>
+  <text x="490" y="190" class="mono right" font-size="13">TIME: 18:15:02</text>
+  <text x="110" y="215" class="mono" font-size="13">PUMP: 06</text>
+  <text x="490" y="215" class="mono right" font-size="13">PRODUCT: REGULAR UNL</text>
+
+  <line x1="100" y1="240" x2="500" y2="240" stroke="#666" stroke-dasharray="3,3"/>
+
+  <text x="110" y="275" class="mono" font-size="14">GALLONS PUMPED:</text>
+  <text x="490" y="275" class="mono right" font-size="14">4.286 GAL</text>
+
+  <text x="110" y="305" class="mono" font-size="14">PRICE / GAL:</text>
+  <text x="490" y="305" class="mono right" font-size="14">$3.499</text>
+
+  <line x1="100" y1="335" x2="500" y2="335" stroke="#111" stroke-width="2"/>
+
+  <text x="110" y="375" class="mono bold" font-size="20">TOTAL FUEL:</text>
+  <text x="490" y="375" class="mono bold right" font-size="22">$15.00</text>
+
+  <line x1="100" y1="405" x2="500" y2="405" stroke="#666" stroke-dasharray="3,3"/>
+
+  <text x="110" y="440" class="mono" font-size="13">PAYMENT: DEBIT CARD</text>
+  <text x="110" y="465" class="mono" font-size="13">AUTH: 994022</text>
+  <text x="110" y="490" class="mono" font-size="13">APPROVED - THANK YOU</text>
+
+  <text x="300" y="580" class="mono center bold" font-size="14" fill="#007a3d">DRIVE SAFE!</text>
+</svg>

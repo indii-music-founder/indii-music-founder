@@ -894,3 +894,20 @@
 - **Findings:** Scoped unit/integration passed (21/21 files, 135/135 tests). Connected E2E failed 2/17: ISSUE-448 Creative handoff crash and ISSUE-449 Distribution metadata submission stuck before Done. Existing ISSUE-436/437/447 remain reproducible for cache-disabled App Check, local API/preview routing, and upload extraction/App Check blocking.
 - **Coverage Delta:** Added direct dev and built-preview API evidence for upload, analysis, metadata, MusicLibrary, Distribution, Creative handoff, and Video handoff candidates; `npm run build` completed successfully.
 - **Artifacts:** `artifacts/mega_audio_analyzer_2026-06-22_results.md`; JSON evidence in `artifacts/mega_audio_analyzer_2026-06-22_live_evidence.json` and `artifacts/mega_audio_analyzer_2026-06-22_preview_evidence.json`; screenshots in `artifacts/mega_audio_analyzer_2026-06-22_screenshots/`.
+
+---
+
+## 2026-08-14 — Nonstop Live Production Testing (Browser Agent)
+- **Modules Tested:** Auth & Onboarding, Notes Persistence, Booking Agent / Venue Scout, Finance Department & Expense Accounting, Audio Analyzer (Mono Rejection & Stereo Fingerprint), Legal Department (Contract Clause & Risk Analysis), Licensing Department, Distribution Gating & Upgrade Routing, Art & Merch Designer.
+- **Duration:** ~25 minutes
+- **Environment:** Real Deployed Production (`https://indii.music/`)
+- **Accounts:** Fresh UI-registered account (`mara.june.artist.demo@gmail.com`) & Founder account (`wiil@indii.music`).
+- **Findings:**
+  - 🔴 **CRITICAL Blocker (F-01 / ISSUE-450):** App Check 403 error on `exchangeRecaptchaEnterpriseToken` for `https://indii.music` domain causes client throttling and blocks Cloud Function calls (`enforceOperationCost` 400 `Unauthorized: Missing App Check token`), preventing all downstream autonomous AI chat streams (Onboarding, Conductor, Specialist Agents).
+  - 🟢 **PASS:** Notes module multi-note persistence and state survival across dynamic chunk reloads.
+  - 🟢 **PASS:** Finance ledger strictly isolates paid ($18.99) vs expected ($15.00) costs and accurately marks manual entries as `Unverified`.
+  - 🟢 **PASS:** Audio Analyzer DSP pipeline enforces stereo requirement (rejecting mono master) and extracts deep acoustic fingerprint on 2-channel stereo WAV (`What To Come.wav`).
+  - 🟢 **PASS:** Legal contract analysis parser cleanly extracts clauses from `northbound_static_band_agreement.txt`, outputting 88/100 safety score with trademark deadlock and buyout risk warnings.
+  - 🟢 **PASS:** Free tier distribution gating and upgrade navigation to `/finance`.
+- **Artifacts:** `artifacts/live_testing_report_2026-08-14.md`, `recording.webm`, screenshots in `artifacts/screenshots/`.
+

@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="900" viewBox="0 0 600 900">
+  <rect width="600" height="900" fill="#1e1e24"/>
+  <!-- Paper background -->
+  <rect x="80" y="40" width="440" height="820" rx="4" fill="#faf8f5" filter="drop-shadow(0px 10px 20px rgba(0,0,0,0.5))"/>
+  
+  <style>
+    .mono { font-family: 'Courier New', Courier, monospace; }
+    .bold { font-weight: bold; }
+    .center { text-anchor: middle; }
+    .right { text-anchor: end; }
+  </style>
+
+  <!-- Header -->
+  <text x="300" y="100" class="mono bold center" font-size="22" fill="#111">GUITAR CENTER #412</text>
+  <text x="300" y="125" class="mono center" font-size="14" fill="#333">2875 Boardwalk Dr</text>
+  <text x="300" y="145" class="mono center" font-size="14" fill="#333">Ann Arbor, MI 48104</text>
+  <text x="300" y="165" class="mono center" font-size="14" fill="#333">Tel: (734) 668-9898</text>
+
+  <line x1="100" y1="185" x2="500" y2="185" stroke="#444" stroke-dasharray="4,4" stroke-width="1.5"/>
+
+  <!-- Transaction Details -->
+  <text x="110" y="215" class="mono" font-size="13" fill="#222">DATE: 10/20/2026</text>
+  <text x="490" y="215" class="mono right" font-size="13" fill="#222">TIME: 15:42:19</text>
+  <text x="110" y="235" class="mono" font-size="13" fill="#222">REG: 04</text>
+  <text x="300" y="235" class="mono center" font-size="13" fill="#222">TRANS: 8841</text>
+  <text x="490" y="235" class="mono right" font-size="13" fill="#222">CASHIER: JAKE</text>
+
+  <line x1="100" y1="255" x2="500" y2="255" stroke="#444" stroke-dasharray="4,4" stroke-width="1.5"/>
+
+  <!-- Line items -->
+  <text x="110" y="285" class="mono bold" font-size="14" fill="#111">ITEM DESCRIPTION</text>
+  <text x="490" y="285" class="mono bold right" font-size="14" fill="#111">AMOUNT</text>
+
+  <text x="110" y="320" class="mono" font-size="13" fill="#222">ELIXIR PHOSPHOR BRONZE</text>
+  <text x="110" y="340" class="mono" font-size="13" fill="#555">  LIGHT 12-53 ACOUSTIC STRINGS</text>
+  <text x="110" y="360" class="mono" font-size="12" fill="#777">  SKU: 733549160527</text>
+  <text x="490" y="320" class="mono right" font-size="14" fill="#111">$18.99</text>
+
+  <line x1="100" y1="400" x2="500" y2="400" stroke="#444" stroke-dasharray="4,4" stroke-width="1.5"/>
+
+  <!-- Totals -->
+  <text x="110" y="430" class="mono" font-size="14" fill="#222">SUBTOTAL:</text>
+  <text x="490" y="430" class="mono right" font-size="14" fill="#222">$18.99</text>
+
+  <text x="110" y="460" class="mono" font-size="14" fill="#222">MI SALES TAX (6%):</text>
+  <text x="490" y="460" class="mono right" font-size="14" fill="#222">$1.14</text>
+
+  <line x1="100" y1="480" x2="500" y2="480" stroke="#111" stroke-width="2"/>
+
+  <text x="110" y="515" class="mono bold" font-size="18" fill="#000">TOTAL:</text>
+  <text x="490" y="515" class="mono bold right" font-size="20" fill="#000">$20.13</text>
+
+  <!-- Payment -->
+  <line x1="100" y1="540" x2="500" y2="540" stroke="#444" stroke-dasharray="4,4" stroke-width="1.5"/>
+  <text x="110" y="570" class="mono" font-size="13" fill="#222">PAYMENT METHOD: VISA CREDIT</text>
+  <text x="110" y="590" class="mono" font-size="13" fill="#222">CARD: ************4082</text>
+  <text x="110" y="610" class="mono" font-size="13" fill="#222">AUTH CODE: 049281</text>
+  <text x="110" y="630" class="mono" font-size="13" fill="#222">CHIP READ - VERIFIED BY PIN</text>
+
+  <!-- Footer -->
+  <line x1="100" y1="660" x2="500" y2="660" stroke="#444" stroke-dasharray="4,4" stroke-width="1.5"/>
+  <text x="300" y="700" class="mono center bold" font-size="14" fill="#333">THANK YOU FOR SHOPPING AT GC!</text>
+  <text x="300" y="720" class="mono center" font-size="12" fill="#555">Retain receipt for 30-day return policy</text>
+  <text x="300" y="740" class="mono center" font-size="12" fill="#555">www.guitarcenter.com</text>
+
+  <!-- Barcode simulation -->
+  <rect x="180" y="770" width="240" height="40" fill="#111"/>
+  <text x="300" y="830" class="mono center" font-size="12" fill="#444">0412 8841 102026 4082</text>
+</svg>
