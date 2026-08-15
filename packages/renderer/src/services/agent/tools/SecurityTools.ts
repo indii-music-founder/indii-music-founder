@@ -1,11 +1,10 @@
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, collection, getDocs, query, where, orderBy, limit } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
-import { db, functions } from '@/services/firebase';
+import { auth, db, functions } from '@/services/firebase';
 import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
 import type { AnyToolFunction } from '../types';
 import { logger } from '@/utils/logger';
 import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
-import { importWithRetry } from '@/utils/dynamicImport';
 
 /**
  * Security Tools
@@ -186,8 +185,19 @@ export const SecurityTools = {
             if (isFirebaseE2EMockEnabled()) {
                 return toolSuccess({ status: 'MOCK_E2E', log_count: 0, logs: [], project_id });
             }
-            const { collection, getDocs, query, orderBy, limit } = await importWithRetry(() => import('firebase/firestore'));
-            const q = query(collection(db, 'audit_logs'), orderBy('timestamp', 'desc'), limit(50));
+            const userId = auth.currentUser?.uid;
+            if (!userId) {
+                return toolError('Security reports require an authenticated account.', 'AUTH_REQUIRED');
+            }
+            // The immutable audit collection is owner-readable only. A global
+            // query is rejected by Firestore rules and can strand the agent
+            // behind a request timeout, so preserve the account boundary here.
+            const q = query(
+                collection(db, 'audit_logs'),
+                where('userId', '==', userId),
+                orderBy('timestamp', 'desc'),
+                limit(50),
+            );
             const snap = await getDocs(q);
             const logs = snap.docs.map(d => ({ id: d.id, ...(d.data() as Record<string, unknown> & { severity?: string }) }));
 

@@ -7,9 +7,10 @@ import {
     check_core_dump_policy,
     audit_workload_isolation,
     audit_permissions,
+    generate_security_report,
     log_audit_event
 } from '../SecurityTools';
-import { collection, getDoc } from 'firebase/firestore';
+import { collection, getDoc, getDocs, query, where } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
 
 const mocks = vi.hoisted(() => ({
@@ -50,6 +51,10 @@ vi.mock('firebase/firestore', async (importOriginal) => {
 
 vi.mock('firebase/functions', () => ({
     httpsCallable: vi.fn(() => mocks.logAuditEventCallable)
+}));
+
+vi.mock('@/utils/e2eMode', () => ({
+    isFirebaseE2EMockEnabled: vi.fn(() => false),
 }));
 
 // Mock the local firebase service to prevent real initialization
@@ -234,6 +239,22 @@ describe('SecurityTools (Mocked)', () => {
             });
             expect(result.success).toBe(false);
             expect(result.metadata?.errorCode).toBe('NOT_SUPPORTED');
+        });
+    });
+
+    describe('generate_security_report', () => {
+        it('queries only the authenticated account audit records', async () => {
+            vi.mocked(getDocs).mockResolvedValue({
+                docs: [{ id: 'audit-1', data: () => ({ userId: 'test-user', action: 'agent.tool.test', severity: 'low' }) }],
+            } as unknown as import('firebase/firestore').QuerySnapshot);
+
+            const result = await generate_security_report({});
+
+            expect(result.error).toBeUndefined();
+            expect(collection).toHaveBeenCalledWith(expect.anything(), 'audit_logs');
+            expect(where).toHaveBeenCalledWith('userId', '==', 'test-user');
+            expect(query).toHaveBeenCalled();
+            expect(result.data.total_events).toBe(1);
         });
     });
 
