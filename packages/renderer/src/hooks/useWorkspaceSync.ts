@@ -11,7 +11,7 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { useStore, getWorkspaceSnapshot, applyWorkspaceSnapshot } from '@/core/store';
 import { useLivingPlanSlice } from '@/core/store/slices/livingPlanSlice';
-import { workspaceSyncService } from '@/services/sync/WorkspaceSyncService';
+import { normalizeWorkspaceScope, workspaceSyncService } from '@/services/sync/WorkspaceSyncService';
 import { auth } from '@/services/firebase';
 import { logger } from '@/utils/logger';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
@@ -22,8 +22,12 @@ export function useWorkspaceSync(): void {
     const hydratedUserIdRef = useRef<string | null>(null);
     const pendingPushRef = useRef<boolean>(false);
     const userId = useStore(state => state.user?.uid ?? null);
+    const organizationId = useStore(state => state.currentOrganizationId);
+    const workspaceScope = normalizeWorkspaceScope(organizationId);
     const activeUserIdRef = useRef<string | null>(userId);
+    const activeWorkspaceScopeRef = useRef(workspaceScope);
     activeUserIdRef.current = userId;
+    activeWorkspaceScopeRef.current = workspaceScope;
 
     // -----------------------------------------------------------------------
     // Push / Debounced Store Subscription (define first for use in Pull)
@@ -37,10 +41,11 @@ export function useWorkspaceSync(): void {
 
         debounceTimerRef.current = setTimeout(async () => {
             const activeUserId = activeUserIdRef.current;
+            const activeWorkspaceScope = activeWorkspaceScopeRef.current;
             if (
                 !activeUserId ||
                 auth.currentUser?.uid !== activeUserId ||
-                hydratedUserIdRef.current !== activeUserId
+                hydratedUserIdRef.current !== `${activeUserId}:${activeWorkspaceScope}`
             ) {
                 logger.debug('[WorkspaceSync] Workspace is not safely hydrated for the active user; skipping push');
                 return;
@@ -50,7 +55,7 @@ export function useWorkspaceSync(): void {
             const snapshot = getWorkspaceSnapshot(state);
 
             try {
-                await workspaceSyncService.pushSnapshot(snapshot);
+                await workspaceSyncService.pushSnapshot(snapshot, activeWorkspaceScope);
                 lastPushTimeRef.current = Date.now();
                 pendingPushRef.current = false;
             } catch (error) {
@@ -81,12 +86,12 @@ export function useWorkspaceSync(): void {
         let attempt = 0;
 
         const markHydrated = () => {
-            hydratedUserIdRef.current = userId;
+            hydratedUserIdRef.current = `${userId}:${workspaceScope}`;
             if (pendingPushRef.current) queuePush();
         };
 
         const rehydrate = async () => {
-            if (!active || hydratedUserIdRef.current === userId) return;
+            if (!active || hydratedUserIdRef.current === `${userId}:${workspaceScope}`) return;
 
             try {
                 if (auth.currentUser?.uid !== userId) {
@@ -94,7 +99,7 @@ export function useWorkspaceSync(): void {
                 }
 
                 logger.info(`[WorkspaceSync] Pulling workspace snapshot (attempt ${attempt + 1})...`);
-                const cloudDoc = await workspaceSyncService.pullSnapshot();
+                const cloudDoc = await workspaceSyncService.pullSnapshot(workspaceScope);
 
                 if (!active) return;
 
@@ -163,7 +168,7 @@ export function useWorkspaceSync(): void {
         };
 
         const handleOnline = () => {
-            if (hydratedUserIdRef.current !== userId) {
+            if (hydratedUserIdRef.current !== `${userId}:${workspaceScope}`) {
                 attempt = 0;
                 if (retryTimer) clearTimeout(retryTimer);
                 void rehydrate();
@@ -178,7 +183,7 @@ export function useWorkspaceSync(): void {
             if (retryTimer) clearTimeout(retryTimer);
             window.removeEventListener('online', handleOnline);
         };
-    }, [queuePush, userId]);
+    }, [queuePush, userId, workspaceScope]);
 
     // -----------------------------------------------------------------------
     // Subscribe to Store Changes (uses queuePush defined above)

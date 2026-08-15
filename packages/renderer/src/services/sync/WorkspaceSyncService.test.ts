@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { workspaceSyncService, type WorkspaceSnapshot } from './WorkspaceSyncService';
+import { normalizeWorkspaceScope, workspaceSyncService, type WorkspaceSnapshot } from './WorkspaceSyncService';
 
 // Mock Firestore
 vi.mock('firebase/firestore', () => ({
@@ -98,11 +98,12 @@ describe('WorkspaceSyncService', () => {
     });
 
     it('should push snapshot to Firestore', async () => {
-        const { setDoc } = await import('firebase/firestore');
+        const { doc, setDoc } = await import('firebase/firestore');
 
-        await workspaceSyncService.pushSnapshot(mockSnapshot);
+        await workspaceSyncService.pushSnapshot(mockSnapshot, 'mara-june');
 
         expect(setDoc).toHaveBeenCalled();
+        expect(doc).toHaveBeenCalledWith(expect.anything(), 'users', 'test-uid', 'workspace', 'mara-june');
         const call = vi.mocked(setDoc).mock.calls[0];
         expect(call[1]).toEqual(
             expect.objectContaining({
@@ -110,6 +111,20 @@ describe('WorkspaceSyncService', () => {
                 deviceId: expect.any(String),
             })
         );
+    });
+
+    it('uses a separate personal workspace rather than the legacy shared current document', async () => {
+        const { doc, getDoc } = await import('firebase/firestore');
+
+        await workspaceSyncService.pullSnapshot('org-default');
+
+        expect(doc).toHaveBeenCalledWith(expect.anything(), 'users', 'test-uid', 'workspace', 'personal');
+        expect(getDoc).toHaveBeenCalled();
+    });
+
+    it('rejects invalid workspace scopes instead of allowing an ambiguous Firestore path', () => {
+        expect(() => normalizeWorkspaceScope('mara/june')).toThrow('path separator');
+        expect(normalizeWorkspaceScope()).toBe('personal');
     });
 
     it('should pull snapshot from Firestore', async () => {

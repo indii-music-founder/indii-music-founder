@@ -6,7 +6,7 @@
  * conversation, seated agents, active plan, current module, and notes.
  *
  * Collection structure:
- *   users/{userId}/workspace/current  ← single workspace doc (snapshot + metadata)
+ *   users/{userId}/workspace/{scopeId}  ← one snapshot per artist/studio scope
  *
  * Security: isOwner(userId) — only the authenticated user touches their workspace.
  * Phase 1 (Resume/Handoff): One-shot pull on auth ready, continuous debounced push.
@@ -60,11 +60,25 @@ function getUserId(): string | null {
     return getRealAuthenticatedUserId(auth.currentUser);
 }
 
-function getWorkspaceRef() {
+/**
+ * The organization selector is the artist/studio boundary for a founder account.
+ * Keep the unresolved legacy selector separate from named studios, and reject
+ * invalid Firestore document IDs instead of silently collapsing them together.
+ */
+export function normalizeWorkspaceScope(scopeId?: string | null): string {
+    const normalized = scopeId?.trim();
+    if (!normalized || normalized === 'org-default') return 'personal';
+    if (normalized.includes('/')) {
+        throw new Error('Workspace scope must not contain a path separator.');
+    }
+    return normalized;
+}
+
+function getWorkspaceRef(scopeId?: string | null) {
     if (isFirebaseE2EMockEnabled()) return null;
     const uid = getUserId();
     if (!uid) return null;
-    return doc(db, 'users', uid, 'workspace', 'current');
+    return doc(db, 'users', uid, 'workspace', normalizeWorkspaceScope(scopeId));
 }
 
 /**
@@ -130,12 +144,12 @@ class WorkspaceSyncService {
 
     /**
      * Push a workspace snapshot to Firestore.
-     * Writes to users/{uid}/workspace/current with merge: true to avoid clobbering other fields.
+     * Writes to the active artist/studio scope with merge: true to avoid clobbering other fields.
      */
-    async pushSnapshot(snapshot: WorkspaceSnapshot): Promise<void> {
+    async pushSnapshot(snapshot: WorkspaceSnapshot, scopeId?: string | null): Promise<void> {
         if (isFirebaseE2EMockEnabled()) return;
         
-        const ref = getWorkspaceRef();
+        const ref = getWorkspaceRef(scopeId);
         if (!ref) {
             throw new Error('Workspace sync requires an authenticated user.');
         }
@@ -161,10 +175,10 @@ class WorkspaceSyncService {
      * Pull the latest workspace snapshot from Firestore (one-shot read).
      * Returns null if no snapshot exists or if fetch fails.
      */
-    async pullSnapshot(): Promise<WorkspaceDoc | null> {
+    async pullSnapshot(scopeId?: string | null): Promise<WorkspaceDoc | null> {
         if (isFirebaseE2EMockEnabled()) return null;
         
-        const ref = getWorkspaceRef();
+        const ref = getWorkspaceRef(scopeId);
         if (!ref) {
             throw new Error('Workspace sync requires an authenticated user.');
         }
@@ -190,8 +204,8 @@ class WorkspaceSyncService {
      * Calls back with each snapshot update in real-time.
      * Defined now but not used in Phase 1 (resume/handoff); reserved for Phase 2.
      */
-    subscribe(callback: (doc: WorkspaceDoc | null) => void): Unsubscribe {
-        const ref = getWorkspaceRef();
+    subscribe(callback: (doc: WorkspaceDoc | null) => void, scopeId?: string | null): Unsubscribe {
+        const ref = getWorkspaceRef(scopeId);
         if (!ref) {
             logger.warn('[WorkspaceSync] No auth — cannot subscribe');
             return () => { };
