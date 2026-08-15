@@ -25,7 +25,10 @@ export class PythonBridge {
         if (app.isPackaged) {
             return path.join(process.resourcesPath, 'execution', scriptName);
         }
-        return path.join(process.cwd(), 'execution', scriptName);
+        // ROOT_DIR can be set in test environments (e.g. Vitest running from packages/main)
+        // to point at the monorepo root where execution/ lives.
+        const root = process.env.ROOT_DIR ?? process.cwd();
+        return path.join(root, 'execution', scriptName);
     }
 
     private static redactArgs(args: string[]): string {

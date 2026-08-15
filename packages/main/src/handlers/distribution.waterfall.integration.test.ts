@@ -5,6 +5,10 @@
  */
 
 import { describe, it, expect, beforeAll, vi } from 'vitest';
+import path from 'path';
+
+// Resolve repo root relative to this test file (packages/main/src/handlers/ → repo root)
+process.env.ROOT_DIR = process.env.ROOT_DIR || path.resolve(__dirname, '../../../..');
 
 // Mock minimal Electron internals
 const mockHandlers: Record<string, (event: unknown, data: unknown) => Promise<unknown>> = {};

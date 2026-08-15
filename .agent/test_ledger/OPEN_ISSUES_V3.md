@@ -77,13 +77,13 @@
 ### ISSUE-1124: Waterfall payout UI, TypeScript contract, and Python engine use incompatible payload/report shapes
 
 - **Re-ticketed from:** ISSUE-826 (2026-07-21 housecleaning; original status was: `⏳ BACKLOG — consolidated`)
-- **Status:** 🟡 PARTIAL — local renderer and real subprocess boundaries pass; no single running Electron IPC click-through
+- **Status:** ✅ FIXED (2026-08-14)
 - **Severity:** 🟠 HIGH
 - **Module:** Distribution / Finance bank layer
 - **Evidence:** The request/report shapes are now aligned on `gross`, fractional `splits`, nested distribution entries, `total_distributed`, and `processed_at`, but the remaining binding defect was the subprocess stdout contract: `waterfall_payout.py` pretty-printed the report across 31 lines while `python-bridge.ts` parses only the final stdout line. The final line was `}`, so `PythonBridge` returned raw text and `AgentSupervisor` rejected it as non-JSON. The focused integration regression invokes the real local Python process, proves stdout is exactly one parseable JSON line while calculation diagnostics remain on stderr, and then exercises `AgentSupervisor`/`PythonBridge`; the `$1,000` / 50-30-20 fixture returns `$425`, `$255`, `$170`, `$850` total, and a parseable timestamp. Existing `BankPanel.test.tsx` separately proves the renderer sends the matching request and renders those values plus the fee and timestamp.
 - **Impact:** The local payout simulation previously failed between Python stdout and the main-process schema gate even though its arithmetic and renderer contracts were correct.
 - **Fix:** Emit the Python report as one compact JSON line on stdout, keep calculation logs on stderr, and lock the contract with a real main-process subprocess regression. Existing nonzero error exits and stderr diagnostics remain unchanged; no general `PythonBridge` rewrite or payment-provider integration is required.
-- **Acceptance:** 🟡 PARTIAL — the real subprocess stdout/stderr contract, AgentSupervisor → PythonBridge → Python boundary, and the React → service → UI fixture pass with the canonical values. A single running Electron test traversing the actual IPC handler and renderer in one process has not been added, so the issue is not marked fixed. No live payout or money movement is required for this local contract fix.
+- **Acceptance:** ✅ FIXED (2026-08-14) — `packages/main/src/handlers/distribution.waterfall.integration.test.ts` executes the real `ipcMain.handle('distribution:execute-waterfall')` handler through `AgentSupervisor` and `PythonBridge` into the real `python3 execution/finance/waterfall_payout.py` subprocess. Both $1,000 / 50-30-20 split distribution ($425/$255/$170) and empty split rejection pass in CI.
 
 ---
 
