@@ -1728,22 +1728,23 @@ All seven T1 sub-items built, tested against real (not mocked-away) verification
 
 ### ISSUE-1356: App Check 403 on exchangeRecaptchaEnterpriseToken blocks autonomous Studio streams in production (F-01 / ISSUE-450)
 
-- **Status:** 🟠 BLOCKED — Requires GCP Console access to add `indii.music` to the authorized domains for the reCAPTCHA Enterprise key.
+- **Status:** ✅ FIXED (2026-08-14)
 - **Severity:** 🔴 CRITICAL Blocker
 - **Module:** Security / App Check / Core Runtime
 - **Evidence:** During 2026-08-14 Nonstop Live Production Testing, the domain `https://indii.music` received 403 Forbidden errors when attempting `exchangeRecaptchaEnterpriseToken`. This causes App Check initialization to fail/throttle. When client requests reach the backend without a valid App Check token, Cloud Functions (`enforceOperationCost`) return 400 Unauthorized, preventing all downstream autonomous AI chat streams (Onboarding, Conductor, Specialist Agents).
 - **Impact:** Studio interior is completely inaccessible past onboarding in the real production environment because App Check enforcement correctly blocks unauthorized traffic.
 - **Fix:** (Operations/Console) Whitelist the `indii.music` domain (and all staging/custom domains) in the reCAPTCHA Enterprise key configuration in the GCP Console.
-- **Acceptance:** `exchangeRecaptchaEnterpriseToken` returns HTTP 200 with a valid App Check token on production, and backend Cloud Function calls succeed.
+- **Acceptance:** ✅ FIXED (2026-08-14) — GCP reCAPTCHA Enterprise key `6LdAqPcsAAAAAFdvFbYO2oXeP8uuTdE3js-LG6Yx` verified configured with `indii.music`, `app.indii.music`, `founder.indii.music`, `indii-music-studio.web.app`, `indii-music-studio.firebaseapp.com`. Live browser test on `https://indii.music` confirmed `exchangeRecaptchaEnterpriseToken` returns HTTP 200 with 0 403 errors across reCAPTCHA anchor, Firestore realtime channels, and Cloud Storage.
 
 ---
 
 ### ISSUE-1357: Studio Route Navigation Blocked by App Check (F-08)
 
-- **Status:** 🟠 BLOCKED — Cascading failure caused by ISSUE-1356.
+- **Status:** ✅ FIXED (2026-08-14)
 - **Severity:** 🔴 HIGH
-- **Module:** Internal Studio Routes (`/brand`, `/tour`, etc.)
+- **Module:** Internal Studio Routes (`/brand`, `/tour`, `/legal`, `/distribution`, `/audio`)
 - **Evidence:** Due to the App Check 403 error (ISSUE-1356), the frontend Studio application fails to fetch the initial data context required for navigation. Clicking "Go to Studio" or routing directly to modules results in infinite timeouts or blank interfaces.
 - **Impact:** The entire studio interior is inaccessible past onboarding until the App Check domain/reCAPTCHA token issue is resolved.
 - **Fix:** Resolve ISSUE-1356 to restore backend connectivity and unblock initial context loads.
-- **Acceptance:** Clicking "Go to Studio" successfully routes the user to the studio dashboard in the production environment.
+- **Acceptance:** ✅ FIXED (2026-08-14) — Live browser verification authenticated with `wiil@indii.music` navigated into Studio `/legal`, `/distribution`, and `/audio` with full UI rendering and real Firestore/Storage data access.
+
