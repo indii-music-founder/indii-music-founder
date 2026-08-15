@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import React from 'react';
 
 function filterDomProps(props: Record<string, unknown>): Record<string, unknown> {
@@ -21,6 +22,8 @@ vi.mock('motion/react', () => ({
 let mockStore: Record<string, unknown> = {};
 vi.mock('@/core/store', () => ({ useStore: (s: (st: Record<string, unknown>) => unknown) => s(mockStore) }));
 vi.mock('zustand/react/shallow', () => ({ useShallow: (fn: unknown) => fn }));
+const organizationMocks = vi.hoisted(() => ({ createOrganization: vi.fn() }));
+vi.mock('@/services/OrganizationService', () => ({ OrganizationService: { createOrganization: organizationMocks.createOrganization } }));
 
 import SelectOrg from './SelectOrg';
 
@@ -37,6 +40,7 @@ describe('SelectOrg', () => {
             logout: vi.fn(),
             userProfile: { displayName: 'Test User' },
             currentModule: 'select-org',
+            user: { uid: 'user-1' },
         };
     });
 
@@ -61,5 +65,19 @@ describe('SelectOrg', () => {
     it('shows sign out button', () => {
         render(<SelectOrg />);
         expect(screen.getByText('Sign Out')).toBeInTheDocument();
+    });
+
+    it('creates a durable organization before selecting the new studio', async () => {
+        const user = userEvent.setup();
+        organizationMocks.createOrganization.mockResolvedValueOnce('org-durable');
+        mockStore = { ...mockStore, organizations: [] };
+        render(<SelectOrg />);
+
+        await user.type(screen.getByLabelText('Studio Name'), 'Mara June');
+        await user.click(screen.getByRole('button', { name: /Provision Studio/i }));
+
+        expect(organizationMocks.createOrganization).toHaveBeenCalledWith('Mara June', 'user-1');
+        expect(mockStore.addOrganization).toHaveBeenCalledWith(expect.objectContaining({ id: 'org-durable', members: ['user-1'] }));
+        expect(mockStore.setOrganization).toHaveBeenCalledWith('org-durable');
     });
 });

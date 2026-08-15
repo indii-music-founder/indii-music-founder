@@ -207,6 +207,32 @@ export function resetStoreForAccountBoundary(user: StoreState['user']): void {
     useLivingPlanSlice.setState(useLivingPlanSlice.getInitialState(), true);
 }
 
+/**
+ * Clear artist/studio-owned working state before loading a different workspace.
+ * The Firebase identity and organization membership remain intact; only private
+ * draft material is replaced with the store's clean initial state.
+ */
+export function resetStoreForWorkspaceBoundary(): void {
+    const current = useStore.getState();
+    const initial = useStore.getInitialState();
+    current.agentAbortController?.abort('Artist workspace changed');
+    current.pendingApproval?.resolve(false);
+    current.clearAllSubscriptions();
+    useStore.setState({
+        ...initial,
+        user: current.user,
+        authLoading: current.authLoading,
+        authError: current.authError,
+        isSignUpMode: current.isSignUpMode,
+        passwordResetSent: current.passwordResetSent,
+        currentOrganizationId: current.currentOrganizationId,
+        organizations: current.organizations,
+        userProfile: current.userProfile,
+        isSidebarOpen: current.isSidebarOpen,
+    }, true);
+    useLivingPlanSlice.setState(useLivingPlanSlice.getInitialState(), true);
+}
+
 // Centralized event-driven context publisher to synchronize boardroom referenced assets
 useStore.subscribe((state, prevState) => {
     if (state.generatedHistory === prevState.generatedHistory && 

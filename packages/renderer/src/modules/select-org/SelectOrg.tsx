@@ -3,9 +3,10 @@ import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { Building2, Check, Plus, ArrowRight, Activity, Users, LogOut, ChevronRight, Zap } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { OrganizationService } from '@/services/OrganizationService';
 
 export default function SelectOrg() {
-    const { organizations, currentOrganizationId, setOrganization, addOrganization, setModule, logout, userProfile, currentModule } = useStore(
+    const { organizations, currentOrganizationId, setOrganization, addOrganization, setModule, logout, userProfile, currentModule, user } = useStore(
         useShallow(s => ({
             organizations: s.organizations,
             currentOrganizationId: s.currentOrganizationId,
@@ -15,17 +16,18 @@ export default function SelectOrg() {
             logout: s.logout,
             userProfile: s.userProfile,
             currentModule: s.currentModule,
+            user: s.user,
         }))
     );
 
     const [newOrgName, setNewOrgName] = useState('');
     const [showCreate, setShowCreate] = useState(organizations.length === 0);
 
-    const handleCreate = () => {
+    const handleCreate = async () => {
         const name = newOrgName.trim();
-        if (!name) return;
-        const id = `org-${Date.now()}`;
-        addOrganization({ id, name, plan: 'free', members: [] });
+        if (!name || !user?.uid) return;
+        const id = await OrganizationService.createOrganization(name, user.uid);
+        addOrganization({ id, name, plan: 'free', members: [user.uid], ownerId: user.uid, memberRoles: { [user.uid]: 'owner' } });
         setOrganization(id);
         setNewOrgName('');
         setShowCreate(false);
@@ -188,11 +190,12 @@ export default function SelectOrg() {
 
                                 <div className="space-y-6">
                                     <div>
-                                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">
+                                        <label htmlFor="studio-name" className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">
                                             Studio Name
                                         </label>
                                         <input
                                             type="text"
+                                            id="studio-name"
                                             value={newOrgName}
                                             onChange={e => setNewOrgName(e.target.value)}
                                             placeholder="e.g. indii Records, My Agency"

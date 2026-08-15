@@ -9,6 +9,7 @@ vi.mock('@/hooks/useBoardroomContextHandshake', () => ({
 
 import {
     resetStoreForAccountBoundary,
+    resetStoreForWorkspaceBoundary,
     sanitizePersistedAppState,
     selectSafePersistedAppState,
     useStore,
@@ -122,5 +123,27 @@ describe('account-bound root store', () => {
         } as Partial<ReturnType<typeof useStore.getState>>);
 
         expect(OrganizationService.getCurrentOrgId()).toBe('org-live');
+    });
+
+    it('clears private artist state while preserving the founder identity and studio selection', () => {
+        const founder = { uid: 'founder-1' } as User;
+        useStore.setState({
+            user: founder,
+            currentOrganizationId: 'mara-june',
+            organizations: [{ id: 'mara-june', name: 'Mara June', plan: 'free', members: ['founder-1'] }],
+            notes: [{ id: 'mara-note', title: 'Private', content: 'Do not carry over', attachments: [], tags: [], createdAt: 1, updatedAt: 1 }],
+            creativePrompt: 'Mara June launch draft',
+            referencedAssets: [{ id: 'mara-asset', type: 'file', name: 'master.wav', value: 'private' }],
+        } as Partial<ReturnType<typeof useStore.getState>>);
+
+        resetStoreForWorkspaceBoundary();
+
+        const state = useStore.getState();
+        expect(state.user).toBe(founder);
+        expect(state.currentOrganizationId).toBe('mara-june');
+        expect(state.organizations).toEqual([{ id: 'mara-june', name: 'Mara June', plan: 'free', members: ['founder-1'] }]);
+        expect(state.notes).toEqual([]);
+        expect(state.creativePrompt).toBe('');
+        expect(state.referencedAssets).toEqual([]);
     });
 });

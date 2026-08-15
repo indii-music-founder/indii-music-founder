@@ -3,14 +3,16 @@ import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { Building2, Check, Plus, ChevronDown, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { OrganizationService } from '@/services/OrganizationService';
 
 export const OrganizationSelector = () => {
-    const { organizations, currentOrganizationId, setOrganization, addOrganization } = useStore(
+    const { organizations, currentOrganizationId, setOrganization, addOrganization, user } = useStore(
         useShallow(state => ({
             organizations: state.organizations,
             currentOrganizationId: state.currentOrganizationId,
             setOrganization: state.setOrganization,
             addOrganization: state.addOrganization,
+            user: state.user,
         }))
     );
     const [isOpen, setIsOpen] = useState(false);
@@ -19,13 +21,17 @@ export const OrganizationSelector = () => {
 
     const currentOrg = organizations.find(o => o.id === currentOrganizationId) ?? organizations[0];
 
-    const handleCreateOrg = () => {
-        if (!newOrgName.trim()) return;
+    const handleCreateOrg = async () => {
+        const name = newOrgName.trim();
+        if (!name || !user?.uid) return;
+        const id = await OrganizationService.createOrganization(name, user.uid);
         const newOrg = {
-            id: `org-${Date.now()}`,
-            name: newOrgName,
+            id,
+            name,
             plan: 'free' as const,
-            members: ['me']
+            members: [user.uid],
+            ownerId: user.uid,
+            memberRoles: { [user.uid]: 'owner' as const },
         };
         addOrganization(newOrg);
         setOrganization(newOrg.id);

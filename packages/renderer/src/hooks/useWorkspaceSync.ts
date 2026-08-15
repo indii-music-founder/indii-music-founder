@@ -9,7 +9,7 @@
  */
 
 import { useCallback, useEffect, useRef } from 'react';
-import { useStore, getWorkspaceSnapshot, applyWorkspaceSnapshot } from '@/core/store';
+import { useStore, getWorkspaceSnapshot, applyWorkspaceSnapshot, resetStoreForWorkspaceBoundary } from '@/core/store';
 import { useLivingPlanSlice } from '@/core/store/slices/livingPlanSlice';
 import { normalizeWorkspaceScope, workspaceSyncService } from '@/services/sync/WorkspaceSyncService';
 import { auth } from '@/services/firebase';
@@ -26,6 +26,7 @@ export function useWorkspaceSync(): void {
     const workspaceScope = normalizeWorkspaceScope(organizationId);
     const activeUserIdRef = useRef<string | null>(userId);
     const activeWorkspaceScopeRef = useRef(workspaceScope);
+    const previousWorkspaceKeyRef = useRef<string | null>(null);
     activeUserIdRef.current = userId;
     activeWorkspaceScopeRef.current = workspaceScope;
 
@@ -69,6 +70,9 @@ export function useWorkspaceSync(): void {
     // -----------------------------------------------------------------------
 
     useEffect(() => {
+        const workspaceKey = userId ? `${userId}:${workspaceScope}` : null;
+        const previousWorkspaceKey = previousWorkspaceKeyRef.current;
+        const wasHydrated = previousWorkspaceKey !== null && hydratedUserIdRef.current === previousWorkspaceKey;
         if (debounceTimerRef.current) {
             clearTimeout(debounceTimerRef.current);
             debounceTimerRef.current = null;
@@ -76,9 +80,14 @@ export function useWorkspaceSync(): void {
         hydratedUserIdRef.current = null;
         lastPushTimeRef.current = 0;
         pendingPushRef.current = false;
+        previousWorkspaceKeyRef.current = workspaceKey;
 
         if (!userId) {
             return;
+        }
+
+        if (previousWorkspaceKey !== null && previousWorkspaceKey !== workspaceKey && wasHydrated) {
+            resetStoreForWorkspaceBoundary();
         }
 
         let active = true;
