@@ -192,15 +192,14 @@ describe('SettingsPanel', () => {
         expect(screen.getByRole('button', { name: 'Export my data' })).toBeInTheDocument();
     });
 
-    it('hides the developer Firebase bypass from non-founder users', () => {
+    it('never exposes an arbitrary Firebase write utility in Settings', () => {
         render(<SettingsPanel />);
         const buttons = screen.getAllByText('settings.sections.desktop.label');
         fireEvent.click(buttons[0]!);
 
-        // import.meta.env.DEV is TRUE in Vitest, so isFounderAccess=true.
-        // The bypass panel is shown; the hidden-outside-founder message is NOT shown.
-        expect(screen.getByText('Developer Firebase Push Bypass')).toBeInTheDocument();
-        expect(screen.queryByText('Developer push tools are hidden outside founder/dev builds.')).not.toBeInTheDocument();
+        expect(screen.queryByText('Developer Firebase Push Bypass')).not.toBeInTheDocument();
+        expect(screen.queryByText('Target Firestore Collection')).not.toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: 'Push to Firebase' })).not.toBeInTheDocument();
     });
 
     it('Profile section renders display name and bio fields', () => {
