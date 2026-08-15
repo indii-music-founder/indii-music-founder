@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ShieldAlert } from 'lucide-react';
-import { collection, query, orderBy, limit, onSnapshot } from 'firebase/firestore';
-import { db } from '@/services/firebase';
+import { collection, query, where, orderBy, limit, onSnapshot, Timestamp } from 'firebase/firestore';
+import { auth, db } from '@/services/firebase';
 import { safeUnsubscribe } from '@/utils/safeUnsubscribe';
 import { logger } from '@/utils/logger';
 
@@ -14,9 +14,19 @@ interface AuditLogEntry {
     status: string;
 }
 
+function normalizeTimestamp(value: unknown): string {
+    if (value instanceof Timestamp) return value.toDate().toISOString();
+    if (value instanceof Date) return value.toISOString();
+    if (typeof value === 'string' || typeof value === 'number') {
+        const date = new Date(value);
+        if (!Number.isNaN(date.getTime())) return date.toISOString();
+    }
+    return '';
+}
+
 export const AuditLogDashboard: React.FC = () => {
     const [logs, setLogs] = useState<AuditLogEntry[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(() => Boolean(auth.currentUser));
 
     // Mounted guard to prevent state updates on unmounted component (Firestore b815 crash fix)
     const isMountedRef = useRef(true);
@@ -26,19 +36,31 @@ export const AuditLogDashboard: React.FC = () => {
     }, []);
 
     useEffect(() => {
-        // Real-time listener on Firestore audit_logs collection
+        const userId = auth.currentUser?.uid;
+        if (!userId) return;
+
+        // Firestore rules permit account owners to read only their own global
+        // audit records, so the ownership predicate must be part of the query.
         const q = query(
             collection(db, 'audit_logs'),
+            where('userId', '==', userId),
             orderBy('timestamp', 'desc'),
             limit(100),
         );
 
         const unsubscribe = onSnapshot(q, (snapshot) => {
             if (!isMountedRef.current) return;
-            const entries = snapshot.docs.map((doc) => ({
-                id: doc.id,
-                ...doc.data(),
-            })) as AuditLogEntry[];
+            const entries: AuditLogEntry[] = snapshot.docs.map((doc) => {
+                const data = doc.data();
+                return {
+                    id: doc.id,
+                    timestamp: normalizeTimestamp(data.timestamp),
+                    agent: data.agentId || data.agent || data.source || 'Account',
+                    action: data.action || 'unknown',
+                    resource: data.resourceId || data.resource || '',
+                    status: data.status === 'failure' ? 'failure' : 'success',
+                };
+            });
             setLogs(entries);
             setLoading(false);
         }, (error) => {
@@ -60,7 +82,7 @@ export const AuditLogDashboard: React.FC = () => {
             </div>
 
             <p className="text-sm text-gray-400 mb-6">
-                Non-repudiable audit trails of all agent commands, API actions, and system events.
+                Immutable, server-recorded audit events for this account, including agent tool outcomes and explicitly logged security actions.
             </p>
 
             <div className="overflow-x-auto">

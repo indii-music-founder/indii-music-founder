@@ -1,9 +1,6 @@
 import { logger } from '@/utils/logger';
-import { db } from '@/services/firebase';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { collection, addDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { auth } from '@/services/firebase';
+import { functions } from '@/services/firebase';
+import { httpsCallable } from 'firebase/functions';
 import {
     SpecializedAgent,
     AgentResponse,
@@ -1413,20 +1410,29 @@ export class BaseAgent implements SpecializedAgent {
                         lastToolResult = result;
                         toolCalls.push({ name, args, result });
 
-                        // Item 406: Write async tool audit record (fire-and-forget, non-blocking)
+                        // Item 406: Write an immutable, server-timestamped tool audit
+                        // record. The callable binds the event to the authenticated
+                        // user; the browser cannot write global audit documents.
                         if (enrichedContext.userId) {
-                            const auditCol = collection(db, 'users', enrichedContext.userId, 'agent_audit');
-                            addDoc(auditCol, {
-                                toolName: name,
-                                agentId: this.id,
-                                timestamp: serverTimestamp(),
-                                success: typeof result === 'object' && result !== null ? (result as unknown as Record<string, unknown>).success !== false : true,
-                                // GEAP: Cryptographic provenance for tool execution audit trail
-                                ...(this.identityCard ? {
-                                    agentInstanceId: this.identityCard.instanceId,
-                                    agentFingerprint: this.identityCard.fingerprint,
-                                } : {}),
-                            }).catch(() => { /* audit is best-effort */ });
+                            const succeeded = typeof result === 'object' && result !== null
+                                ? (result as unknown as Record<string, unknown>).success !== false
+                                : true;
+                            try {
+                                const recordAuditEvent = httpsCallable(functions, 'logAuditEvent');
+                                void recordAuditEvent({
+                                    action: `agent.tool.${name}`,
+                                    resourceId: `agent/${this.id}`,
+                                    severity: succeeded ? 'low' : 'medium',
+                                    agentId: this.id,
+                                    status: succeeded ? 'success' : 'failure',
+                                    ...(this.identityCard?.fingerprint
+                                        ? { details: `agentFingerprint=${this.identityCard.fingerprint}` }
+                                        : {}),
+                                }).catch(() => { /* audit is best-effort */ });
+                            } catch {
+                                // Audit availability must not replace the authoritative
+                                // tool result or break an artist workflow.
+                            }
                         }
 
                         const outputText = typeof result === 'string'
