@@ -4,6 +4,7 @@ import { UniversalTools } from '../tools/UniversalTools';
 import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
 import systemPrompt from '@agents/video/prompt.md?raw';
 import { buildDomainRetrievalTools, buildDomainRetrievalDeclarations } from '../tools/DomainTools';
+import { StorageTools } from '../tools/StorageTools';
 
 
 
@@ -25,6 +26,8 @@ export const VideoAgent: AgentConfig = {
     get functions() {
         return {
             ...videoRetrievalTools,
+            list_stored_assets: StorageTools.list_files,
+            search_stored_assets: StorageTools.search_files,
             generate_video: VideoTools.generate_video,
             batch_edit_videos: VideoTools.batch_edit_videos,
             extend_video: VideoTools.extend_video,
@@ -53,10 +56,34 @@ export const VideoAgent: AgentConfig = {
             }
         } as Record<string, import('@/services/agent/types').AnyToolFunction>;
     },
-    authorizedTools: ['list_domain_records', 'generate_video', 'batch_edit_videos', 'extend_video', 'update_keyframe', 'browser_tool', 'indii_image_gen', 'orchestrate_timeline', 'create_performance_video', 'generate_storyboard', 'draft_video_budget'],
+    authorizedTools: ['list_domain_records', 'list_stored_assets', 'search_stored_assets', 'generate_video', 'batch_edit_videos', 'extend_video', 'update_keyframe', 'browser_tool', 'indii_image_gen', 'orchestrate_timeline', 'create_performance_video', 'generate_storyboard', 'draft_video_budget'],
     tools: [{
         functionDeclarations: [
             ...videoRetrievalDeclarations,
+            {
+                name: "list_stored_assets",
+                description: "List the user’s saved gallery images, brand assets, reference images, and recent uploads. Use this to resolve requests like 'one of the last three images' before generating video.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        source: { type: "STRING", enum: ['gallery', 'brand_assets', 'reference_images', 'uploads', 'all'], description: "Asset source to list." },
+                        limit: { type: "NUMBER", description: "Maximum number of assets to return." },
+                        type: { type: "STRING", description: "Optional media type filter, such as image or video." }
+                    },
+                    required: []
+                }
+            },
+            {
+                name: "search_stored_assets",
+                description: "Search the user’s saved gallery images, brand assets, reference images, and recent uploads by text.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        query: { type: "STRING", description: "Search words to match against prompts, type, or source." }
+                    },
+                    required: ['query']
+                }
+            },
             {
                 name: "generate_video",
                 description: "Generate a video from a text prompt or start image.",
@@ -64,7 +91,9 @@ export const VideoAgent: AgentConfig = {
                     type: "OBJECT",
                     properties: {
                         prompt: { type: "STRING", description: "Description of motion/scene." },
-                        image: { type: "STRING", description: "Optional base64 start image." },
+                        image: { type: "STRING", description: "Optional base64 start image or HTTPS image URL." },
+                        assetId: { type: "STRING", description: "Optional saved image asset ID to use as the first frame." },
+                        recentImageIndex: { type: "NUMBER", description: "Optional zero-based index from the most recent generated/uploaded images to use as the first frame." },
                         duration: { type: "NUMBER", description: "Duration in seconds." }
                     },
                     required: ["prompt"]
