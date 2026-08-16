@@ -187,5 +187,24 @@ describe('router pagination normalization', () => {
 
     expect(mocks.limit).toHaveBeenCalledWith(50);
     expect(mocks.status).toHaveBeenCalledWith(200);
+    router = await import('../router');
+  });
+
+  it('clamps oversized limits while preserving valid offsets', () => {
+    expect(router.normalizePagination({ limit: '5000', offset: '25' }, { defaultLimit: 50, maxLimit: 1000 })).toEqual({
+      limit: 1000,
+      offset: 25,
+    });
+  });
+
+  it('falls back for negative, blank, and non-finite pagination values before Firestore query construction', () => {
+    expect(router.normalizePagination({ limit: '-5', offset: '-1' }, { defaultLimit: 50, maxLimit: 1000 })).toEqual({
+      limit: 50,
+      offset: 0,
+    });
+    expect(router.normalizePagination({ limit: '', offset: 'Infinity' }, { defaultLimit: 100, maxLimit: 1000 })).toEqual({
+      limit: 100,
+      offset: 0,
+    });
   });
 });
