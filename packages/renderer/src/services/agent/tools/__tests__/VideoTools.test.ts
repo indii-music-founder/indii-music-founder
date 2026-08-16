@@ -8,7 +8,7 @@ const mockUserProfile = { id: 'test-user', name: 'Test User' };
 const mockUploadedImages = [
     { url: 'data:video/mp4;base64,vid1', type: 'video' },
     { url: 'data:video/mp4;base64,vid2', type: 'video' },
-    { url: 'data:image/png;base64,img1', type: 'image' }
+    { id: 'upload-image-1', url: 'data:image/png;base64,img1', type: 'image' }
 ];
 
 const mockGetState = vi.fn(() => ({
@@ -16,7 +16,8 @@ const mockGetState = vi.fn(() => ({
     addAgentMessage: mockAddAgentMessage,
     currentProjectId: 'proj-123',
     addToHistory: mockAddToHistory,
-    uploadedImages: mockUploadedImages
+    uploadedImages: mockUploadedImages,
+    generatedHistory: [] as { id?: string; url: string; type?: string; prompt?: string }[]
 }));
 
 vi.mock('@/core/store', () => ({
@@ -79,7 +80,8 @@ describe('VideoTools', () => {
             addAgentMessage: mockAddAgentMessage,
             currentProjectId: 'proj-123',
             addToHistory: mockAddToHistory,
-            uploadedImages: mockUploadedImages
+            uploadedImages: mockUploadedImages,
+            generatedHistory: [{ id: 'recent-generated', url: 'https://example.com/recent.png', type: 'image', prompt: 'recent image' }]
         });
     });
 
@@ -104,8 +106,25 @@ describe('VideoTools', () => {
             expect(result.data).toEqual({
                 id: mockJobId,
                 url: mockUrl,
-                prompt: 'test prompt'
+                prompt: 'test prompt',
+                firstFrameSource: undefined
             });
+        });
+
+        it('uses a saved image asset as the first frame when assetId is provided', async () => {
+            mockGenerateVideo.mockResolvedValue([
+                { id: 'job-from-asset', url: 'https://example.com/from-asset.mp4', prompt: 'animate it' }
+            ]);
+
+            const result = await VideoTools.generate_video({ prompt: 'animate it', assetId: 'recent-generated' });
+
+            expect(mockGenerateVideo).toHaveBeenCalledWith(expect.objectContaining({
+                prompt: 'animate it',
+                firstFrame: 'https://example.com/recent.png',
+                userProfile: mockUserProfile
+            }));
+            expect(result.success).toBe(true);
+            expect(result.data).toEqual(expect.objectContaining({ firstFrameSource: 'recent-generated' }));
         });
 
         it('should wait for job if URL is missing', async () => {

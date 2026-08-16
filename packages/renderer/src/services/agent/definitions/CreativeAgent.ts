@@ -4,6 +4,7 @@ import { DirectorTools } from '../tools/DirectorTools';
 import systemPrompt from '@agents/creative/prompt.md?raw';
 import { buildDomainRetrievalTools, buildDomainRetrievalDeclarations } from '../tools/DomainTools';
 import { McpTools } from '../tools/McpTools';
+import { StorageTools } from '../tools/StorageTools';
 
 const creativeRetrievalConfig = {
     canvases: {
@@ -44,6 +45,8 @@ export const CreativeAgent: AgentConfig = {
     get functions() {
         return {
             ...creativeRetrievalTools,
+            list_stored_assets: StorageTools.list_files,
+            search_stored_assets: StorageTools.search_files,
             generate_image: DirectorTools.generate_image,
             batch_edit_images: DirectorTools.batch_edit_images,
             run_showroom_mockup: DirectorTools.run_showroom_mockup,
@@ -61,6 +64,8 @@ export const CreativeAgent: AgentConfig = {
     },
     authorizedTools: [
         'generate_image',
+        'list_stored_assets',
+        'search_stored_assets',
         'batch_edit_images',
         'run_showroom_mockup',
         'generate_high_res_asset',
@@ -78,6 +83,30 @@ export const CreativeAgent: AgentConfig = {
     tools: [{
         functionDeclarations: [
             ...creativeRetrievalDeclarations,
+            {
+                name: 'list_stored_assets',
+                description: 'List the user’s saved gallery images, brand assets, reference images, and recent uploads. Use before claiming that an existing asset is unavailable.',
+                parameters: {
+                    type: 'OBJECT',
+                    properties: {
+                        source: { type: 'STRING', enum: ['gallery', 'brand_assets', 'reference_images', 'uploads', 'all'], description: 'Asset source to list.' },
+                        limit: { type: 'NUMBER', description: 'Maximum number of assets to return.' },
+                        type: { type: 'STRING', description: 'Optional media type filter, such as image or video.' }
+                    },
+                    required: []
+                }
+            },
+            {
+                name: 'search_stored_assets',
+                description: 'Search the user’s saved gallery images, brand assets, reference images, and recent uploads by text.',
+                parameters: {
+                    type: 'OBJECT',
+                    properties: {
+                        query: { type: 'STRING', description: 'Search words to match against prompts, type, or source.' }
+                    },
+                    required: ['query']
+                }
+            },
             {
                 name: 'generate_image',
                 description: 'Generate Intelligence images using text prompts with support for aspect ratios, reference images, and brand guidelines. Images are automatically saved to history.',

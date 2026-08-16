@@ -62,8 +62,59 @@ function validateDuration(duration: number | undefined, maxDuration: number = MA
 // VideoTools Implementation
 // ============================================================================
 
+type VideoFirstFrameArgs = {
+    prompt: string;
+    image?: string;
+    assetId?: string;
+    recentImageIndex?: number;
+    duration?: number;
+    aspectRatio?: string;
+    resolution?: string;
+};
+
+async function resolveFirstFrame(args: VideoFirstFrameArgs): Promise<{ firstFrame?: string; label?: string } | { error: ReturnType<typeof toolError> }> {
+    if (args.image) return { firstFrame: args.image, label: 'provided image' };
+    if (args.assetId === undefined && args.recentImageIndex === undefined) return {};
+
+    const { useStore } = await importWithRetry(() => import('@/core/store'));
+    const { generatedHistory, uploadedImages, userProfile } = useStore.getState();
+    type AssetCandidate = { id?: string; url: string; type?: string; prompt?: string; description?: string };
+    const rawItems: unknown[] = [
+        ...(generatedHistory || []),
+        ...(uploadedImages || []),
+        ...(userProfile?.brandKit?.brandAssets || []),
+        ...(userProfile?.brandKit?.referenceImages || []),
+    ];
+    const imageItems = rawItems.filter((item): item is AssetCandidate => (
+        !!item
+        && typeof item === 'object'
+        && typeof (item as Record<string, unknown>)['url'] === 'string'
+        && (
+            (item as Record<string, unknown>)['type'] === undefined
+            || (item as Record<string, unknown>)['type'] === 'image'
+        )
+    ));
+
+    const selected = args.assetId !== undefined
+        ? imageItems.find(item => item.id === args.assetId)
+        : imageItems[args.recentImageIndex ?? -1];
+
+    if (!selected?.url) {
+        return {
+            error: toolError(
+                args.assetId !== undefined
+                    ? `Image asset ${args.assetId} was not found in saved images, uploads, or brand assets.`
+                    : `No saved image exists at recentImageIndex ${args.recentImageIndex}. Ask the user to choose one of the listed images.`,
+                'IMAGE_ASSET_NOT_FOUND',
+            ),
+        };
+    }
+
+    return { firstFrame: selected.url, label: selected.id || selected.prompt || selected.description || 'recent image' };
+}
+
 export const VideoTools = {
-    generate_video: wrapTool('generate_video', async (args: { prompt: string, image?: string, duration?: number, aspectRatio?: string, resolution?: string }) => {
+    generate_video: wrapTool('generate_video', async (args: VideoFirstFrameArgs) => {
         // FIX #10: Comprehensive input validation
         if (!args.prompt || args.prompt.trim().length === 0) {
             return toolError("Prompt cannot be empty.", 'INVALID_INPUT');
@@ -83,6 +134,9 @@ export const VideoTools = {
         if (resolutionError) {
             return toolError(resolutionError, 'INVALID_INPUT');
         }
+
+        const resolvedFrame = await resolveFirstFrame(args);
+        if ('error' in resolvedFrame) return resolvedFrame.error;
 
         const { useStore } = await importWithRetry(() => import('@/core/store'));
         const { userProfile, whiskState } = useStore.getState();
@@ -124,7 +178,7 @@ export const VideoTools = {
 
         const results = await VideoGeneration.generateVideo({
             prompt: finalPrompt,
-            firstFrame: args.image,
+            firstFrame: resolvedFrame.firstFrame,
             duration: finalDuration,
             aspectRatio: finalAspectRatio,
             resolution: args.resolution as VideoGenerationOptions['resolution'],
@@ -157,8 +211,9 @@ export const VideoTools = {
             return toolSuccess({
                 id: videoJob.id,
                 url: finalUrl,
-                prompt: args.prompt
-            }, `Video generated successfully: ${finalUrl}`);
+                prompt: args.prompt,
+                firstFrameSource: resolvedFrame.label
+            }, `Video generated successfully${resolvedFrame.label ? ` from ${resolvedFrame.label}` : ''}: ${finalUrl}`);
         }
         return toolError('Video generation failed (no result returned).', 'GENERATION_FAILED');
     }),

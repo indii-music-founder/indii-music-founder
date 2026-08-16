@@ -25,6 +25,14 @@ vi.mock('../tools/UniversalTools', () => ({
     }
 }));
 
+
+vi.mock('../tools/StorageTools', () => ({
+    StorageTools: {
+        list_files: vi.fn(),
+        search_files: vi.fn(),
+    }
+}));
+
 describe('VideoAgent', () => {
     beforeEach(() => {
         vi.clearAllMocks();
@@ -39,6 +47,8 @@ describe('VideoAgent', () => {
 
     it('should expose the correct authorized tools', () => {
         expect(VideoAgent.authorizedTools).toContain('generate_video');
+        expect(VideoAgent.authorizedTools).toContain('list_stored_assets');
+        expect(VideoAgent.authorizedTools).toContain('search_stored_assets');
         expect(VideoAgent.authorizedTools).toContain('batch_edit_videos');
         expect(VideoAgent.authorizedTools).toContain('extend_video');
         expect(VideoAgent.authorizedTools).toContain('update_keyframe');
@@ -51,6 +61,8 @@ describe('VideoAgent', () => {
 
     it('should map the functions to correct tool implementations', () => {
         expect(VideoAgent.functions!.generate_video).toBeDefined();
+        expect(VideoAgent.functions!.list_stored_assets).toBeDefined();
+        expect(VideoAgent.functions!.search_stored_assets).toBeDefined();
         expect(VideoAgent.functions!.batch_edit_videos).toBeDefined();
         expect(VideoAgent.functions!.extend_video).toBeDefined();
         expect(VideoAgent.functions!.update_keyframe).toBeDefined();

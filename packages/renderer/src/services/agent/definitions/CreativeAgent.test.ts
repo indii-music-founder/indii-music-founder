@@ -23,6 +23,14 @@ vi.mock('../tools/DirectorTools', () => ({
     }
 }));
 
+
+vi.mock('../tools/StorageTools', () => ({
+    StorageTools: {
+        list_files: vi.fn(),
+        search_files: vi.fn(),
+    }
+}));
+
 describe('CreativeAgent', () => {
     beforeEach(() => {
         vi.clearAllMocks();
@@ -37,6 +45,8 @@ describe('CreativeAgent', () => {
 
     it('should expose the correct authorized tools', () => {
         expect(CreativeAgent.authorizedTools).toContain('generate_image');
+        expect(CreativeAgent.authorizedTools).toContain('list_stored_assets');
+        expect(CreativeAgent.authorizedTools).toContain('search_stored_assets');
         expect(CreativeAgent.authorizedTools).toContain('batch_edit_images');
         expect(CreativeAgent.authorizedTools).toContain('run_showroom_mockup');
         expect(CreativeAgent.authorizedTools).toContain('generate_high_res_asset');
@@ -51,6 +61,8 @@ describe('CreativeAgent', () => {
 
     it('should map the functions to correct tool implementations', () => {
         expect(CreativeAgent.functions!.generate_image).toBeDefined();
+        expect(CreativeAgent.functions!.list_stored_assets).toBeDefined();
+        expect(CreativeAgent.functions!.search_stored_assets).toBeDefined();
         expect(CreativeAgent.functions!.batch_edit_images).toBeDefined();
         expect(CreativeAgent.functions!.run_showroom_mockup).toBeDefined();
         expect(CreativeAgent.functions!.generate_high_res_asset).toBeDefined();
