@@ -9,6 +9,12 @@ const mocks = vi.hoisted(() => ({
   status: vi.fn(),
   json: vi.fn(),
   set: vi.fn(),
+  firestoreCollection: vi.fn(),
+  firestoreDoc: vi.fn(),
+  nestedCollection: vi.fn(),
+  orderBy: vi.fn(),
+  limit: vi.fn(),
+  get: vi.fn(),
 }));
 
 vi.mock('firebase-functions/v2/https', () => ({
@@ -22,7 +28,7 @@ vi.mock('firebase-functions/v2/https', () => ({
 
 vi.mock('firebase-admin', () => ({
   auth: () => ({ verifyIdToken: mocks.verifyIdToken }),
-  firestore: () => ({ collection: vi.fn() }),
+  firestore: () => ({ collection: mocks.firestoreCollection }),
 }));
 
 vi.mock('../../security/arcjet', () => ({
@@ -142,5 +148,44 @@ describe('router Arcjet boundary', () => {
     expect(mocks.json).toHaveBeenCalledWith(expect.objectContaining({
       error: expect.objectContaining({ code: 'FAILED_PRECONDITION' }),
     }));
+  });
+});
+
+describe('router pagination normalization', () => {
+  beforeEach(async () => {
+    vi.resetModules();
+    vi.clearAllMocks();
+    mocks.onRequest.mockImplementation((optionsOrHandler: unknown, handler?: unknown) => handler ?? optionsOrHandler);
+    mocks.verifyIdToken.mockResolvedValue({ uid: 'owner-1', admin: false });
+    mocks.requireEntitlement.mockResolvedValue({ tier: 'free' });
+    mocks.policyForEntitlement.mockReturnValue('verified-free');
+    mocks.protect.mockResolvedValue({ allowed: true });
+    mocks.get.mockResolvedValue({ docs: [] });
+    mocks.limit.mockReturnValue({ get: mocks.get });
+    mocks.orderBy.mockReturnValue({ limit: mocks.limit });
+    mocks.nestedCollection.mockReturnValue({ orderBy: mocks.orderBy });
+    mocks.firestoreDoc.mockReturnValue({ collection: mocks.nestedCollection });
+    mocks.firestoreCollection.mockReturnValue({ doc: mocks.firestoreDoc });
+    router = await import('../router');
+  });
+
+  it('clamps oversized list track limits while preserving valid offsets', async () => {
+    const res = response();
+    const req = { ...request('GET', '/api/tracks'), query: { limit: '5000', offset: '25' } };
+
+    await (router.listTracks as unknown as (req: typeof req, res: ReturnType<typeof response>) => Promise<void>)(req, res);
+
+    expect(mocks.limit).toHaveBeenCalledWith(1025);
+    expect(mocks.status).toHaveBeenCalledWith(200);
+  });
+
+  it('falls back for invalid list track pagination values before Firestore query construction', async () => {
+    const res = response();
+    const req = { ...request('GET', '/api/tracks'), query: { limit: '-5', offset: 'Infinity' } };
+
+    await (router.listTracks as unknown as (req: typeof req, res: ReturnType<typeof response>) => Promise<void>)(req, res);
+
+    expect(mocks.limit).toHaveBeenCalledWith(50);
+    expect(mocks.status).toHaveBeenCalledWith(200);
   });
 });
