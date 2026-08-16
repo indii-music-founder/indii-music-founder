@@ -131,6 +131,28 @@ function extractParentResourceId(pathString: string, suffixSegment: string): str
   return undefined;
 }
 
+interface PaginationOptions {
+  defaultLimit: number;
+  maxLimit: number;
+}
+
+interface Pagination {
+  limit: number;
+  offset: number;
+}
+
+function readNonNegativeInteger(value: unknown, fallback: number): number {
+  const parsed = typeof value === 'string' && value.trim() === '' ? Number.NaN : Number(value);
+  if (!Number.isFinite(parsed) || parsed < 0) return fallback;
+  return Math.floor(parsed);
+}
+
+export function normalizePagination(query: Record<string, unknown>, options: PaginationOptions): Pagination {
+  const limit = Math.min(readNonNegativeInteger(query.limit, options.defaultLimit), options.maxLimit);
+  const offset = readNonNegativeInteger(query.offset, 0);
+  return { limit, offset };
+}
+
 // Maps Firebase HttpsError status codes to standard HTTP status codes
 function sendHttpErrorResponse(err: unknown, res: express.Response, requestId: string): void {
   if (err instanceof HttpsError) {
@@ -256,8 +278,7 @@ export const queryAnalytics = onRequest(arcjetProtectedRequestOptions, async (re
     const userId = principal.uid;
     const query = req.query as Record<string, unknown>;
 
-    const limit = Math.min(Number(query.limit) || 100, 1000);
-    const offset = Number(query.offset) || 0;
+    const { limit, offset } = normalizePagination(query, { defaultLimit: 100, maxLimit: 1000 });
 
     const snapshot = await getDb()
       .collection('users')
@@ -351,8 +372,7 @@ export const listTracks = onRequest(arcjetProtectedRequestOptions, async (req: R
     if (await rejectIfArcjetDenied(protectAuthenticatedRequest(req, principal, requestId), res, requestId)) return;
     const userId = principal.uid;
     const query = req.query as Record<string, unknown>;
-    const limit = Math.min(Number(query.limit) || 50, 1000);
-    const offset = Number(query.offset) || 0;
+    const { limit, offset } = normalizePagination(query, { defaultLimit: 50, maxLimit: 1000 });
 
     const snapshot = await getDb()
       .collection('users').doc(userId).collection('tracks')
