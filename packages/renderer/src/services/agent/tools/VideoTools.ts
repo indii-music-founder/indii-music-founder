@@ -78,16 +78,21 @@ async function resolveFirstFrame(args: VideoFirstFrameArgs): Promise<{ firstFram
 
     const { useStore } = await importWithRetry(() => import('@/core/store'));
     const { generatedHistory, uploadedImages, userProfile } = useStore.getState();
-    const imageItems = [
+    type AssetCandidate = { id?: string; url: string; type?: string; prompt?: string; description?: string };
+    const rawItems: unknown[] = [
         ...(generatedHistory || []),
         ...(uploadedImages || []),
         ...(userProfile?.brandKit?.brandAssets || []),
         ...(userProfile?.brandKit?.referenceImages || []),
-    ].filter((item): item is { id?: string; url?: string; type?: string; prompt?: string } => (
+    ];
+    const imageItems = rawItems.filter((item): item is AssetCandidate => (
         !!item
         && typeof item === 'object'
-        && typeof (item as { url?: unknown }).url === 'string'
-        && ((item as { type?: unknown }).type === undefined || (item as { type?: unknown }).type === 'image')
+        && typeof (item as Record<string, unknown>)['url'] === 'string'
+        && (
+            (item as Record<string, unknown>)['type'] === undefined
+            || (item as Record<string, unknown>)['type'] === 'image'
+        )
     ));
 
     const selected = args.assetId !== undefined
@@ -105,7 +110,7 @@ async function resolveFirstFrame(args: VideoFirstFrameArgs): Promise<{ firstFram
         };
     }
 
-    return { firstFrame: selected.url, label: selected.id || selected.prompt || 'recent image' };
+    return { firstFrame: selected.url, label: selected.id || selected.prompt || selected.description || 'recent image' };
 }
 
 export const VideoTools = {

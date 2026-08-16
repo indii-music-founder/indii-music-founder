@@ -16,7 +16,8 @@ const mockGetState = vi.fn(() => ({
     addAgentMessage: mockAddAgentMessage,
     currentProjectId: 'proj-123',
     addToHistory: mockAddToHistory,
-    uploadedImages: mockUploadedImages
+    uploadedImages: mockUploadedImages,
+    generatedHistory: [] as { id?: string; url: string; type?: string; prompt?: string }[]
 }));
 
 vi.mock('@/core/store', () => ({
