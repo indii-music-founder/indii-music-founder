@@ -54,8 +54,9 @@ export function isCapabilityQuestion(task: string): boolean {
         new RegExp(String.raw`\b(?:do|can) ${subject} (?:have access to|access|use|have) (?:any |the )?tools?\b`, 'i'),
         new RegExp(String.raw`\bare (?:your|indii(?:'s)?) tools? (?:available|ready|working|accessible)(?: right now| now)?\b`, 'i'),
         /\b(?:is|are) (?:image|video)(?: generation)? (?:available|ready|working)(?: right now| now)?\b/i,
-        new RegExp(String.raw`\b(?:can|could) ${subject} (?:generate|create|make) (?:an? |any )?(?:image|images|video|videos)(?: right now| now)?\??$`, 'i'),
-        new RegExp(String.raw`\b(?:is|are) ${subject} (?:able|ready) to (?:generate|create|make) (?:an? |any )?(?:image|images|video|videos)(?: right now| now)?\b`, 'i'),
+        new RegExp(String.raw`\b(?:can|could) ${subject} (?:generate|create|make)(?: me)? (?:an? |any )?(?:image|images|picture|pictures|visual|visuals|video|videos)(?: right now| now)?\??$`, 'i'),
+        new RegExp(String.raw`\b(?:can|could) ${subject} (?:generate|create|make)(?: me)? (?:an? |any )?(?:image|images|picture|pictures|visual|visuals|video|videos).{0,40}\b(?:ability|able|capable|available|ready)\b`, 'i'),
+        new RegExp(String.raw`\b(?:is|are) ${subject} (?:able|ready) to (?:generate|create|make)(?: me)? (?:an? |any )?(?:image|images|picture|pictures|visual|visuals|video|videos)(?: right now| now)?\b`, 'i'),
     ].some(pattern => pattern.test(normalized));
 }
 
