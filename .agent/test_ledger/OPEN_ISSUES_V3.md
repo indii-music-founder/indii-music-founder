@@ -1761,3 +1761,18 @@ All seven T1 sub-items built, tested against real (not mocked-away) verification
 - **Impact:** Unauthenticated-to-entitled clients could write unbounded audit/fraud records; the documented protection matrix overstated actual coverage.
 - **Fix:** Both callables now run the canonical admission chain (`admitAuditLogWriteRequest` / `admitFraudAlertWriteRequest`, mirroring `admitOrganizationAccessRequest`): `validateAppCheckV2` → `requireVerifiedEmailV2` → `requireVerifiedServerEntitlement` → `protectAuthenticatedApiRequest` with `policyClassForServerEntitlement`, fail-closed on every stage, plus `secrets: [arcjetKey]`, `enforceAppCheck: true`, `region: us-central1`, `timeoutSeconds: 15` on the `onCall` options. The pure persistence cores (`persistAuditEvent`, alert write) are unchanged and keep their focused tests.
 - **Acceptance:** ✅ FIXED (2026-08-17) — focused Vitest 8/8 passing (admission admit-path, Arcjet 429 → `resource-exhausted`, Arcjet 403 → `permission-denied`, App Check failure → `failed-precondition`, entitlement failure → `permission-denied`; persistence shape/validation tests retained). Security folder suite 30/30 passing. `npm run build -w packages/firebase` clean; scoped ESLint clean. The matrix rows are now truthful (code matches the documented PROTECTED status).
+
+---
+
+### ISSUE-1122: Merlin readiness assumes exclusive rights instead of collecting proof
+
+- **Status:** ✅ FIXED (2026-08-17)
+- **Severity:** 🟠 HIGH
+- **Module:** Distribution / Keys Layer / Merlin
+- **Evidence:** `keys_manager.py` `check_merlin_compliance` defaulted `exclusive_rights` to `True` when absent and awarded 20 readiness points on that assumption; the main-process aggregator used `tracks.every(...)` which returns `true` for an **empty** array (vacuous truth). The renderer's `MerlinReport` contract (`issues`/`passed_count`/`failed_count`) mismatched the Python engine's raw output (`checks`/`score`), so the UI would render `undefined` counts. `KeysPanel` had no surface to record rights evidence.
+- **Impact:** The app could report Merlin readiness for catalog with no verified rights, including tracks under conflicting licenses or with uncleared samples; an empty catalog could vacuously pass the exclusive-rights gate.
+- **Fix:**
+  1. `keys_manager.py` — fail-closed: missing `exclusive_rights` is never `True`; READY now requires `score >= 80 AND rights_confirmed` where rights are confirmed only with complete evidence (master owner, territory, no existing admin obligations, no samples/loops, content-policy clean, no takedown/claim conflicts, supporting documents). Report includes deterministic `passed_checks`/`failed_checks` and `missing_rights_evidence`.
+  2. `packages/main/src/handlers/distribution.ts` — empty track list aggregates to `exclusive_rights: false` (never vacuous `true`), forwards `rights_evidence`, and normalizes the engine report to the renderer's `MerlinReport` shape without string-matching heuristics.
+  3. `KeysPanel.tsx` — visible rights-evidence checklist; unconfirmed items are sent as `false` and reported as missing proof, never assumed. `MerlinCheckData.rights_evidence` added to the shared type.
+- **Acceptance:** ✅ FIXED (2026-08-17) — Python suite 5/5 (`execution/distribution/tests/test_keys_manager.py`: missing field → NOT_READY; explicit true without evidence → NOT_READY listing every missing item; full evidence → READY; failed_checks list all 7 proof items; empty catalog never READY). Main-process suite 9/9 (aggregation fail-closed on empty tracks; evidence forwarding; report normalization). Renderer KeysPanel 6/6 (payload carries explicit per-item evidence). Typechecks clean (main, renderer, firebase, firebase-tests); scoped ESLint 0 errors.

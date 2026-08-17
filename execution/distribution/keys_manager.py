@@ -108,13 +108,35 @@ class KeysManager:
 
     def check_merlin_compliance(
             self, catalog_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Checks if a catalog meets Merlin application standards."""
-        # Simple heuristic check
+        """Checks if a catalog meets Merlin application standards.
 
+        ISSUE-1122: Rights readiness is evidence-based, never assumed.
+        `exclusive_rights` defaults to False (fail-closed), and the report
+        lists every missing rights-evidence item so a catalog with no proof
+        returns NOT_READY with the full gap list. A locally generated value
+        is never sufficient to mark exclusive rights confirmed.
+        """
         track_count = catalog_data.get('total_tracks', 0)
         has_isrcs = catalog_data.get('has_isrcs', False)
         has_upcs = catalog_data.get('has_upcs', False)
-        exclusive_rights = catalog_data.get('exclusive_rights', True)
+        exclusive_rights = catalog_data.get('exclusive_rights') is True
+
+        # Rights-evidence checklist (ISSUE-1122): each item must be explicitly
+        # provided as `true`. Missing items are reported, never assumed.
+        evidence_keys = [
+            'master_owner_confirmed',
+            'territory_confirmed',
+            'no_existing_admin_obligations',
+            'no_samples_or_loops',
+            'content_policy_clean',
+            'no_takedown_or_claim_conflicts',
+            'supporting_documents_uploaded',
+        ]
+        rights_evidence = catalog_data.get('rights_evidence') or {}
+        missing_evidence = [
+            key for key in evidence_keys
+            if rights_evidence.get(key) is not True
+        ]
 
         score = 0
         checks = []
@@ -136,15 +158,40 @@ class KeysManager:
             checks.append("UPCs assigned")
 
         if exclusive_rights:
-            score += 20
-            checks.append("Exclusive rights confirmed")
+            if missing_evidence:
+                checks.append(
+                    f"Exclusive rights claimed but evidence missing: {', '.join(missing_evidence)}")
+            else:
+                score += 20
+                checks.append("Exclusive rights confirmed (evidence complete)")
+        else:
+            checks.append("Exclusive rights NOT verified (no explicit proof)")
 
-        status = "READY" if score >= 80 else "NOT_READY"
+        rights_confirmed = exclusive_rights and not missing_evidence
+        status = "READY" if score >= 80 and rights_confirmed else "NOT_READY"
+
+        # Deterministic pass/fail split for the renderer contract — never
+        # derived by string-matching checks on the client.
+        passed_checks = [
+            c for c in checks
+            if c not in (
+                f"Catalog size low ({track_count}/50)",
+                "Exclusive rights NOT verified (no explicit proof)",
+                "Exclusive rights claimed but evidence missing: " + ", ".join(missing_evidence),
+            )
+        ]
+        failed_checks = [c for c in checks if c not in passed_checks]
+        failed_checks.extend(
+            f"Missing rights evidence: {key}" for key in missing_evidence
+        )
 
         return {
             "status": status,
             "score": score,
             "checks": checks,
+            "passed_checks": passed_checks,
+            "failed_checks": failed_checks,
+            "missing_rights_evidence": [] if rights_confirmed else missing_evidence,
             "timestamp": datetime.datetime.now().isoformat()
         }
 

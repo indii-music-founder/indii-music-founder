@@ -121,6 +121,38 @@ describe('KeysPanel', () => {
         });
     });
 
+    it('sends the explicit rights-evidence checklist with every Merlin check (ISSUE-1122)', async () => {
+        (distributionService.checkMerlinStatus as import("vitest").Mock).mockResolvedValue({
+            status: 'NOT_READY',
+            passed_count: 0,
+            failed_count: 1,
+            issues: ['Exclusive rights NOT verified (no explicit proof)']
+        });
+
+        render(<KeysPanel />);
+        await waitFor(() => expect(screen.getByText(/Check compliance for 1 track/i)).toBeDefined());
+
+        // Confirm one evidence item so the payload is not all-false
+        fireEvent.click(screen.getByLabelText(/I control the master recordings/i));
+
+        fireEvent.click(screen.getByText('Run Compliance Audit'));
+
+        await waitFor(() => {
+            expect(distributionService.checkMerlinStatus).toHaveBeenCalledWith(expect.objectContaining({
+                rights_evidence: expect.objectContaining({
+                    master_owner_confirmed: true,
+                    territory_confirmed: false,
+                    no_samples_or_loops: false,
+                    supporting_documents_uploaded: false,
+                }),
+            }));
+        });
+
+        // Unconfirmed items are never reported as confirmed
+        const payload = (distributionService.checkMerlinStatus as import("vitest").Mock).mock.calls[0][0];
+        expect(payload.rights_evidence.no_existing_admin_obligations).toBe(false);
+    });
+
     it('should generate BWARM CSV', async () => {
         (distributionService.generateBWARM as import("vitest").Mock).mockResolvedValue('Header\nData');
 

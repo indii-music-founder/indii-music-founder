@@ -365,16 +365,22 @@ export const setupDistributionHandlers = () => {
             const storagePath = getStoragePath();
 
             // ISSUE-1122: Aggregate track-level data to flat shape for fail-closed verification
-            // Input: { catalog_id, tracks: [{ isrc, title, rights_holder, exclusive_rights }, ...] }
-            // Output: { total_tracks, has_isrcs, has_upcs, exclusive_rights }
+            // Input: { catalog_id, tracks: [{ isrc, title, rights_holder, exclusive_rights }, ...], rights_evidence? }
+            // Output: { total_tracks, has_isrcs, has_upcs, exclusive_rights, rights_evidence }
+            // Fail-closed: an empty track list or any track without explicit
+            // exclusive_rights === true aggregates to false (never vacuous true).
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const dataObj = data as any;
             const tracks = Array.isArray(dataObj?.tracks) ? dataObj.tracks : [];
+            const rightsEvidence = dataObj?.rights_evidence as Record<string, unknown> | undefined;
             const aggregatedData = {
                 total_tracks: tracks.length,
                 has_isrcs: tracks.some((t: any) => !!t.isrc),
                 has_upcs: tracks.some((t: any) => !!t.upc),
-                exclusive_rights: tracks.every((t: any) => t.exclusive_rights === true)
+                exclusive_rights: tracks.length > 0 && tracks.every((t: any) => t.exclusive_rights === true),
+                ...(rightsEvidence !== undefined && typeof rightsEvidence === 'object'
+                    ? { rights_evidence: rightsEvidence }
+                    : {}),
             };
 
             const report = await AgentSupervisor.execute<Record<string, unknown>>('distribution', 'keys_manager.py', [
@@ -383,7 +389,22 @@ export const setupDistributionHandlers = () => {
                 '--storage-path',
                 storagePath
             ], { timeoutMs: 30000 }, undefined, {}, [1]); // Redact JSON data
-            return { success: true, report };
+
+            // ISSUE-1122: Normalize the Python engine's structured report to the
+            // renderer's MerlinReport contract ({ issues, passed_count,
+            // failed_count }) without string-matching heuristics.
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const raw = (report ?? {}) as any;
+            const passed = Array.isArray(raw.passed_checks) ? raw.passed_checks : [];
+            const failed = Array.isArray(raw.failed_checks) ? raw.failed_checks : [];
+            const normalized = {
+                status: raw.status === 'READY' ? 'READY' : raw.status === 'WARNING' ? 'WARNING' : 'NOT_READY',
+                issues: failed as string[],
+                passed_count: passed.length,
+                failed_count: failed.length,
+                timestamp: typeof raw.timestamp === 'string' ? raw.timestamp : new Date().toISOString(),
+            };
+            return { success: true, report: normalized };
         } catch (error) {
             return { success: false, error: error instanceof Error ? error.message : String(error) };
         }

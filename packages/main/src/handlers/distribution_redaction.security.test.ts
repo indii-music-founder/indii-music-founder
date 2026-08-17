@@ -210,6 +210,64 @@ describe('🛡️ Shield: Distribution PII Redaction', () => {
         );
     });
 
+    it('fails closed on an empty track list for check-merlin-status (ISSUE-1122)', async () => {
+        // An empty tracks array must never vacuously aggregate to
+        // exclusive_rights: true (Array.prototype.every on [] returns true).
+        mocks.agentSupervisor.execute.mockResolvedValue({ status: 'SUCCESS' });
+
+        await invoke('distribution:check-merlin-status', {
+            catalog_id: 'CAT-user123',
+            tracks: [],
+            rights_evidence: {},
+        });
+
+        const expectedAggregatedData = {
+            total_tracks: 0,
+            has_isrcs: false,
+            has_upcs: false,
+            exclusive_rights: false,
+            rights_evidence: {},
+        };
+        expect(mocks.agentSupervisor.execute).toHaveBeenCalledWith(
+            'distribution',
+            'keys_manager.py',
+            expect.arrayContaining(['merlin_check', JSON.stringify(expectedAggregatedData)]),
+            expect.any(Object),
+            undefined,
+            expect.anything(),
+            [1]
+        );
+    });
+
+    it('forwards rights evidence and normalizes the engine report to MerlinReport shape (ISSUE-1122)', async () => {
+        mocks.agentSupervisor.execute.mockResolvedValue({
+            status: 'NOT_READY',
+            score: 40,
+            checks: ['Catalog size low (10/50)', 'ISRCs assigned'],
+            passed_checks: ['ISRCs assigned'],
+            failed_checks: ['Catalog size low (10/50)', 'Missing rights evidence: master_owner_confirmed'],
+            missing_rights_evidence: ['master_owner_confirmed'],
+            timestamp: '2026-08-17T00:00:00.000Z',
+        });
+
+        const result = await invoke('distribution:check-merlin-status', {
+            catalog_id: 'CAT-user123',
+            tracks: [{ isrc: 'US123', exclusive_rights: true }],
+            rights_evidence: { master_owner_confirmed: false },
+        });
+
+        expect(result).toEqual({
+            success: true,
+            report: {
+                status: 'NOT_READY',
+                issues: ['Catalog size low (10/50)', 'Missing rights evidence: master_owner_confirmed'],
+                passed_count: 1,
+                failed_count: 2,
+                timestamp: '2026-08-17T00:00:00.000Z',
+            },
+        });
+    });
+
     it('should redact sensitive metadata in register-release', async () => {
         const sensitiveData = { isrc: 'US123' };
         mocks.agentSupervisor.execute.mockResolvedValue({ status: 'SUCCESS' });

@@ -26,6 +26,21 @@ export const KeysPanel: React.FC = () => {
     const [catalog, setCatalog] = useState<ISRCRecordDocument[]>([]);
     const [dataLoaded, setDataLoaded] = useState(false);
 
+    // ISSUE-1122: Rights evidence checklist — Merlin readiness is never assumed
+    // from a locally generated value. Each item must be explicitly confirmed;
+    // unconfirmed items are reported as missing proof, not defaults.
+    const RIGHTS_EVIDENCE_ITEMS: Array<{ key: string; label: string }> = [
+        { key: 'master_owner_confirmed', label: 'I control the master recordings' },
+        { key: 'territory_confirmed', label: 'Territory of rights confirmed' },
+        { key: 'no_existing_admin_obligations', label: 'No conflicting distributor/admin agreements' },
+        { key: 'no_samples_or_loops', label: 'No uncleared samples or loops' },
+        { key: 'content_policy_clean', label: 'Catalog complies with content policy' },
+        { key: 'no_takedown_or_claim_conflicts', label: 'No takedowns or claim conflicts' },
+        { key: 'supporting_documents_uploaded', label: 'Supporting rights documents on file' },
+    ];
+    const [rightsEvidence, setRightsEvidence] = useState<Record<string, boolean>>({});
+    const allEvidenceConfirmed = RIGHTS_EVIDENCE_ITEMS.every(item => rightsEvidence[item.key] === true);
+
     // Fetch catalog on mount
     React.useEffect(() => {
         const fetchCatalog = async () => {
@@ -67,7 +82,13 @@ export const KeysPanel: React.FC = () => {
 
             const checkData: MerlinCheckData = {
                 catalog_id: `CAT-${auth.currentUser?.uid?.substring(0, 8) || 'USER'}`,
-                tracks: tracks
+                tracks: tracks,
+                // ISSUE-1122: Send the explicit evidence checklist. Every item
+                // must be confirmed; the engine reports missing proof instead
+                // of assuming exclusive rights.
+                rights_evidence: Object.fromEntries(
+                    RIGHTS_EVIDENCE_ITEMS.map(item => [item.key, rightsEvidence[item.key] === true])
+                ),
             };
 
             const report = await distributionService.checkMerlinStatus(checkData);
@@ -219,6 +240,29 @@ export const KeysPanel: React.FC = () => {
                                     ? `Check compliance for ${catalog.length} track${catalog.length === 1 ? '' : 's'} in your catalog.`
                                     : 'Loading catalog...'}
                             </p>
+
+                            {/* ISSUE-1122: Rights-evidence checklist */}
+                            <div className="text-left max-w-md mx-auto mb-4 bg-black/30 rounded-lg p-3 text-xs space-y-1.5">
+                                <p className="text-gray-300 font-semibold mb-2 flex items-center gap-1.5">
+                                    <ShieldCheck className="w-3.5 h-3.5" />
+                                    Rights Evidence (required for exclusive-rights confirmation)
+                                </p>
+                                {RIGHTS_EVIDENCE_ITEMS.map(item => (
+                                    <label key={item.key} className="flex items-start gap-2 cursor-pointer text-gray-400 hover:text-gray-200">
+                                        <input
+                                            type="checkbox"
+                                            checked={rightsEvidence[item.key] === true}
+                                            onChange={(e) => setRightsEvidence(prev => ({
+                                                ...prev,
+                                                [item.key]: e.target.checked,
+                                            }))}
+                                            className="mt-0.5 accent-dept-creative"
+                                        />
+                                        <span>{item.label}</span>
+                                    </label>
+                                ))}
+                            </div>
+
                             <button
                                 data-testid="keys-run-compliance-audit"
                                 onClick={handleCheckMerlin}
@@ -228,6 +272,11 @@ export const KeysPanel: React.FC = () => {
                                 {loading && <Loader2 className="w-4 h-4 animate-spin" />}
                                 Run Compliance Audit
                             </button>
+                            <p className="text-[11px] mt-2 text-gray-600">
+                                {allEvidenceConfirmed
+                                    ? 'All evidence confirmed — exclusive rights will be reported as verified.'
+                                    : 'Unconfirmed evidence items are reported as missing proof (never assumed).'}
+                            </p>
                         </div>
                     ) : (
                         <div className="space-y-4">

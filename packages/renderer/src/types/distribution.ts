@@ -11,6 +11,9 @@ import type { AudioSemanticData } from '@/services/audio/types';
 export interface MerlinCheckData {
     catalog_id?: string;
     tracks: MerlinTrack[];
+    // ISSUE-1122: Explicit rights-evidence checklist. Every item must be
+    // confirmed; missing proof is reported, never assumed.
+    rights_evidence?: Record<string, boolean>;
 }
 
 export interface MerlinReport {
