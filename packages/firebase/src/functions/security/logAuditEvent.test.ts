@@ -23,7 +23,63 @@ vi.mock('firebase-functions/v2/https', () => {
     };
 });
 
-import { persistAuditEvent } from './logAuditEvent';
+import { SubscriptionTier } from '../../shared/subscription/types';
+import { admitAuditLogWriteRequest, persistAuditEvent } from './logAuditEvent';
+
+function admittedRequest() {
+    return {
+        auth: { uid: 'owner-123', token: { admin: false } },
+        app: { appId: 'verified-app' },
+        rawRequest: { method: 'POST', headers: {} },
+        data: {},
+    } as never;
+}
+
+describe('admitAuditLogWriteRequest', () => {
+    beforeEach(() => vi.clearAllMocks());
+
+    it('admits a verified, entitled request that passes Arcjet protection', async () => {
+        const uid = await admitAuditLogWriteRequest(admittedRequest(), {
+            validateAppCheck: vi.fn() as never,
+            requireVerifiedEmail: vi.fn().mockReturnValue('owner-123') as never,
+            resolveEntitlement: vi.fn().mockResolvedValue({ tier: SubscriptionTier.STUDIO }) as never,
+            protect: vi.fn().mockResolvedValue({ allowed: true }) as never,
+            policyForEntitlement: vi.fn().mockReturnValue('paid') as never,
+        });
+
+        expect(uid).toBe('owner-123');
+    });
+
+    it('fails closed when Arcjet denies the request with a rate limit', async () => {
+        await expect(admitAuditLogWriteRequest(admittedRequest(), {
+            validateAppCheck: vi.fn() as never,
+            requireVerifiedEmail: vi.fn().mockReturnValue('owner-123') as never,
+            resolveEntitlement: vi.fn().mockResolvedValue({ tier: SubscriptionTier.STUDIO }) as never,
+            protect: vi.fn().mockResolvedValue({
+                allowed: false,
+                status: 429,
+                code: 'RATE_LIMITED',
+                message: 'Too many requests. Please slow down.',
+                retryAfterSeconds: 60,
+            }) as never,
+            policyForEntitlement: vi.fn().mockReturnValue('paid') as never,
+        })).rejects.toMatchObject({ code: 'resource-exhausted' });
+    });
+
+    it('fails closed when App Check validation throws', async () => {
+        const appCheckError = new Error('Unauthorized: Missing App Check token.');
+        (appCheckError as { code?: string }).code = 'failed-precondition';
+
+        await expect(admitAuditLogWriteRequest(admittedRequest(), {
+            validateAppCheck: vi.fn().mockImplementation(() => { throw appCheckError; }) as never,
+            requireVerifiedEmail: vi.fn().mockReturnValue('owner-123') as never,
+            resolveEntitlement: vi.fn().mockResolvedValue({ tier: SubscriptionTier.STUDIO }) as never,
+            protect: vi.fn().mockResolvedValue({ allowed: true }) as never,
+            policyForEntitlement: vi.fn().mockReturnValue('paid') as never,
+        })).rejects.toMatchObject({ code: 'failed-precondition' });
+        expect(mocks.add).not.toHaveBeenCalled();
+    });
+});
 
 describe('persistAuditEvent', () => {
     beforeEach(() => vi.clearAllMocks());

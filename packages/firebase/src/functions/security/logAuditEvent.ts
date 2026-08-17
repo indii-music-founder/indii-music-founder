@@ -1,5 +1,14 @@
-import { onCall, HttpsError } from "firebase-functions/v2/https";
+import { onCall, HttpsError, type CallableRequest } from "firebase-functions/v2/https";
 import * as admin from "firebase-admin";
+import { randomUUID } from "node:crypto";
+
+import { arcjetKey } from "../../config/secrets";
+import { validateAppCheckV2, requireVerifiedEmailV2 } from "../../middleware/appCheck";
+import { requireVerifiedServerEntitlement } from "../auth/entitlements";
+import {
+    policyClassForServerEntitlement,
+    protectAuthenticatedApiRequest,
+} from "./arcjet";
 
 type AuditSeverity = "low" | "medium" | "high" | "critical";
 
@@ -85,6 +94,58 @@ export async function persistAuditEvent(
 }
 
 /**
+ * Admit a callable request to the audit-log writer.
+ *
+ * Mirrors the canonical admission chain used by sibling client-reachable
+ * callables (see `admitOrganizationAccessRequest`): App Check, verified
+ * email, server-owned entitlement, then Arcjet request protection with a
+ * policy class derived only from backend state. Fail-closed on every stage.
+ */
+export async function admitAuditLogWriteRequest(
+    request: CallableRequest<unknown>,
+    dependencies: {
+        validateAppCheck?: typeof validateAppCheckV2;
+        requireVerifiedEmail?: typeof requireVerifiedEmailV2;
+        resolveEntitlement?: typeof requireVerifiedServerEntitlement;
+        protect?: typeof protectAuthenticatedApiRequest;
+        policyForEntitlement?: typeof policyClassForServerEntitlement;
+    } = {},
+): Promise<string> {
+    const validateAppCheck = dependencies.validateAppCheck ?? validateAppCheckV2;
+    const requireVerifiedEmail = dependencies.requireVerifiedEmail ?? requireVerifiedEmailV2;
+    const resolveEntitlement = dependencies.resolveEntitlement ?? requireVerifiedServerEntitlement;
+    const protect = dependencies.protect ?? protectAuthenticatedApiRequest;
+    const policyForEntitlement = dependencies.policyForEntitlement ?? policyClassForServerEntitlement;
+
+    validateAppCheck(request);
+    const uid = requireVerifiedEmail(request);
+    const entitlement = await resolveEntitlement(uid);
+    if (!request.rawRequest) {
+        throw new HttpsError('unavailable', 'Request protection is temporarily unavailable.');
+    }
+    const protection = await protect(request.rawRequest as never, {
+        userId: uid,
+        policy: policyForEntitlement({
+            tier: entitlement.tier,
+            isAdmin: request.auth?.token.admin === true,
+        }),
+        operationId: `audit-log-write:${randomUUID()}`,
+    });
+    if (!protection.allowed) {
+        const code = protection.status === 429
+            ? 'resource-exhausted'
+            : protection.status === 403
+                ? 'permission-denied'
+                : 'unavailable';
+        throw new HttpsError(code, protection.message, {
+            code: protection.code,
+            ...(protection.retryAfterSeconds ? { retryAfterSeconds: protection.retryAfterSeconds } : {}),
+        });
+    }
+    return uid;
+}
+
+/**
  * logAuditEvent: callable backend writer for global audit_logs.
  *
  * The browser can request an audit event, but only Admin SDK writes the global
@@ -92,17 +153,19 @@ export async function persistAuditEvent(
  * or source while preserving the existing SecurityTools workflow.
  */
 export const logAuditEvent = onCall(
-    { memory: '512MiB', cpu: 'gcf_gen1', concurrency: 1 },
+    {
+        memory: '512MiB',
+        cpu: 'gcf_gen1',
+        concurrency: 1,
+        region: 'us-central1',
+        timeoutSeconds: 15,
+        secrets: [arcjetKey],
+        enforceAppCheck: true,
+    },
     async (request) => {
-        if (!request.auth) {
-            throw new HttpsError(
-                "unauthenticated",
-                "User must be authenticated to write audit logs.",
-            );
-        }
-
+        const uid = await admitAuditLogWriteRequest(request);
         return persistAuditEvent(
-            request.auth.uid,
+            uid,
             (request.data ?? {}) as LogAuditEventRequest,
         );
     },
