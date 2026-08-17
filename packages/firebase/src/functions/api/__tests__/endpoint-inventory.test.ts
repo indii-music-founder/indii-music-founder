@@ -40,10 +40,19 @@ const EXPECTED_ENDPOINTS = [
   'health',
 ] as const;
 
+/**
+ * Non-endpoint helpers exported for focused unit coverage. Keep this list narrow:
+ * adding a real onRequest export must still fail this inventory check until the
+ * public endpoint manifest above is deliberately updated.
+ */
+const INTERNAL_FUNCTION_EXPORTS = ['normalizePagination'] as const;
+
 /** An exported endpoint is an onRequest handler — a callable function export. */
 function exportedEndpoints(): string[] {
+  const internalExports = new Set<string>(INTERNAL_FUNCTION_EXPORTS);
   return Object.keys(router)
     .filter((name) => typeof (router as Record<string, unknown>)[name] === 'function')
+    .filter((name) => !internalExports.has(name))
     .sort();
 }
 

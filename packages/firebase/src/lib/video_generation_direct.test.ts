@@ -1,6 +1,4 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import * as admin from 'firebase-admin';
-
 import { FUNCTION_INTELLIGENCE_MODELS } from '../config/models';
 import { normalizeVeoDuration, resolveVeoModel } from './video';
 import { decodeInlineVideoSeedImage, parseOwnedVideoSeedUri, generateVideoDirect } from './video_generation_direct';
