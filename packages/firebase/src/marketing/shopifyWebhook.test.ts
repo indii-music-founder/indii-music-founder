@@ -40,7 +40,7 @@ vi.mock('firebase-functions/v2', () => ({
 // Mock firebase-admin firestore
 vi.mock('firebase-admin/firestore', () => ({
   getFirestore: () => ({
-    collection: (name: string) => ({
+    collection: (_name: string) => ({
       doc: (id?: string) => ({
         id: id || 'test-id',
       }),

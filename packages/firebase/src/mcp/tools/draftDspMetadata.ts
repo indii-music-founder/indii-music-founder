@@ -30,13 +30,19 @@ export const draftDspMetadata: IndiiMcpTool = {
     },
     handler: async (rawArgs: Record<string, unknown>, context: McpContext) => {
 
-        const targetUserId = (rawArgs as any).userId || (rawArgs as any).artistId || (rawArgs as any).ownerId || context.user.uid;
+        const targetUserId = typeof rawArgs.userId === 'string'
+            ? rawArgs.userId
+            : typeof rawArgs.artistId === 'string'
+                ? rawArgs.artistId
+                : typeof rawArgs.ownerId === 'string'
+                    ? rawArgs.ownerId
+                    : context.user.uid;
         try {
             verifyOwnership(context, targetUserId);
-        } catch (e: any) {
+        } catch (e: unknown) {
             return {
                 isError: true,
-                content: [{ type: 'text', text: e.message }]
+                content: [{ type: 'text', text: e instanceof Error ? e.message : String(e) }]
             };
         }
 

@@ -1203,8 +1203,8 @@ export const generateImageV3 = onCall({ ...creativeGatewayCallableOptions, timeo
             if (metadata.textNarration) narrationParts.push(metadata.textNarration);
             if (metadata.thoughtSummary) thoughtSummaries.push(metadata.thoughtSummary);
             usedInteractions = true;
-        } catch (e: any) {
-            if (e?.message?.includes('Unsupported model interaction')) {
+        } catch (e: unknown) {
+            if (e instanceof Error && e.message.includes('Unsupported model interaction')) {
                 console.log(`[generateImageV3] interactions.create unsupported for ${modelId}, falling back to models.generateContent`);
             } else {
                 throw e;
