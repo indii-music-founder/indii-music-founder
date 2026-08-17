@@ -173,7 +173,7 @@ describe('router pagination normalization', () => {
     const res = response();
     const req = { ...request('GET', '/api/tracks'), query: { limit: '5000', offset: '25' } };
 
-    await (router.listTracks as unknown as (req: typeof req, res: ReturnType<typeof response>) => Promise<void>)(req, res);
+    await (router.listTracks as unknown as (req: ReturnType<typeof request>, res: ReturnType<typeof response>) => Promise<void>)(req, res);
 
     expect(mocks.limit).toHaveBeenCalledWith(1025);
     expect(mocks.status).toHaveBeenCalledWith(200);
@@ -183,7 +183,7 @@ describe('router pagination normalization', () => {
     const res = response();
     const req = { ...request('GET', '/api/tracks'), query: { limit: '-5', offset: 'Infinity' } };
 
-    await (router.listTracks as unknown as (req: typeof req, res: ReturnType<typeof response>) => Promise<void>)(req, res);
+    await (router.listTracks as unknown as (req: ReturnType<typeof request>, res: ReturnType<typeof response>) => Promise<void>)(req, res);
 
     expect(mocks.limit).toHaveBeenCalledWith(50);
     expect(mocks.status).toHaveBeenCalledWith(200);

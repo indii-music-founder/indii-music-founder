@@ -147,7 +147,6 @@ function readNonNegativeInteger(value: unknown, fallback: number): number {
   return Math.floor(parsed);
 }
 
-function normalizePagination(query: Record<string, unknown>, options: PaginationOptions): Pagination {
 export function normalizePagination(query: Record<string, unknown>, options: PaginationOptions): Pagination {
   const limit = Math.min(readNonNegativeInteger(query.limit, options.defaultLimit), options.maxLimit);
   const offset = readNonNegativeInteger(query.offset, 0);
