@@ -1,6 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import * as http from 'node:http';
-import type { AddressInfo } from 'node:net';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const verifyIdTokenMock = vi.fn();
 
