@@ -1097,6 +1097,13 @@ export class AgentService {
                     }
 
                     if (result && result.text) {
+                        // ISSUE-1362: clear the typing indicator as soon as the
+                        // specialist's own execution completes. The persona
+                        // finalizer below makes an additional LLM pass, and the
+                        // indicator must not stay "typing..." for its duration —
+                        // the founder saw exactly that (dots stuck after the
+                        // reply landed).
+                        useStore.getState().updateAgentMessage(resId, { isStreaming: false });
                         const completedText = await this.applyCompletedResponse(
                             agentId,
                             task.rawUserUtterance,

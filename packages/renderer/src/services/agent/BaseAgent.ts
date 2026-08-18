@@ -829,6 +829,39 @@ export class BaseAgent implements SpecializedAgent {
             }
         }
 
+        // ISSUE-1363 (capability truth): every agent execution carries a
+        // verified capability summary derived from the server snapshot +
+        // actual authorized tools, so the agent can only claim what is
+        // genuinely available — never improvise "fully operational" from tool
+        // names (the founder caught exactly this in a Boardroom self-review).
+        let capabilityTruthSection: string | undefined;
+        try {
+            const { loadCapabilitySnapshot } = await importWithRetry(() => import('./CapabilitySnapshotService'));
+            const { buildCapabilitySummary, getCapabilityHealth } = await importWithRetry(() => import('./capabilityTruth'));
+            const snapshot = await loadCapabilitySnapshot();
+            const registeredTools = (this.authorizedTools || [])
+                .filter(tool => typeof this.functions?.[tool] === 'function');
+            const { agentRegistry } = await importWithRetry(() => import('./registry'));
+            const summary = buildCapabilitySummary({
+                authorizedTools: registeredTools,
+                registeredSpecialistIds: agentRegistry.getAll().map(agent => agent.id),
+                snapshot,
+                health: getCapabilityHealth(),
+            });
+            capabilityTruthSection = `
+## VERIFIED CAPABILITIES (server snapshot — do not claim anything beyond this list)
+${summary}
+If a user asks about a capability not listed here, say it is not verified/available in this session. Never claim an external integration (ads, payments, DSP delivery, publishing) is live without a verified connection and receipt.`;
+        } catch (err) {
+            // Capability truth is advisory hardening: if the snapshot cannot be
+            // loaded, degrade to the existing truthful default instruction in
+            // the system prompt rather than failing the whole execution.
+            logger.warn(`[BaseAgent] Capability snapshot unavailable for ${this.id}:`, err);
+            capabilityTruthSection = `
+## VERIFIED CAPABILITIES
+The capability snapshot could not be loaded this session. Do not claim any capability is live or operational unless you have just executed it successfully with a confirmed result. Never claim external integrations (ads, payments, DSP delivery, publishing) are active without a verified connection and receipt.`;
+        }
+
         let fullPrompt = AgentPromptBuilder.buildFullPrompt(
             this.systemPrompt,
             task,
@@ -843,7 +876,8 @@ export class BaseAgent implements SpecializedAgent {
             // Layer 5: Big Brain auto-recall block (XML from all 4 memory layers)
             (context as Record<string, unknown> | undefined)?.autoRecallBlock as string | undefined,
             boardroomSection,
-            delegationScopeSection
+            delegationScopeSection,
+            capabilityTruthSection
         );
 
         // Tool gathering logic via ToolPoolAssembler

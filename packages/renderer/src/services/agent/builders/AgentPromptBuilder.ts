@@ -279,7 +279,8 @@ export class AgentPromptBuilder {
         distributorSection: string,
         autoRecallBlock?: string,
         boardroomSection?: string,
-        delegationScopeSection?: string
+        delegationScopeSection?: string,
+        capabilityTruthSection?: string
     ): string {
         const whiskContext = context?.whiskState ? `\n${this.buildWhiskContext(context.whiskState)}\n` : '';
         const safeTask = this.sanitizeTask(task);
@@ -331,6 +332,7 @@ ${autoRecall}
 ${boardroom}
 ${interAgentNotes}
 ${delegationScopeSection || ''}
+${capabilityTruthSection || ''}
 
 # HISTORY
 ${safeHistory}

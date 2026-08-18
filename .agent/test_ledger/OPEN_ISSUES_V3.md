@@ -1836,3 +1836,16 @@ All seven T1 sub-items built, tested against real (not mocked-away) verification
   1. `openImageInStudio` now positions each new import at a visible cascade offset (+32px from the last existing layer, wrapping back near origin beyond 1400px) — only the selected image is imported per call, and it lands where the user can see and grab it.
   2. Adaptive Fill now renders a prompt textarea above the button (default = the original extension instruction), and `handleCrop` passes the user's prompt through to `handleGeneration` → `Editing.editImage({ prompt })`.
 - **Acceptance:** ✅ FIXED (2026-08-18) — slice suite 13/13 incl. new cascade regression (3 imports at 100/132/164, latest selected, 3 layers); InfiniteCanvas 9/9 incl. new regression (crop → prompt input present with default → user override "remove the white cup" → `editImage` called with that exact prompt); boardroom suite 43/43; renderer typecheck + lint clean.
+
+---
+
+### ISSUE-1363: Agents overclaim capabilities in conversation; typing indicator stays stuck during persona finalizer
+
+- **Status:** ✅ FIXED (2026-08-18)
+- **Severity:** 🔴 HIGH (agent told the founder five "fully operational" pillars — Meta Ads, Vision QC, dbt DW, Command Center, User Review Gate — while Meta is BLOCKED on a missing Business account and Vision QC has zero callers; trust-damaging fabrication)
+- **Module:** `BaseAgent.ts` / `AgentPromptBuilder.ts` / `AgentService.ts` (swarm)
+- **Evidence:** `buildCapabilitySummary` (the evidence-based capability text) had **zero importers** outside the capability-question path in `GeneralistAgent` — so in normal conversation the Conductor improvised capability claims from tool names. Verified against code: `facebookAdsExecutor` is kill-switch gated + ISSUE-1173 BLOCKED (no Meta account); `runCreativeVisionCheck` has 0 callers (dead code); dbt SQL models exist but nothing invokes dbt; `request_approval` is a tool, not a mandatory gate. Separately, the Boardroom typing indicator stayed "typing..." after the specialist reply landed because `applyCompletedResponse` runs the persona finalizer (an extra LLM pass) before clearing `isStreaming`.
+- **Fix:**
+  1. `AgentPromptBuilder.buildFullPrompt` gains a `capabilityTruthSection`; `BaseAgent._executeInternal` now loads the server capability snapshot once per execution and injects `## VERIFIED CAPABILITIES (server snapshot — do not claim anything beyond this list)` with an explicit no-overclaim rule (external integrations require a verified connection and receipt). On snapshot failure it degrades to a truthful "do not claim anything is live unless just executed successfully" instruction — never failing the execution.
+  2. Swarm flow clears `isStreaming: false` immediately when the specialist's execution completes, before the persona finalizer's extra LLM pass — typing dots stop when the answer lands.
+- **Acceptance:** ✅ FIXED (2026-08-18) — AgentPromptBuilder 35/35 incl. new injection regression (section present, ordering before objective); capabilityTruth 27/27; agent suites (boardroom-capability 9, torture 3, architecture 17, cost-circuit 1) all pass; renderer typecheck + lint clean.
