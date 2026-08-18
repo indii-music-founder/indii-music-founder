@@ -24,7 +24,14 @@ test.describe('real staging public paths', () => {
             const response = await page.goto(route.path, { waitUntil: 'domcontentloaded' });
             expect(response?.status(), `${route.path} should be reachable`).toBe(200);
             await expect(page).toHaveURL(new RegExp(`${route.path.replaceAll('/', '\\/')}\\/?$`));
-            await expect(page.getByText(route.visibleText).first()).toBeVisible({ timeout: 15_000 });
+            // ISSUE-1368: /tax-form-upload renders "Invalid Link" only after the
+            // lazy TaxFormUpload module loads behind the app boot sequence
+            // (auth listener + App Check). On a cold staging preview channel the
+            // headless CI browser intermittently exceeds 15s (proven flake: same
+            // renderer passed CI #277 and failed #278 at exactly the 15s mark,
+            // URL correct, text absent). 30s absorbs boot variance without
+            // weakening the route/URL/text assertions themselves.
+            await expect(page.getByText(route.visibleText).first()).toBeVisible({ timeout: 30_000 });
             await expect(page.getByText('Studio Disconnected')).toHaveCount(0);
         }
     });
