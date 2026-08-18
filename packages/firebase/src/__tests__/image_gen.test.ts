@@ -320,7 +320,8 @@ describe('Image and Content Generation Functions', () => {
             expect(res.json).toHaveBeenCalledWith({
                 error: {
                     code: 'GENERATION_CAPACITY_LIMITED',
-                    message: 'Boardroom is temporarily at capacity. Your request was not sent for generation.',
+                    // ISSUE-1366: rate limit described honestly, not as an outage.
+                    message: 'Too many AI requests in the last minute. Please wait about 60 seconds and try again.',
                     retryable: true,
                     retryAfterSeconds: 60,
                     category: 'application_rate_limit',

@@ -72,8 +72,14 @@ export async function enforceRateLimit(
  * Preset rate limit configs for different endpoint types.
  */
 export const RATE_LIMITS = {
-    /** AI generation endpoints (expensive) - 10 req/min */
-    generation: { maxRequests: 10, windowMs: 60_000 },
+    // ISSUE-1366: was 10 req/min, which the Boardroom swarm trips in seconds
+    // (observed: 6 legitimate generateContentStream calls in 32s across 3
+    // seated agents). Each agent's reasoning + tool-turn LLM calls count
+    // against this limit, so a multi-agent conversation hit the ceiling and
+    // surfaced as "Boardroom is temporarily at capacity" — the founder's image
+    // request never completed. 30/min still bounds spend while letting a
+    // normal swarm conversation proceed.
+    generation: { maxRequests: 30, windowMs: 60_000 },
     /** Standard API calls - 60 req/min */
     standard: { maxRequests: 60, windowMs: 60_000 },
     /** Auth/sensitive operations - 5 req/min */

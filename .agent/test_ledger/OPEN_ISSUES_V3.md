@@ -1888,3 +1888,21 @@ All seven T1 sub-items built, tested against real (not mocked-away) verification
   2. New `recordUsage(userId, type, amount, project)` writes top-level `usage` records server-side on every completed image (`amount = outputUris.length`) and video (`amount = durationSeconds`, matching getUsageStats) generation.
   3. Firestore rule added for top-level `/usage`: owner-read, server-only writes (gateway + trackUsage are server-owned).
 - **Acceptance:** ✅ FIXED (2026-08-18) — gateway 46/46 incl. 2 new usage regressions (record shape written; zero/missing-user skipped); rules 232/232 incl. 3 new usage-ledger tests (owner read, cross-user denied, all client writes denied, anonymous denied); firebase build + lint clean. Live meters update after deploy + next generation.
+
+---
+
+### ISSUE-1366: Boardroom swarm trips the 10/min generation rate limit — "Boardroom at capacity" message hides the real cause; image requests never complete
+
+- **Status:** ✅ FIXED (2026-08-18)
+- **Severity:** 🔴 CRITICAL (founder blocked: asked for an image in the Boardroom, got "Boardroom is temporarily at capacity. Your request was not sent for generation." from one agent and "Task ended: Same tool with same arguments called consecutively" from another — no image, two confusing errors)
+- **Module:** `lib/rateLimit.ts`, `index.ts` (generateContentStream), `FirebaseIntelligenceService.ts` (client fallback message)
+- **Evidence (proven from live logs, never guessed):**
+  1. `generateContentStream` returned HTTP 429 at 20:27:45 after **6 legitimate requests in 32 seconds** (20:27:13–45) from the Boardroom swarm (Conductor + Brand + Creative all working the same request).
+  2. The 429 is `RATE_LIMITS.generation = 10 req/min` — each agent's reasoning + tool-turn LLM calls count against it; 3 seated agents blow past 10/min in seconds.
+  3. The 429 body said "Boardroom is temporarily at capacity" — a rate limit described as an outage; the founder could not tell what went wrong.
+  4. The failed generate_image then retried with identical args and the per-agent LoopDetector killed it ("Same tool with same arguments called consecutively") — no recovery path.
+- **Fix:**
+  1. `RATE_LIMITS.generation`: 10 → **30 req/min** — accommodates a normal swarm conversation (observed 6/32s ≈ 12/min peak) while still bounding abuse.
+  2. 429 message now says what happened: "Too many AI requests in the last minute. Please wait about 60 seconds and try again." (backend + client fallback).
+  3. LoopDetector behavior unchanged (it correctly stops retry-loops) — with the rate limit fixed, the first attempt succeeds and the loop never triggers.
+- **Acceptance:** ✅ FIXED (2026-08-18) — firebase build + renderer typecheck clean; image_gen suite (429 handler asserts new message) + intelligence 20/20 pass. After deploy, the founder's Boardroom image request should complete on the first attempt.

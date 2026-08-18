@@ -124,7 +124,13 @@ export class AgentExecutor {
                             content: typeof event.content === 'string' ? event.content : null,
                             agentId: agent?.id ?? null,
                             timestamp: serverTimestamp(),
-                        }, { merge: false }).catch(() => { /* best-effort */ });
+                        }, { merge: false }).catch((err: unknown) => {
+                            // ISSUE-1365: never swallow persistence failures silently —
+                            // a denied or failed trace-progress write must be visible
+                            // in logs or it looks like the feature works when it does
+                            // not (agent_tasks was found empty while traces existed).
+                            logger.warn('[AgentExecutor] Trace progress write failed (best-effort):', err);
+                        });
                     }
                 } else if (event.type === 'usage' && event.usage) {
                     await TraceService.addStepWithUsage(

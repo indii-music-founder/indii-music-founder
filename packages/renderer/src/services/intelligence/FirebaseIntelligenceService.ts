@@ -94,7 +94,7 @@ const generationCapacityFromPayload = (
     return new AppException(
         AppErrorCode.GENERATION_CAPACITY_LIMITED,
         payload.error.message
-            || 'Boardroom is temporarily at capacity. Your request was not sent for generation.',
+            || 'Too many AI requests in the last minute. Please wait about 60 seconds and try again.',
         {
             retryable: payload.error.retryable === true,
             retryAfterMs: typeof retryAfterSeconds === 'number'
