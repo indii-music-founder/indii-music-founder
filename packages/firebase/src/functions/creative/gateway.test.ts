@@ -294,6 +294,32 @@ describe('creative gateway media routing policy', () => {
   });
 });
 
+describe('creative gateway usage accounting (ISSUE-1365)', () => {
+  it('writes a usage record with the gateway shape for a completed image', async () => {
+    vi.clearAllMocks();
+    const { recordUsage } = await import('./gateway');
+    await recordUsage('user-123', 'image', 3, 'session-1');
+
+    // The mock collection('usage').doc(id).set path — verify a set happened
+    // with the usage record shape.
+    expect(mockSet).toHaveBeenCalledWith(expect.objectContaining({
+      userId: 'user-123',
+      type: 'image',
+      amount: 3,
+      project: 'session-1',
+      subscriptionId: 'gateway',
+    }));
+  });
+
+  it('skips usage writes for missing user or zero amount', async () => {
+    vi.clearAllMocks();
+    const { recordUsage } = await import('./gateway');
+    await recordUsage('', 'image', 1);
+    await recordUsage('user-123', 'video', 0);
+    expect(mockSet).not.toHaveBeenCalled();
+  });
+});
+
 describe('creative gateway generateImageV3', () => {
   beforeEach(() => {
     vi.clearAllMocks();

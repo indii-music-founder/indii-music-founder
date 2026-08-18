@@ -1623,6 +1623,14 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // ISSUE-1365: top-level usage ledger written by the gateway on every
+    // completed generation (recordUsage) and by the trackUsage callable.
+    // Owner-read for the settings usage meters; writes are server-only.
+    match /usage/{recordId} {
+      allow read: if isAuthenticated() && resource.data.get('userId', null) == request.auth.uid;
+      allow create, update, delete: if false;
+    }
+
     match /creative_sessions/{sessionId} {
       allow read: if (isAuthenticated() &&
         (resource.data.get('userId', null) == request.auth.uid ||

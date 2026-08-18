@@ -1871,3 +1871,20 @@ All seven T1 sub-items built, tested against real (not mocked-away) verification
   1. `openImageInStudio` now exits boardroom mode (`setConversationMode('direct')`) before switching to canvas + creative module, so the overlay unmounts and the Studio is actually visible.
   2. `BoardroomConversationPanel`: while any agent message is `isStreaming`, the user's own avatar throbs with the same pulse + ping-ring effect the Boardroom uses for an executing agent — from message-send, not first-token.
 - **Acceptance:** ✅ FIXED (2026-08-18) — conversation panel 23/23 incl. 2 new regressions (user avatar pulses+rings while an agent streams; no pulse when nothing streams); slice 14/14 incl. new regression (openImageInStudio calls setConversationMode('direct') + canvas + creative); renderer typecheck + lint clean.
+
+---
+
+### ISSUE-1365: Generation usage meters always show 0 — nothing records usage; safeDb swallows errors, hiding weeks of unpersisted creative_jobs
+
+- **Status:** ✅ FIXED (2026-08-18)
+- **Severity:** 🔴 HIGH (founder's settings showed 0/999,999 images used despite successful generations all day; the top-level `usage` collection had no records; `creative_jobs` had nothing newer than June while generations succeeded through August — same shape, two surfaces)
+- **Module:** `gateway.ts` (`safeDbSet`/`safeDbUpdate`/new `recordUsage`), `firestore.rules`
+- **Evidence (proven, never guessed):**
+  1. Live `users/{uid}/usage` has only a `storage` doc; top-level `/usage` has no image/video/token records. `getUsageStats` reads top-level `usage` records of type image/video/chat_tokens — nothing ever writes them.
+  2. The only writer is the `trackUsage` callable — the gateway never calls it, and the top-level `/usage` collection had **no Firestore rule** (client `trackUsage` silently denied by the catch-all).
+  3. `creative_jobs` had no documents newer than June; gateway logs show `Firestore set/update failed (non-blocking)` on both success and failure paths — but `safeDbSet`/`safeDbUpdate` used `catch {}` and discarded the error, making the cause invisible. IAM proven fine: the function's compute SA has `roles/datastore.user`, and impersonated REST writes to `creative_jobs` succeed. The remaining runtime cause needs the now-logged error to surface (the swallow was the bug).
+- **Fix:**
+  1. `safeDbSet`/`safeDbUpdate` now log the error name/code/message (never the payload) so persistence failures are diagnosable.
+  2. New `recordUsage(userId, type, amount, project)` writes top-level `usage` records server-side on every completed image (`amount = outputUris.length`) and video (`amount = durationSeconds`, matching getUsageStats) generation.
+  3. Firestore rule added for top-level `/usage`: owner-read, server-only writes (gateway + trackUsage are server-owned).
+- **Acceptance:** ✅ FIXED (2026-08-18) — gateway 46/46 incl. 2 new usage regressions (record shape written; zero/missing-user skipped); rules 232/232 incl. 3 new usage-ledger tests (owner read, cross-user denied, all client writes denied, anonymous denied); firebase build + lint clean. Live meters update after deploy + next generation.

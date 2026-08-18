@@ -22,7 +22,7 @@ import {
   type VideoInputRequest,
 } from './videoJobAuthority';
 import { cancelOwnedVideoJobTransactionally } from '../video/renderJobLifecycle';
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID as cryptoRandomUUID } from 'node:crypto';
 import { readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { extname, join } from 'node:path';
@@ -239,10 +239,19 @@ async function safeDbSet(
 ) {
   try {
     await getDb().collection(collection).doc(jobId).set(data);
-  } catch {
-    // Firestore errors can include document fragments or provider diagnostics.
-    // The job id is enough to correlate safely in controlled server tooling.
-    console.warn('[creativeGateway] Firestore set failed (non-blocking)', { collection, jobId });
+  } catch (error) {
+    // ISSUE-1365: this catch previously discarded the error entirely, so the
+    // gateway logged only collection+jobId and the actual cause (which was
+    // hiding weeks of unpersisted creative_jobs — the collection had no
+    // documents newer than June while generations succeeded through August)
+    // was invisible. Log the error name/code/message — never the payload.
+    const err = error as { code?: string; message?: string };
+    console.error('[creativeGateway] Firestore set failed (non-blocking)', {
+      collection,
+      jobId,
+      code: err?.code ?? (error instanceof Error ? error.name : typeof error),
+      reason: err?.message ?? String(error),
+    });
   }
 }
 
@@ -253,14 +262,66 @@ async function safeDbUpdate(
 ) {
   try {
     await getDb().collection(collection).doc(jobId).update(data);
-  } catch {
-    console.warn('[creativeGateway] Firestore update failed (non-blocking)', { collection, jobId });
+  } catch (error) {
+    // ISSUE-1365: same non-swallowing fix as safeDbSet — the underlying
+    // Firestore failure must be visible in logs to be diagnosable.
+    const err = error as { code?: string; message?: string };
+    console.error('[creativeGateway] Firestore update failed (non-blocking)', {
+      collection,
+      jobId,
+      code: err?.code ?? (error instanceof Error ? error.name : typeof error),
+      reason: err?.message ?? String(error),
+    });
   }
 }
 
 async function syncVideoJobUpdate(jobId: string, data: Record<string, unknown>) {
   await getDb().collection('videoJobs').doc(jobId).update(data);
   await safeDbUpdate(jobId, data, 'creative_jobs');
+}
+
+/**
+ * ISSUE-1365: record a completed generation in the top-level `usage`
+ * collection — the same record shape `trackUsage` writes — so the settings
+ * usage meters (images used / video minutes / tokens) reflect real
+ * generations. Previously nothing in the gateway invoked usage accounting,
+ * so the meters always showed 0 despite successful generation, and the
+ * collection had no records newer than June. Server-side write, fire and
+ * forget (failures must never fail a successful generation); logged loudly
+ * on failure so accounting gaps stay visible.
+ */
+export async function recordUsage(
+  userId: string,
+  type: 'image' | 'video' | 'chat_tokens',
+  amount: number,
+  project?: string,
+) {
+  if (!userId || amount <= 0) return;
+  const recordId = `${type}_${Date.now()}_${jobIdSuffix()}`;
+  try {
+    await getDb().collection('usage').doc(recordId).set({
+      id: recordId,
+      userId,
+      subscriptionId: 'gateway',
+      project: project || 'default',
+      type,
+      amount,
+      timestamp: Date.now(),
+    });
+  } catch (error) {
+    const err = error as { code?: string; message?: string };
+    console.error('[creativeGateway] Usage record failed (non-blocking)', {
+      userId,
+      type,
+      amount,
+      code: err?.code ?? (error instanceof Error ? error.name : typeof error),
+      reason: err?.message ?? String(error),
+    });
+  }
+}
+
+function jobIdSuffix(): string {
+  return cryptoRandomUUID().slice(0, 8);
 }
 
 async function loadTrackedVideoJob(jobId: string): Promise<Record<string, unknown> | null> {
@@ -1293,6 +1354,9 @@ export const generateImageV3 = onCall({ ...creativeGatewayCallableOptions, timeo
       provider: mediaProvider,
       outputCount: outputUris.length,
     });
+    // ISSUE-1365: usage accounting — settings meters must reflect real
+    // generations. Each output image counts as one usage record.
+    await recordUsage(userId, 'image', outputUris.length, sessionId);
     try {
       await finalizeOperationReservation({ userId, operationId: costReservationId, outcome: 'SETTLED' });
     } catch {
@@ -1939,6 +2003,10 @@ export const generateOmniRemixV3 = onCall({ ...creativeGatewayCallableOptions, t
       completedAt: new Date().toISOString()
     });
     outputCompleted = true;
+    // ISSUE-1365: usage accounting — video minutes must appear in the
+    // settings meters. The record type is 'video' with seconds as amount
+    // (matching getUsageStats: videoDurationSeconds += amount).
+    await recordUsage(userId, 'video', durationSeconds);
     try {
       await finalizeOperationReservation({
         userId,

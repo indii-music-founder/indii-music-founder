@@ -3044,6 +3044,49 @@ describe('Firestore Security Rules', () => {
     });
 
     // ──────────────────────────────────────────────────────────────────────
+    // ISSUE-1365: top-level usage ledger — owner reads, server-only writes
+    // ──────────────────────────────────────────────────────────────────────
+
+    describe('usage/{recordId} (top-level usage ledger)', () => {
+        beforeEach(async () => {
+            if (requireEmulator()) return;
+            await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                await setDoc(doc(ctx.firestore(), 'usage', 'image_1'), {
+                    id: 'image_1',
+                    userId: ALICE_UID,
+                    type: 'image',
+                    amount: 3,
+                    timestamp: 1787000000000,
+                });
+            });
+        });
+
+        it('allows only the owner to read their own usage records', async () => {
+            if (requireEmulator()) return;
+            await assertSucceeds(getDoc(doc(verifiedCtx(ALICE_UID).firestore(), 'usage', 'image_1')));
+            await assertFails(getDoc(doc(verifiedCtx(BOB_UID).firestore(), 'usage', 'image_1')));
+        });
+
+        it('denies every client write (gateway/trackUsage are server-owned)', async () => {
+            if (requireEmulator()) return;
+            const aliceDb = verifiedCtx(ALICE_UID).firestore();
+            await assertFails(setDoc(doc(aliceDb, 'usage', 'image_new'), {
+                userId: ALICE_UID,
+                type: 'image',
+                amount: 1,
+                timestamp: Date.now(),
+            }));
+            await assertFails(updateDoc(doc(aliceDb, 'usage', 'image_1'), { amount: 99 }));
+            await assertFails(deleteDoc(doc(aliceDb, 'usage', 'image_1')));
+        });
+
+        it('denies anonymous access', async () => {
+            if (requireEmulator()) return;
+            await assertFails(getDoc(doc(anonCtx().firestore(), 'usage', 'image_1')));
+        });
+    });
+
+    // ──────────────────────────────────────────────────────────────────────
     // DENY-ALL: arbitrary collection access denied
     // ──────────────────────────────────────────────────────────────────────
 
