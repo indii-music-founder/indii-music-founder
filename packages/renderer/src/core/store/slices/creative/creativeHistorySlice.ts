@@ -374,10 +374,19 @@ export function buildCreativeHistoryState(
                 }
             }));
             
-            // Route-switch to creative module using dynamic import of store
+            // Route-switch to creative module using dynamic import of store.
+            // ISSUE-1364: the Boardroom is a fullscreen overlay that only
+            // unmounts when conversationMode leaves 'boardroom' — switching
+            // the module underneath left the overlay covering the Studio, so
+            // "Open in Studio" appeared to return to the Boardroom. Exit
+            // boardroom mode explicitly so the Studio is actually visible.
             import('@/core/store').then(({ useStore }) => {
-                useStore.getState().setViewMode('canvas');
-                useStore.getState().setModule('creative');
+                const store = useStore.getState();
+                if (store.conversationMode === 'boardroom') {
+                    store.setConversationMode?.('direct');
+                }
+                store.setViewMode('canvas');
+                store.setModule('creative');
             });
         },
 

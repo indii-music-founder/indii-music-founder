@@ -229,6 +229,14 @@ export function BoardroomConversationPanel({ messages }: BoardroomConversationPa
                         const displayText = sanitizeBoardroomMessage(
                             msg.text || (msg as { content?: string }).content || '',
                         );
+                        // ISSUE-1364: while any agent is still responding, the
+                        // user's own message throbs with the same pulse+ping
+                        // effect the Boardroom uses for an executing agent — so
+                        // there is never a dead gap where the user cannot tell
+                        // indii is working (observed 30s+ of silence before the
+                        // first token).
+                        const agentsResponding = messages.some(m => m.role !== 'user' && m.isStreaming);
+                        const userAwaitingResponse = isUser && agentsResponding;
 
                         return (
                             <motion.div
@@ -245,7 +253,10 @@ export function BoardroomConversationPanel({ messages }: BoardroomConversationPa
                                 {/* Avatar */}
                                 <div className="shrink-0 mt-0.5">
                                     {isUser ? (
-                                        <div className="w-8 h-8 rounded-full bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center">
+                                        <div className={`relative w-8 h-8 rounded-full bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center ${userAwaitingResponse ? 'animate-pulse scale-105' : ''}`}>
+                                            {userAwaitingResponse && (
+                                                <span className="absolute inset-0 rounded-full animate-ping opacity-30 border pointer-events-none border-indigo-400" />
+                                            )}
                                             <span className="text-[10px] font-bold text-indigo-300">You</span>
                                         </div>
                                     ) : (

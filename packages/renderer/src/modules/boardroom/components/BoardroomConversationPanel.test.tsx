@@ -89,6 +89,30 @@ describe('BoardroomConversationPanel', () => {
         expect(screen.getByText('Marketing plan ready')).toBeInTheDocument();
     });
 
+    it('throbs the user avatar while an agent is streaming (ISSUE-1364)', () => {
+        const messages = [
+            { id: 'user-1', role: 'user' as const, text: 'Make me a cover', timestamp: Date.now() },
+            { id: 'agent-1', role: 'model' as const, text: '*(Reviewing request...)*', timestamp: Date.now(), agentId: 'creative', isStreaming: true },
+        ];
+        const { container } = render(<BoardroomConversationPanel messages={messages} />);
+
+        // The user's avatar circle carries the pulse class while any agent streams.
+        const userAvatar = container.querySelector('[data-message-id="user-1"]')?.querySelector('.animate-pulse');
+        expect(userAvatar).not.toBeNull();
+        // The ping ring is present too.
+        expect(container.querySelector('[data-message-id="user-1"]')?.querySelector('.animate-ping')).not.toBeNull();
+    });
+
+    it('does not throb the user avatar when no agent is streaming', () => {
+        const messages = [
+            { id: 'user-1', role: 'user' as const, text: 'Make me a cover', timestamp: Date.now() },
+            { id: 'agent-1', role: 'model' as const, text: 'Done', timestamp: Date.now(), agentId: 'creative', isStreaming: false },
+        ];
+        const { container } = render(<BoardroomConversationPanel messages={messages} />);
+
+        expect(container.querySelector('[data-message-id="user-1"]')?.querySelector('.animate-pulse')).toBeNull();
+    });
+
     it('renders message count in header', () => {
         const messages = [
             { id: 'msg-1', role: 'model' as const, text: 'Hello', timestamp: Date.now(), agentId: 'marketing' },

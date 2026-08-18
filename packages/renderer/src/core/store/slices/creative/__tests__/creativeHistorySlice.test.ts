@@ -9,6 +9,8 @@ const { createFileNodeMock, storeStateMock } = vi.hoisted(() => {
     const storeStateMock = {
         setViewMode: vi.fn(),
         setModule: vi.fn(),
+        setConversationMode: vi.fn(),
+        conversationMode: 'boardroom',
         currentOrganizationId: 'test-org',
         currentProjectId: 'test-project',
         user: { uid: 'test-user' },
@@ -173,6 +175,23 @@ describe('creativeHistorySlice — openImageInStudio', () => {
         expect(third?.y).toBe(164);
         // The latest import is selected.
         expect(slice.selectedCanvasImageId).toBe(third?.id);
+    });
+
+    it('exits boardroom mode when routing to the Studio (ISSUE-1364)', async () => {
+        slice.openImageInStudio({
+            imageId: 'img-1',
+            sourceUrl: 'https://example.com/1.jpg',
+            sourceMessageId: 'm1',
+            agentId: 'generalist',
+            prompt: 'cover'
+        });
+
+        // The route-switch is async (dynamic import). Flush it.
+        await new Promise(r => setTimeout(r, 10));
+
+        expect(storeStateMock.setConversationMode).toHaveBeenCalledWith('direct');
+        expect(storeStateMock.setViewMode).toHaveBeenCalledWith('canvas');
+        expect(storeStateMock.setModule).toHaveBeenCalledWith('creative');
     });
 
     it('generates unique layer IDs with imageId and timestamp', () => {
