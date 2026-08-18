@@ -1906,3 +1906,86 @@ All seven T1 sub-items built, tested against real (not mocked-away) verification
   2. 429 message now says what happened: "Too many AI requests in the last minute. Please wait about 60 seconds and try again." (backend + client fallback).
   3. LoopDetector behavior unchanged (it correctly stops retry-loops) — with the rate limit fixed, the first attempt succeeds and the loop never triggers.
 - **Acceptance:** ✅ FIXED (2026-08-18) — firebase build + renderer typecheck clean; image_gen suite (429 handler asserts new message) + intelligence 20/20 pass. After deploy, the founder's Boardroom image request should complete on the first attempt.
+
+---
+
+### ISSUE-1365 follow-up: creative_jobs write-failure root-cause hunt round 2 (2026-08-18 21:40 UTC) — still open, narrowed
+
+- **Status:** 🔴 OPEN — root cause narrowed to a runtime write-path failure in the function environment; next generation on the logging gateway reveals it
+- **New evidence (all proven, never guessed):**
+  1. **10 image completions today; only 1 (00:36Z, `EtdSxNXSf8EH6cRT3TMd`) has a creative_jobs doc.** The other 9 (01:15Z×1, 01:16Z×2, 01:39Z, 01:40Z, 20:20Z×2, 20:21Z, 20:27Z founder's `ipE7Lvx8X7FUm00MrbeX`) are 404 on direct GET. The "nothing newer than June" claim from round 1 was WRONG — the collection has Aug 1-18 docs (19 in August); round 1's snapshot was incomplete.
+  2. **Break happened mid-revision:** 00:36 ✓ and 01:15 ✗ ran on the SAME revision (generateimagev3-00287-hud, created Aug 17 23:11) — no deploy, no SA change between. All revisions use `148015878263-compute` SA (verified via gcloud run revisions list).
+  3. **Excluded:** IAM (compute-SA impersonated probe write to creative_jobs SUCCEEDED 21:17Z, probe doc deleted), billing (enabled, `billingAccounts/01FE3A-DF27A5-BB47C2`), region (all 195 fns us-central1), named-DB drift (`getDb()` = plain `admin.firestore()`, single implementation in gateway.ts:146), code regression (same revision), App Check (admin SDK bypasses).
+  4. **Signature:** Vertex generation ✓, Storage upload ✓ (completion log fires after upload), Firestore reads ✓ (cost reservations load), Firestore WRITES ✗ — writes fail only inside the function runtime.
+- **Why the cause is still invisible:** the 9 failing jobs all ran on pre-961cfac28 code whose `safeDbSet`/`safeDbUpdate` swallowed errors. The logging gateway went live 20:28:41Z; NO generation has run since. **The next generation's logs will show `[creativeGateway] Firestore set/update failed` with code+reason — that is the root cause.**
+- **Action:** after deploy-production (5d8169069) lands, founder retries the Boardroom image request → immediately pull `generateimagev3` runtime logs + check `creative_jobs/{jobId}` + `usage` collection.
+
+---
+
+### Google APIs & Maps audit (2026-08-18) — COMPLETE, all proven live
+
+- **Image/Video:** `aiplatform.googleapis.com`, `firebasevertexai.googleapis.com`, `generativelanguage.googleapis.com` all enabled. Deployed `generateImageV3` env `MEDIA_PROVIDER=vertex` (gcloud functions describe). Live logs 2026-08-18 show `Image generation completed { provider: 'vertex', outputCount: 1 }` ×10. Model `gemini-3.1-flash-image` runs via `models.generateContent` fallback (`interactions.create unsupported` for this model — expected SDK behavior, the working path).
+- **Maps:** live bundle TourMap chunk contains key `AIzaSyA-Cf95…` = GCP key **8bff1ea7 "Google Maps Desktop Key"** (matched via api-keys get-key-string), restricted to `maps-backend.googleapis.com` (JS API), `places.googleapis.com`, `geocoding-backend.googleapis.com` — exactly the APIs the app uses (TourMap loads `maps/api/js?key=…&libraries=places`). Live functional tests: JS API HTTP 200, Geocoding returns real results, Static Maps 403 by design (not whitelisted; app doesn't use it). CI injects the key from `secrets.VITE_GOOGLE_MAPS_API_KEY` + `VITE_ENABLE_GOOGLE_MAPS=true`.
+- **Verdict:** ALL Google APIs + Maps fully engaged for image and video. No gaps found.
+
+---
+
+### Region consolidation audit (2026-08-18) — COMPLETE, all proven
+
+- 195 deployed functions, ALL in us-central1; 0 in us-west1/europe-west1/us-east1/asia-east1 (gcloud functions list per region).
+- Client: single `getFunctions(app)` client (firebase.ts:273); `functionsWest1` is a pure alias (`functionsWest1 = functions`, firebase.ts:276) — west1 imports are safe by construction, NOT a bug.
+- **Verdict:** API endpoints are all in the same place (one region, one client). No consolidation needed.
+
+---
+
+### Flowchart/API endpoint map re-sync (2026-08-18, committed `c68386ba9`)
+
+- `docs/flowcharts/api_endpoints.md` now covers **195/195 deployed functions** (verified by automated diff: 0 missing, 0 extra).
+- 56 previously undocumented endpoints added (55 client-reachable: onCall/onRequest; 2 internal: `executeVideoJob`, `onAgentTaskUpdate`); `processISWCMapping` renamed to its deployed alias `processISWCMappingV2`. Client-reachable 116→171, internal triggers 23→24.
+
+---
+
+### Headless probe limitation (2026-08-18) — App Check 403 in headless Chromium
+
+- Headless persistent-context launches on `/tmp/pw-indii-probe` cannot pass App Check (no attestation provider) → 403 → **24h initial-throttle persisted in the profile's firebase-app-check-database**. The app falls through to the login screen ("Auth listener timed out").
+- Session data itself is INTACT on disk (uid `g2AcFApNZvQKYlGg0LQuVADCFoO2` + refresh token in leveldb 000153.ldb) — only App Check attestation is unreachable headless.
+- **Lesson:** do NOT relaunch headless against the live app with the founder's profile; the founder's real browser is the only valid live-test vehicle. Profile App Check is throttled ~24h from 21:29Z.
+
+---
+
+### ISSUE-1367: "AI Request timed out after 25000ms" kills agent streams before the image tool fires (2026-08-18, committed `010f84620`)
+
+- **Status:** ✅ FIXED (2026-08-18) — awaiting CI deploy
+- **Severity:** 🔴 CRITICAL (founder-live: CD said "I'll initiate the generation now" then reported the timeout and cancelled; the image was never even requested)
+- **Module:** `FirebaseIntelligenceService.ts` (client timeout defaults, lines ~647 and ~862)
+- **Evidence (proven from live logs, never guessed):**
+  1. Founder transcript: CD "AI Request timed out after 25000ms … I have cancelled the pending generation."
+  2. `generateImageV3` runtime logs show **ZERO requests since 21:00Z** — the image tool call never reached the backend; the timeout hit the CD's reasoning stream, not the image engine.
+  3. Code proof: the 25s `setTimeout` → `timeoutController.abort('TIMEOUT')` wraps the entire stream (client rate-limiter `acquire(300_000)` queue wait + quota/rate-limit pre-flight + token stream) — `cleanupRequestLifecycle` only runs when the response promise settles (line 956-961), i.e. after the LAST chunk.
+  4. Server contract mismatch: `generateContentStream` is `onRequest` with `timeoutSeconds: 300` (index.ts:1084). A 3-seat swarm turn or slow Vertex model routinely exceeds 25s end-to-end.
+  5. The aborted agent (an LLM) then misattributed the failure to the "generation engine" and cancelled a generation that never started — the exact misleading-error pattern the founder flagged.
+- **Fix:** default client timeout `25000` → `120_000` at both call sites (generateContent + generateContentStream paths); `options.timeout` overrides still honored; `timeout: 0` semantics unchanged (no callers pass 0).
+- **Acceptance:** ✅ FIXED — renderer typecheck clean; intelligence suite 153/153 pass (28 files). Deploy rides the next CI run after 5d8169069 lands.
+- **Companion note:** this is why the 429-rate-limit fix alone was insufficient — even with 30/min, the 25s cap would still kill slow swarm turns.
+
+---
+
+### ISSUE-1368: ROOT CAUSE FOUND — undefined `sessionId` invalidated every agent-driven job record (2026-08-18, committed `f5eef5629`)
+
+- **Status:** ✅ FIXED (2026-08-18) — CI #278 deploying
+- **Severity:** 🔴 CRITICAL — this is the "image generated but never appears in the Boardroom" bug, closed with log-proven root cause
+- **Root cause (from live logs, founder's 23:16Z request):**
+  ```
+  [creativeGateway] Firestore set failed (non-blocking) {
+    collection: 'creative_jobs', jobId: 'JpxIRRQK8vqCNZ6M4R4X',
+    code: 'Error',
+    reason: 'Value for argument "data" is not a valid Firestore document.
+             Cannot use "undefined" as a Firestore value (found in field "sessionId").'
+  }
+  ```
+  `GenerateImageSchema.sessionId` is optional; agent-driven Boardroom generations (DirectorTools.generate_image → ImageGenerationService) never send it → `undefined` → Firestore rejects the ENTIRE document → no creative_jobs doc → completion `safeDbUpdate` fails `5 NOT_FOUND` → Boardroom asset strip (job-doc-backed) shows nothing. The image itself generated + uploaded fine (`Image generation completed { outputCount: 1 }`, file present in GCS).
+- **Why it looked like "writes broke mid-revision":** Studio-driven generations pass a sessionId (records persisted — the 00:36Z doc has `sessionId: 'creative_default-project'`); agent-driven ones don't. The founder's Boardroom sessions produced 0 docs; Studio sessions produced docs — the mix looked like a time-based break.
+- **Video had the same class:** video jobRecord carries `cameraPhysics: undefined` explicitly + optional staged fields — video records could never persist to creative_jobs either.
+- **Nightly production evidence:** 5 usage records 23:16-23:20Z (recordUsage live since 961cfac28) + 6 full-size outputs in GCS (`1787094984890`…`1787095257563`) + 0 creative_jobs docs for those jobs.
+- **Fix:** `safeDbSet`/`safeDbUpdate` strip undefined values via JSON round-trip (gateway records are plain JSON — audited: zero FieldValue sentinels in gateway.ts) so a missing optional field can never invalidate a write. Helpers exported; 2 new regression tests; gateway suite 48/48; firebase typecheck clean.
+- **After deploy:** founder's next Boardroom image request writes the job doc → image appears in the asset strip. (Tonight's already-generated images remain storage-only; backfill optional — needs UI prompt-field tolerance check first.)
