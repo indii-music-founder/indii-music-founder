@@ -725,13 +725,15 @@ export default function VideoWorkflow() {
 
             // Check for long-form Video (Daisy Chain or duration > 8s)
             if (!isTemporalInpaint && (studioControls.duration > 8 || videoInputs.isDaisyChain)) {
+                const parsedLongFormSeed = studioControls.seed ? Number(studioControls.seed) : undefined;
                 results = await VideoGeneration.generateLongFormVideo({
                     prompt: finalPrompt,
                     totalDuration: Math.max(studioControls.duration, 8), // Ensure at least 1 block
                     aspectRatio: effectiveAspectRatio,
                     resolution: studioControls.resolution,
                     negativePrompt: audioNegativePrompt,
-                    seed: studioControls.seed ? parseInt(studioControls.seed) : undefined,
+                    // ISSUE-1360: NaN must never reach the gateway as null.
+                    seed: Number.isSafeInteger(parsedLongFormSeed) ? parsedLongFormSeed : undefined,
                     firstFrame: videoInputs.firstFrame?.url,
                     // Audio suppression handled via prompt augmentation above
                     inputAudio: useVideoEditorStore.getState().inputAudio || undefined,
@@ -747,15 +749,25 @@ export default function VideoWorkflow() {
             } else {
                 const directorFps = studioControls.fps || 24;
                 const directorDuration = studioControls.duration || 6;
+                // ISSUE-1360: parseInt("abc") is NaN, which JSON-serializes to
+                // null and can reach the gateway as directorSettings.seed=null.
+                // Only a safe integer is ever forwarded; anything else is
+                // omitted (schema optional). frame URIs that are not strings
+                // are omitted rather than sent as null.
+                const parsedDirectorSeed = studioControls.seed ? Number(studioControls.seed) : undefined;
+                const safeDirectorSeed = Number.isSafeInteger(parsedDirectorSeed) ? parsedDirectorSeed : undefined;
+                const safeFirstFrameUri = videoInputs.firstFrame?.url || undefined;
+                const safeLastFrameUri = videoInputs.lastFrame?.url || undefined;
+                const safeSeed = studioControls.seed ? Number(studioControls.seed) : undefined;
                 const directorSettings = {
                     fps: directorFps,
                     durationSeconds: directorDuration,
                     totalFrames: Math.round(directorFps * directorDuration),
                     aspectRatio: effectiveAspectRatio,
                     resolution: studioControls.resolution,
-                    seed: studioControls.seed ? parseInt(studioControls.seed) : undefined,
-                    firstFrameUri: videoInputs.firstFrame?.url,
-                    lastFrameUri: videoInputs.lastFrame?.url,
+                    seed: safeDirectorSeed,
+                    firstFrameUri: safeFirstFrameUri,
+                    lastFrameUri: safeLastFrameUri,
                     cameraMovement: studioControls.cameraMovement,
                     motionStrength: studioControls.motionStrength,
                 };
@@ -766,13 +778,13 @@ export default function VideoWorkflow() {
                     resolution: studioControls.resolution,
                     aspectRatio: effectiveAspectRatio,
                     negativePrompt: audioNegativePrompt,
-                    seed: studioControls.seed ? parseInt(studioControls.seed) : undefined,
+                    seed: Number.isSafeInteger(safeSeed) ? safeSeed : undefined,
                     fps: studioControls.fps,
                     cameraMovement: studioControls.cameraMovement,
                     motionStrength: studioControls.motionStrength,
                     shotList: studioControls.shotList,
-                    firstFrame: videoInputs.firstFrame?.url,
-                    lastFrame: videoInputs.lastFrame?.url,
+                    firstFrame: safeFirstFrameUri,
+                    lastFrame: safeLastFrameUri,
                     sourceVideoUri,
                     maskFrameUri,
                     maskTrackUri: maskFrameUri,

@@ -223,29 +223,48 @@ export async function protectAuthenticatedApiRequest(
     if (!client) {
         return securityUnavailableResult(context.policy, context.operationId, "fail-closed", "missing_configuration");
     }
-    try {
-        const decision = await client.protect(req, {
-            userId: context.userId,
-            correlationId: context.operationId,
-        });
-        return mapDecision(decision, context.policy, context.operationId, "fail-closed");
-    } catch (error) {
-        // ISSUE-1242: this catch previously discarded the error entirely
-        // (`catch (_error)`), so a persistent `decision_error` was
-        // indistinguishable from a transient one and gave no cause. That
-        // blindness is what made a total production outage undiagnosable from
-        // logs — the only signal was "Request protection is temporarily
-        // unavailable" with nothing behind it. Log the cause; never the key.
-        logger.error("[Arcjet] Protect call threw", {
-            policy: context.policy,
-            operationId: context.operationId,
-            err_name: error instanceof Error ? error.name : typeof error,
-            err_msg: error instanceof Error ? error.message : String(error),
-            err_cause: (error as { cause?: unknown })?.cause !== undefined ? String((error as { cause?: unknown }).cause) : undefined,
-            err_stack: error instanceof Error ? error.stack?.split("\n").slice(0, 4).join(" | ") : undefined,
-        });
-        return securityUnavailableResult(context.policy, context.operationId, "fail-closed", "decision_error");
+    // ISSUE-1360: a single transient Arcjet API timeout (deadline_exceeded)
+    // previously blocked a legitimate paid operation (e.g. the cost-control
+    // gate during annotation refine) with a fail-closed SECURITY_UNAVAILABLE.
+    // The decision stays fail-closed — a retry that also fails still blocks —
+    // but one bounded retry absorbs a blip in the external decision service.
+    const attempts = 2;
+    for (let attempt = 0; attempt < attempts; attempt++) {
+        try {
+            const decision = await client.protect(req, {
+                userId: context.userId,
+                correlationId: context.operationId,
+            });
+            return mapDecision(decision, context.policy, context.operationId, "fail-closed");
+        } catch (error) {
+            // ISSUE-1242: this catch previously discarded the error entirely
+            // (`catch (_error)`), so a persistent `decision_error` was
+            // indistinguishable from a transient one and gave no cause. That
+            // blindness is what made a total production outage undiagnosable from
+            // logs — the only signal was "Request protection is temporarily
+            // unavailable" with nothing behind it. Log the cause; never the key.
+            logger.error("[Arcjet] Protect call threw", {
+                policy: context.policy,
+                operationId: context.operationId,
+                attempt: attempt + 1,
+                err_name: error instanceof Error ? error.name : typeof error,
+                err_msg: error instanceof Error ? error.message : String(error),
+                err_cause: (error as { cause?: unknown })?.cause !== undefined ? String((error as { cause?: unknown }).cause) : undefined,
+                err_stack: error instanceof Error ? error.stack?.split("\n").slice(0, 4).join(" | ") : undefined,
+            });
+            if (attempt < attempts - 1) {
+                // Transient timeout/connectivity blip: retry once. Non-transient
+                // errors (bad key, malformed request) fail immediately without
+                // burning the retry.
+                const lower = error instanceof Error ? error.message.toLowerCase() : String(error).toLowerCase();
+                const transient = lower.includes("deadline") || lower.includes("timeout") || lower.includes("econnreset") || lower.includes("fetch failed") || lower.includes("socket");
+                if (!transient) return securityUnavailableResult(context.policy, context.operationId, "fail-closed", "decision_error");
+                continue;
+            }
+            return securityUnavailableResult(context.policy, context.operationId, "fail-closed", "decision_error");
+        }
     }
+    return securityUnavailableResult(context.policy, context.operationId, "fail-closed", "decision_error");
 }
 
 /**

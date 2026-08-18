@@ -252,6 +252,40 @@ describe('VideoWorkflow', () => {
         });
     });
 
+    it('never forwards a NaN seed to the gateway (ISSUE-1360)', async () => {
+        mockGenerateVideo.mockResolvedValue([{ id: 'job-456', url: '', prompt: 'test' }]);
+
+        render(
+            <ToastProvider>
+                <VideoWorkflow />
+            </ToastProvider>
+        );
+
+        const input = screen.getByPlaceholderText(/describe your video/i);
+        fireEvent.change(input, { target: { value: 'Turntable close-up' } });
+
+        // Open the technical settings panel to reach the seed control.
+        const settingsToggle = screen.getByTestId('toggle-settings-btn');
+        fireEvent.click(settingsToggle);
+
+        const seedInput = await screen.findByTestId('seed-input');
+        fireEvent.change(seedInput, { target: { value: 'not-a-number' } });
+
+        const generateBtn = screen.getByTestId('video-generate-btn');
+        fireEvent.click(generateBtn);
+
+        await waitFor(() => {
+            expect(mockGenerateVideo).toHaveBeenCalled();
+        });
+        const payload = mockGenerateVideo.mock.calls[0][0];
+        expect(Number.isNaN(payload.seed)).toBe(false);
+        expect(payload.seed).toBeUndefined();
+        if (payload.directorSettings) {
+            expect(Number.isNaN(payload.directorSettings.seed)).toBe(false);
+            expect(payload.directorSettings.seed).toBeUndefined();
+        }
+    });
+
     it('protects the primary stage when the measured workspace is focused', () => {
         mockWorkspaceLayout.mode = 'focused';
         mockWorkspaceLayout.width = 720;

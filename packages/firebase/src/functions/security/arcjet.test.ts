@@ -162,6 +162,35 @@ describe("Arcjet request protection", () => {
         }));
     });
 
+    it("retries once on a transient timeout and allows the request when the retry succeeds (ISSUE-1360)", async () => {
+        mocks.freeProtect
+            .mockRejectedValueOnce(new Error("[deadline_exceeded] the operation timed out"))
+            .mockResolvedValueOnce(mockDecision({ denied: false }));
+        const { protectAuthenticatedApiRequest } = await loadArcjetModule();
+
+        const result = await protectAuthenticatedApiRequest(request as never, {
+            userId: "user_123",
+            policy: "verified-free",
+            operationId: "operation-1",
+        });
+
+        expect(result).toEqual({ allowed: true });
+        expect(mocks.freeProtect).toHaveBeenCalledTimes(2);
+        expect(mocks.freeProtect).toHaveBeenLastCalledWith(request, { userId: "user_123", correlationId: "operation-1" });
+    });
+
+    it("does not retry non-transient errors (bad key, malformed request)", async () => {
+        mocks.freeProtect.mockRejectedValue(new Error("invalid api key"));
+        const { protectAuthenticatedApiRequest } = await loadArcjetModule();
+
+        await expect(protectAuthenticatedApiRequest(request as never, {
+            userId: "user_123",
+            policy: "verified-free",
+            operationId: "operation-1",
+        })).resolves.toMatchObject({ allowed: false, status: 503, code: "SECURITY_UNAVAILABLE" });
+        expect(mocks.freeProtect).toHaveBeenCalledTimes(1);
+    });
+
     it("fails closed when ARCJET_KEY is missing, regardless of runtime mode", async () => {
         delete process.env.ARCJET_KEY;
 
