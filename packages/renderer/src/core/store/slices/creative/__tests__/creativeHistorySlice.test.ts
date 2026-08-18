@@ -138,6 +138,43 @@ describe('creativeHistorySlice — openImageInStudio', () => {
         expect(slice.chatImportContext).toBeNull();
     });
 
+    it('cascades repeated imports instead of stacking invisibly (ISSUE-1362)', () => {
+        slice.openImageInStudio({
+            imageId: 'img-1',
+            sourceUrl: 'https://example.com/1.jpg',
+            sourceMessageId: 'm1',
+            agentId: 'generalist',
+            prompt: 'first'
+        });
+        slice.openImageInStudio({
+            imageId: 'img-2',
+            sourceUrl: 'https://example.com/2.jpg',
+            sourceMessageId: 'm2',
+            agentId: 'generalist',
+            prompt: 'second'
+        });
+        slice.openImageInStudio({
+            imageId: 'img-3',
+            sourceUrl: 'https://example.com/3.jpg',
+            sourceMessageId: 'm3',
+            agentId: 'generalist',
+            prompt: 'third'
+        });
+
+        const [first, second, third] = slice.canvasImages;
+        // Only the selected image is imported per call — three calls, three
+        // layers, each visibly offset from the previous (never stacked).
+        expect(slice.canvasImages).toHaveLength(3);
+        expect(first?.x).toBe(100);
+        expect(first?.y).toBe(100);
+        expect(second?.x).toBe(132);
+        expect(second?.y).toBe(132);
+        expect(third?.x).toBe(164);
+        expect(third?.y).toBe(164);
+        // The latest import is selected.
+        expect(slice.selectedCanvasImageId).toBe(third?.id);
+    });
+
     it('generates unique layer IDs with imageId and timestamp', () => {
         slice.openImageInStudio({
             imageId: 'image-1',

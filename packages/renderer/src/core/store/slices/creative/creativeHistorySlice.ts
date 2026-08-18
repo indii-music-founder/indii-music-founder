@@ -327,12 +327,36 @@ export function buildCreativeHistoryState(
         chatImportContext: null,
         clearChatImportContext: () => set({ chatImportContext: null }),
         openImageInStudio: ({ imageId, sourceUrl, sourceMessageId, agentId, prompt }) => {
-            // Stage the image as a new canvas layer
+            // Stage the image as a new canvas layer. ISSUE-1362: every import
+            // previously landed at the fixed (100,100), so repeated sends
+            // stacked invisibly on top of each other — the user could only see
+            // the top layer. Position each new import visibly offset from the
+            // last existing layer so only the selected image moves in, and it
+            // lands where the user can actually see and grab it.
+            const existing = _get().canvasImages || [];
+            const baseX = 100;
+            const baseY = 100;
+            const CASCADE_STEP = 32;
+            let x = baseX;
+            let y = baseY;
+            if (existing.length > 0) {
+                const last = existing[existing.length - 1];
+                const lastX = typeof last?.x === 'number' ? last.x : baseX;
+                const lastY = typeof last?.y === 'number' ? last.y : baseY;
+                x = lastX + CASCADE_STEP;
+                y = lastY + CASCADE_STEP;
+            }
+            // Keep imports on-canvas: if the cascade walks off the visible
+            // area, wrap back to a clean offset near the origin.
+            if (x > 1400 || y > 1400) {
+                x = baseX + CASCADE_STEP;
+                y = baseY + CASCADE_STEP;
+            }
             const newCanvasImage: CanvasImage = {
                 id: `layer_${imageId}_${Date.now()}`,
                 base64: sourceUrl, // URL or data URI
-                x: 100,
-                y: 100,
+                x,
+                y,
                 width: 512,
                 height: 512,
                 aspect: 1,

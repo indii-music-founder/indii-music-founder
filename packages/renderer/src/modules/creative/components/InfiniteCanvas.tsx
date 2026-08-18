@@ -54,6 +54,10 @@ export default function InfiniteCanvas() {
     const [promptOverlay, setPromptOverlay] = useState<{ sx: number, sy: number, w: number, h: number } | null>(null);
     const [cropOverlay, setCropOverlay] = useState<{ sx: number, sy: number, w: number, h: number } | null>(null);
     const [promptText, setPromptText] = useState("");
+    // ISSUE-1362: the Adaptive Fill action had no prompt input — it always ran
+    // a hardcoded extension prompt, so the user could not say what to change.
+    // Default preserves the original behavior; the user can now override it.
+    const [adaptiveFillPrompt, setAdaptiveFillPrompt] = useState("Naturally extend the image to fill any empty space, matching the existing style, lighting, and composition.");
     const [detectedObjects, setDetectedObjects] = useState<{ sourceImageId: string; objects: DetectedObject[] } | null>(null);
     const [flattenRevision, setFlattenRevision] = useState<{ flattenedId: string; sources: CanvasImage[] } | null>(null);
 
@@ -828,7 +832,10 @@ export default function InfiniteCanvas() {
     const handleCrop = async (sx: number, sy: number, w: number, h: number, adaptiveFill: boolean) => {
         setCropOverlay(null);
         if (adaptiveFill) {
-            await handleGeneration(sx, sy, w, h, "Naturally extend the image to fill any empty space, matching the existing style, lighting, and composition.");
+            // ISSUE-1362: use the user's prompt (defaulted to the standard
+            // extension instruction) instead of a hardcoded string.
+            const fillPrompt = adaptiveFillPrompt.trim() || "Naturally extend the image to fill any empty space, matching the existing style, lighting, and composition.";
+            await handleGeneration(sx, sy, w, h, fillPrompt);
         } else {
             const scale = scaleRef.current;
             const offset = offsetRef.current;
@@ -1467,6 +1474,18 @@ export default function InfiniteCanvas() {
                         >
                             Standard Crop
                         </button>
+                        {/* ISSUE-1362: Adaptive Fill prompt input — the user must be
+                            able to say what to change, not only accept the default
+                            extension instruction. */}
+                        <textarea
+                            value={adaptiveFillPrompt}
+                            onChange={(e) => setAdaptiveFillPrompt(e.target.value)}
+                            rows={2}
+                            placeholder="Describe what to generate in the selected area (e.g. 'extend the background', 'remove the cup', 'fill with studio backdrop')..."
+                            className="w-full px-3 py-2 text-sm bg-black/40 border border-white/10 rounded text-white placeholder-white/30 focus:ring-1 focus:ring-green-500/50 focus:border-green-500/30 outline-none resize-none"
+                            data-testid="adaptive-fill-prompt"
+                            aria-label="Adaptive fill prompt"
+                        />
                         <button 
                             onClick={() => handleCrop(cropOverlay.sx, cropOverlay.sy, cropOverlay.w, cropOverlay.h, true)}
                             className="w-full px-3 py-2 text-sm text-white bg-green-600 hover:bg-green-700 rounded transition-colors flex items-center justify-center gap-2"

@@ -493,4 +493,53 @@ describe('InfiniteCanvas Culling', () => {
             expect(setFailedVariationBatch).toHaveBeenCalledWith(null);
         });
     });
+
+    it('Adaptive Fill accepts a user prompt and passes it to the edit backend (ISSUE-1362)', async () => {
+        mockUseStore.mockImplementation((selector: any) => {
+            const state = {
+                canvasImages: [],
+                addCanvasImage: vi.fn(),
+                updateCanvasImage: vi.fn(),
+                removeCanvasImage: vi.fn(),
+                selectedCanvasImageId: null,
+                selectCanvasImage: vi.fn(),
+                currentProjectId: 'test-project',
+                generatedHistory: [],
+                uploadedImages: [],
+                failedVariationBatch: null,
+                setFailedVariationBatch: vi.fn()
+            };
+            return selector ? selector(state) : state;
+        });
+
+        (ImageGeneration.generateImages as any).mockResolvedValue([{ id: 'gen1', url: 'data:image/png;base64,new' }]);
+        const { Editing } = await import('@/services/image/EditingService');
+        (Editing.editImage as any).mockResolvedValue({ id: 'edit1', url: 'data:image/png;base64,edited' });
+
+        render(<InfiniteCanvas />);
+
+        // Enter crop mode via the HUD tool rail.
+        fireEvent.click(screen.getByTitle('Adaptive Crop & Fill'));
+
+        // Drag a selection box on the canvas surface.
+        const surface = screen.getByTestId('infinite-canvas-surface');
+        fireEvent.mouseDown(surface, { clientX: 200, clientY: 200 });
+        fireEvent.mouseMove(surface, { clientX: 400, clientY: 400 });
+        fireEvent.mouseUp(surface, { clientX: 400, clientY: 400 });
+
+        // The crop panel shows the prompt input with the default extension prompt.
+        const promptInput = await screen.findByTestId('adaptive-fill-prompt');
+        expect((promptInput as HTMLTextAreaElement).value).toContain('Naturally extend the image');
+
+        // User overrides the prompt with what they actually want changed.
+        fireEvent.change(promptInput, { target: { value: 'remove the white cup' } });
+
+        fireEvent.click(screen.getByRole('button', { name: /Adaptive Fill/i }));
+
+        await waitFor(() => {
+            expect(Editing.editImage).toHaveBeenCalledWith(expect.objectContaining({
+                prompt: 'remove the white cup',
+            }));
+        });
+    });
 });

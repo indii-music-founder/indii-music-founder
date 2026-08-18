@@ -1823,3 +1823,16 @@ All seven T1 sub-items built, tested against real (not mocked-away) verification
   3. `AgentService.ts` `handleBoardroomSwarmFlow`: the first seat now sets `isStreaming: true` immediately, so the typing indicator renders from message-send, not first-token (completion already clears it in all branches).
   4. New `BoardroomAssetStrip` renders the 8 most recent generated assets as a horizontal strip above the Boardroom discussion; image assets open in the Studio editor, documents/videos open in a new tab; transient `data:` blobs excluded.
 - **Acceptance:** ✅ FIXED (2026-08-18) — chart covers 139/139 endpoints (verified by grep); no `videoStatusWebhook` refs remain; renderer typecheck + lint clean; intelligence 20/20; boardroom suite 41/41 incl. 4 new strip tests (empty state, latest-first ordering, open-in-studio, data-URI exclusion). Full CI runs on delivery commit.
+
+---
+
+### ISSUE-1362: Boardroom→Studio image handoff stacks layers invisibly; Adaptive Fill has no prompt input
+
+- **Status:** ✅ FIXED (2026-08-18)
+- **Severity:** 🟠 HIGH (Studio UX: imported images stacked at fixed (100,100) so only the top layer was visible; Adaptive Fill ran a hardcoded prompt)
+- **Module:** `creativeHistorySlice.ts` (`openImageInStudio`); `InfiniteCanvas.tsx` (Adaptive Fill)
+- **Evidence (founder live-test):** (1) Sending an image from the Boardroom to Studio landed every import at the fixed position `x:100, y:100, 512×512` — repeated sends stacked invisibly on top of each other and the user could only see the top layer. (2) The crop tool's "Adaptive Fill (Autonomous)" button always ran the hardcoded prompt "Naturally extend the image to fill any empty space..." — no way to tell it what to change (e.g. remove the cup vs extend the background).
+- **Fix:**
+  1. `openImageInStudio` now positions each new import at a visible cascade offset (+32px from the last existing layer, wrapping back near origin beyond 1400px) — only the selected image is imported per call, and it lands where the user can see and grab it.
+  2. Adaptive Fill now renders a prompt textarea above the button (default = the original extension instruction), and `handleCrop` passes the user's prompt through to `handleGeneration` → `Editing.editImage({ prompt })`.
+- **Acceptance:** ✅ FIXED (2026-08-18) — slice suite 13/13 incl. new cascade regression (3 imports at 100/132/164, latest selected, 3 layers); InfiniteCanvas 9/9 incl. new regression (crop → prompt input present with default → user override "remove the white cup" → `editImage` called with that exact prompt); boardroom suite 43/43; renderer typecheck + lint clean.
