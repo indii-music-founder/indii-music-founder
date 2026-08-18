@@ -663,6 +663,7 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
 
             const internalSignal = timeoutController.signal;
             let costReservationId: string | undefined;
+            let headers: Record<string, string> | undefined;
 
             try {
                 await this.rateLimiter.acquire(300_000, internalSignal);
@@ -686,13 +687,27 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
                         const userId = auth.currentUser?.uid;
                         if (!userId) throw new AppException(AppErrorCode.UNAUTHORIZED, 'User must be authenticated for AI requests.', { retryable: false });
                         {
-                            // Check basic token quotas
-                            await TokenUsageService.checkQuota(userId);
-                            await TokenUsageService.checkRateLimit(userId);
+                            // ISSUE-1361 (Boardroom latency): quota and rate-limit
+                            // checks are independent Firestore reads — run them in
+                            // parallel instead of serially. The cost reservation
+                            // (server round trip) and the backend request headers
+                            // (ID-token + App-Check mints) are also independent of
+                            // each other, so they run concurrently too. This cuts
+                            // the pre-stream critical path from four serial awaits
+                            // to two, which is the dominant Boardroom
+                            // message→first-token delay for every seated agent.
+                            const [_quotaResult, _rateLimitResult] = await Promise.all([
+                                TokenUsageService.checkQuota(userId),
+                                TokenUsageService.checkRateLimit(userId),
+                            ]);
 
-                            costReservationId = await this.reserveAgentStream(userId, modelName, false);
+                            const [reservationId, preparedHeaders] = await Promise.all([
+                                this.reserveAgentStream(userId, modelName, false),
+                                this.prepareBackendRequestHeaders(),
+                            ]);
+                            costReservationId = reservationId;
+                            headers = preparedHeaders;
                         }
-                        const headers = await this.prepareBackendRequestHeaders();
 
                         // 4. Sanitize & Prepare Prompt
                         const sanitizedPrompt = this.sanitizePrompt(prompt);
@@ -863,6 +878,7 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
 
         const internalSignal = timeoutController.signal;
         let costReservationId: string | undefined;
+        let headers: Record<string, string> | undefined;
         const cleanupRequestLifecycle = () => {
             if (timeoutId) {
                 clearTimeout(timeoutId);
@@ -895,13 +911,22 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
                     const userId = auth.currentUser?.uid;
                     if (!userId) throw new AppException(AppErrorCode.UNAUTHORIZED, 'User must be authenticated for AI requests.', { retryable: false });
                     {
-                        // Check basic token quotas
-                        await TokenUsageService.checkQuota(userId);
-                        await TokenUsageService.checkRateLimit(userId);
+                        // ISSUE-1361: same parallel pre-flight as the stream
+                        // path — quota/rate-limit reads and the reservation +
+                        // header mints are independent, so run them
+                        // concurrently to cut the pre-token critical path.
+                        const [_quotaResult, _rateLimitResult] = await Promise.all([
+                            TokenUsageService.checkQuota(userId),
+                            TokenUsageService.checkRateLimit(userId),
+                        ]);
 
-                        costReservationId = await this.reserveAgentStream(userId, modelName, true);
+                        const [reservationId, preparedHeaders] = await Promise.all([
+                            this.reserveAgentStream(userId, modelName, true),
+                            this.prepareBackendRequestHeaders(),
+                        ]);
+                        costReservationId = reservationId;
+                        headers = preparedHeaders;
                     }
-                    const headers = await this.prepareBackendRequestHeaders();
 
                     // 2. Sanitize & Prepare Prompt
                     const sanitizedPrompt = this.sanitizePrompt(prompt);

@@ -22,7 +22,7 @@ graph TD
         InitJob["`generateVideo` (HTTPS Trigger)"]
         AuthGate["Tier Verification Gate"]
         TaskQueue["Cloud Tasks / Inngest Queue"]
-        StatusWebhook["`videoStatusWebhook`"]
+        StatusWebhook["`videoJobFirestoreOrchestrator` (onCreate)"]
     end
 
     %% Model & Storage
@@ -83,5 +83,5 @@ graph TD
 5. **Auth & Queueing:** The backend checks the **Tier Verification Gate** (e.g., verifying if the Free user has exceeded their 8-minute/day limit). If approved, it does *not* wait for Vertex AI to finish. It enqueues the request in **Cloud Tasks** (or Inngest) and immediately writes a `status: PENDING` record to the **Firestore** `jobs` collection. 
 6. **Async Client Polling:** The Cloud Function returns a HTTP 202 Accepted with the `JobID`. The frontend **VideoService** begins silently polling that Firestore document to check its status.
 7. **Execution:** The backend worker sends the payload to **Vertex AI (`veo-3.1-generate-preview`)**. 
-8. **Fulfillment:** When Vertex AI finishes rendering, it saves the mp4 to **Firebase Cloud Storage**. A completion webhook triggers **`videoStatusWebhook`**, which updates the Firestore document status to `DONE` and attaches the final video URL.
+8. **Fulfillment:** When Vertex AI finishes rendering, it saves the mp4 to **Firebase Cloud Storage**. The `videoJobFirestoreOrchestrator` Firestore trigger observes the job document transition and completes it (`status: DONE`, final video URL attached).
 9. **UI Update:** The frontend polling detects the `DONE` state, stops polling, updates the **VideoSlice**, and transitions the user from a loading state to a fully playable video.

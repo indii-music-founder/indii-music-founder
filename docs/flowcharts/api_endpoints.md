@@ -81,53 +81,25 @@ graph LR
 
 ## Complete API Endpoint Map
 
-Below is a detailed inventory of every exposed Firebase Cloud Function, mapped by its primary domain.
+## Complete API Endpoint Map (auto-synced 2026-08-18)
+
+**Client-reachable endpoints: 116** (onCall/onRequest exported from the deploy surface). **Internal triggers: 23** (scheduled/storage/Firestore/Cloud Tasks — not client-callable).
 
 ### Core Platform & Security
-- **Auth & Handoff**: `createHandoffCode`, `redeemHandoffCode`
-- **Security & Admin**: `setGodMode`, `persistFraudAlert`, `logAuditEvent`
-- **Privacy (GDPR)**: `exportUserData`, `requestAccountDeletion`
-- **Relay & Multi-Channel**: `processRelayCommand`, `telegramWebhook`, `generateTelegramLinkCode`, `getTelegramLinkStatus`
-- **REST API Router**: `getTrack`, `createTrack`, `queryAnalytics`, `updateTrack`, `deleteTrack`, `listTracks`, `createDistribution`, `getDistribution`, `submitDistribution`, `getProfile`, `health`
+- `claimStudioCommand`, `completeStudioCommand`, `createHandoffCode`, `createPurgeIntent`, `emailExchangeToken`, `emailRefreshToken`, `emailRevokeToken`, `generateTelegramLinkCode`, `getCapabilitySnapshot`, `getOrganizationAccessMatrix`, `getTelegramLinkStatus`, `issueStudioExecutorLease`, `logAuditEvent`, `manageSemanticMemory`, `mintElectronAppCheckToken`, `persistFraudAlert`, `provisionVerifiedFreeEntitlement`, `publishStudioPresence`, `publishStudioResponse`, `purgeTrashItems`, `queueRightsRegistration`, `recordInstrumentUsage`, `recordPersonaResponseMeasurement`, `redeemHandoffCode`, `registerAiContextCache`, `releaseStudioPresence`, `reportBugFn`, `sendEmail`, `setGodMode`, `telegramWebhook`, `updateOrganizationMemberAccess`
 
 ### Creative & AI Engine
-- **Video Generation**: `triggerVideoJob`, `executeVideoJob`, `triggerLongFormVideoJob`, `renderVideo`, `generateVideoV3`
-- **Image Generation**: `editImage`, `generateImageV3`
-- **Audio & Speech**: `analyzeAudio`, `generateSpeech`, `generateAudioV3`
-- **Omni Generation**: `generateOmniRemixV3`
-- **Generative AI / RAG**: `generateContentStream`, `ragProxy`
-- **Streaming / SSE**: `agentStreamResponse`, `agentStreamHealth`
+- `agentStreamHealth`, `agentStreamResponse`, `alignSessionMaster`, `applyAudioRecipe`, `approveSessionEditPlan`, `cancelVideoJob`, `cancelVideoSession`, `createKnowledgeUpload`, `createSocialHandoffDraft`, `createVideoSession`, `deleteKnowledgeDocument`, `fetchStorageAssetForCanvas`, `finalizeKnowledgeUpload`, `generateAudioV3`, `generateImageV3`, `generateOmniRemixV3`, `generateSessionEditPlan`, `generateVideoV3`, `getMediaDuration`, `getVideoRenderReceipt`, `queryKnowledgeBase`, `retrySessionProxyJob`, `verifyMasterAudio`
 
 ### Business & Finance
-- **Subscriptions & Billing**: `getSubscription`, `createCheckoutSession`, `createOneTimeCheckout`, `generateInvoice`, `cancelSubscription`, `resumeSubscription`, `getCustomerPortal`, `getUsageStats`, `trackUsage`, `stripeWebhook`, `activateFounderPass`, `createMicroTransaction`, `enforceOperationCost`
-- **Stripe Connect & Escrow**: `createStripeAccount`, `createStripeConnectAccount`, `createTransfer`, `initiateSplitEscrow`, `signEscrow`, `requestTaxForms`, `createStripePaymentLinks`
-- **Distribution (DDEX/SFTP)**: `pollDeliveryStatus`, `processDDEXAck`, `assignDistributionIdentifier`, `recordDistributionIdentifier`, `recordDistributionAuditEvent`, `requestDistributionTakedown`, `createSftpIngestionRecord`, `updateSftpIngestionRecord`
-- **Legal & Publishing**: `exportSplitSheet`, `sendForDigitalSignature`, `verifyMechanicalLicense`, `processISWCMappingV2`
-- **PandaDoc Integration**: `pandadocListTemplates`, `pandadocCreateDocument`, `pandadocSendDocument`, `pandadocGetDocumentStatus`, `pandadocGetSigningLink`, `pandadocWebhook`
+- `auditReleaseArtworkForDelivery`, `calculateRoyaltyAllocations`, `createStripeAccount`, `createStripeConnectAccount`, `createStripePaymentLinks`, `createTransfer`, `generateReleaseDownloadUrl`, `ingestEarningsReport`, `initiateSplitEscrow`, `pandadocWebhook`, `processAudioIngestion`, `releaseEscrow`, `requestTaxFormUpload`, `requestTaxForms`, `sendForDigitalSignature`, `setRecoupmentBalance`, `signEscrow`, `submitTaxForm`, `verifyMechanicalLicense`
 
 ### Marketing, Touring & Fans
-- **Social Media**: `deliverScheduledPosts`, `dispatchSocialPost`
-- **Marketing**: `executeCampaign`, `createInfluencerBounty`
-- **Touring Logistics**: `generateItinerary`, `checkLogistics`, `findPlaces`, `calculateFuelLogistics`
-- **Fan Data Enrichment**: `enrichFanData`
-- **Print on Demand (Printful)**: `pod_printfulGetProducts`, `pod_printfulGetProduct`, `pod_printfulCalculatePrice`, `pod_printfulGetShippingRates`, `pod_printfulCreateOrder`, `pod_printfulGetOrder`, `pod_printfulCancelOrder`, `pod_printfulGenerateMockup`
+- `createPreSaveCampaign`, `getInstagramMediaCommentsCallable`, `getPreSaveCampaign`, `listPreSaveCampaigns`, `marketingGetCampaignMetrics`, `presaveRegister`, `refreshSocialToken`, `replyInstagramCommentCallable`, `sendInstagramMessageCallable`, `shopifyWebhook`, `smartLinkRedirect`
 
 ### Infrastructure, Data & Orchestration
-- **Timeline Orchestrator**: `pollTimelineMilestones`, `pulseTick`, `onMilestoneScheduled`, `workflowOrchestrator`
-- **BigQuery Analytics**: `executeBigQueryQuery`, `getBigQueryTableSchema`, `listBigQueryDatasets`
-- **DevOps (GKE/GCE)**: `listGKEClusters`, `getGKEClusterStatus`, `scaleGKENodePool`, `listGCEInstances`, `restartGCEInstance`
-- **Storage Maintenance**: `cleanupOrphanedVideos`, `trackStorageQuotas`, `flagVideosForArchival`
-- **Email & Platform Tokens**: `emailExchangeToken`, `emailRefreshToken`, `emailRevokeToken`, `sendEmail`, `analyticsExchangeToken`, `analyticsRefreshToken`, `analyticsRevokeToken`
-- **Background Workers**: `inngestApi`
-- **App Releases**: `generateReleaseDownloadUrl`
-- **Health Checks**: `healthCheck`, `healthCheckWest1`
-- **Bug Reporting**: `reportBugFn`
-- **MCP Server**: Exports defined via `mcp/index.ts`
+- `analyticsExchangeToken`, `analyticsFinalizeInstagramConnection`, `analyticsGetConnectionStatus`, `analyticsRefreshToken`, `analyticsRevokeToken`, `auditInstagramConnectionCallable`, `enforceOperationCost`, `enrichFanData`, `executeBigQueryQuery`, `generateContentStream`, `generateSpeech`, `getBigQueryTableSchema`, `getGKEClusterStatus`, `getOperationCostHistory`, `getOperationCostStatus`, `healthCheck`, `healthCheckWest1`, `inngestApi`, `listBigQueryDatasets`, `listGCEInstances`, `listGKEClusters`, `mcpEndpoint`, `ragProxy`, `renderVideo`, `requestAccountDeletion`, `restartGCEInstance`, `scaleGKENodePool`, `syncPlatformStats`, `triggerLongFormVideoJob`, `triggerVideoJob`, `voidAgentStreamCostReservation`, `voidVideoCostReservation`
 
-## Transition Breakdown
+### Internal-only triggers (not client-callable)
+- `agentLoopCron`, `batchEventsScheduled`, `cleanupExpiredVideoSessions`, `cleanupExpiredVideoTemps`, `cleanupOrphanedVideos`, `deliverScheduledPosts`, `expireStaleOperationCostReservations`, `finalizeVideoSessionUpload`, `flagVideosForArchival`, `flushConversionEvents`, `indexKnowledgeDocumentWorker`, `onMilestoneScheduled`, `pollDeliveryStatus`, `pollTimelineMilestones`, `processDDEXAck`, `processISWCMapping`, `processRelayCommand`, `pulseTick`, `settleVideoSessionCost`, `streamEventOnCreate`, `trackStorageQuotas`, `videoJobFirestoreOrchestrator`, `workflowOrchestrator`
 
-1. **Client Request**: The frontend initiates a request to the backend using an HTTPS callable function.
-2. **REST API Router**: For REST-specific paths (like `getTrack`, `createTrack`), the HTTP request routes through the Express API router wrapper.
-3. **Domain Execution**: The request is routed to the specific domain bucket (e.g., Creative Engine, Business Engine) where specialized Cloud Functions process the business logic.
-4. **External Services**: If third-party interaction is required, the function triggers outbound requests to external APIs such as Stripe, Vertex AI, DDEX endpoints, or Clearbit.
-5. **Orchestration & Background**: For long-running operations or scheduled items (e.g., video rendering, timeline tasks), the request is queued onto Inngest or triggers BigQuery execution loops to process asynchronously.

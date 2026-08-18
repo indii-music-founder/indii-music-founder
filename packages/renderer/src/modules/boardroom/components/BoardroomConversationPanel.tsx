@@ -2,6 +2,7 @@ import React, { useRef, useEffect, useLayoutEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { logger } from '@/utils/logger';
 import type { AgentMessage } from '@/core/store/slices/agent/agentSessionSlice';
+import { BoardroomAssetStrip } from './BoardroomAssetStrip';
 import {
     Bot,
     BriefcaseBusiness,
@@ -198,6 +199,10 @@ export function BoardroomConversationPanel({ messages }: BoardroomConversationPa
                     {messages.length} message{messages.length !== 1 ? 's' : ''}
                 </span>
             </div>
+
+            {/* ISSUE-1361: in-page asset strip — created assets visible without
+                flipping back to the Studio */}
+            <BoardroomAssetStrip />
 
             {/* Scrollable Message List */}
             <div

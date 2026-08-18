@@ -1006,7 +1006,13 @@ export class AgentService {
                         agentId: agentId
                     });
                 } else {
-                    useStore.getState().updateAgentMessage(resId, { agentId, text: '*(Reviewing request...)*' });
+                    // ISSUE-1361 (Boardroom UX): the first seat (the Conductor)
+                    // previously showed a static placeholder with isStreaming
+                    // never set, so the user saw nothing "working" during the
+                    // whole pre-token wait. Mark it streaming immediately so
+                    // the typing indicator renders from message-send, not from
+                    // first-token.
+                    useStore.getState().updateAgentMessage(resId, { agentId, text: '*(Reviewing request...)*', isStreaming: true });
                 }
 
                 // Sync initial message immediately
