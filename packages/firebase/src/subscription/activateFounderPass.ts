@@ -363,7 +363,11 @@ export const activateFounderPass = onCall({
             error: String(gitErr),
             timedOut: isTimeout,
             createdAt: FieldValue.serverTimestamp(),
-        }).catch(() => { /* best-effort */ });
+        }).catch((err: unknown) => {
+            // ISSUE-1365: a lost retry-queue entry means the founder's commit
+            // silently never happens — must be visible in logs.
+            console.error('[activateFounderPass] Failed to queue GitHub retry entry:', err);
+        });
     }
 
     const message = githubCommitPending

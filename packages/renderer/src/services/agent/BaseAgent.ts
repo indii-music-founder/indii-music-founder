@@ -1462,7 +1462,11 @@ The capability snapshot could not be loaded this session. Do not claim any capab
                                     ...(this.identityCard?.fingerprint
                                         ? { details: `agentFingerprint=${this.identityCard.fingerprint}` }
                                         : {}),
-                                }).catch(() => { /* audit is best-effort */ });
+                                }).catch((err: unknown) => {
+                                    // ISSUE-1365: audit records must not vanish silently —
+                                    // log so missing audits are discoverable.
+                                    logger.warn('[BaseAgent] Audit event write failed (best-effort):', err);
+                                });
                             } catch {
                                 // Audit availability must not replace the authoritative
                                 // tool result or break an artist workflow.

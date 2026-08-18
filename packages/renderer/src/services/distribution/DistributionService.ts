@@ -595,7 +595,11 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
         const releaseId = releaseData.releaseId ?? releaseData.upc ?? taskId;
 
         // Item 414: Snapshot metadata at the point of submission for post-distribution history
-        writeMetadataSnapshot(releaseId, releaseData).catch(() => { /* best-effort */ });
+        // ISSUE-1365: never swallow persistence failures silently — the callable itself
+        // logs errors, but a rejected call here must be visible in logs too.
+        writeMetadataSnapshot(releaseId, releaseData).catch((err: unknown) => {
+            logger.warn('[DistributionService] Metadata snapshot call failed (best-effort):', err);
+        });
 
         // Item: Robust Release Metadata Validation (DDEX Compliance)
         try {
