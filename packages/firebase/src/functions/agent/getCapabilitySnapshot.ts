@@ -50,8 +50,16 @@ function firestoreEvidenceReader(firestore: Firestore): CapabilityEvidenceReader
             await firestore.collection('users').doc(uid).collection('memories').limit(1).get();
         },
         async listRecentMediaJobs(uid): Promise<MediaJobEvidence[]> {
+            // ISSUE-1359: order by createdAt descending so the limit window
+            // always contains the most recent jobs. Without orderBy, Firestore
+            // returns documents in document-ID order, so once a user has more
+            // than 50 jobs, recent completed generations can fall outside the
+            // window and the snapshot reports image/video generation as
+            // unverified — the agent then truthfully reports the pipeline as
+            // "offline" even though generation works.
             const snapshot = await firestore.collection('creative_jobs')
                 .where('userId', '==', uid)
+                .orderBy('createdAt', 'desc')
                 .limit(50)
                 .get();
             return snapshot.docs.map(document => document.data());

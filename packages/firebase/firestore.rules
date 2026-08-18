@@ -1547,6 +1547,29 @@ service cloud.firestore {
       allow update: if isVerifiedUser() && ownerUpdateIsValid('userId');
     }
 
+    // ── Creative Agent Domain Records (canvases / storyboards / concept_art) ──
+    // ISSUE-1359: these top-level collections are read by the Creative
+    // Director's `list_domain_records` tool (DomainTools) with a
+    // `where('userId', '==', uid)` filter. They previously had no rules and
+    // fell through to the deny-all catch-all, so the agent truthfully reported
+    // "no permission to list canvas records". Owner-scoped read for the agent
+    // tool and Studio UI; writes are server-side only (no client mutation of
+    // these domain records).
+    match /canvases/{canvasId} {
+      allow read: if isVerifiedUser() && resource.data.userId == request.auth.uid;
+      allow create, update, delete: if false;
+    }
+
+    match /storyboards/{storyboardId} {
+      allow read: if isVerifiedUser() && resource.data.userId == request.auth.uid;
+      allow create, update, delete: if false;
+    }
+
+    match /concept_art/{conceptId} {
+      allow read: if isVerifiedUser() && resource.data.userId == request.auth.uid;
+      allow create, update, delete: if false;
+    }
+
     // Read-only connectivity probe (HealthPanel) — no client writes expected.
     match /_health_check/{docId} {
       allow read: if isAuthenticated();

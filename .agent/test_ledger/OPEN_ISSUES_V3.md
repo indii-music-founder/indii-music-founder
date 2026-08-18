@@ -1776,3 +1776,20 @@ All seven T1 sub-items built, tested against real (not mocked-away) verification
   2. `packages/main/src/handlers/distribution.ts` — empty track list aggregates to `exclusive_rights: false` (never vacuous `true`), forwards `rights_evidence`, and normalizes the engine report to the renderer's `MerlinReport` shape without string-matching heuristics.
   3. `KeysPanel.tsx` — visible rights-evidence checklist; unconfirmed items are sent as `false` and reported as missing proof, never assumed. `MerlinCheckData.rights_evidence` added to the shared type.
 - **Acceptance:** ✅ FIXED (2026-08-17) — Python suite 5/5 (`execution/distribution/tests/test_keys_manager.py`: missing field → NOT_READY; explicit true without evidence → NOT_READY listing every missing item; full evidence → READY; failed_checks list all 7 proof items; empty catalog never READY). Main-process suite 9/9 (aggregation fail-closed on empty tracks; evidence forwarding; report normalization). Renderer KeysPanel 6/6 (payload carries explicit per-item evidence). Typechecks clean (main, renderer, firebase, firebase-tests); scoped ESLint 0 errors.
+
+---
+
+### ISSUE-1359: Boardroom capability reporting lies about image generation, Creative Director cannot list canvas records, and raw stream errors leak into verdicts
+
+- **Status:** ✅ FIXED (2026-08-18)
+- **Severity:** 🔴 HIGH (agent told the founder "image generation pipeline is offline" while it worked; CD blocked from its own assets; raw engine errors rendered in verdicts)
+- **Module:** `getCapabilitySnapshot` / Firestore rules / `FirebaseIntelligenceService`
+- **Evidence (live production, real founder session):**
+  1. A real `generateImageV3` call succeeded (`provider: vertex`, `outputCount: 1`, job `EtdSxNXSf8EH6cRT3TMd`, completedAt 2026-08-18T00:36:48Z) while the Boardroom agent reported the pipeline "off-line". Root cause: `listRecentMediaJobs` queried `creative_jobs` with `.limit(50)` and **no `orderBy`** — Firestore returns docs in document-ID order, so once a user has >50 jobs, recent completed generations fall outside the window and the snapshot reports `unverified`, which the agent honestly relays as offline/unavailable. Confirmed against live Firestore: the reader's window is ID-ordered and the 08-18 success only landed inside it by ID-sort luck.
+  2. Creative Director answered "I do not have permission to list your canvas records or search your stored assets" to a legitimate asset-reuse request. Root cause: `DomainTools.list_domain_records` reads top-level `canvases`, `storyboards`, `concept_art` — **zero Firestore rules existed** for these collections → deny-all catch-all → `permission-denied`. Same bug class as ISSUE-1126; these three were missed.
+  3. Boardroom verdicts intermittently carried "Technical Failure: ... (BodyStreamBuffer was aborted)". Root cause: `callBackendGenerateContentStream` rejected with undici's raw DOMException when the response body died mid-stream (instance recycle / dropped connection / proxy timeout), and the agent rendered it verbatim.
+- **Fix:**
+  1. `listRecentMediaJobs` now `orderBy('createdAt', 'desc')` before `.limit(50)` so recent successes are always in the evidence window.
+  2. Firestore rules: owner-scoped read (`isVerifiedUser() && resource.data.userId == request.auth.uid`) for `canvases`, `storyboards`, `concept_art`; all client writes denied (server/UI-owned records).
+  3. `normalizeStreamInterruption()` in `FirebaseIntelligenceService` maps mid-body stream aborts to a clean retryable `NETWORK_ERROR` AppException ("The AI response stream was interrupted. Please retry.") with the raw message preserved in `details.originalError` for diagnostics; explicit cancellations/timeouts keep their own codes.
+- **Acceptance:** ✅ FIXED (2026-08-18) — Firestore rules emulator suite 229/229 (new suites: owner-read allowed, cross-user/anonymous denied, all client writes denied for all three collections); `getCapabilitySnapshot` 14/14; intelligence 20/20 incl. new regression proving a mid-body abort surfaces as `NETWORK_ERROR` with `retryable: true` (not the raw undici message); firebase build + renderer typecheck clean; scoped ESLint clean.

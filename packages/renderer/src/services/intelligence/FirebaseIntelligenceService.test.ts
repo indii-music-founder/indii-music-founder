@@ -331,6 +331,33 @@ describe('FirebaseIntelligenceService', () => {
         vi.useRealTimers();
     });
 
+    it('surfaces a mid-body stream abort as a clean retryable NETWORK_ERROR, not undici internals (ISSUE-1359)', async () => {
+        // A Response whose body stream dies mid-read with undici's raw error.
+        const abortingBody = new ReadableStream<Uint8Array>({
+            start(controller) {
+                controller.enqueue(new TextEncoder().encode(`${JSON.stringify({ text: 'Start' })}\n`));
+                controller.error(new DOMException('BodyStreamBuffer was aborted', 'AbortError'));
+            },
+        });
+        vi.mocked(fetch).mockImplementationOnce(async () => new Response(abortingBody, {
+            status: 200,
+            headers: { 'content-type': 'application/x-ndjson' },
+        }));
+
+        const result = await service.rawGenerateContentStream(
+            'Stream me',
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            { timeout: 0 },
+        );
+        await expect(result.response).rejects.toMatchObject({
+            code: 'NETWORK_ERROR',
+            details: expect.objectContaining({ retryable: true }),
+        });
+    });
+
     it('should not fall back if bootstrap fails (Resilience)', async () => {
         const { fetchAndActivate } = await import('firebase/remote-config');
         vi.mocked(fetchAndActivate).mockRejectedValueOnce(new Error('firebase-app-check-token-invalid'));

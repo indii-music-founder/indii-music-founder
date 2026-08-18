@@ -138,6 +138,44 @@ const stripSseDataPrefix = (line: string): string | null => {
     return trimmed;
 };
 
+/**
+ * ISSUE-1359: normalize mid-stream failures so undici engine internals
+ * ("BodyStreamBuffer was aborted") never reach the user. A stream that dies
+ * mid-body — server instance recycle, dropped connection, proxy timeout —
+ * should surface as a clean retryable network error; an explicit caller
+ * cancellation stays a cancellation.
+ */
+const normalizeStreamInterruption = (error: unknown, signal?: AbortSignal): unknown => {
+    if (error instanceof AppException) return error;
+
+    const isDomAbort = typeof DOMException !== 'undefined'
+        && error instanceof DOMException
+        && (error.name === 'AbortError' || error.name === 'NetworkError');
+    const message = error instanceof Error ? error.message : String(error);
+    const isBodyStreamAbort = /aborted|body stream|BodyStreamBuffer|network|fetch failed|terminated/i.test(message);
+
+    if (signal?.aborted) {
+        if (signal.reason === 'TIMEOUT') {
+            return new AppException(AppErrorCode.TIMEOUT, 'AI Request timed out.', { retryable: true });
+        }
+        return new AppException(AppErrorCode.CANCELLED, 'AI Request was cancelled.', { retryable: false });
+    }
+
+    if (isDomAbort || isBodyStreamAbort) {
+        logger.warn('[FirebaseIntelligenceService] Stream interrupted mid-body; surfacing retryable network error.', {
+            err_name: error instanceof Error ? error.name : typeof error,
+            err_msg: message.slice(0, 200),
+        });
+        return new AppException(
+            AppErrorCode.NETWORK_ERROR,
+            'The AI response stream was interrupted. Please retry.',
+            { retryable: true, originalError: message },
+        );
+    }
+
+    return error;
+};
+
 const extractFunctionCalls = (payload: BackendStreamPayload): FunctionCallPart['functionCall'][] => {
     if (Array.isArray(payload.functionCalls)) return payload.functionCalls;
     const parts = payload.candidates?.flatMap(candidate => candidate.content?.parts || []) || [];
@@ -513,8 +551,16 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
                     logger.debug(`[FirebaseIntelligenceService] Final built response:`, JSON.stringify(finalResponse.functionCalls()));
                     resolveWrappedResponse(finalResponse);
                 } catch (error) {
-                    try { controller.error(error); } catch { /* cancellation already closed controller */ }
-                    rejectWrappedResponse(error);
+                    // ISSUE-1359: a stream that dies mid-body (server instance
+                    // recycle, network drop, proxy timeout) surfaces undici's
+                    // raw "BodyStreamBuffer was aborted" DOMException. That raw
+                    // engine text leaked into Boardroom verdicts as a confusing
+                    // "system error" instead of a clean, retryable message.
+                    // Normalize stream-interruption errors here so the agent
+                    // never renders undici internals to the user.
+                    const normalized = normalizeStreamInterruption(error, signal);
+                    try { controller.error(normalized); } catch { /* cancellation already closed controller */ }
+                    rejectWrappedResponse(normalized);
                 }
             },
             async cancel(reason) {

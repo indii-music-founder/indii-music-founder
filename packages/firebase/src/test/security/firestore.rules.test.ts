@@ -2982,6 +2982,68 @@ describe('Firestore Security Rules', () => {
     });
 
     // ──────────────────────────────────────────────────────────────────────
+    // ISSUE-1359: Creative Agent domain records (canvases / storyboards /
+    // concept_art) — read by DomainTools.list_domain_records with a userId
+    // filter. Previously unruled → deny-all → the Creative Director agent
+    // truthfully reported "no permission to list canvas records".
+    // ──────────────────────────────────────────────────────────────────────
+
+    describe('creative agent domain records (canvases / storyboards / concept_art)', () => {
+        const domainCollections = ['canvases', 'storyboards', 'concept_art'];
+
+        beforeEach(async () => {
+            if (requireEmulator()) return;
+            await testEnv.withSecurityRulesDisabled(async (ctx: any) => {
+                for (const collectionName of domainCollections) {
+                    await setDoc(doc(ctx.firestore(), collectionName, 'alice-own-001'), {
+                        userId: ALICE_UID,
+                        title: 'Alice concept',
+                        createdAt: serverTimestamp(),
+                    });
+                }
+            });
+        });
+
+        it('allows only the owner to read their own records', async () => {
+            if (requireEmulator()) return;
+            for (const collectionName of domainCollections) {
+                const aliceDb = verifiedCtx(ALICE_UID).firestore();
+                await assertSucceeds(getDoc(doc(aliceDb, collectionName, 'alice-own-001')));
+            }
+        });
+
+        it('denies cross-user reads', async () => {
+            if (requireEmulator()) return;
+            for (const collectionName of domainCollections) {
+                const bobDb = verifiedCtx(BOB_UID).firestore();
+                await assertFails(getDoc(doc(bobDb, collectionName, 'alice-own-001')));
+            }
+        });
+
+        it('denies anonymous and unverified access', async () => {
+            if (requireEmulator()) return;
+            for (const collectionName of domainCollections) {
+                const anonDb = anonCtx().firestore();
+                await assertFails(getDoc(doc(anonDb, collectionName, 'alice-own-001')));
+            }
+        });
+
+        it('denies every client write, including by the owner (server-owned records)', async () => {
+            if (requireEmulator()) return;
+            for (const collectionName of domainCollections) {
+                const aliceDb = verifiedCtx(ALICE_UID).firestore();
+                const ownerRef = doc(aliceDb, collectionName, 'alice-own-001');
+                await assertFails(setDoc(doc(aliceDb, collectionName, 'new-doc'), {
+                    userId: ALICE_UID,
+                    title: 'New concept',
+                }));
+                await assertFails(updateDoc(ownerRef, { title: 'Tampered' }));
+                await assertFails(deleteDoc(ownerRef));
+            }
+        });
+    });
+
+    // ──────────────────────────────────────────────────────────────────────
     // DENY-ALL: arbitrary collection access denied
     // ──────────────────────────────────────────────────────────────────────
 
