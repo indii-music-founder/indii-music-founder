@@ -644,7 +644,16 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
             let timeoutId: NodeJS.Timeout | number | undefined;
             let externalAbortHandler: (() => void) | undefined;
 
-            const requestTimeout = options?.timeout || 25000;
+            // ISSUE-1367 (founder-live): the old 25s default aborted agent
+            // reasoning streams mid-flight — the timer covers the WHOLE stream
+            // (rate-limiter queue wait + pre-flight + token stream), and the
+            // server contract for generateContentStream is timeoutSeconds: 300.
+            // A 3-seat swarm turn or a slow Vertex model routinely exceeds 25s;
+            // the abort surfaced as "AI Request timed out after 25000ms" and the
+            // agent misattributed it to the image engine (generateImageV3 never
+            // received the request). 120s bounds runaway calls while fitting the
+            // real server capability.
+            const requestTimeout = options?.timeout || 120_000;
             if (requestTimeout > 0) {
                 timeoutId = setTimeout(() => {
                     timeoutController.abort('TIMEOUT');
@@ -859,7 +868,10 @@ export class FirebaseIntelligenceService implements IntelligenceContext {
         let timeoutId: NodeJS.Timeout | number | undefined;
         let externalAbortHandler: (() => void) | undefined;
 
-        const requestTimeout = options?.timeout || 25000;
+        // ISSUE-1367: same 25s→120s raise as the non-stream path — this timer
+        // covers the entire stream (queue + pre-flight + tokens), and the
+        // generateContentStream callable allows 300s server-side.
+        const requestTimeout = options?.timeout || 120_000;
         if (requestTimeout > 0) {
             timeoutId = setTimeout(() => {
                 timeoutController.abort('TIMEOUT');
