@@ -232,13 +232,23 @@ async function deleteStorageOutputs(uris: string[]): Promise<void> {
   }));
 }
 
-async function safeDbSet(
+export async function safeDbSet(
   jobId: string,
   data: Record<string, unknown>,
   collection: string = 'creative_jobs',
 ) {
   try {
-    await getDb().collection(collection).doc(jobId).set(data);
+    // ISSUE-1365/1368: Firestore rejects documents containing `undefined`
+    // values ("Cannot use 'undefined' as a Firestore value"). The image job
+    // record carries optional `sessionId` (absent on agent-driven Boardroom
+    // generations) and the video record has optional staged fields plus an
+    // explicit `cameraPhysics: undefined` — so every such write failed and
+    // was silently discarded before 961cfac28, leaving the Boardroom with no
+    // record of successful generations. Strip undefined values (gateway
+    // records are plain JSON — no FieldValue sentinels) so a missing
+    // optional field can never invalidate the write.
+    const clean = JSON.parse(JSON.stringify(data)) as Record<string, unknown>;
+    await getDb().collection(collection).doc(jobId).set(clean);
   } catch (error) {
     // ISSUE-1365: this catch previously discarded the error entirely, so the
     // gateway logged only collection+jobId and the actual cause (which was
@@ -255,13 +265,16 @@ async function safeDbSet(
   }
 }
 
-async function safeDbUpdate(
+export async function safeDbUpdate(
   jobId: string,
   data: Record<string, unknown>,
   collection: string = 'creative_jobs',
 ) {
   try {
-    await getDb().collection(collection).doc(jobId).update(data);
+    // ISSUE-1365/1368: same undefined-strip as safeDbSet — an update carrying
+    // an undefined field is also an invalid Firestore document.
+    const clean = JSON.parse(JSON.stringify(data)) as Record<string, unknown>;
+    await getDb().collection(collection).doc(jobId).update(clean);
   } catch (error) {
     // ISSUE-1365: same non-swallowing fix as safeDbSet — the underlying
     // Firestore failure must be visible in logs to be diagnosable.

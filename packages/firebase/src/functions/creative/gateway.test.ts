@@ -320,6 +320,41 @@ describe('creative gateway usage accounting (ISSUE-1365)', () => {
   });
 });
 
+describe('creative gateway undefined-safe job writes (ISSUE-1368)', () => {
+  it('safeDbSet strips undefined fields before writing (agent-driven records omit sessionId)', async () => {
+    vi.clearAllMocks();
+    mockSet.mockResolvedValue(undefined);
+    const { safeDbSet } = await import('./gateway');
+    await safeDbSet('job-1', {
+      id: 'job-1',
+      sessionId: undefined,
+      status: 'processing',
+      nested: { cameraPhysics: undefined, mode: 'fast' },
+    }, 'creative_jobs');
+    expect(mockSet).toHaveBeenCalledWith({
+      id: 'job-1',
+      status: 'processing',
+      nested: { mode: 'fast' },
+    });
+    expect(JSON.stringify(mockSet.mock.calls[0][0])).not.toContain('undefined');
+  });
+
+  it('safeDbUpdate strips undefined fields before writing', async () => {
+    vi.clearAllMocks();
+    mockUpdate.mockResolvedValue(undefined);
+    const { safeDbUpdate } = await import('./gateway');
+    await safeDbUpdate('job-1', {
+      status: 'completed',
+      resultUri: undefined,
+      outputCount: 1,
+    }, 'creative_jobs');
+    expect(mockUpdate).toHaveBeenCalledWith({
+      status: 'completed',
+      outputCount: 1,
+    });
+  });
+});
+
 describe('creative gateway generateImageV3', () => {
   beforeEach(() => {
     vi.clearAllMocks();
