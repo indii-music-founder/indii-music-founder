@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import { Image as ImageIcon, FileText, Music, Video, X, ExternalLink, Sparkles } from 'lucide-react';
+import { Image as ImageIcon, FileText, Music, Video, X, ExternalLink, Sparkles, Download } from 'lucide-react';
 import { useStore } from '@/core/store';
 import { useToast } from '@/core/context/ToastContext';
 import type { HistoryItem } from '@/core/types/history';
@@ -64,6 +64,25 @@ export const BoardroomAssetStrip: React.FC = () => {
         setPreviewItem(item);
     }, []);
 
+    // ISSUE-1371: "Export" = save the asset to the computer. Same download
+    // utility the Studio gallery uses; named Export so the intent is
+    // unambiguous (generating vs. downloading).
+    const exportAsset = useCallback(async (item: HistoryItem) => {
+        try {
+            const { downloadAsset } = await import('@/utils/download');
+            const ext = item.type === 'video' ? 'mp4' : item.type === 'music' ? 'mp3' : 'png';
+            const filename = `${item.type}-export-${item.id.slice(0, 8)}.${ext}`;
+            const ok = await downloadAsset(item.url, filename);
+            if (ok) {
+                toast.success(`"${(item.prompt || 'Asset').slice(0, 40)}" exported to your computer.`);
+            } else {
+                toast.error('Export failed — the asset URL could not be downloaded.');
+            }
+        } catch {
+            toast.error('Export failed.');
+        }
+    }, [toast]);
+
     if (assets.length === 0) return null;
 
     return (
@@ -77,10 +96,18 @@ export const BoardroomAssetStrip: React.FC = () => {
             </div>
             <div className="flex gap-2 overflow-x-auto pb-1" data-testid="boardroom-asset-strip">
                 {assets.map(item => (
-                    <button
+                    <div
                         key={item.id}
                         onClick={() => openPreview(item)}
-                        className="group relative shrink-0 w-14 h-14 rounded-lg overflow-hidden border border-white/10 hover:border-indigo-400/50 hover:scale-105 transition-all bg-black/40 flex items-center justify-center"
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault();
+                                openPreview(item);
+                            }
+                        }}
+                        className="group relative shrink-0 w-14 h-14 rounded-lg overflow-hidden border border-white/10 hover:border-indigo-400/50 hover:scale-105 transition-all bg-black/40 flex items-center justify-center cursor-pointer"
                         title={item.prompt || 'Asset'}
                         aria-label={`Preview ${item.prompt || 'asset'}`}
                         data-testid={`boardroom-asset-${item.id}`}
@@ -103,7 +130,21 @@ export const BoardroomAssetStrip: React.FC = () => {
                         <span className="absolute bottom-0 inset-x-0 bg-black/60 text-[8px] text-white/70 px-1 py-0.5 truncate opacity-0 group-hover:opacity-100 transition-opacity">
                             {item.type}
                         </span>
-                    </button>
+                        {/* ISSUE-1371: hover Export (download) — save the asset
+                            to the computer without leaving the Boardroom. */}
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                void exportAsset(item);
+                            }}
+                            className="absolute top-0.5 right-0.5 p-1 rounded bg-black/70 text-white/80 hover:text-white hover:bg-green-600/80 opacity-0 group-hover:opacity-100 transition-opacity"
+                            title="Export to computer"
+                            aria-label={`Export ${item.prompt || 'asset'}`}
+                            data-testid={`boardroom-asset-export-${item.id}`}
+                        >
+                            <Download size={10} />
+                        </button>
+                    </div>
                 ))}
             </div>
 
@@ -168,6 +209,14 @@ export const BoardroomAssetStrip: React.FC = () => {
                             >
                                 <ExternalLink size={12} />
                                 Open in Studio
+                            </button>
+                            <button
+                                onClick={() => void exportAsset(previewItem)}
+                                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/5 hover:bg-green-600/20 text-green-300 hover:text-green-200 border border-white/10 hover:border-green-500/30 transition-all text-xs font-bold uppercase tracking-wider"
+                                data-testid="boardroom-asset-export"
+                            >
+                                <Download size={12} />
+                                Export
                             </button>
                             <button
                                 onClick={() => setPreviewItem(null)}

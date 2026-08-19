@@ -16,6 +16,8 @@ const mockStore = vi.hoisted(() => ({
 
 const mockToast = vi.hoisted(() => ({ success: vi.fn(), error: vi.fn() }));
 
+const mockDownloadAsset = vi.hoisted(() => vi.fn().mockResolvedValue(true));
+
 vi.mock('@/core/store', () => ({
     useStore: (selector: (state: unknown) => unknown) => selector({
         generatedHistory: mockStore.generatedHistory,
@@ -25,6 +27,10 @@ vi.mock('@/core/store', () => ({
 
 vi.mock('@/core/context/ToastContext', () => ({
     useToast: () => mockToast,
+}));
+
+vi.mock('@/utils/download', () => ({
+    downloadAsset: mockDownloadAsset,
 }));
 
 describe('BoardroomAssetStrip (ISSUE-1361 in-page workspace)', () => {
@@ -67,14 +73,15 @@ describe('BoardroomAssetStrip (ISSUE-1361 in-page workspace)', () => {
     it('renders a strip of recent generated assets with the latest first', () => {
         render(<BoardroomAssetStrip />);
         expect(screen.getByTestId('boardroom-asset-strip')).toBeDefined();
+        // 3 preview tiles (role=button) + 3 hover Export buttons.
         const buttons = screen.getAllByRole('button');
-        expect(buttons).toHaveLength(3);
+        expect(buttons).toHaveLength(6);
         expect(buttons[0]).toHaveAttribute('aria-label', expect.stringContaining('Album cover concept'));
     });
 
     it('does not send to Studio on strip click — opens the enlarged preview instead', () => {
         render(<BoardroomAssetStrip />);
-        fireEvent.click(screen.getByRole('button', { name: /Album cover concept/i }));
+        fireEvent.click(screen.getByRole('button', { name: /^Preview Album cover concept/i }));
         // The handoff must NOT happen on strip click (silent action was the bug).
         expect(mockStore.openImageInStudio).not.toHaveBeenCalled();
         expect(screen.getByTestId('boardroom-asset-preview')).toBeDefined();
@@ -82,7 +89,7 @@ describe('BoardroomAssetStrip (ISSUE-1361 in-page workspace)', () => {
 
     it('opens the enlarged preview, then sends to Studio only on explicit action with a toast', async () => {
         render(<BoardroomAssetStrip />);
-        fireEvent.click(screen.getByRole('button', { name: /Album cover concept/i }));
+        fireEvent.click(screen.getByRole('button', { name: /^Preview Album cover concept/i }));
 
         const openInStudio = screen.getByTestId('boardroom-asset-open-in-studio');
         fireEvent.click(openInStudio);
@@ -101,8 +108,41 @@ describe('BoardroomAssetStrip (ISSUE-1361 in-page workspace)', () => {
 
     it('closes the preview without handing off when dismissed', () => {
         render(<BoardroomAssetStrip />);
-        fireEvent.click(screen.getByRole('button', { name: /Album cover concept/i }));
+        fireEvent.click(screen.getByRole('button', { name: /^Preview Album cover concept/i }));
         fireEvent.click(screen.getByTestId('boardroom-asset-preview-close'));
+        expect(screen.queryByTestId('boardroom-asset-preview')).toBeNull();
+        expect(mockStore.openImageInStudio).not.toHaveBeenCalled();
+    });
+
+    it('exports (downloads) an asset from the enlarged preview (ISSUE-1371)', async () => {
+        render(<BoardroomAssetStrip />);
+        fireEvent.click(screen.getByRole('button', { name: /^Preview Album cover concept/i }));
+
+        fireEvent.click(screen.getByTestId('boardroom-asset-export'));
+
+        await waitFor(() => {
+            expect(mockDownloadAsset).toHaveBeenCalledWith(
+                'https://firebasestorage.example.com/img1.png',
+                'image-export-img-1.png'
+            );
+            expect(mockToast.success).toHaveBeenCalledWith(expect.stringContaining('exported'));
+        });
+        // Export is not a handoff — the preview stays open.
+        expect(screen.getByTestId('boardroom-asset-preview')).toBeDefined();
+        expect(mockStore.openImageInStudio).not.toHaveBeenCalled();
+    });
+
+    it('exports directly from the tile hover action without opening the preview (ISSUE-1371)', async () => {
+        render(<BoardroomAssetStrip />);
+
+        fireEvent.click(screen.getByTestId('boardroom-asset-export-img-1'));
+
+        await waitFor(() => {
+            expect(mockDownloadAsset).toHaveBeenCalledWith(
+                'https://firebasestorage.example.com/img1.png',
+                'image-export-img-1.png'
+            );
+        });
         expect(screen.queryByTestId('boardroom-asset-preview')).toBeNull();
         expect(mockStore.openImageInStudio).not.toHaveBeenCalled();
     });

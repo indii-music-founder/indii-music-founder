@@ -450,18 +450,18 @@ const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference
                                     const filename = `${item.type}-export-${item.id.slice(0, 8)}${ext}`;
                                     const success = await downloadAsset(item.url, filename);
                                     if (success) {
-                                        toast.success('Asset downloaded successfully.');
+                                        toast.success('Exported successfully.');
                                     } else {
-                                        toast.error('Failed to download asset.');
+                                        toast.error('Failed to export asset.');
                                     }
                                 } catch {
-                                    toast.error('Download failed.');
+                                    toast.error('Export failed.');
                                 }
                             }}
                             data-testid="download-asset-btn"
                             className="p-1.5 bg-gray-800/50 text-white rounded hover:bg-green-600 transition-colors"
-                            title="Download"
-                            aria-label="Download"
+                            title="Export"
+                            aria-label="Export"
                         >
                             <Download size={14} />
                         </button>
