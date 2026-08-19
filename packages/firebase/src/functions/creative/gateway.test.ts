@@ -595,7 +595,7 @@ describe('creative gateway generateImageV3', () => {
       model: 'gemini-3-pro-image',
       input: [
         { type: 'text', text: 'Dogs having fun' },
-        { inlineData: { mimeType: 'image/png', data: Buffer.from('reference-bytes').toString('base64') } },
+        { type: 'image', mime_type: 'image/png', data: Buffer.from('reference-bytes').toString('base64') },
       ],
     }));
 

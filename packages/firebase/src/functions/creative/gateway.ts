@@ -1224,14 +1224,23 @@ export const generateImageV3 = onCall({ ...creativeGatewayCallableOptions, timeo
     const normalizedThinkingLevel = normalizeThinkingLevel(thinkingLevel);
     const normalizedImageSize = normalizeImageSize(imageSize);
     const referenceImages = await loadReferenceImages(userId, parsed.data);
-    // ISSUE-1382: parts MUST use the @google/genai Part shape. The old
-    // {type:'image', mime_type, data} object has none of the SDK's part keys
-    // (inlineData/text/fileData), so _isPart() rejects it and the serialized
-    // request carries a malformed part — Vertex: 'parts[1].data: required
-    // oneof field "data" must have one initialized field'. Every variation
-    // request failed this way (18:46, founder-live). inlineData is the
-    // canonical inline-media shape (same as createPartFromBase64).
+    // ISSUE-1382: the two Gemini APIs take DIFFERENT input shapes:
+    // - interactions.create uses its own Step schema and REQUIRES the 'type'
+    //   field on every step ('The type parameter is required at input[1]' —
+    //   live 21:41 when inlineData was sent there).
+    // - models.generateContent uses standard Parts, recognized only by
+    //   inlineData/text/fileData keys ('parts[1].data: required oneof field
+    //   "data"' — live 18:46 when the Step shape was sent there).
+    // Build each input for its API.
     const interactionInput = [
+      { type: 'text' as const, text: prompt },
+      ...referenceImages.map(ref => ({
+        type: 'image' as const,
+        mime_type: ref.mimeType,
+        data: ref.data,
+      })),
+    ];
+    const generateContentInput = [
       { type: 'text' as const, text: prompt },
       ...referenceImages.map(ref => ({
         inlineData: {
@@ -1325,7 +1334,7 @@ export const generateImageV3 = onCall({ ...creativeGatewayCallableOptions, timeo
         }> => {
           const response = await imageAi.models.generateContent({
             model: modelId,
-            contents: interactionInput,
+            contents: generateContentInput,
             config: {
               responseModalities: responseFormat === 'image_and_text' ? ['TEXT', 'IMAGE'] : ['IMAGE'],
               imageConfig: {
