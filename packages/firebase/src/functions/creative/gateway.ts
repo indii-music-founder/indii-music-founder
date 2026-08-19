@@ -289,7 +289,10 @@ export async function safeDbUpdate(
 }
 
 async function syncVideoJobUpdate(jobId: string, data: Record<string, unknown>) {
-  await getDb().collection('videoJobs').doc(jobId).update(data);
+  // ISSUE-1380: same undefined-strip as safeDbUpdate — the direct videoJobs
+  // write must never reject on an absent optional field.
+  const clean = JSON.parse(JSON.stringify(data)) as Record<string, unknown>;
+  await getDb().collection('videoJobs').doc(jobId).update(clean);
   await safeDbUpdate(jobId, data, 'creative_jobs');
 }
 

@@ -218,7 +218,13 @@ export async function createClaimedVideoJob(
       claimedJobId: input.jobId,
       claimedAt: FieldValue.serverTimestamp(),
     });
-    transaction.create(jobRef, input.jobRecord as FirebaseFirestore.WithFieldValue<FirebaseFirestore.DocumentData>);
+    // ISSUE-1380: the gateway's jobRecord can carry undefined optional fields
+    // (e.g. negativePrompt when the client omits it). Firestore rejects ANY
+    // undefined value in the document ('Cannot use "undefined" as a Firestore
+    // value (found in field "negativePrompt")' — observed live at 16:53).
+    // Strip them (the record is plain JSON — no FieldValue sentinels).
+    const cleanRecord = JSON.parse(JSON.stringify(input.jobRecord)) as Record<string, unknown>;
+    transaction.create(jobRef, cleanRecord as FirebaseFirestore.WithFieldValue<FirebaseFirestore.DocumentData>);
   });
 }
 

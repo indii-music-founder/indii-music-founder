@@ -149,6 +149,28 @@ describe('video job authority', () => {
     expect(harness.create).toHaveBeenCalledWith(expect.anything(), { id: 'job-1' });
   });
 
+  it('strips undefined fields from the job record before the authoritative write (ISSUE-1380)', async () => {
+    const harness = firestoreHarness({
+      reservation: { userId: 'owner-1', type: 'video', status: 'APPROVED', estimatedCost: 0.8 },
+    });
+    await createClaimedVideoJob(harness.db as never, {
+      ownerUid: 'owner-1',
+      reservationId: 'reservation-1',
+      jobId: 'job-1',
+      expectedCost: 0.8,
+      jobRecord: {
+        id: 'job-1',
+        negativePrompt: undefined,
+        seed: undefined,
+        payload: { cameraPhysics: undefined, prompt: 'x' },
+      },
+    });
+    expect(harness.create).toHaveBeenCalledWith(expect.anything(), {
+      id: 'job-1',
+      payload: { prompt: 'x' },
+    });
+  });
+
   it('rejects reservation replay before creating another paid job', async () => {
     const harness = firestoreHarness({
       reservation: { userId: 'owner-1', type: 'video', status: 'CLAIMED', estimatedCost: 0.8, claimedJobId: 'job-0' },

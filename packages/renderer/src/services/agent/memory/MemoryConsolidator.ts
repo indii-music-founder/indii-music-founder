@@ -333,7 +333,10 @@ export class MemoryConsolidator {
         insight: Omit<ConsolidationInsight, 'id'>
     ): Promise<string> {
         const insightRef = collection(db, 'users', userId, 'consolidationInsights');
-        const docRef = await addDoc(insightRef, {
+        // ISSUE-1380 class: the LLM-parsed insight may carry undefined fields
+        // ('Unsupported field value: undefined' observed live). Strip them so
+        // the write can never be rejected.
+        const cleanInsight = JSON.parse(JSON.stringify({
             ...insight,
             connections: insight.connections.map(c => ({
                 fromMemoryId: c.fromMemoryId,
@@ -342,7 +345,8 @@ export class MemoryConsolidator {
                 confidence: c.confidence,
                 discoveredAt: c.discoveredAt,
             })),
-        });
+        }));
+        const docRef = await addDoc(insightRef, cleanInsight);
         logger.info(`[MemoryConsolidator] 💡 New insight: ${insight.insight.slice(0, 80)}...`);
         return docRef.id;
     }
