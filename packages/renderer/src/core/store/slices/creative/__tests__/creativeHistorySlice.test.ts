@@ -43,13 +43,43 @@ vi.mock('@/utils/logger', () => ({
     }
 }));
 
+// ISSUE-1370: openImageInStudio reads natural dimensions via Image() to
+// preserve the source aspect ratio. jsdom's Image never decodes — stub it
+// with a deterministic mock: default 0×0 (exercises the 512×512 fallback),
+// or a test-set size to verify aspect preservation.
+const imageSizeMock = { width: 0, height: 0 };
 
+class MockImage {
+    naturalWidth = imageSizeMock.width;
+    naturalHeight = imageSizeMock.height;
+    onload: (() => void) | null = null;
+    onerror: (() => void) | null = null;
+    complete = false;
+    private _src = '';
+
+    set src(value: string) {
+        this._src = value;
+        queueMicrotask(() => {
+            this.complete = true;
+            if (this.naturalWidth > 0 && this.onload) this.onload();
+            else if (this.onerror) this.onerror();
+        });
+    }
+
+    get src(): string {
+        return this._src;
+    }
+}
+
+vi.stubGlobal('Image', MockImage);
 
 describe('creativeHistorySlice — openImageInStudio', () => {
     let slice: CreativeHistorySlice;
 
     beforeEach(() => {
         vi.clearAllMocks();
+        imageSizeMock.width = 0;
+        imageSizeMock.height = 0;
         slice = buildCreativeHistoryState(
             (updater) => {
                 const update = typeof updater === 'function' ? updater(slice as unknown as StoreState) : updater;
@@ -59,7 +89,7 @@ describe('creativeHistorySlice — openImageInStudio', () => {
         );
     });
 
-    it('adds a canvas image on openImageInStudio call', () => {
+    it('adds a canvas image on openImageInStudio call', async () => {
         expect(slice.canvasImages.length).toBe(0);
 
         slice.openImageInStudio({
@@ -70,10 +100,10 @@ describe('creativeHistorySlice — openImageInStudio', () => {
             prompt: 'a red car on a beach'
         });
 
-        expect(slice.canvasImages.length).toBe(1);
+        await waitFor(() => expect(slice.canvasImages.length).toBe(1));
     });
 
-    it('creates canvas image with correct properties (base64=sourceUrl, x=100, y=100, w=512, h=512, projectId=chat_import)', () => {
+    it('falls back to a 512x512 box when the source image cannot be decoded (base64=sourceUrl, x=100, y=100, projectId=chat_import)', async () => {
         slice.openImageInStudio({
             imageId: 'test-image-id',
             sourceUrl: 'https://example.com/image.jpg',
@@ -82,17 +112,41 @@ describe('creativeHistorySlice — openImageInStudio', () => {
             prompt: 'a red car on a beach'
         });
 
-        const added = slice.canvasImages[0];
-        expect(added?.base64).toBe('https://example.com/image.jpg');
-        expect(added?.x).toBe(100);
-        expect(added?.y).toBe(100);
-        expect(added?.width).toBe(512);
-        expect(added?.height).toBe(512);
-        expect(added?.projectId).toBe('chat_import');
-        expect(added?.prompt).toBe('a red car on a beach');
+        await waitFor(() => {
+            const added = slice.canvasImages[0];
+            expect(added?.base64).toBe('https://example.com/image.jpg');
+            expect(added?.x).toBe(100);
+            expect(added?.y).toBe(100);
+            expect(added?.width).toBe(512);
+            expect(added?.height).toBe(512);
+            expect(added?.aspect).toBe(1);
+            expect(added?.projectId).toBe('chat_import');
+            expect(added?.prompt).toBe('a red car on a beach');
+        });
     });
 
-    it('selects the newly imported canvas image', () => {
+    it('preserves the source aspect ratio on the work mat instead of forcing square (ISSUE-1370)', async () => {
+        // A 16:9 generation must land 1024x576 on the mat, not 512x512.
+        imageSizeMock.width = 1024;
+        imageSizeMock.height = 576;
+
+        slice.openImageInStudio({
+            imageId: 'wide-image',
+            sourceUrl: 'https://example.com/wide.jpg',
+            sourceMessageId: 'msg-123',
+            agentId: 'generalist',
+            prompt: 'wide'
+        });
+
+        await waitFor(() => {
+            const added = slice.canvasImages[0];
+            expect(added?.width).toBe(1024);
+            expect(added?.height).toBe(576);
+            expect(added?.aspect).toBeCloseTo(16 / 9, 5);
+        });
+    });
+
+    it('selects the newly imported canvas image', async () => {
         expect(slice.selectedCanvasImageId).toBeNull();
 
         slice.openImageInStudio({
@@ -103,10 +157,10 @@ describe('creativeHistorySlice — openImageInStudio', () => {
             prompt: 'a red car on a beach'
         });
 
-        expect(slice.selectedCanvasImageId).toBe(slice.canvasImages[0]?.id);
+        await waitFor(() => expect(slice.selectedCanvasImageId).toBe(slice.canvasImages[0]?.id));
     });
 
-    it('populates chatImportContext with messageId, agentId, and prompt', () => {
+    it('populates chatImportContext with messageId, agentId, and prompt', async () => {
         expect(slice.chatImportContext).toBeNull();
 
         slice.openImageInStudio({
@@ -117,14 +171,14 @@ describe('creativeHistorySlice — openImageInStudio', () => {
             prompt: 'a red car on a beach'
         });
 
-        expect(slice.chatImportContext).toEqual({
+        await waitFor(() => expect(slice.chatImportContext).toEqual({
             messageId: 'msg-123',
             agentId: 'generalist',
             prompt: 'a red car on a beach'
-        });
+        }));
     });
 
-    it('clears chatImportContext with clearChatImportContext action', () => {
+    it('clears chatImportContext with clearChatImportContext action', async () => {
         slice.openImageInStudio({
             imageId: 'test-image-id',
             sourceUrl: 'https://example.com/image.jpg',
@@ -133,14 +187,14 @@ describe('creativeHistorySlice — openImageInStudio', () => {
             prompt: 'a red car on a beach'
         });
 
-        expect(slice.chatImportContext).not.toBeNull();
+        await waitFor(() => expect(slice.chatImportContext).not.toBeNull());
 
         slice.clearChatImportContext();
 
         expect(slice.chatImportContext).toBeNull();
     });
 
-    it('cascades repeated imports instead of stacking invisibly (ISSUE-1362)', () => {
+    it('cascades repeated imports instead of stacking invisibly (ISSUE-1362)', async () => {
         slice.openImageInStudio({
             imageId: 'img-1',
             sourceUrl: 'https://example.com/1.jpg',
@@ -163,18 +217,20 @@ describe('creativeHistorySlice — openImageInStudio', () => {
             prompt: 'third'
         });
 
-        const [first, second, third] = slice.canvasImages;
-        // Only the selected image is imported per call — three calls, three
-        // layers, each visibly offset from the previous (never stacked).
-        expect(slice.canvasImages).toHaveLength(3);
-        expect(first?.x).toBe(100);
-        expect(first?.y).toBe(100);
-        expect(second?.x).toBe(132);
-        expect(second?.y).toBe(132);
-        expect(third?.x).toBe(164);
-        expect(third?.y).toBe(164);
-        // The latest import is selected.
-        expect(slice.selectedCanvasImageId).toBe(third?.id);
+        await waitFor(() => {
+            const [first, second, third] = slice.canvasImages;
+            // Only the selected image is imported per call — three calls, three
+            // layers, each visibly offset from the previous (never stacked).
+            expect(slice.canvasImages).toHaveLength(3);
+            expect(first?.x).toBe(100);
+            expect(first?.y).toBe(100);
+            expect(second?.x).toBe(132);
+            expect(second?.y).toBe(132);
+            expect(third?.x).toBe(164);
+            expect(third?.y).toBe(164);
+            // The latest import is selected.
+            expect(slice.selectedCanvasImageId).toBe(third?.id);
+        });
     });
 
     it('exits boardroom mode when routing to the Studio (ISSUE-1364)', async () => {
@@ -186,15 +242,15 @@ describe('creativeHistorySlice — openImageInStudio', () => {
             prompt: 'cover'
         });
 
-        // The route-switch is async (dynamic import). Flush it.
-        await new Promise(r => setTimeout(r, 10));
+        // The route-switch is async (dimension read + dynamic import). Flush it.
+        await new Promise(r => setTimeout(r, 20));
 
         expect(storeStateMock.setConversationMode).toHaveBeenCalledWith('direct');
         expect(storeStateMock.setViewMode).toHaveBeenCalledWith('canvas');
         expect(storeStateMock.setModule).toHaveBeenCalledWith('creative');
     });
 
-    it('generates unique layer IDs with imageId and timestamp', () => {
+    it('generates unique layer IDs with imageId and timestamp', async () => {
         slice.openImageInStudio({
             imageId: 'image-1',
             sourceUrl: 'https://example.com/image1.jpg',
@@ -203,9 +259,9 @@ describe('creativeHistorySlice — openImageInStudio', () => {
             prompt: 'prompt 1'
         });
 
+        await waitFor(() => expect(slice.canvasImages.length).toBe(1));
         const id1 = slice.canvasImages[0]?.id;
 
-        // Simulate delay
         slice.openImageInStudio({
             imageId: 'image-2',
             sourceUrl: 'https://example.com/image2.jpg',
@@ -214,6 +270,7 @@ describe('creativeHistorySlice — openImageInStudio', () => {
             prompt: 'prompt 2'
         });
 
+        await waitFor(() => expect(slice.canvasImages.length).toBe(2));
         const id2 = slice.canvasImages[1]?.id;
 
         expect(id1).not.toBe(id2);
@@ -221,7 +278,7 @@ describe('creativeHistorySlice — openImageInStudio', () => {
         expect(id2).toMatch(/^layer_image-2_\d+$/);
     });
 
-    it('preserves existing canvas images on second import', () => {
+    it('preserves existing canvas images on second import', async () => {
         slice.openImageInStudio({
             imageId: 'image-1',
             sourceUrl: 'https://example.com/image1.jpg',
@@ -230,6 +287,7 @@ describe('creativeHistorySlice — openImageInStudio', () => {
             prompt: 'prompt 1'
         });
 
+        await waitFor(() => expect(slice.canvasImages.length).toBe(1));
         const firstImage = { ...slice.canvasImages[0] };
 
         slice.openImageInStudio({
@@ -240,9 +298,11 @@ describe('creativeHistorySlice — openImageInStudio', () => {
             prompt: 'prompt 2'
         });
 
-        expect(slice.canvasImages.length).toBe(2);
-        expect(slice.canvasImages[0]).toEqual(firstImage);
-        expect(slice.canvasImages[1]?.id).toMatch(/^layer_image-2_\d+$/);
+        await waitFor(() => {
+            expect(slice.canvasImages.length).toBe(2);
+            expect(slice.canvasImages[0]).toEqual(firstImage);
+            expect(slice.canvasImages[1]?.id).toMatch(/^layer_image-2_\d+$/);
+        });
     });
 
     it('clears selection and failed variation state when their source layer is removed', () => {

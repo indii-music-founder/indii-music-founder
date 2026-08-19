@@ -135,6 +135,36 @@ export interface CreativeHistorySlice {
     removeUploadedAudioFromProject: (id: string) => void;
 }
 
+/**
+ * ISSUE-1370: read the natural pixel dimensions of a source image (https URL
+ * or data URI) so work-mat imports preserve the real aspect ratio instead of
+ * being forced square. Returns 0×0 when the image cannot be decoded — the
+ * caller falls back to the legacy 512×512 box. Never guesses dimensions.
+ */
+async function readNaturalDimensions(url: string): Promise<{ width: number; height: number }> {
+    if (typeof Image === 'undefined') return { width: 0, height: 0 };
+    return new Promise((resolve) => {
+        const img = new Image();
+        let settled = false;
+        const finish = () => {
+            if (settled) return;
+            settled = true;
+            clearTimeout(timer);
+            const w = img.naturalWidth;
+            const h = img.naturalHeight;
+            resolve({ width: w > 0 ? w : 0, height: h > 0 ? h : 0 });
+        };
+        // A hung source must never block the import indefinitely.
+        const timer = setTimeout(() => {
+            try { img.src = ''; } catch { /* noop */ }
+            finish();
+        }, 4000);
+        img.onload = finish;
+        img.onerror = finish;
+        img.src = url;
+    });
+}
+
 export function buildCreativeHistoryState(
     set: Parameters<StateCreator<StoreState, [], [], CreativeHistorySlice>>[0],
     _get: Parameters<StateCreator<StoreState, [], [], CreativeHistorySlice>>[1]
@@ -327,66 +357,79 @@ export function buildCreativeHistoryState(
         chatImportContext: null,
         clearChatImportContext: () => set({ chatImportContext: null }),
         openImageInStudio: ({ imageId, sourceUrl, sourceMessageId, agentId, prompt }) => {
-            // Stage the image as a new canvas layer. ISSUE-1362: every import
-            // previously landed at the fixed (100,100), so repeated sends
-            // stacked invisibly on top of each other — the user could only see
-            // the top layer. Position each new import visibly offset from the
-            // last existing layer so only the selected image moves in, and it
-            // lands where the user can actually see and grab it.
-            const existing = _get().canvasImages || [];
-            const baseX = 100;
-            const baseY = 100;
-            const CASCADE_STEP = 32;
-            let x = baseX;
-            let y = baseY;
-            if (existing.length > 0) {
-                const last = existing[existing.length - 1];
-                const lastX = typeof last?.x === 'number' ? last.x : baseX;
-                const lastY = typeof last?.y === 'number' ? last.y : baseY;
-                x = lastX + CASCADE_STEP;
-                y = lastY + CASCADE_STEP;
-            }
-            // Keep imports on-canvas: if the cascade walks off the visible
-            // area, wrap back to a clean offset near the origin.
-            if (x > 1400 || y > 1400) {
-                x = baseX + CASCADE_STEP;
-                y = baseY + CASCADE_STEP;
-            }
-            const newCanvasImage: CanvasImage = {
-                id: `layer_${imageId}_${Date.now()}`,
-                base64: sourceUrl, // URL or data URI
-                x,
-                y,
-                width: 512,
-                height: 512,
-                aspect: 1,
-                projectId: 'chat_import', // Temporary or default
-                prompt: prompt
-            };
-            
-            set((state) => ({
-                canvasImages: [...state.canvasImages, newCanvasImage],
-                selectedCanvasImageId: newCanvasImage.id,
-                chatImportContext: {
-                    messageId: sourceMessageId,
-                    agentId,
-                    prompt
+            // ISSUE-1370: the import used to hardcode width/height/aspect
+            // (512×512, 1:1), so a non-square generation (e.g. 16:9) was
+            // squished into a square on the work mat. Read the source image's
+            // natural pixel dimensions and preserve its real aspect ratio;
+            // fall back to the legacy 512×512 only when the image cannot be
+            // decoded (never guess dimensions).
+            void readNaturalDimensions(sourceUrl).then(({ width, height }) => {
+                const naturalWidth = width > 0 ? width : 512;
+                const naturalHeight = height > 0 ? height : 512;
+                const aspect = naturalWidth / naturalHeight;
+
+                // Stage the image as a new canvas layer. ISSUE-1362: every
+                // import previously landed at the fixed (100,100), so repeated
+                // sends stacked invisibly on top of each other — the user could
+                // only see the top layer. Position each new import visibly
+                // offset from the last existing layer so only the selected
+                // image moves in, and it lands where the user can actually see
+                // and grab it.
+                const existing = _get().canvasImages || [];
+                const baseX = 100;
+                const baseY = 100;
+                const CASCADE_STEP = 32;
+                let x = baseX;
+                let y = baseY;
+                if (existing.length > 0) {
+                    const last = existing[existing.length - 1];
+                    const lastX = typeof last?.x === 'number' ? last.x : baseX;
+                    const lastY = typeof last?.y === 'number' ? last.y : baseY;
+                    x = lastX + CASCADE_STEP;
+                    y = lastY + CASCADE_STEP;
                 }
-            }));
-            
-            // Route-switch to creative module using dynamic import of store.
-            // ISSUE-1364: the Boardroom is a fullscreen overlay that only
-            // unmounts when conversationMode leaves 'boardroom' — switching
-            // the module underneath left the overlay covering the Studio, so
-            // "Open in Studio" appeared to return to the Boardroom. Exit
-            // boardroom mode explicitly so the Studio is actually visible.
-            import('@/core/store').then(({ useStore }) => {
-                const store = useStore.getState();
-                if (store.conversationMode === 'boardroom') {
-                    store.setConversationMode?.('direct');
+                // Keep imports on-canvas: if the cascade walks off the visible
+                // area, wrap back to a clean offset near the origin.
+                if (x > 1400 || y > 1400) {
+                    x = baseX + CASCADE_STEP;
+                    y = baseY + CASCADE_STEP;
                 }
-                store.setViewMode('canvas');
-                store.setModule('creative');
+                const newCanvasImage: CanvasImage = {
+                    id: `layer_${imageId}_${Date.now()}`,
+                    base64: sourceUrl, // URL or data URI
+                    x,
+                    y,
+                    width: naturalWidth,
+                    height: naturalHeight,
+                    aspect,
+                    projectId: 'chat_import', // Temporary or default
+                    prompt: prompt
+                };
+
+                set((state) => ({
+                    canvasImages: [...state.canvasImages, newCanvasImage],
+                    selectedCanvasImageId: newCanvasImage.id,
+                    chatImportContext: {
+                        messageId: sourceMessageId,
+                        agentId,
+                        prompt
+                    }
+                }));
+
+                // Route-switch to creative module using dynamic import of store.
+                // ISSUE-1364: the Boardroom is a fullscreen overlay that only
+                // unmounts when conversationMode leaves 'boardroom' — switching
+                // the module underneath left the overlay covering the Studio, so
+                // "Open in Studio" appeared to return to the Boardroom. Exit
+                // boardroom mode explicitly so the Studio is actually visible.
+                import('@/core/store').then(({ useStore }) => {
+                    const store = useStore.getState();
+                    if (store.conversationMode === 'boardroom') {
+                        store.setConversationMode?.('direct');
+                    }
+                    store.setViewMode('canvas');
+                    store.setModule('creative');
+                });
             });
         },
 
