@@ -287,7 +287,7 @@ export class GeminiImageService {
 
             // Thought signature for reasoning continuity (Pro models)
             if (data.thoughtSignature) {
-                userParts.push({ thought_signature: data.thoughtSignature });
+                userParts.push({ thoughtSignature: data.thoughtSignature });
             }
 
             contents.push({ role: "user", parts: userParts });
@@ -315,7 +315,7 @@ export class GeminiImageService {
 
         // Thought signature for reasoning continuity (Pro models)
         if (data.thoughtSignature) {
-            parts.push({ thought_signature: data.thoughtSignature });
+            parts.push({ thoughtSignature: data.thoughtSignature });
         }
 
         return [{ role: "user", parts }];
@@ -688,7 +688,7 @@ export class GeminiImageService {
 
                 // Thought signature (circulate back exactly for continuity)
                 if (data.thoughtSignature) {
-                    newParts.push({ thought_signature: data.thoughtSignature });
+                    newParts.push({ thoughtSignature: data.thoughtSignature });
                 }
 
                 contents.push({ role: "user", parts: newParts });
@@ -750,7 +750,7 @@ export class GeminiImageService {
 
                 // Thought signature
                 if (data.thoughtSignature) {
-                    parts.push({ thought_signature: data.thoughtSignature });
+                    parts.push({ thoughtSignature: data.thoughtSignature });
                 }
 
                 contents = [{ role: "user", parts }];

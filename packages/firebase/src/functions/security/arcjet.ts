@@ -227,8 +227,10 @@ export async function protectAuthenticatedApiRequest(
     // previously blocked a legitimate paid operation (e.g. the cost-control
     // gate during annotation refine) with a fail-closed SECURITY_UNAVAILABLE.
     // The decision stays fail-closed — a retry that also fails still blocks —
-    // but one bounded retry absorbs a blip in the external decision service.
-    const attempts = 2;
+    // but bounded retries with short backoff absorb external decision-service
+    // blips (observed outage windows of 10-25s on 2026-08-19 14:25 and 21:48:
+    // repeated '[Arcjet] Decision failed' while the service recovered).
+    const attempts = 3;
     for (let attempt = 0; attempt < attempts; attempt++) {
         try {
             const decision = await client.protect(req, {
@@ -253,12 +255,13 @@ export async function protectAuthenticatedApiRequest(
                 err_stack: error instanceof Error ? error.stack?.split("\n").slice(0, 4).join(" | ") : undefined,
             });
             if (attempt < attempts - 1) {
-                // Transient timeout/connectivity blip: retry once. Non-transient
-                // errors (bad key, malformed request) fail immediately without
-                // burning the retry.
+                // Transient timeout/connectivity blip: retry with backoff.
+                // Non-transient errors (bad key, malformed request) fail
+                // immediately without burning the retries.
                 const lower = error instanceof Error ? error.message.toLowerCase() : String(error).toLowerCase();
                 const transient = lower.includes("deadline") || lower.includes("timeout") || lower.includes("econnreset") || lower.includes("fetch failed") || lower.includes("socket");
                 if (!transient) return securityUnavailableResult(context.policy, context.operationId, "fail-closed", "decision_error");
+                await new Promise(resolve => setTimeout(resolve, 250 * (attempt + 1)));
                 continue;
             }
             return securityUnavailableResult(context.policy, context.operationId, "fail-closed", "decision_error");
