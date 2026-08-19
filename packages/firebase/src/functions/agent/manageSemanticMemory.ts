@@ -224,3 +224,48 @@ export const manageSemanticMemory = onCall({
         throw new HttpsError('internal', `Memory operation failed: ${message}`);
     }
 });
+
+/**
+ * ISSUE-1377: server-side batch embedding for the client memory pipeline.
+ * The browser-side Firebase AI embeddings are disabled by design (fail-closed
+ * in EmbeddingGenerator), so agent memory ingestion/search ran with empty
+ * vectors — semantic recall silently returned nothing. This endpoint proxies
+ * text-embedding-004 so the client's memory records keep their richer shape
+ * while vectors are computed where they can be.
+ */
+export const batchEmbedText = onCall({
+    timeoutSeconds: 60,
+    memory: '512MiB',
+    enforceAppCheck: false,
+}, async (request) => {
+    validateAppCheckV2(request);
+    if (!request.auth) {
+        throw new HttpsError('unauthenticated', 'User must be authenticated.');
+    }
+
+    const data = request.data as unknown;
+    if (!data || typeof data !== 'object' || Array.isArray(data)) {
+        throw new HttpsError('invalid-argument', 'Request data must be an object.');
+    }
+
+    const { texts } = data as { texts?: unknown };
+    if (!Array.isArray(texts) || texts.length === 0 || texts.length > 20) {
+        throw new HttpsError('invalid-argument', 'texts must be an array of 1-20 strings.');
+    }
+
+    try {
+        const genai = getVertexAIClient();
+        const embeddings: number[][] = [];
+        for (const text of texts) {
+            const normalized = normalizeSemanticText(text, 'memory');
+            embeddings.push(await generateSemanticEmbedding(genai, normalized, 'memory'));
+        }
+        return { embeddings };
+    } catch (error: unknown) {
+        if (error instanceof HttpsError) {
+            throw error;
+        }
+        const message = error instanceof Error ? error.message : String(error);
+        throw new HttpsError('internal', `Batch embedding failed: ${message}`);
+    }
+});

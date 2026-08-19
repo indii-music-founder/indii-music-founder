@@ -3,6 +3,7 @@ import { INTELLIGENCE_MODELS, APPROVED_MODELS } from '@/core/config/intelligence
 import { cleanPrompt } from '@/utils/prompt';
 import { RequestBatcher } from '@/utils/RequestBatcher';
 import { logger } from '@/utils/logger';
+import { backendEmbedTexts } from './backendEmbeddings';
 import type { Content, GenerationConfig } from '@/shared/types/ai.dto';
 import { MemorySummarizer } from './MemorySummarizer';
 import { memoryBankService } from './MemoryBankService';
@@ -74,11 +75,9 @@ export class MemoryIngestionPipeline {
         this.embeddingBatcher = new RequestBatcher<string, number[]>(
             async (texts: string[]) => {
                 try {
-                    const results = await AIService.getInstance().batchEmbedContents(
-                        texts,
-                        APPROVED_MODELS.EMBEDDING_DEFAULT
-                    );
-                    return results;
+                    // ISSUE-1377: browser-side embeddings are disabled by
+                    // design — vectors come from the backend callable.
+                    return await backendEmbedTexts(texts);
                 } catch (error: unknown) {
                     logger.error('[MemoryIngestionPipeline] Batch embedding failed:', error);
                     return texts.map(() => []);

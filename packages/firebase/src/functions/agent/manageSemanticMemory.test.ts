@@ -60,7 +60,7 @@ vi.mock('../../lib/vertexClient', () => ({
   })),
 }));
 
-import { manageSemanticMemory } from './manageSemanticMemory';
+import { manageSemanticMemory, batchEmbedText } from './manageSemanticMemory';
 
 const callManageSemanticMemory = manageSemanticMemory as unknown as (request: {
   auth?: { uid: string };
@@ -413,4 +413,55 @@ describe('manageSemanticMemory', () => {
       })
     );
 });
+});
+
+describe('batchEmbedText (ISSUE-1377)', () => {
+  let callBatchEmbedText: (request: { auth?: { uid: string }; data: Record<string, unknown> }) => Promise<unknown>;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockFieldValue.vector = mockVector;
+    callBatchEmbedText = batchEmbedText as unknown as (request: { auth?: { uid: string }; data: Record<string, unknown> }) => Promise<unknown>;
+  });
+
+  it('requires an authenticated caller', async () => {
+    await expect(callBatchEmbedText({ data: { texts: ['hello'] } })).rejects.toMatchObject({
+      code: 'unauthenticated',
+    });
+  });
+
+  it('rejects invalid text arrays', async () => {
+    await expect(callBatchEmbedText({ auth: { uid: 'user-1' }, data: { texts: [] } })).rejects.toMatchObject({
+      code: 'invalid-argument',
+    });
+    await expect(callBatchEmbedText({ auth: { uid: 'user-1' }, data: { texts: Array.from({ length: 21 }, () => 'x') } })).rejects.toMatchObject({
+      code: 'invalid-argument',
+    });
+    await expect(callBatchEmbedText({ auth: { uid: 'user-1' }, data: { texts: 'not-an-array' } })).rejects.toMatchObject({
+      code: 'invalid-argument',
+    });
+  });
+
+  it('returns one embedding vector per text from the backend model', async () => {
+    mockEmbedContent
+      .mockResolvedValueOnce({ embeddings: [{ values: [0.1, 0.2, 0.3] }] })
+      .mockResolvedValueOnce({ embeddings: [{ values: [0.4, 0.5, 0.6] }] });
+
+    const result = await callBatchEmbedText({
+      auth: { uid: 'user-1' },
+      data: { texts: ['first memory', 'second memory'] },
+    });
+
+    expect(result).toEqual({
+      embeddings: [
+        [0.1, 0.2, 0.3],
+        [0.4, 0.5, 0.6],
+      ],
+    });
+    expect(mockEmbedContent).toHaveBeenCalledTimes(2);
+    expect(mockEmbedContent).toHaveBeenCalledWith({
+      model: 'text-embedding-004',
+      contents: 'first memory',
+    });
+  });
 });

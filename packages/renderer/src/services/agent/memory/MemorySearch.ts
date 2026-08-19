@@ -8,10 +8,9 @@ import {
     orderBy,
     limit as firestoreLimit,
 } from 'firebase/firestore';
-import { FirebaseIntelligenceService as AIService } from '../../intelligence/FirebaseIntelligenceService';
-import { APPROVED_MODELS } from '@/core/config/intelligence-models';
 import { RequestBatcher } from '@/utils/RequestBatcher';
 import { logger } from '@/utils/logger';
+import { backendEmbedTexts } from './backendEmbeddings';
 import type {
     AlwaysOnMemory,
     AlwaysOnMemoryCategory,
@@ -98,11 +97,9 @@ export class MemorySearch {
     private static embeddingBatcher = new RequestBatcher<string, number[]>(
         async (texts: string[]) => {
             try {
-                const results = await AIService.getInstance().batchEmbedContents(
-                    texts,
-                    APPROVED_MODELS.EMBEDDING_DEFAULT
-                );
-                return results;
+                // ISSUE-1377: browser-side embeddings are disabled by design —
+                // vectors come from the backend callable.
+                return await backendEmbedTexts(texts);
             } catch (error: unknown) {
                 logger.error('[MemorySearch] Batch embedding failed:', error);
                 return texts.map(() => []);
