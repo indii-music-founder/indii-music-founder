@@ -4,6 +4,7 @@ import { writeFile } from 'node:fs/promises';
 const mockInteractionsCreate = vi.fn();
 const mockInteractionsGet = vi.fn();
 const mockGenerateVideos = vi.fn();
+const mockGenerateContent = vi.fn();
 const mockGetVideosOperation = vi.fn();
 const mockDownload = vi.fn();
 const mockFilesUpload = vi.fn();
@@ -44,6 +45,7 @@ vi.mock('@google/genai', () => ({
       },
       models: {
         generateVideos: mockGenerateVideos,
+        generateContent: mockGenerateContent,
       },
       operations: {
         getVideosOperation: mockGetVideosOperation,
@@ -621,6 +623,65 @@ describe('creative gateway generateImageV3', () => {
       },
     })).rejects.toMatchObject({
       code: 'invalid-argument',
+    });
+  });
+
+  it('retries ONCE when Vertex returns an empty response, then succeeds (ISSUE-1378)', async () => {
+    // Force the generateContent fallback path.
+    mockInteractionsCreate.mockRejectedValue(new Error('Unsupported model interaction'));
+    // First response: empty parts (the live 12:56:40 'No parts in response.' class).
+    mockGenerateContent.mockResolvedValueOnce({
+      candidates: [{ content: { parts: [] } }],
+    });
+    // Second response: valid image data.
+    mockGenerateContent.mockResolvedValueOnce({
+      candidates: [{
+        content: {
+          parts: [{ inlineData: { data: Buffer.from('retried-image-bytes').toString('base64'), mimeType: 'image/png' } }],
+        },
+      }],
+    });
+
+    const result = await callGenerateImage({
+      auth: { uid: 'user-123' },
+      data: {
+        prompt: 'Dogs having fun',
+        aspectRatio: '16:9',
+        model: 'fast',
+        costReservationId: 'image-op-retry-once',
+      },
+    });
+
+    expect(mockGenerateContent).toHaveBeenCalledTimes(2);
+    expect(result).toEqual(expect.objectContaining({
+      jobId: 'job-123',
+      resultUri: expect.stringContaining('gs://test-bucket/creative/user-123/'),
+    }));
+    expect(mockFinalizeReservation).toHaveBeenCalledWith({
+      userId: 'user-123',
+      operationId: 'image-op-retry-once',
+      outcome: 'SETTLED',
+    });
+  });
+
+  it('fails fast (no retry) on non-empty-response errors (ISSUE-1378)', async () => {
+    mockInteractionsCreate.mockRejectedValue(new Error('Unsupported model interaction'));
+    mockGenerateContent.mockRejectedValue(new Error('Vertex is down entirely'));
+
+    await expect(callGenerateImage({
+      auth: { uid: 'user-123' },
+      data: {
+        prompt: 'Dogs having fun',
+        aspectRatio: '16:9',
+        model: 'fast',
+        costReservationId: 'image-op-no-retry',
+      },
+    })).rejects.toMatchObject({ code: 'internal' });
+    expect(mockGenerateContent).toHaveBeenCalledTimes(1);
+    expect(mockFinalizeReservation).toHaveBeenCalledWith({
+      userId: 'user-123',
+      operationId: 'image-op-no-retry',
+      outcome: 'VOIDED',
     });
   });
 

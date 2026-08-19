@@ -1294,46 +1294,80 @@ export const generateImageV3 = onCall({ ...creativeGatewayCallableOptions, timeo
             : {}),
           ...(includeThoughts ? { includeThoughts: true } : {}),
         };
-        const response = await imageAi.models.generateContent({
-          model: modelId,
-          contents: interactionInput,
-          config: {
-            responseModalities: responseFormat === 'image_and_text' ? ['TEXT', 'IMAGE'] : ['IMAGE'],
-            imageConfig: {
-              aspectRatio: aspectRatio,
-              ...(normalizedImageSize ? { imageSize: normalizedImageSize } : {}),
-            },
-            ...(Object.keys(thinkingConfig).length > 0 ? { thinkingConfig } : {}),
-            ...(googleSearchTool ? { tools: googleSearchTool } : {}),
-          }
-        });
 
-        const candidates = (response as GeminiContentResponse).candidates;
-        if (!candidates || candidates.length === 0) {
-          throw new Error('No candidates returned from Gemini API.');
-        }
-        const parts = candidates[0].content?.parts;
-        if (!parts || parts.length === 0) {
-          throw new Error('No parts in response.');
-        }
-        const part = parts.find(candidatePart => candidatePart.inlineData?.data && !candidatePart.thought);
-        if (!part?.inlineData?.data) {
-          throw new Error('No image data found in response.');
-        }
-        image = {
-          data: part.inlineData.data,
-          mimeType: part.inlineData.mimeType || 'image/png'
+        // ISSUE-1378: Vertex occasionally returns an EMPTY response
+        // (no candidates / no parts / no inline data) on an otherwise fine
+        // request — observed live at 12:56:40 (job Gl9F0xlep4X5oeRzbWEV,
+        // 'No parts in response.'). Retry ONCE on exactly this transient
+        // class before surfacing an error; anything else propagates
+        // unchanged. The extraction below appends nothing before the empty
+        // checks throw, so a retry cannot double-append narration.
+        const runGenerateContent = async (): Promise<{
+          image: { data: string; mimeType: string };
+          textNarration: string;
+          thoughtSummary: string;
+        }> => {
+          const response = await imageAi.models.generateContent({
+            model: modelId,
+            contents: interactionInput,
+            config: {
+              responseModalities: responseFormat === 'image_and_text' ? ['TEXT', 'IMAGE'] : ['IMAGE'],
+              imageConfig: {
+                aspectRatio: aspectRatio,
+                ...(normalizedImageSize ? { imageSize: normalizedImageSize } : {}),
+              },
+              ...(Object.keys(thinkingConfig).length > 0 ? { thinkingConfig } : {}),
+              ...(googleSearchTool ? { tools: googleSearchTool } : {}),
+            }
+          });
+
+          const candidates = (response as GeminiContentResponse).candidates;
+          if (!candidates || candidates.length === 0) {
+            throw new Error('No candidates returned from Gemini API.');
+          }
+          const parts = candidates[0].content?.parts;
+          if (!parts || parts.length === 0) {
+            throw new Error('No parts in response.');
+          }
+          const part = parts.find(candidatePart => candidatePart.inlineData?.data && !candidatePart.thought);
+          if (!part?.inlineData?.data) {
+            throw new Error('No image data found in response.');
+          }
+          const textNarration = parts
+            .filter(candidatePart => candidatePart.text && !candidatePart.thought)
+            .map(candidatePart => candidatePart.text)
+            .join('\n\n');
+          const thoughtSummary = parts
+            .filter(candidatePart => candidatePart.text && candidatePart.thought)
+            .map(candidatePart => candidatePart.text)
+            .join('\n\n');
+          return {
+            image: { data: part.inlineData.data, mimeType: part.inlineData.mimeType || 'image/png' },
+            textNarration,
+            thoughtSummary,
+          };
         };
-        const textNarration = parts
-          .filter(candidatePart => candidatePart.text && !candidatePart.thought)
-          .map(candidatePart => candidatePart.text)
-          .join('\n\n');
-        const thoughtSummary = parts
-          .filter(candidatePart => candidatePart.text && candidatePart.thought)
-          .map(candidatePart => candidatePart.text)
-          .join('\n\n');
-        if (textNarration) narrationParts.push(textNarration);
-        if (thoughtSummary) thoughtSummaries.push(thoughtSummary);
+
+        const EMPTY_RESPONSE_MARKERS = [
+          'No candidates returned from Gemini API.',
+          'No parts in response.',
+          'No image data found in response.',
+        ];
+        let generateResult: { image: { data: string; mimeType: string }; textNarration: string; thoughtSummary: string };
+        try {
+          generateResult = await runGenerateContent();
+        } catch (error: unknown) {
+          if (error instanceof Error && EMPTY_RESPONSE_MARKERS.includes(error.message)) {
+            console.warn(`[generateImageV3] Empty Gemini response (${error.message}) — retrying once...`);
+            generateResult = await runGenerateContent();
+          } else {
+            throw error;
+          }
+        }
+
+        image = generateResult.image;
+        if (generateResult.textNarration) narrationParts.push(generateResult.textNarration);
+        if (generateResult.thoughtSummary) thoughtSummaries.push(generateResult.thoughtSummary);
       }
       if (!image) {
         throw new Error('Image generation failed to produce output.');
