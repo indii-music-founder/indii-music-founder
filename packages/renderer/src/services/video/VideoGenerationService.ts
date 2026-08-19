@@ -260,12 +260,20 @@ export class VideoGenerationService {
         const clampedDuration = durationSec ? Math.min(8, Math.max(4, durationSec)) : undefined;
         const fps = options.fps ?? 24;
         const directorDuration = clampedDuration ?? durationSec ?? 6;
+        // ISSUE-1379: never let aspectRatio/resolution reach serialization as
+        // undefined/null — zod's .default()/.optional() reject null (observed
+        // live: the agent's generate_video tool omits them and the gateway
+        // rejected 'directorSettings.aspectRatio: Expected 16:9|9:16|1:1,
+        // received null'). Default here so every caller (tool, studio, API)
+        // sends a valid shape.
+        const effectiveAspectRatio = options.aspectRatio ?? '16:9';
+        const effectiveResolution = options.resolution ?? '720p';
         const directorSettings = DirectorSettingsSchema.parse({
             fps,
             durationSeconds: directorDuration,
             totalFrames: Math.round(directorDuration * fps),
-            aspectRatio: options.aspectRatio,
-            resolution: options.resolution,
+            aspectRatio: effectiveAspectRatio,
+            resolution: effectiveResolution,
             seed: options.seed,
             firstFrameUri,
             lastFrameUri,
@@ -301,9 +309,9 @@ export class VideoGenerationService {
                 referenceUris: referenceUris && referenceUris.length > 0
                     ? referenceUris.filter(uri => typeof uri === 'string' && uri.startsWith('gs://'))
                     : undefined,
-                aspectRatio: normalizeVideoAspectRatio(options.aspectRatio),
+                aspectRatio: normalizeVideoAspectRatio(effectiveAspectRatio),
                 model: modelTier,
-                resolution: options.resolution,
+                resolution: effectiveResolution,
                 durationSeconds: clampedDuration,
                 directorSettings,
                 personGeneration: options.personGeneration,

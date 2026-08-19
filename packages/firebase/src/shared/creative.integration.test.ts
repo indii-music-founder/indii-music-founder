@@ -68,6 +68,27 @@ describe('Creative request schemas', () => {
         }).success).toBe(false);
     });
 
+    it('normalizes null aspectRatio/resolution to the defaults (ISSUE-1379)', () => {
+        // The agent's generate_video tool can omit these; JSON serializes
+        // absence as null, which zod's .default()/.optional() would reject.
+        const parsed = GenerateVideoSchema.safeParse({
+            prompt: 'A live performance',
+            costReservationId: 'video-reservation-1',
+            aspectRatio: null,
+            resolution: null,
+            directorSettings: {
+                aspectRatio: null,
+                resolution: null,
+                fps: 24,
+            },
+        });
+        expect(parsed.success).toBe(true);
+        if (parsed.success) {
+            expect(parsed.data.aspectRatio).toBe('16:9');
+            expect(parsed.data.resolution).toBe('720p');
+        }
+    });
+
     it('enforces task-specific canonical media references for Omni edits', () => {
         expect(GenerateOmniRemixSchema.safeParse({
             prompt: 'Add a slow camera orbit while preserving the performer',

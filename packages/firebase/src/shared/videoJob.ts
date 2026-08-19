@@ -49,8 +49,11 @@ export const VideoJobDirectorSettingsSchema = z.object({
     fps: z.number().int().positive().default(24),
     durationSeconds: z.number().positive().optional(),
     totalFrames: z.number().int().nonnegative().optional(),
-    aspectRatio: z.enum(['16:9', '9:16', '1:1']).optional(),
-    resolution: z.enum(['720p', '1080p', '4k']).optional(),
+    // ISSUE-1379: clients may serialize absent settings as null (JSON has no
+    // undefined). nullish() treats null exactly like undefined so a missing
+    // value can never reject the payload.
+    aspectRatio: z.enum(['16:9', '9:16', '1:1']).nullish(),
+    resolution: z.enum(['720p', '1080p', '4k']).nullish(),
     seed: z.union([z.number().int(), z.string()]).optional(),
     cameraPhysics: VideoJobDirectorPhysicsSchema.optional(),
     firstFrameUri: z.string().startsWith('gs://').optional(),

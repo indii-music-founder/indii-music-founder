@@ -35,9 +35,13 @@ export const GenerateVideoSchema = BaseMediaRequestSchema.extend({
         endFrame: z.number().int().min(0),
     }).optional(),
     referenceUris: z.array(z.string().startsWith('gs://')).max(3).optional(),
-    aspectRatio: z.enum(['16:9', '9:16', '1:1', '3:4', '4:3']).default('16:9'),
+    // ISSUE-1379: JSON has no undefined — clients may send null for an absent
+    // value, and .default() only handles undefined. Normalize null to the
+    // 16:9 default; INVALID strings still fail the enum (the ISSUE-870 check
+    // downstream keeps rejecting non-16:9/9:16).
+    aspectRatio: z.preprocess(v => (v ?? undefined), z.enum(['16:9', '9:16', '1:1', '3:4', '4:3']).default('16:9')),
     model: z.enum(['lite', 'fast', 'pro']).default('fast'),
-    resolution: z.enum(['720p', '1080p', '4k', '1280x720', '1920x1080', '3840x2160']).default('720p'),
+    resolution: z.preprocess(v => (v ?? undefined), z.enum(['720p', '1080p', '4k', '1280x720', '1920x1080', '3840x2160']).default('720p')),
     durationSeconds: z.number().min(4).max(8).default(6),
     directorSettings: VideoJobDirectorSettingsSchema.optional(),
     personGeneration: z.enum(['allow_adult', 'dont_allow', 'allow_all']).optional(),
