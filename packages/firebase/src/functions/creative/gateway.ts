@@ -1122,6 +1122,11 @@ export async function executeVideoJob(jobId: string, job: VideoGenerationJobReco
         updatedAt: new Date().toISOString(),
       });
 
+    // ISSUE-1381: video completions never metered usage — recordUsage was only
+    // wired into the image path, so the video meter stayed at 0 despite real
+    // generations. Meter by rendered duration (matches getUsageStats).
+    await recordUsage(job.userId, 'video', normalizedDuration, job.projectId);
+
     return { jobId, resultUri: outputUri };
   } catch (error: unknown) {
     const gatewayError = recordGatewayFailure('Video generation', jobId, error);
