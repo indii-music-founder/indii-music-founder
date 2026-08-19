@@ -1560,6 +1560,20 @@
           "order": "DESCENDING"
         }
       ]
+    },
+    {
+      "collectionGroup": "conversionEventOutbox",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "flushAttempts",
+          "order": "ASCENDING"
+        }
+      ]
     }
   ]
 }
