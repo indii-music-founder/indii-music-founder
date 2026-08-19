@@ -1224,12 +1224,20 @@ export const generateImageV3 = onCall({ ...creativeGatewayCallableOptions, timeo
     const normalizedThinkingLevel = normalizeThinkingLevel(thinkingLevel);
     const normalizedImageSize = normalizeImageSize(imageSize);
     const referenceImages = await loadReferenceImages(userId, parsed.data);
+    // ISSUE-1382: parts MUST use the @google/genai Part shape. The old
+    // {type:'image', mime_type, data} object has none of the SDK's part keys
+    // (inlineData/text/fileData), so _isPart() rejects it and the serialized
+    // request carries a malformed part — Vertex: 'parts[1].data: required
+    // oneof field "data" must have one initialized field'. Every variation
+    // request failed this way (18:46, founder-live). inlineData is the
+    // canonical inline-media shape (same as createPartFromBase64).
     const interactionInput = [
       { type: 'text' as const, text: prompt },
       ...referenceImages.map(ref => ({
-        type: 'image' as const,
-        mime_type: ref.mimeType as 'image/png' | 'image/jpeg' | 'image/webp' | 'image/heic' | 'image/heif' | 'image/gif' | 'image/bmp' | 'image/tiff',
-        data: ref.data,
+        inlineData: {
+          mimeType: ref.mimeType,
+          data: ref.data,
+        },
       })),
     ];
     if (useImageSearch) {
@@ -1996,6 +2004,9 @@ export const generateOmniRemixV3 = onCall({ ...creativeGatewayCallableOptions, t
 
     const input = [
       ...(sourceVideo ? [sourceVideo.input] : []),
+      // NOTE: the Omni interactions API uses its own Step schema where
+      // {type:'image', mime_type, data} IS the canonical shape — do NOT
+      // convert these to inlineData (that is the generateContent Part shape).
       ...referenceImages.map(r => ({ type: 'image' as const, mime_type: r.mimeType, data: r.data })),
       { type: 'text' as const, text: buildOmniPrompt(data, task) },
     ];

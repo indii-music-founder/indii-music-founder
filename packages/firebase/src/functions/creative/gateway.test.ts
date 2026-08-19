@@ -595,7 +595,7 @@ describe('creative gateway generateImageV3', () => {
       model: 'gemini-3-pro-image',
       input: [
         { type: 'text', text: 'Dogs having fun' },
-        { type: 'image', mime_type: 'image/png', data: Buffer.from('reference-bytes').toString('base64') },
+        { inlineData: { mimeType: 'image/png', data: Buffer.from('reference-bytes').toString('base64') } },
       ],
     }));
 
@@ -682,6 +682,42 @@ describe('creative gateway generateImageV3', () => {
       userId: 'user-123',
       operationId: 'image-op-no-retry',
       outcome: 'VOIDED',
+    });
+  });
+
+  it('sends reference images as canonical inlineData parts on the fast-model fallback path (ISSUE-1382)', async () => {
+    // Force the generateContent fallback (fast model).
+    mockInteractionsCreate.mockRejectedValue(new Error('Unsupported model interaction'));
+    mockDownload.mockResolvedValue([Buffer.from('reference-bytes')]);
+    mockGenerateContent.mockResolvedValue({
+      candidates: [{
+        content: {
+          parts: [{ inlineData: { data: Buffer.from('image-bytes').toString('base64'), mimeType: 'image/png' } }],
+        },
+      }],
+    });
+
+    await callGenerateImage({
+      auth: { uid: 'user-123' },
+      data: {
+        prompt: 'Dogs having fun',
+        aspectRatio: '16:9',
+        model: 'fast',
+        referenceUri: 'gs://test-bucket/creative/user-123/ref.png',
+        costReservationId: 'image-op-ref-fallback',
+      },
+    });
+
+    expect(mockGenerateContent).toHaveBeenCalledWith(expect.objectContaining({
+      contents: [
+        { type: 'text', text: 'Dogs having fun' },
+        { inlineData: { mimeType: 'image/png', data: Buffer.from('reference-bytes').toString('base64') } },
+      ],
+    }));
+    expect(mockFinalizeReservation).toHaveBeenCalledWith({
+      userId: 'user-123',
+      operationId: 'image-op-ref-fallback',
+      outcome: 'SETTLED',
     });
   });
 
