@@ -153,6 +153,14 @@ export interface CreativeControlsSlice {
     viewMode: 'gallery' | 'canvas' | 'video_production' | 'showroom' | 'direct' | 'lab' | 'editor' | 'release' | 'omni';
     setViewMode: (mode: 'gallery' | 'canvas' | 'video_production' | 'showroom' | 'direct' | 'lab' | 'editor' | 'release' | 'omni') => void;
 
+    // ISSUE-1375: view-mode navigation history — Back/Forward between the
+    // image studio (direct), canvas, and every other creative view the user
+    // actually visits, so leaving the canvas for the studio is one click.
+    _viewModeHistory: string[];
+    _viewModeIndex: number;
+    viewModeBack: () => void;
+    viewModeForward: () => void;
+
     // Showroom Mode State
     showroomState: {
         productAsset: HistoryItem | null;
@@ -332,7 +340,39 @@ export function buildCreativeControlsState(
         })),
 
         viewMode: 'direct',
-        setViewMode: (mode) => set({ viewMode: mode }),
+        // ISSUE-1375: Back/Forward navigation over visited views. Standard
+        // undo semantics: a new switch trims any forward entries, appends the
+        // target, and moves the pointer to the end; Back/Forward only move
+        // the pointer (they never create new entries).
+        _viewModeHistory: ['direct'],
+        _viewModeIndex: 0,
+        setViewMode: (mode) => set((state: StoreState) => {
+            if (state.viewMode === mode) return state;
+            const history = state._viewModeHistory.slice(0, state._viewModeIndex + 1);
+            if (history[history.length - 1] !== mode) history.push(mode);
+            const trimmed = history.slice(-30);
+            return {
+                viewMode: mode,
+                _viewModeHistory: trimmed,
+                _viewModeIndex: trimmed.length - 1,
+            };
+        }),
+        viewModeBack: () => set((state: StoreState) => {
+            if (state._viewModeIndex <= 0) return state;
+            const index = state._viewModeIndex - 1;
+            return {
+                viewMode: state._viewModeHistory[index] as StoreState['viewMode'],
+                _viewModeIndex: index,
+            };
+        }),
+        viewModeForward: () => set((state: StoreState) => {
+            if (state._viewModeIndex >= state._viewModeHistory.length - 1) return state;
+            const index = state._viewModeIndex + 1;
+            return {
+                viewMode: state._viewModeHistory[index] as StoreState['viewMode'],
+                _viewModeIndex: index,
+            };
+        }),
 
         showroomState: {
             productAsset: null,

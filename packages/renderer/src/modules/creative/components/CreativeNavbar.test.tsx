@@ -106,6 +106,9 @@ describe('CreativeNavbar', () => {
     const mockEnablePLPMode = vi.fn();
     const mockDisablePLPMode = vi.fn();
     const mockSetViewMode = vi.fn();
+    const mockViewModeBack = vi.fn();
+    const mockViewModeForward = vi.fn();
+    const mockGoBackModule = vi.fn();
     
     const mockToast = {
         success: vi.fn(),
@@ -127,6 +130,13 @@ describe('CreativeNavbar', () => {
         setGenerationMode: mockSetGenerationMode,
         viewMode: 'direct',
         setViewMode: mockSetViewMode,
+        _viewModeHistory: ['direct', 'canvas'],
+        _viewModeIndex: 1,
+        viewModeBack: mockViewModeBack,
+        viewModeForward: mockViewModeForward,
+        goBackModule: mockGoBackModule,
+        currentModule: 'creative',
+        _navigationHistory: ['dashboard', 'creative'],
         videoInputs: {
             firstFrame: null,
             lastFrame: null,
@@ -177,6 +187,52 @@ describe('CreativeNavbar', () => {
         expect(screen.getByText('ONLINE')).toBeInTheDocument();
         expect(screen.getByTestId('canvas-mode-picker')).toBeInTheDocument();
         expect(screen.getByTestId('canvas-mode-picker')).not.toHaveClass('absolute');
+    });
+
+    it('renders Back/Forward navigation controls and calls the store actions (ISSUE-1375)', () => {
+        render(
+            <ToastProvider>
+                <CreativeNavbar />
+            </ToastProvider>
+        );
+        const backModule = screen.getByTestId('creative-nav-back-module');
+        const backView = screen.getByTestId('creative-nav-back-view');
+        const forwardView = screen.getByTestId('creative-nav-forward-view');
+
+        expect(backModule).not.toBeDisabled();
+        expect(backView).not.toBeDisabled();
+        expect(forwardView).toBeDisabled(); // at the end of ['direct','canvas'] (index 1 of 2)
+
+        fireEvent.click(backModule);
+        expect(mockGoBackModule).toHaveBeenCalled();
+
+        fireEvent.click(backView);
+        expect(mockViewModeBack).toHaveBeenCalled();
+    });
+
+    it('disables view Back at the start of history and forward at the end (ISSUE-1375)', () => {
+        defaultState._viewModeIndex = 0;
+        render(
+            <ToastProvider>
+                <CreativeNavbar />
+            </ToastProvider>
+        );
+        expect(screen.getByTestId('creative-nav-back-view')).toBeDisabled();
+        expect(screen.getByTestId('creative-nav-forward-view')).not.toBeDisabled();
+        fireEvent.click(screen.getByTestId('creative-nav-forward-view'));
+        expect(mockViewModeForward).toHaveBeenCalled();
+        defaultState._viewModeIndex = 1; // restore for later tests
+    });
+
+    it('disables module Back when there is no prior page (ISSUE-1375)', () => {
+        defaultState._navigationHistory = ['creative'];
+        render(
+            <ToastProvider>
+                <CreativeNavbar />
+            </ToastProvider>
+        );
+        expect(screen.getByTestId('creative-nav-back-module')).toBeDisabled();
+        defaultState._navigationHistory = ['dashboard', 'creative']; // restore
     });
 
     it('opens and closes brand assets drawer', () => {

@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { ScreenControl } from '@/services/screen/ScreenControlService';
 import {
     Sparkles, Video, MonitorPlay, MessageSquare,
-    Palette, Clock, Rocket, Cpu
+    Palette, Clock, Rocket, Cpu, ArrowLeft, ChevronLeft, ChevronRight
 } from 'lucide-react';
 import IntelligencePromptBuilder from './IntelligencePromptBuilder';
 import { useToast } from '@/core/context/ToastContext';
@@ -26,7 +26,15 @@ export default function CreativeNavbar(props: CreativeNavbarProps) {
         enablePLPMode,
         disablePLPMode,
         showPromptBuilder,
-        togglePromptBuilder
+        togglePromptBuilder,
+        viewMode,
+        viewModeBack,
+        viewModeForward,
+        _viewModeHistory,
+        _viewModeIndex,
+        goBackModule,
+        currentModule,
+        _navigationHistory
     } = useStore(useShallow(state => ({
         creativePrompt: state.creativePrompt,
         setCreativePrompt: state.setCreativePrompt,
@@ -35,9 +43,23 @@ export default function CreativeNavbar(props: CreativeNavbarProps) {
         enablePLPMode: state.enablePLPMode,
         disablePLPMode: state.disablePLPMode,
         showPromptBuilder: state.isPromptBuilderOpen,
-        togglePromptBuilder: state.togglePromptBuilder
+        togglePromptBuilder: state.togglePromptBuilder,
+        viewMode: state.viewMode,
+        viewModeBack: state.viewModeBack,
+        viewModeForward: state.viewModeForward,
+        _viewModeHistory: state._viewModeHistory,
+        _viewModeIndex: state._viewModeIndex,
+        goBackModule: state.goBackModule,
+        currentModule: state.currentModule,
+        _navigationHistory: state._navigationHistory
     })));
     const toast = useToast();
+
+    // ISSUE-1375: navigation state for Back/Forward controls.
+    const canGoBackView = (_viewModeIndex ?? 0) > 0;
+    const canGoForwardView = (_viewModeIndex ?? 0) < ((_viewModeHistory?.length ?? 1) - 1);
+    const moduleHistory = _navigationHistory ?? [currentModule];
+    const canGoBackModule = moduleHistory.lastIndexOf(currentModule) > 0;
     // Single active right-rail panel so they are mutually exclusive and can't
     // overlap/stack on top of each other (ISSUE-492).
     type RailPanel = 'brand' | 'history' | 'roster' | null;
@@ -53,6 +75,41 @@ export default function CreativeNavbar(props: CreativeNavbarProps) {
             <div className="flex items-center justify-between px-3 md:px-4 py-2 h-12 gap-2">
                 {/* Left: Branding & Tabs */}
                 <div className="flex items-center gap-2 md:gap-3 min-w-0 flex-1">
+                    {/* ISSUE-1375: Back/Forward navigation — one-click return
+                        to the previous page (module) and previous view
+                        (studio/canvas and every other creative view). */}
+                    <div className="flex items-center gap-0.5 shrink-0">
+                        <button
+                            onClick={() => void goBackModule()}
+                            disabled={!canGoBackModule}
+                            title="Back to the page you came from"
+                            aria-label="Back to previous page"
+                            data-testid="creative-nav-back-module"
+                            className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                        >
+                            <ArrowLeft size={14} />
+                        </button>
+                        <button
+                            onClick={() => viewModeBack()}
+                            disabled={!canGoBackView}
+                            title="Back (e.g. canvas → studio)"
+                            aria-label="Back to previous view"
+                            data-testid="creative-nav-back-view"
+                            className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                        >
+                            <ChevronLeft size={14} />
+                        </button>
+                        <button
+                            onClick={() => viewModeForward()}
+                            disabled={!canGoForwardView}
+                            title="Forward"
+                            aria-label="Forward to next view"
+                            data-testid="creative-nav-forward-view"
+                            className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                        >
+                            <ChevronRight size={14} />
+                        </button>
+                    </div>
                     <div className="flex items-center gap-2 text-gray-400 shrink-0">
                         {generationMode === 'video' ? (
                             <Video size={15} className="text-blue-400" />
@@ -62,6 +119,9 @@ export default function CreativeNavbar(props: CreativeNavbarProps) {
                         <h1 className="text-xs font-bold text-gray-300 tracking-tight hidden sm:block">
                             {generationMode === 'video' ? 'Video Producer' : 'Studio'}
                         </h1>
+                    </div>
+                    <div className="hidden md:flex items-center gap-1 text-[10px] text-gray-500 shrink-0">
+                        {viewMode}
                     </div>
 
                     <div className="h-3.5 w-px bg-white/8 mx-0.5" />

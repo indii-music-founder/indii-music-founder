@@ -103,4 +103,26 @@ describe('appSlice', () => {
             expect(useStore.getState().isRightPanelOpen).toBe(false);
         });
     });
+
+    describe('goBackModule (ISSUE-1375)', () => {
+        it('returns to the module visited before the current one', async () => {
+            const store = useStore.getState();
+            // Simulate: dashboard -> creative -> finance
+            await store.setModule('creative');
+            await store.setModule('finance');
+
+            await useStore.getState().goBackModule();
+
+            expect(useStore.getState().currentModule).toBe('creative');
+        });
+
+        it('does nothing when there is no prior module', async () => {
+            const store = useStore.getState();
+            await store.setModule('creative');
+
+            await useStore.getState().goBackModule();
+
+            expect(useStore.getState().currentModule).toBe('creative');
+        });
+    });
 });

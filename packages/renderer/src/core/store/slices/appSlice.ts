@@ -72,6 +72,9 @@ export interface AppSlice {
     currentProjectId: string;
     projects: ProjectMetadata[]; // Changed from Project[] to enforce UI type
     setModule: (module: AppSlice['currentModule']) => Promise<void>;
+    // ISSUE-1375: return to the module visited before the current one (the
+    // store already tracks unique visited modules in _navigationHistory).
+    goBackModule: () => Promise<void>;
     setProject: (id: string) => void;
     addProject: (project: ProjectMetadata) => void; // Changed parameter type
     loadProjects: () => Promise<void>;
@@ -214,6 +217,17 @@ export const createAppSlice: StateCreator<AppSlice> = (set, get) => ({
             _navigationHistory: history,
             _lastModuleSwitch: now,
         });
+    },
+    // ISSUE-1375: module-level Back. _navigationHistory holds the unique
+    // modules visited in order; the entry before the current one is the page
+    // the user came from. setModule won't re-push it (dedupe by includes).
+    goBackModule: async () => {
+        const state = get();
+        const history = state._navigationHistory ?? [state.currentModule];
+        const index = history.lastIndexOf(state.currentModule);
+        if (index > 0) {
+            await state.setModule(history[index - 1]);
+        }
     },
     setProject: (id) => {
         set({ currentProjectId: id });
