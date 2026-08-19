@@ -280,6 +280,12 @@ export class VideoGenerationService {
             cameraMovement: options.cameraMovement,
             motionStrength: options.motionStrength,
         });
+        // ISSUE-1379: never ship undefined settings — JSON has no undefined,
+        // and the callable SDK can serialize absent values as null. Strip
+        // them so only real values leave the client.
+        const cleanDirectorSettings = Object.fromEntries(
+            Object.entries(directorSettings).filter(([, v]) => v !== undefined && v !== null)
+        );
         const referenceRoles = options.inputManifest?.filter(input => ['ingredient', 'character_reference', 'whisk_reference'].includes(input.role)) ?? [];
         const inputManifest = [
             ...(firstFrameUri ? [{ role: 'first_frame' as const, uri: firstFrameUri }] : []),
@@ -313,7 +319,7 @@ export class VideoGenerationService {
                 model: modelTier,
                 resolution: effectiveResolution,
                 durationSeconds: clampedDuration,
-                directorSettings,
+                directorSettings: cleanDirectorSettings,
                 personGeneration: options.personGeneration,
                 negativePrompt: options.negativePrompt,
                 seed: options.seed,

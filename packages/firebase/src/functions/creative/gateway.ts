@@ -1586,8 +1586,8 @@ export const generateVideoV3 = onCall({ ...creativeGatewayCallableOptions, timeo
     totalFrames: normalizedDuration * directorFps,
     aspectRatio: normalizeVideoAspectRatio(aspectRatio),
     resolution: normalizedResolution,
-    ...(normalizeVideoSeed(seed ?? requestedDirectorSettings?.seed) !== undefined
-      ? { seed: normalizeVideoSeed(seed ?? requestedDirectorSettings?.seed) }
+    ...(normalizeVideoSeed(seed ?? requestedDirectorSettings?.seed ?? undefined) !== undefined
+      ? { seed: normalizeVideoSeed(seed ?? requestedDirectorSettings?.seed ?? undefined) }
       : {}),
     ...(requestedDirectorSettings?.cameraPhysics
       ? { cameraPhysics: requestedDirectorSettings.cameraPhysics }

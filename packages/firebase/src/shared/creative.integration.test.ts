@@ -89,6 +89,27 @@ describe('Creative request schemas', () => {
         }
     });
 
+    it('treats null optional director settings as absent (ISSUE-1379 class)', () => {
+        // seed/firstFrameUri/cameraMovement etc. may arrive as null from the
+        // callable SDK; every optional director setting must tolerate it.
+        const parsed = GenerateVideoSchema.safeParse({
+            prompt: 'A live performance',
+            costReservationId: 'video-reservation-1',
+            directorSettings: {
+                fps: 24,
+                seed: null,
+                firstFrameUri: null,
+                lastFrameUri: null,
+                cameraMovement: null,
+                motionStrength: null,
+                durationSeconds: null,
+                totalFrames: null,
+                cameraPhysics: null,
+            },
+        });
+        expect(parsed.success).toBe(true);
+    });
+
     it('enforces task-specific canonical media references for Omni edits', () => {
         expect(GenerateOmniRemixSchema.safeParse({
             prompt: 'Add a slow camera orbit while preserving the performer',

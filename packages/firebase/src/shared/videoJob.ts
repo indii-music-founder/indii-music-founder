@@ -47,19 +47,19 @@ export const VideoJobPayloadSchema = z.object({
 
 export const VideoJobDirectorSettingsSchema = z.object({
     fps: z.number().int().positive().default(24),
-    durationSeconds: z.number().positive().optional(),
-    totalFrames: z.number().int().nonnegative().optional(),
-    // ISSUE-1379: clients may serialize absent settings as null (JSON has no
-    // undefined). nullish() treats null exactly like undefined so a missing
-    // value can never reject the payload.
+    // ISSUE-1379 class: clients serialize absent values as null (JSON has no
+    // undefined). nullish() treats null exactly like undefined everywhere, so
+    // no missing setting can ever reject the payload.
+    durationSeconds: z.number().positive().nullish(),
+    totalFrames: z.number().int().nonnegative().nullish(),
     aspectRatio: z.enum(['16:9', '9:16', '1:1']).nullish(),
     resolution: z.enum(['720p', '1080p', '4k']).nullish(),
-    seed: z.union([z.number().int(), z.string()]).optional(),
-    cameraPhysics: VideoJobDirectorPhysicsSchema.optional(),
-    firstFrameUri: z.string().startsWith('gs://').optional(),
-    lastFrameUri: z.string().startsWith('gs://').optional(),
-    cameraMovement: z.string().optional(),
-    motionStrength: z.number().min(0).max(1).optional(),
+    seed: z.union([z.number().int(), z.string()]).nullish(),
+    cameraPhysics: VideoJobDirectorPhysicsSchema.nullish(),
+    firstFrameUri: z.string().startsWith('gs://').nullish(),
+    lastFrameUri: z.string().startsWith('gs://').nullish(),
+    cameraMovement: z.string().nullish(),
+    motionStrength: z.number().min(0).max(1).nullish(),
 });
 
 export const VideoJobDocumentSchema = z.object({
