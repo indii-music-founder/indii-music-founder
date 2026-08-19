@@ -1,7 +1,37 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { waitFor } from '@testing-library/react';
 import { createCreativeSlice } from './creative';
 import { HistoryItem } from '@/core/types/history';
+
+// ISSUE-1370: openImageInStudio now reads natural dimensions via Image().
+// jsdom never decodes images — stub a deterministic Image (0×0 → onerror →
+// 512×512 fallback) so the async import settles immediately.
+const imageSizeMock = { width: 0, height: 0 };
+
+class MockImage {
+    naturalWidth = imageSizeMock.width;
+    naturalHeight = imageSizeMock.height;
+    onload: (() => void) | null = null;
+    onerror: (() => void) | null = null;
+    complete = false;
+    private _src = '';
+
+    set src(value: string) {
+        this._src = value;
+        queueMicrotask(() => {
+            this.complete = true;
+            if (this.naturalWidth > 0 && this.onload) this.onload();
+            else if (this.onerror) this.onerror();
+        });
+    }
+
+    get src(): string {
+        return this._src;
+    }
+}
+
+vi.stubGlobal('Image', MockImage);
 
 // Mock StorageService
 vi.mock('@/services/StorageService', () => ({
@@ -215,7 +245,7 @@ describe('CreativeSlice - initializeHistory', () => {
         expect(slice.uploadedAudio).not.toContainEqual(otherUploadedItem);
     });
 
-    it('should handle openImageInStudio correctly', () => {
+    it('should handle openImageInStudio correctly', async () => {
         const mockParams = {
             imageId: 'test-img',
             sourceUrl: 'http://test.url',
@@ -226,8 +256,8 @@ describe('CreativeSlice - initializeHistory', () => {
 
         slice.openImageInStudio(mockParams);
 
-        // Verify canvasImages was updated
-        expect(slice.canvasImages).toHaveLength(1);
+        // Verify canvasImages was updated (async: dimension read first)
+        await waitFor(() => expect(slice.canvasImages).toHaveLength(1));
         const canvasImg = slice.canvasImages[0];
         expect(canvasImg.base64).toBe(mockParams.sourceUrl);
         expect(canvasImg.prompt).toBe(mockParams.prompt);
