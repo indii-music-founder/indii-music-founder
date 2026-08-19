@@ -1,6 +1,7 @@
 import { StateCreator } from 'zustand';
 import { HistoryItem } from '@/core/types/history';
 import { logger } from '@/utils/logger';
+import { isAnonymousOrDemoUser } from '@/utils/authGuards';
 import { StoreState } from '@/core/store';
 
 let creativeHistoryUnsubscribe: (() => void) | null = null;
@@ -188,6 +189,12 @@ export function buildCreativeHistoryState(
                 if (enrichedItem.type === 'image' || enrichedItem.type === 'video') {
                     if (!user?.uid) {
                         logger.error("CreativeSlice: Cannot sync generated asset to file system without an authenticated user");
+                    } else if (isAnonymousOrDemoUser(user)) {
+                        // ISSUE-1194 + ISSUE-1390: rules deny every file_nodes
+                        // write for anonymous/demo sessions (isVerifiedUser()
+                        // excludes them). Don't attempt a doomed round-trip —
+                        // declare the limitation instead of a red alert.
+                        logger.warn("CreativeSlice: Skipping file-node sync for guest/demo session (rules deny anonymous file writes)");
                     } else {
                         const { extension, mimeType } = inferMediaExtension(enrichedItem);
                         const filename = `${enrichedItem.origin || 'generation'}-${enrichedItem.id.slice(0, 8)}.${extension}`;

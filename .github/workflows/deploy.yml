@@ -863,7 +863,30 @@ jobs:
             (cd packages/firebase && npx --no-install tsc --listEmittedFiles --diagnostics)
             exit 1
           fi
-          npx --no-install firebase deploy --only functions --project indii-music-founder --non-interactive --force
+          # ISSUE-1390: `firebase deploy --force` still exits 0 when individual
+          # function updates fail (observed 2026-08-19 22:46: seven HTTP 429
+          # "Per project mutation requests per minute per region" quota
+          # failures — generateImageV3 stayed on its old revision while CI
+          # reported success, so the per-API input-shape fix never went live).
+          # Retry transient quota failures with backoff; only a deploy that
+          # leaves functions on old code for a real (non-quota) reason fails
+          # the pipeline. A bare "Error:" would also match the benign
+          # "specified filters do not match" output from the pre-delete steps,
+          # so the check keys on the deploy's own failure marker.
+          for attempt in 1 2 3; do
+            npx --no-install firebase deploy --only functions --project indii-music-founder --non-interactive --force 2>&1 | tee /tmp/functions-deploy.log
+            if ! grep -Eq "failed to (update|create) function" /tmp/functions-deploy.log; then
+              echo "::notice::All Cloud Functions updated successfully on attempt $attempt."
+              break
+            fi
+            if grep -Eq "429, Quota exceeded" /tmp/functions-deploy.log && [ "$attempt" -lt 3 ]; then
+              echo "::warning::Cloud Functions deploy attempt $attempt hit transient quota limits — retrying in 90s."
+              sleep 90
+              continue
+            fi
+            echo "::error::Some Cloud Functions failed to update — see the deploy log above. The pipeline must not report success while functions are stale."
+            exit 1
+          done
 
       - name: Deploy landing page to Firebase Hosting
         run: |

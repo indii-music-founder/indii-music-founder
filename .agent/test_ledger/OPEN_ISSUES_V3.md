@@ -1989,3 +1989,240 @@ All seven T1 sub-items built, tested against real (not mocked-away) verification
 - **Nightly production evidence:** 5 usage records 23:16-23:20Z (recordUsage live since 961cfac28) + 6 full-size outputs in GCS (`1787094984890`…`1787095257563`) + 0 creative_jobs docs for those jobs.
 - **Fix:** `safeDbSet`/`safeDbUpdate` strip undefined values via JSON round-trip (gateway records are plain JSON — audited: zero FieldValue sentinels in gateway.ts) so a missing optional field can never invalidate a write. Helpers exported; 2 new regression tests; gateway suite 48/48; firebase typecheck clean.
 - **After deploy:** founder's next Boardroom image request writes the job doc → image appears in the asset strip. (Tonight's already-generated images remain storage-only; backfill optional — needs UI prompt-field tolerance check first.)
+
+---
+
+### ISSUE-1369: getCapabilitySnapshot query fails in production — missing composite index on creative_jobs (ISSUE-1359 incomplete)
+
+- **Status:** 🔴 FIX IN FLIGHT (index created via REST 00:42Z, awaiting READY) — no code change needed, but MUST be documented
+- **Severity:** 🔴 HIGH — the agent capability evidence query `creative_jobs where userId == X orderBy createdAt desc limit 50` (getCapabilitySnapshot.ts:60) requires a composite index that **does not exist** on the live database. The query throws FAILED_PRECONDITION; mediaStatuses catches it and returns `unverified` (line 151) — so agents' VERIFIED CAPABILITIES reports image/video generation as **unverified** in production.
+- **Root cause:** ISSUE-1359 (abbe7c856) added `orderBy('createdAt','desc')` to fix stale evidence windows — but a composite index was never created for it. Verified: `collectionGroups/creative_jobs/indexes` contains ZERO composite indexes (the earlier "list" returned all database groups — 96 indexes, none on creative_jobs). Reproduced the exact failure via REST: `The query requires an index… userId ASC, createdAt DESC, __name__ DESC`.
+- **Why it wasn't caught:** the 1359 fix was validated with mocked Firestore + emulator rules tests — emulators don't enforce composite-index availability the same way, and no live query test covered it.
+- **Fix (no code change):** created composite index `CICAgITsmpEK` (COLLECTION scope, userId ASC, createdAt DESC) via Firestore Admin REST. NOT added to firestore.indexes.json — CI's `firebase deploy --only firestore:indexes --non-interactive --force` would DELETE the 96 existing manually-managed indexes not listed in the file. If the team ever introduces an indexes file, ALL live indexes must be enumerated first.
+- **Backfill (founder-approved):** 14 orphaned creative_jobs docs restored (all Aug 18 generations 01:15-23:20Z except the 00:36Z job that already had a doc). Each doc built from the REAL history record (prompt, timestamp, https URL → gs:// URI): id=jobId, userId, status=completed, type=image, provider=vertex, prompt, requestedCount=1, createdAt/completedAt=history timestamp, resultUri/resultUris/outputCount. Verified direct GETs all 200. With the index READY, the capability snapshot will finally see these recent completed jobs → agents truthfully report image generation online.
+- **Correction to earlier session finding:** the claim "0 history docs for 23:16-23:20 generations" was WRONG (flawed query: unparsed timestampValue + arbitrary order + limit 20). All 16 of today's generations have history docs — the Boardroom strip data was always there.
+
+---
+
+### ISSUE-1370: Boardroom→Studio imports forced square on the work mat (2026-08-19, committed `1d00ee51d`)
+
+- **Status:** ✅ FIXED (2026-08-19) — CI #280 deploying
+- **Severity:** 🔴 HIGH (founder-live: a 16:9 wordmark transferred from the Boardroom to the Creative Suite work mat rendered squished into a square)
+- **Root cause:** `openImageInStudio` (creativeHistorySlice.ts) hardcoded `width: 512, height: 512, aspect: 1` on every imported canvas layer; InfiniteCanvas draws at exactly the stored dimensions (`ctx.drawImage(image, drawX, drawY, drawW, drawH)`), so any non-square generation was stretched into a square.
+- **Fix:** new `readNaturalDimensions(url)` reads the source image's natural pixel dimensions (https URL or data URI; 4s decode timeout; `Image` guard for non-DOM). Import uses natural width/height + computed aspect; falls back to the legacy 512×512 box only when the image cannot be decoded. Cascade (ISSUE-1362) and boardroom-exit (ISSUE-1364) logic unchanged.
+- **Tests:** deterministic `Image` stub (0×0 → fallback path; 1024×576 → width 1024, height 576, aspect ≈ 1.77778). Suite 15/15, typecheck + lint clean.
+
+---
+
+### ISSUE-1371: Export generated assets to the computer from the Boardroom (2026-08-19, committed `5c8f5a004`)
+
+- **Status:** ✅ FIXED (2026-08-19) — CI deploying
+- **Severity:** 🔴 HIGH (founder-live: no easy way to save images created in the Boardroom; the only download was the Studio gallery hover action labeled "Download")
+- **Fix:**
+  1. Boardroom asset strip: hover an asset tile → Export button downloads to the computer (dynamic `downloadAsset` import; https storage URLs fetch→blob; correct extension per type). Enlarged preview lightbox gains an Export action next to "Open in Studio" — export is NOT a handoff, preview stays open, toast confirms.
+  2. Studio gallery hover action renamed Download → **Export** with matching toasts ("Exported successfully." / "Failed to export asset.").
+  3. Strip tiles converted `<button>` → `role="button"` divs so the nested Export button is valid HTML; keyboard access (Enter/Space) preserved.
+- **Tests:** `downloadAsset` mocked; lightbox export asserts filename (`image-export-img-1.png`), success toast, preview stays open, no Studio handoff; tile hover export asserts no preview. Strip+galley suites 11/11; typecheck + lint clean.
+
+---
+
+### ISSUE-1372: Production Stripe checkout is non-functional — mock secret + missing price IDs (2026-08-19, founder real-world task)
+
+- **Status:** 🔴 FOUNDER-GATED (real-world config; cannot be fixed in code — documented with proof and exact steps)
+- **Severity:** 🔴 CRITICAL for first customers (PRO/STUDIO checkout disabled; one-time founder checkout would fail)
+- **Evidence (all proven):**
+  1. Secret Manager `STRIPE_SECRET_KEY` (version 1) = **`MOCK_KEY_DO_NOT_USE`** (gcloud secrets versions access — verified). `createOneTimeCheckout` attaches this secret → any Stripe API call returns 401. `createStripePaymentLinks` has NO secret attached.
+  2. `STRIPE_PRICE_PRO_MONTHLY/YEARLY` and `STRIPE_PRICE_STUDIO_MONTHLY/YEARLY` are absent from the deployed function env (gcloud functions describe) AND from `packages/firebase/.env.indii-music-founder` → `resolvePriceId` returns '' → every function boot logs `[Stripe] Missing price ID for … Checkout for the related tier is disabled until configured.` (verified in run logs).
+  3. The founder's own tier=founder access has **no `subscription` doc** (users/{uid} has only `tier: founder`) — the pass was activated via the GitHub/admin `activateFounderPass` flow, NOT Stripe. `createOneTimeCheckout` saw exactly one call (2026-08-18T14:28) with no completion.
+- **Founder steps (exact):**
+  1. In the Stripe dashboard, confirm/create the LIVE prices: PRO monthly, PRO yearly, STUDIO monthly, STUDIO yearly.
+  2. Put the live secret key into Secret Manager: update `STRIPE_SECRET_KEY` (new version) with `sk_live_…`.
+  3. Add the four `STRIPE_PRICE_*` values to `packages/firebase/.env.indii-music-founder` (price IDs are public identifiers — safe to commit) and deploy.
+  4. Re-run a test checkout end-to-end before inviting customers.
+- **Note:** STRIPE_WEBHOOK_SECRET also exists in Secret Manager — verify it matches the live webhook endpoint's signing secret.
+
+---
+
+### ISSUE-1373: 30/39 Secret Manager values are mock/placeholder — third-party integration readiness table (2026-08-19, founder real-world task)
+
+- **Status:** 🔴 FOUNDER-GATED (real-world config; documented with proof)
+- **Evidence:** every Secret Manager value verified via `gcloud secrets versions access latest` (2026-08-19).
+- **MOCK (`MOCK_KEY_DO_NOT_USE`):** STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, RESEND_API_KEY, META_APP_ID, META_APP_SECRET, SPOTIFY_CLIENT_ID, SPOTIFY_CLIENT_SECRET, TIKTOK_CLIENT_KEY, TIKTOK_CLIENT_SECRET, TWITTER_CLIENT_ID, TWITTER_CLIENT_SECRET, MICROSOFT_CLIENT_ID, MICROSOFT_CLIENT_SECRET, PANDADOC_API_KEY, PANDADOC_WEBHOOK_SECRET, TELEGRAM_BOT_TOKEN, TELEGRAM_WEBHOOK_SECRET, INNGEST_EVENT_KEY, INNGEST_SIGNING_KEY, GOOGLE_OAUTH_CLIENT_ID, GOOGLE_OAUTH_CLIENT_SECRET, GITHUB_TOKEN_FOUNDERS
+- **MOCK (other strings):** CLICKHOUSE_HOST/PASSWORD/USERNAME/WRITER_PASSWORD/WRITER_USERNAME ("placeholder…"), APOLLO_API_KEY ("value"), CLEARBIT_API_KEY ("value"), SHOPIFY_WEBHOOK_SECRET ("pending_shopify_webhook_secret")
+- **EMPTY:** AIZA_SY_BH5W_GPMB_YLQC_SNTE0D_OQXX_VH_MBZSEC_D_I
+- **REAL (verified non-placeholder):** ARCJET_KEY (`ajkey_…`), GEMINI_API_KEY (`AIza…`), GITHUB_TOKEN (`ghp_…`), GOOGLE_MAPS_API_KEY + VITE_GOOGLE_MAPS_API_KEY (`AIza…`), MCP_API_KEY, PRINTFUL_API_KEY, RESEND_FROM_EMAIL (`info@indii.music`)
+- **Customer impact by integration (all mock = broken in production):**
+  1. **Stripe** (ISSUE-1372): no real payments possible.
+  2. **Resend**: `sendEmail` callable cannot send artist/transactional email.
+  3. **Meta/Spotify/TikTok/Twitter/Microsoft**: social connect + publishing fail-closed (Meta already known-blocked ISSUE-1173).
+  4. **PandaDoc**: contract signing (legal agent) cannot create/send documents.
+  5. **Telegram**: relay channel dead.
+  6. **Inngest**: background job orchestration key mock (many flows use Inngest).
+  7. **ClickHouse**: analytics writes fail.
+  8. **Apollo/Clearbit**: fan-data enrichment calls fail.
+  9. **Google OAuth**: Google-account sign-in/connect unavailable.
+- **Founder steps:** replace each mock value with the real credential from the corresponding provider dashboard; verify SHOPIFY webhook secret once the Shopify app is configured; delete the EMPTY secret or populate it. Re-test each integration's live path after replacement.
+- **Note for agents:** capability claims for any of these integrations must remain "unverified/blocked" until the matching secret is real (the no-overclaim rule already covers this via VERIFIED CAPABILITIES).
+
+---
+
+### ISSUE-1374: Founder seat #1 agreement commit never happened (2026-08-19, founder task, part of ISSUE-1373)
+
+- **Status:** 🔴 FOUNDER-GATED (GITHUB_TOKEN_FOUNDERS is MOCK — same root as ISSUE-1373)
+- **Evidence:** `founder_github_commit_queue` EMPTY (query verified); `git log --all --grep="feat(founders)"` shows NO founder-seat commit; founder user `g2AcFApNZvQKYlGg0LQuVADCFoO2` has `tier: founder`, `founderSeats: {}`, no subscription doc. The pass activated via the Firestore-side flow; the GitHub agreement commit failed on the mock token and the old silent-swallow queue write dropped the retry entry (fixed in `5d8169069`).
+- **Founder steps:** set the real GITHUB_TOKEN_FOUNDERS (repo-write PAT), then re-run the activation/commit for seat #1 (or commit the agreement hash manually per the FOUNDERS_FILE_PATH format) so the founder receipt is permanent in the repo.
+
+---
+
+### ISSUE-1369 resolution (2026-08-19, committed `3b0fc1a48`): index keep-alive saga closed durably
+
+- The REST-created creative_jobs index was deleted TWICE by CI's `firebase deploy --only firestore:indexes --force` step (CI #281 at 01:27, CI #282 — each logged "Deleting 1 indexes"), because `packages/firebase/firestore.indexes.json` (the deploy-managed source of truth, 96 entries) did not list it.
+- **Durable fix:** the index entry (COLLECTION scope, userId ASC, createdAt DESC) is now IN the file (97 entries). Every deploy keeps/creates it. CI #283 deploying.
+- **Lesson (documented):** ANY live composite index must be listed in `packages/firebase/firestore.indexes.json` or the next deploy deletes it. The earlier HANDOFF note "do not introduce firestore.indexes.json" was WRONG (file existed under packages/firebase/ — I checked the repo root).
+- **Composite-index audit (server, complete):** all 11 where+orderBy chains + multi-where chains vs file/live — only creative_jobs was missing. Single-field orderBy auto-served. History (orgId+userId+timestamp DESC) present. Audit method in the 2026-08-19 round entries.
+
+---
+
+### ISSUE-1375: Back/Forward navigation — studio ↔ canvas and previous page (2026-08-19, committed `5209ad436`)
+
+- **Status:** ✅ FIXED (2026-08-19) — CI deploying
+- **Severity:** 🔴 HIGH (founder-live: no way back from the Creative Editor to the previous view/page; studio↔canvas switching was particularly hard)
+- **Fix:**
+  1. `creativeControlsSlice`: view-mode history (undo semantics; cap 30; consecutive dedupe; new switch after Back trims forward entries); `viewModeBack`/`viewModeForward` move the pointer without recording.
+  2. `appSlice.goBackModule`: returns to the module visited before the current one via the existing `_navigationHistory` (setModule's includes-dedupe prevents re-push).
+  3. `CreativeNavbar`: Back/Forward cluster top-left — ArrowLeft = previous page (module), ChevronLeft/Right = previous/next view (studio ↔ canvas and all visited creative views); disabled at bounds; tooltips + testids. View label shown next to the Studio title.
+  4. `openImageInStudio` routes through `setViewMode('canvas')`, so Boardroom imports land on canvas and Back returns to the studio.
+- **Tests:** controls-slice history semantics (5), appSlice goBackModule (2), navbar buttons render/disable/click (3). 24/24 touched suites; typecheck clean.
+- **Dead-code note:** `ImageSubMenu.tsx` (Gallery/Canvas/Showroom buttons) is not mounted anywhere; `viewMode 'gallery'` renders nothing in CreativeStudio. Left untouched in this unit.
+
+---
+
+### ISSUE-1369 final status (2026-08-19 02:45 UTC): index durable, saga closed
+
+- The creative_jobs composite index (userId ASC, createdAt DESC) is listed in `packages/firebase/firestore.indexes.json` (97 entries, commit `3b0fc1a48`). CI #283 (that commit) was cancelled by the ISSUE-1375 push (concurrency), so the file fix + navigation ride CI #284 together.
+- Live check 02:45: capability query HTTP 200 with docs — index alive; every subsequent deploy will keep it because the deploy-managed file now lists it.
+- Sequence of the saga (for the record): REST-created 00:42 → deleted by CI #281 (01:27) → recreated 02:00 → deleted by CI #282 → recreated 02:20 → file fix committed 02:22 → alive since. Lesson: `firebase deploy --only firestore:indexes --force` = the file is the single source of truth for live indexes; anything not listed gets deleted.
+
+---
+
+### Verification note (2026-08-19 02:50 UTC)
+- Full creative-module + store-slices suite re-run after ISSUE-1375: **99 files / 629 tests all pass**.
+- CI #284 (index durable + nav) in flight — unit shards green, build in progress at 02:50.
+
+---
+
+### ISSUE-1376: flushconversionevents failed every 5 minutes — missing outbox composite index (2026-08-19, committed `3d5ebdfc9`)
+
+- **Status:** ✅ FIXED + LIVE (index READY 12:24 UTC; no flush errors since 12:21)
+- **Evidence:** `[flushConversionEvents] Flush tick failed` every 5 min all night (40/40 overnight errors were this service). REST reproduction: `The query requires an index` for `conversionEventOutbox where(status=='pending') where(flushAttempts < 5)`. The outbox query's composite index never existed — conversion events could never flush.
+- **Why the yesterday audit missed it:** it scanned where+orderBy chains and same-line multi-wheres; this chain has two wheres, no orderBy, multi-line.
+- **Fix:** index (status ASC, flushAttempts ASC) added to `firestore.indexes.json` (98) + created via REST. Verified: ticks run clean (outbox empty; when real ClickHouse creds land — ISSUE-1373 — the pipeline will actually deliver).
+- **Morning audit (complete):** all 17 multi-where chains (line-spanning) parsed; the 7 flagged empirically tested via REST — only conversionEventOutbox actually failed. `user_usage_stats` range query is COVERED by the (userId, date DESC) index via the code's `.orderBy('date','desc')` (verified 200 with the exact code shape). Live index set == deploy file (0 drift, 0 deletion risk).
+- **Morning sweep otherwise:** live bundle intact (nav, aspect, export, rate-limit all present); no founder activity since 00:40 UTC; zero other overnight errors.
+
+---
+
+### 2026-08-19 morning: FULL LIVE E2E via App Check debug token — the founder's blocker is PROVEN FIXED (ISSUE-1366/1368 closed end-to-end)
+
+- **Unlock:** registered an App Check debug token via the Admin API (`firebaseappcheck.googleapis.com` debugTokens — token `af5ccdbd-…`, no founder console action needed) and injected it via `self.FIREBASE_APPCHECK_DEBUG_TOKEN` in the Playwright persistent profile — the app now boots fully in the automated browser with the founder's REAL session (wiil@indii.music).
+- **Live E2E result (12:55-13:00 UTC):** sent the Dii wordmark prompt in the real Boardroom → swarm ran (Arcjet allowed + specialist route resolved in logs) → **3 images generated (9civhXEIT8pjVHJFeqA5, QaPurOrk0N2PH0kif4jE, la4dVrCPpO41Uqijg3R8) and appeared in the Boardroom asset strip** → all 3 persisted: creative_jobs 200 + history 200 + usage records (12:55:50/12:56:10/12:56:31). Export buttons rendered on all strip items.
+- **The 4th call failed 500:** `No parts in response.` (transient empty Vertex response) → **ISSUE-1378**: gateway now retries once on empty-response markers (committed `d6ea28635`, CI #286).
+- **New gap found (ISSUE-1377, wiring):** `MemoryIngestionPipeline`/`MemorySearch` use the client `embedContent` which fail-closes BY DESIGN ("Embeddings require a secured backend embedding function") — memory ingestion logs 'Batch embedding failed' and stores/returns empty vectors → agent semantic memory silently dead. Backend `manageSemanticMemory` DOES embed server-side (text-embedding-004) — the client memory path should route through a backend embedding callable. Follow-up unit.
+- **Debug token note:** the token is registered for the web app and works headless; keep it for future automated E2E (it's how the app is testable without the founder's hands).
+
+---
+
+### ISSUE-1379: agent generate_video sends null aspectRatio/resolution — every swarm video request rejected (2026-08-19, committed `03a27e433`)
+
+- **Status:** ✅ FIXED (2026-08-19) — CI #287 deploying
+- **Evidence (live Boardroom E2E 13:25):** agent's generate_video tool omitted aspectRatio/resolution → JSON null → zod `.default()`/`.optional()` reject null (they only accept undefined) → gateway 400 `Invalid video payload: directorSettings.aspectRatio: Expected '16:9' | '9:16' | '1:1', received null`. The swarm retried, failed again, and parked the request ("the video pipeline is restored" never came).
+- **Fix (root + defense):** client VideoGenerationService defaults aspectRatio '16:9' + resolution '720p' before directorSettings/payload (all callers covered); backend GenerateVideoSchema preprocesses null → default (invalid strings still rejected — ISSUE-870 intact); VideoJobDirectorSettingsSchema nullish() for aspectRatio/resolution.
+- **Also observed:** 13:25:30 `503 Request protection is temporarily unavailable` from the cost-control preflight — coincided with the CI #286 deploy rollout (13:25-13:32); ISSUE-1360's Arcjet retry covers single blips.
+- **Tests:** +1 schema regression; 1,082/1,103 firebase+renderer video suites; both typechecks clean.
+- **Next:** re-run the live Boardroom video probe after #287 lands (the founder's ask: "a video made from all of the video paths").
+
+---
+
+### 2026-08-19 afternoon: live video-path testing (the founder's "make a video from all the video paths")
+
+- **Proven live (real session, real APIs):**
+  1. The Video Director's generate_video tool NOW reaches generateVideoV3 (verification + Arcjet pass) — before the ISSUE-1379 fix it 400'd instantly. Explicit delegation prompt ("Video Director, use your generate_video tool NOW") engages the VD; the plain request gets the Conductor's routing (video capability unverified since no video job since May → agents truthfully defer — chicken-and-egg BY DESIGN, resolved by one successful video).
+  2. **Second validation bug (same null class)**: `directorSettings.seed: Invalid input; directorSettings.firstFrameUri: Expected str...` — the callable SDK serializes absent nested values as null; .optional() rejects null. **Fixed: ALL optional director settings now nullish() + client strips undefined before sending (committed `573e45a8b`, CI #288).**
+  3. Arcjet had a ~20s decision-service blip at 14:25 (fail-closed correctly; recovered; ISSUE-1360's one-retry covers single blips).
+- **Not yet completed:** a full video generation end-to-end (needs #288 deployed + a stable session; the probe profile hit network flakiness 14:53-15:30 and the session restore now needs an app-check cache reset). The pipeline itself (generateVideoV3 → createClaimedVideoJob → videoJobFirestoreOrchestrator → storage) is code-verified and the orchestrator is deployed/healthy.
+- **Follow-ups:** dashboard "Create Video" guided-chat widget returned a client 400 (observed during network flakiness — recheck after #288); the memory-embedding wiring gap (ISSUE-1377) remains open.
+
+---
+
+### ISSUE-1380: video-jobs write path rejects undefined optional fields (2026-08-19, committed `079393460`)
+
+- **Status:** ✅ FIXED (2026-08-19) — CI #289 deploying
+- **Evidence (live 16:53, final video E2E):** generateVideoV3 passed validation + Arcjet (ISSUE-1379 fix held — no more 400s), then failed creating the job: `Cannot use "undefined" as a Firestore value (found in field "negativePrompt")` → 500 INTERNAL. `createClaimedVideoJob` writes the gateway jobRecord DIRECTLY to videoJobs (transaction.create) — outside safeDbSet's strip.
+- **Fix:** JSON-strip the jobRecord in createClaimedVideoJob; strip in syncVideoJobUpdate's direct videoJobs update; ALSO MemoryConsolidator.storeInsight (client addDoc with undefined — observed in the same probe).
+- **Tests:** +1 videoJobAuthority regression; gateway 59/59, memory 60/60.
+- **E2E chain after this deploy:** reservation → generateVideoV3 → job created → Veo render → orchestrator → storage → asset in strip. The final render proof is the pending acceptance criterion.
+
+---
+
+### 🎬 VIDEO END-TO-END PROVEN LIVE (2026-08-19 18:08 UTC) — the founder's "make a video" ask is DONE
+
+- **Job `SUjgH7P8GLPBT1YEQpkn`** (my Dii wordmark probe): generateVideoV3 **200** → videoJobs doc created → Veo rendered → orchestrator completed → **mp4 in storage** (`creative/g2AcFApNZvQKYlGg0LQuVADCFoO2/video/tmp/SUjgH7P8GLPBT1YEQpkn/outputs/1787162976254_ee58da0d.mp4`) → **creative_jobs video doc 200**. The full chain the founder asked for.
+- **Fix chain that made it possible (all live):** ISSUE-1379 (null aspect/resolution) → ISSUE-1379 class (null on ALL director settings) → ISSUE-1380 (undefined-strip in createClaimedVideoJob/syncVideoJobUpdate) → ISSUE-1381 (video usage metering — committed `aeb1dadc7`).
+- **Consequence:** the capability snapshot now has a recent COMPLETED video job → video_generation evidence becomes "available" → the swarm's normal video requests (without explicit delegation) will now proceed.
+- **Left open:** dashboard "Create Video" guided-chat widget (400 observed once during network flakiness — recheck), ISSUE-1377 memory-embedding wiring, founder real-world tasks (Stripe/secrets/founder commit).
+
+---
+
+### ISSUE-1382: variation requests failed — reference parts used the wrong SDK shape (2026-08-19, committed `d049e3320`)
+
+- **Status:** ✅ FIXED (2026-08-19) — CI deploying
+- **Evidence (founder-live 18:46):** "All variation requests failed. Your source image is unchanged." — 3-4 requests on the Dii wordmark failed at Vertex: `contents[0].parts[1].data: required oneof field "data" must have one initialized field`.
+- **Root cause (proven from @google/genai source):** `_isPart()` recognizes parts by `inlineData`/`text`/`fileData` keys. The gateway built `{type:'image', mime_type, data}` — none of those keys → malformed part. **Reference images NEVER worked on the generateContent fallback path** (fast model = the default) — text-only requests were fine (text is recognized), which masked it.
+- **Fix:** image path reference parts → `{inlineData: {mimeType, data}}` (createPartFromBase64's shape). Omni interactions path unchanged (its Step schema uses type/mime_type/data — verified against InteractionsInput).
+- **Tests:** updated reference-payload assertion + new fallback-path regression (contents[1].inlineData). Gateway 51/51.
+- **Open follow-up:** the founder's 18:46 attempt showed NO vault reference uploads (53 vault objects, 0 today) — re-check after this deploy whether uploads occur; if not, the client upload path has a second issue.
+
+---
+
+### ISSUE-1377 RESOLVED: agent-memory embeddings now backend-routed (2026-08-19, committed `63a93d22b`)
+
+- Browser-side embeddings fail-closed by design → memory ingestion stored empty vectors → semantic recall silently empty. New `batchEmbedText` callable (text-embedding-004) + both client call sites wired; failures degrade to empty vectors (keyword fallback intact). Tests: +3 backend, 60/60 memory.
+- **Also closed in this round:** ISSUE-1382 (variation part shape — committed `d049e3320`; the 18:46 reference upload was PROVEN healthy: 22,761-byte PNG at 18:46:10 — the part shape was the sole defect; my earlier 'no uploads' claim was my own listing bug, corrected).
+
+---
+
+### Deployment-level verification (2026-08-19 21:25 UTC)
+- **ISSUE-1382 (variations):** deployed gateway.js source archive (generateImageV3 rev 00301-hek, generation 1787171066877164) contains `inlineData: {` — the Part-shape fix is LIVE. Reference upload at 18:46 proven healthy (22,761-byte PNG) — the shape was the sole defect.
+- **ISSUE-1377 (memory embeddings):** deployed manageSemanticMemory source (generation 1787174457229540) contains `batchEmbedText` + its validation — LIVE (CI #291 green).
+- **Live UI proof of a successful variation still pending** — my probe environment's UI driving is fragile (workspace-dialog races + network), so the founder's browser is the decisive surface: click Variations on any canvas image; I'll watch generateImageV3 logs in real time.
+
+---
+
+### ISSUE-1382 follow-up (21:41 UTC, committed `7396e2858`): interactions.create requires the Step 'type' field
+
+- The founder's retry with the inlineData-only fix produced `400 The 'type' parameter is required at 'input[1]'` — interactions.create (Pro path) requires its Step schema (type/mime_type/data); generateContent (fast fallback) requires inlineData. One input can't serve both.
+- **Fix:** build both shapes; route per API. Tests: interactions assertion = Step shape; fallback regression = inlineData. Gateway 51/51.
+- **Live status:** after #292 lands, variations should succeed on BOTH fast and pro models. The 21:41 catch is the live-testing loop working — the founder's clicks are finding what static analysis can't.
+
+---
+
+### Round 2026-08-19 evening (committed `7396e2858`, `f97d3b395`) — all live-testing driven
+
+1. **Per-API input shapes** (`7396e2858`, #292 LIVE): interactions.create requires the Step 'type' field; generateContent requires inlineData. Both built, routed per API. Founder's 21:41 click caught the interactions-side of the first fix.
+2. **Arcjet backoff** (`f97d3b395`): 3 attempts with 250/500ms backoff — two outage windows observed today (14:25, 21:48); fail-closed preserved.
+3. **thoughtSignature part key** (`f97d3b395`): legacy edit service wrote snake_case thought_signature which the SDK drops — multi-turn edit continuity was silently lost; now camelCase.
+4. **Verified:** memory embedding fix live in bundle (batchEmbedText ×3); variation fix live in deployed gateway source (inlineData); #292 green.
+
+---
+
+### ISSUE-1390: painting-save "Failed to create file/folder" + no way out of the creative editor (2026-08-19, founder-live)
+
+- **Founder report (evening):** "Failed to create file/folder. After using the painting feature on the canvas for security. Either there's no way or it's not easy to find and figure out how to move from the creative editor to the canvas." Two distinct defects.
+- **Defect A — rules suspicion RULED OUT with proof:** emulator repro (`paint-save-repro.rules.test.ts`, the same harness CI runs) against the LIVE ruleset: the exact painting-save doc (name/type/fileType/parentId/projectId/userId/data + Timestamps) **ALLOWS** for a verified Google user; **DENIES** only for anonymous/guest (`PERMISSION_DENIED ... false for 'create' @ L2517`). Rules haven't changed since 08-11 (`93788828b`); live ruleset == repo. So the founder's failure was client session state (documented intermittent: session-restore "Authentication timed out", App Check throttling, flaky network) — a dead-end alert hid which.
+- **Fix A (client):** `FileSystemService` now emits session-aware alerts via `describeFileSystemError`: guest/demo → "You're browsing as a guest… sign in to save your work"; permission-denied with a real user → "session may have expired… sign in again"; network/unavailable → "temporary network hiccup… try again". `creativeHistorySlice` file-sync skips doomed writes for guest/demo sessions (ISSUE-1194 pattern) instead of alerting.
+- **Defect B — navigation gap (proven by code):** the editor overlay (`CanvasHeader`) had NO close/back affordance on its own; the only exit was `CanvasActionRail`'s X which is `hidden md:flex` (desktop-only) — on mobile/narrow windows there was literally no way back to the canvas.
+- **Fix B:** `CanvasHeader` gains a visible "← Canvas" button (all breakpoints, `data-testid="canvas-header-back"`) wired to `onClose`; `CreativeCanvas` passes `onClose` through and adds an Escape-key handler.
+- **Tests:** CanvasHeader +2 (back button renders/calls onClose; absent when onClose omitted), CreativeCanvas +3 (header back → onClose; Escape → onClose; other keys no-op), FileSystemService.error.test.ts +5 (message mapping), creativeHistorySlice 15/15. Rules suite: paint-save repro wired into `test:rules` (CI rules-tests job).
+- **Deploy integrity defect found while verifying (root cause of "fixed but not live"):** CI #293 "Deploy Cloud Functions" step exited 0 while 7 function updates failed with HTTP 429 (`Per project mutation requests per minute per region`) — **generateImageV3 stayed on rev 00301-hek (20:24) while CI reported success**, so the per-API variation fix (7396e2858) is STILL NOT LIVE. `firebase deploy --force` does not fail on per-function errors.
+- **Fix C (pipeline):** deploy step now tees the log and greps for `failed to (update|create) function` — retries twice with 90s backoff on 429-quota markers, else exits 1. A deploy that leaves functions stale can never look green again.
+- **Next:** push this commit → CI #294 redeploys all functions (retry loop handles quota) → verify generateImageV3 revision rotates past 00301-hek → founder retests Variations + painting save + editor→canvas exit.

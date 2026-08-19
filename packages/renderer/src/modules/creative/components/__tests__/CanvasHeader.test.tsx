@@ -90,4 +90,20 @@ describe('CanvasHeader — edit prompt and model mode', () => {
         expect(screen.getAllByText('Generating...')[0]).toBeInTheDocument();
         expect(screen.getByTestId('magic-generate-btn')).toBeDisabled();
     });
+
+    // ISSUE-1390: the editor overlay needs an explicit path back to the canvas
+    // — visible on every screen size (the rail close button is desktop-only).
+    it('renders the back-to-canvas button when onClose is provided', () => {
+        const onClose = vi.fn();
+        renderHeader({ onClose });
+        const back = screen.getByTestId('canvas-header-back');
+        expect(back).toBeInTheDocument();
+        fireEvent.click(back);
+        expect(onClose).toHaveBeenCalledOnce();
+    });
+
+    it('does not render the back button when onClose is omitted', () => {
+        renderHeader();
+        expect(screen.queryByTestId('canvas-header-back')).not.toBeInTheDocument();
+    });
 });

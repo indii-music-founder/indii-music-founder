@@ -1,5 +1,5 @@
 import React from 'react';
-import { Lock, Sparkles, Star, Wand2, Shield } from 'lucide-react';
+import { ArrowLeft, Lock, Sparkles, Star, Wand2, Shield } from 'lucide-react';
 import { auth } from '@/services/firebase';
 
 interface CanvasHeaderProps {
@@ -16,6 +16,11 @@ interface CanvasHeaderProps {
     aspectRatio?: string;
     grounding?: boolean;
     imageSize?: string;
+    // ISSUE-1390: the editor overlay must always offer an explicit path back
+    // to the canvas. Before this prop the only exit was the CanvasActionRail
+    // close button, which is desktop-only (`hidden md:flex`) — on mobile and
+    // narrow windows there was no way out of the creative editor.
+    onClose?: () => void;
 }
 
 export const CanvasHeader: React.FC<CanvasHeaderProps> = ({
@@ -32,6 +37,7 @@ export const CanvasHeader: React.FC<CanvasHeaderProps> = ({
     aspectRatio,
     grounding,
     imageSize,
+    onClose,
 }) => {
     const isAuthenticated = !!auth.currentUser;
     const effectiveModel = modelTier || (isHighFidelity ? 'pro' : 'fast');
@@ -39,6 +45,18 @@ export const CanvasHeader: React.FC<CanvasHeaderProps> = ({
     return (
         <header className="grid grid-cols-[minmax(140px,1fr)_minmax(320px,560px)_minmax(140px,1fr)] items-start gap-4 px-5 py-3 border-b border-white/10 bg-[#050608]/95 backdrop-blur-xl">
             <div className="min-w-0 flex items-center gap-2">
+                {onClose && (
+                    <button
+                        onClick={onClose}
+                        title="Back to canvas"
+                        aria-label="Back to canvas"
+                        data-testid="canvas-header-back"
+                        className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-2.5 py-1.5 text-[11px] font-semibold text-gray-300 hover:text-white hover:bg-white/10 transition-colors shrink-0"
+                    >
+                        <ArrowLeft size={13} />
+                        <span>Canvas</span>
+                    </button>
+                )}
                 <h3 className="text-sm font-bold text-white truncate">
                     Creative Editor
                 </h3>

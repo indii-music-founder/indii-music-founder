@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { HistoryItem } from '@/core/store';
 import { motion, AnimatePresence } from 'motion/react';
 import { CanvasHeader } from './CanvasHeader';
@@ -82,6 +82,16 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
         handleAddSketchLayer,
     } = useCreativeCanvas({ item, onClose, onRefine });
 
+    // ISSUE-1390: Escape always returns to the canvas — the editor overlay
+    // previously had no keyboard path back, and on mobile no visible one.
+    useEffect(() => {
+        const onKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') onClose();
+        };
+        window.addEventListener('keydown', onKeyDown);
+        return () => window.removeEventListener('keydown', onKeyDown);
+    }, [onClose]);
+
     if (!item) return null;
 
     return (
@@ -107,6 +117,7 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
                     aspectRatio={editManifest.settings.aspectRatio}
                     grounding={editManifest.settings.grounding}
                     imageSize={editManifest.settings.imageSize}
+                    onClose={onClose}
                 />
 
                 <div className="flex-1 relative overflow-hidden bg-transparent">

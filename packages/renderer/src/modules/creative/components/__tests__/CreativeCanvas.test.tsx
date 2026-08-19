@@ -246,6 +246,26 @@ describe('CreativeCanvas', () => {
         expect(screen.getByTestId('canvas-close-btn')).toBeInTheDocument();
     });
 
+    // ISSUE-1390: the editor overlay must always offer an explicit path back
+    // to the canvas — the header back button and Escape both call onClose.
+    it('calls onClose when the header "Canvas" back button is clicked', () => {
+        render(<CreativeCanvas item={mockItem} onClose={mockOnClose} />);
+        fireEvent.click(screen.getByTestId('canvas-header-back'));
+        expect(mockOnClose).toHaveBeenCalledOnce();
+    });
+
+    it('calls onClose when Escape is pressed', () => {
+        render(<CreativeCanvas item={mockItem} onClose={mockOnClose} />);
+        fireEvent.keyDown(window, { key: 'Escape' });
+        expect(mockOnClose).toHaveBeenCalledOnce();
+    });
+
+    it('does not call onClose for other keys', () => {
+        render(<CreativeCanvas item={mockItem} onClose={mockOnClose} />);
+        fireEvent.keyDown(window, { key: 'Enter' });
+        expect(mockOnClose).not.toHaveBeenCalled();
+    });
+
     it('threads reference roles into the edit prompt', async () => {
         render(<CreativeCanvas item={mockItem} onClose={mockOnClose} />);
 

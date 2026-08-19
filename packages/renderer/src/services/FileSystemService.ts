@@ -13,7 +13,35 @@ import {
 import { FirestoreService } from './FirestoreService';
 import { events } from '@/core/events';
 import { logger } from '@/utils/logger';
+import { auth } from './firebase';
+import { isAnonymousOrDemoUser } from '@/utils/authGuards';
 import { DEFAULT_PROJECT_ID, LEGACY_DEFAULT_PROJECT_ID, isDefaultProject } from '@/core/constants';
+import type { User } from 'firebase/auth';
+
+/**
+ * ISSUE-1390: file/folder writes are denied by Firestore rules for anonymous
+ * sessions (rules require a verified non-anonymous sign-in — proven against
+ * the live ruleset via the emulator). A dead-end "Failed to create file/folder"
+ * alert reads as a malfunction; say what actually happened and how to fix it.
+ * Firestore error codes: permission-denied = rules/auth rejection,
+ * unavailable = transient network, resource-exhausted = quota/App Check.
+ */
+export function describeFileSystemError(error: unknown, user: Pick<User, 'uid' | 'isAnonymous'> | null | undefined, action: string): string {
+    const code = (error as { code?: string } | null)?.code ?? (error as { message?: string } | null)?.message ?? '';
+
+    // Guest/demo/anonymous session: rules deny every write (isVerifiedUser()
+    // excludes anonymous sign-in providers) — surface the real reason.
+    if (isAnonymousOrDemoUser(user)) {
+        return `You're browsing as a guest, so this ${action} can't be saved to your project. Sign in to save your work.`;
+    }
+    if (code === 'permission-denied') {
+        return `Your session may have expired. Please sign in again, then retry this ${action}.`;
+    }
+    if (code === 'unavailable' || code === 'resource-exhausted' || String(code).includes('network')) {
+        return `A temporary network hiccup blocked this ${action}. Please try again.`;
+    }
+    return `Failed to ${action}. Check your connection and try again.`;
+}
 
 export interface FileNode {
     id: string;
@@ -90,7 +118,7 @@ export class FileSystemService extends FirestoreService<FileNode> {
             } as FileNode;
         } catch (error: unknown) {
             logger.error('Error creating node:', error);
-            events.emit('SYSTEM_ALERT', { level: 'error', message: 'Failed to create file/folder' });
+            events.emit('SYSTEM_ALERT', { level: 'error', message: describeFileSystemError(error, auth.currentUser, 'create this file/folder') });
             throw error;
         }
     }
@@ -103,7 +131,7 @@ export class FileSystemService extends FirestoreService<FileNode> {
             });
         } catch (error: unknown) {
             logger.error('Error updating node:', error);
-            events.emit('SYSTEM_ALERT', { level: 'error', message: 'Failed to update file/folder' });
+            events.emit('SYSTEM_ALERT', { level: 'error', message: describeFileSystemError(error, auth.currentUser, 'update this file/folder') });
             throw error;
         }
     }
@@ -117,7 +145,7 @@ export class FileSystemService extends FirestoreService<FileNode> {
             );
         } catch (error: unknown) {
             logger.error('Error moving node to trash:', error);
-            events.emit('SYSTEM_ALERT', { level: 'error', message: 'Failed to move item to trash' });
+            events.emit('SYSTEM_ALERT', { level: 'error', message: describeFileSystemError(error, auth.currentUser, 'move this item to trash') });
             throw error;
         }
     }
