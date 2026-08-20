@@ -2255,3 +2255,12 @@ All seven T1 sub-items built, tested against real (not mocked-away) verification
 - **Direct asset path (Send to Canvas):** new editor action-rail button (MonitorUp icon, `send-to-canvas-btn`) → saves the edited asset, stages it on the InfiniteCanvas with true natural dimensions (reusing exported `readNaturalDimensions`), switches to canvas view. Test: +1 (stages with natural dims, sets viewMode 'canvas', closes editor).
 - **Hosting staleness fix (same round, founder's "updated versions don't open"):** live `app.indii.music/` served `cache-control: max-age=3600` on the HTML shell because the `index.html` no-cache rule only matches the literal path — browsers request `/` and SPA routes, which fell through to the catch-all `**` rule (security headers only, no Cache-Control) → old shell cached 1h after every deploy. Fix: `Cache-Control: no-cache, no-store, must-revalidate` on the app target's `**` rule (hashed assets keep immutable via more-specific rules); landing target got the same treatment + immutable hashed js/css. Verify after deploy: `/` should return no-cache.
 - **Status:** all tests green (creative 81 files/466 tests, lifecycle 3, CanvasHeader 11, CreativeCanvas 13), typecheck + lint clean. Commit held for next push.
+
+---
+
+### ISSUE-1391 follow-up (00:55 UTC): hosting header ORDER correction — my first fix was incomplete
+
+- **My own catch, verified live:** after 97c91c010 deployed, `app.indii.music/` correctly returned `no-cache` for `/` and `/studio` — BUT hashed assets (`/assets/index-*.js|css`) ALSO returned `no-cache` instead of `max-age=31536000, immutable`. Firebase Hosting applies later matching rules over earlier ones for the same header key, and I had placed the catch-all `**` no-cache rule LAST, so it shadowed the more specific js/css/media rules.
+- **Fix (3e1f88233):** moved the catch-all `**` rule to the FRONT of both targets' header lists; the specific rules after it now win for the paths they cover (assets stay immutable 1y, `/creative` and `index.html` stay no-cache, everything else revalidates). Landing target same treatment.
+- **Verification pending after #297:** `/` → no-cache; `/assets/*.js` → immutable; `/studio` → no-cache; `indii.music/` → no-cache.
+- Lesson recorded: never place a broad Cache-Control catch-all after specific rules in Firebase Hosting.
