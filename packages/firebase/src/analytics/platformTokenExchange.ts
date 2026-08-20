@@ -340,19 +340,18 @@ export const analyticsRefreshToken = onCall(
             const fresh = await tx.get(tokenRef);
             if (!fresh.exists) return false;
             const current = fresh.data() as StoredToken;
-            const update: Record<string, unknown> = {
+            const refreshTokenStillCurrent = current.refreshToken === stored.refreshToken;
+            const update = {
                 accessToken: newAccess,
                 expiresAt: newExpiry,
                 updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+                ...(refreshTokenStillCurrent ? { refreshToken: newRefresh } : {}),
             };
-            if (current.refreshToken === stored.refreshToken) {
-                update.refreshToken = newRefresh;
-                tx.update(tokenRef, update);
-                return true;
+            if (!refreshTokenStillCurrent) {
+                console.warn(`[analyticsRefreshToken] Concurrent refresh already rotated ${platform} tokens — keeping the newer stored refresh token.`);
             }
-            console.warn(`[analyticsRefreshToken] Concurrent refresh already rotated ${platform} tokens — keeping the newer stored refresh token.`);
             tx.update(tokenRef, update);
-            return false;
+            return refreshTokenStillCurrent;
         });
 
         // Mirror the same outcome to socialTokens (ISSUE-766 dual-write).
