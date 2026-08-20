@@ -189,6 +189,7 @@ export { refreshSocialToken } from './social/refreshTokenCallable';
 export { pollTimelineMilestones } from './timeline/pollTimelineMilestones';
 export { pulseTick } from './orchestration/pulseTick';
 export { onMilestoneScheduled } from './timeline/onMilestoneScheduled';
+export { retentionDaemon } from './daemons/retention-daemon';
 
 // Email OAuth Token Manager (Gmail / Outlook — server-side token exchange & refresh)
 export { emailExchangeToken, emailRefreshToken, emailRevokeToken } from './email/tokenManager';
@@ -209,6 +210,7 @@ export { smartLinkRedirect } from './marketing/smartLink';
 export { flushConversionEvents } from './marketing/flushConversionEvents';
 export { presaveRegister } from './marketing/presaveRegister';
 export { createPreSaveCampaign, getPreSaveCampaign, listPreSaveCampaigns } from './marketing/presaveCampaigns';
+export { sendWebhookOnEvent, processWebhookQueue, createWebhook } from './functions/webhooks/dispatcher';
 export { shopifyWebhook } from './marketing/shopifyWebhook';
 
 // Storage Maintenance (Scheduled — orphan cleanup, quota tracking, archival flagging, temp cleanup)

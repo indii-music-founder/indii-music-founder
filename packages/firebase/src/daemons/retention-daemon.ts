@@ -16,10 +16,20 @@ export const retentionDaemon = onSchedule("every 72 hours", async (_event) => {
     cutoffDate.setDate(cutoffDate.getDate() - 90);
 
     // Query active placements that are younger than 90 days
-    const snapshot = await placementsRef
-        .where('status', '==', 'ACTIVE')
-        .where('placedAt', '>', cutoffDate)
-        .get();
+    let snapshot;
+    try {
+        snapshot = await placementsRef
+            .where('status', '==', 'ACTIVE')
+            .where('placedAt', '>', cutoffDate)
+            .get();
+    } catch (error) {
+        // A missing composite index (status ASC, placedAt ASC) or a rules
+        // regression must fail the run loudly — a silent catch here would
+        // look like a healthy daemon while vendor compliance audits never
+        // happen (ISSUE-1393).
+        console.error('[retentionDaemon] Query failed — placements audit did not run.', error);
+        throw error;
+    }
 
     const batch = db.batch();
     let updates = 0;

@@ -2309,3 +2309,16 @@ All seven T1 sub-items built, tested against real (not mocked-away) verification
 - **This closes ISSUE-1158's residual acceptance** (deployed authenticated Cloud run proving generation, fresh-read playback, idempotent replay) — the last remaining item was the live run, now done with genuine session credentials.
 - **ISSUE-1392 root cause recap:** TTS model rejects interactions.create ("400 Unsupported model interaction"); fixed by routing through models.generateContent with string speechConfig (→ voiceConfig.prebuiltVoiceConfig.voiceName) + responseModalities ['AUDIO']; extractor handles both response shapes. 54/54 gateway tests.
 - **Also proven in this round:** the probe harness itself (refresh-token → ID token via securetoken API, App Check token from IndexedDB, direct callable REST invocation) is a reusable live-proof tool — /tmp/probe-day2-audio-fix.cjs.
+
+---
+
+### ISSUE-1393: retention daemon was dead code + would crash on a missing index; webhook dispatcher never deployed (2026-08-20, perfection sweep)
+
+- **Discovery:** /go perfection sweep — a composite-index coverage scan + dead-export sweep against index.ts found:
+  1. `retentionDaemon` (daemons/retention-daemon.ts, onSchedule every 72h) was NEVER imported into index.ts — never deployed. Its query `placements where(status==ACTIVE, placedAt > 90d)` REQUIRES a composite index (range+equality — **proven live**: REST runQuery returned `FAILED_PRECONDITION: The query requires an index`), and no index existed in JSON or live.
+  2. Webhook dispatcher (`sendWebhookOnEvent` onDocumentCreated, `processWebhookQueue` onSchedule 30s, `createWebhook` onRequest) — defined with 29 passing tests but never exported from index.ts → never deployed.
+  3. Truly orphaned callables (no renderer refs, no tests): `triggerUnifiedDistribution`, `getSocialConnectionStatus`, `handleEscrowWebhook` — documented, NOT wired (speculative).
+- **Fix:** exported retentionDaemon + all three webhook dispatcher functions from index.ts; added `placements (status ASC, placedAt ASC, __name__)` composite index to firestore.indexes.json (the CI `--force`-surviving source of truth — ISSUE-1369 class prevention); retention daemon now fails loudly (console.error + rethrow) if the query fails so a broken audit can never look healthy.
+- **Verified index safety of wired queries:** `webhook_queue nextRetry<=` (single-field range — no composite), `users/{uid}/webhooks active== + events array-contains` (served by single-field merge — **proven live via REST probe**), `events` docs (server-written only).
+- **Tests:** gateway 54 + dispatcher 29 = 83 pass; firebase typecheck + lint clean.
+- **Also proven this round (correction to earlier assumption):** Firestore serves multi-equality and equality+array-contains queries WITHOUT composite indexes via single-field merge — only range/inequality+equality and cross-field orderBy need composites. My initial 30-flagged scan was mostly false positives; the placements case was the one true positive.
