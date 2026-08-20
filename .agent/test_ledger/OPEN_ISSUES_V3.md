@@ -2322,3 +2322,14 @@ All seven T1 sub-items built, tested against real (not mocked-away) verification
 - **Verified index safety of wired queries:** `webhook_queue nextRetry<=` (single-field range — no composite), `users/{uid}/webhooks active== + events array-contains` (served by single-field merge — **proven live via REST probe**), `events` docs (server-written only).
 - **Tests:** gateway 54 + dispatcher 29 = 83 pass; firebase typecheck + lint clean.
 - **Also proven this round (correction to earlier assumption):** Firestore serves multi-equality and equality+array-contains queries WITHOUT composite indexes via single-field merge — only range/inequality+equality and cross-field orderBy need composites. My initial 30-flagged scan was mostly false positives; the placements case was the one true positive.
+
+---
+
+### ISSUE-1393 CLOSED — all wired + verified live (2026-08-20 12:40 UTC)
+
+- **Commits:** 8513fc6cd (wire + index) → CI #299 caught a latent landmine (module-top-level getFirestore() crash on import) → 2179e43a9 (lazy Firestore handles) → CI #300 GREEN.
+- **Live verification (post #300):**
+  - All four functions deployed and running: `retentionDaemon`, `sendWebhookOnEvent`, `processWebhookQueue`, `createWebhook`.
+  - `placements (status ASC, placedAt ASC)` composite index READY — the daemon's query returns OK live (was FAILED_PRECONDITION before the index existed).
+- **Import-crash class documented:** bare `getFirestore()` at module top level throws at import time in test envs that never init admin; `admin.firestore()` namespace form does not. Scan found 3 latent instances (publishing/iswc.ts, orchestration/fsm/machine.ts, stripe/escrow.ts) — all in unimported/dead modules, harmless, but any future wiring must use lazy handles. The import smoke test pattern (import index.ts + assert exports) is the regression guard.
+- **Perfection-sweep method note:** parallel audit agents returned zero findings (too shallow); the real defects came from my own targeted scans (composite-index coverage vs live REST probes, dead-export sweep vs index.ts, module-top-level init scan). Lesson: audits must run the code's actual queries/probes, not just read files.
