@@ -62,7 +62,7 @@ class WebSocketControlPlane {
   private sessionLocks: Map<string, SessionLock> = new Map();
   private commandQueues: Map<string, QueueEntry[]> = new Map();
   private processingSet: Set<string> = new Set(); // sessions actively processing
-  private pendingAcks: Map<string, { resolve: (v: unknown) => void; reject: (e: Error) => void }> = new Map();
+  private pendingAcks: Map<string, { resolve: (v: unknown) => void; reject: (e: Error) => void; timer: ReturnType<typeof setTimeout> }> = new Map();
   private listeners: Map<string, Set<(msg: WCPMessage) => void>> = new Map();
   private heartbeatTimer: ReturnType<typeof setInterval> | null = null;
   private reconnectAttempts = 0;
@@ -70,6 +70,8 @@ class WebSocketControlPlane {
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private readonly maxReconnects = 5;
   private readonly heartbeatIntervalMs = 20_000;
+  /** Any inbound traffic proves liveness; silence past this forces a close. */
+  private lastInboundAt = 0;
 
   // ─── Connection ────────────────────────────────────────────────────────────
 
@@ -90,11 +92,13 @@ class WebSocketControlPlane {
     this.ws.onopen = () => {
       this.state = 'connected';
       this.reconnectAttempts = 0;
+      this.lastInboundAt = Date.now();
       logger.info('[WCP] Connected');
       this._startHeartbeat();
     };
 
     this.ws.onmessage = (event: MessageEvent) => {
+      this.lastInboundAt = Date.now();
       try {
         const msg: WCPMessage = JSON.parse(event.data as string);
         this._dispatch(msg);
@@ -116,7 +120,7 @@ class WebSocketControlPlane {
     };
   }
 
-  disconnect(): void {
+  disconnect(reason = '[WCP] Disconnected'): void {
     this.reconnectEnabled = false;
     if (this.reconnectTimer) {
       clearTimeout(this.reconnectTimer);
@@ -133,13 +137,32 @@ class WebSocketControlPlane {
       socket.close();
     }
     this.state = 'disconnected';
+    // A clean disconnect is a full reset: the next connect() must start a
+    // fresh backoff instead of inheriting a dead counter, and everything
+    // waiting on this connection must fail now rather than hang until the
+    // ack timeout.
+    this.reconnectAttempts = 0;
+    const connectionError = new Error(reason);
+    this.commandQueues.forEach(queue => queue.splice(0).forEach(entry => entry.reject(connectionError)));
+    this.pendingAcks.forEach(pending => {
+      clearTimeout(pending.timer);
+      pending.reject(connectionError);
+    });
+    this.commandQueues.clear();
+    this.pendingAcks.clear();
+    this.processingSet.clear();
   }
 
   clearAccountBoundary(): void {
-    this.disconnect();
+    // disconnect(reason) rejects everything queued/pending with the boundary
+    // message; the explicit rejections below are kept as a no-op safety net.
+    this.disconnect('Authenticated account changed');
     const boundaryError = new Error('Authenticated account changed');
     this.commandQueues.forEach(queue => queue.splice(0).forEach(entry => entry.reject(boundaryError)));
-    this.pendingAcks.forEach(pending => pending.reject(boundaryError));
+    this.pendingAcks.forEach(pending => {
+      clearTimeout(pending.timer);
+      pending.reject(boundaryError);
+    });
     this.commandQueues.clear();
     this.pendingAcks.clear();
     this.sessionLocks.clear();
@@ -244,8 +267,10 @@ class WebSocketControlPlane {
   private _dispatch(msg: WCPMessage): void {
     // Resolve pending acks
     if (msg.type === 'ack' && this.pendingAcks.has(msg.requestId)) {
-      this.pendingAcks.get(msg.requestId)!.resolve(msg.payload);
+      const pending = this.pendingAcks.get(msg.requestId)!;
+      clearTimeout(pending.timer);
       this.pendingAcks.delete(msg.requestId);
+      pending.resolve(msg.payload);
     }
 
     // Fan out to type listeners
@@ -293,16 +318,15 @@ class WebSocketControlPlane {
         return;
       }
 
-      this.pendingAcks.set(msg.requestId, { resolve, reject });
-      this._rawSend(msg);
-
-      // Timeout if no ack after 60s
-      setTimeout(() => {
+      const timer = setTimeout(() => {
         if (this.pendingAcks.has(msg.requestId)) {
           this.pendingAcks.delete(msg.requestId);
           reject(new Error(`[WCP] Timeout waiting for ack ${msg.requestId}`));
         }
       }, 60_000);
+
+      this.pendingAcks.set(msg.requestId, { resolve, reject, timer });
+      this._rawSend(msg);
     });
   }
 
@@ -316,7 +340,7 @@ class WebSocketControlPlane {
 
   private _startHeartbeat(): void {
     this.heartbeatTimer = setInterval(() => {
-      if (this.state === 'connected') {
+      if (this.state === 'connected' && this.ws) {
         const hb: WCPMessage = {
           type: 'heartbeat',
           sessionId: '__hb__',
@@ -324,7 +348,22 @@ class WebSocketControlPlane {
           timestamp: Date.now(),
           requestId: crypto.randomUUID(),
         };
-        this._rawSend(hb);
+        // Route the heartbeat through the ack machinery: the server's ack is
+        // inbound traffic that proves liveness. An unacked heartbeat rejects
+        // here (bounded: at most ~3 pending timers at 20s/60s) and the
+        // silence check below forces the reconnect.
+        this._dispatchEntry(hb).catch(() => {
+          logger.warn(`[WCP] Heartbeat ${hb.requestId} went unacknowledged.`);
+        });
+
+        // Liveness: a half-open TCP socket (peer gone, no FIN/RST) would
+        // otherwise stay 'connected' forever and every send() would hang
+        // until the ack timeout. Silence past three intervals means the
+        // socket is dead — force the close so onclose reconnects.
+        if (Date.now() - this.lastInboundAt > 3 * this.heartbeatIntervalMs) {
+          logger.warn(`[WCP] No inbound traffic for ${(Date.now() - this.lastInboundAt) / 1000}s — forcing reconnect.`);
+          this.ws.close();
+        }
       }
     }, this.heartbeatIntervalMs);
   }
@@ -337,13 +376,19 @@ class WebSocketControlPlane {
   }
 
   private _scheduleReconnect(url: string): void {
-    if (this.reconnectAttempts >= this.maxReconnects) {
-      logger.warn('[WCP] Max reconnect attempts reached. Giving up.');
-      return;
-    }
-    const delay = Math.min(1000 * 2 ** this.reconnectAttempts, 30_000);
+    // Capped exponential backoff that never silently gives up: once the
+    // initial budget is exhausted the plane keeps retrying at the cap
+    // (30s) while reconnectEnabled is true — the old code stopped
+    // scheduling entirely after maxReconnects, leaving the plane dead
+    // with no recovery path until a fresh connect().
+    const attempts = this.reconnectAttempts;
+    const delay = Math.min(1000 * 2 ** attempts, 30_000);
     this.reconnectAttempts++;
-    logger.info(`[WCP] Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts})`);
+    if (attempts >= this.maxReconnects) {
+      logger.warn(`[WCP] Reconnect attempt ${attempts + 1} — keeping retry at capped interval`);
+    } else {
+      logger.info(`[WCP] Reconnecting in ${delay}ms (attempt ${attempts + 1})`);
+    }
     this.reconnectTimer = setTimeout(() => {
       this.reconnectTimer = null;
       if (this.reconnectEnabled) this.connect(url);
