@@ -3,6 +3,7 @@ import { ipcMain } from 'electron';
 import { validateSender } from '../utils/ipc-security';
 import { AgentSupervisor } from '../utils/AgentSupervisor';
 import { BrandConsistencySchema } from '../utils/validation';
+import { accessControlService } from '../security/AccessControlService';
 import { z } from 'zod';
 import path from 'path';
 
@@ -20,9 +21,20 @@ export const registerBrandHandlers = () => {
             // Validate inputs
             const validated = BrandConsistencySchema.parse({ assetPath, brandKit });
 
+            // 2. SECURITY: the schema only rejects `..` and non-media
+            // extensions — an absolute path like /Users/me/.ssh/keys.png
+            // passes it. This handler reads the file's bytes and transmits
+            // them to the model provider, so it must sit behind the same
+            // authorization gate as audio:analyze: only paths the user
+            // granted (dialog) or that live in the app-scoped directories
+            // may be read.
+            if (!accessControlService.verifyAccess(validated.assetPath)) {
+                throw new Error(`Security Violation: Access to ${validated.assetPath} is denied. File was not authorized by user.`);
+            }
+
             log.info(`[Brand] Analyzing consistency for: ${path.basename(validated.assetPath)}`);
 
-            // 2. Execute Python Script via AgentSupervisor
+            // 3. Execute Python Script via AgentSupervisor
             // Using 60s timeout for vision processing
             const report = await AgentSupervisor.execute<Record<string, unknown>>(
                 'brand',
@@ -31,7 +43,7 @@ export const registerBrandHandlers = () => {
                 { timeoutMs: 60000 }
             );
 
-            // 3. Return structured result
+            // 4. Return structured result
             return {
                 success: true,
                 report: report

@@ -145,10 +145,16 @@ class WorkspaceSyncService {
     /**
      * Push a workspace snapshot to Firestore.
      * Writes to the active artist/studio scope with merge: true to avoid clobbering other fields.
+     *
+     * Returns the server-assigned write time in epoch millis (or 0 when the
+     * write result carries none, e.g. E2E mock mode). Callers use this as the
+     * last-push timestamp for the cross-device last-write-wins comparison —
+     * comparing a local `Date.now()` against the cloud's server timestamp is
+     * wrong under any device clock skew.
      */
-    async pushSnapshot(snapshot: WorkspaceSnapshot, scopeId?: string | null): Promise<void> {
-        if (isFirebaseE2EMockEnabled()) return;
-        
+    async pushSnapshot(snapshot: WorkspaceSnapshot, scopeId?: string | null): Promise<number> {
+        if (isFirebaseE2EMockEnabled()) return 0;
+
         const ref = getWorkspaceRef(scopeId);
         if (!ref) {
             throw new Error('Workspace sync requires an authenticated user.');
@@ -164,7 +170,17 @@ class WorkspaceSyncService {
 
         try {
             await setDoc(ref, workspaceDoc, { merge: true });
+            // Read back the server-assigned write time. The renderer compares
+            // this against the cloud timestamp of another device's write for
+            // last-write-wins; a local `Date.now()` would be wrong under any
+            // device clock skew.
+            const written = await getDoc(ref);
+            const storedUpdatedAt = written.data()?.updatedAt;
+            const serverMillis = storedUpdatedAt && typeof storedUpdatedAt === 'object' && 'toMillis' in storedUpdatedAt
+                ? Number((storedUpdatedAt as { toMillis: () => number }).toMillis())
+                : 0;
             logger.info('[WorkspaceSync] 💾 Snapshot pushed successfully');
+            return Number.isFinite(serverMillis) ? serverMillis : 0;
         } catch (error) {
             logger.error('[WorkspaceSync] Push failed:', error);
             throw error;

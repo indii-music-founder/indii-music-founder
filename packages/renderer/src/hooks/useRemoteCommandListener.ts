@@ -554,13 +554,35 @@ function useFirestoreRelay(enabled: boolean) {
         wakeDesktop();
         isProcessing.current = true;
 
-        // Safety: auto-unlock after 2 minutes so one stuck command can't block the relay forever
+        // Safety: auto-unlock so one stuck command can't block the relay
+        // forever. BUT agent runs legitimately take up to 5-10 minutes —
+        // unlocking while `AgentService` is still processing would let the
+        // next command claim the queue, have `sendMessage` silently no-op
+        // against the busy guard, and get a stale or misleading response.
+        // Only unlock once the store reports the agent run has settled; keep
+        // re-checking while it is genuinely active.
         const processingTimeout = setTimeout(() => {
-            if (isProcessing.current) {
-                isProcessing.current = false;
-                writeDiagnostic('processing_timeout_reset', { commandId: command.id });
-                scanAndProcessPendingCommands();
+            if (!isProcessing.current) return;
+            if (useStore.getState().isAgentProcessing) {
+                logger.info('[RemoteRelay/Firestore] ⏳ Command still executing in AgentService — extending processing lock.');
+                writeDiagnostic('processing_timeout_extended', { commandId: command.id });
+                const recheck = () => {
+                    if (!isProcessing.current) return;
+                    if (useStore.getState().isAgentProcessing) {
+                        writeDiagnostic('processing_timeout_extended', { commandId: command.id });
+                        setTimeout(recheck, 30_000);
+                        return;
+                    }
+                    isProcessing.current = false;
+                    writeDiagnostic('processing_timeout_reset', { commandId: command.id });
+                    scanAndProcessPendingCommands();
+                };
+                setTimeout(recheck, 30_000);
+                return;
             }
+            isProcessing.current = false;
+            writeDiagnostic('processing_timeout_reset', { commandId: command.id });
+            scanAndProcessPendingCommands();
         }, 120_000);
 
         logger.info(`[RemoteRelay/Firestore] 📱→🖥️ Processing command: "${command.text?.substring(0, 50)}"`);

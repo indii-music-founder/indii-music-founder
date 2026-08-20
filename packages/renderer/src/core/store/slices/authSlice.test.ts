@@ -447,6 +447,45 @@ describe('AuthSlice', () => {
             expect(useStore.getState().user).toBeNull();
         });
 
+        it('ignores a transient null that arrives while the login debounce is pending', async () => {
+            // Regression: a token-refresh null blip landing inside the 500ms
+            // login debounce used to fall through to the steady-state branch,
+            // cancelling the pending login and stranding the app logged-out
+            // while Firebase is still signed in.
+            const { auth } = await import('@/services/firebase');
+            const { initializeAuthListener } = useStore.getState();
+
+            let authCallback: (user: unknown) => void = () => { };
+            vi.mocked(onAuthStateChanged).mockImplementation((_auth, cb) => {
+                authCallback = cb as (user: unknown) => void;
+                return () => { };
+            });
+
+            initializeAuthListener();
+
+            const mockUser = { uid: 'blip-user', email: 'blip@example.com' };
+            (auth as unknown as Record<string, unknown>).currentUser = mockUser;
+            authCallback(mockUser);
+
+            // Still loading — login debounce is in flight.
+            expect(useStore.getState().authLoading).toBe(true);
+
+            // Null blip right after the login event (token refresh cycle).
+            (auth as unknown as Record<string, unknown>).currentUser = mockUser;
+            authCallback(null);
+
+            // The pending login debounce must NOT have been cancelled — the
+            // user is neither logged out nor flipped to a non-loading state.
+            expect(useStore.getState().user).toBeNull();
+            expect(useStore.getState().authLoading).toBe(true);
+
+            // The login debounce resolves against the still-signed-in user.
+            vi.advanceTimersByTime(500);
+
+            expect(useStore.getState().user).toEqual(mockUser);
+            expect(useStore.getState().authLoading).toBe(false);
+        });
+
         it('should preserve founder source from electron handoff tokens', async () => {
             let userUpdateCallback: ((tokens: { idToken: string; accessToken?: string | null; source?: string }) => Promise<void> | void) | null = null;
             const onUserUpdate = vi.fn((cb) => {

@@ -441,6 +441,19 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, _get) => ({
                 return;
             }
 
+            // A null event arriving WHILE the login debounce is pending (i.e.
+            // right after the login event, before its 500ms timer resolved)
+            // used to fall through to the steady-state branch below, which
+            // cancelled the pending login and logged the user out even though
+            // Firebase is still signed in — the token-refresh null blip that
+            // follows a login is indistinguishable at fire time from a logout,
+            // so the pending timer (which re-checks auth.currentUser) is the
+            // only authority. Ignore the blip; the login timer decides.
+            if (!user && debounceTimer) {
+                logger.info('[Auth] Null during login debounce — ignoring transient null.');
+                return;
+            }
+
             // BUG-002 FIX: Debounce rapid null→user transitions during token refresh.
             // Firebase may briefly emit null between token refresh cycles,
             // causing spurious logouts under rapid load (100+ clicks/sec).

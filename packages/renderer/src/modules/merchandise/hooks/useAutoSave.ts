@@ -86,20 +86,24 @@ export const useAutoSave = (
             canvas.setZoom(1);
             // We don't resize the whole canvas here to avoid disruptive flashes during auto-save,
             // instead we use the width/height parameters of toDataURL
-
-            const thumbnail = canvas.toDataURL({
-                format: 'png',
-                quality: 0.6,
-                multiplier: 0.3, // Fixed 30x scale of 800x1000 = 240x300 thumbnail
-                left: 0,
-                top: 0,
-                width: 800,
-                height: 1000
-            });
-
-            // Restore
-            canvas.setViewportTransform(currentVpt as [number, number, number, number, number, number]);
-            canvas.setZoom(currentZoom);
+            let thumbnail: string;
+            try {
+                thumbnail = canvas.toDataURL({
+                    format: 'png',
+                    quality: 0.6,
+                    multiplier: 0.3, // Fixed 30x scale of 800x1000 = 240x300 thumbnail
+                    left: 0,
+                    top: 0,
+                    width: 800,
+                    height: 1000
+                });
+            } finally {
+                // Restore even when toDataURL throws (tainted canvas, memory
+                // pressure) — otherwise the user's zoom/pan is left at
+                // identity until the next successful save.
+                canvas.setViewportTransform(currentVpt as [number, number, number, number, number, number]);
+                canvas.setZoom(currentZoom);
+            }
 
             // Save to Firestore. orgId is best-effort — never blocks the save
             // (ISSUE-933: personal/solo workspaces have no matching org entry).
@@ -177,8 +181,32 @@ export const useAutoSave = (
 
             if (saveTimeoutRef.current) {
                 clearTimeout(saveTimeoutRef.current);
+                saveTimeoutRef.current = null;
+                // Flush the pending edit on unmount — without this, navigating
+                // away inside the 5s debounce window silently discards the
+                // last edits (same loss the video editor hook protects
+                // against on its own unmount).
+                void saveDesign();
             }
         };
+    }, [enabled, canvas, saveDesign]);
+
+    // Flush pending edits when the tab is hidden. Mobile browsers routinely
+    // kill a backgrounded tab without firing beforeunload, silently discarding
+    // up to a full debounce window of canvas edits.
+    useEffect(() => {
+        if (!enabled || !canvas) return;
+
+        const handleVisibilityChange = () => {
+            if (document.visibilityState !== 'hidden') return;
+            if (saveTimeoutRef.current) {
+                clearTimeout(saveTimeoutRef.current);
+                saveTimeoutRef.current = null;
+                void saveDesign();
+            }
+        };
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+        return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
     }, [enabled, canvas, saveDesign]);
 
     return { saveDesign, lastSaved, isSaving, error };

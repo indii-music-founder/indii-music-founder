@@ -2,6 +2,7 @@ import log from 'electron-log';
 import { ipcMain, IpcMainInvokeEvent } from 'electron';
 import { AgentSupervisor } from '../utils/AgentSupervisor';
 import { validateSender } from '../utils/ipc-security';
+import { accessControlService } from '../security/AccessControlService';
 import { z } from 'zod';
 import crypto from 'crypto';
 import { credentialService } from '../services/CredentialService';
@@ -147,6 +148,15 @@ export function registerSecurityHandlers() {
         try {
             const validated = ScanSchema.parse(data);
             const scope = validated.scope || process.cwd();
+
+            // SECURITY: the scanner recursively walks the scope and applies
+            // secret-detection regexes, so the renderer must not be able to
+            // point it at arbitrary directories. Gate the scope behind the
+            // same authorization check used for file reads (dialog grants +
+            // app-scoped roots).
+            if (!accessControlService.verifyAccess(scope)) {
+                throw new Error(`Security Violation: Access to ${scope} is denied. Directory was not authorized by user.`);
+            }
 
             log.info(`[SecurityHandler] Running vulnerability scan on: ${scope}`);
 

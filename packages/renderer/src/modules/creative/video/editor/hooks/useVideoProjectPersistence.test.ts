@@ -236,4 +236,84 @@ describe('useVideoProjectPersistence', () => {
             expect(useVideoEditorStore.getState().projectSaveError).toBe('Missing or insufficient permissions.');
         });
     });
+
+    // Regression: overlapping autosaves (debounce + interval + visibility +
+    // unmount flushes can all fire while a transaction is in flight). Two
+    // concurrent saves sharing one revision token would make the loser hit
+    // the service's ConflictError — a spurious "could not save" banner even
+    // though the write landed. Saves must be serialized, and a coalesced
+    // trailing save must use the advanced token, never the stale one.
+    it('coalesces overlapping autosaves so no two saves ever share a revision token', async () => {
+        vi.mocked(PersistenceService.loadVideoProject).mockResolvedValue({
+            status: 'absent',
+            token: token('project-a'),
+        });
+
+        let resolveFirstSave: (result: Awaited<ReturnType<typeof PersistenceService.saveVideoProject>>) => void = () => { };
+        const firstSave = new Promise<Awaited<ReturnType<typeof PersistenceService.saveVideoProject>>>((resolve) => {
+            resolveFirstSave = resolve;
+        });
+        vi.mocked(PersistenceService.saveVideoProject)
+            // Debounced save #1 — held open while the user keeps editing.
+            .mockImplementationOnce(() => firstSave)
+            // Coalesced trailing save — resolves with the advanced token.
+            .mockResolvedValue({ success: true, token: token('project-a', 2) });
+
+        renderHook(() => useVideoProjectPersistence());
+        await vi.waitFor(() => expect(useVideoEditorStore.getState().project.id).toBe('project-a'));
+
+        // Mutation → debounce fires → save #1 starts and stays in flight.
+        useVideoEditorStore.getState().addTrack('audio');
+        await vi.advanceTimersByTimeAsync(5000);
+        expect(PersistenceService.saveVideoProject).toHaveBeenCalledTimes(1);
+
+        // More edits while save #1 is still in flight → second debounce fires.
+        useVideoEditorStore.getState().addTrack('video');
+        await vi.advanceTimersByTimeAsync(5000);
+
+        // The second request must NOT start a concurrent save.
+        expect(PersistenceService.saveVideoProject).toHaveBeenCalledTimes(1);
+
+        // Save #1 settles; the trailing save runs with the ADVANCED token.
+        resolveFirstSave({ success: true, token: token('project-a', 1) });
+        await vi.waitFor(() => {
+            expect(PersistenceService.saveVideoProject).toHaveBeenCalledTimes(2);
+        });
+
+        const calls = vi.mocked(PersistenceService.saveVideoProject).mock.calls;
+        expect(calls[0]?.[0].revision).toBeNull();
+        expect(calls[1]?.[0].revision).toBe(1);
+
+        // No spurious failure banner.
+        expect(useVideoEditorStore.getState().projectSaveError).toBeNull();
+    });
+
+    it('does not surface a false failure when a coalesced trailing save also succeeds', async () => {
+        vi.mocked(PersistenceService.loadVideoProject).mockResolvedValue({
+            status: 'absent',
+            token: token('project-a'),
+        });
+        let resolveFirstSave: (result: Awaited<ReturnType<typeof PersistenceService.saveVideoProject>>) => void = () => { };
+        const firstSave = new Promise<Awaited<ReturnType<typeof PersistenceService.saveVideoProject>>>((resolve) => {
+            resolveFirstSave = resolve;
+        });
+        vi.mocked(PersistenceService.saveVideoProject)
+            .mockImplementationOnce(() => firstSave)
+            .mockResolvedValue({ success: true, token: token('project-a', 1) });
+
+        renderHook(() => useVideoProjectPersistence());
+        await vi.waitFor(() => expect(useVideoEditorStore.getState().project.id).toBe('project-a'));
+
+        useVideoEditorStore.getState().addTrack('audio');
+        await vi.advanceTimersByTimeAsync(5000);
+        useVideoEditorStore.getState().addTrack('video');
+        await vi.advanceTimersByTimeAsync(5000);
+
+        resolveFirstSave({ success: true, token: token('project-a', 1) });
+        await vi.waitFor(() => {
+            expect(PersistenceService.saveVideoProject).toHaveBeenCalledTimes(2);
+        });
+
+        expect(useVideoEditorStore.getState().projectSaveError).toBeNull();
+    });
 });

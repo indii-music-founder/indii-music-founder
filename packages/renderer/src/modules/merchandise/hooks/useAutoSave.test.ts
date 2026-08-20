@@ -343,4 +343,56 @@ describe('useAutoSave', () => {
 
         loggerDebugSpy.mockRestore();
     });
+
+    it('flushes a pending debounced save on unmount instead of discarding it', async () => {
+        const { setDoc: mockSetDoc } = await import('firebase/firestore');
+        vi.mocked(mockSetDoc).mockResolvedValue(undefined);
+
+        const { unmount } = renderHook(() =>
+            useAutoSave(mockCanvas, 'Test Design', 'design-123', { enabled: true, interval: 60000 })
+        );
+
+        // The user edits — the 5s debounce is armed.
+        mockCanvas.fire('object:modified');
+        expect(mockSetDoc).not.toHaveBeenCalled();
+
+        // Navigate away before the debounce fires.
+        unmount();
+
+        await waitFor(() => {
+            expect(mockSetDoc).toHaveBeenCalled();
+        });
+    });
+
+    it('restores the canvas viewport when thumbnail generation throws', async () => {
+        const { setDoc: mockSetDoc } = await import('firebase/firestore');
+        vi.mocked(mockSetDoc).mockResolvedValue(undefined);
+        const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => { });
+
+        // User is zoomed in when the save runs.
+        mockCanvas.setZoom(2);
+        mockCanvas.setViewportTransform([2, 0, 0, 2, 100, 100]);
+
+        const originalToDataURL = mockCanvas.toDataURL.bind(mockCanvas);
+        vi.spyOn(mockCanvas, 'toDataURL').mockImplementation(() => {
+            throw new Error('tainted canvas');
+        });
+
+        const { result } = renderHook(() =>
+            useAutoSave(mockCanvas, 'Test Design', 'design-123', { enabled: false })
+        );
+
+        let saveResult;
+        await act(async () => {
+            saveResult = await result.current.saveDesign();
+        });
+
+        expect(saveResult).toHaveProperty('success', false);
+        // The view must be restored even though the save failed.
+        expect(mockCanvas.getZoom()).toBe(2);
+        expect(mockCanvas.viewportTransform).toEqual([2, 0, 0, 2, 100, 100]);
+
+        mockCanvas.toDataURL = originalToDataURL;
+        consoleErrorSpy.mockRestore();
+    });
 });

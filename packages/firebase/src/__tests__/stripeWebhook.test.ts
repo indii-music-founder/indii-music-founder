@@ -418,9 +418,12 @@ describe('Stripe Webhook Handler (WO-8)', () => {
         await stripeWebhook(req, res);
 
         expect(jsonFn).toHaveBeenCalledWith({ received: true });
-        // Ledger write must target users/{userId}/ledger
+        // Ledger write must target users/{userId}/ledger with a deterministic
+        // invoice-keyed ID — a duplicate delivery overwrites the same row
+        // instead of double-counting the payment.
         expect(mocks.mockDb.collection).toHaveBeenCalledWith('users/user-123/ledger');
-        expect(mocks.mockAdd).toHaveBeenCalledWith(
+        expect(mocks.mockDoc).toHaveBeenCalledWith('subscription_payment_in_paid_001');
+        expect(mocks.mockSet).toHaveBeenCalledWith(
             expect.objectContaining({
                 type: 'subscription_payment',
                 invoiceId: 'in_paid_001',
@@ -458,9 +461,11 @@ describe('Stripe Webhook Handler (WO-8)', () => {
             expect.anything(),
             expect.objectContaining({ status: 'past_due' })
         );
-        // Dunning record must target dunning_notifications collection
+        // Dunning record must target dunning_notifications with a
+        // deterministic invoice-keyed ID (idempotent under retry).
         expect(mocks.mockDb.collection).toHaveBeenCalledWith('dunning_notifications');
-        expect(mocks.mockAdd).toHaveBeenCalledWith(
+        expect(mocks.mockDoc).toHaveBeenCalledWith('dunning_in_failed_001');
+        expect(mocks.mockSet).toHaveBeenCalledWith(
             expect.objectContaining({
                 invoiceId: 'in_failed_001',
                 status: 'pending',

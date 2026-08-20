@@ -97,12 +97,24 @@ let functions: ReturnType<typeof getFunctions> | any = null;
 let functionsWest1: ReturnType<typeof getFunctions> | any = null;
 
 try {
-    db = initializeFirestore(app, {
-        localCache: persistentLocalCache({
-            tabManager: persistentMultipleTabManager()
-        }),
-        experimentalForceLongPolling: true
-    });
+    try {
+        db = initializeFirestore(app, {
+            localCache: persistentLocalCache({
+                tabManager: persistentMultipleTabManager()
+            }),
+            experimentalForceLongPolling: true
+        });
+    } catch (persistentError) {
+        // IndexedDB can be unavailable (Safari private browsing, storage-
+        // blocked webviews, disk-full). Persistent offline caching is a
+        // convenience, not a requirement — degrade to in-memory Firestore
+        // instead of leaving `db` null, which would crash every caller that
+        // does doc(db, ...) with a TypeError at first use.
+        logger.warn('[Firebase] Persistent Firestore cache unavailable — falling back to in-memory mode:', persistentError);
+        db = initializeFirestore(app, {
+            experimentalForceLongPolling: true
+        });
+    }
     storage = getStorage(app);
 
     const isDev = env.DEV;
@@ -312,7 +324,8 @@ export { remoteConfig };
 // Initialize Messaging (Client-side only)
 // LAZY: Use isSupported() guard to prevent FirebaseError on browsers that lack
 // Service Worker / Push API (e.g. Chrome iOS). Sentry fix 2026-04-15.
-import { getMessaging, isSupported as isMessagingSupported } from 'firebase/messaging';
+// The messaging module itself is also loaded lazily (dynamic import inside
+// getFirebaseMessaging) so its ~200KB stays out of the eager startup bundle.
 import type { Messaging } from 'firebase/messaging';
 import { Logger } from '@/core/logger/Logger';
 
@@ -333,6 +346,7 @@ export async function getFirebaseMessaging(): Promise<Messaging | null> {
     if (typeof window === 'undefined') return null;
 
     try {
+        const { getMessaging, isSupported: isMessagingSupported } = await import('firebase/messaging');
         const supported = await isMessagingSupported().catch(() => false);
         if (!supported) {
             logger.debug('[Firebase] Messaging not supported in this browser — skipping FCM init.');

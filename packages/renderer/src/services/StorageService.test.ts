@@ -143,4 +143,71 @@ describe('StorageService', () => {
 
         unsubscribe();
     });
+
+    it('detaches the failed primary listener before attaching the fallback, and never accumulates fallbacks on repeated index errors', async () => {
+        const docFor = (id: string, timestamp: number, orgId: string) => ({
+            id,
+            data: () => ({
+                id,
+                type: 'image',
+                url: `https://cdn.test/${id}.png`,
+                prompt: id,
+                timestamp: { toMillis: () => timestamp },
+                projectId: 'project-1',
+                orgId,
+                userId: 'test-user-123',
+                origin: 'generated'
+            })
+        });
+
+        const unsubscribes: Array<ReturnType<typeof vi.fn>> = [];
+        const errorCallbacks: Array<(err: { code: string; message: string }) => void> = [];
+
+        mockOnSnapshot.mockImplementation((q, onNext, onError) => {
+            const unsub = vi.fn();
+            unsubscribes.push(unsub);
+            const isPrimary = q.constraints.some((c: { type?: string }) => c.type === 'orderBy');
+            if (isPrimary) {
+                // Primary queries are orderBy queries; capture their error path.
+                errorCallbacks.push(onError as (err: { code: string; message: string }) => void);
+            } else {
+                // Fallback query (no orderBy) — deliver docs.
+                const orgFilter = q.constraints.find((c: { field?: string }) => c.field === 'orgId');
+                onNext({ docs: [docFor(`fallback-${String(orgFilter?.value)}`, 1500, String(orgFilter?.value))] });
+            }
+            return unsub;
+        });
+
+        const updates: Array<Array<{ id: string }>> = [];
+        const unsubscribe = await StorageService.subscribeToHistory(
+            50,
+            (items) => updates.push(items),
+            () => { }
+        );
+
+        // org + personal primary listeners registered first.
+        expect(errorCallbacks).toHaveLength(2);
+
+        // Simulate the org query failing with a missing index — twice. A
+        // Firestore listener stays alive on error and keeps retrying, so a
+        // second error event must NOT attach a second fallback listener.
+        errorCallbacks[0]!({ code: 'failed-precondition', message: 'The query requires an index.' });
+        errorCallbacks[0]!({ code: 'failed-precondition', message: 'The query requires an index.' });
+
+        // Exactly one fallback attached: 2 primaries + 1 fallback, not 3.
+        expect(mockOnSnapshot).toHaveBeenCalledTimes(3);
+
+        // The failed primary listener was detached (it would otherwise keep
+        // retrying the dead query and duplicate every delivery).
+        expect(unsubscribes[0]).toHaveBeenCalledTimes(1);
+        // The healthy personal primary listener is untouched.
+        expect(unsubscribes[1]).not.toHaveBeenCalled();
+
+        // The fallback's docs flow into the merged updates.
+        await vi.waitFor(() => {
+            expect(updates.at(-1)?.map(item => item.id)).toContain('fallback-org-123');
+        });
+
+        unsubscribe();
+    });
 });

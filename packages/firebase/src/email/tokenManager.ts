@@ -205,21 +205,43 @@ export const emailExchangeToken = onCall(
             if (!tokens.refreshToken) {
                 throw new HttpsError('failed-precondition', 'The provider did not issue a refresh token. Reconnect and approve offline access.');
             }
-            const account = await verifyProviderAccount(provider, tokens.accessToken, request.auth.token);
             const firestore = admin.firestore();
             const userRef = firestore.collection('users').doc(userId);
             const tokenRef = userRef.collection('emailTokens').doc(provider);
             const accountRef = userRef.collection('emailAccounts').doc(provider);
-            const batch = firestore.batch();
-            batch.set(tokenRef, {
-                refreshToken: tokens.refreshToken,
-                scope: tokens.scope,
-                provider,
-                createdAt: admin.firestore.FieldValue.serverTimestamp(),
-                updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-            });
-            batch.set(accountRef, account, { merge: true });
-            await batch.commit();
+            const authClaims = request.auth?.token ?? {};
+            // Definite assignment: storeTokens() always assigns before the
+            // loop below exits successfully, and the return only runs after.
+            let account!: EmailAccountRecord;
+            const storeTokens = async (): Promise<void> => {
+                account = await verifyProviderAccount(provider, tokens.accessToken, authClaims);
+                const batch = firestore.batch();
+                batch.set(tokenRef, {
+                    refreshToken: tokens.refreshToken,
+                    scope: tokens.scope,
+                    provider,
+                    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+                    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+                });
+                batch.set(accountRef, account, { merge: true });
+                await batch.commit();
+            };
+
+            // The authorization code is single-use: once the provider exchange
+            // above succeeded, a transient Firestore or profile-verification
+            // failure must not force the user to redo the whole OAuth flow.
+            // The batch is idempotent (set, not create), so retrying it is safe.
+            const MAX_STORE_ATTEMPTS = 3;
+            for (let attempt = 1; attempt <= MAX_STORE_ATTEMPTS; attempt += 1) {
+                try {
+                    await storeTokens();
+                    break;
+                } catch (storageError) {
+                    if (attempt === MAX_STORE_ATTEMPTS) throw storageError;
+                    console.warn(`[EmailToken] Token storage attempt ${attempt}/${MAX_STORE_ATTEMPTS} failed — retrying:`, storageError);
+                    await new Promise((resolve) => setTimeout(resolve, 400 * attempt));
+                }
+            }
 
             console.log(`[EmailToken] Stored ${provider} tokens for user ${userId}`);
 
@@ -297,17 +319,30 @@ export const emailRefreshToken = onCall(
                 throw new HttpsError("invalid-argument", `Unknown provider: ${provider}`);
             }
 
-            // Update stored refresh token if a new one was issued
+            // Update stored refresh token if a new one was issued. The write is
+            // a compare-and-swap: a concurrent refresh (another device, a
+            // retry) may already have rotated the stored token while this call
+            // was in flight. Overwriting unconditionally could clobber the
+            // newer credential; the stored token stays authoritative and this
+            // call still returns its own (valid) access token.
             if (tokens.refreshToken && tokens.refreshToken !== actualRefreshToken) {
-                await admin.firestore()
+                const tokenRef = admin.firestore()
                     .collection('users')
                     .doc(userId)
                     .collection('emailTokens')
-                    .doc(provider)
-                    .update({
+                    .doc(provider);
+                await admin.firestore().runTransaction(async (tx) => {
+                    const freshSnap = await tx.get(tokenRef);
+                    if (!freshSnap.exists) return; // removed concurrently
+                    if (freshSnap.data()?.refreshToken !== actualRefreshToken) {
+                        console.warn(`[EmailToken] Concurrent refresh already rotated ${provider} tokens — keeping the newer stored token.`);
+                        return;
+                    }
+                    tx.update(tokenRef, {
                         refreshToken: tokens.refreshToken,
                         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
                     });
+                });
             }
 
             return {

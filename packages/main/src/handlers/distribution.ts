@@ -127,6 +127,14 @@ export const setupDistributionHandlers = () => {
             // SECURITY: Validate Path (Symlinks, System Roots, Hidden Files, Audio Extensions)
             const validatedPath = validateSafeAudioPath(absolutePath);
 
+            // SECURITY: same authorization gate as audio:analyze. The path
+            // checks above reject traversal/system files but still allow any
+            // absolute audio path on disk; the forensics script reads the
+            // file's bytes, so only user-granted or app-scoped files qualify.
+            if (!accessControlService.verifyAccess(validatedPath)) {
+                throw new Error(`Security Violation: Access to ${validatedPath} is denied. File was not authorized by user.`);
+            }
+
             // Execute Python Script
             const report = await AgentSupervisor.execute('audio', 'audio_forensics.py', [validatedPath], { timeoutMs: 60000 });
             return { success: true, report };

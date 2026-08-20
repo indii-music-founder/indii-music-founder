@@ -601,24 +601,36 @@ export class BaseAgent implements SpecializedAgent {
         // This eliminates race conditions that cause "agent dismantling"
         const lockKey = `${context?.userId || 'unknown'}-${context?.projectId || 'unknown'}-${this.id}`;
 
-        // If another execution is in progress for this key, wait for it
-        if (BaseAgent.executionLocks.has(lockKey)) {
+        // Chain onto any in-flight execution for this key. The old
+        // check-then-set pattern (await the held promise, THEN register your
+        // own) had a check/act gap: between the held promise settling and this
+        // caller registering, a fresh caller could observe no lock and start
+        // executing concurrently. Chaining inside the promise body closes the
+        // gap completely — every caller awaits the previous promise, and the
+        // map always holds the NEWEST promise.
+        const previousExecution = BaseAgent.executionLocks.get(lockKey);
+        if (previousExecution) {
             logger.debug(`[BaseAgent] ${this.name} waiting for existing execution to complete...`);
-            try {
-                await BaseAgent.executionLocks.get(lockKey);
-            } catch (_err: unknown) {
-                // Previous execution failed, but we can proceed
-                logger.warn(`[BaseAgent] Previous execution failed for ${lockKey}, proceeding...`);
-            }
         }
 
-        // Create a promise for this execution and store it
         const executionPromise = (async () => {
+            if (previousExecution) {
+                try {
+                    await previousExecution;
+                } catch (_err: unknown) {
+                    // Previous execution failed, but we can proceed
+                    logger.warn(`[BaseAgent] Previous execution failed for ${lockKey}, proceeding...`);
+                }
+            }
             try {
                 return await this._executeInternal(task, context, onProgress, signal, attachments);
             } finally {
-                // Clean up lock when done
-                BaseAgent.executionLocks.delete(lockKey);
+                // Only the NEWEST execution may release the lock — an older
+                // execution finishing must not delete the key while a chained
+                // successor is still queued behind it.
+                if (BaseAgent.executionLocks.get(lockKey) === executionPromise) {
+                    BaseAgent.executionLocks.delete(lockKey);
+                }
             }
         })();
 

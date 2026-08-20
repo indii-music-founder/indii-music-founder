@@ -16,13 +16,18 @@ import { importWithRetry } from '@/utils/dynamicImport';
 export class ProactiveService {
     private unsubscribers: (() => void)[] = [];
     private activeInterval: NodeJS.Timeout | null = null;
+    private eventListenersRegistered = false;
 
     constructor() {
-        this.initializeEventListeners();
+        // Listeners are registered lazily by start() so that a dispose()
+        // (org switch / logout) followed by start() (login) re-registers
+        // them. Registering only in the constructor left the service deaf
+        // forever after the first dispose.
         // Polling must be started manually to prevent side-effects in tests
     }
 
     start() {
+        this.initializeEventListeners();
         this.startPolling();
     }
 
@@ -30,6 +35,8 @@ export class ProactiveService {
      * Listen for system events and trigger subscribed agents
      */
     private initializeEventListeners() {
+        if (this.eventListenersRegistered) return;
+
         // For simplicity in Alpha, we'll watch all events and check Firestore for subscriptions
         // A more optimized way would be to register specific listeners on the EventBus
         const allEvents: EventType[] = [
@@ -49,6 +56,7 @@ export class ProactiveService {
                 events.off(eventType, handler);
             });
         });
+        this.eventListenersRegistered = true;
     }
 
     /**
@@ -207,7 +215,10 @@ export class ProactiveService {
 
     dispose() {
         if (this.activeInterval) clearInterval(this.activeInterval);
+        this.activeInterval = null;
         this.unsubscribers.forEach(unsub => unsub());
+        this.unsubscribers = [];
+        this.eventListenersRegistered = false;
     }
 }
 

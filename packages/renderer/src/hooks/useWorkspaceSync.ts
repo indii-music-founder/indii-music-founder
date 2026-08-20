@@ -34,13 +34,21 @@ export function useWorkspaceSync(): void {
     // Push / Debounced Store Subscription (define first for use in Pull)
     // -----------------------------------------------------------------------
 
-    const queuePush = useCallback(() => {
-        pendingPushRef.current = true;
-        if (debounceTimerRef.current) {
-            clearTimeout(debounceTimerRef.current);
-        }
+    // Serialized push runner. Two overlapping pushes of full snapshots would
+    // race: with a slow connection the OLDER snapshot can commit last and win,
+    // leaving the cloud document stale while the local state believes it is
+    // synced. Requests arriving mid-push are coalesced into one trailing push
+    // that runs with the latest store state after the in-flight write settles.
+    const pushInFlightRef = useRef(false);
+    const pushAgainRef = useRef(false);
 
-        debounceTimerRef.current = setTimeout(async () => {
+    const doPush = useCallback(async () => {
+        if (pushInFlightRef.current) {
+            pushAgainRef.current = true;
+            return;
+        }
+        pushInFlightRef.current = true;
+        try {
             const activeUserId = activeUserIdRef.current;
             const activeWorkspaceScope = activeWorkspaceScopeRef.current;
             if (
@@ -56,14 +64,34 @@ export function useWorkspaceSync(): void {
             const snapshot = getWorkspaceSnapshot(state);
 
             try {
-                await workspaceSyncService.pushSnapshot(snapshot, activeWorkspaceScope);
-                lastPushTimeRef.current = Date.now();
+                // Server-assigned write time, so the cross-device LWW comparison
+                // is never skewed by this device's clock.
+                const serverWriteMillis = await workspaceSyncService.pushSnapshot(snapshot, activeWorkspaceScope);
+                if (serverWriteMillis > 0) lastPushTimeRef.current = serverWriteMillis;
                 pendingPushRef.current = false;
             } catch (error) {
                 logger.error('[WorkspaceSync] Debounced push failed; local state remains unsynced:', error);
             }
-        }, 4000); // 4 second debounce (within 3–5s range)
+        } finally {
+            pushInFlightRef.current = false;
+            if (pushAgainRef.current) {
+                pushAgainRef.current = false;
+                void doPush();
+            }
+        }
     }, []);
+
+    const queuePush = useCallback(() => {
+        pendingPushRef.current = true;
+        if (debounceTimerRef.current) {
+            clearTimeout(debounceTimerRef.current);
+        }
+
+        debounceTimerRef.current = setTimeout(() => {
+            debounceTimerRef.current = null;
+            void doPush();
+        }, 4000); // 4 second debounce (within 3–5s range)
+    }, [doPush]);
 
     // -----------------------------------------------------------------------
     // Pull / Rehydrate (on auth ready)

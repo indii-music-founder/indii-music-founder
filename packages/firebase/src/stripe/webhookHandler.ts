@@ -596,7 +596,12 @@ async function handleInvoicePaid(event: Stripe.Event): Promise<void> {
 
   if (!subSnapshot.empty) {
     const userId = subSnapshot.docs[0].id;
-    await db.collection(`users/${userId}/ledger`).add({
+    // Deterministic document ID keyed by the invoice: the webhook idempotency
+    // guard allows a retake after a crashed worker (>5 min stale processing),
+    // and a second write with a random ID would duplicate the ledger row and
+    // double-count the payment in Finance. set() (not add()) makes a duplicate
+    // delivery overwrite the same row with identical content.
+    await db.collection(`users/${userId}/ledger`).doc(`subscription_payment_${invoice.id}`).set({
       type: 'subscription_payment',
       invoiceId: invoice.id,
       invoiceNumber: invoice.number || invoice.id,
@@ -637,7 +642,9 @@ async function handleInvoicePaymentFailed(event: Stripe.Event): Promise<void> {
 
   if (!subSnapshot.empty) {
     const userId = subSnapshot.docs[0].id;
-    await db.collection('dunning_notifications').add({
+    // Deterministic ID keyed by the invoice — duplicate delivery (including a
+    // stale-processing retake) must not queue the same dunning prompt twice.
+    await db.collection('dunning_notifications').doc(`dunning_${invoice.id}`).set({
       userId,
       stripeCustomerId: invoice.customer as string,
       invoiceId: invoice.id,
