@@ -221,7 +221,21 @@ export function buildCreativeHistoryState(
                 import('@/services/StorageService').then(({ StorageService }) => {
                     StorageService.saveItem(enrichedItem)
                         .then(() => { logger.debug("CreativeSlice: Saved to Storage", enrichedItem.id); })
-                        .catch((err) => { logger.error("CreativeSlice: Storage Save Error", err); });
+                        .catch((err) => {
+                            // ISSUE-1395 (audit): persistence failures were
+                            // only logged — the item stayed visible as if
+                            // saved, then silently vanished at the 50-item
+                            // eviction cap with no cloud copy anywhere.
+                            // Surface the failure so the user knows the asset
+                            // is not durable.
+                            logger.error("CreativeSlice: Storage Save Error", err);
+                            import('@/core/events').then(({ events }) => {
+                                events.emit('SYSTEM_ALERT', {
+                                    level: 'error',
+                                    message: 'A generated asset could not be saved to the cloud. It will not survive a reload.',
+                                });
+                            }).catch(() => { /* events module unavailable in some test contexts */ });
+                        });
                 }).catch(err => logger.error("CreativeSlice: Failed to import StorageService", err));
             }).catch(err => logger.error("CreativeSlice: Failed to import store", err));
         },
@@ -342,8 +356,27 @@ export function buildCreativeHistoryState(
         },
         removeItemFromProject: (id: string) => {
             set((state) => ({ generatedHistory: state.generatedHistory.filter(i => i.id !== id) }));
-            // Soft delete - removes from local state/project view, but leaves in master storage
-            logger.debug(`[CreativeSlice] Soft removed item ${id} from project view.`);
+            // ISSUE-1395 (audit): this was a soft-hide — the Firestore
+            // snapshot rebuild resurrected "deleted" items on the next
+            // unrelated history write or reload (ISSUE-1146 was logged
+            // CLOSED but never actually fixed). Trash durably (reversible
+            // tombstone) and drop any linked project file node so a deleted
+            // asset stays deleted everywhere.
+            import('@/services/StorageService').then(({ StorageService }) => {
+                StorageService.removeItem(id).catch((e: unknown) => {
+                    logger.error('[CreativeSlice] Failed to trash history item:', e);
+                });
+            }).catch(() => { /* dynamic import failure is non-fatal */ });
+            import('@/core/store').then(({ useStore }) => {
+                const current = useStore.getState() as {
+                    fileNodes?: Array<{ id: string }>;
+                    deleteNode?: (id: string) => void;
+                };
+                if (typeof current.deleteNode === 'function' && current.fileNodes?.some(n => n.id === id)) {
+                    current.deleteNode(id);
+                }
+            }).catch(() => { /* dynamic import failure is non-fatal */ });
+            logger.debug(`[CreativeSlice] Removed item ${id} (durable trash tombstone).`);
         },
 
         canvasImages: [],
@@ -537,11 +570,27 @@ export function buildCreativeHistoryState(
         },
         removeUploadedImageFromProject: (id: string) => {
             set((state) => ({ uploadedImages: state.uploadedImages.filter(i => i.id !== id) }));
-            logger.debug(`[CreativeSlice] Soft removed uploaded image ${id} from project view.`);
+            // ISSUE-1395 (audit): was a soft-hide that let snapshot rebuilds
+            // resurrect the asset. Trash durably like the gallery's real
+            // removeUploadedImage path.
+            import('@/services/StorageService').then(({ StorageService }) => {
+                StorageService.removeItem(id).catch((e: unknown) => {
+                    logger.error('[CreativeSlice] Failed to trash uploaded image:', e);
+                });
+            }).catch(() => { /* dynamic import failure is non-fatal */ });
+            logger.debug(`[CreativeSlice] Removed uploaded image ${id} (durable trash tombstone).`);
         },
         removeUploadedAudioFromProject: (id: string) => {
             set((state) => ({ uploadedAudio: state.uploadedAudio.filter(i => i.id !== id) }));
-            logger.debug(`[CreativeSlice] Soft removed uploaded audio ${id} from project view.`);
+            // ISSUE-1395 (audit): was a soft-hide that let snapshot rebuilds
+            // resurrect the asset. Trash durably like the gallery's real
+            // removeUploadedAudio path.
+            import('@/services/StorageService').then(({ StorageService }) => {
+                StorageService.removeItem(id).catch((e: unknown) => {
+                    logger.error('[CreativeSlice] Failed to trash uploaded audio:', e);
+                });
+            }).catch(() => { /* dynamic import failure is non-fatal */ });
+            logger.debug(`[CreativeSlice] Removed uploaded audio ${id} (durable trash tombstone).`);
         },
     };
 }

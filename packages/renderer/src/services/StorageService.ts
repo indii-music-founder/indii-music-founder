@@ -203,21 +203,37 @@ class StorageServiceImpl extends FirestoreService<HistoryDocument> {
 
             if (userId) {
                 try {
-                    const result = await CloudStorageService.smartSave(
-                        item.url,
-                        item.id,
-                        userId
-                    );
-                    imageUrl = result.url;
-                    thumbnailUrl = result.thumbnailUrl;
-                    logger.debug(`[StorageService] Image saved (${result.strategy}):`, item.id);
+                    const mimeMatch = /^data:([^;,]+)/.exec(item.url);
+                    const mimeType = mimeMatch?.[1] || '';
+                    if (mimeType.startsWith('video/') || mimeType.startsWith('audio/')) {
+                        // ISSUE-1395 (audit): data: video/audio went through
+                        // the image-only smartSave path, which rejected them —
+                        // the item stayed ephemeral in memory and vanished on
+                        // the next history snapshot rebuild. Upload media
+                        // bytes directly with their real MIME.
+                        const blob = await (await fetch(item.url)).blob();
+                        const ext = mimeType.startsWith('video/') ? 'mp4' : 'mp3';
+                        const storageRef = ref(storage, `users/${userId}/assets/${item.id}.${ext}`);
+                        await uploadBytes(storageRef, blob);
+                        imageUrl = await getDownloadURL(storageRef);
+                        storageUri = `gs://${storage.app.options.storageBucket}/users/${userId}/assets/${item.id}.${ext}`;
+                    } else {
+                        const result = await CloudStorageService.smartSave(
+                            item.url,
+                            item.id,
+                            userId
+                        );
+                        imageUrl = result.url;
+                        thumbnailUrl = result.thumbnailUrl;
+                        logger.debug(`[StorageService] Image saved (${result.strategy}):`, item.id);
+                    }
                 } catch (error: unknown) {
                     logger.error('[StorageService] Cloud upload failed:', error);
-                    events.emit('SYSTEM_ALERT', { level: 'error', message: 'Image upload failed' });
+                    events.emit('SYSTEM_ALERT', { level: 'error', message: 'Media upload failed' });
                     throw error;
                 }
             } else {
-                throw new Error('User must be authenticated to upload generated image assets.');
+                throw new Error('User must be authenticated to upload generated media assets.');
             }
         }
 

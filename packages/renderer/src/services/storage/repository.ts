@@ -12,33 +12,7 @@ const WORKFLOWS_STORE = 'workflows';
 const PROFILE_STORE = 'profile';
 const CANVAS_STORE = 'canvas_states';
 
-// ============================================================================
-// Sync Queue for offline-first asset uploads
-// ============================================================================
-
-interface SyncQueueItem {
-    id: string;
-    type: 'asset';
-    data: Blob;
-    timestamp: number;
-    retryCount: number;
-}
-
-const syncQueue: Map<string, SyncQueueItem> = new Map();
-
-function queueAssetForSync(id: string, blob: Blob): void {
-    syncQueue.set(id, {
-        id,
-        type: 'asset',
-        data: blob,
-        timestamp: Date.now(),
-        retryCount: 0
-    });
-    // Asset ${id} queued for sync (${syncQueue.size} items in queue)
-}
-
 export async function clearAccountBoundRepositoryState(): Promise<void> {
-    syncQueue.clear();
     const dbLocal = await initDB();
     const storeNames = [STORE_NAME, WORKFLOWS_STORE, PROFILE_STORE, CANVAS_STORE]
         .filter(storeName => dbLocal.objectStoreNames.contains(storeName));
@@ -48,40 +22,6 @@ export async function clearAccountBoundRepositoryState(): Promise<void> {
     await transaction.done;
 }
 
-/**
- * Process the sync queue - call this when online connectivity is restored
- */
-export async function processSyncQueue(): Promise<void> {
-    const user = auth.currentUser;
-    const userId = getRealAuthenticatedUserId(user);
-    if (!userId || syncQueue.size === 0) return;
-
-    logger.info(`[Repository] Processing sync queue (${syncQueue.size} items)...`);
-
-    const itemsToRemove: string[] = [];
-
-    for (const [id, item] of syncQueue) {
-        try {
-            const storageRef = ref(storage, `users/${userId}/assets/${id}`);
-            await uploadBytes(storageRef, item.data);
-            itemsToRemove.push(id);
-            logger.info(`[Repository] Successfully synced queued asset ${id}`);
-        } catch (error: unknown) {
-            logger.warn(`[Repository] Failed to sync queued asset ${id}:`, error);
-            item.retryCount++;
-
-            // Remove from queue after 3 failed attempts
-            if (item.retryCount >= 3) {
-                logger.error(`[Repository] Asset ${id} removed from queue after 3 failed attempts`);
-                itemsToRemove.push(id);
-            }
-        }
-    }
-
-    // Clean up processed items
-    itemsToRemove.forEach(id => syncQueue.delete(id));
-    logger.info(`[Repository] Sync queue processed. ${syncQueue.size} items remaining.`);
-}
 
 // ============================================================================
 // Database Initialization
@@ -120,14 +60,15 @@ export async function saveAssetToStorage(blob: Blob): Promise<string> {
     const user = auth.currentUser;
     const userId = getRealAuthenticatedUserId(user);
     if (userId) {
-        try {
-            const storageRef = ref(storage, `users/${userId}/assets/${id}`);
-            await uploadBytes(storageRef, blob);
-        } catch (_error: unknown) {
-            // Failed to sync asset ${id} to cloud
-            // Queue for retry on next sync
-            queueAssetForSync(id, blob);
-        }
+        // ISSUE-1395 (audit): the failure path used to queue into an
+        // in-memory sync queue that nothing ever processed (processSyncQueue
+        // has zero callers), then returned the id as if the upload had
+        // landed — callers minted and persisted a gs:// storageUri that
+        // dangles forever (broken assets on other devices / project file
+        // nodes). Fail loudly instead: callers surface an honest error and
+        // never claim a cloud copy that does not exist.
+        const storageRef = ref(storage, `users/${userId}/assets/${id}`);
+        await uploadBytes(storageRef, blob);
     }
 
     return id;
