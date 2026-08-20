@@ -834,9 +834,20 @@ export async function reconcileStaleClaimedVideoReservations(
       ) {
         await finalize({ userId, operationId: operation.id, outcome: 'VOIDED', jobId });
         reconciled += 1;
+      } else if (
+        (job.status === 'failed' || job.status === 'cancelled')
+        && job.providerSubmissionState === 'ambiguous_or_failed'
+        && job.reconciliationRequired === true
+      ) {
+        // The gateway recorded an attempted provider submission it could not
+        // resolve before dying. Fail closed financially: the submission may
+        // still have been billed, so settle rather than refund.
+        await finalize({ userId, operationId: operation.id, outcome: 'SETTLED', jobId });
+        reconciled += 1;
       }
-      // queued, processing, or ambiguous provider outcomes remain CLAIMED.
-      // A later scheduler pass can settle them when durable evidence appears.
+      // queued, processing, or ambiguous outcomes without a reconciliation
+      // flag remain CLAIMED. A later scheduler pass can settle them when
+      // durable evidence appears.
     } catch (error) {
       console.warn('[CostControl] Claimed video reservation reconciliation skipped', operation.id, error);
     }

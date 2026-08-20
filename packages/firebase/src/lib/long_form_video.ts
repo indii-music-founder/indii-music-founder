@@ -225,6 +225,37 @@ export const generateLongFormVideoFn = (inngestClient: Inngest, _legacyUnusedPro
 
                 // 1. Trigger Video Generation (Vertex AI)
                 const operationName = await step.run(`trigger-segment-${i}`, async () => {
+                    // Skip-if-intent-exists: an Inngest retry re-runs this
+                    // step from scratch. If a previous attempt already
+                    // submitted (and recorded) the Veo operation, re-submitting
+                    // would create a SECOND billable generation for the same
+                    // segment. Reuse the recorded operation instead.
+                    const jobSnap = await admin.firestore().collection('videoJobs').doc(jobId).get();
+                    const existingSubmission = jobSnap.data()?.vertexSubmission as
+                        | { segmentIndex?: number; operationName?: string; attemptedAt?: unknown }
+                        | undefined;
+                    if (
+                        existingSubmission?.operationName
+                        && typeof existingSubmission.segmentIndex === 'number'
+                        && existingSubmission.segmentIndex >= i
+                    ) {
+                        console.log(`[LongForm] Reusing previously submitted Veo operation for segment ${i}: ${existingSubmission.operationName}`);
+                        providerSubmissionAttempted = true;
+                        return existingSubmission.operationName;
+                    }
+                    if (
+                        existingSubmission?.attemptedAt !== undefined
+                        && typeof existingSubmission.segmentIndex === 'number'
+                        && existingSubmission.segmentIndex >= i
+                    ) {
+                        // An earlier attempt reached the provider but its
+                        // operation name was never recorded (response lost).
+                        // Fail closed rather than re-submitting billable work.
+                        throw new Error(
+                            `Segment ${i} has an unconfirmed Veo submission (segmentIndex ${existingSubmission.segmentIndex}); refusing to re-submit. Manual reconciliation required.`,
+                        );
+                    }
+
                     const { modelId } = resolveVeoModel(options?.model);
 
                     const auth = new GoogleAuth({
@@ -300,7 +331,21 @@ export const generateLongFormVideoFn = (inngestClient: Inngest, _legacyUnusedPro
                     }
 
                     const triggerResult = (await triggerResponse.json()) as Record<string, unknown>;
-                    return triggerResult.name as string;
+                    const submittedOperationName = triggerResult.name as string;
+
+                    // Record the operation name so a retry of THIS step (or a
+                    // crash before the polling loop) reuses the submitted
+                    // operation instead of submitting a second billable one.
+                    await admin.firestore().collection('videoJobs').doc(jobId).set({
+                        vertexSubmission: {
+                            attemptedAt: admin.firestore.FieldValue.serverTimestamp(),
+                            segmentIndex: i,
+                            operationName: submittedOperationName,
+                        },
+                        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+                    }, { merge: true });
+
+                    return submittedOperationName;
                 });
 
                 // Polling Loop
@@ -700,6 +745,20 @@ export const stitchVideoFn = (inngestClient: Inngest) => inngestClient.createFun
                 }
             };
 
+            // Skip-if-intent-exists for the PUBLIC videoJobs path: the private
+            // render path is already guarded by its transition state machine.
+            // expectedStage === null matches any recorded stage (standard
+            // stitch path records the job name without a distinct stage).
+            const readPublicTranscoderJob = async (expectedStage: string | null): Promise<string | null> => {
+                if (privateLifecycleIdentity) return null;
+                const snapshot = await admin.firestore().collection('videoJobs').doc(jobId).get();
+                const data = snapshot.data();
+                if (typeof data?.transcoderJobName !== 'string') return null;
+                if (expectedStage !== null && data.renderStage !== expectedStage) return null;
+                console.log(`[LongForm] Reusing previously submitted transcoder job for stage ${expectedStage ?? 'standard-stitch'}: ${data.transcoderJobName}`);
+                return data.transcoderJobName as string;
+            };
+
             // Transcoder has no caller-provided idempotency key. Record an
             // intent immediately before every external submission so a worker
             // retry cannot incorrectly refund a provider job that may have
@@ -747,6 +806,11 @@ export const stitchVideoFn = (inngestClient: Inngest) => inngestClient.createFun
                 await markTranscoderSubmissionAttempted('submitting_video_concatenation');
                 const concatJobName = await step.run('concatenate-video-without-native-audio', async () => {
                     await assertPrivateRenderActive();
+                    // Skip-if-intent-exists: a step retry must not re-submit a
+                    // billable Transcoder job that a previous attempt already
+                    // created and recorded (transcoderJobName + renderStage).
+                    const existing = await readPublicTranscoderJob('concatenating_video');
+                    if (existing) return existing;
                     const [job] = await transcoder.createJob({
                         parent: transcoder.locationPath(projectId!, location),
                         job: { outputUri: plan.intermediateOutputUri, config: plan.concatenateConfig },
@@ -774,6 +838,8 @@ export const stitchVideoFn = (inngestClient: Inngest) => inngestClient.createFun
                 await markTranscoderSubmissionAttempted('submitting_canonical_master_mix');
                 const masterJobName = await step.run('map-canonical-master-audio', async () => {
                     await assertPrivateRenderActive();
+                    const existing = await readPublicTranscoderJob('mapping_canonical_master');
+                    if (existing) return existing;
                     const [job] = await transcoder.createJob({
                         parent: transcoder.locationPath(projectId!, location),
                         job: { outputUri: plan.finalOutputUri, config: plan.masterMixConfig },
@@ -873,6 +939,12 @@ export const stitchVideoFn = (inngestClient: Inngest) => inngestClient.createFun
 
             await markTranscoderSubmissionAttempted('submitting_standard_stitch');
             const jobName = await step.run("create-transcoder-job", async () => {
+                // Skip-if-intent-exists: the standard stitch path records the
+                // transcoder job name in the same document right after
+                // submission; a retry must reuse it, never re-submit.
+                const existing = await readPublicTranscoderJob(null);
+                if (existing) return existing;
+
                 const requestedDuration = typeof eventData.totalDuration === 'number'
                     ? eventData.totalDuration
                     : (eventData.options && typeof eventData.options === 'object' && (eventData.options as Record<string, unknown>).timelineDurationSeconds

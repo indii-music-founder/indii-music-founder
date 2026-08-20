@@ -47,6 +47,7 @@ export { cancelVideoSession } from "./functions/video/cancelVideoSession";
 export { finalizeVideoSessionUpload } from "./functions/video/finalizeVideoSessionUpload";
 export { retrySessionProxyJob } from "./functions/video/retrySessionProxyJob";
 export { settleVideoSessionCost } from "./functions/video/settleVideoSessionCost";
+export { reclaimStuckVideoJobs } from "./functions/video/reclaimStuckVideoJobs";
 export { cleanupExpiredVideoSessions } from "./functions/video/cleanupVideoSessions";
 export { alignSessionMaster } from "./functions/video/alignSessionMaster";
 export { generateSessionEditPlan } from "./functions/video/generateSessionEditPlan";

@@ -456,6 +456,46 @@ describe('ISSUE-1006 operation cost receipts and expiry', () => {
     });
   });
 
+  it('settles an ambiguous claimed video hold when the gateway recorded reconciliationRequired', async () => {
+    const query = createQuery([
+      {
+        id: 'video-op-ambiguous-recon',
+        data: () => ({ userId: 'user-1', type: 'video', claimedJobId: 'video-job-ambiguous-recon' }),
+      },
+    ]);
+    const db = {
+      collection: vi.fn(() => query),
+      doc: vi.fn(() => ({
+        get: vi.fn(async () => ({
+          exists: true,
+          data: () => ({
+            userId: 'user-1',
+            costReservationId: 'video-op-ambiguous-recon',
+            workerVersion: 'gateway-video-v3',
+            status: 'failed',
+            providerSubmissionState: 'ambiguous_or_failed',
+            reconciliationRequired: true,
+          }),
+        })),
+      })),
+    };
+    mocks.firestore.mockReturnValue(db);
+    const finalize = vi.fn().mockResolvedValue(undefined);
+
+    await expect(reconcileStaleClaimedVideoReservations(
+      new Date('2026-07-16T20:30:00.000Z'),
+      finalize,
+    )).resolves.toBe(1);
+    // Fail closed financially: an attempted provider submission may still
+    // have been billed, so the hold settles instead of being refunded.
+    expect(finalize).toHaveBeenCalledWith({
+      userId: 'user-1',
+      operationId: 'video-op-ambiguous-recon',
+      outcome: 'SETTLED',
+      jobId: 'video-job-ambiguous-recon',
+    });
+  });
+
   it('reuses a deterministic video reservation without incrementing aggregate cost twice', async () => {
     const documents = new Map<string, Record<string, unknown>>();
     documents.set('users/user-1', { tier: 'free' });

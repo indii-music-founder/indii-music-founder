@@ -41,6 +41,12 @@ interface ScheduledPostDoc {
     campaignId?: string;
     campaignPostId?: string;
     source?: string;
+    /**
+     * Instagram media container created for this post and persisted BEFORE
+     * the publish call. A retry after an ambiguous outcome reuses it instead
+     * of creating a new container and publishing a duplicate.
+     */
+    igContainerId?: string;
 }
 
 interface PlatformToken {
@@ -64,6 +70,21 @@ function validDeliveredPostId(value: unknown): value is string {
     return typeof value === 'string' && value.trim().length > 0;
 }
 
+/**
+ * Deterministic, content-scoped hash for the Twitter Idempotency-Key. A
+ * retry of an ambiguous outcome (timeout after the platform accepted the
+ * request) sends the same key + body, so the API returns the SAME tweet
+ * instead of creating a duplicate public post. The text hash means an
+ * edited post becomes a new logical publish.
+ */
+function hashText(text: string): string {
+    let hash = 5381;
+    for (let i = 0; i < text.length; i += 1) {
+        hash = ((hash << 5) + hash + text.charCodeAt(i)) >>> 0;
+    }
+    return hash.toString(36);
+}
+
 function requireDeliveredPostId(platform: string, value: unknown): DeliveryResult {
     return validDeliveredPostId(value)
         ? { success: true, postId: value }
@@ -84,11 +105,17 @@ async function getTokenForUser(
     }
 }
 
-async function deliverToTwitter(token: PlatformToken, text: string): Promise<{ success: boolean; postId?: string; error?: string }> {
+async function deliverToTwitter(token: PlatformToken, text: string, postId: string): Promise<{ success: boolean; postId?: string; error?: string }> {
     try {
         const res = await fetch('https://api.twitter.com/2/tweets', {
             method: 'POST',
-            headers: { 'Authorization': `Bearer ${token.accessToken}`, 'Content-Type': 'application/json' },
+            headers: {
+                'Authorization': `Bearer ${token.accessToken}`,
+                'Content-Type': 'application/json',
+                // Idempotency: a retry after an ambiguous outcome reuses the
+                // key, so the platform deduplicates instead of posting twice.
+                'Idempotency-Key': `indii-post-${postId}-${hashText(text)}`,
+            },
             body: JSON.stringify({ text }),
             signal: AbortSignal.timeout(15000),
         });
@@ -127,7 +154,12 @@ async function waitForInstagramContainerReady(
     return { ready: false, error: 'Container processing timed out on Instagram' };
 }
 
-async function deliverToInstagram(token: PlatformToken, post: ScheduledPostDoc): Promise<{ success: boolean; postId?: string; error?: string }> {
+async function deliverToInstagram(
+    db: DeliveryDatabase,
+    postRef: DeliveryDocumentReference,
+    token: PlatformToken,
+    post: ScheduledPostDoc,
+): Promise<{ success: boolean; postId?: string; error?: string }> {
     if (!token.igUserId) return { success: false, error: 'Missing Instagram user ID' };
     const base = 'https://graph.facebook.com/v23.0';
     const caption = [post.text, post.hashtags?.map(h => `#${h.replace('#', '')}`).join(' ')].filter(Boolean).join('\n\n');
@@ -135,7 +167,14 @@ async function deliverToInstagram(token: PlatformToken, post: ScheduledPostDoc):
     try {
         let containerId: string | undefined;
 
-        if (post.mediaType === 'carousel' && Array.isArray(post.carouselUrls) && post.carouselUrls.length > 0) {
+        // A previous attempt may have created the container and lost the
+        // publish outcome (timeout after Instagram accepted it). Reusing the
+        // persisted container is what prevents a duplicate public post on
+        // retry — a fresh container would publish the same content twice.
+        if (validDeliveredPostId(post.igContainerId)) {
+            containerId = post.igContainerId;
+            logger.info(`[deliverToInstagram] Reusing persisted container ${containerId} for post ${postRef.id}`);
+        } else if (post.mediaType === 'carousel' && Array.isArray(post.carouselUrls) && post.carouselUrls.length > 0) {
             // Create child item containers
             const childIds: string[] = [];
             for (const url of post.carouselUrls) {
@@ -194,6 +233,16 @@ async function deliverToInstagram(token: PlatformToken, post: ScheduledPostDoc):
             return { success: false, error: 'Instagram created no publishable media container ID' };
         }
 
+        // Persist the container BEFORE publishing. If the publish request is
+        // lost after Instagram accepted it, the retry reuses this container
+        // instead of publishing a duplicate. Best-effort: a failure to write
+        // falls back to the previous behavior for this attempt.
+        try {
+            await postRef.update({ igContainerId: containerId, updatedAt: FieldValue.serverTimestamp() });
+        } catch (persistError) {
+            logger.warn(`[deliverToInstagram] Failed to persist container ${containerId} for post ${postRef.id}:`, persistError);
+        }
+
         // Poll container readiness for videos/reels/carousels
         if (post.mediaType === 'video' || post.mediaType === 'reel' || post.mediaType === 'carousel') {
             const statusCheck = await waitForInstagramContainerReady(base, containerId, token.accessToken);
@@ -209,6 +258,15 @@ async function deliverToInstagram(token: PlatformToken, post: ScheduledPostDoc):
         });
         if (!publishRes.ok) return { success: false, error: `IG publish ${publishRes.status}` };
         const { id: postId } = await publishRes.json() as { id?: string };
+
+        // The container is consumed by publishing — clear it so a future
+        // logical publish starts fresh.
+        try {
+            await postRef.update({ igContainerId: FieldValue.delete() });
+        } catch (clearError) {
+            logger.warn(`[deliverToInstagram] Failed to clear container ${containerId} for post ${postRef.id}:`, clearError);
+        }
+
         return requireDeliveredPostId('Instagram', postId);
     } catch (e) {
         return { success: false, error: String(e) };
@@ -345,12 +403,21 @@ async function persistDeliveryOutcome(
     });
 }
 
-async function deliverPost(post: ScheduledPostDoc, token: PlatformToken, postId: string): Promise<DeliveryResult> {
+async function deliverPost(
+    post: ScheduledPostDoc,
+    token: PlatformToken,
+    postId: string,
+    db?: DeliveryDatabase,
+    postRef?: DeliveryDocumentReference,
+): Promise<DeliveryResult> {
     switch (post.platform) {
         case 'twitter':
-            return deliverToTwitter(token, post.text || '');
+            return deliverToTwitter(token, post.text || '', postId);
         case 'instagram':
-            return deliverToInstagram(token, post);
+            if (!db || !postRef) {
+                return { success: false, error: 'Instagram delivery requires the queue document reference for container persistence.' };
+            }
+            return deliverToInstagram(db, postRef, token, post);
         case 'tiktok':
             return {
                 success: false,
@@ -488,7 +555,7 @@ export async function deliverScheduledPostsHandler(
 
                 const token = await getToken(db, claimedPost.userId, claimedPost.platform);
                 const result = token
-                    ? await dispatch(claimedPost, token, docSnap.id)
+                    ? await dispatch(claimedPost, token, docSnap.id, db, postRef)
                     : { success: false, error: `No OAuth token for ${claimedPost.platform}` };
 
                 const persisted = await persistDeliveryOutcome(db, postRef, claimedPost, result, now);
