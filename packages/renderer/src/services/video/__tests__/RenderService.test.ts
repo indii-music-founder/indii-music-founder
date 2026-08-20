@@ -150,12 +150,17 @@ describe('RenderService', () => {
     });
 
     it('contains no renderer Cloud Run client authority, public privacy, or fabricated fallback', async () => {
+        // Resolve relative to THIS file (src/services/video/__tests__), so the
+        // suite behaves identically from the repo root and from the renderer
+        // package directory.
         const files = await Promise.all([
-            readFile(resolve(process.cwd(), 'packages/renderer/src/services/video/RenderService.ts'), 'utf8'),
-            readFile(resolve(process.cwd(), 'packages/renderer/src/services/video/ParallelRenderOrchestrator.ts'), 'utf8'),
-            readFile(resolve(process.cwd(), 'packages/renderer/src/services/video/VeoToRemotionBridge.ts'), 'utf8'),
-            readFile(resolve(process.cwd(), 'packages/renderer/vite.config.ts'), 'utf8'),
-            readFile(resolve(process.cwd(), 'electron.vite.config.ts'), 'utf8'),
+            readFile(resolve(__dirname, '../RenderService.ts'), 'utf8'),
+            readFile(resolve(__dirname, '../ParallelRenderOrchestrator.ts'), 'utf8'),
+            readFile(resolve(__dirname, '../VeoToRemotionBridge.ts'), 'utf8'),
+            // __tests__ → video → services → src → packages/renderer
+            readFile(resolve(__dirname, '../../../../vite.config.ts'), 'utf8'),
+            // …→ packages/renderer → packages → repo root
+            readFile(resolve(__dirname, '../../../../../..', 'electron.vite.config.ts'), 'utf8'),
         ]);
         const rendererAuthority = files.join('\n');
 

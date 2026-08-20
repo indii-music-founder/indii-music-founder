@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AutonomousIntelligence } from '../AutonomousIntelligence';
+import { RateLimiter } from '../RateLimiter';
 import { wcpInstance } from '../../agent/WebSocketControlPlane';
 import type { Content } from '@/shared/types/ai.dto';
 
@@ -28,9 +29,31 @@ vi.mock('../../agent/WebSocketControlPlane', () => ({
     }
 }));
 
+// The AI service routes every content request through the backend streaming
+// endpoint via fetch. These tests must not depend on the real network: serve
+// the exact SSE contract the service consumes so the flow completes
+// deterministically.
+const streamChunk = (text: string): Uint8Array =>
+    new TextEncoder().encode(`${JSON.stringify({ text })}\n${JSON.stringify({ complete: true })}\n`);
+const fetchMock = vi.fn(async () => ({
+    ok: true,
+    status: 200,
+    body: new ReadableStream<Uint8Array>({
+        start(controller) {
+            controller.enqueue(streamChunk('Recovered!'));
+            controller.close();
+        },
+    }),
+    text: async () => '',
+}));
+vi.stubGlobal('fetch', fetchMock);
+
 describe('ChaosVerification', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        // The service's rate limiter is a singleton with ONE initial token and
+        // a ~6s refill — requests after the first queue past the test timeout.
+        AutonomousIntelligence.rateLimiter = new RateLimiter(10, 10);
     });
 
     describe('WebSocket Control Plane Connection Failures', () => {
@@ -167,4 +190,8 @@ describe('ChaosVerification', () => {
             expect(result.response.text()).toBe('Recovered!');
         });
     });
+});
+
+afterEach(() => {
+    vi.unstubAllGlobals();
 });

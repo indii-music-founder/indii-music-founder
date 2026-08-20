@@ -1,7 +1,31 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { firebaseAI } from '@/services/intelligence/FirebaseIntelligenceService';
+import { RateLimiter } from '@/services/intelligence/RateLimiter';
 import { EditDocumentWithAnnotationsTool } from './EditDocumentWithAnnotationsTool';
 
+// The tool routes content through the backend streaming endpoint via fetch
+// and a singleton rate limiter with ONE initial token (~6s refill) — both
+// made deterministic here so execution cannot hang on the network or queue.
+vi.stubGlobal('fetch', vi.fn(async () => ({
+    ok: true,
+    status: 200,
+    body: new ReadableStream<Uint8Array>({
+        start(controller) {
+            controller.enqueue(new TextEncoder().encode(`${JSON.stringify({ text: 'Edits summarized.' })}\n${JSON.stringify({ complete: true })}\n`));
+            controller.close();
+        },
+    }),
+    text: async () => '',
+})));
+
 describe('EditDocumentWithAnnotationsTool', () => {
+    beforeEach(() => {
+        firebaseAI.rateLimiter = new RateLimiter(10, 10);
+    });
+
+    afterEach(() => {
+        vi.unstubAllGlobals();
+    });
     it('should have the correct tool name and description', () => {
         expect(EditDocumentWithAnnotationsTool.name).toBe('edit_document_with_annotations');
         expect(EditDocumentWithAnnotationsTool.description).toContain('Edit a document (PDF/Text)');

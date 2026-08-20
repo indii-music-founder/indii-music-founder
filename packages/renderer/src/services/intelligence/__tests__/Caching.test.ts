@@ -1,5 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { firebaseAI } from '../FirebaseIntelligenceService';
+import { RateLimiter } from '../RateLimiter';
 import { aiCache } from '../IntelligenceResponseCache';
 import 'fake-indexeddb/auto'; // Polyfill IndexedDB for JSDOM
 
@@ -77,10 +78,37 @@ vi.mock('firebase/ai', () => ({
     }))
 }));
 
+// The AI service routes every content request through the backend
+// streaming endpoint via fetch (the direct @google/genai path was removed).
+// These tests must not depend on the real network: serve the exact SSE
+// contract the service consumes (a BackendStreamPayload line) so the flow
+// completes deterministically.
+let streamText = 'Fresh Autonomous Response';
+// Text and completion travel as SEPARATE stream lines: a payload carrying
+// complete:true is consumed without extracting text.
+const streamChunk = (text: string): Uint8Array =>
+    new TextEncoder().encode(`${JSON.stringify({ text })}\n${JSON.stringify({ complete: true })}\n`);
+const fetchMock = vi.fn(async () => ({
+    ok: true,
+    status: 200,
+    body: new ReadableStream<Uint8Array>({
+        start(controller) {
+            controller.enqueue(streamChunk(streamText));
+            controller.close();
+        },
+    }),
+    text: async () => '',
+}));
+vi.stubGlobal('fetch', fetchMock);
+
 describe('AI Caching (Browser Environment)', () => {
     // Force window to exist (although JSDOM usually handles this, explicit check helps)
     beforeEach(async () => {
         vi.clearAllMocks();
+        // The service's rate limiter is a singleton with ONE initial token and
+        // a ~6s refill — every request after the first queues past the test
+        // timeout. Give each test a full bucket.
+        firebaseAI.rateLimiter = new RateLimiter(10, 10);
         mockGenerateContent.mockReset(); // Use reset to clear 'Once' implementations
         await aiCache.clear(); // Start with empty cache
 
@@ -123,6 +151,9 @@ describe('AI Caching (Browser Environment)', () => {
         const prompt = 'Extract data';
         const schema = { type: 'object', properties: { foo: { type: 'string' } } } as unknown as Parameters<typeof firebaseAI.generateStructuredData>[1];
 
+        // The backend stream must carry JSON for the structured parser.
+        streamText = JSON.stringify({ foo: 'bar' });
+
         // Mock returning specific JSON
         const jsonResponse = JSON.stringify({ foo: 'bar' });
         mockGenerateContent.mockResolvedValue({
@@ -152,4 +183,8 @@ describe('AI Caching (Browser Environment)', () => {
         await firebaseAI.generateText('Prompt B');
         expect(fetch).toHaveBeenCalledTimes(2);
     });
+});
+
+afterEach(() => {
+    vi.unstubAllGlobals();
 });

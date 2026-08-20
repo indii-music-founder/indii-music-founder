@@ -3,8 +3,11 @@ import { resolve } from 'node:path';
 import { runInNewContext } from 'node:vm';
 import { describe, expect, it, vi } from 'vitest';
 
+// Resolve relative to THIS file, not process.cwd(): the suite must behave
+// identically whether vitest is launched from the repo root (CI, npm test)
+// or from packages/renderer.
 const bootstrapSource = readFileSync(
-    resolve(process.cwd(), 'packages/renderer/public/bootstrap.js'),
+    resolve(__dirname, '../public/bootstrap.js'),
     'utf8'
 );
 

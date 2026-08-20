@@ -2,6 +2,8 @@ import { describe, it, expect, vi } from 'vitest';
 import { RAGAgent } from '../RAGAgent';
 import { knowledgeRetrievalService } from '@/modules/knowledge/services/KnowledgeRetrievalService';
 import { AgentConfig } from '../types';
+import { firebaseAI } from '@/services/intelligence/FirebaseIntelligenceService';
+import { RateLimiter } from '@/services/intelligence/RateLimiter';
 
 // Mock the Knowledge Retrieval service
 vi.mock('@/modules/knowledge/services/KnowledgeRetrievalService', () => ({
@@ -52,7 +54,28 @@ class TestRAGAgent extends RAGAgent {
     }
 }
 
+// The agent loop routes content through the backend streaming endpoint via
+// fetch and a singleton rate limiter with ONE initial token (~6s refill) —
+// both made deterministic here so the loop cannot hang on the network or a
+// token queue.
+const streamChunk = (text: string): Uint8Array =>
+    new TextEncoder().encode(`${JSON.stringify({ text })}\n${JSON.stringify({ complete: true })}\n`);
+vi.stubGlobal('fetch', vi.fn(async () => ({
+    ok: true,
+    status: 200,
+    body: new ReadableStream<Uint8Array>({
+        start(controller) {
+            controller.enqueue(streamChunk('Standard agent response.'));
+            controller.close();
+        },
+    }),
+    text: async () => '',
+})));
+
 describe('ISSUE-481: KB offline message', () => {
+    beforeEach(() => {
+        firebaseAI.rateLimiter = new RateLimiter(10, 10);
+    });
     it('emits neutral "Proceeding with standard knowledge." when RAG throws an error', async () => {
         // Arrange
         const agent = new TestRAGAgent({ id: 'finance', name: 'Test', role: 'Test', systemPrompt: 'Test' } as any);
@@ -89,4 +112,8 @@ describe('ISSUE-481: KB offline message', () => {
             content: 'Proceeding with standard protocol (no supplemental insights required).'
         });
     });
+});
+
+afterEach(() => {
+    vi.unstubAllGlobals();
 });
