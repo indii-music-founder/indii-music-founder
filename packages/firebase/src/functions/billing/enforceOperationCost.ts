@@ -735,6 +735,29 @@ export async function expireStaleOperationReservations(
         const jobSnapshot = await db.doc(`creative_jobs/${jobId}`).get();
         if (jobSnapshot.exists && jobSnapshot.data()?.status === 'completed') {
           outcome = 'SETTLED';
+        } else if (!jobSnapshot.exists) {
+          // Long-form video jobs (`triggerLongFormVideoJob`) and stitch
+          // renders (`renderVideo`) track their job exclusively in
+          // `videoJobs`, not `creative_jobs`. Multi-segment generation and
+          // master-audio stitching legitimately outlive the generic 15-minute
+          // hold TTL (segment polling alone can run 30+ minutes). Treating the
+          // missing creative_jobs doc as "no work happened" refunded the hold
+          // mid-flight; the worker's later SETTLED finalize then threw
+          // "already VOIDED", failing the stitch step and eventually
+          // overwriting a completed render with `failed` in a retry loop.
+          const videoJobSnapshot = await db.doc(`videoJobs/${jobId}`).get();
+          if (videoJobSnapshot.exists) {
+            const videoStatus = videoJobSnapshot.data()?.status;
+            if (videoStatus === 'completed') {
+              outcome = 'SETTLED';
+            } else if (videoStatus === 'failed' || videoStatus === 'cancelled') {
+              outcome = 'VOIDED';
+            } else {
+              // queued/processing/stitching: the worker owns this lifecycle
+              // and finalizes the hold itself. Never refund active work.
+              continue;
+            }
+          }
         }
       }
       await finalize({ userId, operationId: operation.id, outcome });

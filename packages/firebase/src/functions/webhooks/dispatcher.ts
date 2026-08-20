@@ -21,7 +21,13 @@ function maskId(id: string): string {
   return id.length > 4 ? `${id.slice(0, 4)}***` : '***';
 }
 
-const db = admin.firestore();
+// ISSUE-1393: lazily resolve Firestore inside each invocation. A module-top-
+// level admin.firestore() runs at import time — index.ts imports this module,
+// so any unit test that imports index.ts would hit an uninitialized admin
+// during import. The function runtime always has admin ready.
+function getDb() {
+  return admin.firestore();
+}
 
 interface Webhook {
   id: string;
@@ -141,7 +147,7 @@ async function scheduleRetry(
   backoffMs: number
 ): Promise<void> {
   const nextRetry = new Date(Date.now() + backoffMs).toISOString();
-  await db.collection('webhook_queue').doc(event.eventId).update({
+  await getDb().collection('webhook_queue').doc(event.eventId).update({
     attempt: event.attempt + 1,
     nextRetry,
     error: null,
@@ -156,12 +162,12 @@ async function markFailed(
   event: WebhookEvent,
   reason: string
 ): Promise<void> {
-  await db.collection('webhook_deadletter').doc(event.eventId).set({
+  await getDb().collection('webhook_deadletter').doc(event.eventId).set({
     ...event,
     failedAt: new Date().toISOString(),
     reason,
   });
-  await db.collection('webhook_queue').doc(event.eventId).delete();
+  await getDb().collection('webhook_queue').doc(event.eventId).delete();
   logger.error(`[WebhookDispatcher] Webhook ${event.eventId} moved to dead letter: ${reason}`);
 }
 
@@ -182,7 +188,7 @@ async function processWebhookDelivery(
   const result = await deliverWebhook(webhook, event, payload);
 
   if (result.success) {
-    await db.collection('webhook_queue').doc(event.eventId).delete();
+    await getDb().collection('webhook_queue').doc(event.eventId).delete();
     logger.info(`[WebhookDispatcher] Webhook ${event.eventId} delivered successfully`);
     return;
   }
@@ -214,7 +220,7 @@ export const sendWebhookOnEvent = onDocumentCreated('events/{eventId}', async (c
       const eventType = eventData.eventType;
 
       // Find webhooks subscribed to this event type
-      const webhookSnapshot = await db
+      const webhookSnapshot = await getDb()
         .collection('users').doc(userId).collection('webhooks')
         .where('active', '==', true)
         .where('events', 'array-contains', eventType)
@@ -245,9 +251,9 @@ export const sendWebhookOnEvent = onDocumentCreated('events/{eventId}', async (c
       });
 
       // Batch insert webhook events to queue
-      const batch = db.batch();
+      const batch = getDb().batch();
       webhookEvents.forEach(we => {
-        batch.set(db.collection('webhook_queue').doc(we.eventId), we);
+        batch.set(getDb().collection('webhook_queue').doc(we.eventId), we);
       });
       await batch.commit();
 
@@ -271,7 +277,7 @@ export const processWebhookQueue = onSchedule(
       const now = new Date().toISOString();
 
       // Get pending webhooks (no nextRetry or nextRetry in past)
-      const snapshot = await db
+      const snapshot = await getDb()
         .collection('webhook_queue')
         .where('nextRetry', '<=', now)
         .limit(50)
@@ -285,20 +291,20 @@ export const processWebhookQueue = onSchedule(
       for (const doc of snapshot.docs) {
         const event = doc.data() as WebhookEvent;
 
-        const webhook = await db
+        const webhook = await getDb()
           .collection('users').doc(event.userId)
           .collection('webhooks').doc(event.webhookId)
           .get();
 
         if (!webhook.exists) {
-          await db.collection('webhook_queue').doc(doc.id).delete();
+          await getDb().collection('webhook_queue').doc(doc.id).delete();
           logger.warn(`[WebhookDispatcher] Webhook not found: ${event.webhookId} for user ${maskId(event.userId)}`);
           continue;
         }
 
         const webhookData = webhook.data() as Webhook;
         if (!webhookData.active) {
-          await db.collection('webhook_queue').doc(doc.id).delete();
+          await getDb().collection('webhook_queue').doc(doc.id).delete();
           continue;
         }
 
@@ -331,7 +337,7 @@ export const createWebhook = onRequest(async (req: express.Request, res: express
       return;
     }
 
-    const webhookId = db.collection('_').doc().id;
+    const webhookId = getDb().collection('_').doc().id;
     const webhook: Webhook = {
       id: webhookId,
       userId,
@@ -342,7 +348,7 @@ export const createWebhook = onRequest(async (req: express.Request, res: express
       createdAt: new Date().toISOString(),
     };
 
-    await db.collection('users').doc(userId).collection('webhooks').doc(webhookId).set(webhook);
+    await getDb().collection('users').doc(userId).collection('webhooks').doc(webhookId).set(webhook);
     res.status(201).json({ ...webhook, id: webhookId });
   } catch (err) {
     logger.error('[WebhookDispatcher] Create webhook failed:', err);

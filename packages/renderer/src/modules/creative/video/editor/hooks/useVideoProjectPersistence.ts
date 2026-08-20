@@ -45,28 +45,55 @@ export function useVideoProjectPersistence() {
     const loadedProjectIdRef = useRef<string | null>(null);
     // The permission to write. Absent until a load establishes what is stored.
     const tokenRef = useRef<WriteToken | null>(null);
+    // Serializes saves. The debounce, the interval fallback, the visibility
+    // flush and the unmount flush can all fire while a transaction is still in
+    // flight. Two concurrent saves that share one revision token make the
+    // second one hit the service's compare-and-swap ConflictError, which would
+    // surface as a spurious "Could not save your timeline" banner even though
+    // the write actually landed. Requests that arrive mid-save are coalesced
+    // into one trailing save that runs with the advanced token and the latest
+    // store state.
+    const saveInFlightRef = useRef<Promise<void> | null>(null);
+    const saveAgainRef = useRef(false);
 
     const save = useCallback(async () => {
-        const { project } = useVideoEditorStore.getState();
-        const token = tokenRef.current;
-
-        // No token means we never established what is stored for this project.
-        // Writing here is exactly the ISSUE-1193 data-loss path.
-        if (!token || !user || project === lastSyncedProjectRef.current) return;
-        if (token.projectId !== project.id) return;
-
-        const result = await saveVideoProject(token, project, user.uid, resolvedOrgId);
-        if (result.success && result.token) {
-            tokenRef.current = result.token;
-            lastSyncedProjectRef.current = project;
-            useVideoEditorStore.getState().setProjectSaveError(null);
-        } else {
-            // Surfaced, not just logged — a silent warn is how work disappears.
-            logger.warn(`[VideoProjectPersistence] Save failed: ${result.reason}`);
-            useVideoEditorStore.getState().setProjectSaveError(
-                result.reason ?? 'Could not save your timeline.'
-            );
+        if (saveInFlightRef.current) {
+            saveAgainRef.current = true;
+            return saveInFlightRef.current;
         }
+
+        const runSave = async () => {
+            const { project } = useVideoEditorStore.getState();
+            const token = tokenRef.current;
+
+            // No token means we never established what is stored for this project.
+            // Writing here is exactly the ISSUE-1193 data-loss path.
+            if (!token || !user || project === lastSyncedProjectRef.current) return;
+            if (token.projectId !== project.id) return;
+
+            const result = await saveVideoProject(token, project, user.uid, resolvedOrgId);
+            if (result.success && result.token) {
+                tokenRef.current = result.token;
+                lastSyncedProjectRef.current = project;
+                useVideoEditorStore.getState().setProjectSaveError(null);
+            } else {
+                // Surfaced, not just logged — a silent warn is how work disappears.
+                logger.warn(`[VideoProjectPersistence] Save failed: ${result.reason}`);
+                useVideoEditorStore.getState().setProjectSaveError(
+                    result.reason ?? 'Could not save your timeline.'
+                );
+            }
+        };
+
+        const promise = runSave().finally(() => {
+            saveInFlightRef.current = null;
+            if (saveAgainRef.current) {
+                saveAgainRef.current = false;
+                void save();
+            }
+        });
+        saveInFlightRef.current = promise;
+        return promise;
     }, [user, resolvedOrgId]);
 
     // ISSUE-1194: a guest session can never persist — Firestore's

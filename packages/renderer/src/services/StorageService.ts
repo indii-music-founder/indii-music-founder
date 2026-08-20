@@ -389,11 +389,23 @@ class StorageServiceImpl extends FirestoreService<HistoryDocument> {
 
             let unsubscribe: Unsubscribe | null = null;
             let isUnsubscribed = false;
+            let fallbackAttached = false;
 
             const originalUnsubscribe = onSnapshot(q, makeSnapshotHandler(scope), (error: FirestoreError | Error & { code?: string }) => {
                 // Check if it's an index error, fallback to un-ordered query if so
                 if (error.code === 'failed-precondition' || error.message.includes('index')) {
+                    // A Firestore listener is NOT detached by an error — the SDK
+                    // keeps retrying the failed query in the background. Leaving it
+                    // attached while also subscribing the fallback would deliver
+                    // every doc through two live listeners, and every retry of the
+                    // original error would attach yet another fallback (one leaked
+                    // listener per error event). Detach the original and guard the
+                    // fallback so repeated index errors can never accumulate
+                    // listeners.
+                    if (fallbackAttached) return;
+                    fallbackAttached = true;
                     logger.warn('[StorageService] Index missing for history subscription, falling back to client-side sort.');
+                    originalUnsubscribe();
 
                     const fallbackConstraints = [
                         where('orgId', '==', scope === 'personal' ? 'personal' : orgId),

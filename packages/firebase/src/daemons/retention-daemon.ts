@@ -1,7 +1,15 @@
 import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { getFirestore } from 'firebase-admin/firestore';
 
-const db = getFirestore();
+// ISSUE-1393: lazily resolve the Firestore handle INSIDE the invocation.
+// A module-top-level getFirestore() runs at import time — when index.ts
+// imports this daemon, every unit test that imports index.ts crashed at
+// import ("getFirestore before initializeApp") because the test env never
+// initializes admin. The function's own runtime always has admin ready, so
+// lazy resolution keeps the deploy surface wired without poisoning tests.
+function getDb() {
+    return getFirestore();
+}
 
 /**
  * 90-Day Retention Daemon
@@ -11,6 +19,7 @@ const db = getFirestore();
 export const retentionDaemon = onSchedule("every 72 hours", async (_event) => {
     console.log("Starting 90-Day Retention Daemon check...");
     
+    const db = getDb();
     const placementsRef = db.collection('placements');
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - 90);

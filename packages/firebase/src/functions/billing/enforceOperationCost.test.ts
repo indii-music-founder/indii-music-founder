@@ -261,6 +261,112 @@ describe('ISSUE-1006 operation cost receipts and expiry', () => {
     });
   });
 
+  // ISSUE regression: long-form video jobs and stitch renders are tracked only
+  // in `videoJobs` (never in `creative_jobs`), and legitimately outlive the
+  // generic 15-minute hold TTL. The sweeper used to refund such a hold
+  // mid-flight; the worker's later SETTLED finalize then threw, failed the
+  // stitch step and eventually overwrote the completed render with `failed`.
+  it('never refunds a stale hold whose videoJobs job is still actively processing', async () => {
+    const query = createQuery([
+      {
+        id: 'long-form-op-1',
+        data: () => ({ userId: 'user-1', metadata: { jobId: 'video-job-1' } }),
+      },
+    ]);
+    const jobStatusByPath: Record<string, string> = {
+      'creative_jobs/video-job-1': 'missing',
+      'videoJobs/video-job-1': 'processing',
+    };
+    const db = {
+      collection: vi.fn(() => query),
+      doc: vi.fn((path: string) => ({
+        get: vi.fn(async () => {
+          const status = jobStatusByPath[path];
+          if (status === 'missing') return { exists: false, data: () => undefined };
+          return { exists: true, data: () => ({ status }) };
+        }),
+      })),
+    };
+    mocks.firestore.mockReturnValue(db);
+    const finalize = vi.fn().mockResolvedValue(undefined);
+
+    await expect(expireStaleOperationReservations(
+      new Date('2026-07-16T20:30:00.000Z'),
+      finalize,
+    )).resolves.toBe(0);
+    expect(finalize).not.toHaveBeenCalled();
+  });
+
+  it('settles a stale hold whose videoJobs job completed, even with no creative_jobs doc', async () => {
+    const query = createQuery([
+      {
+        id: 'long-form-op-1',
+        data: () => ({ userId: 'user-1', metadata: { jobId: 'video-job-1' } }),
+      },
+    ]);
+    const jobStatusByPath: Record<string, string> = {
+      'creative_jobs/video-job-1': 'missing',
+      'videoJobs/video-job-1': 'completed',
+    };
+    const db = {
+      collection: vi.fn(() => query),
+      doc: vi.fn((path: string) => ({
+        get: vi.fn(async () => {
+          const status = jobStatusByPath[path];
+          if (status === 'missing') return { exists: false, data: () => undefined };
+          return { exists: true, data: () => ({ status }) };
+        }),
+      })),
+    };
+    mocks.firestore.mockReturnValue(db);
+    const finalize = vi.fn().mockResolvedValue(undefined);
+
+    await expect(expireStaleOperationReservations(
+      new Date('2026-07-16T20:30:00.000Z'),
+      finalize,
+    )).resolves.toBe(1);
+    expect(finalize).toHaveBeenCalledWith({
+      userId: 'user-1',
+      operationId: 'long-form-op-1',
+      outcome: 'SETTLED',
+    });
+  });
+
+  it('voids a stale hold whose videoJobs job failed before any worker reconciliation', async () => {
+    const query = createQuery([
+      {
+        id: 'long-form-op-2',
+        data: () => ({ userId: 'user-1', metadata: { jobId: 'video-job-2' } }),
+      },
+    ]);
+    const jobStatusByPath: Record<string, string> = {
+      'creative_jobs/video-job-2': 'missing',
+      'videoJobs/video-job-2': 'failed',
+    };
+    const db = {
+      collection: vi.fn(() => query),
+      doc: vi.fn((path: string) => ({
+        get: vi.fn(async () => {
+          const status = jobStatusByPath[path];
+          if (status === 'missing') return { exists: false, data: () => undefined };
+          return { exists: true, data: () => ({ status }) };
+        }),
+      })),
+    };
+    mocks.firestore.mockReturnValue(db);
+    const finalize = vi.fn().mockResolvedValue(undefined);
+
+    await expect(expireStaleOperationReservations(
+      new Date('2026-07-16T20:30:00.000Z'),
+      finalize,
+    )).resolves.toBe(1);
+    expect(finalize).toHaveBeenCalledWith({
+      userId: 'user-1',
+      operationId: 'long-form-op-2',
+      outcome: 'VOIDED',
+    });
+  });
+
   it('settles a stale claimed video reservation only from matching durable output evidence', async () => {
     const query = createQuery([
       {

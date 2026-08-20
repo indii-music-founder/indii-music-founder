@@ -155,16 +155,18 @@ export async function saveVideoProject(
 
     const ref = ownedDoc(userId, project.id);
 
-    try {
+    // CAS commit against a specific revision token. Throws ConflictError when
+    // the stored revision has moved on (another tab/device wrote first).
+    const commit = async (currentToken: WriteToken): Promise<WriteToken> => {
         const nextRevision = await runTransaction(db, async tx => {
             const snap = await tx.get(ref);
             const storedRevision = snap.exists()
                 ? (typeof snap.data().revision === 'number' ? (snap.data().revision as number) : 0)
                 : null;
 
-            if (storedRevision !== token.revision) {
+            if (storedRevision !== currentToken.revision) {
                 throw new ConflictError(
-                    `Stored revision ${storedRevision} no longer matches the loaded revision ${token.revision}.`
+                    `Stored revision ${storedRevision} no longer matches the loaded revision ${currentToken.revision}.`
                 );
             }
 
@@ -184,13 +186,46 @@ export async function saveVideoProject(
             );
             return revision;
         });
+        return mintToken(project.id, nextRevision, false);
+    };
 
+    try {
         return {
             success: true,
-            token: mintToken(project.id, nextRevision, false),
+            token: await commit(token),
             lastModified: new Date(),
         };
     } catch (err: unknown) {
+        // CAS conflict: another writer (second tab, another device) committed a
+        // revision this token never observed. Same-instance saves are
+        // serialized by the hook, so this means the stored document genuinely
+        // moved on — refresh the token from the document and retry ONCE rather
+        // than surfacing a failure for a save that is still perfectly writable.
+        // Without this recovery the token would stay stale forever and every
+        // subsequent save would conflict, permanently wedging autosave.
+        if (err instanceof ConflictError) {
+            logger.warn(
+                `[VideoProjectPersistence] Revision conflict on save (token revision ${token.revision}); refreshing token and retrying once.`
+            );
+            const reload = await loadVideoProject(project.id, userId);
+            if (reload.status === 'error') {
+                return {
+                    success: false,
+                    reason: 'Could not re-read the project to resolve a save conflict.',
+                };
+            }
+            try {
+                return {
+                    success: true,
+                    token: await commit(reload.token),
+                    lastModified: new Date(),
+                };
+            } catch (retryErr: unknown) {
+                const retryReason = retryErr instanceof Error ? retryErr.message : 'Auto-save failed';
+                logger.error(`[VideoProjectPersistence] Conflict retry failed for project ${project.id}:`, retryErr);
+                return { success: false, reason: retryReason };
+            }
+        }
         const reason = err instanceof Error ? err.message : 'Auto-save failed';
         logger.error(`[VideoProjectPersistence] Failed to save project ${project.id}:`, err);
         return { success: false, reason };
