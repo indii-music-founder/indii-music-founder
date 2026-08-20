@@ -2275,3 +2275,13 @@ All seven T1 sub-items built, tested against real (not mocked-away) verification
 - `/icon-192.png` → `max-age=2592000, immutable` ✓
 - `indii.music/` → no-cache ✓; landing asset → immutable ✓
 - **Net effect for the founder:** a plain refresh now always loads the newest deploy — no more hour-long stale shell ("the updated versions don't open in the browser"). Commits 97c91c010 + 3e1f88233 + 697dd94ff, CI #296 + #297 green.
+
+---
+
+### /middle round close (2026-08-20 03:10 UTC) — all active units verified LIVE
+
+- **Founder actively using the app (02:27–02:31 UTC):** image jobs completing (wordmark 'inDii', outputCount 1, resultUri in storage). Variations flow healthy on rev 00302-xed.
+- **ISSUE-1383 chat_tokens meter — LIVE WRITES CONFIRMED:** 6 usage records for the founder's UID (425/135/957/1400/1537/27107 tokens), shape `{id: chat_tokens_<ts>_<suffix>, userId, subscriptionId:'gateway', project:'default', type:'chat_tokens', amount, timestamp: epoch-ms}` — exactly what getUsageStats queries (userId ==, timestamp between periodStart/periodEnd ints). The settings chat meter will now move.
+- **ISSUE-1391 hosting cache — verified live after #297:** `/` no-cache; SPA routes no-cache; hashed js/css immutable; png immutable; landing same. A plain refresh now always loads the newest deploy.
+- **ISSUE-1391 editor fixes shipped:** DOM crash guard (useLayoutEffect + idempotent init + crash-proof dispose), header renamed back to "Creative Canvas", Send to Canvas action in editor rail.
+- **Commit history:** 97c91c010, 3e1f88233, 697dd94ff, 93cd3945f — CI #296, #297 green.
