@@ -24,7 +24,12 @@ export interface DesignVersion {
 
 export interface DesignHistorySlice {
     designVersions: DesignVersion[];
-    saveDesignVersion: (name?: string) => Promise<void>;
+    // ISSUE-1395 (audit): now returns whether the version was persisted
+    // durably to Firestore — callers (flatten) rely on a cloud revision for
+    // reload recovery and must not believe one exists when the write failed
+    // (full-res data-URI canvas states can exceed the 1 MiB document limit,
+    // and Firestore errors used to be swallowed).
+    saveDesignVersion: (name?: string) => Promise<boolean>;
     restoreDesignVersion: (version: DesignVersion) => void;
     deleteDesignVersion: (id: string) => Promise<void>;
     initializeDesignHistory: () => Promise<void>;
@@ -43,7 +48,7 @@ export function buildDesignHistoryState(
             
             if (!currentProjectId) {
                 logger.error("DesignHistory: No project selected");
-                return;
+                return false;
             }
 
             const { getAuth } = await import('firebase/auth');
@@ -77,15 +82,38 @@ export function buildDesignHistoryState(
                 const service = new FirestoreService<DesignVersion>('design_versions');
                 await service.set(newVersion.id, newVersion);
                 logger.info("DesignHistory: Saved version", newVersion.id);
+                return true;
             } catch (err) {
                 logger.error("DesignHistory: Failed to save version", err);
+                return false;
             }
         },
 
+        // ISSUE-1395 (audit): restoring a version saved under a different
+        // project used to overwrite the current board unconditionally.
+        // Reject mismatched versions and re-stamp restored images to the
+        // current project so board state can never cross projects.
         restoreDesignVersion: (version) => {
+            const currentProjectId = get().currentProjectId;
+            if (currentProjectId && version.projectId && version.projectId !== currentProjectId) {
+                logger.error('DesignHistory: Refusing to restore a version from another project', {
+                    versionProjectId: version.projectId,
+                    currentProjectId,
+                });
+                import('@/core/events').then(({ events }) => {
+                    events.emit('SYSTEM_ALERT', {
+                        level: 'error',
+                        message: 'This design version belongs to another project and was not restored.',
+                    });
+                }).catch(() => { /* events module unavailable in some test contexts */ });
+                return;
+            }
             set((state: StoreState) => ({
                 studioControls: { ...state.studioControls, ...version.state.studioControls },
-                canvasImages: [...version.state.canvasImages],
+                canvasImages: (version.state.canvasImages || []).map(img => ({
+                    ...img,
+                    projectId: currentProjectId || img.projectId,
+                })),
                 whiskState: { ...state.whiskState, ...version.state.whiskState },
                 characterReferences: [...version.state.characterReferences],
                 creativePrompt: version.state.creativePrompt

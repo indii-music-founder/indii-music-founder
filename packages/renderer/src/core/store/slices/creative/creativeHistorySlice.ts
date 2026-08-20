@@ -444,7 +444,11 @@ export function buildCreativeHistoryState(
                     width: naturalWidth,
                     height: naturalHeight,
                     aspect,
-                    projectId: 'chat_import', // Temporary or default
+                    // ISSUE-1395 (audit): was stamped 'chat_import', a fake
+                    // project that matched nothing — re-stamp to the active
+                    // project so board state stays project-truthful (the
+                    // board is cleared on project switch).
+                    projectId: _get().currentProjectId || 'default',
                     prompt: prompt
                 };
 

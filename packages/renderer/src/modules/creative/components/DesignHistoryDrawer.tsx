@@ -6,12 +6,20 @@ import { useToast } from '@/core/context/ToastContext';
 import { DesignVersion } from '@/core/store';
 
 export default function DesignHistoryDrawer({ onClose, embedded = false }: { onClose: () => void; embedded?: boolean }) {
-    const { designVersions, saveDesignVersion, restoreDesignVersion, deleteDesignVersion } = useStore(useShallow(state => ({
+    const { designVersions, saveDesignVersion, restoreDesignVersion, deleteDesignVersion, currentProjectId } = useStore(useShallow(state => ({
         designVersions: state.designVersions,
         saveDesignVersion: state.saveDesignVersion,
         restoreDesignVersion: state.restoreDesignVersion,
-        deleteDesignVersion: state.deleteDesignVersion
+        deleteDesignVersion: state.deleteDesignVersion,
+        currentProjectId: state.currentProjectId,
     })));
+
+    // ISSUE-1395 (audit): the version list was rendered unfiltered — a
+    // stale version from another project could be restored onto the current
+    // board (the slice now also refuses mismatched restores).
+    const scopedVersions = currentProjectId
+        ? designVersions.filter(v => !v.projectId || v.projectId === currentProjectId)
+        : designVersions;
     
     const [isSaving, setIsSaving] = useState(false);
     const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -67,13 +75,13 @@ export default function DesignHistoryDrawer({ onClose, embedded = false }: { onC
             </div>
 
             <div className="flex-1 overflow-y-auto p-3 custom-scrollbar space-y-3 pb-6">
-                {designVersions.length === 0 ? (
+                {scopedVersions.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-40 text-gray-500 text-xs">
                         <Layers size={32} className="mb-2 opacity-10" />
                         No saved versions
                     </div>
                 ) : (
-                    designVersions.map((v) => (
+                    scopedVersions.map((v) => (
                         <div 
                             key={v.id} 
                             onClick={() => handleRestore(v)}

@@ -2430,3 +2430,16 @@ NaN
 4. **addToHistory persistence failures were silent** — saveItem errors were only logged; the item looked saved, then vanished at the 50-item cap with no cloud copy. A SYSTEM_ALERT now surfaces the failure.
 
 **Remaining backlog (logged, own pass each):** eviction-rebuild cap mismatch + fallback-path isTrashed/limit-sort gaps (medium, storage); resolveStorageUrl echo-on-failure leaks into VideoPropertiesPanel/VideoWorkflow openSessionProxy (medium); getCanvasStateFromStorage no updatedAt compare (medium); detected-object boxes outside transform (medium); board video-drop always fails (medium); history/gallery not project-filtered on read (medium); aspect-ratio triple-coercion conflict (medium); PLP attention_required dead end (medium); Omni referenceVideoUri '' fallback (medium); 12+ low-severity items (blob: refs, never-settling frame promises, fake Like/Dislike, duplicate history entries, orphaned ImageSubMenu, IDB bloat, token re-mint on re-save, etc.).
+
+### ISSUE-1395 audit round 3 (2026-08-20): board-audit remainder closed
+
+The board (InfiniteCanvas) audit's remaining findings are now fixed:
+1. **Detected-object overlays misplaced after pan/zoom** — drawn after ctx.restore() with world coordinates; now drawn inside the transformed context (only lined up at scale=1 before).
+2. **Dropping a video on the board always failed** — the mp4 URL was fed to an HTMLImageElement (always onerror). Drops now use the video's thumbnailUrl; videos without a thumbnail fail with an honest message. gs:// drops also resolve before decode.
+3. **handleGeneration silent failure** — edit+fallback both returning nothing closed the overlay with no feedback; now toasts "Generation returned no image".
+4. **Flatten recovery overstatement** — saveDesignVersion swallowed Firestore failures (full-res data-URI canvas states can exceed the 1 MiB doc limit) while flatten claimed reload durability. saveDesignVersion now returns whether persistence succeeded; flatten warns honestly ("Undo works only until you leave this page") instead of claiming a cloud revision exists.
+5. **Undo-flatten z-order flip** — restored sources were appended (array order = z-order), putting them ABOVE layers added after flatten; sources are now prepended so post-flatten layers stay on top.
+6. **Cross-project version restore** — restoreDesignVersion now refuses versions from another project (SYSTEM_ALERT) and re-stamps restored images to the current project; DesignHistoryDrawer lists only the current project's versions.
+7. **openImageInStudio 'chat_import' stamp** — board imports from chat were tagged with a fake project id; now re-stamped to the active project.
+
+Remaining logged backlog (medium/low): eviction-rebuild cap mismatch, resolveStorageUrl echo-on-failure leaks into VideoPropertiesPanel/openSessionProxy, getCanvasStateFromStorage no updatedAt compare, aspect-ratio triple coercion, PLP attention_required dead end, Omni referenceVideoUri '', blob: reference handling, never-settling frame promises, Like/Dislike fake toasts, duplicate history entries, ImageSubMenu orphan, IDB bloat, download-token re-mint on re-save, gallery empty-state flash, AssetsPanel music/text click no-op.

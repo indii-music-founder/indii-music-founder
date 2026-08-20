@@ -103,7 +103,7 @@ describe('creativeHistorySlice — openImageInStudio', () => {
         await waitFor(() => expect(slice.canvasImages.length).toBe(1));
     });
 
-    it('falls back to a 512x512 box when the source image cannot be decoded (base64=sourceUrl, x=100, y=100, projectId=chat_import)', async () => {
+    it('falls back to a 512x512 box when the source image cannot be decoded (base64=sourceUrl, x=100, y=100, projectId=active project)', async () => {
         slice.openImageInStudio({
             imageId: 'test-image-id',
             sourceUrl: 'https://example.com/image.jpg',
@@ -120,7 +120,9 @@ describe('creativeHistorySlice — openImageInStudio', () => {
             expect(added?.width).toBe(512);
             expect(added?.height).toBe(512);
             expect(added?.aspect).toBe(1);
-            expect(added?.projectId).toBe('chat_import');
+            // ISSUE-1395: re-stamped to the active project (was the fake
+            // 'chat_import' id that matched nothing).
+            expect(added?.projectId).toBe('default');
             expect(added?.prompt).toBe('a red car on a beach');
         });
     });

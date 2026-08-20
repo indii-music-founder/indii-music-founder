@@ -250,8 +250,10 @@ export default function InfiniteCanvas() {
             }
         });
 
-        ctx.restore();
-
+        // ISSUE-1395 (audit): detected-object overlays were drawn AFTER
+        // ctx.restore() with world coordinates — they only lined up at
+        // scale=1/offset=(0,0) and drifted off position/size after any
+        // pan/zoom. Draw them inside the transformed context instead.
         if (detectedObjects) {
             const sourceImage = canvasImages.find(img => img.id === detectedObjects.sourceImageId);
             if (sourceImage) {
@@ -291,6 +293,8 @@ export default function InfiniteCanvas() {
                 ctx.restore();
             }
         }
+
+        ctx.restore();
 
         // Selection Box (Screen Space)
         if (selectionStart.current && (tool === 'generate' || tool === 'crop')) {
@@ -675,6 +679,11 @@ export default function InfiniteCanvas() {
                         projectId: currentProjectId,
                         origin: 'generated'
                     });
+                } else {
+                    // ISSUE-1395 (audit): both paths returned nothing and no
+                    // error was raised — the overlay closed silently with no
+                    // result, no history entry, and no feedback.
+                    toast.error('Generation returned no image. Please try again.');
                 }
             }
         } catch (e: unknown) {
@@ -951,7 +960,15 @@ export default function InfiniteCanvas() {
         // document before the destructive state change so recovery survives a
         // reload, unlike the short-lived in-component Undo control.
         try {
-            await saveDesignVersion(`Before flatten — ${new Date().toLocaleString()}`);
+            const durable = await saveDesignVersion(`Before flatten — ${new Date().toLocaleString()}`);
+            if (!durable) {
+                // ISSUE-1395 (audit): the cloud revision failed (e.g. the
+                // full-res canvas state exceeds the Firestore document
+                // limit). Proceed with an honest warning — the in-session
+                // Undo still works, but reload recovery will not.
+                logger.warn('Pre-flatten revision was not persisted to the cloud.');
+                toast.warning('Pre-flatten revision could not be saved to the cloud — Undo works only until you leave this page.');
+            }
         } catch (error) {
             logger.error('Could not save a recoverable pre-flatten revision:', error);
             toast.error('Flatten was not performed because its recovery revision could not be saved.');
@@ -1026,7 +1043,13 @@ export default function InfiniteCanvas() {
             return;
         }
         removeCanvasImage(flattenRevision.flattenedId);
-        flattenRevision.sources.forEach(image => addCanvasImage(image));
+        // ISSUE-1395 (audit): appending restored sources at the array end put
+        // them ABOVE layers added after the flatten (array order is z-order
+        // on this board). Prepend the sources in their original order so
+        // post-flatten layers stay on top, matching the original hierarchy.
+        useStore.setState((state: { canvasImages?: CanvasImage[] }) => ({
+            canvasImages: [...flattenRevision!.sources, ...(state.canvasImages || [])].slice(-20),
+        }));
         selectCanvasImage(flattenRevision.sources[flattenRevision.sources.length - 1]?.id ?? null);
         setFlattenRevision(null);
         toast.success('Flatten undone. Original layers were restored.');
@@ -1256,13 +1279,31 @@ export default function InfiniteCanvas() {
             const wx = (mx - offset.x) / scale;
             const wy = (my - offset.y) / scale;
 
+            // ISSUE-1395 (audit): a video drop used to feed the mp4 URL into
+            // an HTMLImageElement — always onerror. Use the thumbnail when
+            // present; otherwise fail with an honest message.
+            const dropSource = historyItem.type === 'video'
+                ? (historyItem.thumbnailUrl || '')
+                : historyItem.url;
+            if (!dropSource) {
+                toast.error('This video has no thumbnail — extract a frame first, then drop that image.');
+                return;
+            }
+
             try {
-                let dataUrl = historyItem.url;
+                let dataUrl = dropSource;
                 
                 // If it's a remote URL, fetch and convert to Data URL to prevent canvas tainting
                 if (dataUrl.startsWith('http')) {
                     const { base64, mimeType } = await fetchAsBase64(dataUrl);
                     dataUrl = `data:${mimeType};base64,${base64}`;
+                }
+                if (dataUrl.startsWith('gs://')) {
+                    const resolved = await resolveStorageUrl(dataUrl);
+                    if (!resolved.startsWith('gs://')) {
+                        const { base64, mimeType } = await fetchAsBase64(resolved);
+                        dataUrl = `data:${mimeType};base64,${base64}`;
+                    }
                 }
 
                 const img = new window.Image(); // Explicit window.Image to avoid conflict if imported
