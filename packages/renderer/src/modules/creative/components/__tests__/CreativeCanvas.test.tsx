@@ -401,6 +401,15 @@ describe('CreativeCanvas', () => {
         }
     });
 
+    // ISSUE-1395: the canvas board is image-only — video items must not be
+    // offered a send-to-canvas action (the URL cannot render on the board).
+    it('does not offer send-to-canvas for video items', () => {
+        render(<CreativeCanvas item={{ ...mockItem, type: 'video' }} onClose={mockOnClose} />);
+        expect(screen.queryByTestId('send-to-canvas-btn')).not.toBeInTheDocument();
+        // The header "Canvas" control falls back to a plain close affordance.
+        expect(screen.getByTestId('canvas-header-back')).toBeInTheDocument();
+    });
+
     it('threads reference roles into the edit prompt', async () => {
         render(<CreativeCanvas item={mockItem} onClose={mockOnClose} />);
 
