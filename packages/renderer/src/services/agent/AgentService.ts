@@ -546,7 +546,9 @@ export class AgentService {
                     void this.sendMessage(pending.text, pending.attachments, pending.forcedAgentId, pending.options);
                 }
             };
-            if (flowSettled) {
+            if (flowSettled || !flowPromise) {
+                // Either the flow already settled, or sendMessage returned
+                // early (auth gate, cache hit) before any flow started.
                 cleanup();
             } else {
                 flowPromise.then(cleanup, cleanup);

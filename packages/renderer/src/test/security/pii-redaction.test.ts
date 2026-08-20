@@ -44,6 +44,7 @@ vi.mock('../../core/store', () => {
             getState: () => ({
                 activeAgentProvider: 'agent', // Make sure Direct mode is OFF so executor runs
                 addAgentMessage: (msg: any) => messages.push(msg),
+                addMessageToSession: (_sessionId: string, msg: any) => messages.push(msg),
                 updateAgentMessage: () => { },
                 agentHistory: messages,
                 currentProjectId: 'test-project',
