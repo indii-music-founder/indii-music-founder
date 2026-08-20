@@ -207,6 +207,7 @@ export default function Home({ founder = true }: { founder?: boolean }) {
           '@id': 'https://indii.music/#organization',
           name: 'indii.music',
           url: 'https://indii.music',
+          slogan: 'music business at the speed of you',
           description:
             'An artist-controlled workspace for the work around an independent music career.',
         },

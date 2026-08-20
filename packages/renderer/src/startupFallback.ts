@@ -4,6 +4,9 @@ export function renderStartupFallback(reason: string): void {
 
   if (root.querySelector('[data-startup-fallback="true"]')) return;
 
+  // Dismiss the static boot splash so the failure card is the visible surface.
+  document.getElementById('boot-splash')?.remove();
+
   root.innerHTML = `
     <div class="startup-fallback" data-startup-fallback="true">
       <div class="startup-fallback__card">

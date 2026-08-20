@@ -4,6 +4,7 @@ import React from 'react';
 import { motion, useReducedMotion, useScroll, useTransform } from 'framer-motion';
 import { ArrowDown, ArrowRight, Play } from 'lucide-react';
 import { emitSystemPulse } from '../../three/signals';
+import { INDII_BRAND } from '@shared/brand';
 
 const heroWords = ['Run', 'your', 'music', 'career', 'without', 'giving', 'it', 'away.'];
 
@@ -42,6 +43,18 @@ export default function Hero({ founder, previewEnabled, previewHref, trackPrevie
       </div>
 
       <div className="relative my-auto py-16 md:py-12">
+        {/* Canonical brand lockup — indii.music / music business at the speed of you */}
+        <motion.p
+          initial={{ opacity: 0, y: 18 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.18, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+          className="relative mb-8 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[11px] tracking-[0.22em] text-white/55 md:mb-10"
+        >
+          <span className="font-bold text-white">{INDII_BRAND.name}</span>
+          <span aria-hidden="true" className="h-px w-7 bg-white/25" />
+          <span className="normal-case tracking-[0.16em]">{INDII_BRAND.tagline}</span>
+        </motion.p>
+
         <h1
           className="relative max-w-[1450px] text-[15.4vw] font-black leading-[0.73] tracking-[-0.075em] text-white sm:text-[12.3vw] lg:text-[10.6rem]"
           aria-label="Run your music career without giving it away."

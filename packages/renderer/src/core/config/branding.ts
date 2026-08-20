@@ -1,25 +1,31 @@
 /**
  * Branding Configuration — indii.music Identity System
- * 
- * Central location for all brand messaging, names, and taglines
- * Used across UI, marketing, documentation, and internal systems
+ *
+ * Central location for all brand messaging, names, and taglines.
+ * Used across UI, marketing, documentation, and internal systems.
+ *
+ * The canonical tagline is a PRIMARY BRAND ASSET defined once in
+ * packages/shared/src/brand.ts (INDII_BRAND) and sourced here, so every
+ * surface shares the exact string: "music business at the speed of you".
  */
+
+import { INDII_BRAND } from '@shared/brand';
 
 export const BRANDING = {
   // Core brand identity
-  official_name: 'indii.music',
-  full_brand_name: 'indii.music',
-  tagline: 'your independence operating system',
-  
+  official_name: INDII_BRAND.name,
+  full_brand_name: INDII_BRAND.name,
+  tagline: INDII_BRAND.tagline,
+
   // Complete brand statements
-  full_statement: 'indii.music, your independence operating system',
-  
+  full_statement: `${INDII_BRAND.name}, ${INDII_BRAND.tagline}`,
+
   // Brand variants (for different contexts)
   variants: {
     short: 'indii',
-    platform: 'indii.music',
-    statement_app: 'indii.music — your independence operating system',
-    statement_marketing: 'indii.music: The independence operating system',
+    platform: INDII_BRAND.name,
+    statement_app: `${INDII_BRAND.name} — ${INDII_BRAND.tagline}`,
+    statement_marketing: `${INDII_BRAND.name}: ${INDII_BRAND.tagline}`,
     statement_legal: 'indii.music (indii)',
   },
   
@@ -56,7 +62,7 @@ export const BRANDING = {
   version_format: 'indii.music v{version}',
   
   // Meta description for web
-  meta_description: 'indii.music: The independence operating system for independent music artists',
+  meta_description: `${INDII_BRAND.name} — ${INDII_BRAND.tagline} — your personal music business team for independent artists.`,
   
   // Document headers
   document_attribution: 'indii.music',

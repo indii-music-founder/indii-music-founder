@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { INDII_BRAND } from '@shared/brand';
 
 interface FooterSectionProps {
   founder: boolean;
@@ -14,7 +15,9 @@ export default function FooterSection({ founder, onContactClick }: FooterSection
         <div>
           <div className="text-2xl font-black tracking-[-0.04em] text-white">indii.music</div>
           <p className="mt-3 max-w-md text-sm leading-relaxed text-white/50">
-            The operating system for musical independence. Built in Detroit.
+            {INDII_BRAND.tagline}
+            <br />
+            Built in Detroit.
           </p>
           <p className="mt-6 font-mono text-[9px] uppercase tracking-[0.18em] text-white/40">© 2026 New Detroit Music LLC</p>
         </div>

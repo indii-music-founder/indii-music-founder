@@ -5,6 +5,7 @@ import { Loader2, Mail, Lock, LogIn, User, UserPlus, Calendar, ArrowLeft, CheckC
 import { motion, AnimatePresence } from 'motion/react';
 import { isFirebaseE2EMockEnabled } from '@/utils/e2eMode';
 import { flushFounderFunnelQueue, trackFounderFunnelEvent } from '@/services/founders/founderFunnel';
+import { INDII_BRAND } from '@shared/brand';
 
 /**
  * Item 305: COPPA Age Gate Utility
@@ -242,6 +243,7 @@ export default function LoginForm() {
                     >
                         indii<span className="text-dept-creative">.music</span>
                     </motion.h1>
+                    <p className="mb-2 text-gray-500 font-mono text-xs tracking-[0.14em]">{INDII_BRAND.tagline}</p>
                     <p className="text-gray-400 font-mono text-xs uppercase tracking-[0.2em]">Founders Release • v1.0</p>
                 </div>
 

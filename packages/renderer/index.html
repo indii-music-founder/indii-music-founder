@@ -55,12 +55,12 @@
     />
     <link rel="dns-prefetch" href="https://identitytoolkit.googleapis.com" />
 
-    <title>indii.music — Your Creative Studio</title>
+    <title>indii.music — music business at the speed of you</title>
 
     <!-- SEO -->
     <meta
       name="description"
-      content="indii.music is your personal music business team. Distribution, creative, legal, finance, and 21 specialist agents — all in one studio."
+      content="indii.music — music business at the speed of you — your personal music business team: distribution, creative, legal, finance, and specialist agents, all in one studio."
     />
     <link rel="canonical" href="https://indii.music/" />
     <meta name="robots" content="noindex, nofollow" />
@@ -68,10 +68,10 @@
     <!-- Open Graph -->
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://indii.music/" />
-    <meta property="og:title" content="indii.music — Your Creative Studio" />
+    <meta property="og:title" content="indii.music — music business at the speed of you" />
     <meta
       property="og:description"
-      content="Your personal team of 21 specialists for independent music. Private launch — sign in to preview."
+      content="indii.music — music business at the speed of you — your personal team of specialists for independent music. Private launch — sign in to preview."
     />
     <meta property="og:image" content="https://indii.music/og-image.png" />
     <meta property="og:image:width" content="1200" />
@@ -81,10 +81,10 @@
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:site" content="@indiidotmusic" />
-    <meta name="twitter:title" content="indii.music — Your Creative Studio" />
+    <meta name="twitter:title" content="indii.music — music business at the speed of you" />
     <meta
       name="twitter:description"
-      content="Your personal team of 21 specialists for independent music."
+      content="indii.music — music business at the speed of you — your personal team of specialists for independent music."
     />
     <meta name="twitter:image" content="https://indii.music/og-image.png" />
 
@@ -126,30 +126,64 @@
         --safe-area-inset-left: env(safe-area-inset-left);
       }
 
-      /* Initial loading state - prevents flash of unstyled content */
-      #root:empty::before {
-        content: "";
+      /* Initial loading state - branded boot splash.
+         Canonical brand pairing shown while the bundle loads:
+         indii.music / music business at the speed of you
+         The tagline here must stay identical to INDII_BRAND.tagline in
+         packages/shared/src/brand.ts. */
+      #boot-splash {
         position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        width: 48px;
-        height: 48px;
-        border: 3px solid rgba(99, 102, 241, 0.2);
-        border-top-color: rgba(99, 102, 241, 0.8);
-        border-radius: 50%;
-        animation: spin 0.8s linear infinite;
+        inset: 0;
+        z-index: 2147483000;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 14px;
+        background-color: #0f0f0f;
+        color: #ffffff;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        text-align: center;
+        padding: 1.5rem;
       }
 
-      @keyframes spin {
+      #boot-splash .boot-splash__mark {
+        font-size: 30px;
+        font-weight: 900;
+        letter-spacing: -0.03em;
+      }
+
+      #boot-splash .boot-splash__tagline {
+        font-size: 12px;
+        line-height: 1.5;
+        color: rgba(255, 255, 255, 0.55);
+        letter-spacing: 0.02em;
+      }
+
+      #boot-splash .boot-splash__spinner {
+        width: 22px;
+        height: 22px;
+        margin-top: 6px;
+        border: 2px solid rgba(255, 255, 255, 0.15);
+        border-top-color: rgba(255, 255, 255, 0.8);
+        border-radius: 50%;
+        animation: boot-spin 0.8s linear infinite;
+      }
+
+      @keyframes boot-spin {
         to {
-          transform: translate(-50%, -50%) rotate(360deg);
+          transform: rotate(360deg);
         }
       }
     </style>
   </head>
   <body>
     <script src="./bootstrap.js" defer></script>
+    <div id="boot-splash" role="status" aria-live="polite">
+      <div class="boot-splash__mark">indii.music</div>
+      <div class="boot-splash__tagline">music business at the speed of you</div>
+      <div class="boot-splash__spinner" aria-hidden="true"></div>
+    </div>
     <div id="root"></div>
     <script type="module" src="/src/startupWatchdog.ts"></script>
     <script type="module" src="/src/main.tsx"></script>

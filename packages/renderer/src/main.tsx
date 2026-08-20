@@ -20,8 +20,16 @@ import App from './core/App';
 import { ErrorBoundary } from './core/components/ErrorBoundary';
 import { initViewportFixes, initKeyboardDetection } from '@/lib/mobile';
 import { renderStartupFallback } from '@/startupFallback';
+import { INDII_BRAND_TITLE } from '@shared/brand';
 import '@/core/i18n'; // Initialize i18n before any component renders
 import './index.css';
+
+/** Remove the static boot splash once the app has committed its first frame. */
+function dismissBootSplash(): void {
+  requestAnimationFrame(() => {
+    document.getElementById('boot-splash')?.remove();
+  });
+}
 
 // Initialize observability
 import { initSentry } from '@/services/observability/SentryService';
@@ -35,7 +43,7 @@ try {
 }
 
 logger.debug("indii.music");
-document.title = "indii.music";
+document.title = INDII_BRAND_TITLE;
 
 try {
     ReactDOM.createRoot(document.getElementById('root')!).render(
@@ -47,6 +55,7 @@ try {
             </BrowserRouter>
         </React.StrictMode>,
     );
+    dismissBootSplash();
 } catch (fatalError: unknown) {
     // LAST RESORT: If React fails to mount (Firebase crash, import chain break,
     // missing env vars), render a bare-metal fallback directly in the DOM.
