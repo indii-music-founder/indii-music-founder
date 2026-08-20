@@ -2234,3 +2234,12 @@ All seven T1 sub-items built, tested against real (not mocked-away) verification
 - **Code-level proof:** `user_usage_stats` is only ever READ (getUsageStats) — no writer exists server-side; the `usage` ledger gets `image`/`video` (gateway) but NOTHING writes `chat_tokens` anywhere. Client `TokenUsageService.trackUsage` is called ONLY in the non-stream `rawGenerateContent` path (FirebaseIntelligenceService:775) — the stream path (`rawGenerateContentStream`, which Boardroom chat actually uses via `generateContentStream` → backend) never tracks. Client `UsageTracker.trackChatTokens` exists but has zero call sites.
 - **Fix (prepared, held until CI #294 settles):** backend `generateContentStream` (index.ts) now reads cumulative `usageMetadata.totalTokenCount` from stream chunks (max-seen, so partial streams record what ran) and calls `recordUsage(uid, 'chat_tokens', tokens)` after SETTLED — non-blocking, ledger shape identical to image/video, `getUsageStats` already sums it. +2 gateway tests (chat_tokens shape; usage-write failure never fails the stream). Lint + 61/61 tests green.
 - **Commit held:** per branch-safety, not pushed while #294 (ISSUE-1390 commit) is in flight — pushed after it settles.
+
+---
+
+### Round close 2026-08-20 ~00:25 UTC — ALL THREE SHIPPED + DEPLOY-VERIFIED
+
+1. **ISSUE-1390 (5b8a3fdb9, CI #294 GREEN):** editor "← Canvas" exit + Escape; session-aware save errors; guest/demo skip file sync; rules proven innocent via emulator.
+2. **Variations per-API fix — TRULY LIVE:** generateImageV3 rev **00302-xed** (00:01:29). Deployed source verified: `interactionInput` (Step: type/mime_type/data) → interactions.create; `generateContentInput` (inlineData) → generateContent. The deploy-integrity defect that kept 00301-hek serving (silent 429 quota failures with exit 0) is fixed in deploy.yml with retry + fail-loud.
+3. **ISSUE-1383 (452368b42, CI #295 GREEN):** chat_tokens metering live — deployed generateContentStream source contains `recordUsage(decodedToken.uid, 'chat_tokens', streamTotalTokens)` (generation 1787185703557766, rev 00065-cet).
+- **Founder to retest (after hard refresh):** Variations (fast + pro), painting save, editor exit. My probe's environment is too fragile to drive the UI reliably; the founder's browser is the decisive surface.

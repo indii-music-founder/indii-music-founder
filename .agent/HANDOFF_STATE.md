@@ -88,3 +88,11 @@
   3. **Deploy integrity:** CI #293 exited 0 while 7 functions failed with HTTP 429 — generateImageV3 STILL rev 00301-hek (20:24), per-API variation fix NOT live. deploy.yml now retries 429s (2×, 90s) and exits 1 if any function fails to update.
 - Tests: rules repro wired into `test:rules`; renderer +10 tests; all green. Committing next.
 - **After push:** watch #294 → verify generateImageV3 revision rotates past 00301-hek → tell founder to retest Variations (fast + pro), painting save, and the new Canvas back button.
+
+## Checkpoint 2026-08-20 ~00:10 UTC — ISSUE-1390 LIVE + ISSUE-1383 pushed
+
+- **ISSUE-1390 shipped (5b8a3fdb9, CI #294 GREEN):** editor exit button (CanvasHeader "← Canvas", all breakpoints) + Escape closes editor; session-aware file-save errors (guest → sign-in message, permission-denied → session expired, network → retry); guest/demo sessions skip doomed file-node syncs. Rules ruled out with emulator proof.
+- **generateImageV3 ROTATED: rev 00302-xed (00:01:29)** — deployed source verified: `interactionInput` (Step: type/mime_type/data) routed to interactions.create; `generateContentInput` (inlineData) routed to generateContent. **The per-API variation fix is now truly LIVE.** Founder's 22:33 failures were on the old build (00301-hek).
+- **Deploy-integrity fix live in pipeline:** deploy.yml tees functions-deploy log; retries 429-quota failures twice (90s backoff); exits 1 on any `failed to (update|create) function` — a stale deploy can never look green again (this exact silent failure is what kept 00301-hek serving).
+- **ISSUE-1383 pushed (452368b42, CI #295 deploying):** generateContentStream now records chat_tokens into the usage ledger from usageMetadata.totalTokenCount (max-seen) after SETTLED — non-blocking; getUsageStats already sums it. Root cause proven: nothing ever wrote chat_tokens; user_usage_stats has no writer; client stream path never tracked.
+- **Founder to retest (they're on the new build after hard refresh):** 1) Variations on any canvas image (fast + pro); 2) painting save (should now give actionable messages if session degrades); 3) the "← Canvas" button + Escape to exit the editor.
