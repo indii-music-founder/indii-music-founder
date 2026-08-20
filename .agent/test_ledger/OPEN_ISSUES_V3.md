@@ -2264,3 +2264,14 @@ All seven T1 sub-items built, tested against real (not mocked-away) verification
 - **Fix (3e1f88233):** moved the catch-all `**` rule to the FRONT of both targets' header lists; the specific rules after it now win for the paths they cover (assets stay immutable 1y, `/creative` and `index.html` stay no-cache, everything else revalidates). Landing target same treatment.
 - **Verification pending after #297:** `/` → no-cache; `/assets/*.js` → immutable; `/studio` → no-cache; `indii.music/` → no-cache.
 - Lesson recorded: never place a broad Cache-Control catch-all after specific rules in Firebase Hosting.
+
+---
+
+### ISSUE-1391 hosting verification COMPLETE (01:10 UTC) — all four behaviors live
+
+- `app.indii.music/` → `no-cache, no-store, must-revalidate` ✓ (was max-age=3600 — the stale-shell root cause)
+- `app.indii.music/studio` (SPA route) → no-cache ✓
+- `/assets/index-*.js|css` → `max-age=31536000, immutable` ✓ (restored after the ordering fix)
+- `/icon-192.png` → `max-age=2592000, immutable` ✓
+- `indii.music/` → no-cache ✓; landing asset → immutable ✓
+- **Net effect for the founder:** a plain refresh now always loads the newest deploy — no more hour-long stale shell ("the updated versions don't open in the browser"). Commits 97c91c010 + 3e1f88233 + 697dd94ff, CI #296 + #297 green.
