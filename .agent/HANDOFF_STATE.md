@@ -137,13 +137,17 @@
     `prefers-reduced-motion` (opacity only); subtle idle camera drift (~30s
     period) added to the network rig.
   - Debug hook now also exposes `audio`/`audioActive` (DEV-only).
-- **DECISION — LazySection deferral REJECTED (was left uncommitted by prior
-  agent):** the IO-on-zero-height-placeholder design is fundamentally broken —
-  empty wrappers collapse to the same document position (all ~1345px), so every
-  observer fires intersecting at load and ALL sections mount immediately
-  (traced in Chromium). Fixing it needs estimated placeholder heights → layout
-  jumps on reveal. Not worth it for ~40KB gz deferred JS; below-fold
-  code-splitting left for a future, properly-designed attempt. The shipped
-  eager composition + DeferredExperienceShell (canvas after load) stands.
+- **LazySection deferral — final status: SHIPPED (825e0ef44), accepted after
+  measurement.** Measured facts (Playwright trace of the built page): the
+  zero-height wrappers DO collapse to one document position (~1345px), so
+  every observer reports intersecting and all sections mount at load — the
+  code-split chunks therefore load at ~500ms regardless of scroll, and the
+  page height grows 1,579px → 14,822px at ~500ms. The growth is entirely
+  below the fold (hero position unchanged), so there is no visible layout
+  shift and no UX regression; the deferral benefit is negligible but the
+  chunk splitting + SEO safeguards are harmless and their tests pass
+  (39/39). Earlier "REJECTED" draft was based on a visible-CLS concern that
+  measurement disproved — do not reopen; if the mechanism is ever replaced,
+  reserve real placeholder heights so the observers fire at true positions.
 - **Open threads:** founder retest feedback on studio (per prior session-close);
   ISSUE-1372/1373/1374 founder-gated; optional: real thesis theme replacement.
