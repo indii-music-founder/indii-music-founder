@@ -16,9 +16,11 @@ vi.mock('./components/Showroom', () => ({ default: () => <div data-testid="showr
 vi.mock('../video/VideoWorkflow', () => ({ default: () => <div data-testid="video-workflow" /> }));
 
 let capturedOnSendToWorkflow: any = null;
+let capturedOnClose: any = null;
 vi.mock('./components/CreativeCanvas', () => ({
     default: (props: any) => {
         capturedOnSendToWorkflow = props.onSendToWorkflow;
+        capturedOnClose = props.onClose;
         return <div data-testid="creative-canvas" />;
     }
 }));
@@ -77,6 +79,7 @@ describe('CreativeStudio', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         capturedOnSendToWorkflow = null;
+        capturedOnClose = null;
         // Reset all mocks to initial state
         mockSetPrompt.mockClear();
         mockSetPendingPrompt.mockClear();
@@ -160,6 +163,35 @@ describe('CreativeStudio', () => {
         expect(screen.getByTestId('direct-generation-tab')).toBeInTheDocument();
         expect(screen.getByTestId('creative-mode-overlay')).toBeInTheDocument();
         expect(screen.getByTestId('adaptive-workspace')).toHaveAttribute('data-workspace-mode', 'wide');
+    });
+
+    // ISSUE-1395: closing the editor must return to the view the user came
+    // from (view history), never dump them into the Creative Hub.
+    it('closing the editor returns to the previous view via view history', () => {
+        const currentStore = (useStore as any).getState();
+        const mockViewModeBack = vi.fn();
+        const mockSetViewMode = vi.fn();
+        const mockSetSelectedItem = vi.fn();
+        const editorStore = {
+            ...currentStore,
+            viewMode: 'editor',
+            _viewModeIndex: 1,
+            viewModeBack: mockViewModeBack,
+            setViewMode: mockSetViewMode,
+            setSelectedItem: mockSetSelectedItem,
+        };
+        (useStore as unknown as import('vitest').Mock).mockImplementation((selector: any) =>
+            selector ? selector(editorStore) : editorStore
+        );
+        (useStore as any).getState.mockReturnValue(editorStore);
+
+        render(<CreativeStudio />);
+        expect(capturedOnClose).toBeTruthy();
+        act(() => capturedOnClose());
+
+        expect(mockSetSelectedItem).toHaveBeenCalledWith(null);
+        expect(mockViewModeBack).toHaveBeenCalledOnce();
+        expect(mockSetViewMode).not.toHaveBeenCalledWith('direct');
     });
 
     it('does not mount a pointer-enabled mode overlay above Image Studio', () => {

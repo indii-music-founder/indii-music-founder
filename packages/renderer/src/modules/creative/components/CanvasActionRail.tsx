@@ -56,8 +56,13 @@ export const CanvasActionRail: React.FC<CanvasActionRailProps> = ({
     const actionButtonClass = "w-11 h-11 rounded-xl border border-white/10 bg-[#0b0d10]/90 text-gray-300 hover:text-white hover:bg-white/10 transition-colors flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dept-creative/50 disabled:opacity-40 disabled:cursor-not-allowed";
     const primaryButtonClass = "w-11 h-11 rounded-xl border border-dept-creative/30 bg-dept-creative text-white shadow-[0_0_22px_rgba(0,255,136,0.25)] hover:bg-dept-creative/80 transition-colors flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dept-creative/60 disabled:opacity-50 disabled:cursor-not-allowed";
     const closeButtonClass = "w-11 h-11 rounded-xl border border-red-500/10 bg-red-950/10 text-gray-400 hover:text-red-300 hover:bg-red-950/40 transition-colors flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400/50";
+    // ISSUE-1395: export/flatten/save are image-only operations. A video item
+    // has no fabric canvas (canvasOps is never initialized for videos), so
+    // those actions only produced error toasts. Video items keep just the
+    // close control — the video player carries its own controls.
+    const isImage = item.type === 'image';
     const capabilityGroups: CapabilityGroup[] = [
-        {
+        ...(isImage ? [{
             id: 'exports',
             actions: [
                 {
@@ -97,8 +102,8 @@ export const CanvasActionRail: React.FC<CanvasActionRailProps> = ({
                     className: actionButtonClass,
                 },
             ],
-        },
-        {
+        }] : []),
+        ...(isImage ? [{
             id: 'commit',
             actions: [
                 {
@@ -110,7 +115,7 @@ export const CanvasActionRail: React.FC<CanvasActionRailProps> = ({
                     testId: 'save-canvas-btn',
                 },
             ],
-        },
+        }] : []),
         {
             id: 'generation',
             actions: item.type === 'image'

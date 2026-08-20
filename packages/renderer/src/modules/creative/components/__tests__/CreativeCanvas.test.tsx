@@ -7,7 +7,7 @@ import { resolveStorageUrl } from '@/services/storage/resolveStorageUrl';
 import { saveAssetToStorage } from '@/services/storage/repository';
 import { Editing } from '@/services/image/EditingService';
 
-const { mockStoreStateRef, createStoreState, canvasOnChangeRef } = vi.hoisted(() => {
+const { mockStoreStateRef, createStoreState, canvasOnChangeRef, canvasOnReadyRef } = vi.hoisted(() => {
     const createStoreState = (overrides: Record<string, unknown> = {}) => ({
         updateHistoryItem: vi.fn(),
         addToHistory: vi.fn(),
@@ -39,6 +39,10 @@ const { mockStoreStateRef, createStoreState, canvasOnChangeRef } = vi.hoisted(()
         // mutation (draw / add shape), which is the only thing that marks
         // the editor as dirty for the send-to-canvas flow.
         canvasOnChangeRef: { current: null as (() => void) | null },
+        // Captures the onReady callback — tests invoke it to simulate init
+        // completion (base image placed / state restored), which is when the
+        // hook captures the canvas baseline for change detection.
+        canvasOnReadyRef: { current: null as (() => void | Promise<void>) | null },
     };
 });
 
@@ -137,8 +141,9 @@ vi.mock('../../services/CanvasOperationsService', () => ({
         prepareMasksForEdit: vi.fn(),
         extractSemanticMask: vi.fn().mockReturnValue('semantic-mask'),
         extractGeminiMask: vi.fn().mockReturnValue('gemini-mask'),
-        initialize: vi.fn((_el: unknown, _url: unknown, _onReady: unknown, onChange?: () => void) => {
+        initialize: vi.fn((_el: unknown, _url: unknown, onReady: (() => void | Promise<void>) | undefined, onChange?: () => void) => {
             canvasOnChangeRef.current = onChange ?? null;
+            canvasOnReadyRef.current = onReady ?? null;
         }),
         dispose: vi.fn(),
         updateBrushColor: vi.fn(),
@@ -197,8 +202,11 @@ describe('CreativeCanvas', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         canvasOnChangeRef.current = null;
+        canvasOnReadyRef.current = null;
         mockStoreStateRef.current = createStoreState();
         vi.mocked(resolveStorageUrl).mockImplementation((url: string) => Promise.resolve(url));
+        // Default canvas state: a plain base image (fabric object list).
+        vi.mocked(canvasOps.toJSON).mockResolvedValue({ objects: [{ id: 'base' }] } as any);
         vi.mocked(canvasOps.prepareMasksForEdit).mockReturnValue({
             baseImage: { mimeType: 'image/png', data: 'base-image' },
             masks: [{
@@ -375,10 +383,14 @@ describe('CreativeCanvas', () => {
         try {
             render(<CreativeCanvas item={mockItem} onClose={mockOnClose} />);
 
-            // Wait for setup to register the mutation callback, then simulate
-            // a real canvas change (draw / add shape) — the only signal that
-            // marks the editor as dirty for the send flow.
+            // Wait for setup to register the init callbacks, complete init
+            // (baseline = plain base image), then simulate a real canvas
+            // change (draw / add shape) that alters the object list.
             await waitFor(() => expect(canvasOnChangeRef.current).toBeTruthy());
+            await act(async () => { await canvasOnReadyRef.current?.(); });
+            vi.mocked(canvasOps.toJSON).mockResolvedValue({
+                objects: [{ id: 'base' }, { id: 'annotation' }],
+            } as any);
             act(() => canvasOnChangeRef.current!());
             fireEvent.click(screen.getByTestId('send-to-canvas-btn'));
 
@@ -395,6 +407,44 @@ describe('CreativeCanvas', () => {
                 }));
                 expect(mockStoreStateRef.current.setViewMode).toHaveBeenCalledWith('canvas');
             });
+            expect(mockOnClose).toHaveBeenCalled();
+        } finally {
+            (globalThis as { Image: unknown }).Image = originalImage;
+        }
+    });
+
+    // ISSUE-1395: edits that were fully undone return the canvas to its
+    // baseline — the send must not export a duplicate of the original.
+    it('does not persist when every edit was undone back to the baseline', async () => {
+        const FakeImage = class {
+            naturalWidth = 800;
+            naturalHeight = 600;
+            onload: (() => void) | null = null;
+            set src(_v: string) {
+                queueMicrotask(() => this.onload?.());
+            }
+        };
+        const originalImage = globalThis.Image;
+        (globalThis as { Image: unknown }).Image = FakeImage;
+        try {
+            render(<CreativeCanvas item={mockItem} onClose={mockOnClose} />);
+
+            await waitFor(() => expect(canvasOnChangeRef.current).toBeTruthy());
+            await act(async () => { await canvasOnReadyRef.current?.(); });
+            // User drew (change event fired) then undid everything — the
+            // object list is identical to the baseline again.
+            act(() => canvasOnChangeRef.current!());
+            fireEvent.click(screen.getByTestId('send-to-canvas-btn'));
+
+            await waitFor(() => {
+                expect(mockStoreStateRef.current.addCanvasImage).toHaveBeenCalledWith(expect.objectContaining({
+                    parentId: mockItem.id,
+                    base64: mockItem.url,
+                }));
+                expect(mockStoreStateRef.current.setViewMode).toHaveBeenCalledWith('canvas');
+            });
+            expect(saveAssetToStorage).not.toHaveBeenCalled();
+            expect(mockStoreStateRef.current.addToHistory).not.toHaveBeenCalled();
             expect(mockOnClose).toHaveBeenCalled();
         } finally {
             (globalThis as { Image: unknown }).Image = originalImage;

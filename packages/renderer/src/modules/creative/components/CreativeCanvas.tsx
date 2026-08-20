@@ -127,36 +127,42 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
 
                 <div className="flex-1 relative overflow-hidden bg-transparent">
                     <div className="absolute inset-0 grid grid-cols-[minmax(0,1fr)] gap-0 md:grid-cols-[72px_minmax(0,1fr)_72px]">
-                        <aside className="z-30 hidden min-h-0 flex-col items-center justify-center border-r border-white/10 bg-[#050608]/74 px-2 py-4 backdrop-blur-xl md:flex">
-                            <div className="max-h-full overflow-y-auto rounded-2xl border border-white/10 bg-[#050608]/82 p-2 shadow-[0_18px_48px_rgba(0,0,0,0.42)] backdrop-blur-2xl [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                                <CanvasToolbar
-                                    addRectangle={handleAddRectangle}
-                                    addCircle={handleAddCircle}
-                                    addText={handleAddText}
-                                    setTool={handleSetTool}
-                                    undo={handleUndo}
-                                    redo={handleRedo}
-                                    canUndo={canUndo}
-                                    canRedo={canRedo}
-                                    activeTool={activeTool}
-                                    handleDetectObjects={handleDetectObjects}
-                                    handleClearDetections={handleClearDetections}
-                                    hasDetections={hasDetections}
-                                    toggleLayersPanel={toggleLayersPanel}
-                                    isLayersPanelOpen={isLayersPanelOpen}
-                                    addSketchLayer={handleAddSketchLayer}
-                                    orientation="vertical"
-                                />
-                                <div className="my-2 h-px w-8 bg-white/10" />
-                                <AnnotationPalette
-                                    activeColor={activeColor}
-                                    onColorSelect={setActiveColor}
-                                    colorDefinitions={definitions}
-                                    onOpenDefinitions={() => setIsDefinitionsOpen(true)}
-                                    orientation="vertical"
-                                />
-                            </div>
-                        </aside>
+                        {/* ISSUE-1395: the fabric editing tools only exist for
+                            image items — a video is a plain player, so the
+                            tool/annotation rail is hidden (video preview has
+                            its own controls). */}
+                        {item.type === 'image' && (
+                            <aside className="z-30 hidden min-h-0 flex-col items-center justify-center border-r border-white/10 bg-[#050608]/74 px-2 py-4 backdrop-blur-xl md:flex">
+                                <div className="max-h-full overflow-y-auto rounded-2xl border border-white/10 bg-[#050608]/82 p-2 shadow-[0_18px_48px_rgba(0,0,0,0.42)] backdrop-blur-2xl [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                                    <CanvasToolbar
+                                        addRectangle={handleAddRectangle}
+                                        addCircle={handleAddCircle}
+                                        addText={handleAddText}
+                                        setTool={handleSetTool}
+                                        undo={handleUndo}
+                                        redo={handleRedo}
+                                        canUndo={canUndo}
+                                        canRedo={canRedo}
+                                        activeTool={activeTool}
+                                        handleDetectObjects={handleDetectObjects}
+                                        handleClearDetections={handleClearDetections}
+                                        hasDetections={hasDetections}
+                                        toggleLayersPanel={toggleLayersPanel}
+                                        isLayersPanelOpen={isLayersPanelOpen}
+                                        addSketchLayer={handleAddSketchLayer}
+                                        orientation="vertical"
+                                    />
+                                    <div className="my-2 h-px w-8 bg-white/10" />
+                                    <AnnotationPalette
+                                        activeColor={activeColor}
+                                        onColorSelect={setActiveColor}
+                                        colorDefinitions={definitions}
+                                        onOpenDefinitions={() => setIsDefinitionsOpen(true)}
+                                        orientation="vertical"
+                                    />
+                                </div>
+                            </aside>
+                        )}
 
                         {/* Stage: Main Viewport */}
                         <CanvasViewport
@@ -201,53 +207,60 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
                     <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-linear-to-b from-black/35 to-transparent md:inset-x-[72px]" />
                     <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-linear-to-t from-black/30 to-transparent md:inset-x-[72px]" />
 
-                    <div className="md:hidden absolute inset-x-0 bottom-0 z-40 flex items-center justify-center gap-2 border-t border-white/10 bg-[#050608]/95 px-3 py-3">
-                        <CanvasToolbar
-                            addRectangle={handleAddRectangle}
-                            addCircle={handleAddCircle}
-                            addText={handleAddText}
-                            setTool={handleSetTool}
-                            undo={handleUndo}
-                            redo={handleRedo}
-                            canUndo={canUndo}
-                            canRedo={canRedo}
-                            activeTool={activeTool}
-                            handleDetectObjects={handleDetectObjects}
-                            handleClearDetections={handleClearDetections}
-                            hasDetections={hasDetections}
-                            toggleLayersPanel={toggleLayersPanel}
-                            isLayersPanelOpen={isLayersPanelOpen}
-                            addSketchLayer={handleAddSketchLayer}
+                    {item.type === 'image' && (
+                        <div className="md:hidden absolute inset-x-0 bottom-0 z-40 flex items-center justify-center gap-2 border-t border-white/10 bg-[#050608]/95 px-3 py-3">
+                            <CanvasToolbar
+                                addRectangle={handleAddRectangle}
+                                addCircle={handleAddCircle}
+                                addText={handleAddText}
+                                setTool={handleSetTool}
+                                undo={handleUndo}
+                                redo={handleRedo}
+                                canUndo={canUndo}
+                                canRedo={canRedo}
+                                activeTool={activeTool}
+                                handleDetectObjects={handleDetectObjects}
+                                handleClearDetections={handleClearDetections}
+                                hasDetections={hasDetections}
+                                toggleLayersPanel={toggleLayersPanel}
+                                isLayersPanelOpen={isLayersPanelOpen}
+                                addSketchLayer={handleAddSketchLayer}
+                            />
+                        </div>
+                    )}
+
+                    {/* Right Panel: Contextual Options — image-only (fabric
+                        layers/definitions do not exist for video items). */}
+                    {item.type === 'image' && (
+                        <EditDefinitionsPanel
+                            isOpen={isDefinitionsOpen}
+                            onClose={() => setIsDefinitionsOpen(false)}
+                            definitions={definitions}
+                            onUpdateDefinition={handleUpdateDefinition}
+                            referenceImages={referenceImages}
+                            onUpdateReferenceImage={handleUpdateReferenceImage}
+                            referenceRoles={referenceRoles}
+                            onUpdateReferenceRole={handleUpdateReferenceRole}
                         />
-                    </div>
+                    )}
 
-                    {/* Right Panel: Contextual Options */}
-                    <EditDefinitionsPanel
-                        isOpen={isDefinitionsOpen}
-                        onClose={() => setIsDefinitionsOpen(false)}
-                    definitions={definitions}
-                    onUpdateDefinition={handleUpdateDefinition}
-                    referenceImages={referenceImages}
-                    onUpdateReferenceImage={handleUpdateReferenceImage}
-                    referenceRoles={referenceRoles}
-                    onUpdateReferenceRole={handleUpdateReferenceRole}
-                />
-
-                <LayersPanel
-                    isOpen={isLayersPanelOpen}
-                    onClose={toggleLayersPanel}
-                    layers={layers}
-                    selectedLayerId={selectedLayerId}
-                    onSelectLayer={handleSelectLayer}
-                    onToggleVisibility={handleToggleLayerVisibility}
-                    onToggleLock={handleToggleLayerLock}
-                    onDeleteLayer={handleDeleteLayer}
-                    onReorderLayer={handleReorderLayer}
-                    onAddSketchLayer={handleAddSketchLayer}
-                    onAddTextLayer={handleAddText}
-                    onAddRectangleLayer={handleAddRectangle}
-                    onAddCircleLayer={handleAddCircle}
-                />
+                    {item.type === 'image' && (
+                        <LayersPanel
+                            isOpen={isLayersPanelOpen}
+                            onClose={toggleLayersPanel}
+                            layers={layers}
+                            selectedLayerId={selectedLayerId}
+                            onSelectLayer={handleSelectLayer}
+                            onToggleVisibility={handleToggleLayerVisibility}
+                            onToggleLock={handleToggleLayerLock}
+                            onDeleteLayer={handleDeleteLayer}
+                            onReorderLayer={handleReorderLayer}
+                            onAddSketchLayer={handleAddSketchLayer}
+                            onAddTextLayer={handleAddText}
+                            onAddRectangleLayer={handleAddRectangle}
+                            onAddCircleLayer={handleAddCircle}
+                        />
+                    )}
                 </div>
             </motion.div>
         </AnimatePresence>

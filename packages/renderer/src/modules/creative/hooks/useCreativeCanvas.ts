@@ -69,6 +69,33 @@ async function dataUrlToBlob(dataUrl: string): Promise<Blob> {
     return response.blob();
 }
 
+/**
+ * Serialize just the object list of a fabric toJSON payload. Selection state,
+ * viewport transforms and other transient canvas properties never enter the
+ * comparison, so "did the artwork content actually change?" stays accurate
+ * (ISSUE-1395).
+ */
+function serializeCanvasObjects(json: unknown): string {
+    if (!json || typeof json !== 'object') return '[]';
+    const objects = (json as { objects?: unknown[] }).objects;
+    return JSON.stringify(objects ?? []);
+}
+
+/**
+ * True when a restored canvas-state JSON contains real content beyond the
+ * plain base image (drawn annotations / shapes carry data.isAnnotation and
+ * no data.isBaseImage). Used so restored annotations travel to the board on
+ * the first send without requiring the user to touch the canvas.
+ */
+function restoredStateHasContent(savedStateJson: string): boolean {
+    try {
+        const parsed = JSON.parse(savedStateJson) as { objects?: Array<{ data?: Record<string, unknown> }> };
+        return (parsed.objects ?? []).some(obj => !(obj?.data?.isBaseImage === true));
+    } catch {
+        return false;
+    }
+}
+
 interface UseCreativeCanvasProps {
     item: HistoryItem | null;
     onClose: () => void;
@@ -116,6 +143,21 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
     // must not export/duplicate an untouched asset into the gallery; it only
     // persists (and stages) the edited output when this flag is set.
     const dirtyRef = useRef(false);
+    // ISSUE-1395 follow-up: the serialized object list captured when the
+    // editor finished initializing (after any restored state was loaded).
+    // Undoing every change returns the canvas to this exact state, so a
+    // "dirty but identical" canvas is treated as untouched — no duplicate
+    // gallery export for edits that were fully undone.
+    const baselineJsonRef = useRef<string | null>(null);
+    // ISSUE-1395 follow-up: true when the editor restored a saved canvas
+    // state that contains real content beyond the plain base image (drawn
+    // annotations, shapes). Such content must travel to the board on the
+    // first send even if the user does not touch the canvas.
+    const restoredContentRef = useRef(false);
+    // ISSUE-1395 follow-up: the last export this editor session staged, so
+    // repeat sends of an unchanged canvas keep staging the same artifact
+    // instead of falling back to the original asset.
+    const lastExportRef = useRef<{ url: string; storageUri?: string } | null>(null);
     const sessionId = useMemo(() => getCreativeSessionId(item?.id ?? null, currentProjectId), [currentProjectId, item?.id]);
     const editManifest = useMemo(() => compileCreativeEditManifest({
         sessionId,
@@ -288,15 +330,20 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
                             });
                         }
                         // Load-time object:added events are not user edits — the
-                        // restored canvas is the baseline, not a change.
+                        // restored canvas is the baseline, not a change. Content
+                        // beyond the plain base image is remembered so it can
+                        // travel to the board on the first send.
                         dirtyRef.current = false;
+                        baselineJsonRef.current = serializeCanvasObjects(await canvasOps.toJSON());
+                        restoredContentRef.current = restoredStateHasContent(savedState);
                     }, handleCanvasChange);
                 } else if (isMounted) {
                     // Initialize WITH base image URL
-                    canvasOps.initialize(canvasEl.current, editableImageUrl, () => {
+                    canvasOps.initialize(canvasEl.current, editableImageUrl, async () => {
                         // The base image placement fires object:added before
                         // onReady — that is the baseline, not a user edit.
                         dirtyRef.current = false;
+                        baselineJsonRef.current = serializeCanvasObjects(await canvasOps.toJSON());
                     }, handleCanvasChange);
                 }
 
@@ -334,8 +381,9 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
                 logger.warn('[CreativeStudio] Failed to restore canvas state', err);
                 if (isMounted) {
                     // Fallback to fresh canvas with resolved URL
-                    canvasOps.initialize(canvasEl.current, await resolveEditableImageUrl(item), () => {
+                    canvasOps.initialize(canvasEl.current, await resolveEditableImageUrl(item), async () => {
                         dirtyRef.current = false;
+                        baselineJsonRef.current = serializeCanvasObjects(await canvasOps.toJSON());
                     }, handleCanvasChange);
                 }
             }
@@ -979,12 +1027,24 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
         const { addCanvasImage, setViewMode, currentProjectId, canvasImages } = useStore.getState();
         const { readNaturalDimensions } = await import('@/core/store/slices/creative/creativeHistorySlice');
 
+        // ISSUE-1395: export + stage the EDITED output only when the canvas
+        // actually differs from its baseline — a canvas whose edits were all
+        // undone, or one never touched, is staged as-is with zero gallery
+        // duplication. Restored annotation content travels on the first send.
         let sourceUrl = item.storageUri || item.url;
-        if (dirtyRef.current) {
+        const currentJson = serializeCanvasObjects(await canvasOps.toJSON());
+        const canvasChanged = dirtyRef.current && currentJson !== baselineJsonRef.current;
+        if (canvasChanged || restoredContentRef.current) {
             const saved = await saveCanvas();
             if (saved) {
+                lastExportRef.current = saved;
                 sourceUrl = saved.storageUri || saved.url;
+                restoredContentRef.current = false;
             }
+        } else if (lastExportRef.current) {
+            // Repeat sends of an unchanged canvas keep staging the same
+            // exported artifact instead of reverting to the original.
+            sourceUrl = lastExportRef.current.storageUri || lastExportRef.current.url;
         }
 
         // gs:// URIs cannot be decoded by Image() — resolve to a download URL

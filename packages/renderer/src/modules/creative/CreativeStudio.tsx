@@ -663,7 +663,17 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
                                 item={selectedItem}
                                 onClose={() => {
                                     setSelectedItem(null);
-                                    setViewMode(generationMode === 'video' ? 'video_production' : 'direct');
+                                    // ISSUE-1395: closing the editor returns to
+                                    // the view the user came from (view history,
+                                    // ISSUE-1375) instead of dumping them into
+                                    // the Creative Hub. Falls back to the
+                                    // workspace matching the generation mode.
+                                    const state = useStore.getState();
+                                    if ((state._viewModeIndex ?? 0) > 0) {
+                                        state.viewModeBack();
+                                    } else {
+                                        state.setViewMode(generationMode === 'video' ? 'video_production' : 'canvas');
+                                    }
                                 }}
                                 onSendToWorkflow={async (type, item) => {
                                     const { setVideoInput, setGenerationMode, setViewMode, setSelectedItem } = useStore.getState();
