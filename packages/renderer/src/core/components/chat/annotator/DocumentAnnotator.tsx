@@ -5,10 +5,21 @@ import { AgentService } from '@/services/agent/AgentService';
 import { Logger } from '@/core/logger/Logger';
 import { Eraser, Trash2, CheckCircle2, ChevronLeft, ChevronRight, Highlighter, StickyNote } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
-import * as pdfjsLib from 'pdfjs-dist';
 
-// Initialize PDF.js worker
-pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
+// pdfjs-dist is ~780KB — it is only needed once a document is actually
+// opened for annotation, so it is loaded lazily instead of being part of
+// the app-shell startup graph. Behavior is unchanged: the same workerSrc
+// (with the same CDN + version) is configured before the first use.
+let pdfjsPromise: Promise<typeof import('pdfjs-dist')> | null = null;
+function getPdfjs(): Promise<typeof import('pdfjs-dist')> {
+  if (!pdfjsPromise) {
+    pdfjsPromise = import('pdfjs-dist').then((mod) => {
+      mod.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${mod.version}/pdf.worker.min.mjs`;
+      return mod;
+    });
+  }
+  return pdfjsPromise;
+}
 
 interface DocAnnotation {
     id: string;
@@ -58,6 +69,7 @@ export const DocumentAnnotator: React.FC<DocumentAnnotatorProps> = ({ documentUr
     useEffect(() => {
         const loadPdf = async () => {
             try {
+                const pdfjsLib = await getPdfjs();
                 const loadingTask = pdfjsLib.getDocument(documentUrl);
                 const pdfDoc = await loadingTask.promise;
                 setPdf(pdfDoc);

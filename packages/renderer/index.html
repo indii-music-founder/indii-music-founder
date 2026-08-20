@@ -42,18 +42,6 @@
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="format-detection" content="telephone=no" />
 
-    <!-- Performance Hints - Google Fonts preconnect -->
-    <link
-      rel="preconnect"
-      href="https://fonts.googleapis.com"
-      crossorigin="anonymous"
-    />
-    <link
-      rel="preconnect"
-      href="https://fonts.gstatic.com"
-      crossorigin="anonymous"
-    />
-
     <!-- Item 363: Preconnect to Firebase for LCP improvement — reduces DNS + TLS handshake time -->
     <link
       rel="preconnect"
@@ -161,7 +149,7 @@
     </style>
   </head>
   <body>
-    <script src="./bootstrap.js"></script>
+    <script src="./bootstrap.js" defer></script>
     <div id="root"></div>
     <script type="module" src="/src/startupWatchdog.ts"></script>
     <script type="module" src="/src/main.tsx"></script>

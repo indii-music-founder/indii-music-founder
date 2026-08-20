@@ -203,7 +203,13 @@ export default defineConfig({
             envSanitizerPlugin(),
             apiFallbackPlugin()
         ],
+        esbuild: {
+            // ISSUE-548: match packages/renderer/vite.config.ts — strip console
+            // and debugger statements in production builds.
+            drop: ['console', 'debugger'],
+        },
         build: {
+            minify: 'esbuild',
             modulePreload: {
                 resolveDependencies(filename, deps) {
                     return deps.filter(dep => {
@@ -216,7 +222,10 @@ export default defineConfig({
                                         dep.includes('vendor-tesseract') ||
                                         dep.includes('vendor-reactflow') ||
                                         dep.includes('vendor-yjs') ||
-                                        dep.includes('vendor-remotion');
+                                        dep.includes('vendor-remotion') ||
+                                        dep.includes('vendor-driver') ||
+                                        dep.includes('vendor-virtuoso') ||
+                                        dep.includes('vendor-firebase-messaging');
                         return !isHeavy;
                     });
                 }
@@ -236,6 +245,11 @@ export default defineConfig({
                     index: resolve(__dirname, 'packages/renderer/index.html'),
                 },
                 output: {
+                    // Do not hoist transitive imports into the entry chunk. With the
+                    // default (true), the entry statically imports every transitive
+                    // dependency of every lazy chunk it references, forcing the
+                    // browser to fetch and execute heavy vendor code on startup.
+                    hoistTransitiveImports: false,
                     // WO-14 + Incident 2026-04-16: Split heavy libraries into named
                     // chunks so each lazy-loaded module only pulls what it needs.
                     //
@@ -256,6 +270,13 @@ export default defineConfig({
                     // packages that don't import anything belonging to another
                     // named vendor chunk.
                     manualChunks(id: string) {
+                        // Vite's dynamic-import preload helper is shared by every chunk
+                        // that uses import(). Give it its own tiny chunk so the 1MB
+                        // vendor-three chunk is not pulled into the graph of every
+                        // lazy-loading chunk.
+                        if (id.includes('vite/preload-helper')) {
+                            return 'vendor-preload-helper';
+                        }
                         // Extract the package name from the id. Handles:
                         //   /node_modules/foo/...            → foo
                         //   /node_modules/@scope/foo/...     → @scope/foo
@@ -285,6 +306,16 @@ export default defineConfig({
                             return 'vendor-motion';
                         }
                         // Firebase SDK
+                        // Firebase Messaging is only needed at runtime when a user opts into
+                        // web push (getFirebaseMessaging()). Carve it out of the eager
+                        // vendor-firebase chunk so the ~200KB FCM module is fetched
+                        // lazily, not on the startup critical path.
+                        if (pkg === '@firebase/messaging' || pkg === '@firebase/messaging-compat') {
+                            return 'vendor-firebase-messaging';
+                        }
+                        if (pkg === 'firebase' && id.includes('/messaging/')) {
+                            return 'vendor-firebase-messaging';
+                        }
                         if (pkg === 'firebase' || pkg.startsWith('@firebase/')) {
                             return 'vendor-firebase';
                         }
@@ -317,10 +348,13 @@ export default defineConfig({
                             return 'vendor-i18n';
                         }
                         // UI Utilities & Primitives
+                        // Shared babel helpers (extends etc.) are imported by many lazy
+                        // chunks; keep them out of the heavy vendor-video chunk.
+                        if (pkg === '@babel/runtime') {
+                            return 'vendor-babel-runtime';
+                        }
                         if (
-                            pkg === 'react-virtuoso' ||
                             pkg === 'tailwind-merge' ||
-                            pkg === 'driver.js' ||
                             pkg === 'clsx' ||
                             pkg === 'classnames' ||
                             pkg.startsWith('@radix-ui/') ||
@@ -329,6 +363,15 @@ export default defineConfig({
                             pkg === 'zustand'
                         ) {
                             return 'vendor-ui';
+                        }
+                        // Lazy-only UI libs: only lazy chunks import these, so they get
+                        // their own chunks instead of riding the eagerly-loaded
+                        // vendor-ui bundle (which is on the critical path).
+                        if (pkg === 'driver.js') {
+                            return 'vendor-driver';
+                        }
+                        if (pkg === 'react-virtuoso') {
+                            return 'vendor-virtuoso';
                         }
                         // React ecosystem: core React runtime strictly isolated to prevent circular ESM imports
                         if (

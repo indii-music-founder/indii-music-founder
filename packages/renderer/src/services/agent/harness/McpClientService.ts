@@ -1,5 +1,8 @@
-import { Client } from '@modelcontextprotocol/sdk/client/index.js';
-import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js';
+// The MCP SDK (and its AJV schema-validation stack) is heavy (~200KB minified).
+// It is only needed at runtime when a tool actually connects to the backend MCP
+// server, so it is loaded lazily inside connect() instead of eagerly at startup.
+import type { Client } from '@modelcontextprotocol/sdk/client/index.js';
+import type { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js';
 import { auth } from '@/services/firebase';
 import { logger } from '@/utils/logger';
 
@@ -29,6 +32,11 @@ class McpClientService {
 
         this.isConnecting = true;
         try {
+            // Lazy-load the MCP SDK only when a connection is actually requested.
+            const [{ Client }, { SSEClientTransport }] = await Promise.all([
+                import('@modelcontextprotocol/sdk/client/index.js'),
+                import('@modelcontextprotocol/sdk/client/sse.js'),
+            ]);
             const user = auth.currentUser;
             if (!user) {
                 throw new Error('User must be authenticated to connect to MCP Server.');
