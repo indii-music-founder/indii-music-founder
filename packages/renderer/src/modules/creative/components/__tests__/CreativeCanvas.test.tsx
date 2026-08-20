@@ -256,12 +256,40 @@ describe('CreativeCanvas', () => {
         expect(screen.getByTestId('canvas-close-btn')).toBeInTheDocument();
     });
 
-    // ISSUE-1390: the editor overlay must always offer an explicit path back
-    // to the canvas — the header back button and Escape both call onClose.
-    it('calls onClose when the header "Canvas" back button is clicked', () => {
-        render(<CreativeCanvas item={mockItem} onClose={mockOnClose} />);
-        fireEvent.click(screen.getByTestId('canvas-header-back'));
-        expect(mockOnClose).toHaveBeenCalledOnce();
+    // ISSUE-1395: the header "Canvas" button is the primary path for moving
+    // the edited asset onto the canvas — it must run the send-to-canvas flow
+    // (save + stage + canvas view), not close the editor into the Creative Hub.
+    it('stages the asset on the canvas when the header "Canvas" button is clicked', async () => {
+        // jsdom's Image never fires load/error, so readNaturalDimensions would
+        // sit on its 4s timeout while waitFor times out at 1s. Stub Image to
+        // resolve dimensions immediately.
+        const FakeImage = class {
+            naturalWidth = 800;
+            naturalHeight = 600;
+            onload: (() => void) | null = null;
+            set src(_v: string) {
+                queueMicrotask(() => this.onload?.());
+            }
+        };
+        const originalImage = globalThis.Image;
+        (globalThis as { Image: unknown }).Image = FakeImage;
+        try {
+            render(<CreativeCanvas item={mockItem} onClose={mockOnClose} />);
+            fireEvent.click(screen.getByTestId('canvas-header-back'));
+
+            await waitFor(() => {
+                expect(mockStoreStateRef.current.addCanvasImage).toHaveBeenCalledWith(expect.objectContaining({
+                    parentId: mockItem.id,
+                    width: 800,
+                    height: 600,
+                    prompt: expect.stringContaining('Canvas edit of'),
+                }));
+                expect(mockStoreStateRef.current.setViewMode).toHaveBeenCalledWith('canvas');
+            });
+            expect(mockOnClose).toHaveBeenCalled();
+        } finally {
+            (globalThis as { Image: unknown }).Image = originalImage;
+        }
     });
 
     it('calls onClose when Escape is pressed', () => {

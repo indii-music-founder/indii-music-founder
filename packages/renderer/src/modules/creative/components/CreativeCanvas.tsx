@@ -119,6 +119,7 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
                     grounding={editManifest.settings.grounding}
                     imageSize={editManifest.settings.imageSize}
                     onClose={onClose}
+                    onSendToCanvas={handleSendToCanvas}
                 />
 
                 <div className="flex-1 relative overflow-hidden bg-transparent">

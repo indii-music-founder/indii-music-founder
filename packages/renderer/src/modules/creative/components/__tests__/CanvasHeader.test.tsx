@@ -102,6 +102,20 @@ describe('CanvasHeader — edit prompt and model mode', () => {
         expect(onClose).toHaveBeenCalledOnce();
     });
 
+    // ISSUE-1395: when the editor can stage the asset, the "Canvas" button
+    // must run the send-to-canvas flow (save + place on the canvas + switch
+    // view) instead of closing into the Creative Hub.
+    it('runs onSendToCanvas instead of onClose when both are provided', () => {
+        const onClose = vi.fn();
+        const onSendToCanvas = vi.fn();
+        renderHeader({ onClose, onSendToCanvas });
+        const back = screen.getByTestId('canvas-header-back');
+        expect(back).toHaveAccessibleName('Send to canvas');
+        fireEvent.click(back);
+        expect(onSendToCanvas).toHaveBeenCalledOnce();
+        expect(onClose).not.toHaveBeenCalled();
+    });
+
     it('does not render the back button when onClose is omitted', () => {
         renderHeader();
         expect(screen.queryByTestId('canvas-header-back')).not.toBeInTheDocument();

@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowLeft, Lock, Sparkles, Star, Wand2, Shield } from 'lucide-react';
+import { ArrowLeft, Lock, MonitorUp, Sparkles, Star, Wand2, Shield } from 'lucide-react';
 import { auth } from '@/services/firebase';
 
 interface CanvasHeaderProps {
@@ -21,6 +21,13 @@ interface CanvasHeaderProps {
     // close button, which is desktop-only (`hidden md:flex`) — on mobile and
     // narrow windows there was no way out of the creative editor.
     onClose?: () => void;
+    // ISSUE-1395: the upper-left "Canvas" control is the user's primary path
+    // for moving the asset being edited onto the creative canvas (the gray
+    // work board). When the editor can stage the asset — save, place it on
+    // the InfiniteCanvas, switch to the canvas view — wire it here. Without
+    // it, clicking "Canvas" used to close the editor straight into the
+    // Creative Hub instead of the canvas. Falls back to a plain close.
+    onSendToCanvas?: () => void | Promise<void>;
 }
 
 export const CanvasHeader: React.FC<CanvasHeaderProps> = ({
@@ -38,6 +45,7 @@ export const CanvasHeader: React.FC<CanvasHeaderProps> = ({
     grounding,
     imageSize,
     onClose,
+    onSendToCanvas,
 }) => {
     const isAuthenticated = !!auth.currentUser;
     const effectiveModel = modelTier || (isHighFidelity ? 'pro' : 'fast');
@@ -45,15 +53,18 @@ export const CanvasHeader: React.FC<CanvasHeaderProps> = ({
     return (
         <header className="grid grid-cols-[minmax(140px,1fr)_minmax(320px,560px)_minmax(140px,1fr)] items-start gap-4 px-5 py-3 border-b border-white/10 bg-[#050608]/95 backdrop-blur-xl">
             <div className="min-w-0 flex items-center gap-2">
-                {onClose && (
+                {(onClose || onSendToCanvas) && (
                     <button
-                        onClick={onClose}
-                        title="Back to canvas"
-                        aria-label="Back to canvas"
+                        onClick={() => {
+                            const action = onSendToCanvas ?? onClose;
+                            if (action) void action();
+                        }}
+                        title={onSendToCanvas ? 'Send this image to the creative canvas' : 'Back to canvas'}
+                        aria-label={onSendToCanvas ? 'Send to canvas' : 'Back to canvas'}
                         data-testid="canvas-header-back"
                         className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-2.5 py-1.5 text-[11px] font-semibold text-gray-300 hover:text-white hover:bg-white/10 transition-colors shrink-0"
                     >
-                        <ArrowLeft size={13} />
+                        {onSendToCanvas ? <MonitorUp size={13} /> : <ArrowLeft size={13} />}
                         <span>Canvas</span>
                     </button>
                 )}

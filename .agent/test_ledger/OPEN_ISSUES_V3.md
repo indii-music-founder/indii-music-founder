@@ -2362,3 +2362,11 @@ All seven T1 sub-items built, tested against real (not mocked-away) verification
 NaN
 NaN
 NaN
+---
+
+### ISSUE-1395: editor "Canvas" button dumped the user into the Creative Hub instead of putting the image on the canvas (2026-08-20, founder-live)
+
+- **Founder report:** from Assets, clicking an image opens the editor; the upper-left "Canvas" tab (next to the "Creative Canvas" heading) looked like the way to put the image onto the creative canvas (the gray grid board), but clicking it "takes you directly back to the creative hub" — image nowhere, place lost.
+- **Root cause (code-proven):** `CanvasHeader`'s "Canvas" button (`canvas-header-back`) called `onClose` → `CreativeStudio`'s handler → `setSelectedItem(null); setViewMode(generationMode === 'video' ? 'video_production' : 'direct')` → `viewMode 'direct'` renders `DirectGenerationTab`, whose console header reads "Creative Hub". The real send-to-canvas flow (`handleSendToCanvas` — ISSUE-1391: save first, stage onto InfiniteCanvas with natural dimensions, switch to `viewMode 'canvas'`) existed but was exposed ONLY as a small icon in the desktop-only right action rail (`hidden md:flex`) — invisible on mobile, not discoverable.
+- **Fix:** `CanvasHeader` gains `onSendToCanvas` prop; the "Canvas" button now runs the send-to-canvas flow when the editor can stage (icon swaps to MonitorUp, title "Send this image to the creative canvas"), falling back to plain `onClose` when absent. `CreativeCanvas` passes `handleSendToCanvas`. Escape and the rail X button keep plain-close semantics.
+- **Tests:** CanvasHeader.test.tsx +1 (onSendToCanvas preferred over onClose), CreativeCanvas.test.tsx header-back test now asserts stage + `setViewMode('canvas')` + onClose (with Image dimension stub). 25/25 in the two files; full creative module suite + monorepo typecheck re-run.
