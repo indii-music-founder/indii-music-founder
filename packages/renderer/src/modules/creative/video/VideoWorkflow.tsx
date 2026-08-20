@@ -188,6 +188,16 @@ export const processJobUpdate = async (
             deps.setJobId(null);
             deps.setJobStatus('idle');
             deps.resetEditorProgress();
+        } else if (newStatus === 'completed') {
+            // ISSUE-1395 (audit): a terminal 'completed' job without any
+            // output URL used to fall through every branch — the listener
+            // stayed subscribed, the spinner state lingered, and no error
+            // surfaced. Treat it as a failure like waitForJob now does.
+            useStore.getState().updateJobStatus(currentJobId, 'error', 'Video job completed without an output URL.');
+            deps.toast.error('The video completed without an output URL. Please retry.');
+            deps.setJobId(null);
+            deps.setJobStatus('idle');
+            deps.resetEditorProgress();
         } else if (newStatus === 'failed') {
             useStore.getState().updateJobStatus(currentJobId, 'error', data.stitchError || 'Generation failed');
             deps.toast.error(data.stitchError ? `Stitching failed: ${data.stitchError}` : 'Generation failed');

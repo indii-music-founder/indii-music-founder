@@ -443,9 +443,17 @@ export class VideoGenerationService {
                         // Lens 🎥 Integrity Check: Verify Video Asset Availability (404 Protection)
                         const videoUrl = job.output?.url || job.videoUrl || job.url;
                         const playableUrl = videoUrl ? await resolveStorageUrl(videoUrl) : videoUrl;
+                        // ISSUE-1395 (audit): a terminal 'completed' job with
+                        // NO output URL violates the waitForJob contract —
+                        // resolve() used to return url:undefined and let
+                        // callers treat a URL-less job as a finished video.
+                        if (!playableUrl) {
+                            reject(new Error('Asset Integrity Failure: Video job completed without an output URL.'));
+                            return;
+                        }
                         // Skip integrity check for blob URLs — they are in-memory and always valid.
                         // HEAD requests are not supported on the blob: protocol.
-                        if (playableUrl && typeof playableUrl === 'string' && !playableUrl.startsWith('blob:') && !playableUrl.startsWith('gs://') && (playableUrl.startsWith('http://') || playableUrl.startsWith('https://'))) {
+                        if (typeof playableUrl === 'string' && !playableUrl.startsWith('blob:') && !playableUrl.startsWith('gs://') && (playableUrl.startsWith('http://') || playableUrl.startsWith('https://'))) {
                             try {
                                 // HEAD request to verify existence without downloading payload
                                 const response = await fetch(playableUrl, { method: 'HEAD' });

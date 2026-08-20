@@ -125,4 +125,33 @@ describe('appSlice', () => {
             expect(useStore.getState().currentModule).toBe('creative');
         });
     });
+
+    describe('setProject (ISSUE-1395 board scoping)', () => {
+        it('clears the creative board state when switching projects', () => {
+            useStore.getState().setProject('project-a');
+            useStore.setState({
+                canvasImages: [{ id: 'img-1', projectId: 'project-a', base64: 'data:x', x: 0, y: 0, width: 10, height: 10, aspect: 1 }],
+                selectedCanvasImageId: 'img-1',
+            } as any);
+
+            useStore.getState().setProject('project-b');
+
+            const after = useStore.getState() as any;
+            expect(after.currentProjectId).toBe('project-b');
+            expect(after.canvasImages).toEqual([]);
+            expect(after.selectedCanvasImageId).toBeNull();
+        });
+
+        it('keeps board state when re-selecting the same project', () => {
+            useStore.getState().setProject('project-a');
+            useStore.setState({
+                canvasImages: [{ id: 'img-1', projectId: 'project-a', base64: 'data:x', x: 0, y: 0, width: 10, height: 10, aspect: 1 }],
+                selectedCanvasImageId: 'img-1',
+            } as any);
+
+            useStore.getState().setProject('project-a');
+
+            expect((useStore.getState() as any).canvasImages).toHaveLength(1);
+        });
+    });
 });

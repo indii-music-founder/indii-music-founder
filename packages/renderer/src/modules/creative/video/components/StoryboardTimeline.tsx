@@ -172,6 +172,18 @@ export function StoryboardTimeline() {
     const [isIsolatingStems, setIsIsolatingStems] = useState<boolean>(false);
     const [renderReceipt, setRenderReceipt] = useState<VideoRenderReceipt | null>(null);
 
+    // ISSUE-1395 (audit): job subscriptions must not leak past unmount —
+    // a slot still rendering while the timeline unmounts used to keep
+    // calling updateStoryboardSlot on dead state forever.
+    const jobUnsubsRef = useRef<Array<() => void>>([]);
+    useEffect(() => {
+        const ref = jobUnsubsRef;
+        return () => {
+            ref.current.forEach(unsub => { try { unsub(); } catch { /* noop */ } });
+            ref.current = [];
+        };
+    }, []);
+
     // Handle audio upload and trigger automatic beat mapping
     const handleAudioUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -327,25 +339,38 @@ export function StoryboardTimeline() {
                                 if (data.progress !== undefined) {
                                     updateStoryboardSlot(slot.id, { progress: data.progress });
                                 }
-                                if (data.status === 'completed' && data.videoUrl) {
+                                // ISSUE-1395 (audit): the canonical completed
+                                // shape is output.url — matching only
+                                // data.videoUrl froze the spinner forever on
+                                // jobs that complete with output.url. Handle
+                                // cancelled and URL-less completions too.
+                                const completedUrl = data.videoUrl || data.output?.url || data.url;
+                                if (data.status === 'completed' && completedUrl) {
                                     unsub();
                                     updateStoryboardSlot(slot.id, {
                                         isGenerating: false,
                                         progress: 100,
-                                        videoUrl: data.videoUrl,
+                                        videoUrl: completedUrl,
                                         ...(data.resultUri?.startsWith('gs://')
                                             ? { canonicalVideoUri: data.resultUri }
                                             : {}),
                                         driftScore: calculateDriftScore(slot.prompt)
                                     });
                                     toast.success(`Slot ${index + 1} rendering complete!`);
-                                } else if (data.status === 'failed') {
+                                } else if (data.status === 'completed') {
                                     unsub();
                                     updateStoryboardSlot(slot.id, { isGenerating: false, progress: 0 });
-                                    toast.error(`Slot ${index + 1} rendering failed.`);
+                                    toast.error(`Slot ${index + 1} completed without an output URL. Please retry.`);
+                                } else if (data.status === 'failed' || data.status === 'cancelled') {
+                                    unsub();
+                                    updateStoryboardSlot(slot.id, { isGenerating: false, progress: 0 });
+                                    toast.error(data.status === 'cancelled'
+                                        ? `Slot ${index + 1} rendering was cancelled.`
+                                        : `Slot ${index + 1} rendering failed.`);
                                 }
                             }
                         });
+                        jobUnsubsRef.current.push(unsub);
                     };
                     checkJob();
                 }

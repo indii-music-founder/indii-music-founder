@@ -406,6 +406,39 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
                                     }))[0];
                                 } else {
                                     const videoIndex = index - 10;
+                                    // ISSUE-1395 (audit): character references
+                                    // were passed as raw URLs in imageBytes
+                                    // (the backend rejects anything that is
+                                    // not inline bytes) and every data: PNG
+                                    // was hardcoded as image/jpeg — every PLP
+                                    // video slot using a gallery reference
+                                    // failed deterministically. Fetch each
+                                    // reference to inline base64 with its real
+                                    // MIME; unreadable refs are skipped, not
+                                    // fatal.
+                                    const usableVideoRefs: Array<{ image: { imageBytes: string; mimeType: string }; referenceType: 'asset' }> = [];
+                                    for (const ref of (characterReferences || [])) {
+                                        try {
+                                            const url = ref.image.url;
+                                            if (url.startsWith('data:')) {
+                                                const match = /^data:([^;,]+)[^,]*,(.*)$/s.exec(url);
+                                                if (!match) continue;
+                                                usableVideoRefs.push({
+                                                    image: { imageBytes: match[2] || '', mimeType: match[1] || 'image/jpeg' },
+                                                    referenceType: 'asset',
+                                                });
+                                            } else {
+                                                const { fetchAsBase64 } = await import('@/services/storage/safeStorageFetch');
+                                                const fetched = await fetchAsBase64(url);
+                                                usableVideoRefs.push({
+                                                    image: { imageBytes: fetched.base64, mimeType: fetched.mimeType || 'image/jpeg' },
+                                                    referenceType: 'asset',
+                                                });
+                                            }
+                                        } catch (refErr: unknown) {
+                                            logger.warn('[PLP] Skipping character reference that could not be read:', refErr);
+                                        }
+                                    }
                                     item = (await awaitCompletedPlpVideoVariant(() => VideoGeneration.generateVideo({
                                         prompt: `${finalPrompt}, cinematic motion variant ${videoIndex + 1}`,
                                         resolution: studioControls.resolution,
@@ -414,17 +447,7 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
                                         cameraMovement: 'Dynamic',
                                         motionStrength: 0.8,
                                         model: studioControls.model,
-                                        referenceImages: (characterReferences || []).map(ref => {
-                                            let bytes = ref.image.url;
-                                            const commaIndex = bytes.indexOf(',');
-                                            if (bytes.startsWith('data:') && commaIndex !== -1) {
-                                                bytes = bytes.substring(commaIndex + 1);
-                                            }
-                                            return {
-                                                image: { imageBytes: bytes, mimeType: 'image/jpeg' },
-                                                referenceType: 'asset' as const
-                                            };
-                                        })
+                                        referenceImages: usableVideoRefs
                                     }), (jobId) => VideoGeneration.waitForJob(jobId), token => {
                                         mutatePlpBatch(batch => batch.id === batchId ? queuePlpSlot(batch, index, token.id) : batch);
                                     }))[0];

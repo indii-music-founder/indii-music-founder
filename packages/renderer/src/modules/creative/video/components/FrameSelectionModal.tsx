@@ -141,7 +141,17 @@ export default function FrameSelectionModal({ isOpen, onClose, onSelect, target 
                             <CreativeGallery
                                 compact={true}
                                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                onSelect={(item: any) => { onSelect(item); onClose(); }}
+                                onSelect={(item: any) => {
+                                    // ISSUE-1145: a frame/reference must be a
+                                    // still image — videos are uploaded with
+                                    // image semantics and fail downstream.
+                                    if (item?.type !== 'image') {
+                                        toast.error('Only images can be used as frames or references.');
+                                        return;
+                                    }
+                                    onSelect(item);
+                                    onClose();
+                                }}
                                 searchQuery={searchQuery}
                                 className="bg-[#0f0f0f]"
                             />

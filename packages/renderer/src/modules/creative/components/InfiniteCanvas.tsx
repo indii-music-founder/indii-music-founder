@@ -10,6 +10,7 @@ import { InfiniteCanvasHUD } from './InfiniteCanvasHUD';
 import { useToast } from '@/core/context/ToastContext';
 import { logger } from '@/utils/logger';
 import { fetchAsBase64 } from '@/services/storage/safeStorageFetch';
+import { resolveStorageUrl } from '@/services/storage/resolveStorageUrl';
 import { readCreativeAssetDrag } from '@/services/creative/CreativeAssetDragService';
 
 export default function InfiniteCanvas() {
@@ -151,7 +152,29 @@ export default function InfiniteCanvas() {
                 imageCache.current.set(img.id, image);
                 
                 const src = img.base64;
-                if (src.startsWith('http')) {
+                if (src.startsWith('gs://')) {
+                    // ISSUE-1395 (audit): a gs:// URI in canvasImages.base64
+                    // (e.g. staged by the editor send-to-canvas flow) was
+                    // assigned straight to image.src — browsers cannot decode
+                    // it, silently breaking the layer. Resolve to a download
+                    // URL first.
+                    resolveStorageUrl(src)
+                        .then((resolved) => {
+                            if (resolved.startsWith('gs://')) {
+                                throw new Error(`Could not resolve ${src}`);
+                            }
+                            return fetchAsBase64(resolved);
+                        })
+                        .then(({ base64, mimeType }) => {
+                            if (typeof image!.removeAttribute === 'function') image!.removeAttribute('crossOrigin');
+                            image!.src = `data:${mimeType};base64,${base64}`;
+                        })
+                        .catch(err => {
+                            logger.error("Failed to load canvas image via safe fetch:", src, err);
+                            if (typeof image!.removeAttribute === 'function') image!.removeAttribute('crossOrigin');
+                            image!.src = src;
+                        });
+                } else if (src.startsWith('http')) {
                     // Fetch as base64 to avoid CORS tainting issues
                     fetchAsBase64(src).then(({ base64, mimeType }) => {
                         if (typeof image!.removeAttribute === 'function') image!.removeAttribute('crossOrigin');
@@ -857,8 +880,27 @@ export default function InfiniteCanvas() {
             tCtx.drawImage(canvas, sx, sy, w, h, 0, 0, w, h);
 
             const dataUrl = tempCanvas.toDataURL('image/png');
-            
-            canvasImages.forEach(img => removeCanvasImage(img.id));
+
+            // ISSUE-1395 (audit): cropping used to delete EVERY board layer —
+            // an empty or off-target crop rect wiped the whole board (and,
+            // with the project-scoping leak, other projects' images). Only
+            // layers intersecting the crop rect are replaced by the crop.
+            const cropRect = { left: wx, top: wy, right: wx + ww, bottom: wy + wh };
+            let removedAny = false;
+            canvasImages.forEach(img => {
+                const intersects = img.x < cropRect.right
+                    && img.x + (img.width || 0) > cropRect.left
+                    && img.y < cropRect.bottom
+                    && img.y + (img.height || 0) > cropRect.top;
+                if (intersects) {
+                    removeCanvasImage(img.id);
+                    removedAny = true;
+                }
+            });
+            if (!removedAny) {
+                toast.error('Nothing to crop — the crop area contains no images.');
+                return;
+            }
 
             const newId = crypto.randomUUID();
             addCanvasImage({

@@ -875,11 +875,37 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
             const result = await VideoDirector.triggerAnimation(item, {
                 aspectRatio,
             });
-            if (result.success) {
-                toast.success('Video generation started in background!');
-            } else {
+            if (!result.success) {
                 throw new Error(result.error || 'Unknown error');
             }
+            if (result.jobId) {
+                // ISSUE-1395 (audit): the animation job used to be fired and
+                // forgotten — the billed Veo artifact completed server-side
+                // but was never surfaced anywhere. Poll to completion and add
+                // the finished video to the gallery.
+                const { VideoGeneration } = await import('@/services/video/VideoGenerationService');
+                void VideoGeneration.waitForJob(result.jobId)
+                    .then((completed) => {
+                        const playableUrl = completed.output?.url || completed.videoUrl || completed.url || '';
+                        if (!playableUrl) return;
+                        const { addToHistory, currentProjectId: projectId } = useStore.getState();
+                        addToHistory({
+                            id: completed.id,
+                            url: playableUrl,
+                            prompt: `Animation of: ${item.prompt || 'untitled'}`,
+                            type: 'video',
+                            timestamp: Date.now(),
+                            projectId: projectId || item.projectId || 'default',
+                            origin: 'generated',
+                        });
+                        toast.success('Animation complete — added to your gallery!');
+                    })
+                    .catch((err: unknown) => {
+                        logger.warn('[CreativeStudio] Animation job did not complete:', err);
+                        toast.error(err instanceof Error ? err.message : 'Animation failed to complete.');
+                    });
+            }
+            toast.success('Video generation started in background!');
         } catch (error: unknown) {
             toast.error(error instanceof Error ? error.message : 'Animation failed');
         }

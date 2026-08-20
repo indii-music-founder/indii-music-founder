@@ -129,7 +129,10 @@ const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference
                 <div className="flex justify-between items-center">
                     <span className="text-[10px] text-gray-400 uppercase">{item.type}</span>
                     <div className="flex gap-1">
-                        {item.type !== 'music' && generationMode === 'video' && (
+                        {/* ISSUE-1145: frames and character references must be
+                            actual still images — a video cannot be a frame or
+                            reference (uploaded with image semantics). */}
+                        {item.type === 'image' && generationMode === 'video' && (
                             <>
                                 <button
                                     onClick={(e) => { e.stopPropagation(); setVideoInput('firstFrame', item); toast.success("Set as First Frame"); }}
@@ -390,15 +393,17 @@ const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference
                                 </div>
                             </>
                         )}
-                        <button
-                            onClick={(e) => { e.stopPropagation(); addCharacterReference({ image: item, referenceType: 'subject' }); toast.success("Character Reference Set"); }}
-                            data-testid="set-anchor-btn"
-                            className="p-1.5 bg-gray-800/50 text-white rounded hover:bg-yellow-500 hover:text-black focus-visible:ring-2 focus-visible:ring-white/50 transition-colors"
-                            title="Add Character Reference"
-                            aria-label="Add Character Reference"
-                        >
-                            <Anchor size={14} />
-                        </button>
+                        {item.type === 'image' && (
+                            <button
+                                onClick={(e) => { e.stopPropagation(); addCharacterReference({ image: item, referenceType: 'subject' }); toast.success("Character Reference Set"); }}
+                                data-testid="set-anchor-btn"
+                                className="p-1.5 bg-gray-800/50 text-white rounded hover:bg-yellow-500 hover:text-black focus-visible:ring-2 focus-visible:ring-white/50 transition-colors"
+                                title="Add Character Reference"
+                                aria-label="Add Character Reference"
+                            >
+                                <Anchor size={14} />
+                            </button>
+                        )}
                         <button
                             onClick={(e) => { e.stopPropagation(); setSelectedItem(item); setViewMode('editor'); }}
                             data-testid="view-fullsize-btn"
@@ -445,10 +450,16 @@ const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference
                                 e.stopPropagation();
                                 try {
                                     const { downloadAsset } = await import('@/utils/download');
+                                    // ISSUE-1395 (audit): export used the raw
+                                    // item.url — a gs:// URI made the download
+                                    // fail ("Failed to export asset"). Resolve
+                                    // storage URIs to a downloadable URL first.
+                                    const { resolveStorageUrl } = await import('@/services/storage/resolveStorageUrl');
+                                    const resolvedUrl = await resolveStorageUrl(item.url);
                                     // ISSUE-921: Add proper file extension
                                     const ext = item.type === 'video' ? '.mp4' : item.type === 'music' ? '.mp3' : '.png';
                                     const filename = `${item.type}-export-${item.id.slice(0, 8)}${ext}`;
-                                    const success = await downloadAsset(item.url, filename);
+                                    const success = await downloadAsset(resolvedUrl, filename);
                                     if (success) {
                                         toast.success('Exported successfully.');
                                     } else {

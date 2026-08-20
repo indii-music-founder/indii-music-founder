@@ -28,7 +28,9 @@ export function IngredientDropZone({ ingredients, onChange, mode = 'reference', 
     const [showCamera, setShowCamera] = React.useState(false);
 
     const maxIngredients = mode === 'reference' ? 3 : mode === 'transition' ? 2 : 1;
-    const acceptedTypes = mode === 'base_video' ? 'video/*' : 'image/*,video/*';
+    // ISSUE-1145: references and transitions must be still images — videos
+    // are uploaded with image semantics and rejected downstream.
+    const acceptedTypes = mode === 'base_video' ? 'video/*' : 'image/*';
 
     const handleFiles = useCallback((files: FileList | File[]) => {
         const currentCount = ingredients.length;
@@ -37,7 +39,7 @@ export function IngredientDropZone({ ingredients, onChange, mode = 'reference', 
 
         const filesToProcess = Array.from(files).slice(0, availableSlots).filter(f => {
             if (mode === 'base_video') return f.type.startsWith('video/');
-            return f.type.startsWith('image/') || f.type.startsWith('video/');
+            return f.type.startsWith('image/');
         });
         
         Array.from(filesToProcess).forEach(file => {

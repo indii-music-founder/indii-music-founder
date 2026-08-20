@@ -146,7 +146,8 @@ export function useDirectGeneration() {
         setVideoInputs,
         characterReferences,
         generationMode,
-        setGenerationMode
+        setGenerationMode,
+        setPendingPrompt
     } = useStore(useShallow(state => ({
         studioControls: state.studioControls,
         creativePrompt: state.creativePrompt,
@@ -161,7 +162,8 @@ export function useDirectGeneration() {
         setVideoInputs: state.setVideoInputs,
         characterReferences: state.characterReferences,
         generationMode: state.generationMode,
-        setGenerationMode: state.setGenerationMode
+        setGenerationMode: state.setGenerationMode,
+        setPendingPrompt: state.setPendingPrompt
     })));
     const toast = useToast();
 
@@ -547,6 +549,16 @@ export function useDirectGeneration() {
             }
 
             if (mode === 'image') {
+                // ISSUE-1395 (audit): PLP and cover-art modes are armed in the
+                // navbar but the Direct tab's Generate used to ignore them and
+                // silently produce one ordinary image. Route those modes
+                // through the CreativeStudio pending-prompt pipeline, which
+                // owns the PLP 15-variant batch and the cover-art
+                // distributor-compliance measurement.
+                if (studioControls.isPLPMode || studioControls.isCoverArtMode) {
+                    setPendingPrompt(localPrompt);
+                    return;
+                }
                 const finalPrompt = WhiskService.synthesizeWhiskPrompt(localPrompt, whiskState);
                 await handleImageGenerate(finalPrompt);
             } else {

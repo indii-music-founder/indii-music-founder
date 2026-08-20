@@ -230,7 +230,27 @@ export const createAppSlice: StateCreator<AppSlice> = (set, get) => ({
         }
     },
     setProject: (id) => {
-        set({ currentProjectId: id });
+        // ISSUE-1395 (audit): the creative board's canvasImages is a global
+        // array whose projectId field was never filtered or reset — after a
+        // project switch the previous project's layers stayed visible and
+        // editable, and Crop/Flatten could composite or delete other
+        // projects' images. Board state is per-project: clear it on switch.
+        const prevProjectId = get().currentProjectId;
+        if (prevProjectId && prevProjectId !== id) {
+            const current = get() as any;
+            if (Array.isArray(current.canvasImages) && current.canvasImages.length > 0) {
+                set({
+                    currentProjectId: id,
+                    canvasImages: [],
+                    selectedCanvasImageId: null,
+                    failedVariationBatch: null,
+                } as any);
+            } else {
+                set({ currentProjectId: id });
+            }
+        } else {
+            set({ currentProjectId: id });
+        }
         const state = get() as any;
         
         // Only switch session if we have agent slice loaded

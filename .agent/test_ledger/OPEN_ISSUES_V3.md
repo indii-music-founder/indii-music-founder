@@ -2389,3 +2389,35 @@ NaN
   4. Send-to-canvas was offered for video items, staging an unrenderable video URL on the image board. Now gated to `item.type === 'image'`; videos fall back to plain close.
 - **Fix (useCreativeCanvas.ts):** `dirtyRef` set by the fabric change handler (object add/modify/remove, path:created — never selection), reset to baseline in every init path's onReady (fresh, restored, fallback). `saveCanvas` now returns `{url, storageUri} | null`. `handleSendToCanvas` skips persistence entirely on an untouched canvas (stages `item.storageUri || item.url` as-is), and when dirty persists once and stages the EDITED export (`saved.storageUri || saved.url`).
 - **Tests:** CreativeCanvas.test.tsx — clean-send asserts NO saveAssetToStorage/addToHistory (both header + rail paths) + staged base64 = original URL; new dirty-path test fires the captured change callback and asserts exactly one save + one gallery entry + staged base64 = the edited export's storage URI. 26/26 targeted, 470/470 creative module suite, monorepo typecheck clean.
+
+---
+
+### ISSUE-1395 audit round (2026-08-20): full image/video umbrella sweep — 5 parallel auditors, 36 findings
+
+**Fixed this round (9 areas, committed with tests):**
+1. **ISSUE-1145 was logged CLOSED but NOT fixed** — videos were selectable as image frames/references everywhere. Now: CreativeGallery frame/anchor buttons gated to `type === 'image'`; FrameSelectionModal rejects non-image picks; IngredientDropZone reference/transition modes accept `image/*` only.
+2. **PLP/cover-art modes unreachable from the primary Generate button** — the Direct tab's `handleGenerate` ignored `isPLPMode`/`isCoverArtMode` and silently produced one ordinary image; cover-art compliance pipeline had zero production callers. Now routed through the CreativeStudio pending-prompt pipeline.
+3. **PLP video character references malformed** — raw https/gs URLs stuffed into `imageBytes` (backend rejects) + every data: PNG hardcoded `image/jpeg` → every PLP video slot with a gallery reference failed deterministically. Now fetched to inline base64 with real MIME; unreadable refs skipped with warn, not fatal.
+4. **Animate discarded the job** — `handleAnimate` fired the billed Veo job and dropped the jobId; artifact never surfaced. Now polls `waitForJob` and adds the finished video to the gallery.
+5. **waitForJob resolved success with NO URL** — terminal 'completed' with no output URL now rejects with an integrity error; VideoWorkflow `processJobUpdate` completed-without-URL now takes an explicit error branch (was a silent stuck state); StoryboardTimeline slot poller completes on `output.url` (only matched `videoUrl` → frozen spinner), handles `cancelled`, and unsubs on unmount.
+6. **Standard Crop deleted every board layer** — an empty/off-target crop rect wiped the whole board. Now only layers intersecting the crop rect are replaced; no intersection → error toast.
+7. **Board state not project-scoped** — `canvasImages` is global and `setProject` never cleared/filtered it; Crop/Flatten could composite or delete other projects' images. `setProject` now clears board state on project change (canvasImages/selectedCanvasImageId/failedVariationBatch).
+8. **gs:// leaks into rendering/exports** — InfiniteCanvas `draw()` assigned gs:// straight to image.src (silent broken layer); gallery Export fetched raw item.url (failed on gs://). Both resolve via resolveStorageUrl now.
+9. **waitForJob/animate integrity tests updated** — the old "URL-less success" contract was encoded in LensVeoSubscriptionRace + VeoTimeout fixtures; fixtures now carry real URLs and a new no-URL reject test added.
+
+**Logged, NOT fixed this round (bounded scope; each needs its own pass):**
+- [high] Offline sync queue is dead code (`processSyncQueue` zero callers) — upload-failure blobs queued in-memory and lost on reload, yet `storageUri` is minted and persisted → dangling gs:// forever (repository.ts:54-134). Fix: persist queue per-user in IDB + wire connectivity, or throw on upload failure.
+- [high] Gallery delete only soft-hides — `removeItemFromProject` filters memory; snapshot rebuild resurrects (ISSUE-1146 logged CLOSED, verified still present); AssetsPanel deletes uploaded items the same way; file nodes never removed; no confirmation.
+- [high] Gallery Upload of data: video/audio fails to persist (image-only smartSave/compressImage path) — ephemeral in-memory item only.
+- [high] `addToHistory` fire-and-forget with silent 50-item cap — saveItem failures only logged; generated items evicted silently (ISSUE-922 contract applies to uploads only).
+- [medium] Eviction-alert promise false — every rebuild path capped at 50; uploads past cap gone from UI forever.
+- [medium] resolveStorageUrl echoes gs:// on failure — unguarded callers (VideoPropertiesPanel, VideoWorkflow openSessionProxy, useCreativeCanvas candidate URL) persist unrenderable URIs.
+- [medium] Composite-index fallback: missing isTrashed filter (deleted items reappear) + limit-then-sort drops newest (StorageService 292-305, 410-430).
+- [medium] getCanvasStateFromStorage local-first without updatedAt compare — stale IDB beats cloud; cloud failures silently discard annotations.
+- [medium] Detected-object boxes drawn outside the transform (misplaced after pan/zoom).
+- [medium] Dropping a video on the board always fails (img.src = mp4 URL → onerror).
+- [medium] Gallery/history lists not project-scoped on read (surfaces disagree after project switch).
+- [medium] Three independent aspect-ratio coercions disagree (square → 9:16 vs 16:9 by path; conflicting directorSettings.aspectRatio in one payload).
+- [medium] PLP launch `attention_required` is a dead end — no verify/reset affordance.
+- [medium] Omni referenceVideoUri '' fallback — preview vs payload mismatch.
+- [low] uploadReferenceMedia blob: URL mishandling; extractFrame/readAudioDuration/extractVideoFrame never-settling promises; Like/Dislike fake success toasts; duplicate history entries in video job 3s unsub window; ImageSubMenu orphaned; AssetsPanel music/text click no-op; gallery empty-state flash; handleGeneration silent failure; flatten recovery overstatement; IDB assets store append-only + unreferenced object URLs; addUploadedImage overclaims file-node sync; data: re-upload mints new download tokens on every saveItem.

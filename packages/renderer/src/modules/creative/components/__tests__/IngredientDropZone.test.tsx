@@ -137,10 +137,12 @@ describe('IngredientDropZone — Drag-and-Drop File Upload', () => {
         expect(fileInput).toHaveClass('sr-only');
     });
 
-    it('file input accepts image/* and video/* in reference mode', () => {
+    // ISSUE-1145: references must be still images — videos are uploaded with
+    // image semantics and fail downstream.
+    it('file input accepts only image/* in reference mode', () => {
         const { container } = renderDropZone([], vi.fn(), 'reference');
         const fileInput = container.querySelector('input[type="file"]');
-        expect(fileInput).toHaveAttribute('accept', 'image/*,video/*');
+        expect(fileInput).toHaveAttribute('accept', 'image/*');
     });
 
     it('file input accepts only video/* in base_video mode', () => {

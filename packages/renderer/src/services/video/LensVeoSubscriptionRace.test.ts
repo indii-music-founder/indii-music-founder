@@ -147,7 +147,7 @@ describe('Lens 🎥 - Veo 3.1 Subscription Race Conditions', () => {
                     exists: () => true,
                     id: 'job-id-success',
                     data: () => ({
-  serverTimestamp: vi.fn(), status: 'completed' })
+  serverTimestamp: vi.fn(), status: 'completed', output: { url: 'https://example.com/video.mp4' } })
                 });
             }, 50);
             return unsubscribeSpy;
@@ -164,6 +164,28 @@ describe('Lens 🎥 - Veo 3.1 Subscription Race Conditions', () => {
         await expect(jobPromise).resolves.toEqual(expect.objectContaining({ status: 'completed' }));
 
         // 4. Assert: Unsubscribe WAS called
+        expect(unsubscribeSpy).toHaveBeenCalled();
+    });
+
+    it('rejects a completed job that has no output URL (ISSUE-1395 integrity)', async () => {
+        const unsubscribeSpy = vi.fn();
+        mocks.onSnapshot.mockImplementation((ref, callback) => {
+            setTimeout(() => {
+                callback({
+                    exists: () => true,
+                    id: 'job-id-no-url',
+                    data: () => ({
+  serverTimestamp: vi.fn(), status: 'completed', output: {} })
+                });
+            }, 50);
+            return unsubscribeSpy;
+        });
+        mocks.doc.mockReturnValue('doc-ref');
+
+        const jobPromise = service.waitForJob('job-id-no-url', 1000);
+        vi.advanceTimersByTime(60);
+
+        await expect(jobPromise).rejects.toThrow(/completed without an output URL/);
         expect(unsubscribeSpy).toHaveBeenCalled();
     });
 

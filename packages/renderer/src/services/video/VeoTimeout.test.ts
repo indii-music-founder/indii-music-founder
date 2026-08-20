@@ -193,7 +193,7 @@ describe('Veo Timeout Handler (Lens)', () => {
                     exists: () => true,
                     id: jobId,
                     data: () => ({
-  serverTimestamp: vi.fn(), status: 'completed', output: {} })
+  serverTimestamp: vi.fn(), status: 'completed', output: { url: 'https://example.com/video.mp4' } })
                 });
             }, 29000);
 
