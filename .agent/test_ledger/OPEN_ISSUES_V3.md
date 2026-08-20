@@ -2068,9 +2068,10 @@ All seven T1 sub-items built, tested against real (not mocked-away) verification
 
 ### ISSUE-1374: Founder seat #1 agreement commit never happened (2026-08-19, founder task, part of ISSUE-1373)
 
-- **Status:** 🔴 FOUNDER-GATED (GITHUB_TOKEN_FOUNDERS is MOCK — same root as ISSUE-1373)
+- **Status:** ✅ RESOLVED — no action needed (founder direction, 2026-08-20)
 - **Evidence:** `founder_github_commit_queue` EMPTY (query verified); `git log --all --grep="feat(founders)"` shows NO founder-seat commit; founder user `g2AcFApNZvQKYlGg0LQuVADCFoO2` has `tier: founder`, `founderSeats: {}`, no subscription doc. The pass activated via the Firestore-side flow; the GitHub agreement commit failed on the mock token and the old silent-swallow queue write dropped the retry entry (fixed in `5d8169069`).
-- **Founder steps:** set the real GITHUB_TOKEN_FOUNDERS (repo-write PAT), then re-run the activation/commit for seat #1 (or commit the agreement hash manually per the FOUNDERS_FILE_PATH format) so the founder receipt is permanent in the repo.
+- **Resolution (founder, 2026-08-20):** "I'm the founder. I don't necessarily need to have a seat. I'm number one whatever that means." The code's own governance confirms this: `packages/renderer/src/config/founders.ts` reserves 1 internal seat ("The i-i Founder seat is the builder's reserved internal seat; seats #2-#11 are the paid Founder buy-in seats"), and `FOUNDERS` is explicitly the append-only record of PAID seats, appended only by `activateFounderPass` on confirmed payment. The founder IS seat #1 (the reserved internal seat), already accounted for by `occupiedFounderSeats = max(FOUNDERS.length, reserved_internal_seats)` — seats remaining = 10 is correct with an empty array. NO FOUNDERS entry and NO GITHUB_TOKEN_FOUNDERS are needed for the founder's own seat.
+- **Remaining (still founder-gated, part of ISSUE-1373):** GITHUB_TOKEN_FOUNDERS (real repo-write PAT) is still required before ANY paid founder (#2-#11) can be appended automatically on payment. Until then the auto-append path stays blocked and the array remains empty by design.
 
 ---
 

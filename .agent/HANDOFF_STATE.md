@@ -5,12 +5,12 @@
 **ISSUE-1382 (variations — founder-live 18:46):** 'All variation requests failed' — reference parts built as {type:'image', mime_type, data} which the @google/genai SDK does NOT recognize as a Part (needs inlineData/text/fileData) → malformed request → Vertex 400. References NEVER worked on the generateContent fallback. Fixed to {inlineData:{mimeType,data}} (Omni path unchanged — its own Step schema). Reference upload PROVEN healthy (22,761-byte PNG @ 18:46:10) — part shape was the sole defect.
 **ISSUE-1377 (memory embeddings):** client memory pipeline used browser embeddings that fail-closed by design → semantic recall silently empty. New batchEmbedText callable + both client call sites wired; 60/60 tests.
 **Previous round state:** video E2E proven (job SUjgH7P8GLPBT1YEQpkn, mp4 in storage); video metering added (ISSUE-1381, committed aeb1dadc7).
-**Founder real-world list unchanged:** Stripe mock key + prices (1372), 30/39 mock secrets (1373), Founder seat #1 commit (1374), e2e App Check CI token, Meta/desktop/registrations.
+**Founder real-world list unchanged:** Stripe mock key + prices (1372), 30/39 mock secrets (1373), ~~Founder seat #1 commit~~ **1374 RESOLVED 2026-08-20 (founder: no seat needed — seat #1 is the reserved internal i-i Founder seat; FOUNDERS array is for paid seats #2-#11 only; see ledger)**, e2e App Check CI token, Meta/desktop/registrations.
 **Open:** guided-chat 'Create Video' widget 400 observed once during the 14:53 network-flaky window — recheck on next repro; probe profile session restore degraded (auth timeout loop) — the debug token + recovery (clear app-check db) works intermittently.
 **Branch:** `main` — pushed through `5209ad436` (ISSUE-1375 navigation); CI #284 deploying (carries: ISSUE-1369 durable index + ISSUE-1375 nav). ISSUE-1371 Export LIVE; ISSUE-1370 aspect LIVE.
 **ISSUE-1369 saga CLOSED:** index listed in `packages/firebase/firestore.indexes.json` (97 entries, `3b0fc1a48`) — the deploy-managed file is the single source of truth (`firebase deploy --only firestore:indexes --force` deletes anything unlisted; it ate the REST-created index twice). Live check 02:45: capability query 200 + docs.
 **ISSUE-1375 nav LIVE in #284:** view-mode history (studio↔canvas back/forward, cap 30, undo semantics) + `goBackModule` + CreativeNavbar cluster (ArrowLeft=page back; chevrons=view back/forward; disabled at bounds). openImageInStudio routes through setViewMode('canvas') so Boardroom imports get Back for free. 24/24 touched tests.
-**Founder real-world tasks (documented, proof in ledger):** ISSUE-1372 Stripe mock key + missing price IDs; ISSUE-1373 30/39 mock secrets; ISSUE-1374 founder seat #1 never committed (FOUNDERS array empty, program shows 10 seats). e2e App Check debug token (console task).
+**Founder real-world tasks (documented, proof in ledger):** ISSUE-1372 Stripe mock key + missing price IDs; ISSUE-1373 30/39 mock secrets; ISSUE-1374 RESOLVED (2026-08-20, founder direction — founder is the reserved internal seat #1, no FOUNDERS entry/token needed; GITHUB_TOKEN_FOUNDERS still required for future paid seats #2-#11). e2e App Check debug token (console task).
 **NEW FINDINGS this round:**
 1. **Index-vanish root cause (ISSUE-1369 re-opened then durably fixed):** CI's `firebase deploy --only firestore:indexes --force` reads `packages/firebase/firestore.indexes.json` (EXISTS — my earlier 'no file' claim was wrong, checked repo root) and DELETES live indexes not listed ("Deleting 1 indexes" deleted the REST-created creative_jobs index in CI #281 at 01:27). Capability query broke again (~01:50); index recreated via REST (02:00) and the FILE now lists it (97) so every deploy keeps it. Verify query after next deploy.
 2. **Composite-index audit (server):** all 11 where+orderBy chains + multi-where chains checked against the file/live lists — ONLY creative_jobs was missing (now added). Single-field orderBy auto-served. Audit method + result documented in ledger.
@@ -151,3 +151,28 @@
   reserve real placeholder heights so the observers fire at true positions.
 - **Open threads:** founder retest feedback on studio (per prior session-close);
   ISSUE-1372/1373/1374 founder-gated; optional: real thesis theme replacement.
+
+---
+
+## Session close 2026-08-20 ~16:20 UTC — landing second pass complete + ISSUE-1374 resolved
+
+- **Landing (delivered, CI green 32388085318, live):**
+  - `a8ee5873a` — thesis soundtrack = founder's techno track "What To Come"
+    (116 BPM 4/4, identified by beat-grid analysis; transcoded to
+    `public/audio/indii-thesis-theme.mp3` 192kbps; audio E2E proven; loop seam
+    documented in `public/audio/README.txt`), reduced-motion hero transforms,
+    idle camera drift, DEV-only debug audio exposure.
+  - `386c6067b` — HANDOFF: LazySection final status (shipped via `825e0ef44`,
+    accepted after measurement: below-fold growth at ~500ms, no visible CLS).
+  - Founders program link: the landing's $2,500 Founder Access section matches
+    `AGREEMENT_TERMS.price_usd` and `reserved_internal_seats` — no drift.
+- **ISSUE-1374 RESOLVED (founder direction):** founder is seat #1 = the
+  reserved internal i-i Founder seat; `FOUNDERS` array is the append-only
+  record of PAID seats (#2-#11) and needs no founder entry; GITHUB_TOKEN_FOUNDERS
+  remains required (and blocked on ISSUE-1373) for future paid seats.
+  Ledger entry updated with resolution + remaining scope.
+- **Founder-gated backlog (unchanged, needs founder):** 1372 Stripe real keys +
+  price IDs; 1373 30/39 real secrets; e2e App Check debug token (console);
+  Meta/desktop/registrations; studio retest feedback; "Create Video" 400 recheck.
+- **Next session:** pick up founder-gated items above; landing needs only a
+  founder's visual pass + optional final seamless theme loop.
