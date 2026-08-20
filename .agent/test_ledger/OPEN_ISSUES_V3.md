@@ -2370,3 +2370,11 @@ NaN
 - **Root cause (code-proven):** `CanvasHeader`'s "Canvas" button (`canvas-header-back`) called `onClose` → `CreativeStudio`'s handler → `setSelectedItem(null); setViewMode(generationMode === 'video' ? 'video_production' : 'direct')` → `viewMode 'direct'` renders `DirectGenerationTab`, whose console header reads "Creative Hub". The real send-to-canvas flow (`handleSendToCanvas` — ISSUE-1391: save first, stage onto InfiniteCanvas with natural dimensions, switch to `viewMode 'canvas'`) existed but was exposed ONLY as a small icon in the desktop-only right action rail (`hidden md:flex`) — invisible on mobile, not discoverable.
 - **Fix:** `CanvasHeader` gains `onSendToCanvas` prop; the "Canvas" button now runs the send-to-canvas flow when the editor can stage (icon swaps to MonitorUp, title "Send this image to the creative canvas"), falling back to plain `onClose` when absent. `CreativeCanvas` passes `handleSendToCanvas`. Escape and the rail X button keep plain-close semantics.
 - **Tests:** CanvasHeader.test.tsx +1 (onSendToCanvas preferred over onClose), CreativeCanvas.test.tsx header-back test now asserts stage + `setViewMode('canvas')` + onClose (with Image dimension stub). 25/25 in the two files; full creative module suite + monorepo typecheck re-run.
+
+---
+
+### ISSUE-1394 CLOSED — batchEmbedText live + semantic memory verified (2026-08-20 16:25 UTC)
+
+- **Deploy:** function created 2026-08-20T16:21:12Z, state ACTIVE (deployed via the combined mainline pipeline run 32388085318, which carries f5e4b0bfe).
+- **Live probe (founder's REAL session — refresh token + App Check token + minted ID token, same harness as ISSUE-1158):** POST cloudfunctions.net/batchEmbedText with 1 text → HTTP 200, embeddingsCount=1, vector length 768 (text-embedding-004), non-zero values. The renderer's backendEmbedTexts path now receives real vectors; agent-memory semantic recall is functional (was silently empty since 63a93d22b).
+- **Also re-confirmed during the probe run:** generateAudioV3 returns 200 with a real jobId/resultUri (audio-b7f5ea05...) — ISSUE-1392/1158 path still healthy post-redeploy.
