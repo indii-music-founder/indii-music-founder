@@ -96,3 +96,54 @@
 - **Deploy-integrity fix live in pipeline:** deploy.yml tees functions-deploy log; retries 429-quota failures twice (90s backoff); exits 1 on any `failed to (update|create) function` — a stale deploy can never look green again (this exact silent failure is what kept 00301-hek serving).
 - **ISSUE-1383 pushed (452368b42, CI #295 deploying):** generateContentStream now records chat_tokens into the usage ledger from usageMetadata.totalTokenCount (max-seen) after SETTLED — non-blocking; getUsageStats already sums it. Root cause proven: nothing ever wrote chat_tokens; user_usage_stats has no writer; client stream path never tracked.
 - **Founder to retest (they're on the new build after hard refresh):** 1) Variations on any canvas image (fast + pro); 2) painting save (should now give actionable messages if session degrades); 3) the "← Canvas" button + Escape to exit the editor.
+
+---
+
+## Session close 2026-08-20 ~13:20 UTC — /end reconciliation
+
+- **Delivered this session (all live-verified):**
+  - ISSUE-1390: editor exit + session-aware save errors + fail-loud function deploys (5b8a3fdb9, #294 green)
+  - ISSUE-1383: chat_tokens metering live (452368b42, #295 green; usage ledger writing)
+  - ISSUE-1391: removeChild crash guard, "Creative Canvas" rename, Send to Canvas handoff, hosting cache fix (97c91c010 + 3e1f88233, #296/#297 green; cache headers verified live)
+  - ISSUE-1392 + ISSUE-1158: TTS routed through generateContent; full audio E2E proven live (ad5084ab0, #298 green; 200 + WAV + idempotent replay)
+  - ISSUE-1393: retention daemon + webhook dispatcher wired, placements index live (8513fc6cd → #299 red → 2179e43a9 lazy-db fix → #300 green; all 4 functions deployed, index READY, query OK live)
+  - Ledger closes: 322345d2c, 6a9ccc8ec
+- **Tree state:** my scope fully committed; 97 unrelated dirty files belong to the OTHER agent's in-progress landing redesign (.perf-*.mjs, landing sections/components) + their staged stripe/brand work — preserved untouched. Other agent's commit b981c7d68 (async hardening sweep) on main, CI in progress.
+- **Standing verification targets:** generateImageV3 rev must stay ≥ 00302-xed; generateAudioV3 rev 00291-nex (TTS fixed); hosting cache headers: / no-cache, assets immutable.
+- **Next session:** pick up any founder retest feedback; recheck "Create Video" widget 400; ISSUE-1372/1373/1374 remain founder-gated.
+
+---
+
+## Checkpoint 2026-08-20 — landing transformation shipped + second pass (founder-authorized)
+
+- **Delivered & LIVE (prior session):** `4ed4ddca4` — the founder.indii.music WebGL
+  transformation (system-network experience: 8 lifecycle nodes assembling with
+  scroll, section energy rhythm, conductor hub, loop-close ring at Founder
+  Access, adaptive quality tiers FALLBACK→HIGH with frame-time downgrade,
+  thesis-audio bridge, section extraction, dead-code/asset purge, SEO asset
+  fixes, a11y overhaul incl. vestibular-safe thesis transcript). CI green
+  (32375459143 incl. deploy-production); verified live: main bundle
+  `index-eqyn0d0m.js`, three chunk `ExperienceShell-cug6nkTl.js` 200, og-image 200.
+- **Second pass (this session, pending push):**
+  - `public/audio/indii-thesis-theme.mp3` — founder's techno track "What To
+    Come" (`archive/Music/What To Come.wav`, ~116 BPM four-on-the-floor,
+    proven by sub-bass onset-interval analysis: dominant interval ~515 ms)
+    transcoded to 48 kHz / 192 kbps MP3 (~3.1 MB). Audio E2E proven: banner
+    click → file plays → bridge attaches → network levels move (bass 1.0 /
+    mid .56 / high .29), zero errors. Loop seam measured: no click; level
+    drops back to the quiet intro on loop (documented in
+    `public/audio/README.txt`).
+  - Reduced-motion hero: scroll-linked scale/y now identity when
+    `prefers-reduced-motion` (opacity only); subtle idle camera drift (~30s
+    period) added to the network rig.
+  - Debug hook now also exposes `audio`/`audioActive` (DEV-only).
+- **DECISION — LazySection deferral REJECTED (was left uncommitted by prior
+  agent):** the IO-on-zero-height-placeholder design is fundamentally broken —
+  empty wrappers collapse to the same document position (all ~1345px), so every
+  observer fires intersecting at load and ALL sections mount immediately
+  (traced in Chromium). Fixing it needs estimated placeholder heights → layout
+  jumps on reveal. Not worth it for ~40KB gz deferred JS; below-fold
+  code-splitting left for a future, properly-designed attempt. The shipped
+  eager composition + DeferredExperienceShell (canvas after load) stands.
+- **Open threads:** founder retest feedback on studio (per prior session-close);
+  ISSUE-1372/1373/1374 founder-gated; optional: real thesis theme replacement.

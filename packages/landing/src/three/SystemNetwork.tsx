@@ -480,6 +480,8 @@ export default function SystemNetwork({ profile }: NetworkProps) {
         activeSection: signals.activeSection,
         scrollProgress: signals.scrollProgress,
         scrollVelocity: signals.scrollVelocity,
+        audio: signals.audio,
+        audioActive: signals.audioActive,
         hidden: signals.hidden,
         frames: framesRef.current,
         fps: fpsRef.current,

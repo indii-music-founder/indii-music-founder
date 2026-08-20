@@ -69,13 +69,19 @@ function CameraRig({ profile }: { profile: QualityProfile }) {
   const { camera } = useThree();
   const targetRef = useRef({ x: 0, y: 0 });
 
-  useFrame((_, rawDelta) => {
+  useFrame((state, rawDelta) => {
     const dt = Math.min(0.05, rawDelta || 0.016);
     const signals = systemSignals.getState();
 
     if (profile.pointerParallax && signals.pointerActive) {
       targetRef.current.x = signals.pointer.x * 0.45;
       targetRef.current.y = -signals.pointer.y * 0.3;
+    } else if (profile.pointerParallax) {
+      // Barely-there idle drift (~30s period, a few cm of parallax) so the
+      // system never feels frozen; too slow to read as motion.
+      const t = state.clock.elapsedTime;
+      targetRef.current.x = Math.sin(t * 0.22) * 0.05;
+      targetRef.current.y = Math.cos(t * 0.17) * 0.04;
     } else {
       targetRef.current.x = 0;
       targetRef.current.y = 0;

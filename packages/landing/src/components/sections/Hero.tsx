@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { motion, useScroll, useTransform } from 'framer-motion';
+import { motion, useReducedMotion, useScroll, useTransform } from 'framer-motion';
 import { ArrowDown, ArrowRight, Play } from 'lucide-react';
 import { emitSystemPulse } from '../../three/signals';
 
@@ -16,10 +16,13 @@ interface HeroProps {
 }
 
 export default function Hero({ founder, previewEnabled, previewHref, trackPreview, setIsThesisOpen }: HeroProps) {
+  const reducedMotion = useReducedMotion();
   const { scrollYProgress } = useScroll();
-  const heroOpacity = useTransform(scrollYProgress, [0, 0.13], [1, 0.14]);
-  const heroScale = useTransform(scrollYProgress, [0, 0.16], [1, 0.93]);
-  const heroY = useTransform(scrollYProgress, [0, 0.16], [0, 90]);
+  // Under prefers-reduced-motion the hero stays put: no scroll-linked
+  // translation or scale (opacity fade only, and only if the OS allows it).
+  const heroOpacity = useTransform(scrollYProgress, [0, 0.13], [1, reducedMotion ? 1 : 0.14]);
+  const heroScale = useTransform(scrollYProgress, [0, 0.16], [1, reducedMotion ? 1 : 0.93]);
+  const heroY = useTransform(scrollYProgress, [0, 0.16], [0, reducedMotion ? 0 : 90]);
 
   const pulseHero = (strength: number) => {
     emitSystemPulse('cta', 0, strength);
