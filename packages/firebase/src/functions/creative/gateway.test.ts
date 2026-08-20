@@ -868,11 +868,12 @@ describe('creative gateway generateAudioV3', () => {
 
   it('generates playable TTS, durably records the owned library asset, and settles its server reservation', async () => {
     const pcm = Buffer.alloc(48_000 * 2, 7); // 2 seconds of mono 24 kHz 16-bit PCM.
-    mockInteractionsCreate.mockResolvedValueOnce({
-      output_audio: {
-        data: pcm.toString('base64'),
-        mime_type: 'audio/pcm;rate=24000',
-      },
+    mockGenerateContent.mockResolvedValueOnce({
+      candidates: [{
+        content: {
+          parts: [{ inlineData: { data: pcm.toString('base64'), mimeType: 'audio/pcm;rate=24000' } }],
+        },
+      }],
     });
 
     const result = await callGenerateAudio({
@@ -889,11 +890,13 @@ describe('creative gateway generateAudioV3', () => {
       resultUri: string;
     };
 
-    expect(mockInteractionsCreate).toHaveBeenCalledWith({
+    expect(mockGenerateContent).toHaveBeenCalledWith({
       model: 'gemini-3.1-flash-tts-preview',
-      input: 'Read this in a calm Detroit radio voice.',
-      response_format: { type: 'audio' },
-      generation_config: { speech_config: [{ voice: 'Kore' }] },
+      contents: [{ role: 'user', parts: [{ text: 'Read this in a calm Detroit radio voice.' }] }],
+      config: {
+        speechConfig: 'Kore',
+        responseModalities: ['AUDIO'],
+      },
     });
 
     const savedWav = mockSave.mock.calls[0]?.[0] as Buffer;
@@ -933,11 +936,12 @@ describe('creative gateway generateAudioV3', () => {
   });
 
   it('removes the uploaded object and voids the reservation when the atomic metadata commit fails', async () => {
-    mockInteractionsCreate.mockResolvedValueOnce({
-      output_audio: {
-        data: Buffer.alloc(48_000, 3).toString('base64'),
-        mime_type: 'audio/pcm;rate=24000',
-      },
+    mockGenerateContent.mockResolvedValueOnce({
+      candidates: [{
+        content: {
+          parts: [{ inlineData: { data: Buffer.alloc(48_000, 3).toString('base64'), mimeType: 'audio/pcm;rate=24000' } }],
+        },
+      }],
     });
     mockBatchCommit.mockRejectedValueOnce(new Error('Firestore unavailable'));
 
@@ -992,6 +996,64 @@ describe('creative gateway generateAudioV3', () => {
     expect(mockGetMetadata).toHaveBeenCalledOnce();
     expect(mockInteractionsCreate).not.toHaveBeenCalled();
     expect(mockCheckOperationBudget).not.toHaveBeenCalled();
+  });
+
+  it('drives TTS through generateContent (model rejects interactions.create — ISSUE-1392)', async () => {
+    vi.clearAllMocks();
+    mockGenerateContent.mockReset();
+    mockCollectionNames.length = 0;
+    mockSet.mockResolvedValue(undefined);
+    mockCreate.mockResolvedValue(undefined);
+    mockBatchCommit.mockResolvedValue(undefined);
+    mockDelete.mockResolvedValue(undefined);
+    mockRequireVerifiedServerEntitlement.mockResolvedValue({ tier: 'free' });
+    mockEntitlementTierToBudgetTier.mockReturnValue('free');
+    mockCheckOperationBudget.mockResolvedValue({
+      allowed: true,
+      operationId: 'audio-reservation-issue1392',
+      remainingBudget: 99,
+      dailyUsed: 0.02,
+      monthlyUsed: 0.02,
+    });
+    mockJobGet.mockResolvedValue({ exists: false, data: () => undefined });
+
+    // The live model returns audio as an inlineData part, not output_audio —
+    // the extractor must read either shape.
+    const pcm = Buffer.alloc(24_000 * 2, 9);
+    mockGenerateContent.mockResolvedValueOnce({
+      candidates: [{
+        content: {
+          parts: [
+            { text: 'ignored narration' },
+            { inlineData: { data: pcm.toString('base64'), mimeType: 'audio/pcm;rate=24000' } },
+          ],
+        },
+      }],
+    });
+
+    const result = await callGenerateAudio({
+      auth: { uid: 'user-123' },
+      data: {
+        prompt: 'Say the line.',
+        voice: 'Kore',
+        requestId: '55b30b8a-6d42-4e1d-9f2a-7c0e4b8a1f3d',
+      },
+    }) as { jobId: string; mimeType: string };
+
+    expect(mockGenerateContent).toHaveBeenCalledWith({
+      model: 'gemini-3.1-flash-tts-preview',
+      contents: [{ role: 'user', parts: [{ text: 'Say the line.' }] }],
+      config: {
+        speechConfig: 'Kore',
+        responseModalities: ['AUDIO'],
+      },
+    });
+    expect(mockInteractionsCreate).not.toHaveBeenCalled();
+    expect(result.mimeType).toBe('audio/wav');
+    expect(mockBatchSet).toHaveBeenCalledWith(
+      expect.objectContaining({ collectionName: 'audio_assets' }),
+      expect.objectContaining({ userId: 'user-123', type: 'tts', voicePreset: 'Kore' }),
+    );
   });
 });
 

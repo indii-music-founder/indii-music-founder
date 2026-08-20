@@ -2285,3 +2285,13 @@ All seven T1 sub-items built, tested against real (not mocked-away) verification
 - **ISSUE-1391 hosting cache — verified live after #297:** `/` no-cache; SPA routes no-cache; hashed js/css immutable; png immutable; landing same. A plain refresh now always loads the newest deploy.
 - **ISSUE-1391 editor fixes shipped:** DOM crash guard (useLayoutEffect + idempotent init + crash-proof dispose), header renamed back to "Creative Canvas", Send to Canvas action in editor rail.
 - **Commit history:** 97c91c010, 3e1f88233, 697dd94ff, 93cd3945f — CI #296, #297 green.
+
+---
+
+### ISSUE-1392: TTS generation broken — model rejects interactions.create (2026-08-20, live-probe discovered)
+
+- **Discovery (my live probe):** ISSUE-1158's residual acceptance needed a deployed authenticated TTS run. Probe minted a real ID token from the founder's profile refresh token + App Check token from the app-check IndexedDB, called generateAudioV3 → **400**.
+- **Root cause (server log, `[Gateway Debug] Raw Error Details`):** `BadRequestError: 400 Unsupported model interaction: gemini-3.1-flash-tts-preview` — the TTS model only supports `models.generateContent`, but the gateway called `ai.interactions.create` with `response_format: {type:'audio'}` + `generation_config.speech_config`. Same per-API class as the variations bug (ISSUE-1382).
+- **Fix:** generateAudioV3 now calls `ai.models.generateContent({ model, contents:[{role:'user',parts:[{text:prompt}]}], config:{ speechConfig: voice, responseModalities:['AUDIO'] } })` — the SDK maps a string speechConfig to `voiceConfig.prebuiltVoiceConfig.voiceName`. Extractor renamed `extractAudioPcm` and reads BOTH response shapes (interactions `output_audio` and generateContent `candidates[].content.parts[].inlineData`) so a future model swap cannot regress.
+- **Tests:** gateway suite updated to the new call shape (2 tests) + 1 new regression (inlineData part extraction, no interactions call). 54/54 pass; lint + firebase typecheck clean.
+- **Next:** deploy → rerun the same live probe → expect 200 + audio_assets doc + playable WAV in storage → closes ISSUE-1158's residual acceptance.

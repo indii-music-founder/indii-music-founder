@@ -2131,17 +2131,44 @@ interface InteractionAudioResponse {
   };
 }
 
-function extractInteractionAudio(response: unknown): { pcm: Buffer; sampleRate: number } {
-  const audio = (response as InteractionAudioResponse)?.output_audio;
-  if (!audio?.data) {
+/** Shape of a generateContent response that carries audio inlineData parts. */
+interface ContentAudioResponse {
+  candidates?: Array<{
+    content?: {
+      parts?: Array<{
+        inlineData?: { data?: string; mimeType?: string };
+        text?: string;
+      }>;
+    };
+  }>;
+}
+
+/**
+ * ISSUE-1392: extract mono PCM audio from either response shape. The TTS
+ * model (gemini-3.1-flash-tts-preview) REJECTS interactions.create with
+ * "400 Unsupported model interaction" — it must be called through
+ * models.generateContent with a string speechConfig (prebuilt voice). The
+ * generateContent response carries the audio as an inlineData part, while
+ * the interactions response (used by models that DO support interactions)
+ * carries output_audio. Handle both so a future model swap cannot regress.
+ */
+function extractAudioPcm(response: unknown): { pcm: Buffer; sampleRate: number } {
+  const interactionAudio = (response as InteractionAudioResponse)?.output_audio;
+  const partAudio = (response as ContentAudioResponse)?.candidates?.[0]?.content?.parts?.find(
+    (part) => part.inlineData?.data
+  )?.inlineData;
+
+  const data = interactionAudio?.data ?? partAudio?.data;
+  const mimeType = interactionAudio?.mime_type ?? partAudio?.mimeType;
+  if (!data) {
     throw new MediaGenerationError('audio', 'NO_AUDIO');
   }
-  const sampleRateMatch = audio.mime_type?.match(/rate=(\d+)/i);
+  const sampleRateMatch = mimeType?.match(/rate=(\d+)/i);
   const sampleRate = sampleRateMatch ? Number(sampleRateMatch[1]) : 24_000;
   if (!Number.isSafeInteger(sampleRate) || sampleRate < 8_000 || sampleRate > 192_000) {
     throw new HttpsError('failed-precondition', 'The speech provider returned an invalid sample rate.');
   }
-  return { pcm: Buffer.from(audio.data, 'base64'), sampleRate };
+  return { pcm: Buffer.from(data, 'base64'), sampleRate };
 }
 
 /** Wrap Gemini's raw mono 16-bit PCM in a browser-playable WAV container. */
@@ -2279,13 +2306,19 @@ export const generateAudioV3 = onCall({ ...creativeGatewayCallableOptions, timeo
     await jobRef.update({ costEstimate: estimatedCost, costReservationId: operationId, updatedAt: new Date().toISOString() });
 
     const ai = getAiClient('audio');
-    const interaction = await ai.interactions.create({
+    // ISSUE-1392: the TTS model rejects interactions.create ("400 Unsupported
+    // model interaction: gemini-3.1-flash-tts-preview") — it must be driven
+    // through models.generateContent with a string speechConfig (the SDK maps
+    // it to voiceConfig.prebuiltVoiceConfig.voiceName) and AUDIO modality.
+    const interaction = await ai.models.generateContent({
       model: FUNCTION_INTELLIGENCE_MODELS.SPEECH.GENERATION,
-      input: prompt,
-      response_format: { type: 'audio' },
-      generation_config: { speech_config: [{ voice }] },
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      config: {
+        speechConfig: voice,
+        responseModalities: ['AUDIO'],
+      },
     });
-    const { pcm, sampleRate } = extractInteractionAudio(interaction);
+    const { pcm, sampleRate } = extractAudioPcm(interaction);
     const wav = pcmToWav(pcm, sampleRate);
     const actualDuration = Math.max(0.001, pcm.length / (sampleRate * 2));
     outputUri = await uploadToStorage(userId, wav, 'wav', 'audio/wav', {
