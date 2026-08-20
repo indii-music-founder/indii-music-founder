@@ -2,7 +2,11 @@ import * as crypto from 'crypto';
 import { getFirestore } from 'firebase-admin/firestore';
 import { onRequest } from 'firebase-functions/v2/https';
 
-const db = getFirestore();
+// Lazy Firestore handle: a bare getFirestore() at module top level throws at
+// import time in test environments (import-crash class, see 2179e43a).
+function getDb() {
+  return getFirestore();
+}
 
 /**
  * Pay-Per-Approval Escrow Infrastructure
@@ -44,8 +48,8 @@ export const handleEscrowWebhook = onRequest(async (request, response) => {
         }
 
         // ACID Transaction to prevent double-spending
-        await db.runTransaction(async (t) => {
-            const escrowRef = db.collection('escrows').doc(transactionId);
+        await getDb().runTransaction(async (t) => {
+            const escrowRef = getDb().collection('escrows').doc(transactionId);
             const doc = await t.get(escrowRef);
 
             if (!doc.exists) {

@@ -1,7 +1,11 @@
 import { getFirestore } from 'firebase-admin/firestore';
 import { HttpsError } from 'firebase-functions/v2/https';
 
-const db = getFirestore();
+// Lazy Firestore handle: a bare getFirestore() at module top level throws at
+// import time in test environments (import-crash class, see 2179e43a).
+function getDb() {
+  return getFirestore();
+}
 
 // PACKAGE_STAGED (ISSUE-860): DDEX payloads exist in Storage but nothing has
 // been delivered to a DSP. MONITORING requires a real delivery/acknowledgement.
@@ -23,7 +27,7 @@ export class CampaignFSM {
     constructor(private releaseId: string) {}
 
     async getState(): Promise<CampaignContext> {
-        const doc = await db.collection('campaign_fsm').doc(this.releaseId).get();
+        const doc = await getDb().collection('campaign_fsm').doc(this.releaseId).get();
         if (!doc.exists) {
             return { releaseId: this.releaseId, state: 'IDLE', retries: 0, lastUpdated: new Date().toISOString() };
         }
@@ -48,7 +52,7 @@ export class CampaignFSM {
             if (newState === 'FAILED') updates.retries = context.retries + 1;
         }
 
-            const doc = await db.collection('campaign_fsm').doc(this.releaseId).get();
+            const doc = await getDb().collection('campaign_fsm').doc(this.releaseId).get();
             if (!doc.exists) {
                 // If it doesn't exist, we must initialize the full default state so merge:true doesn't leave orphaned properties
                 Object.assign(updates, {
@@ -57,7 +61,7 @@ export class CampaignFSM {
                 });
             }
 
-        await db.collection('campaign_fsm').doc(this.releaseId).set(updates, { merge: true });
+        await getDb().collection('campaign_fsm').doc(this.releaseId).set(updates, { merge: true });
         console.log(`Campaign ${this.releaseId} transitioned to ${newState}`);
     }
 }

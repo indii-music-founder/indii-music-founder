@@ -2333,3 +2333,22 @@ All seven T1 sub-items built, tested against real (not mocked-away) verification
   - `placements (status ASC, placedAt ASC)` composite index READY — the daemon's query returns OK live (was FAILED_PRECONDITION before the index existed).
 - **Import-crash class documented:** bare `getFirestore()` at module top level throws at import time in test envs that never init admin; `admin.firestore()` namespace form does not. Scan found 3 latent instances (publishing/iswc.ts, orchestration/fsm/machine.ts, stripe/escrow.ts) — all in unimported/dead modules, harmless, but any future wiring must use lazy handles. The import smoke test pattern (import index.ts + assert exports) is the regression guard.
 - **Perfection-sweep method note:** parallel audit agents returned zero findings (too shallow); the real defects came from my own targeted scans (composite-index coverage vs live REST probes, dead-export sweep vs index.ts, module-top-level init scan). Lesson: audits must run the code's actual queries/probes, not just read files.
+
+---
+
+### ISSUE-1394: batchEmbedText callable defined but NEVER exported — agent-memory semantic recall silently empty in production (2026-08-20, perfection sweep round 2)
+
+- **Discovery:** dead-export sweep (regex over 193 non-test .ts files for onCall/onRequest/onSchedule/onDocument* definitions vs index.ts exports) found `batchEmbedText` (functions/agent/manageSemanticMemory.ts:236) with ZERO export sites. The renderer's ONLY embedding path — `backendEmbedTexts` (services/agent/memory/backendEmbeddings.ts, ISSUE-1377 commit 63a93d22b) — calls the `batchEmbedText` callable and returns empty vectors per text on failure, so memory ingestion wrote empty vectors and semantic recall silently returned nothing since 63a93d22b (browser-side embeddings are fail-closed by design).
+- **Proof (all live):** (1) deployed source zip for generateImageV3 (generation 1787230367451253) grepped — `batchEmbedText` = 0 hits in lib/index.js, while `manageSemanticMemory` IS exported; (2) `gcloud functions list` = 196 functions, zero named embed/memory/semantic; (3) `git log -S batchEmbedText -- index.ts` = empty (never exported in any commit).
+- **Fix (code, deploy pending):** exported `batchEmbedText` beside `manageSemanticMemory` in packages/firebase/src/index.ts. Typecheck + lint clean; manageSemanticMemory tests 20/20 pass. Callable config: timeoutSeconds 60, memory 512MiB, enforceAppCheck false + validateAppCheckV2, text-embedding-004 via getVertexAIClient.
+- **After deploy:** verify callable exists live, then run a real embedding call to confirm non-empty vectors.
+
+### Perfection sweep round 2 — verified-clean results (2026-08-20 ~13:30 UTC, all live-proven)
+
+- **Composite indexes: 99/99 sync** — live `gcloud firestore indexes composite list` vs firestore.indexes.json diff (normalized: Firestore auto-appends `__name__` to live indexes; manifest omits it) = ZERO missing, ZERO orphans. Includes the placements index (READY) from ISSUE-1393.
+- **Single-field overrides in sync** — live `items.status` config matches manifest (6 indexes, TTL disabled); default `*` wildcard expected.
+- **pulseTick runs healthy** — every-minute scheduler live; `agentPlans where(status==running, updatedAt<now)` succeeds via the COLLECTION_GROUP index (proves collection queries are served by collection-group-scoped indexes — live evidence).
+- **getUsageStats** projects/usage/user_usage_stats queries all served by merged single-field indexes (equality-only / same-field range) — confirmed no action needed.
+- **Import-crash landmines NEUTRALIZED:** bare module-top-level `getFirestore()` in publishing/iswc.ts, orchestration/fsm/machine.ts, stripe/escrow.ts → lazy `getDb()` (pattern from 2179e43a9). All three modules confirmed unimported (inert), now safe to wire.
+- **Orphan re-confirmation (no renderer call sites, leave unwired):** `getSocialConnectionStatus`, `triggerUnifiedDistribution`, `handleEscrowWebhook` (ISSUE-1393 list) + newly scanned `onIswcAssigned` (publishing/iswc.ts — ISWC flow is founder-gated ISSUE-1121 backlog) and `onAgentTaskUpdate` (orchestration/index.ts — agent_tasks advancement is client-side in the Conductor; renderer writes agent_tasks but nothing awaits server-side advancement; legacy trigger harmless).
+- **Noted (no action):** `functions/index.ts` is a dead duplicate barrel — nothing imports it; deploy entry is lib/index.js compiled from src/index.ts. NOT deleted (asset-deletion fail-safe; verify with founder before removal).

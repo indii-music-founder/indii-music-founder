@@ -97,7 +97,7 @@ export { mintElectronAppCheckToken } from './functions/auth/mintElectronAppCheck
 // Agent Functions (Bug Reporting)
 export { reportBugFn } from './functions/agent/reportBugFn';
 export { workflowOrchestrator } from './functions/agent/workflowOrchestrator';
-export { manageSemanticMemory } from './functions/agent/manageSemanticMemory';
+export { manageSemanticMemory, batchEmbedText } from './functions/agent/manageSemanticMemory';
 export { agentLoopCron } from './functions/agent/agentLoopCron';
 export { getCapabilitySnapshot } from './functions/agent/getCapabilitySnapshot';
 export { recordPersonaResponseMeasurement } from './functions/persona/recordPersonaResponseMeasurement';

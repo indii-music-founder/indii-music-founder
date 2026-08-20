@@ -1,7 +1,12 @@
 import { getFirestore } from 'firebase-admin/firestore';
 import { onDocumentUpdated } from 'firebase-functions/v2/firestore';
 
-const db = getFirestore();
+// Lazy Firestore handle: a bare getFirestore() at module top level throws at
+// import time in test environments (import-crash class, see 2179e43a). Resolve
+// inside the handler, where the function runtime always has admin ready.
+function getDb() {
+  return getFirestore();
+}
 
 /**
  * ISWC Pending State Listener
@@ -21,7 +26,7 @@ export const onIswcAssigned = onDocumentUpdated("releases/{releaseId}", async (e
         console.log(`ISWC Assigned for Release ${event.params.releaseId}: ${afterData.iswc}`);
         
         // Unblock any pending distributions that required ISWC (e.g. Mechanical Licensing)
-        const distributionStatusRef = db.collection('releases').doc(event.params.releaseId).collection('orchestration').doc('status');
+        const distributionStatusRef = getDb().collection('releases').doc(event.params.releaseId).collection('orchestration').doc('status');
         await distributionStatusRef.set({
             iswcAssigned: true,
             iswcAssignedAt: new Date().toISOString()
