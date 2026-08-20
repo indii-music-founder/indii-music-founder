@@ -9,11 +9,15 @@ import { Editing } from '@/services/image/EditingService';
 const { mockStoreStateRef, createStoreState } = vi.hoisted(() => {
     const createStoreState = (overrides: Record<string, unknown> = {}) => ({
         updateHistoryItem: vi.fn(),
+        addToHistory: vi.fn(),
         setActiveReferenceImage: vi.fn(),
         uploadedImages: [],
         addUploadedImage: vi.fn(),
         currentProjectId: 'test-project',
         generatedHistory: [],
+        canvasImages: [],
+        addCanvasImage: vi.fn(),
+        setViewMode: vi.fn(),
         studioControls: {
             aspectRatio: '1:1',
             imageSize: '1k',
@@ -34,7 +38,10 @@ const { mockStoreStateRef, createStoreState } = vi.hoisted(() => {
 
 // Mock dependencies
 vi.mock('@/core/store', () => ({
-    useStore: () => mockStoreStateRef.current
+    useStore: Object.assign(
+        () => mockStoreStateRef.current,
+        { getState: () => mockStoreStateRef.current }
+    )
 }));
 
 vi.mock('@/core/context/ToastContext', () => ({
@@ -130,6 +137,9 @@ vi.mock('../../services/CanvasOperationsService', () => ({
         setMagicFillMode: vi.fn(),
         canUndo: vi.fn().mockReturnValue(false),
         canRedo: vi.fn().mockReturnValue(false),
+        hasContent: vi.fn().mockReturnValue(true),
+        saveCanvas: vi.fn().mockReturnValue('data:image/png;base64,mock'),
+        getBlob: vi.fn().mockResolvedValue(new Blob(['mock'], { type: 'image/png' })),
         toJSON: vi.fn().mockResolvedValue({}),
         ensureBaseImage: vi.fn().mockResolvedValue(false),
         getLayers: vi.fn().mockReturnValue([]),
@@ -264,6 +274,42 @@ describe('CreativeCanvas', () => {
         render(<CreativeCanvas item={mockItem} onClose={mockOnClose} />);
         fireEvent.keyDown(window, { key: 'Enter' });
         expect(mockOnClose).not.toHaveBeenCalled();
+    });
+
+    // ISSUE-1391: the editor must offer a direct path to move the edited
+    // asset onto the canvas — one click, then the canvas view opens with the
+    // asset staged on it.
+    it('stages the edited asset on the canvas and switches view via Send to Canvas', async () => {
+        // jsdom's Image never fires load/error, so readNaturalDimensions would
+        // sit on its 4s timeout while waitFor times out at 1s. Stub Image to
+        // resolve dimensions immediately.
+        const FakeImage = class {
+            naturalWidth = 800;
+            naturalHeight = 600;
+            onload: (() => void) | null = null;
+            set src(_v: string) {
+                queueMicrotask(() => this.onload?.());
+            }
+        };
+        const originalImage = globalThis.Image;
+        (globalThis as { Image: unknown }).Image = FakeImage;
+        try {
+            render(<CreativeCanvas item={mockItem} onClose={mockOnClose} />);
+            fireEvent.click(screen.getByTestId('send-to-canvas-btn'));
+
+            await waitFor(() => {
+                expect(mockStoreStateRef.current.addCanvasImage).toHaveBeenCalledWith(expect.objectContaining({
+                    parentId: mockItem.id,
+                    width: 800,
+                    height: 600,
+                    prompt: expect.stringContaining('Canvas edit of'),
+                }));
+                expect(mockStoreStateRef.current.setViewMode).toHaveBeenCalledWith('canvas');
+            });
+            expect(mockOnClose).toHaveBeenCalled();
+        } finally {
+            (globalThis as { Image: unknown }).Image = originalImage;
+        }
     });
 
     it('threads reference roles into the edit prompt', async () => {

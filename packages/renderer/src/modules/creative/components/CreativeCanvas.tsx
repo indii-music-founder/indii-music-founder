@@ -80,6 +80,7 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
         handleAddCircle,
         handleAddText,
         handleAddSketchLayer,
+        handleSendToCanvas,
     } = useCreativeCanvas({ item, onClose, onRefine });
 
     // ISSUE-1390: Escape always returns to the canvas — the editor overlay
@@ -186,6 +187,7 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
                                 saveCanvas={saveCanvas}
                                 batchExportDimensions={batchExportDimensions}
                                 flattenCanvas={handleFlattenCanvas}
+                                onSendToCanvas={handleSendToCanvas}
                             />
                         </div>
                     </div>

@@ -190,6 +190,16 @@ export class CanvasOperationsService {
         onReady?: () => void | Promise<void>,
         onChange?: () => void
     ): fabric.Canvas {
+        // ISSUE-1391: re-initializing while a canvas is already live wraps the
+        // element a second time (fabric replaceChild's a new container over the
+        // old one), leaving orphaned DOM that a later dispose() calls
+        // removeChild on → "The node to be removed is not a child of this
+        // node". Dispose any existing instance first so the element is always
+        // wrapped exactly once.
+        if (this.canvas) {
+            this.dispose();
+        }
+
         // Dynamic sizing: read container dimensions instead of hardcoded 800x600
         const container = canvasElement.parentElement;
         const maxWidth = container ? Math.max(container.clientWidth - 24, 400) : 800;
@@ -453,17 +463,39 @@ export class CanvasOperationsService {
 
     /**
      * Dispose of the canvas and cleanup
+     *
+     * ISSUE-1391: fabric's dispose() walks the DOM (cleanupDOM removeChild /
+     * replaceChild) and can throw "The node to be removed is not a child of
+     * this node" when React has already torn down part of the subtree (e.g.
+     * unmounting the editor while a fabric wrapper is still registered). This
+     * method must never throw: an exception here propagates into React's
+     * unmount and surfaces as a raw DOM error to the user.
      */
     dispose(): void {
-        if (this.canvas) {
-            // Clean up path:created handler to prevent memory leaks
-            if (this._pathCreatedHandler) {
-                this.canvas.off('path:created', this._pathCreatedHandler);
-                this._pathCreatedHandler = null;
+        const canvas = this.canvas;
+        this.canvas = null;
+        if (canvas) {
+            try {
+                // Clean up path:created handler to prevent memory leaks
+                if (this._pathCreatedHandler) {
+                    canvas.off('path:created', this._pathCreatedHandler);
+                }
+                canvas.dispose();
+            } catch (error) {
+                logger.warn('[CanvasOps] fabric dispose raced the DOM teardown; forcing wrapper cleanup', error);
+                // fabric may have partially removed the wrapper — detach any
+                // remaining fabric-owned container so React's own removeChild
+                // on the original <canvas> cannot hit an orphaned parent.
+                try {
+                    const el = canvas.getElement?.();
+                    const wrapper = el?.parentElement;
+                    if (wrapper && wrapper !== el && wrapper.parentNode) {
+                        wrapper.parentNode.replaceChild(el, wrapper);
+                    }
+                } catch { /* best-effort; original node removal is React's job */ }
             }
-            this.canvas.dispose();
-            this.canvas = null;
         }
+        this._pathCreatedHandler = null;
         // Revoke blob URLs created during CORS fallback to free memory
         this._activeBlobUrls.forEach(url => {
             try { URL.revokeObjectURL(url); } catch { /* ignore */ }

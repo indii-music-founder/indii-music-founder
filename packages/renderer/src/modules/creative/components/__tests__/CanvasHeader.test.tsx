@@ -35,7 +35,7 @@ describe('CanvasHeader — edit prompt and model mode', () => {
 
     it('renders the header title', () => {
         renderHeader();
-        expect(screen.getByText('Creative Editor')).toBeInTheDocument();
+        expect(screen.getByText('Creative Canvas')).toBeInTheDocument();
     });
 
     it('calls setIsHighFidelity when Pro/Flash toggle is clicked', () => {

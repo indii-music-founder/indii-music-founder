@@ -141,8 +141,10 @@ export interface CreativeHistorySlice {
  * or data URI) so work-mat imports preserve the real aspect ratio instead of
  * being forced square. Returns 0×0 when the image cannot be decoded — the
  * caller falls back to the legacy 512×512 box. Never guesses dimensions.
+ * Exported (ISSUE-1391) so the editor's "Send to Canvas" handoff stages the
+ * asset with the same true dimensions instead of duplicating the logic.
  */
-async function readNaturalDimensions(url: string): Promise<{ width: number; height: number }> {
+export async function readNaturalDimensions(url: string): Promise<{ width: number; height: number }> {
     if (typeof Image === 'undefined') return { width: 0, height: 0 };
     return new Promise((resolve) => {
         const img = new Image();

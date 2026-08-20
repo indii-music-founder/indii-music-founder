@@ -58,7 +58,7 @@ export const CanvasHeader: React.FC<CanvasHeaderProps> = ({
                     </button>
                 )}
                 <h3 className="text-sm font-bold text-white truncate">
-                    Creative Editor
+                    Creative Canvas
                 </h3>
             </div>
 

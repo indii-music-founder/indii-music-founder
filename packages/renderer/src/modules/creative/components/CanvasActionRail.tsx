@@ -1,5 +1,5 @@
 import React from 'react';
-import { Film, Image as ImageIcon, Layers, Play, Save, Sparkles, Wand2, X } from 'lucide-react';
+import { Film, Image as ImageIcon, Layers, Play, Save, Sparkles, Wand2, X, MonitorUp } from 'lucide-react';
 import { HistoryItem } from '@/core/store';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
@@ -33,6 +33,8 @@ interface CanvasActionRailProps {
     saveCanvas: () => void;
     batchExportDimensions?: () => void;
     flattenCanvas?: () => void;
+    // ISSUE-1391: direct handoff of the edited asset onto the canvas.
+    onSendToCanvas?: () => void | Promise<void>;
 }
 
 export const CanvasActionRail: React.FC<CanvasActionRailProps> = ({
@@ -49,6 +51,7 @@ export const CanvasActionRail: React.FC<CanvasActionRailProps> = ({
     saveCanvas,
     batchExportDimensions,
     flattenCanvas,
+    onSendToCanvas,
 }) => {
     const actionButtonClass = "w-11 h-11 rounded-xl border border-white/10 bg-[#0b0d10]/90 text-gray-300 hover:text-white hover:bg-white/10 transition-colors flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dept-creative/50 disabled:opacity-40 disabled:cursor-not-allowed";
     const primaryButtonClass = "w-11 h-11 rounded-xl border border-dept-creative/30 bg-dept-creative text-white shadow-[0_0_22px_rgba(0,255,136,0.25)] hover:bg-dept-creative/80 transition-colors flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dept-creative/60 disabled:opacity-50 disabled:cursor-not-allowed";
@@ -74,6 +77,17 @@ export const CanvasActionRail: React.FC<CanvasActionRailProps> = ({
                     className: actionButtonClass,
                     testId: 'send-to-video-btn',
                 },
+                ...(onSendToCanvas
+                    ? [{
+                        id: 'send-canvas',
+                        label: 'Send to Canvas',
+                        icon: MonitorUp,
+                        onClick: () => void onSendToCanvas(),
+                        disabled: isProcessing,
+                        className: actionButtonClass,
+                        testId: 'send-to-canvas-btn',
+                    }]
+                    : []),
                 {
                     id: 'flatten',
                     label: 'Flatten Canvas',

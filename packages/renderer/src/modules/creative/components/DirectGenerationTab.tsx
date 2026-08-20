@@ -942,7 +942,7 @@ export default function DirectGenerationTab() {
                             <p className="text-[10px] text-gray-400 leading-normal">
                                 {videoClipCount >= 2 
                                     ? `Mix your ${videoClipCount} generated clips in the production workflow.` 
-                                    : "Edit and refine your asset in the Creative Editor."}
+                                    : "Edit and refine your asset in the Creative Canvas."}
                             </p>
                         </div>
                         <button

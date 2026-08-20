@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- Module component with dynamic data */
-import { useState, useRef, useEffect, useMemo } from 'react';
+import { useState, useRef, useEffect, useLayoutEffect, useMemo } from 'react';
 import { useStore, HistoryItem } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { useToast } from '@/core/context/ToastContext';
@@ -218,7 +218,16 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
     }, [item]);
 
     // Initialization
-    useEffect(() => {
+    // ISSUE-1391: this must be useLayoutEffect, not useEffect. Fabric.js
+    // re-parents the React-owned <canvas> into its own wrapper container
+    // (wrapElement: parentNode.replaceChild(container, canvas)). On editor
+    // close React unmounts the subtree — passive (useEffect) cleanups run
+    // AFTER the DOM nodes are removed, so canvasOps.dispose() fired too late
+    // and fabric's cleanupDOM removeChild() threw "The node to be removed is
+    // not a child of this node". A layout-effect cleanup runs synchronously
+    // BEFORE React removes the node, letting dispose() unwrap the fabric
+    // container first (fabric's cleanupDOM restores the original parent).
+    useLayoutEffect(() => {
         let isMounted = true;
 
         async function setupCanvas() {
@@ -928,6 +937,58 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
         }
     };
 
+    /**
+     * ISSUE-1391 (founder-requested flow): one-click handoff of the asset
+     * being edited straight onto the canvas — the "more direct way of getting
+     * assets between locations and pages". Saves first (so the edited version
+     * is durable), then stages it onto the InfiniteCanvas with its natural
+     * dimensions and switches view. Mirrors openImageInStudio's cascade
+     * positioning so repeated sends land visibly.
+     */
+    const handleSendToCanvas = async () => {
+        if (!item) return;
+        await saveCanvas();
+        const { addCanvasImage, setViewMode, currentProjectId, canvasImages } = useStore.getState();
+        const { readNaturalDimensions } = await import('@/core/store/slices/creative/creativeHistorySlice');
+        const sourceUrl = item.storageUri || item.url;
+        const { width, height } = await readNaturalDimensions(sourceUrl);
+        const naturalWidth = width > 0 ? width : 512;
+        const naturalHeight = height > 0 ? height : 512;
+        const aspect = naturalWidth / naturalHeight;
+
+        const existing = canvasImages || [];
+        const CASCADE_STEP = 32;
+        const last = existing[existing.length - 1];
+        const baseX = 100;
+        const baseY = 100;
+        let x = baseX;
+        let y = baseY;
+        if (last && typeof last.x === 'number' && typeof last.y === 'number') {
+            x = last.x + CASCADE_STEP;
+            y = last.y + CASCADE_STEP;
+        }
+        if (x > 1400 || y > 1400) {
+            x = baseX + CASCADE_STEP;
+            y = baseY + CASCADE_STEP;
+        }
+
+        addCanvasImage({
+            id: `editor_${item.id}_${Date.now()}`,
+            base64: sourceUrl,
+            x,
+            y,
+            width: naturalWidth,
+            height: naturalHeight,
+            aspect,
+            projectId: currentProjectId || 'default',
+            prompt: `Canvas edit of: ${item.prompt || 'untitled'}`,
+            parentId: item.id,
+        });
+        onClose();
+        setViewMode('canvas');
+        toast.success('Sent to canvas!');
+    };
+
     const handleRefineInternal = async () => {
         if (!item) return;
         onClose();
@@ -1091,6 +1152,7 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
         handleRefine: onRefine || handleRefineInternal,
         handleCreateLastFrame,
         batchExportDimensions,
+        handleSendToCanvas,
         handleUndo,
         handleRedo,
         canUndo: canvasOps.canUndo(),
