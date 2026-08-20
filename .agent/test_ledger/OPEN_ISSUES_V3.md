@@ -2352,3 +2352,13 @@ All seven T1 sub-items built, tested against real (not mocked-away) verification
 - **Import-crash landmines NEUTRALIZED:** bare module-top-level `getFirestore()` in publishing/iswc.ts, orchestration/fsm/machine.ts, stripe/escrow.ts → lazy `getDb()` (pattern from 2179e43a9). All three modules confirmed unimported (inert), now safe to wire.
 - **Orphan re-confirmation (no renderer call sites, leave unwired):** `getSocialConnectionStatus`, `triggerUnifiedDistribution`, `handleEscrowWebhook` (ISSUE-1393 list) + newly scanned `onIswcAssigned` (publishing/iswc.ts — ISWC flow is founder-gated ISSUE-1121 backlog) and `onAgentTaskUpdate` (orchestration/index.ts — agent_tasks advancement is client-side in the Conductor; renderer writes agent_tasks but nothing awaits server-side advancement; legacy trigger harmless).
 - **Noted (no action):** `functions/index.ts` is a dead duplicate barrel — nothing imports it; deploy entry is lib/index.js compiled from src/index.ts. NOT deleted (asset-deletion fail-safe; verify with founder before removal).
+
+---
+
+### Perfection sweep round 2 — reverse callable audit (renderer → backend): frontend-only callables (2026-08-20 ~15:30 UTC)
+
+- Method: 143 httpsCallable names extracted from packages/renderer/src (regex over all non-test .ts/.tsx) vs 196 deployed functions across regions. 31 unmatched; ~15 real after filtering regex noise.
+- Marketing callables — `createAd`, `createAdCampaign`, `createAdSet`, `getAdInsights`, `pauseAdCampaign`, `syncEmailList`, `deployEmailCampaign`, `getEmailCampaignStats`, `sendSMSBlast`, `getSMSDeliveryStatus`, `getSocialPostInsights` — called from reachable UI (CreativeStudio, EmailMarketingPanel, SMSMarketingPanel, MultiPlatformPoster, SocialTools agent tool) but NEVER existed in packages/firebase (git log -S = empty). Services throw MarketingProviderUnavailableError by design: commit 342f7e200 (ISSUE-665/666/667) removed fabricated delivery confirmations after a post-mortem. The marketing module is registered in core/constants.ts; panels surface explicit unavailable states. NOT a wiring defect — product decision required (build the backends or hide/flag the panels).
+NaN
+NaN
+NaN
