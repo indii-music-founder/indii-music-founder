@@ -214,6 +214,7 @@ describe('📚 Keeper: Context & Persistence Integration', () => {
         // Bridge the store mock to the session service mock to satisfy integration expectations
         const state = useStore.getState() as unknown as ReturnType<typeof useStore.getState> & {
             addAgentMessage: import('vitest').Mock;
+            addMessageToSession: import('vitest').Mock;
             updateAgentMessage: import('vitest').Mock;
         };
         state.addAgentMessage.mockImplementation((msg: unknown) => {
@@ -221,6 +222,12 @@ describe('📚 Keeper: Context & Persistence Integration', () => {
             if (currentSessionId) {
                 mockUpdateSession(currentSessionId, { messages: [msg] });
             }
+        });
+        // AgentService pins run messages to their originating session through
+        // addMessageToSession (session-switch hardening) — bridge it to the
+        // same persistence assertion.
+        state.addMessageToSession.mockImplementation((sessionId: string, msg: unknown) => {
+            mockUpdateSession(sessionId, { messages: [msg] });
         });
         state.updateAgentMessage.mockImplementation((id: string, updates: Record<string, unknown>) => {
             const currentSessionId = useStore.getState().activeSessionId;

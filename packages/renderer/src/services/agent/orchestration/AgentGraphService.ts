@@ -10,6 +10,8 @@ import { agentGraphStateService } from './AgentGraphStateService';
 import { agentService } from '../AgentService';
 import { AgentEventBus } from '../governance/AgentEventBus';
 import { memoryBankService } from '../memory/MemoryBankService';
+import { doc, runTransaction } from 'firebase/firestore';
+import { db } from '@/services/firebase';
 
 /**
  * AgentGraphService — Directed Acyclic Graph (DAG) Runner
@@ -21,6 +23,13 @@ import { memoryBankService } from '../memory/MemoryBankService';
  * data mapping between nodes, and conditional branching.
  */
 export class AgentGraphService {
+    /**
+     * One loop per execution id. resumeGraph/retry-resume must never start a
+     * second loop against a live one — the live loop re-reads state every
+     * iteration and picks up reset/retried nodes itself; a second loop would
+     * just double-execute nodes.
+     */
+    private activeLoops = new Set<string>();
 
     /**
      * Initializes a new graph execution state in persistence.
@@ -150,6 +159,61 @@ export class AgentGraphService {
      * Continues as long as there are nodes ready to be executed.
      */
     private async runGraphLoop(
+        userId: string,
+        graph: AgentGraph,
+        executionId: string,
+        context: AgentContext,
+        traceId: string,
+        initialInput?: string
+    ): Promise<string> {
+        if (this.activeLoops.has(executionId)) {
+            throw new Error(`Graph execution ${executionId} already has an active loop.`);
+        }
+        this.activeLoops.add(executionId);
+        try {
+            return await this.runGraphLoopInternal(userId, graph, executionId, context, traceId, initialInput);
+        } finally {
+            this.activeLoops.delete(executionId);
+        }
+    }
+
+    /**
+     * Atomically claim a node for execution. The readiness computation in
+     * runGraphLoopInternal reads a state snapshot; two loop instances can
+     * observe the same PLANNED node from their own snapshots. This
+     * transaction only succeeds while the node is still PLANNED, so exactly
+     * one loop wins each node — the loser's claim returns false and the node
+     * is skipped, never double-executed.
+     */
+    private async claimNodeAtomically(
+        userId: string,
+        executionId: string,
+        nodeId: string,
+    ): Promise<boolean> {
+        const ref = doc(db, 'users', userId, 'graphExecutions', executionId);
+        try {
+            return await runTransaction(db, async (tx) => {
+                const snap = await tx.get(ref);
+                if (!snap.exists) return false;
+                const data = snap.data() as {
+                    nodeStates?: Record<string, { status?: string }>;
+                };
+                const nodeState = data.nodeStates?.[nodeId];
+                if (!nodeState || nodeState.status !== 'PLANNED') return false;
+                tx.update(ref, {
+                    [`nodeStates.${nodeId}.status`]: 'EXECUTING_GENERATION',
+                    [`nodeStates.${nodeId}.startedAt`]: Date.now(),
+                    status: 'EXECUTING',
+                });
+                return true;
+            });
+        } catch (error) {
+            logger.warn(`[AgentGraph] Atomic claim failed for node ${nodeId} in ${executionId}:`, error);
+            return false;
+        }
+    }
+
+    private async runGraphLoopInternal(
         userId: string,
         graph: AgentGraph,
         executionId: string,
@@ -312,10 +376,29 @@ export class AgentGraphService {
                 continue;
             }
 
-            // 3. Prepare tasks for ready nodes with Memory Bank Integration
-            logger.info(`[AgentGraph] Iteration ${iteration}: Starting ${readyNodes.length} nodes in parallel: ${readyNodes.map(n => n.id).join(', ')}`);
+            // 3. Atomically claim the ready nodes. A concurrent loop instance
+            // (resume/retry while running) computes the same PLANNED nodes
+            // from its own snapshot; the transaction grants each node to
+            // exactly one loop, so duplicate tool calls are impossible.
+            const claimedNodeIds: string[] = [];
+            for (const node of readyNodes) {
+                if (await this.claimNodeAtomically(userId, executionId, node.id)) {
+                    claimedNodeIds.push(node.id);
+                    AgentEventBus.emitNodeEvent('GRAPH_NODE_STARTED', graph.id, node.id, executionId);
+                }
+            }
+            if (claimedNodeIds.length === 0) {
+                logger.info(`[AgentGraph] Iteration ${iteration}: all candidate nodes claimed by another loop — re-evaluating.`);
+                continue;
+            }
 
-            const tasks = await Promise.all(readyNodes.map(async (node) => {
+            // 4. Prepare tasks for the CLAIMED nodes (memory retrieval happens
+            // after the claim so a lost claim never does wasted work).
+            logger.info(`[AgentGraph] Iteration ${iteration}: Starting ${claimedNodeIds.length} nodes in parallel: ${claimedNodeIds.join(', ')}`);
+
+            const tasks = await Promise.all(claimedNodeIds.map(async (nodeId) => {
+                const node = graph.nodes.find(candidate => candidate.id === nodeId);
+                if (!node) throw new Error(`Graph node ${nodeId} missing from definition`);
                 const prompt = this.resolveNodePrompt(node, graph, state, inputToUse);
 
                 // GEAP Pillar 2: SCALE - Pull relevant memories before execution
@@ -339,15 +422,6 @@ export class AgentGraphService {
                     },
                 };
             }));
-
-            // 4. Mark nodes as executing
-            for (const node of readyNodes) {
-                await agentGraphStateService.updateNodeStatus(userId, executionId, node.id, {
-                    status: 'EXECUTING_GENERATION',
-                    startedAt: Date.now()
-                });
-                AgentEventBus.emitNodeEvent('GRAPH_NODE_STARTED', graph.id, node.id, executionId);
-            }
 
             // 5. Parallel execution
             try {

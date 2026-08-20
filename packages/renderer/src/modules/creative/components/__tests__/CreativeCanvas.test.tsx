@@ -1,12 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor, fireEvent, within } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent, within, act } from '@testing-library/react';
 import CreativeCanvas from '../CreativeCanvas';
 import React from 'react';
 import { canvasOps } from '../../services/CanvasOperationsService';
 import { resolveStorageUrl } from '@/services/storage/resolveStorageUrl';
+import { saveAssetToStorage } from '@/services/storage/repository';
 import { Editing } from '@/services/image/EditingService';
 
-const { mockStoreStateRef, createStoreState } = vi.hoisted(() => {
+const { mockStoreStateRef, createStoreState, canvasOnChangeRef } = vi.hoisted(() => {
     const createStoreState = (overrides: Record<string, unknown> = {}) => ({
         updateHistoryItem: vi.fn(),
         addToHistory: vi.fn(),
@@ -33,6 +34,11 @@ const { mockStoreStateRef, createStoreState } = vi.hoisted(() => {
     return {
         mockStoreStateRef: { current: createStoreState() },
         createStoreState,
+        // Captures the onChange callback the hook registers with
+        // canvasOps.initialize — tests fire it to simulate a real canvas
+        // mutation (draw / add shape), which is the only thing that marks
+        // the editor as dirty for the send-to-canvas flow.
+        canvasOnChangeRef: { current: null as (() => void) | null },
     };
 });
 
@@ -131,7 +137,9 @@ vi.mock('../../services/CanvasOperationsService', () => ({
         prepareMasksForEdit: vi.fn(),
         extractSemanticMask: vi.fn().mockReturnValue('semantic-mask'),
         extractGeminiMask: vi.fn().mockReturnValue('gemini-mask'),
-        initialize: vi.fn(),
+        initialize: vi.fn((_el: unknown, _url: unknown, _onReady: unknown, onChange?: () => void) => {
+            canvasOnChangeRef.current = onChange ?? null;
+        }),
         dispose: vi.fn(),
         updateBrushColor: vi.fn(),
         setMagicFillMode: vi.fn(),
@@ -188,6 +196,7 @@ describe('CreativeCanvas', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
+        canvasOnChangeRef.current = null;
         mockStoreStateRef.current = createStoreState();
         vi.mocked(resolveStorageUrl).mockImplementation((url: string) => Promise.resolve(url));
         vi.mocked(canvasOps.prepareMasksForEdit).mockReturnValue({
@@ -235,7 +244,9 @@ describe('CreativeCanvas', () => {
             expect(canvasOps.initialize).toHaveBeenCalledWith(
                 expect.any(HTMLCanvasElement),
                 'https://cdn.example.com/thumb.png',
-                undefined,
+                // ISSUE-1395: the fresh-path onReady resets the dirty baseline
+                // after the base image is placed — no longer undefined.
+                expect.any(Function),
                 expect.any(Function)
             );
         });
@@ -258,7 +269,8 @@ describe('CreativeCanvas', () => {
 
     // ISSUE-1395: the header "Canvas" button is the primary path for moving
     // the edited asset onto the canvas — it must run the send-to-canvas flow
-    // (save + stage + canvas view), not close the editor into the Creative Hub.
+    // (stage + canvas view), not close the editor into the Creative Hub. An
+    // untouched canvas is staged as-is: no gallery export is created.
     it('stages the asset on the canvas when the header "Canvas" button is clicked', async () => {
         // jsdom's Image never fires load/error, so readNaturalDimensions would
         // sit on its 4s timeout while waitFor times out at 1s. Stub Image to
@@ -280,6 +292,7 @@ describe('CreativeCanvas', () => {
             await waitFor(() => {
                 expect(mockStoreStateRef.current.addCanvasImage).toHaveBeenCalledWith(expect.objectContaining({
                     parentId: mockItem.id,
+                    base64: mockItem.url,
                     width: 800,
                     height: 600,
                     prompt: expect.stringContaining('Canvas edit of'),
@@ -287,6 +300,9 @@ describe('CreativeCanvas', () => {
                 expect(mockStoreStateRef.current.setViewMode).toHaveBeenCalledWith('canvas');
             });
             expect(mockOnClose).toHaveBeenCalled();
+            // ISSUE-1395: no edits → no duplicate gallery export.
+            expect(saveAssetToStorage).not.toHaveBeenCalled();
+            expect(mockStoreStateRef.current.addToHistory).not.toHaveBeenCalled();
         } finally {
             (globalThis as { Image: unknown }).Image = originalImage;
         }
@@ -331,6 +347,51 @@ describe('CreativeCanvas', () => {
                     width: 800,
                     height: 600,
                     prompt: expect.stringContaining('Canvas edit of'),
+                }));
+                expect(mockStoreStateRef.current.setViewMode).toHaveBeenCalledWith('canvas');
+            });
+            expect(mockOnClose).toHaveBeenCalled();
+            // ISSUE-1395: no edits → no duplicate gallery export.
+            expect(saveAssetToStorage).not.toHaveBeenCalled();
+            expect(mockStoreStateRef.current.addToHistory).not.toHaveBeenCalled();
+        } finally {
+            (globalThis as { Image: unknown }).Image = originalImage;
+        }
+    });
+
+    // ISSUE-1395: only a canvas the user actually changed gets persisted —
+    // and in that case the EDITED output (not the original) lands on the board.
+    it('persists and stages the edited output when the canvas was changed', async () => {
+        const FakeImage = class {
+            naturalWidth = 800;
+            naturalHeight = 600;
+            onload: (() => void) | null = null;
+            set src(_v: string) {
+                queueMicrotask(() => this.onload?.());
+            }
+        };
+        const originalImage = globalThis.Image;
+        (globalThis as { Image: unknown }).Image = FakeImage;
+        try {
+            render(<CreativeCanvas item={mockItem} onClose={mockOnClose} />);
+
+            // Wait for setup to register the mutation callback, then simulate
+            // a real canvas change (draw / add shape) — the only signal that
+            // marks the editor as dirty for the send flow.
+            await waitFor(() => expect(canvasOnChangeRef.current).toBeTruthy());
+            act(() => canvasOnChangeRef.current!());
+            fireEvent.click(screen.getByTestId('send-to-canvas-btn'));
+
+            await waitFor(() => {
+                expect(saveAssetToStorage).toHaveBeenCalledOnce();
+                expect(mockStoreStateRef.current.addToHistory).toHaveBeenCalledOnce();
+                expect(mockStoreStateRef.current.addCanvasImage).toHaveBeenCalledWith(expect.objectContaining({
+                    parentId: mockItem.id,
+                    // The EDITED export (persisted storage URI), not the
+                    // original item URL.
+                    base64: 'gs://mock-bucket/users/test-user-id/assets/asset-123',
+                    width: 800,
+                    height: 600,
                 }));
                 expect(mockStoreStateRef.current.setViewMode).toHaveBeenCalledWith('canvas');
             });

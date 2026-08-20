@@ -119,7 +119,10 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
                     grounding={editManifest.settings.grounding}
                     imageSize={editManifest.settings.imageSize}
                     onClose={onClose}
-                    onSendToCanvas={handleSendToCanvas}
+                    // ISSUE-1395: the canvas board is image-only — a video
+                    // item falls back to plain close instead of staging an
+                    // unrenderable video URL on the board.
+                    onSendToCanvas={item.type === 'image' ? handleSendToCanvas : undefined}
                 />
 
                 <div className="flex-1 relative overflow-hidden bg-transparent">

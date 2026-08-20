@@ -34,6 +34,19 @@ import {
  */
 export class AgentService {
     private isProcessing = false;
+    /**
+     * Single-slot queue for messages typed while a previous run is still
+     * finishing in the background (its timeout fired but the flow kept
+     * executing). The latest message is dispatched when the run settles —
+     * otherwise the timeout isolation change would silently drop user input
+     * for up to a full run duration.
+     */
+    private pendingSend: {
+        text: string;
+        attachments?: { mimeType: string; base64: string }[];
+        forcedAgentId?: string;
+        options?: { source?: 'desktop' | 'mobile-remote' | 'background' | 'api', originalBrief?: string };
+    } | null = null;
     private isWarmedUp = false;
     private contextPipeline: ContextPipeline;
     private orchestrator: AgentOrchestrator;
@@ -78,6 +91,25 @@ export class AgentService {
             agentFirebaseConnector.syncMessage(msg).catch(err =>
                 logger.error(`[AgentService] Swarm final sync failed for ${resId}:`, err)
             );
+        }
+    }
+
+    /**
+     * Append a run message to the session the run started in. The model
+     * message is appended after awaits during which the user can switch
+     * sessions, so the explicit-session append is what keeps a run's
+     * conversation intact. Falls back to the active-session append (which
+     * creates a session if none exists) only when the run had no session.
+     */
+    private appendRunMessage(
+        store: typeof import('@/core/store').useStore,
+        msg: AgentMessage,
+        runSessionId: string | null,
+    ): void {
+        if (runSessionId) {
+            store.getState().addMessageToSession(runSessionId, msg);
+        } else {
+            store.getState().addAgentMessage(msg);
         }
     }
 
@@ -169,6 +201,9 @@ export class AgentService {
         this.syncDebounceTimeouts.forEach(timeout => clearTimeout(timeout));
         this.syncDebounceTimeouts.clear();
         this.isProcessing = false;
+        // A queued message belongs to the previous account's session — it must
+        // never be dispatched after a boundary switch.
+        this.pendingSend = null;
     }
 
     private shouldCacheCompletedResponse(
@@ -209,13 +244,21 @@ export class AgentService {
         options?: { source?: 'desktop' | 'mobile-remote' | 'background' | 'api', originalBrief?: string }
     ): Promise<void> {
         if (this.isProcessing) {
-            logger.warn('[AgentService] sendMessage blocked: already processing');
+            // A previous run may legitimately still be finishing in the
+            // background after its timeout. Keep the message instead of
+            // dropping it; it is dispatched when that run settles.
+            logger.warn('[AgentService] sendMessage queued: previous run still processing');
+            this.pendingSend = { text, attachments, forcedAgentId, options };
             return;
         }
         this.isProcessing = true;
 
         let useStoreInstance: typeof import('@/core/store').useStore | null = null;
         let executionSignal: AbortSignal | undefined;
+        // Declared at method scope so the outer finally can defer cleanup to
+        // the flow's settlement (the flow can outlive the timeout race).
+        let flowSettled = false;
+        let flowPromise: Promise<void> | undefined;
         try {
             try {
                 useStoreInstance = await this.getStore();
@@ -266,11 +309,16 @@ export class AgentService {
             const isBoardroomMode = state.conversationMode === 'boardroom';
             logger.debug('[AgentService] sendMessage routing:', { isBoardroomMode });
 
-            if (isBoardroomMode) {
-                store.getState().addAgentMessage(userMsg);
-            } else {
-                store.getState().addAgentMessage(userMsg);
-            }
+            // The session this run started in. Everything the run appends —
+            // user message, model message, streaming updates — must stay in
+            // THIS conversation even if the user switches sessions mid-run.
+            // (Updates are pinned by the slice's message→session registry;
+            // the appends here must target the same session explicitly,
+            // because the model message is appended after an await during
+            // which the active session can change.)
+            const runSessionId = state.activeSessionId ?? null;
+
+            this.appendRunMessage(store, userMsg, runSessionId);
 
             // Tier 2: Index user message for semantic recall (Episodic Indexing)
             if (state.currentProjectId && state.activeSessionId && redactedText.length > 10) {
@@ -300,9 +348,9 @@ export class AgentService {
                 };
 
                 if (isBoardroomMode) {
-                    store.getState().addAgentMessage(msgPayload);
+                    this.appendRunMessage(store, msgPayload, runSessionId);
                 } else {
-                    store.getState().addAgentMessage(msgPayload);
+                    this.appendRunMessage(store, msgPayload, runSessionId);
                 }
                 const cacheHitState = store.getState();
                 if (typeof cacheHitState.setAgentProcessing === 'function') {
@@ -327,9 +375,9 @@ export class AgentService {
             };
 
             if (isBoardroomMode) {
-                store.getState().addAgentMessage(msgPayload);
+                this.appendRunMessage(store, msgPayload, runSessionId);
             } else {
-                store.getState().addAgentMessage(msgPayload);
+                this.appendRunMessage(store, msgPayload, runSessionId);
             }
 
             // Create a timeout controller
@@ -343,47 +391,56 @@ export class AgentService {
                 timeoutHandle = setTimeout(() => reject(new Error(`Indii Timeout: No response received after ${timeoutMs / 1000}s.`)), timeoutMs);
             });
 
+            // The flow can legitimately outlive the race: when the timeout
+            // wins, executeFlow keeps running in the background (a generation
+            // may be seconds from finishing). Track its settlement so the
+            // outer cleanup never runs while the run is still live — that
+            // would kill the Stop button and allow a second concurrent run.
+            flowSettled = false;
+            flowPromise = this.executeFlow(redactedText, attachments, context, responseId, forcedAgentId, executionSignal).then(() => {
+                const currentState = store.getState();
+                const resultMsg = isBoardroomMode 
+                    ? (currentState.agentHistory as AgentMessage[]).find(m => m.id === responseId)
+                    : (currentState.agentHistory as AgentMessage[]).find(m => m.id === responseId);
+
+                // After success, populate cache if not a generation request
+                if (this.shouldCacheCompletedResponse(isGenerationRequest, resultMsg)) {
+                    this.responseCache.set(cacheKey, {
+                        text: resultMsg!.text,
+                        thoughts: resultMsg!.thoughts || [],
+                        agentId: resultMsg!.agentId || 'generalist'
+                    });
+                }
+
+                // Trigger Autorater for feedback and fine-tuning registration
+                if (resultMsg && auth.currentUser) {
+                    this.triggerAutorater(
+                        auth.currentUser.uid, 
+                        resultMsg.agentId || 'generalist', 
+                        responseId, 
+                        isBoardroomMode
+                    ).catch(e => logger.warn('[AgentService] Autorater execution error:', e));
+
+                    // Phase 3: Trigger Visual Autorater for image tool completions
+                    if (resultMsg.text && this.containsImageToolOutput(resultMsg)) {
+                        this.triggerVisualAutorater(
+                            resultMsg.text,
+                            originalBrief,
+                            resultMsg.agentId || 'generalist',
+                            responseId,
+                            isBoardroomMode
+                        ).catch(e => logger.warn('[AgentService] Visual autorater error:', e));
+                    }
+                }
+            }).finally(() => {
+                if (timeoutHandle) clearTimeout(timeoutHandle);
+                flowSettled = true;
+            });
+
             try {
                 // Main execution logic wrapped in a race with timeout
                 await Promise.race([
-                    this.executeFlow(redactedText, attachments, context, responseId, forcedAgentId, executionSignal).then(() => {
-                        const currentState = store.getState();
-                        const resultMsg = isBoardroomMode 
-                            ? (currentState.agentHistory as AgentMessage[]).find(m => m.id === responseId)
-                            : (currentState.agentHistory as AgentMessage[]).find(m => m.id === responseId);
-
-                        // After success, populate cache if not a generation request
-                        if (this.shouldCacheCompletedResponse(isGenerationRequest, resultMsg)) {
-                            this.responseCache.set(cacheKey, {
-                                text: resultMsg!.text,
-                                thoughts: resultMsg!.thoughts || [],
-                                agentId: resultMsg!.agentId || 'generalist'
-                            });
-                        }
-
-                        // Trigger Autorater for feedback and fine-tuning registration
-                        if (resultMsg && auth.currentUser) {
-                            this.triggerAutorater(
-                                auth.currentUser.uid, 
-                                resultMsg.agentId || 'generalist', 
-                                responseId, 
-                                isBoardroomMode
-                            ).catch(e => logger.warn('[AgentService] Autorater execution error:', e));
-
-                            // Phase 3: Trigger Visual Autorater for image tool completions
-                            if (resultMsg.text && this.containsImageToolOutput(resultMsg)) {
-                                this.triggerVisualAutorater(
-                                    resultMsg.text,
-                                    originalBrief,
-                                    resultMsg.agentId || 'generalist',
-                                    responseId,
-                                    isBoardroomMode
-                                ).catch(e => logger.warn('[AgentService] Visual autorater error:', e));
-                            }
-                        }
-                    }).finally(() => {
-                        if (timeoutHandle) clearTimeout(timeoutHandle);
-                    }),
+                    flowPromise,
                     timeoutPromise
                 ]);
             } catch (err: unknown) {
@@ -454,27 +511,45 @@ export class AgentService {
             logger.error('[AgentService] Fatal Error in sendMessage:', e);
             this.addSystemMessage(`❌ **System Error:** ${errObj.message || 'Unknown error occurred.'}`);
         } finally {
-            this.isProcessing = false;
-            if (useStoreInstance) {
-                try {
-                    const state = useStoreInstance.getState();
-                    if (typeof state.setAgentProcessing === 'function') {
-                        state.setAgentProcessing(false);
+            // Cleanup is owned by the FLOW, not by the race: if the timeout
+            // fired first, executeFlow is still running in the background.
+            // Resetting the processing flag or nulling the abort controller
+            // here would kill the Stop button mid-run and let a second
+            // concurrent run start. Defer cleanup until the flow settles.
+            const cleanup = () => {
+                this.isProcessing = false;
+                if (useStoreInstance) {
+                    try {
+                        const state = useStoreInstance.getState();
+                        if (typeof state.setAgentProcessing === 'function') {
+                            state.setAgentProcessing(false);
+                        }
+                        useStoreInstance.setState({ agentAbortController: null });
+                    } catch (e) {
+                        logger.error('[AgentService] Failed to reset processing state:', e);
                     }
-                    useStoreInstance.setState({ agentAbortController: null });
-                } catch (e) {
-                    logger.error('[AgentService] Failed to reset processing state:', e);
+                } else {
+                    this.getStore().then(store => {
+                        const state = store.getState();
+                        if (typeof state.setAgentProcessing === 'function') {
+                            state.setAgentProcessing(false);
+                        }
+                        store.setState({ agentAbortController: null });
+                    }).catch((e) => {
+                        logger.error('[AgentService] Failed to reset processing state in getStore:', e);
+                    });
                 }
+                const pending = this.pendingSend;
+                this.pendingSend = null;
+                if (pending) {
+                    logger.info('[AgentService] Dispatching queued message after previous run settled.');
+                    void this.sendMessage(pending.text, pending.attachments, pending.forcedAgentId, pending.options);
+                }
+            };
+            if (flowSettled) {
+                cleanup();
             } else {
-                this.getStore().then(store => {
-                    const state = store.getState();
-                    if (typeof state.setAgentProcessing === 'function') {
-                        state.setAgentProcessing(false);
-                    }
-                    store.setState({ agentAbortController: null });
-                }).catch((e) => {
-                    logger.error('[AgentService] Failed to reset processing state in getStore:', e);
-                });
+                flowPromise.then(cleanup, cleanup);
             }
         }
     }

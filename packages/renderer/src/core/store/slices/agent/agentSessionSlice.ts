@@ -8,6 +8,15 @@ const agentSessionRuntimeStartedAt = Date.now();
 const pendingMessageIds = new Map<string, Set<string>>();
 const messageWriteChains = new Map<string, Promise<void>>();
 const recoveredInterruptedMessageIds = new Set<string>();
+/**
+ * Pins every locally-appended message to the session it was appended to.
+ * Streaming agent runs can outlive a session switch; without this registry,
+ * `updateAgentMessage` resolves the session from the LIVE `activeSessionId`
+ * at write time, so every token/thought/completion update — and its Firestore
+ * persistence — lands in whichever conversation is active when the write
+ * happens. The registry makes updates follow the message, not the UI.
+ */
+const messageSessionRegistry = new Map<string, string>();
 const INTERRUPTED_GENERATION_MARKER = '*(Generation interrupted by page reload)*';
 
 function messageWriteKey(sessionId: string, messageId: string): string {
@@ -420,6 +429,8 @@ export function buildAgentSessionState(
                 };
             }
 
+            messageSessionRegistry.set(msg.id, currentSessionId);
+
             const currentSession = sessions[currentSessionId]!;
             const updatedSession = {
                 ...currentSession,
@@ -446,14 +457,18 @@ export function buildAgentSessionState(
         }),
 
         updateAgentMessage: (id, updates) => set((state) => {
-            if (!state.activeSessionId) return {};
+            // A message belongs to the session it was APPENDED to, not to
+            // whichever session is active when the update lands. Fall back to
+            // the active session only for legacy/unregistered messages.
+            const sessionId = messageSessionRegistry.get(id) ?? state.activeSessionId;
+            if (!sessionId) return {};
 
-            const session = state.sessions[state.activeSessionId]!;
-            const updatedMessages = session!.messages.map(msg =>
+            const session = state.sessions[sessionId];
+            if (!session) return {};
+            const updatedMessages = session.messages.map(msg =>
                 msg.id === id ? { ...msg, ...updates } : msg
             );
 
-            const sessionId = state.activeSessionId;
             const persistUpdate = async () => {
                 const { sessionService } = await import('@/services/agent/SessionService');
                 await sessionService.updateMessage(sessionId, id, updates);
@@ -472,12 +487,16 @@ export function buildAgentSessionState(
             return {
                 sessions: {
                     ...state.sessions,
-                    [state.activeSessionId]: {
+                    [sessionId]: {
                         ...session,
                         messages: updatedMessages
                     }
                 },
-                agentHistory: updatedMessages
+                // The rendered conversation is the ACTIVE session's list; a
+                // pinned update to a background session must not replace it.
+                agentHistory: sessionId === state.activeSessionId
+                    ? updatedMessages
+                    : state.agentHistory
             };
         }),
 
@@ -485,6 +504,8 @@ export function buildAgentSessionState(
             const sessions = { ...state.sessions };
             const session = sessions[sessionId];
             if (!session) return {};
+
+            messageSessionRegistry.set(msg.id, sessionId);
 
             const updatedSession = {
                 ...session,
@@ -513,6 +534,14 @@ export function buildAgentSessionState(
             const targetSessionId = sessionId || state.activeSessionId;
             if (!targetSessionId || !state.sessions[targetSessionId]) return {};
             pendingMessageIds.delete(targetSessionId);
+
+            // Purge the pinning registry for the cleared session so its
+            // message ids cannot be redirected after history reset.
+            for (const [messageId, ownerSessionId] of messageSessionRegistry) {
+                if (ownerSessionId === targetSessionId) {
+                    messageSessionRegistry.delete(messageId);
+                }
+            }
 
             // Persist the cleared history with retry logic
             const persistClear = async (attempt = 1) => {

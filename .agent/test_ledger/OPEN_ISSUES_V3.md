@@ -2379,3 +2379,13 @@ NaN
 - **Deploy:** function created 2026-08-20T16:21:12Z, state ACTIVE (deployed via the combined mainline pipeline run 32388085318, which carries f5e4b0bfe).
 - **Live probe (founder's REAL session — refresh token + App Check token + minted ID token, same harness as ISSUE-1158):** POST cloudfunctions.net/batchEmbedText with 1 text → HTTP 200, embeddingsCount=1, vector length 768 (text-embedding-004), non-zero values. The renderer's backendEmbedTexts path now receives real vectors; agent-memory semantic recall is functional (was silently empty since 63a93d22b).
 - **Also re-confirmed during the probe run:** generateAudioV3 returns 200 with a real jobId/resultUri (audio-b7f5ea05...) — ISSUE-1392/1158 path still healthy post-redeploy.
+
+### ISSUE-1395 follow-up (2026-08-20): send-to-canvas no longer duplicates gallery entries — and the EDITED version now lands on the board
+
+- **Quirks closed (founder: "don't leave anything hanging"):**
+  1. Every "Canvas" send exported and re-uploaded the image to the gallery as a "Canvas edit of…" asset even when nothing changed → duplicate gallery clutter on the primary path.
+  2. When the user HAD edited, the flow saved the edited output but staged the ORIGINAL item URL on the board — the edited version never reached the canvas.
+  3. `gs://` storage URIs can't be decoded by Image() → staged assets collapsed to the 512×512 fallback box. Now resolved via resolveStorageUrl before dimension reads.
+  4. Send-to-canvas was offered for video items, staging an unrenderable video URL on the image board. Now gated to `item.type === 'image'`; videos fall back to plain close.
+- **Fix (useCreativeCanvas.ts):** `dirtyRef` set by the fabric change handler (object add/modify/remove, path:created — never selection), reset to baseline in every init path's onReady (fresh, restored, fallback). `saveCanvas` now returns `{url, storageUri} | null`. `handleSendToCanvas` skips persistence entirely on an untouched canvas (stages `item.storageUri || item.url` as-is), and when dirty persists once and stages the EDITED export (`saved.storageUri || saved.url`).
+- **Tests:** CreativeCanvas.test.tsx — clean-send asserts NO saveAssetToStorage/addToHistory (both header + rail paths) + staged base64 = original URL; new dirty-path test fires the captured change callback and asserts exactly one save + one gallery entry + staged base64 = the edited export's storage URI. 26/26 targeted, 470/470 creative module suite, monorepo typecheck clean.

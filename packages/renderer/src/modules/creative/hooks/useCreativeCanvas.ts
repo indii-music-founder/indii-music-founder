@@ -110,6 +110,12 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
 
     // Canvas ref
     const canvasEl = useRef<HTMLCanvasElement>(null);
+    // ISSUE-1395: tracks whether the user actually modified the fabric canvas
+    // this session (change events only fire on real mutations — object
+    // add/modify/remove/path — never on selection). The "Canvas" send flow
+    // must not export/duplicate an untouched asset into the gallery; it only
+    // persists (and stages) the edited output when this flag is set.
+    const dirtyRef = useRef(false);
     const sessionId = useMemo(() => getCreativeSessionId(item?.id ?? null, currentProjectId), [currentProjectId, item?.id]);
     const editManifest = useMemo(() => compileCreativeEditManifest({
         sessionId,
@@ -260,6 +266,7 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
             // (ISSUE-480 — they were stuck disabled until an unrelated re-render),
             // then debounce the heavier state persistence.
             const handleCanvasChange = () => {
+                dirtyRef.current = true;
                 setHistoryTrigger(prev => prev + 1);
                 debouncedSave();
             };
@@ -280,10 +287,17 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
                                 itemId: item.id,
                             });
                         }
+                        // Load-time object:added events are not user edits — the
+                        // restored canvas is the baseline, not a change.
+                        dirtyRef.current = false;
                     }, handleCanvasChange);
                 } else if (isMounted) {
                     // Initialize WITH base image URL
-                    canvasOps.initialize(canvasEl.current, editableImageUrl, undefined, handleCanvasChange);
+                    canvasOps.initialize(canvasEl.current, editableImageUrl, () => {
+                        // The base image placement fires object:added before
+                        // onReady — that is the baseline, not a user edit.
+                        dirtyRef.current = false;
+                    }, handleCanvasChange);
                 }
 
                 try {
@@ -320,7 +334,9 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
                 logger.warn('[CreativeStudio] Failed to restore canvas state', err);
                 if (isMounted) {
                     // Fallback to fresh canvas with resolved URL
-                    canvasOps.initialize(canvasEl.current, await resolveEditableImageUrl(item), undefined, handleCanvasChange);
+                    canvasOps.initialize(canvasEl.current, await resolveEditableImageUrl(item), () => {
+                        dirtyRef.current = false;
+                    }, handleCanvasChange);
                 }
             }
         }
@@ -867,13 +883,20 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
         }
     };
 
-    const saveCanvas = async () => {
-        if (!item) return;
+    /**
+     * Persist the current canvas state: export the flattened artwork to
+     * storage, add it to the gallery as a canvas-export asset, and save the
+     * layer state for reload. Returns the persisted export ({url, storageUri})
+     * so callers can hand the EDITED output onward (e.g. the canvas send
+     * flow) — or null when nothing could be persisted.
+     */
+    const saveCanvas = async (): Promise<{ url: string; storageUri?: string } | null> => {
+        if (!item) return null;
 
         // Guard: prevent saving an empty canvas (e.g. image failed to load due to CORS)
         if (!canvasOps.hasContent()) {
             toast.error('Cannot save: canvas is empty. The image may have failed to load.');
-            return;
+            return null;
         }
 
         try {
@@ -881,7 +904,7 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
             const dataUrl = canvasOps.saveCanvas();
             if (!dataUrl) {
                 toast.error('Could not export the canvas. Reopen the image and try again.');
-                return;
+                return null;
             }
 
             // 2. Upload blob to Firebase Storage as a persistent asset
@@ -931,27 +954,44 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
             } else {
                 toast.warning('Canvas state saved, but export to gallery failed.');
             }
+            return { url: dataUrl || item.url, storageUri };
         } catch {
             // ISSUE-917: No disk save actually happened in catch path
             toast.error('Canvas save failed. Changes are not persistent.');
+            return null;
         }
     };
 
     /**
      * ISSUE-1391 (founder-requested flow): one-click handoff of the asset
      * being edited straight onto the canvas — the "more direct way of getting
-     * assets between locations and pages". Saves first (so the edited version
-     * is durable), then stages it onto the InfiniteCanvas with its natural
-     * dimensions and switches view. Mirrors openImageInStudio's cascade
-     * positioning so repeated sends land visibly.
+     * assets between locations and pages". Stages it onto the InfiniteCanvas
+     * with its natural dimensions and switches view. Mirrors
+     * openImageInStudio's cascade positioning so repeated sends land visibly.
+     *
+     * ISSUE-1395 follow-up: an untouched canvas must NOT spawn a duplicate
+     * gallery export ("Canvas edit of…") — persistence happens only when the
+     * user actually changed something, and in that case the EDITED output
+     * (not the original asset) is what lands on the board.
      */
     const handleSendToCanvas = async () => {
         if (!item) return;
-        await saveCanvas();
         const { addCanvasImage, setViewMode, currentProjectId, canvasImages } = useStore.getState();
         const { readNaturalDimensions } = await import('@/core/store/slices/creative/creativeHistorySlice');
-        const sourceUrl = item.storageUri || item.url;
-        const { width, height } = await readNaturalDimensions(sourceUrl);
+
+        let sourceUrl = item.storageUri || item.url;
+        if (dirtyRef.current) {
+            const saved = await saveCanvas();
+            if (saved) {
+                sourceUrl = saved.storageUri || saved.url;
+            }
+        }
+
+        // gs:// URIs cannot be decoded by Image() — resolve to a download URL
+        // so the staged asset keeps its true dimensions instead of collapsing
+        // to the legacy 512×512 box.
+        const dimensionUrl = await resolveStorageUrl(sourceUrl);
+        const { width, height } = await readNaturalDimensions(dimensionUrl);
         const naturalWidth = width > 0 ? width : 512;
         const naturalHeight = height > 0 ? height : 512;
         const aspect = naturalWidth / naturalHeight;

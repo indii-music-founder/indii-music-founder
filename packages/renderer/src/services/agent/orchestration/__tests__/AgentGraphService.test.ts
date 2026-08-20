@@ -4,6 +4,7 @@ import { agentGraphStateService } from '../AgentGraphStateService';
 import { agentService } from '../../AgentService';
 import { memoryBankService } from '../../memory/MemoryBankService';
 import { AgentGraph, AgentContext } from '../../types';
+import { runTransaction } from 'firebase/firestore';
 
 // Mock dependencies
 vi.mock('../AgentGraphStateService', () => ({
@@ -56,6 +57,25 @@ describe('AgentGraphService', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
+        // Nodes are now claimed through a Firestore transaction before
+        // execution. The global setup's transaction mock reads an empty doc,
+        // which would fail every claim; grant claims so the readiness
+        // progression driven by the getExecution mock decides execution.
+        vi.mocked(runTransaction).mockImplementation(async (_db, cb) => cb({
+            get: vi.fn(async () => ({
+                exists: true,
+                data: () => ({
+                    nodeStates: {
+                        'node-1': { status: 'PLANNED' },
+                        'node-2': { status: 'PLANNED' },
+                        'node-3': { status: 'PLANNED' },
+                    },
+                }),
+            })),
+            set: vi.fn(),
+            update: vi.fn(),
+            delete: vi.fn(),
+        } as never));
     });
 
     it('should execute a simple 2-node linear graph', async () => {
