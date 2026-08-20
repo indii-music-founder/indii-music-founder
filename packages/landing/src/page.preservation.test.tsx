@@ -5,9 +5,15 @@
  * WebGL layer stubbed, and asserts that every conversion-critical string and
  * system marker from the pre-transformation site is still present. This is the
  * tripwire for copy drift during the section extraction.
+ *
+ * The below-the-fold sections are now deferred (LazySection): they mount only
+ * when they approach the viewport, when the URL hash targets them, or when a
+ * crawler renders the page. The stub IntersectionObserver below lets the tests
+ * both verify the deferred contract (sections absent before any intersection)
+ * and then reveal every section so the full-content tripwire still runs.
  */
 import React from 'react';
-import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
+import { describe, expect, it, vi, beforeEach, afterEach, beforeAll } from 'vitest';
 import { createRoot } from 'react-dom/client';
 import { act } from 'react';
 
@@ -47,21 +53,43 @@ vi.mock('./components/ExperienceShell', () => ({
   default: () => null,
 }));
 
-// framer-motion's whileInView uses IntersectionObserver, which jsdom lacks.
+// framer-motion's whileInView and the page's LazySection both use
+// IntersectionObserver. jsdom 26 ships its own implementation; force the
+// controllable stub so the deferred-sections contract is deterministic.
+interface StubIOEntry {
+  isIntersecting: boolean;
+  target: Element;
+}
+const ioInstances: IntersectionObserverStub[] = [];
 class IntersectionObserverStub {
   readonly root = null;
   readonly rootMargin = '';
   readonly thresholds = [];
-  observe() {}
+  private callback: (entries: StubIOEntry[]) => void;
+  private observed: Element[] = [];
+
+  constructor(callback: (entries: StubIOEntry[]) => void) {
+    this.callback = callback;
+    ioInstances.push(this);
+  }
+
+  observe(el: Element) {
+    this.observed.push(el);
+  }
   unobserve() {}
-  disconnect() {}
+  disconnect() {
+    this.observed = [];
+  }
   takeRecords() {
     return [];
   }
+
+  /** Test helper: report every observed element as intersecting. */
+  revealAll() {
+    this.callback(this.observed.map((target) => ({ isIntersecting: true, target })));
+  }
 }
-if (typeof globalThis.IntersectionObserver === 'undefined') {
-  globalThis.IntersectionObserver = IntersectionObserverStub as unknown as typeof IntersectionObserver;
-}
+globalThis.IntersectionObserver = IntersectionObserverStub as unknown as typeof IntersectionObserver;
 
 import Home from './page';
 
@@ -69,7 +97,27 @@ describe('home page preservation (founder mode)', () => {
   let container: HTMLDivElement;
   let root: ReturnType<typeof createRoot>;
 
+  // Pre-warm the lazy section chunks (vite-node transforms each chunk on first
+  // import, which is far too slow to happen inside a test). The REAL components
+  // still render and are asserted below — this only avoids transform latency.
+  beforeAll(async () => {
+    await Promise.all([
+      import('./components/AgentGrid'),
+      import('./components/ConductorSection'),
+      import('./components/AppStudioShowcase'),
+      import('./components/LegacyComparison'),
+      import('./components/FounderRoyaltyCalculator'),
+      import('./components/sections/DetroitSection'),
+      import('./components/sections/ThesisSection'),
+      import('./components/sections/StatsBand'),
+      import('./components/sections/PrinciplesSection'),
+      import('./components/sections/OnboardingSection'),
+      import('./components/sections/FounderAccessSection'),
+    ]);
+  });
+
   beforeEach(() => {
+    ioInstances.length = 0;
     container = document.createElement('div');
     document.body.appendChild(container);
     root = createRoot(container);
@@ -87,8 +135,39 @@ describe('home page preservation (founder mode)', () => {
     });
   };
 
+  /** Fire every pending intersection and wait for the lazy section chunks to resolve. */
+  const revealSections = async () => {
+    await act(async () => {
+      for (const io of ioInstances) io.revealAll();
+      // LazySection updates state, then each lazy() chunk resolves asynchronously.
+      // Modules are pre-warmed in beforeAll, so this resolves quickly.
+      for (let i = 0; i < 40; i++) {
+        const markers = container.querySelectorAll('[data-system-section]').length;
+        if (markers >= 13) break; // hero, waitlist, footer + the 10 deferred sections
+        await new Promise((resolve) => setTimeout(resolve, 50));
+      }
+    });
+  };
+
   /** Hero words are inline-blocks separated by margins — compare spacing-insensitively. */
   const normalized = (value: string) => value.replace(/\s+/g, '');
+
+  it('defers the below-the-fold sections until they approach the viewport', async () => {
+    await renderHome();
+    // Eager, above-the-fold content is present immediately...
+    const text = container.textContent ?? '';
+    expect(normalized(text)).toContain(normalized('Run your music career without giving $ıt away.'));
+    expect(container.querySelector('[data-system-section="waitlist"]')).not.toBeNull();
+    // ...while deferred sections are not in the DOM until an intersection fires.
+    expect(container.querySelector('[data-system-section="capabilities"]')).toBeNull();
+    expect(container.querySelector('[data-system-section="founder-access"]')).toBeNull();
+    expect(container.querySelector('[data-system-section="conductor"]')).toBeNull();
+    // Once the observer reports an intersection, the sections render in full.
+    await revealSections();
+    expect(container.querySelector('[data-system-section="capabilities"]')).not.toBeNull();
+    expect(container.querySelector('[data-system-section="founder-access"]')).not.toBeNull();
+    expect(container.querySelector('[data-system-section="conductor"]')).not.toBeNull();
+  });
 
   it('keeps every critical hero claim and CTA', async () => {
     await renderHome();
@@ -97,19 +176,22 @@ describe('home page preservation (founder mode)', () => {
     expect(text).toContain('The Artist Operating System');
     expect(text).toContain('Tools for your music career');
     expect(text).toContain('without sacrifice');
-    expect(text).toContain('Distribution is the last gatekeeper standing');
-    expect(text).toContain('The Freedom Principle');
-    expect(text).toContain('Direct Distribution Pipeline');
-    expect(text).toContain('Distribution IS The Workspace');
-    expect(text).toContain('No Handlers. 24 Specialists.');
-    expect(text).toContain('100%');
-    expect(text).toContain('0%');
-    expect(text).toContain('24');
     // Preview closed → the hero CTA is the waitlist join (original behavior).
     expect(text).toContain('Join Waitlist');
     expect(text).toContain('Watch the Thesis');
     // The "$ıt" wordplay must survive intact.
     expect(text).toContain('ıt');
+    // Below-the-fold claims still exist once the sections reveal.
+    await revealSections();
+    const revealed = container.textContent ?? '';
+    expect(revealed).toContain('Distribution is the last gatekeeper standing');
+    expect(revealed).toContain('The Freedom Principle');
+    expect(revealed).toContain('Direct Distribution Pipeline');
+    expect(revealed).toContain('Distribution IS The Workspace');
+    expect(revealed).toContain('No Handlers. 24 Specialists.');
+    expect(revealed).toContain('100%');
+    expect(revealed).toContain('0%');
+    expect(revealed).toContain('24');
   });
 
   it('keeps the waitlist conversion path', async () => {
@@ -123,6 +205,7 @@ describe('home page preservation (founder mode)', () => {
 
   it('keeps the story sections and their headlines', async () => {
     await renderHome();
+    await revealSections();
     const text = container.textContent ?? '';
     expect(text).toContain('Built in Detroit for your work');
     expect(text).toContain('behind the music scene.');
@@ -150,6 +233,7 @@ describe('home page preservation (founder mode)', () => {
 
   it('keeps the founder offer, disclaimers and footer', async () => {
     await renderHome();
+    await revealSections();
     const text = container.textContent ?? '';
     expect(text).toContain('$2,500');
     expect(text).toContain('Secure Founder Access');
@@ -166,6 +250,7 @@ describe('home page preservation (founder mode)', () => {
 
   it('marks every section for the system layer', async () => {
     await renderHome();
+    await revealSections();
     const markers = Array.from(container.querySelectorAll('[data-system-section]')).map(
       (el) => el.getAttribute('data-system-section'),
     );
@@ -190,6 +275,7 @@ describe('home page preservation (founder mode)', () => {
 
   it('keeps the working execution paths in the capabilities grid', async () => {
     await renderHome();
+    await revealSections();
     const text = container.textContent ?? '';
     expect(text).toContain('Deliver directly to Spotify, Apple & Tidal.');
     expect(text).toContain('DDEX ERN 4.3');
@@ -203,6 +289,7 @@ describe('home page preservation (public mode)', () => {
   let root: ReturnType<typeof createRoot>;
 
   beforeEach(() => {
+    ioInstances.length = 0;
     container = document.createElement('div');
     document.body.appendChild(container);
     root = createRoot(container);
@@ -227,5 +314,14 @@ describe('home page preservation (public mode)', () => {
     expect(text).not.toContain('Launch cinematic thesis');
     expect(text).not.toContain('Project White Glove');
     expect(text).not.toContain('Contact');
+    // Founder-only sections stay hidden even after intersections fire.
+    await act(async () => {
+      for (const io of ioInstances) io.revealAll();
+      for (let i = 0; i < 12; i++) {
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      }
+    });
+    expect(container.textContent ?? '').not.toContain('Secure Founder Access');
+    expect(container.textContent ?? '').not.toContain('Built in Detroit for your work');
   });
 });

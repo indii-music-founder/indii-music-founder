@@ -2,7 +2,7 @@
 import { AppException, AppErrorCode } from '@/shared/types/errors';
 import { revenueService } from '@/services/RevenueService';
 import { db, auth } from '@/services/firebase';
-import * as Sentry from '@sentry/react';
+import { captureException, captureMessage } from '@/services/observability/SentryService';
 import {
   collection,
   addDoc,
@@ -88,14 +88,14 @@ export class FinanceService {
 
       if (!parseResult.success) {
         logger.error(`[FinanceService] Earnings data validation failed for ${userId}:`, parseResult.error);
-        Sentry.captureMessage(`Earnings validation failed for user ${userId}`, 'error');
+        captureMessage(`Earnings validation failed for user ${userId}`, 'error');
         return null;
       }
 
       return parseResult.data;
 
     } catch (error: unknown) {
-      Sentry.captureException(error);
+      captureException(error);
       throw error;
     }
   }
@@ -131,7 +131,7 @@ export class FinanceService {
         createdAt: typeof now.toDate === 'function' ? now.toDate().toISOString() : new Date(now as any).toISOString()
       };
     } catch (error: unknown) {
-      Sentry.captureException(error);
+      captureException(error);
       throw error;
     }
   }
@@ -162,7 +162,7 @@ export class FinanceService {
         } as Expense;
       });
     } catch (error: unknown) {
-      Sentry.captureException(error);
+      captureException(error);
       throw error;
     }
   }
@@ -202,7 +202,7 @@ export class FinanceService {
       // a permission-denied or outage left the finance UI spinning "loading"
       // forever with no visible error. Callers now receive the failure.
       logger.error("Error subscribing to expenses:", error);
-      Sentry.captureException(error);
+      captureException(error);
       onError?.(error instanceof Error ? error : new Error(String(error)));
     });
   }
@@ -242,7 +242,7 @@ export class FinanceService {
     }, (error) => {
       // ISSUE-1278: see subscribeToExpenses — the consumer must learn about this.
       logger.error("Error subscribing to earnings:", error);
-      Sentry.captureException(error);
+      captureException(error);
       onError?.(error instanceof Error ? error : new Error(String(error)));
     });
   }

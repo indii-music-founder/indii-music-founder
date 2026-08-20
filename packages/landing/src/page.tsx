@@ -10,19 +10,8 @@ import { flushFounderFunnelQueue, trackFounderFunnelEvent } from './lib/founderF
 import { isFounderPreviewEnabled } from './lib/previewAccess';
 import { emitSystemPulse } from './three/signals';
 import { detectTier, detectInputs } from './three/quality';
-import AgentGrid from './components/AgentGrid';
-import ConductorSection from './components/ConductorSection';
-import AppStudioShowcase from './components/AppStudioShowcase';
-import LegacyComparison from './components/LegacyComparison';
-import { FounderRoyaltyCalculator } from './components/FounderRoyaltyCalculator';
 import Hero from './components/sections/Hero';
 import WaitlistSection from './components/sections/WaitlistSection';
-import DetroitSection from './components/sections/DetroitSection';
-import ThesisSection from './components/sections/ThesisSection';
-import StatsBand from './components/sections/StatsBand';
-import PrinciplesSection from './components/sections/PrinciplesSection';
-import OnboardingSection from './components/sections/OnboardingSection';
-import FounderAccessSection from './components/sections/FounderAccessSection';
 import FooterSection from './components/sections/FooterSection';
 
 /**
@@ -34,6 +23,22 @@ import FooterSection from './components/sections/FooterSection';
  */
 const ExperienceShell = lazy(() => import('./components/ExperienceShell'));
 const ThesisCrawl = lazy(() => import('./components/ThesisCrawl'));
+
+// Below-the-fold sections are code-split: their JS is fetched and parsed only
+// when the section approaches the viewport (see LazySection below).
+const AgentGrid = lazy(() => import('./components/AgentGrid'));
+const ConductorSection = lazy(() => import('./components/ConductorSection'));
+const AppStudioShowcase = lazy(() => import('./components/AppStudioShowcase'));
+const LegacyComparison = lazy(() => import('./components/LegacyComparison'));
+const FounderRoyaltyCalculator = lazy(() =>
+  import('./components/FounderRoyaltyCalculator').then((m) => ({ default: m.FounderRoyaltyCalculator })),
+);
+const DetroitSection = lazy(() => import('./components/sections/DetroitSection'));
+const ThesisSection = lazy(() => import('./components/sections/ThesisSection'));
+const StatsBand = lazy(() => import('./components/sections/StatsBand'));
+const PrinciplesSection = lazy(() => import('./components/sections/PrinciplesSection'));
+const OnboardingSection = lazy(() => import('./components/sections/OnboardingSection'));
+const FounderAccessSection = lazy(() => import('./components/sections/FounderAccessSection'));
 const systemTier = typeof window === 'undefined' ? 'FALLBACK' : detectTier(detectInputs());
 const shouldMountSystem = systemTier !== 'FALLBACK';
 
@@ -71,6 +76,61 @@ function DeferredExperienceShell() {
     <Suspense fallback={null}>
       <ExperienceShell />
     </Suspense>
+  );
+}
+
+
+
+/**
+ * LazySection — renders below-the-fold marketing sections only when they
+ * approach the viewport (IntersectionObserver), when the URL hash targets
+ * them (e.g. #capabilities, #conductor, #founder-access), or when a search
+ * engine crawler is rendering the page (content stays indexable).
+ * Deferring these sections keeps first paint and the hero on the main
+ * thread; every section renders once approached, with no visual change.
+ */
+function LazySection({ id, children }: { id?: string; children: React.ReactNode }) {
+  // Renders immediately when there is no observer support, when a search
+  // engine renderer is reading the page (content stays indexable), or when
+  // the URL hash already targets this section.
+  const [visible, setVisible] = useState(() => {
+    if (typeof IntersectionObserver === 'undefined') return true;
+    if (/bot|crawl|spider|googlebot|bingbot|duckduckbot|slurp|yandex|baiduspider|facebookexternalhit|twitterbot/i.test(navigator.userAgent)) {
+      return true;
+    }
+    return Boolean(id && window.location.hash === '#' + id);
+  });
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (visible) return;
+    const el = ref.current;
+    if (!el) return;
+    const show = () => setVisible(true);
+    const io = new IntersectionObserver((entries) => {
+      if (entries.some((entry) => entry.isIntersecting)) {
+        show();
+        io.disconnect();
+      }
+    }, { rootMargin: '900px 0px' });
+    io.observe(el);
+    const onHash = () => {
+      if (id && window.location.hash === '#' + id) {
+        show();
+        window.removeEventListener('hashchange', onHash);
+      }
+    };
+    window.addEventListener('hashchange', onHash);
+    return () => {
+      io.disconnect();
+      window.removeEventListener('hashchange', onHash);
+    };
+  }, [id, visible]);
+
+  return (
+    <div ref={ref}>
+      {visible ? <Suspense fallback={null}>{children}</Suspense> : null}
+    </div>
   );
 }
 
@@ -307,24 +367,42 @@ export default function Home({ founder = true }: { founder?: boolean }) {
         />
       )}
 
-      {founder && <DetroitSection />}
+      <LazySection id="detroit">{founder && <DetroitSection />}</LazySection>
 
-      {founder && <ThesisSection setIsThesisOpen={setIsThesisOpen} />}
+      <LazySection>
+        {founder && <ThesisSection setIsThesisOpen={setIsThesisOpen} />}
+      </LazySection>
 
-      <StatsBand />
+      <LazySection>
+        <StatsBand />
+      </LazySection>
 
-      <LegacyComparison />
-      <AgentGrid />
-      <ConductorSection />
-      <AppStudioShowcase />
-      <FounderRoyaltyCalculator />
-      <PrinciplesSection />
+      <LazySection id="legacy-shift">
+        <LegacyComparison />
+      </LazySection>
+      <LazySection id="capabilities">
+        <AgentGrid />
+      </LazySection>
+      <LazySection id="conductor">
+        <ConductorSection />
+      </LazySection>
+      <LazySection id="studio-preview">
+        <AppStudioShowcase />
+      </LazySection>
+      <LazySection>
+        <FounderRoyaltyCalculator />
+      </LazySection>
+      <LazySection>
+        <PrinciplesSection />
+      </LazySection>
 
-      {founder && <OnboardingSection />}
+      <LazySection>{founder && <OnboardingSection />}</LazySection>
 
-      {founder && (
-        <FounderAccessSection studioUrl={getStudioUrl()} trackPreview={trackPreview} />
-      )}
+      <LazySection id="founder-access">
+        {founder && (
+          <FounderAccessSection studioUrl={getStudioUrl()} trackPreview={trackPreview} />
+        )}
+      </LazySection>
 
       <FooterSection founder={founder} onContactClick={handleFounderInterestClick} />
 
