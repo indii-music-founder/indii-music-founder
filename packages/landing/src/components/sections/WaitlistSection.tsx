@@ -1,0 +1,73 @@
+'use client';
+
+import React from 'react';
+
+interface WaitlistSectionProps {
+  email: string;
+  status: 'idle' | 'loading' | 'success' | 'error';
+  message: string;
+  onChange: (email: string) => void;
+  onSubmit: (event: React.FormEvent) => void;
+}
+
+export default function WaitlistSection({ email, status, message, onChange, onSubmit }: WaitlistSectionProps) {
+  return (
+    <section
+      id="waitlist"
+      data-system-section="waitlist"
+      className="relative z-20 scroll-mt-[72px] border-y border-amber-400/20 bg-[#080602]"
+      aria-labelledby="waitlist-title"
+    >
+      <div className="mx-auto grid max-w-[1500px] gap-8 px-5 py-12 md:grid-cols-[0.48fr_1fr_0.36fr] md:items-center md:px-10 md:py-14">
+        <div className="flex items-center gap-3 font-mono text-[9px] uppercase tracking-[0.23em] text-amber-400">
+          <span className="h-2 w-2 rounded-full bg-amber-400 shadow-[0_0_18px_rgba(245,158,11,0.8)]" />
+          Waitlist open
+        </div>
+        <div>
+          <h2
+            id="waitlist-title"
+            className="text-3xl font-black tracking-[-0.045em] text-white md:text-4xl"
+          >
+            Join the founder waitlist.
+          </h2>
+          <p className="mt-3 max-w-2xl text-sm leading-relaxed text-white/45 md:text-base">
+            We are preparing the Founder preview before opening product access. You can explore the thesis and the working system here. Join the list to get notified when spots open up.
+          </p>
+        </div>
+        <div className="md:text-right">
+          <form onSubmit={onSubmit} className="flex w-full flex-col gap-3 sm:flex-row md:justify-end">
+            <label htmlFor="waitlist-email" className="sr-only">
+              Email address
+            </label>
+            <input
+              id="waitlist-email"
+              type="email"
+              placeholder="Enter your email"
+              required
+              value={email}
+              onChange={(e) => onChange(e.target.value)}
+              disabled={status === 'loading' || status === 'success'}
+              className="w-full rounded-md border border-white/20 bg-white/5 px-4 py-2.5 text-sm text-white placeholder-white/40 outline-none transition-colors focus:border-amber-400 focus:bg-white/10 sm:max-w-[240px]"
+            />
+            <button
+              type="submit"
+              disabled={status === 'loading' || status === 'success'}
+              className="group inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md bg-amber-400 px-6 py-2.5 text-sm font-bold text-black transition-all hover:bg-amber-300 disabled:opacity-50 disabled:hover:bg-amber-400"
+            >
+              {status === 'loading' ? 'Joining...' : status === 'success' ? 'Joined' : 'Join Waitlist'}
+            </button>
+          </form>
+          {message && (
+            <p
+              role="status"
+              aria-live="polite"
+              className={`mt-3 text-xs ${status === 'success' ? 'text-amber-400' : 'text-red-400'}`}
+            >
+              {message}
+            </p>
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}

@@ -9,12 +9,7 @@ import {
   Activity,
   DollarSign,
   CheckCircle2,
-  ArrowRight,
-  Terminal,
-  ShieldCheck,
   Disc,
-  Sliders,
-  Play,
   FileCode,
   Zap,
 } from 'lucide-react';
@@ -38,7 +33,7 @@ export default function AppStudioShowcase() {
   const [activeTab, setActiveTab] = useState<string>('boardroom');
 
   return (
-    <section id="studio-preview" className="relative z-20 w-full border-t border-white/10 bg-[#040404] py-24 md:py-36">
+    <section id="studio-preview" data-system-section="studio" className="relative z-20 w-full border-t border-white/10 bg-[#040404] py-24 md:py-36">
       {/* Glow Effects */}
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_20%,rgba(245,158,11,0.08),transparent_50%)]" />
       <div className="pointer-events-none absolute left-1/2 top-1/2 h-[500px] w-[900px] -translate-x-1/2 -translate-y-1/2 bg-amber-500/[0.04] blur-[140px]" />

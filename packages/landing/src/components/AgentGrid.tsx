@@ -188,7 +188,7 @@ export default function AgentGrid() {
   const active = workstreams.find((workstream) => workstream.id === activeId) ?? workstreams[0];
 
   return (
-    <section id="capabilities" className="relative z-20 w-full border-t border-white/10 bg-[#030303]">
+    <section id="capabilities" data-system-section="capabilities" className="relative z-20 w-full border-t border-white/10 bg-[#030303]">
       <div className="mx-auto max-w-[1500px] px-5 py-28 md:px-10 md:py-40">
         <motion.div
           initial={{ opacity: 0, y: 24 }}
@@ -257,12 +257,12 @@ export default function AgentGrid() {
                   }`}
                   aria-pressed={isActive}
                 >
-                  <span className={`font-mono text-[10px] tracking-[0.2em] ${isActive ? 'text-amber-400 font-bold' : 'text-white/25'}`}>
+                  <span className={`font-mono text-[10px] tracking-[0.2em] ${isActive ? 'text-amber-400 font-bold' : 'text-white/40'}`}>
                     {workstream.index}
                   </span>
                   <span className="flex-1 text-base font-bold tracking-tight md:text-lg">{workstream.name}</span>
                   <span className={`rounded-full px-2 py-0.5 font-mono text-[9px] uppercase tracking-wider ${
-                    isActive ? 'bg-amber-400 text-black font-bold' : 'bg-white/5 text-white/30'
+                    isActive ? 'bg-amber-400 text-black font-bold' : 'bg-white/5 text-white/45'
                   }`}>
                     {workstream.badge}
                   </span>

@@ -37,7 +37,7 @@ const workingSteps = [
 
 export default function ConductorSection() {
   return (
-    <section id="conductor" className="relative z-20 w-full overflow-hidden border-t border-white/10 bg-[#050505]">
+    <section id="conductor" data-system-section="conductor" className="relative z-20 w-full overflow-hidden border-t border-white/10 bg-[#050505]">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_48%,rgba(245,158,11,0.12),transparent_28%)]" />
 
       <div className="relative mx-auto max-w-[1500px] px-5 py-28 md:px-10 md:py-40">

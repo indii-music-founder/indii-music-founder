@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { DollarSign, ShieldAlert, ShieldCheck, ArrowUpRight, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { DollarSign, ShieldAlert, ShieldCheck, ArrowUpRight, CheckCircle2 } from 'lucide-react';
 
 interface DistributorConfig {
   id: string;
@@ -129,15 +128,17 @@ export const FounderRoyaltyCalculator: React.FC = () => {
                 {/* Catalog Size Slider */}
                 <div className="rounded-2xl border border-white/10 bg-black/60 p-5">
                   <div className="flex items-center justify-between">
-                    <span className="font-mono text-[10px] uppercase tracking-wider text-white/60">Catalog Releases</span>
+                    <label htmlFor="catalog-releases" className="font-mono text-[10px] uppercase tracking-wider text-white/60">Catalog Releases</label>
                     <span className="font-mono text-base font-black text-amber-400">{releaseCount} Releases</span>
                   </div>
                   <input
+                    id="catalog-releases"
                     type="range"
                     min="1"
                     max="25"
                     step="1"
                     value={releaseCount}
+                    aria-valuetext={`${releaseCount} releases`}
                     onChange={(e) => setReleaseCount(Number(e.target.value))}
                     className="mt-3 h-2 w-full cursor-pointer appearance-none rounded-lg bg-white/20 accent-amber-400"
                   />
@@ -151,15 +152,17 @@ export const FounderRoyaltyCalculator: React.FC = () => {
                 {/* Annual Streams Slider */}
                 <div className="rounded-2xl border border-white/10 bg-black/60 p-5">
                   <div className="flex items-center justify-between">
-                    <span className="font-mono text-[10px] uppercase tracking-wider text-white/60">Annual DSP Streams</span>
+                    <label htmlFor="annual-streams" className="font-mono text-[10px] uppercase tracking-wider text-white/60">Annual DSP Streams</label>
                     <span className="font-mono text-base font-black text-amber-400">{formatStreams(annualStreams)}</span>
                   </div>
                   <input
+                    id="annual-streams"
                     type="range"
                     min="500000"
                     max="50000000"
                     step="500000"
                     value={annualStreams}
+                    aria-valuetext={`${formatStreams(annualStreams)} streams per year`}
                     onChange={(e) => setAnnualStreams(Number(e.target.value))}
                     className="mt-3 h-2 w-full cursor-pointer appearance-none rounded-lg bg-white/20 accent-amber-400"
                   />

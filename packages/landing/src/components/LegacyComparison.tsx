@@ -29,7 +29,7 @@ const legacyPillars = [
 
 export default function LegacyComparison() {
   return (
-    <section id="legacy-shift" className="relative z-20 w-full border-t border-white/10 bg-[#020202] py-28 md:py-40">
+    <section id="legacy-shift" data-system-section="legacy" className="relative z-20 w-full border-t border-white/10 bg-[#020202] py-28 md:py-40">
       {/* Background radial glow */}
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_40%,rgba(245,158,11,0.07),transparent_50%)]" />
 

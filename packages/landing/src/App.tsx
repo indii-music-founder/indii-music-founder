@@ -1,5 +1,6 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { MotionConfig } from 'framer-motion';
 import Home from './page';
 import LoginForm from './components/auth/LoginForm';
 import SignupForm from './components/auth/SignupForm';
@@ -56,11 +57,13 @@ function App() {
 
   return (
     <AuthProvider>
-      <BrowserRouter>
-        <div className="app-container">
-          {isFounder ? <FounderRoutes /> : <GeneralRoutes />}
-        </div>
-      </BrowserRouter>
+      <MotionConfig reducedMotion="user">
+        <BrowserRouter>
+          <div className="app-container">
+            {isFounder ? <FounderRoutes /> : <GeneralRoutes />}
+          </div>
+        </BrowserRouter>
+      </MotionConfig>
     </AuthProvider>
   );
 }

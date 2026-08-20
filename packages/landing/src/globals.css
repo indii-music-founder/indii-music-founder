@@ -222,7 +222,31 @@ a:focus-visible,
 button:focus-visible {
   outline: 2px solid rgba(245, 158, 11, 0.8);
   outline-offset: 3px;
+  border-radius: inherit;
+}
+
+/* Anchored sections must never land under the fixed 72px nav. */
+section[id] {
+  scroll-margin-top: 72px;
+}
+
+/* Visually hidden skip link, revealed on keyboard focus. */
+.skip-link {
+  position: fixed;
+  top: 8px;
+  left: 8px;
+  z-index: 1000;
+  transform: translateY(-200%);
+  background: #ffb800;
+  color: #000;
+  font-weight: 700;
+  font-size: 14px;
+  padding: 10px 16px;
   border-radius: 9999px;
+  transition: transform 0.15s ease;
+}
+.skip-link:focus-visible {
+  transform: translateY(0);
 }
 
 /* Input fields — inset ring so border doesn't expand layout */
@@ -330,5 +354,32 @@ footer span {
   background-clip: text;
   color: transparent;
   filter: drop-shadow(0 2px 8px rgba(245, 158, 11, 0.35));
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+ * System canvas layer — fixed WebGL presentation layer behind all content.
+ * Fades in only after the first frame is ready; never intercepts input.
+ * ──────────────────────────────────────────────────────────────────────────*/
+.system-canvas-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  animation: system-canvas-fade-in 0.8s ease-out both;
+}
+
+@keyframes system-canvas-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .system-canvas-layer {
+    animation: none;
+  }
 }
 
