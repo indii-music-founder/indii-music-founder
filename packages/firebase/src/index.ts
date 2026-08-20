@@ -36,6 +36,7 @@ import { generateVideoDirect } from "./lib/video_generation_direct";
 import { executeMilestoneFn } from "./timeline/milestone_execution";
 import { editImageFn } from "./lib/image_generation";
 export { generateImageV3, generateVideoV3, generateOmniRemixV3, generateAudioV3 } from "./functions/creative/gateway";
+import { recordUsage } from "./functions/creative/gateway";
 export { getOperationCostHistory, getOperationCostStatus, voidAgentStreamCostReservation, voidVideoCostReservation } from "./functions/billing/enforceOperationCost";
 export { cancelVideoJob } from "./functions/creative/gateway";
 export { videoJobFirestoreOrchestrator } from "./functions/creative/videoJobOrchestrator";
@@ -1425,9 +1426,16 @@ export const generateContentStream = onRequest(
                     }
                 })();
 
+                // ISSUE-1383: the chat meter was stuck at 0 because nothing
+                // ever wrote chat_tokens to the usage ledger. The SDK reports
+                // cumulative usageMetadata on the final chunk; take the max
+                // seen so a partial stream still records what actually ran.
+                let streamTotalTokens = 0;
                 try {
                     // Iterate over SDK Stream
                     for await (const chunk of replayStream) {
+                        const chunkTokens = (chunk as { usageMetadata?: { totalTokenCount?: number } }).usageMetadata?.totalTokenCount ?? 0;
+                        if (chunkTokens > streamTotalTokens) streamTotalTokens = chunkTokens;
                         const parts = (chunk.candidates?.[0]?.content?.parts || []) as Record<string, unknown>[];
                         const text = typeof chunk.text === 'string'
                             ? chunk.text
@@ -1468,6 +1476,13 @@ export const generateContentStream = onRequest(
 
                 if (clientDisconnected) throw new Error('Client disconnected before the stream completed.');
                 await finalizeAgentStreamReservation('SETTLED');
+                // ISSUE-1383: record the chat tokens actually consumed into the
+                // usage ledger so the meter moves. Non-blocking: a metering
+                // failure must never fail a successful stream (recordUsage
+                // already swallows and logs its own errors).
+                if (streamTotalTokens > 0) {
+                    void recordUsage(decodedToken.uid, 'chat_tokens', streamTotalTokens);
+                }
                 if (clientDisconnected) return;
                 res.write(JSON.stringify({ complete: true }) + '\n');
                 streamCompleted = true;

@@ -320,6 +320,27 @@ describe('creative gateway usage accounting (ISSUE-1365)', () => {
     await recordUsage('user-123', 'video', 0);
     expect(mockSet).not.toHaveBeenCalled();
   });
+
+  it('records chat_tokens usage with the same ledger shape (ISSUE-1383)', async () => {
+    vi.clearAllMocks();
+    const { recordUsage } = await import('./gateway');
+    await recordUsage('user-123', 'chat_tokens', 482, 'default');
+    expect(mockSet).toHaveBeenCalledWith(expect.objectContaining({
+      userId: 'user-123',
+      type: 'chat_tokens',
+      amount: 482,
+      project: 'default',
+      subscriptionId: 'gateway',
+    }));
+  });
+
+  it('never fails a generation when the usage write fails (ISSUE-1383)', async () => {
+    vi.clearAllMocks();
+    mockSet.mockRejectedValueOnce(new Error('boom'));
+    const { recordUsage } = await import('./gateway');
+    await expect(recordUsage('user-123', 'chat_tokens', 100)).resolves.toBeUndefined();
+    expect(mockSet).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe('creative gateway undefined-safe job writes (ISSUE-1368)', () => {

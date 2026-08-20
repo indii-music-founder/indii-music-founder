@@ -2226,3 +2226,11 @@ All seven T1 sub-items built, tested against real (not mocked-away) verification
 - **Deploy integrity defect found while verifying (root cause of "fixed but not live"):** CI #293 "Deploy Cloud Functions" step exited 0 while 7 function updates failed with HTTP 429 (`Per project mutation requests per minute per region`) — **generateImageV3 stayed on rev 00301-hek (20:24) while CI reported success**, so the per-API variation fix (7396e2858) is STILL NOT LIVE. `firebase deploy --force` does not fail on per-function errors.
 - **Fix C (pipeline):** deploy step now tees the log and greps for `failed to (update|create) function` — retries twice with 90s backoff on 429-quota markers, else exits 1. A deploy that leaves functions stale can never look green again.
 - **Next:** push this commit → CI #294 redeploys all functions (retry loop handles quota) → verify generateImageV3 revision rotates past 00301-hek → founder retests Variations + painting save + editor→canvas exit.
+
+---
+
+### ISSUE-1383: chat_tokens usage never recorded — meter stuck at 0 (2026-08-19, root cause proven)
+
+- **Code-level proof:** `user_usage_stats` is only ever READ (getUsageStats) — no writer exists server-side; the `usage` ledger gets `image`/`video` (gateway) but NOTHING writes `chat_tokens` anywhere. Client `TokenUsageService.trackUsage` is called ONLY in the non-stream `rawGenerateContent` path (FirebaseIntelligenceService:775) — the stream path (`rawGenerateContentStream`, which Boardroom chat actually uses via `generateContentStream` → backend) never tracks. Client `UsageTracker.trackChatTokens` exists but has zero call sites.
+- **Fix (prepared, held until CI #294 settles):** backend `generateContentStream` (index.ts) now reads cumulative `usageMetadata.totalTokenCount` from stream chunks (max-seen, so partial streams record what ran) and calls `recordUsage(uid, 'chat_tokens', tokens)` after SETTLED — non-blocking, ledger shape identical to image/video, `getUsageStats` already sums it. +2 gateway tests (chat_tokens shape; usage-write failure never fails the stream). Lint + 61/61 tests green.
+- **Commit held:** per branch-safety, not pushed while #294 (ISSUE-1390 commit) is in flight — pushed after it settles.
