@@ -64,9 +64,23 @@ export class LoopDetector {
     async detectLoop(name: string, args: Record<string, unknown>): Promise<LoopDetectionResult> {
         const argsStr = JSON.stringify(args);
 
+        // Checks 1 and 3 protect against BILLABLE spend loops. Free tools
+        // (search, reads, document ops) legitimately repeat — an agent
+        // re-reading the same file or querying several times in a row is
+        // normal intent-chaining, not a loop; the agent's iteration budget
+        // still bounds runaway free-tool rounds.
+        const costedTool = [
+            'generate_video',
+            'indii_video_gen',
+            'generate_image',
+            'indii_image_gen',
+            'generate_audio',
+            'indii_audio_gen',
+        ].includes(name);
+
         // Check 1: Exact same tool+args called twice in a row
         const lastCall = this.toolCallHistory[this.toolCallHistory.length - 1];
-        if (lastCall && lastCall.name === name && lastCall.args === argsStr) {
+        if (costedTool && lastCall && lastCall.name === name && lastCall.args === argsStr) {
             return {
                 isLoop: true,
                 reason: 'Same tool with same arguments called consecutively',
@@ -89,12 +103,14 @@ export class LoopDetector {
             }
         }
 
-        // Check 3: Tool frequency (same tool called too many times)
+        // Check 3: Tool frequency (same tool called too many times) — applies
+        // to billable tools and the seating pair; free-tool frequency is left
+        // to the iteration budget.
         const recentCalls = this.toolCallHistory.slice(-10); // Last 10 calls
         const sameToolCount = recentCalls.filter(call => call.name === name).length;
         const MAX_SAME_TOOL_FREQUENCY = (name === 'unseat_agent' || name === 'seat_agent') ? 10 : 5; // Max 5 times in last 10 calls (10 for agent seating)
 
-        if (sameToolCount >= MAX_SAME_TOOL_FREQUENCY) {
+        if ((costedTool || name === 'unseat_agent' || name === 'seat_agent') && sameToolCount >= MAX_SAME_TOOL_FREQUENCY) {
             return {
                 isLoop: true,
                 reason: `Tool '${name}' called ${sameToolCount} times in last ${recentCalls.length} calls`,
@@ -102,16 +118,20 @@ export class LoopDetector {
             };
         }
 
-        // Check 4: Repeating sequence pattern (A→B→C→A→B→C)
+        // Check 4: Repeating sequence pattern (A→B→C→A→B→C). The signature
+        // includes the arguments — six calls of the same tool with different
+        // args (pagination, repeated lookups) is intent-chaining, not a loop;
+        // only an exact (tool, args) sequence repetition is loop-shaped.
         if (this.toolCallHistory.length >= 6) {
             const last6 = this.toolCallHistory.slice(-6);
-            const sequence1 = last6.slice(0, 3).map(c => c.name).join('→');
-            const sequence2 = last6.slice(3, 6).map(c => c.name).join('→');
+            const signature = (call: ToolCall) => `${call.name}(${call.args})`;
+            const sequence1 = last6.slice(0, 3).map(signature).join('→');
+            const sequence2 = last6.slice(3, 6).map(signature).join('→');
 
             if (sequence1 === sequence2) {
                 // Ignore sequences composed entirely of seating/unseating commands, as these often happen in large batches
-                const isOnlySeatingCommands = sequence1.split('→').every(n => n === 'seat_agent' || n === 'unseat_agent');
-                
+                const isOnlySeatingCommands = last6.every(call => call.name === 'seat_agent' || call.name === 'unseat_agent');
+
                 if (!isOnlySeatingCommands) {
                     return {
                         isLoop: true,

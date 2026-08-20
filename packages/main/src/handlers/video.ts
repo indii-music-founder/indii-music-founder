@@ -10,6 +10,9 @@ import { validateSafeUrlAsync } from '../utils/network-security';
 import { FetchUrlSchema } from '../utils/validation';
 import { accessControlService } from '../security/AccessControlService';
 
+/** Cap for video:save-asset downloads (2 GB) — disk-fill protection. */
+const MAX_VIDEO_ASSET_BYTES = 2 * 1024 * 1024 * 1024;
+
 /**
  * Downloads a file from a URL to a local path.
  */
@@ -24,13 +27,40 @@ async function downloadFile(url: string, destinationPath: string) {
     if (!response.ok) throw new Error(`Failed to fetch ${url}: ${response.statusText}`);
     if (!response.body) throw new Error(`No body in response for ${url}`);
 
+    // SECURITY: the download used to be unbounded — a compromised renderer
+    // could fill the disk through this handler. Reject on the declared
+    // Content-Length when present, and cap the stream itself (a server can
+    // lie about or omit Content-Length).
+    const declaredLength = Number(response.headers.get('content-length') || 0);
+    if (Number.isFinite(declaredLength) && declaredLength > MAX_VIDEO_ASSET_BYTES) {
+        throw new Error(
+            `Refusing to download ${declaredLength} bytes — exceeds the ${MAX_VIDEO_ASSET_BYTES / (1024 * 1024 * 1024)} GB asset cap.`
+        );
+    }
+
     // Create directory if it doesn't exist
     await fs.promises.mkdir(path.dirname(destinationPath), { recursive: true });
 
     // Use stream pipeline for efficient writing
     const stream = Readable.fromWeb(response.body as unknown as import('stream/web').ReadableStream); // Type cast for Node compatibility
+    let received = 0;
+    stream.on('data', (chunk: Buffer) => {
+        received += chunk.length;
+        if (received > MAX_VIDEO_ASSET_BYTES) {
+            stream.destroy(new Error(
+                `Download exceeded the ${MAX_VIDEO_ASSET_BYTES / (1024 * 1024 * 1024)} GB asset cap.`
+            ));
+        }
+    });
     const fileStream = fs.createWriteStream(destinationPath);
-    await pipeline(stream, fileStream);
+    try {
+        await pipeline(stream, fileStream);
+    } catch (error) {
+        // Remove the partial file so a capped download cannot leave a giant
+        // partial asset behind.
+        await fs.promises.rm(destinationPath, { force: true }).catch(() => undefined);
+        throw error;
+    }
 }
 
 export function registerVideoHandlers() {

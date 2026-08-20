@@ -40,46 +40,17 @@ export async function auditSessionCookies(): Promise<void> {
 }
 
 export function configureSecurity(session: Session) {
-    // 1. CSP Hardening
+    // CSP is applied by the dedicated applyCSP() module (single source of
+    // truth). Registering a second onHeadersReceived here used to emit TWO
+    // Content-Security-Policy headers per response — browsers enforce the
+    // intersection, and the two policies had drifted, so legitimately allowed
+    // directives (e.g. wasm-unsafe-eval for Essentia/PDF.js) could be
+    // stripped by the other header. Only the non-duplicated hardening lives
+    // here.
     session.webRequest.onHeadersReceived((details, callback) => {
-        const isDev = !app.isPackaged || process.env.VITE_DEV_SERVER_URL;
-
-        // SECURITY: Use 'wasm-unsafe-eval' instead of 'unsafe-eval' in production
-        // This allows WASM (needed for Essentia.js, PDF.js, Tesseract.js) but blocks JS eval()
-        const scriptSrc = isDev
-            ? "* 'unsafe-inline' 'unsafe-eval'"
-            : "'self' 'wasm-unsafe-eval' https://apis.google.com https://*.firebaseapp.com https://cdn.jsdelivr.net https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/ https://recaptcha.net https://*.recaptcha.net";
-
-        const defaultSrc = isDev ? "*" : "'none'";
-        const styleSrc = isDev
-            ? "* 'unsafe-inline'"
-            : "'self' 'unsafe-inline' https://fonts.googleapis.com";
-
-        const connectSrc = isDev
-            ? "* ws: http: https:"
-            : "'self' https://apis.google.com https://*.googleapis.com https://*.firebaseio.com https://*.firebaseapp.com https://us-central1-indii-music-founder.cloudfunctions.net https://essentia.upf.edu https://cdn.jsdelivr.net https://storage.googleapis.com https://api.frankfurter.dev https://api.spotify.com https://graph.facebook.com https://open.tiktokapis.com https://graph.microsoft.com https://api.believemusic.com https://api.onerpm.com https://api.tunecore.com https://api.unitedmasters.com";
-
-        const mediaSrc = isDev
-            ? "*"
-            : "'self' file: blob: https://*.googleapis.com https://storage.googleapis.com";
-
         callback({
             responseHeaders: {
                 ...details.responseHeaders,
-                'Content-Security-Policy': [
-                    [
-                        `default-src ${defaultSrc}`,
-                        `script-src ${scriptSrc}`,
-                        `style-src ${styleSrc}`,
-                        `connect-src ${connectSrc}`,
-                        `media-src ${mediaSrc}`,
-                        "img-src 'self' file: data: https://firebasestorage.googleapis.com https://*.googleusercontent.com http://localhost:4243 https://indii.music",
-                        "font-src 'self' data: https://fonts.gstatic.com http://localhost:4243",
-                        "manifest-src 'self' https://indii.music",
-                        "frame-src 'self' https://www.google.com/recaptcha/ https://recaptcha.net https://*.recaptcha.net https://*.google.com",
-                        "worker-src 'self' blob:"
-                    ].join('; ')
-                ],
                 'Cross-Origin-Opener-Policy': ['same-origin-allow-popups'],
                 'Cross-Origin-Embedder-Policy': ['unsafe-none']
             }

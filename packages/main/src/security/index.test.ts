@@ -86,8 +86,13 @@ describe('security/index.ts', () => {
             expect(mockSession.webRequest.onBeforeSendHeaders).toHaveBeenCalled();
         });
 
-        describe('CSP Hardening (onHeadersReceived)', () => {
-            it('should apply production CSP when app is packaged', () => {
+        describe('Header Hardening (onHeadersReceived)', () => {
+            // CSP is applied by the dedicated applyCSP() module — registering
+            // it here too used to emit TWO Content-Security-Policy headers
+            // per response (browsers enforce the intersection, so the two
+            // drifted policies cancelled each other's allowances). This
+            // handler now only carries the non-duplicated hardening.
+            it('applies COOP/COEP without emitting a duplicate CSP header', () => {
                 Object.defineProperty(app, 'isPackaged', { value: true, configurable: true });
                 configureSecurity(mockSession as unknown as Session);
 
@@ -99,47 +104,10 @@ describe('security/index.ts', () => {
 
                 expect(callback).toHaveBeenCalled();
                 const response = callback.mock.calls[0][0];
-                const csp = response.responseHeaders['Content-Security-Policy'][0];
-
-                expect(csp).toContain("default-src 'none'");
-                expect(csp).toContain("'wasm-unsafe-eval'");
-                expect(csp).not.toContain("'unsafe-eval'");
+                expect(response.responseHeaders['Cross-Origin-Opener-Policy']).toEqual(['same-origin-allow-popups']);
+                expect(response.responseHeaders['Cross-Origin-Embedder-Policy']).toEqual(['unsafe-none']);
+                expect(response.responseHeaders['Content-Security-Policy']).toBeUndefined();
                 expect(response.responseHeaders['Some-Header']).toEqual(['value']);
-            });
-
-            it('should apply development CSP when app is not packaged', () => {
-                Object.defineProperty(app, 'isPackaged', { value: false, configurable: true });
-                configureSecurity(mockSession as unknown as Session);
-
-                const handler = mockSession.webRequest.onHeadersReceived.mock.calls[0][0];
-                const callback = vi.fn();
-                const details = { responseHeaders: {} };
-
-                handler(details, callback);
-
-                const response = callback.mock.calls[0][0];
-                const csp = response.responseHeaders['Content-Security-Policy'][0];
-
-                expect(csp).toContain("default-src *");
-                expect(csp).toContain("'unsafe-eval'");
-            });
-
-            it('should apply development CSP when VITE_DEV_SERVER_URL is set', () => {
-                Object.defineProperty(app, 'isPackaged', { value: true, configurable: true });
-                process.env.VITE_DEV_SERVER_URL = 'http://localhost:5173';
-                configureSecurity(mockSession as unknown as Session);
-
-                const handler = mockSession.webRequest.onHeadersReceived.mock.calls[0][0];
-                const callback = vi.fn();
-                const details = { responseHeaders: {} };
-
-                handler(details, callback);
-
-                const response = callback.mock.calls[0][0];
-                const csp = response.responseHeaders['Content-Security-Policy'][0];
-
-                expect(csp).toContain("default-src *");
-                expect(csp).toContain("'unsafe-eval'");
             });
         });
 

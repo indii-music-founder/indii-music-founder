@@ -19,6 +19,9 @@ export class PinataService {
                     'Authorization': `Bearer ${jwt}`,
                 },
                 body: formData,
+                // A stalled network must not hang the IPC handler forever —
+                // sibling services (MasterAudioStagingService) time out too.
+                signal: AbortSignal.timeout(60_000),
             });
 
             if (!response.ok) {

@@ -720,22 +720,26 @@ export const setupDistributionHandlers = () => {
             const tempFile = path.join(os.tmpdir(), `xsd-validation-${crypto.randomUUID()}.xml`);
             await fs.writeFile(tempFile, xmlContent, 'utf-8');
 
-            const report = await AgentSupervisor.execute<Record<string, unknown>>('distribution', 'xsd_validator.py', [
-                tempFile,
-                '--require-xsd'
-            ], { timeoutMs: 30000 });
-
-            // Clean up temp file
             try {
-                await fs.unlink(tempFile);
-            } catch (_e) {
-                // ignore
-            }
+                const report = await AgentSupervisor.execute<Record<string, unknown>>('distribution', 'xsd_validator.py', [
+                    tempFile,
+                    '--require-xsd'
+                ], { timeoutMs: 30000 });
 
-            return {
-                success: report.valid === true && report.mode === 'xsd',
-                report
-            };
+                return {
+                    success: report.valid === true && report.mode === 'xsd',
+                    report
+                };
+            } finally {
+                // Always clean up — including when the supervisor throws.
+                // (try/catch, not .catch(): a mocked/absent fs.unlink throws on
+                // property access, which .catch() cannot intercept.)
+                try {
+                    await fs.unlink(tempFile);
+                } catch {
+                    // Best-effort cleanup.
+                }
+            }
         } catch (error) {
             log.error('[Distribution] XSD validation failed:', error);
             return { success: false, error: error instanceof Error ? error.message : String(error) };

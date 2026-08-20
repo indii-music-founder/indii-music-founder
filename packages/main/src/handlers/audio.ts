@@ -181,10 +181,13 @@ export function registerAudioHandlers() {
     });
 
     ipcMain.handle('audio:transcode', async (event, options) => {
-        const { inputPath, outputPath, targetFormat, bitRate, sampleRate } = options;
-        log.info(`[Main] Transcoding: ${inputPath} -> ${outputPath} (${targetFormat})`);
-
         try {
+            // Destructure INSIDE the try so a null/undefined payload returns
+            // the standard { success: false } envelope instead of a raw
+            // TypeError escaping the handler.
+            const { inputPath, outputPath, targetFormat, bitRate, sampleRate } = options || {};
+            log.info(`[Main] Transcoding: ${inputPath} -> ${outputPath} (${targetFormat})`);
+
             validateSender(event);
 
             const validatedInputPath = validateSafeAudioPath(inputPath);
@@ -226,10 +229,10 @@ export function registerAudioHandlers() {
     });
 
     ipcMain.handle('audio:master', async (event, options) => {
-        const { inputPath, outputPath, style } = options;
-        log.info(`[Main] Mastering: ${inputPath} -> ${outputPath} (Style: ${style})`);
-
         try {
+            const { inputPath, outputPath, style } = options || {};
+            log.info(`[Main] Mastering: ${inputPath} -> ${outputPath} (Style: ${style})`);
+
             validateSender(event);
 
             const validatedInputPath = validateSafeAudioPath(inputPath);

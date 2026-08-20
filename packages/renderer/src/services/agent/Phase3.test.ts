@@ -30,8 +30,9 @@ describe('Phase 3: Architectural Improvements', () => {
         });
 
         it('should detect immediate repetition', async () => {
-            detector.recordToolCall('test_tool', { arg: 1 });
-            const result = await detector.detectLoop('test_tool', { arg: 1 });
+            // The consecutive-call kill switch applies to billable tools.
+            detector.recordToolCall('generate_image', { prompt: 'x' });
+            const result = await detector.detectLoop('generate_image', { prompt: 'x' });
             expect(result.isLoop).toBe(true);
             expect(result.reason).toContain('consecutively');
         });
