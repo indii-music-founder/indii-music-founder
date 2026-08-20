@@ -28,12 +28,31 @@ class DawServer extends EventEmitter {
             this.wss = new WebSocketServer({ port: this.port });
             log.info(`[DawServer] Started on ws://localhost:${this.port}`);
 
+            // A port bind failure (EADDRINUSE) is delivered asynchronously as
+            // an 'error' event — the try/catch cannot see it, and with no
+            // listener it would throw into the global handler while `this.wss`
+            // stays non-null, permanently blocking restart while the renderer
+            // believes the DAW is on.
+            this.wss.on('error', (error) => {
+                log.error(`[DawServer] Server error (${this.port}):`, error);
+                this.wss?.close();
+                this.wss = null;
+                this.emit('error', error);
+            });
+
             this.wss.on('connection', (ws) => {
                 log.info('[DawServer] Client connected');
                 this.clients.add(ws);
                 
                 // Send initial state
                 ws.send(JSON.stringify({ type: 'state_update', state: this.state }));
+
+                // A dropped/rejected socket (ECONNRESET) must not throw into
+                // the global handler; without this listener every client
+                // disconnect can kill the feature silently.
+                ws.on('error', (error) => {
+                    log.warn('[DawServer] Client socket error:', error);
+                });
 
                 ws.on('message', (message) => {
                     try {

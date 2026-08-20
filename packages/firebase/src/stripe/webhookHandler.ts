@@ -50,8 +50,18 @@ async function handleMicroTransactionCheckoutCompleted(session: Stripe.Checkout.
 
   const db = getFirestore();
   const creditsRef = db.collection('user_credits').doc(userId);
-  
+  // Deterministic per-session log. Checking it FIRST inside the transaction
+  // makes the whole credit operation idempotent: a stale-processing retake
+  // (>5 min) re-executes this handler, and without this guard the second
+  // transaction would credit the balance again for the same purchase.
+  const logRef = db.collection('user_credits').doc(userId).collection('transactions').doc(session.id);
+
   await db.runTransaction(async (t) => {
+    const logSnap = await t.get(logRef);
+    if (logSnap.exists) {
+      logger.info(`[handleMicroTransaction] Session ${session.id} already credited — skipping duplicate delivery.`);
+      return;
+    }
     const doc = await t.get(creditsRef);
     if (!doc.exists) {
       t.set(creditsRef, { balance: credits, updatedAt: Date.now() });
@@ -59,9 +69,7 @@ async function handleMicroTransactionCheckoutCompleted(session: Stripe.Checkout.
       const currentBalance = doc.data()?.balance || 0;
       t.update(creditsRef, { balance: currentBalance + credits, updatedAt: Date.now() });
     }
-    
-    // Log transaction
-    const logRef = db.collection('user_credits').doc(userId).collection('transactions').doc(session.id);
+
     t.set(logRef, {
       amount: credits,
       type: 'purchase',

@@ -659,6 +659,15 @@ app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') app.quit();
 });
 
+// Any standard quit path — Cmd+Q, File → Quit, autoUpdater.quitAndInstall —
+// calls app.quit(), which emits before-quit BEFORE the window close handler
+// runs. Without this, the close handler's `if (!isQuitting)` guard hides the
+// window to the tray instead of quitting: Cmd+Q / Quit never exit the app and
+// a downloaded update is never installed from the restart prompt.
+app.on('before-quit', () => {
+    isQuitting = true;
+});
+
 app.on('will-quit', async () => {
     isQuitting = true;
     globalShortcut.unregisterAll();

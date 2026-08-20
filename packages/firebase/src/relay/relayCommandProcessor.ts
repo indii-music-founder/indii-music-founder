@@ -25,7 +25,7 @@ import { getAgentPrompt, VALID_AGENT_IDS } from "./agentPrompts";
 import { telegramBotToken } from "../config/secrets";
 import { enforceRateLimit, RATE_LIMITS } from "../lib/rateLimit";
 import { FUNCTION_INTELLIGENCE_MODELS } from "../config/models";
-import { checkOperationBudget } from "../functions/billing/enforceOperationCost";
+import { checkOperationBudget, finalizeOperationReservation } from "../functions/billing/enforceOperationCost";
 import { entitlementTierToBudgetTier, requireVerifiedServerEntitlement } from "../functions/auth/entitlements";
 import { getVertexAIClient } from "../lib/vertexClient";
 
@@ -219,6 +219,30 @@ export const processRelayCommand = onDocumentCreated(
         // ---------------------------------------------------------------
         // 5. Call Vertex AI with the appropriate agent prompt
         // ---------------------------------------------------------------
+        // The reservation created above is a hold on the daily/monthly ledger.
+        // It MUST be finalized: otherwise the 15-minute TTL sweeper treats
+        // every completed command as an abandoned hold and refunds it, making
+        // relay commands free and defeating the daily limit + $500 runaway
+        // kill-switch. SETTLED on success; on failure, follow the same
+        // fail-closed-financially rule as the media gateway: if the provider
+        // call was attempted we cannot prove nothing ran, so SETTLED.
+        let providerSubmissionAttempted = false;
+        const costReservationId = budget.allowed && typeof budget.operationId === 'string'
+            ? budget.operationId
+            : undefined;
+        const finalizeRelayReservation = async (outcome: 'SETTLED' | 'VOIDED'): Promise<void> => {
+            if (!costReservationId) return;
+            try {
+                await finalizeOperationReservation({
+                    userId,
+                    operationId: costReservationId,
+                    outcome,
+                    expectedType: 'agent_stream',
+                });
+            } catch (finalizeError) {
+                console.error(`[Relay] Failed to finalize cost reservation ${costReservationId} for command ${commandId}:`, finalizeError);
+            }
+        };
         try {
             const { resolvedAgentId, prompt } = getAgentPrompt(targetAgentId);
             console.log(`[Relay] Using agent: ${resolvedAgentId} for command ${commandId}`);
@@ -227,6 +251,7 @@ export const processRelayCommand = onDocumentCreated(
 
             const modelId = FUNCTION_INTELLIGENCE_MODELS.TEXT.PRO;
 
+            providerSubmissionAttempted = true;
             const result = await client.models.generateContent({
                 model: modelId,
                 contents: [{ role: "user", parts: [{ text: trimmedText }] }],
@@ -251,10 +276,15 @@ export const processRelayCommand = onDocumentCreated(
 
             console.log(`[Relay] ✅ Command ${commandId} completed (${responseText.length} chars, agent: ${resolvedAgentId})`);
 
+            await finalizeRelayReservation('SETTLED');
+
         } catch (err: unknown) {
             const errorMsg = err instanceof Error ? err.message : String(err);
             console.error(`[Relay] ❌ Gemini call failed for ${commandId}:`, errorMsg);
             await markFailed(userId, commandId, `❌ Agent error: ${errorMsg.substring(0, 200)}`);
+            // Fail closed financially: an attempted provider call may still
+            // have been billed even though the response was lost.
+            await finalizeRelayReservation(providerSubmissionAttempted ? 'SETTLED' : 'VOIDED');
         }
     });
 

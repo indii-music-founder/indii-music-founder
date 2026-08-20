@@ -49,8 +49,32 @@ export class FoundationalSkillService {
     private runPythonScript(scriptPath: string, args: string[]): Promise<Record<string, unknown>> {
         return new Promise((resolve, reject) => {
             log.info(`[FoundationalService] Running script: ${scriptPath} with args: ${args.join(' ')}`);
-            
+
+            // python3 can be missing (packaged Windows, macOS without CLT) and
+            // scripts can hang. Without an 'error' listener the spawn failure
+            // is swallowed by the global handler and 'close' NEVER fires —
+            // the IPC invoke() hangs forever. A timeout kills hung scripts.
+            const timeoutMs = 120_000;
+            let settled = false;
+            const settle = (fn: () => void) => {
+                if (settled) return;
+                settled = true;
+                clearTimeout(timeout);
+                fn();
+            };
+
             const pythonProcess = spawn('python3', [scriptPath, ...args]);
+            const timeout = setTimeout(() => {
+                log.error(`[FoundationalService] Script timed out after ${timeoutMs / 1000}s — killing: ${scriptPath}`);
+                pythonProcess.kill('SIGKILL');
+                settle(() => reject(new Error(`Python script timed out after ${timeoutMs / 1000}s.`)));
+            }, timeoutMs);
+
+            pythonProcess.on('error', (err) => {
+                log.error(`[FoundationalService] Failed to spawn python3 for ${scriptPath}:`, err);
+                settle(() => reject(err));
+            });
+
             let stdout = '';
             let stderr = '';
 
@@ -67,17 +91,17 @@ export class FoundationalSkillService {
                     try {
                         // Check if output is JSON
                         if (stdout.trim().startsWith('{') || stdout.trim().startsWith('[')) {
-                            resolve(JSON.parse(stdout) as Record<string, unknown>);
+                            settle(() => resolve(JSON.parse(stdout) as Record<string, unknown>));
                         } else {
-                            resolve({ success: true, message: stdout.trim() });
+                            settle(() => resolve({ success: true, message: stdout.trim() }));
                         }
                     } catch (e) {
                         log.warn(`[FoundationalService] JSON parse failed, returning raw string. Error:`, e);
-                        resolve({ success: true, message: stdout.trim() });
+                        settle(() => resolve({ success: true, message: stdout.trim() }));
                     }
                 } else {
                     log.error(`[FoundationalService] Script failed with code ${code}. Stderr: ${stderr}`);
-                    reject(new Error(stderr || `Script exited with code ${code}`));
+                    settle(() => reject(new Error(stderr || `Script exited with code ${code}`)));
                 }
             });
         });

@@ -272,7 +272,13 @@ export const SchedulerService = {
         const delay = Math.max(nextRunAt.getTime() - Date.now(), 0);
 
         const timer = setTimeout(() => {
-            SchedulerService._fire(task.id);
+            // Fire-and-forget is fine, but the promise must not be dropped
+            // silently: an unhandled rejection here leaves the task un-armed
+            // forever (the reschedule is the last statement of _fire) with no
+            // clue in the logs beyond the global handler.
+            SchedulerService._fire(task.id).catch((err: unknown) => {
+                log.error(`[Scheduler] Task ${task.id} failed to complete a run:`, err);
+            });
         }, delay);
 
         timers.set(task.id, timer);
