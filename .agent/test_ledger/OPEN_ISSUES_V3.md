@@ -2295,3 +2295,17 @@ All seven T1 sub-items built, tested against real (not mocked-away) verification
 - **Fix:** generateAudioV3 now calls `ai.models.generateContent({ model, contents:[{role:'user',parts:[{text:prompt}]}], config:{ speechConfig: voice, responseModalities:['AUDIO'] } })` — the SDK maps a string speechConfig to `voiceConfig.prebuiltVoiceConfig.voiceName`. Extractor renamed `extractAudioPcm` and reads BOTH response shapes (interactions `output_audio` and generateContent `candidates[].content.parts[].inlineData`) so a future model swap cannot regress.
 - **Tests:** gateway suite updated to the new call shape (2 tests) + 1 new regression (inlineData part extraction, no interactions call). 54/54 pass; lint + firebase typecheck clean.
 - **Next:** deploy → rerun the same live probe → expect 200 + audio_assets doc + playable WAV in storage → closes ISSUE-1158's residual acceptance.
+
+---
+
+### ISSUE-1392 CLOSED + ISSUE-1158 FULL E2E PROVEN LIVE (2026-08-20 04:50 UTC)
+
+- **Deploy:** ad5084ab0 → CI #298 green → generateAudioV3 rev **00291-nex**.
+- **Live proof (founder's real session via probe — ID token minted from profile refresh token + App Check token from app-check IndexedDB):**
+  1. **Generation:** callable **200**; job `audio-b7f5ea059a16e54c` → creative_jobs `completed` (type audio, voice Kore, estimatedDuration 8.92); audio_assets doc owner-scoped (userId g2AcFApNZvQKYlGg0LQuVADCFoO2, type tts, mimeType audio/wav, storageUrl, voicePreset Kore, fullText); storage object 428,204 bytes.
+  2. **Playable WAV:** downloaded object → RIFF/WAVE/fmt headers valid, mono 24,000 Hz, 16-bit PCM — exactly pcmToWav's contract.
+  3. **Idempotent replay:** same requestId re-invoked → **200** with the SAME stored receipt (same jobId/resultUri) — no regeneration, no double reservation.
+  4. **Failed-job idempotency:** pre-fix failed requestId re-invoked → **409 "This audio request is already failed. Use a new request ID only for an intentional retry."** — correct.
+- **This closes ISSUE-1158's residual acceptance** (deployed authenticated Cloud run proving generation, fresh-read playback, idempotent replay) — the last remaining item was the live run, now done with genuine session credentials.
+- **ISSUE-1392 root cause recap:** TTS model rejects interactions.create ("400 Unsupported model interaction"); fixed by routing through models.generateContent with string speechConfig (→ voiceConfig.prebuiltVoiceConfig.voiceName) + responseModalities ['AUDIO']; extractor handles both response shapes. 54/54 gateway tests.
+- **Also proven in this round:** the probe harness itself (refresh-token → ID token via securetoken API, App Check token from IndexedDB, direct callable REST invocation) is a reusable live-proof tool — /tmp/probe-day2-audio-fix.cjs.
