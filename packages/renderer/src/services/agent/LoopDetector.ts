@@ -122,10 +122,16 @@ export class LoopDetector {
             }
         }
 
-        // Check 5: Consecutive speak calls (anti-spam)
+        // Check 5: Consecutive speak calls (anti-spam). The system prompt
+        // explicitly directs agents to use `speak` for announcements, so two
+        // speaks with other tools in between is normal intent-chaining — the
+        // old rule (2 speaks in any 3 calls) killed legitimate runs with
+        // "Task ended: Excessive consecutive speak calls". Only speaks with
+        // NO other tool call between them are spam-shaped. The current call
+        // is not recorded yet, so the previous recorded call is the test.
         if (name === 'speak') {
-            const recentSpeakCalls = this.toolCallHistory.slice(-3).filter(c => c.name === 'speak');
-            if (recentSpeakCalls.length >= 2) {
+            const previousCall = this.toolCallHistory[this.toolCallHistory.length - 1];
+            if (previousCall?.name === 'speak') {
                 return {
                     isLoop: true,
                     reason: 'Excessive consecutive speak calls',

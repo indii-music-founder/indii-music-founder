@@ -328,12 +328,60 @@ export const analyticsRefreshToken = onCall(
             throw new HttpsError('invalid-argument', 'Unsupported analytics platform.');
         }
 
-        await storeToken(uid, platform, {
-            ...stored,
-            accessToken: newAccess,
-            refreshToken: newRefresh,
-            expiresAt: newExpiry,
+        // The provider may rotate the refresh token. Two concurrent refreshes
+        // (overlapping scheduled syncs + a user-triggered refresh) would both
+        // read the old token; the loser's write could store an already-
+        // invalidated credential last and permanently disconnect the account.
+        // Compare-and-swap the rotated token inside a transaction: if another
+        // refresh already rotated it while this call was in flight, keep the
+        // newer stored token and only update the short-lived access token.
+        const tokenRef = tokenPath(uid, platform);
+        const refreshTokenWon = await admin.firestore().runTransaction(async (tx) => {
+            const fresh = await tx.get(tokenRef);
+            if (!fresh.exists) return false;
+            const current = fresh.data() as StoredToken;
+            const update: Record<string, unknown> = {
+                accessToken: newAccess,
+                expiresAt: newExpiry,
+                updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            };
+            if (current.refreshToken === stored.refreshToken) {
+                update.refreshToken = newRefresh;
+                tx.update(tokenRef, update);
+                return true;
+            }
+            console.warn(`[analyticsRefreshToken] Concurrent refresh already rotated ${platform} tokens — keeping the newer stored refresh token.`);
+            tx.update(tokenRef, update);
+            return false;
         });
+
+        // Mirror the same outcome to socialTokens (ISSUE-766 dual-write).
+        // When another refresh won the rotation, the stored credential stays
+        // authoritative — writing our stale token anywhere would break the
+        // posting path too. Only the short-lived access token is refreshed
+        // on both copies in that case.
+        if (refreshTokenWon) {
+            await storeToken(uid, platform, {
+                ...stored,
+                accessToken: newAccess,
+                refreshToken: newRefresh,
+                expiresAt: newExpiry,
+            });
+        } else {
+            const postingPlatforms = ['instagram', 'tiktok', 'youtube'];
+            if (postingPlatforms.includes(platform)) {
+                await admin.firestore()
+                    .collection('users')
+                    .doc(uid)
+                    .collection('socialTokens')
+                    .doc(platform)
+                    .set({
+                        accessToken: newAccess,
+                        expiresAt: newExpiry,
+                        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+                    }, { merge: true });
+            }
+        }
 
         return { ok: true, accessToken: newAccess, expiresAt: newExpiry };
     });
