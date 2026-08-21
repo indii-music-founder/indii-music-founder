@@ -14,7 +14,7 @@ const url = `https://generativelanguage.googleapis.com/v1beta/models?key=${API_K
 console.log("📡 Connecting to Google AI Studio API...");
 
 try {
-    const response = await fetch(url);
+    const response = await fetch(url, { signal: AbortSignal.timeout(30000) });
 
     if (!response.ok) {
         const text = await response.text();
@@ -52,6 +52,7 @@ try {
         try {
             const genResponse = await fetch(genUrl, {
                 method: 'POST',
+                signal: AbortSignal.timeout(30000),
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     contents: [{ parts: [{ text: "Hello, strictly reply with 'OK'." }] }]

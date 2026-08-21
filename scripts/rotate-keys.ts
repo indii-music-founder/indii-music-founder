@@ -46,7 +46,7 @@ async function rotateServiceAccountKey(accountName: string): Promise<RotationRes
             'list',
             `--iam-account=${email}`,
             '--format=json'
-        ]).toString();
+        ], { timeout: 60000 }).toString();
         const existingKeys = JSON.parse(existingKeysRaw);
 
         // 2. Create new key
@@ -57,7 +57,7 @@ async function rotateServiceAccountKey(accountName: string): Promise<RotationRes
             'create',
             filePath,
             `--iam-account=${email}`
-        ]);
+        ], { timeout: 60000 });
 
         logger.info(`[Rotation] New key saved to ${filePath}`);
 

@@ -32,7 +32,7 @@ async function main() {
     // 1. Get existing stores first to avoid listing in the loop
     let existingStores: any[] = [];
     try {
-        const listRes = await fetch(`${BASE_URL}/fileSearchStores?key=${API_KEY}`);
+        const listRes = await fetch(`${BASE_URL}/fileSearchStores?key=${API_KEY}`, { signal: AbortSignal.timeout(30000) });
         if (!listRes.ok) {
             throw new Error(`List failed: ${listRes.status} ${await listRes.text()}`);
         }
@@ -57,6 +57,7 @@ async function main() {
             // Create if not found
             const createRes = await fetch(`${BASE_URL}/fileSearchStores?key=${API_KEY}`, {
                 method: 'POST',
+                signal: AbortSignal.timeout(30000),
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ displayName })
             });

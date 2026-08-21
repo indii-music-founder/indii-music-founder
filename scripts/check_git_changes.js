@@ -1,21 +1,28 @@
 import { execSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
+import { pathToFileURL } from 'url';
 
 const STATE_FILE_PATH = path.resolve('.agent/checkpoints/polling_state.json');
+
+// Timeouts so a hung fetch/status call cannot stall the poller silently.
+const TIMEOUTS = {
+    gitFetchMs: 60000,
+    gitStatusMs: 30000,
+};
 
 // Check git status
 function getGitState() {
     try {
         // Fetch to update remote tracking branch status
-        execSync('git fetch origin', { stdio: 'ignore' });
+        execSync('git fetch origin', { stdio: 'ignore', timeout: TIMEOUTS.gitFetchMs });
     } catch (e) {
         console.warn('Warning: Could not fetch from origin (offline or remote access blocked).');
     }
 
     try {
-        const statusOutput = execSync('git status -sb', { encoding: 'utf-8' }).trim();
-        const hasLocalChanges = execSync('git status --short', { encoding: 'utf-8' }).trim().length > 0;
+        const statusOutput = execSync('git status -sb', { encoding: 'utf-8', timeout: TIMEOUTS.gitStatusMs }).trim();
+        const hasLocalChanges = execSync('git status --short', { encoding: 'utf-8', timeout: TIMEOUTS.gitStatusMs }).trim().length > 0;
         const isAhead = statusOutput.includes('[ahead ');
         
         return {
@@ -45,6 +52,8 @@ function getNextInterval(consecutiveNoChanges) {
     if (consecutiveNoChanges === 4) return 240;
     return 480; // 8 hours maximum
 }
+
+export { getCronExpression, getNextInterval };
 
 function run() {
     let state = {
@@ -100,4 +109,7 @@ function run() {
     console.log(JSON.stringify(result, null, 2));
 }
 
-run();
+// Run only when executed directly, so importing for tests has no side effects.
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+    run();
+}

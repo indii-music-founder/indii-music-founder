@@ -67,6 +67,7 @@ async function checkVertexAI() {
     try {
         const response = await fetch(endpoint, {
             method: 'POST',
+            signal: AbortSignal.timeout(30000),
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         });

@@ -103,7 +103,7 @@ async function handleYouTube(url: string, storeName: string, existingMap: Set<st
 async function handleWebPage(url: string, storeName: string, existingMap: Set<string>) {
     console.log(`\n[Web Mode] Scraping article...`);
 
-    const res = await fetch(url);
+    const res = await fetch(url, { signal: AbortSignal.timeout(30000) });
     if (!res.ok) throw new Error(`Failed to fetch URL: ${res.statusText}`);
     const html = await res.text();
 

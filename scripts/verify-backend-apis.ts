@@ -49,6 +49,7 @@ async function runTest(
     try {
         const response = await fetch(url, {
             method,
+            signal: AbortSignal.timeout(30000),
             headers: {
                 ...headers,
                 'Referer': 'https://app.indii.music/',
@@ -112,6 +113,7 @@ async function verifyAll() {
     const authStart = Date.now();
     const authResponse = await fetch(authUrl, {
         method: 'POST',
+        signal: AbortSignal.timeout(30000),
         headers: { 
             'Content-Type': 'application/json',
             'Referer': 'https://app.indii.music/',

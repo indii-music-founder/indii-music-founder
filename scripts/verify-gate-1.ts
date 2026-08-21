@@ -66,6 +66,7 @@ async function verifyGate1() {
 
         const res = await fetch(url, {
           method: 'POST',
+          signal: AbortSignal.timeout(30000),
           headers: {
             'Authorization': `Bearer ${accessToken.token}`,
             'Content-Type': 'application/json',

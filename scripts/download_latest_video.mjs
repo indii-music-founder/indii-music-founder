@@ -63,7 +63,7 @@ async function run() {
         const fetchUrl = rawUrl.includes('key=') ? rawUrl : `${rawUrl}&key=${apiKey}`;
         console.log(`Fetching from Google APIs...`);
         
-        const res = await fetch(fetchUrl);
+        const res = await fetch(fetchUrl, { signal: AbortSignal.timeout(60000) });
         if (!res.ok) {
             console.error(`Fetch failed: ${res.status} ${res.statusText}`);
             console.error(await res.text());
@@ -79,7 +79,7 @@ async function run() {
         
     } else {
         console.log(`URL seems to be a normal public URL or Storage URL. Downloading...`);
-        const res = await fetch(rawUrl);
+        const res = await fetch(rawUrl, { signal: AbortSignal.timeout(60000) });
         if (!res.ok) {
             console.error(`Fetch failed: ${res.status} ${res.statusText}`);
             process.exit(1);

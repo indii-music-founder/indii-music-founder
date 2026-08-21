@@ -47,11 +47,16 @@ const server = http.createServer(async (req, res) => {
             proxyRes.pipe(res);
         });
 
+        // A hung upstream must not leave the client waiting forever.
+        proxyReq.setTimeout(30000, () => {
+            proxyReq.destroy(new Error('Upstream request timed out'));
+        });
+
         req.pipe(proxyReq);
 
         proxyReq.on('error', (e) => {
             console.error(`[Proxy] Request Error: ${e.message}`);
-            res.writeHead(500);
+            res.writeHead(504);
             res.end(`Proxy Error: ${e.message}`);
         });
 

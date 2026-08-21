@@ -5,6 +5,7 @@ async function test() {
     // 1. Sign in via Auth Emulator REST API to get ID token
     const authRes = await fetch('http://127.0.0.1:9099/identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=fake-key', {
       method: 'POST',
+      signal: AbortSignal.timeout(30000),
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email: 'wiil@indii.music', password: 'password123', returnSecureToken: true })
     });
@@ -14,6 +15,7 @@ async function test() {
     // 2. Call enforceOperationCost with the token
     const res = await fetch('http://127.0.0.1:5001/indii-music-founder/us-central1/enforceOperationCost', {
       method: 'POST',
+      signal: AbortSignal.timeout(30000),
       headers: { 
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${idToken}`

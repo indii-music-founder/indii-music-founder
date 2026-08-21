@@ -5,8 +5,13 @@
  * Run: npx tsx scripts/test-resend-email.ts
  */
 
-const RESEND_API_KEY = process.env.RESEND_KEY || 're_6Cf2uU5r_Mp37WJBW5yhZ4MW9NDV7j1wr';
+const RESEND_API_KEY = process.env.RESEND_KEY;
 const TARGET_EMAIL = process.argv[2] || 'williamroberts321@hotmail.com';
+
+if (!RESEND_API_KEY) {
+    console.error('❌ RESEND_KEY environment variable is required. Set it before running this script.');
+    process.exit(1);
+}
 
 async function sendTestEmail() {
     console.log(`\n🚀 Sending test email to: ${TARGET_EMAIL}\n`);
@@ -106,6 +111,7 @@ async function sendTestEmail() {
 
     const response = await fetch('https://api.resend.com/emails', {
         method: 'POST',
+        signal: AbortSignal.timeout(30000),
         headers: {
             'Authorization': `Bearer ${RESEND_API_KEY}`,
             'Content-Type': 'application/json',

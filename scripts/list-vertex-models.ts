@@ -24,6 +24,7 @@ async function listModels() {
 
     console.log(`Checking models at: ${endpoint}`);
     const res = await fetch(endpoint, {
+        signal: AbortSignal.timeout(30000),
         headers: { 'Authorization': `Bearer ${accessToken.token}` }
     });
 

@@ -19,6 +19,13 @@
 
 set -e
 
+# Clean up the patterns file on every exit path (error, abort, completion).
+PATTERNS_FILE="patterns-to-remove.txt"
+cleanup() {
+    rm -f "$PATTERNS_FILE"
+}
+trap cleanup EXIT
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -43,13 +50,13 @@ PATTERNS_TO_REMOVE=(
 
 # Files to check for accidental secrets
 # SENSITIVE_FILE_PATTERNS=(
-    "*.env"
-    "*.env.*"
-    "*credentials*"
-    "*secret*"
-    "*.pem"
-    "*.key"
-)
+#     "*.env"
+#     "*.env.*"
+#     "*credentials*"
+#     "*secret*"
+#     "*.pem"
+#     "*.key"
+# )
 
 # ============================================================================
 # Pre-flight Checks
@@ -104,7 +111,13 @@ BFG_URL="https://repo1.maven.org/maven2/com/madgag/bfg/1.14.0/bfg-1.14.0.jar"
 
 if [ ! -f "$BFG_JAR" ]; then
     echo "Downloading BFG..."
-    curl -L -o "$BFG_JAR" "$BFG_URL"
+    # Fail on HTTP errors (-f), time out after 2 minutes, and retry transient
+    # failures — a silent partial/HTML download would fail confusingly later.
+    curl -fL --max-time 120 --retry 2 -o "$BFG_JAR" "$BFG_URL"
+    if [ ! -s "$BFG_JAR" ]; then
+        echo -e "${RED}Error: BFG download failed or produced an empty file.${NC}"
+        exit 1
+    fi
 fi
 
 echo -e "${GREEN}✓ BFG ready${NC}"
@@ -116,9 +129,7 @@ echo -e "${GREEN}✓ BFG ready${NC}"
 echo ""
 echo -e "${YELLOW}[4/6] Creating patterns file...${NC}"
 
-PATTERNS_FILE="patterns-to-remove.txt"
 true > "$PATTERNS_FILE"
-
 for pattern in "${PATTERNS_TO_REMOVE[@]}"; do
     echo "$pattern" >> "$PATTERNS_FILE"
 done

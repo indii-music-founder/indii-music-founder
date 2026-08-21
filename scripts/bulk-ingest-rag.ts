@@ -108,7 +108,7 @@ async function main() {
             }
         }
 
-            const corpusName = CORPUS_MAP[entry.toLowerCase()];
+            corpusName = CORPUS_MAP[entry.toLowerCase()];
             if (corpusName && storeMap[corpusName]) {
                 await ingestDirectory(fullPath, storeMap[corpusName], corpusName);
             } else {
@@ -131,7 +131,7 @@ async function listAllStores() {
 
     do {
         const url = `${BASE_URL}/fileSearchStores?key=${API_KEY}${pageToken ? `&pageToken=${pageToken}` : ''}`;
-        const res = await fetch(url);
+        const res = await fetch(url, { signal: AbortSignal.timeout(30000) });
         const data = await res.json() as any;
         if (data.fileSearchStores) {
             allStores = allStores.concat(data.fileSearchStores);

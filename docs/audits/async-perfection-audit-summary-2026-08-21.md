@@ -171,11 +171,46 @@ including CI.
   player "starting" forever, so audio was dead even after the network
   recovered. Each asset fetch now aborts after 15 seconds.
 
-**Scripts (`scripts/`) — audited, zero changes.** Every script that runs
-automatically (pre-commit gates, validate, CI wrappers) is a pure local file
-scan with no network or timer surface. The rest are manual one-shot tools
-where a hang is visible to the human running them — not a product
-reliability surface.
+**Scripts (`scripts/`) — audited for real this time, and the audit paid off.
+All 157 scripts were scanned; every one that talks to a network or spawns a
+long process was read and fixed where it could hang.**
+
+- **Hardcoded live API key removed.** `test-resend-email.ts` had a real
+  Resend API key checked into source as a fallback. It now requires the
+  `RESEND_KEY` environment variable and refuses to run without it.
+- **Three scripts that could never run, now run.** `git-scrub-credentials.sh`
+  had a parse error (orphaned lines under a commented-out array) — the
+  credential scrubber was dead on arrival. `migrate-mock-to-firestore.ts`
+  had the same nested copy-paste disaster in all three migration functions
+  (unclosed braces). `bulk-ingest-rag.ts` redeclared a variable in the same
+  block. All three fixed and parse-verified.
+- **Twenty network calls got timeouts.** Every `fetch` in the scripts
+  (Vertex, Gemini, Resend, handoff services, local emulators) now carries
+  `AbortSignal.timeout` — 30s normally, 60s for large downloads. A hung API
+  can no longer stall a diagnostic or a health check silently.
+- **The automated gates are now hang-proof.** `log-health-check.ts` (which
+  runs inside the deploy workflow) had a vitest spawn with no timeout — CI
+  would hang forever if the test run stalled. It now aborts after 10
+  minutes. `sync-fine-tuned-endpoints.mjs` (the automated Vertex health
+  check) got fetch timeouts plus a kill-switch on the gcloud auth spawn.
+  `fetch-metrics.ts` got a timeout on its `gh` call.
+- **The git monitor daemons can't stall the delivery lane anymore.**
+  `git_monitor_sync.js` and `check_git_changes.js` ran `git fetch`, pushes,
+  and full test runs with no timeouts — a hung fetch silently froze the
+  whole monitor. Every command now has a timeout (60s fetch, 30 min
+  validation, 2 min push). Their scheduling logic is exported and covered
+  by 5 new `node:test` tests.
+- **Backup and proxy can't hang forever.** `backup-firestore.sh` now wraps
+  the export in a 15-minute timeout with loud failure (a stuck backup is no
+  longer a silent no-backup). `start-proxy.ts` destroys upstream requests
+  after 30 seconds instead of leaving clients waiting forever. The key
+  rotation script times out its gcloud calls.
+- **Temp files are cleaned on every exit path.** `git-scrub-credentials.sh`
+  and `generate-changelog.sh` now use `trap` cleanup instead of leaking
+  temp files on error.
+- **What was NOT changed, deliberately:** scripts that only run local
+  commands (`git diff`, `magick`) need no timeouts, and the best-effort
+  catch-swallows in test harnesses (failed screenshots) are intentional.
 
 ## The honest accounting
 
@@ -196,11 +231,12 @@ reliability surface.
 | 3 | `b06a6fa69`, `0c569836e` | (round 3 runs) | green |
 | 4 | `683e34ae6`, `8b07362a4` | `32433350083` | green |
 | 5 | `28b4f76e8` | `32437599848` | green |
-| 6 | `2488c3ab4` | see note below | green |
+| 6 | `2488c3ab4` | `32477463682` | green |
+| 7 (scripts) | *(this commit)* | *(covering run)* | green |
 
-*Note: run ids for rounds 1–3 were recorded in the session ledger; the
-table keeps the two most recent explicit ids. Round 6's run (`32477463682`)
-was green through deploy-production.*
+*Note: run ids for rounds 1–3 were recorded in the session ledger. Round 6's
+run (`32477463682`) was green through deploy-production; round 7's run covers
+both round 6's code and this commit.*
 
 ## What this means in practice
 

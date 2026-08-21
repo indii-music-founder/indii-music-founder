@@ -16,6 +16,7 @@ async function testFilesApi() {
     try {
         const res = await fetch(modelsUrl, {
             method: 'GET',
+            signal: AbortSignal.timeout(30000),
             headers: {
                 'Content-Type': 'application/json'
             }
@@ -32,6 +33,7 @@ async function testFilesApi() {
         const generateUrl = `${functionsUrl}/ragProxy/v1beta/models/gemini-3-flash-preview:generateContent`;
         const contentRes = await fetch(generateUrl, {
             method: 'POST',
+            signal: AbortSignal.timeout(30000),
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 contents: [{ parts: [{ text: "Hello, are you working?" }] }]

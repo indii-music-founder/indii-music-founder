@@ -9,7 +9,10 @@ export async function getGitHubCIStatus() {
   try {
     // Attempt to fetch GitHub Actions runs using the gh CLI.
     // If the CLI is authenticated, it will return the latest run status.
-    const { stdout } = await execAsync('gh run list --limit 1 --json status,conclusion,headSha');
+    const { stdout } = await execAsync('gh run list --limit 1 --json status,conclusion,headSha', {
+      timeout: 60000,
+      maxBuffer: 1024 * 1024,
+    });
     const runs = JSON.parse(stdout);
     if (runs.length > 0) {
       const run = runs[0];

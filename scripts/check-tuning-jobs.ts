@@ -26,6 +26,7 @@ async function checkVertexTuningJobs() {
 
     const res = await fetch(url, {
       method: 'GET',
+      signal: AbortSignal.timeout(30000),
       headers: {
         'Authorization': `Bearer ${accessToken.token}`,
       }

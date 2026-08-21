@@ -75,6 +75,9 @@ FULL_OUTPUT="${HEADER}${OUTPUT}---\n"
 if [ "${1:-}" = "--prepend" ]; then
     # Prepend to CHANGELOG.md after the header
     CHANGELOG="$REPO_ROOT/CHANGELOG.md"
+    TEMP=""
+    # Clean up temp files on every exit path (set -e can abort mid-way).
+    trap 'rm -f "${TEMP:-}" "${CHANGELOG:-}.tmp"' EXIT
     if [ -f "$CHANGELOG" ]; then
         # Insert after "## [Unreleased]" section
         TEMP=$(mktemp)

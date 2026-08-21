@@ -27,9 +27,14 @@ const FIREBASE_POLICY_OUTPUT_FILE = path.join(__dirname, '../packages/firebase/s
 async function getAccessToken() {
   return new Promise((resolve, reject) => {
     const proc = spawn('gcloud', ['auth', 'print-access-token'], { stdio: 'pipe' });
+    const killer = setTimeout(() => {
+      proc.kill('SIGKILL');
+      reject(new Error('gcloud auth timed out after 30s'));
+    }, 30000);
     let token = '';
     proc.stdout.on('data', (d) => { token += d.toString(); });
     proc.on('close', (code) => {
+      clearTimeout(killer);
       if (code !== 0) reject(new Error(`gcloud auth failed (code ${code})`));
       else resolve(token.trim());
     });
@@ -38,7 +43,10 @@ async function getAccessToken() {
 
 async function fetchTuningJobs(token) {
   const url = `${resolveVertexLocation(LOCATION).baseUrl}/v1/projects/${PROJECT_ID}/locations/${LOCATION}/tuningJobs?pageSize=200`;
-  const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+  const res = await fetch(url, {
+    signal: AbortSignal.timeout(30000),
+    headers: { Authorization: `Bearer ${token}` },
+  });
   if (!res.ok) throw new Error(`Vertex API failed (${res.status}): ${await res.text()}`);
   const data = await res.json();
   return data.tuningJobs || [];
@@ -52,7 +60,10 @@ async function preflightEndpoints(token, registry) {
     try {
       const route = resolveVertexEndpointResource(resourceName);
       const url = `${route.baseUrl}/v1/${route.resourceName}`;
-      const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch(url, {
+        signal: AbortSignal.timeout(30000),
+        headers: { Authorization: `Bearer ${token}` },
+      });
       if (!res.ok) {
         failures.push({
           category: res.status === 404 ? 'specialist_unavailable' : 'provider_outage',

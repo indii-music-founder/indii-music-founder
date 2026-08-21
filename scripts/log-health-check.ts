@@ -26,7 +26,7 @@ async function runHealthCheck(): Promise<void> {
         'integration.test.ts',
         '--reporter=json',
         `--outputFile=${tmpFile}`,
-      ]);
+      ], { timeout: 600000 });
     } catch {
       runnerSucceeded = false;
     }

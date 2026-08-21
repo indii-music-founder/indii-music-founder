@@ -1,6 +1,7 @@
 import { execSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
+import { pathToFileURL } from 'url';
 
 const STATE_FILE_PATH = path.resolve('.agent/checkpoints/polling_state.json');
 const LOG_FILE_PATH = path.resolve('.agent/logs/git_monitor.log');
@@ -15,6 +16,17 @@ if (!fs.existsSync(logsDir)) {
     fs.mkdirSync(logsDir, { recursive: true });
 }
 
+// Timeouts so a hung network call or validation run cannot stall the
+// monitor indefinitely with no visibility. Long validation steps get
+// generous caps; everything else fails fast.
+const TIMEOUTS = {
+    gitFetchMs: 60000,
+    gitStatusMs: 30000,
+    validationMs: 1800000, // typecheck + full test run can take a while
+    pushMs: 120000,
+    ghMs: 60000,
+};
+
 function logMessage(message) {
     const timestamp = new Date().toISOString();
     const logLine = `[${timestamp}] ${message}\n`;
@@ -22,9 +34,9 @@ function logMessage(message) {
     fs.appendFileSync(LOG_FILE_PATH, logLine);
 }
 
-function runCommand(cmd, ignoreError = false) {
+function runCommand(cmd, ignoreError = false, timeoutMs = TIMEOUTS.gitStatusMs) {
     try {
-        return execSync(cmd, { encoding: 'utf-8', maxBuffer: 20 * 1024 * 1024 }).trim();
+        return execSync(cmd, { encoding: 'utf-8', maxBuffer: 20 * 1024 * 1024, timeout: timeoutMs }).trim();
     } catch (error) {
         if (ignoreError) {
             return '';
@@ -37,7 +49,7 @@ function getGitState() {
     let fetchSucceeded = true;
     try {
         logMessage('Fetching origin/main...');
-        execSync('git fetch origin', { stdio: 'ignore' });
+        execSync('git fetch origin', { stdio: 'ignore', timeout: TIMEOUTS.gitFetchMs });
     } catch (e) {
         fetchSucceeded = false;
         logMessage('CRITICAL: Could not fetch origin/main. Mainline delivery is blocked.');
@@ -76,6 +88,8 @@ function getNextInterval(consecutiveNoChanges) {
     if (consecutiveNoChanges === 0) return 5;
     return 10;
 }
+
+export { getCronExpression, getNextInterval };
 
 async function executeSync() {
     logMessage('--- Starting Git Monitor Sync Cycle ---');
@@ -135,13 +149,13 @@ async function executeSync() {
             logMessage('Verifying the single mainline commit before pushing...');
 
             logMessage('Running typecheck validation...');
-            runCommand('npm run typecheck');
+            runCommand('npm run typecheck', false, TIMEOUTS.validationMs);
 
             logMessage('Running tests validation...');
-            runCommand('NODE_OPTIONS="--max-old-space-size=4096" npm test -- --run --pool=threads');
+            runCommand('NODE_OPTIONS="--max-old-space-size=4096" npm test -- --run --pool=threads', false, TIMEOUTS.validationMs);
             
             logMessage('Validation successful. Pushing explicit HEAD:main refspec...');
-            runCommand('git push origin HEAD:main');
+            runCommand('git push origin HEAD:main', false, TIMEOUTS.pushMs);
             logMessage('Push completed successfully.');
             syncPerformed = true;
         }
@@ -195,7 +209,7 @@ async function executeSync() {
             // Check authentication cleanly before proceeding
             let authSuccess = false;
             try {
-                execSync('gh auth status', { stdio: 'ignore' });
+                execSync('gh auth status', { stdio: 'ignore', timeout: TIMEOUTS.ghMs });
                 authSuccess = true;
             } catch (authError) {
                 if (process.env.GITHUB_TOKEN) {
@@ -203,7 +217,7 @@ async function executeSync() {
                     const originalToken = process.env.GITHUB_TOKEN;
                     delete process.env.GITHUB_TOKEN;
                     try {
-                        execSync('gh auth status', { stdio: 'ignore' });
+                        execSync('gh auth status', { stdio: 'ignore', timeout: TIMEOUTS.ghMs });
                         authSuccess = true;
                     } catch (retryError) {
                         process.env.GITHUB_TOKEN = originalToken; // restore if it still fails
@@ -216,7 +230,7 @@ async function executeSync() {
                 return;
             }
 
-            const ghOutput = runCommand(`gh run list --branch main --commit ${currentSha} --limit 20 --json status,conclusion,name,url,createdAt,headBranch,headSha,databaseId`);
+            const ghOutput = runCommand(`gh run list --branch main --commit ${currentSha} --limit 20 --json status,conclusion,name,url,createdAt,headBranch,headSha,databaseId`, false, TIMEOUTS.ghMs);
             const runs = JSON.parse(ghOutput);
             const matchingRuns = runs.filter(r => r.headBranch === 'main' && r.headSha === currentSha);
             const failedRuns = matchingRuns.filter(r => r.conclusion === 'failure');
@@ -252,4 +266,8 @@ async function executeSync() {
     console.log(JSON.stringify(result, null, 2));
 }
 
-executeSync();
+// Run only when executed directly, so importing for tests has no side
+// effects (no fetch, no push, no state writes).
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+    executeSync();
+}
