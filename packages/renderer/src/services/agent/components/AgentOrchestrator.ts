@@ -57,7 +57,7 @@ export class AgentOrchestrator {
         ];
 
         const prompt = `
-        You are indii, the Autonomous agent orchestration system for indii (the operating system for your musical independence).
+        You are indii, the Autonomous agent orchestration system for indii (an artist-controlled operating system for the business behind the music).
         Your goal is to accurately route user requests to the most appropriate specialist agent and determine the most relevant knowledge base corpus to query.
 
         AVAILABLE AGENTS:
