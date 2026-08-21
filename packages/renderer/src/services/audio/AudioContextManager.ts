@@ -1,4 +1,5 @@
 import { logger } from '@/utils/logger';
+import { useStore } from '@/core/store';
 
 /**
  * Requirement 164: Mobile Web Audio Context Fixes
@@ -112,6 +113,12 @@ export class AudioContextManager {
         if (!this.isInitialized || !this.context) return;
 
         if (document.visibilityState === 'hidden') {
+            // The PIP player routes its media element through this context's
+            // graph, so suspending here would silently mute music that the
+            // user is actively playing. Background playback keeps running;
+            // only idle contexts are suspended.
+            if (useStore.getState().isPlaying) return;
+
             // Only suspend if we aren't currently playing background audio via other means
             // If the user is actively playing a song, we might want to skip this.
             // For analysis tasks (Essentia), we always suspend.

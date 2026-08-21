@@ -1,10 +1,11 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { Play, Pause, X, SkipForward, SkipBack, Volume2, VolumeX } from 'lucide-react';
 import { audioContextManager } from '@/services/audio/AudioContextManager';
 import { motion } from 'motion/react';
 import { logger } from '@/utils/logger';
+import { events } from '@/core/events';
 
 export default function AudioPIPPlayer() {
     const {
@@ -114,24 +115,37 @@ export default function AudioPIPPlayer() {
         };
     }, [isPlaying, setFrequencyData]);
 
+    const handlePlaybackError = useCallback((e: unknown, action: string) => {
+        logger.error(`[AudioPIPPlayer] ${action} failed:`, e);
+        // Only surface the failure if the user still expects playback. A
+        // pause/stop that races the play() promise (AbortError) is not a
+        // failure the user needs to hear about.
+        if (!useStore.getState().isPlaying) return;
+        pauseTrack(); // Roll the store back so the UI matches the silent reality.
+        events.emit('SYSTEM_ALERT', {
+            level: 'error',
+            message: 'Playback failed. The track may be unavailable or blocked by the browser.',
+        });
+    }, [pauseTrack]);
+
     useEffect(() => {
         if (currentTrack && audioRef.current) {
             audioRef.current.src = currentTrack.url;
             if (isPlaying) {
-                audioRef.current.play().catch((e) => logger.error('[AudioPIPPlayer] Playback failed:', e));
+                audioRef.current.play().catch((e) => handlePlaybackError(e, 'Playback'));
             }
         }
-    }, [currentTrack, isPlaying]);
+    }, [currentTrack, isPlaying, handlePlaybackError]);
 
     useEffect(() => {
         if (audioRef.current) {
             if (isPlaying) {
-                audioRef.current.play().catch((e) => logger.error('[AudioPIPPlayer] Playback failed:', e));
+                audioRef.current.play().catch((e) => handlePlaybackError(e, 'Playback'));
             } else {
                 audioRef.current.pause();
             }
         }
-    }, [isPlaying]);
+    }, [isPlaying, handlePlaybackError]);
 
     useEffect(() => {
         if (audioRef.current) {

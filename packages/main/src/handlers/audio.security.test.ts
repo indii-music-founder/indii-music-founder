@@ -5,6 +5,8 @@ import { registerAudioHandlers } from './audio';
 import { ipcMain } from 'electron';
 import fs from 'fs';
 import stream from 'stream';
+import ffmpeg from 'fluent-ffmpeg';
+import { accessControlService } from '../security/AccessControlService';
 
 // Mock Electron
 vi.mock('electron', () => ({
@@ -24,6 +26,7 @@ vi.mock('electron', () => ({
 vi.mock('fluent-ffmpeg', () => ({
     default: Object.assign(
         vi.fn(() => ({
+            audioFilters: vi.fn().mockReturnThis(),
             audioChannels: vi.fn().mockReturnThis(),
             audioFrequency: vi.fn().mockReturnThis(),
             audioBitrate: vi.fn().mockReturnThis(),
@@ -78,6 +81,26 @@ vi.mock('../utils/ipc-security', () => ({
 describe('Vulnerability: Audio Handler Symlink Exploit', () => {
     afterEach(() => {
         vi.clearAllMocks();
+    });
+
+    it('wires a hard timeout into every ffmpeg pipeline so a hung encode cannot stall analysis forever', async () => {
+        registerAudioHandlers();
+        // Grant access explicitly so the analysis actually reaches ffmpeg
+        // (the temp-dir allowlist differs between macOS and Linux runners).
+        accessControlService.grantAccess('/tmp/safe.wav');
+
+        const calls = (ipcMain.handle as Mock).mock.calls;
+        const handler = calls.find((call: unknown[]) => call[0] === 'audio:analyze')![1] as (event: unknown, path: string) => Promise<unknown>;
+        await handler({ senderFrame: { url: 'file://app/index.html' } }, '/tmp/safe.wav');
+
+        const ffmpegMock = ffmpeg as unknown as Mock;
+        expect(ffmpegMock.mock.calls.length).toBeGreaterThan(0);
+        // Every pipeline (loudness measurement, proxy generation) must carry
+        // a hard timeout via the constructor option.
+        expect(ffmpegMock).toHaveBeenCalledWith(
+            expect.any(String),
+            expect.objectContaining({ timeout: 300000 }),
+        );
     });
 
     it('should BLOCK analyzing a symlink that points to a restricted file', async () => {

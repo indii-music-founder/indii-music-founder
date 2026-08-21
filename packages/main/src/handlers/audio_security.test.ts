@@ -26,6 +26,7 @@ const mocks = vi.hoisted(() => ({
     // Mock ffmpeg
     ffmpeg: Object.assign(
         vi.fn(() => ({
+            audioFilters: vi.fn().mockReturnThis(),
             audioChannels: vi.fn().mockReturnThis(),
             audioFrequency: vi.fn().mockReturnThis(),
             audioBitrate: vi.fn().mockReturnThis(),

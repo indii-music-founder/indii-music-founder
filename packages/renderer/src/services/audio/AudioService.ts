@@ -2,18 +2,31 @@
  * AudioService handles playback of generated agent speech.
  * It manages a queue to ensure agents speak sequentially and provides a global toggle.
  */
+
+/** Thrown when playback is interrupted by an explicit stop()/mute, so
+ *  callers can distinguish "the user stopped me" from real failures. */
+export class AudioPlaybackInterruptedError extends Error {
+    constructor() {
+        super('Audio playback stopped');
+        this.name = 'AudioPlaybackInterruptedError';
+    }
+}
+
+interface QueueItem {
+    source: string;
+    mimeType: string;
+    sourceType: 'base64' | 'url';
+    resolve: () => void;
+    reject: (err: unknown) => void;
+}
+
 export class AudioService {
     private static instance: AudioService;
     private isEnabled: boolean = true;
-    private queue: Array<{
-        source: string;
-        mimeType: string;
-        sourceType: 'base64' | 'url';
-        resolve: () => void;
-        reject: (err: unknown) => void;
-    }> = [];
+    private queue: QueueItem[] = [];
     private isProcessing: boolean = false;
     private currentAudio: HTMLAudioElement | null = null;
+    private currentItem: QueueItem | null = null;
 
     private constructor() {
         // Set volume and initial state
@@ -33,7 +46,6 @@ export class AudioService {
         this.isEnabled = enabled;
         if (!enabled) {
             this.stop();
-            this.queue = [];
         }
     }
 
@@ -65,14 +77,36 @@ export class AudioService {
     }
 
     /**
-     * Stop current playback and clear queue
+     * Stop current playback and clear queue. Every pending play()/playUrl()
+     * promise is rejected with AudioPlaybackInterruptedError so callers are
+     * never left awaiting a promise that can never settle.
      */
     stop() {
+        const error = new AudioPlaybackInterruptedError();
+
+        const current = this.currentItem;
+        this.currentItem = null;
+
         if (this.currentAudio) {
-            this.currentAudio.pause();
+            const element = this.currentAudio;
+            // Detach handlers so the stopped element can never drive the queue.
+            element.onended = null;
+            element.onerror = null;
+            element.pause();
             this.currentAudio = null;
         }
+
         this.isProcessing = false;
+
+        if (current) {
+            current.reject(error);
+        }
+
+        const remaining = this.queue;
+        this.queue = [];
+        for (const item of remaining) {
+            item.reject(error);
+        }
     }
 
     private async processQueue() {
@@ -86,6 +120,8 @@ export class AudioService {
             return;
         }
 
+        this.currentItem = item;
+
         try {
             const source = item.sourceType === 'url'
                 ? item.source
@@ -93,24 +129,28 @@ export class AudioService {
             const audio = new Audio(source);
             this.currentAudio = audio;
 
-            audio.onended = () => {
+            const settle = (error?: unknown) => {
+                if (this.currentItem !== item) return; // Already settled (e.g. by stop()).
+                this.currentItem = null;
                 this.currentAudio = null;
                 this.isProcessing = false;
-                item.resolve();
+                if (error) {
+                    item.reject(error);
+                } else {
+                    item.resolve();
+                }
                 this.processQueue();
             };
 
-            audio.onerror = (e) => {
-                // AudioService Playback error
-                this.currentAudio = null;
-                this.isProcessing = false;
-                item.reject(e);
-                this.processQueue();
-            };
+            audio.onended = () => settle();
+            audio.onerror = (e) => settle(e);
 
             await audio.play();
         } catch (error: unknown) {
-            // AudioService Failed to play audio
+            // If stop() already settled this item, do nothing.
+            if (this.currentItem !== item) return;
+            this.currentItem = null;
+            this.currentAudio = null;
             this.isProcessing = false;
             item.reject(error);
             this.processQueue();

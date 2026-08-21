@@ -58,7 +58,7 @@ interface LoudnessMeasurement {
 /** FFmpeg's ebur128 filter implements EBU R128 integrated loudness and true peak. */
 const measureLoudness = (filePath: string): Promise<LoudnessMeasurement> => new Promise((resolve, reject) => {
     let stderr = '';
-    ffmpeg(filePath)
+    ffmpeg(filePath, { timeout: 300000 }) // A hung ffmpeg must not leave the analysis spinner spinning forever.
         .audioFilters('ebur128=peak=true')
         .format('null')
         .output('-')
@@ -110,7 +110,7 @@ export function registerAudioHandlers() {
             const tempProxyPath = path.join(os.tmpdir(), `${hash}_proxy.mp3`);
             
             await new Promise<void>((resolve, reject) => {
-                ffmpeg(validatedPath)
+                ffmpeg(validatedPath, { timeout: 300000 }) // A hung encode must fail the analysis, not stall it.
                     .audioChannels(1)
                     .audioFrequency(32000)
                     .audioBitrate('64k')
@@ -205,7 +205,8 @@ export function registerAudioHandlers() {
             const validatedOutputPath = validateSafeAudioOutputPath(outputPath, allowedRoots);
 
             return new Promise((resolve) => {
-                let command = ffmpeg(validatedInputPath)
+                // A hung ffmpeg must not leave the transcoding UI stuck.
+                let command = ffmpeg(validatedInputPath, { timeout: 600000 })
                     .toFormat(targetFormat);
 
                 if (bitRate) command = command.audioBitrate(bitRate);

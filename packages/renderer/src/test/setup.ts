@@ -315,7 +315,26 @@ vi.mock('@/core/store', () => {
         // Agent orchestration slice
         activeLoops: {},
         setActiveLoops: vi.fn(),
-        updateLoopExecution: vi.fn()
+        updateLoopExecution: vi.fn(),
+        // Audio player slice — required by AudioPIPPlayer
+        currentTrack: null,
+        isPlaying: false,
+        volume: 1,
+        isPIPVisible: false,
+        pauseTrack: vi.fn(() => {
+            mockState.isPlaying = false;
+        }),
+        resumeTrack: vi.fn(() => {
+            mockState.isPlaying = true;
+        }),
+        stopTrack: vi.fn(() => {
+            mockState.isPlaying = false;
+            mockState.currentTrack = null;
+            mockState.isPIPVisible = false;
+        }),
+        setVolume: vi.fn(),
+        updatePlaybackProgress: vi.fn(),
+        setFrequencyData: vi.fn()
     };
 
     const useStoreMock = Object.assign(

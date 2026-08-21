@@ -1,5 +1,5 @@
 import { AutonomousIntelligence } from '@/services/intelligence/AutonomousIntelligence';
-import { audioService } from '@/services/audio/AudioService';
+import { audioService, AudioPlaybackInterruptedError } from '@/services/audio/AudioService';
 import { useStore } from '@/core/store';
 import { PersistedAudioMetadata } from '@/services/audio/AudioPersistenceService';
 
@@ -100,7 +100,10 @@ export class VoiceService {
                 const store = useStore.getState();
                 await store.persistGeneratedAsset(asset);
             }
-        } catch {
+        } catch (err) {
+            // User-initiated stop/mute is not a failure: stay silent instead
+            // of falling back to system TTS the user just tried to silence.
+            if (err instanceof AudioPlaybackInterruptedError) return;
             this.fallbackSpeak(text);
         }
     }

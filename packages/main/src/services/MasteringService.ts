@@ -25,7 +25,7 @@ export class MasteringService {
             }
 
             return new Promise((resolve) => {
-                ffmpeg(inputPath)
+                ffmpeg(inputPath, { timeout: 600000 }) // A hung ffmpeg must not leave the mastering UI stuck.
                     .audioFilters(filter)
                     .on('end', () => {
                         log.info('[MasteringService] Mastering finished');
