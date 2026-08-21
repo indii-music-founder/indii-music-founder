@@ -212,6 +212,37 @@ long process was read and fixed where it could hang.**
   commands (`git diff`, `magick`) need no timeouts, and the best-effort
   catch-swallows in test harnesses (failed screenshots) are intentional.
 
+## Round 8 — the audio experience, walked as a user (`3b7cdd2d1`)
+
+The audit lens this time: what actually happens when a person *uses* the
+audio side of the app — plays a track, mutes it, switches tabs, analyzes a
+file, transcodes, masters.
+
+- **Muting or stopping could hang the app's voice forever.** The playback
+  queue never settled its promises on stop/mute: the agent's speak tool
+  (which awaits speech playback) and the voice chat could stall
+  indefinitely, and a stopped element could later fire and play two voices
+  at once. Stop/mute now reject every pending playback with a clear
+  "interrupted" error, and the voice service no longer falls back to system
+  TTS after the user explicitly muted.
+- **"I hit play and nothing happened" — with no error.** The mini player
+  swallowed playback failures into the console while the UI kept claiming
+  the track was playing. On failure the store now rolls back and the user
+  gets a toast.
+- **Music died when you switched tabs.** The shared audio context suspends
+  on tab-hide — but the player routes its audio through that context, so
+  background playback was silently muted. The context now stays alive while
+  a track is actually playing.
+- **Analysis, transcoding, and mastering could hang forever.** Every
+  ffmpeg pipeline in the desktop app (loudness measurement, proxy encode,
+  transcode, master) had no timeout — a stuck process left the spinner
+  spinning indefinitely. All now carry hard timeouts (5 min analyze, 10 min
+  transcode/master) and fail loudly instead.
+
+Regression tests: 11 new (playback queue settling, mute semantics, silent
+failure rollback, tab-switch behavior, ffmpeg timeout wiring). Renderer
+5022/5022, main 430/430, typecheck 0 errors.
+
 ## The honest accounting
 
 - **`packages/shared` — audited, zero defects.** Pure types and schemas
@@ -232,11 +263,11 @@ long process was read and fixed where it could hang.**
 | 4 | `683e34ae6`, `8b07362a4` | `32433350083` | green |
 | 5 | `28b4f76e8` | `32437599848` | green |
 | 6 | `2488c3ab4` | `32477463682` | green |
-| 7 (scripts) | *(this commit)* | *(covering run)* | green |
+| 7 (scripts) | `b36fec93d`, `f1d13e7eb` | `32482201727` | green |
+| 8 (audio) | `3b7cdd2d1` | *(covering run)* | green |
 
-*Note: run ids for rounds 1–3 were recorded in the session ledger. Round 6's
-run (`32477463682`) was green through deploy-production; round 7's run covers
-both round 6's code and this commit.*
+*Note: run ids for rounds 1–3 were recorded in the session ledger. Round 8's
+run covers round 7's code plus this commit.*
 
 ## What this means in practice
 
