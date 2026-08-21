@@ -62,8 +62,8 @@ export const NexusMonitor: React.FC = () => {
       // allSettled (not all) so a second-to-fail request can never surface as an
       // unhandled rejection after the first one has already thrown.
       const [dnsSettled, logsSettled] = await Promise.allSettled([
-        fetch('/api/dns/status', { headers }),
-        fetch('/api/nexus/logs', { headers }),
+        fetch('/api/dns/status', { headers, signal: AbortSignal.timeout(15000) }),
+        fetch('/api/nexus/logs', { headers, signal: AbortSignal.timeout(15000) }),
       ]);
       if (dnsSettled.status === 'rejected') throw dnsSettled.reason;
       if (logsSettled.status === 'rejected') throw logsSettled.reason;

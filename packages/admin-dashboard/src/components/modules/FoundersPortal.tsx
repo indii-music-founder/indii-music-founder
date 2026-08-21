@@ -49,6 +49,7 @@ export const FoundersPortal: React.FC = () => {
         const token = getAdminToken();
         const res = await fetch('/api/founders', {
           headers: token ? { Authorization: `Bearer ${token}` } : {},
+                signal: AbortSignal.timeout(15000),
         });
 
         if (res.status === 401 || res.status === 403) {

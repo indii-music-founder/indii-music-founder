@@ -41,6 +41,7 @@ export const EmailManager: React.FC = () => {
       const token = getAdminToken();
       const res = await fetch('/api/messaging/inbox', {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
+            signal: AbortSignal.timeout(15000),
       });
       if (!res.ok) throw new Error(`Messaging server returned ${res.status}`);
       const data = await res.json();
@@ -71,6 +72,7 @@ export const EmailManager: React.FC = () => {
           'Content-Type': 'application/json',
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
+        signal: AbortSignal.timeout(15000),
         body: JSON.stringify({ id }),
       });
       if (res.ok) {

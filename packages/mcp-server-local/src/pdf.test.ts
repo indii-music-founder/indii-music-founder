@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { jsPDF } from 'jspdf';
-import { mkdtempSync, rmSync, writeFileSync } from 'fs';
+import { mkdtempSync, rmSync, writeFileSync, openSync, ftruncateSync, closeSync } from 'fs';
 import { tmpdir } from 'os';
 import path from 'path';
 import { extractPdfContractText } from './pdf.js';
@@ -36,5 +36,38 @@ describe('extractPdfContractText', () => {
 
     it('throws a clear error when the PDF is missing', async () => {
         await expect(extractPdfContractText('/does/not/exist.pdf')).rejects.toThrow('File not found: /does/not/exist.pdf');
+    });
+});
+
+describe('extractPdfContractText caps', () => {
+    let tempDir: string;
+
+    afterEach(() => {
+        if (tempDir) {
+            rmSync(tempDir, { recursive: true, force: true });
+        }
+    });
+
+    it('refuses files larger than the configured cap without reading them', async () => {
+        tempDir = mkdtempSync(path.join(tmpdir(), 'indii-mcp-pdf-cap-'));
+        const filePath = path.join(tempDir, 'big.pdf');
+        // Sparse file: size is large but it costs no memory to create.
+        const fd = openSync(filePath, 'w');
+        ftruncateSync(fd, 1024 * 1024 + 1);
+        closeSync(fd);
+
+        await expect(extractPdfContractText(filePath, { maxBytes: 1024 * 1024 }))
+            .rejects.toThrow(/exceeds the 1048576 byte extraction cap/);
+    });
+
+    it('refuses PDFs with more pages than the configured cap', async () => {
+        tempDir = mkdtempSync(path.join(tmpdir(), 'indii-mcp-pdf-pages-'));
+        const filePath = path.join(tempDir, 'many.pdf');
+        const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+        doc.text('Page one', 72, 72);
+        writeFileSync(filePath, Buffer.from(doc.output('arraybuffer')));
+
+        await expect(extractPdfContractText(filePath, { maxPages: 0 }))
+            .rejects.toThrow(/exceeds the 0 page extraction cap/);
     });
 });

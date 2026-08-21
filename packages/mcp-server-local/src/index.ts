@@ -186,7 +186,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                     'Authorization': `Bearer ${token}`,
                     'Accept': 'application/vnd.github.v3+json',
                     'User-Agent': 'indii-MCP'
-                }
+                },
+                signal: AbortSignal.timeout(15_000),
             });
 
             if (!response.ok) {
@@ -201,7 +202,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                     'Authorization': `Bearer ${token}`,
                     'Accept': 'application/vnd.github.v3+json',
                     'User-Agent': 'indii-MCP'
-                }
+                },
+                signal: AbortSignal.timeout(15_000),
             });
             const comments = commentsResponse.ok ? await commentsResponse.json() : [];
 
@@ -239,7 +241,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'Accept': 'application/json'
-                }
+                },
+                signal: AbortSignal.timeout(15_000),
             });
 
             if (!response.ok) {

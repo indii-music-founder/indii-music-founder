@@ -49,6 +49,7 @@ export const DDEXTracker: React.FC = () => {
       const token = getAdminToken();
       const res = await fetch('/api/deliveries/list', {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
+            signal: AbortSignal.timeout(15000),
       });
       if (res.status === 401 || res.status === 403) {
         throw new Error(

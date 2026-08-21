@@ -36,9 +36,12 @@ const App: React.FC = () => {
 
   const handleSignOut = () => {
     localStorage.removeItem(ADMIN_TOKEN_KEY);
-    signOut(auth).then(() => {
-      window.location.reload();
-    });
+    // signOut can reject on network loss — the local session must still end.
+    signOut(auth)
+      .catch(() => { /* offline sign-out: local state already cleared */ })
+      .finally(() => {
+        window.location.reload();
+      });
   };
 
   useEffect(() => {

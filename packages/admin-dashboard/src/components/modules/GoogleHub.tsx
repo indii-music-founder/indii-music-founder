@@ -147,6 +147,7 @@ export const GoogleHub: React.FC = () => {
       const token = getAdminToken();
       const res = await fetch('/api/google/status', {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
+            signal: AbortSignal.timeout(15000),
       });
       if (!res.ok) {
         // A failed status check is NOT the same as "not linked" — surface it,
@@ -179,6 +180,7 @@ export const GoogleHub: React.FC = () => {
       const token = getAdminToken();
       const res = await fetch('/api/google/oauth/url', {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
+            signal: AbortSignal.timeout(15000),
       });
       if (res.ok) {
         const body: unknown = await res.json();
@@ -214,6 +216,7 @@ export const GoogleHub: React.FC = () => {
     try {
       const res = await fetch(endpoint.url, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
+            signal: AbortSignal.timeout(15000),
       });
 
       // 412 = the OAuth token went away between the status check and this read.
@@ -286,6 +289,7 @@ export const GoogleHub: React.FC = () => {
           'Content-Type': 'application/json',
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
+        signal: AbortSignal.timeout(15000),
         body: JSON.stringify({
           to: composeTo,
           subject: composeSubject,
@@ -326,6 +330,7 @@ export const GoogleHub: React.FC = () => {
           'Content-Type': 'application/json',
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
+        signal: AbortSignal.timeout(15000),
         body: JSON.stringify({
           title: eventTitle,
           start: eventStart,
@@ -368,6 +373,7 @@ export const GoogleHub: React.FC = () => {
           'Content-Type': 'application/json',
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
+        signal: AbortSignal.timeout(15000),
         body: JSON.stringify({
           name: uploadName,
           content: uploadContent,
