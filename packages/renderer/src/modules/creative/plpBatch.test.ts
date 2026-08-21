@@ -41,10 +41,13 @@ describe('PLP batch lifecycle', () => {
         const failed = failPlpSlot(outputLess, 11, 'Provider cancelled the render.');
         const retrying = retryPlpSlot(failed, 11);
 
-        expect(outputLess.slots[10]?.status).toBe('queued');
+        expect(outputLess.slots[10]?.status).toBe('failed');
+        expect(outputLess.slots[10]?.error).toContain('playable asset');
         expect(failed.slots[11]).toMatchObject({ status: 'failed', attempt: 1 });
         expect(retrying.slots[11]).toMatchObject({ status: 'queued', attempt: 2 });
-        expect(retrying.slots[10]).toMatchObject({ status: 'queued', attempt: 1 });
+        // Only the targeted slot is retried — slot 10 stays failed until its
+        // own retry (ISSUE-1395: it was stranded 'queued' before).
+        expect(retrying.slots[10]).toMatchObject({ status: 'failed', attempt: 1 });
         expect(getEligiblePlpSlots(retrying)).toEqual([]);
     });
 });
