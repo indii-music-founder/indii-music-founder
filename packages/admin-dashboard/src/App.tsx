@@ -108,8 +108,8 @@ const AdminDashboard: React.FC<{ user: User; onSignOut: () => void }> = ({ user,
 
   return (
     <div className="flex h-screen bg-[#050505] text-white font-sans selection:bg-[#2e2efe]/30 overflow-hidden relative">
-      {/* Dynamic Ambient Background Blobs */}
-      <div className="absolute top-[-10%] right-[-10%] w-[600px] h-[600px] bg-gradient-to-br from-[#2e2efe]/5 to-purple-600/0 rounded-full blur-[140px] pointer-events-none" />
+      {/* Dynamic Ambient Background Blobs — gold orb lifted from the site's comparison section */}
+      <div className="absolute top-[-10%] right-[-10%] w-[600px] h-[600px] bg-[radial-gradient(circle_at_50%_40%,rgba(245,158,11,0.07),transparent_50%)] rounded-full blur-[140px] pointer-events-none" />
       <div className="absolute bottom-[-15%] left-[-10%] w-[600px] h-[600px] bg-gradient-to-tr from-purple-600/5 to-[#2e2efe]/0 rounded-full blur-[140px] pointer-events-none" />
 
       {/* Sidebar */}
@@ -117,7 +117,7 @@ const AdminDashboard: React.FC<{ user: User; onSignOut: () => void }> = ({ user,
         <div className="absolute top-0 right-0 w-[1px] h-full bg-gradient-to-b from-white/10 via-white/5 to-transparent" />
         
         <div className="p-8 flex items-center gap-3">
-          <div className="w-10 h-10 bg-gradient-to-br from-[#2e2efe] via-[#2e2efe] to-purple-600 rounded-xl flex items-center justify-center shadow-lg shadow-[#2e2efe]/20 relative">
+          <div className="w-10 h-10 gradient-tech-bro animate-liquid rounded-xl flex items-center justify-center shadow-lg shadow-[#2e2efe]/20 relative">
             <div className="absolute inset-0 bg-[#2e2efe]/10 blur-sm rounded-xl" />
             <ShieldCheck className="text-white w-5 h-5 relative z-10" />
           </div>

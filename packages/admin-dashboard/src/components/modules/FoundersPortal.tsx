@@ -80,12 +80,12 @@ export const FoundersPortal: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between bg-[#0d0d0d] border border-white/5 p-6 rounded-3xl">
+      {/* Header — framed in the site's 5-color metallic gold foil */}
+      <div className="flex items-center justify-between foil-gold-border p-6 rounded-3xl">
         <div>
           <h3 className="text-xl font-bold tracking-tight flex items-center gap-2">
             <Users className="text-[#ffb800] w-6 h-6" />
-            Founders Portal
+            <span className="foil-sheen-text">Founders Portal</span>
           </h3>
           <p className="text-sm text-white/40 mt-1">Live founders roster from the activation ledger.</p>
         </div>
@@ -109,7 +109,7 @@ export const FoundersPortal: React.FC = () => {
         <>
           {/* Seat count — real */}
           <div className="grid grid-cols-2 gap-6">
-            <div className="bg-[#1f222a] border border-white/5 p-6 rounded-2xl">
+            <div className="specular-card p-6 rounded-2xl">
               <div className="flex items-center gap-3 mb-2">
                 <Crown className="w-5 h-5 text-[#ffb800]" />
                 <h4 className="font-bold text-white/70">Founders activated</h4>

@@ -113,7 +113,7 @@ export const LoginScreen: React.FC = () => {
 
           {/* Logo / Title */}
           <div className="flex flex-col items-center text-center space-y-3">
-            <div className="w-12 h-12 bg-gradient-to-br from-[#2e2efe] via-[#2e2efe] to-purple-600 rounded-2xl flex items-center justify-center shadow-lg shadow-[#2e2efe]/15 relative group">
+            <div className="w-12 h-12 gradient-tech-bro animate-liquid rounded-2xl flex items-center justify-center shadow-lg shadow-[#2e2efe]/15 relative group">
               <div className="absolute inset-0 bg-[#2e2efe]/20 blur-md rounded-2xl opacity-100 group-hover:opacity-100 transition-opacity" />
               <ShieldCheck className="text-white w-6 h-6 relative z-10" />
             </div>
@@ -180,7 +180,7 @@ export const LoginScreen: React.FC = () => {
                   <button
                     type="submit"
                     disabled={submitting}
-                    className="w-full flex items-center justify-center gap-2 py-3 bg-gradient-to-r from-[#2e2efe] to-[#2e2efe] hover:from-[#2e2efe] hover:to-[#4bd5ee] active:scale-[0.98] disabled:opacity-50 text-white font-semibold text-sm rounded-xl transition-all shadow-md shadow-[#2e2efe]/10 cursor-pointer"
+                    className="w-full flex items-center justify-center gap-2 py-3 gradient-tech-bro hover:brightness-110 active:scale-[0.98] disabled:opacity-50 text-white font-semibold text-sm rounded-xl transition-all shadow-md shadow-[#2e2efe]/10 cursor-pointer"
                   >
                     {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Send Magic Link'}
                   </button>
