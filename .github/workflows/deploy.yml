@@ -937,6 +937,10 @@ jobs:
         run: |
           npx --no-install firebase deploy --only firestore:indexes --project indii-music-founder --non-interactive --force
 
+      - name: Deploy Storage rules
+        run: |
+          npx --no-install firebase deploy --only storage --project indii-music-founder --non-interactive --force
+
       - name: Configure deterministic media storage
         run: |
           set -euo pipefail

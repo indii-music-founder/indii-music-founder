@@ -2454,3 +2454,54 @@ Remaining logged backlog (medium/low): eviction-rebuild cap mismatch, resolveSto
 6. **Gallery loading/error states (low)** — new isHistoryInitialized flag (set when the history subscription settles) so the gallery stops flashing "GALLERY IS EMPTY" mid-first-snapshot; historySyncError now renders an inline state instead of a transient toast only.
 
 Remaining logged backlog (own pass each): eviction-rebuild cap mismatch, resolveStorageUrl echo-on-failure leaks into VideoPropertiesPanel/openSessionProxy, getCanvasStateFromStorage no updatedAt compare, aspect-ratio triple coercion, PLP attention_required dead end, Omni referenceVideoUri '', blob: reference handling, never-settling frame promises, ImageSubMenu orphan (founder sign-off required to remove), IDB bloat, download-token re-mint on re-save.
+
+---
+
+### SWEEP NOTE 2026-08-20 20:10 ET: mixed-commit incident (shared-index race) — root cause + prevention
+
+- **Incident:** docs commit 683e34ae6 (flowchart gate fix) swept 11 concurrently-staged files owned by the other agent into the commit. Sequence: the other agent staged their in-progress files in the shared index; `git add docs/flowcharts/api_endpoints.md && git commit` then committed ALL staged content. Root cause: `git commit` commits the whole index, and the index is shared between concurrent agents.
+- **Impact:** zero data loss — all 11 files (AssetsPanel, CreativeGallery, DirectGenerationTab, creativeHistorySlice, interaction/gallery tests, hostingPolicy/python-bridge tests, ledger) are intact on main under commit 683e34ae6. CI 32431428586 runs on that tree; any red root cause belongs to the swept files' owner. The other agent's remaining 6 dirty files + 1 untracked were NOT touched.
+- **Prevention (binding):** before ANY commit, run `git diff --cached --stat` and verify it contains EXACTLY the intended files; abort if foreign entries appear. Prefer `git commit -- <explicit paths>`? No — that still commits all staged. Correct pattern: `git reset` foreign staged entries first (or `git stash push -- <their paths>`), or verify `git diff --cached --name-only` matches the intended set exactly, then commit.
+---
+
+### ISSUE-1168 verification (2026-08-20 20:25 ET) — Vertex routing + alerting proven live
+
+- **Live provider routing (residual acceptance item):** deployed generateImageV3 logs, last 48h — every completed generation logs `provider: 'vertex'` (jobIds e.g. RmdujZHC5Q9qrSvNhA36, WV8bX0Ot7Sa2tXrYtMCX, dMwqxY9WZKYumeKy9l8d) and `[VertexClient] Initialized Vertex AI SDK for project=indii-music-founder, location=global, baseUrl=https://aiplatform.googleapis.com`. Production AI generation runs on Vertex postpaid via ADC — the AI Studio prepaid-credit dead path is not in use.
+- **Alert policy live:** `AI generation billing/quota exhaustion (RESOURCE_EXHAUSTED)` exists (combiner OR), notification channel `projects/indii-music-founder/notificationChannels/11054218369120817035` = `email / Founder email (William)` — matches the channel ID recorded at creation.
+- **Budget:** billing-account listing requires Billing Admin (service account lacks it) — the $200/mo budget creation is documented in the fix; budget visibility is founder-gated.
+- **Remaining residual (external acceptance, not self-verifiable):** deliver one test alert email to the founder. Everything else in the acceptance is now evidenced.
+
+### ISSUE-1158 status correction (2026-08-20 20:25 ET) — stale PARTIAL header
+
+- The status header above still reads `🟡 PARTIAL (2026-07-11...)`, but ISSUE-1158's residual acceptance was closed on 2026-08-20 04:50 by the ISSUE-1392 CLOSED entry (generateAudioV3 200 + playable WAV 428,204 bytes mono 24kHz 16-bit + idempotent replay + failed-job 409). Re-confirmed 2026-08-20 ~16:10 ET: probe re-run → 200, jobId audio-b7f5ea059a16e54c..., resultUri gs://indii-music-founder.firebasestorage.app/creative/g2AcFApNZvQKYlGg0LQuVADCFoO2/audio/outputs/1787201179368_1f48d006.wav. Status is ✅ FIXED; the header line is superseded.
+---
+
+### ISSUE-1159 evidence (2026-08-20 20:16 ET) — PLP batch suites green
+
+- Ran plpBatch.test.ts (3) + plpBatch.integration.test.ts (7) → 10/10 pass on the current tree. The suite covers the 5 acceptance scenarios (mixed completion order, retry lifecycle, duplicate events, project switch, cleanup).
+- Note: despite the name, plpBatch.integration.test.ts is pure in-memory logic (no Firestore emulator dependency) — the ledger's 'emulator-backed' wording is aspirational. The remaining residual — a live provider generation receipt — stays budget-gated (approved fixture/budget required before paid generation).
+- VideoGenerationService.integration.test.ts: 3 tests skipped (env-gated) — expected, not a failure.
+---
+
+### Emulator rules suite — REAL emulator-backed run (2026-08-20 20:16 ET)
+
+- Command: `FIREBASE_EMULATORS_PATH=/tmp/fb-emulators npx -y firebase-tools@latest emulators:exec --only firestore --project indii-os-rules-test "cd packages/firebase && npm run test:rules"` (firepit standalone binary fails under the sandbox — EPERM on ~/.cache/firebase/runtime/shell; the npm-distributed firebase-tools + redirected emulator path works).
+- Result: **235/235 passed** (firestore.rules.test.ts 232 + paint-save-repro.rules.test.ts 3) with the Firestore emulator enforcing rules live (stderr shows real PERMISSION_DENIED rejections for the deny-assertions). This closes the long-standing 'harness skips emulator-backed assertions when localhost:8080 is unavailable' gap — assertions genuinely ran.
+- ISSUE-1390's paint-save repro suite re-validated on the current tree: painting-save writes ALLOW for verified users, DENY anonymous — rules remain innocent; the ISSUE-1390 root cause was client session state (already fixed).
+---
+
+### Storage rules suite — REAL emulator-backed run (2026-08-20 20:20 ET) — 20/20
+
+- Command: `npx -y firebase-tools@latest emulators:exec --config /tmp/fb-config/firebase.json --only firestore,storage --project indii-music-founder "cd packages/firebase && npx vitest run src/test/security/storage.rules.test.ts"` (scratch config with storage target 'main' mapped in a scratch .firebaserc; the repo firebase.json's storage target can't resolve for emulator projects).
+- Result: **20/20 passed** — immutable canonical masters, canonical covers, RAG docs, owner-bound long-recording staging (incl. cross-service firestore.get() reads), private project render outputs, quarantine/client-write denials. First genuine emulator-backed execution of this suite (previous runs skipped emulator assertions when localhost:8080 was unavailable).
+- **Invocation lesson:** the suite's initializeTestEnvironment uses projectId 'indii-music-founder' — emulators:exec MUST use the same `--project` or cross-service rules reads (firestore.exists/get in storage rules) evaluate against a different database and legitimate uploads get denied (reproduced 2 false failures with --project indii-os-rules-test; 20/20 with the matching project).
+- Combined with the firestore run (235/235), the ENTIRE committed rules surface is now emulator-proven on the current tree.
+---
+
+### PROD DEFECT: live storage rules 18 days stale — CI never deployed them (2026-08-20 20:25 ET) — FIXED
+
+- **Discovery (live-vs-committed drift check via Firebase Rules API):** live storage release `firebase.storage/indii-music-founder.firebasestorage.app` pointed at ruleset f735d19d, updateTime **2026-08-02** — while firestore rules were current (ruleset f6e1724d, 2026-08-18). Storage rules changed on main 4+ times since Aug 2 (long-session ingestion 2fdfa9acd, RAG server-authorized uploads 6ba4299b7, storyboard authority 39805c6f4, Trash Quarantine Vault + client-delete denial 93788828b) — NONE reached production storage.
+NaN
+NaN
+NaN
+NaN
