@@ -79,7 +79,9 @@ describe('ISSUE-1159: PLP batch integration scenarios', () => {
 
         // Video job 1 completes with no URL (provider error)
         state = completePlpSlot(state, 11, { id: 'video-job-1', url: '', prompt: 'no output' });
-        expect(state.slots[11]?.status).toBe('queued');
+        // ISSUE-1395: a URL-less completion must not strand the slot 'queued'
+        // forever — the model marks it failed so the retry path is reachable.
+        expect(state.slots[11]?.status).toBe('failed');
         expect(getEligiblePlpSlots(state)).toHaveLength(1); // Not eligible
 
         // User retries video job 1

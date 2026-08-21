@@ -80,7 +80,13 @@ export function retryPlpSlot(batch: PlpBatch, slotIndex: number): PlpBatch {
 }
 
 export function completePlpSlot(batch: PlpBatch, slotIndex: number, result: PlpVariantResult): PlpBatch {
-    if (!result.id || !result.url) return batch;
+    // ISSUE-1395 (audit): returning the batch unchanged on a missing
+    // id/url stranded the slot 'queued' forever — no retry button, launch
+    // blocked, no diagnostic. The model should never accept a completion
+    // without a playable artifact: mark the slot failed instead.
+    if (!result.id || !result.url) {
+        return failPlpSlot(batch, slotIndex, 'Variant completed without a playable asset.');
+    }
     return updateSlot(batch, slotIndex, slot => {
         // A listener can emit the same terminal record more than once. The first
         // accepted completion owns this immutable PLP slot.

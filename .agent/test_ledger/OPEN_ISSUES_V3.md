@@ -2505,3 +2505,12 @@ NaN
 NaN
 NaN
 NaN
+### ISSUE-1395 audit round 5 (2026-08-21): image-generation pipeline remainder
+
+From the image-generation pipeline audit (3258c8c6): PLP char refs, PLP/cover-art routing, chat_import stamp, and history dedupe were already fixed in rounds 1/3/4. Fixed now:
+1. **Stuck activeJobs spinner** — a resolveStorageUrl failure in the direct-tab video job listener left the job in activeJobs forever with a live subscription. The catch now cleans up the job+subscription and toasts honestly.
+2. **PLP stranded slots** — completePlpSlot returned the batch unchanged on a missing id/url, leaving the slot 'queued' forever (no retry, launch blocked). It now marks the slot failed with a diagnostic so the retry path is reachable.
+
+Backlogged (need design/gateway work — flag for the firebase swarm):
+- **Image jobId reconciliation** — when the image callable rejects after the gateway committed (resultUris persisted), the result is lost and a retry pays again; images have no waitForJob equivalent (videos do). Needs a gateway job-receipt contract + client resume path.
+- Dead branches: ImageGenerationService legacy data.images path (gateway returns resultUris only); EditingService.generateStoryChain inlineData skip. Documented, not removed (asset-deletion fail-safe).

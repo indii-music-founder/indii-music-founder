@@ -261,7 +261,17 @@ export function useDirectGeneration() {
                             }
                         }, 3000);
                     } catch (err) {
+                        // ISSUE-1395 (audit): a resolve failure used to leave
+                        // the job in activeJobs forever with a permanent
+                        // spinner and a live subscription. Clean up and
+                        // surface the failure like the 'failed' branch.
                         logger.error('Failed to resolve Storage URL', err);
+                        toast.error('Generation completed but its file could not be resolved. It may still be in your gallery.');
+                        setActiveJobs(prev => prev.filter(j => j.id !== job.id));
+                        if (unsubsRef.current[job.id]) {
+                            unsubsRef.current[job.id]?.();
+                            delete unsubsRef.current[job.id];
+                        }
                     }
                 } else if (data.status === 'failed') {
                     setTimeout(() => {
