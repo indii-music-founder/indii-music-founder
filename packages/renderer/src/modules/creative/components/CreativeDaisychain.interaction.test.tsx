@@ -78,7 +78,8 @@ describe('Creative Director Daisychain (6-Click Workflow)', () => {
         url: 'data:image/png;base64,mock',
         prompt: 'Initial Prompt',
         type: 'image',
-        timestamp: Date.now()
+        timestamp: Date.now(),
+        projectId: 'test-project'
     };
 
     const mockToastInfo = vi.fn();
@@ -123,6 +124,8 @@ describe('Creative Director Daisychain (6-Click Workflow)', () => {
                     currentProjectId: 'test-project',
                     updateHistoryItem: vi.fn(),
                     setActiveReferenceImage: vi.fn(),
+                    isHistoryInitialized: true,
+                    historySyncError: null,
                     uploadedImages: [],
                     addUploadedImage: vi.fn(),
                     userProfile: {

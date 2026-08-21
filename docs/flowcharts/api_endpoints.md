@@ -79,7 +79,23 @@ graph LR
 
 ```
 
-## Complete API Endpoint Map
+## Step-by-Step Transition Breakdown
+
+1. **Client callable / HTTP request lifecycle** — every client-reachable endpoint runs on a Gen 2 Cloud Function in `us-central1`:
+   1. The request arrives at the function URL; App Check enforcement applies where configured, and the caller's ID token is resolved into an authenticated `uid`.
+   2. Inputs are validated (shape guards / schema checks) — failures return typed `HttpsError` codes (`invalid-argument`, `unauthenticated`, `permission-denied`, `failed-precondition`, `unavailable`) instead of silent fallbacks.
+   3. Cost-gated operations (creative generation, video, streaming) reserve budget through `enforceOperationCost` before executing; entitlements/tier checks gate the call.
+   4. The service layer executes against external providers (Vertex AI / Gemini, Stripe, PandaDoc, DSP/DDEX, social platforms, BigQuery, Printful, GCP).
+   5. Durable artifacts are written (Storage objects + Firestore receipts with idempotent job IDs), and usage is recorded to the `usage` ledger (`image` / `video` / `chat_tokens`) via `recordUsage`.
+   6. The response returns; failures fail loud (logged + typed error), never fabricated success.
+
+2. **Internal trigger lifecycle** — the 24 internal triggers fire on state changes rather than client calls:
+   1. Firestore triggers (`onDocumentCreated/Updated/Deleted` — e.g. `sendWebhookOnEvent`, `videoJobFirestoreOrchestrator`) react to document transitions and write idempotent receipts (event IDs / job IDs) so replays do not double-process.
+   2. Scheduled triggers (`retentionDaemon` 72h, `processWebhookQueue` 30s, `pulseTick` 1m, `agentLoopCron`) run composite-index-backed queries (`status` + timestamp ranges) and batch-process due work.
+   3. Storage triggers (`onObjectFinalized` — e.g. `verifyMasterAudio`) validate content hashes and metadata before downstream consumers trust the object.
+   4. External webhooks (`stripeWebhook`, `pandadocWebhook`, `shopifyWebhook`, `telegramWebhook`) verify provider signatures (Stripe signature / HMAC) before mutating state; failures retry with backoff and dead-letter.
+
+3. **Observability** — every transition writes its ledger (usage, `costLedger`, `webhook_queue`, `agent_traces`) and logs failures via `console.error` so monitors and session reports surface real errors.
 
 ## Complete API Endpoint Map (auto-synced 2026-08-18)
 

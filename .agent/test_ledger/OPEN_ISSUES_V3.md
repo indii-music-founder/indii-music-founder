@@ -2443,3 +2443,14 @@ The board (InfiniteCanvas) audit's remaining findings are now fixed:
 7. **openImageInStudio 'chat_import' stamp** — board imports from chat were tagged with a fake project id; now re-stamped to the active project.
 
 Remaining logged backlog (medium/low): eviction-rebuild cap mismatch, resolveStorageUrl echo-on-failure leaks into VideoPropertiesPanel/openSessionProxy, getCanvasStateFromStorage no updatedAt compare, aspect-ratio triple coercion, PLP attention_required dead end, Omni referenceVideoUri '', blob: reference handling, never-settling frame promises, Like/Dislike fake toasts, duplicate history entries, ImageSubMenu orphan, IDB bloat, download-token re-mint on re-save, gallery empty-state flash, AssetsPanel music/text click no-op.
+
+### ISSUE-1395 audit round 4 (2026-08-20): gallery/asset surfaces closed
+
+1. **Project-scoped reads (medium)** — the gallery and "Project Assets" panel rendered every project's assets (subscription is org-scoped; projectId was stamped but never filtered). CreativeGallery and AssetsPanel now scope to the active project bucket via projectBucketMatches; file nodes filtered too.
+2. **gs:// leaks in export/render paths (medium)** — AssetsPanel video tiles now resolve storage URIs (VideoThumb via useResolvedStorageUrl); the Direct tab's anchor download resolves before downloadAsset.
+3. **Like/Dislike removed (low)** — they only emitted fake success toasts with no stored state; buttons and their tests removed.
+4. **Duplicate history entries (low)** — addToHistory dedupes by id (the video-job completion listener could re-add the same job.id in its unsubscribe window → duplicate tiles/React keys).
+5. **AssetsPanel music/text clicks no-op (low)** — music clicks now play the track; file clicks get an honest info toast.
+6. **Gallery loading/error states (low)** — new isHistoryInitialized flag (set when the history subscription settles) so the gallery stops flashing "GALLERY IS EMPTY" mid-first-snapshot; historySyncError now renders an inline state instead of a transient toast only.
+
+Remaining logged backlog (own pass each): eviction-rebuild cap mismatch, resolveStorageUrl echo-on-failure leaks into VideoPropertiesPanel/openSessionProxy, getCanvasStateFromStorage no updatedAt compare, aspect-ratio triple coercion, PLP attention_required dead end, Omni referenceVideoUri '', blob: reference handling, never-settling frame promises, ImageSubMenu orphan (founder sign-off required to remove), IDB bloat, download-token re-mint on re-save.

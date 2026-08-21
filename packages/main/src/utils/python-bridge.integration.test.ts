@@ -1,5 +1,5 @@
 import { spawnSync } from 'child_process';
-import path from 'path';
+import path, { resolve } from 'path';
 import { describe, expect, it, vi } from 'vitest';
 import { AgentSupervisor } from './AgentSupervisor';
 
@@ -32,6 +32,12 @@ const fixture = {
     },
 };
 
+// The execution/ scripts live at the monorepo root, not under packages/main.
+// Point both the direct spawn calls and PythonBridge (which honors ROOT_DIR)
+// at that root so the suite is cwd-independent.
+const repoRoot = resolve(__dirname, '../../..', '..'); // utils → src → main → packages → repo root
+process.env.ROOT_DIR = repoRoot;
+
 function resolvePythonCommand(): string {
     if (process.env.PYTHON_PATH) return process.env.PYTHON_PATH;
     if (process.env.PYTHON_CMD) return process.env.PYTHON_CMD;
@@ -45,7 +51,7 @@ describe('PythonBridge waterfall subprocess integration', () => {
         const result = spawnSync(
             resolvePythonCommand(),
             [
-                path.resolve(process.cwd(), 'execution/finance/waterfall_payout.py'),
+                path.resolve(repoRoot, 'execution/finance/waterfall_payout.py'),
                 JSON.stringify(fixture),
             ],
             { encoding: 'utf8' },
@@ -63,7 +69,7 @@ describe('PythonBridge waterfall subprocess integration', () => {
         const result = spawnSync(
             resolvePythonCommand(),
             [
-                path.resolve(process.cwd(), 'execution/finance/waterfall_payout.py'),
+                path.resolve(repoRoot, 'execution/finance/waterfall_payout.py'),
                 JSON.stringify({ gross: 1000 }),
             ],
             { encoding: 'utf8' },

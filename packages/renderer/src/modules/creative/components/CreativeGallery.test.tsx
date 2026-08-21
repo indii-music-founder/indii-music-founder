@@ -31,7 +31,11 @@ describe('CreativeGallery', () => {
         setVideoInput: vi.fn(),
         selectedItem: null,
         setSelectedItem: vi.fn(),
-        setEntityAnchor: vi.fn()
+        setEntityAnchor: vi.fn(),
+        // ISSUE-1395: the gallery shows a loading state until the history
+        // snapshot has settled — tests simulate an initialized store.
+        isHistoryInitialized: true,
+        historySyncError: null
     };
 
     beforeEach(() => {
@@ -75,9 +79,8 @@ describe('CreativeGallery', () => {
 
         render(<CreativeGallery />);
 
-        // Check for aria-labels on buttons
-        expect(screen.getByLabelText('Like')).toBeInTheDocument();
-        expect(screen.getByLabelText('Dislike')).toBeInTheDocument();
+        // Check for aria-labels on buttons (Like/Dislike were removed —
+        // they only faked success toasts with no stored state).
         expect(screen.getByLabelText('Delete')).toBeInTheDocument();
         expect(screen.getByLabelText('View Fullsize')).toBeInTheDocument();
 

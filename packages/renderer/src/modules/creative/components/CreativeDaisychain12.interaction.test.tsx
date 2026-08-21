@@ -128,7 +128,8 @@ describe('Creative Director 12-Click Daisychain', () => {
         url: 'data:image/png;base64,mockA',
         prompt: 'Initial Prompt A',
         type: 'image',
-        timestamp: BASE_TS
+        timestamp: BASE_TS,
+        projectId: 'test-project'
     };
 
     const mockItemB = {
@@ -136,7 +137,8 @@ describe('Creative Director 12-Click Daisychain', () => {
         url: 'data:image/png;base64,mockB',
         prompt: 'Initial Prompt B',
         type: 'image',
-        timestamp: BASE_TS + 1000
+        timestamp: BASE_TS + 1000,
+        projectId: 'test-project'
     };
 
     const mockToastInfo = vi.fn();
@@ -224,6 +226,8 @@ describe('Creative Director 12-Click Daisychain', () => {
                     addUploadedAudio: vi.fn(),
                     removeUploadedAudio: vi.fn(),
                     currentProjectId: 'test-project',
+                    isHistoryInitialized: true,
+                    historySyncError: null,
                     isPromptBuilderOpen: false,
                     togglePromptBuilder: vi.fn(),
                     showBrandAssets: false,
@@ -296,12 +300,8 @@ describe('Creative Director 12-Click Daisychain', () => {
 
         render(<DaisychainApp />);
 
-        // --- CLICK 1: Like Item A in Gallery ---
-        const likeBtn = screen.getAllByTestId('like-btn')[0]!;
-        fireEvent.click(likeBtn);
-        expect(mockToastInfo).toHaveBeenCalledWith("Liked");
-
-        // --- CLICK 2: Maximize Item A ---
+        // --- CLICK 1: Maximize Item A in Gallery (Like was removed — it
+        // only faked a success toast with no stored state) ---
         const maximizeButtons = screen.getAllByTestId('view-fullsize-btn');
         fireEvent.click(maximizeButtons[0]!); // Item A
 

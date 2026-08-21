@@ -9,7 +9,10 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '@/lib/utils';
 import { useSafeImageUrl } from '@/hooks/useSafeImageUrl';
+import { useResolvedStorageUrl } from '@/hooks/useResolvedStorageUrl';
 import { writeCreativeAssetDrag } from '@/services/creative/CreativeAssetDragService';
+import { projectBucketMatches } from '@/core/constants';
+import { useToast } from '@/core/context/ToastContext';
 
 type AssetFilter = 'all' | 'images' | 'videos' | 'audio' | 'files';
 type ViewStyle = 'grid' | 'list';
@@ -42,46 +45,75 @@ function AssetThumbnail({ src, alt, className, onError }: { src: string; alt: st
     );
 }
 
+// ISSUE-1395 (audit): the panel's video tiles fed raw asset URLs (a gs://
+// URI breaks the element silently). Resolve storage URIs to download URLs.
+function VideoThumb({ src, className }: { src: string; className: string }) {
+    const { url: resolvedUrl, isResolving } = useResolvedStorageUrl(src);
+    if (isResolving) return null;
+    return (
+        <video
+            src={resolvedUrl || src}
+            preload="metadata"
+            muted
+            className={className}
+            onError={(e) => { (e.target as HTMLVideoElement).style.display = 'none'; }}
+        />
+    );
+}
+
 export default function AssetsPanel({ toggleRightPanel }: AssetsPanelProps) {
     const {
         generatedHistory,
         uploadedImages,
         uploadedAudio,
         fileNodes,
+        currentProjectId,
         setSelectedItem,
         setViewMode,
         setModule,
         removeItemFromProject,
         removeUploadedImageFromProject,
         removeUploadedAudioFromProject,
-        deleteNode
+        deleteNode,
+        playTrack
     } = useStore(useShallow(state => ({
         generatedHistory: state.generatedHistory,
         uploadedImages: state.uploadedImages,
         uploadedAudio: state.uploadedAudio,
         fileNodes: state.fileNodes,
+        currentProjectId: state.currentProjectId,
         setSelectedItem: state.setSelectedItem,
         setViewMode: state.setViewMode,
         setModule: state.setModule,
         removeItemFromProject: state.removeItemFromProject,
         removeUploadedImageFromProject: state.removeUploadedImageFromProject,
         removeUploadedAudioFromProject: state.removeUploadedAudioFromProject,
-        deleteNode: state.deleteNode
+        deleteNode: state.deleteNode,
+        playTrack: state.playTrack
     })));
 
     const [filter, setFilter] = useState<AssetFilter>('all');
     const [viewStyle, setViewStyle] = useState<ViewStyle>('grid');
     const [searchQuery, setSearchQuery] = useState('');
+    const toast = useToast();
 
     // Aggregate all assets into a single sorted list
+    // ISSUE-1395 (audit): "Project Assets" rendered every project's assets —
+    // the subscription is org-scoped and nothing filtered on read. Scope the
+    // list to the active project bucket (default-era sentinels share one
+    // bucket). A null currentProjectId shows everything (no project context).
     const allAssets = useMemo(() => {
         const assets: HistoryItem[] = [];
 
         // Generated images/videos
-        generatedHistory.forEach(item => assets.push(item));
+        generatedHistory.forEach(item => {
+            if (currentProjectId && !projectBucketMatches(item.projectId, currentProjectId)) return;
+            assets.push(item);
+        });
 
         // Uploaded images (deduplicate)
         uploadedImages.forEach(item => {
+            if (currentProjectId && !projectBucketMatches(item.projectId, currentProjectId)) return;
             if (!assets.find(a => a.id === item.id || (a.url && a.url === item.url))) {
                 assets.push(item);
             }
@@ -89,6 +121,7 @@ export default function AssetsPanel({ toggleRightPanel }: AssetsPanelProps) {
 
         // Uploaded audio (deduplicate)
         uploadedAudio.forEach(item => {
+            if (currentProjectId && !projectBucketMatches(item.projectId, currentProjectId)) return;
             if (!assets.find(a => a.id === item.id || (a.url && a.url === item.url))) {
                 assets.push(item);
             }
@@ -96,6 +129,7 @@ export default function AssetsPanel({ toggleRightPanel }: AssetsPanelProps) {
 
         // File nodes → convert to pseudo-HistoryItem for display
         fileNodes.forEach(node => {
+            if (currentProjectId && !projectBucketMatches(node.projectId, currentProjectId)) return;
             if (!assets.find(a => a.id === node.id || (a.url && a.url === node.data?.url))) {
                 const mime = node.data?.mimeType || '';
                 const nodeType = node.type === 'folder' ? 'text' : (
@@ -118,7 +152,7 @@ export default function AssetsPanel({ toggleRightPanel }: AssetsPanelProps) {
 
         // Sort newest first
         return assets.sort((a, b) => b.timestamp - a.timestamp);
-    }, [generatedHistory, uploadedImages, uploadedAudio, fileNodes]);
+    }, [generatedHistory, uploadedImages, uploadedAudio, fileNodes, currentProjectId]);
 
     // Filter assets
     const filteredAssets = useMemo(() => {
@@ -172,6 +206,13 @@ export default function AssetsPanel({ toggleRightPanel }: AssetsPanelProps) {
             setSelectedItem(asset);
             setModule('creative');
             setViewMode('editor');
+            return;
+        }
+        // ISSUE-1395 (audit): music/text assets used to silently no-op.
+        if (asset.type === 'music') {
+            playTrack?.(asset);
+        } else {
+            toast?.info('File assets can be opened from the file system panel.');
         }
     };
 
@@ -317,12 +358,9 @@ export default function AssetsPanel({ toggleRightPanel }: AssetsPanelProps) {
                                 >
                                     {/* Thumbnail */}
                                     {asset.type === 'video' ? (
-                                        <video
+                                        <VideoThumb
                                             src={asset.thumbnailUrl || asset.url}
-                                            preload="metadata"
-                                            muted
                                             className="w-full h-full object-cover"
-                                            onError={(e) => { (e.target as HTMLVideoElement).style.display = 'none'; }}
                                         />
                                     ) : asset.type === 'image' ? (
                                         <AssetThumbnail

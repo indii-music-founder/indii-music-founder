@@ -18,7 +18,9 @@ interface HostingTarget {
 }
 
 const firebaseConfig = JSON.parse(
-    readFileSync(resolve(process.cwd(), 'firebase.json'), 'utf8'),
+    // Resolve relative to THIS file (src/security), so the suite behaves
+    // identically from the repo root and from the main package directory.
+    readFileSync(resolve(__dirname, '../../../..', 'firebase.json'), 'utf8'),
 ) as { hosting: HostingTarget[] };
 
 function target(name: string): HostingTarget {

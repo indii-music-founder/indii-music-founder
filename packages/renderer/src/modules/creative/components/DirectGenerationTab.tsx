@@ -907,12 +907,15 @@ export default function DirectGenerationTab() {
                                                         className="p-1.5 rounded-lg bg-white/5 border border-white/5 text-gray-400 hover:text-white hover:bg-white/10 transition-colors" 
                                                         onClick={(e) => {
                                                             e.stopPropagation();
-                                                            // Download with correct file extension
-                                                            const a = document.createElement('a');
-                                                            a.href = item.url;
-                                                            const ext = item.type === 'video' ? 'mp4' : 'png';
-                                                            a.download = `${item.type}_${item.id}.${ext}`;
-                                                            a.click();
+                                                            void (async () => {
+                                                                // ISSUE-1395 (audit): a raw gs:// href cannot be downloaded —
+                                                                // resolve to a download URL first.
+                                                                const { resolveStorageUrl } = await import('@/services/storage/resolveStorageUrl');
+                                                                const { downloadAsset } = await import('@/utils/download');
+                                                                const resolvedUrl = await resolveStorageUrl(item.url);
+                                                                const ext = item.type === 'video' ? 'mp4' : 'png';
+                                                                await downloadAsset(resolvedUrl, `${item.type}_${item.id}.${ext}`);
+                                                            })();
                                                         }}
                                                     >
                                                         <Download size={11} />

@@ -60,7 +60,9 @@ describe('🖱️ Click: CreativeGallery Interaction', () => {
         resumeTrack: vi.fn(),
         stopTrack: vi.fn(),
         currentTrack: null,
-        isPlaying: false
+        isPlaying: false,
+        isHistoryInitialized: true,
+        historySyncError: null
     };
 
     beforeEach(() => {
@@ -232,17 +234,11 @@ describe('🖱️ Click: CreativeGallery Interaction', () => {
         });
     });
 
-    it('verifies the Like lifecycle (Click → Feedback)', async () => {
+    // ISSUE-1395 (audit): Like/Dislike were removed — they only emitted
+    // fake success toasts with no stored state.
+    it('no longer offers Like/Dislike buttons that faked success', async () => {
         render(<CreativeGallery />);
-        const likeBtn = screen.getByTestId('like-btn');
-        fireEvent.click(likeBtn);
-        expect(mockToastInfo).toHaveBeenCalledWith("Liked");
-    });
-
-    it('verifies the Dislike lifecycle (Click → Feedback)', async () => {
-        render(<CreativeGallery />);
-        const dislikeBtn = screen.getByTestId('dislike-btn');
-        fireEvent.click(dislikeBtn);
-        expect(mockToastInfo).toHaveBeenCalledWith("Disliked");
+        expect(screen.queryByTestId('like-btn')).not.toBeInTheDocument();
+        expect(screen.queryByTestId('dislike-btn')).not.toBeInTheDocument();
     });
 });

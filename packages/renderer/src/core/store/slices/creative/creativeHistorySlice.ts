@@ -98,6 +98,10 @@ export interface CreativeHistorySlice {
     generatedHistory: HistoryItem[];
     /** Non-null when the cloud history subscription failed — the gallery may be showing device-local data only (ISSUE-772). */
     historySyncError: string | null;
+    /** ISSUE-1395 (audit): true once the history subscription/snapshot has
+     *  settled — the gallery uses it to show a loading state instead of
+     *  flashing "GALLERY IS EMPTY" while the first snapshot is in flight. */
+    isHistoryInitialized: boolean;
     addToHistory: (item: HistoryItem) => void;
     initializeHistory: () => Promise<void>;
     updateHistoryItem: (id: string, updates: Partial<HistoryItem>) => void;
@@ -175,6 +179,7 @@ export function buildCreativeHistoryState(
     return {
         generatedHistory: [],
         historySyncError: null,
+        isHistoryInitialized: false,
         failedVariationBatch: null,
         setFailedVariationBatch: (batch) => set({ failedVariationBatch: batch }),
         addToHistory: (item: HistoryItem) => {
@@ -183,8 +188,13 @@ export function buildCreativeHistoryState(
                 logger.debug("CreativeSlice: addToHistory called", item.id);
                 const { currentOrganizationId, currentProjectId, createFileNode, user } = useStore.getState();
                 const enrichedItem = { ...item, orgId: item.orgId || currentOrganizationId };
-                // Eviction policy: cap at 50 items to prevent memory bloat from base64 images
-                set((state) => ({ generatedHistory: [enrichedItem, ...state.generatedHistory].slice(0, 50) }));
+                // Eviction policy: cap at 50 items to prevent memory bloat from base64 images.
+                // ISSUE-1395 (audit): dedupe by id — the video-job completion
+                // listener can re-add the same job.id within its unsubscribe
+                // window, which produced duplicate tiles and duplicate React keys.
+                set((state) => ({
+                    generatedHistory: [enrichedItem, ...state.generatedHistory.filter(i => i.id !== enrichedItem.id)].slice(0, 50),
+                }));
                 logger.debug("CreativeSlice: generatedHistory updated", enrichedItem.id);
 
                 // Auto-persistence to project asset folder
@@ -332,7 +342,11 @@ export function buildCreativeHistoryState(
                 });
             };
 
-            return attemptSubscribe();
+            return attemptSubscribe().finally(() => {
+                // ISSUE-1395 (audit): flag the first snapshot as settled so
+                // surfaces can stop showing their empty/loading placeholder.
+                set({ isHistoryInitialized: true });
+            });
         },
         updateHistoryItem: (id: string, updates: Partial<HistoryItem>) => {
             set((state) => {

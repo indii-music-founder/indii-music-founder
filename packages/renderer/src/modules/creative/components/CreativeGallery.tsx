@@ -2,13 +2,14 @@ import React, { useState, useRef, useMemo, memo, useCallback, useEffect } from '
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { Play, Pause, Image as ImageIcon, Trash2, Maximize2, Upload, ArrowLeftToLine, ArrowRightToLine, Anchor, ThumbsUp, ThumbsDown, Download, Share2, RotateCw, Pin, Send } from 'lucide-react';
+import { Play, Pause, Image as ImageIcon, Trash2, Maximize2, Upload, ArrowLeftToLine, ArrowRightToLine, Anchor, Download, Share2, RotateCw, Pin, Send } from 'lucide-react';
 
 import { useToast } from '@/core/context/ToastContext';
 import { ActionableEmptyState } from '@/components/shared/ActionableEmptyState';
 import { SendToTarget, SendToPayload, CreativeStage, StageHandoffPayload } from '@/types/handoff';
 import { useResolvedStorageUrl } from '@/hooks/useResolvedStorageUrl';
 import { writeCreativeAssetDrag } from '@/services/creative/CreativeAssetDragService';
+import { projectBucketMatches } from '@/core/constants';
 
 import { HistoryItem } from '@/core/store';
 
@@ -414,15 +415,6 @@ const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference
                             <Maximize2 size={14} />
                         </button>
                         <button
-                            onClick={(e) => { e.stopPropagation(); toast.info("Liked"); }}
-                            data-testid="like-btn"
-                            className="p-1.5 bg-gray-800/50 text-white rounded hover:bg-blue-500 focus-visible:ring-2 focus-visible:ring-white/50 transition-colors"
-                            title="Like"
-                            aria-label="Like"
-                        >
-                            <ThumbsUp size={14} />
-                        </button>
-                        <button
                             onClick={(e) => {
                                 e.stopPropagation();
                                 setPrompt(item.prompt);
@@ -435,15 +427,6 @@ const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference
                             aria-label="Re-roll with this prompt"
                         >
                             <RotateCw size={14} />
-                        </button>
-                        <button
-                            onClick={(e) => { e.stopPropagation(); toast.info("Disliked"); }}
-                            data-testid="dislike-btn"
-                            className="p-1.5 bg-gray-800/50 text-white rounded hover:bg-orange-500 focus-visible:ring-2 focus-visible:ring-white/50 transition-colors"
-                            title="Dislike"
-                            aria-label="Dislike"
-                        >
-                            <ThumbsDown size={14} />
                         </button>
                         <button
                             onClick={async (e) => {
@@ -535,7 +518,7 @@ export default function CreativeGallery({ compact = false, onSelect, className =
         setVideoInput, selectedItem, setSelectedItem, addCharacterReference, setPrompt, setViewMode,
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         playTrack, stopTrack, currentTrack, isPlaying, pauseTrack, resumeTrack,
-        pinToClipboard, sendToModule, sendToStage
+        pinToClipboard, sendToModule, sendToStage, isHistoryInitialized, historySyncError
     } = useStore(useShallow(state => ({
         generatedHistory: state.generatedHistory,
         removeItemFromProject: state.removeItemFromProject,
@@ -561,7 +544,9 @@ export default function CreativeGallery({ compact = false, onSelect, className =
         resumeTrack: state.resumeTrack,
         pinToClipboard: state.pinToClipboard,
         sendToModule: state.sendToModule,
-        sendToStage: state.sendToStage
+        sendToStage: state.sendToStage,
+        isHistoryInitialized: state.isHistoryInitialized,
+        historySyncError: state.historySyncError
     })));
     const fileInputRef = useRef<HTMLInputElement>(null);
     const toast = useToast();
@@ -584,6 +569,12 @@ export default function CreativeGallery({ compact = false, onSelect, className =
     // Combine all items and sort by timestamp (newest first)
     // ⚡ Bolt Optimization: Memoize allItems and compute filtered arrays inside the callback
     const allItems = useMemo(() => {
+        // ISSUE-1395 (audit): the lists are org-scoped from the subscription —
+        // the gallery used to render every project's assets. Scope to the
+        // active project bucket (default-era sentinels share one bucket).
+        const inProject = (item: HistoryItem) =>
+            !currentProjectId || projectBucketMatches(item.projectId, currentProjectId);
+
         const filteredUploadedImages = (searchQuery
             ? uploadedImages?.filter(item => item.prompt?.toLowerCase().includes(searchQuery.toLowerCase()))
             : uploadedImages) || [];
@@ -596,8 +587,10 @@ export default function CreativeGallery({ compact = false, onSelect, className =
             ? generatedHistory?.filter(item => item.prompt?.toLowerCase().includes(searchQuery.toLowerCase()))
             : generatedHistory) || [];
 
-        return [...filteredUploadedImages, ...filteredUploadedAudio, ...filteredGenerated].sort((a, b) => b.timestamp - a.timestamp);
-    }, [uploadedImages, uploadedAudio, generatedHistory, searchQuery]);
+        return [...filteredUploadedImages, ...filteredUploadedAudio, ...filteredGenerated]
+            .filter(inProject)
+            .sort((a, b) => b.timestamp - a.timestamp);
+    }, [uploadedImages, uploadedAudio, generatedHistory, searchQuery, currentProjectId]);
 
     // ISSUE-922: uploads are validated up front, each file's read AND durable
     // persistence are awaited, and the toast reports real per-file outcomes —
@@ -698,6 +691,36 @@ export default function CreativeGallery({ compact = false, onSelect, className =
     }, [removeUploadedAudio, removeUploadedImage, removeItemFromProject]);
 
     if (isEmpty) {
+        // ISSUE-1395 (audit): while the first history snapshot is in flight
+        // the gallery used to flash "GALLERY IS EMPTY"; a failed sync was
+        // only a transient toast. Show honest loading and error states.
+        if (!isHistoryInitialized) {
+            return (
+                <div className="flex-1 p-8 flex flex-col items-center justify-center text-gray-500">
+                    <div className="w-10 h-10 rounded-full border-2 border-gray-700 border-t-dept-creative animate-spin mb-4" />
+                    <p className="text-xs">Loading your creations…</p>
+                </div>
+            );
+        }
+        if (historySyncError) {
+            return (
+                <div className="flex-1 p-8">
+                    <ActionableEmptyState
+                        icon={<ImageIcon size={48} />}
+                        title="CLOUD SYNC UNAVAILABLE"
+                        description={`${historySyncError} New assets you create will still appear here for this session.`}
+                        actionLabel="Upload Media"
+                        onAction={() => fileInputRef.current?.click()}
+                        colorClasses={{
+                            text: 'text-amber-400',
+                            bg: 'bg-[#111]',
+                            border: 'border-amber-500/20',
+                            glow: 'shadow-amber-500/5'
+                        }}
+                    />
+                </div>
+            );
+        }
         return (
             <div className="flex-1 p-8">
                 <ActionableEmptyState
