@@ -2688,6 +2688,29 @@ service cloud.firestore {
     }
 
     // =========================================================================
+    // Founders program
+    // =========================================================================
+    // Public recognition: seat, name, joinedAt and the agreement verification
+    // hash are public once a founder joins (Founders Agreement — "name in
+    // code" is a public receipt). All writes happen server-side only
+    // (activateFounderPass / admin tools), never from clients.
+    match /founders/{uid} {
+      allow read: if true;
+      allow create, update, delete: if false;
+    }
+
+    // Public live counter for the landing page (founders_meta/summary.count).
+    match /founders_meta/{docId} {
+      allow read: if true;
+      allow create, update, delete: if false;
+    }
+
+    // GitHub retry queue is server-only — never readable or writable by clients.
+    match /founder_github_commit_queue/{docId} {
+      allow read, write: if false;
+    }
+
+    // =========================================================================
     // Deny all other access by default
     // =========================================================================
     match /{document=**} {

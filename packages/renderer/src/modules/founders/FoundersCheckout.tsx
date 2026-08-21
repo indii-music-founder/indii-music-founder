@@ -10,7 +10,8 @@ import {
     Check,
     ArrowRight,
     AlertTriangle,
-    Mail
+    Mail,
+    Landmark
 } from 'lucide-react';
 import { createOneTimePayment } from '@/services/payment/PaymentService';
 import { logger } from '@/utils/logger';
@@ -301,6 +302,35 @@ export default function FoundersCheckout() {
                             <div className="mt-4 flex items-center justify-center gap-2 text-xs text-gray-500 font-mono">
                                 <ShieldCheck size={14} className="text-amber-500/80" />
                                 <span>Guaranteed Secure via Stripe SSL Protocol</span>
+                            </div>
+                        </div>
+
+                        {/* Alternative payment (hybrid decision 2026-08-20):
+                            Stripe is primary; Cash App / Wire / Check remain
+                            available, with the founder's seat activated
+                            manually by the admin after payment is confirmed. */}
+                        <div className="w-full max-w-2xl mt-6 border border-cyan-500/20 bg-cyan-950/10 rounded-3xl p-6 md:p-8 text-left">
+                            <div className="flex items-center gap-2 mb-3">
+                                <Landmark size={16} className="text-cyan-300" />
+                                <span className="text-xs font-mono uppercase tracking-widest text-cyan-300">
+                                    Prefer an alternative payment?
+                                </span>
+                            </div>
+                            <p className="text-sm text-gray-300 leading-relaxed mb-4">
+                                Pay $2,500 via <strong className="text-white">Cash App</strong>,{' '}
+                                <strong className="text-white">wire transfer</strong>, or{' '}
+                                <strong className="text-white">check</strong>. Your Founder seat is
+                                activated manually by the indii admin after payment is confirmed —
+                                you still receive your seat number and permanent agreement hash.
+                            </p>
+                            <div className="flex flex-col sm:flex-row gap-3">
+                                <a
+                                    href="mailto:wiil@indii.music?subject=indii%20Founder%20Access%20-%20Alternative%20Payment"
+                                    className="flex-1 inline-flex items-center justify-center gap-2 bg-cyan-600/80 hover:bg-cyan-500 text-white font-bold py-3 px-6 rounded-lg transition-all text-sm"
+                                >
+                                    <Mail size={15} />
+                                    Arrange Payment: wiil@indii.music
+                                </a>
                             </div>
                         </div>
 

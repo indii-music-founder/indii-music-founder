@@ -322,11 +322,9 @@ export default function Home({ founder = true }: { founder?: boolean }) {
                 Thesis
               </button>
             )}
-            {founder && (
-              <a href="#founder-access" className="py-2 text-amber-400 transition-colors hover:text-amber-300">
-                Founder access
-              </a>
-            )}
+            <a href="#founder-access" className="py-2 text-amber-400 transition-colors hover:text-amber-300">
+              Founder access
+            </a>
           </div>
 
           <a
@@ -400,9 +398,7 @@ export default function Home({ founder = true }: { founder?: boolean }) {
       <LazySection>{founder && <OnboardingSection />}</LazySection>
 
       <LazySection id="founder-access">
-        {founder && (
-          <FounderAccessSection studioUrl={getStudioUrl()} trackPreview={trackPreview} />
-        )}
+        <FounderAccessSection studioUrl={getStudioUrl()} trackPreview={trackPreview} />
       </LazySection>
 
       <FooterSection founder={founder} onContactClick={handleFounderInterestClick} />

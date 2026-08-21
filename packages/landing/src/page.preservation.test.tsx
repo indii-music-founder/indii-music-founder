@@ -309,19 +309,26 @@ describe('home page preservation (public mode)', () => {
     // With the preview closed, the hero CTA is the waitlist join.
     expect(text).toContain('Join Waitlist');
     expect(text).not.toContain('Enter Founder Preview');
-    expect(text).not.toContain('Secure Founder Access');
     expect(text).not.toContain('Built in Detroit for your work');
     expect(text).not.toContain('Launch cinematic thesis');
     expect(text).not.toContain('Project White Glove');
     expect(text).not.toContain('Contact');
-    // Founder-only sections stay hidden even after intersections fire.
+    // Reveal the lazy sections. Founder Access is public (decision
+    // 2026-08-20) while the other founder-only sections stay hidden.
     await act(async () => {
       for (const io of ioInstances) io.revealAll();
       for (let i = 0; i < 12; i++) {
         await new Promise((resolve) => setTimeout(resolve, 0));
       }
     });
-    expect(container.textContent ?? '').not.toContain('Secure Founder Access');
-    expect(container.textContent ?? '').not.toContain('Built in Detroit for your work');
+    const revealed = container.textContent ?? '';
+    expect(revealed).toContain('Secure Founder Access');
+    expect(revealed).toContain('$2,500');
+    expect(revealed).not.toContain('Built in Detroit for your work');
+    expect(revealed).not.toContain('Launch cinematic thesis');
+    // The onboarding section is founder-only — "Start with your real catalog"
+    // is unique to it (the founders offer itself mentions White Glove).
+    expect(revealed).not.toContain('Start with your real catalog');
+    expect(revealed).not.toContain('Contact');
   });
 });

@@ -1,9 +1,56 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowRight, Check } from 'lucide-react';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../../lib/firebase';
 import { emitSystemPulse } from '../../three/signals';
+
+/** Total seats per the Founders Agreement (1 internal + 10 paid). */
+const FOUNDERS_TOTAL_SEATS = 11;
+
+interface FounderSeatsState {
+  remaining: number;
+  loaded: boolean;
+}
+
+/**
+ * Live seats counter — reads the public founders_meta/summary doc written by
+ * activateFounderPass. Progressive enhancement: fails silently (no counter
+ * shown) when Firestore is unavailable or the doc is absent.
+ */
+function useFounderSeatsRemaining(): FounderSeatsState {
+  const [state, setState] = useState<FounderSeatsState>({ remaining: 0, loaded: false });
+
+  useEffect(() => {
+    let cancelled = false;
+    // Narrow before the async closure so TypeScript sees a real Firestore.
+    const firestore = db;
+    if (!firestore) return;
+
+    const load = async () => {
+      try {
+        const promise = getDoc(doc(firestore, 'founders_meta', 'summary'));
+        if (!promise || typeof promise.then !== 'function') return;
+        const snap = await promise;
+        if (cancelled || !snap.exists()) return;
+        const data = snap.data();
+        const count = typeof data.count === 'number' ? data.count : 0;
+        setState({ remaining: Math.max(0, FOUNDERS_TOTAL_SEATS - count), loaded: true });
+      } catch {
+        // Counter is enhancement only — never break the section on failure.
+      }
+    };
+
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  return state;
+}
 
 const founderIncludes = [
   'Lifetime access to the Founder edition',
@@ -21,6 +68,7 @@ interface FounderAccessSectionProps {
 }
 
 export default function FounderAccessSection({ studioUrl, trackPreview }: FounderAccessSectionProps) {
+  const { remaining, loaded } = useFounderSeatsRemaining();
   return (
     <section id="founder-access" data-system-section="founder-access" className="relative z-20 w-full overflow-hidden border-t border-amber-400/25 bg-black">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_72%_45%,rgba(245,158,11,0.18),transparent_34%)]" />
@@ -58,6 +106,11 @@ export default function FounderAccessSection({ studioUrl, trackPreview }: Founde
               <div>
                 <div className="font-mono text-[9px] uppercase tracking-[0.2em] text-white/45">One-time purchase</div>
                 <div className="mt-2 text-5xl font-black tracking-[-0.055em] text-white">$2,500</div>
+                {loaded && (
+                  <div className="mt-2 font-mono text-[9px] uppercase tracking-[0.18em] text-amber-400/80" aria-live="polite">
+                    {remaining > 0 ? `${remaining} of 11 seats remaining` : 'All 11 founder seats claimed'}
+                  </div>
+                )}
               </div>
               <div className="pb-1 font-mono text-[9px] uppercase tracking-[0.18em] text-amber-400">Founder edition</div>
             </div>

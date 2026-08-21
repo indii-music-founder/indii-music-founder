@@ -43,7 +43,7 @@ Add a "New to indii? **Create account →**" link that points to `/signup`. Ensu
 
 These terms will be encoded immutably in `src/config/founders.ts` and signed:
 
-- **Price:** $2,500 USD, one-time payment. We explicitly DO NOT use Stripe for this investment to avoid SEC/investing compliance issues. Accepted methods: Cash App, Wire Transfer, or Check.
+- **Price:** $2,500 USD, one-time payment. **Payment methods (decision 2026-08-20 — hybrid):** Stripe Checkout is the primary path (implemented in `FoundersCheckout.tsx`); Cash App, Wire Transfer, and Check remain available as the alternative path, with the founder's seat activated manually by the admin via `activateFounderPass` after payment is confirmed. Earlier plan text said "we explicitly DO NOT use Stripe… to avoid SEC/investing compliance issues" — superseded by the hybrid decision; the alternative path preserves the manual-activation option.
 - **Access:** All current and future indii features for the lifetime of the software.
 - **Desktop Application Delivery:** Founders will receive standalone, installable applications (DMG for macOS, EXE for Windows) so they can run the system natively on their computers.
 - **API costs:** Pass-through at cost — founders are not charged a markup, but are responsible for their own Gemini/Vertex AI token consumption billed monthly at Anthropic/Google cost.
