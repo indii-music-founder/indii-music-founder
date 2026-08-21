@@ -65,6 +65,57 @@ app.use(
 );
 app.use(express.json());
 
+// ─── Access Audit ────────────────────────────────────────────────────────────
+// The founder requires a durable record of who entered the dashboard and when
+// (and, with future employees, exactly which identity did what). Every admitted
+// request refreshes that identity's audit trail. Writes are throttled to one
+// entry per ACCESS_AUDIT_INTERVAL_MS per user so dashboard polling does not
+// flood the log, and an audit failure must never block or break a request.
+
+const ACCESS_LOG_COLLECTION = 'admin_access_log';
+const ACCESS_AUDIT_STATE_COLLECTION = 'admin_access_state';
+const ACCESS_AUDIT_INTERVAL_MS = 30 * 60 * 1000;
+const lastAuditWriteAt = new Map<string, number>();
+
+const recordAccess = (req: express.Request, decodedToken: admin.auth.DecodedIdToken): void => {
+  try {
+    const now = Date.now();
+    const last = lastAuditWriteAt.get(decodedToken.uid) ?? 0;
+    if (now - last < ACCESS_AUDIT_INTERVAL_MS) return;
+    lastAuditWriteAt.set(decodedToken.uid, now);
+
+    const at: admin.firestore.FieldValue | Date = admin.firestore.FieldValue
+      ? admin.firestore.FieldValue.serverTimestamp()
+      : new Date(); // fallback when the admin SDK stub lacks FieldValue (tests)
+    const entry = {
+      uid: decodedToken.uid,
+      email: decodedToken.email ?? 'unknown',
+      ip: req.ip ?? 'unknown',
+      userAgent: typeof req.headers['user-agent'] === 'string' ? req.headers['user-agent'] : 'unknown',
+      at,
+    };
+
+    // Inside one async fn so ANY failure — including synchronous throws from a
+    // misshaped Firestore handle — becomes an ordinary caught rejection instead
+    // of an orphaned unhandled rejection escaping around Promise.all setup.
+    const writeAuditTrail = async (): Promise<void> => {
+      const db = admin.firestore();
+      await db.collection(ACCESS_LOG_COLLECTION).add(entry);
+      await db.collection(ACCESS_AUDIT_STATE_COLLECTION).doc(decodedToken.uid).set({
+        email: entry.email,
+        lastSeenAt: entry.at,
+        lastIp: entry.ip,
+        lastUserAgent: entry.userAgent,
+      }, { merge: true });
+    };
+    void writeAuditTrail().catch((err: unknown) => {
+      console.error('[Admin] Access audit write failed:', err);
+    });
+  } catch (err) {
+    console.error('[Admin] Access audit failed:', err);
+  }
+};
+
 // Auth Middleware
 const requireAdminAuth = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
   const token = req.headers.authorization?.split('Bearer ')[1];
@@ -74,6 +125,7 @@ const requireAdminAuth = async (req: express.Request, res: express.Response, nex
     const decodedToken = await admin.auth().verifyIdToken(token);
     if (decodedToken.email?.endsWith(ADMIN_EMAIL_DOMAIN)) {
       Object.assign(req, { user: decodedToken });
+      recordAccess(req, decodedToken);
       next();
     } else {
       res.status(403).json({ error: 'Forbidden: Requires indii.music admin identity' });
@@ -706,6 +758,26 @@ app.get('/api/nexus/logs', requireAdminAuth, async (_req, res) => {
   } catch (error) {
     console.error('[Nexus] Failed to retrieve system logs:', error);
     res.status(500).json({ error: 'Failed to retrieve system logs' });
+  }
+});
+
+// Access audit — who has been in the dashboard, newest first. Admin-only like
+// every other data route: the log itself must not leak to non-admin identities.
+app.get('/api/admin/access-log', requireAdminAuth, async (_req, res) => {
+  try {
+    const snapshot = await admin.firestore()
+      .collection(ACCESS_LOG_COLLECTION)
+      .orderBy('at', 'desc')
+      .limit(100)
+      .get();
+    const entries: Record<string, unknown>[] = [];
+    snapshot.forEach((doc) => {
+      entries.push({ id: doc.id, ...doc.data() });
+    });
+    res.json({ entries });
+  } catch (error) {
+    console.error('[Admin] Failed to retrieve access log:', error);
+    res.status(500).json({ error: 'Failed to retrieve access log' });
   }
 });
 

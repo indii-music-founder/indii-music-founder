@@ -80,6 +80,24 @@ function makeSnapshot(docs: Array<{ id: string; data: Record<string, unknown> }>
   };
 }
 
+/**
+ * Like makeQuery, but the failure surfaces lazily from get()/add()/set() instead
+ * of an eagerly-created rejected promise. An eager `Promise.reject` that no one
+ * awaits (e.g. the access-audit hook touches only `.add`) escapes as an
+ * unhandled rejection — this keeps failure-path mocks observation-safe.
+ */
+function makeFailingQuery(message: string) {
+  const query = {
+    where: vi.fn(() => query),
+    orderBy: vi.fn(() => query),
+    limit: vi.fn(() => query),
+    get: vi.fn().mockRejectedValue(new Error(message)),
+    add: vi.fn().mockRejectedValue(new Error(message)),
+    doc: vi.fn(() => ({ set: vi.fn().mockRejectedValue(new Error(message)) })),
+  };
+  return query;
+}
+
 describe('admin-dashboard server.ts', () => {
     const ORIGINAL_ENV = { ...process.env };
 
@@ -187,10 +205,10 @@ describe('admin-dashboard server.ts', () => {
 
         it('never returns founders it did not fetch, even on a Firestore failure', async () => {
             vi.mocked(admin.auth).mockReturnValue({
-                verifyIdToken: vi.fn().mockResolvedValue({ email: 'admin@indii.music' }),
+                verifyIdToken: vi.fn().mockResolvedValue({ email: 'admin@indii.music', uid: 'failing-firestore-uid' }),
             } as unknown as ReturnType<typeof admin.auth>);
             vi.mocked(admin.firestore).mockReturnValue({
-                collection: vi.fn(() => makeQuery(Promise.reject(new Error('firestore down')))),
+                collection: vi.fn(() => makeFailingQuery('firestore down')),
             } as unknown as ReturnType<typeof admin.firestore>);
 
             const res = await request('GET', '/api/founders', { headers: { Authorization: 'Bearer good-token' } });
@@ -285,6 +303,55 @@ describe('admin-dashboard server.ts', () => {
             const res = await request('GET', '/api/google/gmail/list', { headers: { Authorization: 'Bearer good-token' } });
             expect(res.status).toBe(412);
             expect(res.body).toMatchObject({ code: 'workspace_not_linked' });
+        });
+    });
+
+    describe('GET /api/admin/access-log — who entered the dashboard', () => {
+        it('admits an @indii.music admin and returns the recorded entries', async () => {
+            vi.mocked(admin.auth).mockReturnValue({
+                verifyIdToken: vi.fn().mockResolvedValue({ email: 'admin@indii.music', uid: 'admin-uid' }),
+            } as unknown as ReturnType<typeof admin.auth>);
+            const query = makeQuery(makeSnapshot([
+                { id: 'log-2', data: { email: 'wiil@indii.music', ip: '127.0.0.1', userAgent: 'Mozilla/5.0 Test' } },
+                { id: 'log-1', data: { email: 'staff@indii.music', ip: '10.0.0.2' } },
+            ]));
+            vi.mocked(admin.firestore).mockReturnValue({
+                collection: vi.fn(() => Object.assign(query, {
+                    add: vi.fn().mockResolvedValue({ id: 'queued-write' }),
+                    doc: vi.fn(() => ({ set: vi.fn().mockResolvedValue(undefined) })),
+                })),
+            } as unknown as ReturnType<typeof admin.firestore>);
+
+            const res = await request('GET', '/api/admin/access-log', { headers: { Authorization: 'Bearer good-token' } });
+            expect(res.status).toBe(200);
+            expect(res.body).toMatchObject({
+                entries: [
+                    { id: 'log-2', email: 'wiil@indii.music', ip: '127.0.0.1' },
+                    { id: 'log-1', email: 'staff@indii.music', ip: '10.0.0.2' },
+                ],
+            });
+        });
+
+        it('fails closed with a 500 instead of fabricating an empty trail when Firestore is down', async () => {
+            vi.mocked(admin.auth).mockReturnValue({
+                verifyIdToken: vi.fn().mockResolvedValue({ email: 'admin@indii.music', uid: 'failing-audit-uid' }),
+            } as unknown as ReturnType<typeof admin.auth>);
+            vi.mocked(admin.firestore).mockReturnValue({
+                collection: vi.fn(() => makeFailingQuery('firestore down')),
+            } as unknown as ReturnType<typeof admin.firestore>);
+
+            const res = await request('GET', '/api/admin/access-log', { headers: { Authorization: 'Bearer good-token' } });
+            expect(res.status).toBe(500);
+            expect(res.body).toMatchObject({ error: 'Failed to retrieve access log' });
+        });
+
+        it('still refuses a non-admin identity even for the audit surface itself', async () => {
+            vi.mocked(admin.auth).mockReturnValue({
+                verifyIdToken: vi.fn().mockResolvedValue({ email: 'intruder@gmail.com', uid: 'bad-uid' }),
+            } as unknown as ReturnType<typeof admin.auth>);
+
+            const res = await request('GET', '/api/admin/access-log', { headers: { Authorization: 'Bearer some-token' } });
+            expect(res.status).toBe(403);
         });
     });
 });

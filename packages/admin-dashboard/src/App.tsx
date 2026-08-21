@@ -11,7 +11,8 @@ import {
   LogOut,
   Mail,
   Globe,
-  Activity
+  Activity,
+  History
 } from 'lucide-react';
 import { FoundersPortal } from './components/modules/FoundersPortal';
 import { TokenUsage } from './components/modules/TokenUsage';
@@ -19,6 +20,7 @@ import { EmailManager } from './components/modules/EmailManager';
 import { GoogleHub } from './components/modules/GoogleHub';
 import { DDEXTracker } from './components/modules/DDEXTracker';
 import { NexusMonitor } from './components/modules/NexusMonitor';
+import { AccessLog } from './components/modules/AccessLog';
 import { LoginScreen } from './components/LoginScreen';
 import { auth, ADMIN_TOKEN_KEY } from './firebase';
 
@@ -104,6 +106,7 @@ const AdminDashboard: React.FC<{ user: User; onSignOut: () => void }> = ({ user,
     { name: 'Google Workspace Hub', icon: <Globe className="w-5 h-5" />, color: 'text-[#4bd5ee]' },
     { name: 'DDEX Deliveries', icon: <ShieldCheck className="w-5 h-5" />, color: 'text-emerald-400' },
     { name: 'Nexus System Monitor', icon: <Activity className="w-5 h-5" />, color: 'text-[#fe2e9a]' },
+    { name: 'Access Log', icon: <History className="w-5 h-5" />, color: 'text-[#ffb800]' },
   ];
 
   return (
@@ -211,6 +214,8 @@ const AdminDashboard: React.FC<{ user: User; onSignOut: () => void }> = ({ user,
               <DDEXTracker />
             ) : activeModule === 'Nexus System Monitor' ? (
               <NexusMonitor />
+            ) : activeModule === 'Access Log' ? (
+              <AccessLog />
             ) : (
               <div className="flex items-center justify-center h-64 border border-white/5 bg-white/[0.02] rounded-3xl border-dashed">
                 <p className="text-white/40 text-sm font-medium tracking-wide">
