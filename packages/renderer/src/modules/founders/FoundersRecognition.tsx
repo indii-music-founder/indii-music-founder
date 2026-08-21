@@ -33,7 +33,7 @@ export default function FoundersRecognition() {
                 </h1>
 
                 <p className="text-gray-400 text-base md:text-lg max-w-2xl mx-auto leading-relaxed mb-12">
-                    These early believers backed indii's mission to build the operating system for musical independence.
+                    These early believers backed indii's mission to build an artist-controlled operating system for the business behind the music.
                     Their commitment enabled this platform to exist.
                 </p>
 

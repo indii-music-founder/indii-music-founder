@@ -47,13 +47,25 @@ export const ResponsiveLayoutProvider: React.FC<
   const isDesktop = breakpoint === 'desktop';
 
   useEffect(() => {
+    // rAF-coalesce: dragging a window edge fires resize events far faster
+    // than frames, and every handler ran setState before — re-rendering the
+    // ENTIRE provider subtree (all useResponsiveLayout consumers) per event.
+    // At most one state write per animation frame now.
+    let frame: number | null = null;
     const handleResize = () => {
-      setWidth(window.innerWidth);
-      setHeight(window.innerHeight);
+      if (frame !== null) return;
+      frame = requestAnimationFrame(() => {
+        frame = null;
+        setWidth(window.innerWidth);
+        setHeight(window.innerHeight);
+      });
     };
 
     window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      if (frame !== null) cancelAnimationFrame(frame);
+    };
   }, []);
 
   const value: ResponsiveLayoutContextType = {

@@ -80,9 +80,21 @@ export default function RightPanel() {
     );
 
     React.useEffect(() => {
-        const onResize = () => setViewportWidth(window.innerWidth);
+        // rAF-coalesce resize: one state write per animation frame instead
+        // of one per native resize event (drag-resizing fires many/sec).
+        let frame: number | null = null;
+        const onResize = () => {
+            if (frame !== null) return;
+            frame = requestAnimationFrame(() => {
+                frame = null;
+                setViewportWidth(window.innerWidth);
+            });
+        };
         window.addEventListener('resize', onResize);
-        return () => window.removeEventListener('resize', onResize);
+        return () => {
+            window.removeEventListener('resize', onResize);
+            if (frame !== null) cancelAnimationFrame(frame);
+        };
     }, []);
 
     const { maxPanelWidth, canOpenPanel, isPanelOpen, effectivePanelWidth } = getRightPanelLayout({
