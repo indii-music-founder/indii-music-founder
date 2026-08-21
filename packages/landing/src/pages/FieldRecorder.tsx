@@ -8,8 +8,9 @@ import {
 import { useAuth } from '../components/auth/AuthProvider';
 import { auth, db, storage } from '../lib/firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { Link } from 'react-router-dom';
+import { syncRecordingToCloud } from '../lib/recordingSync';
 
 type RecordingState = 'idle' | 'recording' | 'stopped' | 'uploading' | 'completed';
 
@@ -86,51 +87,50 @@ export default function FieldRecorder() {
       setError('You must be logged in to sync with the cloud.');
       return;
     }
+    // Narrow for closures: import bindings do not retain narrowing inside
+    // nested functions, but const locals do.
+    const bucket = storage;
+    const firestore = db;
 
     setRecordingState('uploading');
     const filename = title || `Recording_${new Date().toISOString()}`;
     const storagePath = `users/${user.uid}/recordings/${Date.now()}_${filename}.webm`;
-    const storageRef = ref(storage, storagePath);
 
-    const maxRetries = 3;
-    let attempt = 0;
-    let success = false;
-
-    while (attempt < maxRetries && !success) {
-      try {
-        // 1. Upload to Storage
-        const snapshot = await uploadBytes(storageRef, audioBlob);
-        const downloadUrl = await getDownloadURL(snapshot.ref);
-
-        // 2. Register in Firestore (Shared with Electron App)
-        await addDoc(collection(db, 'history'), {
-          userId: user.uid,
-          orgId: 'personal',
-          type: 'audio_capture',
-          prompt: filename,
-          storageUrl: downloadUrl,
-          mimeType: 'audio/webm',
-          createdAt: serverTimestamp(),
-          generatedAt: Date.now(),
-          estimatedDuration: timer,
-          metadata: {
-            source: 'Artist Portal (Field Recorder)',
-            originalFilename: filename
-          }
-        });
-
-        success = true;
-        setRecordingState('completed');
-      } catch (err) {
-        attempt++;
-        console.error(`Upload failed (attempt ${attempt}/${maxRetries}):`, err);
-        if (attempt >= maxRetries) {
-          setError('Cloud sync failed after multiple attempts. Please try again or download locally.');
-          setRecordingState('stopped');
-        } else {
-          await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, attempt)));
+    try {
+      // Idempotent by construction: the Firestore document id is generated
+      // once and reused across retries (setDoc), and the blob is not
+      // re-uploaded when only the registration write failed. A lost write
+      // response can never duplicate the history record.
+      await syncRecordingToCloud({
+        blob: audioBlob,
+        storagePath,
+        upload: async (path, file) => {
+          await uploadBytes(ref(bucket, path), file);
+        },
+        getDownloadUrl: async (path) => getDownloadURL(ref(bucket, path)),
+        register: async (docId, downloadUrl) => {
+          await setDoc(doc(firestore, 'history', docId), {
+            userId: user.uid,
+            orgId: 'personal',
+            type: 'audio_capture',
+            prompt: filename,
+            storageUrl: downloadUrl,
+            mimeType: 'audio/webm',
+            createdAt: serverTimestamp(),
+            generatedAt: Date.now(),
+            estimatedDuration: timer,
+            metadata: {
+              source: 'Artist Portal (Field Recorder)',
+              originalFilename: filename
+            }
+          });
         }
-      }
+      });
+      setRecordingState('completed');
+    } catch (err) {
+      console.error('Cloud sync failed after multiple attempts:', err);
+      setError('Cloud sync failed after multiple attempts. Please try again or download locally.');
+      setRecordingState('stopped');
     }
   }
 

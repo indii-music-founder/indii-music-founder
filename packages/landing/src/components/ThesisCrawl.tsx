@@ -4,6 +4,7 @@ import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence, useAnimationFrame, useMotionValue } from 'framer-motion';
 import { Volume2, VolumeX, X, Play, Pause, Info, ArrowRight, RotateCcw, Download } from 'lucide-react';
 import { getStudioUrl } from '../lib/auth';
+import { loadSoundtrackSource } from '../lib/soundtrack';
 
 interface ThesisCrawlProps {
   isOpen: boolean;
@@ -277,19 +278,9 @@ export default function ThesisCrawl({ isOpen, onClose }: ThesisCrawlProps) {
 
     for (const source of THESIS_SOUNDTRACK_SOURCES) {
       try {
-        const response = await fetch(source, { cache: 'no-store' });
-        const contentType = response.headers.get('content-type') ?? '';
-
-        // Vite may return the app shell for an unknown asset, so verify that
-        // the response is actually audio before trying to play it.
-        if (!response.ok || !contentType.startsWith('audio/')) continue;
-
-        const soundtrackBlob = await response.blob();
-        const objectUrl = URL.createObjectURL(soundtrackBlob);
-        const soundtrack = new Audio(objectUrl);
-        soundtrack.loop = true;
-        soundtrack.preload = 'auto';
-        soundtrack.volume = 0.72;
+        const loaded = await loadSoundtrackSource(source);
+        if (!loaded) continue;
+        const { url: objectUrl, audio: soundtrack } = loaded;
 
         try {
           await soundtrack.play();

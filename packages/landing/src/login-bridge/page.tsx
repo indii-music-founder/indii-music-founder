@@ -8,6 +8,7 @@ import { flushFounderFunnelQueue, trackFounderFunnelEvent } from '../lib/founder
 type Status = 'loading' | 'ready' | 'authenticating' | 'success' | 'deepLinkFallback' | 'error';
 
 const DEEP_LINK_TIMEOUT_MS = 3000;
+const HANDOFF_TIMEOUT_MS = 15000;
 
 export default function LoginBridge() {
     const [status, setStatus] = useState<Status>('loading');
@@ -110,11 +111,34 @@ export default function LoginBridge() {
             return null;
         }
 
-        const response = await fetch(endpoint, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ idToken, accessToken: accessToken ?? null }),
-        });
+        // A hung handoff service must not leave the visitor stuck on
+        // "Signing in..." forever — abort after 15s and explain.
+        const controller = new AbortController();
+        const timer = window.setTimeout(() => controller.abort(), HANDOFF_TIMEOUT_MS);
+        let response: Response;
+        try {
+            response = await fetch(endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ idToken, accessToken: accessToken ?? null }),
+                signal: controller.signal,
+            });
+        } catch (err) {
+            // DOMException (the fetch abort error) is not guaranteed to be an
+            // Error subclass across environments, so detect by name.
+            const timedOut =
+                typeof err === 'object' &&
+                err !== null &&
+                'name' in err &&
+                (err as { name: unknown }).name === 'AbortError';
+            throw new Error(
+                timedOut
+                    ? 'The sign-in service took too long to respond. Please try again.'
+                    : 'Could not reach the sign-in service. Please try again.',
+            );
+        } finally {
+            window.clearTimeout(timer);
+        }
 
         if (!response.ok) {
             throw new Error(`Failed to create handoff code (${response.status})`);

@@ -48,6 +48,8 @@ describe('LoginBridge deep-link flows', () => {
         container.remove();
         vi.clearAllMocks();
         vi.useRealTimers();
+        vi.unstubAllEnvs();
+        vi.unstubAllGlobals();
     });
 
     it('shows success redirect state after auth succeeds', async () => {
@@ -116,5 +118,41 @@ describe('LoginBridge deep-link flows', () => {
 
         expect(window.location.href).toContain('indii://auth/callback?');
         expect(window.location.href).toBe(before);
+    });
+
+    it('shows a friendly error when the handoff service hangs instead of leaving the visitor stuck on "Signing in..."', async () => {
+        vi.stubEnv('VITE_AUTH_HANDOFF_URL', 'https://handoff.example.test/code');
+        signInWithPopupMock.mockResolvedValue({ user: {} });
+        credentialFromResultMock.mockReturnValue({ idToken: 'id-token' });
+
+        const abortListener = vi.fn();
+        vi.stubGlobal(
+            'fetch',
+            vi.fn((_url: string, init?: RequestInit) =>
+                new Promise((_resolve, reject) => {
+                    init?.signal?.addEventListener('abort', () => {
+                        abortListener();
+                        reject(new DOMException('The operation was aborted.', 'AbortError'));
+                    });
+                }),
+            ),
+        );
+
+        await act(async () => {
+            root.render(<LoginBridge />);
+        });
+
+        await act(async () => {
+            container.querySelector('button')?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+        });
+
+        // Handoff fetch is still pending — the page must not be stuck forever.
+        await act(async () => {
+            vi.advanceTimersByTime(15000);
+        });
+
+        expect(abortListener).toHaveBeenCalledTimes(1);
+        expect(container.textContent).toContain('took too long to respond');
+        expect(container.textContent).toContain('Try Again');
     });
 });
