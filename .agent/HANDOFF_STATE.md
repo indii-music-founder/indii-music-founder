@@ -1,3 +1,64 @@
+# Session Checkpoint — Performance Engineering (2026-08-20, DSH agent)
+
+**Updated:** 2026-08-20 (session close)
+**Branch:** `main` — local == origin/main (0/0).
+
+## Shipped (pushed to origin/main, CI green, production deployed)
+
+1. **`7e47e7d05` perf(web): cut startup JS by ~640KB and minify the deploy build**
+   - Lazy MCP SDK (McpClientService) + lazy pdfjs (DocumentAnnotator)
+   - vite/electron chunk config: preload-helper + @babel/runtime carve-outs,
+     driver.js/react-virtuoso out of eager vendor-ui, messaging carve-out,
+     `hoistTransitiveImports: false` (kills ~640KB of hoisted startup vendor JS)
+   - electron.vite.config.ts: minify + console drop (deploy path previously
+     shipped UNMINIFIED bundles — entry 3,253kB → 1,750kB)
+   - index.html: removed unused Google Fonts preconnects; defer bootstrap.js
+   - CI run 32375459143: success (incl. deploy-production)
+2. **`825e0ef44` perf: lazy-load landing sections (SEO safeguards) + defer Sentry**
+   - Landing: below-the-fold sections via LazySection (IntersectionObserver 900px,
+     hash targeting, crawler-UA instant render); ~154kB out of critical bundle
+   - page.preservation.test.tsx rewritten to assert the deferred contract
+     (forced IO stub — jsdom 26 ships its own; pre-warmed lazy chunks)
+   - SentryService: lazy facade — @sentry/react loads via requestIdleCallback
+     after first paint; all exports await one dynamic import; FinanceService
+     switched to facade (was the only entry-level direct importer)
+   - docs/PERFORMANCE_SW_PLAN.md: service-worker/offline follow-up plan (approved
+     as separate task, NO code yet)
+   - CI run 32388085318: success (incl. deploy-production)
+
+## Measured results (local Playwright, cold loads)
+
+- Studio login JS transfer: 1.91MB → 1.12MB (−41%); heap 22→15-16MB; entry
+  2,031 → 1,341kB (vite build); Sentry/vendor-three/video/recharts/pdfjs no
+  longer fetched at startup; long tasks ~1×55-65ms
+- Landing: FCP ~430-730ms, LCP ~700-990ms (clean runs; machine-noise variance
+  observed), long tasks 39 → 12-24; sections load near-viewport; 3D shell
+  deferred past load
+
+## Repo notes
+
+- Concurrent agent(s) active on main during session; they overwrote
+  landing/src/page.tsx twice — the lazy-section change was re-applied and is
+  confirmed in 825e0ef44 (their docs commit 386c6067b acknowledges it).
+- Cancelled CI runs 32387868463 + 32387799453 are covered by green run
+  32388085318 (ancestors of 825e0ef44). Failed run 32385428073 (deploy-prod,
+  Firebase 429 quota blip) also covered by the same green run.
+- Unrelated in-flight working-tree files (NOT mine, do not commit):
+  envelope.json fixture, agentSessionSlice.ts, CreativeCanvas.tsx (+test/hook),
+  AgentService.ts, AgentGraphService.ts (AgentService has trailing-whitespace
+  diff-check warnings).
+
+## Pending / next steps
+
+- Service-worker/offline caching: implement per docs/PERFORMANCE_SW_PLAN.md
+  (P1 studio shell precache → P4 measurement) when scheduled.
+- Optional follow-ups documented in the perf report: AppShell markdown stack
+  split, i18n locale lazy-load (P3), CSS audit.
+
+---
+
+*Previous session content preserved below.*
+
 # Session Checkpoint — First-Customer Readiness: Live Bug Hunt & Fixes (2026-08-18)
 
 **Updated:** 2026-08-19 20:55 UTC
@@ -176,3 +237,27 @@
   Meta/desktop/registrations; studio retest feedback; "Create Video" 400 recheck.
 - **Next session:** pick up founder-gated items above; landing needs only a
   founder's visual pass + optional final seamless theme loop.
+
+---
+
+## Checkpoint 2026-08-20 ~21:22 UTC — founders decisions shipped; G5 backfill BLOCKED on credentials
+
+- **Shipped + live (9ae273e9c, CI 32433350083 green):** G1 hybrid payment UI
+  (FoundersCheckout "Prefer an alternative payment" block — live-verified in
+  chunk FoundersCheckout-Bg4mbqpD.js); G2 founders Firestore rules (emulator
+  suite 248 green) + landing live seat counter; G8 public founders offer
+  (live-verified on ?public=true). G3/G4/G6 deferred per founder decisions.
+  G2 checkout deep-link deferred: studio has no module deep-link routing;
+  needs a renderer-core change under concurrent edit.
+- **G5 BLOCKED (founder action required, since round 1):** the backfill
+  script packages/firebase/scripts/backfill-founder-seat.ts is ready
+  (idempotency-guarded, self-verifying; writes founders/{uid} +
+  subscriptions/{uid} + users/{uid} + entitlements + founders_meta for
+  founder g2AcFApNZvQKYlGg0LQuVADCFoO2 as seat 1 "wiil" with a real
+  verification hash, plus an honest founder_github_commit_queue entry for
+  the deferred GitHub commit). Google requires reauth on this machine:
+  `gcloud auth application-default login` (browser flow). Verified round
+  1/2/3: ADC mtime unchanged, print-access-token fails invalid_rapt, both
+  firebase CLI ADCs also stale. After the founder runs the command:
+  `cd packages/firebase && npx tsx scripts/backfill-founder-seat.ts`,
+  verify the readback, then record the hash/seat in the ledger.
