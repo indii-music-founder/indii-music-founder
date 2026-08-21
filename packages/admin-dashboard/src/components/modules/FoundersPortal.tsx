@@ -99,7 +99,7 @@ export const FoundersPortal: React.FC = () => {
         />
       ) : error ? (
         <Panel
-          icon={<AlertTriangle className="w-6 h-6 text-red-500" />}
+          icon={<AlertTriangle className="w-6 h-6 text-red-400" />}
           title="Couldn't load founders"
           subtitle={error}
         />

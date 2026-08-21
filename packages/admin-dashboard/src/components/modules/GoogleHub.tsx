@@ -472,7 +472,7 @@ export const GoogleHub: React.FC = () => {
       <div className="bg-[#0d0d0d]/80 backdrop-blur-md border border-white/5 rounded-3xl p-8 min-h-[400px] relative">
         {/* Error Alert Banner */}
         {error && (
-          <div className="mb-6 flex items-start gap-2.5 bg-red-500/5 border border-red-500/10 rounded-2xl p-4 text-xs text-red-500">
+          <div className="mb-6 flex items-start gap-2.5 bg-red-500/5 border border-red-500/10 rounded-2xl p-4 text-xs text-red-400">
             <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
             <div className="space-y-1">
               <p className="font-semibold">Operation Error</p>
@@ -521,7 +521,7 @@ export const GoogleHub: React.FC = () => {
           </div>
         ) : dataUnavailable ? (
           <div className="flex flex-col items-center justify-center text-center py-16 min-h-[300px]">
-            <AlertTriangle className="w-12 h-12 text-red-500/40 mb-4" />
+            <AlertTriangle className="w-12 h-12 text-red-400/40 mb-4" />
             <p className="text-white/85 font-semibold text-base">Workspace data unavailable</p>
             <p className="text-white/40 text-xs mt-2 max-w-md leading-relaxed">
               The selected Workspace service did not return a valid result. No empty-state claim is

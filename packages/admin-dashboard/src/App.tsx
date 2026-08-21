@@ -78,7 +78,7 @@ const App: React.FC = () => {
   if (user && !user.email?.endsWith(ADMIN_EMAIL_DOMAIN)) {
     return (
       <div className="flex h-screen flex-col items-center justify-center gap-4 bg-[#090909] text-white">
-        <ShieldCheck className="w-10 h-10 text-red-500" />
+        <ShieldCheck className="w-10 h-10 text-red-400" />
         <p className="text-white/80 font-semibold">This account is not an indii admin.</p>
         <p className="text-white/40 text-sm">{user.email}</p>
         <button
@@ -102,7 +102,7 @@ const AdminDashboard: React.FC<{ user: User; onSignOut: () => void }> = ({ user,
     { name: 'Founders Portal', icon: <Users className="w-5 h-5" />, color: 'text-[#ffb800]' },
     { name: 'Inbox & Messaging', icon: <Mail className="w-5 h-5" />, color: 'text-purple-500' },
     { name: 'Google Workspace Hub', icon: <Globe className="w-5 h-5" />, color: 'text-[#4bd5ee]' },
-    { name: 'DDEX Deliveries', icon: <ShieldCheck className="w-5 h-5" />, color: 'text-green-500' },
+    { name: 'DDEX Deliveries', icon: <ShieldCheck className="w-5 h-5" />, color: 'text-emerald-400' },
     { name: 'Nexus System Monitor', icon: <Activity className="w-5 h-5" />, color: 'text-[#fe2e9a]' },
   ];
 
@@ -162,7 +162,7 @@ const AdminDashboard: React.FC<{ user: User; onSignOut: () => void }> = ({ user,
             <button
               onClick={onSignOut}
               title="Sign out"
-              className="p-2 bg-white/0 hover:bg-white/5 border border-transparent hover:border-white/5 rounded-lg text-white/30 hover:text-red-500 cursor-pointer transition-all"
+              className="p-2 bg-white/0 hover:bg-white/5 border border-transparent hover:border-white/5 rounded-lg text-white/30 hover:text-red-400 cursor-pointer transition-all"
             >
               <LogOut className="w-4 h-4" />
             </button>
@@ -183,9 +183,9 @@ const AdminDashboard: React.FC<{ user: User; onSignOut: () => void }> = ({ user,
             <h2 className="text-lg font-semibold tracking-tight">{activeModule}</h2>
           </div>
           <div className="flex items-center gap-6">
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-green-500/10 rounded-full border border-green-500/20">
-              <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-              <span className="text-[11px] font-bold text-green-500 uppercase tracking-wider">System Live</span>
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-500/10 rounded-full border border-emerald-500/20">
+              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="text-[11px] font-bold text-emerald-400 uppercase tracking-wider">System Live</span>
             </div>
             <div className="relative">
               <Bell className="w-5 h-5 text-white/40 hover:text-white cursor-pointer transition-colors" />

@@ -122,13 +122,13 @@ export const TokenUsage: React.FC = () => {
   if (error) {
     return (
       <Panel
-        icon={<AlertTriangle className="w-6 h-6 text-red-500" />}
+        icon={<AlertTriangle className="w-6 h-6 text-red-400" />}
         title="Couldn't load usage data"
         subtitle={error}
         action={
           <button
             onClick={() => load(false)}
-            className="flex items-center gap-2 px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-xl transition-all border border-red-500/20 text-sm font-medium cursor-pointer"
+            className="flex items-center gap-2 px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-xl transition-all border border-red-500/20 text-sm font-medium cursor-pointer"
           >
             <RefreshCw className="w-4 h-4" />
             Retry
@@ -206,7 +206,7 @@ export const TokenUsage: React.FC = () => {
 
       {/* Summary stats */}
       <div className="grid grid-cols-4 gap-6">
-        <Stat icon={<DollarSign className="w-5 h-5" />} label="Total cost" value={usd(data.totalCostUsd)} accent="text-green-500" />
+        <Stat icon={<DollarSign className="w-5 h-5" />} label="Total cost" value={usd(data.totalCostUsd)} accent="text-emerald-400" />
         <Stat icon={<Cpu className="w-5 h-5" />} label="Total tokens" value={compact(data.totalTokens)} accent="text-[#4bd5ee]" />
         <Stat icon={<Activity className="w-5 h-5" />} label="Requests" value={compact(data.totalRequests)} accent="text-purple-500" />
         <Stat icon={<Users className="w-5 h-5" />} label="Avg / user" value={usd(data.averageCostPerUserUsd)} accent="text-[#ffb800]" />
@@ -223,7 +223,7 @@ export const TokenUsage: React.FC = () => {
             <div key={m.model} className="space-y-2">
               <div className="flex items-center justify-between text-sm">
                 <span className="font-mono text-white/70">{m.model}</span>
-                <span className="font-bold text-green-500">{usd(m.costUsd)}</span>
+                <span className="font-bold text-emerald-400">{usd(m.costUsd)}</span>
               </div>
               <div className="h-2.5 bg-white/5 rounded-full overflow-hidden">
                 <div
@@ -256,7 +256,7 @@ export const TokenUsage: React.FC = () => {
               <div className="flex-1 font-mono text-sm text-white/70 truncate">{u.userId}</div>
               <div className="w-24 text-right text-xs text-white/30 font-mono">{compact(u.tokensUsed)} tok</div>
               <div className="w-20 text-right text-xs text-white/30 font-mono">{compact(u.requestCount)} req</div>
-              <div className="w-24 text-right text-sm font-bold text-green-500">{usd(u.costUsd)}</div>
+              <div className="w-24 text-right text-sm font-bold text-emerald-400">{usd(u.costUsd)}</div>
             </div>
           ))}
         </div>

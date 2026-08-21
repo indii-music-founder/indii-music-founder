@@ -145,7 +145,7 @@ export const EmailManager: React.FC = () => {
       </div>
 
       {error && (
-        <div className="flex items-start gap-2.5 bg-red-500/5 border border-red-500/10 rounded-2xl p-4 text-xs text-red-500">
+        <div className="flex items-start gap-2.5 bg-red-500/5 border border-red-500/10 rounded-2xl p-4 text-xs text-red-400">
           <ShieldAlert className="w-4 h-4 shrink-0 mt-0.5" />
           <span>{error}</span>
         </div>
@@ -230,8 +230,8 @@ export const EmailManager: React.FC = () => {
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
-                        <div className={`w-1.5 h-1.5 rounded-full ${alias.status === 'Active' ? 'bg-green-500' : 'bg-[#ffb800] animate-pulse'}`} />
-                        <span className={`text-xs font-bold ${alias.status === 'Active' ? 'text-green-500' : 'text-[#ffb800]'}`}>
+                        <div className={`w-1.5 h-1.5 rounded-full ${alias.status === 'Active' ? 'bg-emerald-500' : 'bg-[#ffb800] animate-pulse'}`} />
+                        <span className={`text-xs font-bold ${alias.status === 'Active' ? 'text-emerald-400' : 'text-[#ffb800]'}`}>
                           {alias.status}
                         </span>
                       </div>

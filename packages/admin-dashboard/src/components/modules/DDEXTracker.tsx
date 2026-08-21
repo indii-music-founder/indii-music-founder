@@ -106,7 +106,7 @@ export const DDEXTracker: React.FC = () => {
       <div className="flex items-center justify-between bg-[#0d0d0d] border border-white/5 p-6 rounded-3xl">
         <div>
           <h3 className="text-xl font-bold tracking-tight flex items-center gap-2">
-            <ShieldCheck className="text-green-500 w-6 h-6 animate-pulse-subtle" />
+            <ShieldCheck className="text-emerald-400 w-6 h-6 animate-pulse-subtle" />
             DDEX Delivery Tracker
           </h3>
           <p className="text-sm text-white/40 mt-1">Monitor XML metadata delivery to DSPs via the indii.music direct pipeline.</p>
@@ -118,7 +118,7 @@ export const DDEXTracker: React.FC = () => {
           </div>
           <div className="px-4 py-2 bg-white/5 rounded-xl border border-white/10">
             <p className="text-[10px] text-white/40 uppercase tracking-widest font-bold">Failure Rate</p>
-            <p className={`text-lg font-bold ${stats.failed > 0 ? 'text-red-500' : 'text-white/50'}`}>
+            <p className={`text-lg font-bold ${stats.failed > 0 ? 'text-red-400' : 'text-white/50'}`}>
               {failureRate}
             </p>
           </div>
@@ -183,10 +183,10 @@ export const DDEXTracker: React.FC = () => {
         
         {loading ? (
           <div className="p-12 flex items-center justify-center">
-            <RefreshCw className="w-8 h-8 animate-spin text-green-500" />
+            <RefreshCw className="w-8 h-8 animate-spin text-emerald-400" />
           </div>
         ) : error ? (
-          <div className="p-12 text-center text-red-500 font-semibold text-sm">
+          <div className="p-12 text-center text-red-400 font-semibold text-sm">
             {error}
           </div>
         ) : deliveries.length === 0 ? (
@@ -225,11 +225,11 @@ export const DDEXTracker: React.FC = () => {
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
-                        {delivery.status === 'Failed' && <AlertCircle className="w-4 h-4 text-red-500" />}
+                        {delivery.status === 'Failed' && <AlertCircle className="w-4 h-4 text-red-400" />}
                         <span className={`text-xs font-bold ${
-                          delivery.status === 'Delivered' ? 'text-green-500' : 
+                          delivery.status === 'Delivered' ? 'text-emerald-400' : 
                           delivery.status === 'Processing' ? 'text-[#2e2efe] animate-pulse' : 
-                          delivery.status === 'Failed' ? 'text-red-500' :
+                          delivery.status === 'Failed' ? 'text-red-400' :
                           'text-white/50'
                         }`}>
                           {delivery.status}

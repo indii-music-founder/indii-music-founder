@@ -134,10 +134,10 @@ export const LoginScreen: React.FC = () => {
           <form onSubmit={handleSendLink} className="space-y-6">
               {linkSent ? (
                 <div className="space-y-5">
-                  <div className="flex flex-col items-center text-center p-6 bg-green-500/5 border border-green-500/10 rounded-2xl space-y-3">
-                    <CheckCircle2 className="w-10 h-10 text-green-500" />
+                  <div className="flex flex-col items-center text-center p-6 bg-emerald-500/5 border border-emerald-500/10 rounded-2xl space-y-3">
+                    <CheckCircle2 className="w-10 h-10 text-emerald-400" />
                     <div className="space-y-1">
-                      <p className="text-sm font-semibold text-green-500">Verification Link Sent</p>
+                      <p className="text-sm font-semibold text-emerald-400">Verification Link Sent</p>
                       <p className="text-xs text-white/50 leading-relaxed">
                         We sent a secure link to <span className="text-white/90 font-medium font-mono">{sentEmail}</span>. Click the link to complete sign in.
                       </p>
@@ -171,7 +171,7 @@ export const LoginScreen: React.FC = () => {
                   </div>
 
                   {error && (
-                    <div className="flex items-start gap-2.5 bg-red-500/5 border border-red-500/10 rounded-xl p-3.5 text-xs text-red-500">
+                    <div className="flex items-start gap-2.5 bg-red-500/5 border border-red-500/10 rounded-xl p-3.5 text-xs text-red-400">
                       <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
                       <span>{error}</span>
                     </div>

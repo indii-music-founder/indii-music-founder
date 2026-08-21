@@ -103,9 +103,9 @@ export const NexusMonitor: React.FC = () => {
   const health: { tone: string; dot: string; label: string } = loading
     ? { tone: 'text-white/40', dot: 'bg-white/30', label: 'Checking…' }
     : error
-      ? { tone: 'text-red-500', dot: 'bg-red-500', label: 'Status unavailable' }
+      ? { tone: 'text-red-400', dot: 'bg-red-500', label: 'Status unavailable' }
       : dns && dns.spf === 'verified' && dns.dkim === 'verified' && dns.dmarc === 'verified'
-        ? { tone: 'text-green-500', dot: 'bg-green-500', label: 'All records verified' }
+        ? { tone: 'text-emerald-400', dot: 'bg-emerald-500', label: 'All records verified' }
         : { tone: 'text-[#ffb800]', dot: 'bg-[#ffb800]', label: 'Records unverified' };
 
   return (
@@ -139,7 +139,7 @@ export const NexusMonitor: React.FC = () => {
           ))}
         </div>
       ) : error ? (
-        <div className="p-8 bg-red-500/5 border border-red-500/10 rounded-2xl text-red-500 text-sm font-semibold text-center">
+        <div className="p-8 bg-red-500/5 border border-red-500/10 rounded-2xl text-red-400 text-sm font-semibold text-center">
           {error}
         </div>
       ) : (
@@ -158,7 +158,7 @@ export const NexusMonitor: React.FC = () => {
                 </div>
                 <span className={`px-2 py-1 text-xs font-bold rounded-lg border uppercase tracking-wider ${
                   record.val === 'verified'
-                    ? 'bg-green-500/10 text-green-500 border-green-500/20'
+                    ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
                     : 'bg-[#ffb800]/10 text-[#ffb800] border-[#ffb800]/20'
                 }`}>
                   {record.val || 'Unverified'}
@@ -190,7 +190,7 @@ export const NexusMonitor: React.FC = () => {
               <div key={i} className="flex items-center gap-6 group p-4 hover:bg-white/5 rounded-2xl transition-colors border border-transparent hover:border-white/5">
                 <div className="w-24 text-xs text-white/20 font-mono shrink-0">{log.time}</div>
                 <div className="flex-1 text-sm text-white/70 group-hover:text-white transition-colors truncate">{log.msg}</div>
-                <div className={`text-xs font-bold shrink-0 ${log.status === 'Success' ? 'text-green-500' : 'text-[#ffb800]'}`}>{log.status}</div>
+                <div className={`text-xs font-bold shrink-0 ${log.status === 'Success' ? 'text-emerald-400' : 'text-[#ffb800]'}`}>{log.status}</div>
               </div>
             ))}
           </div>
